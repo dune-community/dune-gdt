@@ -32,8 +32,8 @@ struct LagrangeProjectionLocalizableOperatorTest
     const auto& source    = this->scalar_function_;
     auto& range           = this->discrete_function_;
 
-    auto DUNE_UNUSED(with_grid_view) = make_lagrange_projection_localizable_operator(grid_view, source, range);
-    auto DUNE_UNUSED(wo_grid_view)   = make_lagrange_projection_localizable_operator(source, range);
+    auto with_grid_view DUNE_UNUSED = make_lagrange_projection_localizable_operator(grid_view, source, range);
+    auto wo_grid_view DUNE_UNUSED   = make_lagrange_projection_localizable_operator(source, range);
   } // ... constructible_by_factory(...)
 }; // struct LagrangeProjectionLocalizableOperatorTest
 
@@ -45,7 +45,7 @@ struct LagrangeProjectionOperatorTest
   void constructible_by_factory()
   {
     const auto& grid_view = this->space_.grid_view();
-    auto DUNE_UNUSED(op)  = make_lagrange_projection_operator(grid_view);
+    auto op DUNE_UNUSED   = make_lagrange_projection_operator(grid_view);
   } // ... constructible_by_factory(...)
 
   void free_function_callable()

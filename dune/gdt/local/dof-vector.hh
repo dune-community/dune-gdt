@@ -10,7 +10,7 @@
 
 #include <ostream>
 
-#include <dune/stuff/la/container/vector-interface.hh>
+#include <dune/xt/la/container/vector-interface.hh>
 
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 
@@ -22,9 +22,9 @@ template <class VectorImp>
 class ConstLocalDoFVector
 {
   static_assert(
-      std::is_base_of<Stuff::LA::VectorInterface<typename VectorImp::Traits, typename VectorImp::Traits::ScalarType>,
+      std::is_base_of<XT::LA::VectorInterface<typename VectorImp::Traits, typename VectorImp::Traits::ScalarType>,
                       VectorImp>::value,
-      "VectorImp has to be derived from Stuff::LA::VectorInterface!");
+      "VectorImp has to be derived from XT::LA::VectorInterface!");
 
 public:
   typedef VectorImp VectorType;

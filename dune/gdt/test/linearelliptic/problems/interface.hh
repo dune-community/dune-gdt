@@ -13,9 +13,9 @@
 #include <dune/grid/common/gridview.hh>
 #include <dune/grid/io/file/vtk.hh>
 
-#include <dune/stuff/common/configuration.hh>
-#include <dune/stuff/functions/default.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/common/configuration.hh>
+#include <dune/xt/functions/default.hh>
+#include <dune/xt/functions/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
@@ -34,12 +34,12 @@ public:
   typedef RangeFieldImp RangeFieldType;
   static const size_t dimRange = rangeDim;
 
-  typedef Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
+  typedef XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
       DiffusionFactorType;
-  typedef Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain,
-                                              dimDomain>
+  typedef XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain,
+                                                      dimDomain>
       DiffusionTensorType;
-  typedef Stuff::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
 
   virtual ~ProblemInterface()
@@ -56,17 +56,18 @@ public:
 
   virtual const FunctionType& neumann() const = 0;
 
-  virtual const Stuff::Common::Configuration& grid_cfg() const = 0;
+  virtual const XT::Common::Configuration& grid_cfg() const = 0;
 
-  virtual const Stuff::Common::Configuration& boundary_info_cfg() const = 0;
+  virtual const XT::Common::Configuration& boundary_info_cfg() const = 0;
 
   template <class G>
   void visualize(const GridView<G>& grid_view, std::string filename, const bool subsampling = true,
                  const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
-    auto vtk_writer = subsampling ? DSC::make_unique<SubsamplingVTKWriter<GridView<G>>>(grid_view, VTK::nonconforming)
-                                  : DSC::make_unique<VTKWriter<GridView<G>>>(grid_view, VTK::nonconforming);
-    auto diffusion = Stuff::Functions::make_product(diffusion_factor(), diffusion_tensor(), "diffusion");
+    auto vtk_writer =
+        subsampling ? Dune::XT::Common::make_unique<SubsamplingVTKWriter<GridView<G>>>(grid_view, VTK::nonconforming)
+                    : Dune::XT::Common::make_unique<VTKWriter<GridView<G>>>(grid_view, VTK::nonconforming);
+    auto diffusion = XT::Functions::make_product(diffusion_factor(), diffusion_tensor(), "diffusion");
     add_function_visualization(grid_view, diffusion_factor(), *vtk_writer);
     add_function_visualization(grid_view, diffusion_tensor(), *vtk_writer);
     add_function_visualization(grid_view, *diffusion, *vtk_writer);
@@ -80,7 +81,8 @@ private:
   template <class GridViewType, class F, class VTKWriterType>
   void add_function_visualization(const GridViewType& /*grid_view*/, const F& function, VTKWriterType& vtk_writer) const
   {
-    typedef Stuff::Functions::VisualizationAdapter<GridViewType, F::dimRange, F::dimRangeCols> VisualizationAdapter;
+    typedef XT::Functions::VisualizationAdapterFunction<GridViewType, F::dimRange, F::dimRangeCols>
+        VisualizationAdapter;
     vtk_writer.addVertexData(std::make_shared<VisualizationAdapter>(function));
   }
 }; // ProblemInterface
@@ -92,14 +94,16 @@ namespace internal {
 template <class F>
 struct is_problem_helper
 {
-  DSC_has_typedef_initialize_once(EntityType) DSC_has_typedef_initialize_once(DomainFieldType)
-      DSC_has_typedef_initialize_once(RangeFieldType) DSC_has_static_member_initialize_once(dimDomain)
-          DSC_has_static_member_initialize_once(dimRange)
+  DXTC_has_typedef_initialize_once(EntityType);
+  DXTC_has_typedef_initialize_once(DomainFieldType);
+  DXTC_has_typedef_initialize_once(RangeFieldType);
+  DXTC_has_static_member_initialize_once(dimDomain);
+  DXTC_has_static_member_initialize_once(dimRange);
 
-              static const
-      bool is_candidate = DSC_has_typedef(EntityType)<F>::value && DSC_has_typedef(DomainFieldType)<F>::value
-                          && DSC_has_typedef(RangeFieldType)<F>::value && DSC_has_static_member(dimDomain)<F>::value
-                          && DSC_has_static_member(dimRange)<F>::value;
+  static const bool is_candidate = DXTC_has_typedef(EntityType)<F>::value && DXTC_has_typedef(DomainFieldType)<F>::value
+                                   && DXTC_has_typedef(RangeFieldType)<F>::value
+                                   && DXTC_has_static_member(dimDomain)<F>::value
+                                   && DXTC_has_static_member(dimRange)<F>::value;
 }; // class is_problem_helper
 
 

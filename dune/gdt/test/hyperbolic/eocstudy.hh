@@ -6,19 +6,20 @@
 //   Felix Schindler (2016)
 //   Tobias Leibner  (2016)
 
-#ifndef DUNE_GDT_TESTS_HYPERBOLIC_EOCSTUDY_HH
-#define DUNE_GDT_TESTS_HYPERBOLIC_EOCSTUDY_HH
+#ifndef DUNE_GDT_TEST_HYPERBOLIC_EOCSTUDY_HH
+#define DUNE_GDT_TEST_HYPERBOLIC_EOCSTUDY_HH
 
 #include <dune/grid/common/gridview.hh>
 
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include "../instationary-eocstudy.hh"
-#include "eocexpectations.hh"
+#include "eocexpectations_base.hh"
+#include "all_eocexpectations.hh"
 
 namespace Dune {
 namespace GDT {
-namespace Tests {
+namespace Test {
 
 
 template <class TestCaseImp, class DiscretizerImp>
@@ -44,12 +45,12 @@ public:
   {
   }
 
-  virtual std::string identifier() override final
+  virtual std::string identifier() const override final
   {
     return Discretizer::static_id();
   }
 
-  virtual size_t expected_rate(const std::string type) override final
+  virtual size_t expected_rate(const std::string type) const override final
   {
     // If you get an undefined reference here from the linker you are missing the appropriate
     // specialization of HyperbolicEocExpectations!
@@ -110,7 +111,7 @@ public:
       }
       return norm;
     } else {
-      DUNE_THROW(Stuff::Exceptions::wrong_input_given,
+      DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                  "Wrong type `" << type << "` requested (see `available_norms()`!");
       return 0.0;
     }
@@ -133,4 +134,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_TESTS_HYPERBOLIC_EOCSTUDY_HH
+#endif // DUNE_GDT_TEST_HYPERBOLIC_EOCSTUDY_HH

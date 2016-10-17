@@ -24,9 +24,9 @@
 #include <dune/pdelab/gridfunctionspace/gridfunctionspace.hh>
 #endif // HAVE_DUNE_PDELAB
 
-#include <dune/stuff/common/float_cmp.hh>
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/float_cmp.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include <dune/gdt/spaces/basefunctionset/dune-pdelab-wrapper.hh>
 #include <dune/gdt/spaces/mapper/dune-pdelab-wrapper.hh>
@@ -106,8 +106,8 @@ public:
   typedef BaseFunctionSet::PiolaTransformedDunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain,
                                                              RangeFieldType, rangeDim, rangeDimCols>
       BaseFunctionSetType;
-  static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
-  static const bool needs_grid_view                       = true;
+  static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
+  static const bool needs_grid_view              = true;
   typedef CommunicationChooser<GridViewType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 
@@ -173,7 +173,7 @@ public:
   {
     // make sure our new communicator is prepared if other's was
     if (other.communicator_prepared_)
-      const auto& DUNE_UNUSED(comm) = this->communicator();
+      const auto& comm DUNE_UNUSED = this->communicator();
   }
 
   /**
@@ -217,7 +217,7 @@ public:
 
   CommunicatorType& communicator() const
   {
-    std::lock_guard<std::mutex> DUNE_UNUSED(gg)(communicator_mutex_);
+    DUNE_UNUSED std::lock_guard<std::mutex> gg(communicator_mutex_);
     if (!communicator_prepared_)
       communicator_prepared_ = CommunicationChooser<GridViewType>::prepare(*this, *communicator_);
     return *communicator_;

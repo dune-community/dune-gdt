@@ -14,9 +14,9 @@
 
 #include <dune/common/unused.hh>
 
-#include <dune/stuff/common/crtp.hh>
-#include <dune/stuff/grid/boundaryinfo.hh>
-#include <dune/stuff/la/container/interfaces.hh>
+#include <dune/xt/common/crtp.hh>
+#include <dune/xt/grid/boundaryinfo.hh>
+#include <dune/xt/la/container/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
@@ -37,7 +37,7 @@ class ConstraintsWrapper;
  *        We need this interface for template matching in the SystemAssembler.
  */
 template <class Traits>
-class ConstraintsInterface : public Stuff::CRTPInterface<ConstraintsInterface<Traits>, Traits>
+class ConstraintsInterface : public XT::CRTPInterface<ConstraintsInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -70,7 +70,7 @@ class DirichletConstraints : public ConstraintsInterface<internal::DirichletCons
 
 public:
   typedef internal::DirichletConstraintsTraits<IntersectionType> Traits;
-  typedef Stuff::Grid::BoundaryInfoInterface<IntersectionType> BoundaryInfoType;
+  typedef XT::Grid::BoundaryInfo<IntersectionType> BoundaryInfoType;
 
   DirichletConstraints(const BoundaryInfoType& bnd_info, const size_t sz, const bool set = true)
     : boundary_info_(bnd_info)
@@ -100,7 +100,7 @@ public:
 
   inline void insert(const size_t DoF)
   {
-    std::lock_guard<std::mutex> DUNE_UNUSED(mutex_guard)(mutex_);
+    DUNE_UNUSED std::lock_guard<std::mutex> mutex_guard(mutex_);
     assert(DoF < size_);
     dirichlet_DoFs_.insert(DoF);
   }
@@ -111,7 +111,7 @@ public:
   }
 
   template <class M>
-  void apply(Stuff::LA::MatrixInterface<M>& matrix) const
+  void apply(XT::LA::MatrixInterface<M>& matrix) const
   {
     assert(matrix.rows() == size_);
     if (set_) {
@@ -124,7 +124,7 @@ public:
   } // ... apply(...)
 
   template <class V>
-  void apply(Stuff::LA::VectorInterface<V>& vector) const
+  void apply(XT::LA::VectorInterface<V>& vector) const
   {
     assert(vector.size() == size_);
     for (const auto& DoF : dirichlet_DoFs_)
@@ -132,7 +132,7 @@ public:
   }
 
   template <class M, class V>
-  void apply(Stuff::LA::MatrixInterface<M>& matrix, Stuff::LA::VectorInterface<V>& vector) const
+  void apply(XT::LA::MatrixInterface<M>& matrix, XT::LA::VectorInterface<V>& vector) const
   {
     assert(matrix.rows() == size_);
     assert(vector.size() == size_);

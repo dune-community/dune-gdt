@@ -10,8 +10,8 @@
 #ifndef DUNE_GDT_PLAYGROUND_SPACES_MAPPER_BlockMapper_HH
 #define DUNE_GDT_PLAYGROUND_SPACES_MAPPER_BlockMapper_HH
 
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #if HAVE_DUNE_GRID_MULTISCALE
 #include <dune/grid/multiscale/default.hh>
@@ -113,14 +113,14 @@ private:
       const auto result              = ms_grid.entityToSubdomainMap()->find(global_entity_index);
 #ifndef NDEBUG
       if (result == ms_grid.entityToSubdomainMap()->end())
-        DUNE_THROW(Stuff::Exceptions::internal_error,
+        DUNE_THROW(XT::Common::Exceptions::internal_error,
                    "Entity " << global_entity_index
                              << " of the global grid view was not found in the multiscale grid!");
 #endif // NDEBUG
       const size_t subdomain = result->second;
 #ifndef NDEBUG
       if (subdomain >= ms_grid.size())
-        DUNE_THROW(Stuff::Exceptions::internal_error,
+        DUNE_THROW(XT::Common::Exceptions::internal_error,
                    "The multiscale grid is corrupted!\nIt reports Entity " << global_entity_index
                                                                            << " to be in subdomain "
                                                                            << subdomain
@@ -142,7 +142,7 @@ public:
     , max_num_dofs_(0)
   {
     if (local_spaces_.size() != ms_grid_->size())
-      DUNE_THROW(Stuff::Exceptions::shapes_do_not_match,
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "You have to provide a local space for each subdomain of the multiscale grid!\n"
                      << "  Size of the given multiscale grid: "
                      << ms_grid_->size()

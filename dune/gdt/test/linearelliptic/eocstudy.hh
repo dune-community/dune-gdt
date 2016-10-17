@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_EOCSTUDY_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_EOCSTUDY_HH
 
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/operators/elliptic.hh>
 #include <dune/gdt/operators/l2.hh>
@@ -17,10 +17,12 @@
 #include "../stationary-eocstudy.hh"
 #include "eocexpectations.hh"
 
+#include "eocexpectations/all.hh"
+
+
 namespace Dune {
 namespace GDT {
 namespace Test {
-
 
 template <class TestCaseImp, class DiscretizerImp>
 class LinearEllipticEocStudy : public StationaryEocStudy<TestCaseImp, DiscretizerImp>
@@ -49,12 +51,12 @@ public:
 
   virtual ~LinearEllipticEocStudy() = default;
 
-  virtual std::string identifier() override
+  virtual std::string identifier() const override
   {
     return Discretizer::static_id();
   }
 
-  virtual size_t expected_rate(const std::string type) override
+  virtual size_t expected_rate(const std::string type) const override
   {
     // If you get an undefined reference here from the linker you are missing the appropriate
     // specialization of LinearEllipticEocExpectations!
@@ -96,7 +98,7 @@ public:
                                     over_integrate_)
           ->induced_norm(function);
     else
-      DUNE_THROW(Stuff::Exceptions::wrong_input_given,
+      DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                  "Wrong type `" << type << "` requested (see `available_norms()`!");
   } // ... compute_norm(...)
 

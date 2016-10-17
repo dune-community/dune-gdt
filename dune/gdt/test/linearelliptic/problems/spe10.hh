@@ -12,15 +12,16 @@
 #if HAVE_ALUGRID
 #include <dune/grid/alugrid.hh>
 #endif
-#include <dune/grid/sgrid.hh>
+#include <dune/grid/yaspgrid.hh>
 
-#include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/functions/indicator.hh>
-#include <dune/stuff/functions/spe10.hh>
-#include <dune/stuff/grid/boundaryinfo.hh>
-#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/xt/functions/constant.hh>
+#include <dune/xt/functions/indicator.hh>
+#include <dune/xt/functions/spe10/model1.hh>
+#include <dune/xt/grid/boundaryinfo.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/gdt/test/stationary-testcase.hh>
+#include <dune/gdt/test/grids.hh>
 
 #include "base.hh"
 
@@ -41,41 +42,41 @@ class Spe10Model1Problem<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
     : public ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1>
 {
   typedef ProblemBase<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> BaseType;
-  typedef Stuff::Functions::Constant<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
-  typedef Stuff::Functions::Constant<EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2> MatrixConstantFunctionType;
-  typedef Stuff::Functions::Indicator<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> IndicatorFunctionType;
-  typedef Stuff::Functions::Spe10::Model1<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> Spe10FunctionType;
+  typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> ScalarConstantFunctionType;
+  typedef XT::Functions::ConstantFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 2, 2> MatrixConstantFunctionType;
+  typedef XT::Functions::IndicatorFunction<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> IndicatorFunctionType;
+  typedef XT::Functions::Spe10::Model1Function<EntityImp, DomainFieldImp, 2, RangeFieldImp, 1> Spe10FunctionType;
 
 public:
-  static Stuff::Common::Configuration default_grid_cfg()
+  static XT::Common::Configuration default_grid_cfg()
   {
-    Stuff::Common::Configuration cfg;
-    cfg["type"]        = Stuff::Grid::Providers::Configs::Cube_default()["type"];
+    XT::Common::Configuration cfg;
+    cfg["type"]        = XT::Grid::cube_gridprovider_default_config()["type"];
     cfg["lower_left"]  = "[0 0]";
     cfg["upper_right"] = "[5 1]";
     return cfg;
   }
 
-  static Stuff::Common::Configuration default_boundary_info_cfg()
+  static XT::Common::Configuration default_boundary_info_cfg()
   {
-    return Stuff::Grid::BoundaryInfoConfigs::AllDirichlet::default_config();
+    return XT::Grid::alldirichlet_boundaryinfo_default_config();
   }
 
-  Spe10Model1Problem(const Stuff::Common::Configuration& grd_cfg = default_grid_cfg(),
-                     const Stuff::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
-    : BaseType(new Spe10FunctionType(Stuff::Functions::Spe10::internal::model1_filename,
-                                     grd_cfg.get<typename Spe10FunctionType::DomainType>("lower_left"),
-                                     grd_cfg.get<typename Spe10FunctionType::DomainType>("upper_right"),
-                                     Stuff::Functions::Spe10::internal::model1_min_value,
-                                     Stuff::Functions::Spe10::internal::model1_max_value, "diffusion_factor"),
-               new MatrixConstantFunctionType(Stuff::Functions::internal::unit_matrix<RangeFieldImp, 2>(),
-                                              "diffusion_tensor"),
-               new IndicatorFunctionType({{{{0.95, 0.30}, {1.10, 0.45}}, 2000},
-                                          {{{3.00, 0.75}, {3.15, 0.90}}, -1000},
-                                          {{{4.25, 0.25}, {4.40, 0.40}}, -1000}},
-                                         "force"),
-               new ScalarConstantFunctionType(0, "dirichlet"), new ScalarConstantFunctionType(0, "neumann"), grd_cfg,
-               bnd_cfg)
+  Spe10Model1Problem(const XT::Common::Configuration& grd_cfg = default_grid_cfg(),
+                     const XT::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
+    : BaseType(
+          new Spe10FunctionType(XT::Functions::Spe10::internal::model1_filename,
+                                grd_cfg.get<typename Spe10FunctionType::DomainType>("lower_left"),
+                                grd_cfg.get<typename Spe10FunctionType::DomainType>("upper_right"),
+                                XT::Functions::Spe10::internal::model1_min_value,
+                                XT::Functions::Spe10::internal::model1_max_value, "diffusion_factor"),
+          new MatrixConstantFunctionType(XT::Functions::internal::unit_matrix<RangeFieldImp, 2>(), "diffusion_tensor"),
+          new IndicatorFunctionType({{{{0.95, 0.30}, {1.10, 0.45}}, 2000},
+                                     {{{3.00, 0.75}, {3.15, 0.90}}, -1000},
+                                     {{{4.25, 0.25}, {4.40, 0.40}}, -1000}},
+                                    "force"),
+          new ScalarConstantFunctionType(0, "dirichlet"), new ScalarConstantFunctionType(0, "neumann"), grd_cfg,
+          bnd_cfg)
   {
   }
 }; // class Spe10Model1Problem< ..., 1 >
@@ -99,16 +100,16 @@ private:
   struct Helper
   {
     static_assert(AlwaysFalse<T>::value, "Please add a configuration for this grid type!");
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       return cfg;
     }
   };
 
   template <bool anything>
-  struct Helper<SGrid<2, 2>, anything>
+  struct Helper<Yasp2Grid, anything>
   {
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       cfg["num_elements"] = "[100 20]";
       return cfg;
@@ -117,9 +118,9 @@ private:
 
 #if HAVE_ALUGRID
   template <bool anything>
-  struct Helper<ALUGrid<2, 2, simplex, conforming>, anything>
+  struct Helper<AluConform2dGridType, anything>
   {
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       cfg["num_elements"]    = "[100 20]";
       cfg["num_refinements"] = "1";
@@ -128,9 +129,9 @@ private:
   };
 
   template <bool anything>
-  struct Helper<ALUGrid<2, 2, simplex, nonconforming>, anything>
+  struct Helper<AluSimplex2dGridType, anything>
   {
-    static Stuff::Common::Configuration value(Stuff::Common::Configuration cfg)
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       cfg["num_elements"] = "[100 20]";
       return cfg;
@@ -138,7 +139,7 @@ private:
   };
 #endif // HAVE_ALUGRID
 
-  static Stuff::Common::Configuration grid_cfg()
+  static XT::Common::Configuration grid_cfg()
   {
     auto cfg = ProblemType::default_grid_cfg();
     cfg      = Helper<typename std::decay<G>::type>::value(cfg);
@@ -149,7 +150,7 @@ public:
   using typename BaseType::GridType;
 
   Spe10Model1TestCase(const size_t num_refs = 1)
-    : BaseType(Stuff::Grid::Providers::Cube<G>::create(grid_cfg())->grid_ptr(), num_refs)
+    : BaseType(XT::Grid::make_cube_grid<GridType>(grid_cfg()).grid_ptr(), num_refs)
     , problem_()
   {
   }

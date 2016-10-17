@@ -22,7 +22,7 @@
 #define DUNE_STUFF_TEST_MAIN_ENABLE_DEBUG_LOGGING 1
 #endif
 
-#include <dune/stuff/test/main.hxx> // <- this one has to come first (includes the config.h)!
+#include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
 using namespace Dune;
 

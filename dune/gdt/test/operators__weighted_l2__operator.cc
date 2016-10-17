@@ -5,14 +5,14 @@
 // Authors:
 //   Felix Schindler (2015 - 2016)
 
-#include <dune/stuff/test/main.hxx> // <- this one has to come first
+#include <dune/xt/common/test/main.hxx> // <- this one has to come first
 
 #include "operators/weighted-l2.hh"
 #include "spaces/fv/default.hh"
 
 using namespace Dune::GDT::Test;
 
-typedef testing::Types<SPACE_FV_SGRID(1, 1), SPACE_FV_SGRID(2, 1), SPACE_FV_SGRID(3, 1)> ConstantSpaces;
+typedef testing::Types<SPACE_FV_YASPGRID(1, 1), SPACE_FV_YASPGRID(2, 1), SPACE_FV_YASPGRID(3, 1)> ConstantSpaces;
 
 TYPED_TEST_CASE(WeightedL2OperatorTest, ConstantSpaces);
 TYPED_TEST(WeightedL2OperatorTest, constructible_by_ctor)
@@ -33,7 +33,7 @@ TYPED_TEST(WeightedL2OperatorTest, apply2_correct_for_constant_arguments)
 }
 TYPED_TEST(WeightedL2OperatorTest, apply2_correct_for_linear_arguments)
 {
-  this->correct_for_linear_arguments(this->dimDomain == 3 ? 5.33e-15 : 3.553e-15);
+  this->correct_for_linear_arguments(this->dimDomain == 3 ? 7.11e-15 : 3.553e-15);
 }
 TYPED_TEST(WeightedL2OperatorTest, apply2_correct_for_quadratic_arguments)
 {

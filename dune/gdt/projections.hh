@@ -10,8 +10,8 @@
 #ifndef DUNE_GDT_OPERATORS_PROJECTIONS_HH
 #define DUNE_GDT_OPERATORS_PROJECTIONS_HH
 
-#include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/grid/layers.hh>
+#include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/grid/layers.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/cg/interface.hh>
@@ -25,9 +25,9 @@ namespace GDT {
 
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
-                            && Stuff::is_localizable_function<SourceType>::value && is_cg_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value
+                            && XT::Functions::is_localizable_function<SourceType>::value
+                            && is_cg_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project(const GridViewType& grid_view, const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range,
         const size_t /*over_integrate*/ = 0)
@@ -36,9 +36,9 @@ project(const GridViewType& grid_view, const SourceType& source, DiscreteFunctio
 }
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value
-                            && Stuff::is_localizable_function<SourceType>::value && !is_cg_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value
+                            && XT::Functions::is_localizable_function<SourceType>::value
+                            && !is_cg_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project(const GridViewType& grid_view, const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range,
         const size_t over_integrate = 0)
@@ -48,8 +48,8 @@ project(const GridViewType& grid_view, const SourceType& source, DiscreteFunctio
 
 
 template <class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<Stuff::is_localizable_function<SourceType>::value && is_cg_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+typename std::enable_if<XT::Functions::is_localizable_function<SourceType>::value && is_cg_space<SpaceType>::value
+                            && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range, const size_t /*over_integrate*/ = 0)
 {
@@ -57,8 +57,8 @@ project(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range
 }
 
 template <class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<Stuff::is_localizable_function<SourceType>::value && !is_cg_space<SpaceType>::value
-                            && Stuff::LA::is_vector<VectorType>::value,
+typename std::enable_if<XT::Functions::is_localizable_function<SourceType>::value && !is_cg_space<SpaceType>::value
+                            && XT::LA::is_vector<VectorType>::value,
                         void>::type
 project(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range, const size_t over_integrate = 0)
 {

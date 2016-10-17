@@ -19,7 +19,7 @@
 
 #if HAVE_DUNE_ISTL
 #include <dune/istl/paamg/pinfo.hh>
-#include <dune/stuff/la/solver/istl_amg.hh>
+#include <dune/xt/la/solver/istl/amg.hh>
 #endif
 
 #if HAVE_DUNE_PDELAB
@@ -29,7 +29,7 @@
 #include <dune/pdelab/constraints/conforming.hh>
 #endif // HAVE_DUNE_PDELAB
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include <dune/gdt/spaces/parallel.hh>
 
@@ -102,13 +102,13 @@ public:
   typedef BaseFunctionSet::DunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType,
                                              rangeDim, rangeDimCols>
       BaseFunctionSetType;
-  static const Stuff::Grid::ChoosePartView part_view_type = Stuff::Grid::ChoosePartView::view;
-  static const bool needs_grid_view                       = true;
+  static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
+  static const bool needs_grid_view              = true;
 
   typedef typename CommunicationChooser<GridViewType>::Type CommunicatorType;
-  typedef
-      typename DSC::make_identical_tuple<DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                                         rangeDim>::type SpaceTupleType;
+  typedef typename Dune::XT::Common::make_identical_tuple<DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder,
+                                                                                   RangeFieldImp, 1, 1>,
+                                                          rangeDim>::type SpaceTupleType;
 
 private:
   friend class DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
@@ -204,7 +204,7 @@ public:
   {
     // make sure our new communicator is prepared if other's was
     if (other.communicator_prepared_)
-      const auto& DUNE_UNUSED(comm) = this->communicator();
+      const auto& comm DUNE_UNUSED = this->communicator();
   }
 
   /**
@@ -257,7 +257,7 @@ public:
 
   CommunicatorType& communicator() const
   {
-    std::lock_guard<std::mutex> DUNE_UNUSED(gg)(communicator_mutex_);
+    DUNE_UNUSED std::lock_guard<std::mutex> gg(communicator_mutex_);
     if (!communicator_prepared_)
       communicator_prepared_ = CommunicationChooserType::prepare(*this, *communicator_);
     return *communicator_;
@@ -348,7 +348,7 @@ public:
   {
     // make sure our new communicator is prepared if other's was
     if (other.communicator_prepared_)
-      const auto& DUNE_UNUSED(comm) = this->communicator();
+      const auto& comm DUNE_UNUSED = this->communicator();
   }
 
   /**
@@ -402,7 +402,7 @@ public:
 
   CommunicatorType& communicator() const
   {
-    std::lock_guard<std::mutex> DUNE_UNUSED(gg)(communicator_mutex_);
+    DUNE_UNUSED std::lock_guard<std::mutex> gg(communicator_mutex_);
     if (!communicator_prepared_)
       communicator_prepared_ = CommunicationChooserType::prepare(*this, *communicator_);
     return *communicator_;

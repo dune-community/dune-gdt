@@ -8,7 +8,7 @@
 #ifndef DUNE_GDT_LOCAL_OPERATORS_DIRICHLET_PROJECTION_HH
 #define DUNE_GDT_LOCAL_OPERATORS_DIRICHLET_PROJECTION_HH
 
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/functions/interfaces.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
 
@@ -56,7 +56,7 @@ public:
   }
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC, class RS, class V>
-  void apply(const Stuff::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
              LocalDiscreteFunction<RS, V>& local_range) const
   {
     const auto& entity = local_range.entity();

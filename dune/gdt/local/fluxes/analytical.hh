@@ -9,7 +9,7 @@
 #ifndef DUNE_GDT_LOCAL_FLUXES_ANALYTICAL_HH
 #define DUNE_GDT_LOCAL_FLUXES_ANALYTICAL_HH
 
-#include <dune/stuff/common/configuration.hh>
+#include <dune/xt/common/configuration.hh>
 
 #include "interfaces.hh"
 
@@ -52,10 +52,10 @@ public:
     return "gdt.GlobalFunctionBasedAnalyticalFluxflux";
   }
 
-  static std::unique_ptr<ThisType> create(const DSC::Configuration global_function_config,
+  static std::unique_ptr<ThisType> create(const Dune::XT::Common::Configuration global_function_config,
                                           const std::string sub_name = static_id())
   {
-    return DSC::make_unique<ThisType>(*(GlobalFunctionType::create(global_function_config, sub_name)));
+    return Dune::XT::Common::make_unique<ThisType>(*(GlobalFunctionType::create(global_function_config, sub_name)));
   } // ... create(...)
 private:
   const GlobalFunctionType global_function_;

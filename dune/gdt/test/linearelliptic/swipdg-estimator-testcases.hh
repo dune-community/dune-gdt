@@ -8,10 +8,10 @@
 #ifndef DUNE_GDT_TEST_LINEARELLIPTIC_SWIPDG_ESTIMATOR_TESTCASES_HH
 #define DUNE_GDT_TEST_LINEARELLIPTIC_SWIPDG_ESTIMATOR_TESTCASES_HH
 
-#include <dune/grid/sgrid.hh>
+#include <dune/grid/yaspgrid.hh>
 #include <dune/grid/alugrid.hh>
 
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include "swipdg-estimator-expectations.hh"
 #include "problems/AO2013.hh"
@@ -43,20 +43,20 @@ extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
                                                                                                        conforming>,
                                                                                                double, 1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                                Stuff::LA::ChooseBackend::eigen_sparse>;
+                                                                XT::LA::Backends::eigen_sparse>;
 
 extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
                                                                                                         conforming>,
                                                                                                 double, 1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                                Stuff::LA::ChooseBackend::eigen_sparse>;
+                                                                XT::LA::Backends::eigen_sparse>;
 
 extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::Spe10Model1TestCase<ALUGrid<2, 2,
                                                                                                             simplex,
                                                                                                             conforming>,
                                                                                                     double, 1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                                Stuff::LA::ChooseBackend::eigen_sparse>;
+                                                                XT::LA::Backends::eigen_sparse>;
 
 
 #endif // HAVE_EIGEN
@@ -67,20 +67,20 @@ extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
                                                                                                        conforming>,
                                                                                                double, 1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                                Stuff::LA::ChooseBackend::istl_sparse>;
+                                                                XT::LA::Backends::istl_sparse>;
 
 extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
                                                                                                         conforming>,
                                                                                                 double, 1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                                Stuff::LA::ChooseBackend::istl_sparse>;
+                                                                XT::LA::Backends::istl_sparse>;
 
 extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::Spe10Model1TestCase<ALUGrid<2, 2,
                                                                                                             simplex,
                                                                                                             conforming>,
                                                                                                     double, 1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                                Stuff::LA::ChooseBackend::istl_sparse>;
+                                                                XT::LA::Backends::istl_sparse>;
 
 
 #endif // HAVE_DUNE_ISTL

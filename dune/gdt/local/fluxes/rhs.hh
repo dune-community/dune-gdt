@@ -9,7 +9,7 @@
 #ifndef DUNE_GDT_LOCAL_FLUXES_RHS_HH
 #define DUNE_GDT_LOCAL_FLUXES_RHS_HH
 
-#include <dune/stuff/functions/checkerboard.hh>
+#include <dune/xt/functions/checkerboard.hh>
 
 #include "interfaces.hh"
 
@@ -17,7 +17,7 @@ namespace Dune {
 namespace GDT {
 
 
-/** RHS evaluation for time-independent RHS q(u,x) that is based on Dune::Stuff::Functions::Checkerboard.
+/** RHS evaluation for time-independent RHS q(u,x) that is based on Dune::XT::Functions::Checkerboard.
  *  TODO: static_assert for CheckerboardFunctionImp
  * */
 template <class CheckerboardFunctionImp, class E, class D, size_t d, class R, size_t r, size_t rC = 1>
@@ -48,10 +48,10 @@ public:
     return "gdt.CheckerboardBasedRhsEvaluationFlux";
   }
 
-  static std::unique_ptr<ThisType> create(const Dune::Stuff::Common::Configuration checkerboard_config,
+  static std::unique_ptr<ThisType> create(const Dune::XT::Common::Configuration checkerboard_config,
                                           const std::string sub_name = static_id())
   {
-    return DSC::make_unique<ThisType>(*(CheckerboardFunctionType::create(checkerboard_config, sub_name)));
+    return Dune::XT::Common::make_unique<ThisType>(*(CheckerboardFunctionType::create(checkerboard_config, sub_name)));
   } // ... create(...)
 
 private:

@@ -24,15 +24,14 @@ namespace internal {
 
 std::vector<double>
 results_LinearEllipticSwipdgEstimatorExpectationsAO2013TestCaseALUGrid22simplexconformingdouble1swipdg1(
-    const LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>, double, 1>& /*test_case*/,
-    const std::string type)
+    const LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>& /*test_case*/, const std::string type)
 {
   if (type == "energy")
     return {9.10e-02, 5.23e-02, 2.68e-02, 1.20e-02};
   else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_nonconformity_ESV2007_id())
     return {9.57e-02, 1.10e-01, 5.12e-02, 2.17e-02};
   else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_residual_ESV2007_id())
-    return {1.03e-15, 5.20e-13, 4.68e-13, 1.19e-12};
+    return {7.05e-16, 5.20e-13, 1.99e-12, 1.40e-13};
   else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_diffusive_flux_ESV2007_id())
     return {1.12e-01, 6.54e-02, 3.54e-02, 1.90e-02};
   else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_id())
@@ -58,20 +57,56 @@ results_LinearEllipticSwipdgEstimatorExpectationsAO2013TestCaseALUGrid22simplexc
 #if HAVE_EIGEN
 
 template <bool anything>
-class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>,
-                                                                               double, 1>,
+class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                Stuff::LA::ChooseBackend::eigen_sparse, anything>
+                                                XT::LA::Backends::eigen_sparse, anything>
     : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<1>
 {
-  typedef LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>, double, 1> TestCaseType;
+  typedef LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1> TestCaseType;
+
+public:
+  static std::vector<double> results(const TestCaseType& test_case, const std::string type)
+  {
+    if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_residual_ESV2007_id())
+#ifndef NDEBUG
+      return {7.92e-16, 2.38e-12, 1.94e-13, 8.16e-14};
+#else
+      return {6.73e-16, 2.38e-12, 1.94e-13, 8.14e-14};
+#endif
+    else
+
+      return internal::
+          results_LinearEllipticSwipdgEstimatorExpectationsAO2013TestCaseALUGrid22simplexconformingdouble1swipdg1(
+              test_case, type);
+  }
+}; // LinearEllipticSwipdgEstimatorExpectations
+
+
+template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex,
+                                                                                                conforming>,
+                                                                                        double, 1>,
+                                                         LinearElliptic::ChooseDiscretizer::swipdg, 1,
+                                                         XT::LA::Backends::eigen_sparse>;
+
+
+#endif // HAVE_EIGEN
+#if HAVE_DUNE_ISTL
+
+
+template <bool anything>
+class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
+                                                LinearElliptic::ChooseDiscretizer::swipdg, 1,
+                                                XT::LA::Backends::istl_sparse, anything>
+    : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<1>
+{
+  typedef LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1> TestCaseType;
 
 public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type)
   {
 #ifndef NDEBUG
     if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_residual_ESV2007_id())
-      return {7.62e-16, 8.48e-13, 1.18e-13, 2.47e-13};
+      return {8.38e-16, 5.20e-13, 4.68e-13, 1.19e-12};
     else
 #endif
       return internal::
@@ -85,37 +120,7 @@ template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013T
                                                                                                 conforming>,
                                                                                         double, 1>,
                                                          LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                         Stuff::LA::ChooseBackend::eigen_sparse>;
-
-
-#endif // HAVE_EIGEN
-#if HAVE_DUNE_ISTL
-
-
-template <bool anything>
-class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>,
-                                                                               double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                Stuff::LA::ChooseBackend::istl_sparse, anything>
-    : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<1>
-{
-  typedef LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex, conforming>, double, 1> TestCaseType;
-
-public:
-  static std::vector<double> results(const TestCaseType& test_case, const std::string type)
-  {
-    return internal::
-        results_LinearEllipticSwipdgEstimatorExpectationsAO2013TestCaseALUGrid22simplexconformingdouble1swipdg1(
-            test_case, type);
-  }
-}; // LinearEllipticSwipdgEstimatorExpectations
-
-
-template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex,
-                                                                                                conforming>,
-                                                                                        double, 1>,
-                                                         LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                         Stuff::LA::ChooseBackend::istl_sparse>;
+                                                         XT::LA::Backends::istl_sparse>;
 
 
 #endif // HAVE_DUNE_ISTL

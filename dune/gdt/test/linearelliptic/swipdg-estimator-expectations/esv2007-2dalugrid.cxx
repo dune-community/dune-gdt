@@ -21,13 +21,12 @@ namespace Test {
 
 // polorder 1, conforming
 
-template <Stuff::LA::ChooseBackend la_backend, bool anything>
-class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex, conforming>,
-                                                                                double, 1>,
+template <XT::LA::Backends la_backend, bool anything>
+class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
                                                 LinearElliptic::ChooseDiscretizer::swipdg, 1, la_backend, anything>
     : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<1>
 {
-  typedef LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex, conforming>, double, 1> TestCaseType;
+  typedef LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1> TestCaseType;
 
 public:
   static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type)
@@ -60,14 +59,14 @@ template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007
                                                                                                  conforming>,
                                                                                          double, 1>,
                                                          LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                         Stuff::LA::ChooseBackend::eigen_sparse>;
+                                                         XT::LA::Backends::eigen_sparse>;
 
 
 template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
                                                                                                  conforming>,
                                                                                          double, 1>,
                                                          LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                         Stuff::LA::ChooseBackend::istl_sparse>;
+                                                         XT::LA::Backends::istl_sparse>;
 
 
 } // namespace Test

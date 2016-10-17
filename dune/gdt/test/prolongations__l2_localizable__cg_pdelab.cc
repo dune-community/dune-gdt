@@ -5,9 +5,9 @@
 // Authors:
 //   Felix Schindler (2016)
 
-#include <dune/stuff/test/main.hxx>
+#include <dune/xt/common/test/main.hxx>
 
-#include <dune/stuff/grid/information.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include "prolongations/l2.hh"
 #include "spaces/cg/pdelab.hh"
@@ -31,8 +31,8 @@ get_tolerance(const T& param)
 {
   typedef typename T::GridViewType::Grid Grid;
   const auto dim       = param.dimDomain;
-  const auto tolerance = Dune::Stuff::Grid::is_conforming_alugrid<Grid>::value ? (dim == 3 ? 2.49e-14 : 1e-15)
-                                                                               : (dim == 3 ? 2.49e-14 : 1e-15);
+  const auto tolerance = Dune::XT::Grid::is_conforming_alugrid<Grid>::value ? (dim == 3 ? 2.49e-14 : 1e-15)
+                                                                            : (dim == 3 ? 2.49e-14 : 1e-15);
   return tolerance;
 }
 

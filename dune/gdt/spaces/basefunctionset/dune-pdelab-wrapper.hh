@@ -17,7 +17,7 @@
 #include <dune/pdelab/gridfunctionspace/localfunctionspace.hh>
 #endif
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include "interface.hh"
 

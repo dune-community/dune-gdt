@@ -13,7 +13,7 @@
 #define THIS_IS_A_BUILDBOT_BUILD 0
 #endif
 
-#include <dune/stuff/test/common.hh>
+#include <dune/xt/common/test/common.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/test/hyperbolic/eocstudy.hh>
@@ -34,18 +34,18 @@ struct hyperbolic_FV_discretization_base : public ::testing::Test
 #else
     TestCaseType test_case;
 #endif
-    test_case.print_header(DSC_LOG_INFO);
-    DSC_LOG_INFO << std::endl;
+    test_case.print_header(DXTC_LOG_INFO);
+    DXTC_LOG_INFO << std::endl;
     typedef typename Hyperbolic::FvDiscretizer<TestCaseType,
                                                typename TestCaseType::GridType,
                                                double,
                                                TestCaseType::dimRange,
                                                TestCaseType::dimRangeCols,
                                                numerical_flux,
-                                               time_stepper> Discretizer;
+                                               time_stepper>
         Discretizer;
-    Tests::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
-    Stuff::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DSC_LOG_INFO));
+    Dune::GDT::Test::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
+    XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DXTC_LOG_INFO));
   } // ... eoc_study()
 }; // hyperbolic_FV_discretization_base
 

@@ -9,10 +9,11 @@
 #ifndef DUNE_GDT_OPERATORS_BASE_HH
 #define DUNE_GDT_OPERATORS_BASE_HH
 
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/grid/walker/apply-on.hh>
-#include <dune/stuff/grid/walker.hh>
-#include <dune/stuff/la/container/pattern.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/grid/walker/apply-on.hh>
+#include <dune/xt/grid/walker.hh>
+#include <dune/xt/la/container/pattern.hh>
+#include <dune/xt/functions/interfaces.hh>
 
 #include <dune/gdt/local/assembler.hh>
 #include <dune/gdt/assembler/wrapper.hh>
@@ -40,8 +41,7 @@ template <class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceS
           ChoosePattern pt>
 class MatrixOperatorBaseTraits
 {
-  static_assert(Stuff::LA::is_matrix<MatrixImp>::value,
-                "MatrixType has to be derived from Stuff::LA::MatrixInterface!");
+  static_assert(XT::LA::is_matrix<MatrixImp>::value, "MatrixType has to be derived from XT::LA::MatrixInterface!");
   static_assert(is_space<RangeSpaceImp>::value, "RangeSpaceType has to be derived from SpaceInterface!");
   static_assert(is_space<SourceSpaceImp>::value, "SourceSpaceType has to be derived from SpaceInterface!");
   static_assert(std::is_same<typename RangeSpaceImp::GridViewType::template Codim<0>::Entity,
@@ -65,9 +65,9 @@ public:
  */
 template <class GridViewImp, class RangeImp, class SourceImp = RangeImp,
           class FieldImp = typename RangeImp::RangeFieldType>
-class LocalizableProductBase : public Stuff::Grid::Walker<GridViewImp>
+class LocalizableProductBase : public XT::Grid::Walker<GridViewImp>
 {
-  typedef Stuff::Grid::Walker<GridViewImp> BaseType;
+  typedef XT::Grid::Walker<GridViewImp> BaseType;
 
 public:
   using typename BaseType::GridViewType;
@@ -77,10 +77,10 @@ public:
   typedef FieldImp FieldType;
 
 private:
-  static_assert(Stuff::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(Stuff::is_localizable_function<RangeType>::value,
-                "RangeType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<SourceType>::value,
+                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<RangeType>::value,
+                "RangeType has to be derived from XT::Functions::LocalizableFunctionInterface!");
   static_assert(std::is_same<typename SourceType::EntityType, EntityType>::value,
                 "The EntityType of SourceType and GridViewType have to match!");
   static_assert(std::is_same<typename RangeType::EntityType, EntityType>::value,
@@ -124,8 +124,9 @@ public:
   using BaseType::grid_view;
 
   template <class V>
-  void add(const LocalVolumeTwoFormInterface<V>& local_volume_twoform,
-           const DSG::ApplyOn::WhichEntity<GridViewType>* where = new DSG::ApplyOn::AllEntities<GridViewType>())
+  void
+  add(const LocalVolumeTwoFormInterface<V>& local_volume_twoform,
+      const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     typedef LocalVolumeTwoFormAccumulator<GridViewType,
                                           typename LocalVolumeTwoFormInterface<V>::derived_type,
@@ -161,7 +162,7 @@ public:
 protected:
   const RangeType& range_;
   const SourceType& source_;
-  std::vector<std::unique_ptr<DSG::internal::Codim0ReturnObject<GridViewType, FieldType>>> local_volume_twoforms_;
+  std::vector<std::unique_ptr<XT::Grid::internal::Codim0ReturnObject<GridViewType, FieldType>>> local_volume_twoforms_;
   bool walked_;
 }; // class LocalizableProductBase
 
@@ -188,14 +189,14 @@ public:
       Traits;
   typedef typename BaseAssemblerType::TestSpaceType RangeSpaceType;
   typedef typename BaseAssemblerType::AnsatzSpaceType SourceSpaceType;
-  typedef Stuff::LA::SparsityPatternDefault PatternType;
+  typedef XT::LA::SparsityPatternDefault PatternType;
   typedef MatrixImp MatrixType;
   using typename BaseOperatorType::FieldType;
   using typename BaseOperatorType::derived_type;
   using typename BaseAssemblerType::GridViewType;
 
 private:
-  typedef Stuff::LA::Solver<MatrixType, typename SourceSpaceType::CommunicatorType> LinearSolverType;
+  typedef XT::LA::Solver<MatrixType, typename SourceSpaceType::CommunicatorType> LinearSolverType;
 
   template <ChoosePattern pp = ChoosePattern::face_and_volume, bool anything = true>
   struct Compute
@@ -254,12 +255,12 @@ public:
     , matrix_(mtrx)
   {
     if (matrix_.access().rows() != this->range_space().mapper().size())
-      DUNE_THROW(Stuff::Exceptions::shapes_do_not_match,
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "matrix.rows(): " << matrix_.access().rows() << "\n"
                                    << "range_space().mapper().size(): "
                                    << this->range_space().mapper().size());
     if (matrix_.access().cols() != this->source_space().mapper().size())
-      DUNE_THROW(Stuff::Exceptions::shapes_do_not_match,
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "matrix.cols(): " << matrix_.access().cols() << "\n"
                                    << "source_space().mapper().size(): "
                                    << this->source_space().mapper().size());
@@ -298,8 +299,9 @@ public:
   using BaseAssemblerType::add;
 
   template <class V>
-  void add(const LocalVolumeTwoFormInterface<V>& local_volume_twoform,
-           const DSG::ApplyOn::WhichEntity<GridViewType>* where = new DSG::ApplyOn::AllEntities<GridViewType>())
+  void
+  add(const LocalVolumeTwoFormInterface<V>& local_volume_twoform,
+      const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     typedef internal::LocalVolumeTwoFormWrapper<ThisType,
                                                 typename LocalVolumeTwoFormInterface<V>::derived_type,
@@ -311,8 +313,8 @@ public:
 
   template <class C>
   void add(const LocalCouplingTwoFormInterface<C>& local_coupling_twoform,
-           const DSG::ApplyOn::WhichIntersection<GridViewType>* where =
-               new DSG::ApplyOn::InnerIntersectionsPrimally<GridViewType>())
+           const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
+               new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>())
   {
     typedef internal::LocalCouplingTwoFormWrapper<ThisType,
                                                   typename LocalCouplingTwoFormInterface<C>::derived_type,
@@ -324,8 +326,8 @@ public:
 
   template <class B>
   void add(const LocalBoundaryTwoFormInterface<B>& local_boundary_twoform,
-           const DSG::ApplyOn::WhichIntersection<GridViewType>* where =
-               new DSG::ApplyOn::InnerIntersectionsPrimally<GridViewType>())
+           const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
+               new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>())
   {
     typedef internal::LocalBoundaryTwoFormWrapper<ThisType,
                                                   typename LocalBoundaryTwoFormInterface<B>::derived_type,
@@ -336,7 +338,7 @@ public:
   }
 
   template <class S, class R>
-  void apply(const Stuff::LA::VectorInterface<S>& source, Stuff::LA::VectorInterface<R>& range) const
+  void apply(const XT::LA::VectorInterface<S>& source, XT::LA::VectorInterface<R>& range) const
   {
     const_cast<ThisType&>(*this).assemble();
     matrix().mv(source.as_imp(), range.as_imp());
@@ -349,7 +351,7 @@ public:
   }
 
   template <class R, class S>
-  FieldType apply2(const Stuff::LA::VectorInterface<R>& range, const Stuff::LA::VectorInterface<S>& source) const
+  FieldType apply2(const XT::LA::VectorInterface<R>& range, const XT::LA::VectorInterface<S>& source) const
   {
     const_cast<ThisType&>(*this).assemble();
     auto tmp = range.copy();
@@ -375,8 +377,8 @@ public:
   using BaseOperatorType::apply_inverse;
 
   template <class R, class S>
-  void apply_inverse(const Stuff::LA::VectorInterface<R>& range, Stuff::LA::VectorInterface<S>& source,
-                     const Stuff::Common::Configuration& opts) const
+  void apply_inverse(const XT::LA::VectorInterface<R>& range, XT::LA::VectorInterface<S>& source,
+                     const XT::Common::Configuration& opts) const
   {
     this->assemble();
     LinearSolverType(matrix(), source_space().communicator()).apply(range.as_imp(), source.as_imp(), opts);
@@ -384,7 +386,7 @@ public:
 
   template <class R, class S>
   void apply_inverse(const ConstDiscreteFunction<SourceSpaceType, R>& range,
-                     ConstDiscreteFunction<RangeSpaceType, S>& source, const Stuff::Common::Configuration& opts) const
+                     ConstDiscreteFunction<RangeSpaceType, S>& source, const XT::Common::Configuration& opts) const
   {
     apply_inverse(range.vector(), source.vector(), opts);
   }
@@ -394,7 +396,7 @@ public:
     return LinearSolverType::types();
   }
 
-  Stuff::Common::Configuration invert_options(const std::string& type) const
+  XT::Common::Configuration invert_options(const std::string& type) const
   {
     return LinearSolverType::options(type);
   }
@@ -404,14 +406,14 @@ protected:
   using BaseAssemblerType::codim1_functors_;
 
 private:
-  DSC::StorageProvider<MatrixType> matrix_;
+  Dune::XT::Common::StorageProvider<MatrixType> matrix_;
 }; // class MatrixOperatorBase
 
 
 template <class GridViewImp, class SourceImp, class RangeImp>
-class LocalizableOperatorBase : public Stuff::Grid::Walker<GridViewImp>
+class LocalizableOperatorBase : public XT::Grid::Walker<GridViewImp>
 {
-  typedef Stuff::Grid::Walker<GridViewImp> BaseType;
+  typedef XT::Grid::Walker<GridViewImp> BaseType;
 
 public:
   using typename BaseType::GridViewType;
@@ -420,8 +422,8 @@ public:
   typedef RangeImp RangeType;
 
 private:
-  static_assert(Stuff::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<SourceType>::value,
+                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
   static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
   static_assert(std::is_same<typename SourceType::EntityType, EntityType>::value, "Have to match!");
   static_assert(std::is_same<typename RangeType::EntityType, EntityType>::value, "Have to match!");
@@ -460,8 +462,9 @@ public:
   using BaseType::grid_view;
 
   template <class L>
-  void add(const LocalOperatorInterface<L>& local_operator,
-           const DSG::ApplyOn::WhichEntity<GridViewType>* where = new DSG::ApplyOn::AllEntities<GridViewType>())
+  void
+  add(const LocalOperatorInterface<L>& local_operator,
+      const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     typedef LocalOperatorApplicator<GridViewType,
                                     typename LocalOperatorInterface<L>::derived_type,
@@ -473,9 +476,9 @@ public:
   } // ... add(...)
 
   template <class T>
-  void
-  add(const LocalCouplingOperatorInterface<T>& local_operator,
-      const DSG::ApplyOn::WhichIntersection<GridViewType>* where = new DSG::ApplyOn::InnerIntersections<GridViewType>())
+  void add(const LocalCouplingOperatorInterface<T>& local_operator,
+           const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
+               new XT::Grid::ApplyOn::InnerIntersections<GridViewType>())
   {
     typedef LocalCouplingOperatorApplicator<GridViewType,
                                             typename LocalCouplingOperatorInterface<T>::derived_type,
@@ -488,8 +491,8 @@ public:
 
   template <class T>
   void add(const LocalBoundaryOperatorInterface<T>& local_operator,
-           const DSG::ApplyOn::WhichIntersection<GridViewType>* where =
-               new DSG::ApplyOn::BoundaryIntersections<GridViewType>())
+           const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
+               new XT::Grid::ApplyOn::BoundaryIntersections<GridViewType>())
   {
     typedef LocalBoundaryOperatorApplicator<GridViewType,
                                             typename LocalBoundaryOperatorInterface<T>::derived_type,
@@ -512,8 +515,8 @@ public:
 protected:
   const SourceType& source_;
   RangeType& range_;
-  std::vector<std::unique_ptr<DSG::internal::Codim0Object<GridViewType>>> local_operators_codim_0;
-  std::vector<std::unique_ptr<DSG::internal::Codim1Object<GridViewType>>> local_operators_codim_1;
+  std::vector<std::unique_ptr<XT::Grid::internal::Codim0Object<GridViewType>>> local_operators_codim_0;
+  std::vector<std::unique_ptr<XT::Grid::internal::Codim1Object<GridViewType>>> local_operators_codim_1;
   bool walked_;
 }; // class LocalizableOperatorBase
 

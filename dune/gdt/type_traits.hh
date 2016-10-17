@@ -11,7 +11,7 @@
 
 #include <type_traits>
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include <dune/gdt/local/integrands/interfaces.hh>
 
@@ -29,35 +29,40 @@ namespace internal {
 template <class Tt>
 struct is_unary_volume_integrand_helper
 {
-  DSC_has_typedef_initialize_once(Traits) static const bool is_candidate = DSC_has_typedef(Traits)<Tt>::value;
+  DXTC_has_typedef_initialize_once(Traits);
+  static const bool is_candidate = DXTC_has_typedef(Traits)<Tt>::value;
 };
 
 
 template <class Tt>
 struct is_binary_volume_integrand_helper
 {
-  DSC_has_typedef_initialize_once(Traits) static const bool is_candidate = DSC_has_typedef(Traits)<Tt>::value;
+  DXTC_has_typedef_initialize_once(Traits);
+  static const bool is_candidate = DXTC_has_typedef(Traits)<Tt>::value;
 };
 
 
 template <class Tt>
 struct is_unary_face_integrand_helper
 {
-  DSC_has_typedef_initialize_once(Traits) static const bool is_candidate = DSC_has_typedef(Traits)<Tt>::value;
+  DXTC_has_typedef_initialize_once(Traits);
+  static const bool is_candidate = DXTC_has_typedef(Traits)<Tt>::value;
 };
 
 
 template <class Tt>
 struct is_binary_face_integrand_helper
 {
-  DSC_has_typedef_initialize_once(Traits) static const bool is_candidate = DSC_has_typedef(Traits)<Tt>::value;
+  DXTC_has_typedef_initialize_once(Traits);
+  static const bool is_candidate = DXTC_has_typedef(Traits)<Tt>::value;
 };
 
 
 template <class Tt>
 struct is_quaternary_face_integrand_helper
 {
-  DSC_has_typedef_initialize_once(Traits) static const bool is_candidate = DSC_has_typedef(Traits)<Tt>::value;
+  DXTC_has_typedef_initialize_once(Traits);
+  static const bool is_candidate = DXTC_has_typedef(Traits)<Tt>::value;
 };
 
 

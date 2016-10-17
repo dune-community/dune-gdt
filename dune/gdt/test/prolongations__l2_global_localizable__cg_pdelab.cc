@@ -5,7 +5,7 @@
 // Authors:
 //   Felix Schindler (2016)
 
-#include <dune/stuff/test/main.hxx>
+#include <dune/xt/common/test/main.hxx>
 
 #include "prolongations/l2-global.hh"
 #include "spaces/cg/pdelab.hh"

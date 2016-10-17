@@ -9,49 +9,30 @@
 #ifndef DUNE_GDT_TESTS_HYPERBOLIC_EOCEXPECTATIONS_HH
 #define DUNE_GDT_TESTS_HYPERBOLIC_EOCEXPECTATIONS_HH
 
-#include <dune/stuff/common/float_cmp.hh>
-#include <dune/stuff/common/type_utils.hh>
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/common/float_cmp.hh>
+#include <dune/xt/common/type_traits.hh>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include "discretizers/base.hh"
 #include <dune/gdt/discretizations/default.hh>
+#include <dune/gdt/test/grids.hh>
+
+#include "eocexpectations_base.hh"
 
 namespace Dune {
 namespace GDT {
-namespace Tests {
-namespace internal {
+namespace Test {
 
-
-template <int dimDomain>
-class HyperbolicEocExpectationsBase
-{
-public:
-  static double rate(const std::string type)
-  {
-    if (type == "L1") {
-      if (dimDomain == 1)
-        return 0.5;
-      else
-        return 0.25;
-    } else {
-      EXPECT_TRUE(false) << "expected rate missing for type: " << type;
-      return 0;
-    }
-  } // ... rate(...)
-}; // class HyperbolicEocExpectationsBase
-
-
-} // namespace internal
 
 template <class TestCaseType, Hyperbolic::ChooseDiscretizer disc, size_t dimDomain, NumericalFluxes num_flux,
-          TimeStepperMethods time_stepper, bool anything = true>
+          TimeStepperMethods time_stepper>
 class HyperbolicEocExpectations : public internal::HyperbolicEocExpectationsBase<dimDomain>
 {
 public:
   static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type)
   {
     EXPECT_TRUE(false) << "Please record the expected results for\n"
-                       << "  TestCaseType: " << Stuff::Common::Typename<TestCaseType>::value() << "\n"
+                       << "  TestCaseType: " << XT::Common::Typename<TestCaseType>::value() << "\n"
                        << "  ChooseDiscretizer: ??\n"
                        << "  type: " << type << "\n"
                        << "Please put an appropriate specialization of HyperbolicEocExpectations for these\n"
@@ -66,7 +47,7 @@ public:
 }; // HyperbolicEocExpectations
 
 
-} // namespace Tests
+} // namespace Test
 } // namespace GDT
 } // namespace Dune
 

@@ -13,7 +13,7 @@
 #include <vector>
 #include <string>
 
-#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/gdt/test/instationary-eocstudy.hh>
 
@@ -86,7 +86,7 @@ public:
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return Stuff::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
+    return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
   } // ... create(...)
 
   static ConfigType default_config(const std::string sub_name = "")
@@ -152,8 +152,8 @@ public:
 
 template <class G, class R = double, size_t r = 1, size_t rC = 1>
 class BurgersTestCase
-    : public Dune::GDT::Tests::NonStationaryTestCase<G, Problems::Burgers<typename G::template Codim<0>::Entity,
-                                                                          typename G::ctype, G::dimension, R, r, rC>>
+    : public Dune::GDT::Test::NonStationaryTestCase<G, Problems::Burgers<typename G::template Codim<0>::Entity,
+                                                                         typename G::ctype, G::dimension, R, r, rC>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -165,13 +165,13 @@ public:
   typedef Problems::Burgers<E, D, d, R, r> ProblemType;
 
 private:
-  typedef Tests::NonStationaryTestCase<G, ProblemType> BaseType;
+  typedef Test::NonStationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;
 
   BurgersTestCase(const size_t num_refs = (d == 1 ? 4 : 1), const double divide_t_end_by = 1.0)
-    : BaseType(divide_t_end_by, Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(),
+    : BaseType(divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(),
                num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {
@@ -204,7 +204,7 @@ public:
         << "||  Testcase: Burgers                                                 ||\n"
         << "|+--------------------------------------------------------------------+|\n"
         << domainstring
-        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+        << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end())
                + "]                                                   ||\n"
         << "||  flux = 0.5*u[0]^2                                                 ||\n"
         << "||  rhs = 0                                                           ||\n"

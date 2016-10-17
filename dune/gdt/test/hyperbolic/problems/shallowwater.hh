@@ -11,9 +11,9 @@
 
 #include <memory>
 
-#include <dune/stuff/functions/expression.hh>
-#include <dune/stuff/functions/checkerboard.hh>
-#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/xt/functions/expression.hh>
+#include <dune/xt/functions/checkerboard.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/gdt/test/instationary-eocstudy.hh>
 
@@ -136,7 +136,7 @@ public:
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return Stuff::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
+    return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
   } // ... create(...)
 
   ShallowWater(const std::shared_ptr<const FluxType> flux_in, const std::shared_ptr<const RHSType> rhs_in,
@@ -164,8 +164,8 @@ public:
 // Test case for shallow water equations, see LeVeque, Finite Volume Methods for Hyperbolic Problems, 2002, Example 13.1
 template <class G, class R = double>
 class ShallowWaterTestCase
-    : public Dune::GDT::Tests::NonStationaryTestCase<G, Problems::ShallowWater<typename G::template Codim<0>::Entity,
-                                                                               typename G::ctype, G::dimension, R, 2>>
+    : public Dune::GDT::Test::NonStationaryTestCase<G, Problems::ShallowWater<typename G::template Codim<0>::Entity,
+                                                                              typename G::ctype, G::dimension, R, 2>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -177,7 +177,7 @@ public:
   typedef typename Problems::ShallowWater<E, D, d, R, 2> ProblemType;
 
 private:
-  typedef typename Dune::GDT::Tests::NonStationaryTestCase<G, ProblemType> BaseType;
+  typedef typename Dune::GDT::Test::NonStationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;
@@ -185,7 +185,7 @@ public:
   using typename BaseType::LevelGridViewType;
 
   ShallowWaterTestCase(const size_t num_refs = 2, const double divide_t_end_by = 1.0)
-    : BaseType(divide_t_end_by, Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(),
+    : BaseType(divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(),
                num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {
@@ -215,7 +215,7 @@ public:
         << "||  Testcase: Shallow Water                                           ||\n"
         << "|+--------------------------------------------------------------------+|\n"
         << "||  domain = [0, 10]                                                  ||\n"
-        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+        << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end())
                + "]                                                   ||\n"
         << "||  flux = [u[1] u[1]*u[1]/u[0]+0.5*u[0]*u[0]]                        ||\n"
         << "||  rhs = 0                                                           ||\n"

@@ -13,9 +13,9 @@
 
 #include <dune/gdt/operators/interfaces.hh>
 
-#include <dune/stuff/common/memory.hh>
-#include <dune/stuff/common/string.hh>
-#include <dune/stuff/la/container.hh>
+#include <dune/xt/common/memory.hh>
+#include <dune/xt/common/string.hh>
+#include <dune/xt/la/container.hh>
 
 #include "interface.hh"
 

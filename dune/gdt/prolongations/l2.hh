@@ -76,15 +76,15 @@ public:
 
 
 template <class GridViewType, class SS, class SV, class RS, class RV>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<L2ProlongationLocalizableOperator<GridViewType, ConstDiscreteFunction<SS, SV>,
                                                                           DiscreteFunction<RS, RV>>>>::type
 make_l2_prolongation_localizable_operator(const GridViewType& grid_view, const ConstDiscreteFunction<SS, SV>& source,
                                           DiscreteFunction<RS, RV>& range, const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2ProlongationLocalizableOperator<GridViewType,
-                                                            ConstDiscreteFunction<SS, SV>,
-                                                            DiscreteFunction<RS, RV>>>(
+  return Dune::XT::Common::make_unique<L2ProlongationLocalizableOperator<GridViewType,
+                                                                         ConstDiscreteFunction<SS, SV>,
+                                                                         DiscreteFunction<RS, RV>>>(
       over_integrate, grid_view, source, range);
 } // ... make_l2_prolongation_localizable_operator(...)
 
@@ -94,9 +94,9 @@ std::unique_ptr<L2ProlongationLocalizableOperator<typename RS::GridViewType, Con
 make_l2_prolongation_localizable_operator(const ConstDiscreteFunction<SS, SV>& source, DiscreteFunction<RS, RV>& range,
                                           const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2ProlongationLocalizableOperator<typename RS::GridViewType,
-                                                            ConstDiscreteFunction<SS, SV>,
-                                                            DiscreteFunction<RS, RV>>>(
+  return Dune::XT::Common::make_unique<L2ProlongationLocalizableOperator<typename RS::GridViewType,
+                                                                         ConstDiscreteFunction<SS, SV>,
+                                                                         DiscreteFunction<RS, RV>>>(
       over_integrate, range.space().grid_view(), source, range);
 } // ... make_l2_prolongation_localizable_operator(...)
 
@@ -112,7 +112,7 @@ public:
   using typename BaseType::FieldType;
 
 private:
-  typedef typename Stuff::Grid::Entity<GridViewType>::Type E;
+  typedef typename XT::Grid::Entity<GridViewType>::Type E;
   typedef typename GridViewType::ctype D;
   static const size_t d = GridViewType::dimension;
 
@@ -143,7 +143,7 @@ public:
 
   template <class RangeType, class SourceType>
   void apply_inverse(const RangeType& /*range*/, SourceType& /*source*/,
-                     const Stuff::Common::Configuration& /*opts*/) const
+                     const XT::Common::Configuration& /*opts*/) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
@@ -153,7 +153,7 @@ public:
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
 
-  Stuff::Common::Configuration invert_options(const std::string& /*type*/) const
+  XT::Common::Configuration invert_options(const std::string& /*type*/) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
@@ -187,16 +187,16 @@ private:
 
 
 template <class GridViewType>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value,
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<L2ProlongationOperator<GridViewType>>>::type
 make_l2_prolongation_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
 {
-  return DSC::make_unique<L2ProlongationOperator<GridViewType>>(over_integrate, grid_view);
+  return Dune::XT::Common::make_unique<L2ProlongationOperator<GridViewType>>(over_integrate, grid_view);
 }
 
 
 template <class GridViewType, class SS, class SV, class RS, class RV>
-typename std::enable_if<Stuff::Grid::is_grid_layer<GridViewType>::value, void>::type
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value, void>::type
 prolong_l2(const GridViewType& grid_view, const ConstDiscreteFunction<SS, SV>& source, DiscreteFunction<RS, RV>& range,
            const size_t over_integrate = 0)
 {

@@ -5,7 +5,7 @@
 // Authors:
 //   Felix Schindler (2014 - 2016)
 
-#include <dune/stuff/test/main.hxx> // <- This one has to come first (includes the config.h)!
+#include <dune/xt/common/test/main.hxx> // <- This one has to come first (includes the config.h)!
 
 #include "spaces/cg/fem.hh"
 #include "spaces/rt/pdelab.hh"

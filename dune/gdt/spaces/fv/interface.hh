@@ -9,7 +9,7 @@
 #ifndef DUNE_GDT_SPACES_FV_INTERFACE_HH
 #define DUNE_GDT_SPACES_FV_INTERFACE_HH
 
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include "../interface.hh"
 
@@ -51,12 +51,14 @@ namespace internal {
 template <class S>
 struct is_fv_space_helper
 {
-  DSC_has_typedef_initialize_once(Traits) DSC_has_static_member_initialize_once(dimDomain)
-      DSC_has_static_member_initialize_once(dimRange) DSC_has_static_member_initialize_once(dimRangeCols)
+  DXTC_has_typedef_initialize_once(Traits);
+  DXTC_has_static_member_initialize_once(dimDomain);
+  DXTC_has_static_member_initialize_once(dimRange);
+  DXTC_has_static_member_initialize_once(dimRangeCols);
 
-          static const
-      bool is_candidate = DSC_has_typedef(Traits)<S>::value && DSC_has_static_member(dimDomain)<S>::value
-                          && DSC_has_static_member(dimRange)<S>::value && DSC_has_static_member(dimRangeCols)<S>::value;
+  static const bool is_candidate = DXTC_has_typedef(Traits)<S>::value && DXTC_has_static_member(dimDomain)<S>::value
+                                   && DXTC_has_static_member(dimRange)<S>::value
+                                   && DXTC_has_static_member(dimRangeCols)<S>::value;
 }; // class is_fv_space_helper
 
 

@@ -17,10 +17,10 @@
 #include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/spaces/cg.hh>
 
-#include <dune/stuff/common/string.hh>
-#include <dune/stuff/functions/affine.hh>
-#include <dune/stuff/grid/provider/cube.hh>
-#include <dune/stuff/la/container.hh>
+#include <dune/xt/common/string.hh>
+#include <dune/xt/functions/affine.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
+#include <dune/xt/la/container.hh>
 
 #include "../default.hh"
 
@@ -75,7 +75,7 @@ public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using typename BaseType::DummyEntityType;
-  typedef typename Dune::Stuff::Functions::Affine<DummyEntityType, R, dimRange, R, dimRange, dimDomain>
+  typedef typename Dune::XT::Functions::AffineFunction<DummyEntityType, R, dimRange, R, dimRange, dimDomain>
       FluxAffineFunctionType;
   typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType, E, D, d, R, dimRange, 1>
       DefaultFluxType;
@@ -83,11 +83,10 @@ public:
   typedef typename DefaultFluxType::FluxRangeType FluxRangeType;
   typedef typename FluxAffineFunctionType::FieldMatrixType MatrixType;
   using typename BaseType::DefaultInitialValueType;
-  typedef typename DS::Functions::Affine<DummyEntityType, R, dimRange, R, dimRange, 1> RHSAffineFunctionType;
-  typedef typename DS::Functions::FunctionCheckerboard<RHSAffineFunctionType, E, D, d, R, dimRange, 1>
+  typedef typename XT::Functions::AffineFunction<DummyEntityType, R, dimRange, R, dimRange, 1> RHSAffineFunctionType;
+  typedef typename XT::Functions::FunctionCheckerboardFunction<RHSAffineFunctionType, E, D, d, R, dimRange, 1>
       RHSCheckerboardFunctionType;
   typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFlux<RHSCheckerboardFunctionType, E, D, d, R, dimRange, 1>
-      DefaultRHSType;
       DefaultRHSType;
   typedef typename DefaultRHSType::DomainType DomainType;
   using typename BaseType::DefaultBoundaryValueType;
@@ -121,24 +120,24 @@ protected:
     //    typedef D                                                            VelocityFieldImp;
     //    typedef typename Dune::YaspGrid< dimDomain, Dune::EquidistantOffsetCoordinates< double, dimDomain > >
     //    VelocityGridType;
-    //    typedef Dune::Stuff::Grid::Providers::Cube< VelocityGridType >                    VelocityGridProviderType;
+    //    typedef Dune::XT::Grid::Providers::Cube< VelocityGridType >                    VelocityGridProviderType;
     //    typedef typename VelocityGridType::LeafGridView                                   VelocityGridViewType;
     //    typedef typename VelocityGridType::template Codim< 0 >::Entity                    VelocityEntityType;
     //    typedef typename DS::LocalizableFunctionInterface< VelocityEntityType,
     //                                                       VelocityFieldImp, dimDomain,
     //                                                       R, 1, 1 >          VelocityFunctionType;
-    //    typedef typename DS::Functions::Expression< VelocityEntityType,
+    //    typedef typename XT::Functions::ExpressionFunction< VelocityEntityType,
     //                                                VelocityFieldImp, dimDomain,
     //                                                R, 1, 1 >                 VelocityExpressionFunctionType;
 
-    typedef typename Dune::Stuff::LA::CommonDenseVector<R> VectorType;
+    typedef typename Dune::XT::LA::CommonDenseVector<R> VectorType;
     //    typedef typename Dune::GDT::CgSpaceProvider< VelocityGridType,
-    //                                                    DSG::ChooseLayer::leaf,
+    //                                                    XT::Grid::Layers::leaf,
     //                                                    Dune::GDT::ChooseSpaceBackend::pdelab,
     //                                                    1, R, 1, 1 >          CGProviderType;
     //    typedef typename CGProviderType::Type                                             CGSpaceType;
     //    typedef Dune::GDT::DiscreteFunction< CGSpaceType, VectorType >                    CGFunctionType;
-    //    typedef typename DS::Functions::Checkerboard< typename VelocityGridType::template Codim< 0 >::Entity,
+    //    typedef typename XT::Functions::CheckerboardFunction< typename VelocityGridType::template Codim< 0 >::Entity,
     //                                                  D, dimDomain,
     //                                                  R, 1, 1 >               CGJacobianType;
     static const int precision = 15; // precision for to_string
@@ -189,7 +188,7 @@ protected:
       }
       A_str += "]";
       rhs_config["A.0"] = A_str;
-      rhs_config["b.0"] = DSC::to_string(FluxRangeType(0));
+      rhs_config["b.0"] = Dune::XT::Common::to_string(FluxRangeType(0));
     } // ... create_rhs_values(...)
 
     // flux matrix is D*M^(-1)
@@ -207,9 +206,9 @@ protected:
             if (cc > 0)
               str += " ";
             if (cc == rr - 1)
-              str += DSC::to_string(double(rr) / (2.0 * double(rr) + 1.0), precision);
+              str += Dune::XT::Common::to_string(double(rr) / (2.0 * double(rr) + 1.0), precision);
             else if (cc == rr + 1)
-              str += DSC::to_string((double(rr) + 1.0) / (2.0 * double(rr) + 1.0), precision);
+              str += Dune::XT::Common::to_string((double(rr) + 1.0) / (2.0 * double(rr) + 1.0), precision);
             else
               str += "0";
           }
@@ -218,7 +217,7 @@ protected:
         return str;
       } else {
         MatrixType D_M_inverse(M_inverse());
-        return DSC::to_string(D_M_inverse.leftmultiply(DD()), precision);
+        return Dune::XT::Common::to_string(D_M_inverse.leftmultiply(DD()), precision);
       }
     } // ... create_flux_matrix()
 
@@ -244,7 +243,7 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += DSC::to_string(0.0001 * base_integrated()[rr], precision);
+          str += Dune::XT::Common::to_string(0.0001 * base_integrated()[rr], precision);
         }
         str += "]";
         return str;
@@ -263,7 +262,7 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += "50*(" + DSC::to_string(((1.0 - 2.0 * (rr % 2)) - 1.0), precision) + "*x[0]+1)";
+          str += "50*(" + Dune::XT::Common::to_string(((1.0 - 2.0 * (rr % 2)) - 1.0), precision) + "*x[0]+1)";
         }
         str += "]";
         return str;
@@ -272,9 +271,9 @@ protected:
         for (size_t rr = 0; rr < dimRange; ++rr) {
           if (rr > 0)
             str += " ";
-          str += DSC::to_string(50 * (basefunctions_values_at_minusone()[rr] - basefunctions_values_at_plusone()[rr]),
-                                precision)
-                 + "*x[0]+" + DSC::to_string(50 * basefunctions_values_at_plusone()[rr], precision);
+          str += Dune::XT::Common::to_string(
+                     50 * (basefunctions_values_at_minusone()[rr] - basefunctions_values_at_plusone()[rr]), precision)
+                 + "*x[0]+" + Dune::XT::Common::to_string(50 * basefunctions_values_at_plusone()[rr], precision);
         }
         str += "]";
         return str;
@@ -344,7 +343,7 @@ protected:
       //        for (size_t ii = 0; ii < dimRange; ++ii) {
       //          std::string line;
       //          std::getline(basefunction_file, line);
-      //          basefunction_values[ii] = DSC::tokenize(line,
+      //          basefunction_values[ii] = Dune::XT::Common::tokenize(line,
       //                                                  ",",
       //                                                  boost::algorithm::token_compress_mode_type::token_compress_on);
       //        }
@@ -354,7 +353,8 @@ protected:
       //        velocity_grid_config["type"] = "provider.cube";
       //        velocity_grid_config["lower_left"] = "[-1.0]";
       //        velocity_grid_config["upper_right"] = "[1.0]";
-      //        velocity_grid_config["num_elements"] = "[" + DSC::to_string(basefunction_values[0].size() - 1) + "]";
+      //        velocity_grid_config["num_elements"] = "[" + Dune::XT::Common::to_string(basefunction_values[0].size() -
+      //        1) + "]";
       //        VelocityGridProviderType velocity_grid_provider =
       //        *(VelocityGridProviderType::create(velocity_grid_config));
       //        velocity_grid_ = velocity_grid_provider.grid_ptr();
@@ -368,13 +368,13 @@ protected:
       //        for (size_t ii = 0; ii < dimRange; ++ii) {
       //          VectorType basefunction_ii_values(velocity_grid_view_->size(0) + 1);
       //          for (size_t jj = 0; jj < basefunction_values[ii].size(); ++jj) {
-      //            basefunction_ii_values[jj] = DSC::from_string< R >(basefunction_values[ii][jj]);
+      //            basefunction_ii_values[jj] = Dune::XT::Common::from_string< R >(basefunction_values[ii][jj]);
       //          }
       //          basefunctions_values_at_minusone_[ii] = basefunction_ii_values[0];
       //          basefunctions_values_at_plusone_[ii] = basefunction_ii_values[velocity_grid_view_->size(0)];
       //          basefunctions_.emplace_back(CGFunctionType(cg_space,
       //                                                    basefunction_ii_values,
-      //                                                    "Basefunction " + DSC::to_string(ii)));
+      //                                                    "Basefunction " + Dune::XT::Common::to_string(ii)));
       //        }
 
       //        // get jacobians of basefunctions. jacobians are piecewise constant, so use Checkerboard as
@@ -399,7 +399,8 @@ protected:
       //        for (size_t ii = 0; ii < dimRange; ++ii) {
       //          const CGJacobianType jacobian_ii(DomainType(-1),
       //                                           DomainType(1),
-      //                                           DSC::FieldVector< size_t, dimDomain >(velocity_grid_view_->size(0)),
+      //                                           Dune::XT::Common::FieldVector< size_t, dimDomain
+      //                                           >(velocity_grid_view_->size(0)),
       //                                           basefunction_jacobians_values[ii]);
       //          basefunction_jacobians.emplace_back(jacobian_ii);
       //        }
@@ -415,10 +416,10 @@ protected:
       //          onebeam_left_boundary_values_[ii] = l2_product.apply2(onebeam_left_boundary, basefunctions_[ii]);
       //          for (size_t jj = 0; jj < dimRange; ++jj) {
       //            M_[ii][jj] = l2_product.apply2(basefunctions_[jj], basefunctions_[ii]);
-      //            const auto v_times_base = DS::Functions::Product< VelocityFunctionType,
+      //            const auto v_times_base = XT::Functions::Product< VelocityFunctionType,
       //                                                              CGFunctionType >(v, basefunctions_[jj]);
       //            const auto jacobian_times_one_minus_v_squared
-      //                = DS::Functions::Product< VelocityFunctionType, CGJacobianType >(one_minus_v_squared,
+      //                = XT::Functions::Product< VelocityFunctionType, CGJacobianType >(one_minus_v_squared,
       //                                                                                 basefunction_jacobians[jj]);
       //            D_[ii][jj] = l2_product.apply2(v_times_base, basefunctions_[ii]);
       //            S_[ii][jj] = l2_product.apply2(jacobian_times_one_minus_v_squared, basefunction_jacobians[ii]);
@@ -473,7 +474,7 @@ public:
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return Stuff::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
+    return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
   } // ... create(...)
 
   /** Reads basefunctions from a file instead of using the Legendre polynomials. Only CG functions with polOrder 1 are
@@ -499,7 +500,7 @@ public:
     ConfigType flux_config;
     flux_config["type"] = DefaultFluxType::static_id();
     flux_config["A"]    = GetData::create_flux_matrix();
-    flux_config["b"]    = DSC::to_string(RangeType(0));
+    flux_config["b"]    = Dune::XT::Common::to_string(RangeType(0));
     config.add(flux_config, "flux");
     ConfigType rhs_config;
     rhs_config["lower_left"]   = "[0.0]";

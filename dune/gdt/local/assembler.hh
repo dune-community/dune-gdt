@@ -12,10 +12,10 @@
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/dynvector.hh>
 
-#include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/grid/walker/apply-on.hh>
-#include <dune/stuff/grid/walker/wrapper.hh>
-#include <dune/stuff/la/container/interfaces.hh>
+#include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/grid/walker/apply-on.hh>
+#include <dune/xt/grid/walker/wrapper.hh>
+#include <dune/xt/la/container/interfaces.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/operators/interfaces.hh>
@@ -45,14 +45,14 @@ public:
    *  \tparam *r          dimRange of test_space (* == T) or ansatz_space (* == A)
    *  \tparam *rC         dimRangeCols of test_space (* == T) or ansatz_space (* == A)
    *  \tparam EntityType  A model of Dune::Entity< 0 >
-   *  \tparam M           Traits of the Dune::Stuff::LA::Container::MatrixInterface implementation, representing the
+   *  \tparam M           Traits of the Dune::XT::LA::Container::MatrixInterface implementation, representing the
    * type of global_matrix
    *  \tparam R           RangeFieldType, i.e. double
    */
   template <class T, size_t Td, size_t Tr, size_t TrC, class A, size_t Ad, size_t Ar, size_t ArC, class EntityType,
             class M, class R>
   void assemble(const SpaceInterface<T, Td, Tr, TrC>& test_space, const SpaceInterface<A, Ad, Ar, ArC>& ansatz_space,
-                const EntityType& entity, Stuff::LA::MatrixInterface<M, R>& global_matrix) const
+                const EntityType& entity, XT::LA::MatrixInterface<M, R>& global_matrix) const
   {
     // prepare
     const size_t rows = test_space.mapper().numDofs(entity);
@@ -88,20 +88,20 @@ private:
 
 template <class GridViewImp, class LocalVolumeTwoFormType, class TestFunctionType, class AnsatzFunctionType,
           class FieldType>
-class LocalVolumeTwoFormAccumulator : public Stuff::Grid::internal::Codim0ReturnObject<GridViewImp, FieldType>
+class LocalVolumeTwoFormAccumulator : public XT::Grid::internal::Codim0ReturnObject<GridViewImp, FieldType>
 {
   static_assert(std::is_base_of<LocalVolumeTwoFormInterface<typename LocalVolumeTwoFormType::Traits>,
                                 LocalVolumeTwoFormType>::value,
                 "LocalVolumeTwoFormType has to be derived from LocalVolumeTwoFormInterface!");
-  static_assert(Stuff::is_localizable_function<TestFunctionType>::value,
-                "TestFunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
-  static_assert(Stuff::is_localizable_function<AnsatzFunctionType>::value,
-                "AnsatzFunctionType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<TestFunctionType>::value,
+                "TestFunctionType has to be derived from XT::Functions::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<AnsatzFunctionType>::value,
+                "AnsatzFunctionType has to be derived from XT::Functions::LocalizableFunctionInterface!");
 
   typedef LocalVolumeTwoFormAccumulator<GridViewImp, LocalVolumeTwoFormType, TestFunctionType, AnsatzFunctionType,
                                         FieldType>
       ThisType;
-  typedef Stuff::Grid::internal::Codim0ReturnObject<GridViewImp, FieldType> BaseType;
+  typedef XT::Grid::internal::Codim0ReturnObject<GridViewImp, FieldType> BaseType;
 
 public:
   typedef typename BaseType::GridViewType GridViewType;
@@ -109,7 +109,7 @@ public:
 
   LocalVolumeTwoFormAccumulator(const GridViewType& grd_vw, const LocalVolumeTwoFormType& local_op,
                                 const TestFunctionType& test_function, const AnsatzFunctionType& ansatz_function,
-                                const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>& where)
+                                const XT::Grid::ApplyOn::WhichEntity<GridViewType>& where)
     : grid_view_(grd_vw)
     , local_operator_(local_op)
     , test_function_(test_function)
@@ -153,7 +153,7 @@ public:
   virtual FieldType result() const override final
   {
     if (!finalized_)
-      DUNE_THROW(Stuff::Exceptions::you_are_using_this_wrong, "Call finalize() first!");
+      DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong, "Call finalize() first!");
     return finalized_result_;
   }
 
@@ -162,29 +162,29 @@ private:
   const LocalVolumeTwoFormType& local_operator_;
   const TestFunctionType& test_function_;
   const AnsatzFunctionType& ansatz_function_;
-  DS::PerThreadValue<FieldType> result_;
+  Dune::XT::Common::PerThreadValue<FieldType> result_;
   bool finalized_;
-  const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>& where_;
+  const XT::Grid::ApplyOn::WhichEntity<GridViewType>& where_;
   FieldType finalized_result_;
 }; // class LocalVolumeTwoFormAccumulator
 
 
 template <class GridViewType, class LocalOperatorType, class SourceType, class RangeType>
-class LocalOperatorApplicator : public Stuff::Grid::internal::Codim0Object<GridViewType>
+class LocalOperatorApplicator : public XT::Grid::internal::Codim0Object<GridViewType>
 {
   static_assert(is_local_operator<LocalOperatorType>::value,
                 "LocalOperatorType has to be derived from LocalOperatorInterface!");
-  static_assert(Stuff::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<SourceType>::value,
+                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
   static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
-  typedef Stuff::Grid::internal::Codim0Object<GridViewType> BaseType;
+  typedef XT::Grid::internal::Codim0Object<GridViewType> BaseType;
 
 public:
   using typename BaseType::EntityType;
 
   LocalOperatorApplicator(const GridViewType& grid_view, const LocalOperatorType& local_operator,
                           const SourceType& source, RangeType& range,
-                          const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>& where)
+                          const XT::Grid::ApplyOn::WhichEntity<GridViewType>& where)
     : grid_view_(grid_view)
     , local_operator_(local_operator)
     , source_(source)
@@ -208,7 +208,7 @@ private:
   const LocalOperatorType& local_operator_;
   const SourceType& source_;
   RangeType& range_;
-  const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>& where_;
+  const XT::Grid::ApplyOn::WhichEntity<GridViewType>& where_;
 }; // class LocalOperatorApplicator
 
 
@@ -231,10 +231,10 @@ public:
                 const SpaceInterface<AE, AEd, AEr, AErC>& ansatz_space_en,
                 const SpaceInterface<TN, TNd, TNr, TNrC>& test_space_ne,
                 const SpaceInterface<AN, ANd, ANr, ANrC>& ansatz_space_ne, const IntersectionType& intersection,
-                Stuff::LA::MatrixInterface<MEE, R>& global_matrix_en_en,
-                Stuff::LA::MatrixInterface<MNN, R>& global_matrix_ne_ne,
-                Stuff::LA::MatrixInterface<MEN, R>& global_matrix_en_ne,
-                Stuff::LA::MatrixInterface<MNE, R>& global_matrix_ne_en) const
+                XT::LA::MatrixInterface<MEE, R>& global_matrix_en_en,
+                XT::LA::MatrixInterface<MNN, R>& global_matrix_ne_ne,
+                XT::LA::MatrixInterface<MEN, R>& global_matrix_en_ne,
+                XT::LA::MatrixInterface<MNE, R>& global_matrix_ne_en) const
   {
     assert(global_matrix_en_en.rows() >= test_space_en.mapper().size());
     assert(global_matrix_en_en.cols() >= ansatz_space_en.mapper().size());
@@ -244,10 +244,8 @@ public:
     assert(global_matrix_en_ne.cols() >= ansatz_space_ne.mapper().size());
     assert(global_matrix_ne_en.rows() >= test_space_ne.mapper().size());
     assert(global_matrix_ne_en.cols() >= ansatz_space_en.mapper().size());
-    const auto entityPtr   = intersection.inside();
-    const auto& entity     = *entityPtr;
-    const auto neighborPtr = intersection.outside();
-    const auto& neighbor   = *neighborPtr;
+    const auto entity   = intersection.inside();
+    const auto neighbor = intersection.outside();
     // prepare
     const size_t rows_en = test_space_en.mapper().numDofs(entity);
     const size_t cols_en = ansatz_space_en.mapper().numDofs(entity);
@@ -319,7 +317,7 @@ public:
                 const SpaceInterface<AE, AEd, AEr, AErC>& ansatz_space_en,
                 const SpaceInterface<TN, TNd, TNr, TNrC>& test_space_ne,
                 const SpaceInterface<AN, ANd, ANr, ANrC>& ansatz_space_ne, const IntersectionType& intersection,
-                Stuff::LA::MatrixInterface<M, R>& global_matrix) const
+                XT::LA::MatrixInterface<M, R>& global_matrix) const
   {
     assemble(test_space_en,
              ansatz_space_en,
@@ -338,14 +336,14 @@ private:
 
 
 template <class GridViewType, class LocalOperatorType, class SourceType, class RangeType>
-class LocalCouplingOperatorApplicator : public Stuff::Grid::internal::Codim1Object<GridViewType>
+class LocalCouplingOperatorApplicator : public XT::Grid::internal::Codim1Object<GridViewType>
 {
   static_assert(is_local_coupling_operator<LocalOperatorType>::value,
                 "LocalOperatorType has to be derived from LocalCouplingOperatorInterface!");
-  static_assert(Stuff::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<SourceType>::value,
+                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
   static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
-  typedef Stuff::Grid::internal::Codim1Object<GridViewType> BaseType;
+  typedef XT::Grid::internal::Codim1Object<GridViewType> BaseType;
 
 public:
   using typename BaseType::EntityType;
@@ -353,7 +351,7 @@ public:
 
   LocalCouplingOperatorApplicator(const GridViewType& grid_view, const LocalOperatorType& local_operator,
                                   const SourceType& source, RangeType& range,
-                                  const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>& where)
+                                  const XT::Grid::ApplyOn::WhichIntersection<GridViewType>& where)
     : grid_view_(grid_view)
     , local_operator_(local_operator)
     , source_(source)
@@ -381,7 +379,7 @@ private:
   const LocalOperatorType& local_operator_;
   const SourceType& source_;
   RangeType& range_;
-  const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>& where_;
+  const XT::Grid::ApplyOn::WhichIntersection<GridViewType>& where_;
 }; // class LocalCouplingOperatorApplicator
 
 
@@ -399,10 +397,9 @@ public:
   template <class T, size_t Td, size_t Tr, size_t TrC, class A, size_t Ad, size_t Ar, size_t ArC,
             class IntersectionType, class M, class R>
   void assemble(const SpaceInterface<T, Td, Tr, TrC>& test_space, const SpaceInterface<A, Ad, Ar, ArC>& ansatz_space,
-                const IntersectionType& intersection, Stuff::LA::MatrixInterface<M, R>& global_matrix) const
+                const IntersectionType& intersection, XT::LA::MatrixInterface<M, R>& global_matrix) const
   {
-    const auto entityPtr = intersection.inside();
-    const auto& entity   = *entityPtr;
+    const auto entity = intersection.inside();
     // prepare
     const size_t rows = test_space.mapper().numDofs(entity);
     const size_t cols = ansatz_space.mapper().numDofs(entity);
@@ -436,14 +433,14 @@ private:
 
 
 template <class GridViewType, class LocalOperatorType, class SourceType, class RangeType>
-class LocalBoundaryOperatorApplicator : public Stuff::Grid::internal::Codim1Object<GridViewType>
+class LocalBoundaryOperatorApplicator : public XT::Grid::internal::Codim1Object<GridViewType>
 {
   static_assert(is_local_boundary_operator<LocalOperatorType>::value,
                 "LocalOperatorType has to be derived from LocalCouplingOperatorInterface!");
-  static_assert(Stuff::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from Stuff::LocalizableFunctionInterface!");
+  static_assert(XT::Functions::is_localizable_function<SourceType>::value,
+                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
   static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
-  typedef Stuff::Grid::internal::Codim1Object<GridViewType> BaseType;
+  typedef XT::Grid::internal::Codim1Object<GridViewType> BaseType;
 
 public:
   using typename BaseType::EntityType;
@@ -451,7 +448,7 @@ public:
 
   LocalBoundaryOperatorApplicator(const GridViewType& grid_view, const LocalOperatorType& local_operator,
                                   const SourceType& source, RangeType& range,
-                                  const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>& where)
+                                  const XT::Grid::ApplyOn::WhichIntersection<GridViewType>& where)
     : grid_view_(grid_view)
     , local_operator_(local_operator)
     , source_(source)
@@ -476,7 +473,7 @@ private:
   const LocalOperatorType& local_operator_;
   const SourceType& source_;
   RangeType& range_;
-  const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>& where_;
+  const XT::Grid::ApplyOn::WhichIntersection<GridViewType>& where_;
 }; // class LocalBoundaryOperatorApplicator
 
 
@@ -498,13 +495,13 @@ public:
    *  \tparam r          dimRange of test_space
    *  \tparam rC         dimRangeCols of test_space
    *  \tparam EntityType A model of Dune::Entity< 0 >
-   *  \tparam V          Traits of the Dune::Stuff::LA::Container::VectorInterface implementation, representing the type
+   *  \tparam V          Traits of the Dune::XT::LA::Container::VectorInterface implementation, representing the type
    * of global_vector
    *  \tparam R          RangeFieldType, i.e. double
    */
   template <class S, size_t d, size_t r, size_t rC, class EntityType, class V, class R>
   void assemble(const SpaceInterface<S, d, r, rC>& test_space, const EntityType& entity,
-                Stuff::LA::VectorInterface<V, R>& global_vector) const
+                XT::LA::VectorInterface<V, R>& global_vector) const
   {
     // prepare
     const size_t size = test_space.mapper().numDofs(entity);
@@ -541,12 +538,11 @@ public:
 
   template <class T, size_t d, size_t r, size_t rC, class IntersectionType, class V, class R>
   void assemble(const SpaceInterface<T, d, r, rC>& test_space, const IntersectionType& intersection,
-                Stuff::LA::VectorInterface<V, R>& global_vector) const
+                XT::LA::VectorInterface<V, R>& global_vector) const
   {
     // prepare
-    const auto entity_ptr = intersection.inside();
-    const auto& entity    = *entity_ptr;
-    const size_t size     = test_space.mapper().numDofs(entity);
+    const auto entity = intersection.inside();
+    const size_t size = test_space.mapper().numDofs(entity);
     Dune::DynamicVector<R> local_vector(size, 0.); // \todo: make mutable member, after SMP refactor
     // apply local functional
     const auto test_basis = test_space.base_function_set(entity);

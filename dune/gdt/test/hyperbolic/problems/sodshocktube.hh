@@ -13,9 +13,9 @@
 
 #include <dune/gdt/test/instationary-eocstudy.hh>
 
-#include <dune/stuff/functions/expression.hh>
-#include <dune/stuff/functions/checkerboard.hh>
-#include <dune/stuff/grid/provider/cube.hh>
+#include <dune/xt/functions/expression.hh>
+#include <dune/xt/functions/checkerboard.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 
 #include "default.hh"
 
@@ -26,9 +26,9 @@ namespace Hyperbolic {
 
 template <class EntityImp, class DomainFieldImp, class RangeFieldImp>
 class ShocktubeSolutionAtSpecificTime
-    : public DS::GlobalFunctionInterface<EntityImp, DomainFieldImp, 1, RangeFieldImp, 3, 1>
+    : public XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, 1, RangeFieldImp, 3, 1>
 {
-  typedef DS::GlobalFunctionInterface<EntityImp, DomainFieldImp, 1, RangeFieldImp, 3, 1> BaseType;
+  typedef XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, 1, RangeFieldImp, 3, 1> BaseType;
   typedef ShocktubeSolutionAtSpecificTime<EntityImp, DomainFieldImp, RangeFieldImp> ThisType;
 
 public:
@@ -80,7 +80,7 @@ public:
 
   virtual void evaluate(const DomainType& x, RangeType& ret) const override final
   {
-    if (DSC::FloatCmp::eq(t_, 0.0)) {
+    if (Dune::XT::Common::FloatCmp::eq(t_, 0.0)) {
       if (x < 0.5)
         evaluate_region_1(x[0], ret);
       else
@@ -169,11 +169,13 @@ private:
 // Solution here is not in primitive variables, i.e. u = (rho, rho v, E).
 template <class EntityType, class DomainFieldType, class RangeFieldType>
 class ShocktubeSolution
-    : public DS::TimeDependentFunctionInterface<
-          typename DS::LocalizableFunctionInterface<EntityType, DomainFieldType, 1, RangeFieldType, 3, 1>, double>
+    : public XT::Functions::TimeDependentFunctionInterface<
+          typename XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, 1, RangeFieldType, 3, 1>,
+          double>
 {
-  typedef typename DS::TimeDependentFunctionInterface<
-      typename DS::LocalizableFunctionInterface<EntityType, DomainFieldType, 1, RangeFieldType, 3, 1>, double>
+  typedef typename XT::Functions::TimeDependentFunctionInterface<
+      typename XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, 1, RangeFieldType, 3, 1>,
+      double>
       BaseType;
   using typename BaseType::TimeIndependentFunctionType;
   typedef ShocktubeSolutionAtSpecificTime<EntityType, DomainFieldType, RangeFieldType> SolutionAtSpecificTimeType;
@@ -189,7 +191,7 @@ public:
 
   virtual std::unique_ptr<TimeIndependentFunctionType> evaluate_at_time(const double t) const
   {
-    return DSC::make_unique<SolutionAtSpecificTimeType>(t, lower_left_, upper_right_);
+    return Dune::XT::Common::make_unique<SolutionAtSpecificTimeType>(t, lower_left_, upper_right_);
   }
 
   virtual std::string type() const
@@ -316,7 +318,7 @@ public:
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return Stuff::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
+    return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
   } // ... create(...)
 
   ShockTube(const std::shared_ptr<const FluxType> flux, const std::shared_ptr<const RHSType> rhs,
@@ -341,8 +343,8 @@ public:
 
 template <class G, class R = double>
 class ShockTubeTestCase
-    : public Dune::GDT::Tests::NonStationaryTestCase<G, Problems::ShockTube<typename G::template Codim<0>::Entity,
-                                                                            typename G::ctype, G::dimension, R, 3>>
+    : public Dune::GDT::Test::NonStationaryTestCase<G, Problems::ShockTube<typename G::template Codim<0>::Entity,
+                                                                           typename G::ctype, G::dimension, R, 3>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -354,7 +356,7 @@ public:
   typedef typename Problems::ShockTube<E, D, d, R, dimRange> ProblemType;
 
 private:
-  typedef typename Dune::GDT::Tests::NonStationaryTestCase<G, ProblemType> BaseType;
+  typedef typename Dune::GDT::Test::NonStationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;
@@ -362,11 +364,11 @@ public:
   using typename BaseType::LevelGridViewType;
 
   ShockTubeTestCase(const size_t num_refs = 3, const double divide_t_end_by = 1.0)
-    : BaseType(divide_t_end_by, Stuff::Grid::Providers::Cube<G>::create(ProblemType::default_grid_config())->grid_ptr(),
+    : BaseType(divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(),
                num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
-    , exact_solution_(std::make_shared<ShocktubeSolution<E, D, R>>(typename DSC::FieldVector<D, d>(0),
-                                                                   typename DSC::FieldVector<D, d>(1)))
+    , exact_solution_(std::make_shared<ShocktubeSolution<E, D, R>>(typename Dune::XT::Common::FieldVector<D, d>(0),
+                                                                   typename Dune::XT::Common::FieldVector<D, d>(1)))
   {
   }
 
@@ -392,7 +394,7 @@ public:
         << "||  Testcase: Shock Tube                                                                              ||\n"
         << "|+----------------------------------------------------------------------------------------------------+|\n"
         << "||  domain = [0, 1]                                                                                   ||\n"
-        << "||  time = [0, " + DSC::toString(BaseType::t_end())
+        << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end())
                + "]                                                                                  ||\n"
         << "||  flux = [u[1] 0.8*u[1]*u[1]/u[0]+0.4*u[2] 1.4*u[1]*u[2]/u[0]-0.2*u[1]*u[1]*u[1]/(u[0]*u[0])]       ||\n"
         << "||  rhs = 0                                                                                           ||\n"

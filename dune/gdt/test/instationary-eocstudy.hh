@@ -9,12 +9,12 @@
 #ifndef DUNE_GDT_TEST_INSTATIONARY_EOCSTUDY_HH
 #define DUNE_GDT_TEST_INSTATIONARY_EOCSTUDY_HH
 
-#include <dune/stuff/common/convergence-study.hh>
-#include <dune/stuff/common/exceptions.hh>
-#include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/functions/interfaces.hh>
-#include <dune/stuff/grid/information.hh>
-#include <dune/stuff/grid/provider/eoc.hh>
+#include <dune/xt/common/convergence-study.hh>
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/functions/constant.hh>
+#include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/grid/gridprovider/eoc.hh>
 
 #include <dune/gdt/discretizations/default.hh>
 #include <dune/gdt/discretizations/interfaces.hh>
@@ -23,7 +23,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace Tests {
+namespace Test {
 
 
 /**
@@ -32,9 +32,9 @@ namespace Tests {
  * TODO: choose suitable SolutionType for Problems (provide Interface?)
  */
 template <class GridImp, class ProblemImp>
-class NonStationaryTestCase : public Stuff::Grid::Providers::EOC<GridImp>
+class NonStationaryTestCase : public XT::Grid::EOCGridProvider<GridImp>
 {
-  typedef Stuff::Grid::Providers::EOC<GridImp> EocBaseType;
+  typedef XT::Grid::EOCGridProvider<GridImp> EocBaseType;
 
 public:
   typedef ProblemImp ProblemType;
@@ -58,8 +58,8 @@ public:
   {
     out << "+===============================================================+\n"
         << "|+=============================================================+|\n"
-        << "||  This is a GDT::Tests::NonStationaryTestCase, please provide ||\n"
-        << "||  a meaningful message by implementing `print_header()`       ||\n"
+        << "||  This is a GDT::Tests:NonStationaryTestCase, please provide ||\n"
+        << "||  a meaningful message by implementing `print_header()`      ||\n"
         << "|+=============================================================+|\n"
         << "+===============================================================+" << std::endl;
   }
@@ -82,10 +82,10 @@ public:
   virtual const std::shared_ptr<const SolutionType> exact_solution() const
   {
     if (provides_exact_solution())
-      DUNE_THROW(Stuff::Exceptions::you_have_to_implement_this,
+      DUNE_THROW(XT::Common::Exceptions::you_have_to_implement_this,
                  "If provides_exact_solution() is true, exact_solution() has to be implemented!");
     else
-      DUNE_THROW(Stuff::Exceptions::you_are_using_this_wrong,
+      DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
                  "Do not call exact_solution() if provides_exact_solution() is false!");
     return zero_;
   }
@@ -97,9 +97,9 @@ private:
 
 
 template <class TestCaseImp, class DiscretizerImp>
-class NonStationaryEocStudy : public Stuff::Common::ConvergenceStudy
+class NonStationaryEocStudy : public XT::Common::ConvergenceStudy
 {
-  typedef Stuff::Common::ConvergenceStudy BaseType;
+  typedef XT::Common::ConvergenceStudy BaseType;
 
 protected:
   typedef TestCaseImp TestCaseType;
@@ -112,7 +112,7 @@ protected:
   typedef typename DiscreteSolutionType::key_type TimeFieldType;
 
   typedef typename TestCaseType::InitialValueType InitialValueType;
-  typedef typename TestCaseType::template Level<Stuff::Grid::ChoosePartView::view>::Type GridViewType;
+  typedef typename TestCaseType::LevelGridViewType GridViewType;
 
 public:
   NonStationaryEocStudy(TestCaseType& test_case, const std::vector<std::string> only_these_norms = {},
@@ -137,7 +137,7 @@ public:
 
   virtual ~NonStationaryEocStudy() = default;
 
-  virtual size_t num_refinements() override final
+  virtual size_t num_refinements() const override final
   {
     return test_case_.num_refinements();
   }
@@ -147,7 +147,7 @@ public:
     std::vector<std::string> ret = available_norms();
     for (auto estimator : available_estimators()) {
       if (is_norm(estimator))
-        DUNE_THROW(Stuff::Exceptions::internal_error,
+        DUNE_THROW(XT::Common::Exceptions::internal_error,
                    "We do not want to handle the case that norms and estimators have the same name!");
       ret.push_back(estimator);
     }
@@ -177,7 +177,7 @@ public:
     return test_case_.grid().size(level, 0);
   } // ... current_num_DoFs(...)
 
-  virtual size_t current_grid_size() override final
+  virtual size_t current_grid_size() const override final
   {
     assert(current_refinement_ <= num_refinements());
     const int level = test_case_.level_of(current_refinement_);
@@ -189,8 +189,8 @@ public:
     assert(current_refinement_ <= num_refinements());
     if (grid_widths_[current_refinement_] < 0.0) {
       const int level      = test_case_.level_of(current_refinement_);
-      const auto grid_view = test_case_.template level<Stuff::Grid::ChoosePartView::view>(level);
-      Stuff::Grid::Dimensions<GridViewType> dimensions(grid_view);
+      const auto grid_view = test_case_.template level<XT::Grid::Backends::view>(level);
+      XT::Grid::Dimensions<GridViewType> dimensions(grid_view);
       grid_widths_[current_refinement_] = dimensions.entity_width.max();
       assert(grid_widths_[current_refinement_] > 0.0);
     }
@@ -203,15 +203,15 @@ public:
       assert(current_refinement_ <= num_refinements());
       // compute solution
       Timer timer;
-      current_discretization_ = Stuff::Common::make_unique<DiscretizationType>(Discretizer::discretize(
+      current_discretization_ = XT::Common::make_unique<DiscretizationType>(Discretizer::discretize(
           test_case_, test_case_, test_case_.level_of(current_refinement_), test_case_.periodic_directions()));
-      current_solution_on_level_ = Stuff::Common::make_unique<DiscreteSolutionType>(current_discretization_->solve());
+      current_solution_on_level_ = XT::Common::make_unique<DiscreteSolutionType>(current_discretization_->solve());
       time_to_solution_          = timer.elapsed();
       // prolong to reference grid part
       compute_reference_solution();
       assert(reference_solution_);
       if (!current_solution_)
-        current_solution_ = Stuff::Common::make_unique<DiscreteSolutionType>(*reference_solution_);
+        current_solution_ = XT::Common::make_unique<DiscreteSolutionType>(*reference_solution_);
       // time prolongation
       DiscreteSolutionType time_prolongated_current_solution_on_level;
       const auto time_prolongated_current_solution_on_level_it_end = time_prolongated_current_solution_on_level.end();
@@ -244,8 +244,9 @@ public:
         size_t counter = 0;
         for (auto current_solution_it = current_solution_->begin(); current_solution_it != current_solution_it_end;
              ++current_solution_it, ++counter)
-          current_solution_it->second.visualize(visualize_prefix_ + "_solution_" + DSC::to_string(current_refinement_),
-                                                DSC::to_string(counter));
+          current_solution_it->second.visualize(visualize_prefix_ + "_solution_"
+                                                    + Dune::XT::Common::to_string(current_refinement_),
+                                                Dune::XT::Common::to_string(counter));
       }
     }
     return time_to_solution_;
@@ -266,10 +267,10 @@ public:
       if (test_case_.provides_exact_solution()) {
         compute_discrete_exact_solution_vector();
         assert(discrete_exact_solution_);
-        difference = DSC::make_unique<DiscreteSolutionType>(*discrete_exact_solution_);
+        difference = Dune::XT::Common::make_unique<DiscreteSolutionType>(*discrete_exact_solution_);
       } else {
         assert(reference_solution_);
-        difference = DSC::make_unique<DiscreteSolutionType>(*reference_solution_);
+        difference = Dune::XT::Common::make_unique<DiscreteSolutionType>(*reference_solution_);
       }
       for (auto& difference_at_time : *difference) {
         auto time = difference_at_time.first;
@@ -298,9 +299,9 @@ protected:
   void compute_reference_solution()
   {
     if (!reference_solution_computed_) {
-      reference_discretization_ = Stuff::Common::make_unique<DiscretizationType>(Discretizer::discretize(
+      reference_discretization_ = XT::Common::make_unique<DiscretizationType>(Discretizer::discretize(
           test_case_, test_case_, test_case_.reference_level(), test_case_.periodic_directions()));
-      reference_solution_          = Stuff::Common::make_unique<DiscreteSolutionType>(reference_discretization_->solve());
+      reference_solution_          = XT::Common::make_unique<DiscreteSolutionType>(reference_discretization_->solve());
       reference_solution_computed_ = true;
       if (!visualize_prefix_.empty()) {
         size_t counter                       = 0;
@@ -308,8 +309,9 @@ protected:
         for (auto reference_solution_it = reference_solution_->begin();
              reference_solution_it != reference_solution_it_end;
              ++reference_solution_it, ++counter)
-          reference_solution_it->second.visualize(
-              visualize_prefix_ + "_reference" + DSC::to_string(current_refinement_), DSC::to_string(counter));
+          reference_solution_it->second.visualize(visualize_prefix_ + "_reference"
+                                                      + Dune::XT::Common::to_string(current_refinement_),
+                                                  Dune::XT::Common::to_string(counter));
       }
     }
   } // ... compute_reference_solution()
@@ -317,7 +319,7 @@ protected:
   void compute_discrete_exact_solution_vector()
   {
     if (!discrete_exact_solution_computed_) {
-      discrete_exact_solution_ = DSC::make_unique<DiscreteSolutionType>();
+      discrete_exact_solution_ = Dune::XT::Common::make_unique<DiscreteSolutionType>();
       compute_reference_solution();
       const auto exact_solution            = test_case_.exact_solution();
       const auto reference_solution_it_end = reference_solution_->end();
@@ -336,8 +338,9 @@ protected:
         for (auto discrete_exact_solution_it = discrete_exact_solution_->begin();
              discrete_exact_solution_it != discrete_exact_solution_it_end;
              ++discrete_exact_solution_it, ++counter)
-          discrete_exact_solution_it->second.visualize(
-              visualize_prefix_ + "_exact_solution" + DSC::to_string(current_refinement_), DSC::to_string(counter));
+          discrete_exact_solution_it->second.visualize(visualize_prefix_ + "_exact_solution"
+                                                           + Dune::XT::Common::to_string(current_refinement_),
+                                                       Dune::XT::Common::to_string(counter));
       }
       discrete_exact_solution_computed_ = true;
     }

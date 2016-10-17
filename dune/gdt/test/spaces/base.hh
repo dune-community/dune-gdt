@@ -18,8 +18,8 @@
 
 #include <boost/numeric/conversion/cast.hpp>
 
-#include <dune/stuff/grid/provider/cube.hh>
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/grid/gridprovider/cube.hh>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/mapper/interfaces.hh>
@@ -68,11 +68,11 @@ template <class SpaceType>
 class SpaceBase : public ::testing::Test
 {
   typedef typename SpaceType::GridViewType::Grid GridType;
-  typedef DSG::Providers::Cube<GridType> ProviderType;
+  typedef Dune::XT::Grid::GridProvider<GridType> ProviderType;
 
 public:
   SpaceBase()
-    : grid_provider_(0.0, 1.0, 3u)
+    : grid_provider_(Dune::XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 3u))
     , space_(grid_provider_.template leaf<SpaceType::part_view_type>())
   {
   }
@@ -87,7 +87,6 @@ public:
   void fulfills_interface() const
   {
     static_assert(Dune::GDT::is_space<SpaceType>::value, "");
-    using namespace Dune::Stuff;
     using namespace Dune::GDT;
     // static checks
     // * as the derived type
@@ -241,9 +240,9 @@ public:
   void check_for_correct_copy()
   {
     SpaceType foop(space_);
-    auto DUNE_UNUSED(aa) = foop.mapper().size();
-    SpaceType cp         = DerivedHolder<SpaceType, ProviderType>(grid_provider_).space();
-    auto DUNE_UNUSED(bb) = cp.mapper().size();
+    auto aa DUNE_UNUSED = foop.mapper().size();
+    SpaceType cp        = DerivedHolder<SpaceType, ProviderType>(grid_provider_).space();
+    auto bb DUNE_UNUSED = cp.mapper().size();
   } // ... check_for_correct_copy()
 
   /**
@@ -252,7 +251,6 @@ public:
   void mapper_fulfills_interface() const
   {
     using namespace Dune;
-    using namespace Dune::Stuff;
     using namespace Dune::GDT;
     // static checks
     // * as the derived type
@@ -290,7 +288,7 @@ public:
       DynamicVector<size_t> d_globalIndices(d_numDofs, 0);
       d_mapper.globalIndices(entity, d_globalIndices);
       if (d_globalIndices.size() > d_numDofs)
-        DUNE_THROW(Exceptions::index_out_of_range, d_globalIndices.size() << " vs. " << d_numDofs);
+        DUNE_THROW(XT::Common::Exceptions::index_out_of_range, d_globalIndices.size() << " vs. " << d_numDofs);
       DynamicVector<size_t> d_globalIndices_return = d_mapper.globalIndices(entity);
       EXPECT_EQ(d_globalIndices_return, d_globalIndices);
       // * as the interface
@@ -320,7 +318,6 @@ public:
   void basefunctionset_fulfills_interface() const
   {
     using namespace Dune;
-    using namespace Dune::Stuff;
     using namespace Dune::GDT;
     // static checks
     // * as the derived type

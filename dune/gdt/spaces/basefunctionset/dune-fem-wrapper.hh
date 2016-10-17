@@ -18,8 +18,8 @@
 #include <dune/fem/space/common/discretefunctionspace.hh>
 #endif
 
-#include <dune/stuff/common/memory.hh>
-#include <dune/stuff/common/type_utils.hh>
+#include <dune/xt/common/memory.hh>
+#include <dune/xt/common/type_traits.hh>
 
 #include "interface.hh"
 

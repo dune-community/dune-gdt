@@ -21,14 +21,14 @@
 #include <dune/grid/common/gridview.hh>
 #include <dune/grid/io/file/vtk/vtkwriter.hh>
 
-#include <dune/stuff/common/crtp.hh>
-#include <dune/stuff/common/float_cmp.hh>
-#include <dune/stuff/common/parallel/threadstorage.hh>
-#include <dune/stuff/common/type_utils.hh>
-#include <dune/stuff/common/ranges.hh>
-#include <dune/stuff/grid/boundaryinfo.hh>
-#include <dune/stuff/grid/layers.hh>
-#include <dune/stuff/la/container/pattern.hh>
+#include <dune/xt/common/crtp.hh>
+#include <dune/xt/common/float_cmp.hh>
+#include <dune/xt/common/parallel/threadstorage.hh>
+#include <dune/xt/common/type_traits.hh>
+#include <dune/xt/common/ranges.hh>
+#include <dune/xt/grid/boundaryinfo.hh>
+#include <dune/xt/grid/layers.hh>
+#include <dune/xt/la/container/pattern.hh>
 
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 
@@ -71,26 +71,26 @@ struct ChooseGridPartView;
 template <>
 struct ChooseGridPartView<ChooseSpaceBackend::gdt>
 {
-  static const Stuff::Grid::ChoosePartView type = Stuff::Grid::ChoosePartView::view;
+  static const XT::Grid::Backends type = XT::Grid::Backends::view;
 };
 
 
 template <>
 struct ChooseGridPartView<ChooseSpaceBackend::pdelab>
 {
-  static const Stuff::Grid::ChoosePartView type = Stuff::Grid::ChoosePartView::view;
+  static const XT::Grid::Backends type = XT::Grid::Backends::view;
 };
 
 
 template <>
 struct ChooseGridPartView<ChooseSpaceBackend::fem>
 {
-  static const Stuff::Grid::ChoosePartView type = Stuff::Grid::ChoosePartView::part;
+  static const XT::Grid::Backends type = XT::Grid::Backends::part;
 };
 
 
 template <class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
-class SpaceInterface : public Stuff::CRTPInterface<SpaceInterface<Traits, domainDim, rangeDim, rangeDimCols>, Traits>
+class SpaceInterface : public XT::CRTPInterface<SpaceInterface<Traits, domainDim, rangeDim, rangeDimCols>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -120,10 +120,10 @@ public:
 
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef typename GridViewType::Intersection IntersectionType;
-  typedef Stuff::Grid::BoundaryInfoInterface<IntersectionType> BoundaryInfoType;
-  typedef Dune::Stuff::LA::SparsityPatternDefault PatternType;
+  typedef XT::Grid::BoundaryInfo<IntersectionType> BoundaryInfoType;
+  typedef Dune::XT::LA::SparsityPatternDefault PatternType;
 
-  static const Stuff::Grid::ChoosePartView part_view_type = Traits::part_view_type;
+  static const XT::Grid::Backends part_view_type = Traits::part_view_type;
 
   static const bool needs_grid_view = Traits::needs_grid_view;
 
@@ -252,7 +252,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     Dune::DynamicVector<size_t> globalRows(mapper().maxNumDofs(), 0);
     Dune::DynamicVector<size_t> globalCols(ansatz_space.mapper().maxNumDofs(), 0);
 
-    for (const auto& entity : DSC::entityRange(local_grid_view)) {
+    for (const auto& entity : elements(local_grid_view)) {
       const auto testBase   = base_function_set(entity);
       const auto ansatzBase = ansatz_space.base_function_set(entity);
       mapper().globalIndices(entity, globalRows);
@@ -296,7 +296,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     PatternType pattern(mapper().size());
     Dune::DynamicVector<size_t> global_rows(mapper().maxNumDofs(), 0);
     Dune::DynamicVector<size_t> global_cols(ansatz_space.mapper().maxNumDofs(), 0);
-    for (const auto& entity : DSC::entityRange(local_grid_view)) {
+    for (const auto& entity : elements(local_grid_view)) {
       const auto test_base_entity   = base_function_set(entity);
       const auto ansatz_base_entity = ansatz_space.base_function_set(entity);
       mapper().globalIndices(entity, global_rows);
@@ -314,8 +314,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
         const auto& intersection = *intersection_it;
         // get the neighbour
         if (intersection.neighbor() && !intersection.boundary()) {
-          const auto neighbour_ptr = intersection.outside();
-          const auto& neighbour    = *neighbour_ptr;
+          const auto neighbour = intersection.outside();
           // get the basis
           const auto ansatz_base_neighbour = ansatz_space.base_function_set(neighbour);
           ansatz_space.mapper().globalIndices(neighbour, global_cols);
@@ -357,7 +356,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     PatternType pattern(mapper().size());
     Dune::DynamicVector<size_t> global_rows(mapper().maxNumDofs(), 0);
     Dune::DynamicVector<size_t> global_cols(ansatz_space.mapper().maxNumDofs(), 0);
-    for (const auto& entity : DSC::entityRange(local_grid_view)) {
+    for (const auto& entity : elements(local_grid_view)) {
       const auto test_base_entity = base_function_set(entity);
       mapper().globalIndices(entity, global_rows);
       // walk the intersections
@@ -367,8 +366,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
         const auto& intersection = *intersection_it;
         // get the neighbour
         if (intersection.neighbor() && !intersection.boundary()) {
-          const auto neighbour_ptr = intersection.outside();
-          const auto& neighbour    = *neighbour_ptr;
+          const auto neighbour = intersection.outside();
           // get the basis
           const auto ansatz_base_neighbour = ansatz_space.base_function_set(neighbour);
           ansatz_space.mapper().globalIndices(neighbour, global_cols);
@@ -458,7 +456,7 @@ public:
       else if (ii == 3)
         number = "3rd";
       else
-        number                     = Stuff::Common::to_string(ii) + "th";
+        number                     = XT::Common::to_string(ii) + "th";
       const auto iith_baseFunction = std::make_shared<BasisVisualization>(this->as_imp(*this), ii, number + " basis");
       vtk_writer.addVertexData(iith_baseFunction);
     }
@@ -524,12 +522,14 @@ namespace internal {
 template <class S>
 struct is_space_helper
 {
-  DSC_has_typedef_initialize_once(Traits) DSC_has_static_member_initialize_once(dimDomain)
-      DSC_has_static_member_initialize_once(dimRange) DSC_has_static_member_initialize_once(dimRangeCols)
+  DXTC_has_typedef_initialize_once(Traits);
+  DXTC_has_static_member_initialize_once(dimDomain);
+  DXTC_has_static_member_initialize_once(dimRange);
+  DXTC_has_static_member_initialize_once(dimRangeCols);
 
-          static const
-      bool is_candidate = DSC_has_typedef(Traits)<S>::value && DSC_has_static_member(dimDomain)<S>::value
-                          && DSC_has_static_member(dimRange)<S>::value && DSC_has_static_member(dimRangeCols)<S>::value;
+  static const bool is_candidate = DXTC_has_typedef(Traits)<S>::value && DXTC_has_static_member(dimDomain)<S>::value
+                                   && DXTC_has_static_member(dimRange)<S>::value
+                                   && DXTC_has_static_member(dimRangeCols)<S>::value;
 }; // class is_space_helper
 
 

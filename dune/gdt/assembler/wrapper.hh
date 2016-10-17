@@ -14,12 +14,11 @@
 
 #include <dune/common/deprecated.hh>
 
-#include <dune/stuff/common/tmp-storage.hh>
-#include <dune/stuff/la/container/interfaces.hh>
-#include <dune/stuff/grid/walker.hh>
-#include <dune/stuff/grid/walker/apply-on.hh>
-#include <dune/stuff/grid/walker/functors.hh>
-#include <dune/stuff/grid/walker/wrapper.hh>
+#include <dune/xt/la/container/interfaces.hh>
+#include <dune/xt/grid/walker.hh>
+#include <dune/xt/grid/walker/apply-on.hh>
+#include <dune/xt/grid/walker/functors.hh>
+#include <dune/xt/grid/walker/wrapper.hh>
 
 #include <dune/gdt/local/assembler.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -34,7 +33,7 @@ namespace internal {
 // //////////////////////
 
 template <class TestSpaceType, class AnsatzSpaceType, class GridViewType, class ConstraintsType>
-class ConstraintsWrapper : public Stuff::Grid::internal::Codim0Object<GridViewType>
+class ConstraintsWrapper : public XT::Grid::internal::Codim0Object<GridViewType>
 {
   static_assert(AlwaysFalse<ConstraintsType>::value, "Please add a specialization for these Constraints!");
 };
@@ -45,19 +44,19 @@ class ConstraintsWrapper : public Stuff::Grid::internal::Codim0Object<GridViewTy
 template <class TestSpaceType, class AnsatzSpaceType, class GridViewType>
 class ConstraintsWrapper<TestSpaceType, AnsatzSpaceType, GridViewType,
                          DirichletConstraints<typename GridViewType::Intersection>>
-    : public Stuff::Grid::internal::Codim0Object<GridViewType>
+    : public XT::Grid::internal::Codim0Object<GridViewType>
 {
   static_assert(is_space<TestSpaceType>::value, "TestSpaceType has to be derived from SpaceInterface!");
   static_assert(is_space<AnsatzSpaceType>::value, "AnsatzSpaceType has to be derived from SpaceInterface!");
-  typedef Stuff::Grid::internal::Codim0Object<GridViewType> BaseType;
+  typedef XT::Grid::internal::Codim0Object<GridViewType> BaseType;
   typedef DirichletConstraints<typename GridViewType::Intersection> ConstraintsType;
 
 public:
   using typename BaseType::EntityType;
 
-  ConstraintsWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
-                     const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
-                     const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where, ConstraintsType& constraints)
+  ConstraintsWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+                     const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                     const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where, ConstraintsType& constraints)
     : test_space_(test_space)
     , ansatz_space_(ansatz_space)
     , where_(where)
@@ -80,17 +79,17 @@ public:
 
   virtual void finalize() override final
   {
-    std::lock_guard<std::mutex> DUNE_UNUSED(mutex_guard)(constraints_.mutex_);
+    DUNE_UNUSED std::lock_guard<std::mutex> mutex_guard(constraints_.mutex_);
     constraints_.dirichlet_DoFs_.insert(thread_local_constraints_->dirichlet_DoFs_.begin(),
                                         thread_local_constraints_->dirichlet_DoFs_.end());
   }
 
 private:
-  const DS::PerThreadValue<const TestSpaceType>& test_space_;
-  const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
-  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
+  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
+  const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const std::unique_ptr<const XT::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
   ConstraintsType& constraints_;
-  DS::PerThreadValue<ConstraintsType> thread_local_constraints_;
+  Dune::XT::Common::PerThreadValue<ConstraintsType> thread_local_constraints_;
 }; // class ConstraintsWrapper
 
 
@@ -102,9 +101,9 @@ private:
 
 template <class AssemblerType, class LocalVolumeTwoFormAssemblerType, class MatrixType>
 class LocalVolumeTwoFormMatrixAssemblerWrapper
-    : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
+    : public XT::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
 {
-  typedef Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType> BaseType;
+  typedef XT::Grid::internal::Codim0Object<typename AssemblerType::GridViewType> BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
@@ -112,9 +111,9 @@ public:
   typedef typename AssemblerType::GridViewType GridViewType;
   using typename BaseType::EntityType;
 
-  LocalVolumeTwoFormMatrixAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
-                                           const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
-                                           const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
+  LocalVolumeTwoFormMatrixAssemblerWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+                                           const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                                           const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where,
                                            const LocalVolumeTwoFormAssemblerType& local_assembler, MatrixType& matrix)
     : test_space_(test_space)
     , ansatz_space_(ansatz_space)
@@ -137,9 +136,9 @@ public:
   }
 
 private:
-  const DS::PerThreadValue<const TestSpaceType>& test_space_;
-  const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
-  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
+  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
+  const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const std::unique_ptr<const XT::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
   const LocalVolumeTwoFormAssemblerType& local_assembler_;
   MatrixType& matrix_;
 }; // class LocalVolumeTwoFormMatrixAssemblerWrapper
@@ -149,11 +148,12 @@ private:
 
 template <class AssemblerType, class LocalVolumeTwoFormType, class MatrixType>
 class LocalVolumeTwoFormWrapper
-    : private DSC::ConstStorageProvider<LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>>,
+    : private Dune::XT::Common::ConstStorageProvider<LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>>,
       public LocalVolumeTwoFormMatrixAssemblerWrapper<AssemblerType,
                                                       LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>, MatrixType>
 {
-  typedef DSC::ConstStorageProvider<LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>> LocalAssemblerProvider;
+  typedef Dune::XT::Common::ConstStorageProvider<LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>>
+      LocalAssemblerProvider;
   typedef LocalVolumeTwoFormMatrixAssemblerWrapper<AssemblerType, LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>,
                                                    MatrixType>
       BaseType;
@@ -163,9 +163,9 @@ public:
   typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
   typedef typename AssemblerType::GridViewType GridViewType;
 
-  LocalVolumeTwoFormWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
-                            const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
-                            const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
+  LocalVolumeTwoFormWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+                            const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                            const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where,
                             const LocalVolumeTwoFormType& local_twoform, MatrixType& matrix)
     : LocalAssemblerProvider(local_twoform)
     , BaseType(test_space, ansatz_space, where, LocalAssemblerProvider::access(), matrix)
@@ -182,9 +182,9 @@ public:
 
 template <class AssemblerType, class LocalCouplingTwoFormAssemblerType, class MatrixType>
 class LocalCouplingTwoFormMatrixAssemblerWrapper
-    : public Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>
+    : public XT::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>
 {
-  typedef Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType> BaseType;
+  typedef XT::Grid::internal::Codim1Object<typename AssemblerType::GridViewType> BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
@@ -193,11 +193,11 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
 
-  LocalCouplingTwoFormMatrixAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
-                                             const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
-                                             const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
-                                             const LocalCouplingTwoFormAssemblerType& local_assembler,
-                                             MatrixType& matrix)
+  LocalCouplingTwoFormMatrixAssemblerWrapper(
+      const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+      const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+      const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+      const LocalCouplingTwoFormAssemblerType& local_assembler, MatrixType& matrix)
     : test_space_(test_space)
     , ansatz_space_(ansatz_space)
     , where_(where)
@@ -220,9 +220,9 @@ public:
   } // ... apply_local(...)
 
 private:
-  const DS::PerThreadValue<const TestSpaceType>& test_space_;
-  const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
-  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>> where_;
+  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
+  const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const std::unique_ptr<const XT::Grid::ApplyOn::WhichIntersection<GridViewType>> where_;
   const LocalCouplingTwoFormAssemblerType& local_assembler_;
   MatrixType& matrix_;
 }; // class LocalCouplingTwoFormMatrixAssemblerWrapper
@@ -231,12 +231,13 @@ private:
 
 template <class AssemblerType, class LocalCouplingTwoFormType, class MatrixType>
 class LocalCouplingTwoFormWrapper
-    : private DSC::ConstStorageProvider<LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>>,
+    : private Dune::XT::Common::ConstStorageProvider<LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>>,
       public LocalCouplingTwoFormMatrixAssemblerWrapper<AssemblerType,
                                                         LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>,
                                                         MatrixType>
 {
-  typedef DSC::ConstStorageProvider<LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>> LocalAssemblerProvider;
+  typedef Dune::XT::Common::ConstStorageProvider<LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>>
+      LocalAssemblerProvider;
   typedef LocalCouplingTwoFormMatrixAssemblerWrapper<AssemblerType,
                                                      LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>,
                                                      MatrixType>
@@ -247,9 +248,9 @@ public:
   typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
   typedef typename AssemblerType::GridViewType GridViewType;
 
-  LocalCouplingTwoFormWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
-                              const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
-                              const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+  LocalCouplingTwoFormWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+                              const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                              const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
                               const LocalCouplingTwoFormType& local_twoform, MatrixType& matrix)
     : LocalAssemblerProvider(local_twoform)
     , BaseType(test_space, ansatz_space, where, LocalAssemblerProvider::access(), matrix)
@@ -266,9 +267,9 @@ public:
 
 template <class AssemblerType, class LocalBoundaryTwoFormAssemblerType, class MatrixType>
 class LocalBoundaryTwoFormMatrixAssemblerWrapper
-    : public Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>
+    : public XT::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>
 {
-  typedef Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType> BaseType;
+  typedef XT::Grid::internal::Codim1Object<typename AssemblerType::GridViewType> BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
@@ -277,11 +278,11 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
 
-  LocalBoundaryTwoFormMatrixAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
-                                             const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
-                                             const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
-                                             const LocalBoundaryTwoFormAssemblerType& local_assembler,
-                                             MatrixType& matrix)
+  LocalBoundaryTwoFormMatrixAssemblerWrapper(
+      const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+      const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+      const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+      const LocalBoundaryTwoFormAssemblerType& local_assembler, MatrixType& matrix)
     : test_space_(test_space)
     , ansatz_space_(ansatz_space)
     , where_(where)
@@ -304,9 +305,9 @@ public:
   } // ... apply_local(...)
 
 private:
-  const DS::PerThreadValue<const TestSpaceType>& test_space_;
-  const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
-  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>> where_;
+  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
+  const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const std::unique_ptr<const XT::Grid::ApplyOn::WhichIntersection<GridViewType>> where_;
   const LocalBoundaryTwoFormAssemblerType& local_assembler_;
   MatrixType& matrix_;
 }; // class LocalBoundaryTwoFormMatrixAssemblerWrapper
@@ -315,12 +316,13 @@ private:
 
 template <class AssemblerType, class LocalBoundaryTwoFormType, class MatrixType>
 class LocalBoundaryTwoFormWrapper
-    : private DSC::ConstStorageProvider<LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>>,
+    : private Dune::XT::Common::ConstStorageProvider<LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>>,
       public LocalBoundaryTwoFormMatrixAssemblerWrapper<AssemblerType,
                                                         LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>,
                                                         MatrixType>
 {
-  typedef DSC::ConstStorageProvider<LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>> LocalAssemblerProvider;
+  typedef Dune::XT::Common::ConstStorageProvider<LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>>
+      LocalAssemblerProvider;
   typedef LocalBoundaryTwoFormMatrixAssemblerWrapper<AssemblerType,
                                                      LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>,
                                                      MatrixType>
@@ -331,9 +333,9 @@ public:
   typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
   typedef typename AssemblerType::GridViewType GridViewType;
 
-  LocalBoundaryTwoFormWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
-                              const DS::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
-                              const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+  LocalBoundaryTwoFormWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+                              const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                              const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
                               const LocalBoundaryTwoFormType& local_twoform, MatrixType& matrix)
     : LocalAssemblerProvider(local_twoform)
     , BaseType(test_space, ansatz_space, where, LocalAssemblerProvider::access(), matrix)
@@ -350,17 +352,17 @@ public:
 
 template <class AssemblerType, class LocalVolumeFunctionalAssemblerType, class VectorType>
 class LocalVolumeFunctionalVectorAssemblerWrapper
-    : public Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
+    : public XT::Grid::internal::Codim0Object<typename AssemblerType::GridViewType>
 {
-  typedef Stuff::Grid::internal::Codim0Object<typename AssemblerType::GridViewType> BaseType;
+  typedef XT::Grid::internal::Codim0Object<typename AssemblerType::GridViewType> BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::GridViewType GridViewType;
   using typename BaseType::EntityType;
 
-  LocalVolumeFunctionalVectorAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& space,
-                                              const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
+  LocalVolumeFunctionalVectorAssemblerWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& space,
+                                              const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where,
                                               const LocalVolumeFunctionalAssemblerType& local_assembler,
                                               VectorType& vector)
     : space_(space)
@@ -383,8 +385,8 @@ public:
   }
 
 private:
-  const DS::PerThreadValue<const TestSpaceType>& space_;
-  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
+  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& space_;
+  const std::unique_ptr<const XT::Grid::ApplyOn::WhichEntity<GridViewType>> where_;
   const LocalVolumeFunctionalAssemblerType& local_assembler_;
   VectorType& vector_;
 }; // class LocalVolumeVectorAssemblerWrapper
@@ -394,12 +396,13 @@ private:
 
 template <class AssemblerType, class LocalFunctionalType, class VectorType>
 class LocalVolumeFunctionalWrapper
-    : private DSC::ConstStorageProvider<LocalVolumeFunctionalAssembler<LocalFunctionalType>>,
+    : private Dune::XT::Common::ConstStorageProvider<LocalVolumeFunctionalAssembler<LocalFunctionalType>>,
       public LocalVolumeFunctionalVectorAssemblerWrapper<AssemblerType,
                                                          LocalVolumeFunctionalAssembler<LocalFunctionalType>,
                                                          VectorType>
 {
-  typedef DSC::ConstStorageProvider<LocalVolumeFunctionalAssembler<LocalFunctionalType>> LocalAssemblerProvider;
+  typedef Dune::XT::Common::ConstStorageProvider<LocalVolumeFunctionalAssembler<LocalFunctionalType>>
+      LocalAssemblerProvider;
   typedef LocalVolumeFunctionalVectorAssemblerWrapper<AssemblerType,
                                                       LocalVolumeFunctionalAssembler<LocalFunctionalType>, VectorType>
       BaseType;
@@ -408,8 +411,8 @@ public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::GridViewType GridViewType;
 
-  LocalVolumeFunctionalWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
-                               const Stuff::Grid::ApplyOn::WhichEntity<GridViewType>* where,
+  LocalVolumeFunctionalWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+                               const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where,
                                const LocalFunctionalType& local_functional, VectorType& vector)
     : LocalAssemblerProvider(local_functional)
     , BaseType(test_space, where, LocalAssemblerProvider::access(), vector)
@@ -426,9 +429,9 @@ public:
 
 template <class AssemblerType, class LocalFaceFunctionalAssemblerType, class VectorType>
 class LocalFaceFunctionalVectorAssemblerWrapper
-    : public Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>
+    : public XT::Grid::internal::Codim1Object<typename AssemblerType::GridViewType>
 {
-  typedef Stuff::Grid::internal::Codim1Object<typename AssemblerType::GridViewType> BaseType;
+  typedef XT::Grid::internal::Codim1Object<typename AssemblerType::GridViewType> BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
@@ -436,8 +439,8 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
 
-  LocalFaceFunctionalVectorAssemblerWrapper(const DS::PerThreadValue<const TestSpaceType>& space,
-                                            const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+  LocalFaceFunctionalVectorAssemblerWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& space,
+                                            const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
                                             const LocalFaceFunctionalAssemblerType& local_assembler, VectorType& vector)
     : space_(space)
     , where_(where)
@@ -460,8 +463,8 @@ public:
   }
 
 private:
-  const DS::PerThreadValue<const TestSpaceType>& space_;
-  const std::unique_ptr<const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>> where_;
+  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& space_;
+  const std::unique_ptr<const XT::Grid::ApplyOn::WhichIntersection<GridViewType>> where_;
   const LocalFaceFunctionalAssemblerType& local_assembler_;
   VectorType& vector_;
 }; // class LocalFaceFunctionalVectorAssemblerWrapper
@@ -471,12 +474,13 @@ private:
 
 template <class AssemblerType, class LocalFaceFunctionalType, class VectorType>
 class LocalFaceFunctionalWrapper
-    : private DSC::ConstStorageProvider<LocalFaceFunctionalAssembler<LocalFaceFunctionalType>>,
+    : private Dune::XT::Common::ConstStorageProvider<LocalFaceFunctionalAssembler<LocalFaceFunctionalType>>,
       public LocalFaceFunctionalVectorAssemblerWrapper<AssemblerType,
                                                        LocalFaceFunctionalAssembler<LocalFaceFunctionalType>,
                                                        VectorType>
 {
-  typedef DSC::ConstStorageProvider<LocalFaceFunctionalAssembler<LocalFaceFunctionalType>> LocalAssemblerProvider;
+  typedef Dune::XT::Common::ConstStorageProvider<LocalFaceFunctionalAssembler<LocalFaceFunctionalType>>
+      LocalAssemblerProvider;
   typedef LocalFaceFunctionalVectorAssemblerWrapper<AssemblerType,
                                                     LocalFaceFunctionalAssembler<LocalFaceFunctionalType>, VectorType>
       BaseType;
@@ -485,8 +489,8 @@ public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::GridViewType GridViewType;
 
-  LocalFaceFunctionalWrapper(const DS::PerThreadValue<const TestSpaceType>& test_space,
-                             const Stuff::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+  LocalFaceFunctionalWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+                             const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
                              const LocalFaceFunctionalType& local_functional, VectorType& vector)
     : LocalAssemblerProvider(local_functional)
     , BaseType(test_space, where, LocalAssemblerProvider::access(), vector)

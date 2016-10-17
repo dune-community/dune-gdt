@@ -9,9 +9,9 @@
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_SWIPDG_ESTIMATOR_EXPECTATIONS_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_SWIPDG_ESTIMATOR_EXPECTATIONS_HH
 
-#include <dune/stuff/common/type_utils.hh>
-#include <dune/stuff/la/container/container-interface.hh>
-#include <dune/stuff/test/gtest/gtest.h>
+#include <dune/xt/common/type_traits.hh>
+#include <dune/xt/la/container/container-interface.hh>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include "discretizers/base.hh"
 #include "estimators/swipdg-fluxreconstruction.hh"
@@ -55,7 +55,7 @@ public:
 } // namespace internal
 
 
-template <class TestCaseType, LinearElliptic::ChooseDiscretizer disc, int polOrder, Stuff::LA::ChooseBackend la_backend,
+template <class TestCaseType, LinearElliptic::ChooseDiscretizer disc, int polOrder, XT::LA::Backends la_backend,
           bool anything = true>
 class LinearEllipticSwipdgEstimatorExpectations
     : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<polOrder>
@@ -64,7 +64,7 @@ public:
   static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type)
   {
     EXPECT_TRUE(false) << "Please record the expected results for\n"
-                       << "  TestCaseType: " << Stuff::Common::Typename<TestCaseType>::value() << "\n"
+                       << "  TestCaseType: " << XT::Common::Typename<TestCaseType>::value() << "\n"
                        << "  ChooseDiscretizer: " << int(disc) << "\n"
                        << "  polOrder: " << polOrder << "\n"
                        << "  type: " << type << "\n"

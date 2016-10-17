@@ -18,10 +18,10 @@
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/typetraits.hh>
 
-#include <dune/stuff/common/fmatrix.hh>
-#include <dune/stuff/common/memory.hh>
-#include <dune/stuff/functions/constant.hh>
-#include <dune/stuff/functions/interfaces.hh>
+#include <dune/xt/common/fmatrix.hh>
+#include <dune/xt/common/memory.hh>
+#include <dune/xt/functions/constant.hh>
+#include <dune/xt/functions/interfaces.hh>
 
 #include "interfaces.hh"
 
@@ -43,7 +43,7 @@ namespace internal {
 template <class DiffusionFactorImp, class DiffusionTensorImp>
 class LocalEllipticIntegrandTraits
 {
-  static_assert(Stuff::is_localizable_function<DiffusionFactorImp>::value,
+  static_assert(XT::Functions::is_localizable_function<DiffusionFactorImp>::value,
                 "DiffusionFactorType has to be a localizable function!");
 
 public:
@@ -70,7 +70,7 @@ private:
   template <bool anything>
   struct Helper<false, false, anything>
   {
-    static_assert(Stuff::is_localizable_function<DiffusionTensorImp>::value,
+    static_assert(XT::Functions::is_localizable_function<DiffusionTensorImp>::value,
                   "DiffusionTensorType has to be a localizable function!");
     static_assert(std::is_same<typename DiffusionFactorImp::EntityType, typename DiffusionTensorImp::EntityType>::value,
                   "EntityTypes have to agree!");
@@ -93,14 +93,14 @@ private:
   struct Helper<true, false, anything>
   {
     typedef DiffusionFactorImp FactorType;
-    typedef Stuff::Functions::Constant<E, D, d, D, d, d> TensorType;
+    typedef XT::Functions::ConstantFunction<E, D, d, D, d, d> TensorType;
   };
 
   // given only one, and this is a tensor
   template <bool anything>
   struct Helper<false, true, anything>
   {
-    typedef Stuff::Functions::Constant<E, D, d, D, 1, 1> FactorType;
+    typedef XT::Functions::ConstantFunction<E, D, d, D, 1, 1> FactorType;
     typedef DiffusionFactorImp TensorType;
   };
 
@@ -148,8 +148,8 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
 
 private:
-  typedef Stuff::Common::ConstStorageProvider<DiffusionFactorType> DiffusionFactorProvider;
-  typedef Stuff::Common::ConstStorageProvider<DiffusionTensorType> DiffusionTensorProvider;
+  typedef XT::Common::ConstStorageProvider<DiffusionFactorType> DiffusionFactorProvider;
+  typedef XT::Common::ConstStorageProvider<DiffusionTensorType> DiffusionTensorProvider;
   using typename BaseType::E;
   using typename BaseType::D;
   using BaseType::d;
@@ -164,7 +164,7 @@ public:
   LocalEllipticIntegrand(const DiffusionFactorType& diffusion_factor)
     : diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(new DiffusionTensorType(
-          Stuff::Functions::internal::UnitMatrix<typename DiffusionTensorType::RangeFieldType, dimDomain>::value()))
+          XT::Functions::internal::UnitMatrix<typename DiffusionTensorType::RangeFieldType, dimDomain>::value()))
   {
   }
 
@@ -196,8 +196,8 @@ public:
    */
   template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
   size_t order(const LocalfunctionTupleType& local_functions_tuple,
-               const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base,
-               const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base) const
+               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base,
+               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base) const
   {
     const auto local_diffusion_factor = std::get<0>(local_functions_tuple);
     const auto local_diffusion_tensor = std::get<1>(local_functions_tuple);
@@ -209,8 +209,8 @@ public:
    */
   template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
   void evaluate(const LocalfunctionTupleType& local_functions_tuple,
-                const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base,
-                const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base,
+                const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base,
+                const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base,
                 const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
     const auto local_diffusion_factor = std::get<0>(local_functions_tuple);
@@ -223,10 +223,10 @@ public:
   /// \{
 
   template <class R, size_t rDF, size_t rCDF, size_t rDT, size_t rCDT, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  size_t order(const Stuff::LocalfunctionInterface<E, D, d, R, rDF, rCDF>& local_diffusion_factor,
-               const Stuff::LocalfunctionInterface<E, D, d, R, rDT, rCDT>& local_diffusion_tensor,
-               const Stuff::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base,
-               const Stuff::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base) const
+  size_t order(const XT::Functions::LocalfunctionInterface<E, D, d, R, rDF, rCDF>& local_diffusion_factor,
+               const XT::Functions::LocalfunctionInterface<E, D, d, R, rDT, rCDT>& local_diffusion_tensor,
+               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base,
+               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base) const
   {
     return local_diffusion_factor.order() + local_diffusion_tensor.order()
            + std::max(ssize_t(test_base.order()) - 1, ssize_t(0))
@@ -238,13 +238,13 @@ public:
   /// \{
 
   template <class R, size_t r>
-  void evaluate(const Stuff::LocalfunctionInterface<E, D, d, R, 1, 1>& local_diffusion_factor,
-                const Stuff::LocalfunctionInterface<E, D, d, R, d, d>& local_diffusion_tensor,
-                const Stuff::LocalfunctionSetInterface<E, D, d, R, r, 1>& test_base,
-                const Stuff::LocalfunctionSetInterface<E, D, d, R, r, 1>& ansatz_base,
+  void evaluate(const XT::Functions::LocalfunctionInterface<E, D, d, R, 1, 1>& local_diffusion_factor,
+                const XT::Functions::LocalfunctionInterface<E, D, d, R, d, d>& local_diffusion_tensor,
+                const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, 1>& test_base,
+                const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, 1>& ansatz_base,
                 const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
   {
-    typedef Stuff::Common::FieldMatrix<R, d, d> TensorType;
+    typedef XT::Common::FieldMatrix<R, d, d> TensorType;
     ret *= 0.0;
     // evaluate local functions
     const auto diffusion_factor_value       = local_diffusion_factor.evaluate(localPoint);
