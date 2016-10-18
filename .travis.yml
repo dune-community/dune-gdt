@@ -71,7 +71,7 @@ before_script:
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja test_binaries_builder_${TESTS}; fi
 
 script:
-    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -j 2 -R builder_${TESTS//_/.+}; fi
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -j 2 -L "^builder_${TESTS}$"; fi
     - if [[ "x${TESTS}" == "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja headercheck; fi
     - ${SUPERDIR}/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-gdt-testlogs
     # retry this step because of the implicated race condition in cloning and pushing with multiple builder running in parallel
