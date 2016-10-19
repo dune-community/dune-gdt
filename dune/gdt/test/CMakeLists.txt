@@ -12,12 +12,12 @@ BEGIN_TESTCASES()
 
 END_TESTCASES()
 
-set(TRAVIS_BUILDER 15)
+set(DXT_TRAVIS_BUILDER 18)
 
 set(current_idx 0)
 
 foreach (target ${dxt_test_binaries})
-    math(EXPR list_idx "${current_idx} % ${TRAVIS_BUILDER}")
+    math(EXPR list_idx "${current_idx} % ${DXT_TRAVIS_BUILDER}")
     list(APPEND test_names_numbered_${list_idx} ${target})
     foreach(testname ${dxt_test_names_${target}})
         set_tests_properties(${testname} PROPERTIES LABELS "builder_${list_idx}")
@@ -25,7 +25,7 @@ foreach (target ${dxt_test_binaries})
     MATH(EXPR current_idx "${current_idx}+1")
 endforeach (target ${dxt_test_binaries})
 
-MATH(EXPR max_idx "${TRAVIS_BUILDER}-1")
+MATH(EXPR max_idx "${DXT_TRAVIS_BUILDER}-1")
 foreach(idx RANGE 0 ${max_idx} 1)
     add_custom_target(test_binaries_builder_${idx} DEPENDS ${test_names_numbered_${idx}})
 endforeach(idx RANGE 0 ${max_idx} 1)

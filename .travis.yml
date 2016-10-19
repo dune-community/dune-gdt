@@ -68,7 +68,7 @@ before_script:
     - $HOME/src/.travis/add_swap.sh
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make; fi
-    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja test_binaries_builder_${TESTS}; fi
+    - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja -v test_binaries_builder_${TESTS}; fi
 
 script:
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_wait 50 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -j 2 -L "^builder_${TESTS}$"; fi
@@ -182,7 +182,16 @@ matrix:
       env: CC=gcc-5 TESTS=14 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=headercheck BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS=15 BLD=${DBG} CXX=g++-5
+    - os: linux
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=16 BLD=${DBG} CXX=g++-5
+    - os: linux
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=17 BLD=${DBG} CXX=g++-5
+    - os: linux
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=headercheck BLD=${DBG} CXX=g++-5 CLANG_FORMAT='/usr/bin/clang-format-3.8'
 
 #   clang 3.8
     - os: linux
@@ -235,7 +244,16 @@ matrix:
       env: CC=clang-3.8 TESTS=13 BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
-      env: CC=clang-3.8 TESTS=14 BLD=${DBG} CXX=clang++-3.8 CLANG_FORMAT='/usr/bin/clang-format-3.8'
+      env: CC=clang-3.8 TESTS=14 BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
-      env: CC=clang-3.8 TESTS=headercheck BLD=${DBG} CXX=clang++-3.8
+      env: CC=clang-3.8 TESTS=15 BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=16 BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=17 BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=headercheck BLD=${DBG} CXX=clang++-3.8 CLANG_FORMAT='/usr/bin/clang-format-3.8'
