@@ -11,7 +11,7 @@ import binpacking
 from multiprocessing import Pool
 
 
-MAXTIME = 45*60
+MAXTIME = 15*60
 pickle_file = 'totals.pickle'
 
 
@@ -27,7 +27,12 @@ def elapsed_timer():
 
 def _compile(binary):
     with elapsed_timer() as timer:
-        subprocess.check_call(['ninja', '-j1', binary])
+        try:
+            subprocess.check_call(['ninja', '-j1', binary])
+        except subprocess.CalledProcessError as cpe:
+            if not 'Timeout' in cpe:
+                raise cpe
+            print('Timeout in compile {}'.format(binary))
         return timer()
 
 
@@ -36,7 +41,12 @@ def _run_tests(tpl):
     testtimes = 0
     for test in teststrings.split('/'):
         with elapsed_timer() as timer:
-            subprocess.check_call(['ctest', '-j1', '-R', test])
+            try:
+                out = subprocess.check_output(['ctest', '-j1', '-R', test])
+            except subprocess.CalledProcessError as cpe:
+                if not 'Timeout' in cpe:
+                    raise cpe
+                print('Timeout in {} from {}'.format(test, binary))
             testtimes += timer()
         return testtimes
 
@@ -57,6 +67,8 @@ def redo_timings(builddir, binaries, testnames, processes):
     print('totals')
     pprint(totals)
     pickle.dump(totals, open(os.path.join(builddir, pickle_file), 'wb'))
+    pickle.dump(compiles, open(os.path.join(builddir, 'compile_'+pickle_file), 'wb'))
+    pickle.dump(testruns, open(os.path.join(builddir, 'tests_' + pickle_file), 'wb'))
     return {b: t for b, t in zip(binaries, totals)}
 
 
