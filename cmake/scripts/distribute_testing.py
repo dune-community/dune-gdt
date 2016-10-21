@@ -8,6 +8,8 @@ import subprocess
 import time
 from contextlib import contextmanager
 import binpacking
+from multiprocessing import Pool
+
 
 MAXTIME = 45*60
 pickle_file = 'totals.pickle'
@@ -23,52 +25,56 @@ def elapsed_timer():
     elapser = lambda: end-start
 
 
-def redo_timings(argv):
-    builddir = argv[1]
-    builder_count = argv[2]
-    binaries = argv[3].split(';')
-    # list comes with a leading empty entry
-    testnames = argv[4].split('/')[1:]
+def _compile(binary):
+    with elapsed_timer() as timer:
+        subprocess.check_call(['ninja', '-j1', binary])
+        return timer()
 
+
+def _run_tests(tpl):
+    binary, teststrings = tpl
+    testtimes = 0
+    for test in teststrings.split('/'):
+        with elapsed_timer() as timer:
+            subprocess.check_call(['ctest', '-j1', '-R', test])
+            testtimes += timer()
+        return testtimes
+
+
+def redo_timings(builddir, binaries, testnames, processes):
     os.chdir(builddir)
-    compiles = {}
-    testtimes = {}
-
     testlimit = -1
     binaries = binaries[:testlimit]
     testnames = testnames[:testlimit]
-    totals = {}
 
-    for binary in binaries:
-        with elapsed_timer() as timer:
-            subprocess.check_call(['ninja', '-j1', binary])
-            compiles[binary] = timer()
-            totals[binary] = compiles[binary]
-    for binary, teststrings in zip(binaries, testnames):
-        testtimes[binary] = 0
-        pprint(teststrings.split('/'))
-        for test in teststrings.split('/'):
-            with elapsed_timer() as timer:
-                subprocess.check_call(['ctest', '-j1', '-R', test])
-                testtimes[binary] += timer()
-                totals[binary] = testtimes[binary]
-    print('compiles')
-    pprint(compiles)
-    print('testtimes')
-    pprint(testtimes)
+    with Pool(processes=processes) as pool:
+        compiles = pool.map(_compile, binaries)
+    with Pool(processes=processes) as pool:
+        testruns = pool.map(_run_tests, zip(binaries, testnames))
+
+    totals = [a+b for a,b in zip(compiles, testruns)]
+
     print('totals')
     pprint(totals)
     pickle.dump(totals, open(os.path.join(builddir, pickle_file), 'wb'))
-    return totals
+    return {b: t for b, t in zip(binaries, totals)}
 
+
+# list comes with a leading empty entry
+testnames = sys.argv[4].split('/')[1:]
+builddir = sys.argv[1]
+binaries = sys.argv[3].split(';')
+processes = 4
 
 try:
-    builddir = sys.argv[1]
     totals = pickle.load(open(os.path.join(builddir, pickle_file), 'rb'))
+    if totals.keys() != binaries:
+        totals = redo_timings(builddir, binaries, testnames, processes)
 except FileNotFoundError:
-    totals = redo_timings(sys.argv)
+    totals = redo_timings(builddir, binaries, testnames, processes)
 
-b = list(totals.values())
+builder_count = sys.argv[2]
+
+b = list(totals.keys())
 bins = binpacking.to_constant_volume(b,MAXTIME)
-
 pprint(bins)
