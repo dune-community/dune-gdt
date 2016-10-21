@@ -17,18 +17,12 @@ set(DXT_TRAVIS_BUILDER 18)
 set(current_idx 0)
 
 foreach (target ${dxt_test_binaries})
-    math(EXPR list_idx "${current_idx} % ${DXT_TRAVIS_BUILDER}")
-    list(APPEND test_names_numbered_${list_idx} ${target})
-    foreach(testname ${dxt_test_names_${target}})
-        set_tests_properties(${testname} PROPERTIES LABELS "builder_${list_idx}")
-    endforeach()
-    MATH(EXPR current_idx "${current_idx}+1")
+    set(all_sorted_testnames "${all_sorted_testnames}/${dxt_test_names_${target}}")
 endforeach (target ${dxt_test_binaries})
+# message(STATUS "LL ${all_sorted_testnames}")
 
-MATH(EXPR max_idx "${DXT_TRAVIS_BUILDER}-1")
-foreach(idx RANGE 0 ${max_idx} 1)
-    add_custom_target(test_binaries_builder_${idx} DEPENDS ${test_names_numbered_${idx}})
-endforeach(idx RANGE 0 ${max_idx} 1)
+add_custom_target(refresh_test_timings python3 ${CMAKE_SOURCE_DIR}/cmake/scripts/distribute_testing.py
+    "${CMAKE_BINARY_DIR}" ${DXT_TRAVIS_BUILDER} "${dxt_test_binaries}" "${all_sorted_testnames}" VERBATIM)
 
 # link spe10 data file if present
 if (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
