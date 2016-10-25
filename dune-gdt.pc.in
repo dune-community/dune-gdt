@@ -14,7 +14,7 @@ DEPENDENCIES=@REQUIRES@
 Name: @PACKAGE_NAME@
 Version: @VERSION@
 Description: dune-gdt module
-URL: http://users.dune-project.org/projects/dune-gdt/
-Requires: dune-common dune-grid dune-fem dune-stuff dune-grid-multiscale dune-fem-localfunctions
+URL: http://github.com/dune-community/dune-gdt/
+Requires: dune-common dune-xt-grid dune-xt-la dune-xt-functions
 Libs: -L
 Cflags: -I
