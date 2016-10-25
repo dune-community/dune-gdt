@@ -8,10 +8,6 @@
 #ifndef DUNE_GDT_TEST_LINEARELLIPTIC_SWIPDG_DISCRETIZATION_HH
 #define DUNE_GDT_TEST_LINEARELLIPTIC_SWIPDG_DISCRETIZATION_HH
 
-#ifndef THIS_IS_A_BUILDBOT_BUILD
-#define THIS_IS_A_BUILDBOT_BUILD 0
-#endif
-
 #include <dune/xt/common/test/common.hh>
 #include <dune/xt/functions/spe10/model1.hh>
 #include <dune/xt/la/container.hh>
@@ -30,7 +26,7 @@ struct linearelliptic_SWIPDG_discretization : public ::testing::Test
   {
     using namespace Dune;
     using namespace Dune::GDT;
-#if THIS_IS_A_BUILDBOT_BUILD
+#if DXT_DISABLE_LARGE_TESTS
     TestCaseType test_case(/*num_refs=*/1); // As in: only 1!
 #else
     TestCaseType test_case;

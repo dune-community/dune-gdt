@@ -155,7 +155,7 @@ struct linearelliptic_SWIPDG_estimators : public ::testing::Test
   {
     using namespace Dune;
     using namespace Dune::GDT;
-#if THIS_IS_A_BUILDBOT_BUILD
+#if DXT_DISABLE_LARGE_TESTS
     TestCaseType test_case(/*num_refs=*/1); // As in: only 1!
 #else
     TestCaseType test_case;
