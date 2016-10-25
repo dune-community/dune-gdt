@@ -6,8 +6,8 @@
 //   Felix Schindler (2016)
 //   Tobias Leibner  (2016)
 
-#ifndef DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING
-#define DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING 1
+#ifndef DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING
+#define DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING 1
 #endif
 
 // This one has to come first (includes the config.h)!
