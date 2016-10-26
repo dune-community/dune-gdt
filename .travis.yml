@@ -48,6 +48,7 @@ before_install:
   - git submodule status
   - ${SUPERDIR}/.travis/trusty_apt_setup.bash
   - export PATH=/usr/lib/ccache:$PATH
+  - ccache -s
   # our local scripts look for an OPTS env entry
   - ./local/bin/download_external_libraries.py
   - ./local/bin/build_external_libraries.py
@@ -93,6 +94,7 @@ after_script:
         ${SUPERDIR}/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-community.github.io
         ${SUPERDIR}/.travis/deploy_docs.sh ${MY_MODULE} ${DUNE_BUILD_DIR}
       fi
+    - ccache -s
 
 notifications:
   email:
