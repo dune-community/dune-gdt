@@ -29,7 +29,7 @@ class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dG
   typedef LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1> TestCaseType;
 
 public:
-  static std::vector<double> results(const TestCaseType& test_case, const std::string type); // ... results(...)
+  static std::vector<double> results(const TestCaseType& test_case, const std::string type);
 }; // LinearEllipticEocExpectations
 
 template <>
@@ -40,7 +40,7 @@ class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dG
   typedef LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1> TestCaseType;
 
 public:
-  static std::vector<double> results(const TestCaseType& test_case, const std::string type); // ... results(...)
+  static std::vector<double> results(const TestCaseType& test_case, const std::string type);
 }; // LinearEllipticEocExpectations
 
 
