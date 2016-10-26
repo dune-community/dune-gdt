@@ -11,7 +11,7 @@ import binpacking
 from multiprocessing import Pool, cpu_count
 
 
-MAXTIME = 4*60
+MAXTIME = 8*60
 pickle_file = 'totals.pickle'
 
 
@@ -96,23 +96,33 @@ def do_timings(builddir, pickledir, binaries, testnames, processes):
 
     totals = {n: compiles[n]+testruns[n] for n in binaries}
     pickle.dump(totals, open(os.path.join(pickledir, pickle_file), 'wb'))
-    print('totals')
-    pprint(totals)
+    # print('totals')
+    # pprint(totals)
     return totals
 
 
 # list comes with a leading empty entry
-testnames = sys.argv[4].split('/')[1:]
+all_testnames = sys.argv[4].split('/')[1:]
 builddir = sys.argv[1]
-pickledir = sys.argv[2]
+module_root = sys.argv[2]
+pickledir = os.path.join(module_root, 'cmake', 'scripts')
+testdir = os.path.join(module_root, 'dune', 'gdt', 'test')
+cmake_outfile = os.path.join(testdir, 'builder_definitions.cmake')
 binaries = sys.argv[3].split(';')
+testname_map = {b: t.split(';') for b,t in zip(binaries, all_testnames)}
 processes = cpu_count()
 
-totals = do_timings(builddir, pickledir, binaries, testnames, processes)
-builder_count = sys.argv[2]
+totals = do_timings(builddir, pickledir, binaries, all_testnames, processes)
 
 b = list(totals.keys())
 bins = binpacking.to_constant_volume(totals, MAXTIME)
-for idx, bin in enumerate(bins):
-    pprint('Bin {} vol: {}'.format(idx, sum(bin.values())))
-    pprint(bin)
+# for idx, bin in enumerate(bins):
+#     pprint('Bin {} vol: {}'.format(idx, sum(bin.values())))
+#     pprint(bin)
+
+with open(cmake_outfile, 'wt') as out:
+    for idx, bin in enumerate(bins):
+        out.write('add_custom_target(test_binaries_builder_{} DEPENDS {})\n'.format(idx, ' '.join(bin.keys())))
+        for binary in bin.keys():
+            for testname in testname_map[binary]:
+                out.write('set_tests_properties({} PROPERTIES LABELS "builder_{}")\n'.format(testname, idx))

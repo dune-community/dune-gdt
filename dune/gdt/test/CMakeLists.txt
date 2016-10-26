@@ -19,10 +19,9 @@ set(current_idx 0)
 foreach (target ${dxt_test_binaries})
     set(all_sorted_testnames "${all_sorted_testnames}/${dxt_test_names_${target}}")
 endforeach (target ${dxt_test_binaries})
-# message(STATUS "LL ${all_sorted_testnames}")
-
 add_custom_target(refresh_test_timings python3 ${CMAKE_SOURCE_DIR}/cmake/scripts/distribute_testing.py
-    "${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/cmake/scripts/" "${dxt_test_binaries}" "${all_sorted_testnames}" VERBATIM)
+    "${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}" "${dxt_test_binaries}" "${all_sorted_testnames}" VERBATIM)
+include("builder_definitions.cmake")
 
 # link spe10 data file if present
 if (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
