@@ -22,7 +22,7 @@ endforeach (target ${dxt_test_binaries})
 # message(STATUS "LL ${all_sorted_testnames}")
 
 add_custom_target(refresh_test_timings python3 ${CMAKE_SOURCE_DIR}/cmake/scripts/distribute_testing.py
-    "${CMAKE_BINARY_DIR}" ${DXT_TRAVIS_BUILDER} "${dxt_test_binaries}" "${all_sorted_testnames}" VERBATIM)
+    "${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}/cmake/scripts/" "${dxt_test_binaries}" "${all_sorted_testnames}" VERBATIM)
 
 # link spe10 data file if present
 if (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")
