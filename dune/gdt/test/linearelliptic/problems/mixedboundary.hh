@@ -91,6 +91,21 @@ public:
 
 private:
   typedef Test::StationaryTestCase<G, ProblemType> BaseType;
+
+#if DXT_DISABLE_LARGE_TESTS
+
+  template <class T, bool anything = true>
+  struct Helper
+  {
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
+    {
+      cfg["num_elements"] = "[4 4]";
+      return cfg;
+    }
+  };
+
+#else // DXT_DISABLE_LARGE_TESTS
+
   template <class T, bool anything = true>
   struct Helper
   {
@@ -112,6 +127,7 @@ private:
   };
 
 #if HAVE_ALUGRID
+
   template <bool anything>
   struct Helper<AluConform2dGridType, anything>
   {
@@ -132,7 +148,9 @@ private:
       return cfg;
     }
   };
+
 #endif // HAVE_ALUGRID
+#endif // DXT_DISABLE_LARGE_TESTS
 
   static XT::Common::Configuration grid_cfg()
   {
@@ -144,7 +162,13 @@ private:
 public:
   using typename BaseType::GridType;
 
-  MixedBoundaryTestCase(const size_t num_refs = 3)
+  MixedBoundaryTestCase(const size_t num_refs =
+#if DXT_DISABLE_LARGE_TESTS
+                            1
+#else
+                            3
+#endif
+                        )
     : BaseType(XT::Grid::make_cube_grid<GridType>(grid_cfg()).grid_ptr(), num_refs)
     , problem_()
   {
