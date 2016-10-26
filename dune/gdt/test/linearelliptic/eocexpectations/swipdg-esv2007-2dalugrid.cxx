@@ -1,4 +1,5 @@
 #include <config.h>
+
 #if HAVE_ALUGRID
 
 #include "swipdg-esv2007-2dalugrid.hh"
@@ -6,6 +7,9 @@
 namespace Dune {
 namespace GDT {
 namespace Test {
+
+
+// polorder 1, conforming
 
 std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
@@ -22,6 +26,26 @@ LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridTy
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
 }
+
+// polorder 2, conforming
+
+std::vector<double>
+LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
+                              LinearElliptic::ChooseDiscretizer::swipdg, 2>::
+    results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
+                                                LinearElliptic::ChooseDiscretizer::swipdg, 2>::TestCaseType&,
+            const std::string type)
+{
+  if (type == "L2")
+    return {8.55e-04, 1.06e-04, 1.31e-05, 1.63e-06};
+  else if (type == "H1_semi" || type == "energy")
+    return {1.41e-02, 3.56e-03, 8.91e-04, 2.23e-04};
+  else
+    EXPECT_TRUE(false) << "test results missing for type: " << type;
+  return {};
+}
+
+// polorder 1, nonconforming
 
 std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
@@ -40,21 +64,7 @@ LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridTy
   return {};
 }
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::swipdg, 2>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 2>::TestCaseType&,
-            const std::string type)
-{
-  if (type == "L2")
-    return {8.55e-04, 1.06e-04, 1.31e-05, 1.63e-06};
-  else if (type == "H1_semi" || type == "energy")
-    return {1.41e-02, 3.56e-03, 8.91e-04, 2.23e-04};
-  else
-    EXPECT_TRUE(false) << "test results missing for type: " << type;
-  return {};
-}
+// polorder 2, nonconforming
 
 std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
@@ -72,8 +82,6 @@ LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridTy
   return {};
 }
 
-
-// ... results(...)
 
 } // namespace Test
 } // namespace GDT

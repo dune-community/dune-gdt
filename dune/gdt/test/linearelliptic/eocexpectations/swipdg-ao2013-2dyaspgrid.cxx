@@ -1,8 +1,11 @@
 #include <config.h>
+
 #include "swipdg-ao2013-2dyaspgrid.hh"
+
 namespace Dune {
 namespace GDT {
 namespace Test {
+
 
 std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<Yasp2Grid, double, 1>,
@@ -57,6 +60,7 @@ LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<Yasp2Grid, double, 
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
 }
+
 
 } // namespace Test
 } // namespace GDT

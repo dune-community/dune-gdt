@@ -1,10 +1,15 @@
 #include <config.h>
+
 #if HAVE_ALUGRID
 
 #include "swipdg-mixedboundary-2dalugrid.hh"
+
 namespace Dune {
 namespace GDT {
 namespace Test {
+
+
+// polorder 1, conforming
 
 std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluConform2dGridType, double, 1>,
@@ -28,27 +33,7 @@ LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluConform2d
   return {};
 }
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluSimplex2dGridType, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::swipdg, 1>::
-    results(const LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluSimplex2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 1>::TestCaseType& test_case,
-            const std::string type)
-{
-  if (type == "L2") {
-    if (test_case.num_refinements() == 1)
-      return {6.46e-02, 1.75e-02};
-    else
-      return {6.84e-02, 2.17e-02, 5.78e-03, 1.27e-03};
-  } else if (type == "H1_semi" || type == "energy") {
-    if (test_case.num_refinements() == 1)
-      return {3.12e-01, 1.47e-01};
-    else
-      return {3.28e-01, 1.76e-01, 8.72e-02, 3.89e-02};
-  } else
-    EXPECT_TRUE(false) << "test results missing for type: " << type;
-  return {};
-}
+// polorder 2, conforming
 
 std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluConform2dGridType, double, 1>,
@@ -72,6 +57,32 @@ LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluConform2d
   return {};
 }
 
+// polorder 1, noncoforming
+
+std::vector<double>
+LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluSimplex2dGridType, double, 1>,
+                              LinearElliptic::ChooseDiscretizer::swipdg, 1>::
+    results(const LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluSimplex2dGridType, double, 1>,
+                                                LinearElliptic::ChooseDiscretizer::swipdg, 1>::TestCaseType& test_case,
+            const std::string type)
+{
+  if (type == "L2") {
+    if (test_case.num_refinements() == 1)
+      return {6.46e-02, 1.75e-02};
+    else
+      return {6.84e-02, 2.17e-02, 5.78e-03, 1.27e-03};
+  } else if (type == "H1_semi" || type == "energy") {
+    if (test_case.num_refinements() == 1)
+      return {3.12e-01, 1.47e-01};
+    else
+      return {3.28e-01, 1.76e-01, 8.72e-02, 3.89e-02};
+  } else
+    EXPECT_TRUE(false) << "test results missing for type: " << type;
+  return {};
+}
+
+// polorder 2, noncoforming
+
 std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluSimplex2dGridType, double, 1>,
                               LinearElliptic::ChooseDiscretizer::swipdg, 2>::
@@ -94,7 +105,9 @@ LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluSimplex2d
   return {};
 }
 
+
 } // namespace Test
 } // namespace GDT
 } // namespace Dune
+
 #endif // HAVE_ALUGRID

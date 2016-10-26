@@ -1,8 +1,11 @@
 #include <config.h>
+
 #include "swipdg-mixedboundary-2dyaspgrid.hh"
+
 namespace Dune {
 namespace GDT {
 namespace Test {
+
 
 std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<Yasp2Grid, double, 1>,
@@ -47,6 +50,7 @@ LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<Yasp2Grid, d
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
 }
+
 
 } // namespace Test
 } // namespace GDT

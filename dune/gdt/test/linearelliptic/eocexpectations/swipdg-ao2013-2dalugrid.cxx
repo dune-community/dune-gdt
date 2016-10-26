@@ -1,10 +1,15 @@
 #include <config.h>
+
 #if HAVE_ALUGRID
 
 #include "swipdg-ao2013-2dalugrid.hh"
+
 namespace Dune {
 namespace GDT {
 namespace Test {
+
+
+// polorder 1, conforming
 
 std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
@@ -33,6 +38,8 @@ LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridTyp
   return {};
 }
 
+// polorder 2, conforming
+
 std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
                               LinearElliptic::ChooseDiscretizer::swipdg, 2>::
@@ -60,6 +67,8 @@ LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridTyp
   return {};
 }
 
+// polorder 1, nonconforming
+
 std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1>,
                               LinearElliptic::ChooseDiscretizer::swipdg, 1>::
@@ -86,6 +95,8 @@ LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridTyp
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
 }
+
+// polorder 2, nonconforming
 
 std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1>,
@@ -118,4 +129,5 @@ LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridTyp
 } // namespace Test
 } // namespace GDT
 } // namespace Dune
+
 #endif // HAVE_ALUGRID

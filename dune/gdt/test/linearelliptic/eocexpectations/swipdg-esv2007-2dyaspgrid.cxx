@@ -1,8 +1,11 @@
 #include <config.h>
+
 #include "swipdg-esv2007-2dyaspgrid.hh"
+
 namespace Dune {
 namespace GDT {
 namespace Test {
+
 
 std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<Yasp2Grid, double, 1>,
@@ -35,6 +38,7 @@ LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<Yasp2Grid, double,
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
 }
+
 
 } // namespace Test
 } // namespace GDT

@@ -15,7 +15,6 @@
 #include "../problems/ESV2007.hh"
 #include "../eocexpectations.hh"
 
-
 namespace Dune {
 namespace GDT {
 namespace Test {
