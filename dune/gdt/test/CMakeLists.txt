@@ -12,15 +12,7 @@ BEGIN_TESTCASES()
 
 END_TESTCASES()
 
-set(DXT_TRAVIS_BUILDER 18)
-
-set(current_idx 0)
-
-foreach (target ${dxt_test_binaries})
-    set(all_sorted_testnames "${all_sorted_testnames}/${dxt_test_names_${target}}")
-endforeach (target ${dxt_test_binaries})
-add_custom_target(refresh_test_timings python3 ${CMAKE_SOURCE_DIR}/cmake/scripts/distribute_testing.py
-    "${CMAKE_BINARY_DIR}" "${CMAKE_SOURCE_DIR}" "${dxt_test_binaries}" "${all_sorted_testnames}" VERBATIM)
+# generated from dune-xt-common's distribute_testing.py
 include("builder_definitions.cmake")
 
 # link spe10 data file if present
