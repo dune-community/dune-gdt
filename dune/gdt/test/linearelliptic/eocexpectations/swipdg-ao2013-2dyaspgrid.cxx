@@ -11,24 +11,27 @@ std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<Yasp2Grid, double, 1>,
                               LinearElliptic::ChooseDiscretizer::swipdg, 1>::
     results(const LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<Yasp2Grid, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 1>::TestCaseType& test_case,
+                                                LinearElliptic::ChooseDiscretizer::swipdg, 1>::TestCaseType&,
             const std::string type)
 {
   if (type == "L2") {
-    if (test_case.num_refinements() == 1)
-      return {1.08e-01, 4.64e-02};
-    else
-      return {1.05e-01, 5.00e-02, 1.16e-02, 3.22e-03};
+#if DXT_DISABLE_LARGE_TESTS
+    return {1.39e-01, 6.43e-01};
+#else
+    return {1.05e-01, 5.00e-02, 1.16e-02, 3.22e-03};
+#endif
   } else if (type == "H1_semi") {
-    if (test_case.num_refinements() == 1)
-      return {6.95e-01, 4.28e-01};
-    else
-      return {6.90e-01, 4.81e-01, 2.28e-01, 1.22e-01};
+#if DXT_DISABLE_LARGE_TESTS
+    return {6.19e-01, 1.65e+00};
+#else
+    return {6.90e-01, 4.81e-01, 2.28e-01, 1.22e-01};
+#endif
   } else if (type == "energy") {
-    if (test_case.num_refinements() == 1)
-      return {5.22e-01, 3.57e-01};
-    else
-      return {5.09e-01, 3.44e-01, 2.64e-01, 2.20e-01};
+#if DXT_DISABLE_LARGE_TESTS
+    return {4.68e-01, 3.98e+00};
+#else
+    return {5.09e-01, 3.44e-01, 2.64e-01, 2.20e-01};
+#endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
@@ -38,24 +41,27 @@ std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<Yasp2Grid, double, 1>,
                               LinearElliptic::ChooseDiscretizer::swipdg, 2>::
     results(const LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<Yasp2Grid, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 2>::TestCaseType& test_case,
+                                                LinearElliptic::ChooseDiscretizer::swipdg, 2>::TestCaseType&,
             const std::string type)
 {
   if (type == "L2") {
-    if (test_case.num_refinements() == 1)
-      return {8.95e-02, 8.74e-03};
-    else
-      return {8.97e-02, 8.75e-03, 1.89e-03, 6.60e-04};
+#if DXT_DISABLE_LARGE_TESTS
+    return {8.91e-02, 5.90e-01};
+#else
+    return {8.97e-02, 8.75e-03, 1.89e-03, 6.60e-04};
+#endif
   } else if (type == "H1_semi") {
-    if (test_case.num_refinements() == 1)
-      return {5.28e-01, 1.51e-01};
-    else
-      return {5.24e-01, 1.47e-01, 7.39e-02, 5.43e-02};
+#if DXT_DISABLE_LARGE_TESTS
+    return {4.37e-01, 1.64e+00};
+#else
+    return {5.24e-01, 1.47e-01, 7.39e-02, 5.43e-02};
+#endif
   } else if (type == "energy") {
-    if (test_case.num_refinements() == 1)
-      return {2.91e-01, 2.20e-01};
-    else
-      return {2.70e-01, 2.05e-01, 1.77e-01, 1.46e-01};
+#if DXT_DISABLE_LARGE_TESTS
+    return {2.35e-01, 4.60e+00};
+#else
+    return {2.70e-01, 2.05e-01, 1.77e-01, 1.46e-01};
+#endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
