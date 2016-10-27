@@ -21,7 +21,7 @@ typedef testing::Types<Dune::GDT::LinearElliptic::AO2013TestCase<Yasp2Grid>,
                        Dune::GDT::LinearElliptic::ER2007TestCase<Yasp2Grid>,
                        Dune::GDT::LinearElliptic::ESV2007TestCase<Yasp2Grid>,
                        Dune::GDT::LinearElliptic::MixedBoundaryTestCase<Yasp2Grid>
-#if !THIS_IS_A_BUILDBOT_BUILD
+#if !DXT_DISABLE_LARGE_TESTS
                        ,
                        Dune::GDT::LinearElliptic::Spe10Model1TestCase<Yasp2Grid>
 #endif

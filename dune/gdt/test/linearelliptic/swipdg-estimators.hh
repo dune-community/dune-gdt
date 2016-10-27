@@ -80,19 +80,14 @@ public:
   virtual size_t expected_rate(const std::string type) const override final
   {
     // If you get an undefined reference here from the linker, see the explanation in LinearEllipticEocStudy!
-    return LinearEllipticSwipdgEstimatorExpectations<TestCaseType,
-                                                     Discretizer::type,
-                                                     polOrder,
-                                                     Discretizer::la_backend>::rate(type);
+    return LinearEllipticSwipdgEstimatorExpectations<TestCaseType, Discretizer::type, polOrder>::rate(type);
   }
 
   virtual std::vector<double> expected_results(const std::string type) const override final
   {
     // If you get an undefined reference here from the linker, see above!
-    return LinearEllipticSwipdgEstimatorExpectations<TestCaseType,
-                                                     Discretizer::type,
-                                                     polOrder,
-                                                     Discretizer::la_backend>::results(this->test_case_, type);
+    return LinearEllipticSwipdgEstimatorExpectations<TestCaseType, Discretizer::type, polOrder>::results(
+        this->test_case_, type);
   }
 
   virtual std::vector<std::string> available_norms() const override final
@@ -155,11 +150,7 @@ struct linearelliptic_SWIPDG_estimators : public ::testing::Test
   {
     using namespace Dune;
     using namespace Dune::GDT;
-#if THIS_IS_A_BUILDBOT_BUILD
-    TestCaseType test_case(/*num_refs=*/1); // As in: only 1!
-#else
     TestCaseType test_case;
-#endif
     test_case.print_header(DXTC_LOG_INFO);
     DXTC_LOG_INFO << std::endl;
     typedef LinearElliptic::IpdgDiscretizer<typename TestCaseType::GridType,
@@ -173,7 +164,7 @@ struct linearelliptic_SWIPDG_estimators : public ::testing::Test
         Discretizer;
     Dune::GDT::Test::LinearEllipticSwipdgEstimatorStudy<TestCaseType, Discretizer> eoc_study(test_case);
     try {
-      Dune::XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DXTC_LOG_INFO));
+      Dune::XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DXTC_LOG_INFO), /*zero_tolerance=*/1e-10);
     } catch (Dune::XT::Common::Exceptions::spe10_data_file_missing&) {
       Dune::XT::Common::TimedLogger().get("gdt.test.linearelliptic.swipdg.discretization").warn()
           << "missing SPE10 data file!" << std::endl;

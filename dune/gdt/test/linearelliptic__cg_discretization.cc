@@ -5,8 +5,8 @@
 // Authors:
 //   Felix Schindler (2015 - 2016)
 
-#ifndef DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING
-#define DUNE_STUFF_TEST_MAIN_ENABLE_INFO_LOGGING 1
+#ifndef DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING
+#define DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING 1
 #endif
 
 #include <dune/xt/common/test/main.hxx> // <- This one has to come first (includes the config.h)!
@@ -31,11 +31,7 @@ struct linearelliptic_CG_discretization : public ::testing::Test
   {
     using namespace Dune;
     using namespace Dune::GDT;
-#if THIS_IS_A_BUILDBOT_BUILD
-    TestCaseType test_case(/*num_refs=*/1); // As in: only 1!
-#else
     TestCaseType test_case;
-#endif
     test_case.print_header(DXTC_LOG_INFO);
     DXTC_LOG_INFO << std::endl;
     typedef LinearElliptic::CGDiscretizer<typename TestCaseType::GridType,

@@ -91,6 +91,20 @@ public:
 private:
   typedef Test::StationaryTestCase<G, ProblemType> BaseType;
 
+#if DXT_DISABLE_LARGE_TESTS
+
+  template <class T, bool anything = true>
+  struct Helper
+  {
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
+    {
+      cfg["num_elements"] = "[4 4]";
+      return cfg;
+    }
+  };
+
+#else // DXT_DISABLE_LARGE_TESTS
+
   template <class T, bool anything = true>
   struct Helper
   {
@@ -132,7 +146,9 @@ private:
       return cfg;
     }
   };
+
 #endif // HAVE_ALUGRID
+#endif // DXT_DISABLE_LARGE_TESTS
 
   static XT::Common::Configuration grid_cfg()
   {
@@ -144,7 +160,13 @@ private:
 public:
   using typename BaseType::GridType;
 
-  ER2007TestCase(const size_t num_refs = 2)
+  ER2007TestCase(const size_t num_refs =
+#if DXT_DISABLE_LARGE_TESTS
+                     1
+#else
+                     2
+#endif
+                 )
     : BaseType(XT::Grid::make_cube_grid<GridType>(grid_cfg()).grid_ptr(), num_refs)
     , problem_()
     , exact_solution_("x", "cos(8.0*pi*x[0])+cos(8.0*pi*x[1])", ProblemType::default_integration_order,

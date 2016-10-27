@@ -96,6 +96,21 @@ public:
 
 private:
   typedef Test::StationaryTestCase<G, ProblemType> BaseType;
+
+#if DXT_DISABLE_LARGE_TESTS
+
+  template <class T, bool anything = true>
+  struct Helper
+  {
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
+    {
+      cfg["num_elements"] = "[4 4]";
+      return cfg;
+    }
+  };
+
+#else // DXT_DISABLE_LARGE_TESTS
+
   template <class T, bool anything = true>
   struct Helper
   {
@@ -117,6 +132,7 @@ private:
   };
 
 #if HAVE_ALUGRID
+
   template <bool anything>
   struct Helper<AluConform2dGridType, anything>
   {
@@ -137,7 +153,9 @@ private:
       return cfg;
     }
   };
+
 #endif // HAVE_ALUGRID
+#endif // DXT_DISABLE_LARGE_TESTS
 
   static XT::Common::Configuration grid_cfg()
   {

@@ -1,8 +1,11 @@
 #include <config.h>
+
 #include "cg-er2007-2dyaspgrid.hh"
+
 namespace Dune {
 namespace GDT {
 namespace Test {
+
 
 std::vector<double>
 LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<Yasp2Grid, double, 1>,
@@ -11,14 +14,23 @@ LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<Yasp2Grid, double, 
                                                 LinearElliptic::ChooseDiscretizer::cg, 1>::TestCaseType&,
             const std::string type)
 {
-  if (type == "L2")
+  if (type == "L2") {
+#if DXT_DISABLE_LARGE_TESTS
+    return {1.59e+00, 2.16e-01};
+#else
     return {2.16e-01, 2.13e-01, 5.56e-02};
-  else if (type == "H1_semi" || type == "energy")
+#endif
+  } else if (type == "H1_semi" || type == "energy") {
+#if DXT_DISABLE_LARGE_TESTS
+    return {1.02e+00, 4.35e-01};
+#else
     return {4.35e-01, 4.35e-01, 2.24e-01};
-  else
+#endif
+  } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
 }
+
 
 } // namespace Test
 } // namespace GDT

@@ -9,10 +9,6 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_FV_DISCRETIZATION_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_FV_DISCRETIZATION_HH
 
-#ifndef THIS_IS_A_BUILDBOT_BUILD
-#define THIS_IS_A_BUILDBOT_BUILD 0
-#endif
-
 #include <dune/xt/common/test/common.hh>
 
 #include <dune/gdt/spaces/interface.hh>
@@ -29,7 +25,7 @@ struct hyperbolic_FV_discretization_base : public ::testing::Test
   {
     using namespace Dune;
     using namespace Dune::GDT;
-#if THIS_IS_A_BUILDBOT_BUILD
+#if DXT_DISABLE_LARGE_TESTS
     TestCaseType test_case(/*num_refs = */ 1, /*divide_t_end_by = */ 5.0);
 #else
     TestCaseType test_case;
