@@ -19,11 +19,12 @@ namespace Dune {
 namespace GDT {
 namespace Test {
 
+
 // polorder 1, conforming
 
-template <XT::LA::Backends la_backend, bool anything>
+template <bool anything>
 class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 1, la_backend, anything>
+                                                LinearElliptic::ChooseDiscretizer::swipdg, 1, anything>
     : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<1>
 {
   typedef LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1> TestCaseType;
@@ -31,24 +32,25 @@ class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<
 public:
   static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type)
   {
-    if (type == "energy")
+    if (type == "energy") {
       return {3.28e-01, 1.62e-01, 8.04e-02, 4.01e-02};
-    else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_nonconformity_ESV2007_id())
+    } else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_nonconformity_ESV2007_id()) {
       return {1.66e-01, 7.89e-02, 3.91e-02, 1.95e-02};
-    else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_residual_ESV2007_id())
+    } else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_residual_ESV2007_id()) {
       return {7.23e-02, 1.82e-02, 4.54e-03, 1.14e-03};
-    else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_diffusive_flux_ESV2007_id())
+    } else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_diffusive_flux_ESV2007_id()) {
       return {3.55e-01, 1.76e-01, 8.73e-02, 4.35e-02};
-    else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_id())
+    } else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_id()) {
       return {4.48e-01, 2.07e-01, 9.91e-02, 4.85e-02};
-    else if (type == "efficiency_" + LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_id())
+    } else if (type == "efficiency_" + LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_id()) {
       return {1.37, 1.28, 1.23, 1.21};
-    else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_alternative_summation_id())
+    } else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_alternative_summation_id()) {
       return {7.70e-01, 5.22e-01, 3.62e-01, 2.53e-01};
-    else if (type
-             == "efficiency_" + LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_alternative_summation_id())
+    } else if (type
+               == "efficiency_"
+                      + LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_alternative_summation_id()) {
       return {2.35e+00, 3.23e+00, 4.50e+00, 6.32e+00};
-    else
+    } else
       EXPECT_TRUE(false) << "test results missing for type: " << type;
     return {};
   } // ... results(...)
@@ -58,15 +60,7 @@ public:
 template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
                                                                                                  conforming>,
                                                                                          double, 1>,
-                                                         LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                         XT::LA::Backends::eigen_sparse>;
-
-
-template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
-                                                                                                 conforming>,
-                                                                                         double, 1>,
-                                                         LinearElliptic::ChooseDiscretizer::swipdg, 1,
-                                                         XT::LA::Backends::istl_sparse>;
+                                                         LinearElliptic::ChooseDiscretizer::swipdg, 1>;
 
 
 } // namespace Test
