@@ -196,6 +196,27 @@ matrix:
       env: CC=gcc-5 TESTS=17 BLD=${DBG} CXX=g++-5
     - os: linux
       addons:  *gcc5
+      env: CC=gcc-5 TESTS=18 BLD=${DBG} CXX=g++-5
+    - os: linux
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=19 BLD=${DBG} CXX=g++-5
+    - os: linux
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=20 BLD=${DBG} CXX=g++-5
+    - os: linux
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=21 BLD=${DBG} CXX=g++-5
+    - os: linux
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=22 BLD=${DBG} CXX=g++-5
+    - os: linux
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=23 BLD=${DBG} CXX=g++-5
+    - os: linux
+      addons:  *gcc5
+      env: CC=gcc-5 TESTS=24 BLD=${DBG} CXX=g++-5
+    - os: linux
+      addons:  *gcc5
       env: CC=gcc-5 TESTS=headercheck BLD=${DBG} CXX=g++-5 CLANG_FORMAT='/usr/bin/clang-format-3.8'
 
 #   clang 3.8
@@ -259,6 +280,27 @@ matrix:
     - os: linux
       addons:  *clang38
       env: CC=clang-3.8 TESTS=17 BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=18 BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=19 BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=20 BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=21 BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=22 BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=23 BLD=${DBG} CXX=clang++-3.8
+    - os: linux
+      addons:  *clang38
+      env: CC=clang-3.8 TESTS=24 BLD=${DBG} CXX=clang++-3.8
     - os: linux
       addons:  *clang38
       env: CC=clang-3.8 TESTS=headercheck BLD=${DBG} CXX=clang++-3.8 CLANG_FORMAT='/usr/bin/clang-format-3.8'
