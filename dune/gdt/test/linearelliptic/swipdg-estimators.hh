@@ -150,11 +150,7 @@ struct linearelliptic_SWIPDG_estimators : public ::testing::Test
   {
     using namespace Dune;
     using namespace Dune::GDT;
-#if DXT_DISABLE_LARGE_TESTS
-    TestCaseType test_case(/*num_refs=*/1); // As in: only 1!
-#else
     TestCaseType test_case;
-#endif
     test_case.print_header(DXTC_LOG_INFO);
     DXTC_LOG_INFO << std::endl;
     typedef LinearElliptic::IpdgDiscretizer<typename TestCaseType::GridType,
