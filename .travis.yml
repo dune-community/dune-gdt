@@ -48,7 +48,7 @@ before_install:
   - export PATH=/usr/lib/ccache:$PATH
   - ccache -s
   - sudo -E gem install mtime_cache
-  - mtime_cache dune-*/**/*.{%{cpp}} -c .mtime_cache/cache.json
+  - mtime_cache --verbose dune-*/**/*.{%{cpp}} -c .mtime_cache/cache.json
   # our local scripts look for an OPTS env entry
   - ./local/bin/download_external_libraries.py
   - ./local/bin/build_external_libraries.py
