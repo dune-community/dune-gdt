@@ -81,7 +81,7 @@ script:
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make install | grep -v "Installing"
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make package_source
     # cleanup build dir to not exceed max travis cache size/time
-    - rm -r ${DUNE_BUILD_DIR}/dune/gdt/test
+    - rm -r ${DUNE_BUILD_DIR}/${MY_MODULE}/dune/gdt/test
 
 # runs independent of 'script' failure/success
 after_script:
