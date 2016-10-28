@@ -1,4 +1,6 @@
-# This file is part of the dune-gdt project:
+#!/usr/bin/env python3
+
+tpl = '''# This file is part of the dune-gdt project:
 #   https://github.com/dune-community/dune-gdt
 # Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
 # License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
@@ -50,8 +52,9 @@ before_install:
   - export PATH=/usr/lib/ccache:$PATH
   - ccache -s
   - sudo -E gem install mtime_cache
-
+{% raw %}
   - mtime_cache --verbose dune-*/**/*.{%{cpp}} -c .mtime_cache/cache.json
+{%- endraw %}
   # our local scripts look for an OPTS env entry
   - ./local/bin/download_external_libraries.py
   - ./local/bin/build_external_libraries.py
@@ -91,7 +94,7 @@ after_script:
     - |
      if [ "x${CLANG_FORMAT}" != "x" ] ; then
         git config --global hooks.clangformat ${CLANG_FORMAT}
-        PYTHONPATH=${SUPERDIR}/scripts/python/ python3 -c "import travis_report as tp; tp.clang_format_status(\"${TRAVIS_BUILD_DIR}\")"
+        PYTHONPATH=${SUPERDIR}/scripts/python/ python3 -c "import travis_report as tp; tp.clang_format_status(\\"${TRAVIS_BUILD_DIR}\\")"
      fi
     - |
       if [[ $TRAVIS_JOB_NUMBER == *.1 ]] ; then
@@ -148,79 +151,11 @@ matrix:
           - *commonpackages
           - ['g++-5', 'gcc-5']
       env: CC=gcc-5 TESTS=0 BLD=${DBG} CXX=g++-5
-
+{% for c in builders %}
     - os: linux
       addons:  *gcc5
-      env: CC=gcc-5 TESTS=1 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=2 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=3 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=4 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=5 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=6 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=7 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=8 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=9 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=10 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=11 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=12 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=13 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=14 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=15 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=16 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=17 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=18 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=19 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=20 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=21 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=22 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=23 BLD=${DBG} CXX=g++-5
-    - os: linux
-      addons:  *gcc5
-      env: CC=gcc-5 TESTS=24 BLD=${DBG} CXX=g++-5
+      env: CC=gcc-5 TESTS={{c}} BLD=${DBG} CXX=g++-5
+{%- endfor %}
     - os: linux
       addons:  *gcc5
       env: CC=gcc-5 TESTS=headercheck BLD=${DBG} CXX=g++-5 CLANG_FORMAT='/usr/bin/clang-format-3.8'
@@ -236,57 +171,19 @@ matrix:
           packages:
           - *commonpackages
       env: CC=clang-3.8 TESTS=0 BLD=${DBG} CXX=clang++-3.8
-
+{% for c in builders %}
     - os: linux
-      env: CC=clang-3.8 TESTS=1 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=2 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=3 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=4 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=5 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=6 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=7 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=8 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=9 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=10 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=11 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=12 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=13 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=14 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=15 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=16 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=17 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=18 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=19 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=20 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=21 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=22 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=23 BLD=${DBG} CXX=clang++-3.8
-    - os: linux
-      env: CC=clang-3.8 TESTS=24 BLD=${DBG} CXX=clang++-3.8
+      env: CC=clang-3.8 TESTS={{c}} BLD=${DBG} CXX=clang++-3.8
+{%- endfor %}
     - os: linux
       addons:  *clang38
       env: CC=clang-3.8 TESTS=headercheck BLD=${DBG} CXX=clang++-3.8 CLANG_FORMAT='/usr/bin/clang-format-3.8'
 
 # THIS FILE IS AUTOGENERATED -- DO NOT EDIT #
+'''
+
+import os
+import jinja2
+tpl = jinja2.Template(tpl)
+with open(os.path.join(os.path.dirname(__file__), '.travis.yml'), 'wt') as yml:
+    yml.write(tpl.render(builders=range(1,25)))
