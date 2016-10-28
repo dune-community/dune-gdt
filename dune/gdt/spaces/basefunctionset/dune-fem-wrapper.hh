@@ -31,26 +31,27 @@ namespace BaseFunctionSet {
 
 
 // forward, to be used in the traits and to allow for specialization
-template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
+template <class BasisFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim, size_t rangeDimCols = 1>
 class DuneFemWrapper
 {
-  static_assert(Dune::AlwaysFalse<ShapeFunctionSetImp>::value, "Untested for these dimensions!");
+  static_assert(Dune::AlwaysFalse<BasisFunctionSetImp>::value, "Untested for these dimensions!");
 };
 
 
 namespace internal {
 
 
-template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
+template <class BasisFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim, size_t rangeDimCols>
 class DuneFemWrapperTraits
 {
 public:
-  typedef DuneFemWrapper<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
+  typedef DuneFemWrapper<BasisFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
                          rangeDimCols>
       derived_type;
-  typedef typename Dune::Fem::DefaultBasisFunctionSet<EntityImp, ShapeFunctionSetImp> BackendType;
+  typedef typename Dune::Fem::DefaultBasisFunctionSet<EntityImp, typename BasisFunctionSetImp::ShapeFunctionSetType>
+      BackendType;
   typedef EntityImp EntityType;
 };
 
@@ -58,22 +59,22 @@ public:
 } // namespace internal
 
 
-template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
+template <class BasisFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim>
-class DuneFemWrapper<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
-    : public BaseFunctionSetInterface<internal::DuneFemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp,
+class DuneFemWrapper<BasisFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+    : public BaseFunctionSetInterface<internal::DuneFemWrapperTraits<BasisFunctionSetImp, EntityImp, DomainFieldImp,
                                                                      domainDim, RangeFieldImp, rangeDim, 1>,
                                       DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
 {
-  typedef DuneFemWrapper<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+  typedef DuneFemWrapper<BasisFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
       ThisType;
-  typedef BaseFunctionSetInterface<internal::DuneFemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp,
+  typedef BaseFunctionSetInterface<internal::DuneFemWrapperTraits<BasisFunctionSetImp, EntityImp, DomainFieldImp,
                                                                   domainDim, RangeFieldImp, rangeDim, 1>,
                                    DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
       BaseType;
 
 public:
-  typedef internal::DuneFemWrapperTraits<ShapeFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
+  typedef internal::DuneFemWrapperTraits<BasisFunctionSetImp, EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
                                          rangeDim, 1>
       Traits;
   typedef typename Traits::BackendType BackendType;
@@ -85,7 +86,7 @@ public:
   template <class S>
   DuneFemWrapper(const Dune::Fem::DiscreteFunctionSpaceInterface<S>& femSpace, const EntityType& ent)
     : BaseType(ent)
-    , backend_(new BackendType(femSpace.basisFunctionSet(this->entity())))
+    , backend_(new BackendType(ent, femSpace.basisFunctionSet(ent).shapeFunctionSet()))
   {
   }
 
@@ -135,11 +136,11 @@ private:
 #else // HAVE_DUNE_FEM
 
 
-template <class ShapeFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
+template <class BasisFunctionSetImp, class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp,
           size_t rangeDim, size_t rangeDimCols = 1>
 class DuneFemWrapper
 {
-  static_assert(Dune::AlwaysFalse<ShapeFunctionSetImp>::value, "You are missing dune-fem!");
+  static_assert(Dune::AlwaysFalse<BasisFunctionSetImp>::value, "You are missing dune-fem!");
 };
 
 

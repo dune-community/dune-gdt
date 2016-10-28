@@ -68,7 +68,7 @@ public:
   typedef Dune::Fem::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> BackendType;
   typedef Mapper::FemDofWrapper<typename BackendType::BlockMapperType, BackendType::Traits::localBlockSize> MapperType;
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
-  typedef BaseFunctionSet::DuneFemWrapper<typename BackendType::ShapeFunctionSetType, EntityType, DomainFieldType,
+  typedef BaseFunctionSet::DuneFemWrapper<typename BackendType::BasisFunctionSetType, EntityType, DomainFieldType,
                                           dimDomain, RangeFieldType, rangeDim, rangeDimCols>
       BaseFunctionSetType;
   static const XT::Grid::Backends part_view_type = XT::Grid::Backends::part;
