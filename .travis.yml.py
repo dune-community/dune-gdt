@@ -86,6 +86,8 @@ script:
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_retry ${SUPERDIR}/scripts/bash/travis_upload_test_logs.bash ${SUPERDIR}/${MY_MODULE}/${DUNE_BUILD_DIR}/dune/gdt/test/; fi
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make install | grep -v "Installing"
     - ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make package_source
+
+before_cache:
     # cleanup build dir to not exceed max travis cache size/time
     - rm -r ${DUNE_BUILD_DIR}/${MY_MODULE}/dune/gdt/test
 
