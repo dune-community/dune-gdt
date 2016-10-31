@@ -53,7 +53,7 @@ before_install:
   - ccache -s
   - sudo -E gem install mtime_cache
 {% raw %}
-  - mtime_cache --verbose dune-*/**/*.{%{cpp}} -c .mtime_cache/cache.json
+  - mtime_cache --verbose dune-*/**/*.{%{cpp}} -c ~/.mtime_cache/cache.json
 {%- endraw %}
   # our local scripts look for an OPTS env entry
   - ./local/bin/download_external_libraries.py
@@ -123,7 +123,7 @@ cache:
     - $HOME/.ccache
     # don't use potentially not-yet-set matrix var here
     - $HOME/dune_build
-    - $HOME/.mtimes
+    - $HOME/.mtime_cache
 
 env:
   global:
