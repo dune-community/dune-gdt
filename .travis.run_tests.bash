@@ -8,7 +8,6 @@ if [[ "x${TESTS}" != "xheadercheck" ]]; then
     ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja headercheck
 fi
 
-${SUPERDIR}/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-gdt-testlogs
 unset GH_TOKEN
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make install | grep -v "Installing"
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make package_source

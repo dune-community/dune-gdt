@@ -18,7 +18,6 @@ os: linux
 
 script:
     - docker pull renemilk/dune-testing:${DOCKER_TAG}
-    - printenv &> ./myenv
     - docker run -e TESTS=${TESTS} -v $(pwd)/dune-gdt:/root/src/dune-gdt dune-testing:${DOCKER_TAG} /root/src/dune-gdt/.travis.run_tests.bash
      - ${SUPERDIR}/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-gdt-testlogs
     - if [[ "x${TESTS}" != "xheadercheck" ]]; then travis_retry ${SUPERDIR}/scripts/bash/travis_upload_test_logs.bash ${SUPERDIR}/${MY_MODULE}/test_dir/; fi
@@ -68,11 +67,10 @@ env:
 matrix:
   include:
 #   gcc 5
-{% for c in builders %}
+{%- for c in builders %}
     - env: DOCKER_TAG=gcc-5 TESTS={{c}}
 {%- endfor %}
     - env: DOCKER_TAG=gcc-5 TESTS=headercheck CLANG_FORMAT='/usr/bin/clang-format-3.8'
-
 #   clang 3.8
 {% for c in builders %}
     #- env: DOCKER_TAG=clang-3.8 TESTS={{c}}
