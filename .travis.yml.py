@@ -16,13 +16,15 @@ language: generic
 services: docker
 
 before_script:
-    - export IMAGE="renemilk/dune-testing:${DOCKER_TAG}"
+    - export IMAGE="renemilk/dune-testing:${DOCKER_TAG}_${TRAVIS_BRANCH}"
+    # get image with fallback to master branch of the super repo
+    - docker pull ${IMAGE} || export IMAGE="renemilk/dune-testing:${DOCKER_TAG}_master" ; docker pull ${IMAGE}
+    - echo "got docker image: ${IMAGE}"
     - export ENV_FILE=${HOME}/env
     - printenv | \grep TRAVIS > ${ENV_FILE}
     - printenv | \grep encrypt >> ${ENV_FILE}
     - printenv | \grep TEST >> ${ENV_FILE}
     - export DOCKER_RUN="docker run --env-file ${ENV_FILE} -v ${TRAVIS_BUILD_DIR}:/root/src/${MY_MODULE} ${IMAGE}"
-    - docker pull ${IMAGE}
 
 script:
     - travis_wait 50 ${DOCKER_RUN} /root/src/${MY_MODULE}/.travis.script.bash
