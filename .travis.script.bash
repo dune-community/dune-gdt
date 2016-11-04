@@ -12,4 +12,4 @@ fi
 unset GH_TOKEN
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make install | grep -v "Installing"
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make package_source
-cp -ra ${DUNE_BUILD_DIR}/dune/gdt/test/ ${SUPERDIR}/${MY_MODULE}/test_dir
+cp -ra ${DUNE_BUILD_DIR}/${MY_MODULE}/dune/gdt/test/ ${SUPERDIR}/${MY_MODULE}/test_dir
