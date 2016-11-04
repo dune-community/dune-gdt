@@ -4,7 +4,8 @@ ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
 if [[ "x${TESTS}" != "xheadercheck" ]]; then
     ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make
     ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja -v test_binaries_builder_${TESTS}
-    ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -j 2 -L "^builder_${TESTS}$"
+    ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -V -j 2 -L "^builder_${TESTS}$"
+else
     ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja headercheck
 fi
 
