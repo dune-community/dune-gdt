@@ -16,9 +16,9 @@ language: generic
 services: docker
 
 before_script:
-    - export IMAGE="renemilk/dune-testing:${DOCKER_TAG}_${TRAVIS_BRANCH}"
+    - export IMAGE="dunecommunity/dune-gdt-testing:${DOCKER_TAG}_${TRAVIS_BRANCH}"
     # get image with fallback to master branch of the super repo
-    - docker pull ${IMAGE} || export IMAGE="renemilk/dune-testing:${DOCKER_TAG}_master" ; docker pull ${IMAGE}
+    - docker pull ${IMAGE} || export IMAGE="dunecommunity/dune-gdt-testing:${DOCKER_TAG}_master" ; docker pull ${IMAGE}
     - export ENV_FILE=${HOME}/env
     - printenv | \grep TRAVIS > ${ENV_FILE}
     - printenv | \grep encrypt >> ${ENV_FILE}
