@@ -14,7 +14,7 @@ language: generic
 services: docker
 
 before_script:
-    - export IMAGE="dunecommunity/dune-gdt-testing:${DOCKER_TAG}_${TRAVIS_BRANCH}"
+    - export IMAGE="dunecommunity/${MY_MODULE}-testing:${DOCKER_TAG}_${TRAVIS_BRANCH}"
     # get image with fallback to master branch of the super repo
     - docker pull ${IMAGE} || export IMAGE="dunecommunity/dune-gdt-testing:${DOCKER_TAG}_master" ; docker pull ${IMAGE}
     - export ENV_FILE=${HOME}/env
