@@ -68,4 +68,4 @@ import os
 import jinja2
 tpl = jinja2.Template(tpl)
 with open(os.path.join(os.path.dirname(__file__), '.travis.yml'), 'wt') as yml:
-    yml.write(tpl.render(builders=range(0,25)))
+    yml.write(tpl.render(builders=range(0,13)))
