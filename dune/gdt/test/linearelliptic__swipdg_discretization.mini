@@ -1,0 +1,17 @@
+__name = {testcases}_{grids_name}_{space_backends}_{la_backends}
+__exec_suffix = {testcases}_{grids_name}_{space_backends}_{la_backends}
+
+grids = Dune::YaspGrid<2\, Dune::EquidistantOffsetCoordinates<double\, 2>>, Dune::ALUGrid<2\, 2\, Dune::simplex\, Dune::nonconforming> | expand grids
+1, ALUGRID_FOUND| expand grids | cmake_guard
+grids_name = Yasp2, Alu2_Simp_nonc | expand grids
+
+1, 1, 1, 1, DXT_ENABLE_LARGE_TESTS | expand cases | cmake_guard
+testcases = AO2013TestCase, ER2007TestCase, ESV2007TestCase, MixedBoundaryTestCase, Spe10Model1TestCase | expand cases
+space_backends = fem, pdelab | expand spaces
+1, {grids_name}=="Yasp2" | expand spaces | cmake_guard
+la_backends = eigen_sparse, istl_sparse | expand
+
+[__static]
+TESTCASETYPE = Dune::GDT::LinearElliptic::{testcases}<{grids}>
+SPACE_BACKEND = {space_backends}
+LA_BACKEND = {la_backends}
