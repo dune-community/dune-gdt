@@ -14,6 +14,10 @@ END_TESTCASES()
 
 # generated from dune-xt-common's distribute_testing.py
 include("builder_definitions.cmake")
+# make sure there's the same amount of builders in travis as bins from distribution
+add_custom_target(regenerate_travis_yml ${CMAKE_BINARY_DIR}/dune-env-3
+                    "${CMAKE_SOURCE_DIR}/.travis.yml.py" "${DXT_BIN_COUNT}" )
+add_dependencies(refresh_test_timings regenerate_travis_yml)
 
 # link spe10 data file if present
 if (NOT ${SPE10MODEL1DATA} STREQUAL "SPE10MODEL1DATA-NOTFOUND")

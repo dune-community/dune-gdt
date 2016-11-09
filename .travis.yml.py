@@ -66,6 +66,8 @@ matrix:
 
 import os
 import jinja2
+import sys
 tpl = jinja2.Template(tpl)
+builder_count = int(sys.argv[1])
 with open(os.path.join(os.path.dirname(__file__), '.travis.yml'), 'wt') as yml:
-    yml.write(tpl.render(builders=range(0,15)))
+    yml.write(tpl.render(builders=range(0, builder_count)))
