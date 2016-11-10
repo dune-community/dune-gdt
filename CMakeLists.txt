@@ -74,6 +74,7 @@ find_file(SPE10MODEL1DATA
 add_subdirectory(doc)
 add_subdirectory(dune)
 add_subdirectory(cmake/modules)
+dune_install_python_package(PATH python)
 
 add_format(${CMAKE_CURRENT_SOURCE_DIR})
 
