@@ -1,0 +1,18 @@
+wdim = 2, 3 | expand world_dim
+grids = AluCube{wdim}dLeafGridPartType, AluConform{wdim}dLeafGridPartType, Yasp{wdim}dLeafGridPartType, Yasp1dLeafGridPartType | expand
+grid_name = AluCube_{wdim}, AluConform_{wdim}, Yasp_{wdim}, Yasp_1 | expand
+
+[dg]
+spaces = no
+
+[cg]
+names = cg_fem
+fem = Dune::GDT::DuneFemCgSpaceWrapper<{grids}, 1, double, 1>
+pdelab = no
+spaces = {cg.fem}
+
+[rt]
+spaces = no
+
+[fv]
+spaces = no

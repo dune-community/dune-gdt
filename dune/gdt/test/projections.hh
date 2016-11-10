@@ -10,14 +10,13 @@
 
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/test/projections/base.hh>
+#include "spaces/cg/fem.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Test {
 
-
-template <class SpaceType>
-struct ProjectionTest : public internal::ProjectionOperatorBase<SpaceType>
+struct ProjectionTest : public internal::ProjectionOperatorBase<SPACETYPE>
 {
   void produces_correct_results(const double& tolerance = 1e-15)
   {
@@ -31,7 +30,6 @@ struct ProjectionTest : public internal::ProjectionOperatorBase<SpaceType>
     this->measure_error(tolerance);
   } // ... produces_correct_results(...)
 }; // struct ProjectionTest
-
 
 } // namespace Test
 } // namespace GDT

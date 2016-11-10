@@ -1,0 +1,7 @@
+include spaces.mini
+
+__name = projection
+__exec_suffix = {cg.names}__{grid_name}
+
+[__static]
+SPACETYPE={cg.spaces}
