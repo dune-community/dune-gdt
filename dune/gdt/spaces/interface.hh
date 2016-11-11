@@ -447,7 +447,7 @@ public:
     if (filename.empty()) {
       filename = "dune.gdt.space";
     }
-    VTKWriter<GridViewType> vtk_writer(*(grid_view()), Dune::VTK::nonconforming);
+    VTKWriter<GridViewType> vtk_writer(grid_view(), Dune::VTK::nonconforming);
     for (size_t ii = 0; ii < mapper().maxNumDofs(); ++ii) {
       std::string number = "";
       if (ii == 1)
