@@ -25,4 +25,9 @@ spaces = {cg.fem}, {cg.pdelab} | expand cg_backends
 spaces = no
 
 [fv]
-spaces = no
+#rdim = 1, 2, 3 | expand range
+grids =  AluCube{wdim}dLeafGridViewType, AluConform{wdim}dLeafGridViewType, Yasp{wdim}dLeafGridViewType, Yasp1dLeafGridViewType | expand fv_grids
+grid_name = {grids.names.{fv.grids}}
+# trying to use rdim here results in a parser endless loop
+spaces = Dune::GDT::FvSpace<{fv.grids}, double, 1>, Dune::GDT::FvSpace<{fv.grids}, double, 2>, Dune::GDT::FvSpace<{fv.grids}, double, 3>
+

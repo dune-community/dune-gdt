@@ -1,8 +1,8 @@
 include spaces.mini
 
 __name = projection
-__exec_suffix = _{cg.names}__{cg.grid_name}, _{dg.names}__{dg.grid_name} | expand cg_dg
+__exec_suffix = _{cg.names}__{cg.grid_name}, _{dg.names}__{dg.grid_name} , _fv_default__{fv.grid_name} | expand discretizations
 
 
 [__static]
-SPACETYPE={cg.spaces}, {dg.spaces}  | expand cg_dg
+SPACETYPE={cg.spaces}, {dg.spaces}, {fv.spaces}  | expand discretizations
