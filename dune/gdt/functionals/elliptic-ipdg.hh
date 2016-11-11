@@ -197,7 +197,7 @@ typename std::
         const size_t over_integrate = 0)
 {
   return make_elliptic_ipdg_dirichlet_vector_functional<VectorType, LocalEllipticIpdgIntegrands::default_method>(
-      dirichlet, diffusion_factor, diffusion_tensor, space, over_integrate, boundary_info);
+      dirichlet, diffusion_factor, diffusion_tensor, boundary_info, space, over_integrate);
 }
 
 // no vector given, both diffusion factor and tensor, grid view given, method specified
