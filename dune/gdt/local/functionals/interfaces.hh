@@ -28,10 +28,18 @@ public:
   typedef typename Traits::derived_type derived_type;
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
-  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase,
+  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_basis,
              Dune::DynamicVector<R>& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp().apply(testBase, ret));
+    CHECK_AND_CALL_CRTP(this->as_imp().apply(test_basis, ret));
+  }
+
+  template <class E, class D, size_t d, class R, size_t r, size_t rC>
+  Dune::DynamicVector<R> apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_basis) const
+  {
+    Dune::DynamicVector<R> ret(test_basis.size(), 0.);
+    apply(test_basis, ret);
+    return ret;
   }
 }; // class LocalFunctionalInterface
 
@@ -42,12 +50,21 @@ class LocalFaceFunctionalInterface : public XT::CRTPInterface<LocalFaceFunctiona
 public:
   typedef typename Traits::derived_type derived_type;
 
-  template <class E, class IntersectionType, class D, size_t d, class R, size_t r, size_t rC>
-  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase,
+  template <class E, class D, size_t d, class R, size_t r, size_t rC, class IntersectionType>
+  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_basis,
              const IntersectionType& intersection,
              Dune::DynamicVector<R>& ret) const
   {
-    CHECK_AND_CALL_CR(this->as_imp().apply(testBase, intersection, ret));
+    CHECK_AND_CALL_CRTP(this->as_imp().apply(test_basis, intersection, ret));
+  }
+
+  template <class E, class D, size_t d, class R, size_t r, size_t rC, class IntersectionType>
+  Dune::DynamicVector<R> apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_basis,
+                               const IntersectionType& intersection) const
+  {
+    Dune::DynamicVector<R> ret(test_basis.size(), 0.);
+    apply(test_basis, intersection, ret);
+    return ret;
   }
 }; // class LocalFaceFunctionalInterface
 

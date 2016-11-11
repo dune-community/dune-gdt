@@ -58,6 +58,7 @@ class LocalVolumeIntegralFunctional
     : public LocalVolumeFunctionalInterface<internal::LocalVolumeIntegralFunctionalTraits<UnaryEvaluationType>>
 {
   typedef LocalVolumeIntegralFunctional<UnaryEvaluationType> ThisType;
+  typedef LocalVolumeFunctionalInterface<internal::LocalVolumeIntegralFunctionalTraits<UnaryEvaluationType>> BaseType;
 
 public:
   typedef internal::LocalVolumeIntegralFunctionalTraits<UnaryEvaluationType> Traits;
@@ -85,6 +86,8 @@ public:
 
   LocalVolumeIntegralFunctional(const ThisType& other) = default;
   LocalVolumeIntegralFunctional(ThisType&& source) = default;
+
+  using BaseType::apply;
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
   void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_base,
@@ -124,6 +127,9 @@ template <class UnaryEvaluationType>
 class LocalFaceIntegralFunctional
     : public LocalFaceFunctionalInterface<internal::LocalFaceIntegralFunctionalTraits<UnaryEvaluationType>>
 {
+  typedef LocalFaceIntegralFunctional<UnaryEvaluationType> ThisType;
+  typedef LocalFaceFunctionalInterface<internal::LocalFaceIntegralFunctionalTraits<UnaryEvaluationType>> BaseType;
+
 public:
   typedef internal::LocalFaceIntegralFunctionalTraits<UnaryEvaluationType> Traits;
 
@@ -147,6 +153,11 @@ public:
     , over_integrate_(over_integrate)
   {
   }
+
+  LocalFaceIntegralFunctional(const ThisType& other) = default;
+  LocalFaceIntegralFunctional(ThisType&& source) = default;
+
+  using BaseType::apply;
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC, class IntersectionType>
   void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_base,
