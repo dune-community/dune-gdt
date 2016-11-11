@@ -50,13 +50,13 @@ private:
   template <class G, int p, class R, size_t r, size_t rC>
   struct SpaceChooser<G, p, R, r, rC, GDT::ChooseSpaceBackend::fem>
   {
-    typedef GDT::DuneFemCgSpaceWrapper<GridLayerType, p, R, r> Type;
+    typedef GDT::DuneFemCgSpaceWrapper<GridLayerType, p, R, r, rC> Type;
   };
 
   template <class G, int p, class R, size_t r, size_t rC>
   struct SpaceChooser<G, p, R, r, rC, GDT::ChooseSpaceBackend::pdelab>
   {
-    typedef GDT::DunePdelabCgSpaceWrapper<GridLayerType, p, R, r> Type;
+    typedef GDT::DunePdelabCgSpaceWrapper<GridLayerType, p, R, r, rC> Type;
   };
 
   typedef XT::Grid::GridProvider<GridType> GridProviderType;
