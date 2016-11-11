@@ -293,7 +293,7 @@ public:
   }
 
   DiscreteFunction(const SpaceType& sp, VectorType&& vec, const std::string nm = "gdt.discretefunction")
-    : VectorProviderBaseType(vec)
+    : VectorProviderBaseType(std::move(vec))
     , BaseType(sp, VectorProviderBaseType::access(), nm)
   {
   }
@@ -361,10 +361,18 @@ make_discrete_function(const SpaceType& space, VectorType& vector, const std::st
   return DiscreteFunction<SpaceType, VectorType>(space, vector, nm);
 }
 
+template <class SpaceType, class VectorType>
+typename std::enable_if<is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
+                        DiscreteFunction<SpaceType, VectorType>>::type
+make_discrete_function(const SpaceType& space, VectorType&& vector, const std::string nm = "gdt.discretefunction")
+{
+  return DiscreteFunction<SpaceType, VectorType>(space, std::move(vector), nm);
+}
+
 
 /**
  * This can be used like \code
-auto discrete_function = make_discrete_function< VectorType >(space);
+auto discrete_function = make_discrete_function<VectorType>(space);
 \endcode
  */
 template <class VectorType, class SpaceType>
