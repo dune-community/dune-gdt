@@ -1,15 +1,16 @@
 wdim = 2, 3 | expand world_dim
-grids = AluCube{wdim}dLeafGridPartType, AluConform{wdim}dLeafGridPartType, Yasp{wdim}dLeafGridPartType, Yasp1dLeafGridPartType | expand
-grid_name = AluCube_{wdim}, AluConform_{wdim}, Yasp_{wdim}, Yasp_1 | expand
+fem_grids = AluCube{wdim}dLeafGridPartType, AluConform{wdim}dLeafGridPartType, Yasp{wdim}dLeafGridPartType, Yasp1dLeafGridPartType | expand grids
+pdelab_grids = AluCube{wdim}dLeafGridViewType, AluConform{wdim}dLeafGridViewType, Yasp{wdim}dLeafGridViewType, Yasp1dLeafGridViewType | expand grids
+grid_name = AluCube_{wdim}, AluConform_{wdim}, Yasp_{wdim}, Yasp_1 | expand grids
 
 [dg]
 spaces = no
 
 [cg]
-names = cg_fem
-fem = Dune::GDT::DuneFemCgSpaceWrapper<{grids}, 1, double, 1>
-pdelab = no
-spaces = {cg.fem}
+names = cg_fem, cg_pdelab | expand backends
+fem = Dune::GDT::DuneFemCgSpaceWrapper<{fem_grids}, 1, double, 1>
+pdelab =  Dune::GDT::DunePdelabCgSpaceWrapper<{pdelab_grids}, 1, double, 1>
+spaces = {cg.fem}, {cg.pdelab} | expand backends
 
 [rt]
 spaces = no

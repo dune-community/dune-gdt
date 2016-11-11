@@ -11,6 +11,7 @@
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/test/projections/base.hh>
 #include "spaces/cg/fem.hh"
+#include "spaces/cg/pdelab.hh"
 
 namespace Dune {
 namespace GDT {
