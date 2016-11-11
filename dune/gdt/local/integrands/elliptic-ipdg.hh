@@ -31,8 +31,8 @@ namespace GDT {
  *
  *              For the choice of penalization and the role of the user input see Epshteyn, Riviere (2007):
  *              "Estimation of penalty parameters for symmetric interior penalty Galerkin methods"
- *              For the coice of the weighting see Ern, Stephansen, Zunino (2007): "A discontinuous Galerkin method with
- *              weighted averages for advection-diffusion equations with locally small and anisotropic diffusivity"
+ *              For the choice of the weighting see Ern, Stephansen, Zunino (2007): "A discontinuous Galerkin method
+ *              with weighted averages for advection-diffusion equations with locally small and anisotropic diffusivity"
  */
 namespace LocalEllipticIpdgIntegrands {
 
