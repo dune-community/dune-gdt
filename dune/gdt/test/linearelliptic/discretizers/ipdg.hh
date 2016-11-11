@@ -18,6 +18,7 @@
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/discretizations/default.hh>
 #include <dune/gdt/functionals/elliptic-ipdg.hh>
+#include <dune/gdt/functionals/l2.hh>
 #include <dune/gdt/operators/elliptic-ipdg.hh>
 #include <dune/gdt/spaces/dg.hh>
 
