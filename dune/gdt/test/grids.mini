@@ -1,0 +1,22 @@
+[grids.names]
+
+AluCube1dLeafGridPartType = AluCube_1
+AluConform1dLeafGridPartType = AluConform_1
+Yasp1dLeafGridPartType = Yasp_1
+AluCube1dLeafGridViewType = AluCube_1
+AluConform1dLeafGridViewType = AluConform_1
+Yasp1dLeafGridViewType = Yasp_1
+
+AluCube2dLeafGridPartType = AluCube_2
+AluConform2dLeafGridPartType = AluConform_2
+Yasp2dLeafGridPartType = Yasp_2
+AluCube2dLeafGridViewType = AluCube_2
+AluConform2dLeafGridViewType = AluConform_2
+Yasp2dLeafGridViewType = Yasp_2
+
+AluCube3dLeafGridPartType = AluCube_3
+AluConform3dLeafGridPartType = AluConform_3
+Yasp3dLeafGridPartType = Yasp_3
+AluCube3dLeafGridViewType = AluCube_3
+AluConform3dLeafGridViewType = AluConform_3
+Yasp3dLeafGridViewType = Yasp_3
