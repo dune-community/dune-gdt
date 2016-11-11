@@ -129,6 +129,7 @@ class LocalFaceIntegralFunctional
 {
   typedef LocalFaceIntegralFunctional<UnaryEvaluationType> ThisType;
   typedef LocalFaceFunctionalInterface<internal::LocalFaceIntegralFunctionalTraits<UnaryEvaluationType>> BaseType;
+
 public:
   typedef internal::LocalFaceIntegralFunctionalTraits<UnaryEvaluationType> Traits;
 
