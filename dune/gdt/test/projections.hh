@@ -5,28 +5,18 @@
 // Authors:
 //   Felix Schindler (2016)
 
-#include <dune/xt/common/test/main.hxx>
+#ifndef DUNE_GDT_TEST_PROJECTIONS_HH
+#define DUNE_GDT_TEST_PROJECTIONS_HH
 
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/test/projections/base.hh>
 #include "spaces/cg/fem.hh"
-#include "spaces/rt/pdelab.hh"
 
-using namespace Dune::GDT::Test;
+namespace Dune {
+namespace GDT {
+namespace Test {
 
-#if HAVE_DUNE_PDELAB
-
-
-typedef testing::Types<SPACES_RT_PDELAB
-#if HAVE_ALUGRID
-                       ,
-                       SPACES_RT_PDELAB_ALUGRID
-#endif
-                       >
-    SpaceTypes;
-
-template <class T>
-struct ProjectionTestTpl : public internal::ProjectionOperatorBase<T>
+struct ProjectionTest : public internal::ProjectionOperatorBase<SPACETYPE>
 {
   void produces_correct_results(const double& tolerance = 1e-15)
   {
@@ -41,20 +31,8 @@ struct ProjectionTestTpl : public internal::ProjectionOperatorBase<T>
   } // ... produces_correct_results(...)
 }; // struct ProjectionTest
 
+} // namespace Test
+} // namespace GDT
+} // namespace Dune
 
-TYPED_TEST_CASE(ProjectionTestTpl, SpaceTypes);
-TYPED_TEST(ProjectionTestTpl, produces_correct_results)
-{
-  this->produces_correct_results(9.26e-2);
-}
-
-
-#else // HAVE_DUNE_PDELAB
-
-
-TEST(DISABLED_ProjectionTest, produces_correct_results)
-{
-}
-
-
-#endif // HAVE_DUNE_PDELAB
+#endif // DUNE_GDT_TEST_PROJECTIONS_HH

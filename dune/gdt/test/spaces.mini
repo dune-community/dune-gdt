@@ -2,8 +2,6 @@ include grids.mini
 
 [__local]
 wdim = 2, 3 | expand world_dim
-suffix = {__local.cg.names}__{__local.cg.grid_name}, {__local.dg.names}__{__local.dg.grid_name}, {__local.fv.names}__{__local.fv.grid_name}, {__local.rt.names}__{__local.rt.grid_name}| expand discretizations
-spaces = {__local.cg.spaces}, {__local.dg.spaces}, {__local.fv.spaces}, {__local.rt.spaces} | expand discretizations
 
 [__local.cg]
 fem_grids = AluCube{__local.wdim}dLeafGridPartType, AluConform{__local.wdim}dLeafGridPartType, Yasp{__local.wdim}dLeafGridPartType, Yasp1dLeafGridPartType | expand cg_fem_grids

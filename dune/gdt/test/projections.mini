@@ -3,5 +3,9 @@ include spaces.mini
 __exec_suffix = {__local.suffix}
 __name = projections__{__local.suffix}
 
+[__local]
+suffix = {__local.cg.names}__{__local.cg.grid_name}, {__local.dg.names}__{__local.dg.grid_name}, {__local.fv.names}__{__local.fv.grid_name}, {__local.rt.names}__{__local.rt.grid_name}| expand discretizations
+spaces = {__local.cg.spaces}, {__local.dg.spaces}, {__local.fv.spaces}, {__local.rt.spaces} | expand discretizations
+
 [__static]
 SPACETYPE = {__local.spaces}
