@@ -31,9 +31,9 @@ names = fv_default_R{__local.fv.rdim}
 spaces = Dune::GDT::FvSpace<{__local.fv.grids}, double, {__local.fv.rdim}>
 
 [__local.rt]
-wdim = 2, 3 | expand rt_rdim
+wdim = 2, 3 | expand rt_wdim
 grids =  AluCube{__local.rt.wdim}dLeafGridViewType, AluConform{__local.rt.wdim}dLeafGridViewType, Yasp{__local.rt.wdim}dLeafGridViewType | expand rt_grids
 grid_name = {grids.names.{__local.rt.grids}}
-names = rt_pdelab_R{__local.rt.rdim}
-spaces = Dune::GDT::DunePdelabRtSpaceWrapper<{__local.rt.grids}, 0, double, {__local.rt.rdim}>
+names = rt_pdelab
+spaces = Dune::GDT::DunePdelabRtSpaceWrapper<{__local.rt.grids}, 0, double, 1>
 
