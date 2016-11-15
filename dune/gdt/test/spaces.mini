@@ -1,33 +1,41 @@
 include grids.mini
 
+[__local]
 wdim = 2, 3 | expand world_dim
+suffix = {__local.cg.names}__{__local.cg.grid_name}, {__local.dg.names}__{__local.dg.grid_name}, {__local.fv.names}__{__local.fv.grid_name}, {__local.rt.names}__{__local.rt.grid_name}| expand discretizations
+spaces = {__local.cg.spaces}, {__local.dg.spaces}, {__local.fv.spaces}, {__local.rt.spaces} | expand discretizations
 
+[__local.cg]
+fem_grids = AluCube{__local.wdim}dLeafGridPartType, AluConform{__local.wdim}dLeafGridPartType, Yasp{__local.wdim}dLeafGridPartType, Yasp1dLeafGridPartType | expand cg_fem_grids
+pdelab_grids = AluCube{__local.wdim}dLeafGridViewType, AluConform{__local.wdim}dLeafGridViewType, Yasp{__local.wdim}dLeafGridViewType, Yasp1dLeafGridViewType | expand cg_pdelab_grids
+fem = Dune::GDT::DuneFemCgSpaceWrapper<{__local.cg.fem_grids}, 1, double, 1>
+pdelab =  Dune::GDT::DunePdelabCgSpaceWrapper<{__local.cg.pdelab_grids}, 1, double, 1>
 
-[dg]
-names = dg_fem, dg_pdelab | expand dg_backends
-fem_grids = AluCube{wdim}dLeafGridPartType, AluConform{wdim}dLeafGridPartType, Yasp{wdim}dLeafGridPartType, Yasp1dLeafGridPartType | expand dg_fem_grids
-pdelab_grids = AluCube{wdim}dLeafGridViewType, Yasp{wdim}dLeafGridViewType, Yasp1dLeafGridViewType | expand dg_pdelab_grids
-grid_name = {grids.names.{dg.fem_grids}}, {grids.names.{dg.pdelab_grids}} | expand dg_backends
-fem = Dune::GDT::DuneFemDgSpaceWrapper<{dg.fem_grids}, 1, double, 1>
-pdelab =  Dune::GDT::DunePdelabDgSpaceWrapper<{dg.pdelab_grids}, 1, double, 1>
-spaces = {dg.fem}, {dg.pdelab} | expand dg_backends
-
-[cg]
-fem_grids = AluCube{wdim}dLeafGridPartType, AluConform{wdim}dLeafGridPartType, Yasp{wdim}dLeafGridPartType, Yasp1dLeafGridPartType | expand cg_grids
-pdelab_grids = AluCube{wdim}dLeafGridViewType, AluConform{wdim}dLeafGridViewType, Yasp{wdim}dLeafGridViewType, Yasp1dLeafGridViewType | expand cg_grids
 names = cg_fem, cg_pdelab | expand cg_backends
-grid_name = {grids.names.{cg.fem_grids}}, {grids.names.{cg.fem_grids}} | expand cg_backends
-fem = Dune::GDT::DuneFemCgSpaceWrapper<{cg.fem_grids}, 1, double, 1>
-pdelab =  Dune::GDT::DunePdelabCgSpaceWrapper<{cg.pdelab_grids}, 1, double, 1>
-spaces = {cg.fem}, {cg.pdelab} | expand cg_backends
+grid_name = {grids.names.{__local.cg.fem_grids}}, {grids.names.{__local.cg.pdelab_grids}} | expand cg_backends
+spaces = {__local.cg.fem}, {__local.cg.pdelab} | expand cg_backends
 
-[rt]
-spaces = no
+[__local.dg]
+fem_grids = AluCube{__local.wdim}dLeafGridPartType, AluConform{__local.wdim}dLeafGridPartType, Yasp{__local.wdim}dLeafGridPartType, Yasp1dLeafGridPartType | expand dg_fem_grids
+pdelab_grids = AluCube{__local.wdim}dLeafGridViewType, Yasp{__local.wdim}dLeafGridViewType, Yasp1dLeafGridViewType | expand dg_pdelab_grids
+fem = Dune::GDT::DuneFemDgSpaceWrapper<{__local.dg.fem_grids}, 1, double, 1>
+pdelab =  Dune::GDT::DunePdelabDgSpaceWrapper<{__local.dg.pdelab_grids}, 1, double, 1>
 
-[fv]
-#rdim = 1, 2, 3 | expand range
-grids =  AluCube{wdim}dLeafGridViewType, AluConform{wdim}dLeafGridViewType, Yasp{wdim}dLeafGridViewType, Yasp1dLeafGridViewType | expand fv_grids
-grid_name = {grids.names.{fv.grids}}
-# trying to use rdim here results in a parser endless loop
-spaces = Dune::GDT::FvSpace<{fv.grids}, double, 1>, Dune::GDT::FvSpace<{fv.grids}, double, 2>, Dune::GDT::FvSpace<{fv.grids}, double, 3>
+names = dg_fem, dg_pdelab | expand dg_backends
+grid_name = {grids.names.{__local.dg.fem_grids}}, {grids.names.{__local.dg.pdelab_grids}} | expand dg_backends
+spaces = {__local.dg.fem}, {__local.dg.pdelab} | expand dg_backends
+
+[__local.fv]
+rdim = 1, 2, 3 | expand fv_rdim
+grids =  AluCube{__local.wdim}dLeafGridViewType, AluConform{__local.wdim}dLeafGridViewType, Yasp{__local.wdim}dLeafGridViewType, Yasp1dLeafGridViewType | expand fv_grids
+grid_name = {grids.names.{__local.fv.grids}}
+names = fv_default_R{__local.fv.rdim}
+spaces = Dune::GDT::FvSpace<{__local.fv.grids}, double, {__local.fv.rdim}>
+
+[__local.rt]
+wdim = 2, 3 | expand rt_rdim
+grids =  AluCube{__local.rt.wdim}dLeafGridViewType, AluConform{__local.rt.wdim}dLeafGridViewType, Yasp{__local.rt.wdim}dLeafGridViewType | expand rt_grids
+grid_name = {grids.names.{__local.rt.grids}}
+names = rt_pdelab_R{__local.rt.rdim}
+spaces = Dune::GDT::DunePdelabRtSpaceWrapper<{__local.rt.grids}, 0, double, {__local.rt.rdim}>
 

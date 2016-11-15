@@ -17,6 +17,7 @@
 #include "spaces/dg/pdelab.hh"
 
 #include "spaces/fv/default.hh"
+#include "spaces/rt/pdelab.hh"
 
 namespace Dune {
 namespace GDT {
