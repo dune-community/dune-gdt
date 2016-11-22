@@ -21,6 +21,7 @@ before_script:
     - printenv | \grep TRAVIS > ${ENV_FILE}
     - printenv | \grep encrypt >> ${ENV_FILE}
     - printenv | \grep TEST >> ${ENV_FILE}
+    - printenv | \grep TOKEN >> ${ENV_FILE}
     - export DOCKER_RUN="docker run --env-file ${ENV_FILE} -v ${TRAVIS_BUILD_DIR}:/root/src/${MY_MODULE} ${IMAGE}"
 
 script:
