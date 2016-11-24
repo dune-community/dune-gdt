@@ -27,7 +27,7 @@ before_script:
     - export DOCKER_RUN="docker run --env-file ${ENV_FILE} -v ${TRAVIS_BUILD_DIR}:/root/src/${MY_MODULE} ${IMAGE}"
 
 script:
-    - ${DOCKER_RUN} /root/src/${MY_MODULE}/.travis.script.bash
+    - travis_wait 50 ${DOCKER_RUN} /root/src/${MY_MODULE}/.travis.script.bash
 
 # runs independent of 'script' failure/success
 after_script:
