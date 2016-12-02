@@ -104,7 +104,7 @@ private:
   {
     static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
-      cfg["num_elements"] = "[4 4]";
+      cfg["num_elements"] = "[20 4]";
       return cfg;
     }
   };
