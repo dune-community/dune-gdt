@@ -12,7 +12,7 @@ BEGIN_TESTCASES()
 
 END_TESTCASES()
 
-# generated from dune-xt-common's distribute_testing.py
+# (re)generated from refresh_test_timings target
 include("builder_definitions.cmake")
 # make sure there's the same amount of builders in travis as bins from distribution
 add_custom_target(regenerate_travis_yml ${CMAKE_BINARY_DIR}/dune-env-3
@@ -47,4 +47,4 @@ foreach(test_target ${dxt_test_binaries})
     if(${test_target} MATCHES hyperbolic__fv_discretization)
         target_link_libraries(${test_target} expectations_hyperbolic_fv_discretizations_yaspgrid)
     endif(${test_target} MATCHES hyperbolic__fv_discretization)
-endforeach(${test_target} ${dxt_test_binaries})
+endforeach(test_target ${dxt_test_binaries})
