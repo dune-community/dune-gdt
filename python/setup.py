@@ -11,5 +11,5 @@ setup(name='dune.gdt',
       author_email='dune-gdt-dev@listserv.uni-muenster.de',
       url='https://github.com/dune-community/dune-gdt',
       packages=['dune.gdt'],
-      install_requires=['jinja2'],
+      install_requires=['jinja2', 'where'],
       )
