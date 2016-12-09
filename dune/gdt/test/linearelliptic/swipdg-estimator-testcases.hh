@@ -9,7 +9,10 @@
 #define DUNE_GDT_TEST_LINEARELLIPTIC_SWIPDG_ESTIMATOR_TESTCASES_HH
 
 #include <dune/grid/yaspgrid.hh>
-#include <dune/grid/alugrid.hh>
+
+#if HAVE_DUNE_ALUGRID
+#include <dune/alugrid/grid.hh>
+#endif
 
 #include <dune/xt/common/test/gtest/gtest.h>
 
@@ -18,7 +21,7 @@
 #include "problems/ESV2007.hh"
 #include "problems/spe10.hh"
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 
 typedef testing::
@@ -28,14 +31,14 @@ typedef testing::
         AluGridTestCases;
 
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 
 
 namespace Dune {
 namespace GDT {
 namespace Test {
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 
 extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
@@ -62,7 +65,7 @@ extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
                                                                 1>;
 
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 
 } // namespace Test
 } // namespace GDT
