@@ -124,7 +124,7 @@ public:
 
   explicit DuneFemCgSpaceWrapper(GridPartType gridP)
     : gridPart_(new GridPartType(gridP))
-    , gridView_(new GridViewType(gridPart_->gridView()))
+    , gridView_(new GridViewType(GridViewType(*gridPart_)))
     , backend_(new BackendType(*gridPart_))
     , mapper_(new MapperType(backend_->blockMapper()))
     , communicator_(CommunicationChooserType::create(*gridView_))
