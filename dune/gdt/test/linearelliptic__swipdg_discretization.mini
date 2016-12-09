@@ -10,7 +10,7 @@ testcases = AO2013TestCase, ER2007TestCase, ESV2007TestCase, MixedBoundaryTestCa
 space_backends = fem, pdelab | expand spaces
 1, {grids_name}=="Yasp2" | expand spaces | cmake_guard
 la_backends = eigen_sparse, istl_sparse | expand backends
-EIGEN_FOUND, dune-istl_FOUND | expand backends | cmake_guard
+EIGEN3_FOUND, dune-istl_FOUND | expand backends | cmake_guard
 
 [__static]
 TESTCASETYPE = Dune::GDT::LinearElliptic::{testcases}<{grids}>
