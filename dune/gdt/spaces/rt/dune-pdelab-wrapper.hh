@@ -14,7 +14,7 @@
 #include <limits>
 #include <mutex>
 
-#include <dune/geometry/genericgeometry/topologytypes.hh>
+#include <dune/geometry/type.hh>
 #include <dune/geometry/referenceelements.hh>
 
 #include <dune/grid/common/capabilities.hh>
@@ -99,10 +99,10 @@ private:
   };
   typedef typename GridViewType::Grid GridType;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
-  static const bool simplicial_ = (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
-                                   == GenericGeometry::SimplexTopology<dimDomain>::type::id);
-  static const bool cubic_ = (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
-                              == GenericGeometry::CubeTopology<dimDomain>::type::id);
+  static const bool simplicial_ =
+      (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId == Impl::SimplexTopology<dimDomain>::type::id);
+  static const bool cubic_ =
+      (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId == Impl::CubeTopology<dimDomain>::type::id);
   typedef typename FeMap<GridType, single_geom_, simplicial_, cubic_>::Type FEMapType;
 
 public:
