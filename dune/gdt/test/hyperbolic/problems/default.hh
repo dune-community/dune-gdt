@@ -104,7 +104,8 @@ public:
     flux_config["variable"] = "u";
     flux_config["expression"] = "[0 0 0]";
     flux_config["order"] = "0";
-    flux_config["gradient"] = "[0 0 0; 0 0 0; 0 0 0]";
+    if (dimDomain == 1)
+      flux_config["gradient"] = "[0 0 0; 0 0 0; 0 0 0]";
     config.add(flux_config, "flux");
     ConfigType rhs_config;
     rhs_config["lower_left"] = "[0.0 0.0 0.0]";
