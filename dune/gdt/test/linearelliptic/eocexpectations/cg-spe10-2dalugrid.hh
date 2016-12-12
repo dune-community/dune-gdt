@@ -8,9 +8,9 @@
 #ifndef DUNE_GDT_TEST_LINEARELLIPTIC_EOCEXPECTATIONS_CG_SPE10_2DALUGRID_HH
 #define DUNE_GDT_TEST_LINEARELLIPTIC_EOCEXPECTATIONS_CG_SPE10_2DALUGRID_HH
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
-#include <dune/grid/alugrid.hh>
+#include <dune/alugrid/grid.hh>
 
 #include "../problems/spe10.hh"
 #include "../eocexpectations.hh"
@@ -48,6 +48,6 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 
 #endif // DUNE_GDT_TEST_LINEARELLIPTIC_EOCEXPECTATIONS_CG_SPE10_2DALUGRID_HH

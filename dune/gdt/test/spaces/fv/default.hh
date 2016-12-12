@@ -23,7 +23,7 @@
 
 #define SPACE_FV_YASPGRID_LEVEL(dd, rr) Dune::GDT::FvSpace<Yasp##dd##dLevelGridViewType, double, rr>
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 #define SPACE_FV_ALUCONFORMGRID(dd, rr) Dune::GDT::FvSpace<AluConform##dd##dLeafGridViewType, double, rr>
 
@@ -41,7 +41,7 @@
 
 #define SPACE_FV_ALUCUBEGRID_LEVEL(dd, rr) Dune::GDT::FvSpace<AluCube##dd##dLevelGridViewType, double, rr>
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 
 
 #endif // DUNE_GDT_TEST_SPACES_FV_DEFAULT_HH

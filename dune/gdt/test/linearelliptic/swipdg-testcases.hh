@@ -9,7 +9,7 @@
 #define DUNE_GDT_TEST_LINEARELLIPTIC_SWIPDG_TESTCASES_HH
 
 #include <dune/grid/yaspgrid.hh>
-#include <dune/grid/alugrid.hh>
+#include <dune/alugrid/grid.hh>
 
 #include <dune/xt/common/test/gtest/gtest.h>
 
@@ -29,7 +29,7 @@ typedef testing::Types<Dune::GDT::LinearElliptic::AO2013TestCase<Yasp2Grid>,
     YaspGridTestCases;
 
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 
 typedef testing::
@@ -46,7 +46,7 @@ typedef testing::
         AluGridTestCases;
 
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 
 
 namespace Dune {
@@ -121,7 +121,7 @@ extern template class
                                   2>;
 
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 
 // ALUGrid< 2, 2, simplex, conforming >, polorder 1
@@ -258,7 +258,7 @@ extern template class LinearEllipticEocExpectations<LinearElliptic::
                                                     2>;
 
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 
 } // namespace Test
 } // namespace GDT

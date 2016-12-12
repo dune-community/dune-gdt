@@ -1,6 +1,6 @@
 #include <config.h>
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 #include "swipdg-er2007-2dalugrid.hh"
 
@@ -122,4 +122,4 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID

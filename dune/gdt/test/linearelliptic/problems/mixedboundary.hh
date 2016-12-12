@@ -8,8 +8,8 @@
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_MIXEDBOUNDARY_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_MIXEDBOUNDARY_HH
 
-#if HAVE_ALUGRID
-#include <dune/grid/alugrid.hh>
+#if HAVE_DUNE_ALUGRID
+#include <dune/alugrid/grid.hh>
 #endif
 #include <dune/grid/yaspgrid.hh>
 
@@ -132,7 +132,7 @@ private:
     }
   };
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
   template <bool anything>
   struct Helper<AluConform2dGridType, anything>
@@ -155,7 +155,7 @@ private:
     }
   };
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 #endif // DXT_DISABLE_LARGE_TESTS
 
   static XT::Common::Configuration grid_cfg()
