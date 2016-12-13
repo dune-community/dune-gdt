@@ -2,7 +2,7 @@ __name = {testcases}_{grids_name}_{space_backends}_{la_backends}
 __exec_suffix = {testcases}_{grids_name}_{space_backends}_{la_backends}
 
 grids = Dune::YaspGrid<2\, Dune::EquidistantOffsetCoordinates<double\, 2>>, Dune::ALUGrid<2\, 2\, Dune::simplex\, Dune::conforming>, Dune::ALUGrid<2\, 2\, Dune::simplex\, Dune::nonconforming> | expand grids
-1, dune-alugrid_FOUND, dune-alugrid_FOUND | expand grids | cmake_guard
+1, 0, dune-alugrid_FOUND | expand grids | cmake_guard
 grids_name = Yasp2, Alu2_Simp_conf, Alu2_Simp_nonc | expand grids
 
 testcases = AO2013TestCase, ER2007TestCase, ESV2007TestCase, MixedBoundaryTestCase, Spe10Model1TestCase | expand cases
