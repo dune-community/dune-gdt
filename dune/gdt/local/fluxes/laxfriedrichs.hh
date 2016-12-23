@@ -357,8 +357,10 @@ public:
     if (use_local_) {
       if (!is_linear_ || !(*max_derivative_calculated_)) {
         *max_derivative_ = 0;
-        const auto jacobian_u_i = analytical_flux_.jacobian(u_i);
-        const auto jacobian_u_j = analytical_flux_.jacobian(u_j);
+        const auto jacobian_u_i = analytical_flux_.jacobian(
+            u_i, intersection.inside(), intersection.geometryInInside().global(x_intersection));
+        const auto jacobian_u_j = analytical_flux_.jacobian(
+            u_j, intersection.outside(), intersection.geometryInOutside().global(x_intersection));
         EigenMatrixType jacobian_u_i_eigen(
             Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i, 15)));
         EigenMatrixType jacobian_u_j_eigen(
@@ -404,8 +406,9 @@ public:
     // we dont use the local LxF method. As the FieldVector does not provide an operator+, we have to split the
     // expression.
     // calculate n_ij*(f(u_i) + f(u_j)) first
-    ret = analytical_flux_.evaluate(u_i);
-    ret += analytical_flux_.evaluate(u_j);
+    ret = analytical_flux_.evaluate(u_i, intersection.inside(), intersection.geometryInInside().global(x_intersection));
+    ret +=
+        analytical_flux_.evaluate(u_j, intersection.outside(), intersection.geometryInOutside().global(x_intersection));
     if (n_ij < 0)
       ret *= n_ij;
     // add max_derivative*(u_i - u_j)
@@ -718,8 +721,9 @@ public:
     if (use_local_) {
       if (!is_linear_ || !(*max_derivative_calculated_)) {
         *max_derivative_ = 0;
-        const auto jacobian_u_i = analytical_flux_.jacobian(u_i);
-        const auto jacobian_u_j = analytical_flux_.jacobian(u_j);
+        const auto jacobian_u_i = analytical_flux_.jacobian(u_i, intersection.inside(), x_intersection_entity_coords);
+        // TODO: is this the right definition if jacobian really depends on the entity coordinates?
+        const auto jacobian_u_j = analytical_flux_.jacobian(u_j, intersection.inside(), x_intersection_entity_coords);
         EigenMatrixType jacobian_u_i_eigen(
             Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i, 15)));
         EigenMatrixType jacobian_u_j_eigen(
@@ -765,8 +769,9 @@ public:
     // we dont use the local LxF method. As the FieldVector does not provide an operator+, we have to split the
     // expression.
     // calculate n_ij*(f(u_i) + f(u_j)) first
-    ret = analytical_flux_.evaluate(u_i);
-    ret += analytical_flux_.evaluate(u_j);
+    ret = analytical_flux_.evaluate(u_i, intersection.inside(), x_intersection_entity_coords);
+    // TODO: is this the right definition if jacobian really depends on the entity coordinates?
+    ret += analytical_flux_.evaluate(u_j, intersection.inside(), x_intersection_entity_coords, -100);
     if (n_ij < 0)
       ret *= n_ij;
     // add max_derivative*(u_i - u_j)
