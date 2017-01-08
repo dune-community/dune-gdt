@@ -172,7 +172,8 @@ public:
       typename DiffusionType // This disables the ctor if dimDomain == 1, since factor and tensor are then identical
       ,
       typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the ctors
-                                         && (dimDomain > 1) && sizeof(DiffusionType)>::type> // ambiguous.
+                                         && (dimDomain > 1)
+                                         && sizeof(DiffusionType)>::type> // ambiguous.
   LocalEllipticIntegrand(const DiffusionType& diffusion)
     : diffusion_factor_(new DiffusionFactorType(1.))
     , diffusion_tensor_(diffusion)
@@ -180,7 +181,7 @@ public:
   }
 
   LocalEllipticIntegrand(const ThisType& other) = default;
-  LocalEllipticIntegrand(ThisType&& source)     = default;
+  LocalEllipticIntegrand(ThisType&& source) = default;
 
   /// \name Required by LocalVolumeIntegrandInterface< ..., 2 >
   /// \{
@@ -211,7 +212,8 @@ public:
   void evaluate(const LocalfunctionTupleType& local_functions_tuple,
                 const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base,
                 const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base,
-                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
+                const Dune::FieldVector<D, d>& localPoint,
+                Dune::DynamicMatrix<R>& ret) const
   {
     const auto local_diffusion_factor = std::get<0>(local_functions_tuple);
     const auto local_diffusion_tensor = std::get<1>(local_functions_tuple);
@@ -242,16 +244,17 @@ public:
                 const XT::Functions::LocalfunctionInterface<E, D, d, R, d, d>& local_diffusion_tensor,
                 const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, 1>& test_base,
                 const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, 1>& ansatz_base,
-                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicMatrix<R>& ret) const
+                const Dune::FieldVector<D, d>& localPoint,
+                Dune::DynamicMatrix<R>& ret) const
   {
     typedef XT::Common::FieldMatrix<R, d, d> TensorType;
     ret *= 0.0;
     // evaluate local functions
-    const auto diffusion_factor_value       = local_diffusion_factor.evaluate(localPoint);
+    const auto diffusion_factor_value = local_diffusion_factor.evaluate(localPoint);
     const TensorType diffusion_tensor_value = local_diffusion_tensor.evaluate(localPoint);
-    const auto diffusion_value              = diffusion_tensor_value * diffusion_factor_value;
+    const auto diffusion_value = diffusion_tensor_value * diffusion_factor_value;
     // evaluate bases
-    const auto testGradients   = test_base.jacobian(localPoint);
+    const auto testGradients = test_base.jacobian(localPoint);
     const auto ansatzGradients = ansatz_base.jacobian(localPoint);
     // compute elliptic evaluation
     const size_t rows = test_base.size();

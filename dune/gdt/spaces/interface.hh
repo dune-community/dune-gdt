@@ -94,7 +94,7 @@ class SpaceInterface : public XT::CRTPInterface<SpaceInterface<Traits, domainDim
 {
 public:
   typedef typename Traits::derived_type derived_type;
-  static const int polOrder    = Traits::polOrder;
+  static const int polOrder = Traits::polOrder;
   static const bool continuous = Traits::continuous;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::MapperType MapperType;
@@ -102,8 +102,8 @@ public:
   typedef typename Traits::CommunicatorType CommunicatorType;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::RangeFieldType RangeFieldType;
-  static const size_t dimDomain    = domainDim;
-  static const size_t dimRange     = rangeDim;
+  static const size_t dimDomain = domainDim;
+  static const size_t dimRange = rangeDim;
   static const size_t dimRangeCols = rangeDimCols;
 
 private:
@@ -176,7 +176,8 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
 \endcode
    */
   template <class S, size_t d, size_t r, size_t rC, class C>
-  void local_constraints(const SpaceInterface<S, d, r, rC>& ansatz_space, const EntityType& entity,
+  void local_constraints(const SpaceInterface<S, d, r, rC>& ansatz_space,
+                         const EntityType& entity,
                          ConstraintsInterface<C>& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().local_constraints(ansatz_space.as_imp(), entity, ret.as_imp()));
@@ -253,7 +254,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     Dune::DynamicVector<size_t> globalCols(ansatz_space.mapper().maxNumDofs(), 0);
 
     for (const auto& entity : elements(local_grid_view)) {
-      const auto testBase   = base_function_set(entity);
+      const auto testBase = base_function_set(entity);
       const auto ansatzBase = ansatz_space.base_function_set(entity);
       mapper().globalIndices(entity, globalRows);
       ansatz_space.mapper().globalIndices(entity, globalCols);
@@ -297,7 +298,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     Dune::DynamicVector<size_t> global_rows(mapper().maxNumDofs(), 0);
     Dune::DynamicVector<size_t> global_cols(ansatz_space.mapper().maxNumDofs(), 0);
     for (const auto& entity : elements(local_grid_view)) {
-      const auto test_base_entity   = base_function_set(entity);
+      const auto test_base_entity = base_function_set(entity);
       const auto ansatz_base_entity = ansatz_space.base_function_set(entity);
       mapper().globalIndices(entity, global_rows);
       ansatz_space.mapper().globalIndices(entity, global_cols);
@@ -456,7 +457,7 @@ public:
       else if (ii == 3)
         number = "3rd";
       else
-        number                     = XT::Common::to_string(ii) + "th";
+        number = XT::Common::to_string(ii) + "th";
       const auto iith_baseFunction = std::make_shared<BasisVisualization>(this->as_imp(*this), ii, number + " basis");
       vtk_writer.addVertexData(iith_baseFunction);
     }

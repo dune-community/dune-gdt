@@ -64,10 +64,10 @@ public:
 
   TimeFieldType step(const TimeFieldType dt, const TimeFieldType max_dt) override final
   {
-    auto& t                       = current_time();
+    auto& t = current_time();
     const TimeFieldType actual_dt = std::min(dt, max_dt);
-    const auto dt_1               = first_stepper_.solve(t + actual_dt, dt, -1, false);
-    const auto dt_2               = second_stepper_.solve(t + actual_dt, dt_1, -1, false);
+    const auto dt_1 = first_stepper_.solve(t + actual_dt, dt, -1, false);
+    const auto dt_2 = second_stepper_.solve(t + actual_dt, dt_1, -1, false);
     t += actual_dt;
     return dt_2;
   } // ... step(...)

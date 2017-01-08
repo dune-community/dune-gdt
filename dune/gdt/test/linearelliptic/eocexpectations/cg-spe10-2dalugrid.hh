@@ -23,8 +23,8 @@ namespace Test {
 
 template <>
 class LinearEllipticEocExpectations<LinearElliptic::Spe10Model1TestCase<AluConform2dGridType, double, 1>,
-                                    LinearElliptic::ChooseDiscretizer::cg, 1>
-    : public internal::LinearEllipticEocExpectationsBase<1>
+                                    LinearElliptic::ChooseDiscretizer::cg,
+                                    1> : public internal::LinearEllipticEocExpectationsBase<1>
 {
   typedef LinearElliptic::Spe10Model1TestCase<AluConform2dGridType, double, 1> TestCaseType;
 
@@ -34,8 +34,8 @@ public:
 
 template <>
 class LinearEllipticEocExpectations<LinearElliptic::Spe10Model1TestCase<AluSimplex2dGridType, double, 1>,
-                                    LinearElliptic::ChooseDiscretizer::cg, 1>
-    : public internal::LinearEllipticEocExpectationsBase<1>
+                                    LinearElliptic::ChooseDiscretizer::cg,
+                                    1> : public internal::LinearEllipticEocExpectationsBase<1>
 {
   typedef LinearElliptic::Spe10Model1TestCase<AluSimplex2dGridType, double, 1> TestCaseType;
 

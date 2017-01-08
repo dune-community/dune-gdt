@@ -53,8 +53,10 @@ private:
   static_assert(dimDomain == 2, "Not implemented!");
 
 public:
-  DiffusiveFluxReconstructionOperator(const GridViewType& grid_view, const DiffusionFactorType& diffusion_factor,
-                                      const DiffusionTensorType& diffusion_tensor, const size_t over_integrate = 0)
+  DiffusiveFluxReconstructionOperator(const GridViewType& grid_view,
+                                      const DiffusionFactorType& diffusion_factor,
+                                      const DiffusionTensorType& diffusion_tensor,
+                                      const size_t over_integrate = 0)
     : grid_view_(grid_view)
     , diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
@@ -67,10 +69,10 @@ public:
   apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
         DiscreteFunction<DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>, V>& range) const
   {
-    const auto& rtn0_space   = range.space();
-    auto& range_vector       = range.vector();
+    const auto& rtn0_space = range.space();
+    auto& range_vector = range.vector();
     const FieldType infinity = std::numeric_limits<FieldType>::infinity();
-    for (size_t ii     = 0; ii < range_vector.size(); ++ii)
+    for (size_t ii = 0; ii < range_vector.size(); ++ii)
       range_vector[ii] = infinity;
     const LocalEllipticIpdgIntegrands::Inner<DiffusionFactorType, DiffusionTensorType> inner_evaluation(
         diffusion_factor_, diffusion_tensor_);
@@ -88,15 +90,15 @@ public:
     // walk the grid
     const auto entity_it_end = grid_view_.template end<0>();
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity            = *entity_it;
-      const auto local_DoF_indices  = rtn0_space.local_DoF_indices(entity);
+      const auto& entity = *entity_it;
+      const auto local_DoF_indices = rtn0_space.local_DoF_indices(entity);
       const auto global_DoF_indices = rtn0_space.mapper().globalIndices(entity);
       assert(global_DoF_indices.size() == local_DoF_indices.size());
       const auto local_diffusion_factor = diffusion_factor_.local_function(entity);
       const auto local_diffusion_tensor = diffusion_tensor_.local_function(entity);
-      const auto local_source           = source.local_function(entity);
-      const auto local_basis            = rtn0_space.base_function_set(entity);
-      const auto local_constant_one     = constant_one.local_function(entity);
+      const auto local_source = source.local_function(entity);
+      const auto local_basis = rtn0_space.base_function_set(entity);
+      const auto local_constant_one = constant_one.local_function(entity);
       // walk the intersections
       const auto intersection_it_end = grid_view_.iend(entity);
       for (auto intersection_it = grid_view_.ibegin(entity); intersection_it != intersection_it_end;
@@ -107,13 +109,13 @@ public:
           if (grid_view_.indexSet().index(entity) < grid_view_.indexSet().index(neighbor)) {
             const auto local_diffusion_factor_neighbor = diffusion_factor_.local_function(neighbor);
             const auto local_diffusion_tensor_neighbor = diffusion_tensor_.local_function(neighbor);
-            const auto local_source_neighbor           = source.local_function(neighbor);
-            const auto local_constant_one_neighbor     = constant_one.local_function(neighbor);
-            const size_t local_intersection_index      = intersection.indexInInside();
-            const size_t local_DoF_index               = local_DoF_indices[local_intersection_index];
+            const auto local_source_neighbor = source.local_function(neighbor);
+            const auto local_constant_one_neighbor = constant_one.local_function(neighbor);
+            const size_t local_intersection_index = intersection.indexInInside();
+            const size_t local_DoF_index = local_DoF_indices[local_intersection_index];
             // do a face quadrature
-            FieldType lhs                = 0;
-            FieldType rhs                = 0;
+            FieldType lhs = 0;
+            FieldType rhs = 0;
             const size_t integrand_order = inner_evaluation.order(*local_diffusion_factor,
                                                                   *local_diffusion_tensor,
                                                                   *local_diffusion_factor_neighbor,
@@ -126,11 +128,11 @@ public:
                 intersection.type(), boost::numeric_cast<int>(integrand_order + over_integrate_));
             const auto quadrature_it_end = quadrature.end();
             for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
-              const auto& xx_intersection        = quadrature_it->position();
-              xx_entity                          = intersection.geometryInInside().global(xx_intersection);
-              normal                             = intersection.unitOuterNormal(xx_intersection);
+              const auto& xx_intersection = quadrature_it->position();
+              xx_entity = intersection.geometryInInside().global(xx_intersection);
+              normal = intersection.unitOuterNormal(xx_intersection);
               const FieldType integration_factor = intersection.geometry().integrationElement(xx_intersection);
-              const FieldType weigth             = quadrature_it->weight();
+              const FieldType weigth = quadrature_it->weight();
               // evalaute
               local_basis.evaluate(xx_entity, basis_values);
               const auto& basis_value = basis_values[local_DoF_index];
@@ -166,21 +168,21 @@ public:
           }
         } else if (intersection.boundary() && !intersection.neighbor()) {
           const size_t local_intersection_index = intersection.indexInInside();
-          const size_t local_DoF_index          = local_DoF_indices[local_intersection_index];
+          const size_t local_DoF_index = local_DoF_indices[local_intersection_index];
           // do a face quadrature
-          FieldType lhs                = 0;
-          FieldType rhs                = 0;
+          FieldType lhs = 0;
+          FieldType rhs = 0;
           const size_t integrand_order = boundary_evaluation.order(
               *local_diffusion_factor, *local_diffusion_tensor, *local_source, *local_constant_one);
           const auto& quadrature = QuadratureRules<DomainFieldType, dimDomain - 1>::rule(
               intersection.type(), boost::numeric_cast<int>(integrand_order + over_integrate_));
           const auto quadrature_it_end = quadrature.end();
           for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
-            const auto xx_intersection         = quadrature_it->position();
-            normal                             = intersection.unitOuterNormal(xx_intersection);
+            const auto xx_intersection = quadrature_it->position();
+            normal = intersection.unitOuterNormal(xx_intersection);
             const FieldType integration_factor = intersection.geometry().integrationElement(xx_intersection);
-            const FieldType weigth             = quadrature_it->weight();
-            xx_entity                          = intersection.geometryInInside().global(xx_intersection);
+            const FieldType weigth = quadrature_it->weight();
+            xx_entity = intersection.geometryInInside().global(xx_intersection);
             // evalaute
             local_basis.evaluate(xx_entity, basis_values);
             const auto& basis_value = basis_values[local_DoF_index];
@@ -239,7 +241,8 @@ private:
   static_assert(dimDomain == 2, "Not implemented!");
 
 public:
-  DiffusiveFluxReconstructionOperator(const GridViewType& grid_view, const LocalizableFunctionType& diffusion,
+  DiffusiveFluxReconstructionOperator(const GridViewType& grid_view,
+                                      const LocalizableFunctionType& diffusion,
                                       const size_t over_integrate = 0)
     : grid_view_(grid_view)
     , diffusion_(diffusion)
@@ -252,10 +255,10 @@ public:
   apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
         DiscreteFunction<DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>, V>& range) const
   {
-    const auto& rtn0_space   = range.space();
-    auto& range_vector       = range.vector();
+    const auto& rtn0_space = range.space();
+    auto& range_vector = range.vector();
     const FieldType infinity = std::numeric_limits<FieldType>::infinity();
-    for (size_t ii     = 0; ii < range_vector.size(); ++ii)
+    for (size_t ii = 0; ii < range_vector.size(); ++ii)
       range_vector[ii] = infinity;
     const LocalEllipticIpdgIntegrands::Inner<LocalizableFunctionType> inner_evaluation(diffusion_);
     const LocalEllipticIpdgIntegrands::BoundaryLHS<LocalizableFunctionType> boundary_evaluation(diffusion_);
@@ -271,13 +274,13 @@ public:
     // walk the grid
     const auto entity_it_end = grid_view_.template end<0>();
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity            = *entity_it;
-      const auto local_DoF_indices  = rtn0_space.local_DoF_indices(entity);
+      const auto& entity = *entity_it;
+      const auto local_DoF_indices = rtn0_space.local_DoF_indices(entity);
       const auto global_DoF_indices = rtn0_space.mapper().globalIndices(entity);
       assert(global_DoF_indices.size() == local_DoF_indices.size());
-      const auto local_diffusion    = diffusion_.local_function(entity);
-      const auto local_source       = source.local_function(entity);
-      const auto local_basis        = rtn0_space.base_function_set(entity);
+      const auto local_diffusion = diffusion_.local_function(entity);
+      const auto local_source = source.local_function(entity);
+      const auto local_basis = rtn0_space.base_function_set(entity);
       const auto local_constant_one = constant_one.local_function(entity);
       // walk the intersections
       const auto intersection_it_end = grid_view_.iend(entity);
@@ -286,16 +289,16 @@ public:
         const auto& intersection = *intersection_it;
         if (intersection.neighbor() && !intersection.boundary()) {
           const auto neighbor_ptr = intersection.outside();
-          const auto& neighbor    = *neighbor_ptr;
+          const auto& neighbor = *neighbor_ptr;
           if (grid_view_.indexSet().index(entity) < grid_view_.indexSet().index(neighbor)) {
-            const auto local_diffusion_neighbor    = diffusion_.local_function(neighbor);
-            const auto local_source_neighbor       = source.local_function(neighbor);
+            const auto local_diffusion_neighbor = diffusion_.local_function(neighbor);
+            const auto local_source_neighbor = source.local_function(neighbor);
             const auto local_constant_one_neighbor = constant_one.local_function(neighbor);
-            const size_t local_intersection_index  = intersection.indexInInside();
-            const size_t local_DoF_index           = local_DoF_indices[local_intersection_index];
+            const size_t local_intersection_index = intersection.indexInInside();
+            const size_t local_DoF_index = local_DoF_indices[local_intersection_index];
             // do a face quadrature
-            FieldType lhs                = 0;
-            FieldType rhs                = 0;
+            FieldType lhs = 0;
+            FieldType rhs = 0;
             const size_t integrand_order = inner_evaluation.order(*local_diffusion,
                                                                   *local_diffusion_neighbor,
                                                                   *local_constant_one,
@@ -306,11 +309,11 @@ public:
                 intersection.type(), boost::numeric_cast<int>(integrand_order + over_integrate_));
             const auto quadrature_it_end = quadrature.end();
             for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
-              const auto& xx_intersection   = quadrature_it->position();
-              xx_entity                     = intersection.geometryInInside().global(xx_intersection);
-              normal                        = intersection.unitOuterNormal(xx_intersection);
+              const auto& xx_intersection = quadrature_it->position();
+              xx_entity = intersection.geometryInInside().global(xx_intersection);
+              normal = intersection.unitOuterNormal(xx_intersection);
               const auto integration_factor = intersection.geometry().integrationElement(xx_intersection);
-              const auto weigth             = quadrature_it->weight();
+              const auto weigth = quadrature_it->weight();
               // evalaute
               local_basis.evaluate(xx_entity, basis_values);
               const auto& basis_value = basis_values[local_DoF_index];
@@ -344,7 +347,7 @@ public:
           }
         } else if (intersection.boundary() && !intersection.neighbor()) {
           const size_t local_intersection_index = intersection.indexInInside();
-          const size_t local_DoF_index          = local_DoF_indices[local_intersection_index];
+          const size_t local_DoF_index = local_DoF_indices[local_intersection_index];
           // do a face quadrature
           FieldType lhs = 0;
           FieldType rhs = 0;
@@ -354,11 +357,11 @@ public:
               intersection.type(), boost::numeric_cast<int>(integrand_order + over_integrate_));
           const auto quadrature_it_end = quadrature.end();
           for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
-            const auto xx_intersection    = quadrature_it->position();
-            normal                        = intersection.unitOuterNormal(xx_intersection);
+            const auto xx_intersection = quadrature_it->position();
+            normal = intersection.unitOuterNormal(xx_intersection);
             const auto integration_factor = intersection.geometry().integrationElement(xx_intersection);
-            const auto weigth             = quadrature_it->weight();
-            xx_entity                     = intersection.geometryInInside().global(xx_intersection);
+            const auto weigth = quadrature_it->weight();
+            xx_entity = intersection.geometryInInside().global(xx_intersection);
             // evalaute
             local_basis.evaluate(xx_entity, basis_values);
             const auto& basis_value = basis_values[local_DoF_index];
@@ -390,9 +393,8 @@ private:
 
 
 template <class GV, class DF, class DT>
-DiffusiveFluxReconstructionOperator<GV, DF, DT>
-make_diffusive_flux_reconstruction_operator(const GV& grid_view, const DF& diffusion_factor, const DT& diffusion_tensor,
-                                            const size_t over_integrate = 0)
+DiffusiveFluxReconstructionOperator<GV, DF, DT> make_diffusive_flux_reconstruction_operator(
+    const GV& grid_view, const DF& diffusion_factor, const DT& diffusion_tensor, const size_t over_integrate = 0)
 {
   return DiffusiveFluxReconstructionOperator<GV, DF, DT>(grid_view, diffusion_factor, diffusion_tensor, over_integrate);
 }

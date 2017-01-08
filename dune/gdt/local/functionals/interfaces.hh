@@ -44,7 +44,8 @@ public:
 
   template <class E, class IntersectionType, class D, size_t d, class R, size_t r, size_t rC>
   void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase,
-             const IntersectionType& intersection, Dune::DynamicVector<R>& ret) const
+             const IntersectionType& intersection,
+             Dune::DynamicVector<R>& ret) const
   {
     CHECK_AND_CALL_CR(this->as_imp().apply(testBase, intersection, ret));
   }

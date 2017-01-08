@@ -44,7 +44,8 @@ protected:
   typedef typename TestCaseType::LevelGridViewType GridViewType;
 
 public:
-  StationaryEocStudy(TestCaseType& test_case, const std::vector<std::string> only_these_norms = {},
+  StationaryEocStudy(TestCaseType& test_case,
+                     const std::vector<std::string> only_these_norms = {},
                      const std::string visualize_prefix = "")
     : BaseType(only_these_norms)
     , test_case_(test_case)
@@ -129,7 +130,7 @@ public:
   {
     assert(current_refinement_ <= num_refinements());
     if (grid_widths_[current_refinement_] < 0.0) {
-      const int level      = test_case_.level_of(current_refinement_);
+      const int level = test_case_.level_of(current_refinement_);
       const auto grid_view = test_case_.template level<XT::Grid::Backends::view>(level);
       XT::Grid::Dimensions<GridViewType> dimensions(grid_view);
       grid_widths_[current_refinement_] = dimensions.entity_width.max();
@@ -147,7 +148,7 @@ public:
       current_discretization_ = XT::Common::make_unique<DiscretizationType>(
           Discretizer::discretize(test_case_, test_case_.problem(), test_case_.level_of(current_refinement_)));
       current_solution_vector_on_level_ = XT::Common::make_unique<VectorType>(current_discretization_->solve());
-      time_to_solution_                 = timer.elapsed();
+      time_to_solution_ = timer.elapsed();
       const ConstDiscreteFunctionType current_refinement_solution(
           current_discretization_->ansatz_space(), *current_solution_vector_on_level_, "solution on current level");
       // prolong to reference grid part
@@ -218,7 +219,7 @@ protected:
     if (!reference_solution_computed_) {
       reference_discretization_ = XT::Common::make_unique<DiscretizationType>(
           Discretizer::discretize(test_case_, test_case_.problem(), test_case_.reference_level()));
-      reference_solution_vector_   = XT::Common::make_unique<VectorType>(reference_discretization_->solve());
+      reference_solution_vector_ = XT::Common::make_unique<VectorType>(reference_discretization_->solve());
       reference_solution_computed_ = true;
       // visualize
       if (!visualize_prefix_.empty()) {

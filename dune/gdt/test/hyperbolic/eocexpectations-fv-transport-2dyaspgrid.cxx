@@ -4,11 +4,15 @@ namespace Dune {
 namespace GDT {
 namespace Test {
 
-std::vector<double>
-HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp2, double, 1>, Hyperbolic::ChooseDiscretizer::fv, 2,
-                          NumericalFluxes::godunov, TimeStepperMethods::explicit_euler>::
+std::vector<double> HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp2, double, 1>,
+                                              Hyperbolic::ChooseDiscretizer::fv,
+                                              2,
+                                              NumericalFluxes::godunov,
+                                              TimeStepperMethods::explicit_euler>::
     results(const HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp2, double, 1>,
-                                            Hyperbolic::ChooseDiscretizer::fv, 2, NumericalFluxes::godunov,
+                                            Hyperbolic::ChooseDiscretizer::fv,
+                                            2,
+                                            NumericalFluxes::godunov,
                                             TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
             const std::string type)
 {
@@ -28,11 +32,15 @@ HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp2, double, 1>, Hyper
   return {};
 }
 
-std::vector<double>
-HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp2, double, 1>, Hyperbolic::ChooseDiscretizer::fv, 2,
-                          NumericalFluxes::godunov, TimeStepperMethods::dormand_prince>::
+std::vector<double> HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp2, double, 1>,
+                                              Hyperbolic::ChooseDiscretizer::fv,
+                                              2,
+                                              NumericalFluxes::godunov,
+                                              TimeStepperMethods::dormand_prince>::
     results(const HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp2, double, 1>,
-                                            Hyperbolic::ChooseDiscretizer::fv, 2, NumericalFluxes::godunov,
+                                            Hyperbolic::ChooseDiscretizer::fv,
+                                            2,
+                                            NumericalFluxes::godunov,
                                             TimeStepperMethods::dormand_prince>::TestCaseType& test_case,
             const std::string type)
 {
@@ -52,11 +60,15 @@ HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp2, double, 1>, Hyper
   return {};
 }
 
-std::vector<double>
-HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp2, double, 1>, Hyperbolic::ChooseDiscretizer::fv, 2,
-                          NumericalFluxes::laxfriedrichs, TimeStepperMethods::explicit_euler>::
+std::vector<double> HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp2, double, 1>,
+                                              Hyperbolic::ChooseDiscretizer::fv,
+                                              2,
+                                              NumericalFluxes::laxfriedrichs,
+                                              TimeStepperMethods::explicit_euler>::
     results(const HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp2, double, 1>,
-                                            Hyperbolic::ChooseDiscretizer::fv, 2, NumericalFluxes::laxfriedrichs,
+                                            Hyperbolic::ChooseDiscretizer::fv,
+                                            2,
+                                            NumericalFluxes::laxfriedrichs,
                                             TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
             const std::string type)
 {

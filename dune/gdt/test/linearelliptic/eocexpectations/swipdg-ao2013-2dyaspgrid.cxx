@@ -7,11 +7,12 @@ namespace GDT {
 namespace Test {
 
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<Yasp2Grid, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::swipdg, 1>::
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<Yasp2Grid, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::swipdg,
+                                                  1>::
     results(const LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<Yasp2Grid, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 1>::TestCaseType&,
+                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                1>::TestCaseType&,
             const std::string type)
 {
   if (type == "L2") {
@@ -37,11 +38,12 @@ LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<Yasp2Grid, double, 
   return {};
 }
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<Yasp2Grid, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::swipdg, 2>::
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<Yasp2Grid, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::swipdg,
+                                                  2>::
     results(const LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<Yasp2Grid, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 2>::TestCaseType&,
+                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                2>::TestCaseType&,
             const std::string type)
 {
   if (type == "L2") {

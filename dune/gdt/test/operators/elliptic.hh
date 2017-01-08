@@ -96,9 +96,9 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
   {
     const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
-    const auto& grid_view        = this->space_.grid_view();
-    const auto& source           = this->scalar_function_;
-    const auto& range            = this->scalar_function_;
+    const auto& grid_view = this->space_.grid_view();
+    const auto& source = this->scalar_function_;
+    const auto& range = this->scalar_function_;
 
     typedef EllipticLocalizableProduct<ExpressionFunctionType,
                                        void,
@@ -135,9 +135,9 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
   {
     const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
-    const auto& grid_view        = this->space_.grid_view();
-    const auto& source           = this->scalar_function_;
-    const auto& range            = this->scalar_function_;
+    const auto& grid_view = this->space_.grid_view();
+    const auto& source = this->scalar_function_;
+    const auto& range = this->scalar_function_;
 
     auto factor_only DUNE_UNUSED = make_elliptic_localizable_product(diffusion_factor, grid_view, range, source);
     auto factor_only_with_over_integrate DUNE_UNUSED =
@@ -158,7 +158,7 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
     auto product = make_elliptic_localizable_product(
         this->factor_, this->tensor_function_, this->space_.grid_view(), function, function);
     const auto result = product->apply2();
-    auto product_tbb  = make_elliptic_localizable_product(
+    auto product_tbb = make_elliptic_localizable_product(
         this->factor_, this->tensor_function_, this->space_.grid_view(), function, function);
     product_tbb->walk(true);
     const auto result_tbb = product_tbb->apply2();
@@ -170,9 +170,9 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
   {
     const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
-    const auto& grid_view        = this->space_.grid_view();
-    const auto& source           = this->scalar_function_;
-    const auto& range            = this->scalar_function_;
+    const auto& grid_view = this->space_.grid_view();
+    const auto& source = this->scalar_function_;
+    const auto& range = this->scalar_function_;
 
     auto product = make_elliptic_localizable_product(diffusion_factor, diffusion_tensor, grid_view, range, source);
     this->localizable_product_test(*product);
@@ -205,8 +205,8 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
   {
     const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
-    const auto& space            = this->space_;
-    const auto& grid_view        = this->space_.grid_view();
+    const auto& space = this->space_;
+    const auto& grid_view = this->space_.grid_view();
 
     // only diffusion factor
     //   without matrix
@@ -477,8 +477,8 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
   {
     const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
-    const auto& space            = this->space_;
-    const auto& grid_view        = this->space_.grid_view();
+    const auto& space = this->space_;
+    const auto& grid_view = this->space_.grid_view();
     MatrixType matrix(space.mapper().size(), space.mapper().size(), space.compute_volume_pattern());
 
     // both diffusion factor and tensor
@@ -542,14 +542,14 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
   {
     const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
-    const auto& space            = this->space_;
-    auto op                      = make_elliptic_matrix_operator<MatrixType>(diffusion_factor, diffusion_tensor, space);
+    const auto& space = this->space_;
+    auto op = make_elliptic_matrix_operator<MatrixType>(diffusion_factor, diffusion_tensor, space);
     // project the function
     DiscreteFunctionType discrete_function(space);
     project(space.grid_view(), function, discrete_function, 2);
     // compute product
     const auto result = op->apply2(discrete_function, discrete_function);
-    auto op_tbb       = make_elliptic_matrix_operator<MatrixType>(diffusion_factor, diffusion_tensor, space);
+    auto op_tbb = make_elliptic_matrix_operator<MatrixType>(diffusion_factor, diffusion_tensor, space);
     op_tbb->assemble(true);
     const auto result_tbb = op_tbb->apply2(discrete_function, discrete_function);
     EXPECT_DOUBLE_EQ(result_tbb, result);
@@ -604,7 +604,7 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
   {
     const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
-    const auto& space            = this->space_;
+    const auto& space = this->space_;
 
     auto op = make_elliptic_matrix_operator<MatrixType>(diffusion_factor, diffusion_tensor, space);
     this->matrix_operator_test(*op);
@@ -633,7 +633,7 @@ struct EllipticOperatorTest : public EllipticProductBase<SpaceType>, public Oper
   {
     const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
-    const auto& grid_view        = this->space_.grid_view();
+    const auto& grid_view = this->space_.grid_view();
 
     DUNE_UNUSED EllipticOperator<ExpressionFunctionType, void, GridViewType> only_factor(grid_view, diffusion_factor);
     DUNE_UNUSED EllipticOperator<ExpressionFunctionType, void, GridViewType> only_factor_w_over(
@@ -653,15 +653,15 @@ struct EllipticOperatorTest : public EllipticProductBase<SpaceType>, public Oper
   {
     const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
-    const auto& grid_view        = this->space_.grid_view();
+    const auto& grid_view = this->space_.grid_view();
 
-    auto only_factor DUNE_UNUSED        = make_elliptic_operator(grid_view, diffusion_factor);
+    auto only_factor DUNE_UNUSED = make_elliptic_operator(grid_view, diffusion_factor);
     auto only_factor_w_over DUNE_UNUSED = make_elliptic_operator(grid_view, diffusion_factor, 1);
 
-    auto only_tensor DUNE_UNUSED        = make_elliptic_operator(grid_view, diffusion_tensor);
+    auto only_tensor DUNE_UNUSED = make_elliptic_operator(grid_view, diffusion_tensor);
     auto only_tensor_w_over DUNE_UNUSED = make_elliptic_operator(grid_view, diffusion_tensor, 1);
 
-    auto both DUNE_UNUSED        = make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor);
+    auto both DUNE_UNUSED = make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor);
     auto both_w_over DUNE_UNUSED = make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor, 1);
   } // ... constructible_by_factory()
 
@@ -669,7 +669,7 @@ struct EllipticOperatorTest : public EllipticProductBase<SpaceType>, public Oper
   {
     const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
-    const auto& grid_view        = this->space_.grid_view();
+    const auto& grid_view = this->space_.grid_view();
 
     return make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor)->apply2(function, function);
   } // ... compute(...)
@@ -678,9 +678,9 @@ struct EllipticOperatorTest : public EllipticProductBase<SpaceType>, public Oper
   {
     const auto& diffusion_factor = this->factor_;
     const auto& diffusion_tensor = this->tensor_function_;
-    const auto& grid_view        = this->space_.grid_view();
-    auto& source                 = this->discrete_function_;
-    auto range                   = make_discrete_function<VectorType>(this->space_);
+    const auto& grid_view = this->space_.grid_view();
+    auto& source = this->discrete_function_;
+    auto range = make_discrete_function<VectorType>(this->space_);
 
     auto op = make_elliptic_operator(grid_view, diffusion_factor, diffusion_tensor);
     op->apply(source, range);

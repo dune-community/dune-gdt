@@ -37,8 +37,8 @@ public:
   {
   }
 
-  virtual RangeType evaluate(const RangeType& u, const E& entity, const DomainType& /*x_local*/,
-                             const double /*t_*/ = 0) const
+  virtual RangeType
+  evaluate(const RangeType& u, const E& entity, const DomainType& /*x_local*/, const double /*t_*/ = 0) const
   {
     return checkerboard_function_.localizable_function(entity).evaluate(u);
   }

@@ -167,7 +167,9 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::e
  * \tparam OperatorImp Type of operator L
  * \tparam DiscreteFunctionImp Type of initial values
  */
-template <class OperatorImp, class DiscreteFunctionImp, class TimeFieldImp = double,
+template <class OperatorImp,
+          class DiscreteFunctionImp,
+          class TimeFieldImp = double,
           TimeStepperMethods method = TimeStepperMethods::explicit_euler>
 class ExplicitRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
 {
@@ -200,10 +202,12 @@ public:
    * \param b Coefficient vector (only provide if you use ExplicitRungeKuttaMethods::other)
    * \param c Coefficients for time steps (only provide if you use ExplicitRungeKuttaMethods::other)
    */
-  ExplicitRungeKuttaTimeStepper(const OperatorType& op, const DiscreteFunctionType& initial_values,
-                                const RangeFieldType r = 1.0, const double t_0 = 0.0,
-                                const MatrixType& A     = ButcherArrayProviderType::A(),
-                                const VectorType& b     = ButcherArrayProviderType::b(),
+  ExplicitRungeKuttaTimeStepper(const OperatorType& op,
+                                const DiscreteFunctionType& initial_values,
+                                const RangeFieldType r = 1.0,
+                                const double t_0 = 0.0,
+                                const MatrixType& A = ButcherArrayProviderType::A(),
+                                const VectorType& b = ButcherArrayProviderType::b(),
                                 const TimeVectorType& c = ButcherArrayProviderType::c())
     : BaseType(t_0, initial_values)
     , op_(op)
@@ -234,8 +238,11 @@ public:
   /**
    * \brief Constructor ignoring the tol argument for compatibility with AdaptiveRungeKuttaTimeStepper
    */
-  ExplicitRungeKuttaTimeStepper(const OperatorType& op, const DiscreteFunctionType& initial_values,
-                                const RangeFieldType r, const double t_0, const RangeFieldType /*tol*/)
+  ExplicitRungeKuttaTimeStepper(const OperatorType& op,
+                                const DiscreteFunctionType& initial_values,
+                                const RangeFieldType r,
+                                const double t_0,
+                                const RangeFieldType /*tol*/)
     : ExplicitRungeKuttaTimeStepper(op, initial_values, r, t_0)
   {
   }
@@ -243,8 +250,8 @@ public:
   virtual TimeFieldType step(const TimeFieldType dt, const TimeFieldType max_dt) override final
   {
     const TimeFieldType actual_dt = std::min(dt, max_dt);
-    auto& t                       = current_time();
-    auto& u_n                     = current_solution();
+    auto& t = current_time();
+    auto& u_n = current_solution();
     // calculate stages
     for (size_t ii = 0; ii < num_stages_; ++ii) {
       u_intermediate_stages_[ii].vector() *= RangeFieldType(0);
@@ -265,23 +272,25 @@ public:
   } // ... step(...)
 
   const std::pair<bool, TimeFieldType>
-  find_suitable_dt(const TimeFieldType initial_dt, const TimeFieldType dt_refinement_factor = 2,
+  find_suitable_dt(const TimeFieldType initial_dt,
+                   const TimeFieldType dt_refinement_factor = 2,
                    const RangeFieldType treshold = 0.9 * std::numeric_limits<RangeFieldType>::max(),
-                   const size_t max_steps_per_dt = 20, const size_t max_refinements = 20)
+                   const size_t max_steps_per_dt = 20,
+                   const size_t max_refinements = 20)
   {
-    auto& t   = current_time();
+    auto& t = current_time();
     auto& u_n = current_solution();
     assert(treshold > 0);
     // save current state
     DiscreteFunctionType initial_u_n = u_n;
-    TimeFieldType initial_t          = t;
+    TimeFieldType initial_t = t;
     // start with initial dt
     TimeFieldType current_dt = initial_dt;
-    size_t num_refinements   = 0;
+    size_t num_refinements = 0;
     while (num_refinements < max_refinements) {
       std::cout << "Trying time step length dt = " << current_dt << "... " << std::flush;
       bool unlikely_value_occured = false;
-      size_t num_steps            = 0;
+      size_t num_steps = 0;
       // do max_steps_per_dt time steps...
       while (!unlikely_value_occured) {
         step(current_dt);
@@ -298,13 +307,13 @@ public:
         if (num_steps == max_steps_per_dt) {
           std::cout << "looks fine" << std::endl;
           u_n.vector() = initial_u_n.vector();
-          t            = initial_t;
+          t = initial_t;
           return std::make_pair(bool(true), current_dt);
         }
       }
       // if there was a value above threshold start over with smaller dt
       u_n.vector() = initial_u_n.vector();
-      t            = initial_t;
+      t = initial_t;
       current_dt /= dt_refinement_factor;
       ++num_refinements;
     }

@@ -35,7 +35,8 @@ namespace internal {
 
 
 // unspecialized
-template <class RangeFieldType, class TimeFieldType,
+template <class RangeFieldType,
+          class TimeFieldType,
           RosenbrockTimeStepperMethods method = RosenbrockTimeStepperMethods::other>
 struct RosenbrockButcherArrayProvider
 {
@@ -172,7 +173,10 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockT
  *
  * \todo Implement concept of jacobian/time derivative of operator and finish implementation of this method.
  */
-template <class OperatorImp, class DiscreteFunctionImp, class SolverImp, class TimeFieldImp = double,
+template <class OperatorImp,
+          class DiscreteFunctionImp,
+          class SolverImp,
+          class TimeFieldImp = double,
           RosenbrockTimeStepperMethods method = RosenbrockTimeStepperMethods::GRK4T>
 class RosenbrockTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
 {
@@ -211,12 +215,16 @@ public:
    * \param c Coefficients for time steps (only provide if you use RosenbrockTimeStepperMethods::other)
    * \param Gamma Coefficient matrix (only provide if you use RosenbrockTimeStepperMethods::other)
    */
-  RosenbrockTimeStepper(const OperatorType& op, const DiscreteFunctionType& initial_values,
-                        const RangeFieldType r = 1.0, const double t_0 = 0.0, const RangeFieldType tol = 1e-4,
-                        const TimeFieldType scale_factor_min = 0.2, const TimeFieldType scale_factor_max = 5,
-                        const MatrixType& A     = ButcherArrayProviderType::A(),
-                        const VectorType& b_1   = ButcherArrayProviderType::b_1(),
-                        const VectorType& b_2   = ButcherArrayProviderType::b_2(),
+  RosenbrockTimeStepper(const OperatorType& op,
+                        const DiscreteFunctionType& initial_values,
+                        const RangeFieldType r = 1.0,
+                        const double t_0 = 0.0,
+                        const RangeFieldType tol = 1e-4,
+                        const TimeFieldType scale_factor_min = 0.2,
+                        const TimeFieldType scale_factor_max = 5,
+                        const MatrixType& A = ButcherArrayProviderType::A(),
+                        const VectorType& b_1 = ButcherArrayProviderType::b_1(),
+                        const VectorType& b_2 = ButcherArrayProviderType::b_2(),
                         const TimeVectorType& c = ButcherArrayProviderType::c(),
                         const MatrixType& Gamma = ButcherArrayProviderType::Gamma())
     : BaseType(t_0, initial_values)
@@ -284,7 +292,7 @@ public:
     for (size_t ii = 0; ii < Gamma.rows(); ++ii) {
       if (Dune::XT::Common::FloatCmp::ne(gamma, Gamma_[ii]))
         gamma_ii_equal_for_all_i_ = false;
-      d_[ii]                      = 0.0;
+      d_[ii] = 0.0;
       for (size_t jj = 0; jj <= ii; ++jj)
         d_[ii] += Gamma[ii][jj];
     }
@@ -292,11 +300,11 @@ public:
 
   TimeFieldType step(const TimeFieldType dt, const TimeFieldType max_dt)
   {
-    TimeFieldType actual_dt              = std::min(dt, max_dt);
-    RangeFieldType mixed_error           = std::numeric_limits<RangeFieldType>::max();
+    TimeFieldType actual_dt = std::min(dt, max_dt);
+    RangeFieldType mixed_error = std::numeric_limits<RangeFieldType>::max();
     TimeFieldType time_step_scale_factor = 1.0;
 
-    auto& t   = current_time();
+    auto& t = current_time();
     auto& u_n = current_solution();
 
     while (Dune::XT::Common::FloatCmp::gt(mixed_error, tol_)) {

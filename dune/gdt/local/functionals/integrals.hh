@@ -84,13 +84,13 @@ public:
   }
 
   LocalVolumeIntegralFunctional(const ThisType& other) = default;
-  LocalVolumeIntegralFunctional(ThisType&& source)     = default;
+  LocalVolumeIntegralFunctional(ThisType&& source) = default;
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
   void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_base,
              Dune::DynamicVector<R>& ret) const
   {
-    const auto& entity         = test_base.entity();
+    const auto& entity = test_base.entity();
     const auto local_functions = integrand_.localFunctions(entity);
     // create quadrature
     const size_t integrand_order = integrand_.order(local_functions, test_base) + over_integrate_;
@@ -105,7 +105,7 @@ public:
       const auto xx = quadrature_point.position();
       // integration factors
       const auto integration_factor = entity.geometry().integrationElement(xx);
-      const auto quadrature_weight  = quadrature_point.weight();
+      const auto quadrature_weight = quadrature_point.weight();
       // evaluate the integrand
       integrand_.evaluate(local_functions, test_base, xx, evaluation_result);
       // compute integral
@@ -150,9 +150,10 @@ public:
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC, class IntersectionType>
   void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_base,
-             const IntersectionType& intersection, Dune::DynamicVector<R>& ret) const
+             const IntersectionType& intersection,
+             Dune::DynamicVector<R>& ret) const
   {
-    const auto& entity         = test_base.entity();
+    const auto& entity = test_base.entity();
     const auto local_functions = integrand_.localFunctions(entity);
     // create quadrature
     const size_t integrand_order = integrand_.order(local_functions, test_base) + over_integrate_;
@@ -168,7 +169,7 @@ public:
       const auto xx = quadrature_point.position();
       // integration factors
       const auto integration_factor = intersection.geometry().integrationElement(xx);
-      const auto quadrature_weight  = quadrature_point.weight();
+      const auto quadrature_weight = quadrature_point.weight();
       // evaluate the integrand
       integrand_.evaluate(local_functions, test_base, intersection, xx, evaluation_result);
       // compute integral

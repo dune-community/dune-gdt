@@ -143,9 +143,9 @@ public:
   static ConfigType default_grid_config()
   {
     ConfigType grid_config;
-    grid_config["type"]         = "provider.cube";
-    grid_config["lower_left"]   = "[0.0]";
-    grid_config["upper_right"]  = "[1.0]";
+    grid_config["type"] = "provider.cube";
+    grid_config["lower_left"] = "[0.0]";
+    grid_config["upper_right"] = "[1.0]";
     grid_config["num_elements"] = "[25]";
     return grid_config;
   }
@@ -157,7 +157,7 @@ public:
     return boundary_config;
   }
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -165,7 +165,7 @@ public:
     const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
     const std::shared_ptr<const DefaultInitialValueType> initial_values(
         DefaultInitialValueType::create(config.sub("initial_values")));
-    const ConfigType grid_config   = config.sub("grid");
+    const ConfigType grid_config = config.sub("grid");
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
@@ -183,18 +183,18 @@ public:
     config.add(default_grid_config(), "grid", true);
     config.add(default_boundary_info_config(), "boundary_info", true);
     ConfigType rhs_config;
-    rhs_config["lower_left"]   = "[0.0]";
-    rhs_config["upper_right"]  = "[1.0]";
+    rhs_config["lower_left"] = "[0.0]";
+    rhs_config["upper_right"] = "[1.0]";
     rhs_config["num_elements"] = "[10]";
-    rhs_config["variable"]     = "u";
+    rhs_config["variable"] = "u";
     GetData::create_rhs_values(rhs_config);
     rhs_config["name"] = static_id();
     config.add(rhs_config, "rhs", true);
     ConfigType boundary_value_config;
-    boundary_value_config["type"]       = DefaultBoundaryValueType::static_id();
-    boundary_value_config["variable"]   = "x";
+    boundary_value_config["type"] = DefaultBoundaryValueType::static_id();
+    boundary_value_config["variable"] = "x";
     boundary_value_config["expression"] = GetData::create_boundary_values();
-    boundary_value_config["order"]      = "10";
+    boundary_value_config["order"] = "10";
     config.add(boundary_value_config, "boundary_values", true);
     if (sub_name.empty())
       return config;
@@ -205,9 +205,12 @@ public:
     }
   } // ... default_config(...)
 
-  OneBeam(const std::shared_ptr<const FluxType> flux_in, const std::shared_ptr<const RHSType> rhs_in,
-          const std::shared_ptr<const InitialValueType> initial_values_in, const ConfigType& grid_config_in,
-          const ConfigType& boundary_info_in, const std::shared_ptr<const BoundaryValueType> boundary_values_in)
+  OneBeam(const std::shared_ptr<const FluxType> flux_in,
+          const std::shared_ptr<const RHSType> rhs_in,
+          const std::shared_ptr<const InitialValueType> initial_values_in,
+          const ConfigType& grid_config_in,
+          const ConfigType& boundary_info_in,
+          const std::shared_ptr<const BoundaryValueType> boundary_values_in)
     : BaseType(flux_in, rhs_in, initial_values_in, grid_config_in, boundary_info_in, boundary_values_in)
   {
   }
@@ -229,38 +232,39 @@ public:
 }; // class OneBeam
 
 template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-const std::vector<RangeFieldImp> OneBeam<EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                         rangeDim>::GetData::left_boundary_values_ = {1.0,
-                                                                                      6.71636489980355855245e-01,
-                                                                                      3.28363510019644144755e-01,
-                                                                                      1.24363973280948905686e-01,
-                                                                                      3.81809056974300592424e-02,
-                                                                                      9.82125618865871928553e-03,
-                                                                                      2.16963300568142518701e-03,
-                                                                                      4.19513164039210756200e-04,
-                                                                                      7.20671854853712433829e-05,
-                                                                                      1.11324462887737092337e-05,
-                                                                                      1.56169232313775636906e-06,
-                                                                                      2.00600026809414359175e-07,
-                                                                                      2.37587842655794863414e-08,
-                                                                                      2.61015792958530426248e-09,
-                                                                                      2.67362899311749478277e-10,
-                                                                                      2.56499029050593908917e-11,
-                                                                                      2.31390262613575206647e-12,
-                                                                                      1.96974017566116948835e-13,
-                                                                                      1.58724211977210871905e-14,
-                                                                                      1.21415612755686868581e-15,
-                                                                                      8.83915394817958527742e-17,
-                                                                                      6.13842130565872485602e-18,
-                                                                                      4.07500767354120497201e-19,
-                                                                                      2.59097953469175454498e-20,
-                                                                                      1.58064025241231349219e-21,
-                                                                                      9.26712241830912425052e-23,
-                                                                                      5.22944129976226306897e-24,
-                                                                                      2.84427887291271140280e-25,
-                                                                                      1.49300327556249155579e-26,
-                                                                                      7.57264934397747012074e-28,
-                                                                                      3.71557124692250023583e-29};
+const std::vector<RangeFieldImp>
+    OneBeam<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>::GetData::left_boundary_values_ = {
+        1.0,
+        6.71636489980355855245e-01,
+        3.28363510019644144755e-01,
+        1.24363973280948905686e-01,
+        3.81809056974300592424e-02,
+        9.82125618865871928553e-03,
+        2.16963300568142518701e-03,
+        4.19513164039210756200e-04,
+        7.20671854853712433829e-05,
+        1.11324462887737092337e-05,
+        1.56169232313775636906e-06,
+        2.00600026809414359175e-07,
+        2.37587842655794863414e-08,
+        2.61015792958530426248e-09,
+        2.67362899311749478277e-10,
+        2.56499029050593908917e-11,
+        2.31390262613575206647e-12,
+        1.96974017566116948835e-13,
+        1.58724211977210871905e-14,
+        1.21415612755686868581e-15,
+        8.83915394817958527742e-17,
+        6.13842130565872485602e-18,
+        4.07500767354120497201e-19,
+        2.59097953469175454498e-20,
+        1.58064025241231349219e-21,
+        9.26712241830912425052e-23,
+        5.22944129976226306897e-24,
+        2.84427887291271140280e-25,
+        1.49300327556249155579e-26,
+        7.57264934397747012074e-28,
+        3.71557124692250023583e-29};
 
 } // namespace Problems
 } // namespace Hyperbolic

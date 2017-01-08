@@ -29,7 +29,11 @@ namespace GDT {
 
 
 // forward, required for the traits
-template <class M, class RS, class GV = typename RS::GridViewType, class SS = RS, class F = typename M::RealType,
+template <class M,
+          class RS,
+          class GV = typename RS::GridViewType,
+          class SS = RS,
+          class F = typename M::RealType,
           ChoosePattern pt = ChoosePattern::face_and_volume>
 class MatrixOperatorBase;
 
@@ -37,7 +41,11 @@ class MatrixOperatorBase;
 namespace internal {
 
 
-template <class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp, class FieldImp,
+template <class MatrixImp,
+          class RangeSpaceImp,
+          class GridViewImp,
+          class SourceSpaceImp,
+          class FieldImp,
           ChoosePattern pt>
 class MatrixOperatorBaseTraits
 {
@@ -63,7 +71,9 @@ public:
 /**
  * \todo Check parallel case: there is probably/definitely communication missing in apply2!
  */
-template <class GridViewImp, class RangeImp, class SourceImp = RangeImp,
+template <class GridViewImp,
+          class RangeImp,
+          class SourceImp = RangeImp,
           class FieldImp = typename RangeImp::RangeFieldType>
 class LocalizableProductBase : public XT::Grid::Walker<GridViewImp>
 {
@@ -171,15 +181,26 @@ protected:
  * \todo add static checks of dimensions
  * \note Does a const_cast in apply() and apply2(), not sure yet if this is fine.
  */
-template <class MatrixImp, class RangeSpaceImp, class GridViewImp, class SourceSpaceImp, class FieldImp,
+template <class MatrixImp,
+          class RangeSpaceImp,
+          class GridViewImp,
+          class SourceSpaceImp,
+          class FieldImp,
           ChoosePattern pt>
-class MatrixOperatorBase
-    : public OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
-                                                                  FieldImp, pt>>,
-      public SystemAssembler<RangeSpaceImp, GridViewImp, SourceSpaceImp>
+class MatrixOperatorBase : public OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp,
+                                                                                       RangeSpaceImp,
+                                                                                       GridViewImp,
+                                                                                       SourceSpaceImp,
+                                                                                       FieldImp,
+                                                                                       pt>>,
+                           public SystemAssembler<RangeSpaceImp, GridViewImp, SourceSpaceImp>
 {
-  typedef OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp,
-                                                               FieldImp, pt>>
+  typedef OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp,
+                                                               RangeSpaceImp,
+                                                               GridViewImp,
+                                                               SourceSpaceImp,
+                                                               FieldImp,
+                                                               pt>>
       BaseOperatorType;
   typedef SystemAssembler<RangeSpaceImp, GridViewImp, SourceSpaceImp> BaseAssemblerType;
   typedef MatrixOperatorBase<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, FieldImp, pt> ThisType;
@@ -201,8 +222,8 @@ private:
   template <ChoosePattern pp = ChoosePattern::face_and_volume, bool anything = true>
   struct Compute
   {
-    static PatternType pattern(const RangeSpaceType& rng_spc, const SourceSpaceType& src_spc,
-                               const GridViewType& grd_vw)
+    static PatternType
+    pattern(const RangeSpaceType& rng_spc, const SourceSpaceType& src_spc, const GridViewType& grd_vw)
     {
       return rng_spc.compute_face_and_volume_pattern(grd_vw, src_spc);
     }
@@ -211,8 +232,8 @@ private:
   template <bool anything>
   struct Compute<ChoosePattern::volume, anything>
   {
-    static PatternType pattern(const RangeSpaceType& rng_spc, const SourceSpaceType& src_spc,
-                               const GridViewType& grd_vw)
+    static PatternType
+    pattern(const RangeSpaceType& rng_spc, const SourceSpaceType& src_spc, const GridViewType& grd_vw)
     {
       return rng_spc.compute_volume_pattern(grd_vw, src_spc);
     }
@@ -221,8 +242,8 @@ private:
   template <bool anything>
   struct Compute<ChoosePattern::face, anything>
   {
-    static PatternType pattern(const RangeSpaceType& rng_spc, const SourceSpaceType& src_spc,
-                               const GridViewType& grd_vw)
+    static PatternType
+    pattern(const RangeSpaceType& rng_spc, const SourceSpaceType& src_spc, const GridViewType& grd_vw)
     {
       return rng_spc.compute_face_pattern(grd_vw, src_spc);
     }
@@ -269,7 +290,8 @@ public:
   template <class... Args>
   explicit MatrixOperatorBase(Args&&... args)
     : BaseAssemblerType(std::forward<Args>(args)...)
-    , matrix_(new MatrixType(this->range_space().mapper().size(), this->source_space().mapper().size(),
+    , matrix_(new MatrixType(this->range_space().mapper().size(),
+                             this->source_space().mapper().size(),
                              pattern(this->range_space(), this->source_space(), this->grid_view())))
   {
   }
@@ -377,7 +399,8 @@ public:
   using BaseOperatorType::apply_inverse;
 
   template <class R, class S>
-  void apply_inverse(const XT::LA::VectorInterface<R>& range, XT::LA::VectorInterface<S>& source,
+  void apply_inverse(const XT::LA::VectorInterface<R>& range,
+                     XT::LA::VectorInterface<S>& source,
                      const XT::Common::Configuration& opts) const
   {
     this->assemble();
@@ -386,7 +409,8 @@ public:
 
   template <class R, class S>
   void apply_inverse(const ConstDiscreteFunction<SourceSpaceType, R>& range,
-                     ConstDiscreteFunction<RangeSpaceType, S>& source, const XT::Common::Configuration& opts) const
+                     ConstDiscreteFunction<RangeSpaceType, S>& source,
+                     const XT::Common::Configuration& opts) const
   {
     apply_inverse(range.vector(), source.vector(), opts);
   }

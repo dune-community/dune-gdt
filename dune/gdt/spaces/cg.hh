@@ -31,8 +31,13 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridType, XT::Grid::Layers layer_type, ChooseSpaceBackend backend_type, int polOrder,
-          class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1>
+template <class GridType,
+          XT::Grid::Layers layer_type,
+          ChooseSpaceBackend backend_type,
+          int polOrder,
+          class RangeFieldType,
+          size_t dimRange,
+          size_t dimRangeCols = 1>
 class CgSpaceProvider
 {
   static const XT::Grid::Backends part_view_type = ChooseGridPartView<backend_type>::type;

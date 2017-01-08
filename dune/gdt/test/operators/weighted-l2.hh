@@ -95,10 +95,10 @@ struct WeightedL2LocalizableProductTest : public WeightedL2ProductBase<SpaceType
 
   void constructible_by_ctor()
   {
-    const auto& weight    = this->weight_;
+    const auto& weight = this->weight_;
     const auto& grid_view = this->space_.grid_view();
-    const auto& source    = this->scalar_function_;
-    const auto& range     = this->scalar_function_;
+    const auto& source = this->scalar_function_;
+    const auto& range = this->scalar_function_;
 
     typedef WeightedL2LocalizableProduct<ExpressionFunctionType,
                                          GridViewType,
@@ -112,21 +112,21 @@ struct WeightedL2LocalizableProductTest : public WeightedL2ProductBase<SpaceType
 
   void constructible_by_factory()
   {
-    const auto& weight    = this->weight_;
+    const auto& weight = this->weight_;
     const auto& grid_view = this->space_.grid_view();
-    const auto& source    = this->scalar_function_;
-    const auto& range     = this->scalar_function_;
+    const auto& source = this->scalar_function_;
+    const auto& range = this->scalar_function_;
 
-    auto wo_over_integrate DUNE_UNUSED   = make_weighted_l2_localizable_product(weight, grid_view, range, source);
+    auto wo_over_integrate DUNE_UNUSED = make_weighted_l2_localizable_product(weight, grid_view, range, source);
     auto with_over_integrate DUNE_UNUSED = make_weighted_l2_localizable_product(weight, grid_view, range, source, 1);
   } // ... constructible_by_factory()
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
   {
-    const auto& weight    = this->weight_;
+    const auto& weight = this->weight_;
     const auto& grid_view = this->space_.grid_view();
 
-    auto product      = make_weighted_l2_localizable_product(weight, grid_view, function, function);
+    auto product = make_weighted_l2_localizable_product(weight, grid_view, function, function);
     const auto result = product->apply2();
 
     auto product_tbb = make_weighted_l2_localizable_product(weight, grid_view, function, function);
@@ -139,10 +139,10 @@ struct WeightedL2LocalizableProductTest : public WeightedL2ProductBase<SpaceType
 
   void is_localizable_product()
   {
-    const auto& weight    = this->weight_;
+    const auto& weight = this->weight_;
     const auto& grid_view = this->space_.grid_view();
-    const auto& source    = this->scalar_function_;
-    const auto& range     = this->scalar_function_;
+    const auto& source = this->scalar_function_;
+    const auto& range = this->scalar_function_;
 
     auto product = make_weighted_l2_localizable_product(weight, grid_view, range, source);
     this->localizable_product_test(*product);
@@ -168,8 +168,8 @@ struct WeightedL2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, p
 
   void constructible_by_ctor()
   {
-    const auto& weight    = this->weight_;
-    const auto& space     = this->space_;
+    const auto& weight = this->weight_;
+    const auto& space = this->space_;
     const auto& grid_view = this->space_.grid_view();
 
     // without matrix
@@ -232,8 +232,8 @@ struct WeightedL2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, p
 
   void constructible_by_factory()
   {
-    const auto& weight    = this->weight_;
-    const auto& space     = this->space_;
+    const auto& weight = this->weight_;
+    const auto& space = this->space_;
     const auto& grid_view = this->space_.grid_view();
     MatrixType matrix(space.mapper().size(), space.mapper().size(), space.compute_volume_pattern());
 
@@ -256,12 +256,12 @@ struct WeightedL2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, p
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
   {
     const auto& weight = this->weight_;
-    const auto& space  = this->space_;
+    const auto& space = this->space_;
     // project the function
     DiscreteFunctionType discrete_function(space);
     project(function, discrete_function);
     // compute product
-    auto product      = make_weighted_l2_matrix_operator<MatrixType>(weight, space);
+    auto product = make_weighted_l2_matrix_operator<MatrixType>(weight, space);
     const auto result = product->apply2(discrete_function, discrete_function);
 
     auto product_tbb = make_weighted_l2_matrix_operator<MatrixType>(weight, space);
@@ -274,7 +274,7 @@ struct WeightedL2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, p
   void is_matrix_operator()
   {
     const auto& weight = this->weight_;
-    const auto& space  = this->space_;
+    const auto& space = this->space_;
 
     auto op = make_weighted_l2_matrix_operator<MatrixType>(weight, space);
     this->matrix_operator_test(*op);
@@ -298,7 +298,7 @@ struct WeightedL2OperatorTest : public WeightedL2ProductBase<SpaceType>, public 
 
   void constructible_by_ctor()
   {
-    const auto& weight    = this->weight_;
+    const auto& weight = this->weight_;
     const auto& grid_view = this->space_.grid_view();
 
     DUNE_UNUSED WeightedL2Operator<ExpressionFunctionType, GridViewType> wo_over_integrate(weight, grid_view);
@@ -307,16 +307,16 @@ struct WeightedL2OperatorTest : public WeightedL2ProductBase<SpaceType>, public 
 
   void constructible_by_factory()
   {
-    const auto& weight    = this->weight_;
+    const auto& weight = this->weight_;
     const auto& grid_view = this->space_.grid_view();
 
-    auto wo_over_integrate DUNE_UNUSED   = make_weighted_l2_operator(grid_view, weight);
+    auto wo_over_integrate DUNE_UNUSED = make_weighted_l2_operator(grid_view, weight);
     auto with_over_integrate DUNE_UNUSED = make_weighted_l2_operator(grid_view, weight, 1);
   } // ... constructible_by_factory()
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
   {
-    const auto& weight    = this->weight_;
+    const auto& weight = this->weight_;
     const auto& grid_view = this->space_.grid_view();
 
     return make_weighted_l2_operator(grid_view, weight)->apply2(function, function);
@@ -324,10 +324,10 @@ struct WeightedL2OperatorTest : public WeightedL2ProductBase<SpaceType>, public 
 
   void apply_is_callable()
   {
-    const auto& weight    = this->weight_;
+    const auto& weight = this->weight_;
     const auto& grid_view = this->space_.grid_view();
-    auto& source          = this->discrete_function_;
-    auto range            = make_discrete_function<VectorType>(this->space_);
+    auto& source = this->discrete_function_;
+    auto range = make_discrete_function<VectorType>(this->space_);
 
     auto op = make_weighted_l2_operator(grid_view, weight);
     op->apply(source, range);

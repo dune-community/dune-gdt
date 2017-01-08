@@ -25,9 +25,11 @@ namespace Test {
 
 
 template <>
-class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>, Hyperbolic::ChooseDiscretizer::fv, 1,
-                                NumericalFluxes::godunov, TimeStepperMethods::explicit_euler>
-    : public internal::HyperbolicEocExpectationsBase<1>
+class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
+                                Hyperbolic::ChooseDiscretizer::fv,
+                                1,
+                                NumericalFluxes::godunov,
+                                TimeStepperMethods::explicit_euler> : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::SourceBeamTestCase<Yasp1, double> TestCaseType;
 
@@ -36,9 +38,11 @@ public:
 }; // HyperbolicEocExpectations
 
 template <>
-class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>, Hyperbolic::ChooseDiscretizer::fv, 1,
-                                NumericalFluxes::godunov_with_reconstruction, TimeStepperMethods::explicit_euler>
-    : public internal::HyperbolicEocExpectationsBase<1>
+class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
+                                Hyperbolic::ChooseDiscretizer::fv,
+                                1,
+                                NumericalFluxes::godunov_with_reconstruction,
+                                TimeStepperMethods::explicit_euler> : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::SourceBeamTestCase<Yasp1, double> TestCaseType;
 

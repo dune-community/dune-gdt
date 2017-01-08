@@ -45,22 +45,37 @@ public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using typename BaseType::DummyEntityType;
-  typedef typename Dune::XT::Functions::AffineFunction<DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp,
-                                                       dimRange, dimDomain>
-      FluxAffineFunctionType;
-  typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType, EntityImp, DomainFieldImp,
-                                                                dimDomain, RangeFieldImp, dimRange, 1>
+  typedef typename Dune::XT::Functions::
+      AffineFunction<DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp, dimRange, dimDomain>
+          FluxAffineFunctionType;
+  typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType,
+                                                                EntityImp,
+                                                                DomainFieldImp,
+                                                                dimDomain,
+                                                                RangeFieldImp,
+                                                                dimRange,
+                                                                1>
       DefaultFluxType;
   typedef typename DefaultFluxType::FluxRangeType FluxRangeType;
   typedef typename FluxAffineFunctionType::FieldMatrixType MatrixType;
   using typename BaseType::DefaultInitialValueType;
   typedef typename XT::Functions::AffineFunction<DummyEntityType, RangeFieldImp, dimRange, RangeFieldImp, dimRange, 1>
       RHSAffineFunctionType;
-  typedef typename XT::Functions::FunctionCheckerboardFunction<RHSAffineFunctionType, EntityImp, DomainFieldImp,
-                                                               dimDomain, RangeFieldImp, dimRange, 1>
+  typedef typename XT::Functions::FunctionCheckerboardFunction<RHSAffineFunctionType,
+                                                               EntityImp,
+                                                               DomainFieldImp,
+                                                               dimDomain,
+                                                               RangeFieldImp,
+                                                               dimRange,
+                                                               1>
       RHSCheckerboardFunctionType;
-  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFlux<RHSCheckerboardFunctionType, EntityImp, DomainFieldImp,
-                                                                 dimDomain, RangeFieldImp, dimRange, 1>
+  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFlux<RHSCheckerboardFunctionType,
+                                                                 EntityImp,
+                                                                 DomainFieldImp,
+                                                                 dimDomain,
+                                                                 RangeFieldImp,
+                                                                 dimRange,
+                                                                 1>
       DefaultRHSType;
   typedef typename DefaultRHSType::RangeType RangeType;
   typedef typename DefaultRHSType::DomainType DomainType;
@@ -96,9 +111,9 @@ protected:
     // (\Sigma_s \delta_{l0}\delta{m0} - \Sigma_t) * \psi_l^m
     static void create_rhs_values(ConfigType& rhs_config)
     {
-      rhs_config["lower_left"]    = "[0.0 0.0]";
-      rhs_config["upper_right"]   = "[1.0 1.0]";
-      rhs_config["num_elements"]  = "[1 1]";
+      rhs_config["lower_left"] = "[0.0 0.0]";
+      rhs_config["upper_right"] = "[1.0 1.0]";
+      rhs_config["num_elements"] = "[1 1]";
       const RangeFieldImp Sigma_s = 0;
       const RangeFieldImp Sigma_t = 0;
       MatrixType S;
@@ -107,7 +122,7 @@ protected:
         for (size_t m = 0; m <= l; ++m)
           S[pos(l, m)][pos(l, m)] = -1.0 * Sigma_t;
       rhs_config["A.0"] = Dune::XT::Common::to_string(S, precision);
-      rhs_config["b"]   = Dune::XT::Common::to_string(RangeType(0));
+      rhs_config["b"] = Dune::XT::Common::to_string(RangeType(0));
     } // ... create_rhs_values(...)
 
     static void create_flux_matrices(ConfigType& flux_config)
@@ -139,13 +154,13 @@ protected:
           if (l < momentOrder) {
             X[row][pos(l + 1, m - 1)] = 0.5 * D(l + 1, m - 1);
             X[row][pos(l + 1, m + 1)] = -0.5 * F(l + 1, m + 1);
-            Z[row][pos(l + 1, m)]     = B(l + 1, m);
+            Z[row][pos(l + 1, m)] = B(l + 1, m);
           }
         }
       }
       flux_config["A.0"] = Dune::XT::Common::to_string(X, precision);
       flux_config["A.1"] = Dune::XT::Common::to_string(Z, precision);
-      flux_config["b"]   = Dune::XT::Common::to_string(FluxRangeType(0));
+      flux_config["b"] = Dune::XT::Common::to_string(FluxRangeType(0));
     } // ... create_flux_matrix()
 
     // initial value is max(exp(-10*((x-0.5)^2 + (y-0.5)^2)/sigma^2), 10^(-4)) with sigma = 0.02 for \psi_0^0 and 0 else
@@ -225,9 +240,9 @@ public:
   static ConfigType default_grid_config()
   {
     ConfigType grid_config;
-    grid_config["type"]         = "provider.cube";
-    grid_config["lower_left"]   = "[0.0 0.0]";
-    grid_config["upper_right"]  = "[1.0 1.0]";
+    grid_config["type"] = "provider.cube";
+    grid_config["lower_left"] = "[0.0 0.0]";
+    grid_config["upper_right"] = "[1.0 1.0]";
     grid_config["num_elements"] = "[60 60]";
     return grid_config;
   }
@@ -239,7 +254,7 @@ public:
     return boundary_config;
   }
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -247,7 +262,7 @@ public:
     const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
     const std::shared_ptr<const DefaultInitialValueType> initial_values(
         DefaultInitialValueType::create(config.sub("initial_values")));
-    const ConfigType grid_config   = config.sub("grid");
+    const ConfigType grid_config = config.sub("grid");
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
@@ -267,18 +282,18 @@ public:
     GetData::create_rhs_values(rhs_config);
     config.add(rhs_config, "rhs");
     ConfigType initial_value_config;
-    initial_value_config["lower_left"]   = "[0.0 0.0]";
-    initial_value_config["upper_right"]  = "[1.0 1.0]";
+    initial_value_config["lower_left"] = "[0.0 0.0]";
+    initial_value_config["upper_right"] = "[1.0 1.0]";
     initial_value_config["num_elements"] = "[1 1]";
-    initial_value_config["variable"]     = "x";
-    initial_value_config["values.0"]     = GetData::create_initial_values();
-    initial_value_config["name"]         = static_id();
+    initial_value_config["variable"] = "x";
+    initial_value_config["values.0"] = GetData::create_initial_values();
+    initial_value_config["name"] = static_id();
     config.add(initial_value_config, "initial_values");
     ConfigType boundary_value_config;
-    boundary_value_config["type"]       = BoundaryValueType::static_id();
-    boundary_value_config["variable"]   = "x";
+    boundary_value_config["type"] = BoundaryValueType::static_id();
+    boundary_value_config["variable"] = "x";
     boundary_value_config["expression"] = GetData::create_boundary_values();
-    boundary_value_config["order"]      = "0";
+    boundary_value_config["order"] = "0";
     config.add(boundary_value_config, "boundary_values");
     if (sub_name.empty())
       return config;
@@ -289,9 +304,11 @@ public:
     }
   } // ... default_config(...)
 
-  Boltzmann2DLineSource(const std::shared_ptr<const FluxType> flux_in, const std::shared_ptr<const RHSType> rhs_in,
+  Boltzmann2DLineSource(const std::shared_ptr<const FluxType> flux_in,
+                        const std::shared_ptr<const RHSType> rhs_in,
                         const std::shared_ptr<const InitialValueType> initial_values_in,
-                        const ConfigType& grid_config_in, const ConfigType& boundary_info_in,
+                        const ConfigType& grid_config_in,
+                        const ConfigType& boundary_info_in,
                         const std::shared_ptr<const BoundaryValueType> boundary_values_in)
     : BaseType(flux_in, rhs_in, initial_values_in, grid_config_in, boundary_info_in, boundary_values_in)
   {
@@ -363,8 +380,8 @@ protected:
 
     static void create_rhs_values(ConfigType& rhs_config)
     {
-      rhs_config["lower_left"]   = "[0.0 0.0]";
-      rhs_config["upper_right"]  = "[7.0 7.0]";
+      rhs_config["lower_left"] = "[0.0 0.0]";
+      rhs_config["upper_right"] = "[7.0 7.0]";
       rhs_config["num_elements"] = "[7 7]";
       MatrixType S;
       RangeFieldImp Sigma_s;
@@ -374,7 +391,7 @@ protected:
         for (size_t col = 0; col < 7; ++col) {
           if (row == 3 && col == 3) { // center
             q *= 0;
-            q[0]    = 1;
+            q[0] = 1;
             Sigma_s = 1;
             Sigma_t = 1;
           } else if (is_absorbing(row, col)) { // absorbing regions
@@ -391,7 +408,7 @@ protected:
           for (size_t l = 1; l <= momentOrder; ++l)
             for (size_t m = 0; m <= l; ++m)
               S[pos(l, m)][pos(l, m)] = -1.0 * Sigma_t;
-          size_t number                                          = 7 * row + col;
+          size_t number = 7 * row + col;
           rhs_config["A." + Dune::XT::Common::to_string(number)] = Dune::XT::Common::to_string(S, precision);
           rhs_config["b." + Dune::XT::Common::to_string(number)] = Dune::XT::Common::to_string(q);
         }
@@ -417,9 +434,9 @@ public:
   static ConfigType default_grid_config()
   {
     ConfigType grid_config;
-    grid_config["type"]         = "provider.cube";
-    grid_config["lower_left"]   = "[0.0 0.0]";
-    grid_config["upper_right"]  = "[7.0 7.0]";
+    grid_config["type"] = "provider.cube";
+    grid_config["lower_left"] = "[0.0 0.0]";
+    grid_config["upper_right"] = "[7.0 7.0]";
     grid_config["num_elements"] = "[14 14]";
     return grid_config;
   }
@@ -431,7 +448,7 @@ public:
     return boundary_config;
   }
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -439,7 +456,7 @@ public:
     const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
     const std::shared_ptr<const DefaultInitialValueType> initial_values(
         DefaultInitialValueType::create(config.sub("initial_values")));
-    const ConfigType grid_config   = config.sub("grid");
+    const ConfigType grid_config = config.sub("grid");
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
@@ -457,12 +474,12 @@ public:
     GetData::create_rhs_values(rhs_config);
     config.add(rhs_config, "rhs");
     ConfigType initial_value_config;
-    initial_value_config["lower_left"]   = "[0.0 0.0]";
-    initial_value_config["upper_right"]  = "[7.0 7.0]";
+    initial_value_config["lower_left"] = "[0.0 0.0]";
+    initial_value_config["upper_right"] = "[7.0 7.0]";
     initial_value_config["num_elements"] = "[1 1]";
-    initial_value_config["variable"]     = "x";
-    initial_value_config["values.0"]     = GetData::create_initial_values();
-    initial_value_config["name"]         = static_id();
+    initial_value_config["variable"] = "x";
+    initial_value_config["values.0"] = GetData::create_initial_values();
+    initial_value_config["name"] = static_id();
     config.add(initial_value_config, "initial_values");
     ConfigType boundary_value_config = BaseType::default_config().sub("boundary_values");
     config.add(boundary_value_config, "boundary_values");
@@ -475,9 +492,11 @@ public:
     }
   } // ... default_config(...)
 
-  Boltzmann2DCheckerboard(const std::shared_ptr<const FluxType> flux_in, const std::shared_ptr<const RHSType> rhs_in,
+  Boltzmann2DCheckerboard(const std::shared_ptr<const FluxType> flux_in,
+                          const std::shared_ptr<const RHSType> rhs_in,
                           const std::shared_ptr<const InitialValueType> initial_values_in,
-                          const ConfigType& grid_config_in, const ConfigType& boundary_info_in,
+                          const ConfigType& grid_config_in,
+                          const ConfigType& boundary_info_in,
                           const std::shared_ptr<const BoundaryValueType> boundary_values_in)
     : BaseType(flux_in, rhs_in, initial_values_in, grid_config_in, boundary_info_in, boundary_values_in)
   {
@@ -506,8 +525,12 @@ public:
 template <class G, class R = double, size_t momentOrder = 1>
 class Boltzmann2DCheckerboardTestCase
     : public Dune::GDT::Test::
-          NonStationaryTestCase<G, Problems::Boltzmann2DCheckerboard<typename G::template Codim<0>::Entity,
-                                                                     typename G::ctype, G::dimension, R, momentOrder>>
+          NonStationaryTestCase<G,
+                                Problems::Boltzmann2DCheckerboard<typename G::template Codim<0>::Entity,
+                                                                  typename G::ctype,
+                                                                  G::dimension,
+                                                                  R,
+                                                                  momentOrder>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -516,7 +539,7 @@ public:
   static const size_t d = G::dimension;
   static_assert(d == 2, "Only implemented for dimension 2.");
   typedef typename Problems::Boltzmann2DCheckerboard<E, D, d, R, momentOrder> ProblemType;
-  static const size_t dimRange     = ProblemType::dimRange;
+  static const size_t dimRange = ProblemType::dimRange;
   static const size_t dimRangeCols = 1;
 
 private:
@@ -528,8 +551,8 @@ public:
   using typename BaseType::LevelGridViewType;
 
   Boltzmann2DCheckerboardTestCase(const size_t num_refs = 1, const double divide_t_end_by = 1.0)
-    : BaseType(divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(),
-               num_refs)
+    : BaseType(
+          divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(), num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {
   }

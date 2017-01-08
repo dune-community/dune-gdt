@@ -24,25 +24,37 @@ namespace GDT {
 namespace Hyperbolic {
 
 
-template <class TestCaseType, class GridType, class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1,
-          NumericalFluxes numerical_flux         = NumericalFluxes::godunov,
+template <class TestCaseType,
+          class GridType,
+          class RangeFieldType,
+          size_t dimRange,
+          size_t dimRangeCols = 1,
+          NumericalFluxes numerical_flux = NumericalFluxes::godunov,
           TimeStepperMethods time_stepper_method = TimeStepperMethods::explicit_euler>
 class FvDiscretizer
 {
 public:
-  typedef Hyperbolic::ProblemInterface<typename GridType::template Codim<0>::Entity, typename GridType::ctype,
-                                       GridType::dimension, RangeFieldType, dimRange, dimRangeCols>
+  typedef Hyperbolic::ProblemInterface<typename GridType::template Codim<0>::Entity,
+                                       typename GridType::ctype,
+                                       GridType::dimension,
+                                       RangeFieldType,
+                                       dimRange,
+                                       dimRangeCols>
       ProblemType;
-  static const constexpr ChooseDiscretizer type               = ChooseDiscretizer::fv;
-  static const constexpr NumericalFluxes numerical_flux_type  = numerical_flux;
+  static const constexpr ChooseDiscretizer type = ChooseDiscretizer::fv;
+  static const constexpr NumericalFluxes numerical_flux_type = numerical_flux;
   static const constexpr TimeStepperMethods time_stepper_type = time_stepper_method;
 
   typedef typename XT::Grid::PeriodicGridView<typename XT::Grid::GridProvider<GridType>::LevelGridViewType> GridViewImp;
-  typedef Dune::GridView<XT::Grid::internal::PeriodicGridViewTraits<
-      typename XT::Grid::GridProvider<GridType>::LevelGridViewType, false>>
-      GridViewType;
+  typedef Dune::
+      GridView<XT::Grid::internal::PeriodicGridViewTraits<typename XT::Grid::GridProvider<GridType>::LevelGridViewType,
+                                                          false>>
+          GridViewType;
   typedef FvProductSpace<GridViewType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;
-  typedef HyperbolicFVDefaultDiscretization<TestCaseType, FVSpaceType, numerical_flux, time_stepper_method,
+  typedef HyperbolicFVDefaultDiscretization<TestCaseType,
+                                            FVSpaceType,
+                                            numerical_flux,
+                                            time_stepper_method,
                                             time_stepper_method>
       DiscretizationType;
 
@@ -52,7 +64,9 @@ public:
   }
 
   static DiscretizationType
-  discretize(XT::Grid::GridProvider<GridType>& grid_provider, const TestCaseType& test_case, const int level = 0,
+  discretize(XT::Grid::GridProvider<GridType>& grid_provider,
+             const TestCaseType& test_case,
+             const int level = 0,
              const std::bitset<GridType::dimension> periodic_directions = std::bitset<GridType::dimension>())
   {
     auto logger = XT::Common::TimedLogger().get(static_id());

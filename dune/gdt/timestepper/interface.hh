@@ -67,9 +67,9 @@ public:
 
 private:
   typedef typename Dune::XT::Common::StorageProvider<DiscreteFunctionImp> CurrentSolutionStorageProviderType;
-  typedef typename Dune::XT::Common::StorageProvider<std::map<TimeFieldImp, DiscreteFunctionImp,
-                                                              typename internal::FloatCmpLt>>
-      SolutionStorageProviderType;
+  typedef typename Dune::XT::Common::
+      StorageProvider<std::map<TimeFieldImp, DiscreteFunctionImp, typename internal::FloatCmpLt>>
+          SolutionStorageProviderType;
 
 protected:
   TimeStepperInterface(const TimeFieldType t_0, const DiscreteFunctionType& initial_values)
@@ -156,18 +156,23 @@ public:
    * exactly num_save_steps + 1 equidistant time points (including the initial time and t_end), even if the time step
    * length has to be reduced to hit these time points.
    */
-  virtual TimeFieldType solve(const TimeFieldType t_end, const TimeFieldType initial_dt, const size_t num_save_steps,
-                              const bool save_solution, const bool output_progress, const bool visualize,
-                              const std::string filename_prefix, SolutionType& sol)
+  virtual TimeFieldType solve(const TimeFieldType t_end,
+                              const TimeFieldType initial_dt,
+                              const size_t num_save_steps,
+                              const bool save_solution,
+                              const bool output_progress,
+                              const bool visualize,
+                              const std::string filename_prefix,
+                              SolutionType& sol)
   {
     TimeFieldType dt = initial_dt;
-    TimeFieldType t  = current_time();
+    TimeFieldType t = current_time();
     assert(Dune::XT::Common::FloatCmp::ge(t_end - t, 0.0));
     size_t time_step_counter = 0;
 
     const TimeFieldType save_interval = (t_end - t) / num_save_steps;
-    TimeFieldType next_save_time      = t + save_interval > t_end ? t_end : t + save_interval;
-    size_t save_step_counter          = 1;
+    TimeFieldType next_save_time = t + save_interval > t_end ? t_end : t + save_interval;
+    size_t save_step_counter = 1;
 
     // save/visualize initial solution
     if (save_solution)
@@ -185,7 +190,7 @@ public:
 
       // do a timestep
       dt = step(dt, max_dt);
-      t  = current_time();
+      t = current_time();
 
       // augment time step counter
       ++time_step_counter;
@@ -206,17 +211,20 @@ public:
     return dt;
   } // ... solve(...)
 
-  virtual TimeFieldType solve(const TimeFieldType t_end, const TimeFieldType initial_dt = 1e-4,
-                              const size_t num_save_steps = -1, const bool save_solution = true,
-                              const bool output_progress = false, const bool visualize = false,
+  virtual TimeFieldType solve(const TimeFieldType t_end,
+                              const TimeFieldType initial_dt = 1e-4,
+                              const size_t num_save_steps = -1,
+                              const bool save_solution = true,
+                              const bool output_progress = false,
+                              const bool visualize = false,
                               const std::string filename_prefix = "solution")
   {
     return solve(
         t_end, initial_dt, num_save_steps, save_solution, output_progress, visualize, filename_prefix, *solution_);
   }
 
-  virtual TimeFieldType solve(const TimeFieldType t_end, const TimeFieldType initial_dt, const size_t num_save_steps,
-                              SolutionType& sol)
+  virtual TimeFieldType
+  solve(const TimeFieldType t_end, const TimeFieldType initial_dt, const size_t num_save_steps, SolutionType& sol)
   {
     return solve(t_end, initial_dt, num_save_steps, true, false, false, "", sol);
   }

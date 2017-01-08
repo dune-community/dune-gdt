@@ -74,19 +74,19 @@ struct LocalReconstructionFvOperatorTraits
 template <SlopeLimiters slope_limiter, class VectorType>
 struct ChooseLimiter
 {
-  static VectorType limit(const VectorType& slope_left, const VectorType& slope_right,
-                          const VectorType& centered_slope);
+  static VectorType
+  limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& centered_slope);
 };
 
 template <class VectorType>
 struct ChooseLimiter<SlopeLimiters::minmod, VectorType>
 {
-  static VectorType limit(const VectorType& slope_left, const VectorType& slope_right,
-                          const VectorType& /*centered_slope*/)
+  static VectorType
+  limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& /*centered_slope*/)
   {
     VectorType ret;
     for (size_t ii = 0; ii < slope_left.size(); ++ii) {
-      const auto slope_left_abs  = std::abs(slope_left[ii]);
+      const auto slope_left_abs = std::abs(slope_left[ii]);
       const auto slope_right_abs = std::abs(slope_right[ii]);
       if (slope_left_abs < slope_right_abs && slope_left[ii] * slope_right[ii] > 0)
         ret[ii] = slope_left[ii];
@@ -113,7 +113,7 @@ struct ChooseLimiter<SlopeLimiters::superbee, VectorType>
   {
     VectorType ret;
     for (size_t ii = 0; ii < slope_left.size(); ++ii) {
-      const auto slope_left_abs  = std::abs(slope_left[ii]);
+      const auto slope_left_abs = std::abs(slope_left[ii]);
       const auto slope_right_abs = std::abs(slope_right[ii]);
       if (slope_left_abs > slope_right_abs && slope_left[ii] * slope_right[ii] > 0)
         ret[ii] = slope_left[ii];
@@ -140,8 +140,8 @@ struct ChooseLimiter<SlopeLimiters::mc, VectorType>
 template <class VectorType>
 struct ChooseLimiter<SlopeLimiters::no_slope, VectorType>
 {
-  static VectorType limit(const VectorType& /*slope_left*/, const VectorType& /*slope_right*/,
-                          const VectorType& /*centered_slope*/)
+  static VectorType
+  limit(const VectorType& /*slope_left*/, const VectorType& /*slope_right*/, const VectorType& /*centered_slope*/)
   {
     return VectorType(0);
   }
@@ -163,16 +163,17 @@ public:
   }
 
   template <class SourceType, class IntersectionType, class SpaceType, class VectorType>
-  void apply(const SourceType& source, const IntersectionType& intersection,
+  void apply(const SourceType& source,
+             const IntersectionType& intersection,
              LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity,
              LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor) const
   {
-    const auto entity                         = intersection.inside();
-    const auto neighbor                       = intersection.outside();
-    const auto local_source_entity            = source.local_function(entity);
-    const auto local_source_neighbor          = source.local_function(neighbor);
-    const auto geometry_intersection          = intersection.geometry();
-    const auto local_functions_tuple_entity   = numerical_flux_.local_functions(entity);
+    const auto entity = intersection.inside();
+    const auto neighbor = intersection.outside();
+    const auto local_source_entity = source.local_function(entity);
+    const auto local_source_neighbor = source.local_function(neighbor);
+    const auto geometry_intersection = intersection.geometry();
+    const auto local_functions_tuple_entity = numerical_flux_.local_functions(entity);
     const auto local_functions_tuple_neighbor = numerical_flux_.local_functions(neighbor);
     const Dune::XT::Common::FieldVector<typename LocalDiscreteFunction<SpaceType, VectorType>::DomainFieldType,
                                         LocalDiscreteFunction<SpaceType, VectorType>::dimRange>
@@ -203,14 +204,15 @@ public:
   }
 
   template <class SourceType, class IntersectionType, class SpaceType, class VectorType>
-  void apply(const SourceType& source, const IntersectionType& intersection,
+  void apply(const SourceType& source,
+             const IntersectionType& intersection,
              LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity) const
   {
-    const auto entity                = intersection.inside();
-    const auto local_source_entity   = source.local_function(entity);
+    const auto entity = intersection.inside();
+    const auto local_source_entity = source.local_function(entity);
     const auto geometry_intersection = intersection.geometry();
     const auto local_functions_tuple = numerical_flux_.local_functions(entity);
-    auto result                      = numerical_flux_.evaluate(local_functions_tuple,
+    auto result = numerical_flux_.evaluate(local_functions_tuple,
                                            *local_source_entity,
                                            intersection,
                                            geometry_intersection.local(geometry_intersection.center()));
@@ -237,11 +239,11 @@ public:
   template <class SourceType, class RangeSpaceType, class VectorType>
   void apply(const SourceType& source, LocalDiscreteFunction<RangeSpaceType, VectorType>& local_range) const
   {
-    const auto& entity             = local_range.entity();
+    const auto& entity = local_range.entity();
     const auto local_source_entity = source.local_function(entity);
-    const auto x_local             = entity.geometry().local(entity.geometry().center());
-    const auto u                   = local_source_entity->evaluate(x_local);
-    const auto result              = rhs_evaluation_.evaluate(u, entity, x_local);
+    const auto x_local = entity.geometry().local(entity.geometry().center());
+    const auto u = local_source_entity->evaluate(x_local);
+    const auto result = rhs_evaluation_.evaluate(u, entity, x_local);
     local_range.vector().add(result);
   }
 
@@ -252,7 +254,8 @@ private:
 
 template <class MatrixImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter>
 class LocalReconstructionFvOperator
-    : public LocalOperatorInterface<internal::LocalReconstructionFvOperatorTraits<MatrixImp, BoundaryValueFunctionImp,
+    : public LocalOperatorInterface<internal::LocalReconstructionFvOperatorTraits<MatrixImp,
+                                                                                  BoundaryValueFunctionImp,
                                                                                   slope_limiter>>
 {
   typedef internal::LocalReconstructionFvOperatorTraits<MatrixImp, BoundaryValueFunctionImp, slope_limiter> Traits;
@@ -264,7 +267,8 @@ public:
   typedef typename Traits::MatrixType MatrixType;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
 
-  explicit LocalReconstructionFvOperator(const MatrixType& eigenvectors, const MatrixType& eigenvectors_inverse,
+  explicit LocalReconstructionFvOperator(const MatrixType& eigenvectors,
+                                         const MatrixType& eigenvectors_inverse,
                                          const BoundaryValueFunctionType& boundary_values)
     : eigenvectors_(eigenvectors)
     , eigenvectors_inverse_(eigenvectors_inverse)
@@ -275,12 +279,12 @@ public:
   template <class SourceType, class RangeSpaceType, class VectorType>
   void apply(const SourceType& source, LocalDiscreteFunction<RangeSpaceType, VectorType>& local_range) const
   {
-    const auto& entity    = local_range.entity();
+    const auto& entity = local_range.entity();
     const auto& grid_view = local_range.space().grid_view();
     // get reconstruction vector and mapper
-    auto& reconstruction_vector       = local_range.vector();
+    auto& reconstruction_vector = local_range.vector();
     const auto& reconstruction_mapper = local_range.space().mapper();
-    const auto entity_center          = entity.geometry().center();
+    const auto entity_center = entity.geometry().center();
     // walk over intersections to get values of discrete function on left and right neighbor entity
     typename SourceType::RangeType u_left, u_right;
     typename SourceType::RangeType u_entity =
@@ -289,9 +293,9 @@ public:
     for (auto i_it = grid_view.ibegin(entity); i_it != i_it_end; ++i_it) {
       const auto& intersection = *i_it;
       if (intersection.neighbor()) {
-        const auto neighbor        = intersection.outside();
+        const auto neighbor = intersection.outside();
         const auto neighbor_center = neighbor.geometry().center();
-        const bool boundary        = intersection.boundary();
+        const bool boundary = intersection.boundary();
         if ((neighbor_center[0] < entity_center[0] && !boundary) || (neighbor_center[0] > entity_center[0] && boundary))
           u_left = source.local_discrete_function(neighbor)->evaluate(neighbor.geometry().local(neighbor_center));
         else
@@ -310,13 +314,13 @@ public:
     const XTFieldVectorType w_right(eigenvectors_inverse_ * u_right);
     const XTFieldVectorType w_entity(eigenvectors_inverse_ * u_entity);
 
-    const XTFieldVectorType w_slope_left     = w_entity - w_left;
-    const XTFieldVectorType w_slope_right    = w_right - w_entity;
+    const XTFieldVectorType w_slope_left = w_entity - w_left;
+    const XTFieldVectorType w_slope_right = w_right - w_entity;
     const XTFieldVectorType w_centered_slope = w_right * RangeFieldType(0.5) - w_left * RangeFieldType(0.5);
     const XTFieldVectorType w_slope =
         internal::ChooseLimiter<slope_limiter, XTFieldVectorType>::limit(w_slope_left, w_slope_right, w_centered_slope);
-    const XTFieldVectorType half_w_slope          = w_slope * RangeFieldType(0.5);
-    const XTFieldVectorType w_reconstructed_left  = w_entity - half_w_slope;
+    const XTFieldVectorType half_w_slope = w_slope * RangeFieldType(0.5);
+    const XTFieldVectorType w_reconstructed_left = w_entity - half_w_slope;
     const XTFieldVectorType w_reconstructed_right = w_entity + half_w_slope;
 
     // convert back to u variable

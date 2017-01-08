@@ -50,7 +50,7 @@ public:
   typedef DuneFemCgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   typedef GridPartImp GridPartType;
   typedef typename GridPartType::GridViewType GridViewType;
-  static const int polOrder    = polynomialOrder;
+  static const int polOrder = polynomialOrder;
   static const bool continuous = true;
   static_assert(polOrder >= 1, "Wrong polOrder given!");
 
@@ -68,11 +68,16 @@ public:
   typedef Dune::Fem::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> BackendType;
   typedef Mapper::FemDofWrapper<typename BackendType::BlockMapperType, BackendType::Traits::localBlockSize> MapperType;
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
-  typedef BaseFunctionSet::DuneFemWrapper<typename BackendType::BasisFunctionSetType, EntityType, DomainFieldType,
-                                          dimDomain, RangeFieldType, rangeDim, rangeDimCols>
+  typedef BaseFunctionSet::DuneFemWrapper<typename BackendType::BasisFunctionSetType,
+                                          EntityType,
+                                          DomainFieldType,
+                                          dimDomain,
+                                          RangeFieldType,
+                                          rangeDim,
+                                          rangeDimCols>
       BaseFunctionSetType;
   static const XT::Grid::Backends part_view_type = XT::Grid::Backends::part;
-  static const bool needs_grid_view              = false;
+  static const bool needs_grid_view = false;
   typedef CommunicationChooser<GridViewType, false> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 }; // class DuneFemCgSpaceWrapperTraits
@@ -82,19 +87,23 @@ public:
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t r>
 class DuneFemCgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, r, 1>
     : public CgSpaceInterface<DuneFemCgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, r, 1>,
-                              GridPartImp::dimension, r, 1>
+                              GridPartImp::dimension,
+                              r,
+                              1>
 {
   typedef CgSpaceInterface<DuneFemCgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, r, 1>,
-                           GridPartImp::dimension, r, 1>
+                           GridPartImp::dimension,
+                           r,
+                           1>
       BaseType;
   typedef DuneFemCgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, r, 1> ThisType;
 
 public:
   typedef DuneFemCgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, r, 1> Traits;
 
-  static const int polOrder        = Traits::polOrder;
-  static const size_t dimDomain    = BaseType::dimDomain;
-  static const size_t dimRange     = BaseType::dimRange;
+  static const int polOrder = Traits::polOrder;
+  static const size_t dimDomain = BaseType::dimDomain;
+  static const size_t dimRange = BaseType::dimRange;
   static const size_t dimRangeCols = BaseType::dimRangeCols;
 
   typedef typename Traits::GridPartType GridPartType;
@@ -122,7 +131,7 @@ public:
   {
   }
 
-  DuneFemCgSpaceWrapper(const ThisType& other)      = default;
+  DuneFemCgSpaceWrapper(const ThisType& other) = default;
   explicit DuneFemCgSpaceWrapper(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;

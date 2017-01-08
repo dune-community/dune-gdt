@@ -38,21 +38,28 @@ namespace Test {
 #if HAVE_ALUGRID
 
 
-extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex,
-                                                                                                       conforming>,
-                                                                                               double, 1>,
-                                                                LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
+                                                                    AO2013TestCase<ALUGrid<2, 2, simplex, conforming>,
+                                                                                   double,
+                                                                                   1>,
+                                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                                1>;
 
-extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
-                                                                                                        conforming>,
-                                                                                                double, 1>,
-                                                                LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
+                                                                    ESV2007TestCase<ALUGrid<2, 2, simplex, conforming>,
+                                                                                    double,
+                                                                                    1>,
+                                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                                1>;
 
-extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::Spe10Model1TestCase<ALUGrid<2, 2,
+extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::Spe10Model1TestCase<ALUGrid<2,
+                                                                                                            2,
                                                                                                             simplex,
                                                                                                             conforming>,
-                                                                                                    double, 1>,
-                                                                LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+                                                                                                    double,
+                                                                                                    1>,
+                                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                                1>;
 
 
 #endif // HAVE_ALUGRID

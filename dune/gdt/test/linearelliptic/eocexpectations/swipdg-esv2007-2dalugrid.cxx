@@ -11,11 +11,12 @@ namespace Test {
 
 // polorder 1, conforming
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::swipdg, 1>::
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::swipdg,
+                                                  1>::
     results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 1>::TestCaseType&,
+                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                1>::TestCaseType&,
             const std::string type)
 {
   if (type == "L2") {
@@ -37,11 +38,12 @@ LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridTy
 
 // polorder 2, conforming
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::swipdg, 2>::
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::swipdg,
+                                                  2>::
     results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 2>::TestCaseType&,
+                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                2>::TestCaseType&,
             const std::string type)
 {
   if (type == "L2") {
@@ -63,11 +65,12 @@ LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridTy
 
 // polorder 1, nonconforming
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::swipdg, 1>::
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::swipdg,
+                                                  1>::
     results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 1>::TestCaseType&,
+                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                1>::TestCaseType&,
             const std::string type)
 
 {
@@ -90,11 +93,12 @@ LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridTy
 
 // polorder 2, nonconforming
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::swipdg, 2>::
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::swipdg,
+                                                  2>::
     results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 2>::TestCaseType&,
+                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                2>::TestCaseType&,
             const std::string type)
 {
   if (type == "L2") {

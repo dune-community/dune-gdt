@@ -7,6 +7,8 @@ Authors:
   Felix Schindler (2010, 2013 - 2014)
 ```
 
+[![Build Status](https://travis-ci.org/dune-community/dune-gdt.png?branch=master)](https://travis-ci.org/dune-community/dune-gdt)
+
 dune-gdt is a DUNE (http://www.dune-project.org) module which provides a
 generic discretization toolbox for grid-based numerical methods. It contains
 building blocks - like local operators, local evaluations, local assemblers -

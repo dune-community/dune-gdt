@@ -60,10 +60,10 @@ public:
   apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1>& source,
         LocalDiscreteFunction<RangeSpaceType, VectorType>& local_range) const
   {
-    const auto& entity         = local_range.entity();
-    const auto local_source    = source.local_function(entity);
-    auto& local_DoF_vector     = local_range.vector();
-    const size_t size          = local_DoF_vector.size();
+    const auto& entity = local_range.entity();
+    const auto local_source = source.local_function(entity);
+    auto& local_DoF_vector = local_range.vector();
+    const size_t size = local_DoF_vector.size();
     const auto lagrange_points = local_range.space().lagrange_points(entity);
     assert(lagrange_points.size() == size);
     for (size_t ii = 0; ii < size; ++ii)
@@ -81,9 +81,9 @@ public:
         LocalDiscreteFunction<RangeSpaceType, VectorType>& local_range) const
   {
     DUNE_THROW(NotImplemented, "Think about this!"); // For vector valued functions, the code below has an implicit
-    const auto& entity         = local_range.entity(); // assumption about the mapper, which may not be ok!
-    const auto local_source    = source.local_function(entity);
-    auto& local_DoF_vector     = local_range.vector();
+    const auto& entity = local_range.entity(); // assumption about the mapper, which may not be ok!
+    const auto local_source = source.local_function(entity);
+    auto& local_DoF_vector = local_range.vector();
     const auto lagrange_points = local_range.space().lagrange_points(entity);
     // and do the work (see below)
     assert(lagrange_points.size() == local_DoF_vector.size());
@@ -92,7 +92,7 @@ public:
       if (std::isinf(local_DoF_vector.get(kk))) { // Assumes that the global DoF vector was set to infinity beforehand,
         // evaluate source function               // which is not the case anymore.
         const auto& lagrange_point = lagrange_points[ii];
-        const auto source_value    = local_source->evaluate(lagrange_point);
+        const auto source_value = local_source->evaluate(lagrange_point);
         // set DoFs
         for (size_t jj = 0; jj < r; ++jj, ++kk)
           local_DoF_vector.set(kk, source_value[jj]);

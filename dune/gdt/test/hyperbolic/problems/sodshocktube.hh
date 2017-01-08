@@ -49,7 +49,9 @@ public:
     return BaseType::static_id() + ".shocktubesolutionatspecifictime";
   }
 
-  explicit ShocktubeSolutionAtSpecificTime(const double t, const DomainType lower_left, const DomainType upper_right,
+  explicit ShocktubeSolutionAtSpecificTime(const double t,
+                                           const DomainType lower_left,
+                                           const DomainType upper_right,
                                            const std::string nm = static_id())
     : t_(t)
     , lower_left_(lower_left)
@@ -121,11 +123,11 @@ private:
   virtual void evaluate_region_2(const DomainFieldType& x, RangeType& ret) const
   {
     const RangeFieldType rho_exact = std::pow(5.0 / 6.0 - 1.0 / (6.0 * std::sqrt(1.4)) * x, 5);
-    const RangeFieldType p_exact   = std::pow(5.0 / 6.0 - 1.0 / (6.0 * std::sqrt(1.4)) * x, 7);
-    const RangeFieldType v_exact   = 5.0 / 6.0 * (std::sqrt(1.4) + x);
-    ret[0]                         = rho_exact;
-    ret[1]                         = rho_exact * v_exact;
-    ret[2]                         = 2.5 * p_exact + 0.5 * rho_exact * v_exact * v_exact;
+    const RangeFieldType p_exact = std::pow(5.0 / 6.0 - 1.0 / (6.0 * std::sqrt(1.4)) * x, 7);
+    const RangeFieldType v_exact = 5.0 / 6.0 * (std::sqrt(1.4) + x);
+    ret[0] = rho_exact;
+    ret[1] = rho_exact * v_exact;
+    ret[2] = 2.5 * p_exact + 0.5 * rho_exact * v_exact * v_exact;
   }
 
   virtual void evaluate_region_3(const DomainFieldType& /*x*/, RangeType& ret) const
@@ -247,9 +249,9 @@ public:
   static ConfigType default_grid_config()
   {
     ConfigType grid_config;
-    grid_config["type"]         = "provider.cube";
-    grid_config["lower_left"]   = "[0.0]";
-    grid_config["upper_right"]  = "[1]";
+    grid_config["type"] = "provider.cube";
+    grid_config["lower_left"] = "[0.0]";
+    grid_config["upper_right"] = "[1]";
     grid_config["num_elements"] = "[8]";
     return grid_config;
   }
@@ -267,35 +269,35 @@ public:
     config.add(default_grid_config(), "grid");
     config.add(default_boundary_info_config(), "boundary_info");
     ConfigType flux_config;
-    flux_config["variable"]   = "u";
+    flux_config["variable"] = "u";
     flux_config["expression"] = "[u[1] 0.8*u[1]*u[1]/u[0]+0.4*u[2] 1.4*u[1]*u[2]/u[0]-0.2*u[1]*u[1]*u[1]/(u[0]*u[0])]";
-    flux_config["order"]      = "4";
+    flux_config["order"] = "4";
     flux_config["gradient.0"] = "[0 1 0; -0.8*u[1]*u[1]/(u[0]*u[0]) 1.6*u[1]/u[0] 0.4; "
                                 "-1.4*u[1]*u[2]/(u[0]*u[0])+0.4*u[1]*u[1]*u[1]/(u[0]*u[0]*u[0]) "
                                 "1.4*u[2]/u[0]-0.6*u[1]*u[1]/(u[0]*u[0]) 1.4*u[1]/u[0]]";
     config.add(flux_config, "flux");
     ConfigType rhs_config;
-    rhs_config["lower_left"]   = "[0.0]";
-    rhs_config["upper_right"]  = "[1.0]";
+    rhs_config["lower_left"] = "[0.0]";
+    rhs_config["upper_right"] = "[1.0]";
     rhs_config["num_elements"] = "[1]";
-    rhs_config["variable"]     = "u";
-    rhs_config["values.0"]     = "[0 0 0]";
-    rhs_config["name"]         = static_id();
+    rhs_config["variable"] = "u";
+    rhs_config["values.0"] = "[0 0 0]";
+    rhs_config["name"] = static_id();
     config.add(rhs_config, "rhs");
     ConfigType initial_value_config;
-    initial_value_config["lower_left"]   = "[0.0]";
-    initial_value_config["upper_right"]  = "[1]";
+    initial_value_config["lower_left"] = "[0.0]";
+    initial_value_config["upper_right"] = "[1]";
     initial_value_config["num_elements"] = "[2]";
-    initial_value_config["variable"]     = "x";
-    initial_value_config["values.0"]     = "[1 0 2.5]";
-    initial_value_config["values.1"]     = "[0.125 0 0.25]";
-    initial_value_config["order"]        = "0";
+    initial_value_config["variable"] = "x";
+    initial_value_config["values.0"] = "[1 0 2.5]";
+    initial_value_config["values.1"] = "[0.125 0 0.25]";
+    initial_value_config["order"] = "0";
     config.add(initial_value_config, "initial_values");
-    ConfigType boundary_value_config    = DefaultBoundaryValueType::default_config();
-    boundary_value_config["type"]       = DefaultBoundaryValueType::static_id();
-    boundary_value_config["variable"]   = "x";
+    ConfigType boundary_value_config = DefaultBoundaryValueType::default_config();
+    boundary_value_config["type"] = DefaultBoundaryValueType::static_id();
+    boundary_value_config["variable"] = "x";
     boundary_value_config["expression"] = "[1-x[0]*0.875 0 2.5-x[0]*2.25]";
-    boundary_value_config["order"]      = "1";
+    boundary_value_config["order"] = "1";
     config.add(boundary_value_config, "boundary_values");
     if (sub_name.empty())
       return config;
@@ -306,7 +308,7 @@ public:
     }
   } // ... default_config(...)
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -314,16 +316,19 @@ public:
     const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
     const std::shared_ptr<const DefaultInitialValueType> initial_values(
         DefaultInitialValueType::create(config.sub("initial_values")));
-    const ConfigType grid_config   = config.sub("grid");
+    const ConfigType grid_config = config.sub("grid");
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
     return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
   } // ... create(...)
 
-  ShockTube(const std::shared_ptr<const FluxType> flux, const std::shared_ptr<const RHSType> rhs,
-            const std::shared_ptr<const InitialValueType> initial_values, const ConfigType& grid_config,
-            const ConfigType& boundary_info, const std::shared_ptr<const BoundaryValueType> boundary_values)
+  ShockTube(const std::shared_ptr<const FluxType> flux,
+            const std::shared_ptr<const RHSType> rhs,
+            const std::shared_ptr<const InitialValueType> initial_values,
+            const ConfigType& grid_config,
+            const ConfigType& boundary_info,
+            const std::shared_ptr<const BoundaryValueType> boundary_values)
     : BaseType(flux, rhs, initial_values, grid_config, boundary_info, boundary_values)
   {
   }
@@ -343,15 +348,19 @@ public:
 
 template <class G, class R = double>
 class ShockTubeTestCase
-    : public Dune::GDT::Test::NonStationaryTestCase<G, Problems::ShockTube<typename G::template Codim<0>::Entity,
-                                                                           typename G::ctype, G::dimension, R, 3>>
+    : public Dune::GDT::Test::NonStationaryTestCase<G,
+                                                    Problems::ShockTube<typename G::template Codim<0>::Entity,
+                                                                        typename G::ctype,
+                                                                        G::dimension,
+                                                                        R,
+                                                                        3>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
 
 public:
-  static const size_t d            = G::dimension;
-  static const size_t dimRange     = 3;
+  static const size_t d = G::dimension;
+  static const size_t dimRange = 3;
   static const size_t dimRangeCols = 1;
   typedef typename Problems::ShockTube<E, D, d, R, dimRange> ProblemType;
 
@@ -364,8 +373,8 @@ public:
   using typename BaseType::LevelGridViewType;
 
   ShockTubeTestCase(const size_t num_refs = 3, const double divide_t_end_by = 1.0)
-    : BaseType(divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(),
-               num_refs)
+    : BaseType(
+          divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(), num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
     , exact_solution_(std::make_shared<ShocktubeSolution<E, D, R>>(typename Dune::XT::Common::FieldVector<D, d>(0),
                                                                    typename Dune::XT::Common::FieldVector<D, d>(1)))

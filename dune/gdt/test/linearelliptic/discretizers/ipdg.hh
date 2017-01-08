@@ -32,15 +32,22 @@ namespace LinearElliptic {
 /**
  * \brief Discretizes a linear elliptic PDE using an interior penalty discontinuous Galerkin Finite Element method.
  */
-template <class GridType, XT::Grid::Layers layer = XT::Grid::Layers::leaf,
-          ChooseSpaceBackend spacebackend = default_dg_backend, XT::LA::Backends la = XT::LA::default_sparse_backend,
-          int pol = 1, class RangeFieldType = double, size_t dimRange = 1,
+template <class GridType,
+          XT::Grid::Layers layer = XT::Grid::Layers::leaf,
+          ChooseSpaceBackend spacebackend = default_dg_backend,
+          XT::LA::Backends la = XT::LA::default_sparse_backend,
+          int pol = 1,
+          class RangeFieldType = double,
+          size_t dimRange = 1,
           LocalEllipticIpdgIntegrands::Method method = LocalEllipticIpdgIntegrands::default_method>
 class IpdgDiscretizer
 {
 public:
-  typedef ProblemInterface<typename GridType::template Codim<0>::Entity, typename GridType::ctype, GridType::dimension,
-                           RangeFieldType, dimRange>
+  typedef ProblemInterface<typename GridType::template Codim<0>::Entity,
+                           typename GridType::ctype,
+                           GridType::dimension,
+                           RangeFieldType,
+                           dimRange>
       ProblemType;
   typedef DgSpaceProvider<GridType, layer, spacebackend, pol, RangeFieldType, dimRange> SpaceProvider;
   typedef typename SpaceProvider::Type SpaceType;
@@ -48,17 +55,17 @@ public:
   typedef typename XT::LA::Container<RangeFieldType, la>::VectorType VectorType;
   typedef StationaryContainerBasedDefaultDiscretization<ProblemType, SpaceType, MatrixType, VectorType, SpaceType>
       DiscretizationType;
-  static const constexpr ChooseDiscretizer type      = ChooseDiscretizer::swipdg;
+  static const constexpr ChooseDiscretizer type = ChooseDiscretizer::swipdg;
   static const constexpr XT::LA::Backends la_backend = la;
-  static const int polOrder                          = pol;
+  static const int polOrder = pol;
 
   static std::string static_id() //                                                        int() needed, otherwise we
   { //                                                                                     get a linker error
     return std::string("gdt.linearelliptic.discretization.swipdg.order_") + Dune::XT::Common::to_string(int(polOrder));
   }
 
-  static DiscretizationType discretize(XT::Grid::GridProvider<GridType>& grid_provider, const ProblemType& problem,
-                                       const int level = 0)
+  static DiscretizationType
+  discretize(XT::Grid::GridProvider<GridType>& grid_provider, const ProblemType& problem, const int level = 0)
   {
     auto logger = XT::Common::TimedLogger().get(static_id());
     logger.info() << "Creating space... " << std::endl;

@@ -57,52 +57,68 @@ namespace Test {
 // YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>, polorder 1
 
 extern template class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<Yasp2Grid, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>;
 
 extern template class LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<Yasp2Grid, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>;
 
 extern template class LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<Yasp2Grid, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>;
 
 extern template class
     LinearEllipticEocExpectations<LinearElliptic::
-                                      MixedBoundaryTestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double,
-                                                                                                                 2>>,
-                                                            double, 1>,
-                                  LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+                                      MixedBoundaryTestCase<Dune::YaspGrid<2,
+                                                                           Dune::EquidistantOffsetCoordinates<double,
+                                                                                                              2>>,
+                                                            double,
+                                                            1>,
+                                  LinearElliptic::ChooseDiscretizer::swipdg,
+                                  1>;
 
 extern template class
     LinearEllipticEocExpectations<LinearElliptic::
                                       Spe10Model1TestCase<Dune::YaspGrid<2,
                                                                          Dune::EquidistantOffsetCoordinates<double, 2>>,
-                                                          double, 1>,
-                                  LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+                                                          double,
+                                                          1>,
+                                  LinearElliptic::ChooseDiscretizer::swipdg,
+                                  1>;
 
 // YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>, polorder 2
 
 extern template class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<Yasp2Grid, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 2>;
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>;
 
 extern template class LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<Yasp2Grid, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 2>;
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>;
 
 extern template class LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<Yasp2Grid, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 2>;
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>;
 
 extern template class
     LinearEllipticEocExpectations<LinearElliptic::
-                                      MixedBoundaryTestCase<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double,
-                                                                                                                 2>>,
-                                                            double, 1>,
-                                  LinearElliptic::ChooseDiscretizer::swipdg, 2>;
+                                      MixedBoundaryTestCase<Dune::YaspGrid<2,
+                                                                           Dune::EquidistantOffsetCoordinates<double,
+                                                                                                              2>>,
+                                                            double,
+                                                            1>,
+                                  LinearElliptic::ChooseDiscretizer::swipdg,
+                                  2>;
 
 extern template class
     LinearEllipticEocExpectations<LinearElliptic::
                                       Spe10Model1TestCase<Dune::YaspGrid<2,
                                                                          Dune::EquidistantOffsetCoordinates<double, 2>>,
-                                                          double, 1>,
-                                  LinearElliptic::ChooseDiscretizer::swipdg, 2>;
+                                                          double,
+                                                          1>,
+                                  LinearElliptic::ChooseDiscretizer::swipdg,
+                                  2>;
 
 
 #if HAVE_ALUGRID
@@ -111,101 +127,135 @@ extern template class
 // ALUGrid< 2, 2, simplex, conforming >, polorder 1
 
 extern template class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>;
 
 extern template class LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluConform2dGridType, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>;
 
 extern template class LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<ALUGrid<2, 2, simplex,
-                                                                                                  conforming>,
-                                                                                          double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+extern template class LinearEllipticEocExpectations<LinearElliptic::
+                                                        MixedBoundaryTestCase<ALUGrid<2, 2, simplex, conforming>,
+                                                                              double,
+                                                                              1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::Spe10Model1TestCase<ALUGrid<2, 2, simplex,
-                                                                                                conforming>,
-                                                                                        double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+extern template class LinearEllipticEocExpectations<LinearElliptic::
+                                                        Spe10Model1TestCase<ALUGrid<2, 2, simplex, conforming>,
+                                                                            double,
+                                                                            1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>;
 
 
 // ALUGrid< 2, 2, simplex, nonconforming >, polorder 1
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex,
-                                                                                           nonconforming>,
-                                                                                   double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+extern template class LinearEllipticEocExpectations<LinearElliptic::
+                                                        AO2013TestCase<ALUGrid<2, 2, simplex, nonconforming>,
+                                                                       double,
+                                                                       1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<ALUGrid<2, 2, simplex,
-                                                                                           nonconforming>,
-                                                                                   double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+extern template class LinearEllipticEocExpectations<LinearElliptic::
+                                                        ER2007TestCase<ALUGrid<2, 2, simplex, nonconforming>,
+                                                                       double,
+                                                                       1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
-                                                                                            nonconforming>,
-                                                                                    double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+extern template class LinearEllipticEocExpectations<LinearElliptic::
+                                                        ESV2007TestCase<ALUGrid<2, 2, simplex, nonconforming>,
+                                                                        double,
+                                                                        1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<ALUGrid<2, 2, simplex,
-                                                                                                  nonconforming>,
-                                                                                          double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+extern template class LinearEllipticEocExpectations<LinearElliptic::
+                                                        MixedBoundaryTestCase<ALUGrid<2, 2, simplex, nonconforming>,
+                                                                              double,
+                                                                              1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::Spe10Model1TestCase<ALUGrid<2, 2, simplex,
-                                                                                                nonconforming>,
-                                                                                        double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+extern template class LinearEllipticEocExpectations<LinearElliptic::
+                                                        Spe10Model1TestCase<ALUGrid<2, 2, simplex, nonconforming>,
+                                                                            double,
+                                                                            1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    1>;
 
 
 // ALUGrid< 2, 2, simplex, conforming >, polorder 2
 
 extern template class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 2>;
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>;
 
 extern template class LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluConform2dGridType, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 2>;
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>;
 
 extern template class LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 2>;
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<ALUGrid<2, 2, simplex,
-                                                                                                  conforming>,
-                                                                                          double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 2>;
+extern template class LinearEllipticEocExpectations<LinearElliptic::
+                                                        MixedBoundaryTestCase<ALUGrid<2, 2, simplex, conforming>,
+                                                                              double,
+                                                                              1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::Spe10Model1TestCase<ALUGrid<2, 2, simplex,
-                                                                                                conforming>,
-                                                                                        double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 2>;
+extern template class LinearEllipticEocExpectations<LinearElliptic::
+                                                        Spe10Model1TestCase<ALUGrid<2, 2, simplex, conforming>,
+                                                                            double,
+                                                                            1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>;
 
 
 // ALUGrid< 2, 2, simplex, nonconforming >, polorder 2
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex,
-                                                                                           nonconforming>,
-                                                                                   double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 2>;
+extern template class LinearEllipticEocExpectations<LinearElliptic::
+                                                        AO2013TestCase<ALUGrid<2, 2, simplex, nonconforming>,
+                                                                       double,
+                                                                       1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<ALUGrid<2, 2, simplex,
-                                                                                           nonconforming>,
-                                                                                   double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 2>;
+extern template class LinearEllipticEocExpectations<LinearElliptic::
+                                                        ER2007TestCase<ALUGrid<2, 2, simplex, nonconforming>,
+                                                                       double,
+                                                                       1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
-                                                                                            nonconforming>,
-                                                                                    double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 2>;
+extern template class LinearEllipticEocExpectations<LinearElliptic::
+                                                        ESV2007TestCase<ALUGrid<2, 2, simplex, nonconforming>,
+                                                                        double,
+                                                                        1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<ALUGrid<2, 2, simplex,
-                                                                                                  nonconforming>,
-                                                                                          double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 2>;
+extern template class LinearEllipticEocExpectations<LinearElliptic::
+                                                        MixedBoundaryTestCase<ALUGrid<2, 2, simplex, nonconforming>,
+                                                                              double,
+                                                                              1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>;
 
-extern template class LinearEllipticEocExpectations<LinearElliptic::Spe10Model1TestCase<ALUGrid<2, 2, simplex,
-                                                                                                nonconforming>,
-                                                                                        double, 1>,
-                                                    LinearElliptic::ChooseDiscretizer::swipdg, 2>;
+extern template class LinearEllipticEocExpectations<LinearElliptic::
+                                                        Spe10Model1TestCase<ALUGrid<2, 2, simplex, nonconforming>,
+                                                                            double,
+                                                                            1>,
+                                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                                    2>;
 
 
 #endif // HAVE_ALUGRID

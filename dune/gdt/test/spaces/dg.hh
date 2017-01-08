@@ -36,7 +36,7 @@ struct P1Q1_DG_Space : public SpaceBase<SpaceType>
   {
     std::vector<DomainFieldType> ret(dimDomain, DomainFieldType(0));
     for (size_t ii = 0; ii < dimDomain; ++ii)
-      ret[ii]      = source[ii];
+      ret[ii] = source[ii];
     return ret;
   }
 
@@ -49,27 +49,27 @@ struct P1Q1_DG_Space : public SpaceBase<SpaceType>
     for (auto entity_it = this->space_.grid_view().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
       for (auto cc : Dune::XT::Common::value_range(entity.subEntities(dimDomain))) {
-        const auto vertex                                          = entity.template subEntity<dimDomain>(cc);
-        const DomainType vertex_center                             = vertex.geometry().center();
+        const auto vertex = entity.template subEntity<dimDomain>(cc);
+        const DomainType vertex_center = vertex.geometry().center();
         vertex_to_indices_map[convert_vector(vertex_center)].first = std::set<size_t>();
         ++vertex_to_indices_map[convert_vector(vertex_center)].second;
       }
     }
     // walk the grid again to find all DoF ids
     for (auto entity_it = this->space_.grid_view().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
-      const auto& entity        = *entity_it;
+      const auto& entity = *entity_it;
       const size_t num_vertices = entity.subEntities(dimDomain);
-      const auto basis          = this->space_.base_function_set(entity);
+      const auto basis = this->space_.base_function_set(entity);
       EXPECT_EQ(basis.size(), num_vertices);
       for (size_t cc = 0; cc < num_vertices; ++cc) {
-        const auto vertex              = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(cc));
+        const auto vertex = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(cc));
         const DomainType vertex_center = vertex.geometry().center();
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex_center));
         EXPECT_EQ(basis_values.size(), num_vertices);
-        size_t ones            = 0;
-        size_t zeros           = 0;
-        size_t failures        = 0;
+        size_t ones = 0;
+        size_t zeros = 0;
+        size_t failures = 0;
         size_t local_DoF_index = 0;
         for (size_t ii = 0; ii < basis.size(); ++ii) {
           if (Common::FloatCmp::eq(basis_values[ii][0], typename SpaceType::RangeFieldType(1))) {
@@ -106,9 +106,9 @@ struct P1Q1_DG_Space : public SpaceBase<SpaceType>
       ++count;
     }
     for (const auto& entry : vertex_to_indices_map) {
-      const auto vertex_ids               = entry.second.first;
+      const auto vertex_ids = entry.second.first;
       size_t number_of_associated_DoF_ids = vertex_ids.size();
-      size_t number_of_adjacent_entitys   = entry.second.second;
+      size_t number_of_adjacent_entitys = entry.second.second;
       EXPECT_EQ(number_of_associated_DoF_ids, number_of_adjacent_entitys);
     }
   } // ... maps_correctly()

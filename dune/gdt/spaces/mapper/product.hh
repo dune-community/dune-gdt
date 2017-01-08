@@ -42,8 +42,8 @@ struct DynamicTupleGetter
 
   template <class EntityType, typename... TupleArgs>
       static typename std::enable_if
-      < I<sizeof...(TupleArgs), size_t>::type numDofs(const std::tuple<TupleArgs...>& tuple, const size_t factor_index,
-                                                      const EntityType& entity)
+      < I<sizeof...(TupleArgs), size_t>::type
+        numDofs(const std::tuple<TupleArgs...>& tuple, const size_t factor_index, const EntityType& entity)
   {
     if (factor_index == 0)
       return std::get<I>(tuple).numDofs(entity);
@@ -84,7 +84,9 @@ struct DynamicTupleGetter
 
   template <class EntityType, typename... TupleArgs>
   static typename std::enable_if<I == sizeof...(TupleArgs), size_t>::type
-  mapToGlobal(const std::tuple<TupleArgs...>& /*tuple*/, const size_t /*factor_index*/, const EntityType& /*entity*/,
+  mapToGlobal(const std::tuple<TupleArgs...>& /*tuple*/,
+              const size_t /*factor_index*/,
+              const EntityType& /*entity*/,
               const size_t& /*local_index_in_factor*/)
   {
     return 0;
@@ -93,7 +95,8 @@ struct DynamicTupleGetter
   template <class EntityType, typename... TupleArgs>
       static typename std::enable_if
       < I<sizeof...(TupleArgs), size_t>::type mapToGlobal(const std::tuple<TupleArgs...>& tuple,
-                                                          const size_t factor_index, const EntityType& entity,
+                                                          const size_t factor_index,
+                                                          const EntityType& entity,
                                                           const size_t& local_index_in_factor)
   {
     if (factor_index == 0)
@@ -198,7 +201,7 @@ public:
     if (ret.size() != num_dofs_entity)
       ret.resize(num_dofs_entity);
     for (size_t ii = 0; ii < num_dofs_entity; ++ii)
-      ret[ii]      = mapToGlobal(factor_index, entity, ii);
+      ret[ii] = mapToGlobal(factor_index, entity, ii);
   }
 
   size_t mapToGlobal(const size_t factor_index, const EntityType& entity, const size_t& local_index_in_factor) const
@@ -247,7 +250,7 @@ public:
   size_t maxNumDofs() const
   {
     size_t max_num_dofs = 0;
-    const auto it_end   = grid_view_.template end<0>();
+    const auto it_end = grid_view_.template end<0>();
     for (auto it = grid_view_.template begin<0>(); it != it_end; ++it) {
       const auto& entity = *it;
       if (max_num_dofs < numDofs(entity))
@@ -262,14 +265,14 @@ public:
     if (ret.size() != num_dofs_entity)
       ret.resize(num_dofs_entity);
     for (size_t ii = 0; ii < num_dofs_entity; ++ii)
-      ret[ii]      = mapToGlobal(entity, ii);
+      ret[ii] = mapToGlobal(entity, ii);
   } // ... globalIndices(...)
 
   using BaseType::globalIndices;
 
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
-    size_t factor_index          = 0;
+    size_t factor_index = 0;
     size_t local_index_in_factor = localIndex;
     while (local_index_in_factor >= numDofs(factor_index, entity)) {
       local_index_in_factor -= numDofs(factor_index, entity);

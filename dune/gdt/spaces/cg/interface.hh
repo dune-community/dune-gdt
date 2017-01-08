@@ -93,7 +93,7 @@ public:
     typedef typename BaseType::BaseFunctionSetType::RangeType RangeType;
     std::vector<RangeType> tmp_basis_values(basis.size(), RangeType(0));
     const auto& reference_element = ReferenceElements<DomainFieldType, dimDomain>::general(entity.type());
-    const auto num_vertices       = reference_element.size(dimDomain);
+    const auto num_vertices = reference_element.size(dimDomain);
     assert(num_vertices >= 0);
     assert(boost::numeric_cast<size_t>(num_vertices) == basis.size() && "This should not happen with polOrder 1!");
     // prepare return vector
@@ -105,8 +105,8 @@ public:
       // evaluate the basefunctionset
       basis.evaluate(local_vertex, tmp_basis_values);
       // find the basis function that evaluates to one here (has to be only one!)
-      size_t ones     = 0;
-      size_t zeros    = 0;
+      size_t ones = 0;
+      size_t zeros = 0;
       size_t failures = 0;
       for (size_t jj = 0; jj < basis.size(); ++jj) {
         if (std::abs((tmp_basis_values)[jj][0] - RangeFieldType(1)) < compare_tolerance_) {
@@ -157,8 +157,8 @@ public:
     for (size_t cc = 0; cc < dirichlet_vertices.size(); ++cc) {
       // find the basis function that evaluates to one here (has to be only one!)
       basis.evaluate(dirichlet_vertices[cc], tmp_basis_values);
-      size_t ones     = 0;
-      size_t zeros    = 0;
+      size_t ones = 0;
+      size_t zeros = 0;
       size_t failures = 0;
       for (size_t jj = 0; jj < basis.size(); ++jj) {
         if (std::abs(tmp_basis_values[jj][0] - RangeFieldType(1)) < compare_tolerance_) {
@@ -208,7 +208,7 @@ public:
       // calculate by using lagrange grid {x = \sum_{j=0}^d \lambda_j a_j | \sum_j lambda_j = 1}, where a_j are the
       // vertices of the entity and \lambda_j \in {\frac{m}{polOrder} | m = 0, ... , polOrder}
       std::vector<double> possible_coefficients(polOrder < 1 ? 0 : polOrder - 1);
-      for (int m                 = 0; m < polOrder; ++m)
+      for (int m = 0; m < polOrder; ++m)
         possible_coefficients[m] = m / polOrder;
       std::set<std::vector<double>> possible_coefficient_vectors;
       possible_convex_combination_coefficients(
@@ -227,8 +227,8 @@ public:
     for (size_t cc = 0; cc < dirichlet_vertices.size(); ++cc) {
       // find the basis function that evaluates to one here (has to be only one per range dimension!)
       basis.evaluate(dirichlet_vertices[cc], tmp_basis_values);
-      size_t ones     = 0;
-      size_t zeros    = 0;
+      size_t ones = 0;
+      size_t zeros = 0;
       size_t failures = 0;
       for (size_t jj = 0; jj < basis.size(); ++jj) {
         for (size_t rr = 0; rr < dimRange; ++rr) {
@@ -257,14 +257,16 @@ public:
   using BaseType::local_constraints;
 
   template <class S, size_t d, size_t r, size_t rC, class ConstraintsType>
-  void local_constraints(const SpaceInterface<S, d, r, rC>& /*other*/, const EntityType& /*entity*/,
+  void local_constraints(const SpaceInterface<S, d, r, rC>& /*other*/,
+                         const EntityType& /*entity*/,
                          ConstraintsType& /*ret*/) const
   {
     static_assert(AlwaysFalse<S>::value, "Not implemented for these constraints!");
   }
 
   template <class S, size_t d, size_t r, size_t rC>
-  void local_constraints(const SpaceInterface<S, d, r, rC>& /*other*/, const EntityType& entity,
+  void local_constraints(const SpaceInterface<S, d, r, rC>& /*other*/,
+                         const EntityType& entity,
                          DirichletConstraints<IntersectionType>& ret) const
   {
     const auto local_DoFs = this->local_dirichlet_DoFs(entity, ret.boundary_info());

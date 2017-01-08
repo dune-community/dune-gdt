@@ -91,11 +91,11 @@ public:
   {
     if (ret.size() < numDofs(entity))
       ret.resize(numDofs(entity));
-    const auto factor_num_dofs       = factor_mapper_.numDofs(entity);
-    const auto factor_mapper_size    = factor_mapper_.size();
+    const auto factor_num_dofs = factor_mapper_.numDofs(entity);
+    const auto factor_mapper_size = factor_mapper_.size();
     const auto factor_global_indices = factor_mapper_.globalIndices(entity);
     for (size_t ii = 0; ii < dimRange; ++ii) {
-      const auto factor_num_dofs_times_ii    = factor_num_dofs * ii;
+      const auto factor_num_dofs_times_ii = factor_num_dofs * ii;
       const auto factor_mapper_size_times_ii = factor_mapper_size * ii;
       for (size_t jj = 0; jj < factor_num_dofs; ++jj) {
         ret[factor_num_dofs_times_ii + jj] = factor_global_indices[jj] + factor_mapper_size_times_ii;
@@ -106,7 +106,7 @@ public:
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
     assert(localIndex < numDofs(entity));
-    size_t factor_index               = 0;
+    size_t factor_index = 0;
     const auto factor_mapper_num_dofs = factor_mapper_.numDofs(entity);
     while (localIndex >= factor_mapper_num_dofs) {
       localIndex -= factor_mapper_num_dofs;
@@ -134,9 +134,9 @@ public:
     if (ret.size() < factor_mapper_num_dofs)
       ret.resize(factor_mapper_num_dofs);
     const auto factor_mapper_size_times_factor_index = factor_mapper_.size() * factor_index;
-    const auto factor_mapper_global_indices          = factor_mapper_.globalIndices(entity);
+    const auto factor_mapper_global_indices = factor_mapper_.globalIndices(entity);
     for (size_t jj = 0; jj < factor_mapper_num_dofs; ++jj)
-      ret[jj]      = factor_mapper_global_indices[jj] + factor_mapper_size_times_factor_index;
+      ret[jj] = factor_mapper_global_indices[jj] + factor_mapper_size_times_factor_index;
   } // ... globalIndices(...)
 
   size_t mapToGlobal(const size_t factor_index, const EntityType& entity, const size_t& local_index_in_factor) const

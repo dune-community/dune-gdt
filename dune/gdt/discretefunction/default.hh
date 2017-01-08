@@ -47,8 +47,10 @@ template <size_t ii, bool is_product_space = false>
 struct visualize_helper
 {
   template <class DiscreteFunctionType>
-  static void visualize_factor(const std::string filename_prefix, const std::string filename_suffix,
-                               const bool subsampling, const VTK::OutputType vtk_output_type,
+  static void visualize_factor(const std::string filename_prefix,
+                               const std::string filename_suffix,
+                               const bool subsampling,
+                               const VTK::OutputType vtk_output_type,
                                const DiscreteFunctionType& discrete_function)
   {
     static_assert(ii == 0, "Space is not a product space, so there is no factor other than 0.");
@@ -62,12 +64,14 @@ template <size_t ii>
 struct visualize_helper<ii, true>
 {
   template <class DiscreteFunctionType>
-  static void visualize_factor(const std::string filename_prefix, const std::string filename_suffix,
-                               const bool subsampling, const VTK::OutputType vtk_output_type,
+  static void visualize_factor(const std::string filename_prefix,
+                               const std::string filename_suffix,
+                               const bool subsampling,
+                               const VTK::OutputType vtk_output_type,
                                const DiscreteFunctionType& discrete_function)
   {
     static_assert(ii < DiscreteFunctionType::SpaceType::num_factors, "This factor does not exist.");
-    const auto& space        = discrete_function.space();
+    const auto& space = discrete_function.space();
     const auto& factor_space = space.template factor<ii>();
     typename DiscreteFunctionType::VectorType factor_vector(factor_space.mapper().size());
     const auto it_end = space.grid_view().template end<0>();
@@ -94,8 +98,11 @@ template <size_t current_factor_index, size_t last_factor_index>
 struct static_for_loop
 {
   template <class DiscreteFunctionType>
-  static void visualize(const std::string filename_prefix, const std::string filename_suffix, const bool subsampling,
-                        const VTK::OutputType vtk_output_type, const DiscreteFunctionType& discrete_function)
+  static void visualize(const std::string filename_prefix,
+                        const std::string filename_suffix,
+                        const bool subsampling,
+                        const VTK::OutputType vtk_output_type,
+                        const DiscreteFunctionType& discrete_function)
   {
     visualize_helper<current_factor_index, true>::visualize_factor(
         filename_prefix, filename_suffix, subsampling, vtk_output_type, discrete_function);
@@ -109,8 +116,10 @@ template <size_t last_factor_index>
 struct static_for_loop<last_factor_index, last_factor_index>
 {
   template <class DiscreteFunctionType>
-  static void visualize(const std::string /*filename*/, const std::string /*filename_suffix*/,
-                        const bool /*subsampling*/, const VTK::OutputType /*vtk_output_type*/,
+  static void visualize(const std::string /*filename*/,
+                        const std::string /*filename_suffix*/,
+                        const bool /*subsampling*/,
+                        const VTK::OutputType /*vtk_output_type*/,
                         const DiscreteFunctionType& /*discrete_function*/)
   {
   }
@@ -126,18 +135,23 @@ struct ChooseVisualize
 
 
 template <class SpaceImp, class VectorImp>
-class ConstDiscreteFunction
-    : public XT::Functions::LocalizableFunctionInterface<
-          typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType, SpaceImp::dimDomain,
-          typename SpaceImp::RangeFieldType, SpaceImp::dimRange, SpaceImp::dimRangeCols>
+class ConstDiscreteFunction : public XT::Functions::LocalizableFunctionInterface<typename SpaceImp::EntityType,
+                                                                                 typename SpaceImp::DomainFieldType,
+                                                                                 SpaceImp::dimDomain,
+                                                                                 typename SpaceImp::RangeFieldType,
+                                                                                 SpaceImp::dimRange,
+                                                                                 SpaceImp::dimRangeCols>
 {
   static_assert(is_space<SpaceImp>::value, "SpaceImp has to be derived from SpaceInterface!");
   static_assert(XT::LA::is_vector<VectorImp>::value, "VectorImp has to be derived from XT::LA::VectorInterface!");
   static_assert(std::is_same<typename SpaceImp::RangeFieldType, typename VectorImp::ScalarType>::value,
                 "Types do not match!");
-  typedef XT::Functions::LocalizableFunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
-                                                      SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
-                                                      SpaceImp::dimRange, SpaceImp::dimRangeCols>
+  typedef XT::Functions::LocalizableFunctionInterface<typename SpaceImp::EntityType,
+                                                      typename SpaceImp::DomainFieldType,
+                                                      SpaceImp::dimDomain,
+                                                      typename SpaceImp::RangeFieldType,
+                                                      SpaceImp::dimRange,
+                                                      SpaceImp::dimRangeCols>
       BaseType;
   typedef ConstDiscreteFunction<SpaceImp, VectorImp> ThisType;
 
@@ -210,14 +224,16 @@ public:
    * \sa    Dune::XT::Functions::LocalizableFunctionInterface::visualize
    * \note  Subsampling is enabled by default for functions of order greater than one.
    */
-  void visualize(const std::string filename, const bool subsampling = (SpaceType::polOrder > 1),
+  void visualize(const std::string filename,
+                 const bool subsampling = (SpaceType::polOrder > 1),
                  const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
     visualize(filename, "", subsampling, vtk_output_type);
   }
 
-  void visualize(const std::string filename_prefix, const std::string filename_suffix,
-                 const bool subsampling                = (SpaceType::polOrder > 1),
+  void visualize(const std::string filename_prefix,
+                 const std::string filename_suffix,
+                 const bool subsampling = (SpaceType::polOrder > 1),
                  const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
     redirect_visualize(filename_prefix,
@@ -228,8 +244,9 @@ public:
   }
 
   template <size_t ii>
-  void visualize_factor(const std::string filename_prefix, const std::string filename_suffix = "",
-                        const bool subsampling                = (SpaceType::polOrder > 1),
+  void visualize_factor(const std::string filename_prefix,
+                        const std::string filename_suffix = "",
+                        const bool subsampling = (SpaceType::polOrder > 1),
                         const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
     internal::visualize_helper<ii, is_product_space<SpaceType>::value>::visualize_factor(
@@ -242,15 +259,21 @@ public:
   }
 
 protected:
-  void redirect_visualize(const std::string filename_prefix, const std::string filename_suffix, const bool subsampling,
-                          const VTK::OutputType vtk_output_type, const internal::ChooseVisualize<false>&) const
+  void redirect_visualize(const std::string filename_prefix,
+                          const std::string filename_suffix,
+                          const bool subsampling,
+                          const VTK::OutputType vtk_output_type,
+                          const internal::ChooseVisualize<false>&) const
   {
     BaseType::template visualize<typename SpaceType::GridViewType>(
         space().grid_view(), filename_prefix + filename_suffix, subsampling, vtk_output_type);
   } // ... redirect_visualize(...)
 
-  void redirect_visualize(const std::string filename_prefix, const std::string filename_suffix, const bool subsampling,
-                          const VTK::OutputType vtk_output_type, const internal::ChooseVisualize<true>&) const
+  void redirect_visualize(const std::string filename_prefix,
+                          const std::string filename_suffix,
+                          const bool subsampling,
+                          const VTK::OutputType vtk_output_type,
+                          const internal::ChooseVisualize<true>&) const
   {
     internal::static_for_loop<0,
                               ProductSpaceInterface<SpaceTraits,
@@ -345,9 +368,8 @@ private:
 
 
 template <class SpaceType, class VectorType>
-ConstDiscreteFunction<SpaceType, VectorType>
-make_const_discrete_function(const SpaceType& space, const VectorType& vector,
-                             const std::string nm = "gdt.constdiscretefunction")
+ConstDiscreteFunction<SpaceType, VectorType> make_const_discrete_function(
+    const SpaceType& space, const VectorType& vector, const std::string nm = "gdt.constdiscretefunction")
 {
   return ConstDiscreteFunction<SpaceType, VectorType>(space, vector, nm);
 }
@@ -368,8 +390,8 @@ auto discrete_function = make_discrete_function< VectorType >(space);
 \endcode
  */
 template <class VectorType, class SpaceType>
-DiscreteFunction<SpaceType, VectorType>
-make_discrete_function(const SpaceType& space, const std::string nm = "gdt.discretefunction")
+DiscreteFunction<SpaceType, VectorType> make_discrete_function(const SpaceType& space,
+                                                               const std::string nm = "gdt.discretefunction")
 {
   return DiscreteFunction<SpaceType, VectorType>(space, nm);
 }

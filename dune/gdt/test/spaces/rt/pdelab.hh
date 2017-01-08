@@ -52,8 +52,7 @@
 #endif // HAVE_ALUGRID
 
 template <class T>
-double
-pdelab_rt_tolerance(const T& param)
+double pdelab_rt_tolerance(const T& param)
 {
   typedef typename T::GridViewType::Grid Grid;
   const auto dim = param.dimDomain;

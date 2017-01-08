@@ -98,24 +98,24 @@ private:
     const auto entity_it_end = grid_view_.template end<0>();
     // walk the grid to create the maps explained above and to find the boundary vertices
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity        = *entity_it;
+      const auto& entity = *entity_it;
       const size_t num_vertices = entity.subEntities(dimDomain);
-      const auto basis          = source.space().base_function_set(entity);
+      const auto basis = source.space().base_function_set(entity);
       if (basis.size() != num_vertices)
         DUNE_THROW(Dune::XT::Common::Exceptions::internal_error, "basis.size() = " << basis.size());
 
       // loop over all vertices of the entitity, to find their associated global DoF indices
       for (size_t local_vertex_id = 0; local_vertex_id < num_vertices; ++local_vertex_id) {
-        const auto vertex           = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
+        const auto vertex = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
         const auto global_vertex_id = grid_view_.indexSet().index(vertex);
-        const auto vertex_center    = vertex.geometry().center();
+        const auto vertex_center = vertex.geometry().center();
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex_center));
         if (basis_values.size() != num_vertices)
           DUNE_THROW(Dune::XT::Common::Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
-        size_t ones            = 0;
-        size_t zeros           = 0;
-        size_t failures        = 0;
+        size_t ones = 0;
+        size_t zeros = 0;
+        size_t failures = 0;
         size_t local_DoF_index = 0;
         for (size_t ii = 0; ii < basis.size(); ++ii) {
           if (std::abs(basis_values[ii][0] - 1.0) < 1e-14) {
@@ -155,7 +155,7 @@ private:
               for (size_t local_vertex_id = 0; local_vertex_id < num_vertices; ++local_vertex_id) {
                 const auto vertex = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
                 const auto global_vertex_id = grid_view_.indexSet().index(vertex);
-                const auto vertex_center    = vertex.geometry().center();
+                const auto vertex_center = vertex.geometry().center();
                 if (XT::Common::FloatCmp::eq(global_intersection_corner, vertex_center))
                   boundary_vertices.insert(global_vertex_id);
               } // loop over all vertices of the entity
@@ -167,10 +167,10 @@ private:
 
     // walk the grid for the second time
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity      = *entity_it;
+      const auto& entity = *entity_it;
       const auto num_vertices = entity.subEntities(dimDomain);
       // get the local functions
-      const auto local_source             = source.local_discrete_function(entity);
+      const auto local_source = source.local_discrete_function(entity);
       const auto& local_source_DoF_vector = local_source->vector();
 
       // * loop over all local DoFs

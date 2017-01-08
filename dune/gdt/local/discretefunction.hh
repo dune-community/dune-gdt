@@ -27,12 +27,16 @@ namespace GDT {
 
 
 template <class SpaceImp, class VectorImp>
-class ConstLocalDiscreteFunction
-    : public XT::Functions::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
-                                                   SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
-                                                   SpaceImp::dimRange, SpaceImp::dimRangeCols>
+class ConstLocalDiscreteFunction : public XT::Functions::LocalfunctionInterface<typename SpaceImp::EntityType,
+                                                                                typename SpaceImp::DomainFieldType,
+                                                                                SpaceImp::dimDomain,
+                                                                                typename SpaceImp::RangeFieldType,
+                                                                                SpaceImp::dimRange,
+                                                                                SpaceImp::dimRangeCols>
 {
-  static_assert(std::is_base_of<SpaceInterface<typename SpaceImp::Traits, SpaceImp::dimDomain, SpaceImp::dimRange,
+  static_assert(std::is_base_of<SpaceInterface<typename SpaceImp::Traits,
+                                               SpaceImp::dimDomain,
+                                               SpaceImp::dimRange,
                                                SpaceImp::dimRangeCols>,
                                 SpaceImp>::value,
                 "SpaceImp has to be derived from SpaceInterface!");
@@ -42,9 +46,12 @@ class ConstLocalDiscreteFunction
       "VectorImp has to be derived from XT::LA::VectorInterface!");
   static_assert(std::is_same<typename SpaceImp::RangeFieldType, typename VectorImp::ScalarType>::value,
                 "Types do not match!");
-  typedef XT::Functions::LocalfunctionInterface<typename SpaceImp::EntityType, typename SpaceImp::DomainFieldType,
-                                                SpaceImp::dimDomain, typename SpaceImp::RangeFieldType,
-                                                SpaceImp::dimRange, SpaceImp::dimRangeCols>
+  typedef XT::Functions::LocalfunctionInterface<typename SpaceImp::EntityType,
+                                                typename SpaceImp::DomainFieldType,
+                                                SpaceImp::dimDomain,
+                                                typename SpaceImp::RangeFieldType,
+                                                SpaceImp::dimRange,
+                                                SpaceImp::dimRangeCols>
       BaseType;
   typedef ConstLocalDiscreteFunction<SpaceImp, VectorImp> ThisType;
 
@@ -122,7 +129,7 @@ public:
       }
     } else {
       for (size_t ii = 0; ii < localVector_->size(); ++ii)
-        ret[ii]      = localVector_->get(ii);
+        ret[ii] = localVector_->get(ii);
     }
   } // ... evaluate(...)
 

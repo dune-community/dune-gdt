@@ -193,7 +193,7 @@ protected:
         return str;
       } else {
         const auto& basefunctions_right = basefunctions_values_at_plusone();
-        std::string str                 = "[";
+        std::string str = "[";
         for (size_t cc = 0; cc < dimRange; ++cc) {
           if (cc > 0)
             str += " ";
@@ -212,9 +212,9 @@ public:
   static ConfigType default_grid_config()
   {
     ConfigType grid_config;
-    grid_config["type"]         = "provider.cube";
-    grid_config["lower_left"]   = "[0.0]";
-    grid_config["upper_right"]  = "[3.0]";
+    grid_config["type"] = "provider.cube";
+    grid_config["lower_left"] = "[0.0]";
+    grid_config["upper_right"] = "[3.0]";
     grid_config["num_elements"] = "[100]";
     return grid_config;
   }
@@ -226,7 +226,7 @@ public:
     return boundary_config;
   }
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -234,7 +234,7 @@ public:
     const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
     const std::shared_ptr<const DefaultInitialValueType> initial_values(
         DefaultInitialValueType::create(config.sub("initial_values")));
-    const ConfigType grid_config   = config.sub("grid");
+    const ConfigType grid_config = config.sub("grid");
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
@@ -252,17 +252,17 @@ public:
     config.add(default_grid_config(), "grid", true);
     config.add(default_boundary_info_config(), "boundary_info", true);
     ConfigType rhs_config;
-    rhs_config["lower_left"]   = "[0.0]";
-    rhs_config["upper_right"]  = "[3.0]";
+    rhs_config["lower_left"] = "[0.0]";
+    rhs_config["upper_right"] = "[3.0]";
     rhs_config["num_elements"] = "[6]";
     GetData::create_rhs_values(rhs_config);
     rhs_config["name"] = static_id();
     config.add(rhs_config, "rhs", true);
     ConfigType boundary_value_config;
-    boundary_value_config["type"]       = DefaultBoundaryValueType::static_id();
-    boundary_value_config["variable"]   = "x";
+    boundary_value_config["type"] = DefaultBoundaryValueType::static_id();
+    boundary_value_config["variable"] = "x";
     boundary_value_config["expression"] = GetData::create_boundary_values();
-    boundary_value_config["order"]      = "10";
+    boundary_value_config["order"] = "10";
     config.add(boundary_value_config, "boundary_values", true);
     if (sub_name.empty())
       return config;
@@ -273,9 +273,12 @@ public:
     }
   } // ... default_config(...)
 
-  SourceBeam(const std::shared_ptr<const FluxType> flux_in, const std::shared_ptr<const RHSType> rhs_in,
-             const std::shared_ptr<const InitialValueType> initial_values_in, const ConfigType& grid_config_in,
-             const ConfigType& boundary_info_in, const std::shared_ptr<const BoundaryValueType> boundary_values_in)
+  SourceBeam(const std::shared_ptr<const FluxType> flux_in,
+             const std::shared_ptr<const RHSType> rhs_in,
+             const std::shared_ptr<const InitialValueType> initial_values_in,
+             const ConfigType& grid_config_in,
+             const ConfigType& boundary_info_in,
+             const std::shared_ptr<const BoundaryValueType> boundary_values_in)
     : BaseType(flux_in, rhs_in, initial_values_in, grid_config_in, boundary_info_in, boundary_values_in)
   {
   }
@@ -301,9 +304,12 @@ public:
 
 template <class G, class R = double, size_t momentOrder = 5>
 class SourceBeamTestCase
-    : public Dune::GDT::Test::NonStationaryTestCase<G, Problems::SourceBeam<typename G::template Codim<0>::Entity,
-                                                                            typename G::ctype, G::dimension, R,
-                                                                            momentOrder>>
+    : public Dune::GDT::Test::NonStationaryTestCase<G,
+                                                    Problems::SourceBeam<typename G::template Codim<0>::Entity,
+                                                                         typename G::ctype,
+                                                                         G::dimension,
+                                                                         R,
+                                                                         momentOrder>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -312,7 +318,7 @@ public:
   static const size_t d = G::dimension;
   static_assert(d == 1, "Only implemented for dimension 1.");
   typedef typename Problems::SourceBeam<E, D, d, R, momentOrder> ProblemType;
-  static const size_t dimRange     = ProblemType::dimRange;
+  static const size_t dimRange = ProblemType::dimRange;
   static const size_t dimRangeCols = 1;
 
 private:
@@ -324,8 +330,8 @@ public:
   using typename BaseType::LevelGridViewType;
 
   SourceBeamTestCase(const size_t num_refs = 1, const double divide_t_end_by = 1.0)
-    : BaseType(divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(),
-               num_refs)
+    : BaseType(
+          divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(), num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {
   }

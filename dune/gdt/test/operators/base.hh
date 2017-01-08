@@ -36,15 +36,15 @@ struct OperatorBaseTraits
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const size_t dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
-  static const size_t dimRange       = SpaceType::dimRange;
+  static const size_t dimRange = SpaceType::dimRange;
   static const unsigned int polOrder = SpaceType::polOrder;
   typedef Dune::XT::Functions::ExpressionFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1>
       ScalarFunctionType;
   typedef Dune::XT::Functions::ExpressionFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
-  typedef Dune::XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain,
-                                                dimDomain>
-      TensorFunctionType;
+  typedef Dune::XT::Functions::
+      ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain>
+          TensorFunctionType;
   typedef typename XT::LA::Container<RangeFieldType, XT::LA::default_backend>::MatrixType MatrixType;
   typedef typename XT::LA::Container<RangeFieldType, XT::LA::default_backend>::VectorType VectorType;
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
@@ -98,8 +98,8 @@ struct LocalizableProductBase : public OperatorBase<SpaceType>
   template <class ProductImp>
   void localizable_product_test(ProductImp& prod)
   {
-    const auto& source DUNE_UNUSED    = prod.source();
-    const auto& range DUNE_UNUSED     = prod.range();
+    const auto& source DUNE_UNUSED = prod.source();
+    const auto& range DUNE_UNUSED = prod.range();
     auto& non_const_range DUNE_UNUSED = prod.range();
 
     XT::Grid::Walker<GridViewType> walker(this->space_.grid_view());
@@ -121,10 +121,10 @@ struct MatrixOperatorBase : public OperatorBase<SpaceType>
   template <class OperatorImp>
   void matrix_operator_test(OperatorImp& op)
   {
-    const auto& matrix DUNE_UNUSED       = op.matrix();
-    auto& non_const_matrix DUNE_UNUSED   = op.matrix();
+    const auto& matrix DUNE_UNUSED = op.matrix();
+    auto& non_const_matrix DUNE_UNUSED = op.matrix();
     const auto& source_space DUNE_UNUSED = op.source_space();
-    const auto& range_space DUNE_UNUSED  = op.range_space();
+    const auto& range_space DUNE_UNUSED = op.range_space();
 
     XT::Grid::Walker<GridViewType> walker(this->space_.grid_view());
     walker.add(op);

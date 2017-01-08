@@ -11,11 +11,12 @@ namespace Test {
 
 // polorder 1, conforming
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::swipdg, 1>::
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::swipdg,
+                                                  1>::
     results(const LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 1>::TestCaseType&,
+                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                1>::TestCaseType&,
             const std::string type)
 {
   if (type == "L2") {
@@ -43,11 +44,12 @@ LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridTyp
 
 // polorder 2, conforming
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::swipdg, 2>::
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::swipdg,
+                                                  2>::
     results(const LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 2>::TestCaseType&,
+                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                2>::TestCaseType&,
             const std::string type)
 {
   if (type == "L2") {
@@ -75,11 +77,12 @@ LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridTyp
 
 // polorder 1, nonconforming
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::swipdg, 1>::
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::swipdg,
+                                                  1>::
     results(const LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 1>::TestCaseType&,
+                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                1>::TestCaseType&,
             const std::string type)
 {
   if (type == "L2") {
@@ -107,11 +110,12 @@ LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridTyp
 
 // polorder 2, nonconforming
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::swipdg, 2>::
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::swipdg,
+                                                  2>::
     results(const LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 2>::TestCaseType&,
+                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                2>::TestCaseType&,
             const std::string type)
 {
   if (type == "L2") {

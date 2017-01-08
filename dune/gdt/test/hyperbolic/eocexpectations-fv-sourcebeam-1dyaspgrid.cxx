@@ -5,11 +5,15 @@ namespace GDT {
 namespace Test {
 
 
-std::vector<double>
-HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>, Hyperbolic::ChooseDiscretizer::fv, 1,
-                          NumericalFluxes::godunov, TimeStepperMethods::explicit_euler>::
+std::vector<double> HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
+                                              Hyperbolic::ChooseDiscretizer::fv,
+                                              1,
+                                              NumericalFluxes::godunov,
+                                              TimeStepperMethods::explicit_euler>::
     results(const HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
-                                            Hyperbolic::ChooseDiscretizer::fv, 1, NumericalFluxes::godunov,
+                                            Hyperbolic::ChooseDiscretizer::fv,
+                                            1,
+                                            NumericalFluxes::godunov,
                                             TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
             const std::string type)
 {
@@ -25,11 +29,14 @@ HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>, Hyperbo
   return {};
 }
 
-std::vector<double>
-HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>, Hyperbolic::ChooseDiscretizer::fv, 1,
-                          NumericalFluxes::godunov_with_reconstruction, TimeStepperMethods::explicit_euler>::
+std::vector<double> HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
+                                              Hyperbolic::ChooseDiscretizer::fv,
+                                              1,
+                                              NumericalFluxes::godunov_with_reconstruction,
+                                              TimeStepperMethods::explicit_euler>::
     results(const HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
-                                            Hyperbolic::ChooseDiscretizer::fv, 1,
+                                            Hyperbolic::ChooseDiscretizer::fv,
+                                            1,
                                             NumericalFluxes::godunov_with_reconstruction,
                                             TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
             const std::string type)

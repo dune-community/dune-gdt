@@ -65,7 +65,7 @@ class DunePdelabDgSpaceWrapperTraits
 public:
   typedef DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   typedef GridViewImp GridViewType;
-  static const int polOrder    = polynomialOrder;
+  static const int polOrder = polynomialOrder;
   static const bool continuous = false;
 
 private:
@@ -94,7 +94,7 @@ private:
   };
   typedef typename GridViewType::Grid GridType;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
-  static const bool simplicial_  = (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
+  static const bool simplicial_ = (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
                                    == GenericGeometry::SimplexTopology<dimDomain>::type::id);
   static const bool cubic_ = (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
                               == GenericGeometry::CubeTopology<dimDomain>::type::id);
@@ -105,11 +105,11 @@ public:
       BackendType;
   typedef DunePdelabDgMapperWrapper<BackendType> MapperType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
-  typedef BaseFunctionSet::DunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                             rangeDim, rangeDimCols>
-      BaseFunctionSetType;
+  typedef BaseFunctionSet::
+      DunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType, rangeDim, rangeDimCols>
+          BaseFunctionSetType;
   static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
-  static const bool needs_grid_view              = true;
+  static const bool needs_grid_view = true;
   typedef CommunicationChooser<GridViewType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 
@@ -128,9 +128,9 @@ public:
   typedef DunePdelabDgProductSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>
       derived_type;
   using typename BaseType::GridViewType;
-  static const int polOrder        = BaseType::polOrder;
-  static const size_t dimDomain    = GridViewType::dimension;
-  static const size_t dimRange     = rangeDim;
+  static const int polOrder = BaseType::polOrder;
+  static const size_t dimDomain = GridViewType::dimension;
+  static const size_t dimRange = rangeDim;
   static const size_t dimRangeCols = rangeDimCols;
   using typename BaseType::BackendType;
   using typename BaseType::EntityType;
@@ -150,13 +150,17 @@ public:
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp>
 class DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public DgSpaceInterface<internal::DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1,
-                                                                       1>,
-                              GridViewImp::dimension, 1, 1>
+    : public DgSpaceInterface<internal::
+                                  DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                              GridViewImp::dimension,
+                              1,
+                              1>
 {
   typedef DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
   typedef DgSpaceInterface<internal::DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                           GridViewImp::dimension, 1, 1>
+                           GridViewImp::dimension,
+                           1,
+                           1>
       BaseType;
 
 public:
@@ -261,20 +265,33 @@ private:
 
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim>
 class DunePdelabDgProductSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>
-    : public Dune::GDT::SpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp, polynomialOrder,
-                                                                                       RangeFieldImp, rangeDim, 1>,
-                                       GridViewImp::dimension, rangeDim, 1>,
-      public Dune::GDT::
-          ProductSpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp, polynomialOrder,
-                                                                                RangeFieldImp, rangeDim, 1>,
-                                GridViewImp::dimension, rangeDim, 1>
+    : public Dune::GDT::SpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp,
+                                                                                       polynomialOrder,
+                                                                                       RangeFieldImp,
+                                                                                       rangeDim,
+                                                                                       1>,
+                                       GridViewImp::dimension,
+                                       rangeDim,
+                                       1>,
+      public Dune::GDT::ProductSpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp,
+                                                                                              polynomialOrder,
+                                                                                              RangeFieldImp,
+                                                                                              rangeDim,
+                                                                                              1>,
+                                              GridViewImp::dimension,
+                                              rangeDim,
+                                              1>
 {
   typedef DunePdelabDgProductSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef
-      typename Dune::GDT::SpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp, polynomialOrder,
-                                                                                         RangeFieldImp, rangeDim, 1>,
-                                         GridViewImp::dimension, rangeDim, 1>
-          BaseType;
+  typedef typename Dune::GDT::SpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp,
+                                                                                             polynomialOrder,
+                                                                                             RangeFieldImp,
+                                                                                             rangeDim,
+                                                                                             1>,
+                                             GridViewImp::dimension,
+                                             rangeDim,
+                                             1>
+      BaseType;
 
 public:
   typedef

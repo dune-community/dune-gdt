@@ -136,7 +136,7 @@ public:
         const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase)
       const
   {
-    const auto local_diffusion      = std::get<0>(localFuncs);
+    const auto local_diffusion = std::get<0>(localFuncs);
     const auto local_diffusive_flux = std::get<1>(localFuncs);
     return order(*local_diffusion, *local_diffusive_flux, testBase, ansatzBase);
   }
@@ -147,9 +147,10 @@ public:
       const LocalfunctionTupleType localFuncs,
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base,
-      const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret) const
+      const Dune::FieldVector<DomainFieldType, dimDomain>& local_point,
+      Dune::DynamicMatrix<R>& ret) const
   {
-    const auto local_diffusion      = std::get<0>(localFuncs);
+    const auto local_diffusion = std::get<0>(localFuncs);
     const auto local_diffusive_flux = std::get<1>(localFuncs);
     evaluate(*local_diffusion, *local_diffusive_flux, test_base, ansatz_base, local_point, ret);
   }
@@ -187,21 +188,22 @@ public:
                local_diffusive_flux,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1>& test_base,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1>& ansatz_base,
-           const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret) const
+           const Dune::FieldVector<DomainFieldType, dimDomain>& local_point,
+           Dune::DynamicMatrix<R>& ret) const
   {
     // evaluate local functions
-    const auto diffusion_value       = local_diffusion.evaluate(local_point);
+    const auto diffusion_value = local_diffusion.evaluate(local_point);
     const R one_over_diffusion_value = 1.0 / diffusion_value;
-    const auto diffusive_flux_value  = local_diffusive_flux.evaluate(local_point);
+    const auto diffusive_flux_value = local_diffusive_flux.evaluate(local_point);
     // evaluate test gradient
-    const size_t rows         = test_base.size();
+    const size_t rows = test_base.size();
     const auto test_gradients = test_base.jacobian(local_point);
-    auto left_sum             = test_gradients[0];
+    auto left_sum = test_gradients[0];
     assert(test_gradients.size() == rows);
     // evaluate ansatz gradient
-    const size_t cols           = ansatz_base.size();
+    const size_t cols = ansatz_base.size();
     const auto ansatz_gradients = ansatz_base.jacobian(local_point);
-    auto right_sum              = ansatz_gradients[0];
+    auto right_sum = ansatz_gradients[0];
     assert(ansatz_gradients.size() == rows);
     // compute
     assert(ret.rows() >= rows);
@@ -243,7 +245,8 @@ class LocalDiffusiveFluxEstimateESV2007Integrand
       BaseType;
 
 public:
-  typedef internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionFactorType, DiffusiveFluxType,
+  typedef internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionFactorType,
+                                                                     DiffusiveFluxType,
                                                                      DiffusionTensorType>
       Traits;
   using typename BaseType::LocalfunctionTupleType;
@@ -280,7 +283,7 @@ public:
   {
     const auto local_diffusion_factor = std::get<0>(localFuncs);
     const auto local_diffusion_tensor = std::get<1>(localFuncs);
-    const auto local_diffusive_flux   = std::get<2>(localFuncs);
+    const auto local_diffusive_flux = std::get<2>(localFuncs);
     return order(*local_diffusion_factor, *local_diffusion_tensor, *local_diffusive_flux, testBase, ansatzBase);
   } // ... order(...)
 
@@ -290,11 +293,12 @@ public:
       const LocalfunctionTupleType localFuncs,
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base,
-      const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret) const
+      const Dune::FieldVector<DomainFieldType, dimDomain>& local_point,
+      Dune::DynamicMatrix<R>& ret) const
   {
     const auto local_diffusion_factor = std::get<0>(localFuncs);
     const auto local_diffusion_tensor = std::get<1>(localFuncs);
-    const auto local_diffusive_flux   = std::get<2>(localFuncs);
+    const auto local_diffusive_flux = std::get<2>(localFuncs);
     evaluate(*local_diffusion_factor,
              *local_diffusion_tensor,
              *local_diffusive_flux,
@@ -308,8 +312,17 @@ public:
   /// \name Actual implementation of order.
   /// \{
 
-  template <class R, size_t rLD, size_t rCLD, size_t rLDT, size_t rCLDT, size_t rLDF, size_t rCLDF, size_t rT,
-            size_t rCT, size_t rA, size_t rCA>
+  template <class R,
+            size_t rLD,
+            size_t rCLD,
+            size_t rLDT,
+            size_t rCLDT,
+            size_t rLDF,
+            size_t rCLDF,
+            size_t rT,
+            size_t rCT,
+            size_t rA,
+            size_t rCA>
   size_t
   order(const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, rLD, rCLD>&
             local_diffusion_factor,
@@ -344,7 +357,8 @@ public:
           local_diffusive_flux,
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1>& test_base,
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1>& ansatz_base,
-      const Dune::FieldVector<DomainFieldType, dimDomain>& local_point, Dune::DynamicMatrix<R>& ret) const
+      const Dune::FieldVector<DomainFieldType, dimDomain>& local_point,
+      Dune::DynamicMatrix<R>& ret) const
   {
     typedef FieldVector<R, dimDomain> DomainType;
     DomainType left_sum(0);
@@ -353,7 +367,7 @@ public:
     const auto diffusion_factor_value = local_diffusion_factor.evaluate(local_point);
     typedef XT::Common::FieldMatrix<R, dimDomain, dimDomain> TensorType;
     const TensorType diffusion_tensor_value = local_diffusion_tensor.evaluate(local_point);
-    const TensorType diffusion_value        = diffusion_tensor_value * diffusion_factor_value;
+    const TensorType diffusion_value = diffusion_tensor_value * diffusion_factor_value;
     // TODO: there is no documented way to assert that the inversion was successfull, so find one or check the matrix
     //       beforehand
     TensorType one_over_diffusion_value = diffusion_tensor_value;
@@ -361,11 +375,11 @@ public:
     one_over_diffusion_value /= diffusion_factor_value;
     const auto diffusive_flux_value = local_diffusive_flux.evaluate(local_point);
     // evaluate test gradient
-    const size_t rows         = test_base.size();
+    const size_t rows = test_base.size();
     const auto test_gradients = test_base.jacobian(local_point);
     assert(test_gradients.size() == rows);
     // evaluate ansatz gradient
-    const size_t cols           = ansatz_base.size();
+    const size_t cols = ansatz_base.size();
     const auto ansatz_gradients = ansatz_base.jacobian(local_point);
     assert(ansatz_gradients.size() == rows);
     // compute

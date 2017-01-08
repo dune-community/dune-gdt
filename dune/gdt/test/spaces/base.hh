@@ -95,8 +95,8 @@ public:
     typedef typename SpaceType::DomainFieldType D_DomainFieldType;
     static const size_t d_dimDomain = SpaceType::dimDomain;
     typedef typename SpaceType::RangeFieldType D_RangeFieldType;
-    static const int d_polOrder        = SpaceType::polOrder;
-    static const size_t d_dimRange     = SpaceType::dimRange;
+    static const int d_polOrder = SpaceType::polOrder;
+    static const size_t d_dimRange = SpaceType::dimRange;
     static const size_t d_dimRangeCols = SpaceType::dimRangeCols;
     typedef typename SpaceType::BackendType D_BackendType;
     typedef typename SpaceType::MapperType D_MapperType;
@@ -114,8 +114,8 @@ public:
     typedef typename InterfaceType::DomainFieldType I_DomainFieldType;
     static const size_t i_dimDomain = InterfaceType::dimDomain;
     typedef typename InterfaceType::RangeFieldType I_RangeFieldType;
-    static const int i_polOrder        = InterfaceType::polOrder;
-    static const size_t i_dimRange     = InterfaceType::dimRange;
+    static const int i_polOrder = InterfaceType::polOrder;
+    static const size_t i_dimRange = InterfaceType::dimRange;
     static const size_t i_dimRangeCols = InterfaceType::dimRangeCols;
     typedef typename InterfaceType::BackendType I_BackendType;
     typedef typename InterfaceType::MapperType I_MapperType;
@@ -148,26 +148,26 @@ public:
     static_assert(d_needs_grid_view == i_needs_grid_view, "Information do not match!");
     // dynamic checks
     // * as the derived_type
-    const D_BackendType& d_backend                 = space_.backend();
-    const D_MapperType& d_mapper                   = space_.mapper();
-    const D_GridViewType& d_grid_view              = space_.grid_view();
-    D_CommunicatorType& d_comm                     = space_.communicator();
-    D_PatternType d_pattern                        = space_.compute_pattern();
-    D_PatternType d_pattern_view                   = space_.compute_pattern(d_grid_view);
-    D_PatternType d_pattern_other                  = space_.compute_pattern(space_);
-    D_PatternType d_pattern_view_other             = space_.compute_pattern(d_grid_view, space_);
-    D_PatternType d_pattern_volume                 = space_.compute_volume_pattern();
-    D_PatternType d_pattern_volume_view            = space_.compute_volume_pattern(d_grid_view);
-    D_PatternType d_pattern_volume_other           = space_.compute_volume_pattern(space_);
-    D_PatternType d_pattern_volume_view_other      = space_.compute_volume_pattern(d_grid_view, space_);
-    D_PatternType d_pattern_face_volume            = space_.compute_face_and_volume_pattern();
-    D_PatternType d_pattern_face_volume_view       = space_.compute_face_and_volume_pattern(d_grid_view);
-    D_PatternType d_pattern_face_volume_other      = space_.compute_face_and_volume_pattern(space_);
+    const D_BackendType& d_backend = space_.backend();
+    const D_MapperType& d_mapper = space_.mapper();
+    const D_GridViewType& d_grid_view = space_.grid_view();
+    D_CommunicatorType& d_comm = space_.communicator();
+    D_PatternType d_pattern = space_.compute_pattern();
+    D_PatternType d_pattern_view = space_.compute_pattern(d_grid_view);
+    D_PatternType d_pattern_other = space_.compute_pattern(space_);
+    D_PatternType d_pattern_view_other = space_.compute_pattern(d_grid_view, space_);
+    D_PatternType d_pattern_volume = space_.compute_volume_pattern();
+    D_PatternType d_pattern_volume_view = space_.compute_volume_pattern(d_grid_view);
+    D_PatternType d_pattern_volume_other = space_.compute_volume_pattern(space_);
+    D_PatternType d_pattern_volume_view_other = space_.compute_volume_pattern(d_grid_view, space_);
+    D_PatternType d_pattern_face_volume = space_.compute_face_and_volume_pattern();
+    D_PatternType d_pattern_face_volume_view = space_.compute_face_and_volume_pattern(d_grid_view);
+    D_PatternType d_pattern_face_volume_other = space_.compute_face_and_volume_pattern(space_);
     D_PatternType d_pattern_face_volume_view_other = space_.compute_face_and_volume_pattern(d_grid_view, space_);
-    D_PatternType d_pattern_face                   = space_.compute_face_pattern();
-    D_PatternType d_pattern_face_view              = space_.compute_face_pattern(d_grid_view);
-    D_PatternType d_pattern_face_other             = space_.compute_face_pattern(space_);
-    D_PatternType d_pattern_face_view_other        = space_.compute_face_pattern(d_grid_view, space_);
+    D_PatternType d_pattern_face = space_.compute_face_pattern();
+    D_PatternType d_pattern_face_view = space_.compute_face_pattern(d_grid_view);
+    D_PatternType d_pattern_face_other = space_.compute_face_pattern(space_);
+    D_PatternType d_pattern_face_view_other = space_.compute_face_pattern(d_grid_view, space_);
     EXPECT_EQ(d_pattern, d_pattern_other);
     EXPECT_EQ(d_pattern, d_pattern_view);
     EXPECT_EQ(d_pattern, d_pattern_view_other);
@@ -181,27 +181,27 @@ public:
     EXPECT_EQ(d_pattern_face, d_pattern_face_view);
     EXPECT_EQ(d_pattern_face, d_pattern_face_view_other);
     // * as the interface
-    const InterfaceType& i_space                   = static_cast<const InterfaceType&>(space_);
-    const I_BackendType& i_backend                 = i_space.backend();
-    const I_MapperType& i_mapper                   = i_space.mapper();
-    const I_GridViewType& i_grid_view              = i_space.grid_view();
-    I_CommunicatorType& i_comm                     = i_space.communicator();
-    I_PatternType i_pattern                        = i_space.compute_pattern();
-    I_PatternType i_pattern_view                   = i_space.compute_pattern(i_grid_view);
-    I_PatternType i_pattern_other                  = i_space.compute_pattern(i_space);
-    I_PatternType i_pattern_view_other             = i_space.compute_pattern(i_grid_view, i_space);
-    I_PatternType i_pattern_volume                 = i_space.compute_volume_pattern();
-    I_PatternType i_pattern_volume_view            = i_space.compute_volume_pattern(i_grid_view);
-    I_PatternType i_pattern_volume_other           = i_space.compute_volume_pattern(i_space);
-    I_PatternType i_pattern_volume_view_other      = i_space.compute_volume_pattern(i_grid_view, i_space);
-    I_PatternType i_pattern_face_volume            = i_space.compute_face_and_volume_pattern();
-    I_PatternType i_pattern_face_volume_view       = i_space.compute_face_and_volume_pattern(i_grid_view);
-    I_PatternType i_pattern_face_volume_other      = i_space.compute_face_and_volume_pattern(i_space);
+    const InterfaceType& i_space = static_cast<const InterfaceType&>(space_);
+    const I_BackendType& i_backend = i_space.backend();
+    const I_MapperType& i_mapper = i_space.mapper();
+    const I_GridViewType& i_grid_view = i_space.grid_view();
+    I_CommunicatorType& i_comm = i_space.communicator();
+    I_PatternType i_pattern = i_space.compute_pattern();
+    I_PatternType i_pattern_view = i_space.compute_pattern(i_grid_view);
+    I_PatternType i_pattern_other = i_space.compute_pattern(i_space);
+    I_PatternType i_pattern_view_other = i_space.compute_pattern(i_grid_view, i_space);
+    I_PatternType i_pattern_volume = i_space.compute_volume_pattern();
+    I_PatternType i_pattern_volume_view = i_space.compute_volume_pattern(i_grid_view);
+    I_PatternType i_pattern_volume_other = i_space.compute_volume_pattern(i_space);
+    I_PatternType i_pattern_volume_view_other = i_space.compute_volume_pattern(i_grid_view, i_space);
+    I_PatternType i_pattern_face_volume = i_space.compute_face_and_volume_pattern();
+    I_PatternType i_pattern_face_volume_view = i_space.compute_face_and_volume_pattern(i_grid_view);
+    I_PatternType i_pattern_face_volume_other = i_space.compute_face_and_volume_pattern(i_space);
     I_PatternType i_pattern_face_volume_view_other = i_space.compute_face_and_volume_pattern(i_grid_view, i_space);
-    I_PatternType i_pattern_face                   = i_space.compute_face_pattern();
-    I_PatternType i_pattern_face_view              = i_space.compute_face_pattern(i_grid_view);
-    I_PatternType i_pattern_face_other             = i_space.compute_face_pattern(i_space);
-    I_PatternType i_pattern_face_view_other        = i_space.compute_face_pattern(i_grid_view, i_space);
+    I_PatternType i_pattern_face = i_space.compute_face_pattern();
+    I_PatternType i_pattern_face_view = i_space.compute_face_pattern(i_grid_view);
+    I_PatternType i_pattern_face_other = i_space.compute_face_pattern(i_space);
+    I_PatternType i_pattern_face_view_other = i_space.compute_face_pattern(i_grid_view, i_space);
     EXPECT_EQ(&i_backend, &d_backend);
     EXPECT_EQ(&i_mapper, &d_mapper);
     EXPECT_EQ(&i_grid_view, &d_grid_view);
@@ -228,11 +228,11 @@ public:
       const D_EntityType& entity = *entity_it;
       // * as the derived type
       D_BaseFunctionSetType d_base_function_set = space_.base_function_set(entity);
-      size_t d_bfs_size                         = d_base_function_set.size();
+      size_t d_bfs_size = d_base_function_set.size();
       EXPECT_EQ(d_bfs_size, d_mapper.numDofs(entity));
       // * as the interface type
       I_BaseFunctionSetType i_base_function_set = i_space.base_function_set(entity);
-      size_t i_bfs_size                         = i_base_function_set.size();
+      size_t i_bfs_size = i_base_function_set.size();
       EXPECT_EQ(d_bfs_size, i_bfs_size);
     } // walk the grid
   } // ... fulfills_interface()
@@ -241,7 +241,7 @@ public:
   {
     SpaceType foop(space_);
     auto aa DUNE_UNUSED = foop.mapper().size();
-    SpaceType cp        = DerivedHolder<SpaceType, ProviderType>(grid_provider_).space();
+    SpaceType cp = DerivedHolder<SpaceType, ProviderType>(grid_provider_).space();
     auto bb DUNE_UNUSED = cp.mapper().size();
   } // ... check_for_correct_copy()
 
@@ -267,15 +267,15 @@ public:
     static_assert(std::is_same<I_BackendType, D_BackendType>::value, "Types do not match!");
     // dynamic checks
     // * as the derived type
-    const MapperType& d_mapper     = space_.mapper();
+    const MapperType& d_mapper = space_.mapper();
     const D_BackendType& d_backend = d_mapper.backend();
-    size_t d_size                  = d_mapper.size();
-    size_t d_maxNumDofs            = d_mapper.maxNumDofs();
+    size_t d_size = d_mapper.size();
+    size_t d_maxNumDofs = d_mapper.maxNumDofs();
     // * as the interface type
-    const InterfaceType& i_mapper  = static_cast<const InterfaceType&>(d_mapper);
+    const InterfaceType& i_mapper = static_cast<const InterfaceType&>(d_mapper);
     const D_BackendType& i_backend = i_mapper.backend();
-    size_t i_size                  = i_mapper.size();
-    size_t i_maxNumDofs            = i_mapper.maxNumDofs();
+    size_t i_size = i_mapper.size();
+    size_t i_maxNumDofs = i_mapper.maxNumDofs();
     EXPECT_EQ(&i_backend, &d_backend);
     EXPECT_EQ(i_size, d_size);
     EXPECT_EQ(i_maxNumDofs, d_maxNumDofs);
@@ -329,7 +329,7 @@ public:
     static const size_t d_dimDomain = BaseFunctionSetType::dimDomain;
     typedef typename BaseFunctionSetType::DomainType D_DomainType;
     typedef typename BaseFunctionSetType::RangeFieldType D_RangeFieldType;
-    static const size_t d_dimRange     = BaseFunctionSetType::dimRange;
+    static const size_t d_dimRange = BaseFunctionSetType::dimRange;
     static const size_t d_dimRangeCols = BaseFunctionSetType::dimRangeCols;
     typedef typename BaseFunctionSetType::RangeType D_RangeType;
     typedef typename BaseFunctionSetType::JacobianRangeType D_JacobianRangeType;
@@ -355,7 +355,7 @@ public:
     static const size_t i_dimDomain = InterfaceType::dimDomain;
     typedef typename InterfaceType::DomainType I_DomainType;
     typedef typename InterfaceType::RangeFieldType I_RangeFieldType;
-    static const size_t i_dimRange     = InterfaceType::dimRange;
+    static const size_t i_dimRange = InterfaceType::dimRange;
     static const size_t i_dimRangeCols = InterfaceType::dimRangeCols;
     typedef typename InterfaceType::RangeType I_RangeType;
     typedef typename InterfaceType::JacobianRangeType I_JacobianRangeType;
@@ -377,8 +377,8 @@ public:
       const auto& entity = *entity_it;
       // * as the derived type
       BaseFunctionSetType d_base_function_set = space_.base_function_set(entity);
-      const D_BackendType& d_backend          = d_base_function_set.backend();
-      size_t d_order                          = d_base_function_set.order();
+      const D_BackendType& d_backend = d_base_function_set.backend();
+      size_t d_order = d_base_function_set.order();
 #if DUNE_GDT_TEST_SPACES_RT_CHECK
       EXPECT_GE(d_order, boost::numeric_cast<size_t>(SpaceType::polOrder)); // <- normaly we would expect equality here,
 // but the raviart
@@ -389,7 +389,7 @@ public:
       //   the size has already been checked in fulfills_interface() above
       // * as the interface
       InterfaceType& i_base_function_set = static_cast<InterfaceType&>(d_base_function_set);
-      const I_BackendType& i_backend     = i_base_function_set.backend();
+      const I_BackendType& i_backend = i_base_function_set.backend();
       EXPECT_EQ(&d_backend, &i_backend);
       size_t i_order = i_base_function_set.order();
       EXPECT_EQ(i_order, d_order);

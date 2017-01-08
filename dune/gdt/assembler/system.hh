@@ -28,7 +28,8 @@ namespace Dune {
 namespace GDT {
 
 
-template <class TestSpaceImp, class GridViewImp = typename TestSpaceImp::GridViewType,
+template <class TestSpaceImp,
+          class GridViewImp = typename TestSpaceImp::GridViewType,
           class AnsatzSpaceImp = TestSpaceImp>
 class SystemAssembler : public XT::Grid::Walker<GridViewImp>
 {
@@ -103,7 +104,8 @@ public:
   } // ... add(...)
 
   template <class V, class M>
-  void add(const LocalVolumeTwoFormAssembler<V>& local_assembler, XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
+  void add(const LocalVolumeTwoFormAssembler<V>& local_assembler,
+           XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
            const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
@@ -117,7 +119,8 @@ public:
   } // ... add(...)
 
   template <class V, class M>
-  void add(const LocalCouplingTwoFormAssembler<V>& local_assembler, XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
+  void add(const LocalCouplingTwoFormAssembler<V>& local_assembler,
+           XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
            const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
@@ -131,7 +134,8 @@ public:
   } // ... add(...)
 
   template <class V, class M>
-  void add(const LocalBoundaryTwoFormAssembler<V>& local_assembler, XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
+  void add(const LocalBoundaryTwoFormAssembler<V>& local_assembler,
+           XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
            const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
@@ -145,7 +149,8 @@ public:
   } // ... add(...)
 
   template <class L, class V>
-  void add(const LocalVolumeFunctionalAssembler<L>& local_assembler, XT::LA::VectorInterface<V, RangeFieldType>& vector,
+  void add(const LocalVolumeFunctionalAssembler<L>& local_assembler,
+           XT::LA::VectorInterface<V, RangeFieldType>& vector,
            const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     assert(vector.size() == test_space_->mapper().size());
@@ -157,7 +162,8 @@ public:
   } // ... add(...)
 
   template <class L, class V>
-  void add(const LocalFaceFunctionalAssembler<L>& local_assembler, XT::LA::VectorInterface<V, RangeFieldType>& vector,
+  void add(const LocalFaceFunctionalAssembler<L>& local_assembler,
+           XT::LA::VectorInterface<V, RangeFieldType>& vector,
            const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
   {
     assert(vector.size() == test_space_->mapper().size());

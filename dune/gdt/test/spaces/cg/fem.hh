@@ -62,8 +62,7 @@
 
 
 template <class T>
-double
-fem_cg_tolerance(const T& param)
+double fem_cg_tolerance(const T& param)
 {
   typedef typename T::GridViewType::Grid Grid;
   const auto dim = param.dimDomain;

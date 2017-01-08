@@ -43,29 +43,28 @@ private:
 
   static const int polOrder = Discretizer::polOrder;
 
-  typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::LocalNonconformityESV2007<SpaceType, VectorType,
-                                                                                       DiffusionFactorType,
-                                                                                       DiffusionTensorType>
-      LocalNonconformityESV2007Estimator;
-  typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::LocalResidualESV2007<SpaceType, VectorType, FunctionType,
-                                                                                  DiffusionFactorType,
-                                                                                  DiffusionTensorType>
-      LocalResidualESV2007Estimator;
-  typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::LocalDiffusiveFluxESV2007<SpaceType, VectorType,
-                                                                                       DiffusionFactorType,
-                                                                                       DiffusionTensorType>
-      LocalDiffusiveFluxESV2007Estimator;
-  typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007<SpaceType, VectorType, FunctionType,
-                                                                     DiffusionFactorType, DiffusionTensorType>
-      ESV2007Estimator;
+  typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::
+      LocalNonconformityESV2007<SpaceType, VectorType, DiffusionFactorType, DiffusionTensorType>
+          LocalNonconformityESV2007Estimator;
+  typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::
+      LocalResidualESV2007<SpaceType, VectorType, FunctionType, DiffusionFactorType, DiffusionTensorType>
+          LocalResidualESV2007Estimator;
+  typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::
+      LocalDiffusiveFluxESV2007<SpaceType, VectorType, DiffusionFactorType, DiffusionTensorType>
+          LocalDiffusiveFluxESV2007Estimator;
+  typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::
+      ESV2007<SpaceType, VectorType, FunctionType, DiffusionFactorType, DiffusionTensorType>
+          ESV2007Estimator;
   typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::
       ESV2007AlternativeSummation<SpaceType, VectorType, FunctionType, DiffusionFactorType, DiffusionTensorType>
           ESV2007AlternativeSummationEstimator;
 
 public:
   // a perfect forwarding ctor did not do the job here, since it was not able to match the std::initializer_list: {"L2"}
-  LinearEllipticSwipdgEstimatorStudy(TestCaseType& test_case, const std::vector<std::string> only_these_norms = {},
-                                     const std::string visualize_prefix = "", const size_t over_integrate = 2)
+  LinearEllipticSwipdgEstimatorStudy(TestCaseType& test_case,
+                                     const std::vector<std::string> only_these_norms = {},
+                                     const std::string visualize_prefix = "",
+                                     const size_t over_integrate = 2)
     : BaseType(test_case, only_these_norms, visualize_prefix, over_integrate)
   {
   }
@@ -106,8 +105,8 @@ public:
 
   virtual double estimate(const VectorType& vector, const std::string type) override final
   {
-    const auto& space            = this->current_discretization_->ansatz_space();
-    const auto& force            = this->test_case_.problem().force();
+    const auto& space = this->current_discretization_->ansatz_space();
+    const auto& force = this->test_case_.problem().force();
     const auto& diffusion_factor = this->test_case_.problem().diffusion_factor();
     const auto& diffusion_tensor = this->test_case_.problem().diffusion_tensor();
     if (type == LocalNonconformityESV2007Estimator::id())

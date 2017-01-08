@@ -50,8 +50,8 @@ public:
   static XT::Common::Configuration default_grid_cfg()
   {
     XT::Common::Configuration cfg;
-    cfg["type"]        = XT::Grid::cube_gridprovider_default_config()["type"];
-    cfg["lower_left"]  = "[-1 -1]";
+    cfg["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
+    cfg["lower_left"] = "[-1 -1]";
     cfg["upper_right"] = "[1 1]";
     return cfg;
   }
@@ -61,14 +61,17 @@ public:
     return XT::Grid::alldirichlet_boundaryinfo_default_config();
   }
 
-  ESV2007Problem(const size_t integration_order           = default_integration_order,
+  ESV2007Problem(const size_t integration_order = default_integration_order,
                  const XT::Common::Configuration& grd_cfg = default_grid_cfg(),
                  const XT::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
     : BaseType(
           new ScalarConstantFunctionType(1, "diffusion_factor"),
           new MatrixConstantFunctionType(XT::Functions::internal::unit_matrix<RangeFieldImp, 2>(), "diffusion_tensor"),
-          new ForceType(integration_order, "force"), new ScalarConstantFunctionType(0, "dirichlet"),
-          new ScalarConstantFunctionType(0, "neumann"), grd_cfg, bnd_cfg)
+          new ForceType(integration_order, "force"),
+          new ScalarConstantFunctionType(0, "dirichlet"),
+          new ScalarConstantFunctionType(0, "neumann"),
+          grd_cfg,
+          bnd_cfg)
   {
   }
 }; // class ESV2007Problem< ..., 1 >
@@ -76,8 +79,12 @@ public:
 
 template <class G, class R = double, int r = 1>
 class ESV2007TestCase
-    : public Test::StationaryTestCase<G, LinearElliptic::ESV2007Problem<typename G::template Codim<0>::Entity,
-                                                                        typename G::ctype, G::dimension, R, r>>
+    : public Test::StationaryTestCase<G,
+                                      LinearElliptic::ESV2007Problem<typename G::template Codim<0>::Entity,
+                                                                     typename G::ctype,
+                                                                     G::dimension,
+                                                                     R,
+                                                                     r>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -131,7 +138,7 @@ private:
   {
     static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
-      cfg["num_elements"]    = "[4 4]";
+      cfg["num_elements"] = "[4 4]";
       cfg["num_refinements"] = "2";
       return cfg;
     }
@@ -153,7 +160,7 @@ private:
   static XT::Common::Configuration grid_cfg()
   {
     auto cfg = ProblemType::default_grid_cfg();
-    cfg      = Helper<typename std::decay<G>::type>::value(cfg);
+    cfg = Helper<typename std::decay<G>::type>::value(cfg);
     return cfg;
   }
 

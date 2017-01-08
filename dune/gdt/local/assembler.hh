@@ -49,17 +49,28 @@ public:
    * type of global_matrix
    *  \tparam R           RangeFieldType, i.e. double
    */
-  template <class T, size_t Td, size_t Tr, size_t TrC, class A, size_t Ad, size_t Ar, size_t ArC, class EntityType,
-            class M, class R>
-  void assemble(const SpaceInterface<T, Td, Tr, TrC>& test_space, const SpaceInterface<A, Ad, Ar, ArC>& ansatz_space,
-                const EntityType& entity, XT::LA::MatrixInterface<M, R>& global_matrix) const
+  template <class T,
+            size_t Td,
+            size_t Tr,
+            size_t TrC,
+            class A,
+            size_t Ad,
+            size_t Ar,
+            size_t ArC,
+            class EntityType,
+            class M,
+            class R>
+  void assemble(const SpaceInterface<T, Td, Tr, TrC>& test_space,
+                const SpaceInterface<A, Ad, Ar, ArC>& ansatz_space,
+                const EntityType& entity,
+                XT::LA::MatrixInterface<M, R>& global_matrix) const
   {
     // prepare
     const size_t rows = test_space.mapper().numDofs(entity);
     const size_t cols = ansatz_space.mapper().numDofs(entity);
     Dune::DynamicMatrix<R> local_matrix(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
     // apply local two-form
-    const auto test_base   = test_space.base_function_set(entity);
+    const auto test_base = test_space.base_function_set(entity);
     const auto ansatz_base = ansatz_space.base_function_set(entity);
     assert(test_base.size() == rows);
     assert(ansatz_base.size() == cols);
@@ -73,7 +84,7 @@ public:
     assert(global_col_indices.size() == cols);
     for (size_t ii = 0; ii < rows; ++ii) {
       const auto& local_matrix_row = local_matrix[ii];
-      const size_t global_ii       = global_row_indices[ii];
+      const size_t global_ii = global_row_indices[ii];
       for (size_t jj = 0; jj < cols; ++jj) {
         const size_t global_jj = global_col_indices[jj];
         global_matrix.add_to_entry(global_ii, global_jj, local_matrix_row[jj]);
@@ -86,7 +97,10 @@ private:
 }; // class LocalVolumeTwoFormAssembler
 
 
-template <class GridViewImp, class LocalVolumeTwoFormType, class TestFunctionType, class AnsatzFunctionType,
+template <class GridViewImp,
+          class LocalVolumeTwoFormType,
+          class TestFunctionType,
+          class AnsatzFunctionType,
           class FieldType>
 class LocalVolumeTwoFormAccumulator : public XT::Grid::internal::Codim0ReturnObject<GridViewImp, FieldType>
 {
@@ -98,7 +112,10 @@ class LocalVolumeTwoFormAccumulator : public XT::Grid::internal::Codim0ReturnObj
   static_assert(XT::Functions::is_localizable_function<AnsatzFunctionType>::value,
                 "AnsatzFunctionType has to be derived from XT::Functions::LocalizableFunctionInterface!");
 
-  typedef LocalVolumeTwoFormAccumulator<GridViewImp, LocalVolumeTwoFormType, TestFunctionType, AnsatzFunctionType,
+  typedef LocalVolumeTwoFormAccumulator<GridViewImp,
+                                        LocalVolumeTwoFormType,
+                                        TestFunctionType,
+                                        AnsatzFunctionType,
                                         FieldType>
       ThisType;
   typedef XT::Grid::internal::Codim0ReturnObject<GridViewImp, FieldType> BaseType;
@@ -107,8 +124,10 @@ public:
   typedef typename BaseType::GridViewType GridViewType;
   typedef typename BaseType::EntityType EntityType;
 
-  LocalVolumeTwoFormAccumulator(const GridViewType& grd_vw, const LocalVolumeTwoFormType& local_op,
-                                const TestFunctionType& test_function, const AnsatzFunctionType& ansatz_function,
+  LocalVolumeTwoFormAccumulator(const GridViewType& grd_vw,
+                                const LocalVolumeTwoFormType& local_op,
+                                const TestFunctionType& test_function,
+                                const AnsatzFunctionType& ansatz_function,
                                 const XT::Grid::ApplyOn::WhichEntity<GridViewType>& where)
     : grid_view_(grd_vw)
     , local_operator_(local_op)
@@ -121,7 +140,7 @@ public:
   }
 
   LocalVolumeTwoFormAccumulator(const ThisType& other) = default;
-  virtual ~LocalVolumeTwoFormAccumulator()             = default;
+  virtual ~LocalVolumeTwoFormAccumulator() = default;
 
   virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const override final
   {
@@ -146,7 +165,7 @@ public:
     if (!finalized_) {
       finalized_result_ = result_.sum();
       finalized_result_ = grid_view_.comm().sum(finalized_result_);
-      finalized_        = true;
+      finalized_ = true;
     }
   } // ... finalize(...)
 
@@ -182,8 +201,10 @@ class LocalOperatorApplicator : public XT::Grid::internal::Codim0Object<GridView
 public:
   using typename BaseType::EntityType;
 
-  LocalOperatorApplicator(const GridViewType& grid_view, const LocalOperatorType& local_operator,
-                          const SourceType& source, RangeType& range,
+  LocalOperatorApplicator(const GridViewType& grid_view,
+                          const LocalOperatorType& local_operator,
+                          const SourceType& source,
+                          RangeType& range,
                           const XT::Grid::ApplyOn::WhichEntity<GridViewType>& where)
     : grid_view_(grid_view)
     , local_operator_(local_operator)
@@ -224,13 +245,33 @@ public:
   {
   }
 
-  template <class TE, size_t TEd, size_t TEr, size_t TErC, class AE, size_t AEd, size_t AEr, size_t AErC, class TN,
-            size_t TNd, size_t TNr, size_t TNrC, class AN, size_t ANd, size_t ANr, size_t ANrC, class IntersectionType,
-            class MEE, class MNN, class MEN, class MNE, class R>
+  template <class TE,
+            size_t TEd,
+            size_t TEr,
+            size_t TErC,
+            class AE,
+            size_t AEd,
+            size_t AEr,
+            size_t AErC,
+            class TN,
+            size_t TNd,
+            size_t TNr,
+            size_t TNrC,
+            class AN,
+            size_t ANd,
+            size_t ANr,
+            size_t ANrC,
+            class IntersectionType,
+            class MEE,
+            class MNN,
+            class MEN,
+            class MNE,
+            class R>
   void assemble(const SpaceInterface<TE, TEd, TEr, TErC>& test_space_en,
                 const SpaceInterface<AE, AEd, AEr, AErC>& ansatz_space_en,
                 const SpaceInterface<TN, TNd, TNr, TNrC>& test_space_ne,
-                const SpaceInterface<AN, ANd, ANr, ANrC>& ansatz_space_ne, const IntersectionType& intersection,
+                const SpaceInterface<AN, ANd, ANr, ANrC>& ansatz_space_ne,
+                const IntersectionType& intersection,
                 XT::LA::MatrixInterface<MEE, R>& global_matrix_en_en,
                 XT::LA::MatrixInterface<MNN, R>& global_matrix_ne_ne,
                 XT::LA::MatrixInterface<MEN, R>& global_matrix_en_ne,
@@ -244,7 +285,7 @@ public:
     assert(global_matrix_en_ne.cols() >= ansatz_space_ne.mapper().size());
     assert(global_matrix_ne_en.rows() >= test_space_ne.mapper().size());
     assert(global_matrix_ne_en.cols() >= ansatz_space_en.mapper().size());
-    const auto entity   = intersection.inside();
+    const auto entity = intersection.inside();
     const auto neighbor = intersection.outside();
     // prepare
     const size_t rows_en = test_space_en.mapper().numDofs(entity);
@@ -256,9 +297,9 @@ public:
     Dune::DynamicMatrix<R> local_matrix_en_ne(rows_en, cols_ne, 0.); // \todo: make mutable member, after SMP refactor
     Dune::DynamicMatrix<R> local_matrix_ne_en(rows_ne, cols_en, 0.); // \todo: make mutable member, after SMP refactor
     // apply local two-form
-    const auto test_base_en   = test_space_en.base_function_set(entity);
+    const auto test_base_en = test_space_en.base_function_set(entity);
     const auto ansatz_base_en = ansatz_space_en.base_function_set(entity);
-    const auto test_base_ne   = test_space_ne.base_function_set(neighbor);
+    const auto test_base_ne = test_space_ne.base_function_set(neighbor);
     const auto ansatz_base_ne = ansatz_space_ne.base_function_set(neighbor);
     local_coupling_twoform_.apply2(test_base_en,
                                    ansatz_base_en,
@@ -285,7 +326,7 @@ public:
     for (size_t ii = 0; ii < rows_en; ++ii) {
       const auto& local_matrix_en_en_row = local_matrix_en_en[ii];
       const auto& local_matrix_en_ne_row = local_matrix_en_ne[ii];
-      const size_t global_ii             = global_row_indices_en[ii];
+      const size_t global_ii = global_row_indices_en[ii];
       for (size_t jj = 0; jj < cols_en; ++jj) {
         const size_t global_jj = global_col_indices_en[jj];
         global_matrix_en_en.add_to_entry(global_ii, global_jj, local_matrix_en_en_row[jj]);
@@ -298,7 +339,7 @@ public:
     for (size_t ii = 0; ii < rows_ne; ++ii) {
       const auto& local_matrix_ne_en_row = local_matrix_ne_en[ii];
       const auto& local_matrix_ne_ne_row = local_matrix_ne_ne[ii];
-      const size_t global_ii             = global_row_indices_ne[ii];
+      const size_t global_ii = global_row_indices_ne[ii];
       for (size_t jj = 0; jj < cols_en; ++jj) {
         const size_t global_jj = global_col_indices_en[jj];
         global_matrix_ne_en.add_to_entry(global_ii, global_jj, local_matrix_ne_en_row[jj]);
@@ -310,13 +351,30 @@ public:
     }
   } // ... assemble(...)
 
-  template <class TE, size_t TEd, size_t TEr, size_t TErC, class AE, size_t AEd, size_t AEr, size_t AErC, class TN,
-            size_t TNd, size_t TNr, size_t TNrC, class AN, size_t ANd, size_t ANr, size_t ANrC, class IntersectionType,
-            class M, class R>
+  template <class TE,
+            size_t TEd,
+            size_t TEr,
+            size_t TErC,
+            class AE,
+            size_t AEd,
+            size_t AEr,
+            size_t AErC,
+            class TN,
+            size_t TNd,
+            size_t TNr,
+            size_t TNrC,
+            class AN,
+            size_t ANd,
+            size_t ANr,
+            size_t ANrC,
+            class IntersectionType,
+            class M,
+            class R>
   void assemble(const SpaceInterface<TE, TEd, TEr, TErC>& test_space_en,
                 const SpaceInterface<AE, AEd, AEr, AErC>& ansatz_space_en,
                 const SpaceInterface<TN, TNd, TNr, TNrC>& test_space_ne,
-                const SpaceInterface<AN, ANd, ANr, ANrC>& ansatz_space_ne, const IntersectionType& intersection,
+                const SpaceInterface<AN, ANd, ANr, ANrC>& ansatz_space_ne,
+                const IntersectionType& intersection,
                 XT::LA::MatrixInterface<M, R>& global_matrix) const
   {
     assemble(test_space_en,
@@ -349,8 +407,10 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
 
-  LocalCouplingOperatorApplicator(const GridViewType& grid_view, const LocalOperatorType& local_operator,
-                                  const SourceType& source, RangeType& range,
+  LocalCouplingOperatorApplicator(const GridViewType& grid_view,
+                                  const LocalOperatorType& local_operator,
+                                  const SourceType& source,
+                                  RangeType& range,
                                   const XT::Grid::ApplyOn::WhichIntersection<GridViewType>& where)
     : grid_view_(grid_view)
     , local_operator_(local_operator)
@@ -365,8 +425,8 @@ public:
     return where_.apply_on(grid_view, intersection);
   }
 
-  virtual void apply_local(const IntersectionType& intersection, const EntityType& inside_entity,
-                           const EntityType& outside_entity)
+  virtual void
+  apply_local(const IntersectionType& intersection, const EntityType& inside_entity, const EntityType& outside_entity)
   {
     local_operator_.apply(source_,
                           intersection,
@@ -394,10 +454,21 @@ public:
   {
   }
 
-  template <class T, size_t Td, size_t Tr, size_t TrC, class A, size_t Ad, size_t Ar, size_t ArC,
-            class IntersectionType, class M, class R>
-  void assemble(const SpaceInterface<T, Td, Tr, TrC>& test_space, const SpaceInterface<A, Ad, Ar, ArC>& ansatz_space,
-                const IntersectionType& intersection, XT::LA::MatrixInterface<M, R>& global_matrix) const
+  template <class T,
+            size_t Td,
+            size_t Tr,
+            size_t TrC,
+            class A,
+            size_t Ad,
+            size_t Ar,
+            size_t ArC,
+            class IntersectionType,
+            class M,
+            class R>
+  void assemble(const SpaceInterface<T, Td, Tr, TrC>& test_space,
+                const SpaceInterface<A, Ad, Ar, ArC>& ansatz_space,
+                const IntersectionType& intersection,
+                XT::LA::MatrixInterface<M, R>& global_matrix) const
   {
     const auto entity = intersection.inside();
     // prepare
@@ -405,7 +476,7 @@ public:
     const size_t cols = ansatz_space.mapper().numDofs(entity);
     Dune::DynamicMatrix<R> local_matrix(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
     // apply local two-form
-    const auto test_base   = test_space.base_function_set(entity);
+    const auto test_base = test_space.base_function_set(entity);
     const auto ansatz_base = ansatz_space.base_function_set(entity);
     assert(test_base.size() == rows);
     assert(ansatz_base.size() == cols);
@@ -419,7 +490,7 @@ public:
     assert(global_col_indices.size() == cols);
     for (size_t ii = 0; ii < rows; ++ii) {
       const auto& local_matrix_row = local_matrix[ii];
-      const size_t global_ii       = global_row_indices[ii];
+      const size_t global_ii = global_row_indices[ii];
       for (size_t jj = 0; jj < cols; ++jj) {
         const size_t global_jj = global_col_indices[jj];
         global_matrix.add_to_entry(global_ii, global_jj, local_matrix_row[jj]);
@@ -446,8 +517,10 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
 
-  LocalBoundaryOperatorApplicator(const GridViewType& grid_view, const LocalOperatorType& local_operator,
-                                  const SourceType& source, RangeType& range,
+  LocalBoundaryOperatorApplicator(const GridViewType& grid_view,
+                                  const LocalOperatorType& local_operator,
+                                  const SourceType& source,
+                                  RangeType& range,
                                   const XT::Grid::ApplyOn::WhichIntersection<GridViewType>& where)
     : grid_view_(grid_view)
     , local_operator_(local_operator)
@@ -462,7 +535,8 @@ public:
     return where_.apply_on(grid_view, intersection);
   }
 
-  virtual void apply_local(const IntersectionType& intersection, const EntityType& inside_entity,
+  virtual void apply_local(const IntersectionType& intersection,
+                           const EntityType& inside_entity,
                            const EntityType& /*outside_entity*/)
   {
     local_operator_.apply(source_, intersection, *range_.local_discrete_function(inside_entity));
@@ -500,7 +574,8 @@ public:
    *  \tparam R          RangeFieldType, i.e. double
    */
   template <class S, size_t d, size_t r, size_t rC, class EntityType, class V, class R>
-  void assemble(const SpaceInterface<S, d, r, rC>& test_space, const EntityType& entity,
+  void assemble(const SpaceInterface<S, d, r, rC>& test_space,
+                const EntityType& entity,
                 XT::LA::VectorInterface<V, R>& global_vector) const
   {
     // prepare
@@ -537,7 +612,8 @@ public:
   }
 
   template <class T, size_t d, size_t r, size_t rC, class IntersectionType, class V, class R>
-  void assemble(const SpaceInterface<T, d, r, rC>& test_space, const IntersectionType& intersection,
+  void assemble(const SpaceInterface<T, d, r, rC>& test_space,
+                const IntersectionType& intersection,
                 XT::LA::VectorInterface<V, R>& global_vector) const
   {
     // prepare

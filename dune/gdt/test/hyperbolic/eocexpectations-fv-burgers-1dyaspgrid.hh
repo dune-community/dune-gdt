@@ -25,9 +25,11 @@ namespace Test {
 
 
 template <>
-class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1, double, 1>, Hyperbolic::ChooseDiscretizer::fv, 1,
-                                NumericalFluxes::godunov, TimeStepperMethods::explicit_euler>
-    : public internal::HyperbolicEocExpectationsBase<1>
+class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1, double, 1>,
+                                Hyperbolic::ChooseDiscretizer::fv,
+                                1,
+                                NumericalFluxes::godunov,
+                                TimeStepperMethods::explicit_euler> : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::BurgersTestCase<Yasp1, double, 1> TestCaseType;
 
@@ -36,9 +38,11 @@ public:
 }; // HyperbolicEocExpectations
 
 template <>
-class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1, double, 1>, Hyperbolic::ChooseDiscretizer::fv, 1,
-                                NumericalFluxes::godunov, TimeStepperMethods::dormand_prince>
-    : public internal::HyperbolicEocExpectationsBase<1>
+class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1, double, 1>,
+                                Hyperbolic::ChooseDiscretizer::fv,
+                                1,
+                                NumericalFluxes::godunov,
+                                TimeStepperMethods::dormand_prince> : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::BurgersTestCase<Yasp1, double, 1> TestCaseType;
 
@@ -47,9 +51,11 @@ public:
 }; // HyperbolicEocExpectations
 
 template <>
-class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1, double, 1>, Hyperbolic::ChooseDiscretizer::fv, 1,
-                                NumericalFluxes::laxfriedrichs, TimeStepperMethods::explicit_euler>
-    : public internal::HyperbolicEocExpectationsBase<1>
+class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1, double, 1>,
+                                Hyperbolic::ChooseDiscretizer::fv,
+                                1,
+                                NumericalFluxes::laxfriedrichs,
+                                TimeStepperMethods::explicit_euler> : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::BurgersTestCase<Yasp1, double, 1> TestCaseType;
 

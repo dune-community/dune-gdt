@@ -37,14 +37,21 @@ namespace LinearElliptic {
 /**
  * \brief Discretizes a linear elliptic PDE using a continuous Galerkin Finite Element method.
  */
-template <class GridType, XT::Grid::Layers layer = XT::Grid::Layers::leaf,
-          ChooseSpaceBackend space_backend = default_cg_backend, XT::LA::Backends la = XT::LA::default_sparse_backend,
-          int pol = 1, class RangeFieldType = double, size_t dimRange = 1>
+template <class GridType,
+          XT::Grid::Layers layer = XT::Grid::Layers::leaf,
+          ChooseSpaceBackend space_backend = default_cg_backend,
+          XT::LA::Backends la = XT::LA::default_sparse_backend,
+          int pol = 1,
+          class RangeFieldType = double,
+          size_t dimRange = 1>
 class CGDiscretizer
 {
 public:
-  typedef ProblemInterface<typename GridType::template Codim<0>::Entity, typename GridType::ctype, GridType::dimension,
-                           RangeFieldType, dimRange>
+  typedef ProblemInterface<typename GridType::template Codim<0>::Entity,
+                           typename GridType::ctype,
+                           GridType::dimension,
+                           RangeFieldType,
+                           dimRange>
       ProblemType;
   typedef CgSpaceProvider<GridType, layer, space_backend, pol, RangeFieldType, dimRange> SpaceProvider;
   typedef typename SpaceProvider::Type SpaceType;
@@ -52,17 +59,17 @@ public:
   typedef typename XT::LA::Container<RangeFieldType, la>::VectorType VectorType;
   typedef StationaryContainerBasedDefaultDiscretization<ProblemType, SpaceType, MatrixType, VectorType, SpaceType>
       DiscretizationType;
-  static const constexpr ChooseDiscretizer type      = ChooseDiscretizer::cg;
+  static const constexpr ChooseDiscretizer type = ChooseDiscretizer::cg;
   static const constexpr XT::LA::Backends la_backend = la;
-  static const int polOrder                          = pol;
+  static const int polOrder = pol;
 
   static std::string static_id() // int() needed, otherwise we get a
   { // linker error
     return std::string("gdt.linearelliptic.discretization.cg.order_") + Dune::XT::Common::to_string(int(polOrder));
   }
 
-  static DiscretizationType discretize(XT::Grid::GridProvider<GridType>& grid_provider, const ProblemType& problem,
-                                       const int level = 0)
+  static DiscretizationType
+  discretize(XT::Grid::GridProvider<GridType>& grid_provider, const ProblemType& problem, const int level = 0)
   {
     auto logger = XT::Common::TimedLogger().get(static_id());
     logger.info() << "Creating space... " << std::endl;
@@ -82,7 +89,7 @@ public:
                                        space,
                                        new XT::Grid::ApplyOn::NeumannIntersections<GridViewType>(*boundary_info));
     // prepare the dirichlet projection
-    auto dirichlet_projection          = make_discrete_function<VectorType>(space, "dirichlet values");
+    auto dirichlet_projection = make_discrete_function<VectorType>(space, "dirichlet values");
     auto dirichlet_projection_operator = make_localizable_dirichlet_projection_operator(
         space.grid_view(), *boundary_info, problem.dirichlet(), dirichlet_projection);
     DirichletConstraints<IntersectionType> dirichlet_constraints(*boundary_info, space.mapper().size());

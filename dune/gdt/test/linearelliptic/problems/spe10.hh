@@ -51,8 +51,8 @@ public:
   static XT::Common::Configuration default_grid_cfg()
   {
     XT::Common::Configuration cfg;
-    cfg["type"]        = XT::Grid::cube_gridprovider_default_config()["type"];
-    cfg["lower_left"]  = "[0 0]";
+    cfg["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
+    cfg["lower_left"] = "[0 0]";
     cfg["upper_right"] = "[5 1]";
     return cfg;
   }
@@ -69,13 +69,16 @@ public:
                                 grd_cfg.get<typename Spe10FunctionType::DomainType>("lower_left"),
                                 grd_cfg.get<typename Spe10FunctionType::DomainType>("upper_right"),
                                 XT::Functions::Spe10::internal::model1_min_value,
-                                XT::Functions::Spe10::internal::model1_max_value, "diffusion_factor"),
+                                XT::Functions::Spe10::internal::model1_max_value,
+                                "diffusion_factor"),
           new MatrixConstantFunctionType(XT::Functions::internal::unit_matrix<RangeFieldImp, 2>(), "diffusion_tensor"),
           new IndicatorFunctionType({{{{0.95, 0.30}, {1.10, 0.45}}, 2000},
                                      {{{3.00, 0.75}, {3.15, 0.90}}, -1000},
                                      {{{4.25, 0.25}, {4.40, 0.40}}, -1000}},
                                     "force"),
-          new ScalarConstantFunctionType(0, "dirichlet"), new ScalarConstantFunctionType(0, "neumann"), grd_cfg,
+          new ScalarConstantFunctionType(0, "dirichlet"),
+          new ScalarConstantFunctionType(0, "neumann"),
+          grd_cfg,
           bnd_cfg)
   {
   }
@@ -84,8 +87,12 @@ public:
 
 template <class G, class R = double, int r = 1>
 class Spe10Model1TestCase
-    : public Test::StationaryTestCase<G, LinearElliptic::Spe10Model1Problem<typename G::template Codim<0>::Entity,
-                                                                            typename G::ctype, G::dimension, R, r>>
+    : public Test::StationaryTestCase<G,
+                                      LinearElliptic::Spe10Model1Problem<typename G::template Codim<0>::Entity,
+                                                                         typename G::ctype,
+                                                                         G::dimension,
+                                                                         R,
+                                                                         r>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -138,7 +145,7 @@ private:
   {
     static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
-      cfg["num_elements"]    = "[100 20]";
+      cfg["num_elements"] = "[100 20]";
       cfg["num_refinements"] = "1";
       return cfg;
     }
@@ -160,7 +167,7 @@ private:
   static XT::Common::Configuration grid_cfg()
   {
     auto cfg = ProblemType::default_grid_cfg();
-    cfg      = Helper<typename std::decay<G>::type>::value(cfg);
+    cfg = Helper<typename std::decay<G>::type>::value(cfg);
     return cfg;
   }
 

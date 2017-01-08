@@ -37,15 +37,17 @@ namespace internal {
 template <class LocalSpaceType>
 class BlockSpaceTraits
 {
-  static_assert(std::is_base_of<SpaceInterface<typename LocalSpaceType::Traits, LocalSpaceType::dimDomain,
-                                               LocalSpaceType::dimRange, LocalSpaceType::dimRangeCols>,
+  static_assert(std::is_base_of<SpaceInterface<typename LocalSpaceType::Traits,
+                                               LocalSpaceType::dimDomain,
+                                               LocalSpaceType::dimRange,
+                                               LocalSpaceType::dimRangeCols>,
                                 LocalSpaceType>::value,
                 "LocalSpaceType has to be derived from SpaceInterface!");
   typedef grid::Multiscale::Default<typename LocalSpaceType::GridViewType::Grid> MsGridType;
 
 public:
   typedef BlockSpace<LocalSpaceType> derived_type;
-  static const int polOrder    = LocalSpaceType::polOrder;
+  static const int polOrder = LocalSpaceType::polOrder;
   static const bool continuous = false;
   typedef typename LocalSpaceType::BackendType BackendType;
   typedef BlockMapper<LocalSpaceType> MapperType;
@@ -68,10 +70,14 @@ public:
  *       be enough to hold a copy of the global grid view in this space (if the ms_grid is not needed elsewhere)
  */
 template <class LocalSpaceImp>
-class BlockSpace : public SpaceInterface<internal::BlockSpaceTraits<LocalSpaceImp>, LocalSpaceImp::dimDomain,
-                                         LocalSpaceImp::dimRange, LocalSpaceImp::dimRangeCols>
+class BlockSpace : public SpaceInterface<internal::BlockSpaceTraits<LocalSpaceImp>,
+                                         LocalSpaceImp::dimDomain,
+                                         LocalSpaceImp::dimRange,
+                                         LocalSpaceImp::dimRangeCols>
 {
-  typedef SpaceInterface<internal::BlockSpaceTraits<LocalSpaceImp>, LocalSpaceImp::dimDomain, LocalSpaceImp::dimRange,
+  typedef SpaceInterface<internal::BlockSpaceTraits<LocalSpaceImp>,
+                         LocalSpaceImp::dimDomain,
+                         LocalSpaceImp::dimRange,
                          LocalSpaceImp::dimRangeCols>
       BaseType;
   typedef BlockSpace<LocalSpaceImp> ThisType;
@@ -171,7 +177,7 @@ private:
   size_t find_block_of_(const EntityType& entity) const
   {
     const auto global_entity_index = ms_grid_->globalGridView().indexSet().index(entity);
-    const auto result              = ms_grid_->entityToSubdomainMap()->find(global_entity_index);
+    const auto result = ms_grid_->entityToSubdomainMap()->find(global_entity_index);
 #ifndef NDEBUG
     if (result == ms_grid_->entityToSubdomainMap()->end())
       DUNE_THROW(XT::Common::Exceptions::internal_error,

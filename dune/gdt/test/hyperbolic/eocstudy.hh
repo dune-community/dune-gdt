@@ -35,7 +35,8 @@ public:
   using typename BaseType::DiscreteSolutionType;
 
   // a perfect forwarding ctor did not do the job here, since it was not able to match the std::initializer_list: {"L2"}
-  HyperbolicEocStudy(TestCaseType& test_case, const std::vector<std::string> only_these_norms = {},
+  HyperbolicEocStudy(TestCaseType& test_case,
+                     const std::vector<std::string> only_these_norms = {},
                      const std::string visualize_prefix = "")
     : BaseType(test_case, only_these_norms, visualize_prefix)
   {
@@ -96,10 +97,10 @@ public:
         double spatial_integral = 0;
         // walk over all entities, solution is constant on each entity
         const auto& grid_view = solution_it->second.space().grid_view();
-        const auto it_end     = grid_view.template end<0>();
+        const auto it_end = grid_view.template end<0>();
         for (auto it = grid_view.template begin<0>(); it != it_end; ++it) {
           const auto& entity = *it;
-          double value       = 0;
+          double value = 0;
           for (const auto& index : solution_it->second.space().mapper().globalIndices(entity))
             value += std::abs(solution_it->second.vector()[index]);
           spatial_integral += value * entity.geometry().volume();

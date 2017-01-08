@@ -64,9 +64,9 @@ public:
   static ConfigType default_grid_config()
   {
     ConfigType grid_config;
-    grid_config["type"]         = "provider.cube";
-    grid_config["lower_left"]   = "[0.0]";
-    grid_config["upper_right"]  = "[10.0]";
+    grid_config["type"] = "provider.cube";
+    grid_config["lower_left"] = "[0.0]";
+    grid_config["upper_right"] = "[10.0]";
     grid_config["num_elements"] = "[10]";
     return grid_config;
   }
@@ -84,36 +84,36 @@ public:
     config.add(default_grid_config(), "grid");
     config.add(default_boundary_info_config(), "boundary_info");
     ConfigType flux_config;
-    flux_config["variable"]   = "u";
+    flux_config["variable"] = "u";
     flux_config["expression"] = "[u[1] u[1]*u[1]/u[0]+0.5*u[0]*u[0]]";
-    flux_config["order"]      = "2";
+    flux_config["order"] = "2";
     flux_config["gradient.0"] = "[0 1; -1.0*u[1]*u[1]/(u[0]*u[0])+u[0] 2*u[1]/u[0]]";
     config.add(flux_config, "flux");
     ConfigType rhs_config;
-    rhs_config["lower_left"]   = "[0.0]";
-    rhs_config["upper_right"]  = "[10.0]";
+    rhs_config["lower_left"] = "[0.0]";
+    rhs_config["upper_right"] = "[10.0]";
     rhs_config["num_elements"] = "[1]";
-    rhs_config["variable"]     = "u";
-    rhs_config["values.0"]     = "[0 0]";
-    rhs_config["name"]         = static_id();
+    rhs_config["variable"] = "u";
+    rhs_config["values.0"] = "[0 0]";
+    rhs_config["name"] = static_id();
     config.add(rhs_config, "rhs");
     ConfigType initial_value_config;
-    initial_value_config["lower_left"]   = "[0.0]";
-    initial_value_config["upper_right"]  = "[10.0]";
+    initial_value_config["lower_left"] = "[0.0]";
+    initial_value_config["upper_right"] = "[10.0]";
     initial_value_config["num_elements"] = "[5]";
-    initial_value_config["variable"]     = "x";
-    initial_value_config["values.0"]     = "[1 0]";
-    initial_value_config["values.1"]     = "[1 0]";
-    initial_value_config["values.2"]     = "[1+((x[0]-4)^2)*((x[0]-6)^2)*exp(2-((x[0]-4)^2)-((x[0]-6)^2)) 0]";
-    initial_value_config["values.3"]     = "[1 0]";
-    initial_value_config["values.4"]     = "[1 0]";
-    initial_value_config["order"]        = "10";
+    initial_value_config["variable"] = "x";
+    initial_value_config["values.0"] = "[1 0]";
+    initial_value_config["values.1"] = "[1 0]";
+    initial_value_config["values.2"] = "[1+((x[0]-4)^2)*((x[0]-6)^2)*exp(2-((x[0]-4)^2)-((x[0]-6)^2)) 0]";
+    initial_value_config["values.3"] = "[1 0]";
+    initial_value_config["values.4"] = "[1 0]";
+    initial_value_config["order"] = "10";
     config.add(initial_value_config, "initial_values");
-    ConfigType boundary_value_config    = DefaultBoundaryValueType::default_config();
-    boundary_value_config["type"]       = DefaultBoundaryValueType::static_id();
-    boundary_value_config["variable"]   = "x";
+    ConfigType boundary_value_config = DefaultBoundaryValueType::default_config();
+    boundary_value_config["type"] = DefaultBoundaryValueType::static_id();
+    boundary_value_config["variable"] = "x";
     boundary_value_config["expression"] = "[0 0 0]";
-    boundary_value_config["order"]      = "0";
+    boundary_value_config["order"] = "0";
     config.add(boundary_value_config, "boundary_values");
     if (sub_name.empty())
       return config;
@@ -124,7 +124,7 @@ public:
     }
   } // ... default_config(...)
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -132,15 +132,17 @@ public:
     const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
     const std::shared_ptr<const DefaultInitialValueType> initial_values(
         DefaultInitialValueType::create(config.sub("initial_values")));
-    const ConfigType grid_config   = config.sub("grid");
+    const ConfigType grid_config = config.sub("grid");
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
     return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
   } // ... create(...)
 
-  ShallowWater(const std::shared_ptr<const FluxType> flux_in, const std::shared_ptr<const RHSType> rhs_in,
-               const std::shared_ptr<const InitialValueType> initial_values_in, const ConfigType& grid_config_in,
+  ShallowWater(const std::shared_ptr<const FluxType> flux_in,
+               const std::shared_ptr<const RHSType> rhs_in,
+               const std::shared_ptr<const InitialValueType> initial_values_in,
+               const ConfigType& grid_config_in,
                const ConfigType& boundary_info_in,
                const std::shared_ptr<const DefaultBoundaryValueType> boundary_values_in)
     : BaseType(flux_in, rhs_in, initial_values_in, grid_config_in, boundary_info_in, boundary_values_in)
@@ -164,15 +166,19 @@ public:
 // Test case for shallow water equations, see LeVeque, Finite Volume Methods for Hyperbolic Problems, 2002, Example 13.1
 template <class G, class R = double>
 class ShallowWaterTestCase
-    : public Dune::GDT::Test::NonStationaryTestCase<G, Problems::ShallowWater<typename G::template Codim<0>::Entity,
-                                                                              typename G::ctype, G::dimension, R, 2>>
+    : public Dune::GDT::Test::NonStationaryTestCase<G,
+                                                    Problems::ShallowWater<typename G::template Codim<0>::Entity,
+                                                                           typename G::ctype,
+                                                                           G::dimension,
+                                                                           R,
+                                                                           2>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
 
 public:
-  static const size_t d            = G::dimension;
-  static const size_t dimRange     = 2;
+  static const size_t d = G::dimension;
+  static const size_t dimRange = 2;
   static const size_t dimRangeCols = 1;
   typedef typename Problems::ShallowWater<E, D, d, R, 2> ProblemType;
 
@@ -185,8 +191,8 @@ public:
   using typename BaseType::LevelGridViewType;
 
   ShallowWaterTestCase(const size_t num_refs = 2, const double divide_t_end_by = 1.0)
-    : BaseType(divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(),
-               num_refs)
+    : BaseType(
+          divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(), num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {
   }

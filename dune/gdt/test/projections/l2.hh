@@ -29,13 +29,13 @@ struct L2ProjectionLocalizableOperatorTest
   void constructible_by_factory()
   {
     const auto& grid_view = this->space_.grid_view();
-    const auto& source    = this->function_;
-    auto& range           = this->discrete_function_;
+    const auto& source = this->function_;
+    auto& range = this->discrete_function_;
 
     auto w_grid_view_w_over_integrate DUNE_UNUSED =
         make_l2_projection_localizable_operator(grid_view, source, range, 1);
-    auto w_grid_view_wo_over_integrate DUNE_UNUSED  = make_l2_projection_localizable_operator(grid_view, source, range);
-    auto wo_grid_view_w_over_integrate DUNE_UNUSED  = make_l2_projection_localizable_operator(source, range, 1);
+    auto w_grid_view_wo_over_integrate DUNE_UNUSED = make_l2_projection_localizable_operator(grid_view, source, range);
+    auto wo_grid_view_w_over_integrate DUNE_UNUSED = make_l2_projection_localizable_operator(source, range, 1);
     auto wo_grid_view_wo_over_integrate DUNE_UNUSED = make_l2_projection_localizable_operator(source, range);
   } // ... constructible_by_factory(...)
 };
@@ -47,16 +47,16 @@ struct L2ProjectionOperatorTest
 {
   void constructible_by_factory()
   {
-    const auto& grid_view                 = this->space_.grid_view();
-    auto op_w_over_integrate DUNE_UNUSED  = make_l2_projection_operator(grid_view, 1);
+    const auto& grid_view = this->space_.grid_view();
+    auto op_w_over_integrate DUNE_UNUSED = make_l2_projection_operator(grid_view, 1);
     auto op_wo_over_integrate DUNE_UNUSED = make_l2_projection_operator(grid_view);
   } // ... constructible_by_factory(...)
 
   void free_function_callable()
   {
     const auto& grid_view = this->space_.grid_view();
-    const auto& source    = this->function_;
-    auto& range           = this->discrete_function_;
+    const auto& source = this->function_;
+    auto& range = this->discrete_function_;
 
     project_l2(grid_view, source, range);
     project_l2(source, range);

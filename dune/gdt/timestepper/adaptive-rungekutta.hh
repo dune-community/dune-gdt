@@ -214,7 +214,9 @@ public:
  * \tparam TimeFieldImp Type used for representation of time (default is double)
  * \tparam method Adaptive Runge-Kutta method that is used (default is AdaptiveRungeKuttaMethods::dormand_prince)
  */
-template <class OperatorImp, class DiscreteFunctionImp, class TimeFieldImp = double,
+template <class OperatorImp,
+          class DiscreteFunctionImp,
+          class TimeFieldImp = double,
           TimeStepperMethods method = TimeStepperMethods::dormand_prince>
 class AdaptiveRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
 {
@@ -248,12 +250,16 @@ public:
    * \param b_2 Second set of coefficients (only provide if you use AdaptiveRungeKuttaMethods::other)
    * \param c Coefficients for time steps (only provide if you use AdaptiveRungeKuttaMethods::other)
    */
-  AdaptiveRungeKuttaTimeStepper(const OperatorType& op, const DiscreteFunctionType& initial_values,
-                                const RangeFieldType r = 1.0, const double t_0 = 0.0, const RangeFieldType tol = 1e-4,
-                                const TimeFieldType scale_factor_min = 0.2, const TimeFieldType scale_factor_max = 5,
-                                const MatrixType& A     = ButcherArrayProviderType::A(),
-                                const VectorType& b_1   = ButcherArrayProviderType::b_1(),
-                                const VectorType& b_2   = ButcherArrayProviderType::b_2(),
+  AdaptiveRungeKuttaTimeStepper(const OperatorType& op,
+                                const DiscreteFunctionType& initial_values,
+                                const RangeFieldType r = 1.0,
+                                const double t_0 = 0.0,
+                                const RangeFieldType tol = 1e-4,
+                                const TimeFieldType scale_factor_min = 0.2,
+                                const TimeFieldType scale_factor_max = 5,
+                                const MatrixType& A = ButcherArrayProviderType::A(),
+                                const VectorType& b_1 = ButcherArrayProviderType::b_1(),
+                                const VectorType& b_2 = ButcherArrayProviderType::b_2(),
                                 const TimeVectorType& c = ButcherArrayProviderType::c())
     : BaseType(t_0, initial_values)
     , op_(op)
@@ -295,11 +301,11 @@ public:
 
   TimeFieldType step(const TimeFieldType dt, const TimeFieldType max_dt)
   {
-    TimeFieldType actual_dt              = std::min(dt, max_dt);
-    RangeFieldType mixed_error           = std::numeric_limits<RangeFieldType>::max();
+    TimeFieldType actual_dt = std::min(dt, max_dt);
+    RangeFieldType mixed_error = std::numeric_limits<RangeFieldType>::max();
     TimeFieldType time_step_scale_factor = 1.0;
 
-    auto& t   = current_time();
+    auto& t = current_time();
     auto& u_n = current_solution();
 
     while (Dune::XT::Common::FloatCmp::gt(mixed_error, tol_)) {
@@ -307,7 +313,7 @@ public:
       size_t first_stage_to_compute = 0;
       if (last_stage_of_previous_step_) {
         u_intermediate_stages_[0].vector() = last_stage_of_previous_step_->vector();
-        first_stage_to_compute             = 1;
+        first_stage_to_compute = 1;
       }
 
       for (size_t ii = first_stage_to_compute; ii < num_stages_; ++ii) {
@@ -346,7 +352,7 @@ public:
     } // while (mixed_error > tol_)
 
     if (!last_stage_of_previous_step_)
-      last_stage_of_previous_step_         = Dune::XT::Common::make_unique<DiscreteFunctionType>(u_n);
+      last_stage_of_previous_step_ = Dune::XT::Common::make_unique<DiscreteFunctionType>(u_n);
     last_stage_of_previous_step_->vector() = u_intermediate_stages_[num_stages_ - 1].vector();
 
     t += actual_dt;

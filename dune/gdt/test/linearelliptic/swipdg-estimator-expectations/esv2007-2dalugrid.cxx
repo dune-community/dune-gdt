@@ -24,7 +24,9 @@ namespace Test {
 
 template <bool anything>
 class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 1, anything>
+                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                1,
+                                                anything>
     : public internal::LinearEllipticSwipdgEstimatorExpectationsBase<1>
 {
   typedef LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1> TestCaseType;
@@ -89,10 +91,12 @@ public:
 }; // LinearEllipticSwipdgEstimatorExpectations
 
 
-template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2, 2, simplex,
-                                                                                                 conforming>,
-                                                                                         double, 1>,
-                                                         LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
+                                                             ESV2007TestCase<ALUGrid<2, 2, simplex, conforming>,
+                                                                             double,
+                                                                             1>,
+                                                         LinearElliptic::ChooseDiscretizer::swipdg,
+                                                         1>;
 
 
 } // namespace Test

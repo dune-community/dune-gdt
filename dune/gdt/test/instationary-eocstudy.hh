@@ -115,7 +115,8 @@ protected:
   typedef typename TestCaseType::LevelGridViewType GridViewType;
 
 public:
-  NonStationaryEocStudy(TestCaseType& test_case, const std::vector<std::string> only_these_norms = {},
+  NonStationaryEocStudy(TestCaseType& test_case,
+                        const std::vector<std::string> only_these_norms = {},
                         const std::string visualize_prefix = "")
     : BaseType(only_these_norms)
     , test_case_(test_case)
@@ -188,7 +189,7 @@ public:
   {
     assert(current_refinement_ <= num_refinements());
     if (grid_widths_[current_refinement_] < 0.0) {
-      const int level      = test_case_.level_of(current_refinement_);
+      const int level = test_case_.level_of(current_refinement_);
       const auto grid_view = test_case_.template level<XT::Grid::Backends::view>(level);
       XT::Grid::Dimensions<GridViewType> dimensions(grid_view);
       grid_widths_[current_refinement_] = dimensions.entity_width.max();
@@ -206,7 +207,7 @@ public:
       current_discretization_ = XT::Common::make_unique<DiscretizationType>(Discretizer::discretize(
           test_case_, test_case_, test_case_.level_of(current_refinement_), test_case_.periodic_directions()));
       current_solution_on_level_ = XT::Common::make_unique<DiscreteSolutionType>(current_discretization_->solve());
-      time_to_solution_          = timer.elapsed();
+      time_to_solution_ = timer.elapsed();
       // prolong to reference grid part
       compute_reference_solution();
       assert(reference_solution_);
@@ -215,15 +216,15 @@ public:
       // time prolongation
       DiscreteSolutionType time_prolongated_current_solution_on_level;
       const auto time_prolongated_current_solution_on_level_it_end = time_prolongated_current_solution_on_level.end();
-      auto current_solution_on_level_it                            = current_solution_on_level_->begin();
-      const auto current_solution_on_level_it_last                 = --current_solution_on_level_->end();
-      const auto current_solution_it_end                           = current_solution_->end();
-      auto last_time                                               = current_solution_->begin()->first;
+      auto current_solution_on_level_it = current_solution_on_level_->begin();
+      const auto current_solution_on_level_it_last = --current_solution_on_level_->end();
+      const auto current_solution_it_end = current_solution_->end();
+      auto last_time = current_solution_->begin()->first;
       for (auto current_solution_it = current_solution_->begin(); current_solution_it != current_solution_it_end;
            ++current_solution_it) {
-        const auto time          = current_solution_it->first;
+        const auto time = current_solution_it->first;
         const auto time_on_level = current_solution_on_level_it->first;
-        const auto inserted_it   = time_prolongated_current_solution_on_level.emplace_hint(
+        const auto inserted_it = time_prolongated_current_solution_on_level.emplace_hint(
             time_prolongated_current_solution_on_level_it_end, time, current_solution_on_level_it->second);
         if (time_on_level < time && current_solution_on_level_it != current_solution_on_level_it_last) {
           // compute weighted average of the two values of current_solution_on_level_
@@ -301,10 +302,10 @@ protected:
     if (!reference_solution_computed_) {
       reference_discretization_ = XT::Common::make_unique<DiscretizationType>(Discretizer::discretize(
           test_case_, test_case_, test_case_.reference_level(), test_case_.periodic_directions()));
-      reference_solution_          = XT::Common::make_unique<DiscreteSolutionType>(reference_discretization_->solve());
+      reference_solution_ = XT::Common::make_unique<DiscreteSolutionType>(reference_discretization_->solve());
       reference_solution_computed_ = true;
       if (!visualize_prefix_.empty()) {
-        size_t counter                       = 0;
+        size_t counter = 0;
         const auto reference_solution_it_end = reference_solution_->end();
         for (auto reference_solution_it = reference_solution_->begin();
              reference_solution_it != reference_solution_it_end;
@@ -321,19 +322,19 @@ protected:
     if (!discrete_exact_solution_computed_) {
       discrete_exact_solution_ = Dune::XT::Common::make_unique<DiscreteSolutionType>();
       compute_reference_solution();
-      const auto exact_solution            = test_case_.exact_solution();
+      const auto exact_solution = test_case_.exact_solution();
       const auto reference_solution_it_end = reference_solution_->end();
       for (auto reference_solution_it = reference_solution_->begin();
            reference_solution_it != reference_solution_it_end;
            ++reference_solution_it) {
-        const double time                          = reference_solution_it->first;
+        const double time = reference_solution_it->first;
         const auto discrete_exact_solution_at_time = exact_solution->evaluate_at_time(time);
-        const auto inserted_it                     = discrete_exact_solution_->emplace_hint(
+        const auto inserted_it = discrete_exact_solution_->emplace_hint(
             discrete_exact_solution_->end(), time, reference_solution_it->second);
         project(*discrete_exact_solution_at_time, inserted_it->second);
       }
       if (!visualize_prefix_.empty()) {
-        size_t counter                            = 0;
+        size_t counter = 0;
         const auto discrete_exact_solution_it_end = discrete_exact_solution_->end();
         for (auto discrete_exact_solution_it = discrete_exact_solution_->begin();
              discrete_exact_solution_it != discrete_exact_solution_it_end;

@@ -87,7 +87,7 @@ protected:
             }
           }
           str += "]";
-          std::string entry        = "values." + Dune::XT::Common::to_string(ii);
+          std::string entry = "values." + Dune::XT::Common::to_string(ii);
           initial_value_cfg[entry] = str;
         }
       } else {
@@ -102,7 +102,7 @@ protected:
               str += Dune::XT::Common::to_string(0.0001 * base_integrated()[rr]);
           }
           str += "]";
-          std::string entry        = "values." + Dune::XT::Common::to_string(ii);
+          std::string entry = "values." + Dune::XT::Common::to_string(ii);
           initial_value_cfg[entry] = str;
         }
       }
@@ -177,9 +177,9 @@ public:
   static ConfigType default_grid_config()
   {
     ConfigType grid_config;
-    grid_config["type"]         = "provider.cube";
-    grid_config["lower_left"]   = "[0.0]";
-    grid_config["upper_right"]  = "[7.0]";
+    grid_config["type"] = "provider.cube";
+    grid_config["lower_left"] = "[0.0]";
+    grid_config["upper_right"] = "[7.0]";
     grid_config["num_elements"] = "[500]";
     return grid_config;
   }
@@ -191,7 +191,7 @@ public:
     return boundary_config;
   }
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -199,7 +199,7 @@ public:
     const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
     const std::shared_ptr<const DefaultInitialValueType> initial_values(
         DefaultInitialValueType::create(config.sub("initial_values")));
-    const ConfigType grid_config   = config.sub("grid");
+    const ConfigType grid_config = config.sub("grid");
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
@@ -217,23 +217,23 @@ public:
     config.add(default_grid_config(), "grid", true);
     config.add(default_boundary_info_config(), "boundary_info", true);
     ConfigType rhs_config;
-    rhs_config["lower_left"]   = "[0.0]";
-    rhs_config["upper_right"]  = "[7.0]";
+    rhs_config["lower_left"] = "[0.0]";
+    rhs_config["upper_right"] = "[7.0]";
     rhs_config["num_elements"] = "[1]";
     GetData::create_rhs_values(rhs_config);
     rhs_config["name"] = static_id();
     config.add(rhs_config, "rhs", true);
     ConfigType initial_value_config;
-    initial_value_config["lower_left"]   = "[0.0]";
-    initial_value_config["upper_right"]  = "[7.0]";
+    initial_value_config["lower_left"] = "[0.0]";
+    initial_value_config["upper_right"] = "[7.0]";
     initial_value_config["num_elements"] = "[7]";
     GetData::create_initial_values(initial_value_config);
     config.add(initial_value_config, "initial_values", true);
     ConfigType boundary_value_config;
-    boundary_value_config["type"]       = DefaultBoundaryValueType::static_id();
-    boundary_value_config["variable"]   = "x";
+    boundary_value_config["type"] = DefaultBoundaryValueType::static_id();
+    boundary_value_config["variable"] = "x";
     boundary_value_config["expression"] = GetData::create_boundary_values();
-    boundary_value_config["order"]      = "10";
+    boundary_value_config["order"] = "10";
     config.add(boundary_value_config, "boundary_values", true);
     if (sub_name.empty())
       return config;
@@ -244,9 +244,12 @@ public:
     }
   } // ... default_config(...)
 
-  RectangularIC(const std::shared_ptr<const FluxType> flux_in, const std::shared_ptr<const RHSType> rhs_in,
-                const std::shared_ptr<const InitialValueType> initial_values_in, const ConfigType& grid_config_in,
-                const ConfigType& boundary_info_in, const std::shared_ptr<const BoundaryValueType> boundary_values_in)
+  RectangularIC(const std::shared_ptr<const FluxType> flux_in,
+                const std::shared_ptr<const RHSType> rhs_in,
+                const std::shared_ptr<const InitialValueType> initial_values_in,
+                const ConfigType& grid_config_in,
+                const ConfigType& boundary_info_in,
+                const std::shared_ptr<const BoundaryValueType> boundary_values_in)
     : BaseType(flux_in, rhs_in, initial_values_in, grid_config_in, boundary_info_in, boundary_values_in)
   {
   }

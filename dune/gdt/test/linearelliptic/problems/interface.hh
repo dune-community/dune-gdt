@@ -36,9 +36,9 @@ public:
 
   typedef XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
       DiffusionFactorType;
-  typedef XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain,
-                                                      dimDomain>
-      DiffusionTensorType;
+  typedef XT::Functions::
+      LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain>
+          DiffusionTensorType;
   typedef XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
 
@@ -61,7 +61,9 @@ public:
   virtual const XT::Common::Configuration& boundary_info_cfg() const = 0;
 
   template <class G>
-  void visualize(const GridView<G>& grid_view, std::string filename, const bool subsampling = true,
+  void visualize(const GridView<G>& grid_view,
+                 std::string filename,
+                 const bool subsampling = true,
                  const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
     auto vtk_writer =
@@ -111,8 +113,11 @@ struct is_problem_helper
 
 
 template <class P, bool candidate = internal::is_problem_helper<P>::is_candidate>
-struct is_problem : public std::is_base_of<ProblemInterface<typename P::EntityType, typename P::DomainFieldType,
-                                                            P::dimDomain, typename P::RangeFieldType, P::dimRange>,
+struct is_problem : public std::is_base_of<ProblemInterface<typename P::EntityType,
+                                                            typename P::DomainFieldType,
+                                                            P::dimDomain,
+                                                            typename P::RangeFieldType,
+                                                            P::dimRange>,
                                            P>
 {
 };

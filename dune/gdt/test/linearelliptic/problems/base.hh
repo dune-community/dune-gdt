@@ -28,8 +28,12 @@ public:
   using typename BaseType::DiffusionTensorType;
   using typename BaseType::FunctionType;
 
-  ProblemBase(const DiffusionFactorType& diff_fac, const DiffusionTensorType& diff_ten, const FunctionType& forc,
-              const FunctionType& dir, const FunctionType& neum, XT::Common::Configuration grd_cfg,
+  ProblemBase(const DiffusionFactorType& diff_fac,
+              const DiffusionTensorType& diff_ten,
+              const FunctionType& forc,
+              const FunctionType& dir,
+              const FunctionType& neum,
+              XT::Common::Configuration grd_cfg,
               XT::Common::Configuration bnd_cfg)
     : diffusion_factor_(diff_fac)
     , diffusion_tensor_(diff_ten)
@@ -44,8 +48,12 @@ public:
   /**
    * \note Do not manually delete these pointers, they are managed automaticall from here on!
    */
-  ProblemBase(const DiffusionFactorType*&& diff_fac, const DiffusionTensorType*&& diff_ten, const FunctionType*&& forc,
-              const FunctionType*&& dir, const FunctionType*&& neum, XT::Common::Configuration grd_cfg,
+  ProblemBase(const DiffusionFactorType*&& diff_fac,
+              const DiffusionTensorType*&& diff_ten,
+              const FunctionType*&& forc,
+              const FunctionType*&& dir,
+              const FunctionType*&& neum,
+              XT::Common::Configuration grd_cfg,
               XT::Common::Configuration bnd_cfg)
     : diffusion_factor_(std::move(diff_fac))
     , diffusion_tensor_(std::move(diff_ten))
