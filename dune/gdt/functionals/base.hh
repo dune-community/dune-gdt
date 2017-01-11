@@ -108,12 +108,12 @@ public:
     return this->ansatz_space();
   }
 
-  using BaseAssemblerType::add;
+  using BaseAssemblerType::append;
 
   template <class F>
-  void
-  add(const LocalVolumeFunctionalInterface<F>& local_volume_functional,
-      const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
+  ThisType&
+  append(const LocalVolumeFunctionalInterface<F>& local_volume_functional,
+         const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     typedef internal::LocalVolumeFunctionalWrapper<ThisType,
                                                    typename LocalVolumeFunctionalInterface<F>::derived_type,
@@ -121,12 +121,13 @@ public:
         WrapperType;
     this->codim0_functors_.emplace_back(
         new WrapperType(this->test_space_, where, local_volume_functional.as_imp(), vector_.access()));
+    return *this;
   }
 
   template <class F>
-  void add(const LocalFaceFunctionalInterface<F>& local_face_functional,
-           const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
-               new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
+  ThisType& append(const LocalFaceFunctionalInterface<F>& local_face_functional,
+                   const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
+                       new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
   {
     typedef internal::LocalFaceFunctionalWrapper<ThisType,
                                                  typename LocalFaceFunctionalInterface<F>::derived_type,
@@ -134,6 +135,16 @@ public:
         WrapperType;
     this->codim1_functors_.emplace_back(
         new WrapperType(this->test_space_, where, local_face_functional.as_imp(), vector_.access()));
+    return *this;
+  }
+
+  using BaseType::add;
+
+  template <class... Args>
+  DUNE_DEPRECATED_MSG("Use append() instead (since 11.01.2017)!")
+  ThisType& add(Args&&... args)
+  {
+    return append(std::forward<Args>(args)...);
   }
 
   template <class S>

@@ -43,7 +43,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_weighted_l2_operator_(weight)
   {
-    this->add(local_weighted_l2_operator_);
+    this->append(local_weighted_l2_operator_);
   }
 
   template <class... Args>
@@ -51,7 +51,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_weighted_l2_operator_(over_integrate, weight)
   {
-    this->add(local_weighted_l2_operator_);
+    this->append(local_weighted_l2_operator_);
   }
 
 private:
@@ -108,7 +108,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_weighted_l2_operator_(weight)
   {
-    this->add(local_weighted_l2_operator_);
+    this->append(local_weighted_l2_operator_);
   }
 
   template <class... Args>
@@ -116,7 +116,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_weighted_l2_operator_(over_integrate, weight)
   {
-    this->add(local_weighted_l2_operator_);
+    this->append(local_weighted_l2_operator_);
   }
 
 private:

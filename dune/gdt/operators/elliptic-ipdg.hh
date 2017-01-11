@@ -68,9 +68,9 @@ public:
     , local_coupling_operator_(diffusion)
     , local_boundary_operator_(diffusion)
   {
-    this->add(local_volume_operator_);
-    this->add(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
-    this->add(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->append(local_volume_operator_);
+    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
+    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
   }
 
   template <typename DiffusionImp,
@@ -87,9 +87,9 @@ public:
     , local_coupling_operator_(over_integrate, diffusion)
     , local_boundary_operator_(over_integrate, diffusion)
   {
-    this->add(local_volume_operator_);
-    this->add(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
-    this->add(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->append(local_volume_operator_);
+    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
+    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
   }
 
   /// \}
@@ -111,9 +111,9 @@ public:
     , local_coupling_operator_(diffusion_factor, diffusion_tensor)
     , local_boundary_operator_(diffusion_factor, diffusion_tensor)
   {
-    this->add(local_volume_operator_);
-    this->add(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
-    this->add(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->append(local_volume_operator_);
+    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
+    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
   }
 
   template <typename DiffusionFactorImp,
@@ -132,9 +132,9 @@ public:
     , local_coupling_operator_(over_integrate, diffusion_factor, diffusion_tensor)
     , local_boundary_operator_(over_integrate, diffusion_factor, diffusion_tensor)
   {
-    this->add(local_volume_operator_);
-    this->add(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
-    this->add(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->append(local_volume_operator_);
+    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
+    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
   }
 
   /// \}

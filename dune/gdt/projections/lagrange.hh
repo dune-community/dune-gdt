@@ -38,7 +38,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_operator_()
   {
-    this->add(local_operator_);
+    this->append(local_operator_);
   }
 
 private:

@@ -58,7 +58,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_operator_(over_integrate)
   {
-    this->add(local_operator_);
+    this->append(local_operator_);
     issue_warning(this->range().space());
   }
 
@@ -67,7 +67,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_operator_()
   {
-    this->add(local_operator_);
+    this->append(local_operator_);
     issue_warning(this->range().space());
   }
 

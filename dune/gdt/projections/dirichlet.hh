@@ -33,7 +33,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_operator_(boundary_info)
   {
-    this->add(local_operator_);
+    this->append(local_operator_);
     this->range().vector() *= 0.0;
   }
 

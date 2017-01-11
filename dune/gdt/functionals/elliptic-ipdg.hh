@@ -62,7 +62,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_functional_(dirichlet, diffusion)
   {
-    this->add(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->append(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
   }
 
   template <typename Diffusion,
@@ -78,7 +78,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_functional_(over_integrate, dirichlet, diffusion)
   {
-    this->add(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->append(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
   }
 
   /// \}
@@ -99,7 +99,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_functional_(dirichlet, diffusion_factor, diffusion_tensor)
   {
-    this->add(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->append(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
   }
 
   template <typename DiffusionFactor,
@@ -117,7 +117,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_functional_(over_integrate, dirichlet, diffusion_factor, diffusion_tensor)
   {
-    this->add(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->append(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
   }
   /// \}
 
