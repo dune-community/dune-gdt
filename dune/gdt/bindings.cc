@@ -29,6 +29,7 @@
 #include <dune/gdt/spaces/rt.hh>
 
 #include <dune/gdt/spaces.pbh>
+#include <dune/gdt/assembler/system.pbh>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -59,6 +60,8 @@ void addbind_for_space(py::module& m,
         [](Grid::GridProvider<G>& grid_provider, const int level = 0) { return SP::create(grid_provider, level); },
         "grid_provider"_a,
         "level"_a = 0);
+
+  Dune::GDT::bind_system_assembler<S>(m, space_id + "Space__" + grid_id + "_to_" + space_suffix);
 } // ... addbind_for_space(...)
 
 

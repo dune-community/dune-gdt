@@ -1,0 +1,100 @@
+// This file is part of the dune-gdt project:
+//   https://github.com/dune-community/dune-gdt
+// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
+// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+// Authors:
+//   Felix Schindler (2017)
+
+#ifndef DUNE_GDT_ASSEMBLER_SYSTEM_PBH
+#define DUNE_GDT_ASSEMBLER_SYSTEM_PBH
+
+#include <dune/pybindxi/pybind11.h>
+
+#include "system.hh"
+
+namespace Dune {
+namespace GDT {
+namespace internal {
+
+
+template <class T,
+          class G,
+          class A,
+          bool do_bind = (std::is_same<T, A>::value && std::is_same<G, typename T::GridViewType>::value)>
+struct addbind_SystemAssembler_ctor_single
+{
+  template <class C>
+  void operator()(C& c)
+  {
+    using namespace pybind11::literals;
+    c.def(pybind11::init<T>(),
+          "space"_a,
+          "Uses given space as test and ansatz space, and the grid view of the given space as grid view.");
+  }
+}; // struct addbind_SystemAssembler_ctor_single
+
+template <class T, class G, class A>
+struct addbind_SystemAssembler_ctor_single<T, G, A, false>
+{
+  template <class C>
+  void operator()(C& /*c*/)
+  {
+  }
+}; // struct addbind_SystemAssembler_ctor_single
+
+
+template <class T, class G, class A, bool do_bind = (std::is_same<G, typename T::GridViewType>::value)>
+struct addbind_SystemAssembler_ctor_double
+{
+  template <class C>
+  void operator()(C& c)
+  {
+    using namespace pybind11::literals;
+    c.def(pybind11::init<T, A>(),
+          "test_space"_a,
+          "ansatz_space"_a,
+          "Uses given spaces and the grid view of the test space as grid view.");
+  }
+}; // struct addbind_SystemAssembler_ctor_double
+
+template <class T, class G, class A>
+struct addbind_SystemAssembler_ctor_double<T, G, A, false>
+{
+  template <class C>
+  void operator()(C& /*c*/)
+  {
+  }
+}; // struct addbind_SystemAssembler_ctor_double
+
+
+} // namespace internal
+
+
+template <class TestSpace /*, class GridView = typename TestSpace::GridViewType, class AnsatzSpace = TestSpace*/>
+pybind11::class_<SystemAssembler<TestSpace /*, GridView, AnsatzSpace*/>>
+bind_system_assembler(pybind11::module& m, const std::string& space_id)
+{
+  namespace py = pybind11;
+  using namespace pybind11::literals;
+  typedef typename TestSpace::GridViewType GridView;
+  typedef TestSpace AnsatzSpace;
+
+  typedef SystemAssembler<TestSpace /*, GridView, AnsatzSpace*/> C;
+  py::class_<C, Dune::XT::Grid::Walker<GridView>> c(
+      m, std::string("SystemAssembler__" + space_id).c_str(), std::string("SystemAssembler__" + space_id).c_str());
+  internal::addbind_SystemAssembler_ctor_single<TestSpace, GridView, AnsatzSpace>()(c);
+  //  internal::addbind_SystemAssembler_ctor_double<TestSpace, GridView, AnsatzSpace>()(c);
+
+  c.def("append", [](C& self, C& other) { self.append(other); }, "other"_a);
+  c.def("assemble", [](C& self, const bool use_tbb) { self.assemble(use_tbb); }, "use_tbb"_a = false);
+
+  m.def("make_system_assembler", [](const TestSpace& space) { return C(space); }, "space"_a);
+
+  return c;
+} // ... bind_system_assembler(...)
+
+
+} // namespace GDT
+} // namespace Dune
+
+#endif // DUNE_GDT_ASSEMBLER_SYSTEM_PBH
