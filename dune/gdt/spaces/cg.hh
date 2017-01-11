@@ -66,6 +66,7 @@ private:
 
 public:
   typedef typename SpaceChooser<GridType, polOrder, RangeFieldType, dimRange, dimRangeCols, backend_type>::Type Type;
+  typedef Type type;
 
   static Type create(GridLayerType grid_layer)
   {
