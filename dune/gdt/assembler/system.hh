@@ -16,8 +16,9 @@
 #include <dune/common/deprecated.hh>
 #include <dune/common/version.hh>
 
-#include <dune/xt/grid/walker.hh>
 #include <dune/xt/common/parallel/helper.hh>
+
+#include <dune/xt/grid/walker.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/constraints.hh>
@@ -59,6 +60,7 @@ public:
   {
   }
 
+  /// \todo Guard against GridViewType != TestSpaceImp::GridViewType
   SystemAssembler(TestSpaceType test, AnsatzSpaceType ansatz)
     : BaseType(test.grid_view())
     , test_space_(test)
@@ -66,6 +68,7 @@ public:
   {
   }
 
+  /// \todo Guard against AnsatzSpaceType != GridViewType || GridViewType != TestSpaceType::GridViewType
   explicit SystemAssembler(TestSpaceType test)
     : BaseType(test.grid_view())
     , test_space_(test)
@@ -73,6 +76,7 @@ public:
   {
   }
 
+  /// \todo Guard against AnsatzSpaceType != TestSpaceType
   SystemAssembler(TestSpaceType test, GridViewType grd_vw)
     : BaseType(grd_vw)
     , test_space_(test)
