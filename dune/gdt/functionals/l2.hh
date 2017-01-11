@@ -51,7 +51,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_l2_functional_(function)
   {
-    this->add(local_l2_functional_);
+    this->append(local_l2_functional_);
   }
 
   template <class... Args>
@@ -59,7 +59,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_l2_functional_(over_integrate, function)
   {
-    this->add(local_l2_functional_);
+    this->append(local_l2_functional_);
   }
 
 private:
@@ -140,7 +140,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_l2_functional_(function)
   {
-    this->add(local_l2_functional_);
+    this->append(local_l2_functional_);
   }
 
   template <class... Args>
@@ -149,7 +149,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_l2_functional_(function)
   {
-    this->add(local_l2_functional_, which_intersections);
+    this->append(local_l2_functional_, which_intersections);
   }
 
   template <class... Args>
@@ -157,7 +157,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_l2_functional_(over_integrate, function)
   {
-    this->add(local_l2_functional_);
+    this->append(local_l2_functional_);
   }
 
   template <class... Args>
@@ -167,7 +167,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_l2_functional_(over_integrate, function)
   {
-    this->add(local_l2_functional_, which_intersections);
+    this->append(local_l2_functional_, which_intersections);
   }
 
 private:

@@ -107,7 +107,7 @@ public:
   {
     ThisType estimator(grid_view, space, vector, diffusion_factor, diffusion_tensor, over_int);
     XT::Grid::Walker<GridViewType> grid_walker(grid_view);
-    grid_walker.add(estimator);
+    grid_walker.append(estimator);
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
@@ -206,7 +206,7 @@ public:
   {
     ThisType estimator(grid_view, space, vector, force, diffusion_factor, diffusion_tensor, over_int);
     XT::Grid::Walker<GridViewType> grid_walker(grid_view);
-    grid_walker.add(estimator);
+    grid_walker.append(estimator);
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
@@ -343,7 +343,7 @@ public:
     ThisType estimator(
         grid_view, space, vector, diffusion_factor_norm, diffusion_factor_reconstruction, diffusion_tensor, over_int);
     XT::Grid::Walker<GridViewType> grid_walker(grid_view);
-    grid_walker.add(estimator);
+    grid_walker.append(estimator);
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
@@ -475,7 +475,7 @@ public:
                        diffusion_tensor,
                        over_int);
     XT::Grid::Walker<GridViewType> grid_walker(grid_view);
-    grid_walker.add(estimator);
+    grid_walker.append(estimator);
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)
@@ -614,7 +614,7 @@ public:
                        diffusion_tensor,
                        over_int);
     XT::Grid::Walker<GridViewType> grid_walker(grid_view);
-    grid_walker.add(estimator);
+    grid_walker.append(estimator);
     grid_walker.walk();
     return std::sqrt(estimator.result());
   } // ... estimate(...)

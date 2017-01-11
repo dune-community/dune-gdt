@@ -88,11 +88,11 @@ public:
     DirichletConstraints<IntersectionType> dirichlet_constraints(*boundary_info, space.mapper().size());
     // register everything for assembly in one grid walk
     SystemAssembler<SpaceType> assembler(space);
-    assembler.add(*elliptic_operator);
-    assembler.add(*l2_force_functional);
-    assembler.add(*l2_neumann_functional);
-    assembler.add(*dirichlet_projection_operator);
-    assembler.add(dirichlet_constraints);
+    assembler.append(*elliptic_operator);
+    assembler.append(*l2_force_functional);
+    assembler.append(*l2_neumann_functional);
+    assembler.append(*dirichlet_projection_operator);
+    assembler.append(dirichlet_constraints);
     assembler.assemble();
     // apply the dirichlet shift
     auto& system_matrix = elliptic_operator->matrix();

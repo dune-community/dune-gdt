@@ -61,7 +61,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(diffusion)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
   template <typename DiffusionImp // This ctor is only enabled if we are given a single diffusion data function.
@@ -74,7 +74,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(over_integrate, diffusion)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
   template <typename DiffusionFactorImp // This ctor is only enabled
@@ -90,7 +90,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(diffusion_factor, diffusion_tensor)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
   template <typename DiffusionFactorImp // This ctor is only enabled
@@ -106,7 +106,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(over_integrate, diffusion_factor, diffusion_tensor)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
 private:
@@ -188,7 +188,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(diffusion)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
   template <typename DiffusionImp // This ctor is only enabled if we are given a single diffusion data function.
@@ -201,7 +201,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(over_integrate, diffusion)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
   template <typename DiffusionFactorImp // This ctor is only enabled
@@ -217,7 +217,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(diffusion_factor, diffusion_tensor)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
   template <typename DiffusionFactorImp // This ctor is only enabled
@@ -233,7 +233,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(over_integrate, diffusion_factor, diffusion_tensor)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
 private:

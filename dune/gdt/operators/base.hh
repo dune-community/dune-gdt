@@ -67,6 +67,7 @@ template <class GridViewImp, class RangeImp, class SourceImp = RangeImp,
           class FieldImp = typename RangeImp::RangeFieldType>
 class LocalizableProductBase : public XT::Grid::Walker<GridViewImp>
 {
+  typedef LocalizableProductBase<GridViewImp, RangeImp, SourceImp> ThisType;
   typedef XT::Grid::Walker<GridViewImp> BaseType;
 
 public:
@@ -122,11 +123,12 @@ public:
   }
 
   using BaseType::grid_view;
+  using BaseType::append;
 
   template <class V>
-  void
-  add(const LocalVolumeTwoFormInterface<V>& local_volume_twoform,
-      const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
+  ThisType&
+  append(const LocalVolumeTwoFormInterface<V>& local_volume_twoform,
+         const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     typedef LocalVolumeTwoFormAccumulator<GridViewType,
                                           typename LocalVolumeTwoFormInterface<V>::derived_type,
@@ -136,7 +138,17 @@ public:
         AccumulateFunctor;
     local_volume_twoforms_.emplace_back(
         new AccumulateFunctor(grid_view(), local_volume_twoform.as_imp(), range_, source_, *where));
-    BaseType::add(*local_volume_twoforms_.back(), where);
+    BaseType::append(*local_volume_twoforms_.back(), where);
+    return *this;
+  } // ... append(...)
+
+  using BaseType::add;
+
+  template <class... Args>
+  DUNE_DEPRECATED_MSG("Use append() instead (since 11.01.2017)!")
+  ThisType& add(Args&&... args)
+  {
+    return append(std::forward<Args>(args)...);
   }
 
   FieldType compute_locally(const EntityType& entity) const
@@ -296,12 +308,12 @@ public:
     return this->test_space();
   }
 
-  using BaseAssemblerType::add;
+  using BaseAssemblerType::append;
 
   template <class V>
-  void
-  add(const LocalVolumeTwoFormInterface<V>& local_volume_twoform,
-      const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
+  ThisType&
+  append(const LocalVolumeTwoFormInterface<V>& local_volume_twoform,
+         const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     typedef internal::LocalVolumeTwoFormWrapper<ThisType,
                                                 typename LocalVolumeTwoFormInterface<V>::derived_type,
@@ -309,12 +321,13 @@ public:
         WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(
         this->test_space_, this->ansatz_space_, where, local_volume_twoform.as_imp(), matrix_.access()));
-  }
+    return *this;
+  } // ... append(...)
 
   template <class C>
-  void add(const LocalCouplingTwoFormInterface<C>& local_coupling_twoform,
-           const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
-               new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>())
+  ThisType& append(const LocalCouplingTwoFormInterface<C>& local_coupling_twoform,
+                   const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
+                       new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>())
   {
     typedef internal::LocalCouplingTwoFormWrapper<ThisType,
                                                   typename LocalCouplingTwoFormInterface<C>::derived_type,
@@ -322,12 +335,13 @@ public:
         WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(
         this->test_space_, this->ansatz_space_, where, local_coupling_twoform.as_imp(), matrix_.access()));
-  }
+    return *this;
+  } // ... append(...)
 
   template <class B>
-  void add(const LocalBoundaryTwoFormInterface<B>& local_boundary_twoform,
-           const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
-               new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>())
+  ThisType& append(const LocalBoundaryTwoFormInterface<B>& local_boundary_twoform,
+                   const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
+                       new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>())
   {
     typedef internal::LocalBoundaryTwoFormWrapper<ThisType,
                                                   typename LocalBoundaryTwoFormInterface<B>::derived_type,
@@ -335,6 +349,16 @@ public:
         WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(
         this->test_space_, this->ansatz_space_, where, local_boundary_twoform.as_imp(), matrix_.access()));
+    return *this;
+  } // ... append(...)
+
+  using BaseAssemblerType::add;
+
+  template <class... Args>
+  DUNE_DEPRECATED_MSG("Use append() instead (since 11.01.2017)!")
+  ThisType& add(Args&&... args)
+  {
+    return append(std::forward<Args>(args)...);
   }
 
   template <class S, class R>
@@ -413,6 +437,7 @@ private:
 template <class GridViewImp, class SourceImp, class RangeImp>
 class LocalizableOperatorBase : public XT::Grid::Walker<GridViewImp>
 {
+  typedef LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp> ThisType;
   typedef XT::Grid::Walker<GridViewImp> BaseType;
 
 public:
@@ -458,13 +483,13 @@ public:
     return range_;
   }
 
-  using BaseType::add;
   using BaseType::grid_view;
+  using BaseType::append;
 
   template <class L>
-  void
-  add(const LocalOperatorInterface<L>& local_operator,
-      const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
+  ThisType&
+  append(const LocalOperatorInterface<L>& local_operator,
+         const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     typedef LocalOperatorApplicator<GridViewType,
                                     typename LocalOperatorInterface<L>::derived_type,
@@ -472,13 +497,13 @@ public:
                                     RangeType>
         Applicator;
     local_operators_codim_0.emplace_back(new Applicator(grid_view(), local_operator.as_imp(), source_, range_, *where));
-    BaseType::add(*local_operators_codim_0.back(), where);
-  } // ... add(...)
+    BaseType::append(*local_operators_codim_0.back(), where);
+  } // ... append(...)
 
   template <class T>
-  void add(const LocalCouplingOperatorInterface<T>& local_operator,
-           const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
-               new XT::Grid::ApplyOn::InnerIntersections<GridViewType>())
+  ThisType& append(const LocalCouplingOperatorInterface<T>& local_operator,
+                   const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
+                       new XT::Grid::ApplyOn::InnerIntersections<GridViewType>())
   {
     typedef LocalCouplingOperatorApplicator<GridViewType,
                                             typename LocalCouplingOperatorInterface<T>::derived_type,
@@ -486,13 +511,13 @@ public:
                                             RangeType>
         Applicator;
     local_operators_codim_1.emplace_back(new Applicator(grid_view(), local_operator.as_imp(), source_, range_, *where));
-    BaseType::add(*local_operators_codim_1.back(), where);
-  } // ... add(...)
+    BaseType::append(*local_operators_codim_1.back(), where);
+  } // ... append(...)
 
   template <class T>
-  void add(const LocalBoundaryOperatorInterface<T>& local_operator,
-           const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
-               new XT::Grid::ApplyOn::BoundaryIntersections<GridViewType>())
+  ThisType& append(const LocalBoundaryOperatorInterface<T>& local_operator,
+                   const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
+                       new XT::Grid::ApplyOn::BoundaryIntersections<GridViewType>())
   {
     typedef LocalBoundaryOperatorApplicator<GridViewType,
                                             typename LocalBoundaryOperatorInterface<T>::derived_type,
@@ -500,9 +525,17 @@ public:
                                             RangeType>
         Applicator;
     local_operators_codim_1.emplace_back(new Applicator(grid_view(), local_operator.as_imp(), source_, range_, *where));
-    BaseType::add(*local_operators_codim_1.back(), where);
-  } // ... add(...)
+    BaseType::append(*local_operators_codim_1.back(), where);
+  } // ... append(...)
 
+  using BaseType::add;
+
+  template <class... Args>
+  DUNE_DEPRECATED_MSG("Use append() instead (since 11.01.2017)!")
+  ThisType& add(Args&&... args)
+  {
+    return append(std::forward<Args>(args)...);
+  }
 
   void apply()
   {

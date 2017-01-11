@@ -151,9 +151,9 @@ public:
     , local_boundary_operator_(analytical_flux, boundary_values,
                                std::forward<LocalOperatorArgTypes>(local_operator_args)...)
   {
-    this->add(local_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
-    this->add(local_operator_, new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GridViewType>());
-    this->add(local_boundary_operator_, new XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GridViewType>());
+    this->append(local_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
+    this->append(local_operator_, new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GridViewType>());
+    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GridViewType>());
   }
 
 private:
@@ -189,7 +189,7 @@ public:
     , source_(source)
     , range_(range)
   {
-    this->add(local_operator_);
+    this->append(local_operator_);
   }
 
 private:
@@ -506,7 +506,7 @@ public:
   {
     LocalizableOperatorBase<typename RangeType::SpaceType::GridViewType, SourceType, RangeType> localizable_operator(
         range.space().grid_view(), source, range);
-    localizable_operator.add(local_operator_);
+    localizable_operator.append(local_operator_);
     localizable_operator.apply();
   }
 

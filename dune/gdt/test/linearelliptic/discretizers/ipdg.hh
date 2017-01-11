@@ -82,10 +82,10 @@ public:
                                        new XT::Grid::ApplyOn::NeumannIntersections<GridViewType>(*boundary_info));
     // register everything for assembly in one grid walk
     SystemAssembler<SpaceType> assembler(space);
-    assembler.add(*ipdg_operator);
-    assembler.add(*ipdg_boundary_functional);
-    assembler.add(*l2_force_functional);
-    assembler.add(*l2_neumann_functional);
+    assembler.append(*ipdg_operator);
+    assembler.append(*ipdg_boundary_functional);
+    assembler.append(*l2_force_functional);
+    assembler.append(*l2_neumann_functional);
     assembler.assemble();
     // create the discretization (no copy of the containers done here, bc. of cow)
     return DiscretizationType(problem, space, ipdg_operator->matrix(), rhs_vector);

@@ -103,7 +103,7 @@ struct LocalizableProductBase : public OperatorBase<SpaceType>
     auto& non_const_range DUNE_UNUSED = prod.range();
 
     XT::Grid::Walker<GridViewType> walker(this->space_.grid_view());
-    walker.add(prod);
+    walker.append(prod);
     walker.walk();
 
     auto result DUNE_UNUSED = prod.apply2();
@@ -127,7 +127,7 @@ struct MatrixOperatorBase : public OperatorBase<SpaceType>
     const auto& range_space DUNE_UNUSED  = op.range_space();
 
     XT::Grid::Walker<GridViewType> walker(this->space_.grid_view());
-    walker.add(op);
+    walker.append(op);
     walker.walk();
   } // ... matrix_operator_test(...)
 }; // class LocalizableProductBase

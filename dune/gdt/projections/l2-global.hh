@@ -75,8 +75,8 @@ public:
     , rhs_functional_(over_integrate, source_, range_.space(), BaseType::grid_view())
     , solved_(false)
   {
-    this->add(lhs_operator_);
-    this->add(rhs_functional_);
+    this->append(lhs_operator_);
+    this->append(rhs_functional_);
     issue_warning(this->range().space());
   }
 

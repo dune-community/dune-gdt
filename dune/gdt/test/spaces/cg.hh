@@ -133,7 +133,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
       }
     };
     Dune::XT::Grid::Walker<GridViewType> walker(this->space_.grid_view());
-    walker.add(functor);
+    walker.append(functor);
     walker.walk();
     // check that all vertices have indeed one and only one global DoF id and that the numbering is consecutive
     std::set<size_t> global_DoF_indices;
