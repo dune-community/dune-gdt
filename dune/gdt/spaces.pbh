@@ -1,0 +1,42 @@
+// This file is part of the dune-gdt project:
+//   https://github.com/dune-community/dune-gdt
+// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
+// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+// Authors:
+//   Felix Schindler (2016)
+
+#ifndef DUNE_GDT_SPACES_PBH
+#define DUNE_GDT_SPACES_PBH
+
+#include <dune/pybindxi/pybind11.h>
+
+#include "spaces/interface.hh"
+
+namespace Dune {
+namespace GDT {
+
+
+template <class S>
+typename std::enable_if<is_space<S>::value, pybind11::class_<S>>::type bind_space(pybind11::module& m,
+                                                                                  const std::string& id)
+{
+  namespace py = pybind11;
+  using namespace pybind11::literals;
+
+  py::class_<S> c(m, id.c_str(), id.c_str());
+
+  c.def_property_readonly_static("dimDomain", [](const S& /*self*/) { return S::dimDomain; });
+  c.def_property_readonly_static("dimRange", [](const S& /*self*/) { return S::dimRange; });
+  c.def_property_readonly_static("dimRangeCols", [](const S& /*self*/) { return S::dimRangeCols; });
+  c.def_property_readonly_static("polOrder", [](const S& /*self*/) { return S::polOrder; });
+
+  c.def("visualize", [](const S& self, const std::string& filename) { self.visualize(filename); }, "filename"_a = "");
+
+  return c;
+} // ... bind_space(...)
+
+
+} // namespace GDT
+} // namespace Dune
+
+#endif // DUNE_GDT_SPACES_PBH
