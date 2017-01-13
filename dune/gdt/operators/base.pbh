@@ -1,0 +1,118 @@
+// This file is part of the dune-gdt project:
+//   https://github.com/dune-community/dune-gdt
+// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
+// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+// Authors:
+//   Felix Schindler (2017)
+
+#ifndef DUNE_GDT_OPERATORS_BASE_PBH
+#define DUNE_GDT_OPERATORS_BASE_PBH
+//#if HAVE_DUNE_PYBINDXI
+
+#include <dune/pybindxi/pybind11.h>
+
+#include <dune/xt/la/container.hh>
+
+#include "base.hh"
+
+namespace Dune {
+namespace GDT {
+
+
+template <class OperatorType>
+pybind11::class_<OperatorType,
+                 SystemAssembler<typename OperatorType::RangeSpaceType, typename OperatorType::GridViewType,
+                                 typename OperatorType::SourceSpaceType>>
+bind_matrix_operator(pybind11::module& m, const std::string& class_id)
+{
+  namespace py = pybind11;
+  using namespace pybind11::literals;
+
+  typedef OperatorType C;
+  typedef typename C::RangeSpaceType R;
+  typedef typename C::SourceSpaceType S;
+  typedef SystemAssembler<R, typename C::GridViewType, typename C::SourceSpaceType> I;
+  typedef typename XT::LA::Container<typename C::RangeFieldType, C::MatrixType::vector_type>::VectorType V;
+
+  py::class_<C, I> c(m, std::string(class_id).c_str(), std::string(class_id).c_str());
+
+  // from MatrixOperatorBase
+  c.def_static("pattern", [](const R& space) { return C::pattern(space); });
+
+  c.def("pattern", [](C& self) { return self.pattern(self.range_space()); });
+  c.def("matrix", [](C& self) { return self.matrix(); });
+  c.def("source_space", [](C& self) { return self.source_space(); });
+  c.def("range_space", [](C& self) { return self.range_space(); });
+  c.def("apply", [](C& self, const V& source, V& range) { self.apply(source, range); }, "source"_a, "range"_a);
+  c.def("apply",
+        [](C& self, const ConstDiscreteFunction<S, V>& source, DiscreteFunction<R, V>& range) {
+          self.apply(source, range);
+        },
+        "source"_a,
+        "range"_a);
+  c.def("apply2",
+        [](C& self, const V& range, const V& source) { return self.apply2(range, source); },
+        "range"_a,
+        "source"_a);
+  c.def("apply2",
+        [](C& self, const ConstDiscreteFunction<R, V>& range, const ConstDiscreteFunction<S, V>& source) {
+          return self.apply2(range, source);
+        },
+        "range"_a,
+        "source"_a);
+  c.def("apply_inverse",
+        [](C& self, const V& range, V& source, const XT::Common::Configuration& opts) {
+          self.apply_inverse(range, source, opts);
+        },
+        "range"_a,
+        "source"_a,
+        "opts"_a);
+  c.def("apply_inverse",
+        [](C& self,
+           const ConstDiscreteFunction<R, V>& range,
+           ConstDiscreteFunction<S, V>& source,
+           const XT::Common::Configuration& opts) { self.apply_inverse(range, source, opts); },
+        "range"_a,
+        "source"_a,
+        "opts"_a);
+  c.def("invert_options", [](C& self) { return self.invert_options(); });
+  c.def("invert_options", [](C& self, const std::string& type) { return self.invert_options(type); }, "type"_a);
+
+  // from OperatorInterface
+  c.def("apply_inverse",
+        [](C& self, const V& range, V& source, const std::string& type) { self.apply_inverse(range, source, type); },
+        "range"_a,
+        "source"_a,
+        "type"_a);
+  c.def("apply_inverse",
+        [](C& self,
+           const ConstDiscreteFunction<R, V>& range,
+           ConstDiscreteFunction<S, V>& source,
+           const std::string& type) { self.apply_inverse(range, source, type); },
+        "range"_a,
+        "source"_a,
+        "type"_a);
+  c.def("apply_inverse",
+        [](C& self, const V& range, V& source) { self.apply_inverse(range, source); },
+        "range"_a,
+        "source"_a);
+  c.def("apply_inverse",
+        [](C& self, const ConstDiscreteFunction<R, V>& range, ConstDiscreteFunction<S, V>& source) {
+          self.apply_inverse(range, source);
+        },
+        "range"_a,
+        "source"_a);
+  c.def("induced_norm", [](C& self, const V& range) { return self.induced_norm(range); }, "range"_a);
+  c.def("induced_norm",
+        [](C& self, const ConstDiscreteFunction<R, V>& range) { return self.induced_norm(range); },
+        "range"_a);
+
+  return c;
+} // ... bind_matrix_operator(...)
+
+
+} // namespace GDT
+} // namespace Dune
+
+//#endif // HAVE_DUNE_PYBINDXI
+#endif // DUNE_GDT_OPERATORS_BASE_PBH
