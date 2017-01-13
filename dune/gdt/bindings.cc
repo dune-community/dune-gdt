@@ -10,8 +10,7 @@
 //#if HAVE_DUNE_PYBINXI
 
 #include <dune/pybindxi/pybind11.h>
-
-//#include <dune/pybindxi/stl_bind.h> // <- see dune/xt/common/bindings.cc
+#include <dune/pybindxi/stl.h>
 
 #if HAVE_DUNE_FEM
 #include <dune/fem/misc/mpimanager.hh>
