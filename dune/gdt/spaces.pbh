@@ -23,7 +23,7 @@ typename std::enable_if<is_space<S>::value, pybind11::class_<S>>::type bind_spac
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  py::class_<S> c(m, id.c_str(), id.c_str());
+  py::class_<S> c(m, id.c_str(), id.c_str(), py::metaclass());
 
   c.def_property_readonly_static("dimDomain", [](const S& /*self*/) { return S::dimDomain; });
   c.def_property_readonly_static("dimRange", [](const S& /*self*/) { return S::dimRange; });
