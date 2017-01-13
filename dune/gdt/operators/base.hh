@@ -432,8 +432,8 @@ public:
   }
 
   template <class R, class S>
-  void apply_inverse(const ConstDiscreteFunction<SourceSpaceType, R>& range,
-                     ConstDiscreteFunction<RangeSpaceType, S>& source,
+  void apply_inverse(const ConstDiscreteFunction<RangeSpaceType, R>& range,
+                     ConstDiscreteFunction<SourceSpaceType, S>& source,
                      const XT::Common::Configuration& opts) const
   {
     apply_inverse(range.vector(), source.vector(), opts);
