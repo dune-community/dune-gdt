@@ -1,0 +1,115 @@
+// This file is part of the dune-gdt project:
+//   https://github.com/dune-community/dune-gdt
+// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
+// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+// Authors:
+//   Felix Schindler (2017)
+
+#ifndef DUNE_GDT_OPERATORS_ELLIPTIC_PBH
+#define DUNE_GDT_OPERATORS_ELLIPTIC_PBH
+//#if HAVE_DUNE_PYBINDXI
+
+#include <dune/pybindxi/pybind11.h>
+
+#include "elliptic.hh"
+#include "base.pbh"
+
+namespace Dune {
+namespace GDT {
+namespace internal {
+
+
+template <class DF, typename DT>
+struct elliptic_matrix_operator_bind_helper
+{
+  static std::string suffix()
+  {
+    return "diffusion_factor_and_tensor";
+  }
+
+  template <class C>
+  static void addbind_factory_methods(pybind11::module& m, const std::string& method_id)
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+
+    typedef typename C::RangeSpaceType R;
+    typedef typename C::MatrixType MatrixType;
+
+    m.def(std::string(method_id).c_str(),
+          [](const DF& diffusion_factor, const DT& diffusion_tensor, const R& space, const size_t over_integrate) {
+            return make_elliptic_matrix_operator<MatrixType>(diffusion_factor, diffusion_tensor, space, over_integrate)
+                .release(); // b.c. EllipticMatrixOperator is not movable, returning the raw pointer lets pybind11
+          }, //                correctly manage the memory
+          "diffusion_factor"_a,
+          "diffusion_tensor"_a,
+          "space"_a,
+          "over_integrate"_a = 0);
+  } // ... addbind_factory_methods(...)
+}; // struct elliptic_matrix_operator_bind_helper
+
+template <class D>
+struct elliptic_matrix_operator_bind_helper<D, void>
+{
+  static std::string suffix()
+  {
+    return "single_diffusion";
+  }
+
+  template <class C>
+  static void addbind_factory_methods(pybind11::module& m, const std::string& method_id)
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+
+    typedef typename C::RangeSpaceType R;
+    typedef typename C::MatrixType MatrixType;
+
+    m.def(std::string(method_id).c_str(),
+          [](const D& diffusion, const R& space, const size_t over_integrate) {
+            return make_elliptic_matrix_operator<MatrixType>(diffusion, space, over_integrate).release(); // s.a. for
+          }, //                                                                                              .release()
+          "diffusion"_a,
+          "space"_a,
+          "over_integrate"_a = 0);
+  } // ... addbind_factory_methods(...)
+}; // struct elliptic_matrix_operator_bind_helper<..., void>
+
+
+} // namespace internal
+
+
+template <class DF,
+          typename DT, // may be void
+          class R,
+          class M = typename XT::LA::Container<typename R::RangeFieldType>::MatrixType,
+          class GV = typename R::GridViewType,
+          class S = R,
+          class F = typename R::RangeFieldType>
+pybind11::class_<EllipticMatrixOperator<DF, DT, R, M, GV, S, F>>
+bind_elliptic_matrix_operator(pybind11::module& m, const std::string& space_id, const std::string& la_id)
+{
+  static_assert(std::is_same<R, S>::value, "");
+  static_assert(std::is_same<GV, typename R::GridViewType>::value, "");
+
+  namespace py = pybind11;
+  using namespace pybind11::literals;
+
+  typedef EllipticMatrixOperator<DF, DT, R, M, GV, S, F> C;
+  const std::string suffix = la_id + "__" + space_id + internal::elliptic_matrix_operator_bind_helper<DF, DT>::suffix();
+
+  auto c = bind_matrix_operator<C>(m, "EllipticMatrixOperator__" + suffix);
+
+  internal::elliptic_matrix_operator_bind_helper<DF, DT>::template addbind_factory_methods<C>(
+      m, "make_elliptic_matrix_operator__" + la_id);
+
+  return c;
+
+} // ... bind_elliptic_matrix_operator(...)
+
+
+} // namespace GDT
+} // namespace Dune
+
+//#endif // HAVE_DUNE_PYBINDXI
+#endif // DUNE_GDT_OPERATORS_ELLIPTIC_PBH
