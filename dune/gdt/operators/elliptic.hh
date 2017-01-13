@@ -172,11 +172,22 @@ template <class DiffusionFactorType,
 class EllipticMatrixOperator
     : public MatrixOperatorBase<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume>
 {
+  typedef EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, RangeSpace, Matrix, GridView, SourceSpace,
+                                 Field>
+      ThisType;
   typedef MatrixOperatorBase<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume> BaseType;
   typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>>
       LocalEllipticOperatorType;
 
 public:
+  /// \sa MatrixOperatorBase
+  EllipticMatrixOperator(const ThisType& other) = delete;
+  EllipticMatrixOperator(ThisType& other)       = delete; // <- b.c. of the too perfect forwarding ctor
+  EllipticMatrixOperator(ThisType&& source)     = delete;
+
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& source) = delete;
+
   // see the ctors of EllipticLocalizableProduct
   template <typename DiffusionImp // This ctor is only enabled if we are given a single diffusion data function.
             ,
