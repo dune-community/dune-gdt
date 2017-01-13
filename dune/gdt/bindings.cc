@@ -23,6 +23,8 @@
 #include <dune/xt/grid/grids.hh>
 #include <dune/xt/grid/type_traits.hh>
 
+#include <dune/xt/la/container.hh>
+
 #include <dune/gdt/spaces/cg.hh>
 #include <dune/gdt/spaces/dg.hh>
 #include <dune/gdt/spaces/fv.hh>
@@ -30,6 +32,7 @@
 
 #include <dune/gdt/spaces.pbh>
 #include <dune/gdt/assembler/system.pbh>
+#include <dune/gdt/operators/elliptic.pbh>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -45,6 +48,10 @@ addbind_for_space(py::module& m, const std::string& grid_id, const std::string& 
 
   typedef typename SP::type S;
   typedef typename Grid::extract_grid<typename S::GridViewType>::type G;
+  typedef typename S::EntityType E;
+  typedef typename S::DomainFieldType D;
+  static const size_t d = S::dimDomain;
+  typedef typename S::RangeFieldType R;
   static const size_t r  = S::dimRange;
   static const size_t rC = S::dimRangeCols;
   const std::string r_   = to_string(r);
@@ -60,6 +67,21 @@ addbind_for_space(py::module& m, const std::string& grid_id, const std::string& 
         "level"_a = 0);
 
   Dune::GDT::bind_system_assembler<S>(m, space_id + "Space__" + grid_id + "_to_" + space_suffix);
+
+  typedef Dune::XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1> ScalarFunction;
+  typedef Dune::XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunction;
+  Dune::GDT::bind_elliptic_matrix_operator<ScalarFunction,
+                                           TensorFunction,
+                                           S,
+                                           typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::
+                                               MatrixType>(
+      m, space_id + "Space__" + grid_id + "_to_" + space_suffix, "istl_sparse");
+  Dune::GDT::bind_elliptic_matrix_operator<ScalarFunction,
+                                           void,
+                                           S,
+                                           typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::
+                                               MatrixType>(
+      m, space_id + "Space__" + grid_id + "_to_" + space_suffix, "istl_sparse");
 } // ... addbind_for_space(...)
 
 
