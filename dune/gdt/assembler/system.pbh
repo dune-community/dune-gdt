@@ -10,6 +10,8 @@
 
 #include <dune/pybindxi/pybind11.h>
 
+#include <dune/xt/common/memory.hh>
+
 #include "system.hh"
 
 namespace Dune {
@@ -26,10 +28,12 @@ struct addbind_SystemAssembler_ctor_single
   template <class C>
   void operator()(C& c)
   {
+    namespace py = pybind11;
     using namespace pybind11::literals;
-    c.def(pybind11::init<T>(),
+    c.def(py::init<T>(),
           "space"_a,
-          "Uses given space as test and ansatz space, and the grid view of the given space as grid view.");
+          "Uses given space as test and ansatz space, and the grid view of the given space as grid view.",
+          py::keep_alive<1, 2>());
   }
 }; // struct addbind_SystemAssembler_ctor_single
 
@@ -49,11 +53,14 @@ struct addbind_SystemAssembler_ctor_double
   template <class C>
   void operator()(C& c)
   {
+    namespace py = pybind11;
     using namespace pybind11::literals;
-    c.def(pybind11::init<T, A>(),
+    c.def(py::init<T, A>(),
           "test_space"_a,
           "ansatz_space"_a,
-          "Uses given spaces and the grid view of the test space as grid view.");
+          "Uses given spaces and the grid view of the test space as grid view.",
+          py::keep_alive<1, 2>(),
+          py::keep_alive<1, 3>());
   }
 }; // struct addbind_SystemAssembler_ctor_double
 
@@ -85,10 +92,13 @@ bind_system_assembler(pybind11::module& m, const std::string& space_id)
   internal::addbind_SystemAssembler_ctor_single<TestSpace, GridView, AnsatzSpace>()(c);
   //  internal::addbind_SystemAssembler_ctor_double<TestSpace, GridView, AnsatzSpace>()(c);
 
-  c.def("append", [](C& self, C& other) { self.append(other); }, "other"_a);
+  c.def("append", [](C& self, C& other) { self.append(other); }, "other"_a, py::keep_alive<1, 2>());
   c.def("assemble", [](C& self, const bool use_tbb) { self.assemble(use_tbb); }, "use_tbb"_a = false);
 
-  m.def("make_system_assembler", [](const TestSpace& space) { return C(space); }, "space"_a);
+  m.def("make_system_assembler",
+        [](const TestSpace& space) { return XT::Common::make_unique<C>(space); },
+        "space"_a,
+        py::keep_alive<0, 1>());
 
   return c;
 } // ... bind_system_assembler(...)
