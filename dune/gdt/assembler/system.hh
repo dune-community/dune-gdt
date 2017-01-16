@@ -83,7 +83,11 @@ public:
   {
   }
 
-  SystemAssembler(ThisType&& source) = default;
+  /// \sa https://github.com/dune-community/dune-gdt/issues/89
+  SystemAssembler(const ThisType& other) = delete; // all wrappers hold references to dead spaces after move!
+  SystemAssembler(ThisType&& source)     = delete;
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& source) = delete;
 
   const TestSpaceType& test_space() const
   {
