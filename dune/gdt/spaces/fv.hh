@@ -55,7 +55,7 @@ public:
 
   static Type create(GridProviderType& grid_provider, const int level = 0)
   {
-    return Type(grid_provider.template layer<layer_type, part_view_type>(level));
+    return create(grid_provider.template layer<layer_type, part_view_type>(level));
   }
 }; // class FvSpaceProvider
 
