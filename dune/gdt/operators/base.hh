@@ -278,6 +278,7 @@ public:
                                    << this->source_space().mapper().size());
   } // MatrixOperatorBase(...)
 
+  /// \todo Guard against copy and move ctor (Args = ThisType)!
   template <class... Args>
   explicit MatrixOperatorBase(Args&&... args)
     : BaseAssemblerType(std::forward<Args>(args)...)
