@@ -209,8 +209,10 @@ public:
     , communicator_prepared_(false)
   {
     // make sure our new communicator is prepared if other's was
-    if (other.communicator_prepared_)
+    if (other.communicator_prepared_) {
       const auto& comm DUNE_UNUSED = this->communicator();
+      communicator_prepared_ = true;
+    }
   }
 
   /**
@@ -218,17 +220,16 @@ public:
    * \note  Manually implemented bc of the std::mutex.
    */
   DunePdelabCgSpaceWrapper(ThisType&& source)
-    : gridView_(source.gridView_)
-    , fe_map_(source.fe_map_)
-    , backend_(source.backend_)
-    , mapper_(source.mapper_)
+    : gridView_(std::move(source.gridView_))
+    , fe_map_(std::move(source.fe_map_))
+    , backend_(std::move(source.backend_))
+    , mapper_(std::move(source.mapper_))
     , communicator_(std::move(source.communicator_))
-    , communicator_prepared_(source.communicator_prepared_)
+    , communicator_prepared_(std::move(source.communicator_prepared_))
   {
   }
 
   ThisType& operator=(const ThisType& other) = delete;
-
   ThisType& operator=(ThisType&& source) = delete;
 
   const GridViewType& grid_view() const
