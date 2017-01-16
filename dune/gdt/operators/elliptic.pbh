@@ -44,7 +44,10 @@ struct elliptic_matrix_operator_bind_helper
           "diffusion_factor"_a,
           "diffusion_tensor"_a,
           "space"_a,
-          "over_integrate"_a = 0);
+          "over_integrate"_a = 0,
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>());
   } // ... addbind_factory_methods(...)
 }; // struct elliptic_matrix_operator_bind_helper
 
@@ -71,7 +74,9 @@ struct elliptic_matrix_operator_bind_helper<D, void>
           }, //                                                                                              .release()
           "diffusion"_a,
           "space"_a,
-          "over_integrate"_a = 0);
+          "over_integrate"_a = 0,
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
   } // ... addbind_factory_methods(...)
 }; // struct elliptic_matrix_operator_bind_helper<..., void>
 
