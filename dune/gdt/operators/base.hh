@@ -308,7 +308,13 @@ public:
   {
   }
 
-  MatrixOperatorBase(ThisType&& source) = default;
+  /// \sa SystemAssembler
+  MatrixOperatorBase(const ThisType& other) = delete;
+  MatrixOperatorBase(ThisType&& source) = delete;
+  MatrixOperatorBase(ThisType& other) = delete; // <- b.c. of the too perfect forwarding ctor
+
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& source) = delete;
 
   const MatrixType& matrix() const
   {
