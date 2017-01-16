@@ -65,7 +65,8 @@ addbind_for_space(py::module& m, const std::string& grid_id, const std::string& 
   m.def(std::string("make_" + to_lower(space_id) + "_space__" + space_suffix).c_str(),
         [](Grid::GridProvider<G>& grid_provider, const int level = 0) { return SP::create(grid_provider, level); },
         "grid_provider"_a,
-        "level"_a = 0);
+        "level"_a = 0,
+        py::keep_alive<0, 1>());
 
   Dune::GDT::bind_system_assembler<S>(m, space_id + "Space__" + grid_id + "_to_" + space_suffix);
 
