@@ -48,8 +48,9 @@ class DunePdelabCgMapperWrapperTraits
 {
 public:
   typedef DunePdelabCgMapperWrapper<PdelabSpaceImp, rangeDim> derived_type;
-  typedef PdelabSpaceImp BackendType;
-  typedef typename BackendType::Element EntityType;
+  typedef PdelabSpaceImp SpaceType;
+  typedef PDELab::LocalFunctionSpace<SpaceType, PDELab::TrialSpaceTag> BackendType;
+  typedef typename SpaceType::Element EntityType;
 };
 
 template <class PdelabSpaceImp>
@@ -65,34 +66,41 @@ public:
 template <class ImpTraits>
 class PdelabWrapperBase : public MapperInterface<ImpTraits>
 {
+  typedef PdelabWrapperBase<ImpTraits> ThisType;
   typedef MapperInterface<ImpTraits> InterfaceType;
+  typedef typename ImpTraits::SpaceType SpaceType;
 
 public:
   typedef typename InterfaceType::EntityType EntityType;
   typedef typename InterfaceType::BackendType BackendType;
 
 private:
-  typedef PDELab::LocalFunctionSpace<BackendType, PDELab::TrialSpaceTag> PdeLabLFSType;
+  typedef typename BackendType::Traits::DOFIndex MultiIndexType;
 
 public:
-  typedef typename PdeLabLFSType::Traits::DOFIndex MultiIndexType;
-
-public:
-  explicit PdelabWrapperBase(const BackendType& pdelab_space)
-    : backend_(pdelab_space)
-    , lfs_(backend_)
+  explicit PdelabWrapperBase(const SpaceType& pdelab_space)
+    : space_(pdelab_space)
+    , backend_(space_)
   {
-    const auto& grid_view = backend_.gridView();
+    const auto& grid_view = space_.gridView();
     const auto it_end = grid_view.template end<0>();
     std::size_t count = 0;
     for (auto it = grid_view.template begin<0>(); it != it_end; ++it) {
       const auto& entity = *it;
-      lfs_.bind(entity);
-      for (size_t ii = 0; ii < lfs_.size(); ++ii)
-        if (index_map_.find(lfs_.dofIndex(ii)) == index_map_.end())
-          index_map_.insert(std::make_pair(lfs_.dofIndex(ii), count++));
+      backend_.bind(entity);
+      for (size_t ii = 0; ii < backend_.size(); ++ii)
+        if (index_map_.find(backend_.dofIndex(ii)) == index_map_.end())
+          index_map_.insert(std::make_pair(backend_.dofIndex(ii), count++));
     }
   }
+
+  PdelabWrapperBase(const ThisType& other)
+    : space_(other.space_)
+    , backend_(space_)
+  {
+  }
+
+  PdelabWrapperBase(ThisType&& source) = default;
 
   virtual ~PdelabWrapperBase()
   {
@@ -105,23 +113,23 @@ public:
 
   size_t size() const
   {
-    return backend_.size();
+    return space_.size();
   }
 
   size_t numDofs(const EntityType& entity) const
   {
-    lfs_.bind(entity);
-    return lfs_.size();
+    backend_.bind(entity);
+    return backend_.size();
   }
 
   size_t maxNumDofs() const
   {
-    return backend_.maxLocalSize();
+    return space_.maxLocalSize();
   }
 
   void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
-    lfs_.bind(entity);
+    backend_.bind(entity);
     // some checks
     const size_t numLocalDofs = numDofs(entity);
     if (ret.size() < numLocalDofs)
@@ -135,16 +143,16 @@ public:
 
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
-    lfs_.bind(entity);
-    assert(localIndex < lfs_.size());
-    return index_map_[lfs_.dofIndex(localIndex)];
+    backend_.bind(entity);
+    assert(localIndex < backend_.size());
+    return index_map_[backend_.dofIndex(localIndex)];
   } // ... mapToGlobal(...)
 
 protected:
   virtual size_t mapAfterBound(const EntityType& entity, const size_t& localIndex) const = 0;
 
-  const BackendType& backend_;
-  mutable PdeLabLFSType lfs_;
+  const SpaceType& space_;
+  mutable BackendType backend_;
   mutable std::unordered_map<MultiIndexType, std::size_t> index_map_;
 }; // class PdelabWrapperBase
 
@@ -178,6 +186,8 @@ template <class PdelabSpaceImp>
 class DunePdelabCgMapperWrapper<PdelabSpaceImp, 1>
     : public internal::PdelabWrapperBase<internal::DunePdelabCgMapperWrapperTraits<PdelabSpaceImp, 1>>
 {
+  typedef DunePdelabCgMapperWrapper<PdelabSpaceImp, 1> ThisType;
+
 public:
   typedef typename internal::DunePdelabCgMapperWrapperTraits<PdelabSpaceImp, 1> Traits;
   typedef typename Traits::EntityType EntityType;
@@ -188,10 +198,14 @@ public:
   {
   }
 
+  DunePdelabCgMapperWrapper(const ThisType& other) = default;
+  DunePdelabCgMapperWrapper(ThisType& other) = default; // required b.c. of the too perfect forwarding ctor above
+  DunePdelabCgMapperWrapper(ThisType&& source) = default;
+
 protected:
   virtual size_t mapAfterBound(const EntityType& /*entity*/, const size_t& localIndex) const override
   {
-    return this->lfs_.dofIndex(localIndex).entityIndex()[1];
+    return this->backend_.dofIndex(localIndex).entityIndex()[1];
   }
 }; // class DunePdelabCgMapperWrapper
 
@@ -213,7 +227,7 @@ public:
 protected:
   virtual size_t mapAfterBound(const EntityType& entity, const size_t& localIndex) const override
   {
-    return this->lfs_.dofIndex(localIndex).entityIndex()[1] * this->numDofs(entity) + localIndex;
+    return this->backend_.dofIndex(localIndex).entityIndex()[1] * this->numDofs(entity) + localIndex;
   }
 }; // class DunePdelabDgMapperWrapper
 
