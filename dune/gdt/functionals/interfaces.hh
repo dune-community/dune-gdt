@@ -12,12 +12,7 @@
 #ifndef DUNE_GDT_FUNCTIONALS_INTERFACES_HH
 #define DUNE_GDT_FUNCTIONALS_INTERFACES_HH
 
-#include <dune/common/deprecated.hh>
-
 #include <dune/xt/common/crtp.hh>
-
-#include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/discretefunction/default.hh>
 
 namespace Dune {
 namespace GDT {
