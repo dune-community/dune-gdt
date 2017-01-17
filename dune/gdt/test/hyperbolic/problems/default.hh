@@ -55,7 +55,7 @@ public:
   typedef typename XT::Functions::ExpressionFunction<DummyEntityType, R, r, R, r, rC> RHSExpressionFunctionType;
   typedef typename XT::Functions::FunctionCheckerboardFunction<RHSExpressionFunctionType, E, D, d, R, r, rC>
       RHSCheckerboardFunctionType;
-  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFlux<RHSCheckerboardFunctionType, E, D, d, R, r, rC>
+  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluation<RHSCheckerboardFunctionType, E, D, d, R, r, rC>
       DefaultRHSType;
 
   using typename BaseType::FluxType;

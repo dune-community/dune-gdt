@@ -52,7 +52,7 @@ public:
       AutonomousAnalyticalFluxInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
           FluxType;
   typedef Dune::GDT::
-      RhsEvaluationFluxInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
+      RhsEvaluationInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
           RHSType;
   typedef Dune::XT::Functions::
       LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>

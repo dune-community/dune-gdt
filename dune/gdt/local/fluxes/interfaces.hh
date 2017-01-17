@@ -238,28 +238,41 @@ public:
  * \todo: implement for rC > 1.
  * */
 template <class E, class D, size_t d, class R, size_t r, size_t rC = 1>
-class RhsEvaluationFluxInterface : internal::IsRHSEvaluation
+class RhsEvaluationInterface : internal::IsRHSEvaluation
 {
   static_assert(rC == 1, "Not implemented for rC > 1");
 
 public:
   typedef E EntityType;
   typedef D DomainFieldType;
+  typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::DomainType DomainType;
   typedef R RangeFieldType;
   static const size_t dimDomain = d;
   static const size_t dimRange = r;
   static const size_t dimRangeCols = rC;
 
-  virtual ~RhsEvaluationFluxInterface() = default;
+  virtual ~RhsEvaluationInterface() = default;
 
-  typedef
-      typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType; // of u, FieldVector or
-  // FieldMatrix depending on
-  // dimensions
-  typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::DomainType DomainType;
+  // RangeType of u, FieldVector or FieldMatrix depending on dimensions
+  typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType;
+  typedef typename Dune::template YaspGrid<dimRange>::template Codim<0>::Entity DummyEntityType;
+  // Jacobian of RHS with respect to u
+  // TODO: determine correct type
+  typedef typename XT::Functions::LocalfunctionSetInterface<DummyEntityType, R, r, R, r, rC>::JacobianRangeType
+      RhsJacobianRangeType;
+
+  virtual size_t order(const EntityType& entity) const = 0;
 
   virtual RangeType
-  evaluate(const RangeType& u, const E& entity, const DomainType& x_local, const double t_ = 0) const = 0;
+  evaluate(const RangeType& u, const EntityType& entity, const DomainType& x_local, const double t_ = 0) const = 0;
+
+  virtual RhsJacobianRangeType jacobian(const RangeType& /*u*/,
+                                        const EntityType& /*entity*/,
+                                        const DomainType& /*x_local*/,
+                                        const double /*t_*/ = 0) const
+  {
+    DUNE_THROW(Dune::NotImplemented, "There is no jacobian implementation for this RHS");
+  }
 };
 
 

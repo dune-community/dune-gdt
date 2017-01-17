@@ -21,13 +21,17 @@
 #include <dune/xt/la/container/common.hh>
 #include <dune/xt/la/container/interfaces.hh>
 
-#include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/functionals/base.hh>
 #include <dune/gdt/local/fluxes/interfaces.hh>
 #include <dune/gdt/local/fluxes/godunov.hh>
 #include <dune/gdt/local/fluxes/laxfriedrichs.hh>
+#include <dune/gdt/local/functionals/integrals.hh>
+#include <dune/gdt/local/integrands/fv.hh>
 #include <dune/gdt/local/operators/fv.hh>
-#include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/local/operators/integrals.hh>
 #include <dune/gdt/operators/base.hh>
+#include <dune/gdt/spaces/interface.hh>
 
 #include <dune/gdt/playground/spaces/dg/dune-pdelab-wrapper.hh>
 
@@ -77,6 +81,7 @@ public:
   typedef AnalyticalFluxImp AnalyticalFluxType;
   typedef BoundaryValueFunctionImp BoundaryValueFunctionType;
   typedef typename AnalyticalFluxType::DomainFieldType FieldType;
+  typedef typename AnalyticalFluxType::FluxJacobianRangeType JacobianType;
 }; // class AdvectionTraitsBase
 
 
@@ -114,6 +119,7 @@ public:
   typedef AdvectionRHSOperator<RHSEvaluationImp> derived_type;
   typedef RHSEvaluationImp RHSEvaluationType;
   typedef typename RHSEvaluationImp::DomainFieldType FieldType;
+  typedef typename RHSEvaluationImp::RhsJacobianRangeType JacobianType;
 }; // class AdvectionRHSOperatorTraits
 
 
@@ -340,7 +346,7 @@ struct AdvectionOperatorApplier
                                source,
                                range,
                                std::forward<LocalOperatorArgTypes>(local_operator_args)...);
-      localizable_operator.apply();
+      localizable_operator.apply(true);
     }
   }
 }; // struct AdvectionOperatorApplier
@@ -545,24 +551,44 @@ class AdvectionRHSOperator : public Dune::GDT::OperatorInterface<internal::Advec
 public:
   typedef internal::AdvectionRHSOperatorTraits<RHSEvaluationImp> Traits;
   typedef typename Traits::RHSEvaluationType RHSEvaluationType;
-  typedef LocalRhsFvOperator<RHSEvaluationType> LocalOperatorType;
+  using BaseType = typename Dune::GDT::OperatorInterface<internal::AdvectionRHSOperatorTraits<RHSEvaluationImp>>;
 
   AdvectionRHSOperator(const RHSEvaluationType& rhs_evaluation)
-    : local_operator_(rhs_evaluation)
+    : rhs_evaluation_(rhs_evaluation)
   {
   }
 
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const double /*time*/ = 0.0) const
   {
-    LocalizableOperatorBase<typename RangeType::SpaceType::GridViewType, SourceType, RangeType> localizable_operator(
-        range.space().grid_view(), source, range);
-    localizable_operator.append(local_operator_);
-    localizable_operator.apply();
+    std::fill(range.vector().begin(), range.vector().end(), 0);
+    LocalVolumeIntegralFunctional<LocalFvRhsIntegrand<RHSEvaluationType, SourceType>> local_functional(rhs_evaluation_,
+                                                                                                       source);
+    VectorFunctionalBase<typename RangeType::VectorType,
+                         typename RangeType::SpaceType,
+                         typename RangeType::SpaceType::GridViewType,
+                         typename RangeType::DomainFieldType>
+        functional_assembler(range.vector(), range.space());
+    functional_assembler.append(local_functional);
+    functional_assembler.assemble(true);
+  }
+
+  // assembles jacobian (jacobian is assumed to be zero initially)
+  template <class SourceType, class MatrixTraits>
+  void assemble_jacobian(XT::LA::MatrixInterface<MatrixTraits, typename SourceType::RangeFieldType>& jac,
+                         const SourceType& source,
+                         const double /*time*/ = 0.0) const
+  {
+    typedef LocalVolumeIntegralOperator<LocalFvRhsJacobianIntegrand<RHSEvaluationType, SourceType>> LocalOperatorType;
+    LocalOperatorType local_operator(rhs_evaluation_, source);
+    LocalVolumeTwoFormAssembler<LocalOperatorType> local_assembler(local_operator);
+    SystemAssembler<typename SourceType::SpaceType> assembler(source.space());
+    assembler.append(local_assembler, jac);
+    assembler.assemble();
   }
 
 private:
-  const LocalOperatorType local_operator_;
+  const RHSEvaluationType& rhs_evaluation_;
 }; // class AdvectionRHSOperator
 
 

@@ -20,30 +20,47 @@ namespace Dune {
 namespace GDT {
 
 
-/** RHS evaluation for time-independent RHS q(u,x) that is based on Dune::XT::Functions::Checkerboard.
+/** RHS evaluation for time-independent RHS q(u,x) that is based on Dune::XT::Functions::Checkerboard
  *  TODO: static_assert for CheckerboardFunctionImp
  * */
 template <class CheckerboardFunctionImp, class E, class D, size_t d, class R, size_t r, size_t rC = 1>
-class CheckerboardBasedRhsEvaluationFlux : public RhsEvaluationFluxInterface<E, D, d, R, r, rC>
+class CheckerboardBasedRhsEvaluation : public RhsEvaluationInterface<E, D, d, R, r, rC>
 {
-  typedef RhsEvaluationFluxInterface<E, D, d, R, r, rC> BaseType;
-  typedef CheckerboardBasedRhsEvaluationFlux<CheckerboardFunctionImp, E, D, d, R, r, rC> ThisType;
+  typedef RhsEvaluationInterface<E, D, d, R, r, rC> BaseType;
+  typedef CheckerboardBasedRhsEvaluation<CheckerboardFunctionImp, E, D, d, R, r, rC> ThisType;
 
-public:
   // function q(u,x) for fixed x, i.e. only dependent on u
+  typedef typename CheckerboardFunctionImp::LocalizableFunctionType GlobalFunctionType;
+  //  static_assert(std::is_base_of<Dune::XT::Functions::GlobalFunctionInterface<E, R, r, R, r, rC>,
+  //  GlobalFunctionType>::value, "");
+public:
   typedef CheckerboardFunctionImp CheckerboardFunctionType;
+  typedef E EntityType;
   using typename BaseType::RangeType;
   using typename BaseType::DomainType;
+  using typename BaseType::RhsJacobianRangeType;
 
-  CheckerboardBasedRhsEvaluationFlux(const CheckerboardFunctionType& checkerboard_function)
+  CheckerboardBasedRhsEvaluation(const CheckerboardFunctionType& checkerboard_function)
     : checkerboard_function_(checkerboard_function)
   {
   }
 
+  // polynomial order in x
+  virtual size_t order(const EntityType& /*entity*/) const
+  {
+    return 0;
+  }
+
   virtual RangeType
-  evaluate(const RangeType& u, const E& entity, const DomainType& /*x_local*/, const double /*t_*/ = 0) const
+  evaluate(const RangeType& u, const EntityType& entity, const DomainType& /*x_local*/, const double /*t_*/ = 0) const
   {
     return checkerboard_function_.localizable_function(entity).evaluate(u);
+  }
+
+  virtual RhsJacobianRangeType
+  jacobian(const RangeType& u, const EntityType& entity, const DomainType& /*x_local*/, const double /*t_*/ = 0) const
+  {
+    return checkerboard_function_.localizable_function(entity).jacobian(u);
   }
 
   static std::string static_id()
@@ -59,7 +76,7 @@ public:
 
 private:
   const CheckerboardFunctionType checkerboard_function_;
-}; // class CheckerboardBasedRhsEvaluationFlux<...>
+}; // class CheckerboardBasedRhsEvaluation<...>
 
 
 } // namespace GDT

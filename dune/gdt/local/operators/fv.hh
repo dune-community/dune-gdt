@@ -34,9 +34,6 @@ class LocalCouplingFvOperator;
 template <class NumericalFluxType>
 class LocalBoundaryFvOperator;
 
-template <class RHSEvaluationImp>
-class LocalRhsFvOperator;
-
 template <class MatrixImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter>
 class LocalReconstructionFvOperator;
 
@@ -55,12 +52,6 @@ template <class NumericalFluxType>
 struct LocalBoundaryFvOperatorTraits
 {
   typedef LocalBoundaryFvOperator<NumericalFluxType> derived_type;
-};
-
-template <class RHSEvaluationImp>
-struct LocalRhsFvOperatorTraits
-{
-  typedef LocalRhsFvOperator<RHSEvaluationImp> derived_type;
 };
 
 template <class MatrixImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter>
@@ -225,33 +216,6 @@ public:
 
 private:
   const NumericalFluxType numerical_flux_;
-};
-
-/** TODO: add support for time-dependent RHS
- *  TODO: implement as integral operator??
- * */
-template <class RHSEvaluationImp>
-class LocalRhsFvOperator : public LocalOperatorInterface<internal::LocalRhsFvOperatorTraits<RHSEvaluationImp>>
-{
-public:
-  explicit LocalRhsFvOperator(const RHSEvaluationImp& rhs_evaluation)
-    : rhs_evaluation_(rhs_evaluation)
-  {
-  }
-
-  template <class SourceType, class RangeSpaceType, class VectorType>
-  void apply(const SourceType& source, LocalDiscreteFunction<RangeSpaceType, VectorType>& local_range) const
-  {
-    const auto& entity = local_range.entity();
-    const auto local_source_entity = source.local_function(entity);
-    const auto x_local = entity.geometry().local(entity.geometry().center());
-    const auto u = local_source_entity->evaluate(x_local);
-    const auto result = rhs_evaluation_.evaluate(u, entity, x_local);
-    local_range.vector().add(result);
-  }
-
-private:
-  const RHSEvaluationImp& rhs_evaluation_;
 };
 
 

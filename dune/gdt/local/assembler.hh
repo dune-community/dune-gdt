@@ -21,6 +21,7 @@
 #include <dune/xt/la/container/interfaces.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/local/discretefunction.hh>
 #include <dune/gdt/local/operators/interfaces.hh>
 #include <dune/gdt/local/functionals/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -234,6 +235,54 @@ private:
   RangeType& range_;
   const XT::Grid::ApplyOn::WhichEntity<GridViewType>& where_;
 }; // class LocalOperatorApplicator
+
+
+template <class GridViewType, class LocalOperatorType, class SourceType, class RangeType>
+class LocalOperatorJacobianAssembler : public XT::Grid::internal::Codim0Object<GridViewType>
+{
+  static_assert(is_local_operator<LocalOperatorType>::value,
+                "LocalOperatorType has to be derived from LocalOperatorInterface!");
+  static_assert(XT::Functions::is_localizable_function<SourceType>::value,
+                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
+  static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
+  typedef XT::Grid::internal::Codim0Object<GridViewType> BaseType;
+
+public:
+  using typename BaseType::EntityType;
+
+  LocalOperatorJacobianAssembler(const GridViewType& grid_view,
+                                 const LocalOperatorType& local_operator,
+                                 const SourceType& x,
+                                 const SourceType& source,
+                                 RangeType& range,
+                                 const XT::Grid::ApplyOn::WhichEntity<GridViewType>& where)
+    : grid_view_(grid_view)
+    , local_operator_(local_operator)
+    , x_(x)
+    , source_(source)
+    , range_(range)
+    , where_(where)
+  {
+  }
+
+  virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const
+  {
+    return where_.apply_on(grid_view, entity);
+  }
+
+  virtual void apply_local(const EntityType& entity)
+  {
+    local_operator_.assemble_jacobian(x_, source_, *range_.local_discrete_function(entity));
+  }
+
+private:
+  const GridViewType& grid_view_;
+  const LocalOperatorType& local_operator_;
+  const SourceType& x_;
+  const SourceType& source_;
+  RangeType& range_;
+  const XT::Grid::ApplyOn::WhichEntity<GridViewType>& where_;
+}; // class LocalOperatorJacobianAssembler
 
 
 template <class LocalCouplingTwoFormType>
