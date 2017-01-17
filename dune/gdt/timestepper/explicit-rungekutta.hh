@@ -167,6 +167,11 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::e
  * b and c form the butcher tableau (see https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods, A is
  * composed of the coefficients a_{ij}, b of b_j and c of c_j). The default is a forward euler method.
  *
+ * Notation: For an s-stage method,
+ * \mathbf{u}^{n+1} = \mathbf{u}^n + dt \sum_{i=0}^{s-1} b_i \mathbf{k}_i
+ * \mathbf{k}_i = L(\mathbf{u}_i, t^n + dt c_i)
+ * \mathbf{u}_i = \mathbf{u}^n + dt \sum_{j=0}^{i-1} a_{ij} \mathbf{k}_j,
+ *
  * \tparam OperatorImp Type of operator L
  * \tparam DiscreteFunctionImp Type of initial values
  */
@@ -215,7 +220,7 @@ public:
     : BaseType(t_0, initial_values)
     , op_(op)
     , r_(r)
-    , u_tmp_(BaseType::current_solution())
+    , u_i_(BaseType::current_solution())
     , A_(A)
     , b_(b)
     , c_(c)
@@ -232,9 +237,9 @@ public:
       }
     }
 #endif // NDEBUG
-    // store as many discrete functions as needed for intermediate stages
+    // store as many discrete functions as needed for the stages k
     for (size_t ii = 0; ii < num_stages_; ++ii) {
-      u_intermediate_stages_.emplace_back(current_solution());
+      stages_k_.emplace_back(current_solution());
     }
   } // constructor
 
@@ -257,16 +262,17 @@ public:
     auto& u_n = current_solution();
     // calculate stages
     for (size_t ii = 0; ii < num_stages_; ++ii) {
-      u_intermediate_stages_[ii].vector() *= RangeFieldType(0);
-      u_tmp_.vector() = u_n.vector();
-      for (size_t jj = 0; jj < ii; ++jj)
-        u_tmp_.vector() += u_intermediate_stages_[jj].vector() * (actual_dt * r_ * (A_[ii][jj]));
-      op_.apply(u_tmp_, u_intermediate_stages_[ii], t + actual_dt * c_[ii]);
+      stages_k_[ii].vector() *= RangeFieldType(0);
+      if (ii == 0)
+        u_i_.vector() = u_n.vector();
+      else
+        u_i_.vector() += stages_k_[ii - 1].vector() * (actual_dt * r_ * (A_[ii][ii - 1]));
+      op_.apply(u_i_, stages_k_[ii], t + actual_dt * c_[ii]);
     }
 
     // calculate value of u at next time step
     for (size_t ii = 0; ii < num_stages_; ++ii)
-      u_n.vector() += u_intermediate_stages_[ii].vector() * (r_ * actual_dt * b_[ii]);
+      u_n.vector() += stages_k_[ii].vector() * (r_ * actual_dt * b_[ii]);
 
     // augment time
     t += actual_dt;
@@ -326,11 +332,11 @@ public:
 private:
   const OperatorType& op_;
   const RangeFieldType r_;
-  DiscreteFunctionType u_tmp_;
+  DiscreteFunctionType u_i_;
   const MatrixType A_;
   const VectorType b_;
   const VectorType c_;
-  std::vector<DiscreteFunctionType> u_intermediate_stages_;
+  std::vector<DiscreteFunctionType> stages_k_;
   const size_t num_stages_;
 };
 

@@ -212,6 +212,11 @@ public:
  * time step. The tolerance tol and the error estimate are also used to estimate the optimal time step length for the
  * next time step via dt_new = dt_old*min(max(0.9*(tol/error)^(1/5), scale_factor_min), scale_factor_max_);
  *
+ * Notation: For an s-stage method,
+ * \mathbf{u}^{n+1} = \mathbf{u}^n + dt \sum_{i=0}^{s-1} b_i \mathbf{k}_i
+ * \mathbf{k}_i = L(\mathbf{u}_i, t^n + dt c_i)
+ * \mathbf{u}_i = \mathbf{u}^n + dt \sum_{j=0}^{i-1} a_{ij} \mathbf{k}_j,
+ *
  * \tparam OperatorImp Type of operator L
  * \tparam DiscreteFunctionImp Type of initial values and solution at a fixed time
  * \tparam TimeFieldImp Type used for representation of time (default is double)
@@ -295,7 +300,7 @@ public:
 #endif // NDEBUG
     // store as many discrete functions as needed for intermediate stages
     for (size_t ii = 0; ii < num_stages_; ++ii) {
-      u_intermediate_stages_.emplace_back(current_solution());
+      stages_k_.emplace_back(current_solution());
     }
   } // constructor AdaptiveRungeKuttaTimeStepper
 
@@ -315,27 +320,27 @@ public:
       actual_dt *= time_step_scale_factor;
       size_t first_stage_to_compute = 0;
       if (last_stage_of_previous_step_) {
-        u_intermediate_stages_[0].vector() = last_stage_of_previous_step_->vector();
+        stages_k_[0].vector() = last_stage_of_previous_step_->vector();
         first_stage_to_compute = 1;
       }
 
       for (size_t ii = first_stage_to_compute; ii < num_stages_; ++ii) {
-        u_intermediate_stages_[ii].vector() *= RangeFieldType(0);
+        stages_k_[ii].vector() *= RangeFieldType(0);
         u_tmp_.vector() = u_n.vector();
         for (size_t jj = 0; jj < ii; ++jj)
-          u_tmp_.vector() += u_intermediate_stages_[jj].vector() * (actual_dt * r_ * (A_[ii][jj]));
-        op_.apply(u_tmp_, u_intermediate_stages_[ii], t + actual_dt * c_[ii]);
+          u_tmp_.vector() += stages_k_[jj].vector() * (actual_dt * r_ * (A_[ii][jj]));
+        op_.apply(u_tmp_, stages_k_[ii], t + actual_dt * c_[ii]);
       }
 
       // compute error vector
-      u_tmp_.vector() = u_intermediate_stages_[0].vector() * b_diff_[0];
+      u_tmp_.vector() = stages_k_[0].vector() * b_diff_[0];
       for (size_t ii = 1; ii < num_stages_; ++ii)
-        u_tmp_.vector() += u_intermediate_stages_[ii].vector() * b_diff_[ii];
+        u_tmp_.vector() += stages_k_[ii].vector() * b_diff_[ii];
       u_tmp_.vector() *= actual_dt * r_;
 
       // calculate u at timestep n+1
       for (size_t ii = 0; ii < num_stages_; ++ii)
-        u_n.vector() += u_intermediate_stages_[ii].vector() * (actual_dt * r_ * b_1_[ii]);
+        u_n.vector() += stages_k_[ii].vector() * (actual_dt * r_ * b_1_[ii]);
 
       // scale error, use absolute error if norm is less than 0.01 and relative error else
       auto& diff_vector = u_tmp_.vector();
@@ -350,13 +355,13 @@ public:
 
       if (mixed_error > tol_) { // go back from u at timestep n+1 to timestep n
         for (size_t ii = 0; ii < num_stages_; ++ii)
-          u_n.vector() += u_intermediate_stages_[ii].vector() * (-1.0 * r_ * actual_dt * b_1_[ii]);
+          u_n.vector() += stages_k_[ii].vector() * (-1.0 * r_ * actual_dt * b_1_[ii]);
       }
     } // while (mixed_error > tol_)
 
     if (!last_stage_of_previous_step_)
       last_stage_of_previous_step_ = Dune::XT::Common::make_unique<DiscreteFunctionType>(u_n);
-    last_stage_of_previous_step_->vector() = u_intermediate_stages_[num_stages_ - 1].vector();
+    last_stage_of_previous_step_->vector() = stages_k_[num_stages_ - 1].vector();
 
     t += actual_dt;
 
@@ -375,7 +380,7 @@ private:
   const VectorType b_2_;
   const VectorType c_;
   const VectorType b_diff_;
-  std::vector<DiscreteFunctionType> u_intermediate_stages_;
+  std::vector<DiscreteFunctionType> stages_k_;
   const size_t num_stages_;
   std::unique_ptr<DiscreteFunctionType> last_stage_of_previous_step_;
 }; // class AdaptiveRungeKuttaTimeStepper

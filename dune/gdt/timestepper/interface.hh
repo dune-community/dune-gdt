@@ -34,7 +34,11 @@ enum class TimeStepperMethods
   explicit_rungekutta_second_order_ssp,
   explicit_rungekutta_third_order_ssp,
   explicit_rungekutta_classic_fourth_order,
-  explicit_rungekutta_other
+  explicit_rungekutta_other,
+  implicit_euler,
+  implicit_midpoint,
+  trapezoidal_rule,
+  diagonally_implicit_other
 };
 
 
@@ -183,7 +187,7 @@ public:
     if (visualize)
       current_solution().visualize(filename_prefix, Dune::XT::Common::to_string(0));
 
-    while (Dune::XT::Common::FloatCmp::lt(t, t_end)) {
+    while (Dune::XT::Common::FloatCmp::lt(t, t_end, 1e-10)) {
       TimeFieldType max_dt = dt;
       // match saving times and t_end exactly
       if (Dune::XT::Common::FloatCmp::gt(t + dt, t_end))
