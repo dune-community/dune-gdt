@@ -58,125 +58,6 @@ public:
     return BaseType::type() + ".rectangularic";
   }
 
-protected:
-  class GetData : BaseType::GetData
-  {
-    typedef typename BaseType::GetData GetDataBaseType;
-
-  public:
-    using GetDataBaseType::exact_legendre;
-    using GetDataBaseType::S;
-    using GetDataBaseType::M_inverse;
-    using GetDataBaseType::base_integrated;
-
-    // initial value of kinetic equation is 10 if 3 <= x <= 4 and 10^(-4) else, thus initial value of the
-    // k-th component of the moment vector is 10*base_integrated_k or 10^(-4)*base_integrated_k.
-    // For Legendre polynomials, this is 20 or 0.0002 if k == 0 and 0 else
-    static void create_initial_values(ConfigType& initial_value_cfg)
-    {
-      if (exact_legendre()) {
-        for (size_t ii = 0; ii < 7; ++ii) {
-          std::string str = "[";
-          for (size_t rr = 0; rr < dimRange; ++rr) {
-            if (rr > 0)
-              str += " ";
-            if (rr == 0) {
-              if (ii == 3)
-                str += "20";
-              else
-                str += "0.0002";
-            } else {
-              str += "0.0";
-            }
-          }
-          str += "]";
-          std::string entry = "values." + Dune::XT::Common::to_string(ii);
-          initial_value_cfg[entry] = str;
-        }
-      } else {
-        for (size_t ii = 0; ii < 7; ++ii) {
-          std::string str = "[";
-          for (size_t rr = 0; rr < dimRange; ++rr) {
-            if (rr > 0)
-              str += " ";
-            if (ii == 3)
-              str += Dune::XT::Common::to_string(10 * base_integrated()[rr]);
-            else
-              str += Dune::XT::Common::to_string(0.0001 * base_integrated()[rr]);
-          }
-          str += "]";
-          std::string entry = "values." + Dune::XT::Common::to_string(ii);
-          initial_value_cfg[entry] = str;
-        }
-      }
-    } // ... create_initial_values()
-
-    // q - (sigma_a + T/2*S*M^(-1))*u = Q(x)*base_integrated() - (sigma_a(x)*I_{nxn} + T(x)/2*S*M_inverse)*u = q(x) -
-    // A(x)*u
-    // here, sigma_a = 0, T = 10^(-2) and Q = 0
-    // Thus A(x) = 0.005*S*M_inverse and q(x) = 0
-    // For Legendre Polynomials, this gives A[rr][rr] = 0.005*rr*(rr+1), A[rr][cc] = 0 if rr != cc;
-    static void create_rhs_values(ConfigType& rhs_config)
-    {
-      if (exact_legendre()) {
-        std::string A_str = "[";
-        for (size_t rr = 0; rr < dimRange; ++rr) {
-          if (rr > 0)
-            A_str += "; ";
-          for (size_t cc = 0; cc < dimRange; ++cc) {
-            if (cc > 0)
-              A_str += " ";
-            if (cc == rr)
-              A_str += Dune::XT::Common::to_string(-0.005 * cc * (cc + 1));
-            else
-              A_str += "0";
-          }
-        }
-        A_str += "]";
-        rhs_config["A.0"] = A_str;
-        rhs_config["b.0"] = Dune::XT::Common::to_string(RangeType(0));
-      } else {
-        MatrixType S_M_inverse(S());
-        S_M_inverse.rightmultiply(M_inverse());
-        S_M_inverse *= -0.005;
-        rhs_config["A.0"] = Dune::XT::Common::to_string(S_M_inverse);
-        rhs_config["b.0"] = Dune::XT::Common::to_string(RangeType(0));
-      }
-    } // ... create_rhs_values()
-
-    // boundary value of kinetic equation is 10^(-4) at x = 0 and x = 7,
-    // so k-th component of boundary value has to be 10^(-4)*base_integrated_k at x = 0 and x = 7.
-    // For Legendre polynomials, this is [0.0002 0 0 ... ] at both sides
-    // simulate with constant interpolating function
-    static std::string create_boundary_values()
-    {
-      if (exact_legendre()) {
-        std::string str = "[";
-        for (size_t rr = 0; rr < dimRange; ++rr) {
-          if (rr > 0)
-            str += " ";
-          if (rr == 0)
-            str += "0.0002";
-          else
-            str += "0";
-        }
-        str += "]";
-        return str;
-      } else {
-        ;
-        std::string str = "[";
-        for (size_t rr = 0; rr < dimRange; ++rr) {
-          if (rr > 0)
-            str += " ";
-          str += Dune::XT::Common::to_string(0.0001 * base_integrated()[rr]);
-        }
-        str += "]";
-        return str;
-      }
-    } // ... create_boundary_values()
-  }; // class GetData
-
-public:
   static ConfigType default_grid_config()
   {
     ConfigType grid_config;
@@ -214,9 +95,9 @@ public:
     return create(default_config(basefunctions_file), static_id());
   } // ... create(...)
 
-  static ConfigType default_config(const std::string basefunctions_file = "", const std::string sub_name = "")
+  static ConfigType default_config()
   {
-    ConfigType config = BaseType::default_config(basefunctions_file, sub_name);
+    ConfigType config = BaseType::default_config();
     config.add(default_grid_config(), "grid", true);
     config.add(default_boundary_info_config(), "boundary_info", true);
     ConfigType rhs_config;
@@ -271,6 +152,113 @@ public:
   {
     return true;
   }
+
+protected:
+  // initial value of kinetic equation is 10 if 3 <= x <= 4 and 10^(-4) else, thus initial value of the
+  // k-th component of the moment vector is 10*base_integrated_k or 10^(-4)*base_integrated_k.
+  // For Legendre polynomials, this is 20 or 0.0002 if k == 0 and 0 else
+  static void create_initial_values(ConfigType& initial_value_cfg)
+  {
+    if (exact_legendre()) {
+      for (size_t ii = 0; ii < 7; ++ii) {
+        std::string str = "[";
+        for (size_t rr = 0; rr < dimRange; ++rr) {
+          if (rr > 0)
+            str += " ";
+          if (rr == 0) {
+            if (ii == 3)
+              str += "20";
+            else
+              str += "0.0002";
+          } else {
+            str += "0.0";
+          }
+        }
+        str += "]";
+        std::string entry = "values." + Dune::XT::Common::to_string(ii);
+        initial_value_cfg[entry] = str;
+      }
+    } else {
+      for (size_t ii = 0; ii < 7; ++ii) {
+        std::string str = "[";
+        for (size_t rr = 0; rr < dimRange; ++rr) {
+          if (rr > 0)
+            str += " ";
+          if (ii == 3)
+            str += Dune::XT::Common::to_string(10 * base_integrated()[rr]);
+          else
+            str += Dune::XT::Common::to_string(0.0001 * base_integrated()[rr]);
+        }
+        str += "]";
+        std::string entry = "values." + Dune::XT::Common::to_string(ii);
+        initial_value_cfg[entry] = str;
+      }
+    }
+  } // ... create_initial_values()
+
+  // q - (sigma_a + T/2*S*M^(-1))*u = Q(x)*base_integrated() - (sigma_a(x)*I_{nxn} + T(x)/2*S*M_inverse)*u = q(x) -
+  // A(x)*u
+  // here, sigma_a = 0, T = 10^(-2) and Q = 0
+  // Thus A(x) = 0.005*S*M_inverse and q(x) = 0
+  // For Legendre Polynomials, this gives A[rr][rr] = 0.005*rr*(rr+1), A[rr][cc] = 0 if rr != cc;
+  static void create_rhs_values(ConfigType& rhs_config)
+  {
+    if (exact_legendre()) {
+      std::string A_str = "[";
+      for (size_t rr = 0; rr < dimRange; ++rr) {
+        if (rr > 0)
+          A_str += "; ";
+        for (size_t cc = 0; cc < dimRange; ++cc) {
+          if (cc > 0)
+            A_str += " ";
+          if (cc == rr)
+            A_str += Dune::XT::Common::to_string(-0.005 * cc * (cc + 1));
+          else
+            A_str += "0";
+        }
+      }
+      A_str += "]";
+      rhs_config["A.0"] = A_str;
+      rhs_config["b.0"] = Dune::XT::Common::to_string(RangeType(0));
+    } else {
+      MatrixType S_M_inverse(S());
+      S_M_inverse.rightmultiply(M_inverse());
+      S_M_inverse *= -0.005;
+      rhs_config["A.0"] = Dune::XT::Common::to_string(S_M_inverse);
+      rhs_config["b.0"] = Dune::XT::Common::to_string(RangeType(0));
+    }
+  } // ... create_rhs_values()
+
+  // boundary value of kinetic equation is 10^(-4) at x = 0 and x = 7,
+  // so k-th component of boundary value has to be 10^(-4)*base_integrated_k at x = 0 and x = 7.
+  // For Legendre polynomials, this is [0.0002 0 0 ... ] at both sides
+  // simulate with constant interpolating function
+  static std::string create_boundary_values()
+  {
+    if (exact_legendre()) {
+      std::string str = "[";
+      for (size_t rr = 0; rr < dimRange; ++rr) {
+        if (rr > 0)
+          str += " ";
+        if (rr == 0)
+          str += "0.0002";
+        else
+          str += "0";
+      }
+      str += "]";
+      return str;
+    } else {
+      ;
+      std::string str = "[";
+      for (size_t rr = 0; rr < dimRange; ++rr) {
+        if (rr > 0)
+          str += " ";
+        str += Dune::XT::Common::to_string(0.0001 * base_integrated()[rr]);
+      }
+      str += "]";
+      return str;
+    }
+  } // ... create_boundary_values()
 };
 
 } // namespace Problems
