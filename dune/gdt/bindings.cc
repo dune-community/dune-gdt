@@ -34,6 +34,7 @@
 #include <dune/gdt/spaces.pbh>
 #include <dune/gdt/assembler/system.pbh>
 #include <dune/gdt/operators/elliptic.pbh>
+#include <dune/gdt/functionals/l2.pbh>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -75,6 +76,7 @@ void addbind_for_space(py::module& m,
 
   typedef Dune::XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1> ScalarFunction;
   typedef Dune::XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunction;
+  // EllipticMatrixOperator
   Dune::GDT::bind_elliptic_matrix_operator<ScalarFunction,
                                            TensorFunction,
                                            S,
@@ -86,6 +88,12 @@ void addbind_for_space(py::module& m,
                                            S,
                                            typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::
                                                MatrixType>(
+      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
+  // L2VolumeVectorFunctional
+  Dune::GDT::bind_l2_volume_vector_functional<ScalarFunction,
+                                              S,
+                                              typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::
+                                                  VectorType>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
 } // ... addbind_for_space(...)
 
