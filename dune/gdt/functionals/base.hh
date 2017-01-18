@@ -84,6 +84,7 @@ public:
                                    << this->space().mapper().size());
   } // VectorFunctionalBase(...)
 
+  /// \todo Guard against copy and move ctor (Args = ThisType)!
   template <class... Args>
   explicit VectorFunctionalBase(Args&&... args)
     : BaseAssemblerType(std::forward<Args>(args)...)
@@ -91,7 +92,13 @@ public:
   {
   }
 
-  VectorFunctionalBase(ThisType&& source) = default;
+  /// \sa SystemAssembler
+  VectorFunctionalBase(const ThisType& other) = delete;
+  VectorFunctionalBase(ThisType&& source) = delete;
+  VectorFunctionalBase(ThisType& other) = delete; // <- b.c. of the too perfect forwarding ctor
+
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& source) = delete;
 
   const VectorType& vector() const
   {
