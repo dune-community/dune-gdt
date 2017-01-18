@@ -7,7 +7,7 @@
 
 #ifndef DUNE_GDT_OPERATORS_BASE_PBH
 #define DUNE_GDT_OPERATORS_BASE_PBH
-//#if HAVE_DUNE_PYBINDXI
+#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -115,5 +115,5 @@ bind_matrix_operator(pybind11::module& m, const std::string& class_id)
 } // namespace GDT
 } // namespace Dune
 
-//#endif // HAVE_DUNE_PYBINDXI
+#endif // HAVE_DUNE_PYBINDXI
 #endif // DUNE_GDT_OPERATORS_BASE_PBH

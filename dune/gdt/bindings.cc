@@ -7,7 +7,7 @@
 
 #include <config.h>
 
-//#if HAVE_DUNE_PYBINXI
+#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
@@ -240,4 +240,4 @@ PYBIND11_PLUGIN(gdt)
 }
 
 
-//#endif // HAVE_DUNE_PYBINXI
+#endif // HAVE_DUNE_PYBINDXI
