@@ -13,7 +13,9 @@ BEGIN_TESTCASES()
 END_TESTCASES()
 
 # (re)generated from refresh_test_timings target
-include("builder_definitions.cmake")
+if(DEFINED ENV{TRAVIS})
+    include("builder_definitions.cmake")
+endif(DEFINED ENV{TRAVIS})
 # make sure there's the same amount of builders in travis as bins from distribution
 add_custom_target(regenerate_travis_yml ${CMAKE_BINARY_DIR}/dune-env-3
                     "${CMAKE_SOURCE_DIR}/.travis.yml.py" "${DXT_BIN_COUNT}" )
