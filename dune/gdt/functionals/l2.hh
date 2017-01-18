@@ -45,9 +45,17 @@ template <class FunctionType,
           class Field = typename Space::RangeFieldType>
 class L2VolumeVectorFunctional : public VectorFunctionalBase<Vector, Space, GridView, Field>
 {
+  typedef L2VolumeVectorFunctional<FunctionType, Space, Vector, GridView, Field> ThisType;
   typedef VectorFunctionalBase<Vector, Space, GridView, Field> BaseType;
 
 public:
+  /// \sa VectorFunctionalBase
+  L2VolumeVectorFunctional(const ThisType& other) = delete;
+  L2VolumeVectorFunctional(ThisType&& source) = delete;
+
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& source) = delete;
+
   template <class... Args>
   explicit L2VolumeVectorFunctional(const FunctionType& function, Args&&... args)
     : BaseType(std::forward<Args>(args)...)
