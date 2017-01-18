@@ -60,8 +60,9 @@ class DunePdelabDgMapperWrapperTraits
 {
 public:
   typedef DunePdelabDgMapperWrapper<PdelabSpaceImp> derived_type;
-  typedef PdelabSpaceImp BackendType;
-  typedef typename BackendType::Element EntityType;
+  typedef PdelabSpaceImp SpaceType;
+  typedef PDELab::LocalFunctionSpace<SpaceType, PDELab::TrialSpaceTag> BackendType;
+  typedef typename SpaceType::Element EntityType;
 };
 
 
