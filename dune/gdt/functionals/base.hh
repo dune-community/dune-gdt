@@ -138,7 +138,7 @@ public:
     return *this;
   }
 
-  using BaseType::add;
+  using BaseAssemblerType::add;
 
   template <class... Args>
   DUNE_DEPRECATED_MSG("Use append() instead (since 11.01.2017)!")
