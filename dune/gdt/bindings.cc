@@ -42,6 +42,7 @@ using namespace pybind11::literals;
 template <class SP>
 void addbind_for_space(py::module& m,
                        const std::string& grid_id,
+                       const std::string& layer_id,
                        const std::string& space_id,
                        const std::string& backend)
 {
@@ -62,15 +63,15 @@ void addbind_for_space(py::module& m,
   const std::string p_ = to_string(int(S::polOrder)); // without the int(...) we get linker errors on module import
   const std::string space_suffix = r_ + "x" + rC_ + "__p" + p_ + backend;
 
-  Dune::GDT::bind_space<S>(m, space_id + "Space__" + grid_id + "_to_" + space_suffix);
+  Dune::GDT::bind_space<S>(m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix);
 
-  m.def(std::string("make_" + to_lower(space_id) + "_space__" + space_suffix).c_str(),
+  m.def(std::string("make_" + to_lower(space_id) + "_space__" + space_suffix + "__" + layer_id).c_str(),
         [](Grid::GridProvider<G>& grid_provider, const int level = 0) { return SP::create(grid_provider, level); },
         "grid_provider"_a,
         "level"_a = 0,
         py::keep_alive<0, 1>());
 
-  Dune::GDT::bind_system_assembler<S>(m, space_id + "Space__" + grid_id + "_to_" + space_suffix);
+  Dune::GDT::bind_system_assembler<S>(m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix);
 
   typedef Dune::XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1> ScalarFunction;
   typedef Dune::XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunction;
@@ -79,13 +80,13 @@ void addbind_for_space(py::module& m,
                                            S,
                                            typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::
                                                MatrixType>(
-      m, space_id + "Space__" + grid_id + "_to_" + space_suffix, "istl_sparse");
+      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
   Dune::GDT::bind_elliptic_matrix_operator<ScalarFunction,
                                            void,
                                            S,
                                            typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::
                                                MatrixType>(
-      m, space_id + "Space__" + grid_id + "_to_" + space_suffix, "istl_sparse");
+      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
 } // ... addbind_for_space(...)
 
 
@@ -98,13 +99,13 @@ void addbind_for_grid(py::module& m, const std::string& grid_id)
                                                Dune::GDT::ChooseSpaceBackend::gdt,
                                                double,
                                                1,
-                                               1>>(m, grid_id + "_leaf", "Fv", "");
+                                               1>>(m, grid_id, "leaf", "Fv", "");
   addbind_for_space<Dune::GDT::FvSpaceProvider<G,
-                                               Dune::XT::Grid::Layers::leaf,
+                                               Dune::XT::Grid::Layers::level,
                                                Dune::GDT::ChooseSpaceBackend::gdt,
                                                double,
-                                               G::dimension,
-                                               1>>(m, grid_id + "_leaf", "Fv", "");
+                                               1,
+                                               1>>(m, grid_id, "level", "Fv", "");
 // CG
 #if HAVE_DUNE_FEM
   addbind_for_space<Dune::GDT::CgSpaceProvider<G,
@@ -113,14 +114,14 @@ void addbind_for_grid(py::module& m, const std::string& grid_id)
                                                1,
                                                double,
                                                1,
-                                               1>>(m, grid_id + "_leaf", "Cg", "__fem");
+                                               1>>(m, grid_id, "leaf", "Cg", "__fem");
   addbind_for_space<Dune::GDT::CgSpaceProvider<G,
                                                Dune::XT::Grid::Layers::level,
                                                Dune::GDT::ChooseSpaceBackend::fem,
                                                1,
                                                double,
                                                1,
-                                               1>>(m, grid_id + "_level", "Cg", "__fem");
+                                               1>>(m, grid_id, "level", "Cg", "__fem");
 #endif
 #if HAVE_DUNE_PDELAB
   addbind_for_space<Dune::GDT::CgSpaceProvider<G,
@@ -129,14 +130,14 @@ void addbind_for_grid(py::module& m, const std::string& grid_id)
                                                1,
                                                double,
                                                1,
-                                               1>>(m, grid_id + "_leaf", "Cg", "__pdelab");
+                                               1>>(m, grid_id, "leaf", "Cg", "__pdelab");
   addbind_for_space<Dune::GDT::CgSpaceProvider<G,
                                                Dune::XT::Grid::Layers::level,
                                                Dune::GDT::ChooseSpaceBackend::pdelab,
                                                1,
                                                double,
                                                1,
-                                               1>>(m, grid_id + "_level", "Cg", "__pdelab");
+                                               1>>(m, grid_id, "level", "Cg", "__pdelab");
 #endif
 // DG
 #if HAVE_DUNE_FEM
@@ -146,48 +147,48 @@ void addbind_for_grid(py::module& m, const std::string& grid_id)
                                                1,
                                                double,
                                                1,
-                                               1>>(m, grid_id + "_leaf", "Dg", "__fem");
+                                               1>>(m, grid_id, "leaf", "Dg", "__fem");
   addbind_for_space<Dune::GDT::DgSpaceProvider<G,
                                                Dune::XT::Grid::Layers::level,
                                                Dune::GDT::ChooseSpaceBackend::fem,
                                                1,
                                                double,
                                                1,
-                                               1>>(m, grid_id + "_level", "Dg", "__fem");
+                                               1>>(m, grid_id, "level", "Dg", "__fem");
 #endif
-//#if HAVE_DUNE_PDELAB // these need to be guarded against simplicial grids
-//  addbind_for_space<Dune::GDT::DgSpaceProvider<G,
-//                                        Dune::XT::Grid::Layers::leaf,
-//                                        Dune::GDT::ChooseSpaceBackend::pdelab,
-//                                        1,
-//                                        double,
-//                                        1,
-//                                        1>>(m, grid_id + "_leaf", "Dg", "__pdelab");
-//  addbind_for_space<Dune::GDT::DgSpaceProvider<G,
-//                                        Dune::XT::Grid::Layers::level,
-//                                        Dune::GDT::ChooseSpaceBackend::pdelab,
-//                                        1,
-//                                        double,
-//                                        1,
-//                                        1>>(m, grid_id + "_level", "Dg", "__pdelab");
-//#endif
-// RT
-#if HAVE_DUNE_PDELAB
-  addbind_for_space<Dune::GDT::RtSpaceProvider<G,
-                                               Dune::XT::Grid::Layers::leaf,
-                                               Dune::GDT::ChooseSpaceBackend::pdelab,
-                                               0,
-                                               double,
-                                               G::dimension,
-                                               1>>(m, grid_id + "_leaf", "Rt", "__pdelab");
-  addbind_for_space<Dune::GDT::RtSpaceProvider<G,
-                                               Dune::XT::Grid::Layers::level,
-                                               Dune::GDT::ChooseSpaceBackend::pdelab,
-                                               0,
-                                               double,
-                                               G::dimension,
-                                               1>>(m, grid_id + "_level", "Rt", "__pdelab");
-#endif
+  //#if HAVE_DUNE_PDELAB // these need to be guarded against simplicial grids
+  //  addbind_for_space<Dune::GDT::DgSpaceProvider<G,
+  //                                        Dune::XT::Grid::Layers::leaf,
+  //                                        Dune::GDT::ChooseSpaceBackend::pdelab,
+  //                                        1,
+  //                                        double,
+  //                                        1,
+  //                                        1>>(m, grid_id, "leaf", "Dg", "__pdelab");
+  //  addbind_for_space<Dune::GDT::DgSpaceProvider<G,
+  //                                        Dune::XT::Grid::Layers::level,
+  //                                        Dune::GDT::ChooseSpaceBackend::pdelab,
+  //                                        1,
+  //                                        double,
+  //                                        1,
+  //                                        1>>(m, grid_id, "level", "Dg", "__pdelab");
+  //#endif
+  // RT
+  //#if HAVE_DUNE_PDELAB //  enabling those leads to problems in bindings of the functionals and vectors, those need to
+  //  addbind_for_space<Dune::GDT::RtSpaceProvider<G, //                                 be disabled for bad dimensions
+  //                                               Dune::XT::Grid::Layers::leaf,
+  //                                               Dune::GDT::ChooseSpaceBackend::pdelab,
+  //                                               0,
+  //                                               double,
+  //                                               G::dimension,
+  //                                               1>>(m, grid_id, "leaf", "Rt", "__pdelab");
+  //  addbind_for_space<Dune::GDT::RtSpaceProvider<G,
+  //                                               Dune::XT::Grid::Layers::level,
+  //                                               Dune::GDT::ChooseSpaceBackend::pdelab,
+  //                                               0,
+  //                                               double,
+  //                                               G::dimension,
+  //                                               1>>(m, grid_id, "level", "Rt", "__pdelab");
+  //#endif
 } // ... addbind_for_grid(...)
 
 
