@@ -30,6 +30,7 @@ typename std::enable_if<is_space<S>::value, pybind11::class_<S>>::type bind_spac
   c.def_property_readonly_static("dimRangeCols", [](const S& /*self*/) { return S::dimRangeCols; });
   c.def_property_readonly_static("polOrder", [](const S& /*self*/) { return S::polOrder; });
 
+  c.def("size", [](const S& self) { return self.mapper().size(); });
   c.def("visualize", [](const S& self, const std::string& filename) { self.visualize(filename); }, "filename"_a = "");
 
   return c;
