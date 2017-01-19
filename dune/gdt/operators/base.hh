@@ -532,6 +532,7 @@ public:
         Applicator;
     local_operators_codim_0.emplace_back(new Applicator(grid_view(), local_operator.as_imp(), source_, range_, *where));
     BaseType::append(*local_operators_codim_0.back(), where);
+    return *this;
   } // ... append(...)
 
   template <class T>
@@ -546,6 +547,7 @@ public:
         Applicator;
     local_operators_codim_1.emplace_back(new Applicator(grid_view(), local_operator.as_imp(), source_, range_, *where));
     BaseType::append(*local_operators_codim_1.back(), where);
+    return *this;
   } // ... append(...)
 
   template <class T>
@@ -560,6 +562,7 @@ public:
         Applicator;
     local_operators_codim_1.emplace_back(new Applicator(grid_view(), local_operator.as_imp(), source_, range_, *where));
     BaseType::append(*local_operators_codim_1.back(), where);
+    return *this;
   } // ... append(...)
 
   using BaseType::add;
