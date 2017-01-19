@@ -95,10 +95,8 @@ bind_system_assembler(pybind11::module& m, const std::string& space_id)
   c.def("append", [](C& self, C& other) { self.append(other); }, "other"_a, py::keep_alive<1, 2>());
   c.def("assemble", [](C& self, const bool use_tbb) { self.assemble(use_tbb); }, "use_tbb"_a = false);
 
-  m.def("make_system_assembler",
-        [](const TestSpace& space) { return XT::Common::make_unique<C>(space); },
-        "space"_a,
-        py::keep_alive<0, 1>());
+  m.def(
+      "make_system_assembler", [](const TestSpace& space) { return new C(space); }, "space"_a, py::keep_alive<0, 1>());
 
   return c;
 } // ... bind_system_assembler(...)
