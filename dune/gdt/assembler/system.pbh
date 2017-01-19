@@ -92,7 +92,11 @@ bind_system_assembler(pybind11::module& m, const std::string& space_id)
   internal::addbind_SystemAssembler_ctor_single<TestSpace, GridView, AnsatzSpace>()(c);
   //  internal::addbind_SystemAssembler_ctor_double<TestSpace, GridView, AnsatzSpace>()(c);
 
-  c.def("append", [](C& self, C& other) { self.append(other); }, "other"_a, py::keep_alive<1, 2>());
+  c.def("append", [](C& self, C& other) { self.append(other); }, "system_assembler"_a, py::keep_alive<1, 2>());
+  c.def("append",
+        [](C& self, XT::Grid::Walker<GridView>& other) { self.append(other); },
+        "grid_walker"_a,
+        py::keep_alive<1, 2>());
   c.def("assemble", [](C& self, const bool use_tbb) { self.assemble(use_tbb); }, "use_tbb"_a = false);
 
   m.def(
