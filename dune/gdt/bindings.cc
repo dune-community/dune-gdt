@@ -22,6 +22,8 @@
 #include <dune/xt/common/fvector.pbh>
 
 #include <dune/xt/grid/grids.hh>
+#include <dune/xt/grid/intersection.hh>
+#include <dune/xt/grid/layers.hh>
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/xt/la/container.hh>
@@ -37,9 +39,30 @@
 #include <dune/gdt/operators/elliptic.pbh>
 #include <dune/gdt/projections/dirichlet.pbh>
 #include <dune/gdt/spaces.pbh>
+#include <dune/gdt/spaces/constraints.pbh>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
+
+
+template <class I, bool required = true>
+struct for_Grid_and_Intersection
+{
+  template <class G>
+  static void addbind(py::module& m, const std::string& grid_id, const std::string& id)
+  {
+    Dune::GDT::bind_DirichletConstraints<I, Dune::XT::LA::Backends::istl_sparse>(m, grid_id + id, "istl_sparse");
+  }
+};
+
+template <class I>
+struct for_Grid_and_Intersection<I, false>
+{
+  template <class G>
+  static void addbind(py::module& /*m*/, const std::string& /*grid_id*/, const std::string& /*id*/)
+  {
+  }
+};
 
 
 template <class SP>
@@ -82,7 +105,9 @@ void addbind_for_space(py::module& m,
   bind_DiscreteFunction<S, V>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
   // SystemAssembler
-  bind_system_assembler<S>(m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix);
+  auto system_assembler =
+      bind_system_assembler<S>(m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix);
+  addbind_Dirichlet_Constraints_to_SystemAssembler(system_assembler);
   // EllipticMatrixOperator
   bind_elliptic_matrix_operator<ScalarFunction, TensorFunction, S, M>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
@@ -184,6 +209,36 @@ void addbind_for_grid(py::module& m, const std::string& grid_id)
   //  1>>(
   //      m, grid_id, "level", "Rt", "__pdelab");
   //#endif
+
+  typedef typename XT::Grid::Layer<G, XT::Grid::Layers::level, XT::Grid::Backends::view>::type LevelView;
+  typedef typename XT::Grid::Layer<G, XT::Grid::Layers::leaf, XT::Grid::Backends::view>::type LeafView;
+  typedef typename XT::Grid::Intersection<LeafView>::type FVI;
+  typedef typename XT::Grid::Intersection<LevelView>::type LVI;
+#if HAVE_DUNE_FEM
+  typedef typename XT::Grid::Layer<G, XT::Grid::Layers::level, XT::Grid::Backends::part>::type LevelPart;
+  typedef typename XT::Grid::Layer<G, XT::Grid::Layers::leaf, XT::Grid::Backends::part>::type LeafPart;
+  typedef typename XT::Grid::Intersection<LeafPart>::type FPI;
+  typedef typename XT::Grid::Intersection<LevelPart>::type LPI;
+#endif
+  for_Grid_and_Intersection<FVI, true>::template addbind<G>(m,
+                                                            grid_id,
+                                                            (std::is_same<FVI, LVI>::value
+#if HAVE_DUNE_FEM
+                                                             && std::is_same<FVI, FPI>::value
+                                                             && std::is_same<FVI, LPI>::value
+#endif
+                                                             )
+                                                                ? ""
+                                                                : "_leaf_view");
+  for_Grid_and_Intersection<LVI, !(std::is_same<LVI, FVI>::value)>::template addbind<G>(m, grid_id, "_level_view");
+#if HAVE_DUNE_FEM
+  for_Grid_and_Intersection<FPI,
+                            !(std::is_same<FPI, FVI>::value
+                              || std::is_same<FPI, LVI>::value)>::template addbind<G>(m, grid_id, "_leaf_part");
+  for_Grid_and_Intersection<LPI,
+                            !(std::is_same<LPI, FVI>::value || std::is_same<LPI, LVI>::value
+                              || std::is_same<LPI, FPI>::value)>::template addbind<G>(m, grid_id, "_level_part");
+#endif // HAVE_DUNE_FEM
 } // ... addbind_for_grid(...)
 
 

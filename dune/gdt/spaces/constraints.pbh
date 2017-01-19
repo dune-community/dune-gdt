@@ -1,0 +1,107 @@
+// This file is part of the dune-gdt project:
+//   https://github.com/dune-community/dune-gdt
+// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
+// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+// Authors:
+//   Felix Schindler (2017)
+
+#ifndef DUNE_GDT_SPACES_CONSTRAINTS_PBH
+#define DUNE_GDT_SPACES_CONSTRAINTS_PBH
+#if HAVE_DUNE_PYBINDXI
+
+#include <boost/numeric/conversion/cast.hpp>
+
+#include <dune/pybindxi/pybind11.h>
+
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/type_traits.hh>
+
+#include <dune/xt/grid/intersection.hh>
+
+#include <dune/xt/la/container.hh>
+
+#include "constraints.hh"
+
+namespace Dune {
+namespace GDT {
+
+
+template <class I, XT::LA::Backends la_backend, class R = double>
+pybind11::class_<DirichletConstraints<I>>
+bind_DirichletConstraints(pybind11::module& m, const std::string& intersection_id, const std::string& la_id)
+{
+  namespace py = pybind11;
+  using namespace pybind11::literals;
+
+  typedef DirichletConstraints<I> C;
+  typedef typename XT::LA::Container<R, la_backend>::MatrixType M;
+  typedef typename XT::LA::Container<R, la_backend>::VectorType V;
+  py::class_<C> c(m, std::string("DirichletConstraints__" + intersection_id + "__" + la_id).c_str());
+  c.def("__init__",
+        [](C& self, const XT::Grid::BoundaryInfo<I>& boundary_info, const ssize_t size, const bool set) {
+          try {
+            new (&self) C(boundary_info, boost::numeric_cast<size_t>(size), set);
+          } catch (boost::bad_numeric_cast& ee) {
+            DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
+                       "Given size has to be positive!\n\n The error in boost while converting '"
+                           << size
+                           << "' to '"
+                           << XT::Common::Typename<size_t>::value()
+                           << "' was: "
+                           << ee.what());
+          }
+        },
+        "boundary_info"_a,
+        "size"_a,
+        "set_diagonal_entries"_a = true,
+        py::keep_alive<1, 2>());
+  c.def("boundary_info", &C::boundary_info);
+  c.def("size", &C::size);
+  c.def("apply", [](const C& self, M& matrix) { self.apply(matrix); }, "matrix"_a);
+  c.def("apply", [](const C& self, V& vector) { self.apply(vector); }, "vector"_a);
+  c.def("apply", [](const C& self, M& matrix, V& vector) { self.apply(matrix, vector); }, "matrix"_a, "vector"_a);
+
+  m.def(std::string("make_dirichlet_constraints__" + la_id).c_str(),
+        [](const XT::Grid::BoundaryInfo<I>& boundary_info, const ssize_t size, const bool set) {
+          size_t size__as_size_t = 0;
+          try {
+            size__as_size_t = boost::numeric_cast<size_t>(size);
+          } catch (boost::bad_numeric_cast& ee) {
+            DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
+                       "Given size has to be positive!\n\n The error in boost while converting '"
+                           << size
+                           << "' to '"
+                           << XT::Common::Typename<size_t>::value()
+                           << "' was: "
+                           << ee.what());
+          }
+          return C(boundary_info, size__as_size_t, set);
+        },
+        "boundary_info"_a,
+        "size"_a,
+        "set_diagonal_entries"_a,
+        py::keep_alive<0, 1>());
+
+  return c;
+} // ... bind_DirichletConstraints(...)
+
+
+template <class S>
+void addbind_Dirichlet_Constraints_to_SystemAssembler(pybind11::class_<S>& bound_system_assembler)
+{
+  using namespace pybind11::literals;
+
+  bound_system_assembler.def(
+      "append",
+      [](S& self, DirichletConstraints<typename XT::Grid::Intersection<typename S::GridViewType>::type>& constraints) {
+        self.append(constraints);
+      },
+      "dirichlet_constraints"_a);
+}
+
+
+} // namespace GDT
+} // namespace Dune
+
+#endif // HAVE_DUNE_PYBINDXI
+#endif // DUNE_GDT_SPACES_CONSTRAINTS_PBH
