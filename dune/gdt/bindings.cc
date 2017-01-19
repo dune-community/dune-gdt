@@ -95,6 +95,11 @@ void addbind_for_space(py::module& m,
                                               typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::
                                                   VectorType>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
+  Dune::GDT::bind_l2_face_vector_functional<ScalarFunction,
+                                            S,
+                                            typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::
+                                                VectorType>(
+      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
 } // ... addbind_for_space(...)
 
 
