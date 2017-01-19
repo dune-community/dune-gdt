@@ -34,8 +34,9 @@
 #include <dune/gdt/spaces.pbh>
 #include <dune/gdt/assembler/system.pbh>
 #include <dune/gdt/discretefunction.pbh>
-#include <dune/gdt/operators/elliptic.pbh>
 #include <dune/gdt/functionals/l2.pbh>
+#include <dune/gdt/operators/elliptic.pbh>
+#include <dune/gdt/projections/dirichlet.pbh>
 
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -62,26 +63,24 @@ void addbind_for_space(py::module& m,
   typedef typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::VectorType V;
   static const size_t r = S::dimRange;
   static const size_t rC = S::dimRangeCols;
+  typedef Dune::XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1> ScalarFunction;
+  typedef Dune::XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunction;
   const std::string r_ = to_string(r);
   const std::string rC_ = to_string(rC);
   const std::string p_ = to_string(int(S::polOrder)); // without the int(...) we get linker errors on module import
   const std::string space_suffix = r_ + "x" + rC_ + "__p" + p_ + backend;
-
+  // Space
   Dune::GDT::bind_space<S>(m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix);
-
   m.def(std::string("make_" + to_lower(space_id) + "_space__" + space_suffix + "__" + layer_id).c_str(),
         [](Grid::GridProvider<G>& grid_provider, const int level = 0) { return SP::create(grid_provider, level); },
         "grid_provider"_a,
         "level"_a = 0,
         py::keep_alive<0, 1>());
-
+  // DiscreteFunction
   Dune::GDT::bind_DiscreteFunction<S, V>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
-
+  // SystemAssembler
   Dune::GDT::bind_system_assembler<S>(m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix);
-
-  typedef Dune::XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1> ScalarFunction;
-  typedef Dune::XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunction;
   // EllipticMatrixOperator
   Dune::GDT::bind_elliptic_matrix_operator<ScalarFunction, TensorFunction, S, M>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
@@ -90,9 +89,42 @@ void addbind_for_space(py::module& m,
   // L2VolumeVectorFunctional
   Dune::GDT::bind_l2_volume_vector_functional<ScalarFunction, S, V>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
+  // L2FaceVectorFunctional
   Dune::GDT::bind_l2_face_vector_functional<ScalarFunction, S, V>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
 } // ... addbind_for_space(...)
+
+
+template <class SP>
+void addbind_for_lagrange_space(py::module& m,
+                                const std::string& grid_id,
+                                const std::string& layer_id,
+                                const std::string& space_id,
+                                const std::string& backend)
+{
+  using namespace Dune::XT;
+  using Common::to_string;
+
+  typedef typename SP::type S;
+  typedef typename S::EntityType E;
+  typedef typename S::DomainFieldType D;
+  static const size_t d = S::dimDomain;
+  typedef typename S::RangeFieldType R;
+  typedef typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::VectorType V;
+  static const size_t r = S::dimRange;
+  static const size_t rC = S::dimRangeCols;
+  typedef Dune::XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1> ScalarFunction;
+  const std::string r_ = to_string(r);
+  const std::string rC_ = to_string(rC);
+  const std::string p_ = to_string(int(S::polOrder)); // without the int(...) we get linker errors on module import
+  const std::string space_suffix = r_ + "x" + rC_ + "__p" + p_ + backend;
+
+  // DirichletProjectionLocalizableOperator
+  Dune::GDT::bind_DirichletProjectionLocalizableOperator<typename S::GridViewType,
+                                                         ScalarFunction,
+                                                         Dune::GDT::DiscreteFunction<S, V>>(
+      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
+} // ... addbind_for_lagrange_space(...)
 
 
 template <class G>
@@ -120,6 +152,13 @@ void addbind_for_grid(py::module& m, const std::string& grid_id)
                                                double,
                                                1,
                                                1>>(m, grid_id, "leaf", "Cg", "__fem");
+  addbind_for_lagrange_space<Dune::GDT::CgSpaceProvider<G,
+                                                        Dune::XT::Grid::Layers::leaf,
+                                                        Dune::GDT::ChooseSpaceBackend::fem,
+                                                        1,
+                                                        double,
+                                                        1,
+                                                        1>>(m, grid_id, "leaf", "Cg", "__fem");
   addbind_for_space<Dune::GDT::CgSpaceProvider<G,
                                                Dune::XT::Grid::Layers::level,
                                                Dune::GDT::ChooseSpaceBackend::fem,
@@ -127,6 +166,13 @@ void addbind_for_grid(py::module& m, const std::string& grid_id)
                                                double,
                                                1,
                                                1>>(m, grid_id, "level", "Cg", "__fem");
+  addbind_for_lagrange_space<Dune::GDT::CgSpaceProvider<G,
+                                                        Dune::XT::Grid::Layers::level,
+                                                        Dune::GDT::ChooseSpaceBackend::fem,
+                                                        1,
+                                                        double,
+                                                        1,
+                                                        1>>(m, grid_id, "level", "Cg", "__fem");
 #endif
 #if HAVE_DUNE_PDELAB
   addbind_for_space<Dune::GDT::CgSpaceProvider<G,
