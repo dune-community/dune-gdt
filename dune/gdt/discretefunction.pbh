@@ -59,9 +59,7 @@ bind_DiscreteFunction(pybind11::module& m, const std::string& space_id, const st
         "name"_a = "gdt.discretefunction",
         py::keep_alive<0, 1>());
   m.def(std::string("make_discrete_function").c_str(),
-        [](const S& space, const V& vector, const std::string& name) {
-          return make_discrete_function(space, vector, name);
-        },
+        [](const S& space, V& vector, const std::string& name) { return make_discrete_function(space, vector, name); },
         "space"_a,
         "vector"_a,
         "name"_a = "gdt.discretefunction",
