@@ -1,0 +1,79 @@
+// This file is part of the dune-gdt project:
+//   https://github.com/dune-community/dune-gdt
+// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
+// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+// Authors:
+//   Felix Schindler (2017)
+
+#ifndef DUNE_GDT_DISCRETEFUNCTION_PBH
+#define DUNE_GDT_DISCRETEFUNCTION_PBH
+#if HAVE_DUNE_PYBINDXI
+
+#include <dune/pybindxi/pybind11.h>
+
+#include "discretefunction/default.hh"
+
+namespace Dune {
+namespace GDT {
+
+
+template <class S, class V>
+pybind11::class_<DiscreteFunction<S, V>,
+                 XT::Functions::LocalizableFunctionInterface<typename S::EntityType,
+                                                             typename S::DomainFieldType,
+                                                             S::dimDomain,
+                                                             typename S::RangeFieldType,
+                                                             S::dimRange,
+                                                             S::dimRangeCols>>
+bind_DiscreteFunction(pybind11::module& m, const std::string& space_id, const std::string& la_id)
+{
+  namespace py = pybind11;
+  using namespace pybind11::literals;
+
+  typedef DiscreteFunction<S, V> C;
+  py::class_<C,
+             XT::Functions::LocalizableFunctionInterface<typename S::EntityType,
+                                                         typename S::DomainFieldType,
+                                                         S::dimDomain,
+                                                         typename S::RangeFieldType,
+                                                         S::dimRange,
+                                                         S::dimRangeCols>>
+      c(m, std::string("DiscreteFunction__" + space_id + "__" + la_id).c_str());
+  c.def(py::init<const S&, V&, const std::string>(),
+        "space"_a,
+        "vector"_a,
+        "name"_a = "gdt.discretefunction",
+        py::keep_alive<1, 2>(),
+        py::keep_alive<1, 3>());
+  c.def("space", [](C& self) { return self.space(); });
+  c.def("vector", [](C& self) { return self.vector(); });
+  c.def(
+      "visualize",
+      [](C& self, const std::string filename, const bool subsampling) { return self.visualize(filename, subsampling); },
+      "filename"_a,
+      "subsampling"_a = (S::polOrder > 1));
+
+  m.def(std::string("make_discrete_function__" + la_id).c_str(),
+        [](const S& space, const std::string& name) { return make_discrete_function<V>(space, name); },
+        "space"_a,
+        "name"_a = "gdt.discretefunction",
+        py::keep_alive<0, 1>());
+  m.def(std::string("make_discrete_function").c_str(),
+        [](const S& space, const V& vector, const std::string& name) {
+          return make_discrete_function(space, vector, name);
+        },
+        "space"_a,
+        "vector"_a,
+        "name"_a = "gdt.discretefunction",
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>());
+
+  return c;
+} // ... bind_DiscreteFunction(...)
+
+
+} // namespace GDT
+} // namespace Dune
+
+#endif // HAVE_DUNE_PYBINDXI
+#endif // DUNE_GDT_DISCRETEFUNCTION_PBH

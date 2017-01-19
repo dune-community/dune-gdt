@@ -33,6 +33,7 @@
 
 #include <dune/gdt/spaces.pbh>
 #include <dune/gdt/assembler/system.pbh>
+#include <dune/gdt/discretefunction.pbh>
 #include <dune/gdt/operators/elliptic.pbh>
 #include <dune/gdt/functionals/l2.pbh>
 
@@ -57,6 +58,8 @@ void addbind_for_space(py::module& m,
   typedef typename S::DomainFieldType D;
   static const size_t d = S::dimDomain;
   typedef typename S::RangeFieldType R;
+  typedef typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::MatrixType M;
+  typedef typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::VectorType V;
   static const size_t r = S::dimRange;
   static const size_t rC = S::dimRangeCols;
   const std::string r_ = to_string(r);
@@ -72,33 +75,22 @@ void addbind_for_space(py::module& m,
         "level"_a = 0,
         py::keep_alive<0, 1>());
 
+  Dune::GDT::bind_DiscreteFunction<S, V>(
+      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
+
   Dune::GDT::bind_system_assembler<S>(m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix);
 
   typedef Dune::XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1> ScalarFunction;
   typedef Dune::XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunction;
   // EllipticMatrixOperator
-  Dune::GDT::bind_elliptic_matrix_operator<ScalarFunction,
-                                           TensorFunction,
-                                           S,
-                                           typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::
-                                               MatrixType>(
+  Dune::GDT::bind_elliptic_matrix_operator<ScalarFunction, TensorFunction, S, M>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
-  Dune::GDT::bind_elliptic_matrix_operator<ScalarFunction,
-                                           void,
-                                           S,
-                                           typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::
-                                               MatrixType>(
+  Dune::GDT::bind_elliptic_matrix_operator<ScalarFunction, void, S, M>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
   // L2VolumeVectorFunctional
-  Dune::GDT::bind_l2_volume_vector_functional<ScalarFunction,
-                                              S,
-                                              typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::
-                                                  VectorType>(
+  Dune::GDT::bind_l2_volume_vector_functional<ScalarFunction, S, V>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
-  Dune::GDT::bind_l2_face_vector_functional<ScalarFunction,
-                                            S,
-                                            typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::
-                                                VectorType>(
+  Dune::GDT::bind_l2_face_vector_functional<ScalarFunction, S, V>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
 } // ... addbind_for_space(...)
 
