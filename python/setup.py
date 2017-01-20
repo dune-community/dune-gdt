@@ -4,7 +4,7 @@ import sys
 from setuptools import setup
 
 setup(name='dune.gdt',
-      version='2.4',
+      version='0.3-dev',
       namespace_packages=['dune'],
       description='Python for Dune-Gdt',
       author='The dune-gdt devs',
