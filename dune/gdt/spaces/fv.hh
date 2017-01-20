@@ -11,6 +11,8 @@
 #ifndef DUNE_GDT_SPACES_FV_HH
 #define DUNE_GDT_SPACES_FV_HH
 
+#include <dune/xt/grid/gridprovider/provider.hh>
+
 #include "fv/interface.hh"
 #include "fv/default.hh"
 
@@ -30,6 +32,7 @@ class FvSpaceProvider
 
 public:
   typedef typename XT::Grid::Layer<GridType, layer_type, part_view_type>::type GridLayerType;
+  typedef XT::Grid::GridProvider<GridType> GridProviderType;
 
 private:
   template <class G, class R, size_t r, size_t rC, GDT::ChooseSpaceBackend b>
@@ -43,8 +46,6 @@ private:
   {
     typedef GDT::FvSpace<GridLayerType, R, r, rC> Type;
   };
-
-  typedef XT::Grid::GridProvider<GridType> GridProviderType;
 
 public:
   typedef typename SpaceChooser<GridType, RangeFieldType, dimRange, dimRangeCols, backend_type>::Type Type;
