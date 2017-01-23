@@ -242,14 +242,14 @@ void addbind_for_grid(py::module& m, const std::string& grid_id)
 } // ... addbind_for_grid(...)
 
 
-PYBIND11_PLUGIN(gdt)
+PYBIND11_PLUGIN(_gdt)
 {
-  py::module m("gdt", "dune-gdt");
+  py::module m("_gdt", "dune-gdt");
 
-  py::module::import("common");
-  py::module::import("grid");
-  py::module::import("functions");
-  py::module::import("la");
+  py::module::import("dune.xt.common");
+  py::module::import("dune.xt.grid");
+  py::module::import("dune.xt.functions");
+  py::module::import("dune.xt.la");
 
   m.def("init_mpi",
         [](const std::vector<std::string>& args) {
