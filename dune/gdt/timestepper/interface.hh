@@ -57,6 +57,82 @@ struct FloatCmpLt
 
 } // namespace internal
 
+template <size_t ii, class DiscreteFunctionType>
+auto function_factor(const DiscreteFunctionType& discrete_function) -> typename Dune::GDT::DiscreteFunction<
+    typename std::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
+    typename DiscreteFunctionType::VectorType>
+{
+  typedef typename Dune::GDT::DiscreteFunction<
+      typename std::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
+      typename DiscreteFunctionType::VectorType>
+      FactorDiscreteFunctionType;
+  static_assert(ii < DiscreteFunctionType::SpaceType::num_factors, "This factor does not exist.");
+  const auto& space = discrete_function.space();
+  const auto& factor_space = space.template factor<ii>();
+  typename DiscreteFunctionType::VectorType factor_vector(factor_space.mapper().size());
+  const auto it_end = space.grid_view().template end<0>();
+  for (auto it = space.grid_view().template begin<0>(); it != it_end; ++it) {
+    const auto& entity = *it;
+    for (size_t jj = 0; jj < factor_space.mapper().numDofs(entity); ++jj)
+      factor_vector[factor_space.mapper().mapToGlobal(entity, jj)] =
+          discrete_function.vector()[space.mapper().mapToGlobal(ii, entity, jj)];
+  }
+  FactorDiscreteFunctionType factor_discrete_function(factor_space);
+  factor_discrete_function.vector() = factor_vector;
+  typedef Dune::GDT::DiscreteFunctionDataHandle<FactorDiscreteFunctionType> DataHandleType;
+  DataHandleType handle(factor_discrete_function);
+  factor_space.grid_view().template communicate<DataHandleType>(
+      handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
+  return factor_discrete_function;
+}
+
+template <size_t current_factor_index, size_t last_factor_index>
+struct static_for_loop
+{
+  template <class DiscreteFunctionType, class FactorDiscreteFunctionType>
+  static void sum_vector(const DiscreteFunctionType& discrete_function,
+                         FactorDiscreteFunctionType& first_discrete_function)
+  {
+    first_discrete_function.vector() +=
+        function_factor<current_factor_index, DiscreteFunctionType>(discrete_function).vector();
+    static_for_loop<current_factor_index + 1, last_factor_index>::sum_vector(discrete_function,
+                                                                             first_discrete_function);
+  }
+
+  template <class DiscreteFunctionType, class FactorDiscreteFunctionType>
+  static void sum_even_vector(const DiscreteFunctionType& discrete_function,
+                              FactorDiscreteFunctionType& first_discrete_function)
+  {
+    if (!(current_factor_index % 2))
+      first_discrete_function.vector() +=
+          function_factor<current_factor_index, DiscreteFunctionType>(discrete_function).vector();
+    static_for_loop<current_factor_index + 1, last_factor_index>::sum_even_vector(discrete_function,
+                                                                                  first_discrete_function);
+  }
+};
+
+// specialization of static for loop to end the loop
+template <size_t last_factor_index>
+struct static_for_loop<last_factor_index, last_factor_index>
+{
+  template <class DiscreteFunctionType, class FactorDiscreteFunctionType>
+  static void sum_vector(const DiscreteFunctionType& discrete_function,
+                         FactorDiscreteFunctionType& first_discrete_function)
+  {
+    first_discrete_function.vector() +=
+        function_factor<last_factor_index, DiscreteFunctionType>(discrete_function).vector();
+  }
+
+  template <class DiscreteFunctionType, class FactorDiscreteFunctionType>
+  static void sum_even_vector(const DiscreteFunctionType& discrete_function,
+                              FactorDiscreteFunctionType& first_discrete_function)
+  {
+    if (!(last_factor_index % 2))
+      first_discrete_function.vector() +=
+          function_factor<last_factor_index, DiscreteFunctionType>(discrete_function).vector();
+  }
+};
+
 
 template <class DiscreteFunctionImp, class TimeFieldImp>
 class TimeStepperInterface
@@ -171,7 +247,8 @@ public:
                               const bool output_progress,
                               const bool visualize,
                               const std::string filename_prefix,
-                              SolutionType& sol)
+                              SolutionType& sol,
+                              const int visualize_tag = 0)
   {
     TimeFieldType dt = initial_dt;
     TimeFieldType t = current_time();
@@ -185,8 +262,22 @@ public:
     // save/visualize initial solution
     if (save_solution)
       sol.insert(std::make_pair(t, current_solution()));
-    if (visualize)
-      current_solution().visualize(filename_prefix, Dune::XT::Common::to_string(0));
+    if (visualize) {
+      const auto dimRange = DiscreteFunctionType::dimRange;
+      const auto& u_n = current_solution();
+      if (visualize_tag == 0) {
+        u_n.visualize(filename_prefix, Dune::XT::Common::to_string(0));
+      } else if (visualize_tag == 1) {
+        auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
+        static_for_loop<1, dimRange - 1>::sum_vector(u_n, sum_function);
+        sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
+      } else if (visualize_tag == 2) {
+        auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
+        static_for_loop<1, dimRange - 1>::sum_even_vector(u_n, sum_function);
+        sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
+      }
+    }
+
 
     while (Dune::XT::Common::FloatCmp::lt(t, t_end, 1e-10)) {
       TimeFieldType max_dt = dt;
@@ -207,8 +298,21 @@ public:
       if (Dune::XT::Common::FloatCmp::ge(t, next_save_time) || num_save_steps == size_t(-1)) {
         if (save_solution)
           sol.insert(sol.end(), std::make_pair(t, current_solution()));
-        if (visualize)
-          current_solution().visualize(filename_prefix, Dune::XT::Common::to_string(save_step_counter));
+        if (visualize) {
+          const auto dimRange = DiscreteFunctionType::dimRange;
+          const auto& u_n = current_solution();
+          if (visualize_tag == 0) {
+            u_n.visualize(filename_prefix, Dune::XT::Common::to_string(save_step_counter));
+          } else if (visualize_tag == 1) {
+            auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
+            static_for_loop<1, dimRange - 1>::sum_vector(u_n, sum_function);
+            sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(save_step_counter));
+          } else if (visualize_tag == 2) {
+            auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
+            static_for_loop<1, dimRange - 1>::sum_even_vector(u_n, sum_function);
+            sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(save_step_counter));
+          }
+        }
         if (output_progress)
           std::cout << "time step " << time_step_counter << " done, time =" << t << ", current dt= " << dt << std::endl;
         next_save_time += save_interval;
@@ -225,16 +329,24 @@ public:
                               const bool save_solution = true,
                               const bool output_progress = false,
                               const bool visualize = false,
-                              const std::string filename_prefix = "solution")
+                              const std::string filename_prefix = "solution",
+                              const int visualize_prefix = 0)
   {
-    return solve(
-        t_end, initial_dt, num_save_steps, save_solution, output_progress, visualize, filename_prefix, *solution_);
+    return solve(t_end,
+                 initial_dt,
+                 num_save_steps,
+                 save_solution,
+                 output_progress,
+                 visualize,
+                 filename_prefix,
+                 *solution_,
+                 visualize_prefix);
   }
 
   virtual TimeFieldType
   solve(const TimeFieldType t_end, const TimeFieldType initial_dt, const size_t num_save_steps, SolutionType& sol)
   {
-    return solve(t_end, initial_dt, num_save_steps, true, false, false, "", sol);
+    return solve(t_end, initial_dt, num_save_steps, true, false, false, "", sol, 0);
   }
 
   /**
