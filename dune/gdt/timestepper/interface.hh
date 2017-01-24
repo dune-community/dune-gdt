@@ -14,12 +14,12 @@
 
 #include <utility>
 
-#include <dune/gdt/operators/interfaces.hh>
-
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/xt/la/container.hh>
 
+#include <dune/gdt/discretefunction/datahandle.hh>
+#include <dune/gdt/operators/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
@@ -71,6 +71,7 @@ public:
   typedef typename DiscreteFunctionType::RangeFieldType RangeFieldType;
   typedef typename std::map<TimeFieldType, DiscreteFunctionType, typename internal::FloatCmpLt> SolutionType;
   typedef typename SolutionType::value_type TimeAndDiscreteFunctionPairType;
+  typedef DiscreteFunctionDataHandle<DiscreteFunctionType> DataHandleType;
 
 private:
   typedef typename Dune::XT::Common::StorageProvider<DiscreteFunctionImp> CurrentSolutionStorageProviderType;

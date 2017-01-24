@@ -14,12 +14,6 @@
 
 #include <utility>
 
-#include <dune/gdt/operators/interfaces.hh>
-
-#include <dune/xt/common/memory.hh>
-#include <dune/xt/common/string.hh>
-#include <dune/xt/la/container.hh>
-
 #include "interface.hh"
 
 
@@ -191,6 +185,7 @@ public:
   using typename BaseType::DomainFieldType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::SolutionType;
+  using typename BaseType::DataHandleType;
 
   typedef OperatorImp OperatorType;
   typedef typename Dune::DynamicMatrix<RangeFieldType> MatrixType;
@@ -268,6 +263,9 @@ public:
       else
         u_i_.vector() += stages_k_[ii - 1].vector() * (actual_dt * r_ * (A_[ii][ii - 1]));
       op_.apply(u_i_, stages_k_[ii], t + actual_dt * c_[ii]);
+      DataHandleType stages_k_ii_handle(stages_k_[ii]);
+      stages_k_[ii].space().grid_view().template communicate<DataHandleType>(
+          stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
     }
 
     // calculate value of u at next time step

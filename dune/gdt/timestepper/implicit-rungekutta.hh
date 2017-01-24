@@ -11,7 +11,6 @@
 
 #include <utility>
 
-#include <dune/gdt/operators/interfaces.hh>
 
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/memory.hh>
@@ -19,6 +18,9 @@
 
 #include <dune/xt/la/container.hh>
 #include <dune/xt/la/container/pattern.hh>
+
+#include <dune/gdt/assembler/codim0-matrix-datahandle.hh>
+#include <dune/gdt/operators/interfaces.hh>
 
 #include "interface.hh"
 #include "explicit-rungekutta.hh"
@@ -150,6 +152,7 @@ public:
   using typename BaseType::DomainFieldType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::SolutionType;
+  using typename BaseType::DataHandleType;
 
   typedef OperatorImp OperatorType;
   typedef typename Dune::DynamicMatrix<RangeFieldType> MatrixType;
@@ -158,6 +161,8 @@ public:
   typedef typename XT::LA::Container<RangeFieldType, container_backend>::VectorType SolverVectorType;
   typedef typename XT::LA::Solver<SolverMatrixType> SolverType;
   typedef typename Dune::DynamicVector<TimeFieldType> TimeVectorType;
+  typedef typename Dune::GDT::MatrixDataHandle<SolverMatrixType, typename DiscreteFunctionType::SpaceType>
+      SolverMatrixDataHandleType;
 
   using BaseType::current_solution;
   using BaseType::current_time;
@@ -232,17 +237,21 @@ public:
     auto& t = current_time();
     auto& u_n = current_solution();
     // calculate stages
+    SolverMatrixDataHandleType newton_matrix_handle(newton_matrix_, u_n.space());
     for (size_t ii = 0; ii < num_stages_; ++ii) {
       // calculate u_expl
       if (ii == 0)
         u_i_expl_.vector() = u_n.vector();
       else
         u_i_expl_.vector() += stages_k_[ii - 1].vector() * (actual_dt * r_ * (A_[ii][ii - 1]));
+      DataHandleType stages_k_ii_handle(stages_k_[ii]);
       // choose explicit or implicit treatment
       if (XT::Common::FloatCmp::eq(A_[ii][ii], 0.0)) {
         // stage is explicit
         stages_k_[ii].vector() *= RangeFieldType(0);
         op_.apply(u_i_expl_, stages_k_[ii], t + actual_dt * c_[ii]);
+        stages_k_[ii].space().grid_view().template communicate<DataHandleType>(
+            stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
       } else {
         // stage is implicit, Newton method with Armijo backtracking
         // initial guess for u_i: u_i_expl_ + dt a_{ii} k_{i-1}
@@ -251,6 +260,8 @@ public:
         // calculate residual with current iterate
         stages_k_[ii].vector() *= RangeFieldType(0);
         op_.apply(u_i_, stages_k_[ii], t + actual_dt + c_[ii]);
+        stages_k_[ii].space().grid_view().template communicate<DataHandleType>(
+            stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
         res_.vector() = u_i_expl_.vector() - u_i_.vector() + stages_k_[ii].vector() * (actual_dt * r_ * A_[ii][ii]);
         // calculate norm of residual
         RangeFieldType current_error = res_.vector().l2_norm();
@@ -262,6 +273,8 @@ public:
           // assemble Newton matrix N = I - dt * a_{ii} * J_L
           newton_matrix_ *= 0;
           op_.assemble_jacobian(newton_matrix_, u_i_, t + actual_dt * c_[ii]);
+          u_i_.space().grid_view().template communicate<SolverMatrixDataHandleType>(
+              newton_matrix_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
           newton_matrix_ *= -actual_dt * r_ * A_[ii][ii];
           for (size_t kk = 0; kk < newton_matrix_.rows(); ++kk)
             newton_matrix_.add_to_entry(kk, kk, 1.);
@@ -283,6 +296,8 @@ public:
             u_i_plus_alpha_d_.vector() = u_i_.vector() + d_.vector() * alpha;
             stages_k_[ii].vector() *= RangeFieldType(0);
             op_.apply(u_i_plus_alpha_d_, stages_k_[ii], t + actual_dt + c_[ii]);
+            stages_k_[ii].space().grid_view().template communicate<DataHandleType>(
+                stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
             new_res_.vector() = u_i_expl_.vector() - u_i_plus_alpha_d_.vector()
                                 + stages_k_[ii].vector() * (actual_dt * r_ * A_[ii][ii]);
             current_error = new_res_.vector().l2_norm();
