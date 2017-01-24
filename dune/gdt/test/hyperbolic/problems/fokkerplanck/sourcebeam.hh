@@ -63,6 +63,18 @@ FieldType evaluate_hat_function(const FieldType& v, const size_t n, const RangeT
     return 0;
 }
 
+template <class FieldType, class PointsVectorType>
+FieldType evaluate_first_order_dg(const FieldType& v, const size_t n, const PointsVectorType& v_points)
+{
+  if (XT::Common::FloatCmp::ge(v, v_points[n / 2]) && XT::Common::FloatCmp::le(v, v_points[n / 2 + 1]))
+    if (n % 2)
+      return v;
+    else
+      return 1;
+  else
+    return 0;
+}
+
 
 /** \see class TwoBeams in twobeams.hh */
 template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t momentOrder>
@@ -109,7 +121,8 @@ public:
     grid_config["type"] = "provider.cube";
     grid_config["lower_left"] = "[0.0]";
     grid_config["upper_right"] = "[3.0]";
-    grid_config["num_elements"] = "[300]";
+    grid_config["num_elements"] = "[3000]";
+    grid_config["overlap_size"] = "[1 1 1 1]";
     return grid_config;
   }
 
@@ -135,10 +148,12 @@ public:
     return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
   } // ... create(...)
 
-  static ConfigType default_config(const bool BGK_type_collision = false, const RangeFieldImp psi_vac = 5e-9)
+  static ConfigType default_config(const ConfigType grid_config = default_grid_config(),
+                                   const bool BGK_type_collision = true,
+                                   const RangeFieldImp psi_vac = 5e-9)
   {
     ConfigType config = BaseType::default_config(psi_vac);
-    config.add(default_grid_config(), "grid", true);
+    config.add(grid_config, "grid", true);
     config.add(default_boundary_info_config(), "boundary_info", true);
     ConfigType rhs_config;
     rhs_config["lower_left"] = "[0.0]";
@@ -220,8 +235,6 @@ protected:
       } // rr
       rhs_config["A." + XT::Common::to_string(ii)] = XT::Common::to_string(A);
       rhs_config["b." + XT::Common::to_string(ii)] = XT::Common::to_string(b);
-      std::cout << "A_" << ii << ": " << XT::Common::to_string(A) << std::endl;
-      std::cout << "b_" << ii << ": " << XT::Common::to_string(b) << std::endl;
     } // ii
   } // ... create_rhs_values_laplace_beltrami()
 
@@ -252,8 +265,6 @@ protected:
       } // rr
       rhs_config["A." + XT::Common::to_string(ii)] = XT::Common::to_string(A);
       rhs_config["b." + XT::Common::to_string(ii)] = XT::Common::to_string(b);
-      std::cout << "A_" << ii << ": " << XT::Common::to_string(A) << std::endl;
-      std::cout << "b_" << ii << ": " << XT::Common::to_string(b) << std::endl;
     } // ii
   } // ... create_rhs_values_BGK()
 
@@ -267,7 +278,6 @@ protected:
     for (size_t cc = 1; cc < dimRange; ++cc)
       str += " 0.5-0.5*x[0]/3.0";
     str += "]";
-    std::cout << "boundary: " << str << std::endl;
     return str;
   } // ... create_boundary_values()
 
@@ -286,7 +296,6 @@ protected:
       str += " " + XT::Common::to_string(left_boundary_vals[cc], precision) + "-("
              + XT::Common::to_string(left_boundary_vals[cc], precision) + ")*x[0]/3.0";
     str += "]";
-    std::cout << "boundary: " << str << std::endl;
     return str;
   } // ... create_realizable_boundary_values()
 
@@ -389,11 +398,12 @@ public:
     return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
   } // ... create(...)
 
-  static ConfigType default_config(const RangeType v_points = create_equidistant_points(),
+  static ConfigType default_config(const ConfigType grid_config = default_grid_config(),
+                                   const RangeType v_points = create_equidistant_points(),
                                    const RangeFieldImp psi_vac = 5e-9)
   {
     ConfigType config;
-    config.add(default_grid_config(), "grid");
+    config.add(grid_config, "grid");
     config.add(default_boundary_info_config(), "boundary_info");
     ConfigType flux_config;
     flux_config["type"] = DefaultFluxType::static_id();
@@ -560,14 +570,8 @@ protected:
   {
     MatrixType A = mass_matrix_with_v(v_points);
     const MatrixType M = mass_matrix(v_points);
-    std::cout << XT::Common::to_string(M, precision) << std::endl << std::endl;
     const MatrixType M_inv = tridiagonal_matrix_inverse(M);
-    std::cout << XT::Common::to_string(M_inv, precision) << std::endl;
-    std::cout << "BBBBB:" << std::endl;
-    std::cout << XT::Common::to_string(A, precision) << std::endl;
     A.rightmultiply(M_inv);
-    std::cout << "BBBBB M^-1:" << std::endl;
-    std::cout << XT::Common::to_string(A, precision) << std::endl;
     return XT::Common::to_string(A, precision);
   } // ... create_flux_matrix
 
@@ -623,14 +627,14 @@ protected:
   // returns the denominator <g> of the left boundary value (see create_boundary_values)
   static RangeFieldImp denominator()
   {
-    static constexpr auto pi = std::acos(-1);
+    static constexpr auto pi = M_PI;
     return 1 / 200. * std::sqrt(pi / 10) * std::erf(200 * std::sqrt(10));
   }
 
   // calculates integral from v_l to v_u of numerator g
   static RangeFieldImp integral_1(RangeFieldImp v_l, RangeFieldImp v_u)
   {
-    static constexpr auto pi = std::acos(-1);
+    static constexpr auto pi = M_PI;
     return 1 / 200. * std::sqrt(pi / 10)
            * (std::erf(100 * std::sqrt(10) * (v_u - 1)) - std::erf(100 * std::sqrt(10) * (v_l - 1)));
   }
@@ -669,6 +673,326 @@ protected:
     return str;
   } // ... create_boundary_values()
 }; // class SourceBeamPnHatFunctions
+
+
+/** \see class TwoBeams in twobeams.hh */
+template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t num_points>
+class SourceBeamPnFirstOrderDG
+    : public SourceBeamPnLegendre<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 2 * num_points - 3>
+{
+  typedef SourceBeamPnFirstOrderDG<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, num_points> ThisType;
+  typedef SourceBeamPnLegendre<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 2 * num_points - 3> BaseType;
+
+public:
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  using BaseType::precision;
+  using typename BaseType::DefaultFluxType;
+  using typename BaseType::DefaultInitialValueType;
+  using typename BaseType::DefaultRHSType;
+  using typename BaseType::DefaultBoundaryValueType;
+
+  using typename BaseType::FluxType;
+  using typename BaseType::RHSType;
+  using typename BaseType::InitialValueType;
+  using typename BaseType::BoundaryValueType;
+  using typename BaseType::ConfigType;
+  using typename BaseType::MatrixType;
+  using typename BaseType::RangeType;
+
+  typedef typename Dune::FieldVector<DomainFieldImp, num_points> PointsVectorType;
+
+  static std::string static_id()
+  {
+    return BaseType::static_id() + ".sourcebeam_Pn_firstorderdg";
+  }
+
+  std::string type() const override
+  {
+    return BaseType::type() + ".sourcebeam_Pn_firstorderdg";
+  }
+
+  static std::string short_id()
+  {
+    return "SourceBeamPnFirstOrderDG";
+  }
+
+  using BaseType::default_grid_config;
+  using BaseType::default_boundary_info_config;
+
+  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
+                                          const std::string sub_name = static_id())
+  {
+    const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
+    const std::shared_ptr<const DefaultFluxType> flux(DefaultFluxType::create(config.sub("flux")));
+    const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
+    const std::shared_ptr<const DefaultInitialValueType> initial_values(
+        DefaultInitialValueType::create(config.sub("initial_values")));
+    const ConfigType grid_config = config.sub("grid");
+    const ConfigType boundary_info = config.sub("boundary_info");
+    const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
+        DefaultBoundaryValueType::create(config.sub("boundary_values")));
+    return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
+  } // ... create(...)
+
+  static ConfigType default_config(const ConfigType grid_config = default_grid_config(),
+                                   const PointsVectorType& v_points = create_equidistant_points(),
+                                   const RangeFieldImp psi_vac = 5e-9)
+  {
+    ConfigType config;
+    config.add(grid_config, "grid");
+    config.add(default_boundary_info_config(), "boundary_info");
+    ConfigType flux_config;
+    flux_config["type"] = DefaultFluxType::static_id();
+    flux_config["A"] = create_flux_matrix(v_points);
+    flux_config["b"] = Dune::XT::Common::to_string(RangeType(0));
+    config.add(flux_config, "flux");
+    ConfigType rhs_config;
+    rhs_config["lower_left"] = "[0.0]";
+    rhs_config["upper_right"] = "[3.0]";
+    rhs_config["num_elements"] = "[6]";
+    create_rhs_values(rhs_config, v_points);
+    rhs_config["name"] = static_id();
+    config.add(rhs_config, "rhs");
+    ConfigType initial_value_config;
+    initial_value_config["lower_left"] = "[0.0]";
+    initial_value_config["upper_right"] = "[3.0]";
+    initial_value_config["num_elements"] = "[1]";
+    initial_value_config["variable"] = "x";
+    initial_value_config["values.0"] = create_initial_values(v_points, psi_vac);
+    initial_value_config["name"] = static_id();
+    config.add(initial_value_config, "initial_values");
+    ConfigType boundary_value_config;
+    boundary_value_config["type"] = DefaultBoundaryValueType::static_id();
+    boundary_value_config["variable"] = "x";
+    boundary_value_config["expression"] = create_boundary_values(v_points, psi_vac);
+    boundary_value_config["order"] = "10";
+    config.add(boundary_value_config, "boundary_values");
+    return config;
+  } // ... default_config(...)
+
+  SourceBeamPnFirstOrderDG(const std::shared_ptr<const FluxType> flux_in,
+                           const std::shared_ptr<const RHSType> rhs_in,
+                           const std::shared_ptr<const InitialValueType> initial_values_in,
+                           const ConfigType& grid_config_in,
+                           const ConfigType& boundary_info_in,
+                           const std::shared_ptr<const BoundaryValueType> boundary_values_in)
+    : BaseType(flux_in, rhs_in, initial_values_in, grid_config_in, boundary_info_in, boundary_values_in)
+  {
+  }
+
+  virtual double CFL() const override
+  {
+    return 0.4;
+  }
+
+  virtual double t_end() const override
+  {
+    return 4.0;
+  }
+
+  virtual bool has_non_zero_rhs() const override
+  {
+    return true;
+  }
+
+  static PointsVectorType create_equidistant_points()
+  {
+    PointsVectorType ret;
+    for (size_t ii = 0; ii < num_points; ++ii)
+      ret[ii] = -1. + 2. * ii / (num_points - 1);
+    return ret;
+  }
+
+protected:
+  // returns <b>, where b is the basis functions vector
+  static RangeType basisfunctions_integrated(const PointsVectorType& v_points)
+  {
+    RangeType ret(0);
+    for (size_t ii = 0; ii < num_points - 1; ++ii) {
+      ret[2 * ii] = v_points[ii + 1] - v_points[ii];
+      ret[2 * ii + 1] = (std::pow(v_points[ii + 1], 2) - std::pow(v_points[ii], 2)) / 2.;
+    }
+    return ret;
+  }
+
+  // returns matrix with entries <h_i h_j>
+  static MatrixType mass_matrix(const PointsVectorType& v_points)
+  {
+    MatrixType ret(0);
+    for (size_t ii = 0; ii < num_points - 1; ++ii) {
+      ret[2 * ii][2 * ii] = v_points[ii + 1] - v_points[ii];
+      ret[2 * ii + 1][2 * ii + 1] = (std::pow(v_points[ii + 1], 3) - std::pow(v_points[ii], 3)) / 3.;
+      ret[2 * ii][2 * ii + 1] = (std::pow(v_points[ii + 1], 2) - std::pow(v_points[ii], 2)) / 2.;
+      ret[2 * ii + 1][2 * ii] = ret[2 * ii][2 * ii + 1];
+    }
+    return ret;
+  }
+
+  // returns matrix with entries <v h_i h_j>
+  static MatrixType mass_matrix_with_v(const PointsVectorType& v_points)
+  {
+    MatrixType ret(0);
+    for (size_t ii = 0; ii < num_points - 1; ++ii) {
+      ret[2 * ii][2 * ii] = (std::pow(v_points[ii + 1], 2) - std::pow(v_points[ii], 2)) / 2.;
+      ret[2 * ii + 1][2 * ii + 1] = (std::pow(v_points[ii + 1], 4) - std::pow(v_points[ii], 4)) / 4.;
+      ret[2 * ii][2 * ii + 1] = (std::pow(v_points[ii + 1], 3) - std::pow(v_points[ii], 3)) / 3.;
+      ret[2 * ii + 1][2 * ii] = ret[2 * ii][2 * ii + 1];
+    }
+    return ret;
+  }
+
+  // see https://en.wikipedia.org/wiki/Tridiagonal_matrix#Inversion
+  static MatrixType tridiagonal_matrix_inverse(const MatrixType& matrix)
+  {
+#ifndef NDEBUG
+    for (size_t rr = 0; rr < dimRange; ++rr)
+      for (size_t cc = 0; cc < dimRange; ++cc)
+        if ((cc > rr + 1 || cc + 1 < rr) && XT::Common::FloatCmp::ne(matrix[rr][cc], 0.))
+          DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong, "Matrix has to be tridiagonal!");
+#endif // NDEBUG
+    MatrixType ret(0);
+    Dune::FieldVector<RangeFieldImp, dimRange + 1> a(0), b(0), c(0), theta(0);
+    Dune::FieldVector<RangeFieldImp, dimRange + 2> phi(0);
+    for (size_t ii = 1; ii < dimRange + 1; ++ii) {
+      a[ii] = matrix[ii - 1][ii - 1];
+      if (ii < dimRange) {
+        b[ii] = matrix[ii - 1][ii];
+        c[ii] = matrix[ii][ii - 1];
+      }
+    }
+    theta[0] = 1;
+    theta[1] = a[1];
+    for (size_t ii = 2; ii < dimRange + 1; ++ii)
+      theta[ii] = a[ii] * theta[ii - 1] - b[ii - 1] * c[ii - 1] * theta[ii - 2];
+    phi[dimRange + 1] = 1;
+    phi[dimRange] = a[dimRange];
+    for (size_t ii = dimRange - 1; ii > 0; --ii)
+      phi[ii] = a[ii] * phi[ii + 1] - b[ii] * c[ii] * phi[ii + 2];
+    for (size_t ii = 1; ii < dimRange + 1; ++ii) {
+      for (size_t jj = 1; jj < dimRange + 1; ++jj) {
+        if (ii == jj)
+          ret[ii - 1][jj - 1] = theta[ii - 1] * phi[jj + 1] / theta[dimRange];
+        else if (ii < jj) {
+          ret[ii - 1][jj - 1] = std::pow(-1, ii + jj) * theta[ii - 1] * phi[jj + 1] / theta[dimRange];
+          for (size_t kk = ii; kk < jj; ++kk)
+            ret[ii - 1][jj - 1] *= b[kk];
+        } else if (ii > jj) {
+          ret[ii - 1][jj - 1] = std::pow(-1, ii + jj) * theta[jj - 1] * phi[ii + 1] / theta[dimRange];
+          for (size_t kk = jj; kk < ii; ++kk)
+            ret[ii - 1][jj - 1] *= c[kk];
+        }
+      } // jj
+    } // ii
+    return ret;
+  } // ... tridiagonal_matrix_inverse(...)
+
+  // flux matrix A = B M^{-1} with B_{ij} = <v h_i h_j>
+  static std::string create_flux_matrix(const PointsVectorType& v_points)
+  {
+    MatrixType A = mass_matrix_with_v(v_points);
+    const MatrixType M = mass_matrix(v_points);
+    const MatrixType M_inv = tridiagonal_matrix_inverse(M);
+    A.rightmultiply(M_inv);
+    return XT::Common::to_string(A, precision);
+  } // ... create_flux_matrix
+
+  // Initial value of the kinetic equation is a constant vacuum concentration psi_vac.
+  // Thus, the initial value of the moment vector is psi_vac * <b>.
+  static std::string create_initial_values(const PointsVectorType& v_points = create_equidistant_points(),
+                                           const RangeFieldImp psi_vac = 5e-9)
+  {
+    RangeType initial_vals = basisfunctions_integrated(v_points);
+    initial_vals *= psi_vac;
+    return XT::Common::to_string(initial_vals, precision);
+  } // ... create_initial_values()
+
+  // RHS is (G - sigma_t * I)u + Q<b>
+  // For this test case (sigma_t = sigma_s + sigma_a),
+  // sigma_a = 1 if x <= 2, 0 else
+  // sigma_s = 0 if x <= 1, 2 if 1 < x <= 2, 10 else
+  // Q = 1 if 1 <= x <= 1.5, 0 else
+  static void create_rhs_values(ConfigType& rhs_config, const PointsVectorType& v_points)
+  {
+    const RangeType integrated_basis = basisfunctions_integrated(v_points);
+    const MatrixType M = mass_matrix(v_points);
+    const MatrixType M_inv = tridiagonal_matrix_inverse(M);
+    RangeType c(0);
+    M_inv.mtv(integrated_basis, c);
+
+    for (size_t ii = 0; ii < 6; ++ii) {
+      Dune::FieldMatrix<RangeFieldImp, dimRange, dimRange> A(0);
+      Dune::FieldVector<RangeFieldImp, dimRange> b(0);
+      for (size_t rr = 0; rr < dimRange; ++rr) {
+        if (ii == 2) // 1 < x <= 1.5
+          b[rr] = integrated_basis[rr];
+        if (ii == 0 || ii == 1) // x <= 1
+          A[rr][rr] = -1;
+        for (size_t cc = 0; cc < dimRange; ++cc) {
+          if (ii == 2 || ii == 3) // 1 <= x <= 2
+            A[rr][cc] = integrated_basis[rr] * c[cc] - 3. * (rr == cc);
+          else if (ii == 4 || ii == 5) // 2 <= x <= 3
+            A[rr][cc] = 5 * integrated_basis[rr] * c[cc] - 10. * (rr == cc);
+        } // cc
+      } // rr
+      rhs_config["A." + XT::Common::to_string(ii)] = XT::Common::to_string(A, precision);
+      rhs_config["b." + XT::Common::to_string(ii)] = XT::Common::to_string(b, precision);
+    } // ii
+  } // ... create_rhs_values()
+
+  // returns the numerator g of the left boundary value (see create_boundary_values)
+  static RangeFieldImp numerator(const RangeFieldImp v)
+  {
+    return std::exp(-1e5 * (v - 1) * (v - 1));
+  }
+
+  // returns the denominator <g> of the left boundary value (see create_boundary_values)
+  static RangeFieldImp denominator()
+  {
+    static constexpr double pi = M_PI;
+    return 1 / 200. * std::sqrt(pi / 10) * std::erf(200 * std::sqrt(10));
+  }
+
+  // calculates integral from v_l to v_u of numerator g
+  static RangeFieldImp integral_1(RangeFieldImp v_l, RangeFieldImp v_u)
+  {
+    static constexpr auto pi = M_PI;
+    return 1 / 200. * std::sqrt(pi / 10)
+           * (std::erf(100 * std::sqrt(10) * (v_u - 1)) - std::erf(100 * std::sqrt(10) * (v_l - 1)));
+  }
+
+  static RangeFieldImp integral_2(RangeFieldImp v_l, RangeFieldImp v_u)
+  {
+    return integral_1(v_l, v_u) - 1. / 2e5 * (numerator(v_u) - numerator(v_l));
+  }
+
+  // Boundary value of kinetic equation is \frac{exp(-10^5(v-1)^2)}{<exp(-10^5(v-1)^2)>} at x = 0 and
+  // \psi_{vac} = 0.5*10^(-8) at x = 3, so n-th component of boundary value has to be
+  // \frac{<base_n(v)*exp(-10^5(v-1)^2)>}{<exp(-10^5(v-1)^2)>} at x = 0 and \psi_{vac}*base_integrated_n
+  // at x = 3.
+  // Simulate with linear interpolating function.
+  static std::string create_boundary_values(const PointsVectorType& v_points = create_equidistant_points(),
+                                            const RangeFieldImp psi_vac = 5e-9)
+  {
+    const RangeType integrated_basis = basisfunctions_integrated(v_points);
+    RangeType left_boundary_values(0);
+    for (size_t ii = 0; ii < num_points - 1; ++ii) {
+      left_boundary_values[2 * ii] = integral_1(v_points[ii], v_points[ii + 1]) / denominator();
+      left_boundary_values[2 * ii + 1] = integral_2(v_points[ii], v_points[ii + 1]) / denominator();
+    }
+
+    std::string str = "[";
+    for (size_t nn = 0; nn < dimRange; ++nn) {
+      if (nn > 0)
+        str += " ";
+      str += XT::Common::to_string(left_boundary_values[nn], precision) + "-("
+             + XT::Common::to_string(left_boundary_values[nn] - psi_vac * integrated_basis[nn], precision)
+             + ")*x[0]/3.0";
+    }
+    str += "]";
+    return str;
+  } // ... create_boundary_values()
+}; // class SourceBeamPnFirstOrderDG
 
 
 } // namespace Problems

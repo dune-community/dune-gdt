@@ -123,6 +123,7 @@ public:
     grid_config["lower_left"] = "[0.0]";
     grid_config["upper_right"] = "[1.0]";
     grid_config["num_elements"] = "[100]";
+    grid_config["overlap_size"] = "[1 1 1 1]";
     return grid_config;
   }
 

@@ -13,6 +13,8 @@
 #include <vector>
 #include <string>
 
+#include <boost/math/special_functions/legendre.hpp>
+
 #include <dune/xt/common/string.hh>
 
 #include "sourcebeam.hh"
@@ -22,13 +24,55 @@ namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
 
+// calculates position of \psi_l^m in vector.
+// The \psi_l^m are ordered by l first and then by m,
+// i.e. (\psi_0^0, \psi_1^{-1}, \psi_1^0, psi_1^1, \psi_2^{-2},\psi_2^{-1},...,\psi_N^{-N}, \psi_N^{-N+1}, ...)
+// Thus \psi_l^m has position l + m + \sum_{k=0}^(l-1) (2k+1) = l^2 + l + m in the vector.
+constexpr size_t pos(const size_t l = 0, const size_t m = 0)
+{
+  return l * l + l + m;
+}
+
+constexpr size_t factorial(size_t n)
+{
+  return n > 0 ? n * factorial(n - 1) : 1;
+}
+
+template <class FieldType>
+FieldType evaluate_associated_legendre_polynomial(const FieldType& v, const int l, int m)
+{
+  return boost::math::legendre_p(l, m, v);
+}
+
+// Notation from Garrett, Hauck, "A Comparison of Moment Closures for Linear Kinetic Transport Equations: The Line
+// Source Benchmark",
+// http://www.tandfonline.com/doi/full/10.1080/00411450.2014.910226?src=recsys&, Section 4.1
+double N_lm(const int l, const int m)
+{
+  assert(l >= 0 && m >= 0 && m <= l);
+  return std::sqrt((2. * l + 1.) * factorial(l - m) / (factorial(l + m) * 4. * M_PI));
+}
+
+template <class FieldType>
+FieldType evaluate_real_spherical_harmonics(const FieldType v, const FieldType phi, const int l, const int m)
+{
+  assert(l >= 0 && std::abs(m) <= l);
+  if (m < 0)
+    return std::sqrt(2) * N_lm(l, -m) * evaluate_associated_legendre_polynomial(v, l, -m) * std::sin(-m * phi);
+  else if (m == 0)
+    return N_lm(l, 0) * evaluate_associated_legendre_polynomial(v, l, 0);
+  else
+    return std::sqrt(2) * N_lm(l, m) * evaluate_associated_legendre_polynomial(v, l, m) * std::cos(m * phi);
+}
+
+
 /** \see class TwoBeams in twobeams.hh */
 template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t momentOrder>
-class PlaneSourcePnLegendre
-    : public SourceBeamPnLegendre<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder>
+class PlaneSourcePnSphericalHarmonics
+    : public Default<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, (momentOrder + 1) * (momentOrder + 1)>
 {
-  typedef PlaneSourcePnLegendre<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder> ThisType;
-  typedef SourceBeamPnLegendre<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder> BaseType;
+  typedef PlaneSourcePnSphericalHarmonics<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder> ThisType;
+  typedef Default<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, (momentOrder + 1) * (momentOrder + 1)> BaseType;
 
 public:
   using BaseType::dimDomain;
