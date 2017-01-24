@@ -5,7 +5,7 @@
 # Authors:
 #   Felix Schindler (2010, 2013 - 2016)
 
-if(dune-pybindxi_FOUND AND CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9)
+if(dune-pybindxi_FOUND)
   dune_pybindxi_add_module(_gdt bindings.cc)
   target_link_dune_default_libraries(_gdt)
 endif()
