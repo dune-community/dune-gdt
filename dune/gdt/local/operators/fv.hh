@@ -160,7 +160,8 @@ public:
   void apply(const SourceType& source,
              const IntersectionType& intersection,
              LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor) const
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor,
+             const double time) const
   {
     const auto entity = intersection.inside();
     const auto neighbor = intersection.outside();
@@ -176,7 +177,8 @@ public:
                                           *local_source_entity,
                                           *local_source_neighbor,
                                           intersection,
-                                          geometry_intersection.local(geometry_intersection.center()));
+                                          geometry_intersection.local(geometry_intersection.center()),
+                                          time);
     local_range_entity.vector().add(result * (1.0 / entity.geometry().volume()));
     local_range_neighbor.vector().add(result * (-1.0 / neighbor.geometry().volume()));
   }
@@ -200,7 +202,8 @@ public:
   template <class SourceType, class IntersectionType, class SpaceType, class VectorType>
   void apply(const SourceType& source,
              const IntersectionType& intersection,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity) const
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity,
+             const double time) const
   {
     const auto entity = intersection.inside();
     const auto local_source_entity = source.local_function(entity);
@@ -209,7 +212,8 @@ public:
     auto result = numerical_flux_.evaluate(local_functions_tuple,
                                            *local_source_entity,
                                            intersection,
-                                           geometry_intersection.local(geometry_intersection.center()));
+                                           geometry_intersection.local(geometry_intersection.center()),
+                                           time);
     result /= entity.geometry().volume();
     local_range_entity.vector().add(result);
   }
