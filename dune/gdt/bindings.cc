@@ -66,12 +66,11 @@ struct for_Grid_and_Intersection<I, false>
 
 
 template <class SP>
-auto addbind_for_space(py::module& m,
+void addbind_for_space(py::module& m,
                        const std::string& grid_id,
                        const std::string& layer_id,
                        const std::string& space_id,
                        const std::string& backend)
-    -> decltype(Dune::GDT::bind_system_assembler<typename SP::type>(m, ""))
 {
   using namespace Dune;
   using namespace Dune::XT;
@@ -108,6 +107,7 @@ auto addbind_for_space(py::module& m,
   // SystemAssembler
   auto system_assembler =
       bind_system_assembler<S>(m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix);
+  addbind_Dirichlet_Constraints_to_SystemAssembler(system_assembler);
   // EllipticMatrixOperator
   bind_elliptic_matrix_operator<ScalarFunction, TensorFunction, S, M>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
@@ -119,13 +119,11 @@ auto addbind_for_space(py::module& m,
   // L2FaceVectorFunctional
   bind_l2_face_vector_functional<ScalarFunction, S, V>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
-  return system_assembler;
 } // ... addbind_for_space(...)
 
 
 template <class SP>
 void addbind_for_lagrange_space(py::module& m,
-                                pybind11::class_<Dune::GDT::SystemAssembler<typename SP::type>>&& system_assembler,
                                 const std::string& grid_id,
                                 const std::string& layer_id,
                                 const std::string& space_id,
@@ -153,8 +151,6 @@ void addbind_for_lagrange_space(py::module& m,
                                                          ScalarFunction,
                                                          Dune::GDT::DiscreteFunction<S, V>>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
-  // DirichletConstraints
-  addbind_Dirichlet_Constraints_to_SystemAssembler(system_assembler);
 } // ... addbind_for_lagrange_space(...)
 
 
@@ -171,22 +167,14 @@ void addbind_for_grid(py::module& m, const std::string& grid_id)
       m, grid_id, "level", "Fv", "");
 // CG
 #if HAVE_DUNE_FEM
+  addbind_for_space<CgSpaceProvider<G, XT::Grid::Layers::leaf, ChooseSpaceBackend::fem, 1, double, 1, 1>>(
+      m, grid_id, "leaf", "Cg", "__fem");
   addbind_for_lagrange_space<CgSpaceProvider<G, XT::Grid::Layers::leaf, ChooseSpaceBackend::fem, 1, double, 1, 1>>(
-      m,
-      addbind_for_space<CgSpaceProvider<G, XT::Grid::Layers::leaf, ChooseSpaceBackend::fem, 1, double, 1, 1>>(
-          m, grid_id, "leaf", "Cg", "__fem"),
-      grid_id,
-      "leaf",
-      "Cg",
-      "__fem");
+      m, grid_id, "leaf", "Cg", "__fem");
+  addbind_for_space<CgSpaceProvider<G, XT::Grid::Layers::level, ChooseSpaceBackend::fem, 1, double, 1, 1>>(
+      m, grid_id, "level", "Cg", "__fem");
   addbind_for_lagrange_space<CgSpaceProvider<G, XT::Grid::Layers::level, ChooseSpaceBackend::fem, 1, double, 1, 1>>(
-      m,
-      addbind_for_space<CgSpaceProvider<G, XT::Grid::Layers::level, ChooseSpaceBackend::fem, 1, double, 1, 1>>(
-          m, grid_id, "level", "Cg", "__fem"),
-      grid_id,
-      "level",
-      "Cg",
-      "__fem");
+      m, grid_id, "level", "Cg", "__fem");
 #endif
 #if HAVE_DUNE_PDELAB
   addbind_for_space<CgSpaceProvider<G, XT::Grid::Layers::leaf, ChooseSpaceBackend::pdelab, 1, double, 1, 1>>(
