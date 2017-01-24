@@ -72,13 +72,13 @@ public:
                                                                dimRange,
                                                                1>
       RHSCheckerboardFunctionType;
-  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluationFlux<RHSCheckerboardFunctionType,
-                                                                 EntityImp,
-                                                                 DomainFieldImp,
-                                                                 dimDomain,
-                                                                 RangeFieldImp,
-                                                                 dimRange,
-                                                                 1>
+  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluation<RHSCheckerboardFunctionType,
+                                                             EntityImp,
+                                                             DomainFieldImp,
+                                                             dimDomain,
+                                                             RangeFieldImp,
+                                                             dimRange,
+                                                             1>
       DefaultRHSType;
   typedef typename DefaultRHSType::RangeType RangeType;
   typedef typename DefaultRHSType::DomainType DomainType;

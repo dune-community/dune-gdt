@@ -324,6 +324,20 @@ struct AdvectionOperatorCreator<OperatorType, NumericalFluxes::local_laxfriedric
   }
 };
 
+template <class OperatorType>
+struct AdvectionOperatorCreator<OperatorType, NumericalFluxes::kinetic>
+{
+  template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType, class RangeFieldType>
+  static OperatorType create(const AnalyticalFluxType& analytical_flux,
+                             const BoundaryValueType& boundary_values,
+                             const ConstantFunctionType& /*dx_function*/,
+                             const RangeFieldType /*dt*/,
+                             const bool /*is_linear*/)
+  {
+    return OperatorType(analytical_flux, boundary_values);
+  }
+};
+
 
 } // namespace internal
 
