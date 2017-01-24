@@ -5,6 +5,7 @@
 // Authors:
 //   Tobias Leibner  (2016)
 
+#include <stdlib.h>
 #include <utility>
 #include <vector>
 
@@ -27,6 +28,7 @@
 #include <dune/fem/misc/mpimanager.hh>
 #endif
 
+#include <dune/gdt/discretefunction/datahandle.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/fluxes/interfaces.hh>
 #include <dune/gdt/local/fluxes/entropybased.hh>
@@ -38,64 +40,12 @@
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/sourcebeam.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/planesource.hh>
 
-template <size_t ii, class DiscreteFunctionType>
-auto function_factor(const DiscreteFunctionType& discrete_function) -> typename Dune::GDT::DiscreteFunction<
-    typename std::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
-    typename DiscreteFunctionType::VectorType>
-{
-  static_assert(ii < DiscreteFunctionType::SpaceType::num_factors, "This factor does not exist.");
-  const auto& space = discrete_function.space();
-  const auto& factor_space = space.template factor<ii>();
-  typename DiscreteFunctionType::VectorType factor_vector(factor_space.mapper().size());
-  const auto it_end = space.grid_view().template end<0>();
-  for (auto it = space.grid_view().template begin<0>(); it != it_end; ++it) {
-    const auto& entity = *it;
-    for (size_t jj = 0; jj < factor_space.mapper().numDofs(entity); ++jj)
-      factor_vector[factor_space.mapper().mapToGlobal(entity, jj)] =
-          discrete_function.vector()[space.mapper().mapToGlobal(ii, entity, jj)];
-  }
-  Dune::GDT::DiscreteFunction<
-      typename std::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
-      typename DiscreteFunctionType::VectorType>
-      factor_discrete_function(factor_space);
-  factor_discrete_function.vector() = factor_vector;
-  return factor_discrete_function;
-}
-
-template <size_t current_factor_index, size_t last_factor_index>
-struct static_for_loop
-{
-  template <class DiscreteFunctionType, class FactorDiscreteFunctionType>
-  static void sum_vector(const DiscreteFunctionType& discrete_function,
-                         FactorDiscreteFunctionType& first_discrete_function)
-  {
-    std::cout << "current factor " << current_factor_index << std::endl;
-    first_discrete_function.vector() +=
-        function_factor<current_factor_index, DiscreteFunctionType>(discrete_function).vector();
-    static_for_loop<current_factor_index + 1, last_factor_index>::sum_vector(discrete_function,
-                                                                             first_discrete_function);
-  }
-};
-
-// specialization of static for loop to end the loop
-template <size_t last_factor_index>
-struct static_for_loop<last_factor_index, last_factor_index>
-{
-  template <class DiscreteFunctionType, class FactorDiscreteFunctionType>
-  static void sum_vector(const DiscreteFunctionType& discrete_function,
-                         FactorDiscreteFunctionType& first_discrete_function)
-  {
-    first_discrete_function.vector() +=
-        function_factor<last_factor_index, DiscreteFunctionType>(discrete_function).vector();
-  }
-};
-
-
 int main(int argc, char** argv)
 {
 
   size_t num_threads = 1;
   size_t num_save_steps = 1000;
+  std::string grid_size("100"), overlap_size("1");
   bool visualize = true;
   for (int i = 1; i < argc; ++i) {
     if (std::string(argv[i]) == "-num_threads") {
@@ -112,12 +62,25 @@ int main(int argc, char** argv)
         std::cerr << "-num_save_steps option requires one argument." << std::endl;
         return 1;
       }
+    } else if (std::string(argv[i]) == "-grid_size") {
+      if (i + 1 < argc) {
+        grid_size = argv[++i];
+      } else {
+        std::cerr << "-grid_size option requires one argument." << std::endl;
+        return 1;
+      }
+    } else if (std::string(argv[i]) == "-overlap_size") {
+      if (i + 1 < argc) {
+        overlap_size = argv[++i];
+      } else {
+        std::cerr << "-overlap_size option requires one argument." << std::endl;
+        return 1;
+      }
     } else if (std::string(argv[i]) == "--no_visualization") {
       visualize = false;
     }
   }
 
-  std::cout << num_threads << std::endl;
   DXTC_CONFIG.set("threading.partition_factor", 1u, true);
   Dune::XT::Common::threadManager().set_max_threads(num_threads);
 
@@ -130,27 +93,39 @@ int main(int argc, char** argv)
 
   const int dimDomain = 1;
   const int momentOrder = 3;
-  const auto numerical_flux = Dune::GDT::NumericalFluxes::laxfriedrichs;
+  const auto numerical_flux = Dune::GDT::NumericalFluxes::godunov;
   const auto time_stepper_method = Dune::GDT::TimeStepperMethods::explicit_euler;
-  const auto rhs_time_stepper_method = Dune::GDT::TimeStepperMethods::implicit_euler;
+  const auto rhs_time_stepper_method = Dune::GDT::TimeStepperMethods::explicit_euler;
   typedef typename Dune::YaspGrid<dimDomain, Dune::EquidistantOffsetCoordinates<double, dimDomain>> GridType;
   typedef typename GridType::LeafGridView GridViewType;
   typedef typename GridType::Codim<0>::Entity EntityType;
-  //  typedef typename Dune::GDT::Hyperbolic::Problems::SourceBeamPnHatFunctions< EntityType, double, dimDomain, double,
-  //  momentOrder > ProblemType;
-  //  typedef typename Dune::GDT::Hyperbolic::Problems::SourceBeamPnLegendre< EntityType, double, dimDomain, double,
-  //  momentOrder > ProblemType;
-  //  typedef typename Dune::GDT::Hyperbolic::Problems::PlaneSourcePnLegendre< EntityType, double, dimDomain, double,
-  //  momentOrder > ProblemType;
-  typedef typename Dune::GDT::Hyperbolic::Problems::
-      PlaneSourcePnHatFunctions<EntityType, double, dimDomain, double, momentOrder>
+  //  typedef typename Dune::GDT::Hyperbolic::Problems::
+  //      SourceBeamPnHatFunctions<EntityType, double, dimDomain, double, momentOrder>
+  //          ProblemType;
+  typedef
+      typename Dune::GDT::Hyperbolic::Problems::SourceBeamPnLegendre<EntityType, double, dimDomain, double, momentOrder>
           ProblemType;
-  //  const auto problem_ptr = ProblemType::create(ProblemType::default_config(true));
-  const auto problem_ptr = ProblemType::create(ProblemType::default_config());
+  //  typedef typename Dune::GDT::Hyperbolic::Problems::
+  //      PlaneSourcePnLegendre<EntityType, double, dimDomain, double, momentOrder>
+  //          ProblemType;
+  //  typedef typename Dune::GDT::Hyperbolic::Problems::
+  //      PlaneSourcePnHatFunctions<EntityType, double, dimDomain, double, momentOrder>
+  //          ProblemType;
+  //  typedef typename Dune::GDT::Hyperbolic::Problems::
+  //      PlaneSourcePnFirstOrderDG<EntityType, double, dimDomain, double, momentOrder>
+  //          ProblemType;
+  //  typedef typename Dune::GDT::Hyperbolic::Problems::
+  //      SourceBeamPnFirstOrderDG<EntityType, double, dimDomain, double, momentOrder>
+  //          ProblemType;
+  auto grid_config = ProblemType::default_grid_config();
+  grid_config["num_elements"] = grid_size;
+  grid_config["overlap_size"] = overlap_size;
+  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config));
+  //  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config, true));
   const ProblemType& problem = *problem_ptr;
-  const auto grid_ptr =
-      Dune::XT::Grid::CubeGridProviderFactory<GridType>::create(ProblemType::default_grid_config()).grid_ptr();
+  const auto grid_ptr = Dune::XT::Grid::CubeGridProviderFactory<GridType>::create(grid_config).grid_ptr();
   const auto& grid = *grid_ptr;
+  assert(grid.comm().size() == 1 || grid.overlapSize(0) > 0);
   const GridViewType& grid_view = grid_ptr->leafGridView();
   const auto dimRange = ProblemType::dimRange;
   typedef typename Dune::GDT::FvProductSpace<GridViewType, double, dimRange, 1> SpaceType;
@@ -177,24 +152,36 @@ int main(int argc, char** argv)
   const size_t num_quad_points = s[0] * 31;
   using BasisValuesMatrixType = Dune::FieldMatrix<double, num_quad_points, dimRange>;
   BasisValuesMatrixType basis_values_matrix(0);
-  assert(num_quad_points == quadrature_rule.size());
+  //    assert(num_quad_points == quadrature_rule.size());
   for (size_t ii = 0; ii < num_quad_points; ++ii)
     for (size_t nn = 0; nn < dimRange; ++nn)
-      //      basis_values_matrix[ii][nn] =
-      //      Dune::GDT::Hyperbolic::Problems::evaluate_legendre_polynomial(quadrature_rule[ii].position(), nn);
-      basis_values_matrix[ii][nn] = Dune::GDT::Hyperbolic::Problems::evaluate_hat_function(
-          quadrature_rule[ii].position()[0], nn, ProblemType::create_equidistant_points());
+      basis_values_matrix[ii][nn] =
+          Dune::GDT::Hyperbolic::Problems::evaluate_legendre_polynomial(quadrature_rule[ii].position(), nn);
+  //      basis_values_matrix[ii][nn] = Dune::GDT::Hyperbolic::Problems::evaluate_hat_function(
+  //          quadrature_rule[ii].position()[0], nn, ProblemType::create_equidistant_points());
 
   typedef typename Dune::XT::LA::Container<double, Dune::XT::LA::default_backend>::VectorType VectorType;
   typedef typename Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
 
   static const bool linear = ProblemType::linear;
-  //  typedef typename ProblemType::FluxType AnalyticalFluxType;
-  //  typedef typename Dune::GDT::EntropyBasedFlux<GridType, typename SpaceType::EntityType,
-  //      double, dimDomain, double, dimRange, 1, num_quad_points> AnalyticalFluxType;
-  typedef typename Dune::GDT::
-      EntropyBasedFluxHatFunctions<GridType, typename SpaceType::EntityType, double, dimDomain, double, dimRange, 1>
-          AnalyticalFluxType;
+  typedef typename ProblemType::FluxType AnalyticalFluxType;
+  //  typedef typename Dune::GDT::EntropyBasedLocalFlux<GridViewType,
+  //                                                    typename SpaceType::EntityType,
+  //                                                    double,
+  //                                                    dimDomain,
+  //                                                    double,
+  //                                                    dimRange,
+  //                                                    1,
+  //                                                    num_quad_points>
+  //      AnalyticalFluxType;
+  //  typedef typename Dune::GDT::EntropyBasedLocalFluxHatFunctions<GridViewType,
+  //                                                                typename SpaceType::EntityType,
+  //                                                                double,
+  //                                                                dimDomain,
+  //                                                                double,
+  //                                                                dimRange,
+  //                                                                1>
+  //      AnalyticalFluxType;
   typedef typename ProblemType::RHSType RHSType;
   typedef typename ProblemType::InitialValueType InitialValueType;
   typedef typename ProblemType::BoundaryValueType BoundaryValueType;
@@ -204,16 +191,19 @@ int main(int argc, char** argv)
       ConstantFunction<typename SpaceType::EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
           ConstantFunctionType;
   typedef typename Dune::GDT::AdvectionRHSOperator<RHSType> RHSOperatorType;
-  typedef
-      typename std::conditional<numerical_flux == NumericalFluxes::laxfriedrichs
-                                    || numerical_flux == NumericalFluxes::laxfriedrichs_with_reconstruction
-                                    || numerical_flux == NumericalFluxes::local_laxfriedrichs
-                                    || numerical_flux == NumericalFluxes::local_laxfriedrichs_with_reconstruction,
-                                typename Dune::GDT::AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
-                                                                                   BoundaryValueType,
-                                                                                   ConstantFunctionType>,
-                                typename Dune::GDT::AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType>>::
-          type AdvectionOperatorType;
+  typedef typename std::
+      conditional<numerical_flux == NumericalFluxes::kinetic,
+                  typename Dune::GDT::AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType>,
+                  std::conditional<numerical_flux == NumericalFluxes::laxfriedrichs
+                                       || numerical_flux == NumericalFluxes::laxfriedrichs_with_reconstruction
+                                       || numerical_flux == NumericalFluxes::local_laxfriedrichs
+                                       || numerical_flux == NumericalFluxes::local_laxfriedrichs_with_reconstruction,
+                                   typename Dune::GDT::AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
+                                                                                      BoundaryValueType,
+                                                                                      ConstantFunctionType>,
+                                   typename Dune::GDT::AdvectionGodunovOperator<AnalyticalFluxType,
+                                                                                BoundaryValueType>>::type>::type
+          AdvectionOperatorType;
   typedef typename Dune::GDT::TimeStepperFactory<AdvectionOperatorType,
                                                  DiscreteFunctionType,
                                                  RangeFieldType,
@@ -226,9 +216,11 @@ int main(int argc, char** argv)
       TimeStepperType;
 
   // get analytical flux, initial and boundary values
-  //  const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem.flux();
-  const auto analytical_flux =
-      std::make_shared<const AnalyticalFluxType>(grid, ProblemType::create_equidistant_points());
+  const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem.flux();
+  //    const auto analytical_flux =
+  //      std::make_shared<const AnalyticalFluxType>(grid_view, ProblemType::create_equidistant_points());
+  //  const auto analytical_flux =
+  //      std::make_shared<const AnalyticalFluxType>(grid_view, quadrature_rule, basis_values_matrix);
   const std::shared_ptr<const InitialValueType> initial_values = problem.initial_values();
   const std::shared_ptr<const BoundaryValueType> boundary_values = problem.boundary_values();
   const std::shared_ptr<const RHSType> rhs = problem.rhs();
@@ -264,22 +256,13 @@ int main(int argc, char** argv)
     // use fractional step method
     RHSOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
     TimeStepperType timestepper(timestepper_op, timestepper_rhs);
-    timestepper.solve(t_end, dt, num_save_steps, true, true, false, "");
-    //    timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, "plane_source_legendre_p" +
-    //    Dune::XT::Common::to_string(momentOrder) + "_implicit");
+    std::string filename = ProblemType::short_id();
+    filename +=
+        std::string("_") + (std::is_same<typename ProblemType::FluxType, AnalyticalFluxType>::value ? "p" : "m");
+    filename += Dune::XT::Common::to_string(momentOrder);
+    filename += rhs_time_stepper_method == Dune::GDT::TimeStepperMethods::implicit_euler ? "_implicit" : "_explicit";
 
-    size_t counter = 0;
-    for (const auto& pair : timestepper.solution()) {
-      auto sum_function = function_factor<0, decltype(pair.second)>(pair.second);
-      const auto discrete_function = pair.second;
-      static_for_loop<1, dimRange - 1>::sum_vector(discrete_function, sum_function);
-      //      sum_function.visualize("hatfunctions_pn_implicit", Dune::XT::Common::to_string(counter));
-      sum_function.visualize("plane_source_hatfunctions_p" + Dune::XT::Common::to_string(momentOrder)
-                                 + "_implicit_entropy",
-                             Dune::XT::Common::to_string(counter));
-      ++counter;
-    }
-
+    timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 1);
   } else {
     timestepper_op.solve(t_end, dt, num_save_steps, false, true, visualize, "entropy_implicit_trapezoidal");
   }

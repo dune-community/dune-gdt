@@ -13,6 +13,10 @@
 #include <memory>
 #include <unordered_map>
 
+#include <dune/grid/utility/globalindexset.hh>
+
+#include <dune/xt/common/memory.hh>
+
 #include <dune/gdt/local/fluxes/interfaces.hh>
 
 namespace Dune {
@@ -34,11 +38,11 @@ FieldMatrix<R, r, r> unit_matrix()
  * equations"
  * domainDim, rangeDim, rangeDimCols are the respective dimensions of pde solution u, not the dimensions of \mathbf{f}.
  */
-template <class GridType, class E, class D, size_t d, class R, size_t rangeDim, size_t rC, size_t num_quad_points>
-class EntropyBasedFlux : public AnalyticalFluxInterface<E, D, d, R, rangeDim, rC>
+template <class GridViewType, class E, class D, size_t d, class R, size_t rangeDim, size_t rC, size_t num_quad_points>
+class EntropyBasedLocalFlux : public AnalyticalFluxInterface<E, D, d, R, rangeDim, rC>
 {
   typedef AnalyticalFluxInterface<E, D, d, R, rangeDim, rC> BaseType;
-  typedef EntropyBasedFlux<GridType, E, D, d, R, rangeDim, rC, num_quad_points> ThisType;
+  typedef EntropyBasedLocalFlux<GridViewType, E, D, d, R, rangeDim, rC, num_quad_points> ThisType;
 
 public:
   using typename BaseType::DomainType;
@@ -53,8 +57,8 @@ public:
   using typename BaseType::FluxRangeType;
   using typename BaseType::FluxJacobianRangeType;
 
-  explicit EntropyBasedFlux(
-      const GridType& grid,
+  explicit EntropyBasedLocalFlux(
+      const GridViewType& grid_view,
       const Dune::QuadratureRule<DomainFieldType, dimDomain>& quadrature,
       const BasisValuesMatrixType& M,
       const RangeFieldType tau = 1e-9,
@@ -67,7 +71,7 @@ public:
       const RangeFieldType epsilon = std::pow(2, -52),
       const MatrixType& T_minus_one = unit_matrix<RangeFieldType, dimRange>(),
       const std::string name = static_id())
-    : id_set_(grid.localIdSet())
+    : global_index_set_(grid_view, 0)
     , quadrature_(quadrature)
     , M_(M)
     , tau_(tau)
@@ -80,116 +84,131 @@ public:
     , epsilon_(epsilon)
     , T_minus_one_(T_minus_one)
     , name_(name)
+    , alpha_cache_(2 * global_index_set_.size(0))
+    , beta_cache_(2 * global_index_set_.size(0))
+    , T_cache_(2 * global_index_set_.size(0))
   {
     assert(quadrature.size() == num_quad_points);
   }
 
   virtual FluxJacobianRangeType
-  jacobian(const RangeType& /*u*/, const E& /*entity*/, const DomainType& /*x_local*/, const double /*t*/ = 1) const
+  jacobian(const RangeType& /*u*/, const E& /*entity*/, const DomainType& /*x_local*/, const double /*t*/ = 0) const
   {
     DUNE_THROW(NotImplemented, "");
   }
 
-  virtual FluxRangeType
-  evaluate(const RangeType& u, const E& entity, const DomainType& /*x_local*/, const double t = 0) const
+  RangeType get_alpha(const RangeType& u, const E& entity, const DomainType& x_local, const double t) const
   {
     // get initial multiplier and basis matrix from last time step
-    RangeType alpha_iso(0);
-    alpha_iso[0] = std::log(u[0] / 2.);
-    const auto id = id_set_.id(entity);
-    const auto beta_it = beta_cache_.find(id);
-    const auto T_it = T_cache_.find(id);
-    BasisValuesMatrixType P_k;
+    // in the numerical flux, we are setting x_local to DomainType(200) if we are actually not on the entity,
+    // but on the boundary (YaspGrid does not support ghost entities, thus we use this hack)
+    const auto index = global_index_set_.index(entity) + global_index_set_.size(0) * (x_local[0] > 100);
+    RangeType alpha;
 
-    // define further variables
-    bool chol_flag = false;
-    RangeType g_k, beta_out, alpha;
-    MatrixType T_k;
+    // if value has already been calculated for this entity at this time, skip computation
+    if ((*alpha_cache_)[index] && XT::Common::FloatCmp::eq((*alpha_cache_)[index]->first, t)) {
+      alpha = (*alpha_cache_)[index]->second;
+    } else {
+      // multiplier corresponding to isotropic distribution
+      RangeType alpha_iso(0);
+      alpha_iso[0] = std::log(u[0] / 2.);
 
-    const auto r_max = r_sequence_.back();
-    for (const auto& r : r_sequence_) {
-      RangeType beta_in = beta_it != beta_cache_.end() && t > -99 ? beta_it->second : alpha_iso;
-      T_k = T_it != T_cache_.end() && t > -99 ? T_it->second : T_minus_one_;
-      // normalize u
-      RangeType r_times_u_iso(0);
-      r_times_u_iso[0] = r * u[0];
-      RangeType v = u;
-      v *= 1 - r;
-      v += r_times_u_iso;
-      //      std::cout << "v ist : " << XT::Common::to_string(v) << std::endl;
-      // calculate T_k u
-      RangeType v_k;
-      T_k.solve(v_k, v);
-      // calculate values of basis p = T_k m
-      for (size_t ii = 0; ii < num_quad_points; ++ii)
-        T_k.solve(P_k[ii], M_[ii]);
-      // calculate f_0
-      RangeFieldType f_k(0);
-      for (size_t ll = 0; ll < quadrature_.size(); ++ll)
-        f_k += quadrature_[ll].weight() * std::exp(beta_in * P_k[ll]);
-      f_k -= beta_in * v_k;
+      // define further variables
+      bool chol_flag = false;
+      RangeType g_k, beta_out;
+      MatrixType T_k;
+      BasisValuesMatrixType P_k;
 
-      for (size_t kk = 0; kk < k_max_; ++kk) {
-        //        std::cout << "k: " << kk << " " << ", r: " << r << " " <<  std::endl;
-        change_basis(chol_flag, beta_in, v_k, P_k, T_k, g_k, beta_out);
-        MatrixType T_k_transp(0);
-        for (size_t ii = 0; ii < dimRange; ++ii)
-          for (size_t jj = 0; jj < dimRange; ++jj)
-            T_k_transp[ii][jj] = T_k[jj][ii];
-        if (chol_flag == false && r == r_max)
-          DUNE_THROW(Dune::NotImplemented, "Failure to converge!");
-        // exit inner for loop to increase r if to many iterations are used or cholesky decomposition fails
-        if ((kk > k_0_ || chol_flag == false) && r < r_max)
-          break;
-        // calculate current error
-        RangeType error(0);
-        for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
-          auto m = M_[ll];
-          RangeType Tinv_m(0);
-          T_k.solve(Tinv_m, m);
-          m *= std::exp(beta_out * Tinv_m) * quadrature_[ll].weight();
-          error += m;
-        }
-        error -= v;
-        // calculate descent direction d_k;
-        RangeType d_k = g_k;
-        d_k *= -1;
-        RangeType T_k_inv_transp_d_k;
-        T_k_transp.solve(T_k_inv_transp_d_k, d_k);
-        if (error.two_norm() < tau_ && std::exp(5 * T_k_inv_transp_d_k.one_norm()) < 1 + epsilon_gamma_) {
-          T_k_transp.solve(alpha, beta_out);
-          goto outside_all_loops;
-        } else {
-          RangeFieldType zeta_k = 1;
-          beta_in = beta_out;
-          // backtracking line search
-          while (zeta_k > epsilon_ * beta_out.two_norm() / d_k.two_norm()) {
-            RangeFieldType f(0);
-            auto beta_new = d_k;
-            beta_new *= zeta_k;
-            beta_new += beta_out;
-            for (size_t ll = 0; ll < quadrature_.size(); ++ll)
-              f += quadrature_[ll].weight() * std::exp(beta_new * P_k[ll]);
-            f -= beta_new * v_k;
-            if (XT::Common::FloatCmp::le(f, f_k + xi_ * zeta_k * (g_k * d_k))) {
-              beta_in = beta_new;
-              f_k = f;
-              break;
-            }
-            zeta_k = chi_ * zeta_k;
-          } // backtracking linesearch while
-        } // else (stopping conditions)
-      } // k loop (Newton iterations)
-    } // r loop (Regularization parameter)
+      const auto r_max = r_sequence_.back();
+      for (const auto& r : r_sequence_) {
+        RangeType beta_in = (*beta_cache_)[index] ? *((*beta_cache_)[index]) : alpha_iso;
+        T_k = (*T_cache_)[index] ? *((*T_cache_)[index]) : T_minus_one_;
+        // normalize u
+        RangeType r_times_u_iso(0);
+        r_times_u_iso[0] = r * u[0];
+        RangeType v = u;
+        v *= 1 - r;
+        v += r_times_u_iso;
+        // calculate T_k u
+        RangeType v_k;
+        T_k.solve(v_k, v);
+        // calculate values of basis p = T_k m
+        for (size_t ii = 0; ii < num_quad_points; ++ii)
+          T_k.solve(P_k[ii], M_[ii]);
+        // calculate f_0
+        RangeFieldType f_k(0);
+        for (size_t ll = 0; ll < quadrature_.size(); ++ll)
+          f_k += quadrature_[ll].weight() * std::exp(beta_in * P_k[ll]);
+        f_k -= beta_in * v_k;
 
-    DUNE_THROW(NotImplemented, "Failed to converge");
+        for (size_t kk = 0; kk < k_max_; ++kk) {
+          change_basis(chol_flag, beta_in, v_k, P_k, T_k, g_k, beta_out);
+          MatrixType T_k_transp(0);
+          for (size_t ii = 0; ii < dimRange; ++ii)
+            for (size_t jj = 0; jj < dimRange; ++jj)
+              T_k_transp[ii][jj] = T_k[jj][ii];
+          if (chol_flag == false && r == r_max)
+            DUNE_THROW(Dune::NotImplemented, "Failure to converge!");
+          // exit inner for loop to increase r if to many iterations are used or cholesky decomposition fails
+          if ((kk > k_0_ || chol_flag == false) && r < r_max)
+            break;
+          // calculate current error
+          RangeType error(0);
+          for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
+            auto m = M_[ll];
+            RangeType Tinv_m(0);
+            T_k.solve(Tinv_m, m);
+            m *= std::exp(beta_out * Tinv_m) * quadrature_[ll].weight();
+            error += m;
+          }
+          error -= v;
+          // calculate descent direction d_k;
+          RangeType d_k = g_k;
+          d_k *= -1;
+          RangeType T_k_inv_transp_d_k;
+          T_k_transp.solve(T_k_inv_transp_d_k, d_k);
+          if (error.two_norm() < tau_ && std::exp(5 * T_k_inv_transp_d_k.one_norm()) < 1 + epsilon_gamma_) {
+            T_k_transp.solve(alpha, beta_out);
+            goto outside_all_loops;
+          } else {
+            RangeFieldType zeta_k = 1;
+            beta_in = beta_out;
+            // backtracking line search
+            while (zeta_k > epsilon_ * beta_out.two_norm() / d_k.two_norm()) {
+              RangeFieldType f(0);
+              auto beta_new = d_k;
+              beta_new *= zeta_k;
+              beta_new += beta_out;
+              for (size_t ll = 0; ll < quadrature_.size(); ++ll)
+                f += quadrature_[ll].weight() * std::exp(beta_new * P_k[ll]);
+              f -= beta_new * v_k;
+              if (XT::Common::FloatCmp::le(f, f_k + xi_ * zeta_k * (g_k * d_k))) {
+                beta_in = beta_new;
+                f_k = f;
+                break;
+              }
+              zeta_k = chi_ * zeta_k;
+            } // backtracking linesearch while
+          } // else (stopping conditions)
+        } // k loop (Newton iterations)
+      } // r loop (Regularization parameter)
 
-  outside_all_loops:
-    // store values as initial conditions for next time step on this entity
-    beta_cache_[id] = beta_out;
-    T_cache_[id] = T_k;
+      DUNE_THROW(NotImplemented, "Failed to converge");
 
+    outside_all_loops:
+      // store values as initial conditions for next time step on this entity
+      (*alpha_cache_)[index] = std::make_shared<std::pair<double, RangeType>>(std::make_pair(t, alpha));
+      (*beta_cache_)[index] = std::make_shared<RangeType>(beta_out);
+      (*T_cache_)[index] = std::make_shared<MatrixType>(T_k);
+    } // else ( value has not been calculated before )
+
+    return alpha;
+  }
+
+  virtual FluxRangeType evaluate(const RangeType& u, const E& entity, const DomainType& x_local, const double t) const
+  {
     // calculate < \mu m G_\alpha(u) >
+    const auto alpha = get_alpha(u, entity, x_local, t);
     RangeType ret(0);
     for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
       const auto& mu = quadrature_[ll].position();
@@ -200,6 +219,34 @@ public:
     }
     return ret;
   } // FluxRangeType evaluate(...)
+
+  virtual FluxRangeType calculate_flux_integral(const RangeType& u_i,
+                                                const E& entity,
+                                                const DomainType& x_local_entity,
+                                                const RangeType u_j,
+                                                const E& neighbor,
+                                                const DomainType& x_local_neighbor,
+                                                const DomainType& n_ij,
+                                                const double t) const
+  {
+    // calculate < \mu m G_\alpha(u) >
+    const auto alpha_i = get_alpha(u_i, entity, x_local_entity, t);
+    const auto alpha_j = get_alpha(u_j, neighbor, x_local_neighbor, t);
+    RangeType ret(0);
+    for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
+      for (size_t dd = 0; dd < dimDomain; ++dd) {
+        const auto& mu = quadrature_[ll].position();
+        const auto& weight = quadrature_[ll].weight();
+        auto m = M_[ll];
+        if (mu * n_ij > 0)
+          m *= mu[dd] * std::exp(alpha_i * m) * weight * n_ij[dd];
+        else
+          m *= mu[dd] * std::exp(alpha_j * m) * weight * n_ij[dd];
+        ret += m;
+      } // dd
+    }
+    return ret;
+  } // FluxRangeType calculate_flux_integral(...)
 
   static std::string static_id()
   {
@@ -255,7 +302,6 @@ private:
       for (int jj = 0; jj < ii; ++jj)
         xDiag -= L[ii][jj] * L[ii][jj];
 
-      //      std::cout << XT::Common::to_string(H) << std::endl;
       if (XT::Common::FloatCmp::le(xDiag, RangeFieldType(0)))
         return false;
 
@@ -272,7 +318,7 @@ private:
     return true;
   }
 
-  const typename GridType::LocalIdSet& id_set_;
+  const Dune::GlobalIndexSet<GridViewType> global_index_set_;
   const Dune::QuadratureRule<DomainFieldType, dimDomain>& quadrature_;
   const Dune::FieldMatrix<RangeFieldType, num_quad_points, dimRange> M_;
   const RangeFieldType tau_;
@@ -285,8 +331,9 @@ private:
   const RangeFieldType epsilon_;
   const MatrixType T_minus_one_;
   const std::string name_;
-  mutable std::unordered_map<typename GridType::LocalIdSet::IdType, RangeType> beta_cache_;
-  mutable std::unordered_map<typename GridType::LocalIdSet::IdType, MatrixType> T_cache_;
+  mutable XT::Common::PerThreadValue<std::vector<std::shared_ptr<std::pair<double, RangeType>>>> alpha_cache_;
+  mutable XT::Common::PerThreadValue<std::vector<std::shared_ptr<RangeType>>> beta_cache_;
+  mutable XT::Common::PerThreadValue<std::vector<std::shared_ptr<MatrixType>>> T_cache_;
 };
 
 
@@ -296,11 +343,11 @@ private:
  * equations"
  * domainDim, rangeDim, rangeDimCols are the respective dimensions of pde solution u, not the dimensions of \mathbf{f}.
  */
-template <class GridType, class E, class D, size_t d, class R, size_t rangeDim, size_t rC>
-class EntropyBasedFluxHatFunctions : public AnalyticalFluxInterface<E, D, d, R, rangeDim, rC>
+template <class GridViewType, class E, class D, size_t d, class R, size_t rangeDim, size_t rC>
+class EntropyBasedLocalFluxHatFunctions : public AnalyticalFluxInterface<E, D, d, R, rangeDim, rC>
 {
   typedef AnalyticalFluxInterface<E, D, d, R, rangeDim, rC> BaseType;
-  typedef EntropyBasedFluxHatFunctions<GridType, E, D, d, R, rangeDim, rC> ThisType;
+  typedef EntropyBasedLocalFluxHatFunctions<GridViewType, E, D, d, R, rangeDim, rC> ThisType;
 
 public:
   using typename BaseType::DomainType;
@@ -314,8 +361,8 @@ public:
   using typename BaseType::FluxRangeType;
   using typename BaseType::FluxJacobianRangeType;
 
-  explicit EntropyBasedFluxHatFunctions(
-      const GridType& grid,
+  explicit EntropyBasedLocalFluxHatFunctions(
+      const GridViewType& grid_view,
       const RangeType v_points,
       const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
@@ -327,7 +374,7 @@ public:
       const RangeFieldType epsilon = std::pow(2, -52),
       const RangeFieldType taylor_tol = 1e-10,
       const std::string name = static_id())
-    : id_set_(grid.localIdSet())
+    : global_index_set_(grid_view, 0)
     , v_points_(v_points)
     , tau_(tau)
     , epsilon_gamma_(epsilon_gamma)
@@ -339,8 +386,8 @@ public:
     , epsilon_(epsilon)
     , taylor_tol_(taylor_tol)
     , name_(name)
+    , alpha_cache_(2 * global_index_set_.size(0))
   {
-    assert(quadrature.size() == num_quad_points);
   }
 
   virtual FluxJacobianRangeType
@@ -349,197 +396,282 @@ public:
     DUNE_THROW(NotImplemented, "");
   }
 
-  // integrals can be evaluated exactly for hatfunctions
-  FluxRangeType evaluate(const RangeType& u, const E& entity, const DomainType& /*x_local*/, const double t = 0) const
+  RangeType get_alpha(const RangeType& u, const E& entity, const DomainType& x_local, const double t) const
   {
-    // get initial multiplier and basis matrix from last time step
-    RangeType alpha_iso(1);
-    RangeFieldType psi_iso(0);
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      psi_iso += u[ii];
-    psi_iso /= 2.;
-    alpha_iso *= std::log(psi_iso);
-    const auto id = id_set_.id(entity);
-    const auto alpha_it = alpha_cache_.find(id);
+    // in the numerical flux, we are setting x_local to DomainType(200) if we are actually not on the entity,
+    // but on the boundary (YaspGrid does not support ghost entities, thus we use this hack)
+    const auto index = global_index_set_.index(entity) + global_index_set_.size(0) * (x_local[0] > 100);
+    RangeType alpha;
 
-    // define further variables
-    RangeType g_k, alpha;
-    MatrixType H_k;
+    // if value has already been calculated for this entity at this time, skip computation
+    if ((*alpha_cache_)[index] && (*alpha_cache_)[index]->first == t) {
+      alpha = (*alpha_cache_)[index]->second;
+    } else {
+      // get initial multiplier and basis matrix from last time step
+      RangeType alpha_iso(1);
+      RangeFieldType psi_iso(0);
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        psi_iso += u[ii];
+      psi_iso /= 2.;
+      alpha_iso *= std::log(psi_iso);
 
-    // calculate moment vector for isotropic distribution
-    RangeType u_iso(0);
-    u_iso[0] = v_points_[1] - v_points_[0];
-    for (size_t ii = 1; ii < dimRange - 1; ++ii)
-      u_iso[ii] = v_points_[ii + 1] - v_points_[ii - 1];
-    u_iso[dimRange - 1] = v_points_[dimRange - 1] - v_points_[dimRange - 2];
-    u_iso *= psi_iso / 2.;
+      // define further variables
+      RangeType g_k;
+      MatrixType H_k;
 
-    const auto r_max = r_sequence_.back();
-    for (const auto& r : r_sequence_) {
-      // get initial alpha
-      RangeType alpha_k = alpha_it != alpha_cache_.end() && t > -99 ? alpha_it->second : alpha_iso;
-      // normalize u
-      RangeType r_times_u_iso(u_iso);
-      r_times_u_iso *= r;
-      RangeType v = u;
-      v *= 1 - r;
-      v += r_times_u_iso;
+      // calculate moment vector for isotropic distribution
+      RangeType u_iso(0);
+      u_iso[0] = v_points_[1] - v_points_[0];
+      for (size_t ii = 1; ii < dimRange - 1; ++ii)
+        u_iso[ii] = v_points_[ii + 1] - v_points_[ii - 1];
+      u_iso[dimRange - 1] = v_points_[dimRange - 1] - v_points_[dimRange - 2];
+      u_iso *= psi_iso / 2.;
 
-      // calculate f_0
-      RangeFieldType f_k(0);
-      for (size_t ii = 0; ii < dimRange - 1; ++ii) {
-        if (XT::Common::FloatCmp::ne(alpha_k[ii + 1], alpha_k[ii], taylor_tol_))
-          f_k += (v_points_[ii + 1] - v_points_[ii]) / (alpha_k[ii + 1] - alpha_k[ii])
-                 * (std::exp(alpha_k[ii + 1]) - std::exp(alpha_k[ii]));
-        else
-          f_k += (v_points_[ii + 1] - v_points_[ii]) * std::exp(alpha_k[ii]);
-      }
-      f_k -= alpha_k * v;
+      const auto r_max = r_sequence_.back();
+      for (const auto& r : r_sequence_) {
+        // get initial alpha
+        RangeType alpha_k = (*alpha_cache_)[index] ? (*alpha_cache_)[index]->second : alpha_iso;
+        // normalize u
+        RangeType r_times_u_iso(u_iso);
+        r_times_u_iso *= r;
+        RangeType v = u;
+        v *= 1 - r;
+        v += r_times_u_iso;
 
-      for (size_t kk = 0; kk < k_max_; ++kk) {
-        // calculate gradient g
-        g_k *= 0;
-        for (size_t nn = 0; nn < dimRange; ++nn) {
-          if (nn > 0) {
-            if (XT::Common::FloatCmp::ne(alpha_k[nn], alpha_k[nn - 1], taylor_tol_)) {
-              g_k[nn] +=
-                  -(v_points_[nn] - v_points_[nn - 1]) / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2)
-                      * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1]))
-                  + (v_points_[nn] - v_points_[nn - 1]) / (alpha_k[nn] - alpha_k[nn - 1]) * std::exp(alpha_k[nn]);
-            } else {
-              g_k[nn] += (v_points_[nn] - v_points_[nn - 1]) / 2. * std::exp(alpha_k[nn]);
-            }
-          } // if (nn > 0)
-          if (nn < dimRange - 1) {
-            if (XT::Common::FloatCmp::ne(alpha_k[nn + 1], alpha_k[nn], taylor_tol_)) {
-              g_k[nn] +=
-                  (v_points_[nn + 1] - v_points_[nn]) / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2)
-                      * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn]))
-                  - (v_points_[nn + 1] - v_points_[nn]) / (alpha_k[nn + 1] - alpha_k[nn]) * std::exp(alpha_k[nn]);
-            } else {
-              g_k[nn] += (v_points_[nn + 1] - v_points_[nn]) / 2. * std::exp(alpha_k[nn]);
-            }
-          } // if (nn < dimRange-1)
-        } // nn
-        g_k -= v;
+        // calculate f_0
+        RangeFieldType f_k(0);
+        for (size_t ii = 0; ii < dimRange - 1; ++ii) {
+          if (XT::Common::FloatCmp::ne(alpha_k[ii + 1], alpha_k[ii], taylor_tol_))
+            f_k += (v_points_[ii + 1] - v_points_[ii]) / (alpha_k[ii + 1] - alpha_k[ii])
+                   * (std::exp(alpha_k[ii + 1]) - std::exp(alpha_k[ii]));
+          else
+            f_k += (v_points_[ii + 1] - v_points_[ii]) * std::exp(alpha_k[ii]);
+        }
+        f_k -= alpha_k * v;
 
-        // calculate Hessian H
-        H_k *= 0;
-        for (size_t nn = 0; nn < dimRange; ++nn) {
-          if (nn > 0) {
-            if (XT::Common::FloatCmp::ne(alpha_k[nn], alpha_k[nn - 1], taylor_tol_)) {
-              H_k[nn][nn - 1] =
-                  (v_points_[nn] - v_points_[nn - 1])
-                  * ((std::exp(alpha_k[nn]) + std::exp(alpha_k[nn - 1])) / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2)
-                     - 2. * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1]))
-                           / std::pow(alpha_k[nn] - alpha_k[nn - 1], 3));
-              H_k[nn][nn] +=
-                  (v_points_[nn] - v_points_[nn - 1])
-                  * ((-2. / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2) + 1. / (alpha_k[nn] - alpha_k[nn - 1]))
-                         * std::exp(alpha_k[nn])
-                     + 2. / std::pow(alpha_k[nn] - alpha_k[nn - 1], 3)
-                           * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1])));
+        for (size_t kk = 0; kk < k_max_; ++kk) {
+          // exit inner for loop to increase r if to many iterations are used
+          if (kk > k_0_ && r < r_max)
+            break;
 
-            } else {
-              H_k[nn][nn - 1] = (v_points_[nn] - v_points_[nn - 1]) / 6. * std::exp(alpha_k[nn]);
-              H_k[nn][nn] += (v_points_[nn] - v_points_[nn - 1]) / 3. * std::exp(alpha_k[nn]);
-            }
-          } // if (nn > 0)
-          if (nn < dimRange - 1) {
-            if (XT::Common::FloatCmp::ne(alpha_k[nn + 1], alpha_k[nn], taylor_tol_)) {
-              H_k[nn][nn + 1] =
-                  (v_points_[nn + 1] - v_points_[nn])
-                  * ((std::exp(alpha_k[nn + 1]) + std::exp(alpha_k[nn])) / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2)
-                     - 2. * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn]))
-                           / std::pow(alpha_k[nn + 1] - alpha_k[nn], 3));
-              H_k[nn][nn] +=
-                  (v_points_[nn + 1] - v_points_[nn])
-                  * ((-2. / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2) - 1. / (alpha_k[nn + 1] - alpha_k[nn]))
-                         * std::exp(alpha_k[nn])
-                     + 2. / std::pow(alpha_k[nn + 1] - alpha_k[nn], 3)
-                           * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn])));
-            } else {
-              H_k[nn][nn + 1] = (v_points_[nn + 1] - v_points_[nn]) / 6. * std::exp(alpha_k[nn]);
-              H_k[nn][nn] += (v_points_[nn + 1] - v_points_[nn]) / 3. * std::exp(alpha_k[nn]);
-            }
-          } // if (nn < dimRange - 1)
-        } // nn
+          // calculate gradient g
+          g_k *= 0;
+          for (size_t nn = 0; nn < dimRange; ++nn) {
+            if (nn > 0) {
+              if (XT::Common::FloatCmp::ne(alpha_k[nn], alpha_k[nn - 1], taylor_tol_)) {
+                g_k[nn] +=
+                    -(v_points_[nn] - v_points_[nn - 1]) / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2)
+                        * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1]))
+                    + (v_points_[nn] - v_points_[nn - 1]) / (alpha_k[nn] - alpha_k[nn - 1]) * std::exp(alpha_k[nn]);
+              } else {
+                g_k[nn] += (v_points_[nn] - v_points_[nn - 1]) / 2. * std::exp(alpha_k[nn]);
+              }
+            } // if (nn > 0)
+            if (nn < dimRange - 1) {
+              if (XT::Common::FloatCmp::ne(alpha_k[nn + 1], alpha_k[nn], taylor_tol_)) {
+                g_k[nn] +=
+                    (v_points_[nn + 1] - v_points_[nn]) / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2)
+                        * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn]))
+                    - (v_points_[nn + 1] - v_points_[nn]) / (alpha_k[nn + 1] - alpha_k[nn]) * std::exp(alpha_k[nn]);
+              } else {
+                g_k[nn] += (v_points_[nn + 1] - v_points_[nn]) / 2. * std::exp(alpha_k[nn]);
+              }
+            } // if (nn < dimRange-1)
+          } // nn
+          g_k -= v;
 
-        //        if (chol_flag == false && r == r_max)
-        //          DUNE_THROW(Dune::NotImplemented, "Failure to converge!");
-        // exit inner for loop to increase r if to many iterations are used or cholesky decomposition fails
-        //        if ((kk > k_0_ || chol_flag == false) && r < r_max)
-        //          break;
+          // calculate Hessian H
+          H_k *= 0;
+          for (size_t nn = 0; nn < dimRange; ++nn) {
+            if (nn > 0) {
+              if (XT::Common::FloatCmp::ne(alpha_k[nn], alpha_k[nn - 1], taylor_tol_)) {
+                H_k[nn][nn - 1] =
+                    (v_points_[nn] - v_points_[nn - 1])
+                    * ((std::exp(alpha_k[nn]) + std::exp(alpha_k[nn - 1])) / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2)
+                       - 2. * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1]))
+                             / std::pow(alpha_k[nn] - alpha_k[nn - 1], 3));
+                H_k[nn][nn] +=
+                    (v_points_[nn] - v_points_[nn - 1])
+                    * ((-2. / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2) + 1. / (alpha_k[nn] - alpha_k[nn - 1]))
+                           * std::exp(alpha_k[nn])
+                       + 2. / std::pow(alpha_k[nn] - alpha_k[nn - 1], 3)
+                             * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1])));
 
-        // calculate descent direction d_k;
-        RangeType d_k(0), minus_g_k(g_k);
-        minus_g_k *= -1;
-        H_k.solve(d_k, minus_g_k);
-        if (g_k.two_norm() < tau_ && std::exp(5 * d_k.one_norm()) < 1 + epsilon_gamma_) {
-          alpha = alpha_k;
-          goto outside_all_loops;
-        } else {
-          RangeFieldType zeta_k = 1;
-          // backtracking line search
-          while (zeta_k > epsilon_ * alpha_k.two_norm() / d_k.two_norm()) {
+              } else {
+                H_k[nn][nn - 1] = (v_points_[nn] - v_points_[nn - 1]) / 6. * std::exp(alpha_k[nn]);
+                H_k[nn][nn] += (v_points_[nn] - v_points_[nn - 1]) / 3. * std::exp(alpha_k[nn]);
+              }
+            } // if (nn > 0)
+            if (nn < dimRange - 1) {
+              if (XT::Common::FloatCmp::ne(alpha_k[nn + 1], alpha_k[nn], taylor_tol_)) {
+                H_k[nn][nn + 1] =
+                    (v_points_[nn + 1] - v_points_[nn])
+                    * ((std::exp(alpha_k[nn + 1]) + std::exp(alpha_k[nn])) / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2)
+                       - 2. * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn]))
+                             / std::pow(alpha_k[nn + 1] - alpha_k[nn], 3));
+                H_k[nn][nn] +=
+                    (v_points_[nn + 1] - v_points_[nn])
+                    * ((-2. / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2) - 1. / (alpha_k[nn + 1] - alpha_k[nn]))
+                           * std::exp(alpha_k[nn])
+                       + 2. / std::pow(alpha_k[nn + 1] - alpha_k[nn], 3)
+                             * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn])));
+              } else {
+                H_k[nn][nn + 1] = (v_points_[nn + 1] - v_points_[nn]) / 6. * std::exp(alpha_k[nn]);
+                H_k[nn][nn] += (v_points_[nn + 1] - v_points_[nn]) / 3. * std::exp(alpha_k[nn]);
+              }
+            } // if (nn < dimRange - 1)
+          } // nn
 
-            // calculate alpha_new = alpha_k + zeta_k d_k
-            auto alpha_new = d_k;
-            alpha_new *= zeta_k;
-            alpha_new += alpha_k;
-
-            // calculate f(alpha_new)
-            RangeFieldType f_new(0);
-            for (size_t ii = 0; ii < dimRange - 1; ++ii) {
-              if (XT::Common::FloatCmp::ne(alpha_new[ii + 1], alpha_new[ii], taylor_tol_))
-                f_new += (v_points_[ii + 1] - v_points_[ii]) / (alpha_new[ii + 1] - alpha_new[ii])
-                         * (std::exp(alpha_new[ii + 1]) - std::exp(alpha_new[ii]));
-              else
-                f_new += (v_points_[ii + 1] - v_points_[ii]) * std::exp(alpha_new[ii]);
-            }
-            f_new -= alpha_new * v;
-
-            if (XT::Common::FloatCmp::le(f_new, f_k + xi_ * zeta_k * (g_k * d_k))) {
-              alpha_k = alpha_new;
-              f_k = f_new;
+          // calculate descent direction d_k;
+          RangeType d_k(0), minus_g_k(g_k);
+          minus_g_k *= -1;
+          try {
+            H_k.solve(d_k, minus_g_k);
+          } catch (const Dune::FMatrixError& err) {
+            if (r < r_max) {
               break;
+            } else {
+              DUNE_THROW(Dune::FMatrixError, "Failure to converge!");
             }
-            zeta_k = chi_ * zeta_k;
-          } // backtracking linesearch while
-        } // else (stopping conditions)
-      } // k loop (Newton iterations)
-    } // r loop (Regularization parameter)
+          }
 
-    DUNE_THROW(NotImplemented, "Failed to converge");
+          if (g_k.two_norm() < tau_ && std::exp(5 * d_k.one_norm()) < 1 + epsilon_gamma_) {
+            alpha = alpha_k;
+            goto outside_all_loops;
+          } else {
+            RangeFieldType zeta_k = 1;
+            // backtracking line search
+            while (zeta_k > epsilon_ * alpha_k.two_norm() / d_k.two_norm()) {
 
-  outside_all_loops:
-    // store values as initial conditions for next time step on this entity
-    alpha_cache_[id] = alpha;
+              // calculate alpha_new = alpha_k + zeta_k d_k
+              auto alpha_new = d_k;
+              alpha_new *= zeta_k;
+              alpha_new += alpha_k;
 
-    // TODO: calculate < \mu m G_\alpha(u) > !!!!!
+              // calculate f(alpha_new)
+              RangeFieldType f_new(0);
+              for (size_t ii = 0; ii < dimRange - 1; ++ii) {
+                if (XT::Common::FloatCmp::ne(alpha_new[ii + 1], alpha_new[ii], taylor_tol_))
+                  f_new += (v_points_[ii + 1] - v_points_[ii]) / (alpha_new[ii + 1] - alpha_new[ii])
+                           * (std::exp(alpha_new[ii + 1]) - std::exp(alpha_new[ii]));
+                else
+                  f_new += (v_points_[ii + 1] - v_points_[ii]) * std::exp(alpha_new[ii]);
+              }
+              f_new -= alpha_new * v;
+
+              if (XT::Common::FloatCmp::le(f_new, f_k + xi_ * zeta_k * (g_k * d_k))) {
+                alpha_k = alpha_new;
+                f_k = f_new;
+                break;
+              }
+              zeta_k = chi_ * zeta_k;
+            } // backtracking linesearch while
+          } // else (stopping conditions)
+        } // k loop (Newton iterations)
+      } // r loop (Regularization parameter)
+
+      DUNE_THROW(NotImplemented, "Failed to converge");
+
+    outside_all_loops:
+      // store values as initial conditions for next time step on this entity
+      (*alpha_cache_)[index] = std::make_shared<std::pair<double, RangeType>>(std::make_pair(t, alpha));
+    }
+
+    return alpha;
+  }
+
+  // integrals can be evaluated exactly for hatfunctions
+  FluxRangeType evaluate(const RangeType& u, const E& entity, const DomainType& x_local, const double t) const
+  {
+    const auto alpha = get_alpha(u, entity, x_local, t);
+
+    // calculate < \mu m G_\alpha(u) >
     RangeType ret(0);
     for (size_t nn = 0; nn < dimRange; ++nn) {
       if (nn > 0) {
         if (XT::Common::FloatCmp::ne(alpha[nn], alpha[nn - 1], taylor_tol_)) {
-          ret[nn] += -(v_points_[nn] - v_points_[nn - 1]) / std::pow(alpha[nn] - alpha[nn - 1], 2)
-                         * (std::exp(alpha[nn]) - std::exp(alpha[nn - 1]))
-                     + (v_points_[nn] - v_points_[nn - 1]) / (alpha[nn] - alpha[nn - 1]) * std::exp(alpha[nn]);
+          ret[nn] +=
+              2. * std::pow(v_points_[nn] - v_points_[nn - 1], 2) / std::pow(alpha[nn] - alpha[nn - 1], 3)
+                  * (std::exp(alpha[nn]) - std::exp(alpha[nn - 1]))
+              + (v_points_[nn] - v_points_[nn - 1]) / std::pow(alpha[nn] - alpha[nn - 1], 2)
+                    * (v_points_[nn - 1] * (std::exp(alpha[nn]) + std::exp(alpha[nn - 1]))
+                       - 2 * v_points_[nn] * std::exp(alpha[nn]))
+              + v_points_[nn] * (v_points_[nn] - v_points_[nn - 1]) / (alpha[nn] - alpha[nn - 1]) * std::exp(alpha[nn]);
         } else {
-          ret[nn] += (v_points_[nn] - v_points_[nn - 1]) / 2. * std::exp(alpha[nn]);
+          ret[nn] +=
+              (v_points_[nn] - v_points_[nn - 1]) * (2 * v_points_[nn] + v_points_[nn - 1]) / 6. * std::exp(alpha[nn]);
         }
       } // if (nn > 0)
       if (nn < dimRange - 1) {
         if (XT::Common::FloatCmp::ne(alpha[nn + 1], alpha[nn], taylor_tol_)) {
-          ret[nn] += (v_points_[nn + 1] - v_points_[nn]) / std::pow(alpha[nn + 1] - alpha[nn], 2)
-                         * (std::exp(alpha[nn + 1]) - std::exp(alpha[nn]))
-                     - (v_points_[nn + 1] - v_points_[nn]) / (alpha[nn + 1] - alpha[nn]) * std::exp(alpha[nn]);
+          ret[nn] +=
+              -2. * std::pow(v_points_[nn + 1] - v_points_[nn], 2) / std::pow(alpha[nn + 1] - alpha[nn], 3)
+                  * (std::exp(alpha[nn + 1]) - std::exp(alpha[nn]))
+              + (v_points_[nn + 1] - v_points_[nn]) / std::pow(alpha[nn + 1] - alpha[nn], 2)
+                    * (v_points_[nn + 1] * (std::exp(alpha[nn + 1]) + std::exp(alpha[nn]))
+                       - 2 * v_points_[nn] * std::exp(alpha[nn]))
+              - v_points_[nn] * (v_points_[nn + 1] - v_points_[nn]) / (alpha[nn + 1] - alpha[nn]) * std::exp(alpha[nn]);
         } else {
-          ret[nn] += (v_points_[nn + 1] - v_points_[nn]) / 2. * std::exp(alpha[nn]);
+          ret[nn] +=
+              (v_points_[nn + 1] - v_points_[nn]) * (v_points_[nn + 1] + 2. * v_points_[nn]) / 6. * std::exp(alpha[nn]);
         }
-      } // if (nn < dimRange-1)
+      } // if (nn < dimRange - 1)
     } // nn
+
     return ret;
   } // FluxRangeType evaluate(...)
+
+  virtual FluxRangeType calculate_flux_integral(const RangeType& u_i,
+                                                const E& entity,
+                                                const DomainType& x_local_entity,
+                                                const RangeType u_j,
+                                                const E& neighbor,
+                                                const DomainType& x_local_neighbor,
+                                                const DomainType& n_ij,
+                                                const double t) const
+  {
+    assert(v_points_.size() % 2 && "Not implemented for even number of points!");
+    // calculate < \mu m G_\alpha(u) > * n_ij
+    const auto alpha_i = get_alpha(u_i, entity, x_local_entity, t);
+    const auto alpha_j = get_alpha(u_j, neighbor, x_local_neighbor, t);
+    RangeType ret(0);
+    for (size_t nn = 0; nn < dimRange; ++nn) {
+      if (nn > 0) {
+        const auto& alpha = XT::Common::FloatCmp::ge(n_ij[0] * v_points_[nn - 1], 0.) ? alpha_i : alpha_j;
+        if (XT::Common::FloatCmp::ne(alpha[nn], alpha[nn - 1], taylor_tol_)) {
+          ret[nn] +=
+              2. * std::pow(v_points_[nn] - v_points_[nn - 1], 2) / std::pow(alpha[nn] - alpha[nn - 1], 3)
+                  * (std::exp(alpha[nn]) - std::exp(alpha[nn - 1]))
+              + (v_points_[nn] - v_points_[nn - 1]) / std::pow(alpha[nn] - alpha[nn - 1], 2)
+                    * (v_points_[nn - 1] * (std::exp(alpha[nn]) + std::exp(alpha[nn - 1]))
+                       - 2 * v_points_[nn] * std::exp(alpha[nn]))
+              + v_points_[nn] * (v_points_[nn] - v_points_[nn - 1]) / (alpha[nn] - alpha[nn - 1]) * std::exp(alpha[nn]);
+        } else {
+          ret[nn] +=
+              (v_points_[nn] - v_points_[nn - 1]) * (2 * v_points_[nn] + v_points_[nn - 1]) / 6. * std::exp(alpha[nn]);
+        }
+      } // if (nn > 0)
+      if (nn < dimRange - 1) {
+        const auto& alpha = XT::Common::FloatCmp::ge(n_ij[0] * v_points_[nn], 0.) ? alpha_i : alpha_j;
+        if (XT::Common::FloatCmp::ne(alpha[nn + 1], alpha[nn], taylor_tol_)) {
+          ret[nn] +=
+              -2. * std::pow(v_points_[nn + 1] - v_points_[nn], 2) / std::pow(alpha[nn + 1] - alpha[nn], 3)
+                  * (std::exp(alpha[nn + 1]) - std::exp(alpha[nn]))
+              + (v_points_[nn + 1] - v_points_[nn]) / std::pow(alpha[nn + 1] - alpha[nn], 2)
+                    * (v_points_[nn + 1] * (std::exp(alpha[nn + 1]) + std::exp(alpha[nn]))
+                       - 2 * v_points_[nn] * std::exp(alpha[nn]))
+              - v_points_[nn] * (v_points_[nn + 1] - v_points_[nn]) / (alpha[nn + 1] - alpha[nn]) * std::exp(alpha[nn]);
+        } else {
+          ret[nn] +=
+              (v_points_[nn + 1] - v_points_[nn]) * (v_points_[nn + 1] + 2. * v_points_[nn]) / 6. * std::exp(alpha[nn]);
+        }
+      } // if (nn < dimRange - 1)
+    } // nn
+
+    ret *= n_ij[0];
+
+    return ret;
+  } // FluxRangeType calculate_flux_integral(...)
 
   static std::string static_id()
   {
@@ -547,7 +679,7 @@ public:
   }
 
 private:
-  const typename GridType::LocalIdSet& id_set_;
+  const Dune::GlobalIndexSet<GridViewType> global_index_set_;
   const RangeType v_points_;
   const RangeFieldType tau_;
   const RangeFieldType epsilon_gamma_;
@@ -559,7 +691,7 @@ private:
   const RangeFieldType epsilon_;
   const RangeFieldType taylor_tol_;
   const std::string name_;
-  mutable std::unordered_map<typename GridType::LocalIdSet::IdType, RangeType> alpha_cache_;
+  mutable XT::Common::PerThreadValue<std::vector<std::shared_ptr<std::pair<double, RangeType>>>> alpha_cache_;
 };
 
 
