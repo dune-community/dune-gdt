@@ -65,6 +65,34 @@ struct for_Grid_and_Intersection<I, false>
 };
 
 
+template <class S, class V, class F, bool lagrange = Dune::GDT::is_cg_space<S>::value>
+struct addbind_for_lagrange_space
+{
+  template <class BSA>
+  void operator()(py::module& m, BSA& bound_system_assembler, const std::string& space_id, const std::string& la_id)
+  {
+    // DirichletProjectionLocalizableOperator
+    Dune::GDT::bind_DirichletProjectionLocalizableOperator<typename S::GridViewType,
+                                                           F,
+                                                           Dune::GDT::DiscreteFunction<S, V>>(m, space_id, la_id);
+    // DirichletConstraints
+    addbind_Dirichlet_Constraints_to_SystemAssembler(bound_system_assembler);
+  } // ... operator()(...)
+}; // struct addbind_for_lagrange_space
+
+template <class S, class V, class F>
+struct addbind_for_lagrange_space<S, V, F, false>
+{
+  template <class BSA>
+  void operator()(py::module& /*m*/,
+                  BSA& /*bound_system_assembler*/,
+                  const std::string& /*space_id*/,
+                  const std::string& /*la_id*/)
+  {
+  }
+}; // struct addbind_for_lagrange_space< ..., false>
+
+
 template <class SP>
 void addbind_for_space(py::module& m,
                        const std::string& grid_id,
@@ -107,7 +135,9 @@ void addbind_for_space(py::module& m,
   // SystemAssembler
   auto system_assembler =
       bind_system_assembler<S>(m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix);
-  addbind_Dirichlet_Constraints_to_SystemAssembler(system_assembler);
+  addbind_for_lagrange_space<S, V, ScalarFunction>()(
+      m, system_assembler, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
+  //  addbind_Dirichlet_Constraints_to_SystemAssembler(system_assembler);
   // EllipticMatrixOperator
   bind_elliptic_matrix_operator<ScalarFunction, TensorFunction, S, M>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
@@ -120,38 +150,6 @@ void addbind_for_space(py::module& m,
   bind_l2_face_vector_functional<ScalarFunction, S, V>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
 } // ... addbind_for_space(...)
-
-
-template <class SP>
-void addbind_for_lagrange_space(py::module& m,
-                                const std::string& grid_id,
-                                const std::string& layer_id,
-                                const std::string& space_id,
-                                const std::string& backend)
-{
-  using namespace Dune::XT;
-  using Common::to_string;
-
-  typedef typename SP::type S;
-  typedef typename S::EntityType E;
-  typedef typename S::DomainFieldType D;
-  static const size_t d = S::dimDomain;
-  typedef typename S::RangeFieldType R;
-  typedef typename Dune::XT::LA::Container<R, Dune::XT::LA::Backends::istl_sparse>::VectorType V;
-  static const size_t r = S::dimRange;
-  static const size_t rC = S::dimRangeCols;
-  typedef Dune::XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1> ScalarFunction;
-  const std::string r_ = to_string(r);
-  const std::string rC_ = to_string(rC);
-  const std::string p_ = to_string(int(S::polOrder)); // without the int(...) we get linker errors on module import
-  const std::string space_suffix = r_ + "x" + rC_ + "__p" + p_ + backend;
-
-  // DirichletProjectionLocalizableOperator
-  Dune::GDT::bind_DirichletProjectionLocalizableOperator<typename S::GridViewType,
-                                                         ScalarFunction,
-                                                         Dune::GDT::DiscreteFunction<S, V>>(
-      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
-} // ... addbind_for_lagrange_space(...)
 
 
 template <class G>
@@ -169,11 +167,7 @@ void addbind_for_grid(py::module& m, const std::string& grid_id)
 #if HAVE_DUNE_FEM
   addbind_for_space<CgSpaceProvider<G, XT::Grid::Layers::leaf, ChooseSpaceBackend::fem, 1, double, 1, 1>>(
       m, grid_id, "leaf", "Cg", "__fem");
-  addbind_for_lagrange_space<CgSpaceProvider<G, XT::Grid::Layers::leaf, ChooseSpaceBackend::fem, 1, double, 1, 1>>(
-      m, grid_id, "leaf", "Cg", "__fem");
   addbind_for_space<CgSpaceProvider<G, XT::Grid::Layers::level, ChooseSpaceBackend::fem, 1, double, 1, 1>>(
-      m, grid_id, "level", "Cg", "__fem");
-  addbind_for_lagrange_space<CgSpaceProvider<G, XT::Grid::Layers::level, ChooseSpaceBackend::fem, 1, double, 1, 1>>(
       m, grid_id, "level", "Cg", "__fem");
 #endif
 #if HAVE_DUNE_PDELAB
