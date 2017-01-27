@@ -125,7 +125,7 @@ void addbind_for_space(py::module& m,
   // Space
   bind_space<S>(m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix);
   m.def(std::string("make_" + to_lower(space_id) + "_space__" + space_suffix + "__" + layer_id).c_str(),
-        [](XT::Grid::GridProvider<G>& grid_provider, const int level = 0) { return SP::create(grid_provider, level); },
+        [](XT::Grid::GridProvider<G>& grid_provider, const int level) { return SP::create(grid_provider, level); },
         "grid_provider"_a,
         "level"_a = 0,
         py::keep_alive<0, 1>());
