@@ -30,7 +30,7 @@ struct elliptic_matrix_operator_bind_helper
   }
 
   template <class C>
-  static void addbind_factory_methods(pybind11::module& m, const std::string& method_id)
+  static void addbind_factory_methods(pybind11::module& m, const std::string& method_id, const std::string& la_id)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -38,13 +38,31 @@ struct elliptic_matrix_operator_bind_helper
     typedef typename C::RangeSpaceType R;
     typedef typename C::MatrixType MatrixType;
 
-    m.def(std::string(method_id).c_str(),
+    m.def(std::string(method_id + "__" + la_id).c_str(),
           [](const DF& diffusion_factor, const DT& diffusion_tensor, const R& space, const size_t over_integrate) {
             return make_elliptic_matrix_operator<MatrixType>(diffusion_factor, diffusion_tensor, space, over_integrate)
-                .release(); // b.c. EllipticMatrixOperator is not movable, returning the raw pointer lets pybind11
-          }, //                correctly manage the memory
+                .release(); //    <- b.c. EllipticMatrixOperator is not movable, returning the raw pointer lets pybind11
+          }, //                                                                              correctly manage the memory
           "diffusion_factor"_a,
           "diffusion_tensor"_a,
+          "space"_a,
+          "over_integrate"_a = 0,
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>());
+
+    m.def(std::string(method_id).c_str(),
+          [](const DF& diffusion_factor,
+             const DT& diffusion_tensor,
+             MatrixType& matrix,
+             const R& space,
+             const size_t over_integrate) {
+            return make_elliptic_matrix_operator(diffusion_factor, diffusion_tensor, matrix, space, over_integrate)
+                .release(); //                                                                     <- s.a. for release()
+          },
+          "diffusion_factor"_a,
+          "diffusion_tensor"_a,
+          "matrix"_a,
           "space"_a,
           "over_integrate"_a = 0,
           py::keep_alive<0, 1>(),
@@ -62,7 +80,7 @@ struct elliptic_matrix_operator_bind_helper<D, void>
   }
 
   template <class C>
-  static void addbind_factory_methods(pybind11::module& m, const std::string& method_id)
+  static void addbind_factory_methods(pybind11::module& m, const std::string& method_id, const std::string& la_id)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -70,11 +88,22 @@ struct elliptic_matrix_operator_bind_helper<D, void>
     typedef typename C::RangeSpaceType R;
     typedef typename C::MatrixType MatrixType;
 
-    m.def(std::string(method_id).c_str(),
+    m.def(std::string(method_id + "__" + la_id).c_str(),
           [](const D& diffusion, const R& space, const size_t over_integrate) {
-            return make_elliptic_matrix_operator<MatrixType>(diffusion, space, over_integrate).release(); // s.a. for
-          }, //                                                                                              .release()
+            return make_elliptic_matrix_operator<MatrixType>(diffusion, space, over_integrate).release(); // <- s.a. for
+          }, //                                                                                               .release()
           "diffusion"_a,
+          "space"_a,
+          "over_integrate"_a = 0,
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+
+    m.def(std::string(method_id).c_str(),
+          [](const D& diffusion, MatrixType& matrix, const R& space, const size_t over_integrate) {
+            return make_elliptic_matrix_operator(diffusion, matrix, space, over_integrate).release(); //     <- s.a. for
+          }, //                                                                                               .release()
+          "diffusion"_a,
+          "matrix"_a,
           "space"_a,
           "over_integrate"_a = 0,
           py::keep_alive<0, 1>(),
@@ -108,7 +137,7 @@ bind_elliptic_matrix_operator(pybind11::module& m, const std::string& space_id, 
   auto c = bind_matrix_operator<C>(m, "EllipticMatrixOperator__" + suffix);
 
   internal::elliptic_matrix_operator_bind_helper<DF, DT>::template addbind_factory_methods<C>(
-      m, "make_elliptic_matrix_operator__" + la_id);
+      m, "make_elliptic_matrix_operator", la_id);
 
   return c;
 
