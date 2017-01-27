@@ -34,6 +34,10 @@ typename std::enable_if<is_space<S>::value, pybind11::class_<S>>::type bind_spac
 
   c.def("size", [](const S& self) { return self.mapper().size(); });
   c.def("visualize", [](const S& self, const std::string& filename) { self.visualize(filename); }, "filename"_a = "");
+  c.def("compute_pattern", [](const S& self) { return self.compute_pattern(); });
+  c.def("compute_volume_pattern", [](const S& self) { return self.compute_volume_pattern(); });
+  c.def("compute_face_pattern", [](const S& self) { return self.compute_face_pattern(); });
+  c.def("compute_face_and_volume_pattern", [](const S& self) { return self.compute_face_and_volume_pattern(); });
 
   return c;
 } // ... bind_space(...)
