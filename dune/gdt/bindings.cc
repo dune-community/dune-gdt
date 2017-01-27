@@ -9,6 +9,8 @@
 
 #if HAVE_DUNE_PYBINDXI
 
+#include <boost/numeric/conversion/cast.hpp>
+
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
 
@@ -247,7 +249,7 @@ PYBIND11_PLUGIN(_gdt)
 
   m.def("init_mpi",
         [](const std::vector<std::string>& args) {
-          int argc = args.size();
+          int argc = boost::numeric_cast<int>(args.size());
           char** argv = Dune::XT::Common::vector_to_main_args(args);
 #if HAVE_DUNE_FEM
           Dune::Fem::MPIManager::initialize(argc, argv);
