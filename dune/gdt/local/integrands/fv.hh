@@ -127,7 +127,7 @@ public:
   void
   evaluate(const LocalfunctionTupleType& local_functions_tuple,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& test_base,
-           const Dune::FieldVector<DomainType, dimDomain>& x_local,
+           const Dune::FieldVector<DomainFieldType, dimDomain>& x_local,
            Dune::DynamicVector<R>& ret) const
   {
     const auto& entity = test_base.entity();

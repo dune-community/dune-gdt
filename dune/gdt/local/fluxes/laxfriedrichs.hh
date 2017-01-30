@@ -160,13 +160,17 @@ public:
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
           local_source_neighbor,
       const IntersectionType& intersection,
-      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection,
+      const double t = 0) const
   {
     // get function values
-    const RangeType u_i = local_source_entity.evaluate(intersection.geometryInInside().global(x_intersection));
-    RangeType u_j = local_source_neighbor.evaluate(intersection.geometryInOutside().global(x_intersection));
-    FluxRangeType f_u_i_plus_f_u_j = analytical_flux_.evaluate(u_i);
-    f_u_i_plus_f_u_j += analytical_flux_.evaluate(u_j);
+    const auto& x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
+    const auto& x_intersection_neighbor_coords = intersection.geometryInOutside().global(x_intersection);
+    const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
+    RangeType u_j = local_source_neighbor.evaluate(x_intersection_neighbor_coords);
+    FluxRangeType f_u_i_plus_f_u_j =
+        analytical_flux_.evaluate(u_i, intersection.inside(), x_intersection_entity_coords, t);
+    f_u_i_plus_f_u_j += analytical_flux_.evaluate(u_j, intersection.outside(), x_intersection_neighbor_coords, t);
     auto n_ij = intersection.unitOuterNormal(x_intersection);
     // find direction of unit outer normal
     size_t coord = 0;
@@ -344,7 +348,8 @@ public:
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
           local_source_neighbor,
       const IntersectionType& intersection,
-      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection,
+      const double t = 0) const
   {
     // get function values
     RangeType u_i = local_source_entity.evaluate(intersection.geometryInInside().global(x_intersection));
@@ -406,9 +411,10 @@ public:
     // we dont use the local LxF method. As the FieldVector does not provide an operator+, we have to split the
     // expression.
     // calculate n_ij*(f(u_i) + f(u_j)) first
-    ret = analytical_flux_.evaluate(u_i, intersection.inside(), intersection.geometryInInside().global(x_intersection));
-    ret +=
-        analytical_flux_.evaluate(u_j, intersection.outside(), intersection.geometryInOutside().global(x_intersection));
+    ret = analytical_flux_.evaluate(
+        u_i, intersection.inside(), intersection.geometryInInside().global(x_intersection), t);
+    ret += analytical_flux_.evaluate(
+        u_j, intersection.outside(), intersection.geometryInOutside().global(x_intersection), t);
     if (n_ij < 0)
       ret *= n_ij;
     // add max_derivative*(u_i - u_j)
@@ -504,14 +510,16 @@ public:
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
           local_source_entity,
       const IntersectionType& intersection,
-      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection,
+      const double t = 0) const
   {
     // get function values
     const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
     const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
     auto u_j = std::get<1>(local_functions_tuple)->evaluate(x_intersection_entity_coords);
-    FluxRangeType f_u_i_plus_f_u_j = analytical_flux_.evaluate(u_i);
-    f_u_i_plus_f_u_j += analytical_flux_.evaluate(u_j);
+    FluxRangeType f_u_i_plus_f_u_j =
+        analytical_flux_.evaluate(u_i, intersection.inside(), x_intersection_entity_coords, t);
+    f_u_i_plus_f_u_j += analytical_flux_.evaluate(u_j, intersection.inside(), DomainType(200), t);
     auto n_ij = intersection.unitOuterNormal(x_intersection);
     // find direction of unit outer normal
     size_t coord = 0;
@@ -708,7 +716,8 @@ public:
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
           local_source_entity,
       const IntersectionType& intersection,
-      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection,
+      const double t = 0) const
   {
     // get function values
     const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
@@ -769,9 +778,9 @@ public:
     // we dont use the local LxF method. As the FieldVector does not provide an operator+, we have to split the
     // expression.
     // calculate n_ij*(f(u_i) + f(u_j)) first
-    ret = analytical_flux_.evaluate(u_i, intersection.inside(), x_intersection_entity_coords);
+    ret = analytical_flux_.evaluate(u_i, intersection.inside(), x_intersection_entity_coords, t);
     // TODO: is this the right definition if jacobian really depends on the entity coordinates?
-    ret += analytical_flux_.evaluate(u_j, intersection.inside(), x_intersection_entity_coords, -100);
+    ret += analytical_flux_.evaluate(u_j, intersection.inside(), DomainType(200), t);
     if (n_ij < 0)
       ret *= n_ij;
     // add max_derivative*(u_i - u_j)
@@ -857,7 +866,8 @@ public:
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
           local_source_entity,
       const IntersectionType& intersection,
-      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection,
+      const double /*t*/ = 0) const
   {
     // get function values
     const RangeType u_i = local_source_entity.evaluate(intersection.geometryInInside().global(x_intersection));

@@ -330,7 +330,7 @@ public:
                               const bool output_progress = false,
                               const bool visualize = false,
                               const std::string filename_prefix = "solution",
-                              const int visualize_prefix = 0)
+                              const int visualize_tag = 0)
   {
     return solve(t_end,
                  initial_dt,
@@ -340,7 +340,7 @@ public:
                  visualize,
                  filename_prefix,
                  *solution_,
-                 visualize_prefix);
+                 visualize_tag);
   }
 
   virtual TimeFieldType

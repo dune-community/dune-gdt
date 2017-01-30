@@ -32,17 +32,101 @@ FieldMatrix<R, r, r> unit_matrix()
   return ret;
 }
 
+template <class EntityType,
+          class DomainType,
+          class RangeType,
+          class FluxRangeType,
+          class QuadratureRuleType,
+          class BasisValuesMatrixType,
+          size_t dimDomain>
+struct EntropyBasedLocalFluxEvaluator
+{
+  static FluxRangeType evaluate(const RangeType& u,
+                                const EntityType& /*entity*/,
+                                const DomainType& /*x_local*/,
+                                const double /*t*/,
+                                const QuadratureRuleType& quadrature,
+                                const RangeType& alpha,
+                                const BasisValuesMatrixType& M)
+  {
+    // calculate ret[ii] = < omega[ii] m G_\alpha(u) >
+    FluxRangeType ret(0);
+    for (size_t ll = 0; ll < quadrature.size(); ++ll) {
+      const auto& position = quadrature[ll].position();
+      const auto& mu = position[0];
+      const auto& phi = position[1];
+      const auto& weight = quadrature[ll].weight();
+      std::vector<double> omega(3);
+      omega[0] = std::sqrt(1. - mu * mu) * std::cos(phi);
+      omega[1] = std::sqrt(1. - mu * mu) * std::sin(phi);
+      omega[2] = mu;
+      for (size_t dd = 0; dd < dimDomain; ++dd) {
+        auto m = M[ll];
+        m *= omega[dd] * std::exp(alpha * m) * weight;
+        for (size_t rr = 0; rr < u.size(); ++rr)
+          ret[rr][dd] += m[rr];
+      }
+    }
+    return ret;
+  } // FluxRangeType evaluate(...)
+};
+
+template <class EntityType,
+          class DomainType,
+          class RangeType,
+          class FluxRangeType,
+          class QuadratureRuleType,
+          class BasisValuesMatrixType>
+struct EntropyBasedLocalFluxEvaluator<EntityType,
+                                      DomainType,
+                                      RangeType,
+                                      FluxRangeType,
+                                      QuadratureRuleType,
+                                      BasisValuesMatrixType,
+                                      1>
+{
+  static FluxRangeType evaluate(const RangeType& /*u*/,
+                                const EntityType& /*entity*/,
+                                const DomainType& /*x_local*/,
+                                const double /*t*/,
+                                const QuadratureRuleType& quadrature,
+                                const RangeType& alpha,
+                                const BasisValuesMatrixType& M)
+  {
+    // calculate < \mu m G_\alpha(u) >
+    FluxRangeType ret(0);
+    for (size_t ll = 0; ll < quadrature.size(); ++ll) {
+      const auto& position = quadrature[ll].position();
+      const auto& mu = position[0];
+      const auto& weight = quadrature[ll].weight();
+      auto m = M[ll];
+      m *= mu * std::exp(alpha * m) * weight;
+      ret += m;
+    }
+    return ret;
+  }
+};
+
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * for the notation see
  * Alldredge, Hauck, O'Leary, Tits, "Adaptive change of basis in entropy-based moment closures for linear kinetic
  * equations"
  * domainDim, rangeDim, rangeDimCols are the respective dimensions of pde solution u, not the dimensions of \mathbf{f}.
  */
-template <class GridViewType, class E, class D, size_t d, class R, size_t rangeDim, size_t rC, size_t num_quad_points>
+// TODO: implement for non-orthogonal bases (hatfunctions, firstorder dg)
+template <class GridViewType,
+          class E,
+          class D,
+          size_t d,
+          class R,
+          size_t rangeDim,
+          size_t rC,
+          size_t num_quad_points,
+          class PointsVectorType>
 class EntropyBasedLocalFlux : public AnalyticalFluxInterface<E, D, d, R, rangeDim, rC>
 {
   typedef AnalyticalFluxInterface<E, D, d, R, rangeDim, rC> BaseType;
-  typedef EntropyBasedLocalFlux<GridViewType, E, D, d, R, rangeDim, rC, num_quad_points> ThisType;
+  typedef EntropyBasedLocalFlux<GridViewType, E, D, d, R, rangeDim, rC, num_quad_points, PointsVectorType> ThisType;
 
 public:
   using typename BaseType::DomainType;
@@ -56,11 +140,13 @@ public:
   using BasisValuesMatrixType = Dune::FieldMatrix<RangeFieldType, num_quad_points, dimRange>;
   using typename BaseType::FluxRangeType;
   using typename BaseType::FluxJacobianRangeType;
+  typedef Dune::QuadratureRule<DomainFieldType, dimDomain == 1 ? 1 : 2> QuadratureRuleType;
 
   explicit EntropyBasedLocalFlux(
       const GridViewType& grid_view,
-      const Dune::QuadratureRule<DomainFieldType, dimDomain>& quadrature,
+      const Dune::QuadratureRule<DomainFieldType, dimDomain == 1 ? 1 : 2>& quadrature,
       const BasisValuesMatrixType& M,
+      const PointsVectorType& v_points,
       const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
@@ -74,6 +160,7 @@ public:
     : global_index_set_(grid_view, 0)
     , quadrature_(quadrature)
     , M_(M)
+    , v_points_(v_points)
     , tau_(tau)
     , epsilon_gamma_(epsilon_gamma)
     , chi_(chi)
@@ -109,9 +196,48 @@ public:
     if ((*alpha_cache_)[index] && XT::Common::FloatCmp::eq((*alpha_cache_)[index]->first, t)) {
       alpha = (*alpha_cache_)[index]->second;
     } else {
-      // multiplier corresponding to isotropic distribution
+
+      //      // for Legendre polynomials
+      //      // multiplier corresponding to isotropic distribution
+      //      RangeType u_iso(0);
+      //      u_iso[0] = u[0];
+      //      RangeType alpha_iso(0);
+      //      alpha_iso[0] = std::log(u[0] / (dimDomain == 1 ? 2. : 4. * M_PI));
+
+
+      //      // for hat functions
+      //      // calculate moment vector for isotropic distribution
+      //      RangeType alpha_iso(1);
+      //      RangeFieldType psi_iso(0);
+      //      for (size_t ii = 0; ii < dimRange; ++ii)
+      //        psi_iso += u[ii];
+      //      psi_iso /= 2.;
+      //      alpha_iso *= std::log(psi_iso);
+      //      RangeType u_iso(0);
+      //      u_iso[0] = v_points_[1] - v_points_[0];
+      //      for (size_t ii = 1; ii < dimRange - 1; ++ii)
+      //        u_iso[ii] = v_points_[ii + 1] - v_points_[ii - 1];
+      //      u_iso[dimRange - 1] = v_points_[dimRange - 1] - v_points_[dimRange - 2];
+      //      u_iso *= psi_iso / 2.;
+
+
+      //       for first order dg
+      // calculate moment vector for isotropic distribution
       RangeType alpha_iso(0);
-      alpha_iso[0] = std::log(u[0] / 2.);
+      RangeFieldType psi_iso(0);
+      for (size_t ii = 0; ii < dimRange; ii += 2) {
+        psi_iso += u[ii];
+        alpha_iso[ii] = 1;
+      }
+      psi_iso /= 2.;
+      alpha_iso *= std::log(psi_iso);
+      RangeType u_iso(0);
+      for (size_t ii = 0; ii < dimRange / 2; ++ii) {
+        u_iso[2 * ii] = v_points_[ii + 1] - v_points_[ii];
+        u_iso[2 * ii + 1] = (std::pow(v_points_[ii + 1], 2) - std::pow(v_points_[ii], 2)) / 2.;
+      }
+      u_iso *= psi_iso;
+
 
       // define further variables
       bool chol_flag = false;
@@ -124,8 +250,8 @@ public:
         RangeType beta_in = (*beta_cache_)[index] ? *((*beta_cache_)[index]) : alpha_iso;
         T_k = (*T_cache_)[index] ? *((*T_cache_)[index]) : T_minus_one_;
         // normalize u
-        RangeType r_times_u_iso(0);
-        r_times_u_iso[0] = r * u[0];
+        RangeType r_times_u_iso = u_iso;
+        r_times_u_iso *= r;
         RangeType v = u;
         v *= 1 - r;
         v += r_times_u_iso;
@@ -166,7 +292,14 @@ public:
           RangeType d_k = g_k;
           d_k *= -1;
           RangeType T_k_inv_transp_d_k;
-          T_k_transp.solve(T_k_inv_transp_d_k, d_k);
+          try {
+            T_k_transp.solve(T_k_inv_transp_d_k, d_k);
+          } catch (const Dune::FMatrixError& e) {
+            if (r < r_max)
+              break;
+            else
+              DUNE_THROW(Dune::FMatrixError, e.what());
+          }
           if (error.two_norm() < tau_ && std::exp(5 * T_k_inv_transp_d_k.one_norm()) < 1 + epsilon_gamma_) {
             T_k_transp.solve(alpha, beta_out);
             goto outside_all_loops;
@@ -207,41 +340,48 @@ public:
 
   virtual FluxRangeType evaluate(const RangeType& u, const E& entity, const DomainType& x_local, const double t) const
   {
-    // calculate < \mu m G_\alpha(u) >
     const auto alpha = get_alpha(u, entity, x_local, t);
-    RangeType ret(0);
-    for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
-      const auto& mu = quadrature_[ll].position();
-      const auto& weight = quadrature_[ll].weight();
-      auto m = M_[ll];
-      m *= mu * std::exp(alpha * m) * weight;
-      ret += m;
-    }
-    return ret;
+    return EntropyBasedLocalFluxEvaluator<E,
+                                          DomainType,
+                                          RangeType,
+                                          FluxRangeType,
+                                          QuadratureRuleType,
+                                          BasisValuesMatrixType,
+                                          dimDomain>::evaluate(u, entity, x_local, t, quadrature_, alpha, M_);
   } // FluxRangeType evaluate(...)
 
-  virtual FluxRangeType calculate_flux_integral(const RangeType& u_i,
-                                                const E& entity,
-                                                const DomainType& x_local_entity,
-                                                const RangeType u_j,
-                                                const E& neighbor,
-                                                const DomainType& x_local_neighbor,
-                                                const DomainType& n_ij,
-                                                const double t) const
+  virtual RangeType calculate_flux_integral(const RangeType& u_i,
+                                            const E& entity,
+                                            const DomainType& x_local_entity,
+                                            const RangeType u_j,
+                                            const E& neighbor,
+                                            const DomainType& x_local_neighbor,
+                                            const DomainType& n_ij,
+                                            const double t) const
   {
-    // calculate < \mu m G_\alpha(u) >
+    // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto alpha_i = get_alpha(u_i, entity, x_local_entity, t);
     const auto alpha_j = get_alpha(u_j, neighbor, x_local_neighbor, t);
     RangeType ret(0);
     for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
+      const auto& position = quadrature_[ll].position();
+      const auto& mu = position[0];
+      const auto& weight = quadrature_[ll].weight();
+      Dune::FieldVector<double, dimDomain> omega;
+      if (dimDomain == 1)
+        omega[0] = mu;
+      else {
+        const auto& phi = position[1];
+        omega[0] = std::sqrt(1. - mu * mu) * std::cos(phi);
+        omega[1] = std::sqrt(1. - mu * mu) * std::sin(phi);
+        omega[2] = mu;
+      }
+      auto m = M_[ll];
       for (size_t dd = 0; dd < dimDomain; ++dd) {
-        const auto& mu = quadrature_[ll].position();
-        const auto& weight = quadrature_[ll].weight();
-        auto m = M_[ll];
-        if (mu * n_ij > 0)
-          m *= mu[dd] * std::exp(alpha_i * m) * weight * n_ij[dd];
+        if (omega * n_ij > 0)
+          m *= omega[dd] * std::exp(alpha_i * m) * weight * n_ij[dd];
         else
-          m *= mu[dd] * std::exp(alpha_j * m) * weight * n_ij[dd];
+          m *= omega[dd] * std::exp(alpha_j * m) * weight * n_ij[dd];
         ret += m;
       } // dd
     }
@@ -286,9 +426,13 @@ private:
     L.solve(v_k, v_k_copy);
     g_k = v_k;
     g_k *= -1;
-    // assumes that the first basis function is constant
-    for (size_t ll = 0; ll < quadrature_.size(); ++ll)
-      g_k[0] += std::exp(beta_out * P_k[ll]) * quadrature_[ll].weight() * P_k[0][0];
+    for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
+      // assumes that the first basis function is constant
+      //      g_k[0] += std::exp(beta_out * P_k[ll]) * quadrature_[ll].weight() * P_k[0][0];
+      auto contribution = P_k[ll];
+      contribution *= std::exp(beta_out * P_k[ll]) * quadrature_[ll].weight();
+      g_k += contribution;
+    }
   } // void change_basis(...)
 
   // copied and adapted from dune/geometry/affinegeometry.hh
@@ -319,8 +463,9 @@ private:
   }
 
   const Dune::GlobalIndexSet<GridViewType> global_index_set_;
-  const Dune::QuadratureRule<DomainFieldType, dimDomain>& quadrature_;
+  const Dune::QuadratureRule<DomainFieldType, dimDomain == 1 ? 1 : 2>& quadrature_;
   const Dune::FieldMatrix<RangeFieldType, num_quad_points, dimRange> M_;
+  const PointsVectorType v_points_;
   const RangeFieldType tau_;
   const RangeFieldType epsilon_gamma_;
   const RangeFieldType chi_;
@@ -364,7 +509,7 @@ public:
   explicit EntropyBasedLocalFluxHatFunctions(
       const GridViewType& grid_view,
       const RangeType v_points,
-      const RangeFieldType tau = 1e-9,
+      const RangeFieldType tau = 1e-7,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
       const RangeFieldType xi = 1e-3,
@@ -372,7 +517,7 @@ public:
       const size_t k_0 = 50,
       const size_t k_max = 200,
       const RangeFieldType epsilon = std::pow(2, -52),
-      const RangeFieldType taylor_tol = 1e-10,
+      const RangeFieldType taylor_tol = 1e-11,
       const std::string name = static_id())
     : global_index_set_(grid_view, 0)
     , v_points_(v_points)
@@ -396,6 +541,7 @@ public:
     DUNE_THROW(NotImplemented, "");
   }
 
+  // TODO: adjustable Taylor order
   RangeType get_alpha(const RangeType& u, const E& entity, const DomainType& x_local, const double t) const
   {
     // in the numerical flux, we are setting x_local to DomainType(200) if we are actually not on the entity,
@@ -450,7 +596,7 @@ public:
         f_k -= alpha_k * v;
 
         for (size_t kk = 0; kk < k_max_; ++kk) {
-          // exit inner for loop to increase r if to many iterations are used
+          // exit inner for loop to increase r if too many iterations are used
           if (kk > k_0_ && r < r_max)
             break;
 
@@ -464,7 +610,9 @@ public:
                         * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1]))
                     + (v_points_[nn] - v_points_[nn - 1]) / (alpha_k[nn] - alpha_k[nn - 1]) * std::exp(alpha_k[nn]);
               } else {
-                g_k[nn] += (v_points_[nn] - v_points_[nn - 1]) / 2. * std::exp(alpha_k[nn]);
+                g_k[nn] += (1. / 2. - 1. / 6. * (alpha_k[nn] - alpha_k[nn - 1])
+                            + 1. / 24. * std::pow(alpha_k[nn] - alpha_k[nn - 1], 2))
+                           * std::exp(alpha_k[nn]) * (v_points_[nn] - v_points_[nn - 1]);
               }
             } // if (nn > 0)
             if (nn < dimRange - 1) {
@@ -474,7 +622,9 @@ public:
                         * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn]))
                     - (v_points_[nn + 1] - v_points_[nn]) / (alpha_k[nn + 1] - alpha_k[nn]) * std::exp(alpha_k[nn]);
               } else {
-                g_k[nn] += (v_points_[nn + 1] - v_points_[nn]) / 2. * std::exp(alpha_k[nn]);
+                g_k[nn] += (1. / 2. + 1. / 6. * (alpha_k[nn + 1] - alpha_k[nn])
+                            + 1. / 24. * std::pow(alpha_k[nn + 1] - alpha_k[nn], 2))
+                           * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
               }
             } // if (nn < dimRange-1)
           } // nn
@@ -576,7 +726,6 @@ public:
       // store values as initial conditions for next time step on this entity
       (*alpha_cache_)[index] = std::make_shared<std::pair<double, RangeType>>(std::make_pair(t, alpha));
     }
-
     return alpha;
   }
 
