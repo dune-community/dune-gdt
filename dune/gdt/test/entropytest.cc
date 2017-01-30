@@ -5,9 +5,11 @@
 // Authors:
 //   Tobias Leibner  (2016)
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 #include "config.h"
 
@@ -23,6 +25,7 @@
 #include <dune/xt/la/container/istl.hh>
 
 #include <dune/grid/yaspgrid.hh>
+#include <dune/grid/io/file/gmshwriter.hh>
 
 #if HAVE_DUNE_FEM
 #include <dune/fem/misc/mpimanager.hh>
@@ -39,6 +42,16 @@
 #include <dune/gdt/timestepper/implicit-rungekutta.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/sourcebeam.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/planesource.hh>
+#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/pointsource.hh>
+
+struct cmp_pair_struct
+{
+  template <class Pair1, class Pair2>
+  bool operator()(const Pair1& a, const Pair2& b)
+  {
+    return a.position()[0] < b.position()[0];
+  }
+};
 
 int main(int argc, char** argv)
 {
@@ -93,7 +106,7 @@ int main(int argc, char** argv)
 
   const int dimDomain = 1;
   const int momentOrder = 3;
-  const auto numerical_flux = Dune::GDT::NumericalFluxes::godunov;
+  const auto numerical_flux = Dune::GDT::NumericalFluxes::kinetic;
   const auto time_stepper_method = Dune::GDT::TimeStepperMethods::explicit_euler;
   const auto rhs_time_stepper_method = Dune::GDT::TimeStepperMethods::explicit_euler;
   typedef typename Dune::YaspGrid<dimDomain, Dune::EquidistantOffsetCoordinates<double, dimDomain>> GridType;
@@ -102,8 +115,15 @@ int main(int argc, char** argv)
   //  typedef typename Dune::GDT::Hyperbolic::Problems::
   //      SourceBeamPnHatFunctions<EntityType, double, dimDomain, double, momentOrder>
   //          ProblemType;
-  typedef
-      typename Dune::GDT::Hyperbolic::Problems::SourceBeamPnLegendre<EntityType, double, dimDomain, double, momentOrder>
+  //  typedef
+  //      typename Dune::GDT::Hyperbolic::Problems::SourceBeamPnLegendre<EntityType, double, dimDomain, double,
+  //      momentOrder>
+  //          ProblemType;
+  //  typedef typename Dune::GDT::Hyperbolic::Problems::
+  //      SourceBeamPnLegendreLaplaceBeltrami<EntityType, double, dimDomain, double, momentOrder>
+  //          ProblemType;
+  typedef typename Dune::GDT::Hyperbolic::Problems::
+      SourceBeamPnFirstOrderDG<EntityType, double, dimDomain, double, momentOrder>
           ProblemType;
   //  typedef typename Dune::GDT::Hyperbolic::Problems::
   //      PlaneSourcePnLegendre<EntityType, double, dimDomain, double, momentOrder>
@@ -115,7 +135,7 @@ int main(int argc, char** argv)
   //      PlaneSourcePnFirstOrderDG<EntityType, double, dimDomain, double, momentOrder>
   //          ProblemType;
   //  typedef typename Dune::GDT::Hyperbolic::Problems::
-  //      SourceBeamPnFirstOrderDG<EntityType, double, dimDomain, double, momentOrder>
+  //      PointSourcePnLegendre<EntityType, double, dimDomain, double, momentOrder>
   //          ProblemType;
   auto grid_config = ProblemType::default_grid_config();
   grid_config["num_elements"] = grid_size;
@@ -133,10 +153,12 @@ int main(int argc, char** argv)
 
   Dune::FieldVector<double, dimDomain> lower_left(-1);
   Dune::FieldVector<double, dimDomain> upper_right(1);
-  static const std::array<int, dimDomain> s{10};
+  static const int num_cells = 10;
+  static const std::array<int, dimDomain> s{num_cells};
   GridType velocity_grid(lower_left, upper_right, s);
   const auto velocity_grid_view = velocity_grid.leafGridView();
   const auto quadrature_order = 60;
+
   Dune::QuadratureRule<double, dimDomain> quadrature_rule;
   for (const auto& entity : elements(velocity_grid_view)) {
     const auto local_quadrature_rule = Dune::QuadratureRules<double, dimDomain>::rule(
@@ -149,31 +171,47 @@ int main(int argc, char** argv)
                 << quadrature_rule.back().weight() << std::endl;
     }
   }
-  const size_t num_quad_points = s[0] * 31;
+
+  //  const auto quadrature_rule = Dune::GDT::Hyperbolic::Problems::get_lebedev_quadrature(quadrature_order);
+  //  std::cout << quadrature_rule.size() << std::endl;
+  //  return 1;
+  //    std::sort(quadrature_rule.begin(), quadrature_rule.end(), cmp_pair_struct{});
+
+  const size_t num_quad_points = num_cells * 31;
   using BasisValuesMatrixType = Dune::FieldMatrix<double, num_quad_points, dimRange>;
   BasisValuesMatrixType basis_values_matrix(0);
-  //    assert(num_quad_points == quadrature_rule.size());
-  for (size_t ii = 0; ii < num_quad_points; ++ii)
-    for (size_t nn = 0; nn < dimRange; ++nn)
-      basis_values_matrix[ii][nn] =
-          Dune::GDT::Hyperbolic::Problems::evaluate_legendre_polynomial(quadrature_rule[ii].position(), nn);
-  //      basis_values_matrix[ii][nn] = Dune::GDT::Hyperbolic::Problems::evaluate_hat_function(
-  //          quadrature_rule[ii].position()[0], nn, ProblemType::create_equidistant_points());
+  assert(num_quad_points == quadrature_rule.size());
+  for (size_t ii = 0; ii < num_quad_points; ++ii) {
+    for (size_t nn = 0; nn < dimRange; ++nn) {
+      //      basis_values_matrix[ii][nn] =
+      //          Dune::GDT::Hyperbolic::Problems::evaluate_legendre_polynomial(quadrature_rule[ii].position(), nn);
+      //      basis_values_matrix[ii][nn] = Dune::GDT::Hyperbolic::Problems::evaluate_hat_function(
+      //          quadrature_rule[ii].position()[0], nn, ProblemType::create_equidistant_points());
+      basis_values_matrix[ii][nn] = Dune::GDT::Hyperbolic::Problems::evaluate_first_order_dg(
+          quadrature_rule[ii].position()[0], nn, ProblemType::create_equidistant_points());
+      //      basis_values_matrix[ii][nn] = Dune::GDT::Hyperbolic::Problems::evaluate_real_spherical_harmonics(
+      //          quadrature_rule[ii].position()[0],
+      //          quadrature_rule[ii].position()[1],
+      //          Dune::GDT::Hyperbolic::Problems::get_l_and_m(nn).first,
+      //          Dune::GDT::Hyperbolic::Problems::get_l_and_m(nn).second);
+    }
+  }
 
   typedef typename Dune::XT::LA::Container<double, Dune::XT::LA::default_backend>::VectorType VectorType;
   typedef typename Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
 
   static const bool linear = ProblemType::linear;
-  typedef typename ProblemType::FluxType AnalyticalFluxType;
-  //  typedef typename Dune::GDT::EntropyBasedLocalFlux<GridViewType,
-  //                                                    typename SpaceType::EntityType,
-  //                                                    double,
-  //                                                    dimDomain,
-  //                                                    double,
-  //                                                    dimRange,
-  //                                                    1,
-  //                                                    num_quad_points>
-  //      AnalyticalFluxType;
+  //  typedef typename ProblemType::FluxType AnalyticalFluxType;
+  typedef typename Dune::GDT::EntropyBasedLocalFlux<GridViewType,
+                                                    typename SpaceType::EntityType,
+                                                    double,
+                                                    dimDomain,
+                                                    double,
+                                                    dimRange,
+                                                    1,
+                                                    num_quad_points,
+                                                    decltype(ProblemType::create_equidistant_points())>
+      AnalyticalFluxType;
   //  typedef typename Dune::GDT::EntropyBasedLocalFluxHatFunctions<GridViewType,
   //                                                                typename SpaceType::EntityType,
   //                                                                double,
@@ -216,11 +254,11 @@ int main(int argc, char** argv)
       TimeStepperType;
 
   // get analytical flux, initial and boundary values
-  const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem.flux();
+  //  const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem.flux();
   //    const auto analytical_flux =
-  //      std::make_shared<const AnalyticalFluxType>(grid_view, ProblemType::create_equidistant_points());
-  //  const auto analytical_flux =
-  //      std::make_shared<const AnalyticalFluxType>(grid_view, quadrature_rule, basis_values_matrix);
+  //        std::make_shared<const AnalyticalFluxType>(grid_view, ProblemType::create_equidistant_points());
+  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
+      grid_view, quadrature_rule, basis_values_matrix, ProblemType::create_equidistant_points());
   const std::shared_ptr<const InitialValueType> initial_values = problem.initial_values();
   const std::shared_ptr<const BoundaryValueType> boundary_values = problem.boundary_values();
   const std::shared_ptr<const RHSType> rhs = problem.rhs();
@@ -256,13 +294,13 @@ int main(int argc, char** argv)
     // use fractional step method
     RHSOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
     TimeStepperType timestepper(timestepper_op, timestepper_rhs);
-    std::string filename = ProblemType::short_id();
+    std::string filename = ProblemType::static_id();
     filename +=
         std::string("_") + (std::is_same<typename ProblemType::FluxType, AnalyticalFluxType>::value ? "p" : "m");
     filename += Dune::XT::Common::to_string(momentOrder);
     filename += rhs_time_stepper_method == Dune::GDT::TimeStepperMethods::implicit_euler ? "_implicit" : "_explicit";
 
-    timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 1);
+    timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 2);
   } else {
     timestepper_op.solve(t_end, dt, num_save_steps, false, true, visualize, "entropy_implicit_trapezoidal");
   }
