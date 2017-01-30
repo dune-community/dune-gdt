@@ -76,10 +76,10 @@ builder_count = int(sys.argv[1])
 ymlfn = os.path.join(os.path.dirname(__file__), '.travis.yml')
 with open(ymlfn, 'wt') as yml:
     yml.write(tpl.render(builders=range(0, builder_count)))
-travis = str(where.first('travis'))
+travis = where.first('travis')
 if travis:
     try:
-        subprocess.check_call([travis, 'lint', ymlfn])
+        subprocess.check_call([str(travis), 'lint', ymlfn])
     except subprocess.CalledProcessError as err:
         print('Linting {} failed'.format(ymlfn))
         print(err)
