@@ -97,17 +97,17 @@ public:
 
   virtual const std::shared_ptr<const BoundaryValueType>& boundary_values() const = 0;
 
-  virtual double CFL() const
+  static double CFL()
   {
     return 0.5;
   }
 
-  virtual double t_end() const
+  static double t_end()
   {
     return 1.0;
   }
 
-  virtual bool has_non_zero_rhs() const
+  static bool has_non_zero_rhs()
   {
     return false;
   }
