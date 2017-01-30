@@ -12,6 +12,8 @@
 #include "fv/interface.hh"
 #include "fv/default.hh"
 
+#include <dune/xt/grid/gridprovider.hh>
+
 namespace Dune {
 namespace GDT {
 

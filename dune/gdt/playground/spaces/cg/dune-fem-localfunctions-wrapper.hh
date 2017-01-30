@@ -16,7 +16,6 @@
 #include <dune/common/deprecated.hh>
 
 #include <dune/geometry/referenceelements.hh>
-#include <dune/geometry/genericgeometry/topologytypes.hh>
 
 #include <dune/grid/common/capabilities.hh>
 
