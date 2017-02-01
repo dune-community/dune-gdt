@@ -10,6 +10,7 @@
 #define DUNE_GDT_TEST_OPERATORS_ELLIPTIC_HH
 
 #include <dune/xt/common/test/gtest/gtest.h>
+#include <dune/xt/common/test/float_cmp.hh>
 
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/operators/elliptic.hh>
@@ -162,7 +163,7 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
         this->factor_, this->tensor_function_, this->space_.grid_view(), function, function);
     product_tbb->walk(true);
     const auto result_tbb = product_tbb->apply2();
-    EXPECT_EQ(result_tbb, result);
+    DXTC_EXPECT_FLOAT_EQ(result_tbb, result);
     return result;
   }
 
@@ -552,7 +553,7 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
     auto op_tbb = make_elliptic_matrix_operator<MatrixType>(diffusion_factor, diffusion_tensor, space);
     op_tbb->assemble(true);
     const auto result_tbb = op_tbb->apply2(discrete_function, discrete_function);
-    EXPECT_DOUBLE_EQ(result_tbb, result);
+    DXTC_EXPECT_FLOAT_EQ(result_tbb, result);
     return result;
   } // ... compute(...)
 

@@ -10,6 +10,7 @@
 
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
+#include <dune/xt/common/test/float_cmp.hh>
 
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/operators/l2.hh>
@@ -68,7 +69,7 @@ struct L2LocalizableProductTest : public WeightedL2ProductBase<SpaceType>, publi
     product_tbb->walk(true);
     const auto result_tbb = product_tbb->apply2();
 
-    EXPECT_EQ(result_tbb, result);
+    DXTC_EXPECT_FLOAT_EQ(result_tbb, result);
     return result;
   } // ... compute(...)
 
@@ -191,7 +192,7 @@ struct L2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, public Ma
     auto product_tbb = make_l2_matrix_operator<MatrixType>(space);
     product_tbb->assemble(true);
     const auto result_tbb = product_tbb->apply2(discrete_function, discrete_function);
-    EXPECT_DOUBLE_EQ(result_tbb, result);
+    DXTC_EXPECT_FLOAT_EQ(result_tbb, result);
     return result;
   } // ... compute(...)
 
