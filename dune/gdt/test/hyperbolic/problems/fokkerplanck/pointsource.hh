@@ -15,6 +15,8 @@
 
 #include <dune/xt/common/string.hh>
 
+#include <dune/xt/functions/global.hh>
+
 #include "planesource.hh"
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -535,7 +537,7 @@ template <class E, class D, size_t d, class R, size_t num_vertices>
 class PointSourcePnHatFunctions
     : public PointSourceBase<PointSourcePnHatFunctions<E, D, d, R, num_vertices>, E, D, d, R, num_vertices, 1>
 {
-  typedef PointSourcePnLegendre<E, D, d, R, num_vertices> ThisType;
+  typedef PointSourcePnHatFunctions<E, D, d, R, num_vertices> ThisType;
   typedef PointSourceBase<PointSourcePnHatFunctions<E, D, d, R, num_vertices>, E, D, d, R, num_vertices, 1> BaseType;
 
 public:
@@ -544,14 +546,21 @@ public:
   using BaseType::dimRange;
   using BaseType::precision;
   using typename BaseType::FluxRangeType;
+  using typename BaseType::RHSType;
+  using typename BaseType::FluxType;
+  using typename BaseType::InitialValueType;
+  using typename BaseType::BoundaryValueType;
   using typename BaseType::DefaultFluxType;
   using typename BaseType::DefaultRHSType;
-  using typename BaseType::DefaultInitialValueType;
+  typedef typename XT::Functions::GlobalLambdaFunction<E, D, d, R, dimRange> InitialValueFunctionType;
+  typedef typename XT::Functions::FunctionCheckerboardFunction<InitialValueFunctionType, E, D, d, R, dimRange>
+      DefaultInitialValueType;
   using typename BaseType::DefaultBoundaryValueType;
   using typename BaseType::ConfigType;
   using typename BaseType::MatrixType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
+  using typename BaseType::DomainType;
   typedef RangeType PointsVectorType;
 
   static std::string static_id()
@@ -562,6 +571,21 @@ public:
   using BaseType::create_equidistant_points;
   using BaseType::default_grid_config;
   using BaseType::default_boundary_info_config;
+
+  static std::unique_ptr<ThisType> create(const Dune::QuadratureRule<double, 3>& quadrature,
+                                          const Polyhedron_3& poly,
+                                          const ConfigType config = default_config())
+  {
+    const std::shared_ptr<const FluxType> flux(DefaultFluxType::create(config.sub("flux")));
+    const std::shared_ptr<const RHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
+    const std::shared_ptr<const InitialValueType> initial_values(DefaultInitialValueType::create(
+        config.sub("initial_values"), "", create_initial_value_lambda(quadrature, poly)));
+    const ConfigType grid_config = config.sub("grid");
+    const ConfigType boundary_info = config.sub("boundary_info");
+    const std::shared_ptr<const BoundaryValueType> boundary_values(
+        DefaultBoundaryValueType::create(config.sub("boundary_values")));
+    return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
+  } // ... create(...)
 
   static ConfigType default_config(const ConfigType grid_config,
                                    const Dune::QuadratureRule<double, 3>& quadrature,
@@ -680,6 +704,23 @@ public:
     initial_value_config["order.0"] = "20";
     return initial_value_config;
   } // ... create_initial_value_config(...)
+
+  // Initial value of the kinetic equation is psi_vac + 1/(8 pi sigma^2) * exp(-|x|^2/(2*sigma^2)).
+  // Thus the initial value for the n-th moment is base_integrated_n * (psi_vac + 1/(8 pi sigma^2) *
+  // exp(-|x|^2/(2*sigma^2))).
+  static std::vector<std::function<RangeType(DomainType)>> create_initial_value_lambda(
+      const Dune::QuadratureRule<double, 3>& quadrature, const Polyhedron_3& poly, const double psi_vac = 5e-9)
+  {
+    std::vector<std::function<RangeType(DomainType)>> ret;
+    static const double sigma = 0.03;
+    const auto basis_integrated = basisfunctions_integrated(quadrature, poly);
+    ret.push_back([basis_integrated, sigma, psi_vac](const DomainType& x) {
+      RangeType ret = basis_integrated;
+      ret *= psi_vac + 1. / (8. * M_PI * sigma * sigma) * std::exp(-1. * x.two_norm() / (2. * sigma * sigma));
+      return ret;
+    });
+    return ret;
+  } // ... create_initial_value_lambda(...)
 
   // Boundary value of kinetic equation is psi_vac at both boundaries
   // so n-th component of boundary value has to be \psi_{vac}*base_integrated_n at both boundaries.

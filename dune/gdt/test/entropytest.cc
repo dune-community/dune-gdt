@@ -121,6 +121,9 @@ int main(int argc, char** argv)
       }
     } else if (std::string(argv[i]) == "--no_visualization") {
       visualize = false;
+    } else {
+      std::cerr << "Unknown option " << std::string(argv[i]) << std::endl;
+      return 1;
     }
   }
 
@@ -173,7 +176,8 @@ int main(int argc, char** argv)
   grid_config["num_elements"] = grid_size;
   grid_config["overlap_size"] = overlap_size;
   //  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config));
-  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config, quadrature_rule, poly));
+  const auto problem_ptr =
+      ProblemType::create(quadrature_rule, poly, ProblemType::default_config(grid_config, quadrature_rule, poly));
   //  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config, true));
   const ProblemType& problem = *problem_ptr;
   const auto grid_ptr = Dune::XT::Grid::CubeGridProviderFactory<GridType>::create(grid_config).grid_ptr();
