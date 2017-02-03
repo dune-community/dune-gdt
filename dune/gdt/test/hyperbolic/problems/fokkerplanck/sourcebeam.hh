@@ -19,9 +19,12 @@
 
 #include <boost/math/special_functions/legendre.hpp>
 
+#include <dune/pdelab/common/crossproduct.hh>
+
 #include <dune/gdt/test/instationary-eocstudy.hh>
 
 #include <dune/xt/common/string.hh>
+#include <dune/xt/common/math.hh>
 
 #include "twobeams.hh"
 
@@ -30,20 +33,14 @@ namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
 
-double binomial_coefficient(const double n, const size_t k)
-{
-  double ret(1);
-  for (size_t ii = 1; ii <= k; ++ii)
-    ret *= (n + 1 - ii) / ii;
-  return ret;
-}
 
 template <class FieldType>
 FieldType evaluate_legendre_polynomial(const FieldType& v, const size_t n)
 {
   FieldType ret(0);
   for (size_t k = 0; k <= n; ++k)
-    ret += std::pow(-v, k) * binomial_coefficient(n, k) * binomial_coefficient((n + k - 1) / 2., n);
+    ret += std::pow(-v, k) * XT::Common::binomial_coefficient(n, k)
+           * XT::Common::binomial_coefficient((n + k - 1) / 2., n);
   ret *= std::pow(-1, n) * (1 << n); // 2^n
   return ret;
 }
@@ -97,11 +94,6 @@ std::pair<int, int> get_l_and_m(int pos)
   return std::make_pair(l, m);
 }
 
-constexpr size_t factorial(size_t n)
-{
-  return n > 0 ? n * factorial(n - 1) : 1;
-}
-
 template <class FieldType>
 FieldType evaluate_associated_legendre_polynomial(const FieldType& v, const int l, int m)
 {
@@ -114,7 +106,7 @@ FieldType evaluate_associated_legendre_polynomial(const FieldType& v, const int 
 double N_lm(const int l, const int m)
 {
   assert(l >= 0 && m >= 0 && m <= l);
-  return std::sqrt((2. * l + 1.) * factorial(l - m) / (factorial(l + m) * 4. * M_PI));
+  return std::sqrt((2. * l + 1.) * XT::Common::factorial(l - m) / (XT::Common::factorial(l + m) * 4. * M_PI));
 }
 
 template <class FieldType>
