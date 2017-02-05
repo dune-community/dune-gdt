@@ -39,6 +39,7 @@
 #include <dune/gdt/discretefunction.pbh>
 #include <dune/gdt/functionals/l2.pbh>
 #include <dune/gdt/operators/elliptic.pbh>
+#include <dune/gdt/operators/elliptic-ipdg.pbh>
 #include <dune/gdt/projections/dirichlet.pbh>
 #include <dune/gdt/spaces.pbh>
 #include <dune/gdt/spaces/constraints.pbh>
@@ -145,6 +146,11 @@ void addbind_for_space(py::module& m,
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
   bind_elliptic_matrix_operator<ScalarFunction, void, S, M>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
+  // EllipticIpdgMatrixOperator
+  bind_elliptic_ipdg_matrix_operator<ScalarFunction, TensorFunction, S, LocalEllipticIpdgIntegrands::Method::swipdg, M>(
+      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse", "Swipdg");
+  bind_elliptic_ipdg_matrix_operator<ScalarFunction, void, S, LocalEllipticIpdgIntegrands::Method::swipdg, M>(
+      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse", "Swipdg");
   // L2VolumeVectorFunctional
   bind_l2_volume_vector_functional<ScalarFunction, S, V>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
