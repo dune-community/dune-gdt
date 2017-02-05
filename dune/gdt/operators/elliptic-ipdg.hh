@@ -38,6 +38,15 @@ class EllipticIpdgMatrixOperator
     : public MatrixOperatorBase<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::face_and_volume>
 {
   typedef MatrixOperatorBase<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::face_and_volume> BaseType;
+  typedef EllipticIpdgMatrixOperator<DiffusionFactorType,
+                                     DiffusionTensorType,
+                                     RangeSpace,
+                                     method,
+                                     Matrix,
+                                     GridView,
+                                     SourceSpace,
+                                     Field>
+      ThisType;
   typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>>
       LocalVolumeOperatorType;
   typedef LocalCouplingIntegralOperator<LocalEllipticIpdgIntegrands::
@@ -50,6 +59,14 @@ class EllipticIpdgMatrixOperator
 public:
   using typename BaseType::GridViewType;
   using typename BaseType::IntersectionType;
+
+  /// \sa MatrixOperatorBase
+  EllipticIpdgMatrixOperator(const ThisType& other) = delete;
+  EllipticIpdgMatrixOperator(ThisType& other) = delete; // <- b.c. of the too perfect forwarding ctor
+  EllipticIpdgMatrixOperator(ThisType&& source) = delete;
+
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& source) = delete;
 
   /// \name Ctors for given single diffusion
   /// \sa The Ctors of EllipticLocalizableProduct.
