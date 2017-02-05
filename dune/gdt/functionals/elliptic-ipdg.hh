@@ -41,10 +41,26 @@ template <class DirichletType,
 class EllipticIpdgDirichletVectorFunctional : public VectorFunctionalBase<Vector, Space, GridView, Field>
 {
   typedef VectorFunctionalBase<Vector, Space, GridView, Field> BaseType;
+  typedef EllipticIpdgDirichletVectorFunctional<DirichletType,
+                                                DiffusionFactorType,
+                                                DiffusionTensorType,
+                                                Space,
+                                                method,
+                                                Vector,
+                                                GridView,
+                                                Field>
+      ThisType;
 
 public:
   using typename BaseType::GridViewType;
   using typename BaseType::IntersectionType;
+
+  /// \sa VectorFunctionalBase
+  EllipticIpdgDirichletVectorFunctional(const ThisType& other) = delete;
+  EllipticIpdgDirichletVectorFunctional(ThisType&& source) = delete;
+
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& source) = delete;
 
   /// \name Ctors for single diffusion
   /// \sa The ctors of EllipticLocalizableProduct
@@ -208,6 +224,43 @@ typename std::
 
 // ... yet to be implemented!
 
+// no vector given, single diffusion, no grid view given, method specified
+
+template <class VectorType,
+          LocalEllipticIpdgIntegrands::Method method,
+          class DirichletType,
+          class DiffusionType,
+          class SpaceType>
+typename std::enable_if<XT::LA::is_vector<VectorType>::value
+                            && XT::Functions::is_localizable_function<DirichletType>::value
+                            && XT::Functions::is_localizable_function<DiffusionType>::value
+                            && is_space<SpaceType>::value,
+                        std::unique_ptr<EllipticIpdgDirichletVectorFunctional<DirichletType,
+                                                                              DiffusionType,
+                                                                              void,
+                                                                              SpaceType,
+                                                                              method,
+                                                                              VectorType>>>::type
+make_elliptic_ipdg_dirichlet_vector_functional(
+    const DirichletType& dirichlet,
+    const DiffusionType& diffusion,
+    const XT::Grid::BoundaryInfo<typename SpaceType::GridViewType::Intersection>& boundary_info,
+    const SpaceType& space,
+    const size_t over_integrate = 0)
+{
+  return Dune::XT::Common::make_unique<EllipticIpdgDirichletVectorFunctional<DirichletType,
+                                                                             DiffusionType,
+                                                                             void,
+                                                                             SpaceType,
+                                                                             method,
+                                                                             VectorType>>(
+      over_integrate, boundary_info, dirichlet, diffusion, space);
+}
+
+// no vector given, single diffusion, no grid view given, default method
+
+// ... yet to be implemented!
+
 // no vector given, single diffusion, grid view given, method specified
 
 // ... yet to be implemented!
@@ -262,6 +315,44 @@ make_elliptic_ipdg_dirichlet_vector_functional(
 // ... yet to be implemented!
 
 // vector given, both diffusion factor and tensor, grid view given, default method
+
+// ... yet to be implemented!
+
+// vector given, single diffusion, no grid view given, method specified
+
+template <LocalEllipticIpdgIntegrands::Method method,
+          class DirichletType,
+          class DiffusionType,
+          class VectorType,
+          class SpaceType>
+typename std::enable_if<XT::Functions::is_localizable_function<DirichletType>::value
+                            && XT::Functions::is_localizable_function<DiffusionType>::value
+                            && XT::LA::is_vector<VectorType>::value
+                            && is_space<SpaceType>::value,
+                        std::unique_ptr<EllipticIpdgDirichletVectorFunctional<DirichletType,
+                                                                              DiffusionType,
+                                                                              void,
+                                                                              SpaceType,
+                                                                              method,
+                                                                              VectorType>>>::type
+make_elliptic_ipdg_dirichlet_vector_functional(
+    const DirichletType& dirichlet,
+    const DiffusionType& diffusion,
+    const XT::Grid::BoundaryInfo<typename SpaceType::GridViewType::Intersection>& boundary_info,
+    VectorType& vector,
+    const SpaceType& space,
+    const size_t over_integrate = 0)
+{
+  return Dune::XT::Common::make_unique<EllipticIpdgDirichletVectorFunctional<DirichletType,
+                                                                             DiffusionType,
+                                                                             void,
+                                                                             SpaceType,
+                                                                             method,
+                                                                             VectorType>>(
+      over_integrate, boundary_info, dirichlet, diffusion, vector, space);
+}
+
+// vector given, single diffusion, no grid view given, default method
 
 // ... yet to be implemented!
 
