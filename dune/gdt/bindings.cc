@@ -38,6 +38,7 @@
 #include <dune/gdt/assembler/system.pbh>
 #include <dune/gdt/discretefunction.pbh>
 #include <dune/gdt/functionals/l2.pbh>
+#include <dune/gdt/functionals/elliptic-ipdg.pbh>
 #include <dune/gdt/operators/elliptic.pbh>
 #include <dune/gdt/operators/elliptic-ipdg.pbh>
 #include <dune/gdt/projections/dirichlet.pbh>
@@ -157,6 +158,21 @@ void addbind_for_space(py::module& m,
   // L2FaceVectorFunctional
   bind_l2_face_vector_functional<ScalarFunction, S, V>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
+  // EllipticIpdgDirichletVectorFunctional
+  bind_elliptic_ipdg_dirichlet_vector_functional<ScalarFunction,
+                                                 ScalarFunction,
+                                                 TensorFunction,
+                                                 S,
+                                                 LocalEllipticIpdgIntegrands::Method::swipdg,
+                                                 V>(
+      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse", "Swipdg");
+  bind_elliptic_ipdg_dirichlet_vector_functional<ScalarFunction,
+                                                 ScalarFunction,
+                                                 void,
+                                                 S,
+                                                 LocalEllipticIpdgIntegrands::Method::swipdg,
+                                                 V>(
+      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse", "Swipdg");
 } // ... addbind_for_space(...)
 
 
