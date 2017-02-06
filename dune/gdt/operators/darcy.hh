@@ -59,6 +59,7 @@ public:
   typedef DarcyOperator<GridViewImp, FunctionImp> derived_type;
   typedef GridViewImp GridViewType;
   typedef typename FunctionImp::RangeFieldType FieldType;
+  typedef NoJacobian JacobianType;
 }; // class DarcyOperatorTraits
 
 
@@ -72,7 +73,10 @@ public:
 template <class GridViewImp, class FunctionImp>
 class DarcyOperator : public OperatorInterface<internal::DarcyOperatorTraits<GridViewImp, FunctionImp>>
 {
+  typedef OperatorInterface<internal::DarcyOperatorTraits<GridViewImp, FunctionImp>> BaseType;
+
 public:
+  using typename BaseType::JacobianType;
   typedef internal::DarcyOperatorTraits<GridViewImp, FunctionImp> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType FieldType;
@@ -98,6 +102,19 @@ public:
         DiscreteFunction<S, V>& range) const
   {
     redirect_apply(range.space(), source, range);
+  }
+
+  template <class SourceType>
+  JacobianType jacobian(const SourceType& /*source*/) const
+  {
+    DUNE_THROW(NotImplemented, "This operator does not provide a jacobian (yet)!");
+    return JacobianType();
+  }
+
+  template <class SourceType>
+  void jacobian(const SourceType& /*source*/, JacobianType& /*jac*/) const
+  {
+    DUNE_THROW(NotImplemented, "This operator does not provide a jacobian (yet)!");
   }
 
 private:

@@ -79,8 +79,7 @@ public:
   template <class SourceType>
   void jacobian(const SourceType& source, JacobianType& jac) const
   {
-    CHECK_CRTP(this->as_imp().jacobian(source));
-    return this->as_imp().jacobian(source);
+    CHECK_CRTP(this->as_imp().jacobian(source, jac));
   }
 
   template <class RangeType, class SourceType>

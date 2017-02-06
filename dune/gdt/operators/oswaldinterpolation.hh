@@ -49,6 +49,7 @@ public:
   typedef OswaldInterpolationOperator<GridViewImp, FieldImp> derived_type;
   typedef GridViewImp GridViewType;
   typedef FieldImp FieldType;
+  typedef NoJacobian JacobainType;
 };
 
 
@@ -59,7 +60,10 @@ template <class GridViewImp, class FieldImp>
 class OswaldInterpolationOperator
     : public OperatorInterface<internal::OswaldInterpolationOperatorTraits<GridViewImp, FieldImp>>
 {
+  typedef OperatorInterface<internal::OswaldInterpolationOperatorTraits<GridViewImp, FieldImp>> BaseType;
+
 public:
+  using typename BaseType::JacobianType;
   typedef internal::OswaldInterpolationOperatorTraits<GridViewImp, FieldImp> Traits;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename Traits::FieldType FieldType;
@@ -83,6 +87,19 @@ public:
              DiscreteFunction<BlockSpace<DuneFemDgSpaceWrapper<RGP, 1, FieldType, 1, 1>>, RV>& range) const
   {
     apply_dg_fem(source, range);
+  }
+
+  template <class SourceType>
+  JacobianType jacobian(const SourceType& /*source*/) const
+  {
+    DUNE_THROW(NotImplemented, "This operator does not provide a jacobian (yet)!");
+    return JacobianType();
+  }
+
+  template <class SourceType>
+  void jacobian(const SourceType& /*source*/, JacobianType& /*jac*/) const
+  {
+    DUNE_THROW(NotImplemented, "This operator does not provide a jacobian (yet)!");
   }
 
 private:
