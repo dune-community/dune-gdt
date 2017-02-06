@@ -65,6 +65,7 @@ class MatrixOperatorBaseTraits
 public:
   typedef MatrixOperatorBase<MatrixImp, RangeSpaceImp, GridViewImp, SourceSpaceImp, FieldImp, pt> derived_type;
   typedef FieldImp FieldType;
+  typedef std::unique_ptr<derived_type> JacobianType;
 };
 
 
@@ -228,6 +229,7 @@ public:
   typedef XT::LA::SparsityPatternDefault PatternType;
   typedef MatrixImp MatrixType;
   using typename BaseOperatorType::FieldType;
+  using typename BaseOperatorType::JacobianType;
   using typename BaseOperatorType::derived_type;
   using typename BaseAssemblerType::GridViewType;
   static const constexpr ChoosePattern pattern_type = pt;
@@ -423,13 +425,17 @@ public:
     return apply2(range.vector(), source.vector());
   }
 
-  //! \todo Implement a base for matrix operators that only gets a matrix and handles the apply, apply2, apply_inverse,
-  //! etc.
-  //  template< class SourceType >
-  //  JacobianType jacobian(const SourceType& /*source*/) const
-  //  {
-  //    return JacobianType(matrix());
-  //  }
+  template <class SourceType>
+  JacobianType jacobian(const SourceType& /*source*/) const
+  {
+    return JacobianType(matrix(), range_space(), source_space());
+  }
+
+  template <class SourceType>
+  void jacobian(const SourceType& /*source*/, JacobianType& jac) const
+  {
+    jac->matrix() = matrix();
+  }
 
   using BaseOperatorType::apply_inverse;
 
