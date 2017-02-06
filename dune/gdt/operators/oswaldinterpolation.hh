@@ -77,29 +77,41 @@ public:
 
   template <class SGP, class SV, class RGP, class RV>
   void apply(const ConstDiscreteFunction<DuneFemDgSpaceWrapper<SGP, 1, FieldType, 1, 1>, SV>& source,
-             DiscreteFunction<DuneFemDgSpaceWrapper<RGP, 1, FieldType, 1, 1>, RV>& range) const
+             DiscreteFunction<DuneFemDgSpaceWrapper<RGP, 1, FieldType, 1, 1>, RV>& range,
+             const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     apply_dg_fem(source, range);
   }
 
   template <class SGP, class SV, class RGP, class RV>
   void apply(const ConstDiscreteFunction<BlockSpace<DuneFemDgSpaceWrapper<SGP, 1, FieldType, 1, 1>>, SV>& source,
-             DiscreteFunction<BlockSpace<DuneFemDgSpaceWrapper<RGP, 1, FieldType, 1, 1>>, RV>& range) const
+             DiscreteFunction<BlockSpace<DuneFemDgSpaceWrapper<RGP, 1, FieldType, 1, 1>>, RV>& range,
+             const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     apply_dg_fem(source, range);
   }
 
   template <class SourceType>
-  JacobianType jacobian(const SourceType& /*source*/) const
+  JacobianType jacobian(const SourceType& /*source*/, const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     DUNE_THROW(NotImplemented, "This operator does not provide a jacobian (yet)!");
     return JacobianType();
   }
 
   template <class SourceType>
-  void jacobian(const SourceType& /*source*/, JacobianType& /*jac*/) const
+  void
+  jacobian(const SourceType& /*source*/, JacobianType& /*jac*/, const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     DUNE_THROW(NotImplemented, "This operator does not provide a jacobian (yet)!");
+  }
+
+  template <class RangeType, class SourceType>
+  void apply_inverse(const RangeType& /*range*/,
+                     SourceType& /*source*/,
+                     const XT::Common::Configuration& /*opts*/,
+                     const Dune::XT::Common::Parameter& /*param*/ = {}) const
+  {
+    DUNE_THROW(NotImplemented, "");
   }
 
 private:

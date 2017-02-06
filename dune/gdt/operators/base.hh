@@ -397,20 +397,26 @@ public:
   }
 
   template <class S, class R>
-  void apply(const XT::LA::VectorInterface<S>& source, XT::LA::VectorInterface<R>& range) const
+  void apply(const XT::LA::VectorInterface<S>& source,
+             XT::LA::VectorInterface<R>& range,
+             const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     const_cast<ThisType&>(*this).assemble();
     matrix().mv(source.as_imp(), range.as_imp());
   }
 
   template <class S, class R>
-  void apply(const ConstDiscreteFunction<SourceSpaceType, S>& source, DiscreteFunction<RangeSpaceType, R>& range) const
+  void apply(const ConstDiscreteFunction<SourceSpaceType, S>& source,
+             DiscreteFunction<RangeSpaceType, R>& range,
+             const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     apply(source.vector(), range.vector());
   }
 
   template <class R, class S>
-  FieldType apply2(const XT::LA::VectorInterface<R>& range, const XT::LA::VectorInterface<S>& source) const
+  FieldType apply2(const XT::LA::VectorInterface<R>& range,
+                   const XT::LA::VectorInterface<S>& source,
+                   const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     const_cast<ThisType&>(*this).assemble();
     auto tmp = range.copy();
@@ -420,19 +426,21 @@ public:
 
   template <class R, class S>
   FieldType apply2(const ConstDiscreteFunction<RangeSpaceType, R>& range,
-                   const ConstDiscreteFunction<SourceSpaceType, S>& source) const
+                   const ConstDiscreteFunction<SourceSpaceType, S>& source,
+                   const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     return apply2(range.vector(), source.vector());
   }
 
   template <class SourceType>
-  JacobianType jacobian(const SourceType& /*source*/) const
+  JacobianType jacobian(const SourceType& /*source*/, const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     return JacobianType(matrix(), range_space(), source_space());
   }
 
   template <class SourceType>
-  void jacobian(const SourceType& /*source*/, JacobianType& jac) const
+  void
+  jacobian(const SourceType& /*source*/, JacobianType& jac, const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     jac->matrix() = matrix();
   }
@@ -442,7 +450,8 @@ public:
   template <class R, class S>
   void apply_inverse(const XT::LA::VectorInterface<R>& range,
                      XT::LA::VectorInterface<S>& source,
-                     const XT::Common::Configuration& opts) const
+                     const XT::Common::Configuration& opts,
+                     const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     this->assemble();
     LinearSolverType(matrix(), source_space().communicator()).apply(range.as_imp(), source.as_imp(), opts);
@@ -451,7 +460,8 @@ public:
   template <class R, class S>
   void apply_inverse(const ConstDiscreteFunction<RangeSpaceType, R>& range,
                      ConstDiscreteFunction<SourceSpaceType, S>& source,
-                     const XT::Common::Configuration& opts) const
+                     const XT::Common::Configuration& opts,
+                     const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     apply_inverse(range.vector(), source.vector(), opts);
   }

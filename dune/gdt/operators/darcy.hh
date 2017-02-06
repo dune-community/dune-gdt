@@ -99,20 +99,22 @@ public:
   void
   apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, r, rC>&
             source,
-        DiscreteFunction<S, V>& range) const
+        DiscreteFunction<S, V>& range,
+        const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     redirect_apply(range.space(), source, range);
   }
 
   template <class SourceType>
-  JacobianType jacobian(const SourceType& /*source*/) const
+  JacobianType jacobian(const SourceType& /*source*/, const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     DUNE_THROW(NotImplemented, "This operator does not provide a jacobian (yet)!");
     return JacobianType();
   }
 
   template <class SourceType>
-  void jacobian(const SourceType& /*source*/, JacobianType& /*jac*/) const
+  void
+  jacobian(const SourceType& /*source*/, JacobianType& /*jac*/, const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     DUNE_THROW(NotImplemented, "This operator does not provide a jacobian (yet)!");
   }
