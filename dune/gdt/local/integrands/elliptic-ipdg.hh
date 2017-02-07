@@ -26,8 +26,8 @@ namespace Dune {
 namespace GDT {
 
 /**
- *  \brief      Contains local integrands for the symmetric weighted interior penalty discontinuous Galerkin (SWIPDG)
- *              discretization.
+ *  \brief      Contains local integrands for the family of interior penalty discontinuous Galerkin (IPDG)
+ *              discretization schemes.
  *
  *              For the choice of penalization and the role of the user input see Epshteyn, Riviere (2007):
  *              "Estimation of penalty parameters for symmetric interior penalty Galerkin methods"
@@ -109,12 +109,13 @@ public:
 
 /**
  *  see Epshteyn, Riviere, 2007 for the meaning of beta
- * \note The FieldVector< R, dimDomain - 1 > type for the intersection will probably fail for dimDomain 1
+ * \note The FieldVector<R, dimDomain - 1> type for the intersection will probably fail for dimDomain 1
  */
 template <class DiffusionFactorImp, class DiffusionTensorImp, Method method>
 class Inner
     : public LocalFaceIntegrandInterface<internal::InnerTraits<DiffusionFactorImp, DiffusionTensorImp, method>, 4>
 {
+  static_assert(method == Method::swipdg, "Other methods are not implemented yet!");
   typedef LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
   typedef Inner<DiffusionFactorImp, DiffusionTensorImp, method> ThisType;
 
@@ -236,11 +237,11 @@ public:
 
   /// \}
 private:
-  // The Helper struct and private order/evaluate methods are required to provide varaints of order and evaluate for the
-  // single diffusion case.
+  // The DiffusionDependentOrderEvalRedirect struct and private order/evaluate methods are required to provide varaints
+  // of order and evaluate for the single diffusion case.
 
   template <bool single_diffusion, bool is_factor, class Anyone = void>
-  struct Helper
+  struct DiffusionDependentOrderEvalRedirect
   {
     static_assert(AlwaysFalse<Anyone>::value,
                   "These variants of order and evaluate are only available for the single "
@@ -248,7 +249,7 @@ private:
   };
 
   template <class Anyone>
-  struct Helper<true, true, Anyone>
+  struct DiffusionDependentOrderEvalRedirect<true, true, Anyone>
   {
     template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
     static size_t
@@ -317,10 +318,10 @@ private:
                    ret_en_ne,
                    ret_ne_en);
     }
-  }; // struct Helper< true, true, ... >
+  }; // struct DiffusionDependentOrderEvalRedirect< true, true, ... >
 
   template <class Anyone>
-  struct Helper<true, false, Anyone>
+  struct DiffusionDependentOrderEvalRedirect<true, false, Anyone>
   {
     template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
     static size_t
@@ -389,7 +390,7 @@ private:
                    ret_en_ne,
                    ret_ne_en);
     }
-  }; // struct Helper< true, false, ... >
+  }; // struct DiffusionDependentOrderEvalRedirect< true, false, ... >
 
 public:
   /// \name Redirects for single diffusion (either factor or tensor, but not both).
@@ -408,15 +409,16 @@ public:
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>&
           ansatz_base_ne) const
   {
-    return Helper < std::is_same<DiffusionTensorImp, void>::value, rD == 1
-                                                                       && rCD
-                                                                              == 1 > ::order(*this,
-                                                                                             local_diffusion_en,
-                                                                                             local_diffusion_ne,
-                                                                                             test_base_en,
-                                                                                             ansatz_base_en,
-                                                                                             test_base_ne,
-                                                                                             ansatz_base_ne);
+    return DiffusionDependentOrderEvalRedirect < std::is_same<DiffusionTensorImp, void>::value,
+           rD == 1
+               && rCD
+                      == 1 > ::order(*this,
+                                     local_diffusion_en,
+                                     local_diffusion_ne,
+                                     test_base_en,
+                                     ansatz_base_en,
+                                     test_base_ne,
+                                     ansatz_base_ne);
   } // ... order(...)
 
   template <class R, size_t rD, size_t rCD, size_t rT, size_t rCT, size_t rA, size_t rCA, class IntersectionType>
@@ -438,19 +440,20 @@ public:
       Dune::DynamicMatrix<R>& ret_en_ne,
       Dune::DynamicMatrix<R>& ret_ne_en) const
   {
-    Helper<std::is_same<DiffusionTensorImp, void>::value, rD == 1 && rCD == 1>::evaluate(*this,
-                                                                                         local_diffusion_en,
-                                                                                         local_diffusion_ne,
-                                                                                         test_base_en,
-                                                                                         ansatz_base_en,
-                                                                                         test_base_ne,
-                                                                                         ansatz_base_ne,
-                                                                                         intersection,
-                                                                                         local_point,
-                                                                                         ret_en_en,
-                                                                                         ret_ne_ne,
-                                                                                         ret_en_ne,
-                                                                                         ret_ne_en);
+    DiffusionDependentOrderEvalRedirect<std::is_same<DiffusionTensorImp, void>::value, rD == 1 && rCD == 1>::evaluate(
+        *this,
+        local_diffusion_en,
+        local_diffusion_ne,
+        test_base_en,
+        ansatz_base_en,
+        test_base_ne,
+        ansatz_base_ne,
+        intersection,
+        local_point,
+        ret_en_en,
+        ret_ne_ne,
+        ret_en_ne,
+        ret_ne_en);
   } // ... evaluate(...)
 
   /// \}
@@ -627,6 +630,8 @@ template <class DiffusionFactorImp, class DiffusionTensorImp, Method method>
 class BoundaryLHS
     : public LocalFaceIntegrandInterface<internal::BoundaryLHSTraits<DiffusionFactorImp, DiffusionTensorImp, method>, 2>
 {
+  static_assert(method == Method::swipdg, "Other methods are not implemented yet!");
+
 public:
   typedef LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
   typedef BoundaryLHS<DiffusionFactorImp, DiffusionTensorImp, method> ThisType;
@@ -713,11 +718,11 @@ public:
 
   /// \}
 private:
-  // The Helper struct and private order/evaluate methods are required to provide varaints of order and evaluate for the
-  // single diffusion case.
+  // The DiffusionDependentOrderEvalRedirect struct and private order/evaluate methods are required to provide varaints
+  // of order and evaluate for the single diffusion case.
 
   template <bool single_diffusion, bool is_factor, class Anyone = void>
-  struct Helper
+  struct DiffusionDependentOrderEvalRedirect
   {
     static_assert(AlwaysFalse<Anyone>::value,
                   "These variants of order and evaluate are only available for the single "
@@ -725,7 +730,7 @@ private:
   };
 
   template <class Anyone>
-  struct Helper<true, true, Anyone>
+  struct DiffusionDependentOrderEvalRedirect<true, true, Anyone>
   {
     template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
     static size_t order(
@@ -756,10 +761,10 @@ private:
       ths.evaluate(
           local_diffusion_factor, *local_diffusion_tensor, test_base, ansatz_base, intersection, local_point, ret);
     }
-  }; // struct Helper< true, true, ... >
+  }; // struct DiffusionDependentOrderEvalRedirect< true, true, ... >
 
   template <class Anyone>
-  struct Helper<true, false, Anyone>
+  struct DiffusionDependentOrderEvalRedirect<true, false, Anyone>
   {
     template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
     static size_t order(
@@ -790,7 +795,7 @@ private:
       ths.evaluate(
           *local_diffusion_factor, local_diffusion_tensor, test_base, ansatz_base, intersection, local_point, ret);
     }
-  }; // struct Helper< true, false, ... >
+  }; // struct DiffusionDependentOrderEvalRedirect< true, false, ... >
 
 public:
   /// \name Redirects for single diffusion (either factor or tensor, but not both).
@@ -803,7 +808,7 @@ public:
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatz_base)
       const
   {
-    return Helper < std::is_same<DiffusionTensorImp, void>::value,
+    return DiffusionDependentOrderEvalRedirect < std::is_same<DiffusionTensorImp, void>::value,
            rD == 1 && rCD == 1 > ::order(*this, local_diffusion, test_base, ansatz_base);
   }
 
@@ -816,7 +821,7 @@ public:
       const Dune::FieldVector<DomainFieldType, dimDomain - 1>& local_point,
       Dune::DynamicMatrix<R>& ret) const
   {
-    Helper<std::is_same<DiffusionTensorImp, void>::value, rD == 1 && rCD == 1>::evaluate(
+    DiffusionDependentOrderEvalRedirect<std::is_same<DiffusionTensorImp, void>::value, rD == 1 && rCD == 1>::evaluate(
         *this, local_diffusion, test_base, ansatz_base, intersection, local_point, ret);
   }
 
@@ -910,6 +915,7 @@ class BoundaryRHS : public LocalFaceIntegrandInterface<internal::BoundaryRHSTrai
                                                                                    method>,
                                                        1>
 {
+  static_assert(method == Method::swipdg, "Other methods are not implemented yet!");
   typedef LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
   typedef BoundaryRHS<DirichletImp, DiffusionFactorImp, DiffusionTensorImp, method> ThisType;
 
