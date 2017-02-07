@@ -131,6 +131,7 @@ int main(int argc, char** argv)
   Dune::XT::Common::threadManager().set_max_threads(num_threads);
 
   using namespace Dune::GDT;
+#define USE_SMP_PARALLEL 1
 #if HAVE_DUNE_FEM
   Dune::Fem::MPIManager::initialize(argc, argv);
 #else
