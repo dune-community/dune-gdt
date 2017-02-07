@@ -195,15 +195,20 @@ Dune::QuadratureRule<double, 2> get_lebedev_quadrature(size_t requested_order)
 }
 
 template <class DomainType, class VertexVectorType>
-Dune::FieldVector<double, 3> calculate_barycentric_coordinates(const DomainType& v, const VertexVectorType& vertices)
+bool calculate_barycentric_coordinates(const DomainType& v,
+                                       const VertexVectorType& vertices,
+                                       Dune::FieldVector<double, 3>& ret)
 {
-  Dune::FieldVector<double, 3> ret(0);
   Dune::FieldMatrix<double, 3, 3> gradients(0);
   for (size_t ii = 0; ii < 3; ++ii) {
     const auto& point = vertices[ii]->point();
     // copy points to gradients
     gradients[ii] = Dune::FieldVector<double, 3>({point.x(), point.y(), point.z()});
     const auto scalar_prod = v * gradients[ii];
+    // if v is not on the same octant of the sphere as the vertices, return false
+    // assumes the triangulation is fine enough that vertices[ii]*vertices[jj] >= 0 for all triangles
+    if (XT::Common::FloatCmp::lt(scalar_prod, 0.))
+      return false;
     auto v_scaled = v;
     v_scaled *= scalar_prod;
     gradients[ii] -= v_scaled;
@@ -214,12 +219,37 @@ Dune::FieldVector<double, 3> calculate_barycentric_coordinates(const DomainType&
   const auto& g0 = gradients[0];
   const auto& g1 = gradients[1];
   const auto& g2 = gradients[2];
-  ret[0] = ((g1[1] - g2[1]) * (v[0] - g2[0]) + (g2[0] - g1[0]) * (v[1] - g2[1])) / (g1[1] - g2[1]) * (g0[0] - g2[0])
-           + (g2[0] - g1[0]) * (g0[1] - g2[1]);
-  ret[1] = ((g2[1] - g0[1]) * (v[0] - g2[0]) + (g0[0] - g2[0]) * (v[1] - g2[1])) / (g1[1] - g2[1]) * (g0[0] - g2[0])
-           + (g2[0] - g1[0]) * (g0[1] - g2[1]);
-  ret[2] = 1. - ret[0] - ret[1];
-  return ret;
+  auto g0_minus_g2 = g0;
+  auto g1_minus_g2 = g1;
+  g0_minus_g2 -= g2;
+  g1_minus_g2 -= g2;
+  Dune::FieldMatrix<double, 2, 2> A;
+  Dune::FieldVector<double, 2> solution;
+  Dune::FieldVector<double, 2> rhs;
+  // (ii, jj) = (0, 1), (0, 2), (1, 2)
+  for (size_t ii = 0; ii < 2; ++ii) {
+    for (size_t jj = ii + 1; jj < 3; ++jj) {
+      A[0][0] = g0_minus_g2[ii];
+      A[1][0] = g0_minus_g2[jj];
+      A[0][1] = g1_minus_g2[ii];
+      A[1][1] = g1_minus_g2[jj];
+      double det = A.determinant();
+      if (XT::Common::FloatCmp::eq(det, 0.))
+        break;
+      rhs[0] = -g2[ii];
+      rhs[1] = -g2[jj];
+      A.solve(solution, rhs);
+      if (XT::Common::FloatCmp::lt(solution[0], 0.) || XT::Common::FloatCmp::lt(solution[1], 0.))
+        return false;
+      ret[0] = solution[0];
+      ret[1] = solution[1];
+      ret[2] = 1. - ret[0] - ret[1];
+      if (XT::Common::FloatCmp::lt(ret[2], 0.))
+        return false;
+      return true;
+    }
+  }
+  return false;
 }
 
 Dune::QuadratureRule<double, 3>
@@ -234,7 +264,7 @@ get_barycentre_rule(const Dune::XT::Common::FieldVector<Dune::XT::Common::FieldV
       (vertices[2] - vertices[0]) / norm_ff - ff * (ff * (vertices[2] - vertices[0]) / std::pow(norm_ff, 3));
   const auto partial_t_gg =
       (vertices[1] - vertices[0]) / norm_ff - ff * (ff * (vertices[1] - vertices[0]) / std::pow(norm_ff, 3));
-  const auto weight = Dune::PDELab::crossproduct(partial_s_gg, partial_t_gg).two_norm();
+  const auto weight = Dune::PDELab::crossproduct(partial_s_gg, partial_t_gg).two_norm() / 2.;
   Dune::QuadratureRule<double, 3> ret;
   ret.push_back(Dune::QuadraturePoint<double, 3>(bb, weight));
   return ret;
@@ -269,14 +299,6 @@ get_quadrature_points(const Dune::XT::Common::FieldVector<Dune::XT::Common::Fiel
   }
 }
 
-bool all_non_negative(const Dune::FieldVector<double, 3>& coords)
-{
-  for (const auto& coord : coords)
-    if (coord < 0)
-      return false;
-  return true;
-}
-
 template <class DomainType, class PolyhedronType>
 std::vector<double> evaluate_spherical_barycentric_coordinates(const DomainType& v, const PolyhedronType& poly)
 {
@@ -293,8 +315,9 @@ std::vector<double> evaluate_spherical_barycentric_coordinates(const DomainType&
     do {
       local_vertices[index] = halfedge_it->vertex();
     } while (++index, ++halfedge_it != halfedge_it_begin);
-    auto barycentric_coords = calculate_barycentric_coordinates(v, local_vertices);
-    if (all_non_negative(barycentric_coords)) {
+    DomainType barycentric_coords(0);
+    bool success = calculate_barycentric_coordinates(v, local_vertices, barycentric_coords);
+    if (success) {
       for (size_t ii = 0; ii < 3; ++ii)
         ret[local_vertices[ii]->index] = barycentric_coords[ii];
       break;
@@ -714,7 +737,7 @@ public:
     std::vector<std::function<RangeType(DomainType)>> ret;
     static const double sigma = 0.03;
     const auto basis_integrated = basisfunctions_integrated(quadrature, poly);
-    ret.push_back([basis_integrated, sigma, psi_vac](const DomainType& x) {
+    ret.push_back([basis_integrated, psi_vac](const DomainType& x) {
       RangeType ret = basis_integrated;
       ret *= psi_vac + 1. / (8. * M_PI * sigma * sigma) * std::exp(-1. * x.two_norm() / (2. * sigma * sigma));
       return ret;

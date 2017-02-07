@@ -139,9 +139,9 @@ int main(int argc, char** argv)
 
   const int dimDomain = 3;
   const int momentOrder = 3;
-  const auto numerical_flux = Dune::GDT::NumericalFluxes::godunov;
+  const auto numerical_flux = Dune::GDT::NumericalFluxes::kinetic;
   const auto time_stepper_method = Dune::GDT::TimeStepperMethods::explicit_euler;
-  const auto rhs_time_stepper_method = Dune::GDT::TimeStepperMethods::explicit_euler;
+  const auto rhs_time_stepper_method = Dune::GDT::TimeStepperMethods::implicit_euler;
   typedef typename Dune::YaspGrid<dimDomain, Dune::EquidistantOffsetCoordinates<double, dimDomain>> GridType;
   typedef typename GridType::LeafGridView GridViewType;
   typedef typename GridType::Codim<0>::Entity EntityType;
@@ -194,7 +194,6 @@ int main(int argc, char** argv)
   static const std::array<int, dimDomain> s({num_cells});
   GridType velocity_grid(lower_left, upper_right, s);
   const auto velocity_grid_view = velocity_grid.leafGridView();
-  const auto quadrature_order = 60;
 
   //  Dune::QuadratureRule<double, dimDomain> quadrature_rule;
   //  for (const auto& entity : elements(velocity_grid_view)) {
@@ -214,16 +213,101 @@ int main(int argc, char** argv)
   //  return 1;
   //    std::sort(quadrature_rule.begin(), quadrature_rule.end(), cmp_pair_struct{});
 
-  const size_t num_quad_points = num_cells * 31;
-  using BasisValuesMatrixType = Dune::FieldMatrix<double, num_quad_points, dimRange>;
-  BasisValuesMatrixType basis_values_matrix(0);
-  //  assert(num_quad_points == quadrature_rule.size());
-  for (size_t ii = 0; ii < num_quad_points; ++ii) {
+  auto isotropic_dist_calculator_legendre = [](const typename ProblemType::RangeType& u) {
+    typename ProblemType::RangeType u_iso(0), alpha_iso(0);
+    u_iso[0] = u[0];
+    alpha_iso[0] = std::log(u[0] / (ProblemType::dimDomain == 1 ? 2. : 4. * M_PI));
+    return std::make_pair(u_iso, alpha_iso);
+  };
+
+  const auto v_points = ProblemType::create_equidistant_points();
+  auto isotropic_dist_calculator_1d_firstorderdg = [v_points](const typename ProblemType::RangeType& u) {
+    typename ProblemType::RangeType alpha_iso(0);
+    typename ProblemType::RangeFieldType psi_iso(0);
+    for (size_t ii = 0; ii < dimRange; ii += 2) {
+      psi_iso += u[ii];
+      alpha_iso[ii] = 1;
+    }
+    psi_iso /= 2.;
+    alpha_iso *= std::log(psi_iso);
+    typename ProblemType::RangeType u_iso(0);
+    for (size_t ii = 0; ii < ProblemType::dimRange / 2; ++ii) {
+      u_iso[2 * ii] = v_points[ii + 1] - v_points[ii];
+      u_iso[2 * ii + 1] = (std::pow(v_points[ii + 1], 2) - std::pow(v_points[ii], 2)) / 2.;
+    }
+    u_iso *= psi_iso;
+    return std::make_pair(u_iso, alpha_iso);
+  };
+
+  //  const auto v_points = ProblemType::create_equidistant_points();
+  auto isotropic_dist_calculator_1d_hatfunctions = [v_points](const typename ProblemType::RangeType& u) {
+    typename ProblemType::RangeFieldType psi_iso(0);
+    for (size_t ii = 0; ii < ProblemType::dimRange; ++ii)
+      psi_iso += u[ii];
+    psi_iso /= 2.;
+    typename ProblemType::RangeType alpha_iso(std::log(psi_iso)), u_iso;
+    u_iso[0] = v_points[1] - v_points[0];
+    for (size_t ii = 1; ii < dimRange - 1; ++ii)
+      u_iso[ii] = v_points[ii + 1] - v_points[ii - 1];
+    u_iso[dimRange - 1] = v_points[dimRange - 1] - v_points[dimRange - 2];
+    u_iso *= psi_iso / 2.;
+    return std::make_pair(u_iso, alpha_iso);
+  };
+
+  const auto basis_integrated = ProblemType::basisfunctions_integrated(quadrature_rule, poly);
+  auto isotropic_dist_calculator_3d_hatfunctions = [basis_integrated](const typename ProblemType::RangeType& u) {
+    typename ProblemType::RangeFieldType psi_iso(0);
+    for (size_t ii = 0; ii < ProblemType::dimRange; ++ii)
+      psi_iso += u[ii];
+    psi_iso /= 4. * M_PI;
+    ProblemType::RangeType alpha_iso(std::log(psi_iso));
+    auto u_iso = basis_integrated;
+    u_iso *= psi_iso;
+    return std::make_pair(u_iso, alpha_iso);
+  };
+
+
+  //  typedef typename Dune::GDT::EntropyBasedLocalFlux3D<GridViewType,
+  //                                                      typename SpaceType::EntityType,
+  //                                                      double,
+  //                                                      dimDomain,
+  //                                                      double,
+  //                                                      dimRange,
+  //                                                      1,
+  //                                                      Dune::XT::LA::Backends::istl_sparse>
+  //      AnalyticalFluxType;
+
+  //  using BasisValuesMatrixType = Dune::FieldMatrix<double, num_quad_points, dimRange>;
+  typedef typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::istl_sparse>::VectorType VectorType;
+  //  using BasisValuesMatrixType = std::vector<Dune::FieldVector<double, dimRange>>;
+  using BasisValuesMatrixType = std::vector<VectorType>;
+  //  typedef typename Dune::GDT::
+  //      EntropyBasedLocalFlux<GridViewType, typename SpaceType::EntityType, double, dimDomain, double, dimRange, 1>
+  //          AnalyticalFluxType;
+  typedef typename Dune::GDT::EntropyBasedLocalFlux3D<GridViewType,
+                                                      typename SpaceType::EntityType,
+                                                      double,
+                                                      dimDomain,
+                                                      double,
+                                                      dimRange,
+                                                      1,
+                                                      Dune::XT::LA::Backends::istl_sparse>
+      AnalyticalFluxType;
+  typedef typename AnalyticalFluxType::VectorType VectorType;
+  typedef std::vector<VectorType> BasisValuesMatrixType;
+
+  //  BasisValuesMatrixType basis_values_matrix(quadrature_rule.size());
+  BasisValuesMatrixType basis_values_matrix(quadrature_rule.size(), VectorType(dimRange));
+  for (size_t ii = 0; ii < quadrature_rule.size(); ++ii) {
+    const auto hatfunctions_evaluated = Dune::GDT::Hyperbolic::Problems::evaluate_spherical_barycentric_coordinates(
+        quadrature_rule[ii].position(), poly);
     for (size_t nn = 0; nn < dimRange; ++nn) {
+      //      basis_values_matrix[ii][nn] = hatfunctions_evaluated[nn];
+      basis_values_matrix[ii].set_entry(nn, hatfunctions_evaluated[nn]);
       //      basis_values_matrix[ii][nn] =
       //          Dune::GDT::Hyperbolic::Problems::evaluate_legendre_polynomial(quadrature_rule[ii].position(), nn);
-      basis_values_matrix[ii][nn] = Dune::GDT::Hyperbolic::Problems::evaluate_hat_function(
-          quadrature_rule[ii].position()[0], nn, ProblemType::create_equidistant_points());
+      //      basis_values_matrix[ii][nn] = Dune::GDT::Hyperbolic::Problems::evaluate_hat_function(
+      //          quadrature_rule[ii].position()[0], nn, ProblemType::create_equidistant_points());
       //      basis_values_matrix[ii][nn] = Dune::GDT::Hyperbolic::Problems::evaluate_first_order_dg(
       //          quadrature_rule[ii].position()[0], nn, ProblemType::create_equidistant_points());
       //      basis_values_matrix[ii][nn] = Dune::GDT::Hyperbolic::Problems::evaluate_real_spherical_harmonics(
@@ -234,21 +318,10 @@ int main(int argc, char** argv)
     }
   }
 
-  typedef typename Dune::XT::LA::Container<double, Dune::XT::LA::default_backend>::VectorType VectorType;
   typedef typename Dune::GDT::DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
 
   static const bool linear = ProblemType::linear;
-  typedef typename ProblemType::FluxType AnalyticalFluxType;
-  //    typedef typename Dune::GDT::EntropyBasedLocalFlux<GridViewType,
-  //                                                    typename SpaceType::EntityType,
-  //                                                    double,
-  //                                                    dimDomain,
-  //                                                    double,
-  //                                                    dimRange,
-  //                                                    1,
-  //                                                    num_quad_points,
-  //                                                    decltype(ProblemType::create_equidistant_points())>
-  //      AnalyticalFluxType;
+  //  typedef typename ProblemType::FluxType AnalyticalFluxType;
   //  typedef typename Dune::GDT::EntropyBasedLocalFluxHatFunctions<GridViewType,
   //                                                                typename SpaceType::EntityType,
   //                                                                double,
@@ -286,16 +359,22 @@ int main(int argc, char** argv)
   typedef typename Dune::GDT::TimeStepperFactory<RHSOperatorType,
                                                  DiscreteFunctionType,
                                                  RangeFieldType,
-                                                 rhs_time_stepper_method>::TimeStepperType RHSOperatorTimeStepperType;
+                                                 rhs_time_stepper_method,
+                                                 Dune::XT::LA::Backends::istl_sparse>::TimeStepperType
+      RHSOperatorTimeStepperType;
   typedef typename Dune::GDT::FractionalTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType>
       TimeStepperType;
 
   // get analytical flux, initial and boundary values
-  const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem.flux();
+  //  const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem.flux();
   //  const auto analytical_flux =
   //      std::make_shared<const AnalyticalFluxType>(grid_view, ProblemType::create_equidistant_points());
   //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
   //      grid_view, quadrature_rule, basis_values_matrix, ProblemType::create_equidistant_points());
+  //  const auto analytical_flux =
+  //      std::make_shared<const AnalyticalFluxType>(grid_view, quadrature_rule, basis_values_matrix, poly, "umfpack");
+  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
+      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions, "umfpack");
   const std::shared_ptr<const InitialValueType> initial_values = problem.initial_values();
   const std::shared_ptr<const BoundaryValueType> boundary_values = problem.boundary_values();
   const std::shared_ptr<const RHSType> rhs = problem.rhs();
@@ -306,7 +385,7 @@ int main(int argc, char** argv)
   // project initial values
   project(*initial_values, u);
 
-  RangeFieldType t_end = problem.t_end();
+  RangeFieldType t_end = 0.09; // problem.t_end();
   const RangeFieldType CFL = problem.CFL();
 
   // calculate dx and choose initial dt

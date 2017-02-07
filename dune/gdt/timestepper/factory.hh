@@ -22,7 +22,11 @@ namespace Dune {
 namespace GDT {
 
 
-template <class OperatorImp, class DiscreteFunctionImp, class TimeFieldImp, TimeStepperMethods method>
+template <class OperatorImp,
+          class DiscreteFunctionImp,
+          class TimeFieldImp,
+          TimeStepperMethods method,
+          XT::LA::Backends container_backend = XT::LA::default_sparse_backend>
 struct TimeStepperFactory
 {
   typedef typename std::
@@ -35,7 +39,8 @@ struct TimeStepperFactory
                                   typename Dune::GDT::DiagonallyImplicitRungeKuttaTimeStepper<OperatorImp,
                                                                                               DiscreteFunctionImp,
                                                                                               TimeFieldImp,
-                                                                                              method>,
+                                                                                              method,
+                                                                                              container_backend>,
                                   typename Dune::GDT::ExplicitRungeKuttaTimeStepper<OperatorImp,
                                                                                     DiscreteFunctionImp,
                                                                                     TimeFieldImp,
