@@ -636,10 +636,10 @@ public:
           v.set_entry(ii, u[ii] * (1. - r) + r * u_iso[ii]);
         // calculate T_k u
         VectorType v_k(dimRange, 0);
-        T_k_solver.apply(v, v_k, solver_type_);
+        T_k_solver.apply_umfpack(v, v_k, solver_type_);
         // calculate values of basis p = T_k m
         for (size_t ii = 0; ii < quadrature_.size(); ++ii)
-          T_k_solver.apply(M_[ii], P_k[ii], solver_type_);
+          T_k_solver.apply_umfpack(M_[ii], P_k[ii], solver_type_);
         // calculate f_0
         RangeFieldType f_k(0);
         for (size_t ll = 0; ll < quadrature_.size(); ++ll)
@@ -661,7 +661,7 @@ public:
           for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
             auto m = M_[ll];
             VectorType Tinv_m(dimRange, 0);
-            T_k_solver.apply(m, Tinv_m, solver_type_);
+            T_k_solver.apply_umfpack(m, Tinv_m, solver_type_);
             m *= std::exp(beta_out * Tinv_m) * quadrature_[ll].weight();
             error += m;
           }
@@ -671,7 +671,7 @@ public:
           d_k *= -1;
           VectorType T_k_inv_transp_d_k(dimRange);
           try {
-            T_k_transp_solver.apply(d_k, T_k_inv_transp_d_k, solver_type_);
+            T_k_transp_solver.apply_umfpack(d_k, T_k_inv_transp_d_k, solver_type_);
           } catch (const Dune::XT::Common::Exceptions::linear_solver_failed& e) {
             if (r < r_max)
               break;
@@ -679,7 +679,7 @@ public:
               DUNE_THROW(Dune::XT::Common::Exceptions::linear_solver_failed, e.what());
           }
           if (error.l2_norm() < tau_ && std::exp(5 * T_k_inv_transp_d_k.l1_norm()) < 1 + epsilon_gamma_) {
-            T_k_transp_solver.apply(beta_out, alpha, solver_type_);
+            T_k_transp_solver.apply_umfpack(beta_out, alpha, solver_type_);
             goto outside_all_loops;
           } else {
             RangeFieldType zeta_k = 1;
@@ -802,7 +802,7 @@ private:
     const auto P_k_copy = P_k;
     const auto v_k_copy = v_k;
     for (size_t ll = 0; ll < quadrature_.size(); ++ll)
-      L_solver.apply(P_k_copy[ll], P_k[ll], solver_type_);
+      L_solver.apply_umfpack(P_k_copy[ll], P_k[ll], solver_type_);
     // calculate T_k = T_k L
     MatrixType T_k_new(dimRange, dimRange, dense_pattern_);
     T_k_new *= 0;
@@ -816,7 +816,7 @@ private:
     for (size_t ii = 0; ii < dimRange; ++ii)
       for (size_t jj = 0; jj < dimRange; ++jj)
         beta_out.add_to_entry(ii, L.get_entry(jj, ii) * beta_in.get_entry(jj));
-    L_solver.apply(v_k_copy, v_k, solver_type_);
+    L_solver.apply_umfpack(v_k_copy, v_k, solver_type_);
     g_k = v_k;
     g_k *= -1;
     for (size_t ll = 0; ll < quadrature_.size(); ++ll) {

@@ -267,7 +267,12 @@ int main(int argc, char** argv)
     return std::make_pair(u_iso, alpha_iso);
   };
 
-
+  typedef typename Dune::XT::LA::Container<double, Dune::XT::LA::default_sparse_backend>::VectorType VectorType;
+  using BasisValuesMatrixType = std::vector<Dune::FieldVector<double, dimRange>>;
+  //  using BasisValuesMatrixType = std::vector<VectorType>;
+  typedef typename Dune::GDT::
+      EntropyBasedLocalFlux<GridViewType, typename SpaceType::EntityType, double, dimDomain, double, dimRange, 1>
+          AnalyticalFluxType;
   //  typedef typename Dune::GDT::EntropyBasedLocalFlux3D<GridViewType,
   //                                                      typename SpaceType::EntityType,
   //                                                      double,
@@ -277,34 +282,17 @@ int main(int argc, char** argv)
   //                                                      1,
   //                                                      Dune::XT::LA::Backends::istl_sparse>
   //      AnalyticalFluxType;
+  //  typedef typename AnalyticalFluxType::VectorType VectorType;
+  //  typedef std::vector<VectorType> BasisValuesMatrixType;
 
-  //  using BasisValuesMatrixType = Dune::FieldMatrix<double, num_quad_points, dimRange>;
-  typedef typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::istl_sparse>::VectorType VectorType;
-  //  using BasisValuesMatrixType = std::vector<Dune::FieldVector<double, dimRange>>;
-  using BasisValuesMatrixType = std::vector<VectorType>;
-  //  typedef typename Dune::GDT::
-  //      EntropyBasedLocalFlux<GridViewType, typename SpaceType::EntityType, double, dimDomain, double, dimRange, 1>
-  //          AnalyticalFluxType;
-  typedef typename Dune::GDT::EntropyBasedLocalFlux3D<GridViewType,
-                                                      typename SpaceType::EntityType,
-                                                      double,
-                                                      dimDomain,
-                                                      double,
-                                                      dimRange,
-                                                      1,
-                                                      Dune::XT::LA::Backends::istl_sparse>
-      AnalyticalFluxType;
-  typedef typename AnalyticalFluxType::VectorType VectorType;
-  typedef std::vector<VectorType> BasisValuesMatrixType;
-
-  //  BasisValuesMatrixType basis_values_matrix(quadrature_rule.size());
-  BasisValuesMatrixType basis_values_matrix(quadrature_rule.size(), VectorType(dimRange));
+  BasisValuesMatrixType basis_values_matrix(quadrature_rule.size());
+  //  BasisValuesMatrixType basis_values_matrix(quadrature_rule.size(), VectorType(dimRange));
   for (size_t ii = 0; ii < quadrature_rule.size(); ++ii) {
     const auto hatfunctions_evaluated = Dune::GDT::Hyperbolic::Problems::evaluate_spherical_barycentric_coordinates(
         quadrature_rule[ii].position(), poly);
     for (size_t nn = 0; nn < dimRange; ++nn) {
-      //      basis_values_matrix[ii][nn] = hatfunctions_evaluated[nn];
-      basis_values_matrix[ii].set_entry(nn, hatfunctions_evaluated[nn]);
+      basis_values_matrix[ii][nn] = hatfunctions_evaluated[nn];
+      //      basis_values_matrix[ii].set_entry(nn, hatfunctions_evaluated[nn]);
       //      basis_values_matrix[ii][nn] =
       //          Dune::GDT::Hyperbolic::Problems::evaluate_legendre_polynomial(quadrature_rule[ii].position(), nn);
       //      basis_values_matrix[ii][nn] = Dune::GDT::Hyperbolic::Problems::evaluate_hat_function(
@@ -361,7 +349,7 @@ int main(int argc, char** argv)
                                                  DiscreteFunctionType,
                                                  RangeFieldType,
                                                  rhs_time_stepper_method,
-                                                 Dune::XT::LA::Backends::istl_sparse>::TimeStepperType
+                                                 Dune::XT::LA::default_sparse_backend>::TimeStepperType
       RHSOperatorTimeStepperType;
   typedef typename Dune::GDT::FractionalTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType>
       TimeStepperType;
@@ -375,7 +363,7 @@ int main(int argc, char** argv)
   //  const auto analytical_flux =
   //      std::make_shared<const AnalyticalFluxType>(grid_view, quadrature_rule, basis_values_matrix, poly, "umfpack");
   const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
-      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions, "umfpack");
+      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
   const std::shared_ptr<const InitialValueType> initial_values = problem.initial_values();
   const std::shared_ptr<const BoundaryValueType> boundary_values = problem.boundary_values();
   const std::shared_ptr<const RHSType> rhs = problem.rhs();
