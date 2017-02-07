@@ -23,7 +23,7 @@ namespace GDT {
 namespace internal {
 
 
-template <class DF, typename DT>
+template <class DF, typename DT, LocalEllipticIpdgIntegrands::Method ipdg_method>
 struct elliptic_ipdg_matrix_operator_bind_helper
 {
   static std::string suffix()
@@ -41,41 +41,52 @@ struct elliptic_ipdg_matrix_operator_bind_helper
     typedef typename C::MatrixType MatrixType;
 
     m.def(std::string(method_id + "__" + la_id).c_str(),
-          [](const DF& diffusion_factor, const DT& diffusion_tensor, const R& space, const size_t over_integrate) {
-            return make_elliptic_matrix_operator<MatrixType>(diffusion_factor, diffusion_tensor, space, over_integrate)
+          [](const DF& diffusion_factor,
+             const DT& diffusion_tensor,
+             const XT::Grid::BoundaryInfo<typename R::GridViewType::Intersection>& boundary_info,
+             const R& space,
+             const size_t over_integrate) {
+            return make_elliptic_ipdg_matrix_operator<MatrixType, ipdg_method>(
+                       diffusion_factor, diffusion_tensor, boundary_info, space, over_integrate)
                 .release(); //         <- b.c. EllipticIpdgMatrixOperator is not movable, returning the raw pointer lets
           }, //                                                                     pybind11 correctly manage the memory
           "diffusion_factor"_a,
           "diffusion_tensor"_a,
-          "space"_a,
-          "over_integrate"_a = 0,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>(),
-          py::keep_alive<0, 3>());
-
-    m.def(std::string(method_id).c_str(),
-          [](const DF& diffusion_factor,
-             const DT& diffusion_tensor,
-             MatrixType& matrix,
-             const R& space,
-             const size_t over_integrate) {
-            return make_elliptic_matrix_operator(diffusion_factor, diffusion_tensor, matrix, space, over_integrate)
-                .release(); //                                                                     <- s.a. for release()
-          },
-          "diffusion_factor"_a,
-          "diffusion_tensor"_a,
-          "matrix"_a,
+          "boundary_info"_a,
           "space"_a,
           "over_integrate"_a = 0,
           py::keep_alive<0, 1>(),
           py::keep_alive<0, 2>(),
           py::keep_alive<0, 3>(),
           py::keep_alive<0, 4>());
+
+    m.def(std::string(method_id).c_str(),
+          [](const DF& diffusion_factor,
+             const DT& diffusion_tensor,
+             const XT::Grid::BoundaryInfo<typename R::GridViewType::Intersection>& boundary_info,
+             MatrixType& matrix,
+             const R& space,
+             const size_t over_integrate) {
+            return make_elliptic_ipdg_matrix_operator<ipdg_method>(
+                       diffusion_factor, diffusion_tensor, boundary_info, matrix, space, over_integrate)
+                .release(); //                                                                     <- s.a. for release()
+          },
+          "diffusion_factor"_a,
+          "diffusion_tensor"_a,
+          "boundary_info"_a,
+          "matrix"_a,
+          "space"_a,
+          "over_integrate"_a = 0,
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>(),
+          py::keep_alive<0, 4>(),
+          py::keep_alive<0, 5>());
   } // ... addbind_factory_methods(...)
 }; // struct elliptic_ipdg_matrix_operator_bind_helper
 
-template <class D>
-struct elliptic_ipdg_matrix_operator_bind_helper<D, void>
+template <class D, LocalEllipticIpdgIntegrands::Method ipdg_method>
+struct elliptic_ipdg_matrix_operator_bind_helper<D, void, ipdg_method>
 {
   static std::string suffix()
   {
@@ -92,26 +103,41 @@ struct elliptic_ipdg_matrix_operator_bind_helper<D, void>
     typedef typename C::MatrixType MatrixType;
 
     m.def(std::string(method_id + "__" + la_id).c_str(),
-          [](const D& diffusion, const R& space, const size_t over_integrate) {
-            return make_elliptic_matrix_operator<MatrixType>(diffusion, space, over_integrate).release(); // <- s.a. for
-          }, //                                                                                               .release()
+          [](const D& diffusion,
+             const XT::Grid::BoundaryInfo<typename R::GridViewType::Intersection>& boundary_info,
+             const R& space,
+             const size_t over_integrate) {
+            return make_elliptic_ipdg_matrix_operator<MatrixType, ipdg_method>(
+                       diffusion, boundary_info, space, over_integrate)
+                .release(); //                                                                     <- s.a. for release()
+          },
           "diffusion"_a,
+          "boundary_info"_a,
           "space"_a,
           "over_integrate"_a = 0,
           py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>());
 
     m.def(std::string(method_id).c_str(),
-          [](const D& diffusion, MatrixType& matrix, const R& space, const size_t over_integrate) {
-            return make_elliptic_matrix_operator(diffusion, matrix, space, over_integrate).release(); //     <- s.a. for
-          }, //                                                                                               .release()
+          [](const D& diffusion,
+             const XT::Grid::BoundaryInfo<typename R::GridViewType::Intersection>& boundary_info,
+             MatrixType& matrix,
+             const R& space,
+             const size_t over_integrate) {
+            return make_elliptic_ipdg_matrix_operator<ipdg_method>(
+                       diffusion, boundary_info, matrix, space, over_integrate)
+                .release(); //                                                                     <- s.a. for release()
+          },
           "diffusion"_a,
+          "boundary_info"_a,
           "matrix"_a,
           "space"_a,
           "over_integrate"_a = 0,
           py::keep_alive<0, 1>(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 3>());
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>(),
+          py::keep_alive<0, 4>());
   } // ... addbind_factory_methods(...)
 }; // struct elliptic_ipdg_matrix_operator_bind_helper<..., void>
 
@@ -138,11 +164,11 @@ pybind11::class_<EllipticIpdgMatrixOperator<DF, DT, R, method, M, GV, S, F>> bin
 
   typedef EllipticIpdgMatrixOperator<DF, DT, R, method, M, GV, S, F> C;
   const std::string suffix =
-      la_id + "__" + space_id + "_" + internal::elliptic_ipdg_matrix_operator_bind_helper<DF, DT>::suffix();
+      la_id + "__" + space_id + "_" + internal::elliptic_ipdg_matrix_operator_bind_helper<DF, DT, method>::suffix();
 
   auto c = bind_matrix_operator<C>(m, "Elliptic" + method_id + "MatrixOperator__" + suffix);
 
-  internal::elliptic_ipdg_matrix_operator_bind_helper<DF, DT>::template addbind_factory_methods<C>(
+  internal::elliptic_ipdg_matrix_operator_bind_helper<DF, DT, method>::template addbind_factory_methods<C>(
       m, "make_elliptic_" + XT::Common::to_lower(method_id) + "_matrix_operator", la_id);
 
   return c;
