@@ -43,6 +43,35 @@ template <class GridType,
           LocalEllipticIpdgIntegrands::Method method = LocalEllipticIpdgIntegrands::default_method>
 class IpdgDiscretizer
 {
+  template <LocalEllipticIpdgIntegrands::Method in, class Anything = void>
+  struct translate
+  {
+  };
+
+  template <class Anything>
+  struct translate<LocalEllipticIpdgIntegrands::Method::sipdg, Anything>
+  {
+    static const constexpr ChooseDiscretizer value = ChooseDiscretizer::sipdg;
+  };
+
+  template <class Anything>
+  struct translate<LocalEllipticIpdgIntegrands::Method::swipdg, Anything>
+  {
+    static const constexpr ChooseDiscretizer value = ChooseDiscretizer::swipdg;
+  };
+
+  template <class Anything>
+  struct translate<LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor, Anything>
+  {
+    static const constexpr ChooseDiscretizer value = ChooseDiscretizer::swipdg_affine_factor;
+  };
+
+  template <class Anything>
+  struct translate<LocalEllipticIpdgIntegrands::Method::swipdg_affine_tensor, Anything>
+  {
+    static const constexpr ChooseDiscretizer value = ChooseDiscretizer::swipdg_affine_tensor;
+  };
+
 public:
   typedef ProblemInterface<typename GridType::template Codim<0>::Entity,
                            typename GridType::ctype,
@@ -56,7 +85,7 @@ public:
   typedef typename XT::LA::Container<RangeFieldType, la>::VectorType VectorType;
   typedef StationaryContainerBasedDefaultDiscretization<ProblemType, SpaceType, MatrixType, VectorType, SpaceType>
       DiscretizationType;
-  static const constexpr ChooseDiscretizer type = ChooseDiscretizer::swipdg;
+  static const constexpr ChooseDiscretizer type = translate<method>::value;
   static const constexpr XT::LA::Backends la_backend = la;
   static const int polOrder = pol;
 

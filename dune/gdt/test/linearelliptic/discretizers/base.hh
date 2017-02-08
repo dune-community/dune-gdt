@@ -18,7 +18,9 @@ enum class ChooseDiscretizer
 {
   cg,
   sipdg,
-  swipdg
+  swipdg,
+  swipdg_affine_factor,
+  swipdg_affine_tensor
 }; // enum class ChooseDiscretizer
 
 
