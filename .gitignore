@@ -39,3 +39,4 @@ demos-*
 *.vtu
 *.pc
 build-*
+.idea
