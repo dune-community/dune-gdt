@@ -25,45 +25,54 @@
 
 using namespace Dune::GDT::Test;
 
-TEST_F(ProjectionTest, produces_correct_results)
+{% for SpaceType,Name in config.spaces_with_names %}
+
+typedef ProjectionTest<{{SpaceType}}> ProjectionTest_{{Name}};
+TEST_F(ProjectionTest_{{Name}}, produces_correct_results)
 {
   this->produces_correct_results();
 }
 
-TEST_F(L2ProjectionOperatorTest, constructible_by_ctor)
+typedef L2ProjectionOperatorTest<{{SpaceType}}> L2ProjectionOperatorTest_{{Name}};
+TEST_F(L2ProjectionOperatorTest_{{Name}}, constructible_by_ctor)
 {
   this->constructible_by_ctor();
 }
-TEST_F(L2ProjectionOperatorTest, constructible_by_factory)
+TEST_F(L2ProjectionOperatorTest_{{Name}}, constructible_by_factory)
 {
   this->constructible_by_factory();
 }
-TEST_F(L2ProjectionOperatorTest, free_function_callable)
+TEST_F(L2ProjectionOperatorTest_{{Name}}, free_function_callable)
 {
   this->free_function_callable();
 }
-TEST_F(L2ProjectionOperatorTest, produces_correct_results)
+TEST_F(L2ProjectionOperatorTest_{{Name}}, produces_correct_results)
 {
   // RT : 0.0925927
-  typedef typename TypeParam::GridViewType::Grid Grid;
+  typedef typename L2ProjectionOperatorTest_{{Name}}::GridViewType::Grid Grid;
   const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
   this->produces_correct_results(tolerance);
   this->produces_correct_results(tolerance);
 }
 
-TEST_F(L2ProjectionLocalizableOperatorTest, constructible_by_ctor)
+typedef L2ProjectionLocalizableOperatorTest<{{SpaceType}}> L2ProjectionLocalizableOperatorTest_{{Name}};
+TEST_F(L2ProjectionLocalizableOperatorTest_{{Name}}, constructible_by_ctor)
 {
   this->constructible_by_ctor();
 }
-TEST_F(L2ProjectionLocalizableOperatorTest, constructible_by_factory)
+TEST_F(L2ProjectionLocalizableOperatorTest_{{Name}}, constructible_by_factory)
 {
   this->constructible_by_factory();
 }
-TEST_F(L2ProjectionLocalizableOperatorTest, produces_correct_results)
+TEST_F(L2ProjectionLocalizableOperatorTest_{{Name}}, produces_correct_results)
 {
   // RT : 0.096226
-  typedef typename TypeParam::GridViewType::Grid Grid;
+  typedef typename L2ProjectionLocalizableOperatorTest_{{Name}}::GridViewType::Grid Grid;
   const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
   this->produces_correct_results(tolerance);
   this->produces_correct_results(tolerance);
 }
+
+{% endfor %}
+
+

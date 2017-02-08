@@ -16,12 +16,13 @@ namespace Dune {
 namespace GDT {
 namespace Test {
 
+template <class SpaceType>
 struct L2ProjectionLocalizableOperatorTest
-    : public LocalizableProjectionOperatorBase<SPACETYPE,
+    : public LocalizableProjectionOperatorBase<SpaceType,
                                                L2ProjectionLocalizableOperator<
-                                                   typename SPACETYPE::GridViewType,
-                                                   typename internal::OperatorBaseTraits<SPACETYPE>::FunctionType,
-                                                   typename internal::OperatorBaseTraits<SPACETYPE>::
+                                                   typename SpaceType::GridViewType,
+                                                   typename internal::OperatorBaseTraits<SpaceType>::FunctionType,
+                                                   typename internal::OperatorBaseTraits<SpaceType>::
                                                        DiscreteFunctionType>>
 {
   void constructible_by_factory()
@@ -38,9 +39,9 @@ struct L2ProjectionLocalizableOperatorTest
   } // ... constructible_by_factory(...)
 };
 
-
+template <class SpaceType>
 struct L2ProjectionOperatorTest
-    : public ProjectionOperatorBase<SPACETYPE, L2ProjectionOperator<typename SPACETYPE::GridViewType, double>>
+    : public ProjectionOperatorBase<SpaceType, L2ProjectionOperator<typename SpaceType::GridViewType, double>>
 {
   void constructible_by_factory()
   {

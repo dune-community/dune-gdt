@@ -16,6 +16,7 @@ namespace Dune {
 namespace GDT {
 namespace Test {
 
+template <class SPACETYPE>
 struct ProjectionTest : public internal::ProjectionOperatorBase<SPACETYPE>
 {
   void produces_correct_results(const double& tolerance = 1e-15)
