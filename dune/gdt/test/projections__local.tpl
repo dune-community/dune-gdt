@@ -7,8 +7,10 @@
 
 #include <dune/xt/common/test/main.hxx>
 
-#include "projections/l2-local.hh"
-#include "spaces/dg/fem.hh"
+#include <dune/gdt/test/projections/l2-local.hh>
+#include <dune/gdt/test/spaces/dg/fem.hh>
+
+#if 0
 
 using namespace Dune::GDT::Test;
 
@@ -405,5 +407,6 @@ TEST(DISABLED_L2LocalProjectionOperatorTest, produces_correct_results)
 {
 }
 
+#endif // 0
 
 #endif // HAVE_DUNE_PDELAB

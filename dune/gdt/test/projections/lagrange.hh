@@ -16,13 +16,13 @@ namespace Dune {
 namespace GDT {
 namespace Test {
 
-
+template <class SpaceType>
 struct LagrangeProjectionLocalizableOperatorTest
-    : public LocalizableProjectionOperatorBase<SPACETYPE,
+    : public LocalizableProjectionOperatorBase<SpaceType,
                                                LagrangeProjectionLocalizableOperator<
-                                                   typename SPACETYPE::GridViewType,
-                                                   typename internal::OperatorBaseTraits<SPACETYPE>::FunctionType,
-                                                   typename internal::OperatorBaseTraits<SPACETYPE>::
+                                                   typename SpaceType::GridViewType,
+                                                   typename internal::OperatorBaseTraits<SpaceType>::FunctionType,
+                                                   typename internal::OperatorBaseTraits<SpaceType>::
                                                        DiscreteFunctionType>>
 {
   void constructible_by_factory()
@@ -36,9 +36,9 @@ struct LagrangeProjectionLocalizableOperatorTest
   } // ... constructible_by_factory(...)
 }; // struct LagrangeProjectionLocalizableOperatorTest
 
-
+template <class SpaceType>
 struct LagrangeProjectionOperatorTest
-    : public ProjectionOperatorBase<SPACETYPE, LagrangeProjectionOperator<typename SPACETYPE::GridViewType, double>>
+    : public ProjectionOperatorBase<SpaceType, LagrangeProjectionOperator<typename SpaceType::GridViewType, double>>
 {
   void constructible_by_factory()
   {

@@ -25,6 +25,7 @@
 
 using namespace Dune::GDT::Test;
 
+// clang-format off
 {% for SpaceType,Name in config.spaces_with_names %}
 
 typedef ProjectionTest<{{SpaceType}}> ProjectionTest_{{Name}};
@@ -72,7 +73,5 @@ TEST_F(L2ProjectionLocalizableOperatorTest_{{Name}}, produces_correct_results)
   this->produces_correct_results(tolerance);
   this->produces_correct_results(tolerance);
 }
-
 {% endfor %}
-
-
+// clang-format on

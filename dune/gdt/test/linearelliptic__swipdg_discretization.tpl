@@ -17,14 +17,12 @@
 
 #include <dune/gdt/spaces/interface.hh>
 
-#include "linearelliptic/eocstudy.hh"
-#include "linearelliptic/discretizers/ipdg.hh"
+#include <dune/gdt/test/linearelliptic/eocstudy.hh>
+#include <dune/gdt/test/linearelliptic/discretizers/ipdg.hh>
 
-
+template <class TestCaseType, Dune::GDT::ChooseSpaceBackend SpaceBackend, Dune::XT::LA::Backends LaBackend>
 struct linearelliptic_SWIPDG_discretization : public ::testing::Test
 {
-  typedef TESTCASETYPE TestCaseType;
-
   template <int polOrder>
   static void eoc_study()
   {
@@ -35,8 +33,8 @@ struct linearelliptic_SWIPDG_discretization : public ::testing::Test
     DXTC_LOG_INFO << std::endl;
     typedef LinearElliptic::IpdgDiscretizer<typename TestCaseType::GridType,
                                             XT::Grid::Layers::level,
-                                            ChooseSpaceBackend::SPACE_BACKEND,
-                                            XT::LA::Backends::LA_BACKEND,
+                                            SpaceBackend,
+                                            LaBackend,
                                             polOrder,
                                             typename TestCaseType::ProblemType::RangeFieldType,
                                             1,
@@ -56,12 +54,20 @@ struct linearelliptic_SWIPDG_discretization : public ::testing::Test
 using namespace Dune;
 using namespace Dune::GDT;
 
+// clang-format off
+{% for TestCase, SpaceBackend, LaBackend, Name in config.permutations %}
 
-TEST_F(linearelliptic_SWIPDG_discretization, eoc_study_order_1)
+typedef linearelliptic_SWIPDG_discretization<{{TestCase}}, Dune::GDT::ChooseSpaceBackend::{{SpaceBackend}},
+                                             Dune::XT::LA::Backends::{{LaBackend}}>
+    linearelliptic_SWIPDG_discretization{{Name}};
+
+TEST_F(linearelliptic_SWIPDG_discretization{{Name}}, eoc_study_order_1)
 {
   this->template eoc_study<1>();
 }
-TEST_F(linearelliptic_SWIPDG_discretization, eoc_study_order_2)
+TEST_F(linearelliptic_SWIPDG_discretization{{Name}}, eoc_study_order_2)
 {
   this->template eoc_study<2>();
 }
+{% endfor %}
+// clang-format on

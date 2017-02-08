@@ -17,15 +17,15 @@
 
 #include <dune/gdt/spaces/interface.hh>
 
-#include "linearelliptic/eocstudy.hh"
-#include "linearelliptic/discretizers/cg.hh"
+#include <dune/gdt/test/linearelliptic/eocstudy.hh>
+#include <dune/gdt/test/linearelliptic/discretizers/cg.hh>
 
 #include <dune/gdt/test/linearelliptic/problems.hh>
 #include <dune/gdt/test/grids.hh>
 
+template <class TestCaseType, Dune::GDT::ChooseSpaceBackend SpaceBackend, Dune::XT::LA::Backends LaBackend>
 struct linearelliptic_CG_discretization : public ::testing::Test
 {
-  typedef TESTCASETYPE TestCaseType;
 
   static void eoc_study()
   {
@@ -36,8 +36,8 @@ struct linearelliptic_CG_discretization : public ::testing::Test
     DXTC_LOG_INFO << std::endl;
     typedef LinearElliptic::CGDiscretizer<typename TestCaseType::GridType,
                                           XT::Grid::Layers::level,
-                                          ChooseSpaceBackend::SPACE_BACKEND,
-                                          XT::LA::Backends::LA_BACKEND,
+                                          SpaceBackend,
+                                          LaBackend,
                                           1,
                                           typename TestCaseType::ProblemType::RangeFieldType,
                                           1>
@@ -52,7 +52,18 @@ struct linearelliptic_CG_discretization : public ::testing::Test
   } // ... eoc_study()
 }; // linearelliptic_CG_discretization
 
-TEST_F(linearelliptic_CG_discretization, eoc_study)
+// clang-format off
+{% for TestCase, SpaceBackend, LaBackend, Name in config.permutations %}
+// clang-format on
+
+typedef linearelliptic_CG_discretization<{{TestCase}}, Dune::GDT::ChooseSpaceBackend::{{SpaceBackend}},
+                                         Dune::XT::LA::Backends::{{LaBackend}}>
+    linearelliptic_CG_discretization_{{Name}};
+
+TEST_F(linearelliptic_CG_discretization_{{Name}}, eoc_study)
 {
   this->eoc_study();
 }
+// clang-format off
+{% endfor %}
+// clang-format on
