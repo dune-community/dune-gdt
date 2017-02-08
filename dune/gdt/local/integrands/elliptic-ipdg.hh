@@ -115,7 +115,6 @@ template <class DiffusionFactorImp, class DiffusionTensorImp, Method method>
 class Inner
     : public LocalFaceIntegrandInterface<internal::InnerTraits<DiffusionFactorImp, DiffusionTensorImp, method>, 4>
 {
-  static_assert(method == Method::swipdg, "Other methods are not implemented yet!");
   typedef LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
   typedef Inner<DiffusionFactorImp, DiffusionTensorImp, method> ThisType;
 
@@ -392,6 +391,112 @@ private:
     }
   }; // struct DiffusionDependentOrderEvalRedirect< true, false, ... >
 
+  template <Method m, class Anything = void>
+  struct IPDG
+  {
+    static_assert(AlwaysFalse<Anything>::value, "Other methods are not implemented yet!");
+
+    template <class R>
+    static inline R delta_plus(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_ne*/,
+                               const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_ne*/,
+                               const FieldVector<R, dimDomain>& /*normal*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+
+    template <class R>
+    static inline R delta_minus(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_en*/,
+                                const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_en*/,
+                                const FieldVector<R, dimDomain>& /*normal*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+
+    template <class R>
+    static inline R gamma(const R& /*delta_plus*/, const R& /*delta_minus*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+
+    template <class R>
+    static inline R penalty(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                            const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                            const R& sigma,
+                            const R& gamma,
+                            const R& h,
+                            const R& beta)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+
+    template <class R>
+    static inline R weight_plus(const R& /*delta_plus*/, const R& /*delta_minus*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+
+    template <class R>
+    static inline R weight_minus(const R& /*delta_plus*/, const R& /*delta_minus*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+  }; // struct IPDG<...>
+
+  template <class Anything>
+  struct IPDG<Method::swipdg, Anything>
+  {
+    template <class R>
+    static inline R delta_plus(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_ne*/,
+                               const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& diffusion_ne,
+                               const FieldVector<R, dimDomain>& normal)
+    {
+      return normal * (diffusion_ne * normal);
+    }
+
+    template <class R>
+    static inline R delta_minus(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_en*/,
+                                const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& diffusion_en,
+                                const FieldVector<R, dimDomain>& normal)
+    {
+      return normal * (diffusion_en * normal);
+    }
+
+    template <class R>
+    static inline R gamma(const R& delta_plus, const R& delta_minus)
+    {
+      return (delta_plus * delta_minus) / (delta_plus + delta_minus);
+    }
+
+    template <class R>
+    static inline R penalty(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                            const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                            const R& sigma,
+                            const R& gamma,
+                            const R& h,
+                            const R& beta)
+    {
+      return (sigma * gamma) / std::pow(h, beta);
+    }
+
+    template <class R>
+    static inline R weight_plus(const R& delta_plus, const R& delta_minus)
+    {
+      return delta_minus / (delta_plus + delta_minus);
+    }
+
+    template <class R>
+    static inline R weight_minus(const R& delta_plus, const R& delta_minus)
+    {
+      return delta_plus / (delta_plus + delta_minus);
+    }
+  }; // struct IPDG<Method::swipdg, ...>
+
 public:
   /// \name Redirects for single diffusion (either factor or tensor, but not both).
   /// \{
@@ -525,19 +630,22 @@ public:
     const TensorType local_diffusion_tensor_value_ne = local_diffusion_tensor_ne.evaluate(local_point_ne);
     const auto diffusion_value_en = local_diffusion_tensor_value_en * local_diffusion_factor_value_en;
     const auto diffusion_value_ne = local_diffusion_tensor_value_ne * local_diffusion_factor_value_ne;
-    //    // this evaluation has to be linear wrt the diffusion factor, so no other averaging method is allowed here!
-    //    const auto local_diffusion_factor = (local_diffusion_factor_en + local_diffusion_factor_ne) * 0.5;
     // compute penalty factor (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(
         test_base_en.order(), std::max(ansatz_base_en.order(), std::max(test_base_ne.order(), ansatz_base_ne.order())));
     const R sigma = LocalSipdgIntegrands::internal::inner_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
-    const R delta_plus = normal * (/*local_diffusion_tensor_ne*/ diffusion_value_ne * normal);
-    const R delta_minus = normal * (/*local_diffusion_tensor_en*/ diffusion_value_en * normal);
-    const R gamma = (delta_plus * delta_minus) / (delta_plus + delta_minus);
-    const R penalty = (/*local_diffusion_factor **/ sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
-    const R weight_plus = delta_minus / (delta_plus + delta_minus);
-    const R weight_minus = delta_plus / (delta_plus + delta_minus);
+    const R delta_plus = IPDG<method>::delta_plus(local_diffusion_tensor_value_ne, diffusion_value_ne, normal);
+    const R delta_minus = IPDG<method>::delta_minus(local_diffusion_tensor_value_en, diffusion_value_en, normal);
+    const R gamma = IPDG<method>::gamma(delta_plus, delta_minus);
+    const R penalty = IPDG<method>::penalty(local_diffusion_factor_value_en,
+                                            local_diffusion_factor_value_ne,
+                                            sigma,
+                                            gamma,
+                                            intersection.geometry().volume(),
+                                            beta_);
+    const R weight_plus = IPDG<method>::weight_plus(delta_plus, delta_minus);
+    const R weight_minus = IPDG<method>::weight_minus(delta_plus, delta_minus);
     // evaluate bases
     // * entity
     //   * test
@@ -630,8 +738,6 @@ template <class DiffusionFactorImp, class DiffusionTensorImp, Method method>
 class BoundaryLHS
     : public LocalFaceIntegrandInterface<internal::BoundaryLHSTraits<DiffusionFactorImp, DiffusionTensorImp, method>, 2>
 {
-  static_assert(method == Method::swipdg, "Other methods are not implemented yet!");
-
 public:
   typedef LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
   typedef BoundaryLHS<DiffusionFactorImp, DiffusionTensorImp, method> ThisType;
@@ -797,6 +903,44 @@ private:
     }
   }; // struct DiffusionDependentOrderEvalRedirect< true, false, ... >
 
+  template <Method m, class Anything = void>
+  struct IPDG
+  {
+    static_assert(AlwaysFalse<Anything>::value, "Other methods are not implemented yet!");
+
+    template <class R>
+    static inline R gamma(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion*/,
+                          const FieldVector<R, dimDomain>& /*normal*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+
+    template <class R>
+    static inline R penalty(const R& /*sigma*/, const R& /*gamma*/, const R& /*h*/, const R& /*beta*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+  }; // struct IPDG<...>
+
+  template <class Anything>
+  struct IPDG<Method::swipdg, Anything>
+  {
+    template <class R>
+    static inline R gamma(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& diffusion,
+                          const FieldVector<R, dimDomain>& normal)
+    {
+      return normal * (diffusion * normal);
+    }
+
+    template <class R>
+    static inline R penalty(const R& sigma, const R& gamma, const R& h, const R& beta)
+    {
+      return (sigma * gamma) / std::pow(h, beta);
+    }
+  }; // struct IPDG<Method::swipdg, ...>
+
 public:
   /// \name Redirects for single diffusion (either factor or tensor, but not both).
   /// \{
@@ -872,8 +1016,8 @@ public:
     const size_t max_polorder = std::max(test_base.order(), ansatz_base.order());
     const R sigma = LocalSipdgIntegrands::internal::boundary_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
-    const R gamma = normal * (/*diffusion_tensor_value*/ diffusion_value * normal);
-    const R penalty = (/*diffusion_factor_value **/ sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+    const R gamma = IPDG<method>::gamma(diffusion_value, normal);
+    const R penalty = IPDG<method>::penalty(sigma, gamma, intersection.geometry().volume(), beta_);
     // evaluate bases
     // * test
     const size_t rows = test_base.size();
@@ -915,7 +1059,6 @@ class BoundaryRHS : public LocalFaceIntegrandInterface<internal::BoundaryRHSTrai
                                                                                    method>,
                                                        1>
 {
-  static_assert(method == Method::swipdg, "Other methods are not implemented yet!");
   typedef LocalEllipticIntegrand<DiffusionFactorImp, DiffusionTensorImp> EllipticType;
   typedef BoundaryRHS<DirichletImp, DiffusionFactorImp, DiffusionTensorImp, method> ThisType;
 
@@ -1029,6 +1172,46 @@ public:
     return std::max(test_order + dirichletOrder, diffusionOrder + test_gradient_order + dirichletOrder);
   } // ... order(...)
 
+private:
+  template <Method m, class Anything = void>
+  struct IPDG
+  {
+    static_assert(AlwaysFalse<Anything>::value, "Other methods are not implemented yet!");
+
+    template <class R>
+    static inline R gamma(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion*/,
+                          const FieldVector<R, dimDomain>& /*normal*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+
+    template <class R>
+    static inline R penalty(const R& /*sigma*/, const R& /*gamma*/, const R& /*h*/, const R& /*beta*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+  }; // struct IPDG<...>
+
+  template <class Anything>
+  struct IPDG<Method::swipdg, Anything>
+  {
+    template <class R>
+    static inline R gamma(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& diffusion,
+                          const FieldVector<R, dimDomain>& normal)
+    {
+      return normal * (diffusion * normal);
+    }
+
+    template <class R>
+    static inline R penalty(const R& sigma, const R& gamma, const R& h, const R& beta)
+    {
+      return (sigma * gamma) / std::pow(h, beta);
+    }
+  }; // struct IPDG<Method::swipdg, ...>
+
+public:
   /// \}
   /// \name Actual implementation of evaluate.
   /// \{
@@ -1055,14 +1238,13 @@ public:
     const auto dirichlet_value = local_dirichlet.evaluate(local_point_entity);
     const auto diffusion_factor_value = local_diffusion_factor.evaluate(local_point_entity);
     const TensorType diffusion_tensor_value = local_diffusion_tensor.evaluate(local_point_entity);
+    const auto diffusion_value = diffusion_tensor_value * diffusion_factor_value;
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t polorder = test_base.order();
     const R sigma = LocalSipdgIntegrands::internal::boundary_sigma(polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
-    const R gamma = normal * (diffusion_tensor_value * normal);
-    const R penalty = (diffusion_factor_value * sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
-    // compute diffusion value
-    const auto diffusion_value = diffusion_tensor_value * diffusion_factor_value;
+    const R gamma = IPDG<method>::gamma(diffusion_value, normal);
+    const R penalty = IPDG<method>::penalty(sigma, gamma, intersection.geometry().volume(), beta_);
     // evaluate basis
     const size_t size = test_base.size();
     const auto test_values = test_base.evaluate(local_point_entity);
