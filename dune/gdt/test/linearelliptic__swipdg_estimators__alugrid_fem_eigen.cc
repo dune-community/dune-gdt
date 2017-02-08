@@ -18,7 +18,7 @@ using namespace Dune;
 using namespace Dune::GDT;
 
 
-#if HAVE_DUNE_FEM && HAVE_EIGEN && HAVE_ALUGRID
+#if 0 && HAVE_DUNE_FEM && HAVE_EIGEN && HAVE_DUNE_ALUGRID
 
 TYPED_TEST_CASE(linearelliptic_SWIPDG_estimators, AluGridTestCases);
 TYPED_TEST(linearelliptic_SWIPDG_estimators, eoc_study_using_fem_and_eigen_and_alugrid_order_1)

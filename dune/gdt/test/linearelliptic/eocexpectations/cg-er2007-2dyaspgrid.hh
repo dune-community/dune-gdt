@@ -21,8 +21,8 @@ namespace Test {
 
 template <>
 class LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<Yasp2Grid, double, 1>,
-                                    LinearElliptic::ChooseDiscretizer::cg, 1>
-    : public internal::LinearEllipticEocExpectationsBase<1>
+                                    LinearElliptic::ChooseDiscretizer::cg,
+                                    1> : public internal::LinearEllipticEocExpectationsBase<1>
 {
   typedef LinearElliptic::ER2007TestCase<Yasp2Grid, double, 1> TestCaseType;
 

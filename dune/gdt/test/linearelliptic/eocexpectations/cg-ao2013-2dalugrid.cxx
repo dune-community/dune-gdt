@@ -1,6 +1,6 @@
 #include <config.h>
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 #include "cg-ao2013-2dalugrid.hh"
 
@@ -9,11 +9,12 @@ namespace GDT {
 namespace Test {
 
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::cg, 1>::
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::cg,
+                                                  1>::
     results(const LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::cg, 1>::TestCaseType&,
+                                                LinearElliptic::ChooseDiscretizer::cg,
+                                                1>::TestCaseType&,
             const std::string type)
 {
   if (type == "L2") {
@@ -39,11 +40,12 @@ LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridTyp
   return {};
 }
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::cg, 1>::
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::cg,
+                                                  1>::
     results(const LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::cg, 1>::TestCaseType&,
+                                                LinearElliptic::ChooseDiscretizer::cg,
+                                                1>::TestCaseType&,
             const std::string type)
 {
   if (type == "L2") {
@@ -74,4 +76,4 @@ LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridTyp
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID

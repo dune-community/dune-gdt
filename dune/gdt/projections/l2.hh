@@ -75,12 +75,16 @@ public:
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<XT::Grid::is_layer<GridViewType>::value
-                            && XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+                            && XT::Functions::is_localizable_function<SourceType>::value
+                            && is_space<SpaceType>::value
                             && XT::LA::is_vector<VectorType>::value,
-                        std::unique_ptr<L2ProjectionLocalizableOperator<GridViewType, SourceType,
+                        std::unique_ptr<L2ProjectionLocalizableOperator<GridViewType,
+                                                                        SourceType,
                                                                         DiscreteFunction<SpaceType, VectorType>>>>::type
-make_l2_projection_localizable_operator(const GridViewType& grid_view, const SourceType& source,
-                                        DiscreteFunction<SpaceType, VectorType>& range, const size_t over_integrate = 0)
+make_l2_projection_localizable_operator(const GridViewType& grid_view,
+                                        const SourceType& source,
+                                        DiscreteFunction<SpaceType, VectorType>& range,
+                                        const size_t over_integrate = 0)
 {
   return Dune::XT::Common::
       make_unique<L2ProjectionLocalizableOperator<GridViewType, SourceType, DiscreteFunction<SpaceType, VectorType>>>(
@@ -90,9 +94,11 @@ make_l2_projection_localizable_operator(const GridViewType& grid_view, const Sou
 template <class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
                             && XT::LA::is_vector<VectorType>::value,
-                        std::unique_ptr<L2ProjectionLocalizableOperator<typename SpaceType::GridViewType, SourceType,
+                        std::unique_ptr<L2ProjectionLocalizableOperator<typename SpaceType::GridViewType,
+                                                                        SourceType,
                                                                         DiscreteFunction<SpaceType, VectorType>>>>::type
-make_l2_projection_localizable_operator(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range,
+make_l2_projection_localizable_operator(const SourceType& source,
+                                        DiscreteFunction<SpaceType, VectorType>& range,
                                         const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<L2ProjectionLocalizableOperator<typename SpaceType::GridViewType,
@@ -144,8 +150,8 @@ public:
   }
 
   template <class RangeType, class SourceType>
-  void apply_inverse(const RangeType& /*range*/, SourceType& /*source*/,
-                     const XT::Common::Configuration& /*opts*/) const
+  void
+  apply_inverse(const RangeType& /*range*/, SourceType& /*source*/, const XT::Common::Configuration& /*opts*/) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
@@ -199,10 +205,13 @@ make_l2_projection_operator(const GridViewType& grid_view, const size_t over_int
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<XT::Grid::is_layer<GridViewType>::value
-                            && XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+                            && XT::Functions::is_localizable_function<SourceType>::value
+                            && is_space<SpaceType>::value
                             && XT::LA::is_vector<VectorType>::value,
                         void>::type
-project_l2(const GridViewType& grid_view, const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range,
+project_l2(const GridViewType& grid_view,
+           const SourceType& source,
+           DiscreteFunction<SpaceType, VectorType>& range,
            const size_t over_integrate = 0)
 {
   make_l2_projection_operator(grid_view, over_integrate)->apply(source, range);

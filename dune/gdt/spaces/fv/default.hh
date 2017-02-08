@@ -41,18 +41,22 @@ class FvSpaceTraits
 {
 public:
   typedef FvSpace<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
-  static const int polOrder    = 0;
+  static const int polOrder = 0;
   static const bool continuous = false;
   typedef GridViewImp GridViewType;
   typedef typename GridViewType::IndexSet BackendType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   typedef RangeFieldImp RangeFieldType;
   typedef FvMapper<GridViewType, rangeDim, rangeDimCols> MapperType;
-  typedef BaseFunctionSet::FiniteVolume<typename GridViewType::template Codim<0>::Entity, typename GridViewType::ctype,
-                                        GridViewType::dimension, RangeFieldType, rangeDim, rangeDimCols>
+  typedef BaseFunctionSet::FiniteVolume<typename GridViewType::template Codim<0>::Entity,
+                                        typename GridViewType::ctype,
+                                        GridViewType::dimension,
+                                        RangeFieldType,
+                                        rangeDim,
+                                        rangeDimCols>
       BaseFunctionSetType;
   static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
-  static const bool needs_grid_view              = true;
+  static const bool needs_grid_view = true;
   typedef CommunicationChooser<GridViewType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 }; // class FvSpaceTraits
@@ -63,12 +67,16 @@ public:
 
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim>
 class FvSpace<GridViewImp, RangeFieldImp, rangeDim, 1>
-    : public FvSpaceInterface<internal::FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
-                              rangeDim, 1>
+    : public FvSpaceInterface<internal::FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
+                              GridViewImp::dimension,
+                              rangeDim,
+                              1>
 {
   typedef FvSpace<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef FvSpaceInterface<internal::FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>, GridViewImp::dimension,
-                           rangeDim, 1>
+  typedef FvSpaceInterface<internal::FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
+                           GridViewImp::dimension,
+                           rangeDim,
+                           1>
       BaseType;
 
 public:
@@ -139,15 +147,13 @@ private:
 
 
 template <class R, size_t r, size_t rC, class GV>
-FvSpace<GV, R, r, rC>
-make_fv_space(const GV& grid_view)
+FvSpace<GV, R, r, rC> make_fv_space(const GV& grid_view)
 {
   return FvSpace<GV, R, r, rC>(grid_view);
 }
 
 template <class R, size_t r, class GV>
-FvSpace<GV, R, r, 1>
-make_fv_space(const GV& grid_view)
+FvSpace<GV, R, r, 1> make_fv_space(const GV& grid_view)
 {
   return FvSpace<GV, R, r, 1>(grid_view);
 }

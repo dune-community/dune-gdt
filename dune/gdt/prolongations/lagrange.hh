@@ -84,7 +84,10 @@ public:
 }; // class LagrangeProlongationLocalizableOperator
 
 
-template <class GridViewType, class SourceSpaceType, class SourceVectorType, class RangeSpaceType,
+template <class GridViewType,
+          class SourceSpaceType,
+          class SourceVectorType,
+          class RangeSpaceType,
           class RangeVectorType>
 typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<LagrangeProlongationLocalizableOperator<GridViewType,
@@ -94,7 +97,8 @@ typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
                                                                                                  RangeVectorType>>>>::
     type
     make_lagrange_prolongation_localizable_operator(
-        const GridViewType& grid_view, const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
+        const GridViewType& grid_view,
+        const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
         DiscreteFunction<RangeSpaceType, RangeVectorType>& range)
 {
   return Dune::XT::Common::
@@ -155,8 +159,8 @@ public:
   }
 
   template <class RangeType, class SourceType>
-  void apply_inverse(const RangeType& /*range*/, SourceType& /*source*/,
-                     const XT::Common::Configuration& /*opts*/) const
+  void
+  apply_inverse(const RangeType& /*range*/, SourceType& /*source*/, const XT::Common::Configuration& /*opts*/) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
@@ -186,16 +190,14 @@ make_lagrange_prolongation_operator(const GridViewType& grid_view)
 
 
 template <class GridViewType, class SS, class SV, class RS, class RV>
-typename std::enable_if<XT::Grid::is_layer<GridViewType>::value, void>::type
-prolong_lagrange(const GridViewType& grid_view, const ConstDiscreteFunction<SS, SV>& source,
-                 DiscreteFunction<RS, RV>& range)
+typename std::enable_if<XT::Grid::is_layer<GridViewType>::value, void>::type prolong_lagrange(
+    const GridViewType& grid_view, const ConstDiscreteFunction<SS, SV>& source, DiscreteFunction<RS, RV>& range)
 {
   make_lagrange_prolongation_operator(grid_view)->apply(source, range);
 }
 
 template <class SS, class SV, class RS, class RV>
-void
-prolong_lagrange(const ConstDiscreteFunction<SS, SV>& source, DiscreteFunction<RS, RV>& range)
+void prolong_lagrange(const ConstDiscreteFunction<SS, SV>& source, DiscreteFunction<RS, RV>& range)
 {
   make_lagrange_prolongation_operator(range.space().grid_view())->apply(source, range);
 }

@@ -37,8 +37,8 @@ class FvProductSpaceTraits : public FvSpaceTraits<GridViewImp, RangeFieldImp, ra
 public:
   typedef FvProductSpace<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   using typename BaseType::GridViewType;
-  static const size_t dimDomain    = GridViewType::dimension;
-  static const size_t dimRange     = rangeDim;
+  static const size_t dimDomain = GridViewType::dimension;
+  static const size_t dimRange = rangeDim;
   static const size_t dimRangeCols = rangeDimCols;
   using typename BaseType::RangeFieldType;
   typedef typename Dune::GDT::FvSpace<GridViewType, RangeFieldType, 1, dimRangeCols> FactorSpaceType;
@@ -53,13 +53,19 @@ public:
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim>
 class FvProductSpace<GridViewImp, RangeFieldImp, rangeDim, 1>
     : public Dune::GDT::FvSpaceInterface<internal::FvProductSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
-                                         GridViewImp::dimension, rangeDim, 1>,
+                                         GridViewImp::dimension,
+                                         rangeDim,
+                                         1>,
       public Dune::GDT::ProductSpaceInterface<internal::FvProductSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
-                                              GridViewImp::dimension, rangeDim, 1>
+                                              GridViewImp::dimension,
+                                              rangeDim,
+                                              1>
 {
   typedef FvProductSpace<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
   typedef Dune::GDT::FvSpaceInterface<internal::FvProductSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
-                                      GridViewImp::dimension, rangeDim, 1>
+                                      GridViewImp::dimension,
+                                      rangeDim,
+                                      1>
       BaseType;
   typedef FvSpace<GridViewImp, RangeFieldImp, rangeDim, 1> FvSpaceFVSpaceType;
 
@@ -81,7 +87,7 @@ public:
   }
 
   FvProductSpace(const ThisType& other) = default;
-  FvProductSpace(ThisType&& source)     = default;
+  FvProductSpace(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;
 

@@ -15,7 +15,7 @@
 #include <dune/istl/owneroverlapcopy.hh>
 
 #if HAVE_DUNE_PDELAB
-#include <dune/pdelab/backend/istl/parallelhelper.hh>
+#include <dune/pdelab/backend/istl.hh>
 #endif
 
 #include <dune/xt/la/container/istl.hh>

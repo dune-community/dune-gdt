@@ -89,9 +89,10 @@ public:
    * \sa    redirect_apply
    */
   template <class S, class V, size_t r, size_t rC>
-  void apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, r,
-                                                               rC>& source,
-             DiscreteFunction<S, V>& range) const
+  void
+  apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, r, rC>&
+            source,
+        DiscreteFunction<S, V>& range) const
   {
     redirect_apply(range.space(), source, range);
   }
@@ -122,10 +123,11 @@ private:
    * \brief Does an L2 projection of '- function * \gradient source' onto range.
    */
   template <class T, class S, class V>
-  void redirect_apply(const CgSpaceInterface<T, dimDomain, dimDomain, 1>& /*space*/,
-                      const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain,
-                                                                        FieldType, 1, 1>& source,
-                      DiscreteFunction<S, V>& range) const
+  void redirect_apply(
+      const CgSpaceInterface<T, dimDomain, dimDomain, 1>& /*space*/,
+      const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1, 1>&
+          source,
+      DiscreteFunction<S, V>& range) const
   {
     typedef typename XT::LA::Container<FieldType, V::sparse_matrix_type>::MatrixType MatrixType;
     MatrixType lhs(
@@ -135,10 +137,10 @@ private:
     // walk the grid
     const auto entity_it_end = grid_view_.template end<0>();
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity        = *entity_it;
+      const auto& entity = *entity_it;
       const auto local_function = function_.local_function(entity);
-      const auto local_source   = source.local_function(entity);
-      const auto basis          = range.space().base_function_set(entity);
+      const auto local_source = source.local_function(entity);
+      const auto basis = range.space().base_function_set(entity);
       // do a volume quadrature
       const size_t integrand_order =
           std::max(local_function->order() + ssize_t(local_source->order()) - 1, basis.order()) + basis.order();
@@ -146,12 +148,12 @@ private:
           QuadratureRules<DomainFieldType, dimDomain>::rule(entity.type(), boost::numeric_cast<int>(integrand_order));
       const auto quadrature_it_end = quadrature.end();
       for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
-        const auto xx                  = quadrature_it->position();
-        const auto quadrature_weight   = quadrature_it->weight();
+        const auto xx = quadrature_it->position();
+        const auto quadrature_weight = quadrature_it->weight();
         const auto integration_element = entity.geometry().integrationElement(xx);
         const ValueType function_value = local_function->evaluate(xx);
-        const auto source_gradient     = local_source->jacobian(xx);
-        const auto basis_value         = basis.evaluate(xx);
+        const auto source_gradient = local_source->jacobian(xx);
+        const auto basis_value = basis.evaluate(xx);
         for (size_t ii = 0; ii < basis.size(); ++ii) {
           const size_t global_ii = range.space().mapper().mapToGlobal(entity, ii);
           rhs.add_to_entry(global_ii,
@@ -185,20 +187,20 @@ private:
   {
     static_assert(RtSpaceInterface<T, dimDomain, 1>::polOrder == 0, "Untested!");
     const auto& rtn0_space = range.space();
-    auto& range_vector     = range.vector();
-    const auto infinity    = std::numeric_limits<FieldType>::infinity();
-    for (size_t ii     = 0; ii < range_vector.size(); ++ii)
+    auto& range_vector = range.vector();
+    const auto infinity = std::numeric_limits<FieldType>::infinity();
+    for (size_t ii = 0; ii < range_vector.size(); ++ii)
       range_vector[ii] = infinity;
     // walk the grid
     const auto entity_it_end = grid_view_.template end<0>();
     for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity            = *entity_it;
-      const auto local_DoF_indices  = rtn0_space.local_DoF_indices(entity);
+      const auto& entity = *entity_it;
+      const auto local_DoF_indices = rtn0_space.local_DoF_indices(entity);
       const auto global_DoF_indices = rtn0_space.mapper().globalIndices(entity);
       assert(global_DoF_indices.size() == local_DoF_indices.size());
       const auto local_function = function_.local_function(entity);
-      const auto local_source   = source.local_function(entity);
-      const auto local_basis    = rtn0_space.base_function_set(entity);
+      const auto local_source = source.local_function(entity);
+      const auto local_basis = rtn0_space.base_function_set(entity);
       // walk the intersections
       const auto intersection_it_end = grid_view_.iend(entity);
       for (auto intersection_it = grid_view_.ibegin(entity); intersection_it != intersection_it_end;
@@ -207,24 +209,24 @@ private:
         if (intersection.neighbor() && !intersection.boundary()) {
           const auto neighbor = intersection.outside();
           if (grid_view_.indexSet().index(entity) < grid_view_.indexSet().index(neighbor)) {
-            const auto local_function_neighbor    = function_.local_function(neighbor);
-            const auto local_source_neighbor      = source.local_function(neighbor);
+            const auto local_function_neighbor = function_.local_function(neighbor);
+            const auto local_source_neighbor = source.local_function(neighbor);
             const size_t local_intersection_index = intersection.indexInInside();
-            const size_t local_DoF_index          = local_DoF_indices[local_intersection_index];
+            const size_t local_DoF_index = local_DoF_indices[local_intersection_index];
             // do a face quadrature
-            FieldType lhs                = 0;
-            FieldType rhs                = 0;
+            FieldType lhs = 0;
+            FieldType rhs = 0;
             const size_t integrand_order = local_function->order();
-            const auto& quadrature       = QuadratureRules<DomainFieldType, dimDomain - 1>::rule(
+            const auto& quadrature = QuadratureRules<DomainFieldType, dimDomain - 1>::rule(
                 intersection.type(), boost::numeric_cast<int>(integrand_order));
             const auto quadrature_it_end = quadrature.end();
             for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
-              const auto xx_intersection         = quadrature_it->position();
-              const auto normal                  = intersection.unitOuterNormal(xx_intersection);
+              const auto xx_intersection = quadrature_it->position();
+              const auto normal = intersection.unitOuterNormal(xx_intersection);
               const FieldType integration_factor = intersection.geometry().integrationElement(xx_intersection);
-              const FieldType weight             = quadrature_it->weight();
-              const auto xx_entity               = intersection.geometryInInside().global(xx_intersection);
-              const auto xx_neighbor             = intersection.geometryInOutside().global(xx_intersection);
+              const FieldType weight = quadrature_it->weight();
+              const auto xx_entity = intersection.geometryInInside().global(xx_intersection);
+              const auto xx_neighbor = intersection.geometryInOutside().global(xx_intersection);
               // evaluate
               ValueType function_value = local_function->evaluate(xx_entity);
               function_value *= 0.5;
@@ -237,7 +239,7 @@ private:
               source_gradient_neighbor *= 0.5;
               source_gradient += source_gradient_neighbor;
               const auto basis_values = local_basis.evaluate(xx_entity);
-              const auto basis_value  = basis_values[local_DoF_index];
+              const auto basis_value = basis_values[local_DoF_index];
               // compute integrals
               lhs += integration_factor * weight * (basis_value * normal);
               rhs += integration_factor * weight * -1.0 * compute_value(function_value, source_gradient, normal);
@@ -249,25 +251,25 @@ private:
           }
         } else if (intersection.boundary() && !intersection.neighbor()) {
           const size_t local_intersection_index = intersection.indexInInside();
-          const size_t local_DoF_index          = local_DoF_indices[local_intersection_index];
+          const size_t local_DoF_index = local_DoF_indices[local_intersection_index];
           // do a face quadrature
-          FieldType lhs                = 0;
-          FieldType rhs                = 0;
+          FieldType lhs = 0;
+          FieldType rhs = 0;
           const size_t integrand_order = local_function->order();
-          const auto& quadrature       = QuadratureRules<DomainFieldType, dimDomain - 1>::rule(
+          const auto& quadrature = QuadratureRules<DomainFieldType, dimDomain - 1>::rule(
               intersection.type(), boost::numeric_cast<int>(integrand_order));
           const auto quadrature_it_end = quadrature.end();
           for (auto quadrature_it = quadrature.begin(); quadrature_it != quadrature_it_end; ++quadrature_it) {
-            const auto xx_intersection    = quadrature_it->position();
-            const auto normal             = intersection.unitOuterNormal(xx_intersection);
+            const auto xx_intersection = quadrature_it->position();
+            const auto normal = intersection.unitOuterNormal(xx_intersection);
             const auto integration_factor = intersection.geometry().integrationElement(xx_intersection);
-            const auto weight             = quadrature_it->weight();
-            const auto xx_entity          = intersection.geometryInInside().global(xx_intersection);
+            const auto weight = quadrature_it->weight();
+            const auto xx_entity = intersection.geometryInInside().global(xx_intersection);
             // evalaute
             const ValueType function_value = local_function->evaluate(xx_entity);
-            const auto source_gradient     = local_source->jacobian(xx_entity)[0];
-            const auto basis_values        = local_basis.evaluate(xx_entity);
-            const auto basis_value         = basis_values[local_DoF_index];
+            const auto source_gradient = local_source->jacobian(xx_entity)[0];
+            const auto basis_values = local_basis.evaluate(xx_entity);
+            const auto basis_value = basis_values[local_DoF_index];
             // compute integrals
             lhs += integration_factor * weight * (basis_value * normal);
             rhs += integration_factor * weight * -1.0 * compute_value(function_value, source_gradient, normal);
@@ -283,7 +285,8 @@ private:
   } // ... redirect_apply(...)
 
   template <class R, int d>
-  R compute_value(const FieldVector<R, 1>& function_value, const FieldVector<R, d>& source_gradient,
+  R compute_value(const FieldVector<R, 1>& function_value,
+                  const FieldVector<R, d>& source_gradient,
                   const FieldVector<R, d>& normal) const
   {
     return function_value * (source_gradient * normal);
@@ -303,8 +306,7 @@ private:
 
 
 template <class G, class F>
-std::unique_ptr<DarcyOperator<G, F>>
-make_darcy(const G& grid_view, const F& function)
+std::unique_ptr<DarcyOperator<G, F>> make_darcy(const G& grid_view, const F& function)
 {
   return std::unique_ptr<DarcyOperator<G, F>>(new DarcyOperator<G, F>(grid_view, function));
 }

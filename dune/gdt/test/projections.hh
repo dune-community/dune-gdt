@@ -22,8 +22,8 @@ struct ProjectionTest : public internal::ProjectionOperatorBase<SPACETYPE>
   void produces_correct_results(const double& tolerance = 1e-15)
   {
     const auto& grid_view = this->space_.grid_view();
-    const auto& source    = this->function_;
-    auto& range           = this->discrete_function_;
+    const auto& source = this->function_;
+    auto& range = this->discrete_function_;
 
     project(grid_view, source, range);
     project(source, range);

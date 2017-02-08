@@ -1,6 +1,6 @@
 #include <config.h>
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 #include "cg-esv2007-2dalugrid.hh"
 
@@ -9,11 +9,12 @@ namespace GDT {
 namespace Test {
 
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::cg, 1>::
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::cg,
+                                                  1>::
     results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::cg, 1>::TestCaseType&,
+                                                LinearElliptic::ChooseDiscretizer::cg,
+                                                1>::TestCaseType&,
             const std::string type)
 {
   if (type == "L2") {
@@ -33,11 +34,12 @@ LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluConform2dGridTy
   return {};
 }
 
-std::vector<double>
-LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
-                              LinearElliptic::ChooseDiscretizer::cg, 1>::
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::cg,
+                                                  1>::
     results(const LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::cg, 1>::TestCaseType&,
+                                                LinearElliptic::ChooseDiscretizer::cg,
+                                                1>::TestCaseType&,
             const std::string type)
 {
   if (type == "L2") {
@@ -62,4 +64,4 @@ LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluSimplex2dGridTy
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID

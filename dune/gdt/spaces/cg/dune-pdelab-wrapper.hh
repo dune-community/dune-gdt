@@ -15,7 +15,7 @@
 #include <dune/common/fvector.hh>
 #include <dune/common/deprecated.hh>
 
-#include <dune/geometry/genericgeometry/topologytypes.hh>
+#include <dune/geometry/type.hh>
 
 #if HAVE_DUNE_ISTL
 #include <dune/istl/paamg/pinfo.hh>
@@ -88,10 +88,10 @@ private:
   };
   typedef typename GridViewType::Grid GridType;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
-  static const bool simplicial_  = (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
-                                   == GenericGeometry::SimplexTopology<dimDomain>::type::id);
-  static const bool cubic_ = (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
-                              == GenericGeometry::CubeTopology<dimDomain>::type::id);
+  static const bool simplicial_ =
+      (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId == Impl::SimplexTopology<dimDomain>::type::id);
+  static const bool cubic_ =
+      (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId == Impl::CubeTopology<dimDomain>::type::id);
   typedef typename FeMap<GridType, single_geom_, simplicial_, cubic_>::Type FEMapType;
 
 public:
@@ -99,16 +99,16 @@ public:
       BackendType;
   typedef DunePdelabCgMapperWrapper<BackendType, rangeDim> MapperType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
-  typedef BaseFunctionSet::DunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                             rangeDim, rangeDimCols>
-      BaseFunctionSetType;
+  typedef BaseFunctionSet::
+      DunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType, rangeDim, rangeDimCols>
+          BaseFunctionSetType;
   static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
-  static const bool needs_grid_view              = true;
+  static const bool needs_grid_view = true;
 
   typedef typename CommunicationChooser<GridViewType>::Type CommunicatorType;
-  typedef typename Dune::XT::Common::make_identical_tuple<DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder,
-                                                                                   RangeFieldImp, 1, 1>,
-                                                          rangeDim>::type SpaceTupleType;
+  typedef typename Dune::XT::Common::
+      make_identical_tuple<DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>, rangeDim>::type
+          SpaceTupleType;
 
 private:
   friend class DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
@@ -122,7 +122,8 @@ template <int polOrder, class SpaceType>
 struct LocalDirichletDoFs
 {
   static std::set<size_t> get(const typename SpaceType::EntityType& entity,
-                              const typename SpaceType::BoundaryInfoType& boundaryInfo, const SpaceType& space)
+                              const typename SpaceType::BoundaryInfoType& boundaryInfo,
+                              const SpaceType& space)
   {
     return space.local_dirichlet_DoFs_simplicial_lagrange_elements(entity, boundaryInfo);
   }
@@ -132,7 +133,8 @@ template <class SpaceType>
 struct LocalDirichletDoFs<1, SpaceType>
 {
   static std::set<size_t> get(const typename SpaceType::EntityType& entity,
-                              const typename SpaceType::BoundaryInfoType& boundaryInfo, const SpaceType& space)
+                              const typename SpaceType::BoundaryInfoType& boundaryInfo,
+                              const SpaceType& space)
   {
     return space.local_dirichlet_DoFs_order_1(entity, boundaryInfo);
   }
@@ -145,19 +147,23 @@ struct LocalDirichletDoFs<1, SpaceType>
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp>
 class DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>
     : public CgSpaceInterface<DunePdelabCgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                              GridViewImp::dimension, 1, 1>
+                              GridViewImp::dimension,
+                              1,
+                              1>
 {
   typedef CgSpaceInterface<DunePdelabCgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                           GridViewImp::dimension, 1, 1>
+                           GridViewImp::dimension,
+                           1,
+                           1>
       BaseType;
   typedef DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
 public:
   typedef DunePdelabCgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> Traits;
 
-  static const int polOrder        = Traits::polOrder;
-  static const size_t dimDomain    = BaseType::dimDomain;
-  static const size_t dimRange     = BaseType::dimRange;
+  static const int polOrder = Traits::polOrder;
+  static const size_t dimDomain = BaseType::dimDomain;
+  static const size_t dimRange = BaseType::dimRange;
   static const size_t dimRangeCols = BaseType::dimRangeCols;
 
   typedef typename Traits::GridViewType GridViewType;
@@ -203,8 +209,10 @@ public:
     , communicator_prepared_(false)
   {
     // make sure our new communicator is prepared if other's was
-    if (other.communicator_prepared_)
+    if (other.communicator_prepared_) {
       const auto& comm DUNE_UNUSED = this->communicator();
+      communicator_prepared_ = true;
+    }
   }
 
   /**
@@ -212,17 +220,16 @@ public:
    * \note  Manually implemented bc of the std::mutex.
    */
   DunePdelabCgSpaceWrapper(ThisType&& source)
-    : gridView_(source.gridView_)
-    , fe_map_(source.fe_map_)
-    , backend_(source.backend_)
-    , mapper_(source.mapper_)
+    : gridView_(std::move(source.gridView_))
+    , fe_map_(std::move(source.fe_map_))
+    , backend_(std::move(source.backend_))
+    , mapper_(std::move(source.mapper_))
     , communicator_(std::move(source.communicator_))
-    , communicator_prepared_(source.communicator_prepared_)
+    , communicator_prepared_(std::move(source.communicator_prepared_))
   {
   }
 
   ThisType& operator=(const ThisType& other) = delete;
-
   ThisType& operator=(ThisType&& source) = delete;
 
   const GridViewType& grid_view() const
@@ -277,26 +284,40 @@ private:
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim>
 class DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>
     : public CgSpaceInterface<DunePdelabCgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>,
-                              GridViewImp::dimension, rangeDim, 1>,
-      public ProductSpaceInterface<DunePdelabCgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim,
+                              GridViewImp::dimension,
+                              rangeDim,
+                              1>,
+      public ProductSpaceInterface<DunePdelabCgSpaceWrapperTraits<GridViewImp,
+                                                                  polynomialOrder,
+                                                                  RangeFieldImp,
+                                                                  rangeDim,
                                                                   1>,
-                                   GridViewImp::dimension, rangeDim, 1>
+                                   GridViewImp::dimension,
+                                   rangeDim,
+                                   1>
 {
   typedef CgSpaceInterface<DunePdelabCgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>,
-                           GridViewImp::dimension, rangeDim, 1>
+                           GridViewImp::dimension,
+                           rangeDim,
+                           1>
       BaseType;
-  typedef ProductSpaceInterface<DunePdelabCgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim,
+  typedef ProductSpaceInterface<DunePdelabCgSpaceWrapperTraits<GridViewImp,
+                                                               polynomialOrder,
+                                                               RangeFieldImp,
+                                                               rangeDim,
                                                                1>,
-                                GridViewImp::dimension, rangeDim, 1>
+                                GridViewImp::dimension,
+                                rangeDim,
+                                1>
       ProductInterfaceType;
   typedef DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1> ThisType;
 
 public:
   typedef DunePdelabCgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1> Traits;
 
-  static const int polOrder        = Traits::polOrder;
-  static const size_t dimDomain    = BaseType::dimDomain;
-  static const size_t dimRange     = BaseType::dimRange;
+  static const int polOrder = Traits::polOrder;
+  static const size_t dimDomain = BaseType::dimDomain;
+  static const size_t dimRange = BaseType::dimRange;
   static const size_t dimRangeCols = BaseType::dimRangeCols;
 
   typedef typename Traits::GridViewType GridViewType;

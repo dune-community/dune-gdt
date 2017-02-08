@@ -36,8 +36,10 @@ public:
 private:
   static_assert(XT::Functions::is_localizable_function<FunctionType>::value,
                 "ProblemImp::FunctionType has to be derived from XT::Functions::LocalizableFunctionInterface!");
-  typedef XT::Functions::ConstantFunction<typename FunctionType::EntityType, typename FunctionType::DomainFieldType,
-                                          FunctionType::dimDomain, typename FunctionType::RangeFieldType,
+  typedef XT::Functions::ConstantFunction<typename FunctionType::EntityType,
+                                          typename FunctionType::DomainFieldType,
+                                          FunctionType::dimDomain,
+                                          typename FunctionType::RangeFieldType,
                                           FunctionType::dimRange>
       ConstantFunctionType;
 

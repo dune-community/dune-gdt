@@ -47,28 +47,32 @@ struct hyperbolic_FV_discretization_base : public ::testing::Test
 
 template <class TestCaseType>
 struct hyperbolic_FV_discretization_godunov_euler
-    : public hyperbolic_FV_discretization_base<TestCaseType, Dune::GDT::NumericalFluxes::godunov,
+    : public hyperbolic_FV_discretization_base<TestCaseType,
+                                               Dune::GDT::NumericalFluxes::godunov,
                                                Dune::GDT::TimeStepperMethods::explicit_euler>
 {
 }; // hyperbolic_FV_discretization_godunov_euler
 
 template <class TestCaseType>
 struct hyperbolic_FV_discretization_godunovwithreconstruction_euler
-    : public hyperbolic_FV_discretization_base<TestCaseType, Dune::GDT::NumericalFluxes::godunov_with_reconstruction,
+    : public hyperbolic_FV_discretization_base<TestCaseType,
+                                               Dune::GDT::NumericalFluxes::godunov_with_reconstruction,
                                                Dune::GDT::TimeStepperMethods::explicit_euler>
 {
 }; // hyperbolic_FV_discretization_godunovwithreconstruction_euler
 
 template <class TestCaseType>
 struct hyperbolic_FV_discretization_laxfriedrichs_euler
-    : public hyperbolic_FV_discretization_base<TestCaseType, Dune::GDT::NumericalFluxes::laxfriedrichs,
+    : public hyperbolic_FV_discretization_base<TestCaseType,
+                                               Dune::GDT::NumericalFluxes::laxfriedrichs,
                                                Dune::GDT::TimeStepperMethods::explicit_euler>
 {
 }; // hyperbolic_FV_discretization_godunov_laxfriedrichs_euler
 
 template <class TestCaseType>
 struct hyperbolic_FV_discretization_godunov_adaptiveRK
-    : public hyperbolic_FV_discretization_base<TestCaseType, Dune::GDT::NumericalFluxes::godunov,
+    : public hyperbolic_FV_discretization_base<TestCaseType,
+                                               Dune::GDT::NumericalFluxes::godunov,
                                                Dune::GDT::TimeStepperMethods::dormand_prince>
 {
 }; // hyperbolic_FV_discretization_godunov_adaptiveRK

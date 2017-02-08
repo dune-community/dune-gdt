@@ -8,8 +8,8 @@
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_MIXEDBOUNDARY_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_PROBLEMS_MIXEDBOUNDARY_HH
 
-#if HAVE_ALUGRID
-#include <dune/grid/alugrid.hh>
+#if HAVE_DUNE_ALUGRID
+#include <dune/alugrid/grid.hh>
 #endif
 #include <dune/grid/yaspgrid.hh>
 
@@ -50,20 +50,20 @@ public:
   static XT::Common::Configuration default_grid_cfg()
   {
     XT::Common::Configuration cfg = XT::Grid::cube_gridprovider_default_config();
-    cfg["lower_left"]             = "[0 0]";
-    cfg["upper_right"]            = "[1 1]";
+    cfg["lower_left"] = "[0 0]";
+    cfg["upper_right"] = "[1 1]";
     return cfg;
   }
 
   static XT::Common::Configuration default_boundary_info_cfg()
   {
     XT::Common::Configuration cfg = XT::Grid::normalbased_boundaryinfo_default_config();
-    cfg["default"]                = "dirichlet";
-    cfg["neumann.0"]              = "[1 0]";
+    cfg["default"] = "dirichlet";
+    cfg["neumann.0"] = "[1 0]";
     return cfg;
   }
 
-  MixedBoundaryProblem(const size_t integration_order           = default_integration_order,
+  MixedBoundaryProblem(const size_t integration_order = default_integration_order,
                        const XT::Common::Configuration& grd_cfg = default_grid_cfg(),
                        const XT::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
     : BaseType(
@@ -71,7 +71,9 @@ public:
           new MatrixConstantFunctionType(XT::Functions::internal::unit_matrix<RangeFieldImp, 2>(), "diffusion_tensor"),
           new ScalarConstantFunctionType(1, "force"),
           new ExpressionFunctionType("x", "0.25 * x[0] * x[1]", integration_order, "dirichlet"),
-          new ScalarConstantFunctionType(0.1, "neumann"), grd_cfg, bnd_cfg)
+          new ScalarConstantFunctionType(0.1, "neumann"),
+          grd_cfg,
+          bnd_cfg)
   {
   }
 }; // class MixedBoundaryProblem< ..., 1 >
@@ -79,8 +81,12 @@ public:
 
 template <class G, class R = double, int r = 1>
 class MixedBoundaryTestCase
-    : public Test::StationaryTestCase<G, LinearElliptic::MixedBoundaryProblem<typename G::template Codim<0>::Entity,
-                                                                              typename G::ctype, G::dimension, R, r>>
+    : public Test::StationaryTestCase<G,
+                                      LinearElliptic::MixedBoundaryProblem<typename G::template Codim<0>::Entity,
+                                                                           typename G::ctype,
+                                                                           G::dimension,
+                                                                           R,
+                                                                           r>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -126,14 +132,14 @@ private:
     }
   };
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
   template <bool anything>
   struct Helper<AluConform2dGridType, anything>
   {
     static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
-      cfg["num_elements"]    = "[2 2]";
+      cfg["num_elements"] = "[2 2]";
       cfg["num_refinements"] = "1";
       return cfg;
     }
@@ -149,13 +155,13 @@ private:
     }
   };
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 #endif // DXT_DISABLE_LARGE_TESTS
 
   static XT::Common::Configuration grid_cfg()
   {
     auto cfg = ProblemType::default_grid_cfg();
-    cfg      = Helper<typename std::decay<G>::type>::value(cfg);
+    cfg = Helper<typename std::decay<G>::type>::value(cfg);
     return cfg;
   }
 

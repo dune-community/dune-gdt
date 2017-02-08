@@ -16,8 +16,9 @@
 #include <dune/common/deprecated.hh>
 #include <dune/common/version.hh>
 
-#include <dune/xt/grid/walker.hh>
 #include <dune/xt/common/parallel/helper.hh>
+
+#include <dune/xt/grid/walker.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/constraints.hh>
@@ -28,7 +29,8 @@ namespace Dune {
 namespace GDT {
 
 
-template <class TestSpaceImp, class GridViewImp = typename TestSpaceImp::GridViewType,
+template <class TestSpaceImp,
+          class GridViewImp = typename TestSpaceImp::GridViewType,
           class AnsatzSpaceImp = TestSpaceImp>
 class SystemAssembler : public XT::Grid::Walker<GridViewImp>
 {
@@ -58,6 +60,7 @@ public:
   {
   }
 
+  /// \todo Guard against GridViewType != TestSpaceImp::GridViewType
   SystemAssembler(TestSpaceType test, AnsatzSpaceType ansatz)
     : BaseType(test.grid_view())
     , test_space_(test)
@@ -65,6 +68,7 @@ public:
   {
   }
 
+  /// \todo Guard against AnsatzSpaceType != GridViewType || GridViewType != TestSpaceType::GridViewType
   explicit SystemAssembler(TestSpaceType test)
     : BaseType(test.grid_view())
     , test_space_(test)
@@ -72,6 +76,7 @@ public:
   {
   }
 
+  /// \todo Guard against AnsatzSpaceType != TestSpaceType
   SystemAssembler(TestSpaceType test, GridViewType grd_vw)
     : BaseType(grd_vw)
     , test_space_(test)
@@ -79,7 +84,11 @@ public:
   {
   }
 
-  SystemAssembler(ThisType&& source) = default;
+  /// \sa https://github.com/dune-community/dune-gdt/issues/89
+  SystemAssembler(const ThisType& other) = delete; // all wrappers hold references to dead spaces after move!
+  SystemAssembler(ThisType&& source) = delete;
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& source) = delete;
 
   const TestSpaceType& test_space() const
   {
@@ -91,20 +100,22 @@ public:
     return *ansatz_space_;
   }
 
-  using BaseType::add;
+  using BaseType::append;
 
   template <class C>
-  void add(ConstraintsInterface<C>& constraints,
-           const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
+  ThisType& append(ConstraintsInterface<C>& constraints,
+                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     typedef internal::ConstraintsWrapper<TestSpaceType, AnsatzSpaceType, GridViewType, typename C::derived_type>
         WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, ansatz_space_, where, constraints.as_imp()));
-  } // ... add(...)
+    return *this;
+  } // ... append(...)
 
   template <class V, class M>
-  void add(const LocalVolumeTwoFormAssembler<V>& local_assembler, XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
-           const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
+  ThisType& append(const LocalVolumeTwoFormAssembler<V>& local_assembler,
+                   XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
+                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
@@ -114,11 +125,13 @@ public:
         WrapperType;
     this->codim0_functors_.emplace_back(
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
-  } // ... add(...)
+    return *this;
+  } // ... append(...)
 
   template <class V, class M>
-  void add(const LocalCouplingTwoFormAssembler<V>& local_assembler, XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
-           const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
+  ThisType& append(const LocalCouplingTwoFormAssembler<V>& local_assembler,
+                   XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
+                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
@@ -128,11 +141,13 @@ public:
         WrapperType;
     this->codim1_functors_.emplace_back(
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
-  } // ... add(...)
+    return *this;
+  } // ... append(...)
 
   template <class V, class M>
-  void add(const LocalBoundaryTwoFormAssembler<V>& local_assembler, XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
-           const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
+  ThisType& append(const LocalBoundaryTwoFormAssembler<V>& local_assembler,
+                   XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
+                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
@@ -142,11 +157,13 @@ public:
         WrapperType;
     this->codim1_functors_.emplace_back(
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
-  } // ... add(...)
+    return *this;
+  } // ... append(...)
 
   template <class L, class V>
-  void add(const LocalVolumeFunctionalAssembler<L>& local_assembler, XT::LA::VectorInterface<V, RangeFieldType>& vector,
-           const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
+  ThisType& append(const LocalVolumeFunctionalAssembler<L>& local_assembler,
+                   XT::LA::VectorInterface<V, RangeFieldType>& vector,
+                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
   {
     assert(vector.size() == test_space_->mapper().size());
     typedef internal::LocalVolumeFunctionalVectorAssemblerWrapper<ThisType,
@@ -154,11 +171,13 @@ public:
                                                                   typename V::derived_type>
         WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
-  } // ... add(...)
+    return *this;
+  } // ... append(...)
 
   template <class L, class V>
-  void add(const LocalFaceFunctionalAssembler<L>& local_assembler, XT::LA::VectorInterface<V, RangeFieldType>& vector,
-           const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
+  ThisType& append(const LocalFaceFunctionalAssembler<L>& local_assembler,
+                   XT::LA::VectorInterface<V, RangeFieldType>& vector,
+                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
   {
     assert(vector.size() == test_space_->mapper().size());
     typedef internal::LocalFaceFunctionalVectorAssemblerWrapper<ThisType,
@@ -166,7 +185,17 @@ public:
                                                                 typename V::derived_type>
         WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
-  } // ... add(...)
+    return *this;
+  } // ... append(...)
+
+  using BaseType::add;
+
+  template <class... Args>
+  DUNE_DEPRECATED_MSG("Use append() instead (since 11.01.2017)!")
+  ThisType& add(Args&&... args)
+  {
+    return append(std::forward<Args>(args)...);
+  }
 
   void assemble(const bool use_tbb = false)
   {

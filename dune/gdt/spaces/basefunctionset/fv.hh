@@ -18,7 +18,11 @@ namespace BaseFunctionSet {
 
 
 // forward, to be used in the traits and to allow for specialization
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim,
+template <class EntityImp,
+          class DomainFieldImp,
+          size_t domainDim,
+          class RangeFieldImp,
+          size_t rangeDim,
           size_t rangeDimCols = 1>
 class FiniteVolume
 {
@@ -29,7 +33,11 @@ class FiniteVolume
 namespace internal {
 
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim,
+template <class EntityImp,
+          class DomainFieldImp,
+          size_t domainDim,
+          class RangeFieldImp,
+          size_t rangeDim,
           size_t rangeDimCols>
 class FiniteVolumeTraits
 {
@@ -45,14 +53,22 @@ public:
 
 template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp>
 class FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
-    : public BaseFunctionSetInterface<internal::FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                                                   1, 1>,
-                                      DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
+    : public BaseFunctionSetInterface<internal::
+                                          FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>,
+                                      DomainFieldImp,
+                                      domainDim,
+                                      RangeFieldImp,
+                                      1,
+                                      1>
 {
   typedef FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1> ThisType;
-  typedef BaseFunctionSetInterface<internal::FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1,
-                                                                1>,
-                                   DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
+  typedef BaseFunctionSetInterface<internal::
+                                       FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>,
+                                   DomainFieldImp,
+                                   domainDim,
+                                   RangeFieldImp,
+                                   1,
+                                   1>
       BaseType;
 
 public:
@@ -114,14 +130,30 @@ private:
 
 template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
 class FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
-    : public BaseFunctionSetInterface<internal::FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                                                   rangeDim, 1>,
-                                      DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+    : public BaseFunctionSetInterface<internal::FiniteVolumeTraits<EntityImp,
+                                                                   DomainFieldImp,
+                                                                   domainDim,
+                                                                   RangeFieldImp,
+                                                                   rangeDim,
+                                                                   1>,
+                                      DomainFieldImp,
+                                      domainDim,
+                                      RangeFieldImp,
+                                      rangeDim,
+                                      1>
 {
   typedef FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef BaseFunctionSetInterface<internal::FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                                                rangeDim, 1>,
-                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+  typedef BaseFunctionSetInterface<internal::FiniteVolumeTraits<EntityImp,
+                                                                DomainFieldImp,
+                                                                domainDim,
+                                                                RangeFieldImp,
+                                                                rangeDim,
+                                                                1>,
+                                   DomainFieldImp,
+                                   domainDim,
+                                   RangeFieldImp,
+                                   rangeDim,
+                                   1>
       BaseType;
 
 public:

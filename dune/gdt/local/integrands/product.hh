@@ -107,7 +107,8 @@ public:
   void
   evaluate(const LocalfunctionTupleType& localFuncs,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
-           const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint, Dune::DynamicVector<R>& ret) const
+           const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint,
+           Dune::DynamicVector<R>& ret) const
   {
     evaluate(*std::get<0>(localFuncs), testBase, localPoint, ret);
   }
@@ -123,7 +124,8 @@ public:
   void
   evaluate(const LocalfunctionTupleType& localFuncs,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& testBase,
-           const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
+           const IntersectionType& intersection,
+           const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
            Dune::DynamicVector<R>& ret) const
   {
     evaluate(*std::get<0>(localFuncs), testBase, intersection, localPoint, ret);
@@ -141,7 +143,8 @@ public:
       const LocalfunctionTupleType& localFuncs,
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase,
-      const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint, Dune::DynamicMatrix<R>& ret) const
+      const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint,
+      Dune::DynamicMatrix<R>& ret) const
   {
     evaluate(*std::get<0>(localFuncs), testBase, ansatzBase, localPoint, ret);
   }
@@ -158,7 +161,8 @@ public:
       const LocalfunctionTupleType& localFunctions_in,
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase,
-      const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
+      const IntersectionType& intersection,
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
       Dune::DynamicMatrix<R>& ret) const
   {
     evaluate(*std::get<0>(localFunctions_in), testBase, ansatzBase, intersection, localPoint, ret);
@@ -225,13 +229,14 @@ public:
   void
   evaluate(const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& localFunction,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& testBase,
-           const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint, Dune::DynamicVector<R>& ret) const
+           const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint,
+           Dune::DynamicVector<R>& ret) const
   {
     ret *= 0.0;
     // evaluate local function
     const auto functionValue = localFunction.evaluate(localPoint);
     // evaluate test base
-    const size_t size     = testBase.size();
+    const size_t size = testBase.size();
     const auto testValues = testBase.evaluate(localPoint);
     // compute product
     assert(ret.size() >= size);
@@ -249,15 +254,16 @@ public:
   evaluate(const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& testBase,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& ansatzBase,
-           const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint, Dune::DynamicMatrix<R>& ret) const
+           const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint,
+           Dune::DynamicMatrix<R>& ret) const
   {
     ret *= 0.0;
     // evaluate local function
     const auto functionValue = localFunction.evaluate(localPoint);
     // evaluate bases
-    const auto rows         = testBase.size();
-    const auto cols         = ansatzBase.size();
-    const auto testValues   = testBase.evaluate(localPoint);
+    const auto rows = testBase.size();
+    const auto cols = ansatzBase.size();
+    const auto testValues = testBase.evaluate(localPoint);
     const auto ansatzValues = ansatzBase.evaluate(localPoint);
     // compute product
     assert(ret.rows() >= rows);
@@ -277,15 +283,16 @@ public:
   void
   evaluate(const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& localFunction,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& testBase,
-           const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
+           const IntersectionType& intersection,
+           const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
            Dune::DynamicVector<R>& ret) const
   {
     ret *= 0.0;
     // evaluate local function
     const auto localPointEntity = intersection.geometryInInside().global(localPoint);
-    const auto functionValue    = localFunction.evaluate(localPointEntity);
+    const auto functionValue = localFunction.evaluate(localPointEntity);
     // evaluate test base
-    const size_t size     = testBase.size();
+    const size_t size = testBase.size();
     const auto testValues = testBase.evaluate(localPointEntity);
     // compute product
     assert(ret.size() >= size);
@@ -303,7 +310,8 @@ public:
   evaluate(const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& testBase,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& ansatzBase,
-           const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
+           const IntersectionType& intersection,
+           const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
            Dune::DynamicMatrix<R>& ret) const
   {
     ret *= 0.0;
@@ -311,9 +319,9 @@ public:
     // evaluate local function
     const auto functionValue = localFunction.evaluate(localPointEntity);
     // evaluate bases
-    const size_t rows       = testBase.size();
-    const size_t cols       = ansatzBase.size();
-    const auto testValues   = testBase.evaluate(localPointEntity);
+    const size_t rows = testBase.size();
+    const size_t cols = ansatzBase.size();
+    const auto testValues = testBase.evaluate(localPointEntity);
     const auto ansatzValues = ansatzBase.evaluate(localPointEntity);
     // compute product
     assert(ret.rows() >= rows);

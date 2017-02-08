@@ -32,8 +32,7 @@ namespace internal {
 
 
 template <class T>
-constexpr T
-staticMax(T a, T b)
+constexpr T staticMax(T a, T b)
 {
   return a > b ? a : b;
 }
@@ -69,8 +68,8 @@ class DefaultProductSpaceTraits
 public:
   typedef DefaultProductSpace<SpaceImps...> derived_type;
   typedef typename std::tuple_element<0, std::tuple<SpaceImps...>>::type::GridViewType GridViewType;
-  static const size_t dimDomain    = GridViewType::dimension;
-  static const size_t dimRange     = GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange;
+  static const size_t dimDomain = GridViewType::dimension;
+  static const size_t dimRange = GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange;
   static const size_t dimRangeCols = 1;
   typedef typename GridViewType::IndexSet BackendType;
   typedef typename std::tuple_element<0, std::tuple<SpaceImps...>>::type::RangeFieldType RangeFieldType;
@@ -78,11 +77,11 @@ public:
   typedef typename Dune::GDT::DefaultProductMapper<GridViewType, typename SpaceImps::MapperType...> MapperType;
   typedef typename Dune::GDT::BaseFunctionSet::ProductDefault<typename SpaceImps::BaseFunctionSetType...>
       BaseFunctionSetType;
-  static const int polOrder    = internal::maxPolOrder<SpaceImps...>::polOrder;
+  static const int polOrder = internal::maxPolOrder<SpaceImps...>::polOrder;
   static const bool continuous = internal::allContinuous<SpaceImps...>::value;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
   static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
-  static const bool needs_grid_view              = true;
+  static const bool needs_grid_view = true;
   typedef CommunicationChooser<GridViewType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 }; // class ProductSpaceTraits
@@ -95,15 +94,18 @@ template <class... SpaceImps>
 class DefaultProductSpace
     : public Dune::GDT::SpaceInterface<internal::DefaultProductSpaceTraits<SpaceImps...>,
                                        std::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
-                                       GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange, 1>,
+                                       GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange,
+                                       1>,
       public Dune::GDT::ProductSpaceInterface<internal::DefaultProductSpaceTraits<SpaceImps...>,
                                               std::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
-                                              GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange, 1>
+                                              GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange,
+                                              1>
 {
   typedef DefaultProductSpace<SpaceImps...> ThisType;
   typedef Dune::GDT::SpaceInterface<internal::DefaultProductSpaceTraits<SpaceImps...>,
                                     std::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
-                                    GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange, 1>
+                                    GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange,
+                                    1>
       BaseType;
 
 public:

@@ -40,7 +40,8 @@ public:
   using BaseType::local_constraints;
 
   template <class S, size_t d, size_t r, size_t rC, class C, class R>
-  void local_constraints(const SpaceInterface<S, d, r, rC>& /*other*/, const EntityType& /*entity*/,
+  void local_constraints(const SpaceInterface<S, d, r, rC>& /*other*/,
+                         const EntityType& /*entity*/,
                          ConstraintsInterface<C>& /*ret*/) const
   {
     static_assert(AlwaysFalse<S>::value, "DG spaces do not implement constraints!");

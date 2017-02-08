@@ -12,8 +12,6 @@
 
 #include <dune/common/deprecated.hh>
 
-#include <dune/geometry/genericgeometry/topologytypes.hh>
-
 #include <dune/grid/common/capabilities.hh>
 
 #if HAVE_DUNE_FEM_LOCALFUNCTIONS
@@ -59,7 +57,7 @@ class DuneFemLocalfunctionsDgSpaceWrapperTraits
 public:
   typedef GridPartImp GridPartType;
   typedef typename GridPartType::GridViewType GridViewType;
-  static const int polOrder    = polynomialOrder;
+  static const int polOrder = polynomialOrder;
   static const bool continuous = false;
 
 private:
@@ -81,20 +79,27 @@ public:
   typedef Dune::DGLocalFiniteElement<ContinuousFiniteElementType> FiniteElementType;
 
 private:
-  typedef Dune::FemLocalFunctions::BaseFunctionSetMap<GridPartType, FiniteElementType,
+  typedef Dune::FemLocalFunctions::BaseFunctionSetMap<GridPartType,
+                                                      FiniteElementType,
                                                       Dune::FemLocalFunctions::NoTransformation,
-                                                      Dune::FemLocalFunctions::SimpleStorage, polOrder, polOrder>
+                                                      Dune::FemLocalFunctions::SimpleStorage,
+                                                      polOrder,
+                                                      polOrder>
       BaseFunctionSetMapType;
 
 public:
   typedef Dune::FemLocalFunctions::DiscreteFunctionSpace<BaseFunctionSetMapType> BackendType;
   typedef Mapper::FemDofWrapper<typename BackendType::MapperType> MapperType;
-  typedef BaseFunctionSet::DuneFemLocalfunctionsWrapper<BaseFunctionSetMapType, DomainFieldType, dimDomain,
-                                                        RangeFieldType, rangeDim, rangeDimCols>
+  typedef BaseFunctionSet::DuneFemLocalfunctionsWrapper<BaseFunctionSetMapType,
+                                                        DomainFieldType,
+                                                        dimDomain,
+                                                        RangeFieldType,
+                                                        rangeDim,
+                                                        rangeDimCols>
       BaseFunctionSetType;
   typedef typename BaseFunctionSetType::EntityType EntityType;
   static const XT::Grid::Backends part_view_type = XT::Grid::Backends::part;
-  static const bool needs_grid_view              = false;
+  static const bool needs_grid_view = false;
   typedef double CommunicatorType;
 
 private:
@@ -105,12 +110,19 @@ private:
 
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
 class DuneFemLocalfunctionsDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
-    : public SpaceInterface<DuneFemLocalfunctionsDgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1,
+    : public SpaceInterface<DuneFemLocalfunctionsDgSpaceWrapperTraits<GridPartImp,
+                                                                      polynomialOrder,
+                                                                      RangeFieldImp,
+                                                                      1,
                                                                       1>,
-                            typename GridPartImp::dimension, 1, 1>
+                            typename GridPartImp::dimension,
+                            1,
+                            1>
 {
   typedef SpaceInterface<DuneFemLocalfunctionsDgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                         typename GridPartImp::dimension, 1, 1>
+                         typename GridPartImp::dimension,
+                         1,
+                         1>
       BaseType;
   typedef DuneFemLocalfunctionsDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
 
@@ -120,7 +132,7 @@ public:
   typedef typename Traits::GridPartType GridPartType;
   typedef typename Traits::GridViewType GridViewType;
   typedef typename GridPartType::ctype DomainFieldType;
-  static const int polOrder     = Traits::polOrder;
+  static const int polOrder = Traits::polOrder;
   static const size_t dimDomain = BaseType::dimDomain;
 
 private:
@@ -128,7 +140,7 @@ private:
 
 public:
   typedef typename Traits::RangeFieldType RangeFieldType;
-  static const size_t dimRange     = BaseType::dimRange;
+  static const size_t dimRange = BaseType::dimRange;
   static const size_t dimRangeCols = BaseType::dimRangeCols;
 
   typedef typename Traits::BackendType BackendType;
@@ -157,11 +169,11 @@ public:
   ThisType& operator=(const ThisType& other)
   {
     if (this != &other) {
-      gridPart_           = other.gridPart_;
-      gridView_           = other.gridView_;
+      gridPart_ = other.gridPart_;
+      gridView_ = other.gridView_;
       baseFunctionSetMap_ = other.baseFunctionSetMap_;
-      backend_            = other.backend_;
-      mapper_             = other.mapper_;
+      backend_ = other.backend_;
+      mapper_ = other.mapper_;
     }
     return *this;
   }

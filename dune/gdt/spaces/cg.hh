@@ -31,8 +31,13 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridType, XT::Grid::Layers layer_type, ChooseSpaceBackend backend_type, int polOrder,
-          class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1>
+template <class GridType,
+          XT::Grid::Layers layer_type,
+          ChooseSpaceBackend backend_type,
+          int polOrder,
+          class RangeFieldType,
+          size_t dimRange,
+          size_t dimRangeCols = 1>
 class CgSpaceProvider
 {
   static const XT::Grid::Backends part_view_type = ChooseGridPartView<backend_type>::type;
@@ -50,13 +55,13 @@ private:
   template <class G, int p, class R, size_t r, size_t rC>
   struct SpaceChooser<G, p, R, r, rC, GDT::ChooseSpaceBackend::fem>
   {
-    typedef GDT::DuneFemCgSpaceWrapper<GridLayerType, p, R, r> Type;
+    typedef GDT::DuneFemCgSpaceWrapper<GridLayerType, p, R, r, rC> Type;
   };
 
   template <class G, int p, class R, size_t r, size_t rC>
   struct SpaceChooser<G, p, R, r, rC, GDT::ChooseSpaceBackend::pdelab>
   {
-    typedef GDT::DunePdelabCgSpaceWrapper<GridLayerType, p, R, r> Type;
+    typedef GDT::DunePdelabCgSpaceWrapper<GridLayerType, p, R, r, rC> Type;
   };
 
   typedef XT::Grid::GridProvider<GridType> GridProviderType;
@@ -66,6 +71,7 @@ private:
 
 public:
   typedef typename SpaceChooser<GridType, polOrder, RangeFieldType, dimRange, dimRangeCols, backend_type>::Type Type;
+  typedef Type type;
 
   static Type create(GridLayerType grid_layer)
   {

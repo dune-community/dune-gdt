@@ -108,7 +108,7 @@ public:
       ret.resize(dimRange);
     const size_t base = dimRange * backend_.index(entity);
     for (size_t ii = 0; ii < dimRange; ++ii)
-      ret[ii]      = base + ii;
+      ret[ii] = base + ii;
   } // ... globalIndices(...)
 
   using InterfaceType::globalIndices;
@@ -217,7 +217,8 @@ public:
     ret[0] = dimRange * (backend().index(entity)) + factor_index;
   }
 
-  size_t mapToGlobal(const size_t factor_index, const EntityType& entity,
+  size_t mapToGlobal(const size_t factor_index,
+                     const EntityType& entity,
                      const size_t& DXTC_DEBUG_ONLY(local_index_in_factor)) const
   {
     assert(local_index_in_factor == 0);
@@ -225,7 +226,8 @@ public:
     return dimRange * (backend().index(entity)) + factor_index;
   }
 
-  size_t mapToLocal(const size_t factor_index, const EntityType& entity,
+  size_t mapToLocal(const size_t factor_index,
+                    const EntityType& entity,
                     const size_t& DXTC_DEBUG_ONLY(local_index_in_factor)) const
   {
     assert(local_index_in_factor == 0);

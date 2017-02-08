@@ -14,7 +14,7 @@
 #include <limits>
 #include <mutex>
 
-#include <dune/geometry/genericgeometry/topologytypes.hh>
+#include <dune/geometry/type.hh>
 #include <dune/geometry/referenceelements.hh>
 
 #include <dune/grid/common/capabilities.hh>
@@ -57,7 +57,7 @@ class DunePdelabRtSpaceWrapperTraits
 public:
   typedef DunePdelabRtSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   typedef GridViewImp GridViewType;
-  static const int polOrder    = polynomialOrder;
+  static const int polOrder = polynomialOrder;
   static const bool continuous = false;
   static_assert(polOrder == 0, "Untested!");
   static_assert(rangeDim == GridViewType::dimension, "Untested!");
@@ -80,34 +80,45 @@ private:
   template <class G>
   struct FeMap<G, true, true, false>
   {
-    typedef PDELab::RaviartThomasLocalFiniteElementMap<GridViewType, DomainFieldType, RangeFieldType, polOrder,
+    typedef PDELab::RaviartThomasLocalFiniteElementMap<GridViewType,
+                                                       DomainFieldType,
+                                                       RangeFieldType,
+                                                       polOrder,
                                                        Dune::GeometryType::simplex>
         Type;
   };
   template <class G>
   struct FeMap<G, true, false, true>
   {
-    typedef PDELab::RaviartThomasLocalFiniteElementMap<GridViewType, DomainFieldType, RangeFieldType, polOrder,
+    typedef PDELab::RaviartThomasLocalFiniteElementMap<GridViewType,
+                                                       DomainFieldType,
+                                                       RangeFieldType,
+                                                       polOrder,
                                                        Dune::GeometryType::cube>
         Type;
   };
   typedef typename GridViewType::Grid GridType;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
-  static const bool simplicial_  = (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
-                                   == GenericGeometry::SimplexTopology<dimDomain>::type::id);
-  static const bool cubic_ = (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId
-                              == GenericGeometry::CubeTopology<dimDomain>::type::id);
+  static const bool simplicial_ =
+      (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId == Impl::SimplexTopology<dimDomain>::type::id);
+  static const bool cubic_ =
+      (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId == Impl::CubeTopology<dimDomain>::type::id);
   typedef typename FeMap<GridType, single_geom_, simplicial_, cubic_>::Type FEMapType;
 
 public:
   typedef PDELab::GridFunctionSpace<GridViewType, FEMapType> BackendType;
   typedef DunePdelabCgMapperWrapper<BackendType> MapperType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
-  typedef BaseFunctionSet::PiolaTransformedDunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain,
-                                                             RangeFieldType, rangeDim, rangeDimCols>
+  typedef BaseFunctionSet::PiolaTransformedDunePdelabWrapper<BackendType,
+                                                             EntityType,
+                                                             DomainFieldType,
+                                                             dimDomain,
+                                                             RangeFieldType,
+                                                             rangeDim,
+                                                             rangeDimCols>
       BaseFunctionSetType;
   static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
-  static const bool needs_grid_view              = true;
+  static const bool needs_grid_view = true;
   typedef CommunicationChooser<GridViewType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 
@@ -122,11 +133,15 @@ private:
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim>
 class DunePdelabRtSpaceWrapper<GridViewImp, 0, RangeFieldImp, rangeDim, 1>
     : public RtSpaceInterface<internal::DunePdelabRtSpaceWrapperTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>,
-                              GridViewImp::dimension, rangeDim, 1>
+                              GridViewImp::dimension,
+                              rangeDim,
+                              1>
 {
   typedef DunePdelabRtSpaceWrapper<GridViewImp, 0, RangeFieldImp, rangeDim, 1> ThisType;
   typedef RtSpaceInterface<internal::DunePdelabRtSpaceWrapperTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>,
-                           GridViewImp::dimension, rangeDim, 1>
+                           GridViewImp::dimension,
+                           rangeDim,
+                           1>
       BaseType;
 
 public:

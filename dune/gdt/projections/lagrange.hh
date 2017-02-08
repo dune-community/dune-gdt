@@ -38,7 +38,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_operator_()
   {
-    this->add(local_operator_);
+    this->append(local_operator_);
   }
 
 private:
@@ -49,10 +49,13 @@ private:
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
 typename std::
     enable_if<XT::Grid::is_layer<GridViewType>::value && XT::Functions::is_localizable_function<SourceType>::value
-                  && is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
-              std::unique_ptr<LagrangeProjectionLocalizableOperator<GridViewType, SourceType,
+                  && is_space<SpaceType>::value
+                  && XT::LA::is_vector<VectorType>::value,
+              std::unique_ptr<LagrangeProjectionLocalizableOperator<GridViewType,
+                                                                    SourceType,
                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
-    make_lagrange_projection_localizable_operator(const GridViewType& grid_view, const SourceType& source,
+    make_lagrange_projection_localizable_operator(const GridViewType& grid_view,
+                                                  const SourceType& source,
                                                   DiscreteFunction<SpaceType, VectorType>& range)
 {
   return Dune::XT::Common::make_unique<LagrangeProjectionLocalizableOperator<GridViewType,
@@ -66,7 +69,8 @@ template <class SourceType, class SpaceType, class VectorType>
 typename std::
     enable_if<XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
                   && XT::LA::is_vector<VectorType>::value,
-              std::unique_ptr<LagrangeProjectionLocalizableOperator<typename SpaceType::GridViewType, SourceType,
+              std::unique_ptr<LagrangeProjectionLocalizableOperator<typename SpaceType::GridViewType,
+                                                                    SourceType,
                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
     make_lagrange_projection_localizable_operator(const SourceType& source,
                                                   DiscreteFunction<SpaceType, VectorType>& range)
@@ -134,8 +138,8 @@ public:
   }
 
   template <class RangeType, class SourceType>
-  void apply_inverse(const RangeType& /*range*/, SourceType& /*source*/,
-                     const XT::Common::Configuration& /*opts*/) const
+  void
+  apply_inverse(const RangeType& /*range*/, SourceType& /*source*/, const XT::Common::Configuration& /*opts*/) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
@@ -166,10 +170,12 @@ make_lagrange_projection_operator(const GridViewType& grid_view)
 
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<XT::Grid::is_layer<GridViewType>::value
-                            && XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
+                            && XT::Functions::is_localizable_function<SourceType>::value
+                            && is_space<SpaceType>::value
                             && XT::LA::is_vector<VectorType>::value,
                         void>::type
-project_lagrange(const GridViewType& grid_view, const SourceType& source,
+project_lagrange(const GridViewType& grid_view,
+                 const SourceType& source,
                  DiscreteFunction<SpaceType, VectorType>& range)
 {
   make_lagrange_projection_operator(grid_view)->apply(source, range);

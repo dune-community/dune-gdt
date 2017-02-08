@@ -36,33 +36,11 @@ dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune
                          VERBOSE)
 
 
-file( GLOB_RECURSE gdt "${CMAKE_CURRENT_SOURCE_DIR}/*.hh" )
-set( COMMON_HEADER ${gdt} ${DUNE_HEADERS} )
-
-# add header of dependent modules for header listing
-foreach(_mod ${ALL_DEPENDENCIES})
-file(GLOB_RECURSE HEADER_LIST "${CMAKE_CURRENT_SOURCE_DIR}/../${_mod}/*.hh")
-list(APPEND COMMON_HEADER ${HEADER_LIST})
-endforeach(_mod DEPENDENCIES)
-set_source_files_properties( ${COMMON_HEADER} PROPERTIES HEADER_FILE_ONLY 1 )
-
-#disable most warnings from dependent modules
+add_header_listing()
+make_dependent_modules_sys_included()
 if (EIGEN3_FOUND)
   add_definitions("-isystem ${EIGEN3_INCLUDE_DIR}")
 endif (EIGEN3_FOUND)
-foreach(_mod ${ALL_DEPENDENCIES})
-    if(${_mod}_INCLUDE_DIRS)
-        foreach( _idir ${${_mod}_INCLUDE_DIRS} )
-            add_definitions("-isystem ${_idir}")
-        endforeach( _idir )
-    endif(${_mod}_INCLUDE_DIRS)
-endforeach(_mod DEPENDENCIES)
-
-set( COMMON_LIBS
-    ${DUNE_DEFAULT_LIBS}
-    ${GRIDLIBS}
-    ${FASPLIB}
-)
 
 # search for spe10 data files
 find_file(SPE10MODEL1DATA
@@ -77,6 +55,7 @@ add_subdirectory(cmake/modules)
 dune_install_python_package(PATH python)
 
 add_format(${CMAKE_CURRENT_SOURCE_DIR})
+add_tidy(${CMAKE_CURRENT_SOURCE_DIR})
 
 # finalize the dune project, e.g., generate config.h etc.
 finalize_dune_project(GENERATE_CONFIG_H_CMAKE)

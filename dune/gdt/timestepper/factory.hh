@@ -21,18 +21,19 @@ namespace GDT {
 template <class OperatorImp, class DiscreteFunctionImp, class TimeFieldImp, TimeStepperMethods method>
 struct TimeStepperFactory
 {
-  typedef typename std::conditional<method == TimeStepperMethods::bogacki_shampine
-                                        || method == TimeStepperMethods::dormand_prince
-                                        || method == TimeStepperMethods::adaptive_rungekutta_other,
-                                    typename Dune::GDT::AdaptiveRungeKuttaTimeStepper<OperatorImp, DiscreteFunctionImp,
-                                                                                      TimeFieldImp, method>,
-                                    typename Dune::GDT::ExplicitRungeKuttaTimeStepper<OperatorImp, DiscreteFunctionImp,
-                                                                                      TimeFieldImp, method>>::type
-      TimeStepperType;
+  typedef typename std::
+      conditional<method == TimeStepperMethods::bogacki_shampine || method == TimeStepperMethods::dormand_prince
+                      || method == TimeStepperMethods::adaptive_rungekutta_other,
+                  typename Dune::GDT::
+                      AdaptiveRungeKuttaTimeStepper<OperatorImp, DiscreteFunctionImp, TimeFieldImp, method>,
+                  typename Dune::GDT::
+                      ExplicitRungeKuttaTimeStepper<OperatorImp, DiscreteFunctionImp, TimeFieldImp, method>>::type
+          TimeStepperType;
 
-  static TimeStepperType create(const OperatorImp& op, const DiscreteFunctionImp& initial_values,
-                                const typename DiscreteFunctionImp::RangeFieldType r   = 1.0,
-                                const TimeFieldImp t_0                                 = 0.0,
+  static TimeStepperType create(const OperatorImp& op,
+                                const DiscreteFunctionImp& initial_values,
+                                const typename DiscreteFunctionImp::RangeFieldType r = 1.0,
+                                const TimeFieldImp t_0 = 0.0,
                                 const typename DiscreteFunctionImp::RangeFieldType tol = 1e-4)
   {
     return TimeStepperType(op, initial_values, r, t_0, tol);

@@ -46,7 +46,9 @@ enum class NumericalFluxes
 };
 
 // forwards
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp,
+template <class AnalyticalFluxImp,
+          class BoundaryValueFunctionImp,
+          class LocalizableFunctionImp,
           SlopeLimiters slope_limiter = SlopeLimiters::minmod>
 class AdvectionLaxFriedrichsOperator;
 
@@ -75,7 +77,9 @@ public:
 }; // class AdvectionTraitsBase
 
 
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp,
+template <class AnalyticalFluxImp,
+          class BoundaryValueFunctionImp,
+          class LocalizableFunctionImp,
           SlopeLimiters slope_limiter>
 class AdvectionLaxFriedrichsOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp, BoundaryValueFunctionImp>
 {
@@ -84,7 +88,9 @@ class AdvectionLaxFriedrichsOperatorTraits : public AdvectionTraitsBase<Analytic
 
 public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
-  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxImp, BoundaryValueFunctionImp, LocalizableFunctionImp,
+  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxImp,
+                                         BoundaryValueFunctionImp,
+                                         LocalizableFunctionImp,
                                          slope_limiter>
       derived_type;
 
@@ -111,8 +117,12 @@ public:
 } // namespace internal
 
 
-template <class AnalyticalFluxImp, class NumericalCouplingFluxImp, class NumericalBoundaryFluxImp,
-          class BoundaryValueFunctionImp, class SourceImp, class RangeImp>
+template <class AnalyticalFluxImp,
+          class NumericalCouplingFluxImp,
+          class NumericalBoundaryFluxImp,
+          class BoundaryValueFunctionImp,
+          class SourceImp,
+          class RangeImp>
 class AdvectionLocalizableDefault
     : public Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp>
 {
@@ -144,16 +154,18 @@ public:
 
   template <class... LocalOperatorArgTypes>
   AdvectionLocalizableDefault(const AnalyticalFluxType& analytical_flux,
-                              const BoundaryValueFunctionType& boundary_values, const SourceType& source,
-                              RangeType& range, LocalOperatorArgTypes&&... local_operator_args)
+                              const BoundaryValueFunctionType& boundary_values,
+                              const SourceType& source,
+                              RangeType& range,
+                              LocalOperatorArgTypes&&... local_operator_args)
     : BaseType(range.space().grid_view(), source, range)
     , local_operator_(analytical_flux, std::forward<LocalOperatorArgTypes>(local_operator_args)...)
-    , local_boundary_operator_(analytical_flux, boundary_values,
-                               std::forward<LocalOperatorArgTypes>(local_operator_args)...)
+    , local_boundary_operator_(
+          analytical_flux, boundary_values, std::forward<LocalOperatorArgTypes>(local_operator_args)...)
   {
-    this->add(local_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
-    this->add(local_operator_, new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GridViewType>());
-    this->add(local_boundary_operator_, new XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GridViewType>());
+    this->append(local_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
+    this->append(local_operator_, new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GridViewType>());
+    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GridViewType>());
   }
 
 private:
@@ -181,7 +193,9 @@ public:
   typedef typename Dune::GDT::LocalReconstructionFvOperator<MatrixType, BoundaryValueFunctionType, slope_limiter>
       LocalOperatorType;
 
-  LinearReconstructionLocalizable(const SourceType& source, RangeType& range, const MatrixType& eigenvectors,
+  LinearReconstructionLocalizable(const SourceType& source,
+                                  RangeType& range,
+                                  const MatrixType& eigenvectors,
                                   const MatrixType& eigenvectors_inverse,
                                   const BoundaryValueFunctionType& boundary_values)
     : BaseType(range.space().grid_view(), source, range)
@@ -189,7 +203,7 @@ public:
     , source_(source)
     , range_(range)
   {
-    this->add(local_operator_);
+    this->append(local_operator_);
   }
 
 private:
@@ -208,8 +222,10 @@ namespace internal {
 template <size_t domainDim, size_t rangeDim, class MatrixType, class EigenMatrixType, class AnalyticalFluxType>
 struct EigenvectorInitializer
 {
-  static void initialize(const AnalyticalFluxType& /*analytical_flux*/, const bool /*is_linear*/,
-                         const bool use_linear_reconstruction, MatrixType& /*eigenvectors*/,
+  static void initialize(const AnalyticalFluxType& /*analytical_flux*/,
+                         const bool /*is_linear*/,
+                         const bool use_linear_reconstruction,
+                         MatrixType& /*eigenvectors*/,
                          MatrixType& /*eigenvectors_inverse*/)
   {
     if (use_linear_reconstruction) {
@@ -221,8 +237,10 @@ struct EigenvectorInitializer
 template <size_t rangeDim, class MatrixType, class EigenMatrixType, class AnalyticalFluxType>
 struct EigenvectorInitializer<1, rangeDim, MatrixType, EigenMatrixType, AnalyticalFluxType>
 {
-  static void initialize(const AnalyticalFluxType& analytical_flux, const bool is_linear,
-                         const bool use_linear_reconstruction, MatrixType& eigenvectors,
+  static void initialize(const AnalyticalFluxType& analytical_flux,
+                         const bool is_linear,
+                         const bool use_linear_reconstruction,
+                         MatrixType& eigenvectors,
                          MatrixType& eigenvectors_inverse)
   {
     if (use_linear_reconstruction) {
@@ -248,15 +266,28 @@ struct EigenvectorInitializer<1, rangeDim, MatrixType, EigenMatrixType, Analytic
   }
 }; // struct EigenvectorInitializer<1, ...>
 
-template <class NumericalCouplingFluxType, class NumericalBoundaryFluxType, class RangeFieldType, size_t dimRange,
-          size_t dimRangeCols, SlopeLimiters slope_limiter>
+template <class NumericalCouplingFluxType,
+          class NumericalBoundaryFluxType,
+          class RangeFieldType,
+          size_t dimRange,
+          size_t dimRangeCols,
+          SlopeLimiters slope_limiter>
 struct AdvectionOperatorApplier
 {
-  template <class AnalyticalFluxType, class BoundaryValueFunctionType, class MatrixType, class SourceType,
-            class RangeType, class... LocalOperatorArgTypes>
-  static void apply(const AnalyticalFluxType& analytical_flux, const BoundaryValueFunctionType& boundary_values,
-                    const MatrixType& eigenvectors, const MatrixType& eigenvectors_inverse, const SourceType& source,
-                    RangeType& range, const double time, const bool use_linear_reconstruction,
+  template <class AnalyticalFluxType,
+            class BoundaryValueFunctionType,
+            class MatrixType,
+            class SourceType,
+            class RangeType,
+            class... LocalOperatorArgTypes>
+  static void apply(const AnalyticalFluxType& analytical_flux,
+                    const BoundaryValueFunctionType& boundary_values,
+                    const MatrixType& eigenvectors,
+                    const MatrixType& eigenvectors_inverse,
+                    const SourceType& source,
+                    RangeType& range,
+                    const double time,
+                    const bool use_linear_reconstruction,
                     LocalOperatorArgTypes&&... local_operator_args)
   {
     const auto current_boundary_values = boundary_values.evaluate_at_time(time);
@@ -312,22 +343,27 @@ struct AdvectionOperatorApplier
 } // namespace internal
 
 
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp,
+template <class AnalyticalFluxImp,
+          class BoundaryValueFunctionImp,
+          class LocalizableFunctionImp,
           SlopeLimiters slope_limiter>
 class AdvectionLaxFriedrichsOperator
-    : public Dune::GDT::
-          OperatorInterface<internal::AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp, BoundaryValueFunctionImp,
-                                                                           LocalizableFunctionImp, slope_limiter>>
+    : public Dune::GDT::OperatorInterface<internal::AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp,
+                                                                                         BoundaryValueFunctionImp,
+                                                                                         LocalizableFunctionImp,
+                                                                                         slope_limiter>>
 {
 public:
-  typedef internal::AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp, BoundaryValueFunctionImp,
-                                                         LocalizableFunctionImp, slope_limiter>
+  typedef internal::AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp,
+                                                         BoundaryValueFunctionImp,
+                                                         LocalizableFunctionImp,
+                                                         slope_limiter>
       Traits;
   typedef typename Traits::AnalyticalFluxType AnalyticalFluxType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
-  static const size_t dimDomain    = AnalyticalFluxType::dimDomain;
-  static const size_t dimRange     = AnalyticalFluxType::dimRange;
+  static const size_t dimDomain = AnalyticalFluxType::dimDomain;
+  static const size_t dimRange = AnalyticalFluxType::dimRange;
   static const size_t dimRangeCols = AnalyticalFluxType::dimRangeCols;
   typedef typename AnalyticalFluxType::RangeFieldType RangeFieldType;
 
@@ -336,21 +372,25 @@ private:
   typedef typename Dune::XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
 
 public:
-  typedef typename Dune::GDT::LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxType, LocalizableFunctionType,
+  typedef typename Dune::GDT::LocalLaxFriedrichsNumericalCouplingFlux<AnalyticalFluxType,
+                                                                      LocalizableFunctionType,
                                                                       dimDomain>
       NumericalCouplingFluxType;
   typedef typename Dune::GDT::
       LocalLaxFriedrichsDirichletNumericalBoundaryFlux<AnalyticalFluxType,
                                                        typename BoundaryValueFunctionType::TimeIndependentFunctionType,
-                                                       LocalizableFunctionType, dimDomain>
+                                                       LocalizableFunctionType,
+                                                       dimDomain>
           NumericalBoundaryFluxType;
 
   AdvectionLaxFriedrichsOperator(const AnalyticalFluxType& analytical_flux,
-                                 const BoundaryValueFunctionType& boundary_values, const LocalizableFunctionType& dx,
-                                 const double dt, const bool is_linear = false,
-                                 const bool use_linear_reconstruction    = false,
+                                 const BoundaryValueFunctionType& boundary_values,
+                                 const LocalizableFunctionType& dx,
+                                 const double dt,
+                                 const bool is_linear = false,
+                                 const bool use_linear_reconstruction = false,
                                  const bool use_local_laxfriedrichs_flux = false,
-                                 const bool entity_geometries_equal      = false)
+                                 const bool entity_geometries_equal = false)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , dx_(dx)
@@ -412,8 +452,8 @@ public:
   typedef internal::AdvectionGodunovOperatorTraits<AnalyticalFluxImp, BoundaryValueFunctionImp, slope_limiter> Traits;
   typedef typename Traits::AnalyticalFluxType AnalyticalFluxType;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
-  static const size_t dimDomain    = AnalyticalFluxType::dimDomain;
-  static const size_t dimRange     = AnalyticalFluxType::dimRange;
+  static const size_t dimDomain = AnalyticalFluxType::dimDomain;
+  static const size_t dimRange = AnalyticalFluxType::dimRange;
   static const size_t dimRangeCols = AnalyticalFluxType::dimRangeCols;
   typedef typename AnalyticalFluxType::RangeFieldType RangeFieldType;
 
@@ -426,11 +466,14 @@ public:
       NumericalCouplingFluxType;
   typedef typename Dune::GDT::
       LocalGodunovNumericalBoundaryFlux<AnalyticalFluxType,
-                                        typename BoundaryValueFunctionType::TimeIndependentFunctionType, dimDomain>
+                                        typename BoundaryValueFunctionType::TimeIndependentFunctionType,
+                                        dimDomain>
           NumericalBoundaryFluxType;
 
-  AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux, const BoundaryValueFunctionType& boundary_values,
-                           const bool is_linear = false, const bool use_linear_reconstruction = false)
+  AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux,
+                           const BoundaryValueFunctionType& boundary_values,
+                           const bool is_linear = false,
+                           const bool use_linear_reconstruction = false)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
@@ -470,7 +513,9 @@ private:
 
 #else // HAVE_EIGEN
 
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp,
+template <class AnalyticalFluxImp,
+          class BoundaryValueFunctionImp,
+          class LocalizableFunctionImp,
           SlopeLimiters slope_limiter>
 class AdvectionLaxFriedrichsOperator
 {
@@ -506,7 +551,7 @@ public:
   {
     LocalizableOperatorBase<typename RangeType::SpaceType::GridViewType, SourceType, RangeType> localizable_operator(
         range.space().grid_view(), source, range);
-    localizable_operator.add(local_operator_);
+    localizable_operator.append(local_operator_);
     localizable_operator.apply();
   }
 

@@ -37,8 +37,10 @@ namespace internal {
 template <class LocalSpaceType>
 class BlockMapperTraits
 {
-  static_assert(std::is_base_of<SpaceInterface<typename LocalSpaceType::Traits, LocalSpaceType::dimDomain,
-                                               LocalSpaceType::dimRange, LocalSpaceType::dimRangeCols>,
+  static_assert(std::is_base_of<SpaceInterface<typename LocalSpaceType::Traits,
+                                               LocalSpaceType::dimDomain,
+                                               LocalSpaceType::dimRange,
+                                               LocalSpaceType::dimRangeCols>,
                                 LocalSpaceType>::value,
                 "LocalSpaceType has to be derived from SpaceInterface!");
 
@@ -78,15 +80,18 @@ private:
     typedef typename MsGridType::EntityType Comdim0EntityType;
 
   public:
-    static size_t numDofs(const MsGridType& ms_grid, const std::vector<std::shared_ptr<const L>>& local_spaces,
+    static size_t numDofs(const MsGridType& ms_grid,
+                          const std::vector<std::shared_ptr<const L>>& local_spaces,
                           const Comdim0EntityType& entity)
     {
       const size_t block = find_block_of_(ms_grid, entity);
       return local_spaces[block]->mapper().numDofs(entity);
     }
 
-    static void globalIndices(const MsGridType& ms_grid, const std::vector<std::shared_ptr<const L>>& local_spaces,
-                              const std::vector<size_t>& global_start_indices, const Comdim0EntityType& entity,
+    static void globalIndices(const MsGridType& ms_grid,
+                              const std::vector<std::shared_ptr<const L>>& local_spaces,
+                              const std::vector<size_t>& global_start_indices,
+                              const Comdim0EntityType& entity,
                               Dune::DynamicVector<size_t>& ret)
     {
       const size_t block = find_block_of_(ms_grid, entity);
@@ -97,11 +102,13 @@ private:
         ret[ii] += global_start_indices[block];
     }
 
-    static size_t mapToGlobal(const MsGridType& ms_grid, const std::vector<std::shared_ptr<const L>>& local_spaces,
-                              const std::vector<size_t>& global_start_indices, const Comdim0EntityType& entity,
+    static size_t mapToGlobal(const MsGridType& ms_grid,
+                              const std::vector<std::shared_ptr<const L>>& local_spaces,
+                              const std::vector<size_t>& global_start_indices,
+                              const Comdim0EntityType& entity,
                               const size_t& localIndex)
     {
-      const size_t block             = find_block_of_(ms_grid, entity);
+      const size_t block = find_block_of_(ms_grid, entity);
       const size_t block_local_index = local_spaces[block]->mapper().mapToGlobal(entity, localIndex);
       return global_start_indices[block] + block_local_index;
     }
@@ -110,7 +117,7 @@ private:
     static size_t find_block_of_(const MsGridType& ms_grid, const Comdim0EntityType& entity)
     {
       const auto global_entity_index = ms_grid.globalGridView().indexSet().index(entity);
-      const auto result              = ms_grid.entityToSubdomainMap()->find(global_entity_index);
+      const auto result = ms_grid.entityToSubdomainMap()->find(global_entity_index);
 #ifndef NDEBUG
       if (result == ms_grid.entityToSubdomainMap()->end())
         DUNE_THROW(XT::Common::Exceptions::internal_error,

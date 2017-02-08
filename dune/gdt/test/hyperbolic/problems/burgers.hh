@@ -25,7 +25,11 @@ namespace Hyperbolic {
 namespace Problems {
 
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim,
+template <class EntityImp,
+          class DomainFieldImp,
+          size_t domainDim,
+          class RangeFieldImp,
+          size_t rangeDim,
           size_t rangeDimCols = 1>
 class Burgers : public Default<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
 {
@@ -60,9 +64,9 @@ public:
   static ConfigType default_grid_config()
   {
     ConfigType grid_config;
-    grid_config["type"]         = "provider.cube";
-    grid_config["lower_left"]   = "[0.0 0.0 0.0]";
-    grid_config["upper_right"]  = "[1.0 1.0 1.0]";
+    grid_config["type"] = "provider.cube";
+    grid_config["lower_left"] = "[0.0 0.0 0.0]";
+    grid_config["upper_right"] = "[1.0 1.0 1.0]";
     grid_config["num_elements"] = "[8 8 8]";
     return grid_config;
   }
@@ -74,7 +78,7 @@ public:
     return boundary_config;
   }
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -82,7 +86,7 @@ public:
     const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
     const std::shared_ptr<const DefaultInitialValueType> initial_values(
         DefaultInitialValueType::create(config.sub("initial_values")));
-    const ConfigType grid_config   = config.sub("grid");
+    const ConfigType grid_config = config.sub("grid");
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
@@ -95,25 +99,28 @@ public:
     config.add(default_grid_config(), "grid", true);
     config.add(default_boundary_info_config(), "boundary_info", true);
     ConfigType flux_config;
-    flux_config["variable"]   = "u";
+    flux_config["variable"] = "u";
     flux_config["expression"] = "[0.5*u[0]*u[0] 0.5*u[0]*u[0] 0.5*u[0]*u[0]]";
-    flux_config["order"]      = "2";
-    flux_config["gradient"]   = "[u[0] 0 0]";
-    flux_config["gradient.0"] = "[u[0] 0 0]";
-    flux_config["gradient.1"] = "[u[0] 0 0]";
-    flux_config["gradient.2"] = "[u[0] 0 0]";
+    flux_config["order"] = "2";
+    if (dimDomain == 1)
+      flux_config["gradient"] = "[u[0] 0 0]";
+    else {
+      flux_config["gradient.0"] = "[u[0] 0 0]";
+      flux_config["gradient.1"] = "[u[0] 0 0]";
+      flux_config["gradient.2"] = "[u[0] 0 0]";
+    }
     config.add(flux_config, "flux", true);
     ConfigType initial_value_config;
-    initial_value_config["lower_left"]   = "[0.0 0.0 0.0]";
-    initial_value_config["upper_right"]  = "[1.0 1.0 1.0]";
+    initial_value_config["lower_left"] = "[0.0 0.0 0.0]";
+    initial_value_config["upper_right"] = "[1.0 1.0 1.0]";
     initial_value_config["num_elements"] = "[1 1 1]";
-    initial_value_config["variable"]     = "x";
+    initial_value_config["variable"] = "x";
     if (dimDomain == 1)
       initial_value_config["values"] = "sin(pi*x[0])";
     else
       initial_value_config["values.0"] =
           "1.0/40.0*exp(1-(2*pi*x[0]-pi)*(2*pi*x[0]-pi)-(2*pi*x[1]-pi)*(2*pi*x[1]-pi))"; // bump, only in 2D or higher
-    initial_value_config["name"]  = static_id();
+    initial_value_config["name"] = static_id();
     initial_value_config["order"] = "10";
     config.add(initial_value_config, "initial_values", true);
     if (sub_name.empty())
@@ -125,9 +132,12 @@ public:
     }
   } // ... default_config(...)
 
-  Burgers(const std::shared_ptr<const FluxType> flux, const std::shared_ptr<const RHSType> rhs,
-          const std::shared_ptr<const InitialValueType> initial_values, const ConfigType& grid_config,
-          const ConfigType& boundary_info, const std::shared_ptr<const BoundaryValueType> boundary_values)
+  Burgers(const std::shared_ptr<const FluxType> flux,
+          const std::shared_ptr<const RHSType> rhs,
+          const std::shared_ptr<const InitialValueType> initial_values,
+          const ConfigType& grid_config,
+          const ConfigType& boundary_info,
+          const std::shared_ptr<const BoundaryValueType> boundary_values)
     : BaseType(flux, rhs, initial_values, grid_config, boundary_info, boundary_values)
   {
   }
@@ -152,15 +162,20 @@ public:
 
 template <class G, class R = double, size_t r = 1, size_t rC = 1>
 class BurgersTestCase
-    : public Dune::GDT::Test::NonStationaryTestCase<G, Problems::Burgers<typename G::template Codim<0>::Entity,
-                                                                         typename G::ctype, G::dimension, R, r, rC>>
+    : public Dune::GDT::Test::NonStationaryTestCase<G,
+                                                    Problems::Burgers<typename G::template Codim<0>::Entity,
+                                                                      typename G::ctype,
+                                                                      G::dimension,
+                                                                      R,
+                                                                      r,
+                                                                      rC>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
   static const size_t d = G::dimension;
 
 public:
-  static const size_t dimRange     = r;
+  static const size_t dimRange = r;
   static const size_t dimRangeCols = rC;
   typedef Problems::Burgers<E, D, d, R, r> ProblemType;
 
@@ -171,8 +186,8 @@ public:
   using typename BaseType::GridType;
 
   BurgersTestCase(const size_t num_refs = (d == 1 ? 4 : 1), const double divide_t_end_by = 1.0)
-    : BaseType(divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(),
-               num_refs)
+    : BaseType(
+          divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(), num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {
   }

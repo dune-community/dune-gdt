@@ -120,8 +120,7 @@ public:
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-static inline double
-default_beta(const size_t dimDomain)
+static inline double default_beta(const size_t dimDomain)
 {
   return 1.0 / (dimDomain - 1.0);
 }
@@ -130,8 +129,7 @@ default_beta(const size_t dimDomain)
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-static inline double
-inner_sigma(const size_t pol_order)
+static inline double inner_sigma(const size_t pol_order)
 {
   double sigma = 1.0;
   if (pol_order <= 1)
@@ -158,8 +156,7 @@ inner_sigma(const size_t pol_order)
 /**
  * \note see Epshteyn, Riviere, 2007
  */
-static inline double
-boundary_sigma(const size_t pol_order)
+static inline double boundary_sigma(const size_t pol_order)
 {
   double sigma = 1.0;
   if (pol_order <= 1)
@@ -217,7 +214,8 @@ public:
    * \brief extracts the local functions and calls the correct order() method
    */
   template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  size_t order(const LocalfunctionTupleType& localFunctionsEntity, const LocalfunctionTupleType& localFunctionsNeighbor,
+  size_t order(const LocalfunctionTupleType& localFunctionsEntity,
+               const LocalfunctionTupleType& localFunctionsNeighbor,
                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>&
                    testBaseEntity,
                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>&
@@ -227,7 +225,7 @@ public:
                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>&
                    ansatzBaseNeighbor) const
   {
-    const auto localFunctionEntity   = std::get<0>(localFunctionsEntity);
+    const auto localFunctionEntity = std::get<0>(localFunctionsEntity);
     const auto localFunctionNeighbor = std::get<0>(localFunctionsNeighbor);
     return order(*localFunctionEntity,
                  *localFunctionNeighbor,
@@ -241,21 +239,24 @@ public:
    * \brief extracts the local functions and calls the correct evaluate() method
    */
   template <class IntersectionType, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void
-  evaluate(const LocalfunctionTupleType& localFunctionsEntity, const LocalfunctionTupleType& localFunctionsNeighbor,
-           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>&
-               testBaseEntity,
-           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>&
-               ansatzBaseEntity,
-           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>&
-               testBaseNeighbor,
-           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>&
-               ansatzBaseNeighbor,
-           const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
-           Dune::DynamicMatrix<R>& entityEntityRet, Dune::DynamicMatrix<R>& neighborNeighborRet,
-           Dune::DynamicMatrix<R>& entityNeighborRet, Dune::DynamicMatrix<R>& neighborEntityRet) const
+  void evaluate(const LocalfunctionTupleType& localFunctionsEntity,
+                const LocalfunctionTupleType& localFunctionsNeighbor,
+                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>&
+                    testBaseEntity,
+                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>&
+                    ansatzBaseEntity,
+                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>&
+                    testBaseNeighbor,
+                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>&
+                    ansatzBaseNeighbor,
+                const IntersectionType& intersection,
+                const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
+                Dune::DynamicMatrix<R>& entityEntityRet,
+                Dune::DynamicMatrix<R>& neighborNeighborRet,
+                Dune::DynamicMatrix<R>& entityNeighborRet,
+                Dune::DynamicMatrix<R>& neighborEntityRet) const
   {
-    const auto localFunctionEntity   = std::get<0>(localFunctionsEntity);
+    const auto localFunctionEntity = std::get<0>(localFunctionsEntity);
     const auto localFunctionNeighbor = std::get<0>(localFunctionsNeighbor);
     evaluate(*localFunctionEntity,
              *localFunctionNeighbor,
@@ -311,9 +312,12 @@ public:
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>& ansatzBaseEntity,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>& testBaseNeighbor,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>& ansatzBaseNeighbor,
-           const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, 1>& localPoint,
-           Dune::DynamicMatrix<R>& entityEntityRet, Dune::DynamicMatrix<R>& neighborNeighborRet,
-           Dune::DynamicMatrix<R>& entityNeighborRet, Dune::DynamicMatrix<R>& neighborEntityRet) const
+           const IntersectionType& intersection,
+           const Dune::FieldVector<DomainFieldType, 1>& localPoint,
+           Dune::DynamicMatrix<R>& entityEntityRet,
+           Dune::DynamicMatrix<R>& neighborNeighborRet,
+           Dune::DynamicMatrix<R>& entityNeighborRet,
+           Dune::DynamicMatrix<R>& neighborEntityRet) const
   {
     // clear ret
     entityEntityRet *= 0.0;
@@ -321,8 +325,8 @@ public:
     entityNeighborRet *= 0.0;
     neighborEntityRet *= 0.0;
     // convert local point (which is in intersection coordinates) to entity/neighbor coordinates
-    const auto localPointEn    = intersection.geometryInInside().global(localPoint);
-    const auto localPointNe    = intersection.geometryInOutside().global(localPoint);
+    const auto localPointEn = intersection.geometryInInside().global(localPoint);
+    const auto localPointNe = intersection.geometryInOutside().global(localPoint);
     const auto unitOuterNormal = intersection.unitOuterNormal(localPoint);
     // evaluate local function
     const auto functionValueEn = localFunctionEntity.evaluate(localPointEn);
@@ -331,26 +335,26 @@ public:
     const auto max_polorder =
         std::max(testBaseEntity.order(),
                  std::max(ansatzBaseEntity.order(), std::max(testBaseNeighbor.order(), ansatzBaseNeighbor.order())));
-    const R sigma   = internal::inner_sigma(max_polorder);
+    const R sigma = internal::inner_sigma(max_polorder);
     const R penalty = sigma / std::pow(intersection.geometry().volume(), beta_);
     // evaluate bases
     // * entity
     //   * test
-    const auto rowsEn          = testBaseEntity.size();
-    const auto testValuesEn    = testBaseEntity.evaluate(localPointEn);
+    const auto rowsEn = testBaseEntity.size();
+    const auto testValuesEn = testBaseEntity.evaluate(localPointEn);
     const auto testGradientsEn = testBaseEntity.jacobian(localPointEn);
     //   * ansatz
-    const auto colsEn            = ansatzBaseEntity.size();
-    const auto ansatzValuesEn    = ansatzBaseEntity.evaluate(localPointEn);
+    const auto colsEn = ansatzBaseEntity.size();
+    const auto ansatzValuesEn = ansatzBaseEntity.evaluate(localPointEn);
     const auto ansatzGradientsEn = ansatzBaseEntity.jacobian(localPointEn);
     // * neighbor
     //   * test
-    const auto rowsNe          = testBaseNeighbor.size();
-    const auto testValuesNe    = testBaseNeighbor.evaluate(localPointNe);
+    const auto rowsNe = testBaseNeighbor.size();
+    const auto testValuesNe = testBaseNeighbor.evaluate(localPointNe);
     const auto testGradientsNe = testBaseNeighbor.jacobian(localPointNe);
     //   * ansatz
-    const auto colsNe            = ansatzBaseNeighbor.size();
-    const auto ansatzValuesNe    = ansatzBaseNeighbor.evaluate(localPointNe);
+    const auto colsNe = ansatzBaseNeighbor.size();
+    const auto ansatzValuesNe = ansatzBaseNeighbor.evaluate(localPointNe);
     const auto ansatzGradientsNe = ansatzBaseNeighbor.jacobian(localPointNe);
     // compute the evaluations
     assert(entityEntityRet.rows() >= rowsEn);
@@ -363,7 +367,7 @@ public:
     assert(neighborNeighborRet.cols() >= colsNe);
     // loop over all entity test basis functions
     for (size_t ii = 0; ii < rowsEn; ++ii) {
-      auto& entityEntityRetRow   = entityEntityRet[ii];
+      auto& entityEntityRetRow = entityEntityRet[ii];
       auto& entityNeighborRetRow = entityNeighborRet[ii];
       // loop over all entity ansatz basis functions
       for (size_t jj = 0; jj < colsEn; ++jj) {
@@ -390,7 +394,7 @@ public:
     } // loop over all entity test basis functions
     // loop over all neighbor test basis functions
     for (size_t ii = 0; ii < rowsNe; ++ii) {
-      auto& neighborEntityRetRow   = neighborEntityRet[ii];
+      auto& neighborEntityRetRow = neighborEntityRet[ii];
       auto& neighborNeighborRetRow = neighborNeighborRet[ii];
       // loop over all entity ansatz basis functions
       for (size_t jj = 0; jj < colsEn; ++jj) {
@@ -474,7 +478,8 @@ public:
       const LocalfunctionTupleType localFuncs,
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase,
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase,
-      const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
+      const IntersectionType& intersection,
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
       Dune::DynamicMatrix<R>& ret) const
   {
     evaluate(*std::get<0>(localFuncs), testBase, ansatzBase, intersection, localPoint, ret);
@@ -505,28 +510,29 @@ public:
   void evaluate(const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, 2, R, 1, 1>& localFunction,
                 const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>& testBase,
                 const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, 2, R, 1, 1>& ansatzBase,
-                const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, 1>& localPoint,
+                const IntersectionType& intersection,
+                const Dune::FieldVector<DomainFieldType, 1>& localPoint,
                 Dune::DynamicMatrix<R>& ret) const
   {
     // clear ret
     ret *= 0.0;
     // get local point (which is in intersection coordinates) in entity coordinates
     const auto localPointEntity = intersection.geometryInInside().global(localPoint);
-    const auto unitOuterNormal  = intersection.unitOuterNormal(localPoint);
+    const auto unitOuterNormal = intersection.unitOuterNormal(localPoint);
     // evaluate local function
     const auto functionValue = localFunction.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const auto max_polorder = std::max(testBase.order(), ansatzBase.order());
-    const R sigma           = internal::boundary_sigma(max_polorder);
-    const R penalty         = sigma / std::pow(intersection.geometry().volume(), beta_);
+    const R sigma = internal::boundary_sigma(max_polorder);
+    const R penalty = sigma / std::pow(intersection.geometry().volume(), beta_);
     // evaluate bases
     // * test
-    const auto rows          = testBase.size();
-    const auto testValues    = testBase.evaluate(localPointEntity);
+    const auto rows = testBase.size();
+    const auto testValues = testBase.evaluate(localPointEntity);
     const auto testGradients = testBase.jacobian(localPointEntity);
     // * ansatz
-    const auto cols            = ansatzBase.size();
-    const auto ansatzValues    = ansatzBase.evaluate(localPointEntity);
+    const auto cols = ansatzBase.size();
+    const auto ansatzValues = ansatzBase.evaluate(localPointEntity);
     const auto ansatzGradients = ansatzBase.jacobian(localPointEntity);
     // compute products
     assert(ret.rows() >= rows);
@@ -570,7 +576,8 @@ public:
   typedef typename Traits::DomainFieldType DomainFieldType;
   static const size_t dimDomain = Traits::dimDomain;
 
-  BoundaryRHS(const LocalizableDiffusionFunctionType& diffusion, const LocalizableDirichletFunctionType& dirichlet,
+  BoundaryRHS(const LocalizableDiffusionFunctionType& diffusion,
+              const LocalizableDirichletFunctionType& dirichlet,
               const double beta = internal::default_beta(dimDomain))
     : diffusion_(diffusion)
     , dirichlet_(dirichlet)
@@ -606,7 +613,8 @@ public:
   void
   evaluate(const LocalfunctionTupleType localFuncs,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& testBase,
-           const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
+           const IntersectionType& intersection,
+           const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
            Dune::DynamicVector<R>& ret) const
   {
     const auto localDiffusion = std::get<0>(localFuncs);
@@ -628,10 +636,10 @@ public:
       const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& testBase)
       const
   {
-    const size_t testOrder         = testBase.order();
+    const size_t testOrder = testBase.order();
     const size_t testGradientOrder = boost::numeric_cast<size_t>(std::max(ssize_t(testOrder) - 1, ssize_t(0)));
-    const size_t diffusionOrder    = localDiffusion.order();
-    const size_t dirichletOrder    = localDirichlet.order();
+    const size_t diffusionOrder = localDiffusion.order();
+    const size_t dirichletOrder = localDirichlet.order();
     return std::max(testOrder + dirichletOrder, diffusionOrder + testGradientOrder + dirichletOrder);
   } // ... order(...)
 
@@ -644,24 +652,25 @@ public:
   evaluate(const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localDiffusion,
            const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localDirichlet,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& testBase,
-           const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
+           const IntersectionType& intersection,
+           const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
            Dune::DynamicVector<R>& ret) const
   {
     // clear ret
     ret *= 0.0;
     // get local point (which is in intersection coordinates) in entity coordinates
     const auto localPointEntity = intersection.geometryInInside().global(localPoint);
-    const auto unitOuterNormal  = intersection.unitOuterNormal(localPoint);
+    const auto unitOuterNormal = intersection.unitOuterNormal(localPoint);
     // evaluate local functions
     const auto diffusionValue = localDiffusion.evaluate(localPointEntity);
     const auto dirichletValue = localDirichlet.evaluate(localPointEntity);
     // compute penalty (see Epshteyn, Riviere, 2007)
     const auto polorder = testBase.order();
-    const R sigma       = internal::boundary_sigma(polorder);
-    const R penalty     = sigma / std::pow(intersection.geometry().volume(), beta_);
+    const R sigma = internal::boundary_sigma(polorder);
+    const R penalty = sigma / std::pow(intersection.geometry().volume(), beta_);
     // evaluate basis
-    const auto size          = testBase.size();
-    const auto testValues    = testBase.evaluate(localPointEntity);
+    const auto size = testBase.size();
+    const auto testValues = testBase.evaluate(localPointEntity);
     const auto testGradients = testBase.jacobian(localPointEntity);
     // compute
     assert(ret.size() >= size);

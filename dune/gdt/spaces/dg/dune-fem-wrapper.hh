@@ -51,7 +51,7 @@ public:
   typedef DuneFemDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   typedef GridPartImp GridPartType;
   typedef typename GridPartType::GridViewType GridViewType;
-  static const int polOrder    = polynomialOrder;
+  static const int polOrder = polynomialOrder;
   static const bool continuous = false;
   static_assert(polOrder >= 1, "Wrong polOrder given!");
 
@@ -69,11 +69,16 @@ public:
   typedef Dune::Fem::LagrangeDiscontinuousGalerkinSpace<FunctionSpaceType, GridPartType, polOrder> BackendType;
   typedef Mapper::FemDofWrapper<typename BackendType::BlockMapperType, BackendType::Traits::localBlockSize> MapperType;
   typedef typename GridPartType::template Codim<0>::EntityType EntityType;
-  typedef BaseFunctionSet::DuneFemWrapper<typename BackendType::BasisFunctionSetType, EntityType, DomainFieldType,
-                                          dimDomain, RangeFieldType, rangeDim, rangeDimCols>
+  typedef BaseFunctionSet::DuneFemWrapper<typename BackendType::BasisFunctionSetType,
+                                          EntityType,
+                                          DomainFieldType,
+                                          dimDomain,
+                                          RangeFieldType,
+                                          rangeDim,
+                                          rangeDimCols>
       BaseFunctionSetType;
   static const XT::Grid::Backends part_view_type = XT::Grid::Backends::part;
-  static const bool needs_grid_view              = false;
+  static const bool needs_grid_view = false;
   typedef CommunicationChooser<GridViewType, false> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 }; // class DuneFemDgSpaceWrapperTraits
@@ -86,11 +91,15 @@ public:
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp>
 class DuneFemDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>
     : public DgSpaceInterface<internal::DuneFemDgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                              GridPartImp::dimension, 1, 1>
+                              GridPartImp::dimension,
+                              1,
+                              1>
 {
   typedef DuneFemDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
   typedef DgSpaceInterface<internal::DuneFemDgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                           GridPartImp::dimension, 1, 1>
+                           GridPartImp::dimension,
+                           1,
+                           1>
       BaseType;
 
 public:
@@ -110,7 +119,7 @@ public:
 
   DuneFemDgSpaceWrapper(GridPartType gridP)
     : gridPart_(new GridPartType(gridP))
-    , gridView_(new GridViewType(gridPart_->gridView()))
+    , gridView_(new GridViewType(*gridPart_))
     , backend_(new BackendType(*gridPart_))
     , mapper_(new MapperType(backend_->blockMapper()))
     , communicator_(CommunicationChooserType::create(*gridView_))

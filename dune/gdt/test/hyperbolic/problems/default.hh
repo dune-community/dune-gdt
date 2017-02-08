@@ -76,9 +76,9 @@ private:
   static ConfigType default_grid_config()
   {
     ConfigType grid_config;
-    grid_config["type"]         = "provider.cube";
-    grid_config["lower_left"]   = "[0.0 0.0 0.0]";
-    grid_config["upper_right"]  = "[1.0 1.0 1.0]";
+    grid_config["type"] = "provider.cube";
+    grid_config["lower_left"] = "[0.0 0.0 0.0]";
+    grid_config["upper_right"] = "[1.0 1.0 1.0]";
     grid_config["num_elements"] = "[512 60 60]";
     return grid_config;
   }
@@ -97,31 +97,32 @@ public:
     config.add(default_grid_config(), "grid");
     config.add(default_boundary_info_config(), "boundary_info");
     ConfigType flux_config;
-    flux_config["type"]       = DefaultFluxType::static_id();
-    flux_config["variable"]   = "u";
+    flux_config["type"] = DefaultFluxType::static_id();
+    flux_config["variable"] = "u";
     flux_config["expression"] = "[0 0 0]";
-    flux_config["order"]      = "0";
-    flux_config["gradient"]   = "[0 0 0; 0 0 0; 0 0 0]";
+    flux_config["order"] = "0";
+    if (dimDomain == 1)
+      flux_config["gradient"] = "[0 0 0; 0 0 0; 0 0 0]";
     config.add(flux_config, "flux");
     ConfigType rhs_config;
-    rhs_config["lower_left"]   = "[0.0 0.0 0.0]";
-    rhs_config["upper_right"]  = "[1.0 1.0 1.0]";
+    rhs_config["lower_left"] = "[0.0 0.0 0.0]";
+    rhs_config["upper_right"] = "[1.0 1.0 1.0]";
     rhs_config["num_elements"] = "[1 1 1]";
-    rhs_config["variable"]     = "u";
-    rhs_config["values"]       = "[0]";
-    rhs_config["name"]         = static_id();
+    rhs_config["variable"] = "u";
+    rhs_config["values"] = "[0]";
+    rhs_config["name"] = static_id();
     config.add(rhs_config, "rhs");
     ConfigType initial_value_config;
-    initial_value_config["type"]       = InitialValueType::static_id();
-    initial_value_config["variable"]   = "x";
+    initial_value_config["type"] = InitialValueType::static_id();
+    initial_value_config["variable"] = "x";
     initial_value_config["expression"] = "[0 0 0]";
-    initial_value_config["order"]      = "0";
+    initial_value_config["order"] = "0";
     config.add(initial_value_config, "initial_values");
     ConfigType boundary_value_config;
-    boundary_value_config["type"]       = BoundaryValueType::static_id();
-    boundary_value_config["variable"]   = "x";
+    boundary_value_config["type"] = BoundaryValueType::static_id();
+    boundary_value_config["variable"] = "x";
     boundary_value_config["expression"] = "[0 0 0]";
-    boundary_value_config["order"]      = "1";
+    boundary_value_config["order"] = "1";
     config.add(boundary_value_config, "boundary_values");
     if (sub_name.empty())
       return config;
@@ -132,7 +133,7 @@ public:
     }
   } // ... default_config(...)
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -140,17 +141,18 @@ public:
     const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
     const std::shared_ptr<const DefaultInitialValueType> initial_values(
         DefaultInitialValueType::create(config.sub("initial_values")));
-    const ConfigType grid_config   = config.sub("grid");
+    const ConfigType grid_config = config.sub("grid");
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
     return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
   } // ... create(...)
 
-  Default(const std::shared_ptr<const FluxType> flux_ptr, const std::shared_ptr<const RHSType> rhs_ptr,
+  Default(const std::shared_ptr<const FluxType> flux_ptr,
+          const std::shared_ptr<const RHSType> rhs_ptr,
           const std::shared_ptr<const InitialValueType> initial_values_ptr =
               std::make_shared<DefaultInitialValueType>("x", "[0 0 0]", 0),
-          const ConfigType& grid_cfg          = default_grid_config(),
+          const ConfigType& grid_cfg = default_grid_config(),
           const ConfigType& boundary_info_cfg = default_boundary_info_config(),
           const std::shared_ptr<const DefaultBoundaryValueType> boundary_vals =
               std::make_shared<DefaultBoundaryValueType>("x", "[0 0 0]", 0))

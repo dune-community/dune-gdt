@@ -24,7 +24,10 @@ namespace GDT {
 namespace Test {
 
 
-template <class TestCaseType, Hyperbolic::ChooseDiscretizer disc, size_t dimDomain, NumericalFluxes num_flux,
+template <class TestCaseType,
+          Hyperbolic::ChooseDiscretizer disc,
+          size_t dimDomain,
+          NumericalFluxes num_flux,
           TimeStepperMethods time_stepper>
 class HyperbolicEocExpectations : public internal::HyperbolicEocExpectationsBase<dimDomain>
 {

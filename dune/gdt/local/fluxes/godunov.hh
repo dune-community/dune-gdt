@@ -66,12 +66,13 @@ public:
   typedef typename AnalyticalFluxType::FluxJacobianRangeType FluxJacobianRangeType;
   typedef std::tuple<double> LocalfunctionTupleType;
   static const size_t dimDomain = domainDim;
-  static const size_t dimRange  = AnalyticalFluxType::dimRange;
+  static const size_t dimRange = AnalyticalFluxType::dimRange;
   static_assert(AnalyticalFluxType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
   typedef typename Dune::XT::LA::EigenDenseMatrix<RangeFieldType> EigenMatrixType;
 }; // class LocalGodunovNumericalCouplingFluxTraits
 
-template <class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp,
+template <class AnalyticalBoundaryFluxImp,
+          class BoundaryValueFunctionImp,
           size_t domainDim = AnalyticalBoundaryFluxImp::dimDomain>
 class LocalGodunovNumericalBoundaryFluxTraits
     : public LocalGodunovNumericalCouplingFluxTraits<AnalyticalBoundaryFluxImp, domainDim>
@@ -107,9 +108,10 @@ public:
   typedef typename Traits::RangeType RangeType;
   typedef typename Traits::EigenMatrixType EigenMatrixType;
   static constexpr size_t dimDomain = Traits::dimDomain;
-  static const size_t dimRange      = Traits::dimRange;
+  static const size_t dimRange = Traits::dimRange;
 
-  explicit LocalGodunovNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux, const bool is_linear = false,
+  explicit LocalGodunovNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
+                                             const bool is_linear = false,
                                              const bool reinit_jacobians = true)
     : analytical_flux_(analytical_flux)
     , is_linear_(is_linear)
@@ -124,14 +126,15 @@ public:
   }
 
   template <class IntersectionType>
-  RangeType evaluate(const LocalfunctionTupleType& /*local_functions_tuple_entity*/,
-                     const LocalfunctionTupleType& /*local_functions_tuple_neighbor*/,
-                     const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                                                 dimRange, 1>& local_source_entity,
-                     const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                                                 dimRange, 1>& local_source_neighbor,
-                     const IntersectionType& intersection,
-                     const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
+  RangeType evaluate(
+      const LocalfunctionTupleType& /*local_functions_tuple_entity*/,
+      const LocalfunctionTupleType& /*local_functions_tuple_neighbor*/,
+      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
+          local_source_entity,
+      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
+          local_source_neighbor,
+      const IntersectionType& intersection,
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
     // get function values
     const RangeType u_i = local_source_entity.evaluate(intersection.geometryInInside().global(x_intersection));
@@ -170,12 +173,12 @@ public:
       RangeType negative_waves(RangeFieldType(0));
       jacobian_neg_[coord].mv(delta_u, negative_waves);
       for (size_t kk = 0; kk < dimRange; ++kk)
-        ret[kk]      = (f_u_i[kk][coord] - negative_waves[kk] * n_ij[coord]) * vol_intersection;
+        ret[kk] = (f_u_i[kk][coord] - negative_waves[kk] * n_ij[coord]) * vol_intersection;
     } else {
       RangeType positive_waves(RangeFieldType(0));
       jacobian_pos_[coord].mv(delta_u, positive_waves);
       for (size_t kk = 0; kk < dimRange; ++kk)
-        ret[kk]      = (-f_u_i[kk][coord] - positive_waves[kk] * n_ij[coord]) * vol_intersection;
+        ret[kk] = (-f_u_i[kk][coord] - positive_waves[kk] * n_ij[coord]) * vol_intersection;
     }
     return ret;
   } // RangeType evaluate(...) const
@@ -217,7 +220,7 @@ private:
       ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver(
           jacobian[ii].backend());
       assert(eigen_solver.info() == ::Eigen::Success);
-      const auto eigenvalues  = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
+      const auto eigenvalues = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
       const auto eigenvectors = eigen_solver.eigenvectors(); // <- this should be an Eigen matrix of std::complex
       assert(boost::numeric_cast<size_t>(eigenvalues.size()) == dimRange);
       for (size_t jj = 0; jj < dimRange; ++jj) {
@@ -276,12 +279,17 @@ public:
   typedef typename Traits::RangeType RangeType;
   typedef typename Traits::EigenMatrixType EigenMatrixType;
   static const size_t dimDomain = Traits::dimDomain;
-  static const size_t dimRange  = Traits::dimRange;
-  typedef typename XT::Functions::AffineFunction<typename AnalyticalFluxType::FluxDummyEntityType, RangeFieldType,
-                                                 dimRange, RangeFieldType, dimRange, 1>
+  static const size_t dimRange = Traits::dimRange;
+  typedef typename XT::Functions::AffineFunction<typename AnalyticalFluxType::FluxDummyEntityType,
+                                                 RangeFieldType,
+                                                 dimRange,
+                                                 RangeFieldType,
+                                                 dimRange,
+                                                 1>
       AffineFunctionType;
 
-  explicit LocalGodunovNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux, const bool is_linear,
+  explicit LocalGodunovNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
+                                             const bool is_linear,
                                              const bool reinit_jacobians = true)
     : analytical_flux_(analytical_flux)
     , is_linear_(is_linear)
@@ -296,14 +304,15 @@ public:
   }
 
   template <class IntersectionType>
-  RangeType evaluate(const LocalfunctionTupleType& /*local_functions_tuple_entity*/,
-                     const LocalfunctionTupleType& /*local_functions_tuple_neighbor*/,
-                     const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                                                 dimRange, 1>& local_source_entity,
-                     const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                                                 dimRange, 1>& local_source_neighbor,
-                     const IntersectionType& intersection,
-                     const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
+  RangeType evaluate(
+      const LocalfunctionTupleType& /*local_functions_tuple_entity*/,
+      const LocalfunctionTupleType& /*local_functions_tuple_neighbor*/,
+      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
+          local_source_entity,
+      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
+          local_source_neighbor,
+      const IntersectionType& intersection,
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
     // get function values
     const RangeType u_i = local_source_entity.evaluate(intersection.geometryInInside().global(x_intersection));
@@ -365,7 +374,7 @@ private:
     ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver(
         jacobian.backend());
     assert(eigen_solver.info() == ::Eigen::Success);
-    const auto eigenvalues  = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
+    const auto eigenvalues = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
     const auto eigenvectors = eigen_solver.eigenvectors(); // <- this should be an Eigen matrix of std::complex
     assert(boost::numeric_cast<size_t>(eigenvalues.size()) == dimRange);
     for (size_t jj = 0; jj < dimRange; ++jj) {
@@ -425,7 +434,8 @@ thread_local typename LocalGodunovNumericalCouplingFlux<AnalyticalFluxImp, 1>::A
 template <class AnalyticalFluxImp>
 thread_local bool LocalGodunovNumericalCouplingFlux<AnalyticalFluxImp, 1>::jacobians_constructed_(false);
 
-template <class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp,
+template <class AnalyticalBoundaryFluxImp,
+          class BoundaryValueFunctionImp,
           size_t domainDim = AnalyticalBoundaryFluxImp::dimDomain>
 class LocalGodunovNumericalBoundaryFlux
     : public LocalNumericalBoundaryFluxInterface<internal::
@@ -433,7 +443,8 @@ class LocalGodunovNumericalBoundaryFlux
                                                                                              BoundaryValueFunctionImp>>
 {
 public:
-  typedef internal::LocalGodunovNumericalBoundaryFluxTraits<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp,
+  typedef internal::LocalGodunovNumericalBoundaryFluxTraits<AnalyticalBoundaryFluxImp,
+                                                            BoundaryValueFunctionImp,
                                                             domainDim>
       Traits;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
@@ -447,11 +458,12 @@ public:
   typedef typename Traits::RangeType RangeType;
   typedef typename Traits::EigenMatrixType EigenMatrixType;
   static const size_t dimDomain = Traits::dimDomain;
-  static const size_t dimRange  = Traits::dimRange;
+  static const size_t dimRange = Traits::dimRange;
 
   explicit LocalGodunovNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
                                              const BoundaryValueFunctionType& boundary_values,
-                                             const bool is_linear = false, const bool reinit_jacobians = true)
+                                             const bool is_linear = false,
+                                             const bool reinit_jacobians = true)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
@@ -467,14 +479,15 @@ public:
 
 
   template <class IntersectionType>
-  RangeType evaluate(const LocalfunctionTupleType& local_functions_tuple,
-                     const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                                                 dimRange, 1>& local_source_entity,
-                     const IntersectionType& intersection,
-                     const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
+  RangeType evaluate(
+      const LocalfunctionTupleType& local_functions_tuple,
+      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
+          local_source_entity,
+      const IntersectionType& intersection,
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
     const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
-    const RangeType u_i                     = local_source_entity.evaluate(x_intersection_entity_coords);
+    const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
     const RangeType u_j = std::get<0>(local_functions_tuple)->evaluate(x_intersection_entity_coords);
     // get flux values
     const FluxRangeType f_u_i = analytical_flux_.evaluate(u_i);
@@ -510,12 +523,12 @@ public:
       RangeType negative_waves(RangeFieldType(0));
       jacobian_neg_[coord].mv(delta_u, negative_waves);
       for (size_t kk = 0; kk < dimRange; ++kk)
-        ret[kk]      = (f_u_i[kk][coord] - negative_waves[kk] * n_ij[coord]) * vol_intersection;
+        ret[kk] = (f_u_i[kk][coord] - negative_waves[kk] * n_ij[coord]) * vol_intersection;
     } else {
       RangeType positive_waves(RangeFieldType(0));
       jacobian_pos_[coord].mv(delta_u, positive_waves);
       for (size_t kk = 0; kk < dimRange; ++kk)
-        ret[kk]      = (-f_u_i[kk][coord] - positive_waves[kk] * n_ij[coord]) * vol_intersection;
+        ret[kk] = (-f_u_i[kk][coord] - positive_waves[kk] * n_ij[coord]) * vol_intersection;
     }
     return ret;
   } // void evaluate(...) const
@@ -557,7 +570,7 @@ private:
       ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver(
           jacobian[ii].backend());
       assert(eigen_solver.info() == ::Eigen::Success);
-      const auto eigenvalues  = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
+      const auto eigenvalues = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
       const auto eigenvectors = eigen_solver.eigenvectors(); // <- this should be an Eigen matrix of std::complex
       assert(boost::numeric_cast<size_t>(eigenvalues.size()) == dimRange);
       for (size_t jj = 0; jj < dimRange; ++jj) {
@@ -590,17 +603,20 @@ private:
 }; // class LocalGodunovNumericalBoundaryFlux
 
 template <class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp, size_t domainDim>
-typename internal::LocalGodunovNumericalBoundaryFluxTraits<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp,
+typename internal::LocalGodunovNumericalBoundaryFluxTraits<AnalyticalBoundaryFluxImp,
+                                                           BoundaryValueFunctionImp,
                                                            domainDim>::FluxJacobianRangeType
     LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp, domainDim>::jacobian_neg_(0);
 
 template <class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp, size_t domainDim>
-typename internal::LocalGodunovNumericalBoundaryFluxTraits<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp,
+typename internal::LocalGodunovNumericalBoundaryFluxTraits<AnalyticalBoundaryFluxImp,
+                                                           BoundaryValueFunctionImp,
                                                            domainDim>::FluxJacobianRangeType
     LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp, domainDim>::jacobian_pos_(0);
 
 template <class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp, size_t domainDim>
-bool LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp,
+bool LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp,
+                                       BoundaryValueFunctionImp,
                                        domainDim>::jacobians_constructed_(false);
 
 template <class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp>
@@ -623,13 +639,18 @@ public:
   typedef typename Traits::RangeType RangeType;
   typedef typename Traits::EigenMatrixType EigenMatrixType;
   static const size_t dimDomain = Traits::dimDomain;
-  static const size_t dimRange  = Traits::dimRange;
-  typedef typename XT::Functions::AffineFunction<typename AnalyticalFluxType::FluxDummyEntityType, RangeFieldType,
-                                                 dimRange, RangeFieldType, dimRange, 1>
+  static const size_t dimRange = Traits::dimRange;
+  typedef typename XT::Functions::AffineFunction<typename AnalyticalFluxType::FluxDummyEntityType,
+                                                 RangeFieldType,
+                                                 dimRange,
+                                                 RangeFieldType,
+                                                 dimRange,
+                                                 1>
       AffineFunctionType;
   explicit LocalGodunovNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
                                              const BoundaryValueFunctionType& boundary_values,
-                                             const bool is_linear = false, const bool reinit_jacobians = true)
+                                             const bool is_linear = false,
+                                             const bool reinit_jacobians = true)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
@@ -644,14 +665,15 @@ public:
   }
 
   template <class IntersectionType>
-  RangeType evaluate(const LocalfunctionTupleType& local_functions_tuple,
-                     const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                                                 dimRange, 1>& local_source_entity,
-                     const IntersectionType& intersection,
-                     const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
+  RangeType evaluate(
+      const LocalfunctionTupleType& local_functions_tuple,
+      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
+          local_source_entity,
+      const IntersectionType& intersection,
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
     const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
-    const RangeType u_i                     = local_source_entity.evaluate(x_intersection_entity_coords);
+    const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
     const RangeType u_j = std::get<0>(local_functions_tuple)->evaluate(x_intersection_entity_coords);
 
     if (!jacobians_constructed_ && is_linear_)
@@ -710,7 +732,7 @@ private:
     ::Eigen::EigenSolver<typename XT::LA::EigenDenseMatrix<RangeFieldType>::BackendType> eigen_solver(
         jacobian.backend());
     assert(eigen_solver.info() == ::Eigen::Success);
-    const auto eigenvalues  = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
+    const auto eigenvalues = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
     const auto eigenvectors = eigen_solver.eigenvectors(); // <- this should be an Eigen matrix of std::complex
     assert(boost::numeric_cast<size_t>(eigenvalues.size()) == dimRange);
     for (size_t jj = 0; jj < dimRange; ++jj) {
@@ -747,33 +769,41 @@ private:
 }; // class LocalGodunovNumericalBoundaryFlux< ..., 1 >
 
 template <class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp>
-thread_local typename LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp,
+thread_local typename LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp,
+                                                        BoundaryValueFunctionImp,
                                                         1>::FluxJacobianRangeType
     LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp, 1>::jacobian_neg_{
-        typename LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp,
+        typename LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp,
+                                                   BoundaryValueFunctionImp,
                                                    1>::FluxJacobianRangeType()};
 
 template <class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp>
-thread_local typename LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp,
+thread_local typename LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp,
+                                                        BoundaryValueFunctionImp,
                                                         1>::FluxJacobianRangeType
     LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp, 1>::jacobian_pos_{
-        typename LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp,
+        typename LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp,
+                                                   BoundaryValueFunctionImp,
                                                    1>::FluxJacobianRangeType()};
 
 template <class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp>
-thread_local typename LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp,
+thread_local typename LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp,
+                                                        BoundaryValueFunctionImp,
                                                         1>::AffineFunctionType
     LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp, 1>::jacobian_neg_function_(
         LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp, 1>::AffineFunctionType(
-            LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp,
+            LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp,
+                                              BoundaryValueFunctionImp,
                                               1>::FluxJacobianRangeType(0)));
 
 template <class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp>
-thread_local typename LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp,
+thread_local typename LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp,
+                                                        BoundaryValueFunctionImp,
                                                         1>::AffineFunctionType
     LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp, 1>::jacobian_pos_function_(
         LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp, 1>::AffineFunctionType(
-            LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp, BoundaryValueFunctionImp,
+            LocalGodunovNumericalBoundaryFlux<AnalyticalBoundaryFluxImp,
+                                              BoundaryValueFunctionImp,
                                               1>::FluxJacobianRangeType(0)));
 
 template <class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp>

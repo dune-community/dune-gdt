@@ -4,11 +4,15 @@ namespace Dune {
 namespace GDT {
 namespace Test {
 
-std::vector<double>
-HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp2, double, 1>, Hyperbolic::ChooseDiscretizer::fv, 2,
-                          NumericalFluxes::godunov, TimeStepperMethods::explicit_euler>::
+std::vector<double> HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp2, double, 1>,
+                                              Hyperbolic::ChooseDiscretizer::fv,
+                                              2,
+                                              NumericalFluxes::godunov,
+                                              TimeStepperMethods::explicit_euler>::
     results(const HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp2, double, 1>,
-                                            Hyperbolic::ChooseDiscretizer::fv, 2, NumericalFluxes::godunov,
+                                            Hyperbolic::ChooseDiscretizer::fv,
+                                            2,
+                                            NumericalFluxes::godunov,
                                             TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
             const std::string type)
 {

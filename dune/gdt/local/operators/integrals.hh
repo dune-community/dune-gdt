@@ -110,7 +110,7 @@ public:
   }
 
   LocalVolumeIntegralOperator(const ThisType& other) = default;
-  LocalVolumeIntegralOperator(ThisType&& source)     = default;
+  LocalVolumeIntegralOperator(ThisType&& source) = default;
 
   using BaseType::apply2;
 
@@ -120,7 +120,7 @@ public:
               Dune::DynamicMatrix<R>& ret) const
   {
     static_assert(std::is_same<EO, E>::value, "Additional EO tpl only added for clang compat");
-    const auto& entity         = ansatz_base.entity();
+    const auto& entity = ansatz_base.entity();
     const auto local_functions = integrand_.localFunctions(entity);
     // create quadrature
     const size_t integrand_order = integrand_.order(local_functions, ansatz_base, test_base) + over_integrate_;
@@ -137,13 +137,13 @@ public:
       const auto xx = quadrature_point.position();
       // integration factors
       const auto integration_factor = entity.geometry().integrationElement(xx);
-      const auto quadrature_weight  = quadrature_point.weight();
+      const auto quadrature_weight = quadrature_point.weight();
       // evaluate the integrand
       integrand_.evaluate(local_functions, test_base, ansatz_base, xx, evaluation_result);
       // compute integral
       for (size_t ii = 0; ii < rows; ++ii) {
         const auto& evaluation_result_row = evaluation_result[ii];
-        auto& ret_row                     = ret[ii];
+        auto& ret_row = ret[ii];
         for (size_t jj = 0; jj < cols; ++jj)
           ret_row[jj] += evaluation_result_row[jj] * integration_factor * quadrature_weight;
       } // compute integral
@@ -185,19 +185,29 @@ public:
   {
   }
 
-  template <class E, class N, class IntersectionType, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA,
+  template <class E,
+            class N,
+            class IntersectionType,
+            class D,
+            size_t d,
+            class R,
+            size_t rT,
+            size_t rCT,
+            size_t rA,
             size_t rCA>
   void apply2(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base_en,
               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base_en,
               const XT::Functions::LocalfunctionSetInterface<N, D, d, R, rT, rCT>& test_base_ne,
               const XT::Functions::LocalfunctionSetInterface<N, D, d, R, rA, rCA>& ansatz_base_ne,
-              const IntersectionType& intersection, Dune::DynamicMatrix<R>& ret_en_en,
-              Dune::DynamicMatrix<R>& ret_ne_ne, Dune::DynamicMatrix<R>& ret_en_ne,
+              const IntersectionType& intersection,
+              Dune::DynamicMatrix<R>& ret_en_en,
+              Dune::DynamicMatrix<R>& ret_ne_ne,
+              Dune::DynamicMatrix<R>& ret_en_ne,
               Dune::DynamicMatrix<R>& ret_ne_en) const
   {
     // local inducing function
-    const auto& entity            = test_base_en.entity();
-    const auto& neighbor          = test_base_ne.entity();
+    const auto& entity = test_base_en.entity();
+    const auto& neighbor = test_base_ne.entity();
     const auto local_functions_en = integrand_.localFunctions(entity);
     const auto local_functions_ne = integrand_.localFunctions(neighbor);
     // quadrature
@@ -234,9 +244,9 @@ public:
         rows_ne, cols_en, 0.); // \todo: make mutable member, after SMP refactor
     // loop over all quadrature points
     for (const auto& quadrature_point : quadrature) {
-      const auto xx                 = quadrature_point.position();
+      const auto xx = quadrature_point.position();
       const auto integration_factor = intersection.geometry().integrationElement(xx);
-      const auto quadrature_weight  = quadrature_point.weight();
+      const auto quadrature_weight = quadrature_point.weight();
       // evaluate local
       integrand_.evaluate(local_functions_en,
                           local_functions_ne,
@@ -253,8 +263,8 @@ public:
       // compute integrals
       // loop over all entity test basis functions
       for (size_t ii = 0; ii < rows_en; ++ii) {
-        auto& ret_en_en_row                     = ret_en_en[ii];
-        auto& ret_en_ne_row                     = ret_en_ne[ii];
+        auto& ret_en_en_row = ret_en_en[ii];
+        auto& ret_en_ne_row = ret_en_ne[ii];
         const auto& evaluation_result_en_en_row = evaluation_result_en_en[ii];
         const auto& evaluation_result_en_ne_row = evaluation_result_en_ne[ii];
         // loop over all entity ansatz basis functions
@@ -268,8 +278,8 @@ public:
       }
       // loop over all neighbor test basis functions
       for (size_t ii = 0; ii < rows_ne; ++ii) {
-        auto& ret_ne_ne_row                     = ret_ne_ne[ii];
-        auto& ret_ne_en_row                     = ret_ne_en[ii];
+        auto& ret_ne_ne_row = ret_ne_ne[ii];
+        auto& ret_ne_en_row = ret_ne_en[ii];
         const auto& evaluation_result_ne_ne_row = evaluation_result_ne_ne[ii];
         const auto& evaluation_result_ne_en_row = evaluation_result_ne_en[ii];
         // loop over all neighbor ansatz basis functions
@@ -321,10 +331,11 @@ public:
   template <class E, class IntersectionType, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
   void apply2(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base,
               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base,
-              const IntersectionType& intersection, Dune::DynamicMatrix<R>& ret) const
+              const IntersectionType& intersection,
+              Dune::DynamicMatrix<R>& ret) const
   {
     // local inducing function
-    const auto& entity         = test_base.entity();
+    const auto& entity = test_base.entity();
     const auto local_functions = integrand_.localFunctions(entity);
     // create quadrature
     const auto integrand_order = integrand_.order(local_functions, test_base, ansatz_base) + over_integrate_;
@@ -339,9 +350,9 @@ public:
     Dune::DynamicMatrix<R> evaluation_result(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
     // loop over all quadrature points
     for (const auto& quadrature_point : quadrature) {
-      const auto xx              = quadrature_point.position();
+      const auto xx = quadrature_point.position();
       const R integration_factor = intersection.geometry().integrationElement(xx);
-      const R quadrature_weight  = quadrature_point.weight();
+      const R quadrature_weight = quadrature_point.weight();
       // evaluate local
       integrand_.evaluate(local_functions, test_base, ansatz_base, intersection, xx, evaluation_result);
       // compute integral
@@ -349,7 +360,7 @@ public:
       assert(evaluation_result.cols() >= cols);
       // loop over all test basis functions
       for (size_t ii = 0; ii < rows; ++ii) {
-        auto& ret_row                     = ret[ii];
+        auto& ret_row = ret[ii];
         const auto& evaluation_result_row = evaluation_result[ii];
         // loop over all ansatz basis functions
         for (size_t jj = 0; jj < cols; ++jj) {

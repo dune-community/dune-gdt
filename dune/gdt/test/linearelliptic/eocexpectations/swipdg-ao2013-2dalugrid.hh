@@ -8,9 +8,9 @@
 #ifndef DUNE_GDT_TEST_LINEARELLIPTIC_EOCEXPECTATIONS_SWIPDG_AO2013_2DALUGRID_HH
 #define DUNE_GDT_TEST_LINEARELLIPTIC_EOCEXPECTATIONS_SWIPDG_AO2013_2DALUGRID_HH
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
-#include <dune/grid/alugrid.hh>
+#include <dune/alugrid/grid.hh>
 
 #include "../problems/AO2013.hh"
 #include "../eocexpectations.hh"
@@ -23,8 +23,8 @@ namespace Test {
 
 template <>
 class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
-                                    LinearElliptic::ChooseDiscretizer::swipdg, 1>
-    : public internal::LinearEllipticEocExpectationsBase<1>
+                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                    1> : public internal::LinearEllipticEocExpectationsBase<1>
 {
   typedef LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1> TestCaseType;
 
@@ -36,8 +36,8 @@ public:
 
 template <>
 class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
-                                    LinearElliptic::ChooseDiscretizer::swipdg, 2>
-    : public internal::LinearEllipticEocExpectationsBase<2>
+                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                    2> : public internal::LinearEllipticEocExpectationsBase<2>
 {
   typedef LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1> TestCaseType;
 
@@ -49,8 +49,8 @@ public:
 
 template <>
 class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1>,
-                                    LinearElliptic::ChooseDiscretizer::swipdg, 1>
-    : public internal::LinearEllipticEocExpectationsBase<1>
+                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                    1> : public internal::LinearEllipticEocExpectationsBase<1>
 {
   typedef LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1> TestCaseType;
 
@@ -62,8 +62,8 @@ public:
 
 template <>
 class LinearEllipticEocExpectations<LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1>,
-                                    LinearElliptic::ChooseDiscretizer::swipdg, 2>
-    : public internal::LinearEllipticEocExpectationsBase<2>
+                                    LinearElliptic::ChooseDiscretizer::swipdg,
+                                    2> : public internal::LinearEllipticEocExpectationsBase<2>
 {
   typedef LinearElliptic::AO2013TestCase<AluSimplex2dGridType, double, 1> TestCaseType;
 
@@ -76,6 +76,6 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 
 #endif // DUNE_GDT_TEST_LINEARELLIPTIC_EOCEXPECTATIONS_SWIPDG_AO2013_2DALUGRID_HH

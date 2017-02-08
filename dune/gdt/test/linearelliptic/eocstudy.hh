@@ -42,8 +42,10 @@ private:
 
 public:
   // a perfect forwarding ctor did not do the job here, since it was not able to match the std::initializer_list: {"L2"}
-  LinearEllipticEocStudy(TestCaseType& test_case, const std::vector<std::string> only_these_norms = {},
-                         const std::string visualize_prefix = "", const size_t over_integrate = 2)
+  LinearEllipticEocStudy(TestCaseType& test_case,
+                         const std::vector<std::string> only_these_norms = {},
+                         const std::string visualize_prefix = "",
+                         const size_t over_integrate = 2)
     : BaseType(test_case, only_these_norms, visualize_prefix)
     , over_integrate_(over_integrate)
   {
@@ -84,8 +86,8 @@ public:
     return {"L2", "H1_semi", "energy"};
   }
 
-  virtual double compute_norm(const GridViewType& grid_view, const FunctionType& function,
-                              const std::string type) override final
+  virtual double
+  compute_norm(const GridViewType& grid_view, const FunctionType& function, const std::string type) override final
   {
     if (type == "L2")
       return make_l2_operator(grid_view, over_integrate_)->induced_norm(function);

@@ -25,9 +25,11 @@ namespace Test {
 
 
 template <>
-class HyperbolicEocExpectations<Hyperbolic::ShallowWaterTestCase<Yasp1, double>, Hyperbolic::ChooseDiscretizer::fv, 1,
-                                NumericalFluxes::godunov, TimeStepperMethods::explicit_euler>
-    : public internal::HyperbolicEocExpectationsBase<1>
+class HyperbolicEocExpectations<Hyperbolic::ShallowWaterTestCase<Yasp1, double>,
+                                Hyperbolic::ChooseDiscretizer::fv,
+                                1,
+                                NumericalFluxes::godunov,
+                                TimeStepperMethods::explicit_euler> : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::ShallowWaterTestCase<Yasp1, double> TestCaseType;
 

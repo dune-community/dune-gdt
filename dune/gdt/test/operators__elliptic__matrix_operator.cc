@@ -23,7 +23,8 @@ TYPED_TEST_CASE(EllipticMatrixOperatorTest, CubicSpaces);
 
 #elif HAVE_DUNE_PDELAB // HAVE_DUNE_FEM
 
-typedef testing::Types<SPACE_CG_PDELAB_YASPGRID(1, 1, 1), SPACE_CG_PDELAB_YASPGRID(2, 1, 1),
+typedef testing::Types<SPACE_CG_PDELAB_YASPGRID(1, 1, 1),
+                       SPACE_CG_PDELAB_YASPGRID(2, 1, 1),
                        SPACE_CG_PDELAB_YASPGRID(3, 1, 1)>
     LinearSpaces;
 TYPED_TEST_CASE(EllipticMatrixOperatorTest, LinearSpaces);

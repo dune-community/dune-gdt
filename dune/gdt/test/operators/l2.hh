@@ -10,6 +10,7 @@
 
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
+#include <dune/xt/common/test/float_cmp.hh>
 
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/operators/l2.hh>
@@ -39,8 +40,8 @@ struct L2LocalizableProductTest : public WeightedL2ProductBase<SpaceType>, publi
   void constructible_by_ctor()
   {
     const auto& grid_view = this->space_.grid_view();
-    const auto& source    = this->scalar_function_;
-    const auto& range     = this->scalar_function_;
+    const auto& source = this->scalar_function_;
+    const auto& range = this->scalar_function_;
 
     typedef L2LocalizableProduct<GridViewType, ScalarFunctionType, ScalarFunctionType, double> CtorTestProductType;
     DUNE_UNUSED CtorTestProductType wo_over_integrate(grid_view, range, source);
@@ -50,10 +51,10 @@ struct L2LocalizableProductTest : public WeightedL2ProductBase<SpaceType>, publi
   void constructible_by_factory()
   {
     const auto& grid_view = this->space_.grid_view();
-    const auto& source    = this->scalar_function_;
-    const auto& range     = this->scalar_function_;
+    const auto& source = this->scalar_function_;
+    const auto& range = this->scalar_function_;
 
-    auto wo_over_integrate DUNE_UNUSED   = make_l2_localizable_product(grid_view, range, source);
+    auto wo_over_integrate DUNE_UNUSED = make_l2_localizable_product(grid_view, range, source);
     auto with_over_integrate DUNE_UNUSED = make_l2_localizable_product(grid_view, range, source, 1);
   } // ... constructible_by_factory()
 
@@ -61,22 +62,22 @@ struct L2LocalizableProductTest : public WeightedL2ProductBase<SpaceType>, publi
   {
     const auto& grid_view = this->space_.grid_view();
 
-    auto product      = make_l2_localizable_product(grid_view, function, function);
+    auto product = make_l2_localizable_product(grid_view, function, function);
     const auto result = product->apply2();
 
     auto product_tbb = make_l2_localizable_product(grid_view, function, function);
     product_tbb->walk(true);
     const auto result_tbb = product_tbb->apply2();
 
-    EXPECT_EQ(result_tbb, result);
+    DXTC_EXPECT_FLOAT_EQ(result_tbb, result);
     return result;
   } // ... compute(...)
 
   void is_localizable_product()
   {
     const auto& grid_view = this->space_.grid_view();
-    const auto& source    = this->scalar_function_;
-    const auto& range     = this->scalar_function_;
+    const auto& source = this->scalar_function_;
+    const auto& range = this->scalar_function_;
 
     auto product = make_l2_localizable_product(grid_view, range, source);
     this->localizable_product_test(*product);
@@ -105,7 +106,7 @@ struct L2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, public Ma
 
   void constructible_by_ctor()
   {
-    const auto& space     = this->space_;
+    const auto& space = this->space_;
     const auto& grid_view = this->space_.grid_view();
 
     // without matrix
@@ -158,7 +159,7 @@ struct L2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, public Ma
 
   void constructible_by_factory()
   {
-    const auto& space     = this->space_;
+    const auto& space = this->space_;
     const auto& grid_view = this->space_.grid_view();
     MatrixType matrix(space.mapper().size(), space.mapper().size(), space.compute_volume_pattern());
 
@@ -185,13 +186,13 @@ struct L2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, public Ma
     DiscreteFunctionType discrete_function(space);
     project(function, discrete_function);
     // compute product
-    auto product      = make_l2_matrix_operator<MatrixType>(space);
+    auto product = make_l2_matrix_operator<MatrixType>(space);
     const auto result = product->apply2(discrete_function, discrete_function);
 
     auto product_tbb = make_l2_matrix_operator<MatrixType>(space);
     product_tbb->assemble(true);
     const auto result_tbb = product_tbb->apply2(discrete_function, discrete_function);
-    EXPECT_DOUBLE_EQ(result_tbb, result);
+    DXTC_EXPECT_FLOAT_EQ(result_tbb, result);
     return result;
   } // ... compute(...)
 
@@ -232,7 +233,7 @@ struct L2OperatorTest : public WeightedL2ProductBase<SpaceType>, public Operator
   {
     const auto& grid_view = this->space_.grid_view();
 
-    auto wo_over_integrate DUNE_UNUSED   = make_l2_operator(grid_view);
+    auto wo_over_integrate DUNE_UNUSED = make_l2_operator(grid_view);
     auto with_over_integrate DUNE_UNUSED = make_l2_operator(grid_view, 1);
   } // ... constructible_by_factory()
 
@@ -246,8 +247,8 @@ struct L2OperatorTest : public WeightedL2ProductBase<SpaceType>, public Operator
   void apply_is_callable()
   {
     const auto& grid_view = this->space_.grid_view();
-    auto& source          = this->discrete_function_;
-    auto range            = make_discrete_function<VectorType>(this->space_);
+    auto& source = this->discrete_function_;
+    auto range = make_discrete_function<VectorType>(this->space_);
 
     auto op = make_l2_operator(grid_view);
     op->apply(source, range);

@@ -59,7 +59,8 @@ public:
                 const LocalfunctionTupleType& local_functions_tuple_neighbor,
                 const XT::Functions::LocalfunctionInterface<E, D, d, R, r, rC>& local_source_entity,
                 const XT::Functions::LocalfunctionInterface<E, D, d, R, r, rC>& local_source_neighbor,
-                const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& x_intersection) const ->
+                const IntersectionType& intersection,
+                const Dune::FieldVector<D, d - 1>& x_intersection) const ->
       typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType
   {
     CHECK_CRTP(this->as_imp().evaluate(local_functions_tuple_entity,
@@ -96,7 +97,8 @@ public:
   template <class E, class D, size_t d, class R, size_t r, size_t rC, class IntersectionType>
   auto evaluate(const LocalfunctionTupleType& local_functions_tuple,
                 const XT::Functions::LocalfunctionInterface<E, D, d, R, r, rC>& local_source_entity,
-                const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& x_intersection) const ->
+                const IntersectionType& intersection,
+                const Dune::FieldVector<D, d - 1>& x_intersection) const ->
       typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType
   {
     CHECK_CRTP(this->as_imp().evaluate(local_functions_tuple, local_source_entity, intersection, x_intersection))
@@ -117,8 +119,8 @@ public:
   typedef E EntityType;
   typedef D DomainFieldType;
   typedef R RangeFieldType;
-  static const size_t dimDomain    = d;
-  static const size_t dimRange     = r;
+  static const size_t dimDomain = d;
+  static const size_t dimRange = r;
   static const size_t dimRangeCols = rC;
 
   virtual ~AnalyticalFluxInterface() = default;
@@ -137,11 +139,11 @@ public:
   // dimensions
   typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::DomainType DomainType;
 
-  virtual FluxRangeType evaluate(const RangeType& u, const E& entity, const DomainType& x_local,
-                                 const double t_ = 0) const = 0;
+  virtual FluxRangeType
+  evaluate(const RangeType& u, const E& entity, const DomainType& x_local, const double t_ = 0) const = 0;
 
-  virtual FluxJacobianRangeType jacobian(const RangeType& u, const E& entity, const DomainType& x_local,
-                                         const double t_ = 0) const = 0;
+  virtual FluxJacobianRangeType
+  jacobian(const RangeType& u, const E& entity, const DomainType& x_local, const double t_ = 0) const = 0;
 }; // class AnalyticalFluxInterface<..., false>
 
 
@@ -157,8 +159,8 @@ public:
   typedef E EntityType;
   typedef D DomainFieldType;
   typedef R RangeFieldType;
-  static const size_t dimDomain    = d;
-  static const size_t dimRange     = r;
+  static const size_t dimDomain = d;
+  static const size_t dimRange = r;
   static const size_t dimRangeCols = rC;
 
   // Arbitrary entity type with dimension r for FluxRangeType and FluxJacobianRangeType definitions
@@ -178,11 +180,17 @@ public:
       JacobianRangeType; // of \nabla u, FieldMatrix or FieldVector< FieldMatrix > depending on dimensions
   typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::DomainType DomainType;
 
-  virtual FluxRangeType evaluate(const RangeType& u, const JacobianRangeType& grad_u, const E& entity,
-                                 const DomainType& x_local, const double t_ = 0) const = 0;
+  virtual FluxRangeType evaluate(const RangeType& u,
+                                 const JacobianRangeType& grad_u,
+                                 const E& entity,
+                                 const DomainType& x_local,
+                                 const double t_ = 0) const = 0;
 
-  virtual FluxJacobianRangeType jacobian(const RangeType& u, const JacobianRangeType& grad_u, const E& entity,
-                                         const DomainType& x_local, const double t_ = 0) const = 0;
+  virtual FluxJacobianRangeType jacobian(const RangeType& u,
+                                         const JacobianRangeType& grad_u,
+                                         const E& entity,
+                                         const DomainType& x_local,
+                                         const double t_ = 0) const = 0;
 }; // class AnalyticalFluxInterface<..., true>
 
 
@@ -204,19 +212,19 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::FluxJacobianRangeType;
 
-  virtual FluxRangeType evaluate(const RangeType& u, const E& /*entity*/, const DomainType& /*x_local*/,
-                                 const double /*t_*/ = 0) const
+  virtual FluxRangeType
+  evaluate(const RangeType& u, const E& /*entity*/, const DomainType& /*x_local*/, const double /*t_*/ = 0) const
   {
     return evaluate(u);
   }
 
-  virtual FluxJacobianRangeType jacobian(const RangeType& u, const E& /*entity*/, const DomainType& /*x_local*/,
-                                         const double /*t_*/ = 0) const
+  virtual FluxJacobianRangeType
+  jacobian(const RangeType& u, const E& /*entity*/, const DomainType& /*x_local*/, const double /*t_*/ = 0) const
   {
     return jacobian(u);
   }
 
-  virtual FluxRangeType evaluate(const RangeType& u) const         = 0;
+  virtual FluxRangeType evaluate(const RangeType& u) const = 0;
   virtual FluxJacobianRangeType jacobian(const RangeType& u) const = 0;
 };
 
@@ -235,8 +243,8 @@ public:
   typedef E EntityType;
   typedef D DomainFieldType;
   typedef R RangeFieldType;
-  static const size_t dimDomain    = d;
-  static const size_t dimRange     = r;
+  static const size_t dimDomain = d;
+  static const size_t dimRange = r;
   static const size_t dimRangeCols = rC;
 
   virtual ~RhsEvaluationFluxInterface() = default;
@@ -247,8 +255,8 @@ public:
   // dimensions
   typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::DomainType DomainType;
 
-  virtual RangeType evaluate(const RangeType& u, const E& entity, const DomainType& x_local,
-                             const double t_ = 0) const = 0;
+  virtual RangeType
+  evaluate(const RangeType& u, const E& entity, const DomainType& x_local, const double t_ = 0) const = 0;
 };
 
 

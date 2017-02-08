@@ -48,8 +48,11 @@ public:
     return BaseType::static_id() + ".periodictransport";
   }
 
-  explicit PeriodicTransportFunction(const DomainType velocity, const double t, const DomainType lower_left,
-                                     const DomainType upper_right, const std::string nm = static_id())
+  explicit PeriodicTransportFunction(const DomainType velocity,
+                                     const double t,
+                                     const DomainType lower_left,
+                                     const DomainType upper_right,
+                                     const std::string nm = static_id())
     : velocity_(velocity)
     , t_(t)
     , lower_left_(lower_left)
@@ -97,14 +100,19 @@ private:
   const std::string name_;
 };
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim,
+template <class EntityImp,
+          class DomainFieldImp,
+          size_t domainDim,
+          class RangeFieldImp,
+          size_t rangeDim,
           size_t rangeDimCols>
-class InitialValues : public XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                                                    rangeDim, rangeDimCols>
+class InitialValues
+    : public XT::Functions::
+          GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
 {
-  typedef typename XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
-                                                          rangeDimCols>
-      BaseType;
+  typedef typename XT::Functions::
+      GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
+          BaseType;
 
 public:
   using BaseType::dimDomain;
@@ -156,17 +164,21 @@ private:
 template <class LocalizableFunctionType, class GridViewType>
 class TransportSolution
     : public XT::Functions::TimeDependentFunctionInterface<
-          typename XT::Functions::LocalizableFunctionInterface<
-              typename LocalizableFunctionType::EntityType, typename LocalizableFunctionType::DomainFieldType,
-              LocalizableFunctionType::dimDomain, typename LocalizableFunctionType::RangeFieldType,
-              LocalizableFunctionType::dimRange, LocalizableFunctionType::dimRangeCols>,
+          typename XT::Functions::LocalizableFunctionInterface<typename LocalizableFunctionType::EntityType,
+                                                               typename LocalizableFunctionType::DomainFieldType,
+                                                               LocalizableFunctionType::dimDomain,
+                                                               typename LocalizableFunctionType::RangeFieldType,
+                                                               LocalizableFunctionType::dimRange,
+                                                               LocalizableFunctionType::dimRangeCols>,
           double>
 {
   typedef typename XT::Functions::TimeDependentFunctionInterface<
-      typename XT::Functions::LocalizableFunctionInterface<
-          typename LocalizableFunctionType::EntityType, typename LocalizableFunctionType::DomainFieldType,
-          LocalizableFunctionType::dimDomain, typename LocalizableFunctionType::RangeFieldType,
-          LocalizableFunctionType::dimRange, LocalizableFunctionType::dimRangeCols>,
+      typename XT::Functions::LocalizableFunctionInterface<typename LocalizableFunctionType::EntityType,
+                                                           typename LocalizableFunctionType::DomainFieldType,
+                                                           LocalizableFunctionType::dimDomain,
+                                                           typename LocalizableFunctionType::RangeFieldType,
+                                                           LocalizableFunctionType::dimRange,
+                                                           LocalizableFunctionType::dimRangeCols>,
       double>
       BaseType;
   using typename BaseType::TimeIndependentFunctionType;
@@ -178,8 +190,11 @@ class TransportSolution
   typedef typename DomainTransportFunctionType::DomainType DomainType;
 
 public:
-  TransportSolution(const LocalizableFunctionType localizable_func, const GridViewType& grid_view,
-                    const DomainType velocity, const DomainType lower_left, const DomainType upper_right)
+  TransportSolution(const LocalizableFunctionType localizable_func,
+                    const GridViewType& grid_view,
+                    const DomainType velocity,
+                    const DomainType lower_left,
+                    const DomainType upper_right)
     : localizable_func_(localizable_func)
     , grid_view_(grid_view)
     , velocity_(velocity)
@@ -262,9 +277,9 @@ public:
   static ConfigType default_grid_config()
   {
     ConfigType grid_config;
-    grid_config["type"]         = "provider.cube";
-    grid_config["lower_left"]   = "[0.0 0.0 0.0]";
-    grid_config["upper_right"]  = "[1.0 1.0 1.0]";
+    grid_config["type"] = "provider.cube";
+    grid_config["lower_left"] = "[0.0 0.0 0.0]";
+    grid_config["upper_right"] = "[1.0 1.0 1.0]";
     grid_config["num_elements"] = "[8 8 8]";
     return grid_config;
   }
@@ -276,7 +291,7 @@ public:
     return boundary_config;
   }
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg       = default_config(),
+  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
                                           const std::string sub_name = static_id())
   {
     const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
@@ -284,7 +299,7 @@ public:
     const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
     const std::shared_ptr<const DefaultInitialValueType> initial_values(
         DefaultInitialValueType::create(config.sub("initial_values")));
-    const ConfigType grid_config   = config.sub("grid");
+    const ConfigType grid_config = config.sub("grid");
     const ConfigType boundary_info = config.sub("boundary_info");
     const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
         DefaultBoundaryValueType::create(config.sub("boundary_values")));
@@ -299,16 +314,16 @@ public:
     ConfigType flux_config;
     flux_config["A.0"] = "[1]";
     flux_config["A.1"] = "[2]";
-    flux_config["b"]   = "[0 0; 0 0]";
+    flux_config["b"] = "[0 0; 0 0]";
     config.add(flux_config, "flux", true);
     ConfigType initial_value_config;
-    initial_value_config["lower_left"]  = "[0.0 0.0 0.0]";
+    initial_value_config["lower_left"] = "[0.0 0.0 0.0]";
     initial_value_config["upper_right"] = "[1.0 1.0 1.0]";
     if (dimDomain == 1)
       initial_value_config["num_elements"] = "[5]";
     else
       initial_value_config["num_elements"] = "[5 5 1]";
-    initial_value_config["variable"]       = "x";
+    initial_value_config["variable"] = "x";
     if (dimDomain == 1)
       initial_value_config["values"] = "[0.0 "
                                        "10000*((x[0]-0.2)^2)*((x[0]-0.4)^2)*exp(0.02-((x[0]-0.2)^2)-((x[0]-0.4)^2)) "
@@ -322,7 +337,7 @@ public:
                         "2)*((x[1]-0.4)^2)*exp(0.02-((x[1]-0.2)^2)-((x[1]-0.4)^2)) 0 0 0 ")
           + std::string("0 0 0 0 0 ") + std::string("0 0 0 1 0 ") + std::string("0 0 0 0 0]");
     initial_value_config["order"] = "10";
-    initial_value_config["name"]  = static_id();
+    initial_value_config["name"] = static_id();
     config.add(initial_value_config, "initial_values", true);
     if (sub_name.empty())
       return config;
@@ -333,9 +348,12 @@ public:
     }
   } // ... default_config(...)
 
-  Transport(const std::shared_ptr<const FluxType> flux_in, const std::shared_ptr<const RHSType> rhs_in,
-            const std::shared_ptr<const InitialValueType> initial_values_in, const ConfigType& grid_config_in,
-            const ConfigType& boundary_info_in, const std::shared_ptr<const BoundaryValueType> boundary_values_in)
+  Transport(const std::shared_ptr<const FluxType> flux_in,
+            const std::shared_ptr<const RHSType> rhs_in,
+            const std::shared_ptr<const InitialValueType> initial_values_in,
+            const ConfigType& grid_config_in,
+            const ConfigType& boundary_info_in,
+            const std::shared_ptr<const BoundaryValueType> boundary_values_in)
     : BaseType(flux_in, rhs_in, initial_values_in, grid_config_in, boundary_info_in, boundary_values_in)
   {
   }
@@ -358,15 +376,20 @@ public:
 
 template <class G, class R = double, size_t r = 1, size_t rC = 1>
 class TransportTestCase
-    : public Dune::GDT::Test::NonStationaryTestCase<G, Problems::Transport<typename G::template Codim<0>::Entity,
-                                                                           typename G::ctype, G::dimension, R, r, rC>>
+    : public Dune::GDT::Test::NonStationaryTestCase<G,
+                                                    Problems::Transport<typename G::template Codim<0>::Entity,
+                                                                        typename G::ctype,
+                                                                        G::dimension,
+                                                                        R,
+                                                                        r,
+                                                                        rC>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
   static const size_t d = G::dimension;
 
 public:
-  static const size_t dimRange     = r;
+  static const size_t dimRange = r;
   static const size_t dimRangeCols = rC;
   typedef typename Problems::Transport<E, D, d, R, r, rC> ProblemType;
 
@@ -379,8 +402,8 @@ public:
   using typename BaseType::LevelGridViewType;
 
   TransportTestCase(const size_t num_refs = (d == 1 ? 4 : 2), const double divide_t_end_by = 1.0)
-    : BaseType(divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(),
-               num_refs)
+    : BaseType(
+          divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(), num_refs)
     , reference_grid_view_(BaseType::reference_grid_view())
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {

@@ -23,20 +23,30 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridViewType, class SourceSpaceType, class SourceVectorType, class RangeSpaceType,
+template <class GridViewType,
+          class SourceSpaceType,
+          class SourceVectorType,
+          class RangeSpaceType,
           class RangeVectorType>
 typename std::enable_if<XT::Grid::is_layer<GridViewType>::value && is_cg_space<RangeSpaceType>::value, void>::type
-prolong(const GridViewType& grid_view, const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
-        DiscreteFunction<RangeSpaceType, RangeVectorType>& range, const size_t /*over_integrate*/ = 0)
+prolong(const GridViewType& grid_view,
+        const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
+        DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
+        const size_t /*over_integrate*/ = 0)
 {
   prolong_lagrange(grid_view, source, range);
 }
 
-template <class GridViewType, class SourceSpaceType, class SourceVectorType, class RangeSpaceType,
+template <class GridViewType,
+          class SourceSpaceType,
+          class SourceVectorType,
+          class RangeSpaceType,
           class RangeVectorType>
 typename std::enable_if<XT::Grid::is_layer<GridViewType>::value && !is_cg_space<RangeSpaceType>::value, void>::type
-prolong(const GridViewType& grid_view, const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
-        DiscreteFunction<RangeSpaceType, RangeVectorType>& range, const size_t over_integrate = 0)
+prolong(const GridViewType& grid_view,
+        const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
+        DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
+        const size_t over_integrate = 0)
 {
   prolong_l2(grid_view, source, range, over_integrate);
 }
@@ -45,7 +55,8 @@ prolong(const GridViewType& grid_view, const ConstDiscreteFunction<SourceSpaceTy
 template <class SourceSpaceType, class SourceVectorType, class RangeSpaceType, class RangeVectorType>
 typename std::enable_if<is_cg_space<RangeSpaceType>::value, void>::type
 prolong(const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
-        DiscreteFunction<RangeSpaceType, RangeVectorType>& range, const size_t /*over_integrate*/ = 0)
+        DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
+        const size_t /*over_integrate*/ = 0)
 {
   prolong_lagrange(source, range);
 }
@@ -53,7 +64,8 @@ prolong(const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
 template <class SourceSpaceType, class SourceVectorType, class RangeSpaceType, class RangeVectorType>
 typename std::enable_if<!is_cg_space<RangeSpaceType>::value, void>::type
 prolong(const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
-        DiscreteFunction<RangeSpaceType, RangeVectorType>& range, const size_t over_integrate = 0)
+        DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
+        const size_t over_integrate = 0)
 {
   prolong_l2(source, range, over_integrate);
 }

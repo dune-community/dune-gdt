@@ -41,7 +41,10 @@ public:
 
 } // namespace internal
 
-template <class TestCaseType, Hyperbolic::ChooseDiscretizer disc, size_t dimDomain, NumericalFluxes num_flux,
+template <class TestCaseType,
+          Hyperbolic::ChooseDiscretizer disc,
+          size_t dimDomain,
+          NumericalFluxes num_flux,
           TimeStepperMethods time_stepper>
 class HyperbolicEocExpectations;
 

@@ -26,7 +26,7 @@
 
 #define SPACES_RT_PDELAB_LEVEL SPACE_RT_PDELAB_YASPGRID_LEVEL(2), SPACE_RT_PDELAB_YASPGRID_LEVEL(3)
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
 #define SPACE_RT_PDELAB_ALUCONFORMGRID(dd)                                                                             \
   Dune::GDT::DunePdelabRtSpaceWrapper<AluConform##dd##dLeafGridViewType, 0, double, dd>
@@ -49,11 +49,10 @@
   SPACE_RT_PDELAB_ALUCONFORMGRID_LEVEL(2)                                                                              \
   , SPACE_RT_PDELAB_ALUCUBEGRID_LEVEL(2), SPACE_RT_PDELAB_ALUCUBEGRID_LEVEL(3)
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 
 template <class T>
-double
-pdelab_rt_tolerance(const T& param)
+double pdelab_rt_tolerance(const T& param)
 {
   typedef typename T::GridViewType::Grid Grid;
   const auto dim = param.dimDomain;

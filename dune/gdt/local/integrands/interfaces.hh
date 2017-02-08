@@ -85,7 +85,8 @@ public:
   template <class R, size_t r, size_t rC>
   void evaluate(const LocalfunctionTupleType& localFunctionsTuple,
                 const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase,
-                const Dune::FieldVector<D, d>& localPoint, Dune::DynamicVector<R>& ret) const
+                const Dune::FieldVector<D, d>& localPoint,
+                Dune::DynamicVector<R>& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctionsTuple, testBase, localPoint, ret));
   }
@@ -144,7 +145,8 @@ public:
   void evaluate(const LocalfunctionTupleType& localFunctionsTuple,
                 const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
                 const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase,
-                const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint, Dune::DynamicMatrix<R>& ret) const
+                const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint,
+                Dune::DynamicMatrix<R>& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctionsTuple, testBase, ansatzBase, localPoint, ret));
   }
@@ -213,7 +215,8 @@ public:
   template <class IntersectionType, class R, size_t r, size_t rC>
   void evaluate(const LocalfunctionTupleType& localFunctionsTuple,
                 const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase,
-                const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& localPoint,
+                const IntersectionType& intersection,
+                const Dune::FieldVector<D, d - 1>& localPoint,
                 Dune::DynamicVector<R>& ret) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctionsTuple, testBase, intersection, localPoint, ret));
@@ -273,7 +276,8 @@ public:
   void evaluate(const LocalfunctionTupleType& localFunctionsTuple,
                 const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
                 const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase,
-                const IntersectionType& intersection, const Dune::FieldVector<D, d - 1>& localPoint,
+                const IntersectionType& intersection,
+                const Dune::FieldVector<D, d - 1>& localPoint,
                 Dune::DynamicMatrix<R>& ret) const
   {
     CHECK_AND_CALL_CRTP(
@@ -314,7 +318,8 @@ public:
    *  \tparam rC{T,A}               dimRangeRows of the {testBase*,ansatzBase*}
    */
   template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  size_t order(const LocalfunctionTupleType localFunctionsEntity, const LocalfunctionTupleType localFunctionsNeighbor,
+  size_t order(const LocalfunctionTupleType localFunctionsEntity,
+               const LocalfunctionTupleType localFunctionsNeighbor,
                const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBaseEntity,
                const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBaseEntity,
                const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBaseNeighbor,
@@ -343,19 +348,22 @@ public:
    *  \attention entityEntityRet, entityEntityRet, entityEntityRet and neighborEntityRet are assumed to be zero!
    */
   template <class IntersectionType, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void
-  evaluate(const LocalfunctionTupleType& localFunctionsEntity, const LocalfunctionTupleType& localFunctionsNeighbor,
-           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>&
-               testBaseEntity,
-           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>&
-               ansatzBaseEntity,
-           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>&
-               testBaseNeighbor,
-           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>&
-               ansatzBaseNeighbor,
-           const IntersectionType& intersection, const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
-           Dune::DynamicMatrix<R>& entityEntityRet, Dune::DynamicMatrix<R>& neighborNeighborRet,
-           Dune::DynamicMatrix<R>& entityNeighborRet, Dune::DynamicMatrix<R>& neighborEntityRet) const
+  void evaluate(const LocalfunctionTupleType& localFunctionsEntity,
+                const LocalfunctionTupleType& localFunctionsNeighbor,
+                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>&
+                    testBaseEntity,
+                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>&
+                    ansatzBaseEntity,
+                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>&
+                    testBaseNeighbor,
+                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>&
+                    ansatzBaseNeighbor,
+                const IntersectionType& intersection,
+                const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
+                Dune::DynamicMatrix<R>& entityEntityRet,
+                Dune::DynamicMatrix<R>& neighborNeighborRet,
+                Dune::DynamicMatrix<R>& entityNeighborRet,
+                Dune::DynamicMatrix<R>& neighborEntityRet) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctionsEntity,
                                                 localFunctionsNeighbor,

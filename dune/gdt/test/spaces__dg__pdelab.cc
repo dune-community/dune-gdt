@@ -15,7 +15,7 @@
 
 
 typedef testing::Types<SPACES_DG_PDELAB(1)
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
                            ,
                        SPACES_DG_PDELAB_ALUGRID(1)
 #endif
@@ -42,7 +42,7 @@ TYPED_TEST(DG_Space, check_for_correct_copy)
 
 
 typedef testing::Types<SPACES_DG_PDELAB(1)
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
                            ,
                        SPACES_DG_PDELAB_ALUGRID(1)
 #endif

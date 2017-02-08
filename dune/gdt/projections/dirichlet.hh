@@ -33,7 +33,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_operator_(boundary_info)
   {
-    this->add(local_operator_);
+    this->append(local_operator_);
     this->range().vector() *= 0.0;
   }
 
@@ -47,7 +47,8 @@ std::unique_ptr<DirichletProjectionLocalizableOperator<GridViewType, SourceType,
 make_localizable_dirichlet_projection_operator(
     const GridViewType& grid_view,
     const XT::Grid::BoundaryInfo<typename XT::Grid::Intersection<GridViewType>::Type>& boundary_info,
-    const SourceType& source, RangeType& range)
+    const SourceType& source,
+    RangeType& range)
 {
   return Dune::XT::Common::make_unique<DirichletProjectionLocalizableOperator<GridViewType, SourceType, RangeType>>(
       boundary_info, grid_view, source, range);

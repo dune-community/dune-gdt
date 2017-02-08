@@ -19,7 +19,7 @@ typedef testing::Types<SPACES_DG_FEM(1)
                            ,
                        SPACES_DG_FEM(2)
 #endif
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
                            ,
                        SPACES_DG_FEM_ALUGRID(1)
 #ifdef NDEBUG
@@ -65,7 +65,7 @@ TEST(DISABLED_DG_Space, check_for_correct_copy_polorder_2)
 
 
 typedef testing::Types<SPACES_DG_FEM(1)
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
                            ,
                        SPACES_DG_FEM_ALUGRID(1)
 #endif

@@ -65,8 +65,8 @@ public:
     const auto local_dirichlet_DoFs = local_range.space().local_dirichlet_DoFs(entity, boundary_info_);
     if (local_dirichlet_DoFs.size() == 0)
       return;
-    const auto lagrange_points   = local_range.space().lagrange_points(entity);
-    const auto local_source      = source.local_function(entity);
+    const auto lagrange_points = local_range.space().lagrange_points(entity);
+    const auto local_source = source.local_function(entity);
     auto& local_range_DoF_vector = local_range.vector();
     assert(lagrange_points.size() == local_range_DoF_vector.size());
     for (const size_t& local_DoF_id : local_dirichlet_DoFs)

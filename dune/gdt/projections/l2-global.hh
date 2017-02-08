@@ -68,15 +68,17 @@ private:
   typedef L2VolumeVectorFunctional<SourceType, SpaceType, VectorType, GridViewType> RhsFunctionalType;
 
 public:
-  L2GlobalProjectionLocalizableOperator(const size_t over_integrate, GridViewType grd_vw, const SourceType& src,
+  L2GlobalProjectionLocalizableOperator(const size_t over_integrate,
+                                        GridViewType grd_vw,
+                                        const SourceType& src,
                                         RangeType& rng)
     : BaseType(grd_vw, src, rng)
     , lhs_operator_(over_integrate, range_.space(), BaseType::grid_view())
     , rhs_functional_(over_integrate, source_, range_.space(), BaseType::grid_view())
     , solved_(false)
   {
-    this->add(lhs_operator_);
-    this->add(rhs_functional_);
+    this->append(lhs_operator_);
+    this->append(rhs_functional_);
     issue_warning(this->range().space());
   }
 
@@ -144,10 +146,13 @@ private:
 template <class GridViewType, class SourceType, class SpaceType, class VectorType>
 typename std::
     enable_if<XT::Grid::is_layer<GridViewType>::value && XT::Functions::is_localizable_function<SourceType>::value
-                  && is_space<SpaceType>::value && XT::LA::is_vector<VectorType>::value,
-              std::unique_ptr<L2GlobalProjectionLocalizableOperator<GridViewType, SourceType,
+                  && is_space<SpaceType>::value
+                  && XT::LA::is_vector<VectorType>::value,
+              std::unique_ptr<L2GlobalProjectionLocalizableOperator<GridViewType,
+                                                                    SourceType,
                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
-    make_global_l2_projection_localizable_operator(const GridViewType& grid_view, const SourceType& source,
+    make_global_l2_projection_localizable_operator(const GridViewType& grid_view,
+                                                   const SourceType& source,
                                                    DiscreteFunction<SpaceType, VectorType>& range,
                                                    const size_t over_integrate = 0)
 {
@@ -161,7 +166,8 @@ template <class SourceType, class SpaceType, class VectorType>
 typename std::
     enable_if<XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
                   && XT::LA::is_vector<VectorType>::value,
-              std::unique_ptr<L2GlobalProjectionLocalizableOperator<typename SpaceType::GridViewType, SourceType,
+              std::unique_ptr<L2GlobalProjectionLocalizableOperator<typename SpaceType::GridViewType,
+                                                                    SourceType,
                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
     make_global_l2_projection_localizable_operator(const SourceType& source,
                                                    DiscreteFunction<SpaceType, VectorType>& range,
@@ -220,8 +226,8 @@ public:
   }
 
   template <class RangeType, class SourceType>
-  void apply_inverse(const RangeType& /*range*/, SourceType& /*source*/,
-                     const XT::Common::Configuration& /*opts*/) const
+  void
+  apply_inverse(const RangeType& /*range*/, SourceType& /*source*/, const XT::Common::Configuration& /*opts*/) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }

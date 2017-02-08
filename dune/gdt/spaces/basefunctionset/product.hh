@@ -84,25 +84,30 @@ struct DynamicTupleGetter
 
   template <class DomainType, class RangeType, typename... TupleArgs>
   static typename std::enable_if<I == sizeof...(TupleArgs), void>::type
-  evaluate(const std::tuple<TupleArgs...>& /*tuple*/, const DomainType& /*xx*/, std::vector<RangeType>& /*ret*/,
-           const size_t /*first_basis_func_index*/ = 0, const size_t /*first_range_index*/ = 0)
+  evaluate(const std::tuple<TupleArgs...>& /*tuple*/,
+           const DomainType& /*xx*/,
+           std::vector<RangeType>& /*ret*/,
+           const size_t /*first_basis_func_index*/ = 0,
+           const size_t /*first_range_index*/ = 0)
   {
   }
 
   template <class DomainType, class RangeType, typename... TupleArgs>
       static typename std::enable_if
-      < I<sizeof...(TupleArgs), void>::type
-        evaluate(const std::tuple<TupleArgs...>& tuple, const DomainType& xx, std::vector<RangeType>& ret,
-                 const size_t first_basis_func_index = 0, const size_t first_range_index = 0)
+      < I<sizeof...(TupleArgs), void>::type evaluate(const std::tuple<TupleArgs...>& tuple,
+                                                     const DomainType& xx,
+                                                     std::vector<RangeType>& ret,
+                                                     const size_t first_basis_func_index = 0,
+                                                     const size_t first_range_index = 0)
   {
-    const auto factor_ret                = std::get<I>(tuple).evaluate(xx);
+    const auto factor_ret = std::get<I>(tuple).evaluate(xx);
     const auto num_basis_funcs_in_factor = factor_ret.size();
-    const auto dimRangeFactor            = factor_ret[0].size();
+    const auto dimRangeFactor = factor_ret[0].size();
     for (size_t basis_func = 0; basis_func < num_basis_funcs_in_factor; ++basis_func) {
       const auto& basis_func_ret = factor_ret[basis_func];
       assert(basis_func_ret.size() == dimRangeFactor);
       ret[first_basis_func_index + basis_func] = RangeType(0);
-      for (size_t jj                                                     = 0; jj < dimRangeFactor; ++jj)
+      for (size_t jj = 0; jj < dimRangeFactor; ++jj)
         ret[first_basis_func_index + basis_func][first_range_index + jj] = basis_func_ret[jj];
     }
     DynamicTupleGetter<I + 1>::evaluate(
@@ -111,25 +116,30 @@ struct DynamicTupleGetter
 
   template <class DomainType, class JacobianRangeType, typename... TupleArgs>
   static typename std::enable_if<I == sizeof...(TupleArgs), void>::type
-  jacobian(const std::tuple<TupleArgs...>& /*tuple*/, const DomainType& /*xx*/, std::vector<JacobianRangeType>& /*ret*/,
-           const size_t /*first_basis_func_index*/ = 0, const size_t /*first_range_index*/ = 0)
+  jacobian(const std::tuple<TupleArgs...>& /*tuple*/,
+           const DomainType& /*xx*/,
+           std::vector<JacobianRangeType>& /*ret*/,
+           const size_t /*first_basis_func_index*/ = 0,
+           const size_t /*first_range_index*/ = 0)
   {
   }
 
   template <class DomainType, class JacobianRangeType, typename... TupleArgs>
       static typename std::enable_if
-      < I<sizeof...(TupleArgs), void>::type
-        jacobian(const std::tuple<TupleArgs...>& tuple, const DomainType& xx, std::vector<JacobianRangeType>& ret,
-                 const size_t first_basis_func_index = 0, const size_t first_range_index = 0)
+      < I<sizeof...(TupleArgs), void>::type jacobian(const std::tuple<TupleArgs...>& tuple,
+                                                     const DomainType& xx,
+                                                     std::vector<JacobianRangeType>& ret,
+                                                     const size_t first_basis_func_index = 0,
+                                                     const size_t first_range_index = 0)
   {
-    const auto factor_ret                = std::get<I>(tuple).jacobian(xx);
+    const auto factor_ret = std::get<I>(tuple).jacobian(xx);
     const auto num_basis_funcs_in_factor = factor_ret.size();
-    const auto dimRangeFactor            = factor_ret[0].size();
+    const auto dimRangeFactor = factor_ret[0].size();
     for (size_t basis_func = 0; basis_func < num_basis_funcs_in_factor; ++basis_func) {
       const auto& basis_func_ret = factor_ret[basis_func];
       assert(basis_func_ret.size() == dimRangeFactor);
       ret[first_basis_func_index + basis_func] = JacobianRangeType(0);
-      for (size_t jj                                                     = 0; jj < dimRangeFactor; ++jj)
+      for (size_t jj = 0; jj < dimRangeFactor; ++jj)
         ret[first_basis_func_index + basis_func][first_range_index + jj] = basis_func_ret[jj];
     }
     DynamicTupleGetter<I + 1>::jacobian(
@@ -159,7 +169,8 @@ class ProductDefault
                                       std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::dimDomain,
                                       typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::
                                           RangeFieldType,
-                                      internal::SumDimRange<BaseFunctionSetImps...>::dimRange, 1>
+                                      internal::SumDimRange<BaseFunctionSetImps...>::dimRange,
+                                      1>
 {
   typedef ProductDefault<BaseFunctionSetImps...> ThisType;
   typedef BaseFunctionSetInterface<internal::ProductDefaultTraits<BaseFunctionSetImps...>,
@@ -168,7 +179,8 @@ class ProductDefault
                                    std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::dimDomain,
                                    typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::
                                        RangeFieldType,
-                                   internal::SumDimRange<BaseFunctionSetImps...>::dimRange, 1>
+                                   internal::SumDimRange<BaseFunctionSetImps...>::dimRange,
+                                   1>
       BaseType;
 
 public:

@@ -7,9 +7,9 @@
 
 #include "config.h"
 
-#if HAVE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 
-#include <dune/grid/alugrid.hh>
+#include <dune/alugrid/grid.hh>
 
 #include "../problems/AO2013.hh"
 #include "../swipdg-estimator-expectations.hh"
@@ -23,7 +23,9 @@ namespace Test {
 
 template <bool anything>
 class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1>,
-                                                LinearElliptic::ChooseDiscretizer::swipdg, 1, anything>
+                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                1,
+                                                anything>
 {
   typedef LinearElliptic::AO2013TestCase<AluConform2dGridType, double, 1> TestCaseType;
 
@@ -83,14 +85,16 @@ public:
 }; // LinearEllipticSwipdgEstimatorExpectations
 
 
-template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2, 2, simplex,
-                                                                                                conforming>,
-                                                                                        double, 1>,
-                                                         LinearElliptic::ChooseDiscretizer::swipdg, 1>;
+template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
+                                                             AO2013TestCase<ALUGrid<2, 2, simplex, conforming>,
+                                                                            double,
+                                                                            1>,
+                                                         LinearElliptic::ChooseDiscretizer::swipdg,
+                                                         1>;
 
 
 } // namespace Test
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID

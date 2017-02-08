@@ -27,20 +27,38 @@ namespace GDT {
 
 template <class GridView, class Range, class Source = Range, class Field = typename Range::RangeFieldType>
 class LaplaceLocalizableProduct
-    : XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<
-          typename XT::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>,
+    : XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
+                                                                       typename GridView::ctype,
+                                                                       GridView::dimension,
+                                                                       Field,
+                                                                       1>>,
       public EllipticLocalizableProduct<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
-                                                                        typename GridView::ctype, GridView::dimension,
-                                                                        Field, 1>,
-                                        void, GridView, Range, Source, Field>
+                                                                        typename GridView::ctype,
+                                                                        GridView::dimension,
+                                                                        Field,
+                                                                        1>,
+                                        void,
+                                        GridView,
+                                        Range,
+                                        Source,
+                                        Field>
 {
-  typedef XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<
-      typename XT::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>
+  typedef XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
+                                                                           typename GridView::ctype,
+                                                                           GridView::dimension,
+                                                                           Field,
+                                                                           1>>
       FunctionProvider;
   typedef EllipticLocalizableProduct<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
-                                                                     typename GridView::ctype, GridView::dimension,
-                                                                     Field, 1>,
-                                     void, GridView, Range, Source, Field>
+                                                                     typename GridView::ctype,
+                                                                     GridView::dimension,
+                                                                     Field,
+                                                                     1>,
+                                     void,
+                                     GridView,
+                                     Range,
+                                     Source,
+                                     Field>
       BaseType;
 
   // We suffer from the same problem as in L2LocalizableProduct, see there for an explanation.
@@ -79,13 +97,15 @@ LaplaceLocalizableProduct(over_integrate, ...args);
 LaplaceLocalizableProduct(...args);
 \endcode
    */
-  template <typename possibly_int_t, class... Args,
+  template <typename possibly_int_t,
+            class... Args,
             typename std::enable_if<!std::is_same<possibly_int_t, tag<true>>::value
                                         && !std::is_same<possibly_int_t, tag<false>>::value,
                                     int>::type = 0>
   explicit LaplaceLocalizableProduct(possibly_int_t&& possibly_over_integrate, Args&&... args)
     : LaplaceLocalizableProduct(tag<std::numeric_limits<typename std::decay<possibly_int_t>::type>::is_integer>(0),
-                                std::forward<possibly_int_t>(possibly_over_integrate), std::forward<Args>(args)...)
+                                std::forward<possibly_int_t>(possibly_over_integrate),
+                                std::forward<Args>(args)...)
   {
   }
 }; // class LaplaceLocalizableProduct
@@ -103,7 +123,9 @@ typename std::enable_if<XT::Grid::is_layer<GridViewType>::value
                             && XT::Functions::is_localizable_function<RangeType>::value
                             && XT::Functions::is_localizable_function<SourceType>::value,
                         std::unique_ptr<LaplaceLocalizableProduct<GridViewType, RangeType, SourceType>>>::type
-make_laplace_localizable_product(const GridViewType& grid_view, const RangeType& range, const SourceType& source,
+make_laplace_localizable_product(const GridViewType& grid_view,
+                                 const RangeType& range,
+                                 const SourceType& source,
                                  const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<LaplaceLocalizableProduct<GridViewType, RangeType, SourceType>>(
@@ -115,24 +137,46 @@ make_laplace_localizable_product(const GridViewType& grid_view, const RangeType&
 // LaplaceMatrixOperator //
 // ///////////////////// //
 
-template <class RangeSpace, class Matrix = typename XT::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
-          class GridView = typename RangeSpace::GridViewType, class SourceSpace = RangeSpace,
+template <class RangeSpace,
+          class Matrix = typename XT::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
+          class GridView = typename RangeSpace::GridViewType,
+          class SourceSpace = RangeSpace,
           class Field = typename RangeSpace::RangeFieldType>
 class LaplaceMatrixOperator
-    : XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<
-          typename XT::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>,
+    : XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
+                                                                       typename GridView::ctype,
+                                                                       GridView::dimension,
+                                                                       Field,
+                                                                       1>>,
       public EllipticMatrixOperator<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
-                                                                    typename GridView::ctype, GridView::dimension,
-                                                                    Field, 1>,
-                                    void, RangeSpace, Matrix, GridView, SourceSpace, Field>
+                                                                    typename GridView::ctype,
+                                                                    GridView::dimension,
+                                                                    Field,
+                                                                    1>,
+                                    void,
+                                    RangeSpace,
+                                    Matrix,
+                                    GridView,
+                                    SourceSpace,
+                                    Field>
 {
-  typedef XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<
-      typename XT::Grid::Entity<GridView>::type, typename GridView::ctype, GridView::dimension, Field, 1>>
+  typedef XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
+                                                                           typename GridView::ctype,
+                                                                           GridView::dimension,
+                                                                           Field,
+                                                                           1>>
       FunctionProvider;
   typedef EllipticMatrixOperator<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
-                                                                 typename GridView::ctype, GridView::dimension, Field,
+                                                                 typename GridView::ctype,
+                                                                 GridView::dimension,
+                                                                 Field,
                                                                  1>,
-                                 void, RangeSpace, Matrix, GridView, SourceSpace, Field>
+                                 void,
+                                 RangeSpace,
+                                 Matrix,
+                                 GridView,
+                                 SourceSpace,
+                                 Field>
       BaseType;
 
   // We suffer from the same problem as in L2LocalizableProduct, see there for an explanation.
@@ -173,13 +217,15 @@ LaplaceLocalizableProduct(...args);
    *        If no matrix is provided, an appropriate matrix of given MatrixType will be created and is accessible via
    *        matrix().
    */
-  template <typename possibly_int_t, class... Args,
+  template <typename possibly_int_t,
+            class... Args,
             typename std::enable_if<!std::is_same<possibly_int_t, tag<true>>::value
                                         && !std::is_same<possibly_int_t, tag<false>>::value,
                                     int>::type = 0>
   explicit LaplaceMatrixOperator(possibly_int_t&& possibly_over_integrate, Args&&... args)
     : LaplaceMatrixOperator(tag<std::numeric_limits<typename std::decay<possibly_int_t>::type>::is_integer>(0),
-                            std::forward<possibly_int_t>(possibly_over_integrate), std::forward<Args>(args)...)
+                            std::forward<possibly_int_t>(possibly_over_integrate),
+                            std::forward<Args>(args)...)
   {
   }
 }; // class LaplaceMatrixOperator
@@ -235,10 +281,13 @@ auto op = make_laplace_matrix_operator< MatrixType >(range_space, source_space, 
 template <class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
 typename std::
     enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
-                  && is_space<SourceSpaceType>::value && XT::Grid::is_layer<GridViewType>::value,
+                  && is_space<SourceSpaceType>::value
+                  && XT::Grid::is_layer<GridViewType>::value,
               std::unique_ptr<LaplaceMatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>>::type
-    make_laplace_matrix_operator(const RangeSpaceType& range_space, const SourceSpaceType& source_space,
-                                 const GridViewType& grid_view, const size_t over_integrate = 0)
+    make_laplace_matrix_operator(const RangeSpaceType& range_space,
+                                 const SourceSpaceType& source_space,
+                                 const GridViewType& grid_view,
+                                 const size_t over_integrate = 0)
 {
   return Dune::XT::Common::
       make_unique<LaplaceMatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>(
@@ -265,7 +314,9 @@ template <class MatrixType, class SpaceType, class GridViewType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
                             && XT::Grid::is_layer<GridViewType>::value,
                         std::unique_ptr<LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType>>>::type
-make_laplace_matrix_operator(MatrixType& matrix, const SpaceType& space, const GridViewType& grid_view,
+make_laplace_matrix_operator(MatrixType& matrix,
+                             const SpaceType& space,
+                             const GridViewType& grid_view,
                              const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType>>(
@@ -278,10 +329,13 @@ make_laplace_matrix_operator(MatrixType& matrix, const SpaceType& space, const G
 template <class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
 typename std::
     enable_if<XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
-                  && is_space<SourceSpaceType>::value && XT::Grid::is_layer<GridViewType>::value,
+                  && is_space<SourceSpaceType>::value
+                  && XT::Grid::is_layer<GridViewType>::value,
               std::unique_ptr<LaplaceMatrixOperator<RangeSpaceType, MatrixType, GridViewType, SourceSpaceType>>>::type
-    make_laplace_matrix_operator(MatrixType& matrix, const RangeSpaceType& range_space,
-                                 const SourceSpaceType& source_space, const GridViewType& grid_view,
+    make_laplace_matrix_operator(MatrixType& matrix,
+                                 const RangeSpaceType& range_space,
+                                 const SourceSpaceType& source_space,
+                                 const GridViewType& grid_view,
                                  const size_t over_integrate = 0)
 {
   return Dune::XT::Common::
@@ -350,8 +404,8 @@ public:
   using BaseType::apply_inverse;
 
   template <class RangeType, class SourceType>
-  void apply_inverse(const RangeType& /*range*/, SourceType& /*source*/,
-                     const XT::Common::Configuration& /*opts*/) const
+  void
+  apply_inverse(const RangeType& /*range*/, SourceType& /*source*/, const XT::Common::Configuration& /*opts*/) const
   {
     DUNE_THROW(NotImplemented, "yet");
   }

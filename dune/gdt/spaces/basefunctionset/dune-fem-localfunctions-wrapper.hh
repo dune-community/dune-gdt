@@ -21,7 +21,11 @@ namespace BaseFunctionSet {
 
 
 // forward, to be used in the traits and to allow for specialization
-template <class BaseFunctionSetMapImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim,
+template <class BaseFunctionSetMapImp,
+          class DomainFieldImp,
+          size_t domainDim,
+          class RangeFieldImp,
+          size_t rangeDim,
           size_t rangeDimCols = 1>
 class DuneFemLocalfunctionsWrapper
 {
@@ -32,12 +36,20 @@ class DuneFemLocalfunctionsWrapper
 namespace internal {
 
 
-template <class BaseFunctionSetMapImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim,
+template <class BaseFunctionSetMapImp,
+          class DomainFieldImp,
+          size_t domainDim,
+          class RangeFieldImp,
+          size_t rangeDim,
           size_t rangeDimCols>
 class DuneFemLocalfunctionsWrapperTraits
 {
 public:
-  typedef DuneFemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim,
+  typedef DuneFemLocalfunctionsWrapper<BaseFunctionSetMapImp,
+                                       DomainFieldImp,
+                                       domainDim,
+                                       RangeFieldImp,
+                                       rangeDim,
                                        rangeDimCols>
       derived_type;
   typedef typename BaseFunctionSetMapImp::BaseFunctionSetType BackendType;
@@ -51,21 +63,36 @@ public:
 template <class BaseFunctionSetMapImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
 class DuneFemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
     : public BaseFunctionSetInterface<internal::DuneFemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp,
-                                                                                   DomainFieldImp, domainDim,
-                                                                                   RangeFieldImp, rangeDim, 1>,
-                                      DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+                                                                                   DomainFieldImp,
+                                                                                   domainDim,
+                                                                                   RangeFieldImp,
+                                                                                   rangeDim,
+                                                                                   1>,
+                                      DomainFieldImp,
+                                      domainDim,
+                                      RangeFieldImp,
+                                      rangeDim,
+                                      1>
 {
-  typedef BaseFunctionSetInterface<internal::DuneFemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp,
-                                                                                domainDim, RangeFieldImp, rangeDim, 1>,
-                                   DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+  typedef BaseFunctionSetInterface<internal::DuneFemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp,
+                                                                                DomainFieldImp,
+                                                                                domainDim,
+                                                                                RangeFieldImp,
+                                                                                rangeDim,
+                                                                                1>,
+                                   DomainFieldImp,
+                                   domainDim,
+                                   RangeFieldImp,
+                                   rangeDim,
+                                   1>
       BaseType;
   typedef DuneFemLocalfunctionsWrapper<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
       ThisType;
 
 public:
-  typedef internal::DuneFemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp,
-                                                       rangeDim, 1>
-      Traits;
+  typedef internal::
+      DuneFemLocalfunctionsWrapperTraits<BaseFunctionSetMapImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+          Traits;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 

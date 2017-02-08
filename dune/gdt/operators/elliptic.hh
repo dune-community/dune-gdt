@@ -37,7 +37,10 @@ namespace GDT {
 
 template <class DiffusionFactorType,
           typename DiffusionTensorType, // may be void
-          class GridView, class Range, class Source = Range, class Field = typename Range::RangeFieldType>
+          class GridView,
+          class Range,
+          class Source = Range,
+          class Field = typename Range::RangeFieldType>
 class EllipticLocalizableProduct : public LocalizableProductBase<GridView, Range, Source, Field>
 {
   typedef LocalizableProductBase<GridView, Range, Source, Field> BaseType;
@@ -61,7 +64,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(diffusion)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
   template <typename DiffusionImp // This ctor is only enabled if we are given a single diffusion data function.
@@ -74,7 +77,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(over_integrate, diffusion)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
   template <typename DiffusionFactorImp // This ctor is only enabled
@@ -86,11 +89,12 @@ public:
                                                && sizeof(DiffusionFactorImp)>::type,
             class... Args>
   explicit EllipticLocalizableProduct(const DiffusionFactorImp& diffusion_factor,
-                                      const DiffusionTensorImp& diffusion_tensor, Args&&... args)
+                                      const DiffusionTensorImp& diffusion_tensor,
+                                      Args&&... args)
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(diffusion_factor, diffusion_tensor)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
   template <typename DiffusionFactorImp // This ctor is only enabled
@@ -101,12 +105,14 @@ public:
                                                && (std::is_same<DiffusionFactorImp, DiffusionFactorType>::value)
                                                && sizeof(DiffusionFactorImp)>::type,
             class... Args>
-  explicit EllipticLocalizableProduct(const size_t over_integrate, const DiffusionFactorImp& diffusion_factor,
-                                      const DiffusionTensorImp& diffusion_tensor, Args&&... args)
+  explicit EllipticLocalizableProduct(const size_t over_integrate,
+                                      const DiffusionFactorImp& diffusion_factor,
+                                      const DiffusionTensorImp& diffusion_tensor,
+                                      Args&&... args)
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(over_integrate, diffusion_factor, diffusion_tensor)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
 private:
@@ -122,14 +128,17 @@ private:
  * \sa EllipticLocalizableProduct, especially for the role of diffusion.
  */
 template <class DiffusionType, class GridViewType, class RangeType, class SourceType>
-typename std::enable_if<XT::Functions::is_localizable_function<DiffusionType>::value
-                            && XT::Grid::is_layer<GridViewType>::value
-                            && XT::Functions::is_localizable_function<RangeType>::value
-                            && XT::Functions::is_localizable_function<SourceType>::value,
-                        std::unique_ptr<EllipticLocalizableProduct<DiffusionType, void, GridViewType, RangeType,
-                                                                   SourceType>>>::type
-make_elliptic_localizable_product(const DiffusionType& diffusion, const GridViewType& grid_view, const RangeType& range,
-                                  const SourceType& source, const size_t over_integrate = 0)
+typename std::
+    enable_if<XT::Functions::is_localizable_function<DiffusionType>::value && XT::Grid::is_layer<GridViewType>::value
+                  && XT::Functions::is_localizable_function<RangeType>::value
+                  && XT::Functions::is_localizable_function<SourceType>::value,
+              std::unique_ptr<EllipticLocalizableProduct<DiffusionType, void, GridViewType, RangeType, SourceType>>>::
+        type
+        make_elliptic_localizable_product(const DiffusionType& diffusion,
+                                          const GridViewType& grid_view,
+                                          const RangeType& range,
+                                          const SourceType& source,
+                                          const size_t over_integrate = 0)
 {
   return Dune::XT::Common::
       make_unique<EllipticLocalizableProduct<DiffusionType, void, GridViewType, RangeType, SourceType>>(
@@ -145,11 +154,17 @@ typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorTy
                             && XT::Grid::is_layer<GridViewType>::value
                             && XT::Functions::is_localizable_function<RangeType>::value
                             && XT::Functions::is_localizable_function<SourceType>::value,
-                        std::unique_ptr<EllipticLocalizableProduct<DiffusionFactorType, DiffusionTensorType,
-                                                                   GridViewType, RangeType, SourceType>>>::type
+                        std::unique_ptr<EllipticLocalizableProduct<DiffusionFactorType,
+                                                                   DiffusionTensorType,
+                                                                   GridViewType,
+                                                                   RangeType,
+                                                                   SourceType>>>::type
 make_elliptic_localizable_product(const DiffusionFactorType& diffusion_factor,
-                                  const DiffusionTensorType& diffusion_tensor, const GridViewType& grid_view,
-                                  const RangeType& range, const SourceType& source, const size_t over_integrate = 0)
+                                  const DiffusionTensorType& diffusion_tensor,
+                                  const GridViewType& grid_view,
+                                  const RangeType& range,
+                                  const SourceType& source,
+                                  const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticLocalizableProduct<DiffusionFactorType,
                                                                   DiffusionTensorType,
@@ -166,17 +181,35 @@ make_elliptic_localizable_product(const DiffusionFactorType& diffusion_factor,
 
 template <class DiffusionFactorType,
           typename DiffusionTensorType, // may be void
-          class RangeSpace, class Matrix = typename XT::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
-          class GridView = typename RangeSpace::GridViewType, class SourceSpace = RangeSpace,
+          class RangeSpace,
+          class Matrix = typename XT::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
+          class GridView = typename RangeSpace::GridViewType,
+          class SourceSpace = RangeSpace,
           class Field = typename RangeSpace::RangeFieldType>
 class EllipticMatrixOperator
     : public MatrixOperatorBase<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume>
 {
+  typedef EllipticMatrixOperator<DiffusionFactorType,
+                                 DiffusionTensorType,
+                                 RangeSpace,
+                                 Matrix,
+                                 GridView,
+                                 SourceSpace,
+                                 Field>
+      ThisType;
   typedef MatrixOperatorBase<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::volume> BaseType;
   typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>>
       LocalEllipticOperatorType;
 
 public:
+  /// \sa MatrixOperatorBase
+  EllipticMatrixOperator(const ThisType& other) = delete;
+  EllipticMatrixOperator(ThisType& other) = delete; // <- b.c. of the too perfect forwarding ctor
+  EllipticMatrixOperator(ThisType&& source) = delete;
+
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& source) = delete;
+
   // see the ctors of EllipticLocalizableProduct
   template <typename DiffusionImp // This ctor is only enabled if we are given a single diffusion data function.
             ,
@@ -188,7 +221,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(diffusion)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
   template <typename DiffusionImp // This ctor is only enabled if we are given a single diffusion data function.
@@ -201,7 +234,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(over_integrate, diffusion)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
   template <typename DiffusionFactorImp // This ctor is only enabled
@@ -213,11 +246,12 @@ public:
                                                && sizeof(DiffusionFactorImp)>::type,
             class... Args>
   explicit EllipticMatrixOperator(const DiffusionFactorImp& diffusion_factor,
-                                  const DiffusionTensorImp& diffusion_tensor, Args&&... args)
+                                  const DiffusionTensorImp& diffusion_tensor,
+                                  Args&&... args)
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(diffusion_factor, diffusion_tensor)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
   template <typename DiffusionFactorImp // This ctor is only enabled
@@ -228,12 +262,14 @@ public:
                                                && (std::is_same<DiffusionFactorImp, DiffusionFactorType>::value)
                                                && sizeof(DiffusionFactorImp)>::type,
             class... Args>
-  explicit EllipticMatrixOperator(const size_t over_integrate, const DiffusionFactorImp& diffusion_factor,
-                                  const DiffusionTensorImp& diffusion_tensor, Args&&... args)
+  explicit EllipticMatrixOperator(const size_t over_integrate,
+                                  const DiffusionFactorImp& diffusion_factor,
+                                  const DiffusionTensorImp& diffusion_tensor,
+                                  Args&&... args)
     : BaseType(std::forward<Args>(args)...)
     , local_elliptic_operator_(over_integrate, diffusion_factor, diffusion_tensor)
   {
-    this->add(local_elliptic_operator_);
+    this->append(local_elliptic_operator_);
   }
 
 private:
@@ -256,14 +292,17 @@ auto op = make_elliptic_matrix_operator< MatrixType >(factor, tensor, space);
 \endcode
  */
 template <class MatrixType, class DiffusionFactorType, class DiffusionTensorType, class SpaceType>
-typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
-                            && XT::Functions::is_localizable_function<DiffusionFactorType>::value
-                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && is_space<SpaceType>::value,
-                        std::unique_ptr<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
-                                                               MatrixType>>>::type
-make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
-                              const SpaceType& space, const size_t over_integrate = 0)
+typename std::
+    enable_if<XT::LA::is_matrix<MatrixType>::value && XT::Functions::is_localizable_function<DiffusionFactorType>::value
+                  && XT::Functions::is_localizable_function<DiffusionTensorType>::value
+                  && is_space<SpaceType>::value,
+              std::
+                  unique_ptr<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType, MatrixType>>>::
+        type
+        make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor,
+                                      const DiffusionTensorType& diffusion_tensor,
+                                      const SpaceType& space,
+                                      const size_t over_integrate = 0)
 {
   return Dune::XT::Common::
       make_unique<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType, MatrixType>>(
@@ -282,11 +321,18 @@ template <class MatrixType, class DiffusionFactorType, class DiffusionTensorType
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && is_space<SpaceType>::value && XT::Grid::is_layer<GridViewType>::value,
-                        std::unique_ptr<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
-                                                               MatrixType, GridViewType>>>::type
-make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
-                              const SpaceType& space, const GridViewType& grid_view, const size_t over_integrate = 0)
+                            && is_space<SpaceType>::value
+                            && XT::Grid::is_layer<GridViewType>::value,
+                        std::unique_ptr<EllipticMatrixOperator<DiffusionFactorType,
+                                                               DiffusionTensorType,
+                                                               SpaceType,
+                                                               MatrixType,
+                                                               GridViewType>>>::type
+make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor,
+                              const DiffusionTensorType& diffusion_tensor,
+                              const SpaceType& space,
+                              const GridViewType& grid_view,
+                              const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionFactorType,
                                                               DiffusionTensorType,
@@ -303,18 +349,30 @@ make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const
 auto op = make_elliptic_matrix_operator< MatrixType >(factor, tensor, range_space, source_space, grid_view);
 \endcode
  */
-template <class MatrixType, class DiffusionFactorType, class DiffusionTensorType, class RangeSpaceType,
-          class SourceSpaceType, class GridViewType>
+template <class MatrixType,
+          class DiffusionFactorType,
+          class DiffusionTensorType,
+          class RangeSpaceType,
+          class SourceSpaceType,
+          class GridViewType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && is_space<RangeSpaceType>::value && is_space<SourceSpaceType>::value
+                            && is_space<RangeSpaceType>::value
+                            && is_space<SourceSpaceType>::value
                             && XT::Grid::is_layer<GridViewType>::value,
-                        std::unique_ptr<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, RangeSpaceType,
-                                                               MatrixType, GridViewType, SourceSpaceType>>>::type
-make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
-                              const RangeSpaceType& range_space, const SourceSpaceType& source_space,
-                              const GridViewType& grid_view, const size_t over_integrate = 0)
+                        std::unique_ptr<EllipticMatrixOperator<DiffusionFactorType,
+                                                               DiffusionTensorType,
+                                                               RangeSpaceType,
+                                                               MatrixType,
+                                                               GridViewType,
+                                                               SourceSpaceType>>>::type
+make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor,
+                              const DiffusionTensorType& diffusion_tensor,
+                              const RangeSpaceType& range_space,
+                              const SourceSpaceType& source_space,
+                              const GridViewType& grid_view,
+                              const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionFactorType,
                                                               DiffusionTensorType,
@@ -332,13 +390,19 @@ make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const
  *        used).
  */
 template <class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class SpaceType>
-typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
-                            && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
-                        std::unique_ptr<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
-                                                               MatrixType>>>::type
-make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
-                              MatrixType& matrix, const SpaceType& space, const size_t over_integrate = 0)
+typename std::
+    enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
+                  && XT::Functions::is_localizable_function<DiffusionTensorType>::value
+                  && XT::LA::is_matrix<MatrixType>::value
+                  && is_space<SpaceType>::value,
+              std::
+                  unique_ptr<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType, MatrixType>>>::
+        type
+        make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor,
+                                      const DiffusionTensorType& diffusion_tensor,
+                                      MatrixType& matrix,
+                                      const SpaceType& space,
+                                      const size_t over_integrate = 0)
 {
   return Dune::XT::Common::
       make_unique<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType, MatrixType>>(
@@ -351,12 +415,19 @@ make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const
 template <class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class SpaceType, class GridViewType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value
+                            && XT::LA::is_matrix<MatrixType>::value
+                            && is_space<SpaceType>::value
                             && XT::Grid::is_layer<GridViewType>::value,
-                        std::unique_ptr<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, SpaceType,
-                                                               MatrixType, GridViewType>>>::type
-make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
-                              MatrixType& matrix, const SpaceType& space, const GridViewType& grid_view,
+                        std::unique_ptr<EllipticMatrixOperator<DiffusionFactorType,
+                                                               DiffusionTensorType,
+                                                               SpaceType,
+                                                               MatrixType,
+                                                               GridViewType>>>::type
+make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor,
+                              const DiffusionTensorType& diffusion_tensor,
+                              MatrixType& matrix,
+                              const SpaceType& space,
+                              const GridViewType& grid_view,
                               const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionFactorType,
@@ -370,17 +441,30 @@ make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const
 /**
  * \brief Creates an elliptic matrix operator.
  */
-template <class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class RangeSpaceType,
-          class SourceSpaceType, class GridViewType>
+template <class DiffusionFactorType,
+          class DiffusionTensorType,
+          class MatrixType,
+          class RangeSpaceType,
+          class SourceSpaceType,
+          class GridViewType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
-                            && XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value && XT::Grid::is_layer<GridViewType>::value,
-                        std::unique_ptr<EllipticMatrixOperator<DiffusionFactorType, DiffusionTensorType, RangeSpaceType,
-                                                               MatrixType, GridViewType, SourceSpaceType>>>::type
-make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor,
-                              MatrixType& matrix, const RangeSpaceType& range_space,
-                              const SourceSpaceType& source_space, const GridViewType& grid_view,
+                            && XT::LA::is_matrix<MatrixType>::value
+                            && is_space<RangeSpaceType>::value
+                            && is_space<SourceSpaceType>::value
+                            && XT::Grid::is_layer<GridViewType>::value,
+                        std::unique_ptr<EllipticMatrixOperator<DiffusionFactorType,
+                                                               DiffusionTensorType,
+                                                               RangeSpaceType,
+                                                               MatrixType,
+                                                               GridViewType,
+                                                               SourceSpaceType>>>::type
+make_elliptic_matrix_operator(const DiffusionFactorType& diffusion_factor,
+                              const DiffusionTensorType& diffusion_tensor,
+                              MatrixType& matrix,
+                              const RangeSpaceType& range_space,
+                              const SourceSpaceType& source_space,
+                              const GridViewType& grid_view,
                               const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionFactorType,
@@ -424,9 +508,12 @@ auto op = make_elliptic_matrix_operator< MatrixType >(diffusion, space, grid_vie
 template <class MatrixType, class DiffusionType, class SpaceType, class GridViewType>
 typename std::
     enable_if<XT::LA::is_matrix<MatrixType>::value && XT::Functions::is_localizable_function<DiffusionType>::value
-                  && is_space<SpaceType>::value && XT::Grid::is_layer<GridViewType>::value,
+                  && is_space<SpaceType>::value
+                  && XT::Grid::is_layer<GridViewType>::value,
               std::unique_ptr<EllipticMatrixOperator<DiffusionType, void, SpaceType, MatrixType, GridViewType>>>::type
-    make_elliptic_matrix_operator(const DiffusionType& diffusion, const SpaceType& space, const GridViewType& grid_view,
+    make_elliptic_matrix_operator(const DiffusionType& diffusion,
+                                  const SpaceType& space,
+                                  const GridViewType& grid_view,
                                   const size_t over_integrate = 0)
 {
   return Dune::XT::Common::
@@ -445,12 +532,19 @@ auto op = make_elliptic_matrix_operator< MatrixType >(diffusion, range_space, so
 template <class MatrixType, class DiffusionType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionType>::value
-                            && is_space<RangeSpaceType>::value && is_space<SourceSpaceType>::value
+                            && is_space<RangeSpaceType>::value
+                            && is_space<SourceSpaceType>::value
                             && XT::Grid::is_layer<GridViewType>::value,
-                        std::unique_ptr<EllipticMatrixOperator<DiffusionType, void, RangeSpaceType, MatrixType,
-                                                               GridViewType, SourceSpaceType>>>::type
-make_elliptic_matrix_operator(const DiffusionType& diffusion, const RangeSpaceType& range_space,
-                              const SourceSpaceType& source_space, const GridViewType& grid_view,
+                        std::unique_ptr<EllipticMatrixOperator<DiffusionType,
+                                                               void,
+                                                               RangeSpaceType,
+                                                               MatrixType,
+                                                               GridViewType,
+                                                               SourceSpaceType>>>::type
+make_elliptic_matrix_operator(const DiffusionType& diffusion,
+                              const RangeSpaceType& range_space,
+                              const SourceSpaceType& source_space,
+                              const GridViewType& grid_view,
                               const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionType,
@@ -470,9 +564,12 @@ make_elliptic_matrix_operator(const DiffusionType& diffusion, const RangeSpaceTy
  */
 template <class DiffusionType, class MatrixType, class SpaceType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionType>::value
-                            && XT::LA::is_matrix<MatrixType>::value && is_space<SpaceType>::value,
+                            && XT::LA::is_matrix<MatrixType>::value
+                            && is_space<SpaceType>::value,
                         std::unique_ptr<EllipticMatrixOperator<DiffusionType, void, SpaceType, MatrixType>>>::type
-make_elliptic_matrix_operator(const DiffusionType& diffusion, MatrixType& matrix, const SpaceType& space,
+make_elliptic_matrix_operator(const DiffusionType& diffusion,
+                              MatrixType& matrix,
+                              const SpaceType& space,
                               const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionType, void, SpaceType, MatrixType>>(
@@ -485,10 +582,14 @@ make_elliptic_matrix_operator(const DiffusionType& diffusion, MatrixType& matrix
 template <class DiffusionType, class MatrixType, class SpaceType, class GridViewType>
 typename std::
     enable_if<XT::Functions::is_localizable_function<DiffusionType>::value && XT::LA::is_matrix<MatrixType>::value
-                  && is_space<SpaceType>::value && XT::Grid::is_layer<GridViewType>::value,
+                  && is_space<SpaceType>::value
+                  && XT::Grid::is_layer<GridViewType>::value,
               std::unique_ptr<EllipticMatrixOperator<DiffusionType, void, SpaceType, MatrixType, GridViewType>>>::type
-    make_elliptic_matrix_operator(const DiffusionType& diffusion, MatrixType& matrix, const SpaceType& space,
-                                  const GridViewType& grid_view, const size_t over_integrate = 0)
+    make_elliptic_matrix_operator(const DiffusionType& diffusion,
+                                  MatrixType& matrix,
+                                  const SpaceType& space,
+                                  const GridViewType& grid_view,
+                                  const size_t over_integrate = 0)
 {
   return Dune::XT::Common::
       make_unique<EllipticMatrixOperator<DiffusionType, void, SpaceType, MatrixType, GridViewType>>(
@@ -500,12 +601,21 @@ typename std::
  */
 template <class DiffusionType, class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionType>::value
-                            && XT::LA::is_matrix<MatrixType>::value && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value && XT::Grid::is_layer<GridViewType>::value,
-                        std::unique_ptr<EllipticMatrixOperator<DiffusionType, void, RangeSpaceType, MatrixType,
-                                                               GridViewType, SourceSpaceType>>>::type
-make_elliptic_matrix_operator(const DiffusionType& diffusion, MatrixType& matrix, const RangeSpaceType& range_space,
-                              const SourceSpaceType& source_space, const GridViewType& grid_view,
+                            && XT::LA::is_matrix<MatrixType>::value
+                            && is_space<RangeSpaceType>::value
+                            && is_space<SourceSpaceType>::value
+                            && XT::Grid::is_layer<GridViewType>::value,
+                        std::unique_ptr<EllipticMatrixOperator<DiffusionType,
+                                                               void,
+                                                               RangeSpaceType,
+                                                               MatrixType,
+                                                               GridViewType,
+                                                               SourceSpaceType>>>::type
+make_elliptic_matrix_operator(const DiffusionType& diffusion,
+                              MatrixType& matrix,
+                              const RangeSpaceType& range_space,
+                              const SourceSpaceType& source_space,
+                              const GridViewType& grid_view,
                               const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticMatrixOperator<DiffusionType,
@@ -523,7 +633,9 @@ make_elliptic_matrix_operator(const DiffusionType& diffusion, MatrixType& matrix
 // //////////////// //
 
 // forward, needed for the traits
-template <class DiffusionFactorType, typename DiffusionTensorType, class GridView,
+template <class DiffusionFactorType,
+          typename DiffusionTensorType,
+          class GridView,
           class Field = typename DiffusionFactorType::RangeFieldType>
 class EllipticOperator;
 
@@ -545,13 +657,15 @@ public:
 
 template <class DiffusionFactorType,
           typename DiffusionTensorType, // may be void
-          class GridViewType, class Field>
-class EllipticOperator
-    : public OperatorInterface<internal::EllipticOperatorTraits<DiffusionFactorType, DiffusionTensorType, GridViewType,
-                                                                Field>>
+          class GridViewType,
+          class Field>
+class EllipticOperator : public OperatorInterface<internal::EllipticOperatorTraits<DiffusionFactorType,
+                                                                                   DiffusionTensorType,
+                                                                                   GridViewType,
+                                                                                   Field>>
 {
-  typedef OperatorInterface<internal::EllipticOperatorTraits<DiffusionFactorType, DiffusionTensorType, GridViewType,
-                                                             Field>>
+  typedef OperatorInterface<internal::
+                                EllipticOperatorTraits<DiffusionFactorType, DiffusionTensorType, GridViewType, Field>>
       BaseType;
   typedef LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType> LocalIntegrandType;
 
@@ -605,8 +719,8 @@ public:
   using BaseType::apply_inverse;
 
   template <class RangeType, class SourceType>
-  void apply_inverse(const RangeType& /*range*/, SourceType& /*source*/,
-                     const XT::Common::Configuration& /*opts*/) const
+  void
+  apply_inverse(const RangeType& /*range*/, SourceType& /*source*/, const XT::Common::Configuration& /*opts*/) const
   {
     DUNE_THROW(NotImplemented, "yet");
   }
@@ -636,7 +750,9 @@ private:
 template <class GridViewType, class DiffusionType>
 typename std::enable_if<XT::Grid::is_layer<GridViewType>::value
                             && XT::Functions::is_localizable_function<DiffusionType>::value,
-                        std::unique_ptr<EllipticOperator<DiffusionType, void, GridViewType,
+                        std::unique_ptr<EllipticOperator<DiffusionType,
+                                                         void,
+                                                         GridViewType,
                                                          typename DiffusionType::RangeFieldType>>>::type
 make_elliptic_operator(const GridViewType& grid_view, const DiffusionType& diffusion, const size_t over_integrate = 0)
 {
@@ -649,10 +765,14 @@ template <class GridViewType, class DiffusionFactorType, class DiffusionTensorTy
 typename std::enable_if<XT::Grid::is_layer<GridViewType>::value
                             && XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value,
-                        std::unique_ptr<EllipticOperator<DiffusionFactorType, DiffusionTensorType, GridViewType,
+                        std::unique_ptr<EllipticOperator<DiffusionFactorType,
+                                                         DiffusionTensorType,
+                                                         GridViewType,
                                                          typename DiffusionFactorType::RangeFieldType>>>::type
-make_elliptic_operator(const GridViewType& grid_view, const DiffusionFactorType& diffusion_factor,
-                       const DiffusionTensorType& diffusion_tensor, const size_t over_integrate = 0)
+make_elliptic_operator(const GridViewType& grid_view,
+                       const DiffusionFactorType& diffusion_factor,
+                       const DiffusionTensorType& diffusion_tensor,
+                       const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticOperator<DiffusionFactorType,
                                                         DiffusionTensorType,

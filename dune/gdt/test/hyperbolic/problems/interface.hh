@@ -42,25 +42,30 @@ public:
   typedef D DomainFieldType;
   static const size_t dimDomain = d;
   typedef R RangeFieldType;
-  static const size_t dimRange     = r;
+  static const size_t dimRange = r;
   static const size_t dimRangeCols = rC;
 
-  typedef Dune::GDT::AutonomousAnalyticalFluxInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange,
-                                                       dimRangeCols>
-      FluxType;
-  typedef Dune::GDT::RhsEvaluationFluxInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange,
-                                                dimRangeCols>
-      RHSType;
-  typedef Dune::XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                                            dimRange, dimRangeCols>
-      InitialValueType;
-  typedef typename Dune::XT::Functions::TimeDependentExpressionFunction<EntityType, DomainFieldType, dimDomain,
-                                                                        RangeFieldType, dimRange, dimRangeCols, double>
+  typedef Dune::GDT::
+      AutonomousAnalyticalFluxInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
+          FluxType;
+  typedef Dune::GDT::
+      RhsEvaluationFluxInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
+          RHSType;
+  typedef Dune::XT::Functions::
+      LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
+          InitialValueType;
+  typedef typename Dune::XT::Functions::TimeDependentExpressionFunction<EntityType,
+                                                                        DomainFieldType,
+                                                                        dimDomain,
+                                                                        RangeFieldType,
+                                                                        dimRange,
+                                                                        dimRangeCols,
+                                                                        double>
       BoundaryValueType;
   typedef Dune::XT::Common::Configuration ConfigType;
   typedef Dune::XT::Functions::TimeDependentFunctionInterface<
-      typename Dune::XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType,
-                                                                 dimRange, 1>>
+      typename Dune::XT::Functions::
+          LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>>
       SolutionType;
 
   virtual ~ProblemInterface()
