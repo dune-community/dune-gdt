@@ -9,10 +9,13 @@
 #ifndef DUNE_GDT_LOCAL_INTEGRANDS_SIPDG_HH
 #define DUNE_GDT_LOCAL_INTEGRANDS_SIPDG_HH
 
+#warning This header is deprecated, include <dune/gdt/local/integrands/elliptic-ipdg.hh> instead (08.02.2017)!
+
 #include <tuple>
 
 #include <boost/numeric/conversion/cast.hpp>
 
+#include <dune/common/deprecated.hh>
 #include <dune/common/dynmatrix.hh>
 
 #include <dune/xt/common/color.hh>
@@ -186,7 +189,8 @@ static inline double boundary_sigma(const size_t pol_order)
  * see Epshteyn, Riviere, 2007 for the meaning of beta
  */
 template <class LocalizableFunctionImp>
-class Inner : public LocalFaceIntegrandInterface<internal::InnerTraits<LocalizableFunctionImp>, 4>
+class DUNE_DEPRECATED_MSG("Use LocalEllipticIpdgIntegrands::Inner<sipdg> instead (08.02.2017)!") Inner
+    : public LocalFaceIntegrandInterface<internal::InnerTraits<LocalizableFunctionImp>, 4>
 {
 public:
   typedef internal::InnerTraits<LocalizableFunctionImp> Traits;
@@ -433,7 +437,8 @@ private:
  * see Epshteyn, Riviere, 2007 for the meaning of beta
  */
 template <class LocalizableFunctionImp>
-class BoundaryLHS : public LocalFaceIntegrandInterface<internal::BoundaryLHSTraits<LocalizableFunctionImp>, 2>
+class DUNE_DEPRECATED_MSG("Use LocalEllipticIpdgIntegrands::Inner<sipdg> instead (08.02.2017)!") BoundaryLHS
+    : public LocalFaceIntegrandInterface<internal::BoundaryLHSTraits<LocalizableFunctionImp>, 2>
 {
 public:
   typedef internal::BoundaryLHSTraits<LocalizableFunctionImp> Traits;
@@ -563,9 +568,11 @@ private:
  * see Epshteyn, Riviere, 2007 for the meaning of beta
  */
 template <class LocalizableDiffusionFunctionImp, class LocalizableDirichletFunctionImp>
-class BoundaryRHS : public LocalFaceIntegrandInterface<internal::BoundaryRHSTraits<LocalizableDiffusionFunctionImp,
-                                                                                   LocalizableDirichletFunctionImp>,
-                                                       1>
+class DUNE_DEPRECATED_MSG("Use LocalEllipticIpdgIntegrands::Inner<sipdg> instead (08.02.2017)!")
+
+    BoundaryRHS : public LocalFaceIntegrandInterface<internal::BoundaryRHSTraits<LocalizableDiffusionFunctionImp,
+                                                                                 LocalizableDirichletFunctionImp>,
+                                                     1>
 {
 public:
   typedef internal::BoundaryRHSTraits<LocalizableDiffusionFunctionImp, LocalizableDirichletFunctionImp> Traits;
