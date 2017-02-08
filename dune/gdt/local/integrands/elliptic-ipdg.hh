@@ -42,7 +42,8 @@ enum class Method
   nipdg,
   sipdg,
   swipdg,
-  swipdg_affine_factor
+  swipdg_affine_factor,
+  swipdg_affine_tensor
 };
 
 
@@ -458,7 +459,8 @@ private:
     static_assert(AlwaysFalse<Anything>::value, "Other methods are not implemented yet!");
 
     template <class R>
-    static inline R delta_plus(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_ne*/,
+    static inline R delta_plus(const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                               const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_ne*/,
                                const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_ne*/,
                                const FieldVector<R, dimDomain>& /*normal*/)
     {
@@ -467,7 +469,8 @@ private:
     }
 
     template <class R>
-    static inline R delta_minus(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_en*/,
+    static inline R delta_minus(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                                const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_en*/,
                                 const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_en*/,
                                 const FieldVector<R, dimDomain>& /*normal*/)
     {
@@ -484,11 +487,14 @@ private:
 
     template <class R>
     static inline R penalty(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                            const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_en*/,
                             const FieldVector<R, 1>& /*diffusion_factor_ne*/,
-                            const R& sigma,
-                            const R& gamma,
-                            const R& h,
-                            const R& beta)
+                            const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_ne*/,
+                            const FieldVector<R, dimDomain>& /*normal*/,
+                            const R& /*sigma*/,
+                            const R& /*gamma*/,
+                            const R& /*h*/,
+                            const R& /*beta*/)
     {
       static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
       return 0.;
@@ -513,7 +519,8 @@ private:
   struct IPDG<Method::swipdg, Anything>
   {
     template <class R>
-    static inline R delta_plus(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_ne*/,
+    static inline R delta_plus(const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                               const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_ne*/,
                                const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& diffusion_ne,
                                const FieldVector<R, dimDomain>& normal)
     {
@@ -521,7 +528,8 @@ private:
     }
 
     template <class R>
-    static inline R delta_minus(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_en*/,
+    static inline R delta_minus(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                                const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_en*/,
                                 const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& diffusion_en,
                                 const FieldVector<R, dimDomain>& normal)
     {
@@ -536,7 +544,10 @@ private:
 
     template <class R>
     static inline R penalty(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                            const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_en*/,
                             const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                            const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_ne*/,
+                            const FieldVector<R, dimDomain>& /*normal*/,
                             const R& sigma,
                             const R& gamma,
                             const R& h,
@@ -559,10 +570,120 @@ private:
   }; // struct IPDG<Method::swipdg, ...>
 
   template <class Anything>
+  struct IPDG<Method::swipdg_affine_factor, Anything>
+  {
+    template <class R>
+    static inline R delta_plus(const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                               const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& diffusion_tensor_ne,
+                               const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_ne*/,
+                               const FieldVector<R, dimDomain>& normal)
+    {
+      return normal * (diffusion_tensor_ne * normal);
+    }
+
+    template <class R>
+    static inline R delta_minus(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                                const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& diffusion_tensor_en,
+                                const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_en*/,
+                                const FieldVector<R, dimDomain>& normal)
+    {
+      return normal * (diffusion_tensor_en * normal);
+    }
+
+    template <class R>
+    static inline R gamma(const R& delta_plus, const R& delta_minus)
+    {
+      return (delta_plus * delta_minus) / (delta_plus + delta_minus);
+    }
+
+    template <class R>
+    static inline R penalty(const FieldVector<R, 1>& diffusion_factor_en,
+                            const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_en*/,
+                            const FieldVector<R, 1>& diffusion_factor_ne,
+                            const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_ne*/,
+                            const FieldVector<R, dimDomain>& /*normal*/,
+                            const R& sigma,
+                            const R& gamma,
+                            const R& h,
+                            const R& beta)
+    {
+      return (0.5 * (diffusion_factor_en + diffusion_factor_ne) * sigma * gamma) / std::pow(h, beta);
+    }
+
+    template <class R>
+    static inline R weight_plus(const R& delta_plus, const R& delta_minus)
+    {
+      return delta_minus / (delta_plus + delta_minus);
+    }
+
+    template <class R>
+    static inline R weight_minus(const R& delta_plus, const R& delta_minus)
+    {
+      return delta_plus / (delta_plus + delta_minus);
+    }
+  }; // struct IPDG<Method::swipdg_affine_factor, ...>
+
+  template <class Anything>
+  struct IPDG<Method::swipdg_affine_tensor, Anything>
+  {
+    template <class R>
+    static inline R delta_plus(const FieldVector<R, 1>& diffusion_factor_ne,
+                               const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_ne*/,
+                               const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_ne*/,
+                               const FieldVector<R, dimDomain>& /*normal*/)
+    {
+      return diffusion_factor_ne;
+    }
+
+    template <class R>
+    static inline R delta_minus(const FieldVector<R, 1>& diffusion_factor_en,
+                                const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_en*/,
+                                const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_en*/,
+                                const FieldVector<R, dimDomain>& /*normal*/)
+    {
+      return diffusion_factor_en;
+    }
+
+    template <class R>
+    static inline R gamma(const R& delta_plus, const R& delta_minus)
+    {
+      return (delta_plus * delta_minus) / (delta_plus + delta_minus);
+    }
+
+    template <class R>
+    static inline R penalty(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                            const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& diffusion_tensor_en,
+                            const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                            const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& diffusion_tensor_ne,
+                            const FieldVector<R, dimDomain>& normal,
+                            const R& sigma,
+                            const R& gamma,
+                            const R& h,
+                            const R& beta)
+    {
+      return (normal * (((diffusion_tensor_en + diffusion_tensor_ne) * 0.5) * normal) * sigma * gamma)
+             / std::pow(h, beta);
+    }
+
+    template <class R>
+    static inline R weight_plus(const R& delta_plus, const R& delta_minus)
+    {
+      return delta_minus / (delta_plus + delta_minus);
+    }
+
+    template <class R>
+    static inline R weight_minus(const R& delta_plus, const R& delta_minus)
+    {
+      return delta_plus / (delta_plus + delta_minus);
+    }
+  }; // struct IPDG<Method::swipdg_affine_tensor, ...>
+
+  template <class Anything>
   struct IPDG<Method::sipdg, Anything>
   {
     template <class R>
-    static inline R delta_plus(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_ne*/,
+    static inline R delta_plus(const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                               const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_ne*/,
                                const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_ne*/,
                                const FieldVector<R, dimDomain>& /*normal*/)
     {
@@ -570,7 +691,8 @@ private:
     }
 
     template <class R>
-    static inline R delta_minus(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_en*/,
+    static inline R delta_minus(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                                const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_en*/,
                                 const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_en*/,
                                 const FieldVector<R, dimDomain>& /*normal*/)
     {
@@ -585,7 +707,10 @@ private:
 
     template <class R>
     static inline R penalty(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                            const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_en*/,
                             const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                            const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_ne*/,
+                            const FieldVector<R, dimDomain>& /*normal*/,
                             const R& sigma,
                             const R& /*gamma*/,
                             const R& h,
@@ -745,17 +870,30 @@ public:
         test_base_en.order(), std::max(ansatz_base_en.order(), std::max(test_base_ne.order(), ansatz_base_ne.order())));
     const R sigma = internal::inner_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
-    const R delta_plus = IPDG<method>::delta_plus(local_diffusion_tensor_value_ne, diffusion_value_ne, normal);
-    const R delta_minus = IPDG<method>::delta_minus(local_diffusion_tensor_value_en, diffusion_value_en, normal);
+    const R delta_plus = IPDG<method>::delta_plus(
+        local_diffusion_factor_value_ne, local_diffusion_tensor_value_ne, diffusion_value_ne, normal);
+    const R delta_minus = IPDG<method>::delta_minus(
+        local_diffusion_factor_value_en, local_diffusion_tensor_value_en, diffusion_value_en, normal);
     const R gamma = IPDG<method>::gamma(delta_plus, delta_minus);
     const R penalty = IPDG<method>::penalty(local_diffusion_factor_value_en,
+                                            local_diffusion_tensor_value_ne,
                                             local_diffusion_factor_value_ne,
+                                            local_diffusion_tensor_value_en,
+                                            normal,
                                             sigma,
                                             gamma,
                                             intersection.geometry().volume(),
                                             beta_);
     const R weight_plus = IPDG<method>::weight_plus(delta_plus, delta_minus);
     const R weight_minus = IPDG<method>::weight_minus(delta_plus, delta_minus);
+    // const R delta_plus = normal * (/*local_diffusion_tensor_ne * normal);
+    // const R delta_minus = normal * (/*local_diffusion_tensor_en * normal);
+    // const R gamma = (delta_plus * delta_minus) / (delta_plus + delta_minus);
+    //    // this evaluation has to be linear wrt the diffusion factor, so no other averaging method is allowed here!
+    // const auto local_diffusion_factor = (local_diffusion_factor_value_en + local_diffusion_factor_value_ne) * 0.5;
+    // const R penalty = (local_diffusion_factor * sigma * gamma) / std::pow(intersection.geometry().volume(), beta_);
+    // const R weight_plus = delta_minus / (delta_plus + delta_minus);
+    // const R weight_minus = delta_plus / (delta_plus + delta_minus);
     // evaluate bases
     // * entity
     //   * test
@@ -1050,6 +1188,16 @@ private:
   }; // struct IPDG<Method::swipdg, ...>
 
   template <class Anything>
+  struct IPDG<Method::swipdg_affine_factor, Anything> : public IPDG<Method::swipdg, Anything>
+  {
+  };
+
+  template <class Anything>
+  struct IPDG<Method::swipdg_affine_tensor, Anything> : public IPDG<Method::swipdg, Anything>
+  {
+  };
+
+  template <class Anything>
   struct IPDG<Method::sipdg, Anything>
   {
     template <class R>
@@ -1335,6 +1483,16 @@ private:
       return (sigma * gamma) / std::pow(h, beta);
     }
   }; // struct IPDG<Method::swipdg, ...>
+
+  template <class Anything>
+  struct IPDG<Method::swipdg_affine_factor, Anything> : public IPDG<Method::swipdg, Anything>
+  {
+  };
+
+  template <class Anything>
+  struct IPDG<Method::swipdg_affine_tensor, Anything> : public IPDG<Method::swipdg, Anything>
+  {
+  };
 
   template <class Anything>
   struct IPDG<Method::sipdg, Anything>
