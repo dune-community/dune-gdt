@@ -20,7 +20,6 @@
 
 #include "elliptic.hh"
 #include "interfaces.hh"
-#include "sipdg.hh"
 
 namespace Dune {
 namespace GDT {
@@ -64,6 +63,69 @@ class BoundaryRHS;
 
 
 namespace internal {
+
+
+/**
+ * \note see Epshteyn, Riviere, 2007
+ */
+static inline double default_beta(const size_t dimDomain)
+{
+  return 1.0 / (dimDomain - 1.0);
+}
+
+
+/**
+ * \note see Epshteyn, Riviere, 2007
+ */
+static inline double inner_sigma(const size_t pol_order)
+{
+  double sigma = 1.0;
+  if (pol_order <= 1)
+    sigma *= 8.0;
+  else if (pol_order <= 2)
+    sigma *= 20.0;
+  else if (pol_order <= 3)
+    sigma *= 38.0;
+  else {
+#ifndef NDEBUG
+#ifndef DUNE_GDT_LOCALEVALUATION_ELLIPTIC_IPDG_DISABLE_WARNINGS
+    Dune::XT::Common::TimedLogger().get("gdt.localintegrands.elliptic-ipdg.inner").warn()
+        << "a polynomial order of " << pol_order << " is untested!\n"
+        << "  #define DUNE_GDT_LOCALEVALUATION_ELLIPTIC_IPDG_DISABLE_WARNINGS to statically disable this warning\n"
+        << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
+#endif
+#endif
+    sigma *= 50.0;
+  }
+  return sigma;
+} // ... inner_sigma(...)
+
+
+/**
+ * \note see Epshteyn, Riviere, 2007
+ */
+static inline double boundary_sigma(const size_t pol_order)
+{
+  double sigma = 1.0;
+  if (pol_order <= 1)
+    sigma *= 14.0;
+  else if (pol_order <= 2)
+    sigma *= 38.0;
+  else if (pol_order <= 3)
+    sigma *= 74.0;
+  else {
+#ifndef NDEBUG
+#ifndef DUNE_GDT_LOCALEVALUATION_ELLIPTIC_IPDG_DISABLE_WARNINGS
+    Dune::XT::Common::TimedLogger().get("gdt.localintegrands.elliptic-ipdg.boundary").warn()
+        << "a polynomial order of " << pol_order << " is untested!\n"
+        << "  #define DUNE_GDT_LOCALEVALUATION_ELLIPTIC_IPDG_DISABLE_WARNINGS to statically disable this warning\n"
+        << "  or dynamically disable warnings of the TimedLogger() instance!" << std::endl;
+#endif
+#endif
+    sigma *= 100.0;
+  }
+  return sigma;
+} // ... boundary_sigma(...)
 
 
 template <class DiffusionFactorImp, class DiffusionTensorImp, Method method>
@@ -129,14 +191,13 @@ public:
 
   Inner(const DiffusionFactorType& diffusion_factor,
         const DiffusionTensorType& diffusion_tensor,
-        const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
+        const double beta = internal::default_beta(dimDomain))
     : elliptic_(diffusion_factor, diffusion_tensor)
     , beta_(beta)
   {
   }
 
-  Inner(const DiffusionFactorType& diffusion_factor,
-        const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
+  Inner(const DiffusionFactorType& diffusion_factor, const double beta = internal::default_beta(dimDomain))
     : elliptic_(diffusion_factor)
     , beta_(beta)
   {
@@ -148,7 +209,7 @@ public:
       typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the ctors
                                          && (dimDomain > 1)
                                          && sizeof(DiffusionType)>::type> // ambiguous.
-  Inner(const DiffusionType& diffusion, const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
+  Inner(const DiffusionType& diffusion, const double beta = internal::default_beta(dimDomain))
     : elliptic_(diffusion)
     , beta_(beta)
   {
@@ -497,6 +558,55 @@ private:
     }
   }; // struct IPDG<Method::swipdg, ...>
 
+  template <class Anything>
+  struct IPDG<Method::sipdg, Anything>
+  {
+    template <class R>
+    static inline R delta_plus(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_ne*/,
+                               const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_ne*/,
+                               const FieldVector<R, dimDomain>& /*normal*/)
+    {
+      return 1.0;
+    }
+
+    template <class R>
+    static inline R delta_minus(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_tensor_en*/,
+                                const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion_en*/,
+                                const FieldVector<R, dimDomain>& /*normal*/)
+    {
+      return 1.0;
+    }
+
+    template <class R>
+    static inline R gamma(const R& /*delta_plus*/, const R& /*delta_minus*/)
+    {
+      return 1.0;
+    }
+
+    template <class R>
+    static inline R penalty(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                            const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                            const R& sigma,
+                            const R& /*gamma*/,
+                            const R& h,
+                            const R& beta)
+    {
+      return sigma / std::pow(h, beta);
+    }
+
+    template <class R>
+    static inline R weight_plus(const R& /*delta_plus*/, const R& /*delta_minus*/)
+    {
+      return 0.5;
+    }
+
+    template <class R>
+    static inline R weight_minus(const R& /*delta_plus*/, const R& /*delta_minus*/)
+    {
+      return 0.5;
+    }
+  }; // struct IPDG<Method::sipdg, ...>
+
 public:
   /// \name Redirects for single diffusion (either factor or tensor, but not both).
   /// \{
@@ -633,7 +743,7 @@ public:
     // compute penalty factor (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(
         test_base_en.order(), std::max(ansatz_base_en.order(), std::max(test_base_ne.order(), ansatz_base_ne.order())));
-    const R sigma = LocalSipdgIntegrands::internal::inner_sigma(max_polorder);
+    const R sigma = internal::inner_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R delta_plus = IPDG<method>::delta_plus(local_diffusion_tensor_value_ne, diffusion_value_ne, normal);
     const R delta_minus = IPDG<method>::delta_minus(local_diffusion_tensor_value_en, diffusion_value_en, normal);
@@ -753,14 +863,13 @@ public:
 
   BoundaryLHS(const DiffusionFactorType& diffusion_factor,
               const DiffusionTensorType& diffusion_tensor,
-              const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
+              const double beta = internal::default_beta(dimDomain))
     : elliptic_(diffusion_factor, diffusion_tensor)
     , beta_(beta)
   {
   }
 
-  BoundaryLHS(const DiffusionFactorType& diffusion_factor,
-              const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
+  BoundaryLHS(const DiffusionFactorType& diffusion_factor, const double beta = internal::default_beta(dimDomain))
     : elliptic_(diffusion_factor)
     , beta_(beta)
   {
@@ -772,8 +881,7 @@ public:
       typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the ctors
                                          && (dimDomain > 1)
                                          && sizeof(DiffusionType)>::type> // ambiguous.
-  BoundaryLHS(const DiffusionType& diffusion,
-              const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
+  BoundaryLHS(const DiffusionType& diffusion, const double beta = internal::default_beta(dimDomain))
     : elliptic_(diffusion)
     , beta_(beta)
   {
@@ -941,6 +1049,23 @@ private:
     }
   }; // struct IPDG<Method::swipdg, ...>
 
+  template <class Anything>
+  struct IPDG<Method::sipdg, Anything>
+  {
+    template <class R>
+    static inline R gamma(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion*/,
+                          const FieldVector<R, dimDomain>& /*normal*/)
+    {
+      return 1.0;
+    }
+
+    template <class R>
+    static inline R penalty(const R& sigma, const R& /*gamma*/, const R& h, const R& beta)
+    {
+      return sigma / std::pow(h, beta);
+    }
+  }; // struct IPDG<Method::sipdg, ...>
+
 public:
   /// \name Redirects for single diffusion (either factor or tensor, but not both).
   /// \{
@@ -1014,7 +1139,7 @@ public:
     const auto diffusion_value = diffusion_tensor_value * diffusion_factor_value;
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(test_base.order(), ansatz_base.order());
-    const R sigma = LocalSipdgIntegrands::internal::boundary_sigma(max_polorder);
+    const R sigma = internal::boundary_sigma(max_polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R gamma = IPDG<method>::gamma(diffusion_value, normal);
     const R penalty = IPDG<method>::penalty(sigma, gamma, intersection.geometry().volume(), beta_);
@@ -1075,7 +1200,7 @@ public:
   BoundaryRHS(const DirichletType& dirichlet,
               const DiffusionFactorType& diffusion_factor,
               const DiffusionTensorType& diffusion_tensor,
-              const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
+              const double beta = internal::default_beta(dimDomain))
     : dirichlet_(dirichlet)
     , elliptic_(diffusion_factor, diffusion_tensor)
     , beta_(beta)
@@ -1084,7 +1209,7 @@ public:
 
   BoundaryRHS(const DirichletType& dirichlet,
               const DiffusionFactorType& diffusion_factor,
-              const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
+              const double beta = internal::default_beta(dimDomain))
     : dirichlet_(dirichlet)
     , elliptic_(diffusion_factor)
     , beta_(beta)
@@ -1099,7 +1224,7 @@ public:
                                          && sizeof(DiffusionType)>::type> // ambiguous.
   BoundaryRHS(const DirichletType& dirichlet,
               const DiffusionType& diffusion,
-              const double beta = LocalSipdgIntegrands::internal::default_beta(dimDomain))
+              const double beta = internal::default_beta(dimDomain))
     : dirichlet_(dirichlet)
     , elliptic_(diffusion)
     , beta_(beta)
@@ -1211,6 +1336,23 @@ private:
     }
   }; // struct IPDG<Method::swipdg, ...>
 
+  template <class Anything>
+  struct IPDG<Method::sipdg, Anything>
+  {
+    template <class R>
+    static inline R gamma(const XT::Common::FieldMatrix<R, dimDomain, dimDomain>& /*diffusion*/,
+                          const FieldVector<R, dimDomain>& /*normal*/)
+    {
+      return 1.0;
+    }
+
+    template <class R>
+    static inline R penalty(const R& sigma, const R& /*gamma*/, const R& h, const R& beta)
+    {
+      return sigma / std::pow(h, beta);
+    }
+  }; // struct IPDG<Method::sipdg, ...>
+
 public:
   /// \}
   /// \name Actual implementation of evaluate.
@@ -1241,7 +1383,7 @@ public:
     const auto diffusion_value = diffusion_tensor_value * diffusion_factor_value;
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t polorder = test_base.order();
-    const R sigma = LocalSipdgIntegrands::internal::boundary_sigma(polorder);
+    const R sigma = internal::boundary_sigma(polorder);
     // compute weighting (see Ern, Stephansen, Zunino 2007)
     const R gamma = IPDG<method>::gamma(diffusion_value, normal);
     const R penalty = IPDG<method>::penalty(sigma, gamma, intersection.geometry().volume(), beta_);
