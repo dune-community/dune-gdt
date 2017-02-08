@@ -144,10 +144,10 @@ public:
   virtual ReturnType compute_locally(const EntityType& entity) override final
   {
     const auto local_difference = difference_.local_function(entity);
-    const auto result = local_operator_.apply2(*local_difference, *local_difference);
-    assert(result.rows() >= 1);
-    assert(result.cols() >= 1);
-    return result[0][0];
+    const auto ret = local_operator_.apply2(*local_difference, *local_difference);
+    assert(ret.rows() >= 1);
+    assert(ret.cols() >= 1);
+    return ret[0][0];
   } // ... compute_locally(...)
 
   virtual void apply_local(const EntityType& entity) override final
@@ -265,10 +265,10 @@ public:
   virtual ReturnType compute_locally(const EntityType& entity) override final
   {
     const auto local_difference = difference_.local_function(entity);
-    auto result = local_operator_.apply2(*local_difference, *local_difference);
-    assert(result.rows() >= 1);
-    assert(result.cols() >= 1);
-    return result[0][0];
+    auto ret = local_operator_.apply2(*local_difference, *local_difference);
+    assert(ret.rows() >= 1);
+    assert(ret.cols() >= 1);
+    return ret[0][0];
   } // ... compute_locally(...)
 
   virtual void apply_local(const EntityType& entity) override final
@@ -416,10 +416,10 @@ public:
   virtual ReturnType compute_locally(const EntityType& entity) override final
   {
     const auto local_discrete_solution = discrete_solution_.local_function(entity);
-    auto result = local_operator_.apply2(*local_discrete_solution, *local_discrete_solution);
-    assert(result.rows() >= 1);
-    assert(result.cols() >= 1);
-    return result[0][0];
+    auto ret = local_operator_.apply2(*local_discrete_solution, *local_discrete_solution);
+    assert(ret.rows() >= 1);
+    assert(ret.cols() >= 1);
+    return ret[0][0];
   } // ... compute_locally(...)
 
   virtual void apply_local(const EntityType& entity) override final
