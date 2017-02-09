@@ -4,7 +4,8 @@ from dune.xt.codegen import typeid_to_typedef_name
 grids = ['Yasp2Grid']
 try:
     if cache['dune-alugrid']:
-        grids.append('AluCube2dGridType')
+        pass
+        # 'AluConform2dGridType', diabled due to https://gitlab.dune-project.org/extensions/dune-alugrid/issues/17
 except KeyError:
     pass
 casenames = ['AO2013TestCase', 'ER2007TestCase', 'ESV2007TestCase', 'MixedBoundaryTestCase']
