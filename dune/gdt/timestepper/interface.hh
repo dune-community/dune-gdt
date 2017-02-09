@@ -109,6 +109,17 @@ struct static_for_loop
     static_for_loop<current_factor_index + 1, last_factor_index>::sum_even_vector(discrete_function,
                                                                                   first_discrete_function);
   }
+
+  template <class DiscreteFunctionType, class FactorDiscreteFunctionType>
+  static void sum_with_step_of_four(const DiscreteFunctionType& discrete_function,
+                                    FactorDiscreteFunctionType& first_discrete_function)
+  {
+    if (!(current_factor_index % 4))
+      first_discrete_function.vector() +=
+          function_factor<current_factor_index, DiscreteFunctionType>(discrete_function).vector();
+    static_for_loop<current_factor_index + 1, last_factor_index>::sum_with_step_of_four(discrete_function,
+                                                                                        first_discrete_function);
+  }
 };
 
 // specialization of static for loop to end the loop
@@ -128,6 +139,15 @@ struct static_for_loop<last_factor_index, last_factor_index>
                               FactorDiscreteFunctionType& first_discrete_function)
   {
     if (!(last_factor_index % 2))
+      first_discrete_function.vector() +=
+          function_factor<last_factor_index, DiscreteFunctionType>(discrete_function).vector();
+  }
+
+  template <class DiscreteFunctionType, class FactorDiscreteFunctionType>
+  static void sum_with_step_of_four(const DiscreteFunctionType& discrete_function,
+                                    FactorDiscreteFunctionType& first_discrete_function)
+  {
+    if (!(last_factor_index % 4))
       first_discrete_function.vector() +=
           function_factor<last_factor_index, DiscreteFunctionType>(discrete_function).vector();
   }
@@ -275,6 +295,10 @@ public:
         auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
         static_for_loop<1, dimRange - 1>::sum_even_vector(u_n, sum_function);
         sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
+      } else if (visualize_tag == 3) {
+        auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
+        static_for_loop<1, dimRange - 1>::sum_with_step_of_four(u_n, sum_function);
+        sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
       }
     }
 
@@ -310,6 +334,10 @@ public:
           } else if (visualize_tag == 2) {
             auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
             static_for_loop<1, dimRange - 1>::sum_even_vector(u_n, sum_function);
+            sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(save_step_counter));
+          } else if (visualize_tag == 3) {
+            auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
+            static_for_loop<1, dimRange - 1>::sum_with_step_of_four(u_n, sum_function);
             sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(save_step_counter));
           }
         }
@@ -352,7 +380,8 @@ public:
   /**
    * \brief Find discrete solution for time point that is closest to t.
    *
-   * The timestepper only stores the solution at discrete time points. This function returns the discrete solution for
+   * The timestepper only stores the solution at discrete time points. This function returns the discrete solution
+   * for
    * the stored time point that is closest to the query time t.
    *
    * \param t Time

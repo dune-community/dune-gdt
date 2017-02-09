@@ -39,7 +39,7 @@ class Default : public ProblemInterface<E, D, d, R, r, rC>
 protected:
   // we need an EntityType for the Expression functions that model q(u,x) and f(u). As we do not have a grid for the
   // u-variable, choose an arbitrary EntityType
-  typedef typename Dune::template YaspGrid<r>::template Codim<0>::Entity DummyEntityType;
+  typedef XT::Functions::DummyEntity<r> DummyEntityType;
   typedef typename XT::Functions::ExpressionFunction<DummyEntityType, R, r, R, r, d> FluxExpressionFunctionType;
   typedef typename XT::Functions::ExpressionFunction<E, D, d, R, r, rC> InitialValueExpressionFunctionType;
   typedef typename XT::Functions::ExpressionFunction<DummyEntityType, R, r, R, r, rC> RHSExpressionFunctionType;

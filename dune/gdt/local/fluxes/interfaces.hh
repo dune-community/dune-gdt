@@ -129,7 +129,7 @@ public:
   virtual ~AnalyticalFluxInterface() = default;
 
   // Arbitrary entity type with dimension r for FluxRangeType and FluxJacobianRangeType definitions
-  typedef typename Dune::template YaspGrid<r>::template Codim<0>::Entity FluxDummyEntityType;
+  typedef XT::Functions::DummyEntity<r> FluxDummyEntityType;
   typedef
       typename XT::Functions::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
   // TODO: determine correct type
@@ -167,7 +167,7 @@ public:
   static const size_t dimRangeCols = rC;
 
   // Arbitrary entity type with dimension r for FluxRangeType and FluxJacobianRangeType definitions
-  typedef typename Dune::template YaspGrid<r>::template Codim<0>::Entity FluxDummyEntityType;
+  typedef XT::Functions::DummyEntity<r> FluxDummyEntityType;
 
   typedef
       typename XT::Functions::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
@@ -231,7 +231,6 @@ public:
   virtual FluxJacobianRangeType jacobian(const RangeType& u) const = 0;
 };
 
-
 /**
  * Interface for right-hand side q of the PDE delta_t u + div f(u,x,t) = q(u,x,t) where u: R^d \to
  * R^{r \times rC}.
@@ -255,7 +254,7 @@ public:
 
   // RangeType of u, FieldVector or FieldMatrix depending on dimensions
   typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType;
-  typedef typename Dune::template YaspGrid<dimRange>::template Codim<0>::Entity DummyEntityType;
+  typedef XT::Functions::DummyEntity<r> DummyEntityType;
   // Jacobian of RHS with respect to u
   // TODO: determine correct type
   typedef typename XT::Functions::LocalfunctionSetInterface<DummyEntityType, R, r, R, r, rC>::JacobianRangeType
