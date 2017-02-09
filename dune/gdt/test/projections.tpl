@@ -1,6 +1,7 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2016 dune-gdt developers and contributors. All rights
+// reserved.
 // License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 // Authors:
 //   Felix Schindler (2016)
@@ -10,15 +11,15 @@
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/projections.hh>
-#include <dune/gdt/test/projections/base.hh>
 #include <dune/gdt/test/grids.hh>
+#include <dune/gdt/test/projections/base.hh>
 
+#include <dune/gdt/playground/spaces/dg/dune-pdelab-wrapper.hh>
 #include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
 #include <dune/gdt/spaces/cg/dune-pdelab-wrapper.hh>
-#include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
-#include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
-#include <dune/gdt/playground/spaces/dg/dune-pdelab-wrapper.hh>
+#include <dune/gdt/spaces/fv/default.hh>
+#include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
 
 #include <dune/gdt/test/projections.hh>
 #include <dune/gdt/test/projections/l2.hh>
@@ -31,7 +32,14 @@ using namespace Dune::GDT::Test;
 typedef ProjectionTest<{{SpaceType}}> ProjectionTest_{{Name}};
 TEST_F(ProjectionTest_{{Name}}, produces_correct_results)
 {
-  this->produces_correct_results();
+  {% if 'FvSpace' in SpaceType %}
+    const auto tolerance{0.096226};
+  {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
+    const auto tolerance{0.0925927};
+  {% else %}
+    const auto tolerance = this->default_tolerance;
+  {% endif %}
+  this->produces_correct_results(tolerance);
 }
 
 typedef L2ProjectionOperatorTest<{{SpaceType}}> L2ProjectionOperatorTest_{{Name}};
@@ -51,7 +59,13 @@ TEST_F(L2ProjectionOperatorTest_{{Name}}, produces_correct_results)
 {
   // RT : 0.0925927
   typedef typename L2ProjectionOperatorTest_{{Name}}::GridViewType::Grid Grid;
-  const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
+  {% if 'FvSpace' in SpaceType %}
+    const auto tolerance{0.096226};
+  {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
+    const auto tolerance{0.0925927};
+  {% else %}
+    const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
+  {% endif %}
   this->produces_correct_results(tolerance);
   this->produces_correct_results(tolerance);
 }
@@ -69,7 +83,13 @@ TEST_F(L2ProjectionLocalizableOperatorTest_{{Name}}, produces_correct_results)
 {
   // RT : 0.096226
   typedef typename L2ProjectionLocalizableOperatorTest_{{Name}}::GridViewType::Grid Grid;
-  const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
+  {% if 'FvSpace' in SpaceType %}
+    const auto tolerance{0.096226};
+  {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
+      const auto tolerance{0.0925927};
+  {% else %}
+    const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
+  {% endif %}
   this->produces_correct_results(tolerance);
   this->produces_correct_results(tolerance);
 }
