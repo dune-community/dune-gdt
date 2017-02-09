@@ -1,9 +1,11 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
 // Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
-// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+// License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+//      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
+//          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2016)
+//   Felix Schindler (2017)
 
 #include <config.h>
 
@@ -148,10 +150,50 @@ void addbind_for_space(py::module& m,
   bind_elliptic_matrix_operator<ScalarFunction, void, S, M>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
   // EllipticIpdgMatrixOperator
+  // - SIPDG
+  bind_elliptic_ipdg_matrix_operator<ScalarFunction, TensorFunction, S, LocalEllipticIpdgIntegrands::Method::sipdg, M>(
+      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse", "Sipdg");
+  bind_elliptic_ipdg_matrix_operator<ScalarFunction, void, S, LocalEllipticIpdgIntegrands::Method::sipdg, M>(
+      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse", "Sipdg");
+  // - SWIPDG
   bind_elliptic_ipdg_matrix_operator<ScalarFunction, TensorFunction, S, LocalEllipticIpdgIntegrands::Method::swipdg, M>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse", "Swipdg");
   bind_elliptic_ipdg_matrix_operator<ScalarFunction, void, S, LocalEllipticIpdgIntegrands::Method::swipdg, M>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse", "Swipdg");
+  // SWIPDG, affine wrt diffusion factor
+  bind_elliptic_ipdg_matrix_operator<ScalarFunction,
+                                     TensorFunction,
+                                     S,
+                                     LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor,
+                                     M>(m,
+                                        space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix,
+                                        "istl_sparse",
+                                        "Swipdg_Affine_Factor");
+  bind_elliptic_ipdg_matrix_operator<ScalarFunction,
+                                     void,
+                                     S,
+                                     LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor,
+                                     M>(m,
+                                        space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix,
+                                        "istl_sparse",
+                                        "Swipdg_Affine_Factor");
+  // SWIPDG, affine wrt diffusion tensor
+  bind_elliptic_ipdg_matrix_operator<ScalarFunction,
+                                     TensorFunction,
+                                     S,
+                                     LocalEllipticIpdgIntegrands::Method::swipdg_affine_tensor,
+                                     M>(m,
+                                        space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix,
+                                        "istl_sparse",
+                                        "Swipdg_Affine_Tensor");
+  bind_elliptic_ipdg_matrix_operator<ScalarFunction,
+                                     void,
+                                     S,
+                                     LocalEllipticIpdgIntegrands::Method::swipdg_affine_tensor,
+                                     M>(m,
+                                        space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix,
+                                        "istl_sparse",
+                                        "Swipdg_Affine_Tensor");
   // L2VolumeVectorFunctional
   bind_l2_volume_vector_functional<ScalarFunction, S, V>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
@@ -159,6 +201,22 @@ void addbind_for_space(py::module& m,
   bind_l2_face_vector_functional<ScalarFunction, S, V>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
   // EllipticIpdgDirichletVectorFunctional
+  // - SIPDG
+  bind_elliptic_ipdg_dirichlet_vector_functional<ScalarFunction,
+                                                 ScalarFunction,
+                                                 TensorFunction,
+                                                 S,
+                                                 LocalEllipticIpdgIntegrands::Method::sipdg,
+                                                 V>(
+      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse", "Sipdg");
+  bind_elliptic_ipdg_dirichlet_vector_functional<ScalarFunction,
+                                                 ScalarFunction,
+                                                 void,
+                                                 S,
+                                                 LocalEllipticIpdgIntegrands::Method::sipdg,
+                                                 V>(
+      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse", "Sipdg");
+  // - SWIPDG
   bind_elliptic_ipdg_dirichlet_vector_functional<ScalarFunction,
                                                  ScalarFunction,
                                                  TensorFunction,
@@ -173,6 +231,48 @@ void addbind_for_space(py::module& m,
                                                  LocalEllipticIpdgIntegrands::Method::swipdg,
                                                  V>(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse", "Swipdg");
+  // SWIPDG, affine wrt diffusion factor
+  bind_elliptic_ipdg_dirichlet_vector_functional<ScalarFunction,
+                                                 ScalarFunction,
+                                                 TensorFunction,
+                                                 S,
+                                                 LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor,
+                                                 V>(m,
+                                                    space_id + "Space__" + grid_id + "_" + layer_id + "_to_"
+                                                        + space_suffix,
+                                                    "istl_sparse",
+                                                    "Swipdg_Affine_Factor");
+  bind_elliptic_ipdg_dirichlet_vector_functional<ScalarFunction,
+                                                 ScalarFunction,
+                                                 void,
+                                                 S,
+                                                 LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor,
+                                                 V>(m,
+                                                    space_id + "Space__" + grid_id + "_" + layer_id + "_to_"
+                                                        + space_suffix,
+                                                    "istl_sparse",
+                                                    "Swipdg_Affine_Factor");
+  // SWIPDG, affine wrt diffusion tensor
+  bind_elliptic_ipdg_dirichlet_vector_functional<ScalarFunction,
+                                                 ScalarFunction,
+                                                 TensorFunction,
+                                                 S,
+                                                 LocalEllipticIpdgIntegrands::Method::swipdg_affine_tensor,
+                                                 V>(m,
+                                                    space_id + "Space__" + grid_id + "_" + layer_id + "_to_"
+                                                        + space_suffix,
+                                                    "istl_sparse",
+                                                    "Swipdg_Affine_Tensor");
+  bind_elliptic_ipdg_dirichlet_vector_functional<ScalarFunction,
+                                                 ScalarFunction,
+                                                 void,
+                                                 S,
+                                                 LocalEllipticIpdgIntegrands::Method::swipdg_affine_tensor,
+                                                 V>(m,
+                                                    space_id + "Space__" + grid_id + "_" + layer_id + "_to_"
+                                                        + space_suffix,
+                                                    "istl_sparse",
+                                                    "Swipdg_Affine_Tensor");
 } // ... addbind_for_space(...)
 
 
