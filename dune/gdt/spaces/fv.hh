@@ -9,6 +9,9 @@
 #ifndef DUNE_GDT_SPACES_FV_HH
 #define DUNE_GDT_SPACES_FV_HH
 
+#include <dune/xt/grid/gridprovider/provider.hh>
+#include <dune/xt/grid/layers.hh>
+
 #include "fv/interface.hh"
 #include "fv/default.hh"
 
