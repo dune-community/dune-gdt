@@ -125,11 +125,6 @@ struct static_for_loop<last_factor_index, last_factor_index>
   }
 };
 
-template <bool /*is_product_space*/>
-struct ChooseVisualize
-{
-};
-
 
 } // namespace internal
 
@@ -236,11 +231,7 @@ public:
                  const bool subsampling = (SpaceType::polOrder > 1),
                  const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
-    redirect_visualize(filename_prefix,
-                       filename_suffix,
-                       subsampling,
-                       vtk_output_type,
-                       internal::ChooseVisualize<is_product_space<SpaceType>::value>());
+    redirect_visualize<>()(*this, filename_prefix, filename_suffix, subsampling, vtk_output_type);
   }
 
   template <size_t ii>
@@ -259,32 +250,40 @@ public:
   }
 
 protected:
-  void redirect_visualize(const std::string filename_prefix,
-                          const std::string filename_suffix,
-                          const bool subsampling,
-                          const VTK::OutputType vtk_output_type,
-                          const internal::ChooseVisualize<false>&) const
+  template <bool product_space = is_product_space<SpaceType>::value, class Anything = void>
+  struct redirect_visualize
   {
-    BaseType::template visualize<typename SpaceType::GridViewType>(
-        space().grid_view(), filename_prefix + filename_suffix, subsampling, vtk_output_type);
-  } // ... redirect_visualize(...)
+    void operator()(const ThisType& self,
+                    const std::string filename_prefix,
+                    const std::string filename_suffix,
+                    const bool subsampling,
+                    const VTK::OutputType vtk_output_type)
+    {
+      static_cast<const BaseType&>(self).template visualize<typename SpaceType::GridViewType>(
+          self.space().grid_view(), filename_prefix + filename_suffix, subsampling, vtk_output_type);
+    }
+  };
 
-  void redirect_visualize(const std::string filename_prefix,
-                          const std::string filename_suffix,
-                          const bool subsampling,
-                          const VTK::OutputType vtk_output_type,
-                          const internal::ChooseVisualize<true>&) const
+  template <class Anything>
+  struct redirect_visualize<true, Anything>
   {
-    internal::static_for_loop<0,
-                              ProductSpaceInterface<SpaceTraits,
-                                                    SpaceType::dimDomain,
-                                                    SpaceType::dimRange,
-                                                    SpaceType::dimRangeCols>::num_factors>::visualize(filename_prefix,
-                                                                                                      filename_suffix,
-                                                                                                      subsampling,
-                                                                                                      vtk_output_type,
-                                                                                                      *this);
-  } // ... redirect_visualize(...)
+    void operator()(const ThisType& self,
+                    const std::string filename_prefix,
+                    const std::string filename_suffix,
+                    const bool subsampling,
+                    const VTK::OutputType vtk_output_type)
+    {
+      internal::static_for_loop<0,
+                                ProductSpaceInterface<SpaceTraits,
+                                                      SpaceType::dimDomain,
+                                                      SpaceType::dimRange,
+                                                      SpaceType::dimRangeCols>::num_factors>::visualize(filename_prefix,
+                                                                                                        filename_suffix,
+                                                                                                        subsampling,
+                                                                                                        vtk_output_type,
+                                                                                                        self);
+    }
+  };
 
   const Dune::XT::Common::PerThreadValue<SpaceType> space_;
 
