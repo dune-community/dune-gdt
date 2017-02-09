@@ -1,11 +1,10 @@
 import itertools
 from dune.xt.codegen import typeid_to_typedef_name
 
-grids = ['Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>']
+grids = ['Yasp2Grid']
 try:
     if cache['dune-alugrid']:
-        grids.extend(['Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>',
-                      'Dune::ALUGrid<2, 2, Dune::simplex, Dune::nonconforming>'])
+        grids.append('AluCube2dGridType')
 except KeyError:
     pass
 casenames = ['AO2013TestCase', 'ER2007TestCase', 'ESV2007TestCase', 'MixedBoundaryTestCase']

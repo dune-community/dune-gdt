@@ -152,6 +152,17 @@ private:
   };
 
   template <bool anything>
+  struct Helper<AluCube2dGridType, anything>
+  {
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
+    {
+      cfg["num_elements"] = "[100 20]";
+      cfg["num_refinements"] = "1";
+      return cfg;
+    }
+  };
+
+  template <bool anything>
   struct Helper<AluSimplex2dGridType, anything>
   {
     static XT::Common::Configuration value(XT::Common::Configuration cfg)
