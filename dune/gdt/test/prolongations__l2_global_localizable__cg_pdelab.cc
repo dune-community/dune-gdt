@@ -34,7 +34,7 @@ TYPED_TEST(L2GlobalProlongationLocalizableOperatorTest, constructible_by_factory
 }
 TYPED_TEST(L2GlobalProlongationLocalizableOperatorTest, produces_correct_results)
 {
-  this->produces_correct_results(pdelab_cg_tolerance(*this));
+  this->produces_correct_results(pdelab_cg_tolerance<TypeParam>());
 }
 
 

@@ -51,15 +51,5 @@
 
 #endif // HAVE_DUNE_ALUGRID
 
-template <class T>
-double pdelab_rt_tolerance(const T& param)
-{
-  typedef typename T::GridViewType::Grid Grid;
-  const auto dim = param.dimDomain;
-  const auto tolerance =
-      Dune::XT::Grid::is_conforming_alugrid<Grid>::value ? (dim == 3 ? 1.1 : 1.06) : (dim == 3 ? 2.05e-1 : 1.45e-1);
-  return tolerance;
-}
-
 
 #endif // DUNE_GDT_TEST_SPACES_RT_PDELAB_HH
