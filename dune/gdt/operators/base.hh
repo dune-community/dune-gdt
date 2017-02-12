@@ -227,6 +227,7 @@ public:
   using typename BaseOperatorType::FieldType;
   using typename BaseOperatorType::derived_type;
   using typename BaseAssemblerType::GridViewType;
+  static const constexpr ChoosePattern pattern_type = pt;
 
 private:
   typedef XT::LA::Solver<MatrixType, typename SourceSpaceType::CommunicatorType> LinearSolverType;

@@ -109,32 +109,6 @@ public:
 }; // class OperatorInterface
 
 
-namespace internal {
-
-
-template <class Tt>
-struct is_operator_helper
-{
-  DXTC_has_typedef_initialize_once(Traits);
-
-  static const bool is_candidate = DXTC_has_typedef(Traits)<Tt>::value;
-};
-
-
-} // namespace internal
-
-
-template <class T, bool candidate = internal::is_operator_helper<T>::is_candidate>
-struct is_operator : public std::is_base_of<OperatorInterface<typename T::Traits>, T>
-{
-};
-
-template <class T>
-struct is_operator<T, false> : public std::false_type
-{
-};
-
-
 } // namespace GDT
 } // namespace Dune
 
