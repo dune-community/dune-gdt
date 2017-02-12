@@ -329,7 +329,7 @@ private:
       subtriangles[0] = ThisType(vertices_[0], midpoints[1], midpoints[2]);
       subtriangles[1] = ThisType(vertices_[1], midpoints[2], midpoints[0]);
       subtriangles[2] = ThisType(vertices_[2], midpoints[0], midpoints[1]);
-      subtriangles[3] = ThisType(midpoints[0], midpoints[1], midpoints[2], barycentre_rule_);
+      subtriangles[3] = ThisType(midpoints[0], midpoints[1], midpoints[2]);
     }
   } // initialize_subtriangles()
 
@@ -546,7 +546,7 @@ public:
   typedef typename TriangleType::VertexVectorType VertexVectorType;
   typedef typename VertexVectorType::value_type VertexType;
 
-  AdaptiveQuadrature(const typename CGALWrapper::Polyhedron_3& poly, const double tol = 1e-4, const double gamma = 1.)
+  AdaptiveQuadrature(const typename CGALWrapper::Polyhedron_3& poly, const double tol = 1e-2, const double gamma = 1.)
     : triangulation_(poly)
     , tol_(tol)
     , gamma_(gamma)
@@ -574,6 +574,8 @@ public:
     while (true) {
       sum_of_norm_of_errors_ = 0;
       size_t num_triangles = current_triangles_.size();
+      static size_t counter = 0;
+      //      std::cout << num_triangles << " and " << counter++ << std::endl;
       if (num_triangles > I_0_vector_.size()) {
         I_0_vector_.resize(num_triangles);
         I_1_vector_.resize(num_triangles);
@@ -599,14 +601,20 @@ public:
         I_0 = barycentre.weight() * psi(barycentre.position(), data_[ii]);
         // calculate I_1
         I_1 *= 0;
-        for (const auto& subtriangle : triangle.get_subtriangles()) {
+        const auto& subtriangles = triangle.get_subtriangles();
+        // treat first three subtriangles
+        for (size_t jj = 0; jj < 3; ++jj) {
+          const auto& subtriangle = subtriangles[jj];
           const auto& subbarycentre = subtriangle.get_quadrature_point();
           if (!subtriangle_data_stored_[ii]) {
-            subtriangle_data_[ii] = data_function(subbarycentre.position());
-            subtriangle_data_stored_[ii] = true;
+            subtriangle_data_[ii][jj] = data_function(subbarycentre.position());
           }
-          I_1 += subbarycentre.weight() * psi(subbarycentre.position(), data_[ii]);
+          I_1 += subbarycentre.weight() * psi(subbarycentre.position(), subtriangle_data_[ii][jj]);
         }
+        subtriangle_data_stored_[ii] = true;
+        // treat last subtriangle explicitly, as it has the same data as the father triangle
+        const auto& subbarycentre = subtriangles[3].get_quadrature_point();
+        I_1 += subbarycentre.weight() * psi(subbarycentre.position(), data_[ii]);
         // calculate E(K)
         local_error = I_1;
         local_error -= I_0;
@@ -616,9 +624,13 @@ public:
 
       error_ *= 0;
       result_ *= 0;
+      result_0_ *= 0;
       for (size_t ii = 0; ii < num_triangles; ++ii) {
-        error_ += error_vector_[ii];
+        //        error_ += error_vector_[ii];
         result_ += I_1_vector_[ii];
+        result_0_ += I_0_vector_[ii];
+        error_ = result_0_;
+        error_ -= result_;
       }
       const auto error_norm = std::abs(error_);
       const auto result_norm = std::abs(result_);
@@ -666,7 +678,7 @@ private:
   TriangulationType triangulation_;
   std::vector<RangeType> I_0_vector_, I_1_vector_, error_vector_;
   std::vector<RangeFieldImp> norm_of_errors_vector_;
-  RangeType error_, result_;
+  RangeType error_, result_, result_0_;
   RangeFieldImp sum_of_norm_of_errors_;
   double tol_;
   double gamma_;
@@ -728,10 +740,10 @@ Dune::QuadratureRule<double, 3> get_equally_dist_quad_points_on_poly(const CGALW
   return ret;
 } // get_equally_dist_quad_points_on_poly(...)
 
-template <class DomainType, class PolyhedronType>
-std::vector<double> evaluate_spherical_barycentric_coordinates(const DomainType& v, const PolyhedronType& poly)
+template <class RangeType, class DomainType, class PolyhedronType>
+RangeType evaluate_spherical_barycentric_coordinates(const DomainType& v, const PolyhedronType& poly)
 {
-  std::vector<double> ret(poly.size_of_vertices(), 0);
+  RangeType ret(0);
   // walk over facets
   std::vector<typename PolyhedronType::Vertex_const_handle> local_vertices(3);
   const auto facets_it_end = poly.facets_end();
@@ -1109,7 +1121,8 @@ public:
     MatrixType A_0(0), A_1(0), A_2(0);
     for (const auto& quad_point : quadrature) {
       const auto point = quad_point.position();
-      const auto basis_evaluated = evaluate_spherical_barycentric_coordinates(point, poly);
+      const auto basis_evaluated =
+          evaluate_spherical_barycentric_coordinates<RangeType, DomainType, Polyhedron_3>(point, poly);
       const auto weight = quad_point.weight();
       for (int nn = 0; nn < dimRange; ++nn) {
         for (int mm = 0; mm < dimRange; ++mm) {
@@ -1133,7 +1146,8 @@ public:
     RangeType ret(0);
     for (const auto& quad_point : quadrature) {
       const auto point = quad_point.position();
-      const auto basis_evaluated = evaluate_spherical_barycentric_coordinates(point, poly);
+      const auto basis_evaluated =
+          evaluate_spherical_barycentric_coordinates<RangeType, DomainType, Polyhedron_3>(point, poly);
       const auto weight = quad_point.weight();
       for (size_t nn = 0; nn < dimRange; ++nn)
         ret[nn] += basis_evaluated[nn] * weight;
