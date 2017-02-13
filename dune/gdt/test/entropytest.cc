@@ -114,8 +114,8 @@ int main(int argc, char** argv)
   // ********************* choose dimensions, fluxes and grid type ************************
   static const int dimDomain = 3;
   static const int momentOrder = 3;
-  //  const auto numerical_flux = NumericalFluxes::kinetic;
-  const auto numerical_flux = NumericalFluxes::godunov;
+  const auto numerical_flux = NumericalFluxes::kinetic;
+  //  const auto numerical_flux = NumericalFluxes::godunov;
   const auto time_stepper_method = TimeStepperMethods::explicit_euler;
   const auto rhs_time_stepper_method = TimeStepperMethods::implicit_euler;
   const auto container_backend = Dune::XT::LA::default_sparse_backend;
@@ -151,7 +151,7 @@ int main(int argc, char** argv)
   //  typedef typename Hyperbolic::Problems::
   //      PointSourcePnLegendre<EntityType, double, dimDomain, double, momentOrder>
   //          ProblemType;
-  typedef typename Hyperbolic::Problems::PointSourcePnHatFunctions<EntityType, double, dimDomain, double, 26>
+  typedef typename Hyperbolic::Problems::PointSourcePnHatFunctions<EntityType, double, dimDomain, double, 18>
       ProblemType;
   //  typedef typename Hyperbolic::Problems::PointSourcePnPartialMoments<EntityType, double, dimDomain, double, 8>
   //      ProblemType;
@@ -355,9 +355,7 @@ int main(int argc, char** argv)
 
   //*********************** choose analytical flux *************************************************************
 
-  //  typedef typename
-  //      EntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
-  //          AnalyticalFluxType;
+  typedef EntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1> AnalyticalFluxType;
 
   //  typedef AdaptiveEntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
   //      AnalyticalFluxType;
@@ -373,7 +371,7 @@ int main(int argc, char** argv)
   //      AnalyticalFluxType;
 
 
-  typedef typename ProblemType::FluxType AnalyticalFluxType;
+  //  typedef typename ProblemType::FluxType AnalyticalFluxType;
 
   //  typedef typename EntropyBasedLocalFluxHatFunctions<GridViewType,
   //                                                                typename SpaceType::EntityType,
@@ -387,15 +385,13 @@ int main(int argc, char** argv)
 
   // ************************* create analytical flux object ***************************************
 
-  const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem.flux();
+  //  const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem.flux();
   //  const auto analytical_flux =
   //      std::make_shared<const AnalyticalFluxType>(grid_view, ProblemType::create_equidistant_points());
   //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
   //      grid_view, quadrature_rule, basis_values_matrix, ProblemType::create_equidistant_points());
-  //  const auto analytical_flux =
-  //      std::make_shared<const AnalyticalFluxType>(grid_view, quadrature_rule, basis_values_matrix, poly,
-  //      "umfpack");
-
+  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
+      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
   //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
   //      grid_view,
   //      quadrature_rule,

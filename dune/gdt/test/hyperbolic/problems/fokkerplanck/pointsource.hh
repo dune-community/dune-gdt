@@ -746,6 +746,7 @@ RangeType evaluate_spherical_barycentric_coordinates(const DomainType& v, const 
   RangeType ret(0);
   // walk over facets
   std::vector<typename PolyhedronType::Vertex_const_handle> local_vertices(3);
+  bool success = false;
   const auto facets_it_end = poly.facets_end();
   for (auto facets_it = poly.facets_begin(); facets_it != facets_it_end; ++facets_it) {
     // circulate halfedges around facets
@@ -756,13 +757,14 @@ RangeType evaluate_spherical_barycentric_coordinates(const DomainType& v, const 
       local_vertices[index] = halfedge_it->vertex();
     } while (++index, ++halfedge_it != halfedge_it_begin);
     DomainType barycentric_coords(0);
-    bool success = calculate_barycentric_coordinates(v, local_vertices, barycentric_coords);
+    success = calculate_barycentric_coordinates(v, local_vertices, barycentric_coords);
     if (success) {
       for (size_t ii = 0; ii < 3; ++ii)
         ret[local_vertices[ii]->index] = barycentric_coords[ii];
       break;
     }
   } // facets
+  assert(success);
   return ret;
 } // evaluate_spherical_barycentric_coordinates
 

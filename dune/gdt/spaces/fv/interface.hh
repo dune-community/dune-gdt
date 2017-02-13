@@ -34,7 +34,7 @@ public:
   template <class G, class S, size_t d, size_t r, size_t rC>
   PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
-    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
+    return BaseType::compute_volume_pattern(local_grid_view, ansatz_space);
   }
 
   using BaseType::local_constraints;
