@@ -51,7 +51,7 @@ TEST_F(L2LocalProjectionOperatorTest_{{Name}}, constructible_by_factory)
 }
 TEST_F(L2LocalProjectionOperatorTest_{{Name}}, produces_correct_results)
 {
-  this->produces_correct_results();
+  this->produces_correct_results({{Name}}_tolerance);
 }
 
 TEST_F(L2LocalProjectionLocalizableOperatorTest_{{Name}}, constructible_by_ctor)

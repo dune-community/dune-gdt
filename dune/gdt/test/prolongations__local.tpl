@@ -43,24 +43,24 @@ typedef L2LocalProlongationLocalizableOperatorTest<{{SpaceType}}>
 
 TEST_F(L2LocalProlongationOperatorTest_{{Name}}, constructible_by_ctor)
 {
-  this->constructible_by_ctor();
+  this->constructible_by_ctor({{Name}}_tolerance);
 }
 TEST_F(L2LocalProlongationOperatorTest_{{Name}}, constructible_by_factory)
 {
-  this->constructible_by_factory();
+  this->constructible_by_factory({{Name}}_tolerance);
 }
 TEST_F(L2LocalProlongationOperatorTest_{{Name}}, produces_correct_results)
 {
-  this->produces_correct_results();
+  this->produces_correct_results({{Name}}_tolerance);
 }
 
 TEST_F(L2LocalProlongationLocalizableOperatorTest_{{Name}}, constructible_by_ctor)
 {
-  this->constructible_by_ctor();
+  this->constructible_by_ctor({{Name}}_tolerance);
 }
 TEST_F(L2LocalProlongationLocalizableOperatorTest_{{Name}}, constructible_by_factory)
 {
-  this->constructible_by_factory();
+  this->constructible_by_factory({{Name}}_tolerance);
 }
 TEST_F(L2LocalProlongationLocalizableOperatorTest_{{Name}}, produces_correct_results)
 {
