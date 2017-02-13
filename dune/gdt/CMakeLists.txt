@@ -11,38 +11,38 @@ if(dune-pybindxi_FOUND)
   dune_pybindxi_add_helper_lib(_gdt_bindings_helper
                                assembler/system.bindings.cc
                                discretefunction/default.bindings.cc
-                               operators/elliptic-ipdg.bindings/alu_common_fem.cc
-                               operators/elliptic-ipdg.bindings/alu_common_gdt.cc
-                               operators/elliptic-ipdg.bindings/alu_common_pdelab.cc
-                               operators/elliptic-ipdg.bindings/alu_eigen_fem.cc
-                               operators/elliptic-ipdg.bindings/alu_eigen_gdt.cc
-                               operators/elliptic-ipdg.bindings/alu_eigen_pdelab.cc
+                               #operators/elliptic-ipdg.bindings/alu_common_fem.cc
+                               #operators/elliptic-ipdg.bindings/alu_common_gdt.cc
+                               #operators/elliptic-ipdg.bindings/alu_common_pdelab.cc
+                               #operators/elliptic-ipdg.bindings/alu_eigen_fem.cc
+                               #operators/elliptic-ipdg.bindings/alu_eigen_gdt.cc
+                               #operators/elliptic-ipdg.bindings/alu_eigen_pdelab.cc
                                operators/elliptic-ipdg.bindings/alu_istl_fem.cc
-                               operators/elliptic-ipdg.bindings/alu_istl_gdt.cc
-                               operators/elliptic-ipdg.bindings/alu_istl_pdelab.cc
-                               operators/elliptic-ipdg.bindings/yasp_common_fem.cc
-                               operators/elliptic-ipdg.bindings/yasp_common_gdt.cc
-                               operators/elliptic-ipdg.bindings/yasp_common_pdelab.cc
-                               operators/elliptic-ipdg.bindings/yasp_eigen_fem.cc
-                               operators/elliptic-ipdg.bindings/yasp_eigen_gdt.cc
-                               operators/elliptic-ipdg.bindings/yasp_eigen_pdelab.cc
-                               operators/elliptic-ipdg.bindings/yasp_istl_fem.cc
-                               operators/elliptic-ipdg.bindings/yasp_istl_gdt.cc
-                               operators/elliptic-ipdg.bindings/yasp_istl_pdelab.cc
-                               operators/elliptic.bindings/common_fem.cc
-                               operators/elliptic.bindings/common_gdt.cc
-                               operators/elliptic.bindings/common_pdelab.cc
-                               operators/elliptic.bindings/eigen_fem.cc
-                               operators/elliptic.bindings/eigen_gdt.cc
-                               operators/elliptic.bindings/eigen_pdelab.cc
+                               #operators/elliptic-ipdg.bindings/alu_istl_gdt.cc
+                               #operators/elliptic-ipdg.bindings/alu_istl_pdelab.cc
+                               #operators/elliptic-ipdg.bindings/yasp_common_fem.cc
+                               #operators/elliptic-ipdg.bindings/yasp_common_gdt.cc
+                               #operators/elliptic-ipdg.bindings/yasp_common_pdelab.cc
+                               #operators/elliptic-ipdg.bindings/yasp_eigen_fem.cc
+                               #operators/elliptic-ipdg.bindings/yasp_eigen_gdt.cc
+                               #operators/elliptic-ipdg.bindings/yasp_eigen_pdelab.cc
+                               #operators/elliptic-ipdg.bindings/yasp_istl_fem.cc
+                               #operators/elliptic-ipdg.bindings/yasp_istl_gdt.cc
+                               #operators/elliptic-ipdg.bindings/yasp_istl_pdelab.cc
+                               #operators/elliptic.bindings/common_fem.cc
+                               #operators/elliptic.bindings/common_gdt.cc
+                               #operators/elliptic.bindings/common_pdelab.cc
+                               #operators/elliptic.bindings/eigen_fem.cc
+                               #operators/elliptic.bindings/eigen_gdt.cc
+                               #operators/elliptic.bindings/eigen_pdelab.cc
                                operators/elliptic.bindings/istl_fem.cc
-                               operators/elliptic.bindings/istl_gdt.cc
-                               operators/elliptic.bindings/istl_pdelab.cc
+                               #operators/elliptic.bindings/istl_gdt.cc
+                               #operators/elliptic.bindings/istl_pdelab.cc
                                projections/dirichlet.bindings.cc
                                spaces/cg.bindings.cc
                                spaces/constraints.bindings.cc
                                spaces/dg.bindings.cc
-                               spaces/fv.bindings.cc
+                               #spaces/fv.bindings.cc
                                )
   dune_pybindxi_add_module(_gdt bindings.cc)
   target_link_dune_default_libraries(_gdt)

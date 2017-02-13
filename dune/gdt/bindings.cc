@@ -48,11 +48,11 @@ struct for_Grid_and_Intersection
   static void addbind(py::module& m, const std::string& grid_id, const std::string& id)
   {
     auto constraints = DirichletConstraints<I>::bind(m, grid_id + id);
-    DirichletConstraints<I>::template addbind<Dune::XT::LA::Backends::common_dense>(constraints);
-#if HAVE_EIGEN
-    DirichletConstraints<I>::template addbind<Dune::XT::LA::Backends::eigen_dense>(constraints);
-    DirichletConstraints<I>::template addbind<Dune::XT::LA::Backends::eigen_sparse>(constraints);
-#endif
+//    DirichletConstraints<I>::template addbind<Dune::XT::LA::Backends::common_dense>(constraints);
+//#if HAVE_EIGEN
+//    DirichletConstraints<I>::template addbind<Dune::XT::LA::Backends::eigen_dense>(constraints);
+//    DirichletConstraints<I>::template addbind<Dune::XT::LA::Backends::eigen_sparse>(constraints);
+//#endif
 #if HAVE_DUNE_ISTL
     DirichletConstraints<I>::template addbind<Dune::XT::LA::Backends::istl_sparse>(constraints);
 #endif
@@ -132,17 +132,17 @@ void addbind_for_space(py::module& m,
         "grid_provider"_a,
         "level"_a = 0,
         py::keep_alive<0, 1>());
-  // DiscreteFunction
-  ConstDiscreteFunction<S, COMMON_DENSE_VECTOR>::bind(
-      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "common_dense");
-  DiscreteFunction<S, COMMON_DENSE_VECTOR>::bind(
-      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "common_dense");
-#if HAVE_EIGEN
-  ConstDiscreteFunction<S, EIGEN_DENSE_VECTOR>::bind(
-      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_dense");
-  DiscreteFunction<S, EIGEN_DENSE_VECTOR>::bind(
-      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_dense");
-#endif // HAVE_EIGEN
+// DiscreteFunction
+//  ConstDiscreteFunction<S, COMMON_DENSE_VECTOR>::bind(
+//      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "common_dense");
+//  DiscreteFunction<S, COMMON_DENSE_VECTOR>::bind(
+//      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "common_dense");
+//#if HAVE_EIGEN
+//  ConstDiscreteFunction<S, EIGEN_DENSE_VECTOR>::bind(
+//      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_dense");
+//  DiscreteFunction<S, EIGEN_DENSE_VECTOR>::bind(
+//      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_dense");
+//#endif // HAVE_EIGEN
 #if HAVE_DUNE_ISTL
   ConstDiscreteFunction<S, ISTL_DENSE_VECTOR>::bind(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_dense");
@@ -154,35 +154,35 @@ void addbind_for_space(py::module& m,
       SystemAssembler<S>::bind(m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix);
   addbind_for_lagrange_space<S, COMMON_DENSE_VECTOR, ScalarFunction>()(
       m, system_assembler, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "common_dense");
-#if HAVE_EIGEN
-  addbind_for_lagrange_space<S, EIGEN_DENSE_VECTOR, ScalarFunction>()(
-      m, system_assembler, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_dense");
-#endif
-#if HAVE_DUNE_ISTL
-  addbind_for_lagrange_space<S, ISTL_DENSE_VECTOR, ScalarFunction>()(
-      m, system_assembler, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_dense");
-#endif
-  // EllipticMatrixOperator
-  EllipticMatrixOperator<ScalarFunction, TensorFunction, S, COMMON_DENSE_MATRIX>::bind(
-      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "common_dense");
-  EllipticMatrixOperator<ScalarFunction, void, S, COMMON_DENSE_MATRIX>::bind(
-      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "common_dense");
-  EllipticMatrixOperator<TensorFunction, void, S, COMMON_DENSE_MATRIX>::bind(
-      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "common_dense");
-#if HAVE_EIGEN
-  EllipticMatrixOperator<ScalarFunction, TensorFunction, S, EIGEN_DENSE_MATRIX>::bind(
-      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_dense");
-  EllipticMatrixOperator<ScalarFunction, void, S, EIGEN_DENSE_MATRIX>::bind(
-      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_dense");
-  EllipticMatrixOperator<TensorFunction, void, S, EIGEN_DENSE_MATRIX>::bind(
-      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_dense");
-  EllipticMatrixOperator<ScalarFunction, TensorFunction, S, EIGEN_SPARSE_MATRIX>::bind(
-      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_sparse");
-  EllipticMatrixOperator<ScalarFunction, void, S, EIGEN_SPARSE_MATRIX>::bind(
-      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_sparse");
-  EllipticMatrixOperator<TensorFunction, void, S, EIGEN_SPARSE_MATRIX>::bind(
-      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_sparse");
-#endif // HAVE_EIGEN
+//#if HAVE_EIGEN
+//  addbind_for_lagrange_space<S, EIGEN_DENSE_VECTOR, ScalarFunction>()(
+//      m, system_assembler, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_dense");
+//#endif
+//#if HAVE_DUNE_ISTL
+//  addbind_for_lagrange_space<S, ISTL_DENSE_VECTOR, ScalarFunction>()(
+//      m, system_assembler, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_dense");
+//#endif
+// EllipticMatrixOperator
+//  EllipticMatrixOperator<ScalarFunction, TensorFunction, S, COMMON_DENSE_MATRIX>::bind(
+//      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "common_dense");
+//  EllipticMatrixOperator<ScalarFunction, void, S, COMMON_DENSE_MATRIX>::bind(
+//      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "common_dense");
+//  EllipticMatrixOperator<TensorFunction, void, S, COMMON_DENSE_MATRIX>::bind(
+//      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "common_dense");
+//#if HAVE_EIGEN
+//  EllipticMatrixOperator<ScalarFunction, TensorFunction, S, EIGEN_DENSE_MATRIX>::bind(
+//      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_dense");
+//  EllipticMatrixOperator<ScalarFunction, void, S, EIGEN_DENSE_MATRIX>::bind(
+//      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_dense");
+//  EllipticMatrixOperator<TensorFunction, void, S, EIGEN_DENSE_MATRIX>::bind(
+//      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_dense");
+//  EllipticMatrixOperator<ScalarFunction, TensorFunction, S, EIGEN_SPARSE_MATRIX>::bind(
+//      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_sparse");
+//  EllipticMatrixOperator<ScalarFunction, void, S, EIGEN_SPARSE_MATRIX>::bind(
+//      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_sparse");
+//  EllipticMatrixOperator<TensorFunction, void, S, EIGEN_SPARSE_MATRIX>::bind(
+//      m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "eigen_sparse");
+//#endif // HAVE_EIGEN
 #if HAVE_DUNE_ISTL
   EllipticMatrixOperator<ScalarFunction, TensorFunction, S, ISTL_SPARSE_MATRIX>::bind(
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, "istl_sparse");
@@ -206,21 +206,21 @@ void addbind_for_space(py::module& m,
   EllipticIpdgMatrixOperator<TensorFunction, void, S, GDT::LocalEllipticIpdgIntegrands::Method::_MET, _MAT>::bind(     \
       m, space_id + "Space__" + grid_id + "_" + layer_id + "_to_" + space_suffix, _la, _met)
 
-  BIND_ELLIPTIT_IPDG_OP(COMMON_DENSE_MATRIX, "common_dense", sipdg, "Sipdg");
-  BIND_ELLIPTIT_IPDG_OP(COMMON_DENSE_MATRIX, "common_dense", swipdg, "Swipdg");
-  BIND_ELLIPTIT_IPDG_OP(COMMON_DENSE_MATRIX, "common_dense", swipdg_affine_factor, "SwipdgAffineFactor");
-  BIND_ELLIPTIT_IPDG_OP(COMMON_DENSE_MATRIX, "common_dense", swipdg_affine_tensor, "SwipdgAffineTensor");
-#if HAVE_EIGEN
-  BIND_ELLIPTIT_IPDG_OP(EIGEN_DENSE_MATRIX, "eigen_dense", sipdg, "Sipdg");
-  BIND_ELLIPTIT_IPDG_OP(EIGEN_DENSE_MATRIX, "eigen_dense", swipdg, "Swipdg");
-  BIND_ELLIPTIT_IPDG_OP(EIGEN_DENSE_MATRIX, "eigen_dense", swipdg_affine_factor, "SwipdgAffineFactor");
-  BIND_ELLIPTIT_IPDG_OP(EIGEN_DENSE_MATRIX, "eigen_dense", swipdg_affine_tensor, "SwipdgAffineTensor");
-  BIND_ELLIPTIT_IPDG_OP(EIGEN_SPARSE_MATRIX, "eigen_sparse", sipdg, "SIPDG");
-  BIND_ELLIPTIT_IPDG_OP(EIGEN_SPARSE_MATRIX, "eigen_sparse", sipdg, "Sipdg");
-  BIND_ELLIPTIT_IPDG_OP(EIGEN_SPARSE_MATRIX, "eigen_sparse", swipdg, "Swipdg");
-  BIND_ELLIPTIT_IPDG_OP(EIGEN_SPARSE_MATRIX, "eigen_sparse", swipdg_affine_factor, "SwipdgAffineFactor");
-  BIND_ELLIPTIT_IPDG_OP(EIGEN_SPARSE_MATRIX, "eigen_sparse", swipdg_affine_tensor, "SwipdgAffineTensor");
-#endif
+//  BIND_ELLIPTIT_IPDG_OP(COMMON_DENSE_MATRIX, "common_dense", sipdg, "Sipdg");
+//  BIND_ELLIPTIT_IPDG_OP(COMMON_DENSE_MATRIX, "common_dense", swipdg, "Swipdg");
+//  BIND_ELLIPTIT_IPDG_OP(COMMON_DENSE_MATRIX, "common_dense", swipdg_affine_factor, "SwipdgAffineFactor");
+//  BIND_ELLIPTIT_IPDG_OP(COMMON_DENSE_MATRIX, "common_dense", swipdg_affine_tensor, "SwipdgAffineTensor");
+//#if HAVE_EIGEN
+//  BIND_ELLIPTIT_IPDG_OP(EIGEN_DENSE_MATRIX, "eigen_dense", sipdg, "Sipdg");
+//  BIND_ELLIPTIT_IPDG_OP(EIGEN_DENSE_MATRIX, "eigen_dense", swipdg, "Swipdg");
+//  BIND_ELLIPTIT_IPDG_OP(EIGEN_DENSE_MATRIX, "eigen_dense", swipdg_affine_factor, "SwipdgAffineFactor");
+//  BIND_ELLIPTIT_IPDG_OP(EIGEN_DENSE_MATRIX, "eigen_dense", swipdg_affine_tensor, "SwipdgAffineTensor");
+//  BIND_ELLIPTIT_IPDG_OP(EIGEN_SPARSE_MATRIX, "eigen_sparse", sipdg, "SIPDG");
+//  BIND_ELLIPTIT_IPDG_OP(EIGEN_SPARSE_MATRIX, "eigen_sparse", sipdg, "Sipdg");
+//  BIND_ELLIPTIT_IPDG_OP(EIGEN_SPARSE_MATRIX, "eigen_sparse", swipdg, "Swipdg");
+//  BIND_ELLIPTIT_IPDG_OP(EIGEN_SPARSE_MATRIX, "eigen_sparse", swipdg_affine_factor, "SwipdgAffineFactor");
+//  BIND_ELLIPTIT_IPDG_OP(EIGEN_SPARSE_MATRIX, "eigen_sparse", swipdg_affine_tensor, "SwipdgAffineTensor");
+//#endif
 #if HAVE_DUNE_ISTL
   BIND_ELLIPTIT_IPDG_OP(ISTL_SPARSE_MATRIX, "istl_sparse", sipdg, "Sipdg");
   BIND_ELLIPTIT_IPDG_OP(ISTL_SPARSE_MATRIX, "istl_sparse", swipdg, "Swipdg");
@@ -316,11 +316,11 @@ void addbind_for_grid(py::module& m, const std::string& grid_id)
   using namespace Dune;
   using namespace Dune::XT;
   using namespace Dune::GDT;
-  // FV
-  addbind_for_space<FvSpaceProvider<G, XT::Grid::Layers::leaf, ChooseSpaceBackend::gdt, double, 1, 1>>(
-      m, grid_id, "leaf", "Fv", "");
-  addbind_for_space<FvSpaceProvider<G, XT::Grid::Layers::level, ChooseSpaceBackend::gdt, double, 1, 1>>(
-      m, grid_id, "level", "Fv", "");
+//  // FV
+//  addbind_for_space<FvSpaceProvider<G, XT::Grid::Layers::leaf, ChooseSpaceBackend::gdt, double, 1, 1>>(
+//      m, grid_id, "leaf", "Fv", "");
+//  addbind_for_space<FvSpaceProvider<G, XT::Grid::Layers::level, ChooseSpaceBackend::gdt, double, 1, 1>>(
+//      m, grid_id, "level", "Fv", "");
 // CG
 #if HAVE_DUNE_FEM
   addbind_for_space<CgSpaceProvider<G, XT::Grid::Layers::leaf, ChooseSpaceBackend::fem, 1, double, 1, 1>>(
@@ -328,12 +328,12 @@ void addbind_for_grid(py::module& m, const std::string& grid_id)
   addbind_for_space<CgSpaceProvider<G, XT::Grid::Layers::level, ChooseSpaceBackend::fem, 1, double, 1, 1>>(
       m, grid_id, "level", "Cg", "__fem");
 #endif
-#if HAVE_DUNE_PDELAB
-  addbind_for_space<CgSpaceProvider<G, XT::Grid::Layers::leaf, ChooseSpaceBackend::pdelab, 1, double, 1, 1>>(
-      m, grid_id, "leaf", "Cg", "__pdelab");
-  addbind_for_space<CgSpaceProvider<G, XT::Grid::Layers::level, ChooseSpaceBackend::pdelab, 1, double, 1, 1>>(
-      m, grid_id, "level", "Cg", "__pdelab");
-#endif
+//#if HAVE_DUNE_PDELAB
+//  addbind_for_space<CgSpaceProvider<G, XT::Grid::Layers::leaf, ChooseSpaceBackend::pdelab, 1, double, 1, 1>>(
+//      m, grid_id, "leaf", "Cg", "__pdelab");
+//  addbind_for_space<CgSpaceProvider<G, XT::Grid::Layers::level, ChooseSpaceBackend::pdelab, 1, double, 1, 1>>(
+//      m, grid_id, "level", "Cg", "__pdelab");
+//#endif
 // DG
 #if HAVE_DUNE_FEM
   addbind_for_space<DgSpaceProvider<G, XT::Grid::Layers::leaf, ChooseSpaceBackend::fem, 1, double, 1, 1>>(
@@ -415,7 +415,7 @@ PYBIND11_PLUGIN(_gdt)
         },
         "args"_a = std::vector<std::string>());
 
-  addbind_for_grid<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>>(m, "2d_cube_yaspgrid");
+//  addbind_for_grid<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>>(m, "2d_cube_yaspgrid");
 #if HAVE_ALUGRID || HAVE_DUNE_ALUGRID
   addbind_for_grid<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>(m, "2d_simplex_aluconform");
 #endif
