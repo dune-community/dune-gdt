@@ -12,9 +12,6 @@
 #include <dune/gdt/test/grids.hh>
 #include <dune/gdt/test/prolongations.hh>
 #include <dune/gdt/test/prolongations/l2.hh>
-//#include <dune/gdt/test/prolongations/l2-global.hh>
-//#include <dune/gdt/test/prolongations/l2-local.hh>
-//#include <dune/gdt/test/prolongations/lagrange.hh>
 #include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
 #include <dune/gdt/spaces/cg/dune-pdelab-wrapper.hh>
 #include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>

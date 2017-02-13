@@ -93,4 +93,33 @@ typedef typename Dune::GDT::SpaceTools::LevelGridPartView<AluCube3dGridType, tru
 
 #endif // HAVE_DUNE_ALUGRID
 
+template <class T>
+double pdelab_rt_tolerance()
+{
+  typedef typename T::GridViewType::Grid Grid;
+  constexpr auto dim = Grid::dimension;
+  constexpr auto tolerance =
+      Dune::XT::Grid::is_conforming_alugrid<Grid>::value ? (dim == 3 ? 1.1 : 1.06) : (dim == 3 ? 2.05e-1 : 1.45e-1);
+  return tolerance;
+}
+
+template <class T>
+double pdelab_cg_tolerance()
+{
+  typedef typename T::GridViewType::Grid Grid;
+  const auto dim = Grid::dimension;
+  const auto tolerance = Dune::XT::Grid::is_conforming_alugrid<Grid>::value ? (dim == 3 ? 1.35e-13 : 1.4e-14)
+                                                                            : (dim == 3 ? 2.49e-14 : 1e-15);
+  return tolerance;
+}
+
+template <class T>
+double fem_cg_tolerance()
+{
+  typedef typename T::GridViewType::Grid Grid;
+  const auto dim = Grid::dimension;
+  const auto tolerance =
+      Dune::XT::Grid::is_conforming_alugrid<Grid>::value ? (dim == 3 ? 1.1e-13 : 1e-15) : (dim == 3 ? 2.49e-14 : 1e-15);
+  return tolerance;
+}
 #endif // DUNE_GDT_TEST_GRIDS_HH

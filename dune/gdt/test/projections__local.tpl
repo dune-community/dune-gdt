@@ -5,408 +5,69 @@
 // Authors:
 //   Felix Schindler (2015 - 2016)
 
-#include <dune/xt/common/test/main.hxx>
-
-#include <dune/gdt/test/projections/l2-local.hh>
-#include <dune/gdt/test/spaces/dg/fem.hh>
-
-#if 0
-
-using namespace Dune::GDT::Test;
-
-#if HAVE_DUNE_FEM
-
-
-typedef testing::Types<SPACES_DG_FEM(1)
-#if HAVE_ALUGRID
-                           ,
-                       SPACES_DG_FEM_ALUGRID(1)
-#endif
-                       >
-    SpaceTypes;
-
-TYPED_TEST_CASE(L2LocalProjectionOperatorTest, SpaceTypes);
-TYPED_TEST(L2LocalProjectionOperatorTest, constructible_by_ctor)
-{
-  this->constructible_by_ctor();
-}
-TYPED_TEST(L2LocalProjectionOperatorTest, constructible_by_factory)
-{
-  this->constructible_by_factory();
-}
-TYPED_TEST(L2LocalProjectionOperatorTest, produces_correct_results)
-{
-  this->produces_correct_results();
-}
-
-
-#else // HAVE_DUNE_FEM
-
-
-TEST(DISABLED_L2LocalProjectionOperatorTest, constructible_by_ctor)
-{
-}
-TEST(DISABLED_L2LocalProjectionOperatorTest, constructible_by_factory)
-{
-}
-TEST(DISABLED_L2LocalProjectionOperatorTest, produces_correct_results)
-{
-}
-
-
-#endif // HAVE_DUNE_FEM
-// This file is part of the dune-gdt project:
-//   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
-// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
-// Authors:
-//   Felix Schindler (2015 - 2016)
-
-#include <dune/xt/common/test/main.hxx>
-
-#include "projections/l2-local.hh"
-#include "spaces/dg/pdelab.hh"
-
-using namespace Dune::GDT::Test;
-
-#if HAVE_DUNE_PDELAB
-
-
-typedef testing::Types<SPACES_DG_PDELAB(1)
-#if HAVE_ALUGRID
-                           ,
-                       SPACES_DG_PDELAB_ALUGRID(1)
-#endif
-                       >
-    SpaceTypes;
-
-TYPED_TEST_CASE(L2LocalProjectionOperatorTest, SpaceTypes);
-TYPED_TEST(L2LocalProjectionOperatorTest, constructible_by_ctor)
-{
-  this->constructible_by_ctor();
-}
-TYPED_TEST(L2LocalProjectionOperatorTest, constructible_by_factory)
-{
-  this->constructible_by_factory();
-}
-TYPED_TEST(L2LocalProjectionOperatorTest, produces_correct_results)
-{
-  this->produces_correct_results();
-}
-
-
-#else // HAVE_DUNE_PDELAB
-
-
-TEST(DISABLED_L2LocalProjectionOperatorTest, constructible_by_ctor)
-{
-}
-TEST(DISABLED_L2LocalProjectionOperatorTest, constructible_by_factory)
-{
-}
-TEST(DISABLED_L2LocalProjectionOperatorTest, produces_correct_results)
-{
-}
-
-
-#endif // HAVE_DUNE_PDELAB
-// This file is part of the dune-gdt project:
-//   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
-// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
-// Authors:
-//   Felix Schindler (2014 - 2016)
-
-#include <dune/xt/common/test/main.hxx>
-
-#include "projections/l2-local.hh"
-#include "spaces/fv/default.hh"
-
-using namespace Dune::GDT::Test;
-
-
-typedef testing::Types<SPACE_FV_YASPGRID(1, 1), SPACE_FV_YASPGRID(2, 1), SPACE_FV_YASPGRID(3, 1)
-#if HAVE_ALUGRID
-                                                                             ,
-                       SPACE_FV_ALUCONFORMGRID(2, 1), SPACE_FV_ALUCONFORMGRID(3, 1), SPACE_FV_ALUCUBEGRID(2, 1),
-                       SPACE_FV_ALUCUBEGRID(3, 1)
-#endif // HAVE_ALUGRID
-                       >
-    SpaceTypes;
-
-TYPED_TEST_CASE(L2LocalProjectionOperatorTest, SpaceTypes);
-TYPED_TEST(L2LocalProjectionOperatorTest, constructible_by_ctor)
-{
-  this->constructible_by_ctor();
-}
-TYPED_TEST(L2LocalProjectionOperatorTest, constructible_by_factory)
-{
-  this->constructible_by_factory();
-}
-TYPED_TEST(L2LocalProjectionOperatorTest, produces_correct_results)
-{
-  this->produces_correct_results(0.096226);
-}
-// This file is part of the dune-gdt project:
-//   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
-// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
-// Authors:
-//   Felix Schindler (2015 - 2016)
-
-#include <dune/xt/common/test/main.hxx>
+#include <dune/xt/common/test/main.hxx> // <- This one has to come first!
 
 #include <dune/xt/grid/type_traits.hh>
 
-#include "projections/l2-local.hh"
-#include "spaces/dg/fem.hh"
+#include <dune/gdt/test/grids.hh>
+#include <dune/gdt/test/projections/l2-local.hh>
+#include <dune/gdt/test/projections/l2.hh>
+#include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
+#include <dune/gdt/spaces/cg/dune-pdelab-wrapper.hh>
+#include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
+#include <dune/gdt/spaces/fv/default.hh>
+#include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
+#include <dune/gdt/playground/spaces/dg/dune-pdelab-wrapper.hh>
 
 using namespace Dune::GDT::Test;
 
-#if HAVE_DUNE_FEM
+// clang-format off
+{% for SpaceType,Name in config.spaces_with_names %}
 
+typedef L2LocalProjectionOperatorTest<{{SpaceType}}>
+  L2LocalProjectionOperatorTest_{{Name}};
+typedef L2LocalProjectionLocalizableOperatorTest<{{SpaceType}}>
+  L2LocalProjectionLocalizableOperatorTest_{{Name}};
 
-typedef testing::Types<SPACES_DG_FEM(1)
-#if HAVE_ALUGRID
-                           ,
-                       SPACES_DG_FEM_ALUGRID(1)
-#endif
-                       >
-    SpaceTypes;
+{% if 'FvSpace' in SpaceType %}
+  const auto {{Name}}_tolerance{1.45e-1};
+{% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
+    const auto {{Name}}_tolerance = pdelab_rt_tolerance<L2LocalProjectionOperatorTest_{{Name}}>();
+{% elif 'FemCg' in SpaceType %}
+    const auto {{Name}}_tolerance = fem_cg_tolerance<L2LocalProjectionOperatorTest_{{Name}}>();
+{% else %}
+  const auto {{Name}}_tolerance = Dune::XT::Grid::is_alugrid<typename {{SpaceType}}::GridViewType::Grid>::value
+      ? L2LocalProjectionOperatorTest_{{Name}}::alugrid_tolerance
+      : L2LocalProjectionOperatorTest_{{Name}}::default_tolerance;
+{% endif %}
 
-TYPED_TEST_CASE(L2LocalProjectionLocalizableOperatorTest, SpaceTypes);
-TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, constructible_by_ctor)
+TEST_F(L2LocalProjectionOperatorTest_{{Name}}, constructible_by_ctor)
 {
   this->constructible_by_ctor();
 }
-TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, constructible_by_factory)
+TEST_F(L2LocalProjectionOperatorTest_{{Name}}, constructible_by_factory)
 {
   this->constructible_by_factory();
 }
-TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, produces_correct_results)
+TEST_F(L2LocalProjectionOperatorTest_{{Name}}, produces_correct_results)
 {
-  typedef typename TypeParam::GridViewType::Grid Grid;
-  const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
-  this->produces_correct_results(tolerance);
-  this->produces_correct_results(tolerance);
+  this->produces_correct_results();
 }
 
-
-#else // HAVE_DUNE_FEM
-
-
-TEST(DISABLED_L2LocalProjectionLocalizableOperatorTest, constructible_by_ctor)
-{
-}
-TEST(DISABLED_L2LocalProjectionLocalizableOperatorTest, constructible_by_factory)
-{
-}
-TEST(DISABLED_L2LocalProjectionLocalizableOperatorTest, produces_correct_results)
-{
-}
-
-
-#endif // HAVE_DUNE_FEM
-// This file is part of the dune-gdt project:
-//   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
-// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
-// Authors:
-//   Felix Schindler (2015 - 2016)
-
-#include <dune/xt/common/test/main.hxx>
-
-#include "projections/l2-local.hh"
-#include "spaces/dg/pdelab.hh"
-
-using namespace Dune::GDT::Test;
-
-#if HAVE_DUNE_PDELAB
-
-
-typedef testing::Types<SPACES_DG_PDELAB(1)
-#if HAVE_ALUGRID
-                           ,
-                       SPACES_DG_PDELAB_ALUGRID(1)
-#endif
-                       >
-    SpaceTypes;
-
-TYPED_TEST_CASE(L2LocalProjectionLocalizableOperatorTest, SpaceTypes);
-TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, constructible_by_ctor)
+TEST_F(L2LocalProjectionLocalizableOperatorTest_{{Name}}, constructible_by_ctor)
 {
   this->constructible_by_ctor();
 }
-TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, constructible_by_factory)
+TEST_F(L2LocalProjectionLocalizableOperatorTest_{{Name}}, constructible_by_factory)
 {
   this->constructible_by_factory();
 }
-TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, produces_correct_results)
+TEST_F(L2LocalProjectionLocalizableOperatorTest_{{Name}}, produces_correct_results)
 {
-  this->produces_correct_results(this->default_tolerance);
+  this->produces_correct_results({{Name}}_tolerance);
+  this->produces_correct_results({{Name}}_tolerance);
 }
 
 
-#else // HAVE_DUNE_PDELAB
-
-
-TEST(DISABLED_L2LocalProjectionLocalizableOperatorTest, constructible_by_ctor)
-{
-}
-TEST(DISABLED_L2LocalProjectionLocalizableOperatorTest, constructible_by_factory)
-{
-}
-TEST(DISABLED_L2LocalProjectionLocalizableOperatorTest, produces_correct_results)
-{
-}
-
-
-#endif // HAVE_DUNE_PDELAB
-// This file is part of the dune-gdt project:
-//   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
-// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
-// Authors:
-//   Felix Schindler (2014 - 2016)
-
-#include <dune/xt/common/test/main.hxx>
-
-#include "projections/l2-local.hh"
-#include "spaces/fv/default.hh"
-
-using namespace Dune::GDT::Test;
-
-
-typedef testing::Types<SPACE_FV_YASPGRID(1, 1), SPACE_FV_YASPGRID(2, 1), SPACE_FV_YASPGRID(3, 1)
-#if HAVE_ALUGRID
-                                                                             ,
-                       SPACE_FV_ALUCONFORMGRID(2, 1), SPACE_FV_ALUCONFORMGRID(3, 1), SPACE_FV_ALUCUBEGRID(2, 1),
-                       SPACE_FV_ALUCUBEGRID(3, 1)
-#endif // HAVE_ALUGRID
-                       >
-    SpaceTypes;
-
-TYPED_TEST_CASE(L2LocalProjectionLocalizableOperatorTest, SpaceTypes);
-TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, constructible_by_ctor)
-{
-  this->constructible_by_ctor();
-}
-TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, constructible_by_factory)
-{
-  this->constructible_by_factory();
-}
-TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, produces_correct_results)
-{
-  this->produces_correct_results(0.096226);
-}
-// This file is part of the dune-gdt project:
-//   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
-// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
-// Authors:
-//   Felix Schindler (2015 - 2016)
-
-#include <dune/xt/common/test/main.hxx>
-
-#include "projections/l2-local.hh"
-#include "spaces/rt/pdelab.hh"
-
-using namespace Dune::GDT::Test;
-
-#if HAVE_DUNE_PDELAB
-
-
-typedef testing::Types<SPACES_RT_PDELAB
-#if HAVE_ALUGRID
-                       ,
-                       SPACES_RT_PDELAB_ALUGRID
-#endif
-                       >
-    SpaceTypes;
-
-TYPED_TEST_CASE(L2LocalProjectionLocalizableOperatorTest, SpaceTypes);
-TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, constructible_by_ctor)
-{
-  this->constructible_by_ctor();
-}
-TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, constructible_by_factory)
-{
-  this->constructible_by_factory();
-}
-TYPED_TEST(L2LocalProjectionLocalizableOperatorTest, produces_correct_results)
-{
-  this->produces_correct_results(0.0925927);
-}
-
-
-#else // HAVE_DUNE_PDELAB
-
-
-TEST(DISABLED_L2LocalProjectionLocalizableOperatorTest, constructible_by_ctor)
-{
-}
-TEST(DISABLED_L2LocalProjectionLocalizableOperatorTest, constructible_by_factory)
-{
-}
-TEST(DISABLED_L2LocalProjectionLocalizableOperatorTest, produces_correct_results)
-{
-}
-
-
-#endif // HAVE_DUNE_PDELAB
-// This file is part of the dune-gdt project:
-//   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
-// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
-// Authors:
-//   Felix Schindler (2015 - 2016)
-
-#include <dune/xt/common/test/main.hxx>
-
-#include "projections/l2-local.hh"
-#include "spaces/rt/pdelab.hh"
-
-using namespace Dune::GDT::Test;
-
-#if HAVE_DUNE_PDELAB
-
-
-typedef testing::Types<SPACES_RT_PDELAB
-#if HAVE_ALUGRID
-                       ,
-                       SPACES_RT_PDELAB_ALUGRID
-#endif
-                       >
-    SpaceTypes;
-
-TYPED_TEST_CASE(L2LocalProjectionOperatorTest, SpaceTypes);
-TYPED_TEST(L2LocalProjectionOperatorTest, constructible_by_ctor)
-{
-  this->constructible_by_ctor();
-}
-TYPED_TEST(L2LocalProjectionOperatorTest, constructible_by_factory)
-{
-  this->constructible_by_factory();
-}
-TYPED_TEST(L2LocalProjectionOperatorTest, produces_correct_results)
-{
-  this->produces_correct_results(0.0925927);
-}
-
-
-#else // HAVE_DUNE_PDELAB
-
-
-TEST(DISABLED_L2LocalProjectionOperatorTest, constructible_by_ctor)
-{
-}
-TEST(DISABLED_L2LocalProjectionOperatorTest, constructible_by_factory)
-{
-}
-TEST(DISABLED_L2LocalProjectionOperatorTest, produces_correct_results)
-{
-}
-
-#endif // 0
-
-#endif // HAVE_DUNE_PDELAB
+{% endfor %}
+// clang-format on
