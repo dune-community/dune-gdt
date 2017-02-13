@@ -15,6 +15,8 @@
 
 #include <dune/xt/la/container.hh>
 
+#include <dune/gdt/type_traits.hh>
+
 #include "base.hh"
 
 namespace Dune {
@@ -25,6 +27,8 @@ namespace bindings {
 template <class OperatorType>
 class MatrixOperatorBase
 {
+  static_assert(is_matrix_operator<OperatorType>::value, "");
+
 public:
   typedef OperatorType type;
   typedef GDT::SystemAssembler<typename OperatorType::RangeSpaceType,
@@ -40,7 +44,6 @@ public:
 
     typedef typename type::RangeSpaceType R;
     typedef typename type::SourceSpaceType S;
-    typedef GDT::SystemAssembler<R, typename type::GridViewType, typename type::SourceSpaceType> I;
     typedef typename XT::LA::Container<typename type::RangeFieldType, type::MatrixType::vector_type>::VectorType V;
 
     bound_type c(m, std::string(class_id).c_str(), std::string(class_id).c_str());
