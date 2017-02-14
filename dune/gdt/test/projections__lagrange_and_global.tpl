@@ -17,6 +17,24 @@ using namespace Dune::GDT::Test;
 // clang-format off
 {% for Space, Name in config.spaces_with_names %}
 
+typedef LagrangeProjectionOperatorTest<{{Space}}> LagrangeProjectionOperatorTest_{{Name}};
+TEST_F(LagrangeProjectionOperatorTest_{{Name}}, constructible_by_ctor)
+{
+  this->constructible_by_ctor();
+}
+TEST_F(LagrangeProjectionOperatorTest_{{Name}}, constructible_by_factory)
+{
+  this->constructible_by_factory();
+}
+TEST_F(LagrangeProjectionOperatorTest_{{Name}}, free_function_callable)
+{
+  this->free_function_callable();
+}
+TEST_F(LagrangeProjectionOperatorTest_{{Name}}, produces_correct_results)
+{
+  this->produces_correct_results();
+}
+
 typedef LagrangeProjectionLocalizableOperatorTest<{{Space}}> LagrangeProjectionLocalizableOperatorTest_{{Name}};
 TEST_F(LagrangeProjectionLocalizableOperatorTest_{{Name}}, constructible_by_ctor)
 {
@@ -48,6 +66,24 @@ TEST_F(L2GlobalProjectionLocalizableOperatorTest_{{Name}}, produces_correct_resu
   this->produces_correct_results(tolerance);
   this->produces_correct_results(tolerance);
 }
+
+typedef L2GlobalProjectionOperatorTest<{{Space}}> L2GlobalProjectionOperatorTest_{{Name}};
+TEST_F(L2GlobalProjectionOperatorTest_{{Name}}, constructible_by_ctor)
+{
+  this->constructible_by_ctor();
+}
+TEST_F(L2GlobalProjectionOperatorTest_{{Name}}, constructible_by_factory)
+{
+  this->constructible_by_factory();
+}
+TEST_F(L2GlobalProjectionOperatorTest_{{Name}}, produces_correct_results)
+{
+  typedef typename L2GlobalProjectionOperatorTest_{{Name}}::GridViewType::Grid Grid;
+  const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
+  this->produces_correct_results(tolerance);
+  this->produces_correct_results(tolerance);
+}
+
 
 {% endfor %}
 // clang-format on
