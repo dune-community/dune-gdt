@@ -460,7 +460,7 @@ int main(int argc, char** argv)
     std::string filename = ProblemType::static_id();
     filename +=
         std::string("_") + (std::is_same<typename ProblemType::FluxType, AnalyticalFluxType>::value ? "p" : "m");
-    filename += Dune::XT::Common::to_string(momentOrder);
+    filename += Dune::XT::Common::to_string(dimRange);
     filename += rhs_time_stepper_method == TimeStepperMethods::implicit_euler ? "_implicit" : "_explicit";
 
     timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 1);

@@ -153,25 +153,26 @@ inline std::string trim(const std::string& s)
   return (wsback <= wsfront ? std::string() : std::string(wsfront, wsback));
 }
 
-static const std::vector<int> allowed_degrees = {6,    14,   26,   38,   50,   74,   86,   110,  146,  170,  194,
-                                                 230,  266,  302,  350,  434,  590,  770,  974,  1202, 1454, 1730,
-                                                 2030, 2354, 2702, 3074, 3470, 3890, 4334, 4802, 5294, 5810};
-static const std::vector<int> allowed_orders = {3,  5,  7,  9,  11, 13, 15, 17, 19, 21, 23,  25,  27,  29,  31,  35,
-                                                41, 47, 53, 59, 65, 71, 77, 83, 89, 95, 101, 107, 113, 119, 125, 131};
+static const std::vector<size_t> allowed_degrees = {6,    14,   26,   38,   50,   74,   86,   110,  146,  170,  194,
+                                                    230,  266,  302,  350,  434,  590,  770,  974,  1202, 1454, 1730,
+                                                    2030, 2354, 2702, 3074, 3470, 3890, 4334, 4802, 5294, 5810};
+static const std::vector<size_t> allowed_orders = {3,  5,  7,  9,  11,  13,  15,  17,  19,  21, 23,
+                                                   25, 27, 29, 31, 35,  41,  47,  53,  59,  65, 71,
+                                                   77, 83, 89, 95, 101, 107, 113, 119, 125, 131};
 
 Dune::QuadratureRule<double, 2> get_lebedev_quadrature(size_t requested_order)
 {
   size_t index = -1;
-  for (int ii = 0; ii < allowed_orders.size(); ++ii) {
+  for (size_t ii = 0; ii < allowed_orders.size(); ++ii) {
     if (allowed_orders[ii] >= requested_order) {
       index = ii;
       break;
     }
   }
-  int order = allowed_orders[index];
+  size_t order = allowed_orders[index];
   //  int degree = allowed_degrees[index];
   char orderstring[4];
-  sprintf(orderstring, "%03d", order);
+  sprintf(orderstring, "%03u", order);
   std::string filename =
       std::string("/home/tobias/Software/dune-gdt-super-2.5/dune-gdt/dune/gdt/LebedevTables/lebedev_") + orderstring
       + ".txt";
@@ -924,7 +925,7 @@ public:
     rhs_config["b.0"] = XT::Common::to_string(b);
     return rhs_config;
   } // ... create_rhs_config()
-}; // class PlaneSourceBase
+}; // class PointSourceBase
 
 
 /** \see class TwoBeams in twobeams.hh */
@@ -1126,8 +1127,8 @@ public:
       const auto basis_evaluated =
           evaluate_spherical_barycentric_coordinates<RangeType, DomainType, Polyhedron_3>(point, poly);
       const auto weight = quad_point.weight();
-      for (int nn = 0; nn < dimRange; ++nn) {
-        for (int mm = 0; mm < dimRange; ++mm) {
+      for (size_t nn = 0; nn < dimRange; ++nn) {
+        for (size_t mm = 0; mm < dimRange; ++mm) {
           A_0[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * point[0] * weight;
           A_1[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * point[1] * weight;
           A_2[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * point[2] * weight;

@@ -143,6 +143,33 @@ struct FluxRangeTypeConverter<dimRange, 1>
   }
 };
 
+template <class MatrixType, class VectorType>
+void solve_lower_triangular(const MatrixType& A, VectorType& x, const VectorType& b)
+{
+  VectorType& rhs = x; // use x to store rhs
+  rhs = b; // copy data
+  // forward solve
+  for (size_t ii = 0; ii < A.N(); ++ii) {
+    for (int jj = ii - 1; jj >= 0; --jj)
+      rhs[ii] -= A[ii][jj] * x[jj];
+    x[ii] = rhs[ii] / A[ii][ii];
+  }
+}
+
+template <class MatrixType, class VectorType>
+void solve_lower_triangular_transposed(const MatrixType& A, VectorType& x, const VectorType& b)
+{
+  VectorType& rhs = x; // use x to store rhs
+  rhs = b; // copy data
+  // backsolve
+  for (int ii = A.N() - 1; ii >= 0; ii--) {
+    for (size_t jj = ii + 1; jj < A.N(); jj++)
+      rhs[ii] -= A[jj][ii] * x[jj];
+    x[ii] = rhs[ii] / A[ii][ii];
+  }
+}
+
+
 #if 1
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * for the notation see
@@ -256,10 +283,10 @@ public:
         v += r_times_u_iso;
         // calculate T_k u
         RangeType v_k;
-        T_k.solve(v_k, v);
+        solve_lower_triangular(T_k, v_k, v);
         // calculate values of basis p = T_k m
         for (size_t ii = 0; ii < M_.size(); ++ii)
-          T_k.solve(P_k[ii], M_[ii]);
+          solve_lower_triangular(T_k, P_k[ii], M_[ii]);
         // calculate f_0
         RangeFieldType f_k(0);
         for (size_t ll = 0; ll < quadrature_.size(); ++ll)
@@ -268,10 +295,6 @@ public:
 
         for (size_t kk = 0; kk < k_max_; ++kk) {
           change_basis(chol_flag, beta_in, v_k, P_k, T_k, g_k, beta_out);
-          MatrixType T_k_transp(0);
-          for (size_t ii = 0; ii < dimRange; ++ii)
-            for (size_t jj = 0; jj < dimRange; ++jj)
-              T_k_transp[ii][jj] = T_k[jj][ii];
           if (chol_flag == false && r == r_max)
             DUNE_THROW(Dune::NotImplemented, "Failure to converge!");
           // exit inner for loop to increase r if to many iterations are used or cholesky decomposition fails
@@ -282,7 +305,7 @@ public:
           for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
             auto m = M_[ll];
             RangeType Tinv_m(0);
-            T_k.solve(Tinv_m, m);
+            solve_lower_triangular(T_k, Tinv_m, m);
             m *= std::exp(beta_out * Tinv_m) * quadrature_[ll].weight();
             error += m;
           }
@@ -292,7 +315,7 @@ public:
           d_k *= -1;
           RangeType T_k_inv_transp_d_k;
           try {
-            T_k_transp.solve(T_k_inv_transp_d_k, d_k);
+            solve_lower_triangular_transposed(T_k, T_k_inv_transp_d_k, d_k);
           } catch (const Dune::FMatrixError& e) {
             if (r < r_max)
               break;
@@ -300,7 +323,7 @@ public:
               DUNE_THROW(Dune::FMatrixError, e.what());
           }
           if (error.two_norm() < tau_ && std::exp(5 * T_k_inv_transp_d_k.one_norm()) < 1 + epsilon_gamma_) {
-            T_k_transp.solve(alpha, beta_out);
+            solve_lower_triangular_transposed(T_k, alpha, beta_out);
             goto outside_all_loops;
           } else {
             RangeFieldType zeta_k = 1;
@@ -428,13 +451,13 @@ private:
     MatrixType H(0), tmp(0), L(0);
     for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
       const auto& p = P_k[ll];
+      auto p_times_factor = P_k[ll];
+      p_times_factor *= std::exp(beta_in * p) * quadrature_[ll].weight();
       // calculate p p^T
       for (size_t ii = 0; ii < dimRange; ++ii) {
-        tmp[ii] = p;
+        tmp[ii] = p_times_factor;
         tmp[ii] *= p[ii];
       }
-      // multiply p p^T by factor
-      tmp *= std::exp(beta_in * p) * quadrature_[ll].weight();
       H += tmp;
     } // quadrature points for loop
     chol_flag = cholesky_L(H, L);
@@ -443,10 +466,10 @@ private:
     const auto P_k_copy = P_k;
     const auto v_k_copy = v_k;
     for (size_t ll = 0; ll < P_k.size(); ++ll)
-      L.solve(P_k[ll], P_k_copy[ll]);
+      solve_lower_triangular(L, P_k[ll], P_k_copy[ll]);
     T_k.rightmultiply(L);
     L.mtv(beta_in, beta_out);
-    L.solve(v_k, v_k_copy);
+    solve_lower_triangular(L, v_k, v_k_copy);
     g_k = v_k;
     g_k *= -1;
     for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
@@ -506,7 +529,7 @@ private:
 #endif
 
 
-#if 1
+#if 0
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * for the notation see
  * Alldredge, Hauck, O'Leary, Tits, "Adaptive change of basis in entropy-based moment closures for linear kinetic
@@ -536,12 +559,8 @@ public:
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
   using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
-  using BasisValuesMatrixType = std::vector<FieldVector<RangeFieldType, dimRange>>;
   using typename BaseType::FluxRangeType;
   using typename BaseType::FluxJacobianRangeType;
-  typedef Dune::QuadratureRule<DomainFieldType,
-                               quadrature_is_cartesian ? dimDomain : (dimDomain == 1 ? 1 : dimDomain - 1)>
-      QuadratureRuleType;
   typedef std::function<std::pair<RangeType, RangeType>(const RangeType&)> IsotropicDistributionCalculatorType;
   typedef std::function<RangeType(const DomainType&)> BasisfunctionsType;
   typedef typename GDT::Hyperbolic::Problems::AdaptiveQuadrature<DomainType, RangeFieldType, RangeType>
@@ -549,8 +568,6 @@ public:
 
   explicit AdaptiveEntropyBasedLocalFlux(
       const GridViewType& grid_view,
-      const QuadratureRuleType& quadrature,
-      const BasisValuesMatrixType& M,
       const IsotropicDistributionCalculatorType isotropic_dist_calculator,
       BasisfunctionsType basisfunctions,
       const AdaptiveQuadratureType& adaptive_quadrature,
@@ -565,8 +582,6 @@ public:
       const MatrixType& T_minus_one = unit_matrix<dimRange>(),
       const std::string name = static_id())
     : global_index_set_(grid_view, 0)
-    , quadrature_(quadrature)
-    , M_(M)
     , isotropic_dist_calculator_(isotropic_dist_calculator)
     , basisfunctions_(basisfunctions)
     , adaptive_quadrature_(adaptive_quadrature)
@@ -612,7 +627,6 @@ public:
       bool chol_flag = false;
       RangeType g_k, beta_out;
       MatrixType T_k;
-      BasisValuesMatrixType P_k(M_.size());
 
       const auto r_max = r_sequence_.back();
       for (const auto& r : r_sequence_) {
@@ -627,9 +641,6 @@ public:
         // calculate T_k u
         RangeType v_k;
         T_k.solve(v_k, v);
-        // calculate values of basis p = T_k m
-        for (size_t ii = 0; ii < M_.size(); ++ii)
-          T_k.solve(P_k[ii], M_[ii]);
         // calculate f_0
 
         RangeFieldType f_k = adaptive_quadrature_->calculate_integral(
@@ -640,8 +651,6 @@ public:
               T_k.solve(ret, basis_evaluated);
               return ret;
             });
-        //        for (size_t ll = 0; ll < quadrature_.size(); ++ll)
-        //          f_k += quadrature_[ll].weight() * std::exp(beta_in * P_k[ll]);
         f_k -= beta_in * v_k;
 
         for (size_t kk = 0; kk < k_max_; ++kk) {
@@ -803,18 +812,24 @@ private:
                     RangeType& g_k,
                     RangeType& beta_out) const
   {
-    MatrixType H(0), tmp(0), L(0);
-    for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
-      const auto& p = P_k[ll];
-      // calculate p p^T
-      for (size_t ii = 0; ii < dimRange; ++ii) {
-        tmp[ii] = p;
-        tmp[ii] *= p[ii];
-      }
-      // multiply p p^T by factor
-      tmp *= std::exp(beta_in * p) * quadrature_[ll].weight();
-      H += tmp;
-    } // quadrature points for loop
+    MatrixType tmp, L(0);
+    MatrixType H = adaptive_quadrature_->calculate_integral(
+        [&](const DomainType&, const RangeType& basisevaluation) {
+          for (size_t ii = 0; ii < dimRange; ++ii) {
+            tmp[ii] = basisevaluation;
+            tmp[ii] *= basisevaluation[ii];
+          }
+          // multiply p p^T by factor
+          tmp *= std::exp(beta_in * basisevaluation);
+          return tmp;
+        },
+        [&](const DomainType& quadpoint) {
+          RangeType ret(0);
+          RangeType basis_evaluated = basisfunctions_(quadpoint);
+          T_k.solve(ret, basis_evaluated);
+          return ret;
+        });
+
     chol_flag = cholesky_L(H, L);
     if (chol_flag == false)
       return;
@@ -864,8 +879,6 @@ private:
   }
 
   const Dune::GlobalIndexSet<GridViewType> global_index_set_;
-  const QuadratureRuleType quadrature_;
-  const BasisValuesMatrixType M_;
   const IsotropicDistributionCalculatorType isotropic_dist_calculator_;
   const BasisfunctionsType basisfunctions_;
   mutable XT::Common::PerThreadValue<AdaptiveQuadratureType> adaptive_quadrature_;
