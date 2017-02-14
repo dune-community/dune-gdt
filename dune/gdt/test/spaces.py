@@ -1,7 +1,7 @@
 import itertools
 
 from dune.xt.codegen import typeid_to_typedef_name
-from grids import LeafGrids
+from grids import LeafGrids, LevelGrids
 
 
 def CG(cache, base=LeafGrids):
@@ -43,3 +43,13 @@ def RT(cache, base=LeafGrids):
                    for s, d in itertools.product(rt.all_views_fmt, rt.world_dim)]
     rt.names = [typeid_to_typedef_name(sp) for sp in rt.spaces]
     return rt
+
+if __name__ == '__dxt_codegen__':
+    # this is executed from spaces.tpl itself
+    cg = CG(cache)
+    dg = DG(cache)
+    fv = FV(cache)
+    rt = RT(cache)
+    spaces = cg.spaces + dg.spaces + fv.spaces + rt.spaces
+    names = cg.names + dg.names + fv.names + rt.names
+    spaces_with_names = zip(spaces, names)
