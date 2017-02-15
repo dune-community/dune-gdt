@@ -155,14 +155,14 @@ private:
   using BaseType::d;
 
 public:
-  LocalEllipticIntegrand(const DiffusionFactorType& diffusion_factor, const DiffusionTensorType& diffusion_tensor)
-    : diffusion_factor_(diffusion_factor)
-    , diffusion_tensor_(diffusion_tensor)
+  LocalEllipticIntegrand(const DiffusionFactorType& diff_factor, const DiffusionTensorType& diff_tensor)
+    : diffusion_factor_(diff_factor)
+    , diffusion_tensor_(diff_tensor)
   {
   }
 
-  LocalEllipticIntegrand(const DiffusionFactorType& diffusion_factor)
-    : diffusion_factor_(diffusion_factor)
+  LocalEllipticIntegrand(const DiffusionFactorType& diff_factor)
+    : diffusion_factor_(diff_factor)
     , diffusion_tensor_(new DiffusionTensorType(
           XT::Functions::internal::UnitMatrix<typename DiffusionTensorType::RangeFieldType, dimDomain>::value()))
   {
