@@ -10,7 +10,7 @@
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/test/grids.hh>
-#include <dune/gdt/test/prolongations.hh>
+#include <dune/gdt/test/prolongations/prolongations.hh>
 #include <dune/gdt/test/prolongations/l2.hh>
 #include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
 #include <dune/gdt/spaces/cg/dune-pdelab-wrapper.hh>

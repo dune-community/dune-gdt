@@ -11,8 +11,8 @@
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/projections.hh>
-#include <dune/gdt/test/grids.hh>
-#include <dune/gdt/test/projections/base.hh>
+
+#include <dune/gdt/test/projections/lagrange_and_global.hh>
 
 #include <dune/gdt/playground/spaces/dg/dune-pdelab-wrapper.hh>
 #include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
