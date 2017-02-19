@@ -231,6 +231,19 @@ public:
     }
   } // constructor
 
+  RangeFieldType calculate_l2_norm(const DiscreteFunctionType& disc_func)
+  {
+    RangeFieldType norm = 0;
+    const auto& vector = disc_func.vector();
+    const auto& mapper = disc_func.space().mapper();
+    for (const auto& entity : Dune::elements(disc_func.space().grid_view(), Dune::Partitions::interiorBorder))
+      for (const auto& index : mapper.globalIndices(entity))
+        norm += std::pow(vector[index],2); 
+    disc_func.space().grid_view().comm().sum(norm);
+    norm = std::sqrt(norm);
+    return norm;
+  }
+
   virtual TimeFieldType step(const TimeFieldType dt, const TimeFieldType max_dt) override final
   {
     const TimeFieldType actual_dt = std::min(dt, max_dt);
@@ -264,7 +277,7 @@ public:
             stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
         res_.vector() = u_i_expl_.vector() - u_i_.vector() + stages_k_[ii].vector() * (actual_dt * r_ * A_[ii][ii]);
         // calculate norm of residual
-        RangeFieldType current_error = res_.vector().l2_norm();
+        RangeFieldType current_error = calculate_l2_norm(res_);
         RangeFieldType first_error = current_error;
         const double abs_tol = 1e-12;
         const double rel_reduction = 1e-8;
@@ -291,7 +304,8 @@ public:
             // calculate error threshold with current alpha
             N_times_d_.vector() *= 0;
             newton_matrix_.mv(d_.vector(), N_times_d_.vector());
-            error_threshold = (res_.vector() - (N_times_d_.vector() * alpha * beta_)).l2_norm();
+            N_times_d_.vector() = res_.vector() - (N_times_d_.vector() * alpha * beta_);
+            error_threshold = calculate_l2_norm(N_times_d_);
             // calculate residual with current alpha
             u_i_plus_alpha_d_.vector() = u_i_.vector() + d_.vector() * alpha;
             stages_k_[ii].vector() *= RangeFieldType(0);
@@ -300,7 +314,7 @@ public:
                 stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
             new_res_.vector() = u_i_expl_.vector() - u_i_plus_alpha_d_.vector()
                                 + stages_k_[ii].vector() * (actual_dt * r_ * A_[ii][ii]);
-            current_error = new_res_.vector().l2_norm();
+            current_error = calculate_l2_norm(new_res_);
           } // Armijo backtracking
           u_i_.vector() = u_i_plus_alpha_d_.vector();
           res_.vector() = new_res_.vector();
