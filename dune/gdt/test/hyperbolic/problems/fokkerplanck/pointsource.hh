@@ -172,7 +172,7 @@ Dune::QuadratureRule<double, 2> get_lebedev_quadrature(size_t requested_order)
   size_t order = allowed_orders[index];
   //  int degree = allowed_degrees[index];
   char orderstring[4];
-  sprintf(orderstring, "%03u", order);
+  sprintf(orderstring, "%03lu", order);
   std::string filename =
       std::string("/home/tobias/Software/dune-gdt-super-2.5/dune-gdt/dune/gdt/LebedevTables/lebedev_") + orderstring
       + ".txt";

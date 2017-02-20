@@ -258,8 +258,8 @@ public:
     RangeType alpha;
 
     // if value has already been calculated for this entity at this time, skip computation
-    if ((*alpha_cache_)[index] && XT::Common::FloatCmp::eq((*alpha_cache_)[index]->first, t)) {
-      alpha = (*alpha_cache_)[index]->second;
+    if (alpha_cache_[index] && XT::Common::FloatCmp::eq(alpha_cache_[index]->first, t)) {
+      alpha = alpha_cache_[index]->second;
     } else {
 
       RangeType u_iso, alpha_iso;
@@ -273,8 +273,8 @@ public:
 
       const auto r_max = r_sequence_.back();
       for (const auto& r : r_sequence_) {
-        RangeType beta_in = (*beta_cache_)[index] ? *((*beta_cache_)[index]) : alpha_iso;
-        T_k = (*T_cache_)[index] ? *((*T_cache_)[index]) : T_minus_one_;
+        RangeType beta_in = beta_cache_[index] ? *(beta_cache_[index]) : alpha_iso;
+        T_k = T_cache_[index] ? *(T_cache_[index]) : T_minus_one_;
         // normalize u
         RangeType r_times_u_iso = u_iso;
         r_times_u_iso *= r;
@@ -352,9 +352,9 @@ public:
 
     outside_all_loops:
       // store values as initial conditions for next time step on this entity
-      (*alpha_cache_)[index] = std::make_shared<std::pair<double, RangeType>>(std::make_pair(t, alpha));
-      (*beta_cache_)[index] = std::make_shared<RangeType>(beta_out);
-      (*T_cache_)[index] = std::make_shared<MatrixType>(T_k);
+      alpha_cache_[index] = std::make_unique<std::pair<double, RangeType>>(std::make_pair(t, alpha));
+      beta_cache_[index] = std::make_unique<RangeType>(beta_out);
+      T_cache_[index] = std::make_unique<MatrixType>(T_k);
     } // else ( value has not been calculated before )
 
     return alpha;
@@ -419,17 +419,13 @@ public:
         omega[1] = std::sqrt(1. - mu * mu) * std::sin(phi);
         omega[2] = mu;
       }
-      auto m = M_[ll];
-      if (position * n_ij > 0) {
-        const auto factor = std::exp(alpha_i * m) * weight;
-        for (size_t dd = 0; dd < dimDomain; ++dd)
-          m *= omega[dd] * factor * n_ij[dd];
-      } else {
-        const auto factor = std::exp(alpha_j * m) * weight;
-        for (size_t dd = 0; dd < dimDomain; ++dd)
-          m *= omega[dd] * factor * n_ij[dd];
+      const auto& m = M_[ll];
+      const auto factor = position * n_ij > 0 ? std::exp(alpha_i * m) * weight : std::exp(alpha_j * m) * weight;
+      for (size_t dd = 0; dd < dimDomain; ++dd) {
+        auto contribution = m;
+        contribution *= omega[dd] * factor * n_ij[dd];
+        ret += contribution;
       }
-      ret += m;
     }
     return ret;
   } // RangeType calculate_flux_integral(...)
@@ -522,9 +518,12 @@ private:
   const RangeFieldType epsilon_;
   const MatrixType T_minus_one_;
   const std::string name_;
-  mutable XT::Common::PerThreadValue<std::vector<std::shared_ptr<std::pair<double, RangeType>>>> alpha_cache_;
-  mutable XT::Common::PerThreadValue<std::vector<std::shared_ptr<RangeType>>> beta_cache_;
-  mutable XT::Common::PerThreadValue<std::vector<std::shared_ptr<MatrixType>>> T_cache_;
+  // TODO: concurrent writes to different locations of std::vector are thread-safe in most implementations of std::vector,
+  // but that is not guaranteed by the standard.
+  // Use unique_ptr in the vectors to avoid the memory cost for storing twice as much matrices or vectors as needed (see constructor)
+  mutable std::vector<std::unique_ptr<std::pair<double, RangeType>>> alpha_cache_;
+  mutable std::vector<std::unique_ptr<RangeType>> beta_cache_;
+  mutable std::vector<std::unique_ptr<MatrixType>> T_cache_;
 };
 #endif
 
@@ -616,8 +615,8 @@ public:
     RangeType alpha;
 
     // if value has already been calculated for this entity at this time, skip computation
-    if ((*alpha_cache_)[index] && XT::Common::FloatCmp::eq((*alpha_cache_)[index]->first, t)) {
-      alpha = (*alpha_cache_)[index]->second;
+    if (alpha_cache_[index] && XT::Common::FloatCmp::eq(alpha_cache_[index]->first, t)) {
+      alpha = alpha_cache_[index]->second;
     } else {
 
       RangeType u_iso, alpha_iso;
@@ -630,8 +629,8 @@ public:
 
       const auto r_max = r_sequence_.back();
       for (const auto& r : r_sequence_) {
-        RangeType beta_in = (*beta_cache_)[index] ? *((*beta_cache_)[index]) : alpha_iso;
-        T_k = (*T_cache_)[index] ? *((*T_cache_)[index]) : T_minus_one_;
+        RangeType beta_in = beta_cache_[index] ? *(beta_cache_[index]) : alpha_iso;
+        T_k = T_cache_[index] ? *(T_cache_[index]) : T_minus_one_;
         // normalize u
         RangeType r_times_u_iso = u_iso;
         r_times_u_iso *= r;
@@ -716,9 +715,9 @@ public:
 
     outside_all_loops:
       // store values as initial conditions for next time step on this entity
-      (*alpha_cache_)[index] = std::make_shared<std::pair<double, RangeType>>(std::make_pair(t, alpha));
-      (*beta_cache_)[index] = std::make_shared<RangeType>(beta_out);
-      (*T_cache_)[index] = std::make_shared<MatrixType>(T_k);
+      alpha_cache_[index] = std::make_unique<std::pair<double, RangeType>>(std::make_pair(t, alpha));
+      beta_cache_[index] = std::make_unique<RangeType>(beta_out);
+      T_cache_[index] = std::make_unique<MatrixType>(T_k);
     } // else ( value has not been calculated before )
 
     return alpha;
@@ -783,18 +782,14 @@ public:
         omega[1] = std::sqrt(1. - mu * mu) * std::sin(phi);
         omega[2] = mu;
       }
-      auto m = M_[ll];
-      if (position * n_ij > 0) {
-        const auto factor = std::exp(alpha_i * m) * weight;
-        for (size_t dd = 0; dd < dimDomain; ++dd)
-          m *= omega[dd] * factor * n_ij[dd];
-      } else {
-        const auto factor = std::exp(alpha_j * m) * weight;
-        for (size_t dd = 0; dd < dimDomain; ++dd)
-          m *= omega[dd] * factor * n_ij[dd];
-      }
-      ret += m;
-    }
+      const auto& m = M_[ll];
+      const auto factor = position * n_ij > 0 ? std::exp(alpha_i * m) * weight : std::exp(alpha_j * m) * weight;
+      for (size_t dd = 0; dd < dimDomain; ++dd) {
+        auto contribution = m;
+        contribution *= omega[dd] * factor * n_ij[dd];
+        ret += contribution;
+      } // dd
+    } // ll
     return ret;
   } // RangeType calculate_flux_integral(...)
 
@@ -892,9 +887,9 @@ private:
   const RangeFieldType epsilon_;
   const MatrixType T_minus_one_;
   const std::string name_;
-  mutable XT::Common::PerThreadValue<std::vector<std::shared_ptr<std::pair<double, RangeType>>>> alpha_cache_;
-  mutable XT::Common::PerThreadValue<std::vector<std::shared_ptr<RangeType>>> beta_cache_;
-  mutable XT::Common::PerThreadValue<std::vector<std::shared_ptr<MatrixType>>> T_cache_;
+  mutable std::vector<std::unique_ptr<std::pair<double, RangeType>>>> alpha_cache_;
+  mutable std::vector<std::unique_ptr<RangeType>>> beta_cache_;
+  mutable std::vector<std::unique_ptr<MatrixType>>> T_cache_;
 };
 #endif
 
@@ -910,7 +905,7 @@ XT::LA::SparsityPatternDefault make_dense_pattern(const size_t rows, const size_
   return ret;
 }
 
-#if 1
+#if 0
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * for the notation see
  * Alldredge, Hauck, O'Leary, Tits, "Adaptive change of basis in entropy-based moment closures for linear kinetic
@@ -1338,8 +1333,8 @@ public:
     RangeType alpha;
 
     // if value has already been calculated for this entity at this time, skip computation
-    if ((*alpha_cache_)[index] && (*alpha_cache_)[index]->first == t) {
-      alpha = (*alpha_cache_)[index]->second;
+    if (alpha_cache_[index] && alpha_cache_[index]->first == t) {
+      alpha = alpha_cache_[index]->second;
     } else {
       // get initial multiplier and basis matrix from last time step
       RangeType alpha_iso(1);
@@ -1364,7 +1359,7 @@ public:
       const auto r_max = r_sequence_.back();
       for (const auto& r : r_sequence_) {
         // get initial alpha
-        RangeType alpha_k = (*alpha_cache_)[index] ? (*alpha_cache_)[index]->second : alpha_iso;
+        RangeType alpha_k = alpha_cache_[index] ? alpha_cache_[index]->second : alpha_iso;
         // normalize u
         RangeType r_times_u_iso(u_iso);
         r_times_u_iso *= r;
@@ -1537,7 +1532,7 @@ public:
 
     outside_all_loops:
       // store values as initial conditions for next time step on this entity
-      (*alpha_cache_)[index] = std::make_shared<std::pair<double, RangeType>>(std::make_pair(t, alpha));
+      alpha_cache_[index] = std::make_unique<std::pair<double, RangeType>>(std::make_pair(t, alpha));
     }
     return alpha;
   }
@@ -1680,7 +1675,7 @@ private:
   const RangeFieldType taylor_tol_;
   const size_t taylor_order_;
   const std::string name_;
-  mutable XT::Common::PerThreadValue<std::vector<std::shared_ptr<std::pair<double, RangeType>>>> alpha_cache_;
+  mutable std::vector<std::unique_ptr<std::pair<double, RangeType>>> alpha_cache_;
 };
 
 
