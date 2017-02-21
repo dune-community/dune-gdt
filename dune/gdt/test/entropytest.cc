@@ -115,8 +115,8 @@ int main(int argc, char** argv)
   static const int dimDomain = 3;
   static const int momentOrder = 3;
   const auto numerical_flux = NumericalFluxes::kinetic;
-//    const auto numerical_flux = NumericalFluxes::godunov;
-//  const auto numerical_flux = NumericalFluxes::laxfriedrichs;
+  //    const auto numerical_flux = NumericalFluxes::godunov;
+  //  const auto numerical_flux = NumericalFluxes::laxfriedrichs;
   const auto time_stepper_method = TimeStepperMethods::explicit_euler;
   const auto rhs_time_stepper_method = TimeStepperMethods::implicit_euler;
   const auto container_backend = Dune::XT::LA::default_sparse_backend;
@@ -213,17 +213,19 @@ int main(int argc, char** argv)
       GDT::Hyperbolic::Problems::get_equally_dist_quad_points_on_poly(poly, quadrature_refinements);
 
   // 3d adaptive quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
-  typedef std::function<RangeType(const DomainType&)> BasisfunctionsType;
-  typedef typename GDT::Hyperbolic::Problems::AdaptiveQuadrature<DomainType, RangeFieldType, RangeType>
+  typedef typename GDT::Hyperbolic::Problems::AdaptiveQuadrature<DomainType, RangeType, RangeType>
       AdaptiveQuadratureType;
+  typedef typename AdaptiveQuadratureType::QuadraturePointType QuadraturePointType;
+  typedef std::function<RangeType(const QuadraturePointType&)> BasisfunctionsType;
   //  std::function<RangeType(const DomainType&, const CGALWrapper::Polyhedron_3&)> basisevaluation =
   //      GDT::Hyperbolic::Problems::evaluate_linear_partial_basis<RangeType, DomainType, CGALWrapper::Polyhedron_3>;
   std::function<RangeType(const DomainType&, const CGALWrapper::Polyhedron_3&)> basisevaluation =
       GDT::Hyperbolic::Problems::evaluate_spherical_barycentric_coordinates<RangeType,
                                                                             DomainType,
                                                                             CGALWrapper::Polyhedron_3>;
-  BasisfunctionsType basisfunctions(std::bind(basisevaluation, std::placeholders::_1, poly));
-  AdaptiveQuadratureType adaptive_quadrature(poly);
+  BasisfunctionsType basisfunctions(
+      [&](const QuadraturePointType& quadpoint) { return basisevaluation(quadpoint.position(), poly); });
+  AdaptiveQuadratureType adaptive_quadrature(poly, basisfunctions);
 
   //******************* create ProblemType object ***************************************
   //  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config));
@@ -356,10 +358,11 @@ int main(int argc, char** argv)
 
   //*********************** choose analytical flux *************************************************************
 
-  typedef EntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1> AnalyticalFluxType;
+  //  typedef EntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
+  //  AnalyticalFluxType;
 
-  //  typedef AdaptiveEntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
-  //      AnalyticalFluxType;
+  typedef AdaptiveEntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
+      AnalyticalFluxType;
 
   //  typedef typename EntropyBasedLocalFlux3D<GridViewType,
   //                                                      EntityType,
@@ -372,7 +375,7 @@ int main(int argc, char** argv)
   //      AnalyticalFluxType;
 
 
-//    typedef typename ProblemType::FluxType AnalyticalFluxType;
+  //    typedef typename ProblemType::FluxType AnalyticalFluxType;
 
   //  typedef typename EntropyBasedLocalFluxHatFunctions<GridViewType,
   //                                                                typename SpaceType::EntityType,
@@ -386,7 +389,7 @@ int main(int argc, char** argv)
 
   // ************************* create analytical flux object ***************************************
 
-//    const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem.flux();
+  //    const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem.flux();
 
   //  const auto analytical_flux =
   //      std::make_shared<const AnalyticalFluxType>(grid_view, ProblemType::create_equidistant_points());
@@ -394,17 +397,13 @@ int main(int argc, char** argv)
   //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
   //      grid_view, quadrature_rule, basis_values_matrix, ProblemType::create_equidistant_points());
 
-  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
-      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
-
   //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
-  //      grid_view,
-  //      quadrature_rule,
-  //      basis_values_matrix,
-  //      // isotropic_dist_calculator_3d_partialbasis,
-  //      isotropic_dist_calculator_3d_hatfunctions,
-  //      basisfunctions,
-  //      adaptive_quadrature);
+  //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
+
+  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(grid_view,
+                                                                          // isotropic_dist_calculator_3d_partialbasis,
+                                                                          isotropic_dist_calculator_3d_hatfunctions,
+                                                                          adaptive_quadrature);
 
 
   // ******************** choose flux and rhs operator and timestepper

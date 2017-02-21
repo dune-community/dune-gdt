@@ -196,8 +196,10 @@ public:
     } else {
       if (!is_linear_ || !(*max_derivative_calculated_)) {
         *max_derivative_ = 0;
-        const auto jacobian_u_i = analytical_flux_.jacobian(u_i, intersection.inside(), x_intersection_entity_coords, t);
-        const auto jacobian_u_j = analytical_flux_.jacobian(u_j, intersection.outside(), x_intersection_neighbor_coords, t);
+        const auto jacobian_u_i =
+            analytical_flux_.jacobian(u_i, intersection.inside(), x_intersection_entity_coords, t);
+        const auto jacobian_u_j =
+            analytical_flux_.jacobian(u_j, intersection.outside(), x_intersection_neighbor_coords, t);
         std::vector<EigenMatrixType> jacobian_u_i_eigen;
         std::vector<EigenMatrixType> jacobian_u_j_eigen;
         for (size_t ii = 0; ii < dimDomain; ++ii) {
@@ -544,7 +546,8 @@ public:
     } else {
       if (!is_linear_ || !(*max_derivative_calculated_)) {
         *max_derivative_ = 0;
-        const auto jacobian_u_i = analytical_flux_.jacobian(u_i, intersection.inside(), x_intersection_entity_coords, t);
+        const auto jacobian_u_i =
+            analytical_flux_.jacobian(u_i, intersection.inside(), x_intersection_entity_coords, t);
         const auto jacobian_u_j = analytical_flux_.jacobian(u_j, intersection.inside(), DomainType(200), t);
         std::vector<EigenMatrixType> jacobian_u_i_eigen;
         std::vector<EigenMatrixType> jacobian_u_j_eigen;

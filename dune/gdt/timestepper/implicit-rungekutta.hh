@@ -238,7 +238,7 @@ public:
     const auto& mapper = disc_func.space().mapper();
     for (const auto& entity : Dune::elements(disc_func.space().grid_view(), Dune::Partitions::interiorBorder))
       for (const auto& index : mapper.globalIndices(entity))
-        norm += std::pow(vector[index],2); 
+        norm += std::pow(vector[index], 2);
     disc_func.space().grid_view().comm().sum(norm);
     norm = std::sqrt(norm);
     return norm;

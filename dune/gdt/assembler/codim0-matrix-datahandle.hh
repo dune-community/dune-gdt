@@ -83,7 +83,7 @@ public:
   {
     const auto& mapper = space_.mapper();
     const auto& num_local_dofs = mapper.numDofs(entity);
-    assert(num_local_dofs*num_local_dofs == n);
+    assert(num_local_dofs * num_local_dofs == n);
     for (size_t ii = 0; ii < num_local_dofs; ++ii)
       for (size_t jj = 0; jj < num_local_dofs; ++jj)
         buff.read(matrix_.get_entry_ref(mapper.mapToGlobal(entity, ii), mapper.mapToGlobal(entity, jj)));

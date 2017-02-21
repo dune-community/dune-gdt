@@ -150,7 +150,7 @@ void solve_lower_triangular(const MatrixType& A, VectorType& x, const VectorType
   rhs = b; // copy data
   // forward solve
   for (size_t ii = 0; ii < A.N(); ++ii) {
-    for (int jj = ii - 1; jj >= 0; --jj)
+    for (size_t jj = 0; jj < ii; ++jj)
       rhs[ii] -= A[ii][jj] * x[jj];
     x[ii] = rhs[ii] / A[ii][ii];
   }
@@ -159,6 +159,8 @@ void solve_lower_triangular(const MatrixType& A, VectorType& x, const VectorType
 template <class MatrixType, class VectorType>
 void solve_lower_triangular_transposed(const MatrixType& A, VectorType& x, const VectorType& b)
 {
+  if (std::abs(A.determinant()) < 1e-80)
+    DUNE_THROW(Dune::FMatrixError, "A is singular!");
   VectorType& rhs = x; // use x to store rhs
   rhs = b; // copy data
   // backsolve
@@ -518,9 +520,11 @@ private:
   const RangeFieldType epsilon_;
   const MatrixType T_minus_one_;
   const std::string name_;
-  // TODO: concurrent writes to different locations of std::vector are thread-safe in most implementations of std::vector,
+  // TODO: concurrent writes to different locations of std::vector are thread-safe in most implementations of
+  // std::vector,
   // but that is not guaranteed by the standard.
-  // Use unique_ptr in the vectors to avoid the memory cost for storing twice as much matrices or vectors as needed (see constructor)
+  // Use unique_ptr in the vectors to avoid the memory cost for storing twice as much matrices or vectors as needed (see
+  // constructor)
   mutable std::vector<std::unique_ptr<std::pair<double, RangeType>>> alpha_cache_;
   mutable std::vector<std::unique_ptr<RangeType>> beta_cache_;
   mutable std::vector<std::unique_ptr<MatrixType>> T_cache_;
@@ -528,7 +532,7 @@ private:
 #endif
 
 
-#if 0
+#if 1
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * for the notation see
  * Alldredge, Hauck, O'Leary, Tits, "Adaptive change of basis in entropy-based moment closures for linear kinetic
@@ -536,18 +540,11 @@ private:
  * domainDim, rangeDim, rangeDimCols are the respective dimensions of pde solution u, not the dimensions of
  \mathbf{f}.
  */
-template <class GridViewType,
-          class E,
-          class D,
-          size_t d,
-          class R,
-          size_t rangeDim,
-          size_t rC,
-          bool quadrature_is_cartesian = true>
+template <class GridViewType, class E, class D, size_t d, class R, size_t rangeDim, size_t rC>
 class AdaptiveEntropyBasedLocalFlux : public AnalyticalFluxInterface<E, D, d, R, rangeDim, rC>
 {
   typedef AnalyticalFluxInterface<E, D, d, R, rangeDim, rC> BaseType;
-  typedef AdaptiveEntropyBasedLocalFlux<GridViewType, E, D, d, R, rangeDim, rC, quadrature_is_cartesian> ThisType;
+  typedef AdaptiveEntropyBasedLocalFlux<GridViewType, E, D, d, R, rangeDim, rC> ThisType;
 
 public:
   using typename BaseType::DomainType;
@@ -561,15 +558,14 @@ public:
   using typename BaseType::FluxRangeType;
   using typename BaseType::FluxJacobianRangeType;
   typedef std::function<std::pair<RangeType, RangeType>(const RangeType&)> IsotropicDistributionCalculatorType;
-  typedef std::function<RangeType(const DomainType&)> BasisfunctionsType;
-  typedef typename GDT::Hyperbolic::Problems::AdaptiveQuadrature<DomainType, RangeFieldType, RangeType>
+  typedef typename GDT::Hyperbolic::Problems::AdaptiveQuadrature<DomainType, RangeType, RangeType>
       AdaptiveQuadratureType;
+  typedef typename AdaptiveQuadratureType::QuadraturePointType QuadraturePointType;
 
   explicit AdaptiveEntropyBasedLocalFlux(
       const GridViewType& grid_view,
       const IsotropicDistributionCalculatorType isotropic_dist_calculator,
-      BasisfunctionsType basisfunctions,
-      const AdaptiveQuadratureType& adaptive_quadrature,
+      AdaptiveQuadratureType& adaptive_quadrature,
       const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
@@ -582,7 +578,6 @@ public:
       const std::string name = static_id())
     : global_index_set_(grid_view, 0)
     , isotropic_dist_calculator_(isotropic_dist_calculator)
-    , basisfunctions_(basisfunctions)
     , adaptive_quadrature_(adaptive_quadrature)
     , tau_(tau)
     , epsilon_gamma_(epsilon_gamma)
@@ -627,6 +622,7 @@ public:
       RangeType g_k, beta_out;
       MatrixType T_k;
 
+      adaptive_quadrature_.reset();
       const auto r_max = r_sequence_.back();
       for (const auto& r : r_sequence_) {
         RangeType beta_in = beta_cache_[index] ? *(beta_cache_[index]) : alpha_iso;
@@ -642,43 +638,48 @@ public:
         T_k.solve(v_k, v);
         // calculate f_0
 
-        RangeFieldType f_k = adaptive_quadrature_->calculate_integral(
-            [&](const DomainType&, const RangeType& basisevaluation) { return std::exp(beta_in * basisevaluation); },
-            [&](const DomainType& quadpoint) {
+        RangeFieldType f_k = adaptive_quadrature_.template calculate_integral<RangeFieldType>(
+            [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
+              return std::exp(beta_in * p) * quadpoint.weight();
+            },
+            [&](const QuadraturePointType& /*quadpoint*/, const RangeType& m) {
               RangeType ret(0);
-              RangeType basis_evaluated = basisfunctions_(quadpoint);
-              T_k.solve(ret, basis_evaluated);
+              solve_lower_triangular(T_k, ret, m);
               return ret;
-            });
+            },
+            true);
         f_k -= beta_in * v_k;
 
         for (size_t kk = 0; kk < k_max_; ++kk) {
-          change_basis(chol_flag, beta_in, v_k, P_k, T_k, g_k, beta_out);
-          MatrixType T_k_transp(0);
-          for (size_t ii = 0; ii < dimRange; ++ii)
-            for (size_t jj = 0; jj < dimRange; ++jj)
-              T_k_transp[ii][jj] = T_k[jj][ii];
+          change_basis(chol_flag, beta_in, v_k, T_k, g_k, beta_out);
           if (chol_flag == false && r == r_max)
             DUNE_THROW(Dune::NotImplemented, "Failure to converge!");
           // exit inner for loop to increase r if too many iterations are used or cholesky decomposition fails
           if ((kk > k_0_ || chol_flag == false) && r < r_max)
             break;
           // calculate current error
-          RangeType error(0);
-          for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
-            auto m = M_[ll];
-            RangeType Tinv_m(0);
-            T_k.solve(Tinv_m, m);
-            m *= std::exp(beta_out * Tinv_m) * quadrature_[ll].weight();
-            error += m;
-          }
+          RangeType error = adaptive_quadrature_.template calculate_integral<RangeType>(
+              [&](const QuadraturePointType& quadpoint, const RangeType& m, const RangeType& /*p*/) {
+                RangeType Tinv_m(0);
+                solve_lower_triangular(T_k, Tinv_m, m);
+                auto ret = m;
+                ret *= std::exp(beta_out * Tinv_m) * quadpoint.weight();
+                return ret;
+              },
+              [&](const QuadraturePointType& /*quadpoint*/, const RangeType& m) {
+                ;
+                RangeType ret(0);
+                solve_lower_triangular(T_k, ret, m);
+                return ret;
+              },
+              false);
           error -= v;
           // calculate descent direction d_k;
           RangeType d_k = g_k;
           d_k *= -1;
           RangeType T_k_inv_transp_d_k;
           try {
-            T_k_transp.solve(T_k_inv_transp_d_k, d_k);
+            solve_lower_triangular_transposed(T_k, T_k_inv_transp_d_k, d_k);
           } catch (const Dune::FMatrixError& e) {
             if (r < r_max)
               break;
@@ -686,19 +687,27 @@ public:
               DUNE_THROW(Dune::FMatrixError, e.what());
           }
           if (error.two_norm() < tau_ && std::exp(5 * T_k_inv_transp_d_k.one_norm()) < 1 + epsilon_gamma_) {
-            T_k_transp.solve(alpha, beta_out);
+            solve_lower_triangular_transposed(T_k, alpha, beta_out);
             goto outside_all_loops;
           } else {
             RangeFieldType zeta_k = 1;
             beta_in = beta_out;
             // backtracking line search
             while (zeta_k > epsilon_ * beta_out.two_norm() / d_k.two_norm()) {
-              RangeFieldType f(0);
               auto beta_new = d_k;
               beta_new *= zeta_k;
               beta_new += beta_out;
-              for (size_t ll = 0; ll < quadrature_.size(); ++ll)
-                f += quadrature_[ll].weight() * std::exp(beta_new * P_k[ll]);
+
+              RangeFieldType f = adaptive_quadrature_.template calculate_integral<RangeFieldType>(
+                  [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
+                    return std::exp(beta_new * p) * quadpoint.weight();
+                  },
+                  [&](const QuadraturePointType& /*quadpoint*/, const RangeType& m) {
+                    RangeType ret(0);
+                    solve_lower_triangular(T_k, ret, m);
+                    return ret;
+                  },
+                  false);
               f -= beta_new * v_k;
               if (XT::Common::FloatCmp::le(f, f_k + xi_ * zeta_k * (g_k * d_k))) {
                 beta_in = beta_new;
@@ -725,34 +734,36 @@ public:
 
   virtual FluxRangeType evaluate(const RangeType& u, const E& entity, const DomainType& x_local, const double t) const
   {
-    const auto alpha = get_alpha(u, entity, x_local, t);
-    // calculate ret[ii] = < omega[ii] m G_\alpha(u) >
-    Dune::FieldMatrix<RangeFieldType, dimRange, dimDomain> ret(0);
-    Dune::FieldVector<RangeFieldType, dimDomain> omega;
-    RangeType m;
-    for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
-      const auto& position = quadrature_[ll].position();
-      const auto& weight = quadrature_[ll].weight();
-      if (quadrature_is_cartesian) {
-        for (size_t dd = 0; dd < dimDomain; ++dd)
-          omega[dd] = position[dd];
-      } else {
-        const auto& mu = position[0];
-        const auto& phi = position[1];
-        omega[0] = std::sqrt(1. - mu * mu) * std::cos(phi);
-        omega[1] = std::sqrt(1. - mu * mu) * std::sin(phi);
-        omega[2] = mu;
-      }
-      const auto factor = std::exp(alpha * m) * weight;
-      m = M_[ll];
-      for (size_t dd = 0; dd < dimDomain; ++dd) {
-        m *= omega[dd] * factor;
-        for (size_t rr = 0; rr < dimRange; ++rr)
-          ret[rr][dd] += m[rr];
-      }
-    }
-    return FluxRangeTypeConverter<dimRange, dimDomain>::convert(ret);
-    //    return ret;
+    //    const auto alpha = get_alpha(u, entity, x_local, t);
+    //    // calculate ret[ii] = < omega[ii] m G_\alpha(u) >
+    //    Dune::FieldMatrix<RangeFieldType, dimRange, dimDomain> ret(0);
+    //    Dune::FieldVector<RangeFieldType, dimDomain> omega;
+    //    RangeType m;
+    //    for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
+    //      const auto& position = quadrature_[ll].position();
+    //      const auto& weight = quadrature_[ll].weight();
+    //      if (quadrature_is_cartesian) {
+    //        for (size_t dd = 0; dd < dimDomain; ++dd)
+    //          omega[dd] = position[dd];
+    //      } else {
+    //        const auto& mu = position[0];
+    //        const auto& phi = position[1];
+    //        omega[0] = std::sqrt(1. - mu * mu) * std::cos(phi);
+    //        omega[1] = std::sqrt(1. - mu * mu) * std::sin(phi);
+    //        omega[2] = mu;
+    //      }
+    //      const auto factor = std::exp(alpha * m) * weight;
+    //      m = M_[ll];
+    //      for (size_t dd = 0; dd < dimDomain; ++dd) {
+    //        m *= omega[dd] * factor;
+    //        for (size_t rr = 0; rr < dimRange; ++rr)
+    //          ret[rr][dd] += m[rr];
+    //      }
+    //    }
+
+    // return FluxRangeTypeConverter<dimRange, dimDomain>::convert(ret);
+    return FluxRangeType(0);
+
   } // FluxRangeType evaluate(...)
 
   virtual RangeType calculate_flux_integral(const RangeType& u_i,
@@ -767,30 +778,20 @@ public:
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto alpha_i = get_alpha(u_i, entity, x_local_entity, t);
     const auto alpha_j = get_alpha(u_j, neighbor, x_local_neighbor, t);
-    RangeType ret(0);
-    for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
-      const auto& position = quadrature_[ll].position();
-      const auto& weight = quadrature_[ll].weight();
-      Dune::FieldVector<double, dimDomain> omega;
-      if (quadrature_is_cartesian) {
-        for (size_t dd = 0; dd < dimDomain; ++dd)
-          omega[dd] = position[dd];
-      } else {
-        const auto& mu = position[0];
-        const auto& phi = position[1];
-        omega[0] = std::sqrt(1. - mu * mu) * std::cos(phi);
-        omega[1] = std::sqrt(1. - mu * mu) * std::sin(phi);
-        omega[2] = mu;
-      }
-      const auto& m = M_[ll];
-      const auto factor = position * n_ij > 0 ? std::exp(alpha_i * m) * weight : std::exp(alpha_j * m) * weight;
-      for (size_t dd = 0; dd < dimDomain; ++dd) {
-        auto contribution = m;
-        contribution *= omega[dd] * factor * n_ij[dd];
-        ret += contribution;
-      } // dd
-    } // ll
-    return ret;
+    return adaptive_quadrature_.template calculate_integral<RangeType>(
+        [&](const QuadraturePointType& quadpoint, const RangeType& m, const RangeType& /*p*/) {
+          const auto factor = quadpoint.position() * n_ij > 0 ? std::exp(alpha_i * m) * quadpoint.weight()
+                                                              : std::exp(alpha_j * m) * quadpoint.weight();
+          RangeType ret(0);
+          for (size_t dd = 0; dd < dimDomain; ++dd) {
+            auto summand = m;
+            summand *= quadpoint.position()[dd] * factor * n_ij[dd];
+            ret += summand;
+          } // dd
+          return ret;
+        },
+        [&](const QuadraturePointType& /*quadpoint*/, const RangeType& /*m*/) { return RangeType(0); },
+        false);
   } // RangeType calculate_flux_integral(...)
 
   static std::string static_id()
@@ -802,48 +803,50 @@ private:
   void change_basis(bool& chol_flag,
                     const RangeType& beta_in,
                     RangeType& v_k,
-                    BasisValuesMatrixType& P_k,
                     MatrixType& T_k,
                     RangeType& g_k,
                     RangeType& beta_out) const
   {
     MatrixType tmp, L(0);
-    MatrixType H = adaptive_quadrature_->calculate_integral(
-        [&](const DomainType&, const RangeType& basisevaluation) {
+
+    MatrixType H = adaptive_quadrature_.template calculate_integral<MatrixType>(
+        [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
+          auto p_scaled = p;
+          p_scaled *= std::exp(beta_in * p) * quadpoint.weight();
           for (size_t ii = 0; ii < dimRange; ++ii) {
-            tmp[ii] = basisevaluation;
-            tmp[ii] *= basisevaluation[ii];
+            tmp[ii] = p_scaled;
+            tmp[ii] *= p[ii];
           }
-          // multiply p p^T by factor
-          tmp *= std::exp(beta_in * basisevaluation);
           return tmp;
         },
-        [&](const DomainType& quadpoint) {
+        [&](const QuadraturePointType& /*quadpoint*/, const RangeType& m) {
           RangeType ret(0);
-          RangeType basis_evaluated = basisfunctions_(quadpoint);
-          T_k.solve(ret, basis_evaluated);
+          solve_lower_triangular(T_k, ret, m);
           return ret;
-        });
+        },
+        false);
 
     chol_flag = cholesky_L(H, L);
     if (chol_flag == false)
       return;
-    const auto P_k_copy = P_k;
     const auto v_k_copy = v_k;
-    for (size_t ll = 0; ll < P_k.size(); ++ll)
-      L.solve(P_k[ll], P_k_copy[ll]);
     T_k.rightmultiply(L);
     L.mtv(beta_in, beta_out);
-    L.solve(v_k, v_k_copy);
-    g_k = v_k;
-    g_k *= -1;
-    for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
-      // assumes that the first basis function is constant
-      //      g_k[0] += std::exp(beta_out * P_k[ll]) * quadrature_[ll].weight() * P_k[0][0];
-      auto contribution = P_k[ll];
-      contribution *= std::exp(beta_out * P_k[ll]) * quadrature_[ll].weight();
-      g_k += contribution;
-    }
+    solve_lower_triangular(L, v_k, v_k_copy);
+
+    g_k = adaptive_quadrature_.template calculate_integral<RangeType>(
+        [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
+          auto p_scaled = p;
+          p_scaled *= std::exp(beta_out * p) * quadpoint.weight();
+          return p_scaled;
+        },
+        [&](const QuadraturePointType& /*quadpoint*/, const RangeType& m) {
+          RangeType ret(0);
+          solve_lower_triangular(T_k, ret, m);
+          return ret;
+        },
+        true);
+    g_k -= v_k;
   } // void change_basis(...)
 
   // copied and adapted from dune/geometry/affinegeometry.hh
@@ -875,8 +878,7 @@ private:
 
   const Dune::GlobalIndexSet<GridViewType> global_index_set_;
   const IsotropicDistributionCalculatorType isotropic_dist_calculator_;
-  const BasisfunctionsType basisfunctions_;
-  mutable XT::Common::PerThreadValue<AdaptiveQuadratureType> adaptive_quadrature_;
+  AdaptiveQuadratureType& adaptive_quadrature_;
   const RangeFieldType tau_;
   const RangeFieldType epsilon_gamma_;
   const RangeFieldType chi_;
@@ -887,9 +889,9 @@ private:
   const RangeFieldType epsilon_;
   const MatrixType T_minus_one_;
   const std::string name_;
-  mutable std::vector<std::unique_ptr<std::pair<double, RangeType>>>> alpha_cache_;
-  mutable std::vector<std::unique_ptr<RangeType>>> beta_cache_;
-  mutable std::vector<std::unique_ptr<MatrixType>>> T_cache_;
+  mutable std::vector<std::unique_ptr<std::pair<double, RangeType>>> alpha_cache_;
+  mutable std::vector<std::unique_ptr<RangeType>> beta_cache_;
+  mutable std::vector<std::unique_ptr<MatrixType>> T_cache_;
 };
 #endif
 
@@ -1256,9 +1258,9 @@ private:
   const MatrixType T_minus_one_;
   const std::string name_;
   const XT::LA::SparsityPatternDefault dense_pattern_;
-  mutable XT::Common::PerThreadValue<std::vector<std::shared_ptr<std::pair<double, VectorType>>>> alpha_cache_;
-  mutable XT::Common::PerThreadValue<std::vector<std::shared_ptr<VectorType>>> beta_cache_;
-  mutable XT::Common::PerThreadValue<std::vector<std::shared_ptr<MatrixType>>> T_cache_;
+  mutable std::vector<std::shared_ptr<std::pair<double, VectorType>>> alpha_cache_;
+  mutable std::vector<std::shared_ptr<VectorType>> beta_cache_;
+  mutable std::vector<std::shared_ptr<MatrixType>> T_cache_;
 };
 #endif
 
