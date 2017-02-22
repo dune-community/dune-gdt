@@ -1283,8 +1283,8 @@ public:
       const auto point = quad_point.position();
       const auto basis_evaluated = evaluate_linear_partial_basis<RangeType, DomainType, Polyhedron_3>(point, poly);
       const auto weight = quad_point.weight();
-      for (int nn = 0; nn < dimRange; ++nn) {
-        for (int mm = 0; mm < dimRange; ++mm) {
+      for (size_t nn = 0; nn < dimRange; ++nn) {
+        for (size_t mm = 0; mm < dimRange; ++mm) {
           A_0[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * point[0] * weight;
           A_1[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * point[1] * weight;
           A_2[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * point[2] * weight;

@@ -159,16 +159,21 @@ void solve_lower_triangular(const MatrixType& A, VectorType& x, const VectorType
 template <class MatrixType, class VectorType>
 void solve_lower_triangular_transposed(const MatrixType& A, VectorType& x, const VectorType& b)
 {
-  if (std::abs(A.determinant()) < 1e-80)
-    DUNE_THROW(Dune::FMatrixError, "A is singular!");
   VectorType& rhs = x; // use x to store rhs
   rhs = b; // copy data
   // backsolve
+  double min_eigval(std::abs(A[0][0]));
+  double max_eigval = min_eigval;
   for (int ii = A.N() - 1; ii >= 0; ii--) {
+    auto abs = std::abs(A[ii][ii]);
+    min_eigval = std::min(abs, min_eigval);
+    max_eigval = std::max(abs, max_eigval);
     for (size_t jj = ii + 1; jj < A.N(); jj++)
       rhs[ii] -= A[jj][ii] * x[jj];
     x[ii] = rhs[ii] / A[ii][ii];
   }
+  if (XT::Common::FloatCmp::eq(min_eigval, 0.) || max_eigval/min_eigval > 1e10)
+      DUNE_THROW(Dune::FMatrixError, "A is singular!");
 }
 
 
