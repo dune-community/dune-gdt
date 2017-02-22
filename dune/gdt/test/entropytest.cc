@@ -485,7 +485,7 @@ int main(int argc, char** argv)
     filename += Dune::XT::Common::to_string(dimRange);
     filename += rhs_time_stepper_method == TimeStepperMethods::implicit_euler ? "_implicit" : "_explicit";
 
-    timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 1);
+    timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 3);
   } else {
     timestepper_op.solve(t_end, dt, num_save_steps, false, true, visualize, "entropy_implicit_trapezoidal");
   }
