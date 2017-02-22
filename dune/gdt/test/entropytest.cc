@@ -56,6 +56,8 @@ int main(int argc, char** argv)
   size_t num_save_steps = -1;
   std::string grid_size("100"), overlap_size("1");
   double t_end = 0;
+  double rel_tol = 1e-2;
+  double abs_tol = 1e-2;
   bool visualize = true;
   for (int i = 1; i < argc; ++i) {
     if (std::string(argv[i]) == "-num_threads") {
@@ -91,6 +93,20 @@ int main(int argc, char** argv)
         t_end = XT::Common::from_string<double>(argv[++i]);
       } else {
         std::cerr << "-t_end option requires one argument." << std::endl;
+        return 1;
+      }
+        } else if (std::string(argv[i]) == "-quadrature_rel_tol") {
+      if (i + 1 < argc) {
+        rel_tol = XT::Common::from_string<double>(argv[++i]);
+      } else {
+        std::cerr << "-quadrature_rel_tol option requires one argument." << std::endl;
+        return 1;
+      }
+  } else if (std::string(argv[i]) == "-quadrature_abs_tol") {
+      if (i + 1 < argc) {
+        abs_tol = XT::Common::from_string<double>(argv[++i]);
+      } else {
+        std::cerr << "-quadrature_abs_tol option requires one argument." << std::endl;
         return 1;
       }
     } else if (std::string(argv[i]) == "--no_visualization") {
@@ -225,7 +241,7 @@ int main(int argc, char** argv)
                                                                             CGALWrapper::Polyhedron_3>;
   BasisfunctionsType basisfunctions(
       [&](const QuadraturePointType& quadpoint) { return basisevaluation(quadpoint.position(), poly); });
-  AdaptiveQuadratureType adaptive_quadrature(poly, basisfunctions);
+  AdaptiveQuadratureType adaptive_quadrature(poly, basisfunctions, rel_tol, abs_tol);
 
   //******************* create ProblemType object ***************************************
   //  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config));
@@ -358,11 +374,10 @@ int main(int argc, char** argv)
 
   //*********************** choose analytical flux *************************************************************
 
-  //  typedef EntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
-  //  AnalyticalFluxType;
+    typedef EntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1> AnalyticalFluxType;
 
-  typedef AdaptiveEntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
-      AnalyticalFluxType;
+//  typedef AdaptiveEntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
+//      AnalyticalFluxType;
 
   //  typedef typename EntropyBasedLocalFlux3D<GridViewType,
   //                                                      EntityType,
@@ -397,13 +412,13 @@ int main(int argc, char** argv)
   //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
   //      grid_view, quadrature_rule, basis_values_matrix, ProblemType::create_equidistant_points());
 
-  //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
-  //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
+    const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
+        grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
 
-  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(grid_view,
+//  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(grid_view,
                                                                           // isotropic_dist_calculator_3d_partialbasis,
-                                                                          isotropic_dist_calculator_3d_hatfunctions,
-                                                                          adaptive_quadrature);
+//                                                                          isotropic_dist_calculator_3d_hatfunctions,
+//                                                                          adaptive_quadrature);
 
 
   // ******************** choose flux and rhs operator and timestepper
@@ -442,7 +457,7 @@ int main(int argc, char** argv)
     dx /= std::sqrt(2);
   if (dimDomain == 3)
     dx /= std::sqrt(3);
-  RangeFieldType dt = 0.5 * CFL * dx;
+  RangeFieldType dt = CFL * dx;
   t_end = XT::Common::FloatCmp::eq(t_end, 0.) ? problem.t_end() : t_end;
 
 

@@ -570,7 +570,7 @@ public:
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
       const RangeFieldType xi = 1e-3,
-      const std::vector<RangeFieldType> r_sequence = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5},
+      const std::vector<RangeFieldType> r_sequence = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2},
       const size_t k_0 = 50,
       const size_t k_max = 200,
       const RangeFieldType epsilon = std::pow(2, -52),
@@ -622,9 +622,9 @@ public:
       RangeType g_k, beta_out;
       MatrixType T_k;
 
-      adaptive_quadrature_.reset();
       const auto r_max = r_sequence_.back();
       for (const auto& r : r_sequence_) {
+        adaptive_quadrature_.reset();
         RangeType beta_in = beta_cache_[index] ? *(beta_cache_[index]) : alpha_iso;
         T_k = T_cache_[index] ? *(T_cache_[index]) : T_minus_one_;
         // normalize u
@@ -636,9 +636,11 @@ public:
         // calculate T_k u
         RangeType v_k;
         T_k.solve(v_k, v);
-        // calculate f_0
 
-        RangeFieldType f_k = adaptive_quadrature_.template calculate_integral<RangeFieldType>(
+        // calculate f_0
+        RangeFieldType f_k;
+        try {
+        f_k = adaptive_quadrature_.template calculate_integral<RangeFieldType>(
             [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
               return std::exp(beta_in * p) * quadpoint.weight();
             },
@@ -648,6 +650,12 @@ public:
               return ret;
             },
             true);
+        } catch (const Dune::NotImplemented& e) {
+            if (r < r_max)
+                continue;
+            else
+                DUNE_THROW(Dune::NotImplemented, e.what());
+        }
         f_k -= beta_in * v_k;
 
         for (size_t kk = 0; kk < k_max_; ++kk) {
@@ -658,7 +666,9 @@ public:
           if ((kk > k_0_ || chol_flag == false) && r < r_max)
             break;
           // calculate current error
-          RangeType error = adaptive_quadrature_.template calculate_integral<RangeType>(
+          RangeType error;
+          try {
+          error = adaptive_quadrature_.template calculate_integral<RangeType>(
               [&](const QuadraturePointType& quadpoint, const RangeType& m, const RangeType& /*p*/) {
                 RangeType Tinv_m(0);
                 solve_lower_triangular(T_k, Tinv_m, m);
@@ -673,6 +683,12 @@ public:
                 return ret;
               },
               false);
+        } catch (const Dune::NotImplemented& e) {
+            if (r < r_max)
+                break;
+            else
+                DUNE_THROW(Dune::NotImplemented, "");
+        }
           error -= v;
           // calculate descent direction d_k;
           RangeType d_k = g_k;
@@ -698,7 +714,9 @@ public:
               beta_new *= zeta_k;
               beta_new += beta_out;
 
-              RangeFieldType f = adaptive_quadrature_.template calculate_integral<RangeFieldType>(
+              RangeFieldType f;
+              try {
+              f = adaptive_quadrature_.template calculate_integral<RangeFieldType>(
                   [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
                     return std::exp(beta_new * p) * quadpoint.weight();
                   },
@@ -708,6 +726,14 @@ public:
                     return ret;
                   },
                   false);
+        } catch (const Dune::NotImplemented& e) {
+            if (r < r_max) {
+                kk = 10000;
+                break;
+            }
+            else
+                DUNE_THROW(Dune::NotImplemented, "");
+        }
               f -= beta_new * v_k;
               if (XT::Common::FloatCmp::le(f, f_k + xi_ * zeta_k * (g_k * d_k))) {
                 beta_in = beta_new;
@@ -807,9 +833,10 @@ private:
                     RangeType& g_k,
                     RangeType& beta_out) const
   {
-    MatrixType tmp, L(0);
+    MatrixType tmp, L(0), H;
 
-    MatrixType H = adaptive_quadrature_.template calculate_integral<MatrixType>(
+    try {
+    H = adaptive_quadrature_.template calculate_integral<MatrixType>(
         [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
           auto p_scaled = p;
           p_scaled *= std::exp(beta_in * p) * quadpoint.weight();
@@ -825,6 +852,10 @@ private:
           return ret;
         },
         false);
+    } catch (const Dune::NotImplemented&) {
+        chol_flag = false;
+        return;
+    }
 
     chol_flag = cholesky_L(H, L);
     if (chol_flag == false)
@@ -834,6 +865,7 @@ private:
     L.mtv(beta_in, beta_out);
     solve_lower_triangular(L, v_k, v_k_copy);
 
+    try {
     g_k = adaptive_quadrature_.template calculate_integral<RangeType>(
         [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
           auto p_scaled = p;
@@ -847,6 +879,10 @@ private:
         },
         true);
     g_k -= v_k;
+    } catch (const Dune::NotImplemented&) {
+        chol_flag = false;
+        return;
+    }
   } // void change_basis(...)
 
   // copied and adapted from dune/geometry/affinegeometry.hh

@@ -271,10 +271,13 @@ get_barycentre_rule(const Dune::XT::Common::FieldVector<Dune::XT::Common::FieldV
   return ret;
 }
 
-template <class RangeFieldImp = double, class FixedDataType = double, class DynamicDataType = double>
+template <class RangeFieldImp = double, class FixedDataType = double>
 class SphericalTriangle
 {
-  typedef SphericalTriangle<RangeFieldImp, FixedDataType, DynamicDataType> ThisType;
+  static size_t current_index_;
+  static std::mutex indices_mutex_;
+
+  typedef SphericalTriangle<RangeFieldImp, FixedDataType> ThisType;
 
 public:
   typedef typename XT::Common::FieldVector<RangeFieldImp, 3> VertexType;
@@ -282,81 +285,58 @@ public:
   typedef typename Dune::FieldVector<ThisType, 4> SubtrianglesVectorType;
   typedef typename Dune::QuadraturePoint<RangeFieldImp, 3> QuadraturePointType;
   typedef typename Dune::QuadratureRule<RangeFieldImp, 3> QuadratureRuleType;
+  typedef typename std::function<FixedDataType(const QuadraturePointType&)> FixedDataFunctionType;
 
   SphericalTriangle() = default;
-
-  //  SphericalTriangle(const ThisType& other)
-  //    : vertices_(other.vertices_)
-  //    , fixed_data_(other.fixed_data_)
-  //    , dynamic_data_(other.dynamic_data_)
-  //    , subtriangle_mutex_(std::make_unique<std::mutex>())
-  //    , fixed_data_mutex_(std::make_unique<std::mutex>())
-  //  {
-  //  }
-
-  //  ThisType& operator=(const ThisType& other)
-  //  {
-  //    vertices_ = other.vertices_;
-  //    subtriangles_ = std::make_unique<SubtrianglesVectorType>(*other.subtriangles_);
-  //    barycentre_rule_ = other.barycentre_rule_;
-  //    fixed_data_ = other.fixed_data_;
-  //    dynamic_data_ = other.dynamic_data_;
-  //    subtriangle_mutex_ = std::make_unique<std::mutex>();
-  //    barycentre_mutex_ = std::make_unique<std::mutex>();
-  //    fixed_data_mutex_ = std::make_unique<std::mutex>();
-  //    return *this;
-  //  }
-
-
   SphericalTriangle(ThisType&& other) = default;
   ThisType& operator=(ThisType&& other) = default;
 
-  //  ThisType& operator=(ThisType&& other)
-  //  {
-  //    vertices_ = std::move(other.vertices_);
-  //    subtriangles_ = std::move(other.subtriangles_);
-  //    barycentre_rule_ = std::move(other.barycentre_rule_);
-  //    fixed_data_ = std::move(other.fixed_data_);
-  //    dynamic_data_ = std::move(other.dynamic_data_);
-  //    subtriangle_mutex_ = std::move(other.subtriangle_mutex_);
-  //    barycentre_mutex_ = std::move(other.barycentre_mutex_);
-  //    fixed_data_mutex_ = std::move(other.fixed_data_mutex_);
-  //    return *this;
-  //  }
-
-  SphericalTriangle(const VertexVectorType& vertices)
+  SphericalTriangle(const VertexVectorType& vertices, const FixedDataFunctionType* fixed_data_function)
     : vertices_(vertices)
-    , dynamic_data_(std::make_shared<XT::Common::PerThreadValue<std::shared_ptr<DynamicDataType>>>(nullptr))
+    , fixed_data_function_(fixed_data_function)
+    , index_(get_current_index())
     , subtriangle_mutex_(std::make_unique<std::mutex>())
     , fixed_data_mutex_(std::make_unique<std::mutex>())
     , subtriangles_initialized_(false)
   {
     calculate_barycentre_rule();
+    if (fixed_data_function_)
+        set_fixed_data((*fixed_data_function_)(get_quadrature_point()));
   }
 
-  SphericalTriangle(const VertexType& vertex_1, const VertexType& vertex_2, const VertexType& vertex_3)
+  SphericalTriangle(const VertexType& vertex_1, const VertexType& vertex_2, const VertexType& vertex_3, const FixedDataFunctionType* fixed_data_function)
     : vertices_{vertex_1, vertex_2, vertex_3}
-    , dynamic_data_(std::make_shared<XT::Common::PerThreadValue<std::shared_ptr<DynamicDataType>>>(nullptr))
+    , fixed_data_function_(fixed_data_function)
+    , index_(get_current_index())
     , subtriangle_mutex_(std::make_unique<std::mutex>())
     , fixed_data_mutex_(std::make_unique<std::mutex>())
     , subtriangles_initialized_(false)
   {
     calculate_barycentre_rule();
+    if (fixed_data_function_)
+        set_fixed_data((*fixed_data_function_)(get_quadrature_point()));
   }
 
   SphericalTriangle(const VertexType& vertex_1,
                     const VertexType& vertex_2,
                     const VertexType& vertex_3,
-                    const std::shared_ptr<FixedDataType>& fixed_data,
-                    const std::shared_ptr<XT::Common::PerThreadValue<std::shared_ptr<DynamicDataType>>>& dynamic_data)
+                    const FixedDataType& fixed_data,
+                    const FixedDataFunctionType* fixed_data_function,
+                    const size_t index)
     : vertices_{vertex_1, vertex_2, vertex_3}
     , fixed_data_(fixed_data)
-    , dynamic_data_(dynamic_data)
+    , fixed_data_function_(fixed_data_function)
+    , index_(index)
     , subtriangle_mutex_(std::make_unique<std::mutex>())
     , fixed_data_mutex_(std::make_unique<std::mutex>())
     , subtriangles_initialized_(false)
   {
     calculate_barycentre_rule();
+  }
+
+  static size_t max_index()
+  {
+     return current_index_;
   }
 
   const SubtrianglesVectorType& get_subtriangles() const
@@ -376,7 +356,7 @@ public:
     return barycentre_rule_[0];
   }
 
-  const std::shared_ptr<FixedDataType>& fixed_data() const
+  const FixedDataType& fixed_data() const
   {
     return fixed_data_;
   }
@@ -384,20 +364,21 @@ public:
   void set_fixed_data(const FixedDataType& data)
   {
     std::lock_guard<std::mutex> lock(*fixed_data_mutex_);
-    fixed_data_ = std::make_shared<FixedDataType>(data);
+    fixed_data_ = data;
   }
 
-  const std::shared_ptr<DynamicDataType>& dynamic_data() const
+  size_t index()
   {
-    return **dynamic_data_;
-  }
-
-  std::shared_ptr<DynamicDataType>& dynamic_data()
-  {
-    return **dynamic_data_;
+    return index_;
   }
 
 private:
+  static size_t get_current_index()
+  {
+    std::lock_guard<std::mutex> lock(indices_mutex_);
+    return current_index_++;
+  }
+
   void initialize_subtriangles() const
   {
     if (!subtriangles_initialized_) {
@@ -410,10 +391,10 @@ private:
         }
         subtriangles_ = std::make_unique<SubtrianglesVectorType>();
         auto& subtriangles = *subtriangles_;
-        subtriangles[0] = ThisType(vertices_[0], midpoints[1], midpoints[2]);
-        subtriangles[1] = ThisType(vertices_[1], midpoints[2], midpoints[0]);
-        subtriangles[2] = ThisType(vertices_[2], midpoints[0], midpoints[1]);
-        subtriangles[3] = ThisType(midpoints[0], midpoints[1], midpoints[2], fixed_data_, dynamic_data_);
+        subtriangles[0] = ThisType(vertices_[0], midpoints[1], midpoints[2], fixed_data_function_);
+        subtriangles[1] = ThisType(vertices_[1], midpoints[2], midpoints[0], fixed_data_function_);
+        subtriangles[2] = ThisType(vertices_[2], midpoints[0], midpoints[1], fixed_data_function_);
+        subtriangles[3] = ThisType(midpoints[0], midpoints[1], midpoints[2], fixed_data_, fixed_data_function_, index_);
         subtriangles_initialized_ = true;
       }
     }
@@ -438,25 +419,32 @@ private:
   }
 
   VertexVectorType vertices_;
+  FixedDataType fixed_data_;
+  const FixedDataFunctionType* fixed_data_function_;
+  size_t index_;
   mutable std::unique_ptr<SubtrianglesVectorType> subtriangles_;
   mutable QuadratureRuleType barycentre_rule_;
-  std::shared_ptr<FixedDataType> fixed_data_;
-  std::shared_ptr<XT::Common::PerThreadValue<std::shared_ptr<DynamicDataType>>> dynamic_data_;
   mutable std::unique_ptr<std::mutex> subtriangle_mutex_;
   mutable std::unique_ptr<std::mutex> fixed_data_mutex_;
   mutable bool subtriangles_initialized_;
 }; // class SphericalTriangle<...>
 
+template <class RangeFieldImp, class FixedDataType>
+size_t SphericalTriangle<RangeFieldImp, FixedDataType>::current_index_ = 0;
+
+template <class RangeFieldImp, class FixedDataType>
+std::mutex SphericalTriangle<RangeFieldImp, FixedDataType>::indices_mutex_;
 
 template <class RangeFieldImp = double, class TriangleImp = SphericalTriangle<RangeFieldImp>>
 class SphericalTriangulation
 {
 public:
   typedef TriangleImp TriangleType;
+  typedef typename TriangleType::FixedDataFunctionType FixedDataFunctionType;
   typedef typename TriangleType::VertexVectorType VertexVectorType;
   typedef typename VertexVectorType::value_type VertexType;
 
-  SphericalTriangulation(const typename CGALWrapper::Polyhedron_3& poly)
+  SphericalTriangulation(const typename CGALWrapper::Polyhedron_3& poly, const FixedDataFunctionType& fixed_data_function)
   {
     const auto facets_it_end = poly.facets_end();
     for (auto facets_it = poly.facets_begin(); facets_it != facets_it_end; ++facets_it) {
@@ -468,7 +456,7 @@ public:
         const auto& point = halfedge_circ->vertex()->point();
         vertices[ii] = VertexType({point.x(), point.y(), point.z()});
       } while (++ii, ++halfedge_circ != halfedge_circ_begin);
-      faces_.emplace_back(vertices);
+      faces_.emplace_back(vertices, &fixed_data_function);
     } // iterate over faces
   }
 
@@ -511,20 +499,25 @@ template <class DomainType, class FixedDataType, class DynamicDataType, class Ra
 class AdaptiveQuadrature
 {
 public:
-  typedef SphericalTriangle<RangeFieldImp, FixedDataType, DynamicDataType> TriangleType;
+  typedef SphericalTriangle<RangeFieldImp, FixedDataType> TriangleType;
   typedef SphericalTriangulation<RangeFieldImp, TriangleType> TriangulationType;
   typedef typename TriangleType::VertexVectorType VertexVectorType;
   typedef typename VertexVectorType::value_type VertexType;
   typedef typename TriangleType::QuadraturePointType QuadraturePointType;
+  typedef typename TriangleType::FixedDataFunctionType FixedDataFunctionType;
 
   AdaptiveQuadrature(const typename CGALWrapper::Polyhedron_3& poly,
-                     const std::function<FixedDataType(const QuadraturePointType&)>& fixed_data_function,
-                     const double tol = 1e-3,
-                     const double gamma = 1.)
-    : triangulation_(poly)
-    , fixed_data_function_(fixed_data_function)
+                     const FixedDataFunctionType& fixed_data_function,
+                     const double tol = 1e-2,
+                     const double abs_tol = 1e-10,
+                     const size_t max_quadpoints = 1e4,
+                     const double gamma = 2)
+    : triangulation_(poly, fixed_data_function)
     , tol_(tol)
+    , abs_tol_(abs_tol)
+    , max_quadpoints_(max_quadpoints)
     , gamma_(gamma)
+    , dynamic_data_vector_(triangulation_.get_faces().size(), std::make_shared<DynamicDataType>())
   {
     for (auto& face : triangulation_.get_faces())
       current_triangles_->push_back(&face);
@@ -534,15 +527,19 @@ public:
   RangeType calculate_integral(
       std::function<RangeType(const QuadraturePointType&, const FixedDataType&, const DynamicDataType&)> psi,
       const std::function<DynamicDataType(const QuadraturePointType&, const FixedDataType&)>& dynamic_data_function,
-      bool update_data = false)
+      bool update_data = true)
   {
     thread_local std::vector<RangeFieldImp> norm_of_errors_vector_;
     auto& current_triangles = *current_triangles_;
+    auto& dynamic_data_vector = *dynamic_data_vector_;
 
     while (true) {
       RangeType result(0), error(0);
       RangeFieldImp sum_of_norm_of_errors(0);
       size_t num_triangles = current_triangles.size();
+      if (num_triangles > max_quadpoints_)
+        DUNE_THROW(Dune::NotImplemented, "Used to many quadrature points!");
+      // std::cout << "num triangles: " << num_triangles << std::endl;
       if (num_triangles > norm_of_errors_vector_.size())
         norm_of_errors_vector_.resize(num_triangles);
       // loop over triangles
@@ -551,36 +548,33 @@ public:
         // calculate I_0
         const auto& barycentre = triangle.get_quadrature_point();
         const auto& fixed_data = triangle.fixed_data();
-        auto& dynamic_data = triangle.dynamic_data();
-        if (!fixed_data)
-          triangle.set_fixed_data(fixed_data_function_(barycentre));
-        if (!dynamic_data)
-          dynamic_data = std::make_shared<DynamicDataType>(dynamic_data_function(barycentre, *fixed_data));
-        else if (update_data)
-          *dynamic_data = dynamic_data_function(barycentre, *fixed_data);
-        RangeType I_0 = psi(barycentre, *fixed_data, *dynamic_data);
+        auto& dynamic_data = dynamic_data_vector[triangle.index()];
+        if (update_data)
+          *dynamic_data = dynamic_data_function(barycentre, fixed_data);
+        RangeType I_0 = psi(barycentre, fixed_data, *dynamic_data);
 
         // calculate I_1
         RangeType I_1(0);
         auto& subtriangles = triangle.get_subtriangles();
+        dynamic_data_vector.resize(TriangleType::max_index());
         // treat first three subtriangles
         for (size_t jj = 0; jj < 3; ++jj) {
           auto& subtriangle = subtriangles[jj];
           const auto& subbarycentre = subtriangle.get_quadrature_point();
           const auto& fixed_subdata = subtriangle.fixed_data();
-          auto& dynamic_subdata = subtriangle.dynamic_data();
-          if (!fixed_subdata)
-            subtriangle.set_fixed_data(fixed_data_function_(subbarycentre));
+          auto& dynamic_subdata = dynamic_data_vector[subtriangle.index()];
           if (!dynamic_subdata)
-            dynamic_subdata = std::make_shared<DynamicDataType>(dynamic_data_function(subbarycentre, *fixed_subdata));
+              dynamic_subdata = std::make_shared<DynamicDataType>(dynamic_data_function(subbarycentre, fixed_subdata));
           else if (update_data)
-            *dynamic_subdata = dynamic_data_function(subbarycentre, *fixed_subdata);
-          auto contribution = psi(subbarycentre, *fixed_subdata, *dynamic_subdata);
+            *dynamic_subdata = dynamic_data_function(subbarycentre, fixed_subdata);
+          auto contribution = psi(subbarycentre, fixed_subdata, *dynamic_subdata);
           I_1 += contribution;
         }
         // treat last subtriangle explicitly, as it has the same data as the father triangle
         const auto& subbarycentre = subtriangles[3].get_quadrature_point();
-        auto contribution = psi(subbarycentre, *fixed_data, *dynamic_data);
+        // need new reference as references may have been invalidated on resize
+        auto& dynamic_data_new_ref = dynamic_data_vector[triangle.index()];
+        auto contribution = psi(subbarycentre, fixed_data, *dynamic_data_new_ref);
         I_1 += contribution;
         // calculate E(K)
         RangeType local_error(I_1);
@@ -593,7 +587,9 @@ public:
 
       const auto error_norm = two_norm(error);
       const auto result_norm = two_norm(result);
-      if (Dune::XT::Common::FloatCmp::le(error_norm, tol_ * result_norm))
+      if (std::isnan(error_norm) || std::isinf(error_norm) || std::isnan(result_norm) || std::isinf(result_norm))
+         DUNE_THROW(Dune::NotImplemented, "Result is not a number!");
+      if (Dune::XT::Common::FloatCmp::le(error_norm, tol_ * result_norm) || XT::Common::FloatCmp::le(error_norm, abs_tol_))
         return result;
 
       for (size_t ii = 0; ii < num_triangles; ++ii) {
@@ -625,10 +621,12 @@ public:
 
 private:
   TriangulationType triangulation_;
-  const std::function<FixedDataType(const QuadraturePointType&)>& fixed_data_function_;
   double tol_;
+  double abs_tol_;
+  size_t max_quadpoints_;
   double gamma_;
   XT::Common::PerThreadValue<std::vector<TriangleType*>> current_triangles_;
+  XT::Common::PerThreadValue<std::vector<std::shared_ptr<DynamicDataType>>> dynamic_data_vector_;
 };
 
 Dune::QuadratureRule<double, 3> get_equally_dist_quad_points_on_spherical_triangle(
