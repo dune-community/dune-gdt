@@ -129,7 +129,7 @@ public:
   virtual ~AnalyticalFluxInterface() = default;
 
   // Arbitrary entity type with dimension r for FluxRangeType and FluxJacobianRangeType definitions
-  typedef XT::Functions::DummyEntity<r> FluxDummyEntityType;
+  typedef XT::Functions::internal::DummyEntity<r> FluxDummyEntityType;
   typedef
       typename XT::Functions::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
   // TODO: determine correct type
@@ -167,7 +167,7 @@ public:
   static const size_t dimRangeCols = rC;
 
   // Arbitrary entity type with dimension r for FluxRangeType and FluxJacobianRangeType definitions
-  typedef XT::Functions::DummyEntity<r> FluxDummyEntityType;
+  typedef XT::Functions::internal::DummyEntity<r> FluxDummyEntityType;
 
   typedef
       typename XT::Functions::LocalfunctionSetInterface<FluxDummyEntityType, D, r, R, r, d>::RangeType FluxRangeType;
@@ -254,7 +254,7 @@ public:
 
   // RangeType of u, FieldVector or FieldMatrix depending on dimensions
   typedef typename XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>::RangeType RangeType;
-  typedef XT::Functions::DummyEntity<r> DummyEntityType;
+  typedef XT::Functions::internal::DummyEntity<r> DummyEntityType;
   // Jacobian of RHS with respect to u
   // TODO: determine correct type
   typedef typename XT::Functions::LocalfunctionSetInterface<DummyEntityType, R, r, R, r, rC>::JacobianRangeType

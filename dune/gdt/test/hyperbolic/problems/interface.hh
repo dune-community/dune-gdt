@@ -62,14 +62,9 @@ public:
                                                                         dimDomain,
                                                                         RangeFieldType,
                                                                         dimRange,
-                                                                        dimRangeCols,
-                                                                        double>
+                                                                        dimRangeCols>
       BoundaryValueType;
   typedef Dune::XT::Common::Configuration ConfigType;
-  typedef Dune::XT::Functions::TimeDependentFunctionInterface<
-      typename Dune::XT::Functions::
-          LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>>
-      SolutionType;
 
   virtual ~ProblemInterface()
   {
