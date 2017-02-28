@@ -750,6 +750,85 @@ RangeType evaluate_linear_partial_basis(const DomainType& v, const PolyhedronTyp
   return ret;
 } // evaluate_linear_partial_basis
 
+template< class DomainType, class RangeType >
+class Basisfunctionsinterface
+{
+   public:
+    typedef typename DomainType::ctype DomainFieldType;
+    static constexpr size_t dimDomain = DomainType::dimension;
+    static constexpr size_t dimRange = RangeType::dimension;
+    typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
+
+    virtual RangeType evaluate_basisfunctions(const DomainType& v) const = 0;
+
+    virtual RangeType basisfunctions_integrated() const = 0;
+};
+
+template< class DomainType, class RangeType>
+class HatFunctions3d : public Basisfunctionsinterface< DomainType, RangeType >
+{
+    typedef Basisfunctionsinterface< DomainType, RangeType> BaseType;
+public:
+    typedef typename CGALWrapper::Polyhedron_3 Polyhedron_3;
+    using typename BaseType::RangeFieldType;
+    using typename BaseType::QuadratureRuleType;
+    using BaseType::dimDomain;
+    using BaseType::dimRange;
+
+    HatFunctions3d(const QuadratureRuleType& quadrature, const Polyhedron_3& poly)
+        : quadrature_(quadrature)
+        , poly_(poly)
+    {}
+
+    virtual RangeType evaluate_basisfunctions(const DomainType& v) const override
+    {
+        return evaluate_spherical_barycentric_coordinates<RangeType, DomainType, Polyhedron_3>(v, poly_);
+    }
+
+    virtual RangeType basisfunctions_integrated() const override final
+    {
+        RangeType ret(0);
+        for (const auto& quad_point : quadrature_) {
+            const auto v = quad_point.position();
+            const auto basis_evaluated = evaluate_basisfunctions(v);
+            const auto weight = quad_point.weight();
+            for (size_t nn = 0; nn < dimRange; ++nn)
+                ret[nn] += basis_evaluated[nn] * weight;
+        } // quadrature
+        return ret;
+    }
+
+private:
+    const QuadratureRuleType& quadrature_;
+    const Polyhedron_3& poly_;
+};
+
+
+template< class DomainType, class RangeType>
+class PartialMoments3d : public HatFunctions3d< DomainType, RangeType >
+{
+    typedef HatFunctions3d< DomainType, RangeType> BaseType;
+public:
+    using typename BaseType::Polyhedron_3;
+    using typename BaseType::RangeFieldType;
+    using typename BaseType::QuadratureRuleType;
+    using BaseType::dimDomain;
+    using BaseType::dimRange;
+
+    PartialMoments3d(const QuadratureRuleType& quadrature, const Polyhedron_3& poly)
+        : BaseType(quadrature, poly)
+    {}
+
+    virtual RangeType evaluate_basisfunctions(const DomainType& v) const override final
+    {
+        return evaluate_linear_partial_basis<RangeType, DomainType, Polyhedron_3>(v, poly_);
+    }
+
+protected:
+    using BaseType::poly_;
+};
+
+
 
 /** \see class TwoBeams in twobeams.hh */
 template <class PointSourceImp,
