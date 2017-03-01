@@ -115,7 +115,7 @@ public:
                      const std::string& type,
                      const Dune::XT::Common::Parameter& param = {}) const
   {
-    apply_inverse(range, source, invert_options(type, param));
+    apply_inverse(range, source, invert_options(type), param);
   }
 
   template <class RangeType, class SourceType>
