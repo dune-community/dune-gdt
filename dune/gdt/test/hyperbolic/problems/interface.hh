@@ -57,13 +57,9 @@ public:
   typedef Dune::XT::Functions::
       LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
           InitialValueType;
-  typedef typename Dune::XT::Functions::TimeDependentExpressionFunction<EntityType,
-                                                                        DomainFieldType,
-                                                                        dimDomain,
-                                                                        RangeFieldType,
-                                                                        dimRange,
-                                                                        dimRangeCols>
-      BoundaryValueType;
+  typedef typename Dune::XT::Functions::
+      TimeDependentExpressionFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
+          BoundaryValueType;
   typedef Dune::XT::Common::Configuration ConfigType;
 
   virtual ~ProblemInterface()

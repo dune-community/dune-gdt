@@ -42,7 +42,7 @@ public:
   using typename BaseType::DefaultBoundaryValueType;
 
 protected:
-   using typename BaseType::DummyEntityType;
+  using typename BaseType::DummyEntityType;
   typedef typename Dune::XT::Functions::ConstantFunction<DummyEntityType, R, r, R, r, d> RHSConstantFunctionType;
   typedef typename XT::Functions::FunctionCheckerboardFunction<RHSConstantFunctionType,
                                                                EntityType,
@@ -116,22 +116,11 @@ public:
 
 /** \see class TwoBeams in twobeams.hh */
 template <class E, class D, size_t d, class R, size_t momentOrder>
-class FlashPnLegendre : public FlashBase<FlashPnLegendre<E, D, d, R, momentOrder>,
-                                                     E,
-                                                     D,
-                                                     d,
-                                                     R,
-                                                     (momentOrder + 1) * (momentOrder + 1),
-                                                     1>
+class FlashPnLegendre
+    : public FlashBase<FlashPnLegendre<E, D, d, R, momentOrder>, E, D, d, R, (momentOrder + 1) * (momentOrder + 1), 1>
 {
   typedef FlashPnLegendre<E, D, d, R, momentOrder> ThisType;
-  typedef FlashBase<FlashPnLegendre<E, D, d, R, momentOrder>,
-                          E,
-                          D,
-                          d,
-                          R,
-                          (momentOrder + 1) * (momentOrder + 1),
-                          1>
+  typedef FlashBase<FlashPnLegendre<E, D, d, R, momentOrder>, E, D, d, R, (momentOrder + 1) * (momentOrder + 1), 1>
       BaseType;
 
 public:
@@ -162,7 +151,8 @@ public:
   {
   }
 
-  // Initial value of the kinetic equation is 1/13839.6366*exp(10*omega_1) on D (sphere with radius 5) and 1e-4/(4 pi) else.
+  // Initial value of the kinetic equation is 1/13839.6366*exp(10*omega_1) on D (sphere with radius 5) and 1e-4/(4 pi)
+  // else.
   static ConfigType create_initial_value_config(const ConfigType grid_config = default_grid_config(),
                                                 const PointsVectorType& v_points = create_equidistant_points(),
                                                 const RangeFieldType psi_vac = 5e-9)
@@ -257,8 +247,7 @@ public:
 
 /** \see class TwoBeams in twobeams.hh */
 template <class E, class D, size_t d, class R, size_t num_vertices>
-class FlashPnHatFunctions
-    : public FlashBase<FlashPnHatFunctions<E, D, d, R, num_vertices>, E, D, d, R, num_vertices, 1>
+class FlashPnHatFunctions : public FlashBase<FlashPnHatFunctions<E, D, d, R, num_vertices>, E, D, d, R, num_vertices, 1>
 {
   typedef FlashPnHatFunctions<E, D, d, R, num_vertices> ThisType;
   typedef FlashBase<FlashPnHatFunctions<E, D, d, R, num_vertices>, E, D, d, R, num_vertices, 1> BaseType;

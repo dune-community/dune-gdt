@@ -301,10 +301,13 @@ public:
   {
     calculate_barycentre_rule();
     if (fixed_data_function_)
-        set_fixed_data((*fixed_data_function_)(get_quadrature_point()));
+      set_fixed_data((*fixed_data_function_)(get_quadrature_point()));
   }
 
-  SphericalTriangle(const VertexType& vertex_1, const VertexType& vertex_2, const VertexType& vertex_3, const FixedDataFunctionType* fixed_data_function)
+  SphericalTriangle(const VertexType& vertex_1,
+                    const VertexType& vertex_2,
+                    const VertexType& vertex_3,
+                    const FixedDataFunctionType* fixed_data_function)
     : vertices_{vertex_1, vertex_2, vertex_3}
     , fixed_data_function_(fixed_data_function)
     , index_(get_current_index())
@@ -314,7 +317,7 @@ public:
   {
     calculate_barycentre_rule();
     if (fixed_data_function_)
-        set_fixed_data((*fixed_data_function_)(get_quadrature_point()));
+      set_fixed_data((*fixed_data_function_)(get_quadrature_point()));
   }
 
   SphericalTriangle(const VertexType& vertex_1,
@@ -336,7 +339,7 @@ public:
 
   static size_t max_index()
   {
-     return current_index_;
+    return current_index_;
   }
 
   const SubtrianglesVectorType& get_subtriangles() const
@@ -444,7 +447,8 @@ public:
   typedef typename TriangleType::VertexVectorType VertexVectorType;
   typedef typename VertexVectorType::value_type VertexType;
 
-  SphericalTriangulation(const typename CGALWrapper::Polyhedron_3& poly, const FixedDataFunctionType& fixed_data_function)
+  SphericalTriangulation(const typename CGALWrapper::Polyhedron_3& poly,
+                         const FixedDataFunctionType& fixed_data_function)
   {
     const auto facets_it_end = poly.facets_end();
     for (auto facets_it = poly.facets_begin(); facets_it != facets_it_end; ++facets_it) {
@@ -564,7 +568,7 @@ public:
           const auto& fixed_subdata = subtriangle.fixed_data();
           auto& dynamic_subdata = dynamic_data_vector[subtriangle.index()];
           if (!dynamic_subdata)
-              dynamic_subdata = std::make_shared<DynamicDataType>(dynamic_data_function(subbarycentre, fixed_subdata));
+            dynamic_subdata = std::make_shared<DynamicDataType>(dynamic_data_function(subbarycentre, fixed_subdata));
           else if (update_data)
             *dynamic_subdata = dynamic_data_function(subbarycentre, fixed_subdata);
           auto contribution = psi(subbarycentre, fixed_subdata, *dynamic_subdata);
@@ -588,8 +592,9 @@ public:
       const auto error_norm = two_norm(error);
       const auto result_norm = two_norm(result);
       if (std::isnan(error_norm) || std::isinf(error_norm) || std::isnan(result_norm) || std::isinf(result_norm))
-         DUNE_THROW(Dune::NotImplemented, "Result is not a number!");
-      if (Dune::XT::Common::FloatCmp::le(error_norm, tol_ * result_norm) || XT::Common::FloatCmp::le(error_norm, abs_tol_))
+        DUNE_THROW(Dune::NotImplemented, "Result is not a number!");
+      if (Dune::XT::Common::FloatCmp::le(error_norm, tol_ * result_norm)
+          || XT::Common::FloatCmp::le(error_norm, abs_tol_))
         return result;
 
       for (size_t ii = 0; ii < num_triangles; ++ii) {
@@ -750,84 +755,87 @@ RangeType evaluate_linear_partial_basis(const DomainType& v, const PolyhedronTyp
   return ret;
 } // evaluate_linear_partial_basis
 
-template< class DomainType, class RangeType >
+template <class DomainType, class RangeType>
 class Basisfunctionsinterface
 {
-   public:
-    typedef typename DomainType::ctype DomainFieldType;
-    static constexpr size_t dimDomain = DomainType::dimension;
-    static constexpr size_t dimRange = RangeType::dimension;
-    typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
+public:
+  typedef typename DomainType::ctype DomainFieldType;
+  static constexpr size_t dimDomain = DomainType::dimension;
+  static constexpr size_t dimRange = RangeType::dimension;
+  typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
 
-    virtual RangeType evaluate_basisfunctions(const DomainType& v) const = 0;
+  virtual RangeType evaluate_basisfunctions(const DomainType& v) const = 0;
 
-    virtual RangeType basisfunctions_integrated() const = 0;
+  virtual RangeType basisfunctions_integrated() const = 0;
 };
 
-template< class DomainType, class RangeType>
-class HatFunctions3d : public Basisfunctionsinterface< DomainType, RangeType >
+template <class DomainType, class RangeType>
+class HatFunctions3d : public Basisfunctionsinterface<DomainType, RangeType>
 {
-    typedef Basisfunctionsinterface< DomainType, RangeType> BaseType;
+  typedef Basisfunctionsinterface<DomainType, RangeType> BaseType;
+
 public:
-    typedef typename CGALWrapper::Polyhedron_3 Polyhedron_3;
-    using typename BaseType::RangeFieldType;
-    using typename BaseType::QuadratureRuleType;
-    using BaseType::dimDomain;
-    using BaseType::dimRange;
+  typedef typename CGALWrapper::Polyhedron_3 Polyhedron_3;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::QuadratureRuleType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
 
-    HatFunctions3d(const QuadratureRuleType& quadrature, const Polyhedron_3& poly)
-        : quadrature_(quadrature)
-        , poly_(poly)
-    {}
+  HatFunctions3d(const QuadratureRuleType& quadrature, const Polyhedron_3& poly)
+    : quadrature_(quadrature)
+    , poly_(poly)
+  {
+  }
 
-    virtual RangeType evaluate_basisfunctions(const DomainType& v) const override
-    {
-        return evaluate_spherical_barycentric_coordinates<RangeType, DomainType, Polyhedron_3>(v, poly_);
-    }
+  virtual RangeType evaluate_basisfunctions(const DomainType& v) const override
+  {
+    return evaluate_spherical_barycentric_coordinates<RangeType, DomainType, Polyhedron_3>(v, poly_);
+  }
 
-    virtual RangeType basisfunctions_integrated() const override final
-    {
-        RangeType ret(0);
-        for (const auto& quad_point : quadrature_) {
-            const auto v = quad_point.position();
-            const auto basis_evaluated = evaluate_basisfunctions(v);
-            const auto weight = quad_point.weight();
-            for (size_t nn = 0; nn < dimRange; ++nn)
-                ret[nn] += basis_evaluated[nn] * weight;
-        } // quadrature
-        return ret;
-    }
+  virtual RangeType basisfunctions_integrated() const override final
+  {
+    RangeType ret(0);
+    for (const auto& quad_point : quadrature_) {
+      const auto v = quad_point.position();
+      const auto basis_evaluated = evaluate_basisfunctions(v);
+      const auto weight = quad_point.weight();
+      for (size_t nn = 0; nn < dimRange; ++nn)
+        ret[nn] += basis_evaluated[nn] * weight;
+    } // quadrature
+    return ret;
+  }
 
 private:
-    const QuadratureRuleType& quadrature_;
-    const Polyhedron_3& poly_;
+  const QuadratureRuleType& quadrature_;
+  const Polyhedron_3& poly_;
 };
 
 
-template< class DomainType, class RangeType>
-class PartialMoments3d : public HatFunctions3d< DomainType, RangeType >
+template <class DomainType, class RangeType>
+class PartialMoments3d : public HatFunctions3d<DomainType, RangeType>
 {
-    typedef HatFunctions3d< DomainType, RangeType> BaseType;
+  typedef HatFunctions3d<DomainType, RangeType> BaseType;
+
 public:
-    using typename BaseType::Polyhedron_3;
-    using typename BaseType::RangeFieldType;
-    using typename BaseType::QuadratureRuleType;
-    using BaseType::dimDomain;
-    using BaseType::dimRange;
+  using typename BaseType::Polyhedron_3;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::QuadratureRuleType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
 
-    PartialMoments3d(const QuadratureRuleType& quadrature, const Polyhedron_3& poly)
-        : BaseType(quadrature, poly)
-    {}
+  PartialMoments3d(const QuadratureRuleType& quadrature, const Polyhedron_3& poly)
+    : BaseType(quadrature, poly)
+  {
+  }
 
-    virtual RangeType evaluate_basisfunctions(const DomainType& v) const override final
-    {
-        return evaluate_linear_partial_basis<RangeType, DomainType, Polyhedron_3>(v, poly_);
-    }
+  virtual RangeType evaluate_basisfunctions(const DomainType& v) const override final
+  {
+    return evaluate_linear_partial_basis<RangeType, DomainType, Polyhedron_3>(v, poly_);
+  }
 
 protected:
-    using BaseType::poly_;
+  using BaseType::poly_;
 };
-
 
 
 /** \see class TwoBeams in twobeams.hh */

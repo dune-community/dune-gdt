@@ -172,8 +172,8 @@ void solve_lower_triangular_transposed(const MatrixType& A, VectorType& x, const
       rhs[ii] -= A[jj][ii] * x[jj];
     x[ii] = rhs[ii] / A[ii][ii];
   }
-  if (XT::Common::FloatCmp::eq(min_eigval, 0.) || max_eigval/min_eigval > 1e10)
-      DUNE_THROW(Dune::FMatrixError, "A is singular!");
+  if (XT::Common::FloatCmp::eq(min_eigval, 0.) || max_eigval / min_eigval > 1e10)
+    DUNE_THROW(Dune::FMatrixError, "A is singular!");
 }
 
 
@@ -645,21 +645,21 @@ public:
         // calculate f_0
         RangeFieldType f_k;
         try {
-        f_k = adaptive_quadrature_.template calculate_integral<RangeFieldType>(
-            [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
-              return std::exp(beta_in * p) * quadpoint.weight();
-            },
-            [&](const QuadraturePointType& /*quadpoint*/, const RangeType& m) {
-              RangeType ret(0);
-              solve_lower_triangular(T_k, ret, m);
-              return ret;
-            },
-            true);
+          f_k = adaptive_quadrature_.template calculate_integral<RangeFieldType>(
+              [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
+                return std::exp(beta_in * p) * quadpoint.weight();
+              },
+              [&](const QuadraturePointType& /*quadpoint*/, const RangeType& m) {
+                RangeType ret(0);
+                solve_lower_triangular(T_k, ret, m);
+                return ret;
+              },
+              true);
         } catch (const Dune::NotImplemented& e) {
-            if (r < r_max)
-                continue;
-            else
-                DUNE_THROW(Dune::NotImplemented, e.what());
+          if (r < r_max)
+            continue;
+          else
+            DUNE_THROW(Dune::NotImplemented, e.what());
         }
         f_k -= beta_in * v_k;
 
@@ -673,27 +673,27 @@ public:
           // calculate current error
           RangeType error;
           try {
-          error = adaptive_quadrature_.template calculate_integral<RangeType>(
-              [&](const QuadraturePointType& quadpoint, const RangeType& m, const RangeType& /*p*/) {
-                RangeType Tinv_m(0);
-                solve_lower_triangular(T_k, Tinv_m, m);
-                auto ret = m;
-                ret *= std::exp(beta_out * Tinv_m) * quadpoint.weight();
-                return ret;
-              },
-              [&](const QuadraturePointType& /*quadpoint*/, const RangeType& m) {
-                ;
-                RangeType ret(0);
-                solve_lower_triangular(T_k, ret, m);
-                return ret;
-              },
-              false);
-        } catch (const Dune::NotImplemented& e) {
+            error = adaptive_quadrature_.template calculate_integral<RangeType>(
+                [&](const QuadraturePointType& quadpoint, const RangeType& m, const RangeType& /*p*/) {
+                  RangeType Tinv_m(0);
+                  solve_lower_triangular(T_k, Tinv_m, m);
+                  auto ret = m;
+                  ret *= std::exp(beta_out * Tinv_m) * quadpoint.weight();
+                  return ret;
+                },
+                [&](const QuadraturePointType& /*quadpoint*/, const RangeType& m) {
+                  ;
+                  RangeType ret(0);
+                  solve_lower_triangular(T_k, ret, m);
+                  return ret;
+                },
+                false);
+          } catch (const Dune::NotImplemented& e) {
             if (r < r_max)
-                break;
+              break;
             else
-                DUNE_THROW(Dune::NotImplemented, "");
-        }
+              DUNE_THROW(Dune::NotImplemented, "");
+          }
           error -= v;
           // calculate descent direction d_k;
           RangeType d_k = g_k;
@@ -721,24 +721,23 @@ public:
 
               RangeFieldType f;
               try {
-              f = adaptive_quadrature_.template calculate_integral<RangeFieldType>(
-                  [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
-                    return std::exp(beta_new * p) * quadpoint.weight();
-                  },
-                  [&](const QuadraturePointType& /*quadpoint*/, const RangeType& m) {
-                    RangeType ret(0);
-                    solve_lower_triangular(T_k, ret, m);
-                    return ret;
-                  },
-                  false);
-        } catch (const Dune::NotImplemented& e) {
-            if (r < r_max) {
-                kk = 10000;
-                break;
-            }
-            else
-                DUNE_THROW(Dune::NotImplemented, "");
-        }
+                f = adaptive_quadrature_.template calculate_integral<RangeFieldType>(
+                    [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
+                      return std::exp(beta_new * p) * quadpoint.weight();
+                    },
+                    [&](const QuadraturePointType& /*quadpoint*/, const RangeType& m) {
+                      RangeType ret(0);
+                      solve_lower_triangular(T_k, ret, m);
+                      return ret;
+                    },
+                    false);
+              } catch (const Dune::NotImplemented& e) {
+                if (r < r_max) {
+                  kk = 10000;
+                  break;
+                } else
+                  DUNE_THROW(Dune::NotImplemented, "");
+              }
               f -= beta_new * v_k;
               if (XT::Common::FloatCmp::le(f, f_k + xi_ * zeta_k * (g_k * d_k))) {
                 beta_in = beta_new;
@@ -841,25 +840,25 @@ private:
     MatrixType tmp, L(0), H;
 
     try {
-    H = adaptive_quadrature_.template calculate_integral<MatrixType>(
-        [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
-          auto p_scaled = p;
-          p_scaled *= std::exp(beta_in * p) * quadpoint.weight();
-          for (size_t ii = 0; ii < dimRange; ++ii) {
-            tmp[ii] = p_scaled;
-            tmp[ii] *= p[ii];
-          }
-          return tmp;
-        },
-        [&](const QuadraturePointType& /*quadpoint*/, const RangeType& m) {
-          RangeType ret(0);
-          solve_lower_triangular(T_k, ret, m);
-          return ret;
-        },
-        false);
+      H = adaptive_quadrature_.template calculate_integral<MatrixType>(
+          [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
+            auto p_scaled = p;
+            p_scaled *= std::exp(beta_in * p) * quadpoint.weight();
+            for (size_t ii = 0; ii < dimRange; ++ii) {
+              tmp[ii] = p_scaled;
+              tmp[ii] *= p[ii];
+            }
+            return tmp;
+          },
+          [&](const QuadraturePointType& /*quadpoint*/, const RangeType& m) {
+            RangeType ret(0);
+            solve_lower_triangular(T_k, ret, m);
+            return ret;
+          },
+          false);
     } catch (const Dune::NotImplemented&) {
-        chol_flag = false;
-        return;
+      chol_flag = false;
+      return;
     }
 
     chol_flag = cholesky_L(H, L);
@@ -871,22 +870,22 @@ private:
     solve_lower_triangular(L, v_k, v_k_copy);
 
     try {
-    g_k = adaptive_quadrature_.template calculate_integral<RangeType>(
-        [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
-          auto p_scaled = p;
-          p_scaled *= std::exp(beta_out * p) * quadpoint.weight();
-          return p_scaled;
-        },
-        [&](const QuadraturePointType& /*quadpoint*/, const RangeType& m) {
-          RangeType ret(0);
-          solve_lower_triangular(T_k, ret, m);
-          return ret;
-        },
-        true);
-    g_k -= v_k;
+      g_k = adaptive_quadrature_.template calculate_integral<RangeType>(
+          [&](const QuadraturePointType& quadpoint, const RangeType& /*m*/, const RangeType& p) {
+            auto p_scaled = p;
+            p_scaled *= std::exp(beta_out * p) * quadpoint.weight();
+            return p_scaled;
+          },
+          [&](const QuadraturePointType& /*quadpoint*/, const RangeType& m) {
+            RangeType ret(0);
+            solve_lower_triangular(T_k, ret, m);
+            return ret;
+          },
+          true);
+      g_k -= v_k;
     } catch (const Dune::NotImplemented&) {
-        chol_flag = false;
-        return;
+      chol_flag = false;
+      return;
     }
   } // void change_basis(...)
 
