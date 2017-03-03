@@ -194,12 +194,12 @@ public:
 #define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASPGRID(_PRE)                                                           \
   DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LA(_PRE, YASP_2D_EQUIDISTANT_OFFSET)
 
-#if HAVE_ALUGRID || HAVE_DUNE_ALUGRID
+#if HAVE_DUNE_ALUGRID
 #define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALUGRID(_PRE)                                                            \
   DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LA(_PRE, ALU_2D_SIMPLEX_CONFORMING)
 #else
 #define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALUGRID(_PRE)
-#endif // HAVE_ALUGRID || HAVE_DUNE_ALUGRID
+#endif // HAVE_DUNE_ALUGRID
 
 #define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LA(_PRE, _GRID)                                                          \
   DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_COMMON(_PRE, _GRID);                                                           \

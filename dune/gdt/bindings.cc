@@ -416,7 +416,7 @@ PYBIND11_PLUGIN(_gdt)
         "args"_a = std::vector<std::string>());
 
 //  addbind_for_grid<Dune::YaspGrid<2, Dune::EquidistantOffsetCoordinates<double, 2>>>(m, "2d_cube_yaspgrid");
-#if HAVE_ALUGRID || HAVE_DUNE_ALUGRID
+#if HAVE_DUNE_ALUGRID
   addbind_for_grid<Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming>>(m, "2d_simplex_aluconform");
 #endif
 
