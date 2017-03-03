@@ -7,8 +7,8 @@
 
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first
 
-#include "operators/l2.hh"
-#include "spaces/fv/default.hh"
+#include "l2.hh"
+#include <dune/gdt/test/spaces/fv/default.hh>
 
 using namespace Dune::GDT::Test;
 

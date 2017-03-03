@@ -7,10 +7,10 @@
 
 #include <dune/xt/common/test/main.hxx> // <- This one has to come first (includes the config.h)!
 
-#include "spaces/cg/fem.hh"
-#include "spaces/rt/pdelab.hh"
+#include <dune/gdt/test/spaces/cg/fem.hh>
+#include <dune/gdt/test/spaces/rt/pdelab.hh>
 
-#include "operators/darcy.hh"
+#include "darcy.hh"
 
 using namespace Dune::GDT::Test;
 

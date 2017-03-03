@@ -13,22 +13,22 @@
 // This one has to come first (includes the config.h)!
 #include <dune/xt/common/test/main.hxx>
 
-#include "hyperbolic/fv-discretization.hh"
+#include "fv-discretization.hh"
 
 using namespace Dune;
 using namespace Dune::GDT;
 
 #if HAVE_EIGEN
 
-TYPED_TEST_CASE(hyperbolic_FV_discretization_godunov_adaptiveRK, YaspGridTestCasesPartial);
-TYPED_TEST(hyperbolic_FV_discretization_godunov_adaptiveRK, eoc_study_using_yaspgrid)
+TYPED_TEST_CASE(hyperbolic_FV_discretization_laxfriedrichs_euler, YaspGridTestCasesPartial);
+TYPED_TEST(hyperbolic_FV_discretization_laxfriedrichs_euler, eoc_study_using_yaspgrid)
 {
   this->eoc_study();
 }
 
 #else
 
-TEST(DISABLED_hyperbolic_FV_discretization_godunov_adaptiveRK, eoc_study_using_yaspgrid)
+TEST(DISABLED_hyperbolic_FV_discretization_laxfriedrichs_euler, eoc_study_using_yaspgrid)
 {
 }
 

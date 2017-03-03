@@ -13,7 +13,7 @@
 // This one has to come first (includes the config.h)!
 #include <dune/xt/common/test/main.hxx>
 
-#include "hyperbolic/fv-discretization.hh"
+#include "fv-discretization.hh"
 
 using namespace Dune;
 using namespace Dune::GDT;

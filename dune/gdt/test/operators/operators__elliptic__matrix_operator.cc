@@ -7,10 +7,10 @@
 
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first
 
-#include "operators/elliptic.hh"
-#include "spaces/fv/default.hh"
-#include "spaces/dg/fem.hh"
-#include "spaces/cg/pdelab.hh"
+#include "elliptic.hh"
+#include <dune/gdt/test/spaces/fv/default.hh>
+#include <dune/gdt/test/spaces/dg/fem.hh>
+#include <dune/gdt/test/spaces/cg/pdelab.hh>
 
 using namespace Dune::GDT::Test;
 
