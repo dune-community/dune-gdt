@@ -52,16 +52,16 @@ TYPED_TEST(DG_Space, check_for_correct_copy)
 }
 
 #ifndef NDEBUG
-TEST(DISABLED_DG_Space, fulfills_interface_polorder_2)
+GTEST_TEST(DISABLED_DG_Space, fulfills_interface_polorder_2)
 {
 }
-TEST(DISABLED_DG_Space, mapper_fulfills_interface_polorder_2)
+GTEST_TEST(DISABLED_DG_Space, mapper_fulfills_interface_polorder_2)
 {
 }
-TEST(DISABLED_DG_Space, basefunctionset_fulfills_interface_polorder_2)
+GTEST_TEST(DISABLED_DG_Space, basefunctionset_fulfills_interface_polorder_2)
 {
 }
-TEST(DISABLED_DG_Space, check_for_correct_copy_polorder_2)
+GTEST_TEST(DISABLED_DG_Space, check_for_correct_copy_polorder_2)
 {
 }
 #endif // NDEBUG

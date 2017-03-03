@@ -32,10 +32,10 @@ TYPED_TEST(linearelliptic_SWIPDG_estimators, eoc_study_using_fem_and_eigen_and_a
 
 #else
 
-TEST(DISABLED_linearelliptic_SWIPDG_estimators, eoc_study_using_fem_and_eigen_and_alugrid_order_1)
+GTEST_TEST(DISABLED_linearelliptic_SWIPDG_estimators, eoc_study_using_fem_and_eigen_and_alugrid_order_1)
 {
 }
-TEST(DISABLED_linearelliptic_SWIPDG_estimators, eoc_study_using_fem_and_eigen_and_alugrid_order_2)
+GTEST_TEST(DISABLED_linearelliptic_SWIPDG_estimators, eoc_study_using_fem_and_eigen_and_alugrid_order_2)
 {
 }
 

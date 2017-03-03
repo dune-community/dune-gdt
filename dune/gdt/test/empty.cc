@@ -29,6 +29,6 @@
 
 using namespace Dune;
 
-TEST(empty, main)
+GTEST_TEST(empty, main)
 {
 }
