@@ -52,8 +52,18 @@ find_file(SPE10MODEL1DATA
 add_subdirectory(doc)
 add_subdirectory(dune)
 add_subdirectory(cmake/modules)
-dune_install_python_package(PATH python)
 
+if(dune-pybindxi_FOUND)
+  foreach(_file
+          dune/__init__.py
+          dune/gdt/__init__.py
+         )
+  execute_process(COMMAND ln -s ${CMAKE_CURRENT_SOURCE_DIR}/python/${_file} ${CMAKE_CURRENT_BINARY_DIR}/${_file})
+  endforeach()
+endif()
+
+# enable headercheck
+add_definitions("-DENABLE_HEADERCHECK=1")
 add_format(${CMAKE_CURRENT_SOURCE_DIR})
 add_tidy(${CMAKE_CURRENT_SOURCE_DIR})
 
