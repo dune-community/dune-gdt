@@ -11,28 +11,25 @@
 
 #include <dune/xt/common/test/main.hxx> // <- This one has to come first (includes the config.h)!
 
-#include "swipdg-estimators.hh"
-#include "swipdg-estimator-testcases.hh"
+#include <dune/gdt/test/linearelliptic/swipdg-estimators.hh>
+#include <dune/gdt/test/linearelliptic/swipdg-estimator-testcases.hh>
 
 using namespace Dune;
 using namespace Dune::GDT;
 
+// clang-format off
+{% for TestCase, SpaceBackend, LaBackend, Name in config.permutations %}
+// clang-format on
 
-#if HAVE_DUNE_FEM && HAVE_EIGEN && HAVE_DUNE_ALUGRID
+typedef linearelliptic_SWIPDG_estimators<{{TestCase}}, Dune::GDT::ChooseSpaceBackend::{{SpaceBackend}},
+                                         Dune::XT::LA::Backends::{{LaBackend}}>
+    linearelliptic_SWIPDG_estimators_{{Name}};
 
-TYPED_TEST_CASE(linearelliptic_SWIPDG_estimators, AluGridTestCases);
-TYPED_TEST(linearelliptic_SWIPDG_estimators, eoc_study_using_fem_and_eigen_and_alugrid_order_1)
+TEST_F(linearelliptic_SWIPDG_estimators_{{Name}}, eoc_study)
 {
   this->template eoc_study<ChooseSpaceBackend::fem, XT::LA::Backends::eigen_sparse, 1>();
 }
 
-#else
-
-TEST(DISABLED_linearelliptic_SWIPDG_estimators, eoc_study_using_fem_and_eigen_and_alugrid_order_1)
-{
-}
-TEST(DISABLED_linearelliptic_SWIPDG_estimators, eoc_study_using_fem_and_eigen_and_alugrid_order_2)
-{
-}
-
-#endif
+// clang-format off
+{% endfor %}
+// clang-format on
