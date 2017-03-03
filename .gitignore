@@ -42,3 +42,4 @@ demos-*
 *.pc
 build-*
 *.pyc
+.idea

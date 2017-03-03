@@ -16,8 +16,8 @@
 
 #include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/spaces/tools.hh>
-
 #include <dune/gdt/test/operators/base.hh>
+#include <dune/xt/common/test/float_cmp.hh>
 
 namespace Dune {
 namespace GDT {
@@ -39,8 +39,7 @@ struct ProjectionOperatorBase : public OperatorBase<SpaceType>
   {
     const auto l2_error =
         make_l2_operator(this->space_.grid_view(), 2)->induced_norm(this->function_ - this->discrete_function_);
-    EXPECT_LE(l2_error, tolerance) << "l2_error:  " << std::scientific << l2_error << "\n"
-                                   << "tolerance: " << std::scientific << tolerance;
+    DXTC_EXPECT_FLOAT_LE(l2_error, tolerance);
   }
 
   static const constexpr double default_tolerance = 1e-15;

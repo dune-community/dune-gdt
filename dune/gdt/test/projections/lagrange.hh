@@ -20,7 +20,6 @@ namespace Dune {
 namespace GDT {
 namespace Test {
 
-
 template <class SpaceType>
 struct LagrangeProjectionLocalizableOperatorTest
     : public LocalizableProjectionOperatorBase<SpaceType,
@@ -40,7 +39,6 @@ struct LagrangeProjectionLocalizableOperatorTest
     auto wo_grid_view DUNE_UNUSED = make_lagrange_projection_localizable_operator(source, range);
   } // ... constructible_by_factory(...)
 }; // struct LagrangeProjectionLocalizableOperatorTest
-
 
 template <class SpaceType>
 struct LagrangeProjectionOperatorTest

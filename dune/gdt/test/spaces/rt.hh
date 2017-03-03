@@ -43,23 +43,13 @@ public:
   {
     matches_signature(this->space_);
   }
-};
-
-
-template <class SpaceType>
-class RT_2d_simplicial_Space : public RT_Space<SpaceType>
-{
-public:
-  virtual ~RT_2d_simplicial_Space()
-  {
-  }
 
   void fulfills_raviart_thomas_2d_simplicial_interface()
   {
     for (const auto& entity : elements(this->space_.grid_view()))
       auto local_DoF_indices DUNE_UNUSED = this->space_.local_DoF_indices(entity);
   }
-}; // class RT_2d_simplicial_Space
+};
 
 
 #endif // DUNE_GDT_TEST_SPACES_RT_HH

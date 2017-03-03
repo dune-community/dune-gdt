@@ -63,14 +63,5 @@
 #endif // HAVE_DUNE_ALUGRID
 #endif // HAVE_DUNE_PDELAB
 
-template <class T>
-double pdelab_cg_tolerance(const T& param)
-{
-  typedef typename T::GridViewType::Grid Grid;
-  const auto dim = param.dimDomain;
-  const auto tolerance = Dune::XT::Grid::is_conforming_alugrid<Grid>::value ? (dim == 3 ? 1.35e-13 : 1.4e-14)
-                                                                            : (dim == 3 ? 2.49e-14 : 1e-15);
-  return tolerance;
-}
 
 #endif // DUNE_GDT_TEST_SPACES_CG_PDELAB_HH

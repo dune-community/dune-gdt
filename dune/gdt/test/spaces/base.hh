@@ -12,10 +12,6 @@
 #ifndef DUNE_GDT_TEST_SPACES_BASE_HH
 #define DUNE_GDT_TEST_SPACES_BASE_HH
 
-#ifndef DUNE_GDT_TEST_SPACES_RT_CHECK
-#define DUNE_GDT_TEST_SPACES_RT_CHECK 0
-#endif
-
 #include <type_traits>
 
 #include <boost/numeric/conversion/cast.hpp>
@@ -317,7 +313,7 @@ public:
     * \brief  Checks the spaces basefunctionsets for their interface compliance.
     * \note   We do not check for the functionality enforced by LocalfuntionSetInterface at the moment!
     */
-  void basefunctionset_fulfills_interface() const
+  void basefunctionset_fulfills_interface(bool special_case_rt_check = false) const
   {
     using namespace Dune;
     using namespace Dune::GDT;
@@ -381,13 +377,14 @@ public:
       BaseFunctionSetType d_base_function_set = space_.base_function_set(entity);
       const D_BackendType& d_backend = d_base_function_set.backend();
       size_t d_order = d_base_function_set.order();
-#if DUNE_GDT_TEST_SPACES_RT_CHECK
-      EXPECT_GE(d_order, boost::numeric_cast<size_t>(SpaceType::polOrder)); // <- normaly we would expect equality here,
-// but the raviart
-//    thomas space of order 0 reports order 1 here
-#else
-      EXPECT_EQ(d_order, boost::numeric_cast<size_t>(SpaceType::polOrder));
-#endif
+      if (!special_case_rt_check) {
+        EXPECT_GE(d_order,
+                  boost::numeric_cast<size_t>(SpaceType::polOrder)); // <- normaly we would expect equality here,
+      } else {
+        // but the raviart
+        //    thomas space of order 0 reports order 1 here
+        EXPECT_EQ(d_order, boost::numeric_cast<size_t>(SpaceType::polOrder));
+      }
       //   the size has already been checked in fulfills_interface() above
       // * as the interface
       InterfaceType& i_base_function_set = static_cast<InterfaceType&>(d_base_function_set);
