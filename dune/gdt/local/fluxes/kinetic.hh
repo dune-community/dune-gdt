@@ -20,6 +20,7 @@
 #include <dune/grid/yaspgrid.hh>
 
 #include <dune/xt/common/fmatrix.hh>
+#include <dune/xt/common/parameter.hh>
 #include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/la/container/eigen.hh>
@@ -90,8 +91,10 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
-  explicit KineticLocalNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux)
+  explicit KineticLocalNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
+                                             const XT::Common::Parameter param)
     : analytical_flux_(analytical_flux)
+    , param_(param)
   {
   }
 
@@ -109,9 +112,9 @@ public:
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
           local_source_neighbor,
       const IntersectionType& intersection,
-      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection,
-      const double t = 0) const
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
+    const double t = param_.get("t")[0];
     // get function values
     const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
     const auto x_intersection_neighbor_coords = intersection.geometryInOutside().global(x_intersection);
@@ -132,6 +135,7 @@ public:
 
 private:
   const AnalyticalFluxType& analytical_flux_;
+  const XT::Common::Parameter param_;
 }; // class KineticLocalNumericalCouplingFlux
 
 /**
@@ -161,15 +165,17 @@ public:
   static const size_t dimRange = Traits::dimRange;
 
   explicit KineticLocalNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
-                                             const BoundaryValueFunctionType& boundary_values)
+                                             const std::shared_ptr<BoundaryValueFunctionType>& boundary_values,
+                                             const XT::Common::Parameter param)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
+    , param_(param)
   {
   }
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
-    return std::make_tuple(boundary_values_.local_function(entity));
+    return std::make_tuple(boundary_values_->local_function(entity));
   }
 
   template <class IntersectionType>
@@ -178,9 +184,9 @@ public:
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
           local_source_entity,
       const IntersectionType& intersection,
-      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection,
-      const double t = 0) const
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
+    const double t = param_.get("t")[0];
     // get function values
     const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
     const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
@@ -194,7 +200,8 @@ public:
 
 private:
   const AnalyticalFluxType& analytical_flux_;
-  const BoundaryValueFunctionType& boundary_values_;
+  const std::shared_ptr<BoundaryValueFunctionType>& boundary_values_;
+  const XT::Common::Parameter param_;
 }; // class KineticLocalNumericalBoundaryFlux
 
 

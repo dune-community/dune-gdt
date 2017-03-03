@@ -591,10 +591,10 @@ public:
     return append(std::forward<Args>(args)...);
   }
 
-  void apply(const bool use_tbb = true, const double t = 0.)
+  void apply(const bool use_tbb = true)
   {
     if (!walked_) {
-      this->walk(use_tbb, t);
+      this->walk(use_tbb);
       walked_ = true;
     }
   } // ... apply(...)

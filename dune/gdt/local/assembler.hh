@@ -477,16 +477,13 @@ public:
     return where_.apply_on(grid_view, intersection);
   }
 
-  virtual void apply_local(const IntersectionType& intersection,
-                           const EntityType& inside_entity,
-                           const EntityType& outside_entity,
-                           const double t = 0)
+  virtual void
+  apply_local(const IntersectionType& intersection, const EntityType& inside_entity, const EntityType& outside_entity)
   {
     local_operator_.apply(source_,
                           intersection,
                           *range_.local_discrete_function(inside_entity),
-                          *range_.local_discrete_function(outside_entity),
-                          t);
+                          *range_.local_discrete_function(outside_entity));
   }
 
 private:
@@ -592,10 +589,9 @@ public:
 
   virtual void apply_local(const IntersectionType& intersection,
                            const EntityType& inside_entity,
-                           const EntityType& /*outside_entity*/,
-                           const double t = 0)
+                           const EntityType& /*outside_entity*/)
   {
-    local_operator_.apply(source_, intersection, *range_.local_discrete_function(inside_entity), t);
+    local_operator_.apply(source_, intersection, *range_.local_discrete_function(inside_entity));
   }
 
 private:

@@ -160,8 +160,7 @@ public:
   void apply(const SourceType& source,
              const IntersectionType& intersection,
              LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor,
-             const double time) const
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor) const
   {
     const auto entity = intersection.inside();
     const auto neighbor = intersection.outside();
@@ -177,8 +176,7 @@ public:
                                           *local_source_entity,
                                           *local_source_neighbor,
                                           intersection,
-                                          geometry_intersection.local(geometry_intersection.center()),
-                                          time);
+                                          geometry_intersection.local(geometry_intersection.center()));
     local_range_entity.vector().add(result * (1.0 / entity.geometry().volume()));
     local_range_neighbor.vector().add(result * (-1.0 / neighbor.geometry().volume()));
   }
@@ -202,8 +200,7 @@ public:
   template <class SourceType, class IntersectionType, class SpaceType, class VectorType>
   void apply(const SourceType& source,
              const IntersectionType& intersection,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity,
-             const double time) const
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity) const
   {
     const auto entity = intersection.inside();
     const auto local_source_entity = source.local_function(entity);
@@ -212,8 +209,7 @@ public:
     auto result = numerical_flux_.evaluate(local_functions_tuple,
                                            *local_source_entity,
                                            intersection,
-                                           geometry_intersection.local(geometry_intersection.center()),
-                                           time);
+                                           geometry_intersection.local(geometry_intersection.center()));
     result /= entity.geometry().volume();
     local_range_entity.vector().add(result);
   }
@@ -240,7 +236,7 @@ public:
 
   explicit LocalReconstructionFvOperator(const MatrixType& eigenvectors,
                                          const MatrixType& eigenvectors_inverse,
-                                         const BoundaryValueFunctionType& boundary_values)
+                                         const std::shared_ptr<BoundaryValueFunctionType>& boundary_values)
     : eigenvectors_(eigenvectors)
     , eigenvectors_inverse_(eigenvectors_inverse)
     , boundary_values_(boundary_values)
@@ -273,9 +269,9 @@ public:
           u_right = source.local_discrete_function(neighbor)->evaluate(neighbor.geometry().local(neighbor_center));
       } else {
         if (intersection.geometry().center()[0] < entity_center[0])
-          u_left = boundary_values_.local_function(entity)->evaluate(intersection.geometryInInside().center());
+          u_left = boundary_values_->local_function(entity)->evaluate(intersection.geometryInInside().center());
         else
-          u_right = boundary_values_.local_function(entity)->evaluate(intersection.geometryInInside().center());
+          u_right = boundary_values_->local_function(entity)->evaluate(intersection.geometryInInside().center());
       }
     }
 
@@ -311,7 +307,7 @@ public:
 private:
   const MatrixType& eigenvectors_;
   const MatrixType& eigenvectors_inverse_;
-  const BoundaryValueFunctionImp& boundary_values_;
+  const std::shared_ptr<BoundaryValueFunctionImp>& boundary_values_;
 };
 
 } // namespace GDT

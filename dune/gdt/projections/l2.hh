@@ -55,6 +55,7 @@ class L2ProjectionOperatorTraits
 public:
   typedef L2ProjectionOperator<GridViewType, FieldImp> derived_type;
   typedef FieldImp FieldType;
+  typedef NoJacobian JacobianType;
 };
 
 

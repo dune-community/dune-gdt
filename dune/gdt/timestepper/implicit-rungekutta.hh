@@ -262,7 +262,8 @@ public:
       if (XT::Common::FloatCmp::eq(A_[ii][ii], 0.0)) {
         // stage is explicit
         stages_k_[ii].vector() *= RangeFieldType(0);
-        op_.apply(u_i_expl_, stages_k_[ii], t + actual_dt * c_[ii]);
+        op_.apply(
+            u_i_expl_, stages_k_[ii], XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}}, {"dt", {actual_dt}}}));
         stages_k_[ii].space().grid_view().template communicate<DataHandleType>(
             stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
       } else {
@@ -272,7 +273,7 @@ public:
             (ii == 0) ? u_n.vector() : u_i_expl_.vector() + stages_k_[ii - 1].vector() * (actual_dt * r_ * A_[ii][ii]);
         // calculate residual with current iterate
         stages_k_[ii].vector() *= RangeFieldType(0);
-        op_.apply(u_i_, stages_k_[ii], t + actual_dt + c_[ii]);
+        op_.apply(u_i_, stages_k_[ii], XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}}, {"dt", {actual_dt}}}));
         stages_k_[ii].space().grid_view().template communicate<DataHandleType>(
             stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
         res_.vector() = u_i_expl_.vector() - u_i_.vector() + stages_k_[ii].vector() * (actual_dt * r_ * A_[ii][ii]);
@@ -309,7 +310,9 @@ public:
             // calculate residual with current alpha
             u_i_plus_alpha_d_.vector() = u_i_.vector() + d_.vector() * alpha;
             stages_k_[ii].vector() *= RangeFieldType(0);
-            op_.apply(u_i_plus_alpha_d_, stages_k_[ii], t + actual_dt + c_[ii]);
+            op_.apply(u_i_plus_alpha_d_,
+                      stages_k_[ii],
+                      XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}}, {"dt", {actual_dt}}}));
             stages_k_[ii].space().grid_view().template communicate<DataHandleType>(
                 stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
             new_res_.vector() = u_i_expl_.vector() - u_i_plus_alpha_d_.vector()
