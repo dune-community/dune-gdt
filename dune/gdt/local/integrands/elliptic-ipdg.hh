@@ -18,6 +18,7 @@
 
 #include <dune/common/densematrix.hh>
 
+#include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/functions/interfaces.hh>
 
