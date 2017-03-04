@@ -135,13 +135,13 @@ public:
     }
   } // ... default_config(...)
 
-  Burgers(const std::shared_ptr<const FluxType> flux,
-          const std::shared_ptr<const RHSType> rhs,
-          const std::shared_ptr<const InitialValueType> initial_values,
-          const ConfigType& grid_config,
-          const ConfigType& boundary_info,
-          const std::shared_ptr<const BoundaryValueType> boundary_values)
-    : BaseType(flux, rhs, initial_values, grid_config, boundary_info, boundary_values)
+  Burgers(const std::shared_ptr<const FluxType> flx,
+          const std::shared_ptr<const RHSType> rh,
+          const std::shared_ptr<const InitialValueType> init_vals,
+          const ConfigType& grd_cfg,
+          const ConfigType& bnd_info,
+          const std::shared_ptr<const BoundaryValueType> bnd_vals)
+    : BaseType(flx, rh, init_vals, grd_cfg, bnd_info, bnd_vals)
   {
   }
 
