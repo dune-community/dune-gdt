@@ -31,7 +31,7 @@ TYPED_TEST(hyperbolic_FV_discretization_godunov_euler, eoc_study_using_yaspgrid)
 
 #else
 
-TEST(DISABLED_hyperbolic_FV_discretization_godunov_euler, eoc_study_using_yaspgrid)
+GTEST_TEST(DISABLED_hyperbolic_FV_discretization_godunov_euler, eoc_study_using_yaspgrid)
 {
 }
 
