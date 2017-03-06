@@ -147,6 +147,7 @@ template <class Traits>
 class ContainerBasedStationaryDiscretizationInterface : public StationaryDiscretizationInterface<Traits>
 {
   typedef StationaryDiscretizationInterface<Traits> BaseType;
+  typedef ContainerBasedStationaryDiscretizationInterface<Traits> ThisType;
 
 public:
   typedef typename Traits::MatrixType MatrixType;
@@ -195,12 +196,12 @@ public:
   /// \name Provided by the interface for convenience.
   /// \{
 
-  std::vector<std::string> solver_types() const
+  static std::vector<std::string> solver_types()
   {
     return LinearSolverType::types();
   }
 
-  XT::Common::Configuration solver_options(const std::string type = "") const
+  static XT::Common::Configuration solver_options(const std::string type = ThisType::solver_types()[0])
   {
     return LinearSolverType::options(type);
   }

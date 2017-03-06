@@ -45,7 +45,8 @@ protected:
 public:
   StationaryEocStudy(TestCaseType& test_case,
                      const std::vector<std::string> only_these_norms = {},
-                     const std::string visualize_prefix = "")
+                     const std::string visualize_prefix = "",
+                     XT::Common::Configuration solver_options = DiscretizationType::solver_options())
     : BaseType(only_these_norms)
     , test_case_(test_case)
     , current_refinement_(0)
@@ -60,6 +61,7 @@ public:
     , current_solution_vector_(nullptr)
     , visualize_prefix_(visualize_prefix)
     , current_num_DoFs_(0)
+    , solver_options_(solver_options)
   {
   }
 
@@ -142,6 +144,7 @@ public:
     return grid_widths_[current_refinement_];
   } // ... current_grid_width(...)
 
+
   virtual double compute_on_current_refinement() override final
   {
     if (current_refinement_ != last_computed_refinement_) {
@@ -152,7 +155,8 @@ public:
           Discretizer::discretize(test_case_.level_provider(current_refinement_),
                                   test_case_.problem(),
                                   test_case_.level_of(current_refinement_)));
-      current_solution_vector_on_level_ = XT::Common::make_unique<VectorType>(current_discretization_->solve());
+      current_solution_vector_on_level_ =
+          XT::Common::make_unique<VectorType>(current_discretization_->solve(solver_options_));
       time_to_solution_ = timer.elapsed();
       const ConstDiscreteFunctionType current_refinement_solution(
           current_discretization_->ansatz_space(), *current_solution_vector_on_level_, "solution on current level");
@@ -224,7 +228,9 @@ protected:
     if (!reference_solution_computed_) {
       reference_discretization_ = XT::Common::make_unique<DiscretizationType>(
           Discretizer::discretize(test_case_.reference_provider(), test_case_.problem(), test_case_.reference_level()));
-      reference_solution_vector_ = XT::Common::make_unique<VectorType>(reference_discretization_->solve());
+      reference_solution_vector_ =
+          XT::Common::make_unique<VectorType>(reference_discretization_->solve(solver_options_));
+
       reference_solution_computed_ = true;
       // visualize
       if (!visualize_prefix_.empty()) {
@@ -264,6 +270,7 @@ protected:
   std::unique_ptr<VectorType> current_solution_vector_;
   const std::string visualize_prefix_;
   size_t current_num_DoFs_;
+  const XT::Common::Configuration solver_options_;
 }; // class StationaryEocStudy
 
 
