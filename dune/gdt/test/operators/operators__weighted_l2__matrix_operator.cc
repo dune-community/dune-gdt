@@ -57,9 +57,9 @@ TYPED_TEST(WeightedL2MatrixOperatorTest, correct_for_constant_arguments)
 #ifndef NDEBUG
   const double tolerance = 2.85e-14;
 #else
-  const double tolerance = 4.27e-14;
+  const double tolerance = 8.53e-14;
 #endif
-  this->correct_for_constant_arguments(this->dimDomain == 1 ? 1.43e-14 : (this->dimDomain == 2 ? 7.11e-15 : tolerance));
+  this->correct_for_constant_arguments(this->dimDomain == 1 ? 2.2e-14 : (this->dimDomain == 2 ? 2.85e-14 : tolerance));
 }
 
 #if HAVE_DUNE_FEM || HAVE_DUNE_PDELAB
@@ -68,9 +68,9 @@ TYPED_TEST(WeightedL2MatrixOperatorTest, correct_for_linear_arguments)
 #ifndef NDEBUG
   const double tolerance = 1e-15;
 #else
-  const double tolerance = 8.89e-15;
+  const double tolerance = 1.25e-14;
 #endif
-  this->correct_for_linear_arguments(this->dimDomain == 3 ? 2.49e-14 : tolerance);
+  this->correct_for_linear_arguments(this->dimDomain == 3 ? 2.67e-14 : tolerance);
 }
 #else
 TEST(DISABLED_WeightedL2MatrixOperatorTest, correct_for_linear_arguments)
@@ -87,7 +87,7 @@ TYPED_TEST(WeightedL2MatrixOperatorTest, correct_for_quadratic_arguments)
 #else
   const double tolerance = 1.78e-15;
 #endif
-  this->correct_for_quadratic_arguments(this->dimDomain == 3 ? 5.33e-15 : tolerance);
+  this->correct_for_quadratic_arguments(this->dimDomain == 3 ? 1.43e-14 : tolerance);
 }
 #else
 TEST(DISABLED_WeightedL2MatrixOperatorTest, correct_for_quadratic_arguments)

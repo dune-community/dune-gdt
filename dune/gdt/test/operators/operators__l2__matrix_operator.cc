@@ -54,7 +54,7 @@ TYPED_TEST(L2MatrixOperatorTest, is_matrix_operator)
 }
 TYPED_TEST(L2MatrixOperatorTest, correct_for_constant_arguments)
 {
-  this->correct_for_constant_arguments();
+  this->correct_for_constant_arguments(2.5e-15);
 }
 
 #if HAVE_DUNE_FEM || HAVE_DUNE_PDELAB
