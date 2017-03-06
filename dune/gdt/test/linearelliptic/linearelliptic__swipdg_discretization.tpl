@@ -32,8 +32,8 @@ struct linearelliptic_SWIPDG_discretization : public ::testing::Test
     using namespace Dune;
     using namespace Dune::GDT;
     TestCaseType test_case;
-    test_case.print_header(DXTC_LOG_INFO);
-    DXTC_LOG_INFO << std::endl;
+    test_case.print_header(DXTC_LOG_INFO_0);
+    DXTC_LOG_INFO_0 << std::endl;
     typedef LinearElliptic::IpdgDiscretizer<typename TestCaseType::GridType,
                                             XT::Grid::Layers::level,
                                             SpaceBackend,
@@ -45,7 +45,7 @@ struct linearelliptic_SWIPDG_discretization : public ::testing::Test
         Discretizer;
     Dune::GDT::Test::LinearEllipticEocStudy<TestCaseType, Discretizer> eoc_study(test_case);
     try {
-      Dune::XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DXTC_LOG_INFO));
+      Dune::XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DXTC_LOG_INFO_0));
     } catch (Dune::XT::Common::Exceptions::spe10_data_file_missing&) {
       Dune::XT::Common::TimedLogger().get("gdt.test.linearelliptic.swipdg.discretization").warn()
           << "missing SPE10 data file!" << std::endl;
