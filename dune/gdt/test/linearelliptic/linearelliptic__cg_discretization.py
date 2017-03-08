@@ -1,6 +1,6 @@
 import itertools
 
-from dune.xt.codegen import typeid_to_typedef_name, la_backends
+from dune.xt.codegen import typeid_to_typedef_name, la_backends, is_found
 
 
 grids = ['Yasp2Grid']
@@ -15,7 +15,7 @@ space_backends = ['fem', 'pdelab']
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 
 if is_found(cache, 'EIGEN3_INCLUDE_DIR'):
-    permutations = itertools.product(testcases, space_backends, 'eigen_sparse')
+    permutations = itertools.product(testcases, space_backends, ['eigen_sparse'])
     permutations = [(t,s,l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]
 else:
     permutations = []

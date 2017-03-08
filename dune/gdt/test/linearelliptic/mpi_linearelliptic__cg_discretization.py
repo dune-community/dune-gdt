@@ -16,7 +16,7 @@ testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in iterto
 
 
 if is_found(cache, 'dune-istl_DIR'):
-    permutations = itertools.product(testcases, space_backends, 'istl_sparse')
+    permutations = itertools.product(testcases, space_backends, ['istl_sparse'])
     permutations = [(t,s,l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]
 else:
     permutations = []
