@@ -66,7 +66,7 @@ struct CommunicationChooser<ViewImp, true>
                       Type& communicator)
 #else
                       /*space*/,
-                      Type& /*communicator*/)
+                      Type& communicator)
 #endif
   {
 #if HAVE_DUNE_PDELAB

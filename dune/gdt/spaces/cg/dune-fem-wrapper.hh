@@ -57,6 +57,7 @@ public:
   static const int polOrder = polynomialOrder;
   static const bool continuous = true;
   static_assert(polOrder >= 1, "Wrong polOrder given!");
+  static const constexpr ChooseSpaceBackend backend_type{ChooseSpaceBackend::fem};
 
 private:
   typedef typename GridLayerType::ctype DomainFieldType;
@@ -129,6 +130,7 @@ public:
     , backend_(new BackendType(*grid_part_))
     , mapper_(new MapperType(backend_->blockMapper()))
     , communicator_(CommunicationChooserType::create(*grid_part_))
+    , communicator_prepared_(false)
   {
   }
 
@@ -186,7 +188,10 @@ public:
 
   CommunicatorType& communicator() const
   {
-    // no need to prepare the communicator, since we are not pdelab based
+    if (!communicator_prepared_) {
+      communicator_->remoteIndices().template rebuild<true>();
+      communicator_prepared_ = CommunicationChooserType::prepare(*this, *communicator_);
+    }
     return *communicator_;
   }
 
@@ -195,6 +200,7 @@ private:
   const std::shared_ptr<const BackendType> backend_;
   const std::shared_ptr<const MapperType> mapper_;
   mutable std::shared_ptr<CommunicatorType> communicator_;
+  mutable bool communicator_prepared_;
 }; // class DuneFemCgSpaceWrapper< ..., 1 >
 
 

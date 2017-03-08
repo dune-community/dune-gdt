@@ -124,6 +124,7 @@ public:
     , backend_(new BackendType(*grid_part_))
     , mapper_(new MapperType(backend_->blockMapper()))
     , communicator_(CommunicationChooserType::create(*grid_part_))
+    , communicator_prepared_(false)
   {
   }
 
@@ -169,15 +170,19 @@ public:
 
   CommunicatorType& communicator() const
   {
-    // no need to prepare the communicator, since we are not pdelab based
+    if (!communicator_prepared_) {
+      communicator_->remoteIndices().template rebuild<true>();
+      communicator_prepared_ = CommunicationChooserType::prepare(*this, *communicator_);
+    }
     return *communicator_;
-  }
+  } // ... communicator(...)
 
 private:
   std::shared_ptr<GridLayerType> grid_part_;
   const std::shared_ptr<const BackendType> backend_;
   const std::shared_ptr<const MapperType> mapper_;
   mutable std::shared_ptr<CommunicatorType> communicator_;
+  mutable bool communicator_prepared_;
 }; // class DuneFemDgSpaceWrapper< ..., 1 >
 
 
