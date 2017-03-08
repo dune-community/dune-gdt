@@ -70,6 +70,7 @@ public:
   typedef GridLayerImp GridLayerType;
   static const int polOrder = polynomialOrder;
   static const bool continuous = false;
+  static const constexpr ChooseSpaceBackend backend_type{ChooseSpaceBackend::pdelab};
 
 private:
   typedef typename GridLayerType::ctype DomainFieldType;

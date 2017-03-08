@@ -89,6 +89,8 @@ public:
   static const bool needs_grid_view = true;
   typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
+  static const constexpr ChooseSpaceBackend backend_type{
+      typename std::tuple_element<0, std::tuple<SpaceImps...>>::Traits::backend_type};
 }; // class ProductSpaceTraits
 
 

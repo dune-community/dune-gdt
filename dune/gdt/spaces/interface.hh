@@ -166,6 +166,7 @@ public:
   static const size_t dimDomain = domainDim;
   static const size_t dimRange = rangeDim;
   static const size_t dimRangeCols = rangeDimCols;
+  static const constexpr ChooseSpaceBackend backend_type{Traits::backend_type};
 
 private:
   static_assert(dimDomain > 0, "dimDomain has to be positive");

@@ -154,7 +154,7 @@ public:
   using typename BaseType::VectorType;
 
 private:
-  typedef typename XT::LA::Solver<MatrixType, typename BaseType::TestSpaceType::CommunicatorType > LinearSolverType;
+  typedef typename XT::LA::Solver<MatrixType, typename BaseType::TestSpaceType::CommunicatorType> LinearSolverType;
 
 public:
   /// \name Have to be implemented by any derived class.
