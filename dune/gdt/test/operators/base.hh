@@ -75,7 +75,7 @@ struct OperatorBase : public ::testing::Test
   static const size_t dimDomain = Traits::dimDomain;
 
   OperatorBase()
-    : grid_provider_(XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 3u))
+    : grid_provider_(XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 6u))
     , space_(Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(grid_provider_.grid()))
     , scalar_function_("x", "x[0]", 1, "scalar function", {{"1.0", "0.0", "0.0"}})
     , function_("x", {"x[0]", "0", "0"}, 1)

@@ -73,7 +73,7 @@ struct LaplaceLocalizableProductTest : public EllipticProductBase<SpaceType>, pu
     product_tbb->walk(true);
     const auto result_tbb = product_tbb->apply2();
 
-    DXTC_EXPECT_FLOAT_EQ(result_tbb, result);
+    DXTC_EXPECT_FLOAT_EQ(result_tbb, result, 1e-14);
     return result;
   } // ... compute(...)
 

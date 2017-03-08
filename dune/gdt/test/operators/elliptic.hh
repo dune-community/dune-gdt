@@ -53,7 +53,7 @@ struct EllipticProductBase
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const = 0;
 
-  void correct_for_constant_arguments(const RangeFieldType epsilon = 1e-15) const
+  void correct_for_constant_arguments(const RangeFieldType epsilon = 1e-14) const
   {
     check(compute(constant_gradient_), factor_value_ * dimDomain * 1.0, epsilon);
   }
@@ -70,10 +70,8 @@ struct EllipticProductBase
 
   void check(const RangeFieldType& result, const RangeFieldType& expected, const RangeFieldType epsilon) const
   {
-    const auto error = std::abs(expected - result);
-    EXPECT_LE(error, epsilon) << "result:     " << result << "\n"
-                              << "expected:   " << expected << "\n"
-                              << "difference: " << std::scientific << error;
+    //! might be off, since atol was used before
+    DXTC_EXPECT_FLOAT_LE(expected, result, epsilon);
   } // ... check(...)
 
   const double factor_value_;
@@ -166,7 +164,7 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
         this->factor_, this->tensor_function_, this->space_.grid_view(), function, function);
     product_tbb->walk(true);
     const auto result_tbb = product_tbb->apply2();
-    DXTC_EXPECT_FLOAT_EQ(result_tbb, result);
+    DXTC_EXPECT_FLOAT_EQ(result_tbb, result, 1e-14);
     return result;
   }
 

@@ -71,10 +71,8 @@ struct WeightedL2ProductBase
 
   void check(const RangeFieldType& result, const RangeFieldType& expected, const RangeFieldType epsilon) const
   {
-    const auto error = std::abs(expected - result);
-    EXPECT_LE(error, epsilon) << "result:     " << result << "\n"
-                              << "expected:   " << expected << "\n"
-                              << "difference: " << std::scientific << error;
+    //! might be off, since atol was used before
+    DXTC_EXPECT_FLOAT_LE(expected, result, epsilon);
   } // ... check(...)
 
   const double weight_value_;
@@ -137,7 +135,7 @@ struct WeightedL2LocalizableProductTest : public WeightedL2ProductBase<SpaceType
     product_tbb->walk(true);
     const auto result_tbb = product_tbb->apply2();
 
-    DXTC_EXPECT_FLOAT_EQ(result_tbb, result);
+    DXTC_EXPECT_FLOAT_EQ(result_tbb, result, 1e-14);
     return result;
   } // ... compute(...)
 

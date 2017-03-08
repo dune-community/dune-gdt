@@ -35,11 +35,11 @@ struct ProjectionOperatorBase : public OperatorBase<SpaceType>
   using typename BaseType::RangeFieldType;
   using typename BaseType::GridViewType;
 
-  void measure_error(const RangeFieldType& tolerance) const
+  void measure_error(const RangeFieldType& expected_error) const
   {
     const auto l2_error =
         make_l2_operator(this->space_.grid_view(), 2)->induced_norm(this->function_ - this->discrete_function_);
-    DXTC_EXPECT_FLOAT_LE(l2_error, tolerance);
+    DXTC_EXPECT_FLOAT_LE(l2_error, expected_error);
   }
 
   static const constexpr double default_tolerance = 1e-15;
