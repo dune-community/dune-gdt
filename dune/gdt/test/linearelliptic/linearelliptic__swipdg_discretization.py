@@ -4,7 +4,7 @@ from dune.xt.codegen import typeid_to_typedef_name, la_backends
 grids = ['Yasp2Grid']
 try:
     if cache['dune-alugrid']:
-        pass
+        grids.append('AluSimplex2dGridType')
         # 'AluConform2dGridType', diabled due to https://gitlab.dune-project.org/extensions/dune-alugrid/issues/17
 except KeyError:
     pass
