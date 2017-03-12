@@ -29,6 +29,8 @@
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/common/ranges.hh>
 #include <dune/xt/grid/boundaryinfo.hh>
+#include <dune/xt/grid/entity.hh>
+#include <dune/xt/grid/intersection.hh>
 #include <dune/xt/grid/layers.hh>
 #include <dune/xt/la/container/pattern.hh>
 
@@ -112,16 +114,16 @@ private:
   static_assert(dimDomain > 0, "dimDomain has to be positive");
   static_assert(dimRange > 0, "dimRange has to be positive");
   static_assert(dimRangeCols > 0, "dimRangeCols has to be positive");
-  static_assert(std::is_base_of<GridView<typename GridViewType::Traits>, GridViewType>::value,
-                "GridViewType has to be derived from GridView!");
-  static_assert(GridViewType::dimension == dimDomain, "Dimension of GridView has to match dimDomain");
+  static_assert(XT::Grid::is_grid_view<GridViewType>::value || XT::Grid::is_grid_part<GridViewType>::value,
+                "GridViewType has to be a grid view or grid part!");
+  static_assert(GridViewType::dimension == dimDomain, "Dimension of GridViewType has to match dimDomain");
 
 public:
   typedef typename GridViewType::ctype DomainFieldType;
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
 
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
-  typedef typename GridViewType::Intersection IntersectionType;
+  typedef typename XT::Grid::Entity<GridViewType>::type EntityType;
+  typedef typename XT::Grid::Intersection<GridViewType>::type IntersectionType;
   typedef XT::Grid::BoundaryInfo<IntersectionType> BoundaryInfoType;
   typedef Dune::XT::LA::SparsityPatternDefault PatternType;
 
@@ -276,7 +278,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
   }
 
   template <class G>
-  PatternType compute_face_and_volume_pattern(const GridView<G>& local_grid_view) const
+  PatternType compute_face_and_volume_pattern(const /*GridView<*/ G /*>*/& local_grid_view) const
   {
     return compute_face_and_volume_pattern(local_grid_view, *this);
   }
@@ -292,7 +294,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
    *          ansatz space (cols/inner)
    */
   template <class G, class S, size_t d, size_t r, size_t rC>
-  PatternType compute_face_and_volume_pattern(const GridView<G>& local_grid_view,
+  PatternType compute_face_and_volume_pattern(const /*GridView<*/ G /*>*/& local_grid_view,
                                               const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     // prepare
@@ -340,7 +342,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
   }
 
   template <class G>
-  PatternType compute_face_pattern(const GridView<G>& local_grid_view) const
+  PatternType compute_face_pattern(const /*GridView<*/ G /*>*/& local_grid_view) const
   {
     return compute_face_pattern(local_grid_view, *this);
   }
