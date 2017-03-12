@@ -9,24 +9,18 @@
 //   Rene Milk       (2014, 2016 - 2017)
 //   Tobias Leibner  (2014)
 
-#ifndef DUNE_GDT_PLAYGROUND_SPACES_MAPPER_BlockMapper_HH
-#define DUNE_GDT_PLAYGROUND_SPACES_MAPPER_BlockMapper_HH
+#ifndef DUNE_GDT_PLAYGROUND_SPACES_MAPPER_BLOCK_HH
+#define DUNE_GDT_PLAYGROUND_SPACES_MAPPER_BLOCK_HH
 
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/type_traits.hh>
-
-#if HAVE_DUNE_GRID_MULTISCALE
-#include <dune/grid/multiscale/default.hh>
-#endif
+#include <dune/xt/grid/dd/subdomains/grid.hh>
 
 #include <dune/gdt/spaces/interface.hh>
-
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
-
-#if HAVE_DUNE_GRID_MULTISCALE
 
 
 template <class LocalSpaceImp>
@@ -39,17 +33,12 @@ namespace internal {
 template <class LocalSpaceType>
 class BlockMapperTraits
 {
-  static_assert(std::is_base_of<SpaceInterface<typename LocalSpaceType::Traits,
-                                               LocalSpaceType::dimDomain,
-                                               LocalSpaceType::dimRange,
-                                               LocalSpaceType::dimRangeCols>,
-                                LocalSpaceType>::value,
-                "LocalSpaceType has to be derived from SpaceInterface!");
+  static_assert(is_space<LocalSpaceType>::value, "LocalSpaceType has to be derived from SpaceInterface!");
 
 public:
   typedef BlockMapper<LocalSpaceType> derived_type;
   typedef typename LocalSpaceType::EntityType EntityType;
-  typedef typename LocalSpaceType::MapperType::BackendType BackendType;
+  typedef std::vector<LocalSpaceType> BackendType;
 }; // class BlockMapperTraits
 
 
@@ -60,6 +49,7 @@ template <class LocalSpaceImp>
 class BlockMapper : public MapperInterface<internal::BlockMapperTraits<LocalSpaceImp>>
 {
   typedef MapperInterface<internal::BlockMapperTraits<LocalSpaceImp>> BaseType;
+  typedef BlockMapper<LocalSpaceImp> ThisType;
 
 public:
   typedef internal::BlockMapperTraits<LocalSpaceImp> Traits;
@@ -67,9 +57,12 @@ public:
   typedef typename Traits::EntityType EntityType;
   typedef LocalSpaceImp LocalSpaceType;
 
-  typedef grid::Multiscale::Default<typename LocalSpaceType::GridViewType::Grid> MsGridType;
+  typedef XT::Grid::DD::SubdomainGrid<typename LocalSpaceType::GridViewType::Grid> DdSubdomainsGridType;
 
 private:
+  typedef typename DdSubdomainsGridType::GlobalGridPartType GridViewType;
+  typedef typename DdSubdomainsGridType::EntityToSubdomainMapType EntityToSubdomainMapType;
+
   template <class L, class E>
   class Compute
   {
@@ -77,93 +70,92 @@ private:
   };
 
   template <class L>
-  class Compute<L, typename MsGridType::EntityType>
+  class Compute<L, typename DdSubdomainsGridType::EntityType>
   {
-    typedef typename MsGridType::EntityType Comdim0EntityType;
+    typedef typename DdSubdomainsGridType::EntityType Comdim0EntityType;
 
   public:
-    static size_t numDofs(const MsGridType& ms_grid,
-                          const std::vector<std::shared_ptr<const L>>& local_spaces,
-                          const Comdim0EntityType& entity)
+    static size_t numDofs(const ThisType& self, const Comdim0EntityType& entity)
     {
-      const size_t block = find_block_of_(ms_grid, entity);
-      return local_spaces[block]->mapper().numDofs(entity);
+      const size_t block = find_block_of(self, entity);
+      return self.local_spaces_[block].mapper().numDofs(entity);
     }
 
-    static void globalIndices(const MsGridType& ms_grid,
-                              const std::vector<std::shared_ptr<const L>>& local_spaces,
-                              const std::vector<size_t>& global_start_indices,
-                              const Comdim0EntityType& entity,
-                              Dune::DynamicVector<size_t>& ret)
+    static void globalIndices(const ThisType& self, const Comdim0EntityType& entity, Dune::DynamicVector<size_t>& ret)
     {
-      const size_t block = find_block_of_(ms_grid, entity);
-      local_spaces[block]->mapper().globalIndices(entity, ret);
-      const size_t num_dofs = local_spaces[block]->mapper().numDofs(entity);
+      const size_t block = find_block_of(self, entity);
+      self.local_spaces_[block].mapper().globalIndices(entity, ret);
+      const size_t num_dofs = self.local_spaces_[block].mapper().numDofs(entity);
       assert(ret.size() >= num_dofs);
       for (size_t ii = 0; ii < num_dofs; ++ii)
-        ret[ii] += global_start_indices[block];
+        ret[ii] += self.global_start_indices_[block];
     }
 
-    static size_t mapToGlobal(const MsGridType& ms_grid,
-                              const std::vector<std::shared_ptr<const L>>& local_spaces,
-                              const std::vector<size_t>& global_start_indices,
-                              const Comdim0EntityType& entity,
-                              const size_t& localIndex)
+    static size_t mapToGlobal(const ThisType& self, const Comdim0EntityType& entity, const size_t& localIndex)
     {
-      const size_t block = find_block_of_(ms_grid, entity);
-      const size_t block_local_index = local_spaces[block]->mapper().mapToGlobal(entity, localIndex);
-      return global_start_indices[block] + block_local_index;
+      const size_t block = find_block_of(self, entity);
+      const size_t block_local_index = self.local_spaces_[block].mapper().mapToGlobal(entity, localIndex);
+      return self.global_start_indices_[block] + block_local_index;
     }
 
   private:
-    static size_t find_block_of_(const MsGridType& ms_grid, const Comdim0EntityType& entity)
+    static size_t find_block_of(const ThisType& self, const Comdim0EntityType& entity)
     {
-      const auto global_entity_index = ms_grid.globalGridView().indexSet().index(entity);
-      const auto result = ms_grid.entityToSubdomainMap()->find(global_entity_index);
+      const auto global_entity_index = self.grid_view_.indexSet().index(entity);
+      const auto result = self.entity_to_subdomain_map_.find(global_entity_index);
 #ifndef NDEBUG
-      if (result == ms_grid.entityToSubdomainMap()->end())
+      if (result == self.entity_to_subdomain_map_.end())
         DUNE_THROW(XT::Common::Exceptions::internal_error,
                    "Entity " << global_entity_index
-                             << " of the global grid view was not found in the multiscale grid!");
+                             << " of the global grid view was not found in the dd subdomain grid!");
 #endif // NDEBUG
       const size_t subdomain = result->second;
 #ifndef NDEBUG
-      if (subdomain >= ms_grid.size())
+      if (subdomain >= self.num_blocks_)
         DUNE_THROW(XT::Common::Exceptions::internal_error,
-                   "The multiscale grid is corrupted!\nIt reports Entity " << global_entity_index
-                                                                           << " to be in subdomain "
-                                                                           << subdomain
-                                                                           << " while only having "
-                                                                           << ms_grid.size()
-                                                                           << " subdomains!");
+                   "The DD subdomains grid is corrupted!\nIt reports Entity " << global_entity_index
+                                                                              << " to be in subdomain "
+                                                                              << subdomain
+                                                                              << " while only having "
+                                                                              << self.num_blocks_
+                                                                              << " subdomains!");
 #endif // NDEBUG
       return subdomain;
-    } // ... find_block_of_(...)
+    } // ... find_block_of(...)
   }; // class Compute< ..., EntityType >
 
 public:
-  BlockMapper(const std::shared_ptr<const MsGridType> ms_grid,
-              const std::vector<std::shared_ptr<const LocalSpaceType>> local_spaces)
-    : ms_grid_(ms_grid)
+  BlockMapper(const DdSubdomainsGridType& dd_grid,
+              const GridViewType& grid_view,
+              const std::vector<LocalSpaceType>& local_spaces)
+    : grid_view_(grid_view)
+    , entity_to_subdomain_map_(dd_grid.entityToSubdomainMap())
     , local_spaces_(local_spaces)
     , num_blocks_(local_spaces_.size())
     , size_(0)
     , max_num_dofs_(0)
   {
-    if (local_spaces_.size() != ms_grid_->size())
+    if (local_spaces_.size() != dd_grid.size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "You have to provide a local space for each subdomain of the multiscale grid!\n"
-                     << "  Size of the given multiscale grid: "
-                     << ms_grid_->size()
+                 "You have to provide a local space for each subdomain of the DD subdomains grid!\n"
+                     << "  Number of subdomains: "
+                     << dd_grid.size()
                      << "\n"
                      << "  Number of local spaces given: "
                      << local_spaces_.size());
     for (size_t bb = 0; bb < num_blocks_; ++bb) {
-      max_num_dofs_ = std::max(max_num_dofs_, local_spaces_[bb]->mapper().maxNumDofs());
+      auto foo = local_spaces_[bb].mapper().maxNumDofs();
+      max_num_dofs_ = std::max(max_num_dofs_, foo);
       global_start_indices_.push_back(size_);
-      size_ += local_spaces_[bb]->mapper().size();
+      size_ += local_spaces_[bb].mapper().size();
     }
   } // BlockMapper(...)
+
+  BlockMapper(const ThisType& other) = default;
+  BlockMapper(ThisType&& source) = default;
+
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& source) = delete;
 
   size_t numBlocks() const
   {
@@ -184,7 +176,7 @@ public:
 
   const BackendType& backend() const
   {
-    return local_spaces_[0]->mapper().backend();
+    return local_spaces_;
   }
 
   size_t size() const
@@ -199,23 +191,26 @@ public:
 
   size_t numDofs(const EntityType& entity) const
   {
-    return Compute<LocalSpaceType, EntityType>::numDofs(*ms_grid_, local_spaces_, entity);
+    return Compute<LocalSpaceType, EntityType>::numDofs(*this, entity);
   }
 
   void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
-    Compute<LocalSpaceType, EntityType>::globalIndices(*ms_grid_, local_spaces_, global_start_indices_, entity, ret);
+    Compute<LocalSpaceType, EntityType>::globalIndices(*this, entity, ret);
   }
 
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
-    return Compute<LocalSpaceType, EntityType>::mapToGlobal(
-        *ms_grid_, local_spaces_, global_start_indices_, entity, localIndex);
-  } // ... mapToGlobal(...)
+    return Compute<LocalSpaceType, EntityType>::mapToGlobal(*this, entity, localIndex);
+  }
 
 private:
-  std::shared_ptr<const MsGridType> ms_grid_;
-  std::vector<std::shared_ptr<const LocalSpaceType>> local_spaces_;
+  template <class L, class E>
+  friend class Compute;
+
+  const GridViewType& grid_view_;
+  const std::shared_ptr<const typename DdSubdomainsGridType::EntityToSubdomainMapType> entity_to_subdomain_map_;
+  const std::vector<LocalSpaceType>& local_spaces_;
   size_t num_blocks_;
   size_t size_;
   size_t max_num_dofs_;
@@ -223,19 +218,7 @@ private:
 }; // class BlockMapper
 
 
-#else // HAVE_DUNE_GRID_MULTISCALE
-
-
-template <class LocalSpaceImp>
-class BlockMapper
-{
-  static_assert(AlwaysFalse<LocalSpaceImp>::value, "You are missing dune-grid-multiscale!");
-};
-
-
-#endif // HAVE_DUNE_GRID_MULTISCALE
-
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_PLAYGROUND_SPACES_MAPPER_BlockMapper_HH
+#endif // DUNE_GDT_PLAYGROUND_SPACES_MAPPER_BLOCK_HH
