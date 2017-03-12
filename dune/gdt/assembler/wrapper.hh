@@ -203,16 +203,45 @@ public:
   using typename BaseType::IntersectionType;
 
   LocalCouplingTwoFormMatrixAssemblerWrapper(
-      const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-      const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+      const Dune::XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space,
+      const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space,
       const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
       const LocalCouplingTwoFormAssemblerType& local_assembler,
       MatrixType& matrix)
-    : test_space_(test_space)
-    , ansatz_space_(ansatz_space)
+    : inner_test_space_(inner_test_space)
+    , inner_ansatz_space_(inner_ansatz_space)
+    , outer_test_space_(inner_test_space)
+    , outer_ansatz_space_(inner_ansatz_space)
     , where_(where)
     , local_assembler_(local_assembler)
-    , matrix_(matrix)
+    , in_in_matrix_(matrix)
+    , out_out_matrix_(matrix)
+    , in_out_matrix_(matrix)
+    , out_in_matrix_(matrix)
+  {
+  }
+
+  LocalCouplingTwoFormMatrixAssemblerWrapper(
+      const Dune::XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space,
+      const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space,
+      const Dune::XT::Common::PerThreadValue<const TestSpaceType>& outer_test_space,
+      const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& outer_ansatz_space,
+      const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where,
+      const LocalCouplingTwoFormAssemblerType& local_assembler,
+      MatrixType& in_in_matrix,
+      MatrixType& out_out_matrix,
+      MatrixType& in_out_matrix,
+      MatrixType& out_in_matrix)
+    : inner_test_space_(inner_test_space)
+    , inner_ansatz_space_(inner_ansatz_space)
+    , outer_test_space_(outer_test_space)
+    , outer_ansatz_space_(outer_ansatz_space)
+    , where_(where)
+    , local_assembler_(local_assembler)
+    , in_in_matrix_(in_in_matrix)
+    , out_out_matrix_(out_out_matrix)
+    , in_out_matrix_(in_out_matrix)
+    , out_in_matrix_(out_in_matrix)
   {
   }
 
@@ -227,15 +256,28 @@ public:
                            const EntityType& /*inside_entity*/,
                            const EntityType& /*outside_entity*/) override final
   {
-    local_assembler_.assemble(*test_space_, *ansatz_space_, *test_space_, *ansatz_space_, intersection, matrix_);
+    local_assembler_.assemble(*inner_test_space_,
+                              *inner_ansatz_space_,
+                              *outer_test_space_,
+                              *outer_ansatz_space_,
+                              intersection,
+                              in_in_matrix_,
+                              out_out_matrix_,
+                              in_out_matrix_,
+                              out_in_matrix_);
   } // ... apply_local(...)
 
 private:
-  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
-  const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space_;
+  const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space_;
+  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& outer_test_space_;
+  const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& outer_ansatz_space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichIntersection<GridViewType>> where_;
   const LocalCouplingTwoFormAssemblerType& local_assembler_;
-  MatrixType& matrix_;
+  MatrixType& in_in_matrix_;
+  MatrixType& out_out_matrix_;
+  MatrixType& in_out_matrix_;
+  MatrixType& out_in_matrix_;
 }; // class LocalCouplingTwoFormMatrixAssemblerWrapper
 
 // without a given local assembler
