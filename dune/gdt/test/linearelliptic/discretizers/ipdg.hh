@@ -97,8 +97,10 @@ public:
     return std::string("gdt.linearelliptic.discretization.swipdg.order_") + Dune::XT::Common::to_string(int(polOrder));
   }
 
-  static DiscretizationType
-  discretize(XT::Grid::GridProvider<GridType>& grid_provider, const ProblemType& problem, const int level = 0)
+  template <class DdGridType>
+  static DiscretizationType discretize(XT::Grid::GridProvider<GridType, DdGridType>& grid_provider,
+                                       const ProblemType& problem,
+                                       const int level = 0)
   {
     auto logger = XT::Common::TimedLogger().get(static_id());
     logger.info() << "Creating space... " << std::endl;
