@@ -23,6 +23,8 @@
 #include <dune/xt/la/container/istl.hh>
 #include <dune/xt/common/parallel/helper.hh>
 
+#include <dune/gdt/spaces/interface.hh>
+
 namespace Dune {
 namespace GDT {
 
@@ -60,14 +62,8 @@ struct CommunicationChooser<ViewImp, true>
   }
 
   template <class Space>
-  static bool prepare(const Space&
-#if HAVE_DUNE_PDELAB
-                          space,
-                      Type& communicator)
-#else
-                      /*space*/,
-                      Type& communicator)
-#endif
+  static typename std::enable_if<Space::backend_type == Dune::GDT::ChooseSpaceBackend::pdelab, bool>::type
+  prepare(const Space& space, Type& communicator)
   {
 #if HAVE_DUNE_PDELAB
     XT::LA::IstlRowMajorSparseMatrix<typename Space::RangeFieldType> matrix;
@@ -76,6 +72,23 @@ struct CommunicationChooser<ViewImp, true>
 #endif // HAVE_DUNE_PDELAB
     return true;
   } // ... prepare(...)
+
+  template <class Space>
+  static typename std::enable_if<Space::backend_type == Dune::GDT::ChooseSpaceBackend::gdt, bool>::type
+  prepare(const Space& /*space*/, Type& communicator)
+  {
+    communicator.remoteIndices().template rebuild<true>();
+    return true;
+  } // ... prepare(...)
+
+  template <class Space>
+  static typename std::enable_if<Space::backend_type == Dune::GDT::ChooseSpaceBackend::fem, bool>::type
+  prepare(const Space& /*space*/, Type& communicator)
+  {
+    communicator.remoteIndices().template rebuild<true>();
+    return true;
+  } // ... prepare(...)
+
 }; // struct CommunicationChooser< ..., true >
 
 
