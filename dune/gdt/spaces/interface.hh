@@ -408,15 +408,20 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
   template <class GL>
   typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
   compute_face_pattern(const GL& grd_layr) const
-  {
     return compute_face_pattern(grd_layr, *this);
-  }
-
   template <class S, size_t d, size_t r, size_t rC>
   PatternType compute_face_pattern(const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     return compute_face_pattern(grid_layer(), ansatz_space);
   }
+
+  template <class G>
+  typename std::enable_if<XT::Grid::is_grid_view<G>::value || XT::Grid::is_grid_part<G>::value, PatternType>::type
+  compute_face_pattern(const /*GridView<*/ G /*>*/& local_grid_view) const
+  {
+    return compute_face_pattern(local_grid_view, *this);
+  }
+
 
   template <class GL, class S, size_t d, size_t r, size_t rC>
   typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
