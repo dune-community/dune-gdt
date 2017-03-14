@@ -27,7 +27,7 @@
 #include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
 #include <dune/xt/common/ranges.hh>
-#include <dune/xt/common/tuple.hh>
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/common/type_traits.hh>
 
 #include <dune/xt/la/container/pattern.hh>
@@ -416,7 +416,7 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
   }
 
   template <class G>
-  typename std::enable_if<XT::Grid::is_grid_view<G>::value || XT::Grid::is_grid_part<G>::value, PatternType>::type
+  typename std::enable_if<XT::Grid::is_layer<G>::value, PatternType>::type
   compute_face_pattern(const /*GridView<*/ G /*>*/& local_grid_view) const
   {
     return compute_face_pattern(local_grid_view, *this);
