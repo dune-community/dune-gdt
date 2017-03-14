@@ -94,14 +94,15 @@ public:
                       XT::Common::Configuration(),
                       local_boundary_cfg);
     std::vector<LocalDiscretizationType> local_discretizations;
-    std::vector<LocalSpaceType> local_spaces;
+    auto local_spaces_ptr = std::make_shared<std::vector<LocalSpaceType>>();
+    auto& local_spaces = *local_spaces_ptr;
     for (size_t ss = 0; ss < dd_grid.size(); ++ss) {
       local_discretizations.emplace_back(
           LocalDiscretizer::discretize(grid_provider, local_problem, boost::numeric_cast<int>(ss)));
       local_spaces.emplace_back(local_discretizations.back().test_space());
     }
     logger.info() << "Creating space... " << std::endl;
-    SpaceType space(dd_grid, std::move(local_spaces));
+    SpaceType space(dd_grid, local_spaces_ptr);
 
     logger.info() << "Preparing container..." << std::endl;
     std::vector<XT::LA::SparsityPatternDefault> local_patterns(dd_grid.size());
