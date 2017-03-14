@@ -7,4 +7,4 @@
 # Authors:
 #   Felix Schindler (2014, 2016 - 2017)
 
-message(AUTHOR_WARNING "TODO: Implement module test.")
+set(DUNE_GRID_EXPERIMENTAL_GRID_EXTENSIONS TRUE)
