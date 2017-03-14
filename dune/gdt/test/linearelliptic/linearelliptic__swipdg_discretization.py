@@ -37,5 +37,9 @@ if len(space_backends) == 0:
     # prevent unusable iteration in template
     permutations = []
 else:
+def filter(t, s):
+    # pdelab has no DG impl for simplicial grids
+    if s == 'pdelab':
+        return 'AluSimplex' not in t
     permutations = itertools.product(testcases, space_backends, la_backends(cache))
-    permutations = [(t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]
+permutations = [(t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations if filter(t, s)]
