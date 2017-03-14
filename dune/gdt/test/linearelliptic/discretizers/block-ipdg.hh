@@ -80,7 +80,7 @@ public:
     local_boundary_cfg["type"] = "xt.grid.boundaryinfo.boundarysegment";
     local_boundary_cfg["default"] = "dirichlet";
     local_boundary_cfg["neumann"] =
-        "[" + XT::Common::to_string(inner_boundary_index) + " " + XT::Common::to_string(inner_boundary_index - 1) + "]";
+        "[" + XT::Common::to_string(inner_boundary_index) + " " + XT::Common::to_string(inner_boundary_index + 1) + "]";
     LinearElliptic::ProblemBase<typename GridType::template Codim<0>::Entity,
                                 typename GridType::ctype,
                                 GridType::dimension,
