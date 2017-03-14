@@ -78,14 +78,14 @@ private:
     static size_t numDofs(const ThisType& self, const Comdim0EntityType& entity)
     {
       const size_t block = find_block_of(self, entity);
-      return self.local_spaces_[block].mapper().numDofs(entity);
+      return self.backend()[block].mapper().numDofs(entity);
     }
 
     static void globalIndices(const ThisType& self, const Comdim0EntityType& entity, Dune::DynamicVector<size_t>& ret)
     {
       const size_t block = find_block_of(self, entity);
-      self.local_spaces_[block].mapper().globalIndices(entity, ret);
-      const size_t num_dofs = self.local_spaces_[block].mapper().numDofs(entity);
+      self.backend()[block].mapper().globalIndices(entity, ret);
+      const size_t num_dofs = self.backend()[block].mapper().numDofs(entity);
       assert(ret.size() >= num_dofs);
       for (size_t ii = 0; ii < num_dofs; ++ii)
         ret[ii] += self.global_start_indices_[block];
@@ -94,17 +94,17 @@ private:
     static size_t mapToGlobal(const ThisType& self, const Comdim0EntityType& entity, const size_t& localIndex)
     {
       const size_t block = find_block_of(self, entity);
-      const size_t block_local_index = self.local_spaces_[block].mapper().mapToGlobal(entity, localIndex);
+      const size_t block_local_index = self.backend()[block].mapper().mapToGlobal(entity, localIndex);
       return self.global_start_indices_[block] + block_local_index;
     }
 
   private:
     static size_t find_block_of(const ThisType& self, const Comdim0EntityType& entity)
     {
-      const auto global_entity_index = self.grid_view_.indexSet().index(entity);
-      const auto result = self.entity_to_subdomain_map_.find(global_entity_index);
+      const auto global_entity_index = self.grid_view_->indexSet().index(entity);
+      const auto result = self.entity_to_subdomain_map_->find(global_entity_index);
 #ifndef NDEBUG
-      if (result == self.entity_to_subdomain_map_.end())
+      if (result == self.entity_to_subdomain_map_->end())
         DUNE_THROW(XT::Common::Exceptions::internal_error,
                    "Entity " << global_entity_index
                              << " of the global grid view was not found in the dd subdomain grid!");
@@ -126,28 +126,28 @@ private:
 
 public:
   BlockMapper(const DdSubdomainsGridType& dd_grid,
-              const GridViewType& grid_view,
-              const std::vector<LocalSpaceType>& local_spaces)
+              const std::shared_ptr<GridViewType> grid_view,
+              const std::shared_ptr<std::vector<LocalSpaceType>> local_spaces)
     : grid_view_(grid_view)
     , entity_to_subdomain_map_(dd_grid.entityToSubdomainMap())
     , local_spaces_(local_spaces)
-    , num_blocks_(local_spaces_.size())
+    , num_blocks_(local_spaces_->size())
     , size_(0)
     , max_num_dofs_(0)
   {
-    if (local_spaces_.size() != dd_grid.size())
+    if (local_spaces_->size() != dd_grid.size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "You have to provide a local space for each subdomain of the DD subdomains grid!\n"
                      << "  Number of subdomains: "
                      << dd_grid.size()
                      << "\n"
                      << "  Number of local spaces given: "
-                     << local_spaces_.size());
+                     << local_spaces_->size());
     for (size_t bb = 0; bb < num_blocks_; ++bb) {
-      auto foo = local_spaces_[bb].mapper().maxNumDofs();
+      auto foo = backend()[bb].mapper().maxNumDofs();
       max_num_dofs_ = std::max(max_num_dofs_, foo);
       global_start_indices_.push_back(size_);
-      size_ += local_spaces_[bb].mapper().size();
+      size_ += backend()[bb].mapper().size();
     }
   } // BlockMapper(...)
 
@@ -165,7 +165,7 @@ public:
   size_t localSize(const size_t block) const
   {
     assert(block < num_blocks_);
-    return local_spaces_[block]->mapper().size();
+    return backend()[block]->mapper().size();
   }
 
   size_t mapToGlobal(const size_t block, const size_t localIndex) const
@@ -176,7 +176,7 @@ public:
 
   const BackendType& backend() const
   {
-    return local_spaces_;
+    return *local_spaces_;
   }
 
   size_t size() const
@@ -208,9 +208,9 @@ private:
   template <class L, class E>
   friend class Compute;
 
-  const GridViewType& grid_view_;
+  const std::shared_ptr<GridViewType> grid_view_;
   const std::shared_ptr<const typename DdSubdomainsGridType::EntityToSubdomainMapType> entity_to_subdomain_map_;
-  const std::vector<LocalSpaceType>& local_spaces_;
+  const std::shared_ptr<std::vector<LocalSpaceType>> local_spaces_;
   size_t num_blocks_;
   size_t size_;
   size_t max_num_dofs_;

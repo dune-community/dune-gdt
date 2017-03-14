@@ -89,20 +89,20 @@ public:
 
   typedef XT::Grid::DD::SubdomainGrid<typename XT::Grid::extract_grid<GridViewType>::type> DdSubdomainsGridType;
 
-  BlockSpace(const DdSubdomainsGridType& dd_grid, std::vector<LocalSpaceType>&& local_spaces)
+  BlockSpace(const DdSubdomainsGridType& dd_grid, const std::shared_ptr<std::vector<LocalSpaceType>> local_spaces)
     : entity_to_subdomain_map_(dd_grid.entityToSubdomainMap())
-    , grid_view_(dd_grid.globalGridPart())
+    , grid_view_(new GridViewType(dd_grid.globalGridPart()))
     , local_spaces_(local_spaces)
-    , mapper_(dd_grid, grid_view_, local_spaces_)
+    , mapper_(new MapperType(dd_grid, grid_view_, local_spaces_))
   {
-    if (local_spaces_.size() != dd_grid.size())
+    if (local_spaces_->size() != dd_grid.size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "You have to provide a local space for each subdomain of the DD subdomains grid!\n"
                      << "  Number of subdomains: "
                      << dd_grid.size()
                      << "\n"
                      << "  Number of local spaces given: "
-                     << local_spaces_.size());
+                     << local_spaces_->size());
   } // BlockSpace(...)
 
   BlockSpace(const ThisType& other) = default;
@@ -113,23 +113,23 @@ public:
 
   const GridViewType& grid_view() const
   {
-    return grid_view_;
+    return *grid_view_;
   }
 
   const BackendType& backend() const
   {
-    return local_spaces_;
+    return *local_spaces_;
   }
 
   const MapperType& mapper() const
   {
-    return mapper_;
+    return *mapper_;
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
     const size_t block = find_block_of(entity);
-    return local_spaces_[block].base_function_set(entity);
+    return backend()[block].base_function_set(entity);
   }
 
   template <class ConstraintsType>
@@ -149,14 +149,14 @@ public:
   CommunicatorType& communicator() const
   {
     DUNE_THROW(NotImplemented, "I am not sure yet how to implement this, I probably need my own communicator!");
-    return local_spaces_[0].communicator();
+    return backend()[0].communicator();
   }
 
 private:
   template <class EntityType>
   size_t find_block_of(const EntityType& entity) const
   {
-    const auto global_entity_index = grid_view_.indexSet().index(entity);
+    const auto global_entity_index = grid_view_->indexSet().index(entity);
     const auto result = entity_to_subdomain_map_->find(global_entity_index);
 #ifndef NDEBUG
     if (result == entity_to_subdomain_map_->end())
@@ -165,22 +165,22 @@ private:
 #endif // NDEBUG
     const size_t subdomain = result->second;
 #ifndef NDEBUG
-    if (subdomain >= local_spaces_.size())
+    if (subdomain >= local_spaces_->size())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "The DD subdomains grid is corrupted!\nIt reports Entity " << global_entity_index
                                                                             << " to be in subdomain "
                                                                             << subdomain
                                                                             << " while only having "
-                                                                            << local_spaces_.size()
+                                                                            << local_spaces_->size()
                                                                             << " subdomains!");
 #endif // NDEBUG
     return subdomain;
   } // ... find_block_of(...)
 
   const std::shared_ptr<const typename DdSubdomainsGridType::EntityToSubdomainMapType> entity_to_subdomain_map_;
-  const GridViewType grid_view_;
-  const std::vector<LocalSpaceType> local_spaces_;
-  const MapperType mapper_;
+  const std::shared_ptr<GridViewType> grid_view_;
+  const std::shared_ptr<std::vector<LocalSpaceType>> local_spaces_;
+  const std::shared_ptr<MapperType> mapper_;
 }; // class BlockSpace
 
 
