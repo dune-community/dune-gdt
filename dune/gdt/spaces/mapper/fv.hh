@@ -16,8 +16,6 @@
 
 #include <dune/common/dynvector.hh>
 
-#include <dune/grid/utility/globalindexset.hh>
-
 #include <dune/xt/common/unused.hh>
 #include <dune/xt/common/type_traits.hh>
 
@@ -53,7 +51,7 @@ class FvMapperTraits
 public:
   typedef GridViewImp GridViewType;
   typedef FvMapper<GridViewType, rangeDim, rangeDimCols> derived_type;
-  typedef GlobalIndexSet<GridViewImp> BackendType;
+  typedef typename GridViewImp::IndexSet BackendType;
   typedef typename GridViewType::template Codim<0>::Entity EntityType;
 };
 
@@ -82,7 +80,7 @@ public:
   typedef typename Traits::EntityType EntityType;
 
   FvMapper(const GridViewType& grid_view)
-    : backend_(grid_view, 0)
+    : backend_(grid_view.indexSet())
   {
   }
 
@@ -124,7 +122,7 @@ public:
   }
 
 private:
-  const BackendType backend_;
+  const BackendType& backend_;
 }; // class FvMapper< ..., rangeDim, 1 >
 
 
@@ -140,7 +138,7 @@ public:
   typedef typename Traits::EntityType EntityType;
 
   FvMapper(const GridViewType& grid_view)
-    : backend_(grid_view, 0)
+    : backend_(grid_view.indexSet())
   {
   }
 
@@ -180,7 +178,7 @@ public:
   }
 
 private:
-  const BackendType backend_;
+  const BackendType& backend_;
 }; // class FvMapper< ..., 1, 1 >
 
 
