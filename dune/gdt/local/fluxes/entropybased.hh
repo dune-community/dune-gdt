@@ -566,6 +566,7 @@ public:
   typedef typename GDT::Hyperbolic::Problems::AdaptiveQuadrature<DomainType, RangeType, RangeType>
       AdaptiveQuadratureType;
   typedef typename AdaptiveQuadratureType::QuadraturePointType QuadraturePointType;
+  typedef typename GridViewType::IndexSet IndexSetType;
 
   explicit AdaptiveEntropyBasedLocalFlux(
       const GridViewType& grid_view,
@@ -581,7 +582,7 @@ public:
       const RangeFieldType epsilon = std::pow(2, -52),
       const MatrixType& T_minus_one = unit_matrix<dimRange>(),
       const std::string name = static_id())
-    : global_index_set_(grid_view, 0)
+    : index_set_(grid_view.indexSet())
     , isotropic_dist_calculator_(isotropic_dist_calculator)
     , adaptive_quadrature_(adaptive_quadrature)
     , tau_(tau)
@@ -594,9 +595,9 @@ public:
     , epsilon_(epsilon)
     , T_minus_one_(T_minus_one)
     , name_(name)
-    , alpha_cache_(2 * global_index_set_.size(0))
-    , beta_cache_(2 * global_index_set_.size(0))
-    , T_cache_(2 * global_index_set_.size(0))
+    , alpha_cache_(2 * index_set_.size(0))
+    , beta_cache_(2 * index_set_.size(0))
+    , T_cache_(2 * index_set_.size(0))
   {
   }
 
@@ -611,7 +612,7 @@ public:
     // get initial multiplier and basis matrix from last time step
     // in the numerical flux, we are setting x_local to DomainType(200) if we are actually not on the entity,
     // but on the boundary (YaspGrid does not support ghost entities, thus we use this hack)
-    const auto index = global_index_set_.index(entity) + global_index_set_.size(0) * (x_local[0] > 100);
+    const auto index = index_set_.index(entity) + index_set_.size(0) * (x_local[0] > 100);
     RangeType alpha;
 
     // if value has already been calculated for this entity at this time, skip computation
@@ -916,7 +917,7 @@ private:
     return true;
   }
 
-  const Dune::GlobalIndexSet<GridViewType> global_index_set_;
+  const IndexSetType& index_set_;
   const IsotropicDistributionCalculatorType isotropic_dist_calculator_;
   AdaptiveQuadratureType& adaptive_quadrature_;
   const RangeFieldType tau_;
