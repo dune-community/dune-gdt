@@ -41,6 +41,7 @@
 #include <dune/gdt/timestepper/factory.hh>
 #include <dune/gdt/timestepper/fractional-step.hh>
 #include <dune/gdt/timestepper/implicit-rungekutta.hh>
+#include <dune/gdt/timestepper/implicit-rungekutta-parallel.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/sourcebeam.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/planesource.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/pointsource.hh>
@@ -168,7 +169,7 @@ int main(int argc, char** argv)
   //  typedef typename Hyperbolic::Problems::
   //      PointSourcePnLegendre<EntityType, double, dimDomain, double, momentOrder>
   //          ProblemType;
-  typedef typename Hyperbolic::Problems::PointSourcePnHatFunctions<EntityType, double, dimDomain, double, 6>
+  typedef typename Hyperbolic::Problems::PointSourcePnHatFunctions<EntityType, double, dimDomain, double, 18>
       ProblemType;
   //  typedef typename Hyperbolic::Problems::PointSourcePnPartialMoments<EntityType, double, dimDomain, double, 8>
   //      ProblemType;
@@ -222,7 +223,7 @@ int main(int argc, char** argv)
   //  const auto quadrature_rule = Hyperbolic::Problems::get_lebedev_quadrature(quadrature_order);
 
   // 3D quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
-  const size_t octaeder_refinements = 0;
+  const size_t octaeder_refinements = 1;
   const auto poly = CGALWrapper::create_octaeder_spherical_triangulation(octaeder_refinements);
   const size_t quadrature_refinements = 4;
   const auto quadrature_rule =

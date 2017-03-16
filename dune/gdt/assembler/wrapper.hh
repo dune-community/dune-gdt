@@ -138,10 +138,28 @@ public:
 
   virtual void apply_local(const EntityType& entity) override final
   {
-    local_assembler_.assemble(*test_space_, *ansatz_space_, entity, matrix_);
+    apply_local_imp(entity);
   }
 
 private:
+  template <class MatrixImp = MatrixType>
+  std::enable_if_t<!std::is_base_of<std::vector<DynamicMatrix<typename AnsatzSpaceType::RangeFieldType>>,
+                                    MatrixImp>::value,
+                   void>
+  apply_local_imp(const EntityType& entity)
+  {
+    local_assembler_.assemble(*test_space_, *ansatz_space_, entity, matrix_);
+  }
+
+  template <class MatrixImp = MatrixType>
+  std::enable_if_t<std::is_base_of<std::vector<DynamicMatrix<typename AnsatzSpaceType::RangeFieldType>>,
+                                   MatrixImp>::value,
+                   void>
+  apply_local_imp(const EntityType& entity)
+  {
+    local_assembler_.assemble_entitywise(*test_space_, *ansatz_space_, entity, matrix_);
+  }
+
   const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
   const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichEntity<GridViewType>> where_;

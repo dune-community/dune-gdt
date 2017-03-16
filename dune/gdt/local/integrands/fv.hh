@@ -36,6 +36,9 @@ class LocalFvRhsIntegrand;
 template <class RhsEvaluationImp, class SourceType>
 class LocalFvRhsJacobianIntegrand;
 
+template <class RhsEvaluationImp, class SourceType>
+class LocalFvRhsNewtonIntegrand;
+
 namespace internal {
 
 
@@ -77,6 +80,25 @@ public:
                      typename SourceType::SpaceType::GridViewType::ctype>
       LocalfunctionTupleType;
 }; // class LocalFvRhsJacobianIntegrandTraits
+
+/**
+ * \tparam RhsEvaluationImp Right-hand side function derived from RhsEvaluationInterface
+ * \tparam SourceType DiscreteFunction that contains the values u_i
+ */
+template <class RhsEvaluationImp, class SourceType>
+class LocalFvRhsNewtonIntegrandTraits
+{
+public:
+  typedef RhsEvaluationImp RhsEvaluationType;
+  typedef typename RhsEvaluationImp::EntityType EntityType;
+  typedef typename RhsEvaluationImp::DomainFieldType DomainFieldType;
+  static const size_t dimDomain = RhsEvaluationImp::dimDomain;
+  typedef LocalFvRhsNewtonIntegrand<RhsEvaluationImp, SourceType> derived_type;
+  typedef std::tuple<size_t,
+                     std::unique_ptr<typename SourceType::LocalfunctionType>,
+                     typename SourceType::SpaceType::GridViewType::ctype>
+      LocalfunctionTupleType;
+}; // class LocalFvRhsNewtonIntegrandTraits
 
 
 } // namespace internal
@@ -204,6 +226,75 @@ private:
   const RhsEvaluationType& rhs_evaluation_;
   const SourceType& source_;
 }; // class LocalFvRhsJacobianIntegrand
+
+/**
+ * \tparam RhsEvaluationImp Right-hand side function derived from RhsEvaluationInterface
+ * \tparam SourceType DiscreteFunction that contains the values u_i
+ */
+template <class RhsEvaluationImp, class SourceType>
+class LocalFvRhsNewtonIntegrand
+    : public LocalVolumeIntegrandInterface<internal::LocalFvRhsNewtonIntegrandTraits<RhsEvaluationImp, SourceType>, 2>
+{
+  typedef LocalVolumeIntegrandInterface<internal::LocalFvRhsNewtonIntegrandTraits<RhsEvaluationImp, SourceType>, 2>
+      BaseType;
+  typedef LocalFvRhsNewtonIntegrand<RhsEvaluationImp, SourceType> ThisType;
+
+public:
+  typedef internal::LocalFvRhsNewtonIntegrandTraits<RhsEvaluationImp, SourceType> Traits;
+  typedef typename Traits::RhsEvaluationType RhsEvaluationType;
+  typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
+  typedef typename Traits::EntityType EntityType;
+  typedef typename Traits::DomainFieldType DomainFieldType;
+  typedef typename RhsEvaluationType::DomainType DomainType;
+  static const size_t dimDomain = Traits::dimDomain;
+
+public:
+  LocalFvRhsNewtonIntegrand(const RhsEvaluationType& rhs_evaluation,
+                            const SourceType& source,
+                            const XT::Common::Parameter param)
+    : rhs_evaluation_(rhs_evaluation)
+    , source_(source)
+    , factor_(param.get("factor")[0])
+  {
+  }
+
+  LocalfunctionTupleType localFunctions(const EntityType& entity) const
+  {
+    return std::make_tuple(rhs_evaluation_.order(entity), source_.local_function(entity), entity.geometry().volume());
+  }
+
+  template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
+  size_t order(
+      const LocalfunctionTupleType& local_functions_tuple,
+      const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& /*testBase*/,
+      const XT::Functions::
+          LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& /*ansatzBase*/) const
+  {
+    return std::get<0>(local_functions_tuple);
+  }
+
+  template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
+  void evaluate(
+      const LocalfunctionTupleType& local_functions_tuple,
+      const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
+      const XT::Functions::
+          LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& /*ansatzBase*/,
+      const Dune::FieldVector<DomainFieldType, dimDomain>& x_local,
+      Dune::DynamicMatrix<R>& ret) const
+  {
+    const auto& entity = test_base.entity();
+    const auto u = std::get<1>(local_functions_tuple)->evaluate(x_local);
+    ret = rhs_evaluation_.jacobian(u, entity, x_local);
+    ret *= factor_ / std::get<2>(local_functions_tuple);
+    for (size_t ii = 0; ii < ret.size(); ++ii)
+      ret[ii][ii] += 1.;
+  }
+
+private:
+  const RhsEvaluationType& rhs_evaluation_;
+  const SourceType& source_;
+  const double factor_;
+}; // class LocalFvRhsNewtonIntegrand
 
 
 } // namespace GDT

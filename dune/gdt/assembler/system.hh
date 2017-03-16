@@ -130,6 +130,20 @@ public:
     return *this;
   } // ... append(...)
 
+  template <class V, class R>
+  ThisType& append(const LocalVolumeTwoFormAssembler<V>& local_assembler,
+                   std::vector<DynamicMatrix<R>>& matrix,
+                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
+  {
+    assert(matrix.size() == test_space_->grid_view().size(0));
+    typedef internal::LocalVolumeTwoFormMatrixAssemblerWrapper<ThisType,
+                                                               LocalVolumeTwoFormAssembler<V>,
+                                                               std::vector<DynamicMatrix<R>>>
+        WrapperType;
+    this->codim0_functors_.emplace_back(new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix));
+    return *this;
+  } // ... append(...)
+
   template <class V, class M>
   ThisType& append(const LocalCouplingTwoFormAssembler<V>& local_assembler,
                    XT::LA::MatrixInterface<M, RangeFieldType>& matrix,

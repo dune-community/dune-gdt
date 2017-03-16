@@ -96,6 +96,49 @@ public:
     } // write local matrix to global
   } // ... assemble(...)
 
+  /**
+ *  \tparam T           Traits of the SpaceInterface implementation, representing the type of test_space
+ *  \tparam A           Traits of the SpaceInterface implementation, representing the type of ansatz_space
+ *  \tparam *d          dimDomain of test_space (* == T) or ansatz_space (* == A)
+ *  \tparam *r          dimRange of test_space (* == T) or ansatz_space (* == A)
+ *  \tparam *rC         dimRangeCols of test_space (* == T) or ansatz_space (* == A)
+ *  \tparam EntityType  A model of Dune::Entity< 0 >
+ *  \tparam M           Traits of the Dune::XT::LA::Container::MatrixInterface implementation, representing the
+ * type of global_matrix
+ *  \tparam R           RangeFieldType, i.e. double
+ */
+  template <class T,
+            size_t Td,
+            size_t Tr,
+            size_t TrC,
+            class A,
+            size_t Ad,
+            size_t Ar,
+            size_t ArC,
+            class EntityType,
+            class R>
+  void assemble_entitywise(const SpaceInterface<T, Td, Tr, TrC>& test_space,
+                           const SpaceInterface<A, Ad, Ar, ArC>& ansatz_space,
+                           const EntityType& entity,
+                           std::vector<Dune::DynamicMatrix<R>>& global_matrix) const
+  {
+// prepare
+#ifndef NDEBUG
+    const size_t rows = test_space.mapper().numDofs(entity);
+    const size_t cols = ansatz_space.mapper().numDofs(entity);
+#endif
+    auto& local_matrix = global_matrix[test_space.grid_view().indexSet().index(entity)];
+    assert(local_matrix.N() == rows && local_matrix.M() == cols);
+    local_matrix *= 0.;
+
+    // apply local two-form
+    const auto test_base = test_space.base_function_set(entity);
+    const auto ansatz_base = ansatz_space.base_function_set(entity);
+    assert(test_base.size() == rows);
+    assert(ansatz_base.size() == cols);
+    local_volume_twoform_.apply2(test_base, ansatz_base, local_matrix);
+  } // ... assemble_entitywise(...)
+
 private:
   const LocalVolumeTwoFormType& local_volume_twoform_;
 }; // class LocalVolumeTwoFormAssembler

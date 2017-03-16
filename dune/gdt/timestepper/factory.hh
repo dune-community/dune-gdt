@@ -16,6 +16,7 @@
 #include <dune/gdt/timestepper/adaptive-rungekutta.hh>
 #include <dune/gdt/timestepper/explicit-rungekutta.hh>
 #include <dune/gdt/timestepper/implicit-rungekutta.hh>
+#include <dune/gdt/timestepper/implicit-rungekutta-parallel.hh>
 
 
 namespace Dune {
@@ -39,8 +40,7 @@ struct TimeStepperFactory
                                   typename Dune::GDT::DiagonallyImplicitRungeKuttaTimeStepper<OperatorImp,
                                                                                               DiscreteFunctionImp,
                                                                                               TimeFieldImp,
-                                                                                              method,
-                                                                                              container_backend>,
+                                                                                              method>,
                                   typename Dune::GDT::ExplicitRungeKuttaTimeStepper<OperatorImp,
                                                                                     DiscreteFunctionImp,
                                                                                     TimeFieldImp,

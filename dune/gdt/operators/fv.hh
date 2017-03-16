@@ -679,6 +679,92 @@ class AdvectionGodunovOperator
 
 #endif // HAVE_EIGEN
 
+template <class GridViewType, class MatrixType, class DiscreteFunctionType>
+class MatrixSolveFunctor : public XT::Grid::Functor::Codim0<GridViewType>
+{
+  typedef typename XT::Grid::Functor::Codim0<GridViewType> BaseType;
+
+public:
+  using typename BaseType::EntityType;
+
+  MatrixSolveFunctor(const std::vector<MatrixType>& matrices,
+                     const DiscreteFunctionType& rhs,
+                     DiscreteFunctionType& solution)
+    : matrices_(matrices)
+    , rhs_(rhs)
+    , solution_(solution)
+  {
+  }
+
+  virtual void apply_local(const EntityType& entity)
+  {
+    // get mapper
+    const auto& mapper = rhs_.space().mapper();
+
+    // copy rhs to DynamicVector
+    DynamicVector<typename MatrixType::value_type> local_solution(mapper.numDofs(entity), 0.);
+    DynamicVector<typename MatrixType::value_type> local_rhs(local_solution.size(), 0.);
+    const auto& rhs_vector = rhs_.vector();
+    auto& solution_vector = solution_.vector();
+    const auto global_indices = mapper.globalIndices(entity);
+    for (size_t ii = 0; ii < local_rhs.size(); ++ii)
+      local_rhs[ii] = rhs_vector.get_entry(global_indices[ii]);
+    // solve
+    matrices_[rhs_.space().grid_view().indexSet().index(entity)].solve(local_solution, local_rhs);
+    // write solution
+    for (size_t ii = 0; ii < local_rhs.size(); ++ii)
+      solution_vector.set_entry(global_indices[ii], local_solution[ii]);
+  }
+
+private:
+  const std::vector<MatrixType>& matrices_;
+  const DiscreteFunctionType& rhs_;
+  DiscreteFunctionType& solution_;
+};
+
+template <class GridViewType, class MatrixType, class DiscreteFunctionType>
+class MatrixApplyFunctor : public XT::Grid::Functor::Codim0<GridViewType>
+{
+  typedef typename XT::Grid::Functor::Codim0<GridViewType> BaseType;
+
+public:
+  using typename BaseType::EntityType;
+
+  MatrixApplyFunctor(const std::vector<MatrixType>& matrices,
+                     const DiscreteFunctionType& vector,
+                     DiscreteFunctionType& result)
+    : matrices_(matrices)
+    , vector_(vector)
+    , result_(result)
+  {
+  }
+
+  virtual void apply_local(const EntityType& entity)
+  {
+    // get mapper
+    const auto& mapper = vector_.space().mapper();
+
+    // copy rhs to DynamicVector
+    DynamicVector<typename MatrixType::value_type> local_vector(mapper.numDofs(entity), 0.);
+    DynamicVector<typename MatrixType::value_type> local_result(local_vector.size(), 0.);
+    const auto& vector_vector = vector_.vector();
+    auto& result_vector = result_.vector();
+    const auto global_indices = mapper.globalIndices(entity);
+    for (size_t ii = 0; ii < local_vector.size(); ++ii)
+      local_vector[ii] = vector_vector.get_entry(global_indices[ii]);
+    // solve
+    matrices_[vector_.space().grid_view().indexSet().index(entity)].mv(local_vector, local_result);
+
+    // write solution
+    for (size_t ii = 0; ii < local_vector.size(); ++ii)
+      result_vector.set_entry(global_indices[ii], local_result[ii]);
+  }
+
+private:
+  const std::vector<MatrixType>& matrices_;
+  const DiscreteFunctionType& vector_;
+  DiscreteFunctionType& result_;
+};
 
 template <class RHSEvaluationImp>
 class AdvectionRHSOperator : public Dune::GDT::OperatorInterface<internal::AdvectionRHSOperatorTraits<RHSEvaluationImp>>
@@ -721,7 +807,49 @@ public:
     LocalVolumeTwoFormAssembler<LocalOperatorType> local_assembler(local_operator);
     SystemAssembler<typename SourceType::SpaceType> assembler(source.space());
     assembler.append(local_assembler, jac);
-    assembler.assemble();
+    assembler.assemble(true);
+  }
+
+  // assembles jacobian (jacobian is assumed to be zero initially)
+  template <class SourceType, class MatrixType>
+  void assemble_newton_matrix(std::vector<MatrixType>& newton_matrices,
+                              const SourceType& source,
+                              const XT::Common::Parameter& param) const
+  {
+    typedef LocalVolumeIntegralOperator<LocalFvRhsNewtonIntegrand<RHSEvaluationType, SourceType>> LocalOperatorType;
+    LocalOperatorType local_operator(rhs_evaluation_, source, param);
+    LocalVolumeTwoFormAssembler<LocalOperatorType> local_assembler(local_operator);
+    SystemAssembler<typename SourceType::SpaceType> assembler(source.space());
+    assembler.append(local_assembler, newton_matrices);
+    assembler.assemble(false);
+  }
+
+  // solves with local jacobian on each entity
+  template <class SourceType, class RangeType, class MatrixType>
+  void solve(const std::vector<MatrixType>& newton_matrices,
+             const SourceType& rhs,
+             RangeType& solution,
+             const XT::Common::Parameter& /*param*/ = {}) const
+  {
+    MatrixSolveFunctor<typename SourceType::SpaceType::GridViewType, MatrixType, SourceType> functor(
+        newton_matrices, rhs, solution);
+    SystemAssembler<typename SourceType::SpaceType> assembler(rhs.space());
+    assembler.append(functor);
+    assembler.assemble(false);
+  }
+
+  // applies local jacobian on each entity
+  template <class SourceType, class RangeType, class MatrixType>
+  void mv(const std::vector<MatrixType>& newton_matrices,
+          const SourceType& vector,
+          RangeType& result,
+          const XT::Common::Parameter& /*param*/ = {}) const
+  {
+    MatrixApplyFunctor<typename SourceType::SpaceType::GridViewType, MatrixType, SourceType> functor(
+        newton_matrices, vector, result);
+    SystemAssembler<typename SourceType::SpaceType> assembler(vector.space());
+    assembler.append(functor);
+    assembler.assemble(false);
   }
 
 private:
