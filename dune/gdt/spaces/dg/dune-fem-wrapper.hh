@@ -172,7 +172,6 @@ public:
   CommunicatorType& communicator() const
   {
     if (!communicator_prepared_) {
-      communicator_->remoteIndices().template rebuild<true>();
       communicator_prepared_ = CommunicationChooserType::prepare(*this, *communicator_);
     }
     return *communicator_;

@@ -46,7 +46,7 @@ namespace GDT {
 
 enum class Backends
 {
-  fem,
+  fem
   functions,
   gdt,
   pdelab

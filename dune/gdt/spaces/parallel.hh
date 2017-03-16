@@ -24,6 +24,7 @@
 #include <dune/xt/common/parallel/helper.hh>
 
 #include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/spaces/parallel_helper.hh>
 
 namespace Dune {
 namespace GDT {
@@ -55,6 +56,7 @@ template <class ViewImp>
 struct CommunicationChooser<ViewImp, true>
 {
   typedef OwnerOverlapCopyCommunication<bigunsignedint<96>, int> Type;
+  using type = Type;
 
   static Type* create(const ViewImp& gridView)
   {
@@ -77,7 +79,7 @@ struct CommunicationChooser<ViewImp, true>
   static typename std::enable_if<Space::backend_type == Dune::GDT::ChooseSpaceBackend::gdt, bool>::type
   prepare(const Space& /*space*/, Type& communicator)
   {
-    communicator.remoteIndices().template rebuild<true>();
+    GDT::GenericParallelHelper<Space>(space, 1).createIndexSetAndProjectForAMG(communicator);
     return true;
   } // ... prepare(...)
 

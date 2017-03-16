@@ -47,11 +47,13 @@ public:
   typedef std::vector<std::shared_ptr<const LocalSpaceType>> BackendType;
   typedef BlockMapper<LocalSpaceType> MapperType;
   typedef typename LocalSpaceType::BaseFunctionSetType BaseFunctionSetType;
-  typedef typename LocalSpaceType::CommunicatorType CommunicatorType;
   typedef typename DdSubdomainsGridType::GlobalGridPartType GridLayerType;
   typedef typename LocalSpaceType::RangeFieldType RangeFieldType;
 
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::part;
+  static const constexpr ChooseSpaceBackend backend_type{ChooseSpaceBackend::gdt};
+  using CommunicationChooserType = CommunicationChooser<GridViewType, true>;
+  using CommunicatorType = typename CommunicationChooserType::type;
 
   static const bool needs_grid_view = false;
 }; // class BlockSpaceTraits
@@ -83,7 +85,8 @@ public:
   typedef typename BaseType::PatternType PatternType;
   typedef typename BaseType::GridLayerType GridLayerType;
   typedef typename BaseType::EntityType EntityType;
-  typedef typename BaseType::CommunicatorType CommunicatorType;
+  typedef CommunicationChooser<GridViewType, true> CommunicationChooserType;
+  typedef typename CommunicationChooserType::Type CommunicatorType;
 
   typedef XT::Grid::DD::SubdomainGrid<typename XT::Grid::extract_grid<GridLayerType>::type> DdSubdomainsGridType;
 
@@ -92,7 +95,8 @@ public:
     , entity_to_subdomain_map_(dd_grid_.entityToSubdomainMap())
     , global_grid_part_(new GridLayerType(dd_grid_.globalGridPart()))
     , local_spaces_(new std::vector<std::shared_ptr<const LocalSpaceType>>(spaces))
-    , mapper_(new MapperType(dd_grid_, global_grid_part_, local_spaces_))
+    , communicator_(CommunicationChooserType::create(*grid_view_))
+    , communicator__prepared_(false)
   {
     if (local_spaces_->size() != dd_grid_.size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
@@ -152,10 +156,12 @@ public:
     return PatternType();
   }
 
-  CommunicatorType& communicator() const
+  typename Traits::CommunicatorType& communicator() const
   {
-    DUNE_THROW(NotImplemented, "I am not sure yet how to implement this, I probably need my own communicator!");
-    return backend()[0].communicator();
+    if (!communicator__prepared_)
+      communicator__prepared_ = CommunicationChooserType::prepare(*this, *communicator_);
+    return *communicator_;
+    return *communicator_;
   }
 
   const DdSubdomainsGridType& dd_grid() const
@@ -206,6 +212,8 @@ private:
   const std::shared_ptr<GridLayerType> global_grid_part_;
   const std::shared_ptr<std::vector<std::shared_ptr<const LocalSpaceType>>> local_spaces_;
   const std::shared_ptr<MapperType> mapper_;
+  std::shared_ptr<CommunicatorType> communicator_;
+  mutable bool communicator__prepared_;
 }; // class BlockSpace
 
 
