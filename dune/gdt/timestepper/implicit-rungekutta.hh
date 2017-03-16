@@ -138,7 +138,7 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::t
 template <class OperatorImp,
           class DiscreteFunctionImp,
           class TimeFieldImp = double,
-          TimeStepperMethods method = TimeStepperMethods::trapezoidal_rule,
+          TimeStepperMethods method = TimeStepperMethods::implicit_euler,
           XT::LA::Backends container_backend = XT::LA::default_sparse_backend>
 class DiagonallyImplicitRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
 {
@@ -288,8 +288,8 @@ public:
           // assemble Newton matrix N = I - dt * a_{ii} * J_L
           newton_matrix_ *= 0;
           op_.assemble_jacobian(newton_matrix_, u_i_, t + actual_dt * c_[ii]);
-          u_i_.space().grid_view().template communicate<SolverMatrixDataHandleType>(
-              newton_matrix_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
+          //          u_i_.space().grid_view().template communicate<SolverMatrixDataHandleType>(
+          //              newton_matrix_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
           newton_matrix_ *= -actual_dt * r_ * A_[ii][ii];
           for (size_t kk = 0; kk < newton_matrix_.rows(); ++kk)
             newton_matrix_.add_to_entry(kk, kk, 1.);
