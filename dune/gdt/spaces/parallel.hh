@@ -22,6 +22,7 @@
 
 #include <dune/xt/la/container/istl.hh>
 #include <dune/xt/common/parallel/helper.hh>
+//#include <dune/xt/grid/layers.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/parallel_helper.hh>
@@ -38,6 +39,7 @@ struct CommunicationChooser
 
   static Type* create(const ViewImp& /*gridView*/)
   {
+    DUNE_THROW(InvalidStateException, "DEBUG");
     return new Type;
   }
 
@@ -55,6 +57,9 @@ struct CommunicationChooser
 template <class ViewImp>
 struct CommunicationChooser<ViewImp, true>
 {
+  //! this _should_ be the idtype as per OwnerOverlapCopyCommunication docs
+  //  using IdType = typename XT::Grid::ExtractGridType_t<ViewImp>::GlobalIdSet::IdType;
+  // alas they're hard assuming bigunsignedint for some reason
   typedef OwnerOverlapCopyCommunication<bigunsignedint<96>, int> Type;
   using type = Type;
 
@@ -76,18 +81,34 @@ struct CommunicationChooser<ViewImp, true>
   } // ... prepare(...)
 
   template <class Space>
+  static typename std::enable_if<Space::backend_type == Dune::GDT::ChooseSpaceBackend::block, bool>::type
+  prepare(const Space& space, Type& communicator)
+  {
+#if HAVE_DUNE_PDELAB
+    XT::LA::IstlRowMajorSparseMatrix<typename Space::RangeFieldType> matrix;
+    PDELab::istl::ParallelHelper<typename Space::BackendType>(space.backend(), 0)
+        .createIndexSetAndProjectForAMG(matrix.backend(), communicator);
+#endif // HAVE_DUNE_PDELAB
+    return true;
+  } // ... prepare(...)
+
+  template <class Space>
   static typename std::enable_if<Space::backend_type == Dune::GDT::ChooseSpaceBackend::gdt, bool>::type
-  prepare(const Space& /*space*/, Type& communicator)
+  prepare(const Space& space, Type& communicator)
   {
     GDT::GenericParallelHelper<Space>(space, 1).createIndexSetAndProjectForAMG(communicator);
+    //    GDT::GenericParallelHelper<Space>(space, 1).createIndexSetAndProjectForAMG(matrix.backend(), communicator);
+    DUNE_THROW(NotImplemented, "");
     return true;
   } // ... prepare(...)
 
   template <class Space>
   static typename std::enable_if<Space::backend_type == Dune::GDT::ChooseSpaceBackend::fem, bool>::type
-  prepare(const Space& /*space*/, Type& communicator)
+  prepare(const Space& space, Type& communicator)
   {
-    communicator.remoteIndices().template rebuild<true>();
+    //    XT::LA::IstlRowMajorSparseMatrix<typename Space::RangeFieldType> matrix;
+    //    GDT::GenericParallelHelper<Space>(space, 1).createIndexSetAndProjectForAMG(matrix.backend(), communicator);
+    DUNE_THROW(NotImplemented, "");
     return true;
   } // ... prepare(...)
 
