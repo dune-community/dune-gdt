@@ -365,10 +365,18 @@ public:
     return ret;
   }
 
-  bool is_absorbing(size_t plane, size_t row, size_t col)
+  static bool is_absorbing(size_t plane, size_t row, size_t col)
   {
-    return (row == 1 && col % 2 == 1) || ((row == 2 || row == 4) && (col == 2 || col == 4))
-           || ((row == 3 || row == 5) && (col == 1 || col == 5));
+    if (plane == 0 || plane == 6)
+      return false;
+    if (plane == 2 || plane == 4)
+      return !((row == 1 && col % 2 == 1) || ((row == 2 || row == 4) && (col == 2 || col == 4))
+               || ((row == 3 || row == 5) && (col == 1 || col == 5)))
+             && (row != 0 && row != 6) && (col != 0 && col != 6) && !(row == 5 && col == 3);
+    if (plane == 3 || plane == 1 || plane == 5)
+      return (row == 1 && col % 2 == 1) || ((row == 2 || row == 4) && (col == 2 || col == 4))
+             || ((row == 3 || row == 5) && (col == 1 || col == 5))
+             || (plane != 3 && col == 3 && (row == 3 && row == 5));
   }
 
   // n-th component of RHS is -sigma_t u_n + sigma_s/(4 pi) <psi><b_n> + Q<b_n>
@@ -415,7 +423,7 @@ public:
             A[nn] *= basis_integrated[nn];
             A[nn][nn] -= sigma_t;
           }
-          size_t number = 7 * plane * row + 7 * row + col;
+          size_t number = 49 * plane + 7 * row + col;
           rhs_config["A." + Dune::XT::Common::to_string(number)] = Dune::XT::Common::to_string(A, precision);
           rhs_config["b." + Dune::XT::Common::to_string(number)] = Dune::XT::Common::to_string(Q, precision);
         } // col
@@ -424,6 +432,31 @@ public:
 
     return rhs_config;
   } // ... create_rhs_config()
+
+  // Initial value of the kinetic equation is psi_vac
+  static ConfigType create_initial_value_config(const ConfigType& grid_config,
+                                                const Dune::QuadratureRule<double, 3>& quadrature,
+                                                const SphericalTriangulation<double>& poly,
+                                                const double psi_vac = 5e-9)
+  {
+    ConfigType initial_value_config;
+    initial_value_config["lower_left"] = grid_config["lower_left"];
+    initial_value_config["upper_right"] = grid_config["upper_right"];
+    initial_value_config["num_elements"] = "[1 1 1]";
+    initial_value_config["variable"] = "x";
+    initial_value_config["name"] = DefaultInitialValueType::static_id();
+    const auto basis_integrated = basisfunctions_integrated(quadrature, poly);
+    std::string str = "[";
+    for (size_t rr = 0; rr < dimRange; ++rr) {
+      if (rr > 0)
+        str += " ";
+      str += XT::Common::to_string(basis_integrated[rr] * psi_vac, precision);
+    } // rr
+    str += "]";
+    initial_value_config["values.0"] = str;
+    initial_value_config["order.0"] = "1";
+    return initial_value_config;
+  } // ... create_initial_value_config(...)
 
   // Initial value of the kinetic equation is psi_vac
   // Thus the initial value for the n-th moment is base_integrated_n * psi_vac
