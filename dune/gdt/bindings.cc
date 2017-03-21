@@ -115,12 +115,11 @@ void addbind_for_space(py::module& m,
   typedef typename S::DomainFieldType D;
   static const size_t d = S::dimDomain;
   typedef typename S::RangeFieldType R;
-  typedef typename LA::Container<R, LA::Backends::istl_sparse>::MatrixType M;
   typedef typename LA::Container<R, LA::Backends::istl_sparse>::VectorType V;
   static const size_t r = S::dimRange;
   static const size_t rC = S::dimRangeCols;
-  typedef Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1> ScalarFunction;
-  typedef Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunction;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1> ScalarFunction;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunction;
   const std::string r_ = to_string(r);
   const std::string rC_ = to_string(rC);
   const std::string p_ = to_string(int(S::polOrder)); // without the int(...) we get linker errors on module import
