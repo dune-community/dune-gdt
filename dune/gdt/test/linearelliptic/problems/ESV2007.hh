@@ -142,6 +142,18 @@ private:
     }
   };
 
+#if HAVE_DUNE_SPGRID
+  template <class ct, int dim, template <int> class Ref, class Comm, bool anything>
+  struct Helper<SPGrid<ct, dim, Ref, Comm>, anything>
+  {
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
+    {
+      cfg["num_elements"] = "[8 8]";
+      return cfg;
+    }
+  };
+#endif
+
 #if HAVE_DUNE_ALUGRID
 
   template <bool anything>
