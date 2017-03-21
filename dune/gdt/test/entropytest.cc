@@ -45,6 +45,7 @@
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/sourcebeam.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/planesource.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/pointsource.hh>
+#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/checkerboard3d.hh>
 
 
 int main(int argc, char** argv)
@@ -129,10 +130,11 @@ int main(int argc, char** argv)
 #endif
 
   // ********************* choose dimensions, fluxes and grid type ************************
-  static const int dimDomain = 3;
+  //  static const int dimDomain = 3;
+  static const int dimDomain = 1;
   static const int momentOrder = 3;
-  const auto numerical_flux = NumericalFluxes::kinetic;
-  //    const auto numerical_flux = NumericalFluxes::godunov;
+  //  const auto numerical_flux = NumericalFluxes::kinetic;
+  const auto numerical_flux = NumericalFluxes::godunov;
   //  const auto numerical_flux = NumericalFluxes::laxfriedrichs;
   const auto time_stepper_method = TimeStepperMethods::explicit_euler;
   const auto rhs_time_stepper_method = TimeStepperMethods::implicit_euler;
@@ -144,9 +146,9 @@ int main(int argc, char** argv)
 
   //******************** choose ProblemType ***********************************************
 
-  //  typedef typename Hyperbolic::Problems::
-  //      SourceBeamPnHatFunctions<EntityType, double, dimDomain, double, momentOrder>
-  //          ProblemType;
+  //  typedef typename Hyperbolic::Problems::SourceBeamPnHatFunctions<EntityType, double, dimDomain, double,
+  //  momentOrder>
+  //      ProblemType;
   //  typedef
   //      typename Hyperbolic::Problems::SourceBeamPnLegendre<EntityType, double, dimDomain, double,
   //      momentOrder>
@@ -154,23 +156,22 @@ int main(int argc, char** argv)
   //  typedef typename Hyperbolic::Problems::
   //      SourceBeamPnLegendreLaplaceBeltrami<EntityType, double, dimDomain, double, momentOrder>
   //          ProblemType;
-  //  typedef typename Hyperbolic::Problems::
-  //      SourceBeamPnFirstOrderDG<EntityType, double, dimDomain, double, momentOrder>
-  //          ProblemType;
+  //  typedef typename Hyperbolic::Problems::SourceBeamPnFirstOrderDG<EntityType, double, dimDomain, double,
+  //  momentOrder>
+  //      ProblemType;
   //  typedef typename Hyperbolic::Problems::
   //      PlaneSourcePnLegendre<EntityType, double, dimDomain, double, momentOrder>
   //          ProblemType;
-  //  typedef typename Hyperbolic::Problems::
-  //      PlaneSourcePnHatFunctions<EntityType, double, dimDomain, double, momentOrder>
-  //          ProblemType;
-  //  typedef typename Hyperbolic::Problems::
-  //      PlaneSourcePnFirstOrderDG<EntityType, double, dimDomain, double, momentOrder>
-  //          ProblemType;
+  typedef typename Hyperbolic::Problems::PlaneSourcePnHatFunctions<EntityType, double, dimDomain, double, momentOrder>
+      ProblemType;
+  //  typedef typename Hyperbolic::Problems::PlaneSourcePnFirstOrderDG<EntityType, double, dimDomain, double,
+  //  momentOrder>
+  //      ProblemType;
   //  typedef typename Hyperbolic::Problems::
   //      PointSourcePnLegendre<EntityType, double, dimDomain, double, momentOrder>
   //          ProblemType;
-  typedef typename Hyperbolic::Problems::PointSourcePnHatFunctions<EntityType, double, dimDomain, double, 18>
-      ProblemType;
+  //  typedef typename Hyperbolic::Problems::PointSourcePnHatFunctions<EntityType, double, dimDomain, double, 6>
+  //      ProblemType;
   //  typedef typename Hyperbolic::Problems::PointSourcePnPartialMoments<EntityType, double, dimDomain, double, 8>
   //      ProblemType;
 
@@ -198,24 +199,26 @@ int main(int argc, char** argv)
 
   // ***************** get quadrature rule *********************************************
 
-  //  // 1D quadrature that consists of a Gauss-Legendre quadrature on each cell of the velocity grid
-  //  Dune::QuadratureRule<double, dimDomain> quadrature_rule;
-  //  static const int num_cells = 10;
-  //  Dune::FieldVector<double, dimDomain> lower_left(-1);
-  //  Dune::FieldVector<double, dimDomain> upper_right(1);
-  //  static const std::array<int, dimDomain> s{num_cells};
-  //  GridType velocity_grid(lower_left, upper_right, s);
-  //  const auto velocity_grid_view = velocity_grid.leafGridView();
+  // 1D quadrature that consists of a Gauss-Legendre quadrature on each cell of the velocity grid
+  Dune::QuadratureRule<double, dimDomain> quadrature_rule;
+  static const int num_cells = 100;
+  Dune::FieldVector<double, dimDomain> lower_left(-1);
+  Dune::FieldVector<double, dimDomain> upper_right(1);
+  static const std::array<int, dimDomain> s{num_cells};
+  GridType velocity_grid(lower_left, upper_right, s);
+  const auto velocity_grid_view = velocity_grid.leafGridView();
+  const size_t quadrature_order = 20;
 
-  //  for (const auto& entity : elements(velocity_grid_view)) {
-  //    const auto local_quadrature_rule = Dune::QuadratureRules<double, dimDomain>::rule(
-  //          entity.type(), quadrature_order, Dune::QuadratureType::GaussLegendre);
-  //    for (const auto& quad : local_quadrature_rule) {
-  //      quadrature_rule.push_back(Dune::QuadraturePoint<double, dimDomain>(
-  //                                  entity.geometry().global(quad.position()),
-  //                                  quad.weight() * entity.geometry().integrationElement(quad.position())));
-  //    }
-  //  }
+
+  for (const auto& entity : elements(velocity_grid_view)) {
+    const auto local_quadrature_rule = Dune::QuadratureRules<double, dimDomain>::rule(
+        entity.type(), quadrature_order, Dune::QuadratureType::GaussLegendre);
+    for (const auto& quad : local_quadrature_rule) {
+      quadrature_rule.push_back(Dune::QuadraturePoint<double, dimDomain>(
+          entity.geometry().global(quad.position()),
+          quad.weight() * entity.geometry().integrationElement(quad.position())));
+    }
+  }
 
 
   //  // Lebedev quadrature on unit sphere (in polar coordinates)
@@ -223,31 +226,40 @@ int main(int argc, char** argv)
   //  const auto quadrature_rule = Hyperbolic::Problems::get_lebedev_quadrature(quadrature_order);
 
   // 3D quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
-  const size_t octaeder_refinements = 1;
-  const auto poly = CGALWrapper::create_octaeder_spherical_triangulation(octaeder_refinements);
-  const size_t quadrature_refinements = 4;
-  const auto quadrature_rule =
-      GDT::Hyperbolic::Problems::get_equally_dist_quad_points_on_poly(poly, quadrature_refinements);
+  //  const size_t octaeder_refinements = 0;
+  //  std::vector<Dune::XT::Common::FieldVector<double, dimDomain>> initial_points{
+  //      {1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}};
+  //  const Dune::GDT::Hyperbolic::Problems::SphericalTriangulation<double> triangulation(initial_points,
+  //                                                                                      octaeder_refinements);
+  //  const size_t max_quadrature_refinements = 5;
+  //  Dune::GDT::Hyperbolic::Problems::SphericalTriangulation<double> quadrature_triangulation(initial_points, 0);
+  //  std::vector<Dune::QuadratureRule<double, dimDomain>> quadrature_rules(max_quadrature_refinements);
+  //  for (size_t ii = 0; ii < max_quadrature_refinements; ++ii) {
+  //    quadrature_triangulation.refine();
+  //    quadrature_rules[ii] = quadrature_triangulation.quadrature_rule();
+  //  }
+  //  const auto& quadrature_rule = quadrature_rules.back();
+
 
   // 3d adaptive quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
-  typedef typename GDT::Hyperbolic::Problems::AdaptiveQuadrature<DomainType, RangeType, RangeType>
-      AdaptiveQuadratureType;
-  typedef typename AdaptiveQuadratureType::QuadraturePointType QuadraturePointType;
-  typedef std::function<RangeType(const QuadraturePointType&)> BasisfunctionsType;
+  //  typedef typename GDT::Hyperbolic::Problems::AdaptiveQuadrature<DomainType, RangeType, RangeType>
+  //      AdaptiveQuadratureType;
+  //  typedef typename AdaptiveQuadratureType::QuadraturePointType QuadraturePointType;
+  //  typedef std::function<RangeType(const QuadraturePointType&)> BasisfunctionsType;
   //  std::function<RangeType(const DomainType&, const CGALWrapper::Polyhedron_3&)> basisevaluation =
   //      GDT::Hyperbolic::Problems::evaluate_linear_partial_basis<RangeType, DomainType, CGALWrapper::Polyhedron_3>;
-  std::function<RangeType(const DomainType&, const CGALWrapper::Polyhedron_3&)> basisevaluation =
-      GDT::Hyperbolic::Problems::evaluate_spherical_barycentric_coordinates<RangeType,
-                                                                            DomainType,
-                                                                            CGALWrapper::Polyhedron_3>;
-  BasisfunctionsType basisfunctions(
-      [&](const QuadraturePointType& quadpoint) { return basisevaluation(quadpoint.position(), poly); });
-  AdaptiveQuadratureType adaptive_quadrature(poly, basisfunctions, rel_tol, abs_tol);
+  //  std::function<RangeType(const DomainType&, const CGALWrapper::Polyhedron_3&)> basisevaluation =
+  //      GDT::Hyperbolic::Problems::evaluate_spherical_barycentric_coordinates<RangeType,
+  //                                                                            DomainType,
+  //                                                                            CGALWrapper::Polyhedron_3>;
+  //  BasisfunctionsType basisfunctions(
+  //      [&](const QuadraturePointType& quadpoint) { return basisevaluation(quadpoint.position(), poly); });
+  //  AdaptiveQuadratureType adaptive_quadrature(poly, basisfunctions, rel_tol, abs_tol);
 
   //******************* create ProblemType object ***************************************
-  //  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config));
-  const auto problem_ptr =
-      ProblemType::create(quadrature_rule, poly, ProblemType::default_config(grid_config, quadrature_rule, poly));
+  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config));
+  //  const auto problem_ptr = ProblemType::create(
+  //      quadrature_rule, triangulation, ProblemType::default_config(grid_config, quadrature_rule, triangulation));
   //  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config, true));
   const ProblemType& problem = *problem_ptr;
   const std::shared_ptr<const InitialValueType> initial_values = problem.initial_values();
@@ -308,60 +320,63 @@ int main(int argc, char** argv)
     return std::make_pair(u_iso, alpha_iso);
   };
 
-  const auto basis_integrated = ProblemType::basisfunctions_integrated(quadrature_rule, poly);
-  auto isotropic_dist_calculator_3d_hatfunctions = [basis_integrated](const typename ProblemType::RangeType& uu) {
-    typename ProblemType::RangeFieldType psi_iso(0);
-    for (size_t ii = 0; ii < ProblemType::dimRange; ++ii)
-      psi_iso += uu[ii];
-    psi_iso /= 4. * M_PI;
-    ProblemType::RangeType alpha_iso(std::log(psi_iso));
-    auto u_iso = basis_integrated;
-    u_iso *= psi_iso;
-    return std::make_pair(u_iso, alpha_iso);
-  };
+  //  const auto basis_integrated = ProblemType::basisfunctions_integrated(quadrature_rule, triangulation);
+  //  auto isotropic_dist_calculator_3d_hatfunctions = [basis_integrated](const typename ProblemType::RangeType& uu) {
+  //    typename ProblemType::RangeFieldType psi_iso(0);
+  //    for (size_t ii = 0; ii < ProblemType::dimRange; ++ii)
+  //      psi_iso += uu[ii];
+  //    psi_iso /= 4. * M_PI;
+  //    ProblemType::RangeType alpha_iso(std::log(psi_iso));
+  //    auto u_iso = basis_integrated;
+  //    u_iso *= psi_iso;
+  //    return std::make_pair(u_iso, alpha_iso);
+  //  };
 
-  auto isotropic_dist_calculator_3d_partialbasis = [basis_integrated](const typename ProblemType::RangeType& uu) {
-    typename ProblemType::RangeFieldType psi_iso(0);
-    ProblemType::RangeType alpha_iso(0);
-    for (size_t ii = 0; ii < ProblemType::dimRange; ii += 4) {
-      psi_iso += uu[ii];
-      alpha_iso[ii] = 1.;
-    }
-    psi_iso /= 4. * M_PI;
-    alpha_iso *= std::log(psi_iso);
-    auto u_iso = basis_integrated;
-    u_iso *= psi_iso;
-    return std::make_pair(u_iso, alpha_iso);
-  };
+  //  auto isotropic_dist_calculator_3d_partialbasis = [basis_integrated](const typename ProblemType::RangeType& uu) {
+  //    typename ProblemType::RangeFieldType psi_iso(0);
+  //    ProblemType::RangeType alpha_iso(0);
+  //    for (size_t ii = 0; ii < ProblemType::dimRange; ii += 4) {
+  //      psi_iso += uu[ii];
+  //      alpha_iso[ii] = 1.;
+  //    }
+  //    psi_iso /= 4. * M_PI;
+  //    alpha_iso *= std::log(psi_iso);
+  //    auto u_iso = basis_integrated;
+  //    u_iso *= psi_iso;
+  //    return std::make_pair(u_iso, alpha_iso);
+  //  };
 
 
   // ********************** store evaluation of basisfunctions at quadrature points in matrix **********************
   // ********************** (for non-adaptive quadratures)                                    **********************
   using BasisValuesMatrixType = std::vector<Dune::FieldVector<double, dimRange>>;
   BasisValuesMatrixType basis_values_matrix(quadrature_rule.size());
+  //  std::vector<BasisValuesMatrixType> basis_values_matrices(max_quadrature_refinements);
   //  using BasisValuesMatrixType = std::vector<VectorType>;
   //  BasisValuesMatrixType basis_values_matrix(quadrature_rule.size(), VectorType(dimRange));
+  //  for (size_t qq = 0; qq < max_quadrature_refinements; ++qq) {
+  //    const auto& current_quadrature = quadrature_rules[qq];
+  //    basis_values_matrices[qq].resize(current_quadrature.size());
   for (size_t ii = 0; ii < quadrature_rule.size(); ++ii) {
     // 3D hatfunctions on sphere
-    const auto hatfunctions_evaluated =
-        Hyperbolic::Problems::evaluate_spherical_barycentric_coordinates<RangeType,
-                                                                         DomainType,
-                                                                         CGALWrapper::Polyhedron_3>(
-            quadrature_rule[ii].position(), poly);
+    //    const auto hatfunctions_evaluated =
+    //        Hyperbolic::Problems::evaluate_spherical_barycentric_coordinates<RangeType, DomainType>(
+    //            quadrature_rule[ii].position(), triangulation);
 
     // 3D partial moments
     //    const auto partial_basis_evaluated =
-    //        GDT::Hyperbolic::Problems::evaluate_linear_partial_basis<RangeType, DomainType,
-    //        CGALWrapper::Polyhedron_3>(
-    //            quadrature_rule[ii].position(), poly);
+    //        GDT::Hyperbolic::Problems::evaluate_linear_partial_basis<RangeType,
+    //        DomainType>(quadrature_rule[ii].position(),
+    //                                                                                        triangulation);
 
     for (size_t nn = 0; nn < dimRange; ++nn) {
-      basis_values_matrix[ii][nn] = hatfunctions_evaluated[nn];
+      //      basis_values_matrix[ii][nn] = hatfunctions_evaluated[nn];
+      //        basis_values_matrices[qq][ii][nn] = hatfunctions_evaluated[nn];
       //      basis_values_matrix[ii][nn] = partial_basis_evaluated[nn];
       //      basis_values_matrix[ii][nn] =
       //          Hyperbolic::Problems::evaluate_legendre_polynomial(quadrature_rule[ii].position(), nn);
-      //      basis_values_matrix[ii][nn] = Hyperbolic::Problems::evaluate_hat_function(
-      //          quadrature_rule[ii].position()[0], nn, ProblemType::create_equidistant_points());
+      basis_values_matrix[ii][nn] = Hyperbolic::Problems::evaluate_hat_function(
+          quadrature_rule[ii].position()[0], nn, ProblemType::create_equidistant_points());
       //      basis_values_matrix[ii][nn] = Hyperbolic::Problems::evaluate_first_order_dg(
       //          quadrature_rule[ii].position()[0], nn, ProblemType::create_equidistant_points());
       //      basis_values_matrix[ii][nn] = Hyperbolic::Problems::evaluate_real_spherical_harmonics(
@@ -371,11 +386,18 @@ int main(int argc, char** argv)
       //          Hyperbolic::Problems::get_l_and_m(nn).second);
     }
   }
+  //  }
+
+  //  const auto& basis_values_matrix = basis_values_matrices.back();
 
 
   //*********************** choose analytical flux *************************************************************
 
-  typedef EntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1> AnalyticalFluxType;
+  //  typedef EntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
+  //  AnalyticalFluxType;
+
+  //  typedef AdaptiveEntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
+  //      AnalyticalFluxType;
 
   //  typedef AdaptiveEntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
   //      AnalyticalFluxType;
@@ -391,7 +413,7 @@ int main(int argc, char** argv)
   //      AnalyticalFluxType;
 
 
-  //    typedef typename ProblemType::FluxType AnalyticalFluxType;
+  typedef typename ProblemType::FluxType AnalyticalFluxType;
 
   //  typedef typename EntropyBasedLocalFluxHatFunctions<GridViewType,
   //                                                                typename SpaceType::EntityType,
@@ -405,7 +427,7 @@ int main(int argc, char** argv)
 
   // ************************* create analytical flux object ***************************************
 
-  //    const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem.flux();
+  const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem.flux();
 
   //  const auto analytical_flux =
   //      std::make_shared<const AnalyticalFluxType>(grid_view, ProblemType::create_equidistant_points());
@@ -413,8 +435,17 @@ int main(int argc, char** argv)
   //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
   //      grid_view, quadrature_rule, basis_values_matrix, ProblemType::create_equidistant_points());
 
-  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
-      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
+  //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
+  //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_1d_hatfunctions);
+
+  //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
+  //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_1d_firstorderdg);
+
+  //    const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
+  //        grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
+
+  //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
+  //      grid_view, quadrature_rules, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
 
   //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
   //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_partialbasis);

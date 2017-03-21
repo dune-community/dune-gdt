@@ -422,7 +422,7 @@ constexpr auto apply_impl(const AnalyticalFluxType& analytical_flux,
                           const BoundaryValueFunctionType& boundary_values,
                           const SourceType& source,
                           RangeType& range,
-                          const XT::Common::Parameter param,
+                          const XT::Common::Parameter& param,
                           const bool use_linear_reconstruction,
                           std::shared_ptr<MatrixType> eigenvectors,
                           std::shared_ptr<MatrixType> eigenvectors_inverse,
@@ -452,7 +452,7 @@ constexpr auto apply(const AnalyticalFluxType& analytical_flux,
                      const BoundaryValueFunctionType& boundary_values,
                      const SourceType& source,
                      RangeType& range,
-                     const XT::Common::Parameter param,
+                     const XT::Common::Parameter& param,
                      const bool use_linear_reconstruction,
                      std::shared_ptr<MatrixType> eigenvectors,
                      std::shared_ptr<MatrixType> eigenvectors_inverse,
@@ -618,41 +618,70 @@ public:
 }; // class AdvectionKineticOperator
 
 
-#if 0
 // TODO: 0 boundary by default, so no need to specify boundary conditions for periodic grid views
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter>
+template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_lim>
 class AdvectionGodunovOperator
-    : public Dune::GDT::AdvectionOperatorBase<internal::AdvectionGodunovOperatorTraits<AnalyticalFluxImp,
-                                                                                       BoundaryValueFunctionImp,
-                                                                                       slope_limiter>>
+    : public Dune::GDT::OperatorInterface<internal::AdvectionGodunovOperatorTraits<AnalyticalFluxImp,
+                                                                                   BoundaryValueFunctionImp,
+                                                                                   slope_lim>>
 {
 public:
-  typedef Dune::GDT::AdvectionOperatorBase<internal::AdvectionGodunovOperatorTraits<AnalyticalFluxImp,
-                                                                                    BoundaryValueFunctionImp,
-                                                                                    slope_limiter>>
-      BaseType;
-  using typename BaseType::AnalyticalFluxType;
-  using typename BaseType::BoundaryValueFunctionType;
+  typedef internal::AdvectionGodunovOperatorTraits<AnalyticalFluxImp, BoundaryValueFunctionImp, slope_lim> Traits;
+  typedef typename Traits::AnalyticalFluxType AnalyticalFluxType;
+  typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
+  static const size_t dimDomain = Traits::dimDomain;
+  static const size_t dimRange = Traits::dimRange;
+  static const size_t dimRangeCols = Traits::dimRangeCols;
+  static const SlopeLimiters slope_limiter = Traits::slope_limiter;
+  typedef typename AnalyticalFluxType::RangeFieldType RangeFieldType;
+  typedef typename Traits::NumericalCouplingFluxType NumericalCouplingFluxType;
+  typedef typename Traits::NumericalBoundaryFluxType NumericalBoundaryFluxType;
 
+protected:
+  typedef typename Dune::XT::LA::EigenDenseMatrix<RangeFieldType> EigenMatrixType;
+  typedef typename Dune::XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+
+public:
   AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux,
                            const BoundaryValueFunctionType& boundary_values,
                            const bool flux_is_linear = false,
                            const bool use_linear_reconstruction = false)
-    : BaseType(analytical_flux, boundary_values, use_linear_reconstruction, flux_is_linear)
+    : analytical_flux_(analytical_flux)
+    , boundary_values_(boundary_values)
+    , flux_is_linear_(flux_is_linear)
+    , use_linear_reconstruction_(use_linear_reconstruction)
   {
+    internal::EigenvectorInitializer<dimDomain, dimRange, MatrixType, EigenMatrixType, AnalyticalFluxType>::initialize(
+        analytical_flux_, flux_is_linear, use_linear_reconstruction, eigenvectors_, eigenvectors_inverse_);
   }
 
   template <class SourceType, class RangeType>
-  void apply(const SourceType& source, RangeType& range, const double time = 0.0) const
+  void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter param = {}) const
   {
-    BaseType::apply(source, range, time, flux_is_linear_);
+    internal::AdvectionOperatorApplier<NumericalCouplingFluxType,
+                                       NumericalBoundaryFluxType,
+                                       RangeFieldType,
+                                       dimRange,
+                                       dimRangeCols,
+                                       slope_limiter>::apply(analytical_flux_,
+                                                             boundary_values_,
+                                                             source,
+                                                             range,
+                                                             param,
+                                                             use_linear_reconstruction_,
+                                                             eigenvectors_,
+                                                             eigenvectors_inverse_,
+                                                             flux_is_linear_);
   }
 
 private:
-  using BaseType::flux_is_linear_;
-  using BaseType::use_linear_reconstruction_;
+  const AnalyticalFluxType& analytical_flux_;
+  const BoundaryValueFunctionType& boundary_values_;
+  const bool flux_is_linear_;
+  const bool use_linear_reconstruction_;
+  std::shared_ptr<MatrixType> eigenvectors_;
+  std::shared_ptr<MatrixType> eigenvectors_inverse_;
 }; // class AdvectionGodunovOperator
-#endif
 
 #else // HAVE_EIGEN
 

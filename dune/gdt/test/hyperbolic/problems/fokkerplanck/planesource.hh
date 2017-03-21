@@ -114,7 +114,7 @@ public:
       } // rr
       str += "]";
       initial_value_config["values." + XT::Common::to_string(ii)] = str;
-      initial_value_config["order." + XT::Common::to_string(ii)] = 1;
+      initial_value_config["order." + XT::Common::to_string(ii)] = "1";
     } // ii
     return initial_value_config;
   } // ... create_initial_value_config(...)
@@ -148,7 +148,7 @@ public:
   // Boundary value of kinetic equation is psi_vac at both boundaries
   // so n-th component of boundary value has to be \psi_{vac}*base_integrated_n at both boundaries.
   // Modell with constant function.
-  static ConfigType create_boundary_value_config(const RangeType& v_points = create_equidistant_points(),
+  static ConfigType create_boundary_value_config(const PointsVectorType& v_points = create_equidistant_points(),
                                                  const RangeFieldType psi_vac = 5e-9)
   {
     ConfigType boundary_value_config;

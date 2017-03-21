@@ -138,8 +138,7 @@ public:
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
           local_source_neighbor,
       const IntersectionType& intersection,
-      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection,
-      const double /*t*/) const
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
     // get function values
     const RangeType u_i = local_source_entity.evaluate(intersection.geometryInInside().global(x_intersection));
@@ -317,8 +316,7 @@ public:
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
           local_source_neighbor,
       const IntersectionType& intersection,
-      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection,
-      const double /*t*/) const
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
     // get function values
     const RangeType u_i = local_source_entity.evaluate(intersection.geometryInInside().global(x_intersection));
@@ -467,7 +465,7 @@ public:
   static const size_t dimRange = Traits::dimRange;
 
   explicit GodunovLocalNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
-                                             const BoundaryValueFunctionType& boundary_values,
+                                             const std::shared_ptr<BoundaryValueFunctionType>& boundary_values,
                                              const bool is_linear = false,
                                              const bool reinit_jacobians = true)
     : analytical_flux_(analytical_flux)
@@ -480,7 +478,7 @@ public:
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
-    return std::make_tuple(boundary_values_.local_function(entity));
+    return std::make_tuple(boundary_values_->local_function(entity));
   }
 
 
@@ -490,8 +488,7 @@ public:
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
           local_source_entity,
       const IntersectionType& intersection,
-      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection,
-      const double /*t*/) const
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
     const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
     const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
@@ -602,7 +599,7 @@ private:
   } // void calculate_jacobians(...)
 
   const AnalyticalFluxType& analytical_flux_;
-  const BoundaryValueFunctionType& boundary_values_;
+  const std::shared_ptr<BoundaryValueFunctionType>& boundary_values_;
   static FluxJacobianRangeType jacobian_neg_;
   static FluxJacobianRangeType jacobian_pos_;
   static bool jacobians_constructed_;
@@ -655,7 +652,7 @@ public:
                                                  1>
       AffineFunctionType;
   explicit GodunovLocalNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
-                                             const BoundaryValueFunctionType& boundary_values,
+                                             const std::shared_ptr<BoundaryValueFunctionType>& boundary_values,
                                              const bool is_linear = false,
                                              const bool reinit_jacobians = true)
     : analytical_flux_(analytical_flux)
@@ -668,7 +665,7 @@ public:
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
-    return std::make_tuple(boundary_values_.local_function(entity));
+    return std::make_tuple(boundary_values_->local_function(entity));
   }
 
   template <class IntersectionType>
@@ -677,8 +674,7 @@ public:
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
           local_source_entity,
       const IntersectionType& intersection,
-      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection,
-      const double /*t*/) const
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
     const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
     const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
@@ -767,7 +763,7 @@ private:
   } // void calculate_jacobians(...)
 
   const AnalyticalFluxType& analytical_flux_;
-  const BoundaryValueFunctionType& boundary_values_;
+  const std::shared_ptr<BoundaryValueFunctionType>& boundary_values_;
   thread_local static FluxJacobianRangeType jacobian_neg_;
   thread_local static FluxJacobianRangeType jacobian_pos_;
   thread_local static AffineFunctionType jacobian_neg_function_;
