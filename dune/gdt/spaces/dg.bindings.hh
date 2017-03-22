@@ -9,67 +9,79 @@
 
 #ifndef DUNE_GDT_SPACES_DG_BINDINGS_HH
 #define DUNE_GDT_SPACES_DG_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
+//#if HAVE_DUNE_PYBINDXI
 
 #include <dune/xt/grid/grids.bindings.hh>
 
 #include "dg.hh"
 #include "interface.bindings.hh"
 
-namespace Dune {
-namespace GDT {
-namespace bindings {
 
+// begin: this is what we need for the .so
 
-#define _DEFINE_DG_SPACE(_G, _layer, _backend, _p, _r, _rC)                                                            \
-  typedef                                                                                                              \
-      typename DgSpaceProvider<_G, XT::Grid::Layers::_layer, ChooseSpaceBackend::_backend, _p, double, _r, _rC>::type  \
-          Dg_##_G##_##_layer##_to_##_r##x##_rC##_##p##_p##_##_backend##_Space
-
+// * fem
 #if HAVE_DUNE_FEM
-_DEFINE_DG_SPACE(YASP_2D_EQUIDISTANT_OFFSET, leaf, fem, 1, 1, 1);
-_DEFINE_DG_SPACE(YASP_2D_EQUIDISTANT_OFFSET, leaf, fem, 2, 1, 1);
-_DEFINE_DG_SPACE(YASP_2D_EQUIDISTANT_OFFSET, level, fem, 1, 1, 1);
-_DEFINE_DG_SPACE(YASP_2D_EQUIDISTANT_OFFSET, level, fem, 2, 1, 1);
-#endif
-#if HAVE_DUNE_ALUGRID
-#if HAVE_DUNE_FEM
-_DEFINE_DG_SPACE(ALU_2D_SIMPLEX_CONFORMING, leaf, fem, 1, 1, 1);
-_DEFINE_DG_SPACE(ALU_2D_SIMPLEX_CONFORMING, leaf, fem, 2, 1, 1);
-_DEFINE_DG_SPACE(ALU_2D_SIMPLEX_CONFORMING, level, fem, 1, 1, 1);
-_DEFINE_DG_SPACE(ALU_2D_SIMPLEX_CONFORMING, level, fem, 2, 1, 1);
-#endif
-#endif // HAVE_DUNE_ALUGRID
+#define _DUNE_GDT_SPACES_DG_BIND_FEM(_m, _GRID, _layer, _r, _rC)                                                       \
+  Dune::GDT::bindings::SpaceInterface<Dune::GDT::DgSpaceProvider<_GRID,                                                \
+                                                                 Dune::XT::Grid::Layers::_layer,                       \
+                                                                 Dune::GDT::ChooseSpaceBackend::fem,                   \
+                                                                 1,                                                    \
+                                                                 double,                                               \
+                                                                 _r,                                                   \
+                                                                 _rC>>::bind(_m)
 
-#undef _DEFINE_DG_SPACE
-
-
-// this is used by other headers
-#define DG_SPACE(_G, _layer, _backend, _p, _r, _rC) Dg_##_G##_##_layer##_to_##_r##x##_rC##_##p##_p##_##_backend##_Space
-
-
-#define DUNE_GDT_SPACES_DG_BIND_FEM(_prefix, _GRID)                                                                    \
-  _prefix class SpaceInterface<DG_SPACE(_GRID, leaf, fem, 1, 1, 1)>;                                                   \
-  _prefix class SpaceInterface<DG_SPACE(_GRID, level, fem, 1, 1, 1)>;                                                  \
-  _prefix class SpaceInterface<DG_SPACE(_GRID, leaf, fem, 2, 1, 1)>;                                                   \
-  _prefix class SpaceInterface<DG_SPACE(_GRID, level, fem, 2, 1, 1)>
-
-
-// these lines have to match the corresponding ones in the .cc source file
-#if HAVE_DUNE_FEM
-DUNE_GDT_SPACES_DG_BIND_FEM(extern template, YASP_2D_EQUIDISTANT_OFFSET);
+#if HAVE_ALBERTA
+#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, _layer)                                                         \
+  _DUNE_GDT_SPACES_DG_BIND_FEM(_m, ALBERTA_2D, _layer, 1, 1)
+#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA(_m)                                                                       \
+  _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, dd_subdomain);                                                        \
+  _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, leaf);                                                                \
+  _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, level)
+#else
+#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA(_m)
 #endif
 
 #if HAVE_DUNE_ALUGRID
-#if HAVE_DUNE_FEM
-DUNE_GDT_SPACES_DG_BIND_FEM(extern template, ALU_2D_SIMPLEX_CONFORMING);
+#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALU_LAYER(_m, _layer)                                                             \
+  _DUNE_GDT_SPACES_DG_BIND_FEM(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, 1, 1)
+#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALU(_m)                                                                           \
+  _DUNE_GDT_SPACES_DG_BIND_FEM_ALU_LAYER(_m, dd_subdomain);                                                            \
+  _DUNE_GDT_SPACES_DG_BIND_FEM_ALU_LAYER(_m, leaf);                                                                    \
+  _DUNE_GDT_SPACES_DG_BIND_FEM_ALU_LAYER(_m, level)
+#else
+#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALU(_m, _layer)
 #endif
-#endif // HAVE_DUNE_ALUGRID
+
+//#if HAVE_DUNE_UGGRID || HAVE_UG // <- does not work
+//#define _DUNE_GDT_SPACES_DG_BIND_FEM_UG_LAYER(_m, _layer) _DUNE_GDT_SPACES_DG_BIND_FEM(_m, UG_2D, _layer, 1, 1)
+//#define _DUNE_GDT_SPACES_DG_BIND_FEM_UG(_m)
+//  _DUNE_GDT_SPACES_DG_BIND_FEM_UG_LAYER(_m, dd_subdomain);
+//  _DUNE_GDT_SPACES_DG_BIND_FEM_UG_LAYER(_m, leaf);
+//  _DUNE_GDT_SPACES_DG_BIND_FEM_UG_LAYER(_m, level)
+//#else
+//#define _DUNE_GDT_SPACES_DG_BIND_FEM_UG(_m, _layer)
+//#endif
+
+#define _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, _layer)                                                            \
+  _DUNE_GDT_SPACES_DG_BIND_FEM(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1)
+#define _DUNE_GDT_SPACES_DG_BIND_FEM_YASP(_m)                                                                          \
+  _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, dd_subdomain);                                                           \
+  _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, leaf);                                                                   \
+  _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, level)
+
+#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALL(_m)                                                                           \
+  _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA(_m);                                                                            \
+  _DUNE_GDT_SPACES_DG_BIND_FEM_ALU(_m);                                                                                \
+  _DUNE_GDT_SPACES_DG_BIND_FEM_YASP(_m)
+//_DUNE_GDT_SPACES_DG_BIND_FEM_UG(_m); // <- does not work
+#else // HAVE_DUNE_FEM
+#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALL(_m)
+#endif
+
+#define DUNE_GDT_SPACES_DG_BIND(_m) _DUNE_GDT_SPACES_DG_BIND_FEM_ALL(_m)
+
+// end: this is what we need for the .so
 
 
-} // namespace bindings
-} // namespace GDT
-} // namespace Dune
-
-#endif // HAVE_DUNE_PYBINDXI
+//#endif // HAVE_DUNE_PYBINDXI
 #endif // DUNE_GDT_SPACES_DG_BINDINGS_HH

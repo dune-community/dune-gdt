@@ -16,49 +16,60 @@
 #include "fv.hh"
 #include "interface.bindings.hh"
 
-namespace Dune {
-namespace GDT {
-namespace bindings {
 
+// begin: this is what we need for the .so
 
-#define _DEFINE_FV_SPACE(_G, _layer, _backend, _r, _rC)                                                                \
-  typedef typename FvSpaceProvider<_G, XT::Grid::Layers::_layer, ChooseSpaceBackend::_backend, double, _r, _rC>::type  \
-      Fv_##_G##_##_layer##_to_##_r##x##_rC##_##_backend##_Space
+#define _DUNE_GDT_SPACES_FV_BIND_GDT(_m, _GRID, _layer, _r, _rC)                                                       \
+  Dune::GDT::bindings::SpaceInterface<Dune::GDT::FvSpaceProvider<_GRID,                                                \
+                                                                 Dune::XT::Grid::Layers::_layer,                       \
+                                                                 Dune::GDT::ChooseSpaceBackend::gdt,                   \
+                                                                 double,                                               \
+                                                                 _r,                                                   \
+                                                                 _rC>>::bind(_m)
 
-_DEFINE_FV_SPACE(YASP_2D_EQUIDISTANT_OFFSET, leaf, gdt, 1, 1);
-_DEFINE_FV_SPACE(YASP_2D_EQUIDISTANT_OFFSET, leaf, gdt, 1, 1);
-_DEFINE_FV_SPACE(YASP_2D_EQUIDISTANT_OFFSET, level, gdt, 1, 1);
-_DEFINE_FV_SPACE(YASP_2D_EQUIDISTANT_OFFSET, level, gdt, 1, 1);
-#if HAVE_DUNE_ALUGRID
-_DEFINE_FV_SPACE(ALU_2D_SIMPLEX_CONFORMING, leaf, gdt, 1, 1);
-_DEFINE_FV_SPACE(ALU_2D_SIMPLEX_CONFORMING, leaf, gdt, 1, 1);
-_DEFINE_FV_SPACE(ALU_2D_SIMPLEX_CONFORMING, level, gdt, 1, 1);
-_DEFINE_FV_SPACE(ALU_2D_SIMPLEX_CONFORMING, level, gdt, 1, 1);
-#endif // HAVE_DUNE_ALUGRID
-
-#undef _DEFINE_FV_SPACE
-
-
-// this is used by other headers
-#define FV_SPACE(_G, _layer, _backend, _r, _rC) Fv_##_G##_##_layer##_to_##_r##x##_rC##_##_backend##_Space
-
-
-#define DUNE_GDT_SPACES_FV_BIND_GDT(_prefix, _GRID)                                                                    \
-  _prefix class SpaceInterface<FV_SPACE(_GRID, leaf, gdt, 1, 1)>;                                                      \
-  _prefix class SpaceInterface<FV_SPACE(_GRID, level, gdt, 1, 1)>
-
-
-// these lines have to match the corresponding ones in the .cc source file
-DUNE_GDT_SPACES_FV_BIND_GDT(extern template, YASP_2D_EQUIDISTANT_OFFSET);
+#if HAVE_ALBERTA
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA_LAYER(_m, _layer)                                                         \
+  _DUNE_GDT_SPACES_FV_BIND_GDT(_m, ALBERTA_2D, _layer, 1, 1)
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA(_m)                                                                       \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA_LAYER(_m, leaf);                                                                \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA_LAYER(_m, level)
+#else
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA(_m)
+#endif
 
 #if HAVE_DUNE_ALUGRID
-DUNE_GDT_SPACES_FV_BIND_GDT(extern template, ALU_2D_SIMPLEX_CONFORMING);
-#endif // HAVE_DUNE_ALUGRID
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_ALU_LAYER(_m, _layer)                                                             \
+  _DUNE_GDT_SPACES_FV_BIND_GDT(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, 1, 1)
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_ALU(_m)                                                                           \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_ALU_LAYER(_m, leaf);                                                                    \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_ALU_LAYER(_m, level)
+#else
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_ALU(_m, _layer)
+#endif
 
+#if HAVE_DUNE_UGGRID || HAVE_UG
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_UG_LAYER(_m, _layer) _DUNE_GDT_SPACES_FV_BIND_GDT(_m, UG_2D, _layer, 1, 1)
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_UG(_m)                                                                            \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_UG_LAYER(_m, leaf);                                                                     \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_UG_LAYER(_m, level)
+#else
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_UG(_m, _layer)
+#endif
 
-} // namespace bindings
-} // namespace GDT
-} // namespace Dune
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_YASP_LAYER(_m, _layer)                                                            \
+  _DUNE_GDT_SPACES_FV_BIND_GDT(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1)
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_YASP(_m)                                                                          \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_YASP_LAYER(_m, leaf);                                                                   \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_YASP_LAYER(_m, level)
+
+#define DUNE_GDT_SPACES_FV_BIND(_m)                                                                                    \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA(_m);                                                                            \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_ALU(_m);                                                                                \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_UG(_m);                                                                                 \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_YASP(_m)
+
+// end: this is what we need for the .so
+
 
 #endif // HAVE_DUNE_PYBINDXI
 #endif // DUNE_GDT_SPACES_FV_BINDINGS_HH

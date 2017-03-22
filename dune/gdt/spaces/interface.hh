@@ -50,6 +50,19 @@ enum class ChooseSpaceBackend
 }; // enum class ChooseSpaceBackend
 
 
+namespace internal {
+
+
+template <ChooseSpaceBackend backend>
+struct backend_dependent_typename
+{
+  typedef void type;
+};
+
+
+} // namespace  internal
+
+
 static constexpr ChooseSpaceBackend default_space_backend =
 #if HAVE_DUNE_FEM
     ChooseSpaceBackend::fem;

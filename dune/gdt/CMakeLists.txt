@@ -40,17 +40,22 @@ if(dune-pybindxi_FOUND)
                                #operators/elliptic.bindings/istl_pdelab.cc
                                projections/dirichlet.bindings.cc
                                spaces/cg.bindings.cc
-                               spaces/constraints.bindings.cc
                                spaces/dg.bindings.cc
                                #spaces/fv.bindings.cc
                                )
+  dune_pybindxi_add_module(assembler assembler.bindings.cc)
+  target_link_dune_default_libraries(assembler)
+  add_dune_alberta_flags(GRIDDIM 2 assembler)
+  dune_pybindxi_add_module(spaces spaces.bindings.cc)
+  target_link_dune_default_libraries(spaces)
+  add_dune_alberta_flags(GRIDDIM 2 spaces)
   dune_pybindxi_add_module(_gdt bindings.cc)
   target_link_dune_default_libraries(_gdt)
   target_link_libraries(_gdt _gdt_bindings_helper)
   if(DUNE_XT_WITH_PYTHON_BINDINGS)
-    add_custom_target(bindings ALL DEPENDS _gdt)
+    add_custom_target(bindings ALL DEPENDS assembler spaces _gdt)
   else()
-    add_custom_target(bindings DEPENDS _gdt)
+    add_custom_target(bindings DEPENDS assembler spaces _gdt)
   endif()
 endif()
 

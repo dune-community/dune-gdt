@@ -11,22 +11,26 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include "fv.bindings.hh"
+#include <dune/pybindxi/pybind11.h>
 
-namespace Dune {
-namespace GDT {
-namespace bindings {
+#include "spaces.bindings.hh"
 
+PYBIND11_PLUGIN(spaces)
+{
+  namespace py = pybind11;
 
-// these lines have to match the corresponding ones in the .hh header file
-DUNE_GDT_SPACES_FV_BIND_GDT(template, YASP_2D_EQUIDISTANT_OFFSET);
+  py::module m("spaces", "dune-gdt: Spaces");
 
-#if HAVE_DUNE_ALUGRID
-DUNE_GDT_SPACES_FV_BIND_GDT(template, ALU_2D_SIMPLEX_CONFORMING);
-#endif // HAVE_DUNE_ALUGRID
+  py::module::import("dune.xt.common");
+  py::module::import("dune.xt.grid");
+  py::module::import("dune.xt.functions");
+  py::module::import("dune.xt.la");
 
-} // namespace bindings
-} // namespace GDT
-} // namespace Dune
+  DUNE_GDT_SPACES_CG_BIND(m);
+  DUNE_GDT_SPACES_DG_BIND(m);
+  DUNE_GDT_SPACES_FV_BIND(m);
+
+  return m.ptr();
+}
 
 #endif // HAVE_DUNE_PYBINDXI
