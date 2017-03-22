@@ -175,7 +175,10 @@ int main(int argc, char** argv)
   //      ProblemType;
   //  typedef typename Hyperbolic::Problems::PointSourcePnPartialMoments<EntityType, double, dimDomain, double, 8>
   //      ProblemType;
-  typedef typename Hyperbolic::Problems::CheckerboardPnHatFunctions<EntityType, double, dimDomain, double, 6>
+  //  typedef typename Hyperbolic::Problems::CheckerboardPnHatFunctions<EntityType, double, dimDomain, double, 6>
+  //      ProblemType;
+
+  typedef typename Hyperbolic::Problems::CheckerboardPnPartialMoments<EntityType, double, dimDomain, double, 8>
       ProblemType;
 
   //******************* get typedefs and constants from ProblemType **********************//
@@ -362,20 +365,19 @@ int main(int argc, char** argv)
   //    basis_values_matrices[qq].resize(current_quadrature.size());
   for (size_t ii = 0; ii < quadrature_rule.size(); ++ii) {
     // 3D hatfunctions on sphere
-    const auto hatfunctions_evaluated =
-        Hyperbolic::Problems::evaluate_spherical_barycentric_coordinates<RangeType, DomainType>(
-            quadrature_rule[ii].position(), triangulation);
+    //    const auto hatfunctions_evaluated =
+    //        Hyperbolic::Problems::evaluate_spherical_barycentric_coordinates<RangeType, DomainType>(
+    //            quadrature_rule[ii].position(), triangulation);
 
     // 3D partial moments
-    //    const auto partial_basis_evaluated =
-    //        GDT::Hyperbolic::Problems::evaluate_linear_partial_basis<RangeType,
-    //        DomainType>(quadrature_rule[ii].position(),
-    //                                                                                        triangulation);
+    const auto partial_basis_evaluated =
+        GDT::Hyperbolic::Problems::evaluate_linear_partial_basis<RangeType, DomainType>(quadrature_rule[ii].position(),
+                                                                                        triangulation);
 
     for (size_t nn = 0; nn < dimRange; ++nn) {
-      basis_values_matrix[ii][nn] = hatfunctions_evaluated[nn];
+      //      basis_values_matrix[ii][nn] = hatfunctions_evaluated[nn];
       //        basis_values_matrices[qq][ii][nn] = hatfunctions_evaluated[nn];
-      //      basis_values_matrix[ii][nn] = partial_basis_evaluated[nn];
+      basis_values_matrix[ii][nn] = partial_basis_evaluated[nn];
       //      basis_values_matrix[ii][nn] =
       //          Hyperbolic::Problems::evaluate_legendre_polynomial(quadrature_rule[ii].position(), nn);
       //      basis_values_matrix[ii][nn] = Hyperbolic::Problems::evaluate_hat_function(
@@ -396,8 +398,8 @@ int main(int argc, char** argv)
 
   //*********************** choose analytical flux *************************************************************
 
-  //    typedef EntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
-  //    AnalyticalFluxType;
+  //  typedef EntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
+  //  AnalyticalFluxType;
 
   //  typedef AdaptiveEntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
   //      AnalyticalFluxType;
@@ -444,8 +446,8 @@ int main(int argc, char** argv)
   //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
   //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_1d_firstorderdg);
 
-  //    const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
-  //        grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
+  //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
+  //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
 
   //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
   //      grid_view, quadrature_rules, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
@@ -520,7 +522,7 @@ int main(int argc, char** argv)
     filename += Dune::XT::Common::to_string(dimRange);
     filename += rhs_time_stepper_method == TimeStepperMethods::implicit_euler ? "_implicit" : "_explicit";
 
-    timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 1);
+    timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 3);
   } else {
     timestepper_op.solve(t_end, dt, num_save_steps, false, true, visualize, "entropy_implicit_trapezoidal");
   }

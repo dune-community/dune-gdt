@@ -615,7 +615,7 @@ RangeType evaluate_linear_partial_basis(const DomainType& v,
     // the triple product is positive
     const auto& vertices = face->vertices();
     for (size_t ii = 0; ii < 3; ++ii)
-      vertices_matrix[ii] = vertices[ii].position();
+      vertices_matrix[ii] = vertices[ii]->position();
     bool v_in_this_facet = true;
     // the triple products that need to be positive are the determinants of the matrices (v1, v2, v), (v2, v3, v), (v3,
     // v1, v), where vi is the ith
@@ -1288,8 +1288,8 @@ public:
   // n-th component of RHS is -sigma_t u_n + sigma_s/(4 pi) <psi><b_n> + Q<b_n>
   // For this test case (sigma_t = sigma_s + sigma_a),
   // sigma_a = 0, sigma_s = 1, Q = 0
-  // As <psi> = sum_i u_i, the rhs becomes
-  // -u_n + 1/(4 pi) sum_i u_i <b_n>
+  // As <psi> = sum_{i % 4 == 0} u_i, the rhs becomes
+  // -u_n + 1/(4 pi) sum_{i % 4 == 0} u_i <b_n>
   static ConfigType create_rhs_config(const ConfigType grid_config,
                                       const Dune::QuadratureRule<double, 3>& quadrature,
                                       const SphericalTriangulation<double>& poly)
@@ -1300,7 +1300,10 @@ public:
     rhs_config["upper_right"] = grid_config["upper_right"];
     rhs_config["num_elements"] = "[1 1 1]";
     rhs_config["name"] = DefaultRHSType::static_id();
-    MatrixType A(1);
+    MatrixType A(0);
+    for (size_t nn = 0; nn < dimRange; ++nn)
+      for (size_t mm = 0; mm < dimRange; mm += 4)
+        A[nn][mm] = 1.;
     A *= 1. / (4 * M_PI);
     RangeType b(0);
     for (size_t nn = 0; nn < dimRange; ++nn) {
