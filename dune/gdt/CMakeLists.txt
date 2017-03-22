@@ -40,6 +40,7 @@ if(dune-pybindxi_FOUND)
                                #operators/elliptic.bindings/istl_pdelab.cc
                                projections/dirichlet.bindings.cc
                                spaces/cg.bindings.cc
+                               spaces/constraints.bindings.cc
                                spaces/dg.bindings.cc
                                #spaces/fv.bindings.cc
                                )

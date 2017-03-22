@@ -11,19 +11,27 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include "system.bindings.hh"
+#include <dune/pybindxi/pybind11.h>
+
+#include <dune/gdt/assembler/system.bindings.hh>
+#include <dune/gdt/spaces/constraints.bindings.hh>
 
 
-namespace Dune {
-namespace GDT {
-namespace bindings {
+PYBIND11_PLUGIN(assembler)
+{
+  namespace py = pybind11;
 
+  py::module m("assembler", "dune-gdt: SystemAssembler");
 
-DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB(template);
+  py::module::import("dune.xt.common");
+  py::module::import("dune.xt.grid");
+  py::module::import("dune.xt.functions");
+  py::module::import("dune.xt.la");
 
+  DUNE_GDT_SPACES_CONSTRAINTS_BIND(m);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m);
 
-} // namespace bindings
-} // namespace GDT
-} // namespace Dune
+  return m.ptr();
+}
 
 #endif // HAVE_DUNE_PYBINDXI

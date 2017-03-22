@@ -17,6 +17,7 @@
 #include <dune/xt/grid/grids.bindings.hh>
 
 #include <dune/gdt/spaces.bindings.hh>
+#include <dune/gdt/spaces/constraints.bindings.hh>
 
 #include "system.hh"
 
@@ -25,13 +26,14 @@ namespace GDT {
 namespace bindings {
 
 
-template <class T /*, class GV = typename T::GridViewType, class A = T*/>
+template <class TP /*, class GV = typename TP::type::GridViewType, class AP = TP*/>
 class SystemAssembler
 {
+  typedef typename TP::type T;
   static_assert(is_space<T>::value, "");
 
 public:
-  typedef GDT::SystemAssembler<T /*, G, A*/> type;
+  typedef GDT::SystemAssembler<T /*, GV, A*/> type;
   typedef pybind11::class_<type> bound_type;
 
 private:
@@ -64,13 +66,14 @@ private:
   }; // struct addbind_ctor_single
 
 public:
-  static bound_type bind(pybind11::module& m, const std::string& space_id)
+  static bound_type bind(pybind11::module& m)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    bound_type c(
-        m, std::string("SystemAssembler__" + space_id).c_str(), std::string("SystemAssembler__" + space_id).c_str());
+    const auto ClassName = XT::Common::to_camel_case(std::string("system_assembler_") + space_name<TP>::value());
+
+    bound_type c(m, ClassName.c_str(), ClassName.c_str());
     addbind_ctor_single<>()(c);
 
     c.def("append", [](type& self, type& other) { self.append(other); }, "system_assembler"_a, py::keep_alive<1, 2>());
@@ -89,46 +92,249 @@ public:
 }; // class SystemAssembler
 
 
-#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT(_prefix, _GRID)                                                             \
-  _prefix class SystemAssembler<FV_SPACE(_GRID, leaf, gdt, 1, 1)>;                                                     \
-  _prefix class SystemAssembler<FV_SPACE(_GRID, level, gdt, 1, 1)>
-
-#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_prefix, _GRID)                                                             \
-  _prefix class SystemAssembler<CG_SPACE(_GRID, leaf, fem, 1, 1, 1)>;                                                  \
-  _prefix class SystemAssembler<CG_SPACE(_GRID, level, fem, 1, 1, 1)>;                                                 \
-  _prefix class SystemAssembler<DG_SPACE(_GRID, leaf, fem, 1, 1, 1)>;                                                  \
-  _prefix class SystemAssembler<DG_SPACE(_GRID, level, fem, 1, 1, 1)>;                                                 \
-  _prefix class SystemAssembler<DG_SPACE(_GRID, leaf, fem, 2, 1, 1)>;                                                  \
-  _prefix class SystemAssembler<DG_SPACE(_GRID, level, fem, 2, 1, 1)>
-
-#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB(_prefix, _GRID)                                                          \
-  _prefix class SystemAssembler<CG_SPACE(_GRID, leaf, pdelab, 1, 1, 1)>;                                               \
-  _prefix class SystemAssembler<CG_SPACE(_GRID, level, pdelab, 1, 1, 1)>
-
-
-// these lines have to match the corresponding ones in the .cc source file
-DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT(extern template, YASP_2D_EQUIDISTANT_OFFSET);
-#if HAVE_DUNE_FEM
-DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(extern template, YASP_2D_EQUIDISTANT_OFFSET);
-#endif
-#if HAVE_DUNE_PDELAB
-DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB(extern template, YASP_2D_EQUIDISTANT_OFFSET);
-#endif
-
-#if HAVE_DUNE_ALUGRID
-DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT(extern template, ALU_2D_SIMPLEX_CONFORMING);
-#if HAVE_DUNE_FEM
-DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(extern template, ALU_2D_SIMPLEX_CONFORMING);
-#endif
-#if HAVE_DUNE_PDELAB
-DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB(extern template, ALU_2D_SIMPLEX_CONFORMING);
-#endif
-#endif // HAVE_DUNE_ALUGRID
-
-
 } // namespace bindings
 } // namespace GDT
 } // namespace Dune
+
+
+// begin: this is what we need for the .so
+
+#if HAVE_DUNE_FEM
+
+// * fem backend
+//   - cg spaces
+
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG(_m, _GRID, _layer, _p, _r, _rC)                                         \
+  auto system_assembler_##_GRID##_##_layer##_fem_cg_##_p##_double_##_r##_##_rC =                                       \
+      Dune::GDT::bindings::SystemAssembler<Dune::GDT::CgSpaceProvider<_GRID,                                           \
+                                                                      Dune::XT::Grid::Layers::_layer,                  \
+                                                                      Dune::GDT::ChooseSpaceBackend::fem,              \
+                                                                      _p,                                              \
+                                                                      double,                                          \
+                                                                      _r,                                              \
+                                                                      _rC>>::bind(_m);                                 \
+  Dune::GDT::bindings::                                                                                                \
+      DirichletConstraints<Dune::XT::Grid::extract_intersection_t<                                                     \
+                               typename Dune::XT::Grid::Layer<_GRID,                                                   \
+                                                              Dune::XT::Grid::Layers::_layer,                          \
+                                                              Dune::XT::Grid::Backends::part,                          \
+                                                              Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,        \
+                           _GRID>::addbind(system_assembler_##_GRID##_##_layer##_fem_cg_##_p##_double_##_r##_##_rC)
+
+#if HAVE_ALBERTA
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_ALBERTA(_m, _layer, _p)                                                 \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG(_m, ALBERTA_2D, _layer, _p, 1, 1)
+#else
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_ALBERTA(_m, _p, _layer)
+#endif
+
+#if HAVE_DUNE_ALUGRID
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_ALU(_m, _layer, _p)                                                     \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, _p, 1, 1)
+#else
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_ALU(_m, _layer, _p)
+#endif
+
+#if HAVE_DUNE_UGGRID || HAVE_UG
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_UG(_m, _layer, _p)                                                      \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG(_m, UG_2D, _layer, _p, 1, 1)
+#else
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_UG(_m, _layer, _p)
+#endif
+
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_YASP(_m, _layer, _p)                                                    \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1)
+
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_ALL(_m, _layer, _p)                                                     \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_ALBERTA(_m, _layer, _p);                                                      \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_ALU(_m, _layer, _p);                                                          \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_UG(_m, _layer, _p);                                                           \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_YASP(_m, _layer, _p)
+
+//   - dg spaces
+
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG(_m, _GRID, _layer, _p, _r, _rC)                                         \
+  auto system_assembler_##_GRID##_##_layer##_fem_dg_##_p##_double_##_r##_##_rC =                                       \
+      Dune::GDT::bindings::SystemAssembler<Dune::GDT::DgSpaceProvider<_GRID,                                           \
+                                                                      Dune::XT::Grid::Layers::_layer,                  \
+                                                                      Dune::GDT::ChooseSpaceBackend::fem,              \
+                                                                      _p,                                              \
+                                                                      double,                                          \
+                                                                      _r,                                              \
+                                                                      _rC>>::bind(_m);                                 \
+  Dune::GDT::bindings::                                                                                                \
+      DirichletConstraints<Dune::XT::Grid::extract_intersection_t<                                                     \
+                               typename Dune::XT::Grid::Layer<_GRID,                                                   \
+                                                              Dune::XT::Grid::Layers::_layer,                          \
+                                                              Dune::XT::Grid::Backends::part,                          \
+                                                              Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,        \
+                           _GRID>::addbind(system_assembler_##_GRID##_##_layer##_fem_dg_##_p##_double_##_r##_##_rC)
+
+#if HAVE_ALBERTA
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_ALBERTA(_m, _layer, _p)                                                 \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG(_m, ALBERTA_2D, _layer, _p, 1, 1)
+#else
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_ALBERTA(_m, _p, _layer)
+#endif
+
+#if HAVE_DUNE_ALUGRID
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_ALU(_m, _layer, _p)                                                     \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, _p, 1, 1)
+#else
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_ALU(_m, _layer, _p)
+#endif
+
+//#if HAVE_DUNE_UGGRID || HAVE_UG // <- does not work
+//#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_UG(_m, _layer, _p)
+//  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG(_m, UG_2D, _layer, _p, 1, 1)
+//#else
+//#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_UG(_m, _layer, _p)
+//#endif
+
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_YASP(_m, _layer, _p)                                                    \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1)
+
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_ALL(_m, _layer, _p)                                                     \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_ALBERTA(_m, _layer, _p);                                                      \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_ALU(_m, _layer, _p);                                                          \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_YASP(_m, _layer, _p)
+//  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_UG(_m, _layer, _p); // <- does not work
+
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_m)                                                                        \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_ALL(_m, dd_subdomain, 1);                                                     \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_ALL(_m, leaf, 1);                                                             \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_ALL(_m, level, 1);                                                            \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_ALL(_m, dd_subdomain, 1);                                                     \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_ALL(_m, leaf, 1);                                                             \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_ALL(_m, level, 1);                                                            \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_ALL(_m, dd_subdomain, 2);                                                     \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_ALL(_m, leaf, 2);                                                             \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_ALL(_m, level, 2)
+
+#else // HAVE_DUNE_FEM
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_m)
+#endif
+
+#if HAVE_DUNE_PDELAB
+
+// * pdelab backend
+//   - cg spaces
+
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG(_m, _GRID, _layer, _p, _r, _rC)                                      \
+  auto system_assembler_##_GRID##_##_layer##_pdelab_cg_##_p##_double_##_r##_##_rC =                                    \
+      Dune::GDT::bindings::SystemAssembler<Dune::GDT::CgSpaceProvider<_GRID,                                           \
+                                                                      Dune::XT::Grid::Layers::_layer,                  \
+                                                                      Dune::GDT::ChooseSpaceBackend::pdelab,           \
+                                                                      _p,                                              \
+                                                                      double,                                          \
+                                                                      _r,                                              \
+                                                                      _rC>>::bind(_m);                                 \
+  Dune::GDT::bindings::                                                                                                \
+      DirichletConstraints<Dune::XT::Grid::extract_intersection_t<                                                     \
+                               typename Dune::XT::Grid::Layer<_GRID,                                                   \
+                                                              Dune::XT::Grid::Layers::_layer,                          \
+                                                              Dune::XT::Grid::Backends::view,                          \
+                                                              Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,        \
+                           _GRID>::addbind(system_assembler_##_GRID##_##_layer##_pdelab_cg_##_p##_double_##_r##_##_rC)
+
+#if HAVE_ALBERTA
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG_ALBERTA(_m, _layer, _p)                                              \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG(_m, ALBERTA_2D, _layer, _p, 1, 1)
+#else
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG_ALBERTA(_m, _p, _layer)
+#endif
+
+#if HAVE_DUNE_ALUGRID
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG_ALU(_m, _layer, _p)                                                  \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, _p, 1, 1)
+#else
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG_ALU(_m, _layer, _p)
+#endif
+
+//#if HAVE_DUNE_UGGRID || HAVE_UG // <- does not work
+//#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG_UG(_m, _layer, _p)
+//  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG(_m, UG_2D, _layer, _p, 1, 1)
+//#else
+//#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG_UG(_m, _layer, _p)
+//#endif
+
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG_YASP(_m, _layer, _p)                                                 \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1)
+
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG_ALL(_m, _layer, _p)                                                  \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG_ALBERTA(_m, _layer, _p);                                                   \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG_ALU(_m, _layer, _p);                                                       \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG_YASP(_m, _layer, _p)
+//_DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG_UG(_m, _layer, _p); // <- does not work
+
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB(_m)                                                                     \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG_ALL(_m, leaf, 1);                                                          \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB_CG_ALL(_m, level, 1);
+
+#else // HAVE_DUNE_PDELAB
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB(_m)
+#endif
+
+// * gdt backend
+//   - fv spaces
+
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV(_m, _GRID, _layer, _r, _rC)                                             \
+  auto system_assembler_##_GRID##_##_layer##_gdt_fv_double_##_r##_##_rC =                                              \
+      Dune::GDT::bindings::SystemAssembler<Dune::GDT::FvSpaceProvider<_GRID,                                           \
+                                                                      Dune::XT::Grid::Layers::_layer,                  \
+                                                                      Dune::GDT::ChooseSpaceBackend::gdt,              \
+                                                                      double,                                          \
+                                                                      _r,                                              \
+                                                                      _rC>>::bind(_m);                                 \
+  Dune::GDT::bindings::                                                                                                \
+      DirichletConstraints<Dune::XT::Grid::extract_intersection_t<                                                     \
+                               typename Dune::XT::Grid::Layer<_GRID,                                                   \
+                                                              Dune::XT::Grid::Layers::_layer,                          \
+                                                              Dune::XT::Grid::Backends::view,                          \
+                                                              Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,        \
+                           _GRID>::addbind(system_assembler_##_GRID##_##_layer##_gdt_fv_double_##_r##_##_rC)
+
+#if HAVE_ALBERTA
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV_ALBERTA(_m, _layer)                                                     \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV(_m, ALBERTA_2D, _layer, 1, 1)
+#else
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV_ALBERTA(_m, _layer)
+#endif
+
+#if HAVE_DUNE_ALUGRID
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV_ALU(_m, _layer)                                                         \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, 1, 1)
+#else
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV_ALU(_m, _layer)
+#endif
+
+#if HAVE_DUNE_UGGRID || HAVE_UG
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV_UG(_m, _layer)                                                          \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV(_m, UG_2D, _layer, 1, 1)
+#else
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV_UG(_m, _layer)
+#endif
+
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV_YASP(_m, _layer)                                                        \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1)
+
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV_ALL(_m, _layer)                                                         \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV_ALBERTA(_m, _layer);                                                          \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV_ALU(_m, _layer);                                                              \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV_UG(_m, _layer);                                                               \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV_YASP(_m, _layer)
+
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT(_m)                                                                        \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV_ALL(_m, leaf);                                                                \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT_FV_ALL(_m, level)
+
+#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND(_m)                                                                             \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_m);                                                                             \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT(_m);                                                                             \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_PDELAB(_m)
+
+// end: this is what we need for the .so
+
 
 #endif // HAVE_DUNE_PYBINDXI
 #endif // DUNE_GDT_ASSEMBLER_SYSTEM_BINDINGS_HH
