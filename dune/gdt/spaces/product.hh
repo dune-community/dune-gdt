@@ -189,6 +189,11 @@ public:
     return *communicator_;
   }
 
+  static constexpr bool associates_data_with(int codim) const
+  {
+    return BaseType::associates_data_with(codim);
+  }
+
 private:
   template <size_t... S>
   BaseFunctionSetType base_function_set_helper(const EntityType& entity, Dune::XT::Common::index_sequence<S...>) const

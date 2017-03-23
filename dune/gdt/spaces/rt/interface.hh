@@ -179,6 +179,11 @@ public:
   {
     DUNE_THROW(NotImplemented, "RT spaces do not implement constraints!");
   }
+
+  static constexpr bool associates_data_with(int codim) const
+  {
+    return codim < dimDomain;
+  }
   /** @} */
 }; // class RtSpaceInterface
 

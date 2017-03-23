@@ -47,6 +47,11 @@ public:
   {
     static_assert(AlwaysFalse<S>::value, "FV spaces do not implement constraints!");
   }
+
+  static constexpr bool associates_data_with(int codim)
+  {
+    return codim == 0;
+  }
 }; // class FvSpaceInterface
 
 

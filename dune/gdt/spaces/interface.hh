@@ -229,6 +229,11 @@ public:
     return this->as_imp().communicator();
   }
 
+  //! communication data handles may require to know this to setup buffers and trnasmission patterns
+  static constexpr bool associates_data_with(int codim)
+  {
+    return derived_type::associates_data_with(codim);
+  }
   /**
    *  \brief Computes local constraints.
    *

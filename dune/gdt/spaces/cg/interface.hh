@@ -286,6 +286,18 @@ public:
   } // ... local_constraints(..., Constraints::Dirichlet<...> ...)
   /** @} */
 
+  static constexpr bool associates_data_with(int codim)
+  {
+    switch (polOrder) {
+      case 1:
+        return codim == dimDomain;
+      case 2:
+        return dimDomain == 1 ? codim >= 0 : codim > 0;
+      default:
+        return true;
+    }
+  }
+
 private:
   void possible_convex_combination_coefficients(std::set<std::vector<double>>& vectors_in,
                                                 const std::vector<double>& possible_coefficients,
