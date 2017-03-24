@@ -33,19 +33,22 @@ namespace GDT {
 namespace bindings {
 
 
-template <class I>
+template <class I, class G>
 class DirichletConstraints
 {
 public:
   typedef GDT::DirichletConstraints<I> type;
   typedef pybind11::class_<type> bound_type;
 
-  static bound_type bind(pybind11::module& m, const std::string& intersection_id)
+  static bound_type bind(pybind11::module& m, const std::string& layer_name)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    bound_type c(m, std::string("DirichletConstraints__" + intersection_id).c_str());
+    const auto grid_name = XT::Grid::bindings::grid_name<G>::value();
+    const auto ClassName = XT::Common::to_camel_case("DirichletConstraints_" + layer_name + "_" + grid_name);
+
+    bound_type c(m, ClassName.c_str(), ClassName.c_str());
     c.def("__init__",
           [](type& self, const XT::Grid::BoundaryInfo<I>& boundary_info, const ssize_t size, const bool set) {
             try {
@@ -101,7 +104,7 @@ public:
     c.def("apply", [](const type& self, M& matrix) { self.apply(matrix); }, "matrix"_a);
     c.def("apply", [](const type& self, V& vector) { self.apply(vector); }, "vector"_a);
     c.def("apply", [](const type& self, M& matrix, V& vector) { self.apply(matrix, vector); }, "matrix"_a, "vector"_a);
-  }
+  } // ... addbind(...)
 
   template <class T, class GV, class A>
   static void addbind(pybind11::class_<GDT::SystemAssembler<T, GV, A>>& bound_system_assembler)
@@ -114,77 +117,98 @@ public:
                                  self.append(constraints);
                                },
                                "dirichlet_constraints"_a);
-  } // ... addbind_to_SystemAssembler(...)
-}; // class addbind_to_SystemAssembler
-
-
-#define DUNE_GDT_SPACES_CONSTRAINTS_BIND(_prefix, _GRID, _layer, _backend)                                             \
-  _prefix class DirichletConstraints<typename XT::Grid::Intersection<                                                  \
-      typename XT::Grid::Layer<_GRID, XT::Grid::Layers::_layer, XT::Grid::Backends::_backend>::type>::type>
-
-#define DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(_prefix, _GRID, _layer, _backend, _la)                                  \
-  _prefix void DirichletConstraints<typename XT::Grid::Intersection<                                                   \
-      typename XT::Grid::Layer<_GRID, XT::Grid::Layers::_layer, XT::Grid::Backends::_backend>::type>::type>::          \
-      addbind<XT::LA::Backends::_la>(                                                                                  \
-          typename DirichletConstraints<typename XT::Grid::Intersection<                                               \
-              typename XT::Grid::Layer<_GRID, XT::Grid::Layers::_layer, XT::Grid::Backends::_backend>::type>::type>::  \
-              bound_type&)
-
-#define DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_ASSEMBLER_FEM(_prefix, _GRID)                                              \
-  DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_ASSEMBLER_(_prefix, CG_SPACE(_GRID, leaf, fem, 1, 1, 1));                        \
-  DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_ASSEMBLER_(_prefix, CG_SPACE(_GRID, level, fem, 1, 1, 1))
-
-#define DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_ASSEMBLER_PDELAB(_prefix, _GRID)                                           \
-  DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_ASSEMBLER_(_prefix, CG_SPACE(_GRID, leaf, pdelab, 1, 1, 1));                     \
-  DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_ASSEMBLER_(_prefix, CG_SPACE(_GRID, level, pdelab, 1, 1, 1))
-
-#define DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_ASSEMBLER_(_prefix, _SPACE)                                                \
-  _prefix void DirichletConstraints<typename XT::Grid::Intersection<typename _SPACE::GridViewType>::type>::            \
-      addbind<_SPACE, typename _SPACE::GridViewType, _SPACE>(                                                          \
-          pybind11::class_<GDT::SystemAssembler<_SPACE, typename _SPACE::GridViewType, _SPACE>>&)
-
-
-// these lines have to match the corresponding ones in the .hh header file
-DUNE_GDT_SPACES_CONSTRAINTS_BIND(extern template, YASP_2D_EQUIDISTANT_OFFSET, leaf, view);
-DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(extern template, YASP_2D_EQUIDISTANT_OFFSET, leaf, view, common_dense);
-#if HAVE_EIGEN
-DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(extern template, YASP_2D_EQUIDISTANT_OFFSET, leaf, view, eigen_dense);
-DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(extern template, YASP_2D_EQUIDISTANT_OFFSET, leaf, view, eigen_sparse);
-#endif
-#if HAVE_DUNE_ISTL
-DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(extern template, YASP_2D_EQUIDISTANT_OFFSET, leaf, view, istl_sparse);
-#endif
-#if HAVE_DUNE_FEM
-DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_ASSEMBLER_FEM(extern template, YASP_2D_EQUIDISTANT_OFFSET);
-#endif
-#if HAVE_DUNE_PDELAB
-DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_ASSEMBLER_PDELAB(extern template, YASP_2D_EQUIDISTANT_OFFSET);
-#endif
-
-#if HAVE_DUNE_ALUGRID
-DUNE_GDT_SPACES_CONSTRAINTS_BIND(extern template, ALU_2D_SIMPLEX_CONFORMING, leaf, view);
-DUNE_GDT_SPACES_CONSTRAINTS_BIND(extern template, ALU_2D_SIMPLEX_CONFORMING, level, view);
-DUNE_GDT_SPACES_CONSTRAINTS_BIND(extern template, ALU_2D_SIMPLEX_CONFORMING, leaf, view);
-DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(extern template, ALU_2D_SIMPLEX_CONFORMING, leaf, view, common_dense);
-#if HAVE_EIGEN
-DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(extern template, ALU_2D_SIMPLEX_CONFORMING, leaf, view, eigen_dense);
-DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(extern template, ALU_2D_SIMPLEX_CONFORMING, leaf, view, eigen_sparse);
-#endif
-#if HAVE_DUNE_ISTL
-DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(extern template, ALU_2D_SIMPLEX_CONFORMING, leaf, view, istl_sparse);
-#endif
-#if HAVE_DUNE_FEM
-DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_ASSEMBLER_FEM(extern template, ALU_2D_SIMPLEX_CONFORMING);
-#endif
-#if HAVE_DUNE_PDELAB
-DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_ASSEMBLER_PDELAB(extern template, ALU_2D_SIMPLEX_CONFORMING);
-#endif
-#endif
+  } // ... addbind(...)
+}; // class DirichletConstraints
 
 
 } // namespace bindings
 } // namespace GDT
 } // namespace Dune
+
+
+// begin: this is what we need for the .so
+
+#define _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(_c, _GRID, _layer, _backend, _la)                                      \
+  Dune::GDT::bindings::                                                                                                \
+      DirichletConstraints<Dune::XT::Grid::extract_intersection_t<                                                     \
+                               typename Dune::XT::Grid::Layer<_GRID,                                                   \
+                                                              Dune::XT::Grid::Layers::_layer,                          \
+                                                              Dune::XT::Grid::Backends::_backend,                      \
+                                                              Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,        \
+                           _GRID>::addbind<Dune::XT::LA::Backends::_la>(_c)
+
+#define _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_COMMON(_c, _GRID, _layer, _backend)                                    \
+  _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(_c, _GRID, _layer, _backend, common_dense)
+
+#if HAVE_EIGEN
+#define _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_EIGEN(_c, _GRID, _layer, _backend)                                     \
+  _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(_c, _GRID, _layer, _backend, eigen_sparse)
+#else
+#define _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_EIGEN(_c, _GRID, _layer, _backend)
+#endif
+
+#if HAVE_DUNE_ISTL
+#define _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_ISTL(_c, _GRID, _layer, _backend)                                      \
+  _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(_c, _GRID, _layer, _backend, istl_sparse)
+#else
+#define _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_ISTL(_c, _GRID, _layer, _backend)
+#endif
+
+#define _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_ALL(_c, _GRID, _layer, _backend)                                       \
+  _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_COMMON(_c, _GRID, _layer, _backend);                                         \
+  _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_EIGEN(_c, _GRID, _layer, _backend);                                          \
+  _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_ISTL(_c, _GRID, _layer, _backend)
+
+#define _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, _GRID, _layer, _backend, _layer_name)                                    \
+  auto dirichlet_constraints_##_GRID##_##_layer##_##_backend = Dune::GDT::bindings::                                   \
+      DirichletConstraints<Dune::XT::Grid::extract_intersection_t<                                                     \
+                               typename Dune::XT::Grid::Layer<_GRID,                                                   \
+                                                              Dune::XT::Grid::Layers::_layer,                          \
+                                                              Dune::XT::Grid::Backends::_backend,                      \
+                                                              Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,        \
+                           _GRID>::bind(_m, _layer_name);                                                              \
+  _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_ALL(                                                                         \
+      dirichlet_constraints_##_GRID##_##_layer##_##_backend, _GRID, _layer, _backend)
+
+
+#if HAVE_ALBERTA
+#define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_ALBERTA(_m)                                                                  \
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, ALBERTA_2D, leaf, view, "");                                                   \
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, ALBERTA_2D, dd_subdomain, part, "dd_subdomain")
+#else
+#define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_ALBERTA(_m)
+#endif
+
+#if HAVE_DUNE_ALUGRID
+#define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_ALU(_m)                                                                      \
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, leaf, view, "leaf");                                \
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, level, view, "level");                              \
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, part, "dd_subdomain")
+#else
+#define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_ALU(_m)
+#endif
+
+#if HAVE_DUNE_UGGRID
+#define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_UG(_m)                                                                       \
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, UG_2D, leaf, view, "leaf");                                                    \
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, UG_2D, level, view, "level");                                                  \
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, UG_2D, dd_subdomain, part, "dd_subdomain")
+#else
+#define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_UG(_m)
+#endif
+
+#define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_YASP(_m)                                                                     \
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, leaf, view, "");                                   \
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, dd_subdomain, part, "dd_subdomain")
+
+#define DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m)                                                                           \
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND_ALBERTA(_m);                                                                       \
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND_ALU(_m);                                                                           \
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND_UG(_m);                                                                            \
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND_YASP(_m)
+
+// end: this is what we need for the .so
+
 
 #endif // HAVE_DUNE_PYBINDXI
 #endif // DUNE_GDT_SPACES_CONSTRAINTS_BINDINGS_HH
