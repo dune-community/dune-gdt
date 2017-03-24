@@ -50,8 +50,12 @@ public:
     return this->as_imp(*this).maxNumDofs();
   }
 
-  size_t numDofs(const EntityType& entity) const
+  template <int cd, class GridImp, template <int, int, class> class EntityImp>
+  size_t numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity) const
   {
+    static_assert(std::is_same<Entity<cd, EntityType::dimension, GridImp, EntityImp>,
+                               XT::Grid::codim_entity_t<EntityType, cd>>::value,
+                  "Entity mismatch");
     CHECK_CRTP(this->as_imp(*this).numDofs(entity));
     return this->as_imp(*this).numDofs(entity);
   }

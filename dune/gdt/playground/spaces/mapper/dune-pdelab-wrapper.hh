@@ -80,7 +80,8 @@ public:
     return factor_mapper_.size() * dimRange;
   }
 
-  size_t numDofs(const EntityType& entity) const
+  template <int cd, class GridImp, template <int, int, class> class EntityImp>
+  size_t numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity) const
   {
     return dimRange * factor_mapper_.numDofs(entity);
   }

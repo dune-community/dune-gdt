@@ -83,6 +83,7 @@ public:
   FvMapper(const GridLayerType& grd_layr)
     : backend_(grd_layr.indexSet())
   {
+    assert(size() > 0);
   }
 
   const BackendType& backend() const
@@ -95,7 +96,8 @@ public:
     return dimRange * backend_.size(0);
   }
 
-  size_t numDofs(const EntityType& /*entity*/) const
+  template <int cd, class GridImp, template <int, int, class> class EntityImp>
+  size_t numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity) const
   {
     return dimRange;
   }

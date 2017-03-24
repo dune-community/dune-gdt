@@ -44,6 +44,20 @@ class DunePdelabDgMapperWrapper;
 
 namespace internal {
 
+template <class Backend, class Entity, int cd>
+size_t dof_count(Backend& /*backend*/, Entity& entity, std::integral_constant<int, cd>)
+{
+  DUNE_THROW(NotImplemented, "not sure if this should ever be called");
+  return 0;
+};
+
+template <class Backend, class Entity>
+size_t dof_count(Backend& backend, Entity& entity, std::integral_constant<int, 0>)
+{
+  backend.bind(entity);
+  return backend.size();
+};
+
 
 template <class PdelabSpaceImp, size_t rangeDim>
 class DunePdelabCgMapperWrapperTraits
@@ -95,6 +109,7 @@ public:
         if (index_map_.find(backend_.dofIndex(ii)) == index_map_.end())
           index_map_.insert(std::make_pair(backend_.dofIndex(ii), count++));
     }
+    assert(size() > 0);
   }
 
   PdelabWrapperBase(const ThisType& other)
@@ -120,10 +135,10 @@ public:
     return space_.size();
   }
 
-  size_t numDofs(const EntityType& entity) const
+  template <int cd, class GridImp, template <int, int, class> class EntityImp>
+  size_t numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity) const
   {
-    backend_.bind(entity);
-    return backend_.size();
+    return dof_count(backend_, entity, std::integral_constant<int, cd>());
   }
 
   size_t maxNumDofs() const

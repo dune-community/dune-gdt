@@ -73,6 +73,7 @@ public:
   explicit FemDofWrapper(FemDofMapperImp& femNonBlockMapper)
     : backend_(femNonBlockMapper)
   {
+    assert(size() > 0);
   }
 
   const BackendType& backend() const
@@ -83,6 +84,12 @@ public:
   size_t size() const
   {
     return backend_.size();
+  }
+
+  template <int cd, class GridImp, template <int, int, class> class EntityImp>
+  size_t numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity) const
+  {
+    return backend_.numEntityDofs(entity);
   }
 
   size_t numDofs(const EntityType& entity) const
@@ -158,6 +165,7 @@ public:
   explicit FemDofWrapper(const BackendType& femMapper)
     : backend_(femMapper)
   {
+    assert(size() > 0);
   }
 
   const BackendType& backend() const
@@ -170,7 +178,8 @@ public:
     return backend_.size();
   }
 
-  size_t numDofs(const EntityType& entity) const
+  template <size_t codim>
+  size_t numDofs(const XT::Grid::extract_entity_t<typename Traits::GridViewType, codim>& entity) const
   {
     return backend_.numDofs(entity);
   }
