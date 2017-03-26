@@ -25,30 +25,43 @@ namespace GDT {
 namespace bindings {
 
 
-template <class GV, class S, class R, class F = double>
+template <class SP, class V>
 class DirichletProjectionLocalizableOperator
 {
-public:
-  typedef GDT::DirichletProjectionLocalizableOperator<GV, S, R, F> type;
+  typedef typename SP::type SpaceType;
+  static_assert(is_space<SpaceType>::value, "");
+  static_assert(XT::LA::is_vector<V>::value, "");
+  typedef typename SpaceType::GridViewType GridViewType;
+  typedef typename XT::Functions::LocalizableFunctionInterface<typename SpaceType::EntityType,
+                                                               typename SpaceType::DomainFieldType,
+                                                               SpaceType::dimDomain,
+                                                               typename SpaceType::RangeFieldType,
+                                                               SpaceType::dimRange,
+                                                               SpaceType::dimRangeCols>
+      SourceType;
+  typedef DiscreteFunction<SpaceType, V> RangeType;
+  typedef XT::Grid::Walker<GridViewType> BaseType;
 
-private:
-  typedef XT::Grid::Walker<GV> BaseType;
-
 public:
+  typedef GDT::DirichletProjectionLocalizableOperator<GridViewType, SourceType, RangeType, double> type;
   typedef pybind11::class_<type, BaseType> bound_type;
 
-  static bound_type bind(pybind11::module& m, const std::string& space_id, const std::string& la_id)
+  static bound_type bind(pybind11::module& m)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    bound_type c(m, std::string("DirichletProjectionLocalizableOperator__" + space_id + "__" + la_id).c_str());
+    const auto ClassName =
+        XT::Common::to_camel_case("dirichlet_projection_localizable_operator_" + space_name<SP>::value() + "_"
+                                  + XT::LA::bindings::container_name<V>::value());
+
+    bound_type c(m, ClassName.c_str());
     c.def("apply", [](type& self) { self.apply(); });
 
     m.def(std::string("make_localizable_dirichlet_projection_operator").c_str(),
-          [](const XT::Grid::BoundaryInfo<typename XT::Grid::Intersection<GV>::Type>& boundary_info,
-             const S& source,
-             R& range) {
+          [](const XT::Grid::BoundaryInfo<typename XT::Grid::Intersection<GridViewType>::Type>& boundary_info,
+             const SourceType& source,
+             RangeType& range) {
             return make_localizable_dirichlet_projection_operator(
                        range.space().grid_view(), boundary_info, source, range)
                 .release();
@@ -65,66 +78,73 @@ public:
 }; // class DirichletProjectionLocalizableOperator
 
 
-#define DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_FEM(_prefix, _GRID, _LA)                                                   \
-  _prefix DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_(CG_SPACE(_GRID, leaf, fem, 1, 1, 1), _LA);                              \
-  _prefix DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_(CG_SPACE(_GRID, level, fem, 1, 1, 1), _LA)
+// begin: this is what we need for the .so
 
-#define DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_PDELAB(_prefix, _GRID, _LA)                                                \
-  _prefix DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_(CG_SPACE(_GRID, leaf, pdelab, 1, 1, 1), _LA);                           \
-  _prefix DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_(CG_SPACE(_GRID, level, pdelab, 1, 1, 1), _LA)
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, _GRID, _layer, _backend, _r, _rC, _la)                                \
+  Dune::GDT::bindings::                                                                                                \
+      DirichletProjectionLocalizableOperator<Dune::GDT::CgSpaceProvider<_GRID,                                         \
+                                                                        Dune::XT::Grid::Layers::_layer,                \
+                                                                        Dune::GDT::ChooseSpaceBackend::_backend,       \
+                                                                        1,                                             \
+                                                                        double,                                        \
+                                                                        _r,                                            \
+                                                                        _rC>,                                          \
+                                             typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::   \
+                                                 VectorType>::bind(_m)
 
-#define DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_(_SPACE, _LA)                                                              \
-  class DirichletProjectionLocalizableOperator<                                                                        \
-      typename _SPACE::GridViewType,                                                                                   \
-      XT::Functions::LocalizableFunctionInterface<typename _SPACE::EntityType,                                         \
-                                                  typename _SPACE::DomainFieldType,                                    \
-                                                  _SPACE::dimDomain,                                                   \
-                                                  typename _SPACE::RangeFieldType,                                     \
-                                                  _SPACE::dimRange,                                                    \
-                                                  _SPACE::dimRangeCols>,                                               \
-      DiscreteFunction<_SPACE, _LA>>
-
-
-// these lines have to match the corresponding ones in the .cc source file
-#if HAVE_DUNE_FEM
-DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_FEM(extern template, YASP_2D_EQUIDISTANT_OFFSET, COMMON_DENSE_VECTOR);
-#if HAVE_EIGEN
-DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_FEM(extern template, YASP_2D_EQUIDISTANT_OFFSET, EIGEN_DENSE_VECTOR);
+#if HAVE_ALBERTA
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALBERTA(_m, _layer, _backend, _la)                                        \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, ALBERTA_2D, _layer, _backend, 1, 1, _la)
+#else
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALBERTA(_m, _layer, _backend, _la)
 #endif
-#if HAVE_DUNE_ISTL
-DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_FEM(extern template, YASP_2D_EQUIDISTANT_OFFSET, ISTL_DENSE_VECTOR);
-#endif
-#endif // HAVE_DUNE_FEM
-#if HAVE_DUNE_PDELAB
-DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_PDELAB(extern template, YASP_2D_EQUIDISTANT_OFFSET, COMMON_DENSE_VECTOR);
-#if HAVE_EIGEN
-DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_PDELAB(extern template, YASP_2D_EQUIDISTANT_OFFSET, EIGEN_DENSE_VECTOR);
-#endif
-#if HAVE_DUNE_ISTL
-DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_PDELAB(extern template, YASP_2D_EQUIDISTANT_OFFSET, ISTL_DENSE_VECTOR);
-#endif
-#endif // HAVE_DUNE_PDELAB
 
 #if HAVE_DUNE_ALUGRID
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALU(_m, _layer, _backend, _la)                                            \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, _backend, 1, 1, _la)
+#else
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALU(_m, _layer, _backend, _la)
+#endif
+
+#if HAVE_DUNE_UGGRID || HAVE_UG
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, _layer, _backend, _la)                                             \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, UG_2D, _layer, _backend, 1, 1, _la)
+#else
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, _layer, _backend, _la)
+#endif
+
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_YASP(_m, _layer, _backend, _la)                                           \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _backend, 1, 1, _la)
+
 #if HAVE_DUNE_FEM
-DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_FEM(extern template, ALU_2D_SIMPLEX_CONFORMING, COMMON_DENSE_VECTOR);
-#if HAVE_EIGEN
-DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_FEM(extern template, ALU_2D_SIMPLEX_CONFORMING, EIGEN_DENSE_VECTOR);
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_FEM(_m, _la)                                                              \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALBERTA(_m, leaf, fem, _la);                                                    \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALU(_m, leaf, fem, _la);                                                        \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, leaf, fem, _la);                                                         \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_YASP(_m, leaf, fem, _la)
+#else
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_FEM(_m, _la)
 #endif
-#if HAVE_DUNE_ISTL
-DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_FEM(extern template, ALU_2D_SIMPLEX_CONFORMING, ISTL_DENSE_VECTOR);
-#endif
-#endif // HAVE_DUNE_FEM
+
 #if HAVE_DUNE_PDELAB
-DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_PDELAB(extern template, ALU_2D_SIMPLEX_CONFORMING, COMMON_DENSE_VECTOR);
-#if HAVE_EIGEN
-DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_PDELAB(extern template, ALU_2D_SIMPLEX_CONFORMING, EIGEN_DENSE_VECTOR);
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_PDELAB(_m, _la)                                                           \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALBERTA(_m, leaf, pdelab, _la);                                                 \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALU(_m, leaf, pdelab, _la);                                                     \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_YASP(_m, leaf, pdelab, _la)
+//  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, leaf, pdelab, _la); // <- does not work
+#else
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_PDELAB(_m, _la)
 #endif
-#if HAVE_DUNE_ISTL
-DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_PDELAB(extern template, ALU_2D_SIMPLEX_CONFORMING, ISTL_DENSE_VECTOR);
-#endif
-#endif // HAVE_DUNE_PDELAB
-#endif // HAVE_DUNE_ALUGRID
+
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_BACKENDS(_m, _la)                                                         \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_FEM(_m, _la);                                                                   \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_PDELAB(_m, _la)
+
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_COMMON(_m) _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_BACKENDS(_m, common_dense)
+
+#define DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m) _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_COMMON(_m)
+
+// end: this is what we need for the .so
 
 
 } // namespace bindings

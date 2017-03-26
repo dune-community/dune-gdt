@@ -50,6 +50,9 @@ if(dune-pybindxi_FOUND)
   dune_pybindxi_add_module(discretefunction discretefunction.bindings.cc)
   target_link_dune_default_libraries(discretefunction)
   add_dune_alberta_flags(GRIDDIM 2 discretefunction)
+  dune_pybindxi_add_module(projections projections.bindings.cc)
+  target_link_dune_default_libraries(projections)
+  add_dune_alberta_flags(GRIDDIM 2 projections)
   dune_pybindxi_add_module(spaces spaces.bindings.cc)
   target_link_dune_default_libraries(spaces)
   add_dune_alberta_flags(GRIDDIM 2 spaces)
@@ -59,11 +62,13 @@ if(dune-pybindxi_FOUND)
   if(DUNE_XT_WITH_PYTHON_BINDINGS)
     add_custom_target(bindings ALL DEPENDS assembler
                                            discretefunction
+                                           projections
                                            spaces
                                            _gdt)
   else()
     add_custom_target(bindings DEPENDS assembler
                                        discretefunction
+                                       projections
                                        spaces
                                        _gdt)
   endif()
