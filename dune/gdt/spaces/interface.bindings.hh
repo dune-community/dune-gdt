@@ -17,6 +17,8 @@
 #include <dune/xt/grid/grids.bindings.hh>
 #include <dune/xt/grid/layers.bindings.hh>
 
+#include <dune/gdt/spaces.hh>
+
 #include "interface.hh"
 #include "cg.hh"
 #include "dg.hh"
@@ -63,6 +65,55 @@ struct backend_name<ChooseSpaceBackend::pdelab>
   static std::string value()
   {
     return "pdelab";
+  }
+};
+
+
+template <SpaceType tp>
+struct space_type_name
+{
+  static_assert(AlwaysFalse<typename internal::space_type_dependent_typename<tp>::type>::value,
+                "Please add a specialization for this space type!");
+
+  static std::string value()
+  {
+    return "";
+  }
+};
+
+template <>
+struct space_type_name<SpaceType::cg>
+{
+  static std::string value()
+  {
+    return "cg";
+  }
+};
+
+template <>
+struct space_type_name<SpaceType::dg>
+{
+  static std::string value()
+  {
+    return "dg";
+  }
+};
+
+template <>
+struct space_type_name<SpaceType::fv>
+{
+  static std::string value()
+  {
+    return "fv";
+  }
+};
+
+template <>
+struct space_type_name<SpaceType::rt>
+{
+  static std::string value()
+  {
+    return "rt";
   }
 };
 
@@ -122,6 +173,16 @@ struct space_name<FvSpaceProvider<G, layer, backend, double, r, rC>>
   static std::string value()
   {
     return std::string("fv_") + internal::space_name_base<G, layer, backend, r, rC>::value() + "_space";
+  }
+};
+
+template <class G, XT::Grid::Layers l, SpaceType tp, ChooseSpaceBackend backend, int p, class R, size_t r, size_t rC>
+struct space_name<SpaceProvider<G, l, tp, backend, p, R, r, rC>>
+{
+  static std::string value()
+  {
+    return space_type_name<tp>::value() + "_" + internal::space_name_base<G, l, backend, r, rC>::value() + "_p"
+           + XT::Common::to_string(p) + "_space";
   }
 };
 

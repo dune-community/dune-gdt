@@ -50,11 +50,27 @@ enum class ChooseSpaceBackend
 }; // enum class ChooseSpaceBackend
 
 
+enum class SpaceType
+{
+  cg,
+  dg,
+  fv,
+  rt
+};
+
+
 namespace internal {
 
 
 template <ChooseSpaceBackend backend>
 struct backend_dependent_typename
+{
+  typedef void type;
+};
+
+
+template <SpaceType tp>
+struct space_type_dependent_typename
 {
   typedef void type;
 };
