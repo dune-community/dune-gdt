@@ -51,6 +51,86 @@ enum class Method
 };
 
 
+namespace internal {
+
+
+template <Method method>
+struct method_dependent_typename
+{
+  typedef void type;
+};
+
+
+} // namespace internal
+
+
+template <Method method>
+struct method_name
+{
+  static_assert(AlwaysFalse<typename internal::method_dependent_typename<method>::type>::value,
+                "Please add a specialization for this method!");
+
+  static std::string value()
+  {
+    return "";
+  }
+};
+
+template <>
+struct method_name<Method::ipdg>
+{
+  static std::string value()
+  {
+    return "ipdg";
+  }
+};
+
+template <>
+struct method_name<Method::nipdg>
+{
+  static std::string value()
+  {
+    return "nipdg";
+  }
+};
+
+template <>
+struct method_name<Method::sipdg>
+{
+  static std::string value()
+  {
+    return "sipdg";
+  }
+};
+
+template <>
+struct method_name<Method::swipdg>
+{
+  static std::string value()
+  {
+    return "swipdg";
+  }
+};
+
+template <>
+struct method_name<Method::swipdg_affine_factor>
+{
+  static std::string value()
+  {
+    return "swipdg_affine_factor";
+  }
+};
+
+template <>
+struct method_name<Method::swipdg_affine_tensor>
+{
+  static std::string value()
+  {
+    return "swipdg_affine_tensor";
+  }
+};
+
+
 static constexpr Method default_method = Method::swipdg;
 
 
