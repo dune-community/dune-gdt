@@ -43,62 +43,33 @@ if(dune-pybindxi_FOUND)
                                spaces/dg.bindings.cc
                                #spaces/fv.bindings.cc
                                )
-  dune_pybindxi_add_module(assembler assembler.bindings.cc)
-    target_link_dune_default_libraries(assembler)
-    add_dune_alberta_flags(GRIDDIM 2 assembler)
-  dune_pybindxi_add_module(discretefunction discretefunction.bindings.cc)
-    target_link_dune_default_libraries(discretefunction)
-    add_dune_alberta_flags(GRIDDIM 2 discretefunction)
-  dune_pybindxi_add_module(operators_elliptic_fem_common operators/elliptic.bindings/fem_common.cc)
-    target_link_dune_default_libraries(operators_elliptic_fem_common)
-    add_dune_alberta_flags(GRIDDIM 2 operators_elliptic_fem_common)
-  dune_pybindxi_add_module(operators_elliptic_fem_eigen operators/elliptic.bindings/fem_eigen.cc)
-    target_link_dune_default_libraries(operators_elliptic_fem_eigen)
-    add_dune_alberta_flags(GRIDDIM 2 operators_elliptic_fem_eigen)
-  dune_pybindxi_add_module(operators_elliptic_fem_istl operators/elliptic.bindings/fem_istl.cc)
-    target_link_dune_default_libraries(operators_elliptic_fem_istl)
-    add_dune_alberta_flags(GRIDDIM 2 operators_elliptic_fem_istl)
-  dune_pybindxi_add_module(operators_elliptic_pdelab_common operators/elliptic.bindings/pdelab_common.cc)
-    target_link_dune_default_libraries(operators_elliptic_pdelab_common)
-    add_dune_alberta_flags(GRIDDIM 2 operators_elliptic_pdelab_common)
-  dune_pybindxi_add_module(operators_elliptic_pdelab_eigen operators/elliptic.bindings/pdelab_eigen.cc)
-    target_link_dune_default_libraries(operators_elliptic_pdelab_eigen)
-    add_dune_alberta_flags(GRIDDIM 2 operators_elliptic_pdelab_eigen)
-  dune_pybindxi_add_module(operators_elliptic_pdelab_istl operators/elliptic.bindings/pdelab_istl.cc)
-    target_link_dune_default_libraries(operators_elliptic_pdelab_istl)
-    add_dune_alberta_flags(GRIDDIM 2 operators_elliptic_pdelab_istl)
-  dune_pybindxi_add_module(projections projections.bindings.cc)
-    target_link_dune_default_libraries(projections)
-    add_dune_alberta_flags(GRIDDIM 2 projections)
-  dune_pybindxi_add_module(spaces spaces.bindings.cc)
-    target_link_dune_default_libraries(spaces)
-    add_dune_alberta_flags(GRIDDIM 2 spaces)
-  dune_pybindxi_add_module(_gdt bindings.cc)
-    target_link_dune_default_libraries(_gdt)
+  set(pybindxi_modules)
+    dune_pybindxi_add_module(_gdt bindings.cc)
+    list(APPEND pybindxi_modules _gdt)
+  foreach(_target assembler discretefunction projections spaces)
+    dune_pybindxi_add_module(${_target} ${_target}.bindings.cc)
+    list(APPEND pybindxi_modules ${_target})
+  endforeach()
+  foreach(_space_backend fem pdelab)
+    foreach(_la_backend common eigen istl)
+      dune_pybindxi_add_module(operators_elliptic_${_space_backend}_${_la_backend}
+                               operators/elliptic.bindings/${_space_backend}_${_la_backend}.cc)
+      list(APPEND pybindxi_modules operators_elliptic_${_space_backend}_${_la_backend})
+      foreach(_grid alu alberta ug yasp)
+        dune_pybindxi_add_module(operators_elliptic_ipdg_${_grid}_${_space_backend}_${_la_backend}
+                                 operators/elliptic-ipdg.bindings/${_grid}_${_space_backend}_${_la_backend}.cc)
+        list(APPEND pybindxi_modules operators_elliptic_ipdg_${_grid}_${_space_backend}_${_la_backend})
+      endforeach()
+    endforeach()
+  endforeach()
+  foreach(_target ${pybindxi_modules})
+    target_link_dune_default_libraries(${_target})
+    add_dune_alberta_flags(GRIDDIM 2 ${_target})
+  endforeach()
   if(DUNE_XT_WITH_PYTHON_BINDINGS)
-    add_custom_target(bindings ALL DEPENDS assembler
-                                           discretefunction
-                                           operators_elliptic_fem_common
-                                           operators_elliptic_fem_eigen
-                                           operators_elliptic_fem_istl
-                                           operators_elliptic_pdelab_common
-                                           operators_elliptic_pdelab_eigen
-                                           operators_elliptic_pdelab_istl
-                                           projections
-                                           spaces
-                                           _gdt)
+    add_custom_target(bindings ALL DEPENDS ${pybindxi_modules})
   else()
-    add_custom_target(bindings DEPENDS assembler
-                                       discretefunction
-                                       operators_elliptic_fem_common
-                                       operators_elliptic_fem_eigen
-                                       operators_elliptic_fem_istl
-                                       operators_elliptic_pdelab_common
-                                       operators_elliptic_pdelab_eigen
-                                       operators_elliptic_pdelab_istl
-                                       projections
-                                       spaces
-                                       _gdt)
+    add_custom_target(bindings DEPENDS ${pybindxi_modules})
   endif()
 endif()
 

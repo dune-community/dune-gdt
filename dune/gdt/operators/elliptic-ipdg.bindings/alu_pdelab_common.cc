@@ -10,27 +10,26 @@
 #include "config.h"
 
 #if HAVE_DUNE_PYBINDXI
-#if HAVE_DUNE_ALUGRID
-#if HAVE_EIGEN
-#if HAVE_DUNE_FEM
 
-#include "../elliptic-ipdg.bindings.hh"
+#include <dune/pybindxi/pybind11.h>
 
-namespace Dune {
-namespace GDT {
-namespace bindings {
+#include <dune/gdt/operators/elliptic-ipdg.bindings.hh>
 
 
-DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_FEM(template, ALU_2D_SIMPLEX_CONFORMING, eigen_dense);
-DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_FEM(template, ALU_2D_SIMPLEX_CONFORMING, eigen_sparse);
+PYBIND11_PLUGIN(operators_elliptic_ipdg_alu_pdelab_common)
+{
+  namespace py = pybind11;
 
+  py::module m("operators_elliptic_ipdg_alu_pdelab_common", "dune-gdt: EllipticMatrixOperator");
 
-} // namespace bindings
-} // namespace GDT
-} // namespace Dune
+  py::module::import("dune.xt.common");
+  py::module::import("dune.xt.grid");
+  py::module::import("dune.xt.functions");
+  py::module::import("dune.xt.la");
 
+  //  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_PDELAB_COMMON(m);
 
-#endif // HAVE_DUNE_FEM
-#endif // HAVE_EIGEN
-#endif // HAVE_DUNE_ALUGRID
+  return m.ptr();
+}
+
 #endif // HAVE_DUNE_PYBINDXI
