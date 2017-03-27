@@ -11,27 +11,26 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include "../elliptic.bindings.hh"
+#include <dune/pybindxi/pybind11.h>
 
-namespace Dune {
-namespace GDT {
-namespace bindings {
+#include <dune/gdt/operators/elliptic.bindings.hh>
 
 
-// these lines have to match the corresponding ones in the .hh header file
-#if HAVE_DUNE_ISTL
-DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GDT(template, YASP_2D_EQUIDISTANT_OFFSET, istl_sparse);
-#endif
+PYBIND11_PLUGIN(operators_elliptic_fem_eigen)
+{
+  namespace py = pybind11;
 
-#if HAVE_DUNE_ALUGRID
-#if HAVE_DUNE_ISTL
-DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GDT(template, ALU_2D_SIMPLEX_CONFORMING, istl_sparse);
-#endif
-#endif // HAVE_DUNE_ALUGRID
+  py::module m("operators_elliptic_fem_eigen",
+               "dune-gdt: EllipticMatrixOperator (fem space backend, eigen la backend)");
 
+  py::module::import("dune.xt.common");
+  py::module::import("dune.xt.grid");
+  py::module::import("dune.xt.functions");
+  py::module::import("dune.xt.la");
 
-} // namespace bindings
-} // namespace GDT
-} // namespace Dune
+  DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM_EIGEN(m);
+
+  return m.ptr();
+}
 
 #endif // HAVE_DUNE_PYBINDXI
