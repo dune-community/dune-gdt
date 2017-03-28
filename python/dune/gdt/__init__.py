@@ -32,10 +32,13 @@ def init_logger(max_info_level=-1,
 
 
 modules = ['assembler', 'discretefunction', 'projections']
-for space_backend in ('fem', 'pdelab'):
-    for la_backend in ('common', 'eigen', 'istl'):
+#for space_backend in ('fem', 'pdelab'):
+for space_backend in ('fem',):
+    #for la_backend in ('common', 'eigen', 'istl'):
+    for la_backend in ('istl',):
         modules.append('operators_elliptic_{}_{}'.format(space_backend, la_backend))
-        for grid in ('alberta', 'alu', 'ug', 'yasp'):
+        #for grid in ('alberta', 'alu', 'ug', 'yasp'):
+        for grid in ('alu', 'yasp'):
             modules.append('operators_elliptic_ipdg_{}_{}_{}'.format(grid, space_backend, la_backend))
 modules.append('bindings')
 

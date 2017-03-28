@@ -137,15 +137,15 @@ public:
                                                               Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>,        \
                            _GRID>::addbind<Dune::XT::LA::Backends::_la>(_c)
 
-#define _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_COMMON(_c, _GRID, _layer, _backend)                                    \
-  _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(_c, _GRID, _layer, _backend, common_dense)
+#define _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_COMMON(_c, _GRID, _layer, _backend)
+//  _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(_c, _GRID, _layer, _backend, common_dense)
 
-#if HAVE_EIGEN
-#define _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_EIGEN(_c, _GRID, _layer, _backend)                                     \
-  _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(_c, _GRID, _layer, _backend, eigen_sparse)
-#else
+//#if HAVE_EIGEN
+//#define _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_EIGEN(_c, _GRID, _layer, _backend)                                   \
+//  _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(_c, _GRID, _layer, _backend, eigen_sparse)
+//#else
 #define _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_EIGEN(_c, _GRID, _layer, _backend)
-#endif
+//#endif
 
 #if HAVE_DUNE_ISTL
 #define _DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA_ISTL(_c, _GRID, _layer, _backend)                                      \
@@ -171,13 +171,13 @@ public:
       dirichlet_constraints_##_GRID##_##_layer##_##_backend, _GRID, _layer, _backend)
 
 
-#if HAVE_ALBERTA
-#define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_ALBERTA(_m)                                                                  \
-  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, ALBERTA_2D, leaf, view, "");                                                   \
-  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, ALBERTA_2D, dd_subdomain, part, "dd_subdomain")
-#else
+//#if HAVE_ALBERTA
+//#define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_ALBERTA(_m)                                                                \
+//  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, ALBERTA_2D, leaf, view, "");                                                 \
+//  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, ALBERTA_2D, dd_subdomain, part, "dd_subdomain")
+//#else
 #define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_ALBERTA(_m)
-#endif
+//#endif
 
 #if HAVE_DUNE_ALUGRID
 #define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_ALU(_m)                                                                      \
@@ -188,14 +188,14 @@ public:
 #define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_ALU(_m)
 #endif
 
-#if HAVE_DUNE_UGGRID
-#define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_UG(_m)                                                                       \
-  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, UG_2D, leaf, view, "leaf");                                                    \
-  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, UG_2D, level, view, "level");                                                  \
-  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, UG_2D, dd_subdomain, part, "dd_subdomain")
-#else
+//#if HAVE_DUNE_UGGRID
+//#define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_UG(_m)                                                                     \
+//  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, UG_2D, leaf, view, "leaf");                                                  \
+//  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, UG_2D, level, view, "level");                                                \
+//  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, UG_2D, dd_subdomain, part, "dd_subdomain")
+//#else
 #define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_UG(_m)
-#endif
+//#endif
 
 #define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_YASP(_m)                                                                     \
   _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, leaf, view, "");                                   \

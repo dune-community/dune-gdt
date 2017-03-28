@@ -313,12 +313,12 @@ public:
   _DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(                                                                              \
       _m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, swipdg_affine_tensor)
 
-#if HAVE_ALBERTA
-#define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALBERTA(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)            \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_METHODS(_m, 2, ALBERTA_2D, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-#else
+//#if HAVE_ALBERTA
+//#define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALBERTA(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)          \
+//  _DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_METHODS(_m, 2, ALBERTA_2D, _layer, _g_backend, _s_type, _s_backend, _p, _la)
+//#else
 #define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALBERTA(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-#endif
+//#endif
 
 #if HAVE_DUNE_ALUGRID
 #define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)                \
@@ -328,12 +328,12 @@ public:
 #define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
 #endif
 
-#if HAVE_DUNE_UGGRID || HAVE_UG
-#define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_UG(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)                 \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_METHODS(_m, 2, UG_2D, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-#else
+//#if HAVE_DUNE_UGGRID || HAVE_UG
+//#define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_UG(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)               \
+//  _DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_METHODS(_m, 2, UG_2D, _layer, _g_backend, _s_type, _s_backend, _p, _la)
+//#else
 #define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_UG(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-#endif
+//#endif
 
 #define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)               \
   _DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_METHODS(                                                                      \

@@ -30,16 +30,16 @@
                                                                  _r,                                                   \
                                                                  _rC>>::bind(_m)
 
-#if HAVE_ALBERTA
-#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, _layer)                                                         \
-  _DUNE_GDT_SPACES_DG_BIND_FEM(_m, ALBERTA_2D, _layer, 1, 1)
-#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA(_m)                                                                       \
-  _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, dd_subdomain);                                                        \
-  _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, leaf);                                                                \
-  _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, level)
-#else
+//#if HAVE_ALBERTA
+//#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, _layer)                                                       \
+//  _DUNE_GDT_SPACES_DG_BIND_FEM(_m, ALBERTA_2D, _layer, 1, 1)
+//#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA(_m)                                                                     \
+//  _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, dd_subdomain);                                                      \
+//  _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, leaf);                                                              \
+//  _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, level)
+//#else
 #define _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA(_m)
-#endif
+//#endif
 
 #if HAVE_DUNE_ALUGRID
 #define _DUNE_GDT_SPACES_DG_BIND_FEM_ALU_LAYER(_m, _layer)                                                             \
@@ -49,7 +49,7 @@
   _DUNE_GDT_SPACES_DG_BIND_FEM_ALU_LAYER(_m, leaf);                                                                    \
   _DUNE_GDT_SPACES_DG_BIND_FEM_ALU_LAYER(_m, level)
 #else
-#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALU(_m, _layer)
+#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALU(_m)
 #endif
 
 //#if HAVE_DUNE_UGGRID || HAVE_UG // <- does not work
@@ -59,7 +59,7 @@
 //  _DUNE_GDT_SPACES_DG_BIND_FEM_UG_LAYER(_m, leaf);
 //  _DUNE_GDT_SPACES_DG_BIND_FEM_UG_LAYER(_m, level)
 //#else
-//#define _DUNE_GDT_SPACES_DG_BIND_FEM_UG(_m, _layer)
+//#define _DUNE_GDT_SPACES_DG_BIND_FEM_UG(_m)
 //#endif
 
 #define _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, _layer)                                                            \

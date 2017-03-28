@@ -30,16 +30,16 @@
                                                                  _r,                                                   \
                                                                  _rC>>::bind(_m)
 
-#if HAVE_ALBERTA
-#define _DUNE_GDT_SPACES_CG_BIND_FEM_ALBERTA_LAYER(_m, _layer)                                                         \
-  _DUNE_GDT_SPACES_CG_BIND_FEM(_m, ALBERTA_2D, _layer, 1, 1)
-#define _DUNE_GDT_SPACES_CG_BIND_FEM_ALBERTA(_m)                                                                       \
-  _DUNE_GDT_SPACES_CG_BIND_FEM_ALBERTA_LAYER(_m, dd_subdomain);                                                        \
-  _DUNE_GDT_SPACES_CG_BIND_FEM_ALBERTA_LAYER(_m, leaf);                                                                \
-  _DUNE_GDT_SPACES_CG_BIND_FEM_ALBERTA_LAYER(_m, level)
-#else
+//#if HAVE_ALBERTA
+//#define _DUNE_GDT_SPACES_CG_BIND_FEM_ALBERTA_LAYER(_m, _layer)                                                       \
+//  _DUNE_GDT_SPACES_CG_BIND_FEM(_m, ALBERTA_2D, _layer, 1, 1)
+//#define _DUNE_GDT_SPACES_CG_BIND_FEM_ALBERTA(_m)                                                                     \
+//  _DUNE_GDT_SPACES_CG_BIND_FEM_ALBERTA_LAYER(_m, dd_subdomain);                                                      \
+//  _DUNE_GDT_SPACES_CG_BIND_FEM_ALBERTA_LAYER(_m, leaf);                                                              \
+//  _DUNE_GDT_SPACES_CG_BIND_FEM_ALBERTA_LAYER(_m, level)
+//#else
 #define _DUNE_GDT_SPACES_CG_BIND_FEM_ALBERTA(_m)
-#endif
+//#endif
 
 #if HAVE_DUNE_ALUGRID
 #define _DUNE_GDT_SPACES_CG_BIND_FEM_ALU_LAYER(_m, _layer)                                                             \
@@ -49,18 +49,18 @@
   _DUNE_GDT_SPACES_CG_BIND_FEM_ALU_LAYER(_m, leaf);                                                                    \
   _DUNE_GDT_SPACES_CG_BIND_FEM_ALU_LAYER(_m, level)
 #else
-#define _DUNE_GDT_SPACES_CG_BIND_FEM_ALU(_m, _layer)
+#define _DUNE_GDT_SPACES_CG_BIND_FEM_ALU(_m)
 #endif
 
-#if HAVE_DUNE_UGGRID || HAVE_UG
-#define _DUNE_GDT_SPACES_CG_BIND_FEM_UG_LAYER(_m, _layer) _DUNE_GDT_SPACES_CG_BIND_FEM(_m, UG_2D, _layer, 1, 1)
-#define _DUNE_GDT_SPACES_CG_BIND_FEM_UG(_m)                                                                            \
-  _DUNE_GDT_SPACES_CG_BIND_FEM_UG_LAYER(_m, dd_subdomain);                                                             \
-  _DUNE_GDT_SPACES_CG_BIND_FEM_UG_LAYER(_m, leaf);                                                                     \
-  _DUNE_GDT_SPACES_CG_BIND_FEM_UG_LAYER(_m, level)
-#else
-#define _DUNE_GDT_SPACES_CG_BIND_FEM_UG(_m, _layer)
-#endif
+//#if HAVE_DUNE_UGGRID || HAVE_UG
+//#define _DUNE_GDT_SPACES_CG_BIND_FEM_UG_LAYER(_m, _layer) _DUNE_GDT_SPACES_CG_BIND_FEM(_m, UG_2D, _layer, 1, 1)
+//#define _DUNE_GDT_SPACES_CG_BIND_FEM_UG(_m)                                                                          \
+//  _DUNE_GDT_SPACES_CG_BIND_FEM_UG_LAYER(_m, dd_subdomain);                                                           \
+//  _DUNE_GDT_SPACES_CG_BIND_FEM_UG_LAYER(_m, leaf);                                                                   \
+//  _DUNE_GDT_SPACES_CG_BIND_FEM_UG_LAYER(_m, level)
+//#else
+#define _DUNE_GDT_SPACES_CG_BIND_FEM_UG(_m)
+//#endif
 
 #define _DUNE_GDT_SPACES_CG_BIND_FEM_YASP_LAYER(_m, _layer)                                                            \
   _DUNE_GDT_SPACES_CG_BIND_FEM(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1)
@@ -78,60 +78,61 @@
 #define _DUNE_GDT_SPACES_CG_BIND_FEM_ALL(_m)
 #endif
 
-// * pdelab
-#if HAVE_DUNE_PDELAB
-#define _DUNE_GDT_SPACES_CG_BIND_PDELAB(_m, _GRID, _layer, _r, _rC)                                                    \
-  Dune::GDT::bindings::SpaceInterface<Dune::GDT::CgSpaceProvider<_GRID,                                                \
-                                                                 Dune::XT::Grid::Layers::_layer,                       \
-                                                                 Dune::GDT::ChooseSpaceBackend::pdelab,                \
-                                                                 1,                                                    \
-                                                                 double,                                               \
-                                                                 _r,                                                   \
-                                                                 _rC>>::bind(_m)
+//// * pdelab
+//#if HAVE_DUNE_PDELAB
+//#define _DUNE_GDT_SPACES_CG_BIND_PDELAB(_m, _GRID, _layer, _r, _rC)                                                  \
+//  Dune::GDT::bindings::SpaceInterface<Dune::GDT::CgSpaceProvider<_GRID,                                              \
+//                                                                 Dune::XT::Grid::Layers::_layer,                     \
+//                                                                 Dune::GDT::ChooseSpaceBackend::pdelab,              \
+//                                                                 1,                                                  \
+//                                                                 double,                                             \
+//                                                                 _r,                                                 \
+//                                                                 _rC>>::bind(_m)
 
-#if HAVE_ALBERTA
-#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALBERTA_LAYER(_m, _layer)                                                      \
-  _DUNE_GDT_SPACES_CG_BIND_PDELAB(_m, ALBERTA_2D, _layer, 1, 1)
-#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALBERTA(_m)                                                                    \
-  _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALBERTA_LAYER(_m, leaf);                                                             \
-  _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALBERTA_LAYER(_m, level)
-#else
-#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALBERTA(_m)
-#endif
-
-#if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALU_LAYER(_m, _layer)                                                          \
-  _DUNE_GDT_SPACES_CG_BIND_PDELAB(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, 1, 1)
-#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALU(_m)                                                                        \
-  _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALU_LAYER(_m, leaf);                                                                 \
-  _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALU_LAYER(_m, level)
-#else
-#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALU(_m, _layer)
-#endif
-
-//#if HAVE_DUNE_UGGRID || HAVE_UG // <- does not work
-//#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_UG_LAYER(_m, _layer) _DUNE_GDT_SPACES_CG_BIND_PDELAB(_m, UG_2D, _layer, 1, 1)
-//#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_UG(_m)
-//  _DUNE_GDT_SPACES_CG_BIND_PDELAB_UG_LAYER(_m, leaf);
-//  _DUNE_GDT_SPACES_CG_BIND_PDELAB_UG_LAYER(_m, level)
+//#if HAVE_ALBERTA
+//#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALBERTA_LAYER(_m, _layer)                                                    \
+//  _DUNE_GDT_SPACES_CG_BIND_PDELAB(_m, ALBERTA_2D, _layer, 1, 1)
+//#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALBERTA(_m)                                                                  \
+//  _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALBERTA_LAYER(_m, leaf);                                                           \
+//  _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALBERTA_LAYER(_m, level)
 //#else
-//#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_UG(_m, _layer)
+//#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALBERTA(_m)
 //#endif
 
-#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_YASP_LAYER(_m, _layer)                                                         \
-  _DUNE_GDT_SPACES_CG_BIND_PDELAB(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1)
-#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_YASP(_m)                                                                       \
-  _DUNE_GDT_SPACES_CG_BIND_PDELAB_YASP_LAYER(_m, leaf);                                                                \
-  _DUNE_GDT_SPACES_CG_BIND_PDELAB_YASP_LAYER(_m, level)
+//#if HAVE_DUNE_ALUGRID
+//#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALU_LAYER(_m, _layer)                                                        \
+//  _DUNE_GDT_SPACES_CG_BIND_PDELAB(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, 1, 1)
+//#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALU(_m)                                                                      \
+//  _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALU_LAYER(_m, leaf);                                                               \
+//  _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALU_LAYER(_m, level)
+//#else
+//#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALU(_m, _layer)
+//#endif
 
-#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALL(_m)                                                                        \
-  _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALBERTA(_m);                                                                         \
-  _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALU(_m);                                                                             \
-  _DUNE_GDT_SPACES_CG_BIND_PDELAB_YASP(_m)
-//  _DUNE_GDT_SPACES_CG_BIND_PDELAB_UG(_m); // <- does not work
-#else // HAVE_DUNE_PDELAB
+////#if HAVE_DUNE_UGGRID || HAVE_UG // <- does not work
+////#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_UG_LAYER(_m, _layer) _DUNE_GDT_SPACES_CG_BIND_PDELAB(_m, UG_2D, _layer, 1,
+/// 1)
+////#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_UG(_m)
+////  _DUNE_GDT_SPACES_CG_BIND_PDELAB_UG_LAYER(_m, leaf);
+////  _DUNE_GDT_SPACES_CG_BIND_PDELAB_UG_LAYER(_m, level)
+////#else
+////#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_UG(_m, _layer)
+////#endif
+
+//#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_YASP_LAYER(_m, _layer)                                                       \
+//  _DUNE_GDT_SPACES_CG_BIND_PDELAB(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1)
+//#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_YASP(_m)                                                                     \
+//  _DUNE_GDT_SPACES_CG_BIND_PDELAB_YASP_LAYER(_m, leaf);                                                              \
+//  _DUNE_GDT_SPACES_CG_BIND_PDELAB_YASP_LAYER(_m, level)
+
+//#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALL(_m)                                                                      \
+//  _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALBERTA(_m);                                                                       \
+//  _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALU(_m);                                                                           \
+//  _DUNE_GDT_SPACES_CG_BIND_PDELAB_YASP(_m)
+////  _DUNE_GDT_SPACES_CG_BIND_PDELAB_UG(_m); // <- does not work
+//#else // HAVE_DUNE_PDELAB
 #define _DUNE_GDT_SPACES_CG_BIND_PDELAB_ALL(_m)
-#endif
+//#endif
 
 #define DUNE_GDT_SPACES_CG_BIND(_m)                                                                                    \
   _DUNE_GDT_SPACES_CG_BIND_FEM_ALL(_m);                                                                                \
