@@ -17,11 +17,11 @@
 #include <dune/gdt/spaces/constraints.bindings.hh>
 
 
-PYBIND11_PLUGIN(assembler)
+PYBIND11_PLUGIN(__assembler)
 {
   namespace py = pybind11;
 
-  py::module m("assembler", "dune-gdt: SystemAssembler");
+  py::module m("__assembler", "dune-gdt: SystemAssembler");
 
   py::module::import("dune.xt.common");
   py::module::import("dune.xt.grid");

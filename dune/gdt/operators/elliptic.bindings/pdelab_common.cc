@@ -16,11 +16,11 @@
 #include <dune/gdt/operators/elliptic.bindings.hh>
 
 
-PYBIND11_PLUGIN(operators_elliptic_pdelab_common)
+PYBIND11_PLUGIN(__operators_elliptic_pdelab_common)
 {
   namespace py = pybind11;
 
-  py::module m("operators_elliptic_pdelab_common",
+  py::module m("__operators_elliptic_pdelab_common",
                "dune-gdt: EllipticMatrixOperator (pdelab space backend, common la backend)");
 
   py::module::import("dune.xt.common");

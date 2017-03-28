@@ -16,11 +16,11 @@
 #include <dune/gdt/projections/dirichlet.bindings.hh>
 
 
-PYBIND11_PLUGIN(projections)
+PYBIND11_PLUGIN(__projections)
 {
   namespace py = pybind11;
 
-  py::module m("projections", "dune-gdt: projections");
+  py::module m("__projections", "dune-gdt: projections");
 
   py::module::import("dune.xt.common");
   py::module::import("dune.xt.grid");

@@ -8,57 +8,22 @@
 #   Felix Schindler (2010, 2013 - 2017)
 
 if(dune-pybindxi_FOUND)
-  dune_pybindxi_add_helper_lib(_gdt_bindings_helper
-                               assembler/system.bindings.cc
-                               discretefunction/default.bindings.cc
-                               #operators/elliptic-ipdg.bindings/alu_common_fem.cc
-                               #operators/elliptic-ipdg.bindings/alu_common_gdt.cc
-                               #operators/elliptic-ipdg.bindings/alu_common_pdelab.cc
-                               #operators/elliptic-ipdg.bindings/alu_eigen_fem.cc
-                               #operators/elliptic-ipdg.bindings/alu_eigen_gdt.cc
-                               #operators/elliptic-ipdg.bindings/alu_eigen_pdelab.cc
-                               operators/elliptic-ipdg.bindings/alu_istl_fem.cc
-                               #operators/elliptic-ipdg.bindings/alu_istl_gdt.cc
-                               #operators/elliptic-ipdg.bindings/alu_istl_pdelab.cc
-                               #operators/elliptic-ipdg.bindings/yasp_common_fem.cc
-                               #operators/elliptic-ipdg.bindings/yasp_common_gdt.cc
-                               #operators/elliptic-ipdg.bindings/yasp_common_pdelab.cc
-                               #operators/elliptic-ipdg.bindings/yasp_eigen_fem.cc
-                               #operators/elliptic-ipdg.bindings/yasp_eigen_gdt.cc
-                               #operators/elliptic-ipdg.bindings/yasp_eigen_pdelab.cc
-                               #operators/elliptic-ipdg.bindings/yasp_istl_fem.cc
-                               #operators/elliptic-ipdg.bindings/yasp_istl_gdt.cc
-                               #operators/elliptic-ipdg.bindings/yasp_istl_pdelab.cc
-                               #operators/elliptic.bindings/common_fem.cc
-                               #operators/elliptic.bindings/common_gdt.cc
-                               #operators/elliptic.bindings/common_pdelab.cc
-                               #operators/elliptic.bindings/eigen_fem.cc
-                               #operators/elliptic.bindings/eigen_gdt.cc
-                               #operators/elliptic.bindings/eigen_pdelab.cc
-                               operators/elliptic.bindings/istl_fem.cc
-                               #operators/elliptic.bindings/istl_gdt.cc
-                               #operators/elliptic.bindings/istl_pdelab.cc
-                               projections/dirichlet.bindings.cc
-                               spaces/cg.bindings.cc
-                               spaces/dg.bindings.cc
-                               #spaces/fv.bindings.cc
-                               )
   set(pybindxi_modules)
-    dune_pybindxi_add_module(_gdt bindings.cc)
-    list(APPEND pybindxi_modules _gdt)
+    dune_pybindxi_add_module(__bindings bindings.cc)
+    list(APPEND pybindxi_modules __bindings)
   foreach(_target assembler discretefunction projections spaces)
-    dune_pybindxi_add_module(${_target} ${_target}.bindings.cc)
-    list(APPEND pybindxi_modules ${_target})
+    dune_pybindxi_add_module(__${_target} ${_target}.bindings.cc)
+    list(APPEND pybindxi_modules __${_target})
   endforeach()
   foreach(_space_backend fem pdelab)
     foreach(_la_backend common eigen istl)
-      dune_pybindxi_add_module(operators_elliptic_${_space_backend}_${_la_backend}
+      dune_pybindxi_add_module(__operators_elliptic_${_space_backend}_${_la_backend}
                                operators/elliptic.bindings/${_space_backend}_${_la_backend}.cc)
-      list(APPEND pybindxi_modules operators_elliptic_${_space_backend}_${_la_backend})
+      list(APPEND pybindxi_modules __operators_elliptic_${_space_backend}_${_la_backend})
       foreach(_grid alu alberta ug yasp)
-        dune_pybindxi_add_module(operators_elliptic_ipdg_${_grid}_${_space_backend}_${_la_backend}
+        dune_pybindxi_add_module(__operators_elliptic_ipdg_${_grid}_${_space_backend}_${_la_backend}
                                  operators/elliptic-ipdg.bindings/${_grid}_${_space_backend}_${_la_backend}.cc)
-        list(APPEND pybindxi_modules operators_elliptic_ipdg_${_grid}_${_space_backend}_${_la_backend})
+        list(APPEND pybindxi_modules __operators_elliptic_ipdg_${_grid}_${_space_backend}_${_la_backend})
       endforeach()
     endforeach()
   endforeach()

@@ -31,4 +31,16 @@ def init_logger(max_info_level=-1,
                         warning_color)
 
 
-from ._gdt import *
+modules = ['assembler', 'discretefunction', 'projections']
+for space_backend in ('fem', 'pdelab'):
+    for la_backend in ('common', 'eigen', 'istl'):
+        modules.append('operators_elliptic_{}_{}'.format(space_backend, la_backend))
+        for grid in ('alberta', 'alu', 'ug', 'yasp'):
+            modules.append('operators_elliptic_ipdg_{}_{}_{}'.format(grid, space_backend, la_backend))
+modules.append('bindings')
+
+for module_name in modules:
+    mod = import_module('.__{}'.format(module_name), 'dune.gdt')
+    to_import = [name for name in mod.__dict__ if not name.startswith('_')]
+    globals().update({name: mod.__dict__[name] for name in to_import})
+

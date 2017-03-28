@@ -16,11 +16,11 @@
 #include <dune/gdt/operators/elliptic-ipdg.bindings.hh>
 
 
-PYBIND11_PLUGIN(operators_elliptic_ipdg_yasp_fem_istl)
+PYBIND11_PLUGIN(__operators_elliptic_ipdg_yasp_fem_istl)
 {
   namespace py = pybind11;
 
-  py::module m("operators_elliptic_ipdg_yasp_fem_istl", "dune-gdt: EllipticMatrixOperator");
+  py::module m("__operators_elliptic_ipdg_yasp_fem_istl", "dune-gdt: EllipticMatrixOperator");
 
   py::module::import("dune.xt.common");
   py::module::import("dune.xt.grid");

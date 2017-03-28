@@ -16,11 +16,12 @@
 #include <dune/gdt/operators/elliptic.bindings.hh>
 
 
-PYBIND11_PLUGIN(operators_elliptic_fem_istl)
+PYBIND11_PLUGIN(__operators_elliptic_fem_istl)
 {
   namespace py = pybind11;
 
-  py::module m("operators_elliptic_fem_istl", "dune-gdt: EllipticMatrixOperator (fem space backend, istl la backend)");
+  py::module m("__operators_elliptic_fem_istl",
+               "dune-gdt: EllipticMatrixOperator (fem space backend, istl la backend)");
 
   py::module::import("dune.xt.common");
   py::module::import("dune.xt.grid");

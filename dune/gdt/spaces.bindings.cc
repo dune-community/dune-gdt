@@ -15,11 +15,11 @@
 
 #include "spaces.bindings.hh"
 
-PYBIND11_PLUGIN(spaces)
+PYBIND11_PLUGIN(__spaces)
 {
   namespace py = pybind11;
 
-  py::module m("spaces", "dune-gdt: Spaces");
+  py::module m("__spaces", "dune-gdt: Spaces");
 
   py::module::import("dune.xt.common");
   py::module::import("dune.xt.grid");

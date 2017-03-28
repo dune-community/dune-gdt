@@ -16,11 +16,11 @@
 #include <dune/gdt/discretefunction/default.bindings.hh>
 
 
-PYBIND11_PLUGIN(discretefunction)
+PYBIND11_PLUGIN(__discretefunction)
 {
   namespace py = pybind11;
 
-  py::module m("discretefunction", "dune-gdt: discrete functions");
+  py::module m("__discretefunction", "dune-gdt: discrete functions");
 
   py::module::import("dune.xt.common");
   py::module::import("dune.xt.grid");
