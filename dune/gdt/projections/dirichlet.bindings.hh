@@ -142,7 +142,23 @@ public:
 
 #define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_COMMON(_m) _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_BACKENDS(_m, common_dense)
 
-#define DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m) _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_COMMON(_m)
+#if HAVE_EIGEN
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_EIGEN(_m) _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_BACKENDS(_m, eigen_dense)
+#else
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_EIGEN(_m)
+#endif
+
+#if HAVE_DUNE_ISTL
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ISTL(_m) _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_BACKENDS(_m, istl_dense)
+#else
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ISTL(_m)
+#endif
+
+
+#define DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m)                                                                        \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_COMMON(_m);                                                                     \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_EIGEN(_m);                                                                      \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ISTL(_m)
 
 // end: this is what we need for the .so
 
