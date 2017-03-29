@@ -39,6 +39,11 @@ class DgSpaceProvider
   static const XT::Grid::Backends part_view_type = ChooseGridPartView<backend_type>::type;
 
 public:
+  static const constexpr SpaceType space_type = SpaceType::dg;
+  static const constexpr ChooseSpaceBackend space_backend = backend_type;
+  static const constexpr XT::Grid::Layers grid_layer = layer_type;
+  static const constexpr XT::Grid::Backends layer_backend = part_view_type;
+
   typedef typename XT::Grid::Layer<GridType, layer_type, part_view_type>::type GridLayerType;
 
 private:
