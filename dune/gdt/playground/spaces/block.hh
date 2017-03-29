@@ -212,8 +212,8 @@ private:
   const std::shared_ptr<GridLayerType> global_grid_part_;
   const std::shared_ptr<std::vector<std::shared_ptr<const LocalSpaceType>>> local_spaces_;
   const std::shared_ptr<MapperType> mapper_;
-  std::shared_ptr<CommunicatorType> communicator_;
-  mutable bool communicator__prepared_;
+  mutable std::shared_ptr<typename Traits::CommunicatorType> communicator_;
+  mutable bool communicator_prepared_;
 }; // class BlockSpace
 
 

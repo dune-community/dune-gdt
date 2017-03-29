@@ -58,9 +58,12 @@ template <class ViewImp>
 struct CommunicationChooser<ViewImp, true>
 {
   //! this _should_ be the idtype as per OwnerOverlapCopyCommunication docs
-  //  using IdType = typename XT::Grid::ExtractGridType_t<ViewImp>::GlobalIdSet::IdType;
+  //  using GlobalId = typename XT::Grid::extract_grid_t<ViewImp>::GlobalIdSet::IdType;
+  //  using LocalId = typename XT::Grid::extract_grid_t<ViewImp>::LocalIdSet::IdType;
   // alas they're hard assuming bigunsignedint for some reason
-  typedef OwnerOverlapCopyCommunication<bigunsignedint<96>, int> Type;
+  using GlobalId = bigunsignedint<96>;
+  using LocalId = int;
+  using Type = OwnerOverlapCopyCommunication<GlobalId, LocalId>;
   using type = Type;
 
   static Type* create(const ViewImp& gridView)
@@ -85,30 +88,16 @@ struct CommunicationChooser<ViewImp, true>
   prepare(const Space& space, Type& communicator)
   {
 #if HAVE_DUNE_PDELAB
-    XT::LA::IstlRowMajorSparseMatrix<typename Space::RangeFieldType> matrix;
-    PDELab::istl::ParallelHelper<typename Space::BackendType>(space.backend(), 0)
-        .createIndexSetAndProjectForAMG(matrix.backend(), communicator);
-#endif // HAVE_DUNE_PDELAB
+    GDT::GenericParallelHelper<Space>(space, 1).createIndexSetAndProjectForAMG(communicator);
     return true;
   } // ... prepare(...)
 
   template <class Space>
   static typename std::enable_if<Space::backend_type == Dune::GDT::ChooseSpaceBackend::gdt, bool>::type
-  prepare(const Space& space, Type& communicator)
-  {
-    GDT::GenericParallelHelper<Space>(space, 1).createIndexSetAndProjectForAMG(communicator);
-    //    GDT::GenericParallelHelper<Space>(space, 1).createIndexSetAndProjectForAMG(matrix.backend(), communicator);
-    DUNE_THROW(NotImplemented, "");
-    return true;
-  } // ... prepare(...)
-
-  template <class Space>
   static typename std::enable_if<Space::backend_type == Dune::GDT::ChooseSpaceBackend::fem, bool>::type
   prepare(const Space& space, Type& communicator)
   {
-    //    XT::LA::IstlRowMajorSparseMatrix<typename Space::RangeFieldType> matrix;
-    //    GDT::GenericParallelHelper<Space>(space, 1).createIndexSetAndProjectForAMG(matrix.backend(), communicator);
-    DUNE_THROW(NotImplemented, "");
+    GDT::GenericParallelHelper<Space>(space, 1).createIndexSetAndProjectForAMG(communicator);
     return true;
   } // ... prepare(...)
 
