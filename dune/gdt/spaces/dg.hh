@@ -14,10 +14,6 @@
 
 #include <memory>
 
-#if HAVE_DUNE_GRID_MULTISCALE
-#include <dune/grid/multiscale/provider/interface.hh>
-#endif
-
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/grid/layers.hh>
 #include <dune/xt/grid/gridprovider/provider.hh>
