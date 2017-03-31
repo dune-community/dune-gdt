@@ -27,7 +27,11 @@ PYBIND11_PLUGIN(__operators_elliptic_ipdg_yasp_fem_istl)
   py::module::import("dune.xt.functions");
   py::module::import("dune.xt.la");
 
-  //  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_FEM_ISTL(m);
+#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, leaf, part, cg, fem, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, level, part, cg, fem, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, dd_subdomain, part, cg, fem, 1, istl_sparse);
+#endif
 
   return m.ptr();
 }
