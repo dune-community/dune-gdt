@@ -122,7 +122,6 @@ public:
 
     return c;
   } // ... bind(...)
-
 }; // class MatrixOperatorBase
 
 
