@@ -7,14 +7,14 @@
 // Authors:
 //   Felix Schindler (2017)
 
-#ifndef DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_PBH
-#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_PBH
-//#if HAVE_DUNE_PYBINDXI
+#ifndef DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BINDINGS_HH
+#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BINDINGS_HH
+#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
 #include "elliptic-ipdg.hh"
-#include "base.pbh"
+#include "base.bindings.hh"
 
 namespace Dune {
 namespace GDT {
@@ -192,5 +192,5 @@ bind_elliptic_ipdg_dirichlet_vector_functional(pybind11::module& m,
 } // namespace GDT
 } // namespace Dune
 
-//#endif // HAVE_DUNE_PYBINDXI
-#endif // DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_PBH
+#endif // HAVE_DUNE_PYBINDXI
+#endif // DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BINDINGS_HH

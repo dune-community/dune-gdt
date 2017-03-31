@@ -40,6 +40,7 @@ for space_backend in ('fem',):
         #for grid in ('alberta', 'alu', 'ug', 'yasp'):
         for grid in ('alu', 'yasp'):
             modules.append('operators_elliptic_ipdg_{}_{}_{}'.format(grid, space_backend, la_backend))
+            modules.append('functionals_l2_{}_{}_{}'.format(grid, space_backend, la_backend))
 modules.append('bindings')
 
 for module_name in modules:

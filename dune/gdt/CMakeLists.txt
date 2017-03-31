@@ -27,6 +27,9 @@ if(dune-pybindxi_FOUND)
         dune_pybindxi_add_module(__operators_elliptic_ipdg_${_grid}_${_space_backend}_${_la_backend}
                                  operators/elliptic-ipdg.bindings/${_grid}_${_space_backend}_${_la_backend}.cc)
         list(APPEND pybindxi_modules __operators_elliptic_ipdg_${_grid}_${_space_backend}_${_la_backend})
+        dune_pybindxi_add_module(__functionals_l2_${_grid}_${_space_backend}_${_la_backend}
+                                 functionals/l2.bindings/${_grid}_${_space_backend}_${_la_backend}.cc)
+        list(APPEND pybindxi_modules __functionals_l2_${_grid}_${_space_backend}_${_la_backend})
       endforeach()
     endforeach()
   endforeach()

@@ -7,46 +7,54 @@
 // Authors:
 //   Felix Schindler (2017)
 
-#ifndef DUNE_GDT_FUNCTIONALS_BASE_PBH
-#define DUNE_GDT_FUNCTIONALS_BASE_PBH
+#ifndef DUNE_GDT_FUNCTIONALS_BASE_BINDINGS_H
+#define DUNE_GDT_FUNCTIONALS_BASE_BINDINGS_H
 #if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
 #include <dune/xt/la/container.hh>
 
-#include "base.hh"
+#include <dune/gdt/assembler/system.hh>
+#include <dune/gdt/discretefunction/default.hh>
 
 namespace Dune {
 namespace GDT {
+namespace bindings {
 
 
 template <class FunctionalType>
-pybind11::class_<FunctionalType,
-                 SystemAssembler<typename FunctionalType::SpaceType, typename FunctionalType::GridViewType>>
-bind_vector_functional(pybind11::module& m, const std::string& class_id)
+class VectorFunctionalBase
 {
-  namespace py = pybind11;
-  using namespace pybind11::literals;
+public:
+  typedef FunctionalType type;
+  typedef GDT::SystemAssembler<typename FunctionalType::SpaceType, typename FunctionalType::GridViewType> BaseType;
+  typedef pybind11::class_<type, BaseType> bound_type;
 
-  typedef FunctionalType C;
-  typedef typename C::SpaceType S;
-  typedef SystemAssembler<typename FunctionalType::SpaceType, typename FunctionalType::GridViewType> I;
-  typedef typename C::VectorType V;
+  static bound_type bind(pybind11::module& m, const std::string& class_id)
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
 
-  py::class_<C, I> c(m, std::string(class_id).c_str(), std::string(class_id).c_str());
+    typedef typename type::SpaceType S;
+    typedef typename type::VectorType V;
 
-  c.def("vector", [](C& self) { return self.vector(); });
-  c.def("space", [](C& self) { return self.space(); });
-  c.def("apply", [](C& self, const V& source) { return self.apply(source); }, "source"_a);
-  c.def("apply", [](C& self, const ConstDiscreteFunction<S, V>& source) { return self.apply(source); }, "source"_a);
+    bound_type c(m, std::string(class_id).c_str(), std::string(class_id).c_str());
 
-  return c;
-} // ... bind_vector_functional(...)
+    c.def("vector", [](type& self) { return self.vector(); });
+    c.def("space", [](type& self) { return self.space(); });
+    c.def("apply", [](type& self, const V& source) { return self.apply(source); }, "source"_a);
+    c.def(
+        "apply", [](type& self, const ConstDiscreteFunction<S, V>& source) { return self.apply(source); }, "source"_a);
+
+    return c;
+  } // ... bind(...)
+}; // class VectorFunctionalBase
 
 
+} // namespace bindings
 } // namespace GDT
 } // namespace Dune
 
 #endif // HAVE_DUNE_PYBINDXI
-#endif // DUNE_GDT_FUNCTIONALS_BASE_PBH
+#endif // DUNE_GDT_FUNCTIONALS_BASE_BINDINGS_H

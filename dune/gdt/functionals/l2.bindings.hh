@@ -7,139 +7,227 @@
 // Authors:
 //   Felix Schindler (2017)
 
-#ifndef DUNE_GDT_FUNCTIONALS_L2_PBH
-#define DUNE_GDT_FUNCTIONALS_L2_PBH
+#ifndef DUNE_GDT_FUNCTIONALS_L2_BINDINGS_HH
+#define DUNE_GDT_FUNCTIONALS_L2_BINDINGS_HH
 #if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
+#include <dune/xt/grid/grids.bindings.hh>
+#include <dune/xt/la/container.bindings.hh>
+
+#include <dune/gdt/spaces.bindings.hh>
+
 #include "l2.hh"
-#include "base.pbh"
+#include "base.bindings.hh"
 
 namespace Dune {
 namespace GDT {
+namespace bindings {
 
 
-template <class FunctionType,
-          class Space,
-          class Vector = typename XT::LA::Container<typename Space::RangeFieldType>::VectorType,
+template <class F, class SP, class V /*= typename XT::LA::Container<typename SP::type::RangeFieldType>::VectorType,
           class GridView = typename Space::GridViewType,
-          class Field = typename Space::RangeFieldType>
-pybind11::class_<L2VolumeVectorFunctional<FunctionType, Space, Vector, GridView, Field>>
-bind_l2_volume_vector_functional(pybind11::module& m, const std::string& space_id, const std::string& la_id)
+          class Field = typename Space::RangeFieldType*/>
+class L2VolumeVectorFunctional
 {
-  static_assert(std::is_same<GridView, typename Space::GridViewType>::value, "Not tested yet!");
+  typedef typename SP::type S;
+  static_assert(is_space<S>::value, "");
 
-  namespace py = pybind11;
-  using namespace pybind11::literals;
+public:
+  typedef GDT::L2VolumeVectorFunctional<F, S, V> type;
+  typedef pybind11::class_<type> bound_type;
 
-  typedef L2VolumeVectorFunctional<FunctionType, Space, Vector, GridView, Field> C;
+  static bound_type bind(pybind11::module& m)
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
 
-  auto c = bind_vector_functional<C>(m, "L2VolumeVectorFunctional__" + la_id + "__" + space_id);
+    const auto ClassName = XT::Common::to_camel_case("l2_volume_vector_functional_" + space_name<SP>::value() + "_"
+                                                     + XT::LA::bindings::container_name<V>::value());
 
-  m.def(std::string("make_l2_volume_vector_functional__" + la_id).c_str(),
-        [](const FunctionType& function, const Space& space, const size_t over_integrate) {
-          return make_l2_volume_vector_functional<Vector>(function, space, over_integrate).release(); // b.c.
-        }, //      L2VolumeVectorFunctional is not movable, returning the raw pointer lets pybind11 correctly
-        "function"_a, //                                                                    manage the memory
-        "space"_a,
-        "over_integrate"_a = 0,
-        py::keep_alive<0, 1>(),
-        py::keep_alive<0, 2>());
+    auto c = VectorFunctionalBase<type>::bind(m, ClassName);
 
-  m.def("make_l2_volume_vector_functional",
-        [](const FunctionType& function, Vector& vector, const Space& space, const size_t over_integrate) {
-          return make_l2_volume_vector_functional(function, vector, space, over_integrate).release(); // s.a.
-        },
-        "function"_a,
-        "vector"_a,
-        "space"_a,
-        "over_integrate"_a = 0,
-        py::keep_alive<0, 1>(),
-        py::keep_alive<0, 2>(),
-        py::keep_alive<0, 3>());
+    m.def(std::string("make_l2_volume_vector_functional_" + XT::LA::bindings::container_name<V>::value()).c_str(),
+          [](const F& function, const S& space, const size_t over_integrate) {
+            return make_l2_volume_vector_functional<V>(function, space, over_integrate).release(); // <-            b.c.
+          }, //    L2VolumeVectorFunctional is not movable, returning the raw pointer lets pybind11 correctly manage the
+          "function"_a, //                                                                                        memory
+          "space"_a,
+          "over_integrate"_a = 0,
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
 
-  return c;
+    m.def("make_l2_volume_vector_functional",
+          [](const F& function, V& vector, const S& space, const size_t over_integrate) {
+            return make_l2_volume_vector_functional(function, vector, space, over_integrate).release(); //       <- s.a.
+          },
+          "function"_a,
+          "vector"_a,
+          "space"_a,
+          "over_integrate"_a = 0,
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>());
 
-} // ... bind_l2_volume_vector_functional(...)
+    return c;
+  } // ... bind(...)
+}; // class L2VolumeVectorFunctional
 
 
-template <class FunctionType,
-          class Space,
-          class Vector = typename XT::LA::Container<typename Space::RangeFieldType>::VectorType,
-          class GridView = typename Space::GridViewType,
-          class Field = typename Space::RangeFieldType>
-pybind11::class_<L2FaceVectorFunctional<FunctionType, Space, Vector, GridView, Field>>
-bind_l2_face_vector_functional(pybind11::module& m, const std::string& space_id, const std::string& la_id)
+template <class F, class SP, class V /*= typename XT::LA::Container<typename SP::type::RangeFieldType>::VectorType,
+          class GridView = typename SP::type::GridViewType,
+          class Field = typename SP::type::RangeFieldType*/>
+class L2FaceVectorFunctional
 {
-  static_assert(std::is_same<GridView, typename Space::GridViewType>::value, "Not tested yet!");
+  typedef typename SP::type S;
+  static_assert(is_space<S>::value, "");
+  typedef typename S::GridViewType GV;
 
-  namespace py = pybind11;
-  using namespace pybind11::literals;
+public:
+  typedef GDT::L2FaceVectorFunctional<F, S, V> type;
+  typedef pybind11::class_<type> bound_type;
 
-  typedef L2FaceVectorFunctional<FunctionType, Space, Vector, GridView, Field> C;
+  static bound_type bind(pybind11::module& m)
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
 
-  auto c = bind_vector_functional<C>(m, "L2FaceVectorFunctional__" + la_id + "__" + space_id);
+    const std::string class_name = "l2_face_vector_functional";
+    const auto ClassName = XT::Common::to_camel_case(class_name + "_" + space_name<SP>::value() + "_"
+                                                     + XT::LA::bindings::container_name<V>::value());
 
-  m.def(std::string("make_l2_face_vector_functional__" + la_id).c_str(),
-        [](const FunctionType& function, const Space& space, const size_t over_integrate) {
-          return make_l2_face_vector_functional<Vector>(function, space, over_integrate).release(); // b.c.
-        }, //      L2FaceVectorFunctional is not movable, returning the raw pointer lets pybind11 correctly
-        "function"_a, //                                                                    manage the memory
-        "space"_a,
-        "over_integrate"_a = 0,
-        py::keep_alive<0, 1>(),
-        py::keep_alive<0, 2>());
-  m.def(std::string("make_l2_face_vector_functional__" + la_id).c_str(),
-        [](const FunctionType& function,
-           const Space& space,
-           const XT::Grid::ApplyOn::WhichIntersection<GridView>& which_intersections,
-           const size_t over_integrate) {
-          return make_l2_face_vector_functional<Vector>(function, space, over_integrate, which_intersections.copy())
-              .release(); // b.c.
-        }, //      L2FaceVectorFunctional is not movable, returning the raw pointer lets pybind11 correctly
-        "function"_a, //                                                                    manage the memory
-        "space"_a,
-        "which_intersections"_a,
-        "over_integrate"_a = 0,
-        py::keep_alive<0, 1>(),
-        py::keep_alive<0, 2>());
+    auto c = VectorFunctionalBase<type>::bind(m, ClassName);
 
-  m.def("make_l2_face_vector_functional",
-        [](const FunctionType& function, Vector& vector, const Space& space, const size_t over_integrate) {
-          return make_l2_face_vector_functional(function, vector, space, over_integrate).release(); // s.a.
-        },
-        "function"_a,
-        "vector"_a,
-        "space"_a,
-        "over_integrate"_a = 0,
-        py::keep_alive<0, 1>(),
-        py::keep_alive<0, 2>(),
-        py::keep_alive<0, 3>());
-  m.def("make_l2_face_vector_functional",
-        [](const FunctionType& function,
-           Vector& vector,
-           const Space& space,
-           const XT::Grid::ApplyOn::WhichIntersection<GridView>& which_intersections,
-           const size_t over_integrate) {
-          return make_l2_face_vector_functional(function, vector, space, over_integrate, which_intersections.copy())
-              .release(); // s.a.
-        },
-        "function"_a,
-        "vector"_a,
-        "space"_a,
-        "which_intersections"_a,
-        "over_integrate"_a = 0,
-        py::keep_alive<0, 1>(),
-        py::keep_alive<0, 2>(),
-        py::keep_alive<0, 3>());
+    m.def(std::string("make_" + class_name + "_" + XT::LA::bindings::container_name<V>::value()).c_str(),
+          [](const F& function, const S& space, const size_t over_integrate) {
+            return make_l2_face_vector_functional<V>(function, space, over_integrate).release(); //              <- b.c.
+          }, //      L2FaceVectorFunctional is not movable, returning the raw pointer lets pybind11 correctly manage the
+          "function"_a, //                                                                                        memory
+          "space"_a,
+          "over_integrate"_a = 0,
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    m.def(std::string("make_" + class_name + "_" + XT::LA::bindings::container_name<V>::value()).c_str(),
+          [](const F& function,
+             const S& space,
+             const XT::Grid::ApplyOn::WhichIntersection<GV>& which_intersections,
+             const size_t over_integrate) {
+            return make_l2_face_vector_functional<V>(function, space, over_integrate, which_intersections.copy())
+                .release(); //                                                                                   <- s.a.
+          },
+          "function"_a,
+          "space"_a,
+          "which_intersections"_a,
+          "over_integrate"_a = 0,
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
 
-  return c;
-} // ... bind_l2_face_vector_functional(...)
+    m.def(std::string("make_" + class_name).c_str(),
+          [](const F& function, V& vector, const S& space, const size_t over_integrate) {
+            return make_l2_face_vector_functional(function, vector, space, over_integrate).release(); //         <- s.a.
+          },
+          "function"_a,
+          "vector"_a,
+          "space"_a,
+          "over_integrate"_a = 0,
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>());
+    m.def(std::string("make_" + class_name).c_str(),
+          [](const F& function,
+             V& vector,
+             const S& space,
+             const XT::Grid::ApplyOn::WhichIntersection<GV>& which_intersections,
+             const size_t over_integrate) {
+            return make_l2_face_vector_functional(function, vector, space, over_integrate, which_intersections.copy())
+                .release(); //                                                                                   <- s.a.
+          },
+          "function"_a,
+          "vector"_a,
+          "space"_a,
+          "which_intersections"_a,
+          "over_integrate"_a = 0,
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>());
+
+    return c;
+  } // ... bind(...)
+}; // XT::LA::bindings::container_name<V>::value()
 
 
+} // namespace bindings
 } // namespace GDT
 } // namespace Dune
 
+
+// begin: this is what we need for the .so
+
+#define _DUNE_GDT_FUNCTIONALS_L2_BIND(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)                 \
+  Dune::GDT::bindings::                                                                                                \
+      L2VolumeVectorFunctional<Dune::XT::Functions::                                                                   \
+                                   LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<                      \
+                                                                    typename Dune::XT::Grid::                          \
+                                                                        Layer<_GRID,                                   \
+                                                                              Dune::XT::Grid::Layers::_layer,          \
+                                                                              Dune::XT::Grid::Backends::_g_backend,    \
+                                                                              Dune::XT::Grid::DD::                     \
+                                                                                  SubdomainGrid<_GRID>>::type>,        \
+                                                                double,                                                \
+                                                                _d,                                                    \
+                                                                double,                                                \
+                                                                1,                                                     \
+                                                                1>,                                                    \
+                               Dune::GDT::SpaceProvider<_GRID,                                                         \
+                                                        Dune::XT::Grid::Layers::_layer,                                \
+                                                        Dune::GDT::SpaceType::_s_type,                                 \
+                                                        Dune::GDT::ChooseSpaceBackend::_s_backend,                     \
+                                                        _p,                                                            \
+                                                        double,                                                        \
+                                                        1,                                                             \
+                                                        1>,                                                            \
+                               typename Dune::XT::LA::Container<double,                                                \
+                                                                Dune::XT::LA::Backends::_la>::VectorType>::bind(_m);   \
+  Dune::GDT::bindings::                                                                                                \
+      L2FaceVectorFunctional<Dune::XT::Functions::                                                                     \
+                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<                        \
+                                                                  typename Dune::XT::Grid::                            \
+                                                                      Layer<_GRID,                                     \
+                                                                            Dune::XT::Grid::Layers::_layer,            \
+                                                                            Dune::XT::Grid::Backends::_g_backend,      \
+                                                                            Dune::XT::Grid::DD::                       \
+                                                                                SubdomainGrid<_GRID>>::type>,          \
+                                                              double,                                                  \
+                                                              _d,                                                      \
+                                                              double,                                                  \
+                                                              1,                                                       \
+                                                              1>,                                                      \
+                             Dune::GDT::SpaceProvider<_GRID,                                                           \
+                                                      Dune::XT::Grid::Layers::_layer,                                  \
+                                                      Dune::GDT::SpaceType::_s_type,                                   \
+                                                      Dune::GDT::ChooseSpaceBackend::_s_backend,                       \
+                                                      _p,                                                              \
+                                                      double,                                                          \
+                                                      1,                                                               \
+                                                      1>,                                                              \
+                             typename Dune::XT::LA::Container<double,                                                  \
+                                                              Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
+
+
+#if HAVE_DUNE_ALUGRID
+#define DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)                         \
+  _DUNE_GDT_FUNCTIONALS_L2_BIND(_m, 2, ALU_2D_SIMPLEX_CONFORMING, _layer, _g_backend, _s_type, _s_backend, _p, _la)
+#else
+#define DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
+#endif
+
+#define DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)                        \
+  _DUNE_GDT_FUNCTIONALS_L2_BIND(_m, 2, YASP_2D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la)
+
+
+// end: this is what we need for the .so
+
+
 #endif // HAVE_DUNE_PYBINDXI
-#endif // DUNE_GDT_FUNCTIONALS_L2_PBH
+#endif // DUNE_GDT_FUNCTIONALS_L2_BINDINGS_HH
