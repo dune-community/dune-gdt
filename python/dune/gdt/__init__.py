@@ -31,7 +31,7 @@ def init_logger(max_info_level=-1,
                         warning_color)
 
 
-modules = ['assembler', 'discretefunction', 'projections']
+modules = ['spaces', 'assembler', 'discretefunction', 'projections']
 #for space_backend in ('fem', 'pdelab'):
 for space_backend in ('fem',):
     #for la_backend in ('common', 'eigen', 'istl'):
