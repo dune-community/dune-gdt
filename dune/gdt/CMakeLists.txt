@@ -27,12 +27,15 @@ if(dune-pybindxi_FOUND)
         dune_pybindxi_add_module(__operators_elliptic_ipdg_${_grid}_${_space_backend}_${_la_backend}
                                  operators/elliptic-ipdg.bindings/${_grid}_${_space_backend}_${_la_backend}.cc)
         list(APPEND pybindxi_modules __operators_elliptic_ipdg_${_grid}_${_space_backend}_${_la_backend})
-        dune_pybindxi_add_module(__functionals_l2_${_grid}_${_space_backend}_${_la_backend}
-                                 functionals/l2.bindings/${_grid}_${_space_backend}_${_la_backend}.cc)
-        list(APPEND pybindxi_modules __functionals_l2_${_grid}_${_space_backend}_${_la_backend})
       endforeach()
     endforeach()
   endforeach()
+  dune_pybindxi_add_helper_lib(__functionals_l2_helper
+                               functionals/l2.bindings/alu_fem_istl.cc
+                               functionals/l2.bindings/yasp_fem_istl.cc)
+  dune_pybindxi_add_module(__functionals_l2 functionals/l2.bindings.cc)
+  target_link_libraries(__functionals_l2 __functionals_l2_helper)
+  list(APPEND pybindxi_modules __functionals_l2)
   foreach(_target ${pybindxi_modules})
     target_link_dune_default_libraries(${_target})
     add_dune_alberta_flags(GRIDDIM 2 ${_target})
