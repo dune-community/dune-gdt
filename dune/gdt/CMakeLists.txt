@@ -8,28 +8,30 @@
 #   Felix Schindler (2010, 2013 - 2017)
 
 if(dune-pybindxi_FOUND)
+  # the main bindings
   set(pybindxi_modules)
-    dune_pybindxi_add_module(__bindings bindings.cc)
-    list(APPEND pybindxi_modules __bindings)
+  dune_pybindxi_add_module(__bindings bindings.cc)
+  list(APPEND pybindxi_modules __bindings)
+  # some top-level modules
   foreach(_target assembler discretefunction projections spaces)
-    dune_pybindxi_add_module(__${_target} ${_target}.bindings.cc)
-    list(APPEND pybindxi_modules __${_target})
+  dune_pybindxi_add_module(__${_target} ${_target}.bindings.cc)
+  list(APPEND pybindxi_modules __${_target})
   endforeach()
-  #foreach(_space_backend fem pdelab)
-  foreach(_space_backend fem)
-    #foreach(_la_backend common eigen istl)
-    foreach(_la_backend istl)
-      dune_pybindxi_add_module(__operators_elliptic_${_space_backend}_${_la_backend}
-                               operators/elliptic.bindings/${_space_backend}_${_la_backend}.cc)
-      list(APPEND pybindxi_modules __operators_elliptic_${_space_backend}_${_la_backend})
-      #foreach(_grid alu alberta ug yasp)
-      foreach(_grid alu yasp)
-        dune_pybindxi_add_module(__operators_elliptic_ipdg_${_grid}_${_space_backend}_${_la_backend}
-                                 operators/elliptic-ipdg.bindings/${_grid}_${_space_backend}_${_la_backend}.cc)
-        list(APPEND pybindxi_modules __operators_elliptic_ipdg_${_grid}_${_space_backend}_${_la_backend})
-      endforeach()
-    endforeach()
-  endforeach()
+  # the operators
+  # * elliptic
+  dune_pybindxi_add_helper_lib(__operators_elliptic_helper
+                               operators/elliptic.bindings/fem_istl.cc)
+  dune_pybindxi_add_module(__operators_elliptic operators/elliptic.bindings.cc)
+  target_link_libraries(__operators_elliptic __operators_elliptic_helper)
+  list(APPEND pybindxi_modules __operators_elliptic)
+  # * elliptic-ipdg
+  dune_pybindxi_add_helper_lib(__operators_elliptic_ipdg_helper
+                               operators/elliptic-ipdg.bindings/alu_fem_istl.cc
+                               operators/elliptic-ipdg.bindings/yasp_fem_istl.cc)
+  dune_pybindxi_add_module(__operators_elliptic_ipdg operators/elliptic-ipdg.bindings.cc)
+  target_link_libraries(__operators_elliptic_ipdg __operators_elliptic_ipdg_helper)
+  list(APPEND pybindxi_modules __operators_elliptic_ipdg)
+  # the functionals
   dune_pybindxi_add_helper_lib(__functionals_l2_helper
                                functionals/l2.bindings/alu_fem_istl.cc
                                functionals/l2.bindings/yasp_fem_istl.cc)

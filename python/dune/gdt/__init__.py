@@ -31,16 +31,15 @@ def init_logger(max_info_level=-1,
                         warning_color)
 
 
-modules = ['spaces', 'assembler', 'discretefunction', 'projections', 'functionals_l2']
-#for space_backend in ('fem', 'pdelab'):
-for space_backend in ('fem',):
-    #for la_backend in ('common', 'eigen', 'istl'):
-    for la_backend in ('istl',):
-        modules.append('operators_elliptic_{}_{}'.format(space_backend, la_backend))
-        #for grid in ('alberta', 'alu', 'ug', 'yasp'):
-        for grid in ('alu', 'yasp'):
-            modules.append('operators_elliptic_ipdg_{}_{}_{}'.format(grid, space_backend, la_backend))
-modules.append('bindings')
+# the following ordering is not arbitrary
+modules = ['spaces', # is required by all others (aka: needs to be loaded first)
+           'assembler', # requires spaces and is required by all others
+           'discretefunction',
+           'projections',
+           'functionals_l2',
+           'operators_elliptic',
+           'operators_elliptic_ipdg',
+           'bindings'] # should be last
 
 for module_name in modules:
     mod = import_module('.__{}'.format(module_name), 'dune.gdt')
