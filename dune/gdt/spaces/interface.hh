@@ -227,11 +227,12 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
    *  \note   This method can be implemented in a derived class by a forward to one of the methods provided by this
    * class, namely compute_volume_pattern(), compute_face_pattern() or compute_face_and_volume_pattern().
    */
-  template <class G, class S, size_t d, size_t r, size_t rC>
-  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  template <class GL, class S, size_t d, size_t r, size_t rC>
+  typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
+  compute_pattern(const GL& grid_layer, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
-    CHECK_CRTP(this->as_imp().compute_pattern(local_grid_view, ansatz_space.as_imp()));
-    return this->as_imp().compute_pattern(local_grid_view, ansatz_space.as_imp());
+    CHECK_CRTP(this->as_imp().compute_pattern(grid_layer, ansatz_space.as_imp()));
+    return this->as_imp().compute_pattern(grid_layer, ansatz_space.as_imp());
   }
   /* @} */
 
@@ -251,10 +252,10 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     return compute_pattern(grid_view(), ansatz_space);
   }
 
-  template <class G>
-  PatternType compute_pattern(const GridView<G>& local_grid_view) const
+  template <class GL>
+  typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type compute_pattern(const GL& grid_layer) const
   {
-    return compute_pattern(local_grid_view, *this);
+    return compute_pattern(grid_layer, *this);
   }
 
   PatternType compute_volume_pattern() const
@@ -268,25 +269,26 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     return compute_volume_pattern(grid_view(), ansatz_space);
   }
 
-  template <class G>
-  PatternType compute_volume_pattern(const GridView<G>& local_grid_view) const
+  template <class GL>
+  typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
+  compute_volume_pattern(const GL& grid_layer) const
   {
-    return compute_volume_pattern(local_grid_view, *this);
+    return compute_volume_pattern(grid_layer, *this);
   }
 
   /**
    *  \brief  computes a sparsity pattern, where this space is the test space (rows/outer) and the other space is the
    *          ansatz space (cols/inner)
    */
-  template <class G, class S, size_t d, size_t r, size_t rC>
-  PatternType compute_volume_pattern(const GridView<G>& local_grid_view,
-                                     const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  template <class GL, class S, size_t d, size_t r, size_t rC>
+  typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
+  compute_volume_pattern(const GL& grid_layer, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     PatternType pattern(mapper().size());
     Dune::DynamicVector<size_t> globalRows(mapper().maxNumDofs(), 0);
     Dune::DynamicVector<size_t> globalCols(ansatz_space.mapper().maxNumDofs(), 0);
 
-    for (const auto& entity : elements(local_grid_view)) {
+    for (const auto& entity : elements(grid_layer)) {
       const auto testBase = base_function_set(entity);
       const auto ansatzBase = ansatz_space.base_function_set(entity);
       mapper().globalIndices(entity, globalRows);
@@ -306,10 +308,11 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     return compute_face_and_volume_pattern(grid_view(), *this);
   }
 
-  template <class G>
-  PatternType compute_face_and_volume_pattern(const /*GridView<*/ G /*>*/& local_grid_view) const
+  template <class GL>
+  typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
+  compute_face_and_volume_pattern(const GL& grid_layer) const
   {
-    return compute_face_and_volume_pattern(local_grid_view, *this);
+    return compute_face_and_volume_pattern(grid_layer, *this);
   }
 
   template <class S, size_t d, size_t r, size_t rC>
@@ -322,15 +325,15 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
    *  \brief  computes a DG sparsity pattern, where this space is the test space (rows/outer) and the other space is the
    *          ansatz space (cols/inner)
    */
-  template <class G, class S, size_t d, size_t r, size_t rC>
-  PatternType compute_face_and_volume_pattern(const /*GridView<*/ G /*>*/& local_grid_view,
-                                              const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  template <class GL, class S, size_t d, size_t r, size_t rC>
+  typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
+  compute_face_and_volume_pattern(const GL& grid_layer, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     // prepare
     PatternType pattern(mapper().size());
     Dune::DynamicVector<size_t> global_rows(mapper().maxNumDofs(), 0);
     Dune::DynamicVector<size_t> global_cols(ansatz_space.mapper().maxNumDofs(), 0);
-    for (const auto& entity : elements(local_grid_view)) {
+    for (const auto& entity : elements(grid_layer)) {
       const auto test_base_entity = base_function_set(entity);
       const auto ansatz_base_entity = ansatz_space.base_function_set(entity);
       mapper().globalIndices(entity, global_rows);
@@ -342,8 +345,8 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
         }
       }
       // walk the intersections
-      const auto intersection_it_end = local_grid_view.iend(entity);
-      for (auto intersection_it = local_grid_view.ibegin(entity); intersection_it != intersection_it_end;
+      const auto intersection_it_end = grid_layer.iend(entity);
+      for (auto intersection_it = grid_layer.ibegin(entity); intersection_it != intersection_it_end;
            ++intersection_it) {
         const auto& intersection = *intersection_it;
         // get the neighbour
@@ -370,10 +373,11 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     return compute_face_pattern(grid_view(), *this);
   }
 
-  template <class G>
-  PatternType compute_face_pattern(const /*GridView<*/ G /*>*/& local_grid_view) const
+  template <class GL>
+  typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
+  compute_face_pattern(const GL& grid_layer) const
   {
-    return compute_face_pattern(local_grid_view, *this);
+    return compute_face_pattern(grid_layer, *this);
   }
 
   template <class S, size_t d, size_t r, size_t rC>
@@ -382,20 +386,20 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     return compute_face_pattern(grid_view(), ansatz_space);
   }
 
-  template <class G, class S, size_t d, size_t r, size_t rC>
-  PatternType compute_face_pattern(const /*GridView<*/ G /*>*/& local_grid_view,
-                                   const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  template <class GL, class S, size_t d, size_t r, size_t rC>
+  typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
+  compute_face_pattern(const GL& grid_layer, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     // prepare
     PatternType pattern(mapper().size());
     Dune::DynamicVector<size_t> global_rows(mapper().maxNumDofs(), 0);
     Dune::DynamicVector<size_t> global_cols(ansatz_space.mapper().maxNumDofs(), 0);
-    for (const auto& entity : elements(local_grid_view)) {
+    for (const auto& entity : elements(grid_layer)) {
       const auto test_base_entity = base_function_set(entity);
       mapper().globalIndices(entity, global_rows);
       // walk the intersections
-      const auto intersection_it_end = local_grid_view.iend(entity);
-      for (auto intersection_it = local_grid_view.ibegin(entity); intersection_it != intersection_it_end;
+      const auto intersection_it_end = grid_layer.iend(entity);
+      for (auto intersection_it = grid_layer.ibegin(entity); intersection_it != intersection_it_end;
            ++intersection_it) {
         const auto& intersection = *intersection_it;
         // get the neighbour
