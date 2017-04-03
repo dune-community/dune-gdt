@@ -11,6 +11,8 @@
 #ifndef DUNE_GDT_PROLONGATIONS_L2_HH
 #define DUNE_GDT_PROLONGATIONS_L2_HH
 
+#include <dune/xt/grid/type_traits.hh>
+
 #include <dune/gdt/discretefunction/default.hh>
 
 #include "l2-local.hh"
@@ -20,14 +22,14 @@ namespace Dune {
 namespace GDT {
 
 // forward
-template <class GridViewImp, class FieldImp = double>
+template <class GridLayerImp, class FieldImp = double>
 class L2ProlongationOperator;
 
 
 namespace internal {
 
 
-template <class GridViewType, class SourceType, class RangeType>
+template <class GridLayerType, class SourceType, class RangeType>
 class L2ProlongationLocalizableOperatorTraits
 {
   static_assert(is_const_discrete_function<SourceType>::value, "");
@@ -46,15 +48,15 @@ class L2ProlongationLocalizableOperatorTraits
   };
 
 public:
-  typedef typename Helper<GridViewType, SourceType, RangeType, RangeType::SpaceType::continuous>::type BaseType;
+  typedef typename Helper<GridLayerType, SourceType, RangeType, RangeType::SpaceType::continuous>::type BaseType;
 }; // class L2ProlongationLocalizableOperatorTraits
 
 
-template <class GridViewType, class FieldImp = double>
+template <class GridLayerType, class FieldImp = double>
 class L2ProlongationOperatorTraits
 {
 public:
-  typedef L2ProlongationOperator<GridViewType, FieldImp> derived_type;
+  typedef L2ProlongationOperator<GridLayerType, FieldImp> derived_type;
   typedef FieldImp FieldType;
 };
 
@@ -62,12 +64,12 @@ public:
 } // namespace internal
 
 
-template <class GridViewImp, class SourceImp, class RangeImp>
+template <class GridLayerImp, class SourceImp, class RangeImp>
 class L2ProlongationLocalizableOperator
-    : public internal::L2ProlongationLocalizableOperatorTraits<GridViewImp, SourceImp, RangeImp>::BaseType
+    : public internal::L2ProlongationLocalizableOperatorTraits<GridLayerImp, SourceImp, RangeImp>::BaseType
 {
   typedef
-      typename internal::L2ProlongationLocalizableOperatorTraits<GridViewImp, SourceImp, RangeImp>::BaseType BaseType;
+      typename internal::L2ProlongationLocalizableOperatorTraits<GridLayerImp, SourceImp, RangeImp>::BaseType BaseType;
 
 public:
   template <class... Args>
@@ -78,61 +80,61 @@ public:
 };
 
 
-template <class GridViewType, class SS, class SV, class RS, class RV>
-typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
-                        std::unique_ptr<L2ProlongationLocalizableOperator<GridViewType,
+template <class GridLayerType, class SS, class SV, class RS, class RV>
+typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value,
+                        std::unique_ptr<L2ProlongationLocalizableOperator<GridLayerType,
                                                                           ConstDiscreteFunction<SS, SV>,
                                                                           DiscreteFunction<RS, RV>>>>::type
-make_l2_prolongation_localizable_operator(const GridViewType& grid_view,
+make_l2_prolongation_localizable_operator(const GridLayerType& grid_layer,
                                           const ConstDiscreteFunction<SS, SV>& source,
                                           DiscreteFunction<RS, RV>& range,
                                           const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<L2ProlongationLocalizableOperator<GridViewType,
+  return Dune::XT::Common::make_unique<L2ProlongationLocalizableOperator<GridLayerType,
                                                                          ConstDiscreteFunction<SS, SV>,
                                                                          DiscreteFunction<RS, RV>>>(
-      over_integrate, grid_view, source, range);
+      over_integrate, grid_layer, source, range);
 } // ... make_l2_prolongation_localizable_operator(...)
 
 template <class SS, class SV, class RS, class RV>
-std::unique_ptr<L2ProlongationLocalizableOperator<typename RS::GridViewType,
+std::unique_ptr<L2ProlongationLocalizableOperator<typename RS::GridLayerType,
                                                   ConstDiscreteFunction<SS, SV>,
                                                   DiscreteFunction<RS, RV>>>
 make_l2_prolongation_localizable_operator(const ConstDiscreteFunction<SS, SV>& source,
                                           DiscreteFunction<RS, RV>& range,
                                           const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<L2ProlongationLocalizableOperator<typename RS::GridViewType,
+  return Dune::XT::Common::make_unique<L2ProlongationLocalizableOperator<typename RS::GridLayerType,
                                                                          ConstDiscreteFunction<SS, SV>,
                                                                          DiscreteFunction<RS, RV>>>(
-      over_integrate, range.space().grid_view(), source, range);
+      over_integrate, range.space().grid_layer(), source, range);
 } // ... make_l2_prolongation_localizable_operator(...)
 
 
-template <class GridViewImp, class FieldImp>
-class L2ProlongationOperator : public OperatorInterface<internal::L2ProlongationOperatorTraits<GridViewImp, FieldImp>>
+template <class GridLayerImp, class FieldImp>
+class L2ProlongationOperator : public OperatorInterface<internal::L2ProlongationOperatorTraits<GridLayerImp, FieldImp>>
 {
-  typedef OperatorInterface<internal::L2ProlongationOperatorTraits<GridViewImp, FieldImp>> BaseType;
+  typedef OperatorInterface<internal::L2ProlongationOperatorTraits<GridLayerImp, FieldImp>> BaseType;
 
 public:
-  typedef internal::L2ProlongationOperatorTraits<GridViewImp, FieldImp> Traits;
-  typedef GridViewImp GridViewType;
+  typedef internal::L2ProlongationOperatorTraits<GridLayerImp, FieldImp> Traits;
+  typedef GridLayerImp GridLayerType;
   using typename BaseType::FieldType;
 
 private:
-  typedef typename XT::Grid::Entity<GridViewType>::Type E;
-  typedef typename GridViewType::ctype D;
-  static const size_t d = GridViewType::dimension;
+  using E = XT::Grid::extract_entity_t<GridLayerType>;
+  typedef typename GridLayerType::ctype D;
+  static const size_t d = GridLayerType::dimension;
 
 public:
-  L2ProlongationOperator(const size_t over_integrate, GridViewType grid_view)
-    : grid_view_(grid_view)
+  L2ProlongationOperator(const size_t over_integrate, GridLayerType grid_layer)
+    : grid_layer_(grid_layer)
     , over_integrate_(over_integrate)
   {
   }
 
-  L2ProlongationOperator(GridViewType grid_view)
-    : grid_view_(grid_view)
+  L2ProlongationOperator(GridLayerType grid_layer)
+    : grid_layer_(grid_layer)
     , over_integrate_(0)
   {
   }
@@ -140,7 +142,7 @@ public:
   template <class SS, class SV, class RS, class RV>
   void apply(const ConstDiscreteFunction<SS, SV>& source, DiscreteFunction<RS, RV>& range) const
   {
-    redirect<RS::continuous>::apply(grid_view_, source, range, over_integrate_);
+    redirect<RS::continuous>::apply(grid_layer_, source, range, over_integrate_);
   }
 
   template <class RangeType, class SourceType>
@@ -171,9 +173,9 @@ private:
   struct redirect
   {
     template <class SourceType, class RangeType>
-    static void apply(const GridViewType& grd_vw, const SourceType& src, RangeType& rng, const size_t over_integrate)
+    static void apply(const GridLayerType& grd_vw, const SourceType& src, RangeType& rng, const size_t over_integrate)
     {
-      L2GlobalProlongationLocalizableOperator<GridViewType, SourceType, RangeType>(over_integrate, grd_vw, src, rng)
+      L2GlobalProlongationLocalizableOperator<GridLayerType, SourceType, RangeType>(over_integrate, grd_vw, src, rng)
           .apply();
     }
   };
@@ -182,35 +184,35 @@ private:
   struct redirect<false, anything>
   {
     template <class SourceType, class RangeType>
-    static void apply(const GridViewType& grd_vw, const SourceType& src, RangeType& rng, const size_t over_integrate)
+    static void apply(const GridLayerType& grd_vw, const SourceType& src, RangeType& rng, const size_t over_integrate)
     {
-      L2LocalProlongationLocalizableOperator<GridViewType, SourceType, RangeType>(over_integrate, grd_vw, src, rng)
+      L2LocalProlongationLocalizableOperator<GridLayerType, SourceType, RangeType>(over_integrate, grd_vw, src, rng)
           .apply();
     }
   };
 
-  GridViewType grid_view_;
+  GridLayerType grid_layer_;
   const size_t over_integrate_;
 }; // class L2ProlongationOperator
 
 
-template <class GridViewType>
-typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
-                        std::unique_ptr<L2ProlongationOperator<GridViewType>>>::type
-make_l2_prolongation_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
+template <class GridLayerType>
+typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value,
+                        std::unique_ptr<L2ProlongationOperator<GridLayerType>>>::type
+make_l2_prolongation_operator(const GridLayerType& grid_layer, const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<L2ProlongationOperator<GridViewType>>(over_integrate, grid_view);
+  return Dune::XT::Common::make_unique<L2ProlongationOperator<GridLayerType>>(over_integrate, grid_layer);
 }
 
 
-template <class GridViewType, class SS, class SV, class RS, class RV>
-typename std::enable_if<XT::Grid::is_layer<GridViewType>::value, void>::type
-prolong_l2(const GridViewType& grid_view,
+template <class GridLayerType, class SS, class SV, class RS, class RV>
+typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value, void>::type
+prolong_l2(const GridLayerType& grid_layer,
            const ConstDiscreteFunction<SS, SV>& source,
            DiscreteFunction<RS, RV>& range,
            const size_t over_integrate = 0)
 {
-  make_l2_prolongation_operator(grid_view, over_integrate)->apply(source, range);
+  make_l2_prolongation_operator(grid_layer, over_integrate)->apply(source, range);
 }
 
 template <class SS, class SV, class RS, class RV>
@@ -218,7 +220,7 @@ void prolong_l2(const ConstDiscreteFunction<SS, SV>& source,
                 DiscreteFunction<RS, RV>& range,
                 const size_t over_integrate = 0)
 {
-  make_l2_prolongation_operator(range.space().grid_view(), over_integrate)->apply(source, range);
+  make_l2_prolongation_operator(range.space().grid_layer(), over_integrate)->apply(source, range);
 }
 
 

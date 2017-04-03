@@ -31,7 +31,7 @@ template <class DF,
           typename DT, // may be void
           class RP,
           class M /* = typename XT::LA::Container<typename R::RangeFieldType>::MatrixType,
-          class GV = typename R::GridViewType,
+          class GL = typename R::GridLayerType,
           class S = R,
           class F = typename R::RangeFieldType*/>
 class EllipticMatrixOperator
@@ -40,7 +40,7 @@ class EllipticMatrixOperator
   static_assert(is_space<R>::value, "");
 
 public:
-  typedef GDT::EllipticMatrixOperator<DF, DT, R, M /*, GV, S, F*/> type;
+  typedef GDT::EllipticMatrixOperator<DF, DT, R, M /*, GL, S, F*/> type;
   typedef pybind11::class_<type> bound_type;
 
 private:

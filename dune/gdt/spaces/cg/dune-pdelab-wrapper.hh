@@ -57,16 +57,18 @@ class DunePdelabCgSpaceWrapper
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
 class DunePdelabCgSpaceWrapperTraits
 {
+  static_assert(XT::Grid::is_view<GridViewImp>::value, "");
+
 public:
   typedef DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
-  typedef GridViewImp GridViewType;
+  typedef GridViewImp GridLayerType;
   static const int polOrder = polynomialOrder;
   static_assert(polOrder >= 1, "Wrong polOrder given!");
   static const bool continuous = true;
 
 private:
-  typedef typename GridViewType::ctype DomainFieldType;
-  static const size_t dimDomain = GridViewType::dimension;
+  typedef typename GridLayerType::ctype DomainFieldType;
+  static const size_t dimDomain = GridLayerType::dimension;
 
 public:
   typedef RangeFieldImp RangeFieldType;
@@ -81,14 +83,14 @@ private:
   template <class G>
   struct FeMap<G, true, true, false>
   {
-    typedef PDELab::PkLocalFiniteElementMap<GridViewType, DomainFieldType, RangeFieldType, polOrder> Type;
+    typedef PDELab::PkLocalFiniteElementMap<GridLayerType, DomainFieldType, RangeFieldType, polOrder> Type;
   };
   template <class G>
   struct FeMap<G, true, false, true>
   {
-    typedef PDELab::QkLocalFiniteElementMap<GridViewType, DomainFieldType, RangeFieldType, polOrder> Type;
+    typedef PDELab::QkLocalFiniteElementMap<GridLayerType, DomainFieldType, RangeFieldType, polOrder> Type;
   };
-  typedef typename GridViewType::Grid GridType;
+  typedef typename GridLayerType::Grid GridType;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
   static const bool simplicial_ =
       (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId == Impl::SimplexTopology<dimDomain>::type::id);
@@ -97,17 +99,17 @@ private:
   typedef typename FeMap<GridType, single_geom_, simplicial_, cubic_>::Type FEMapType;
 
 public:
-  typedef PDELab::GridFunctionSpace<GridViewType, FEMapType, PDELab::OverlappingConformingDirichletConstraints>
+  typedef PDELab::GridFunctionSpace<GridLayerType, FEMapType, PDELab::OverlappingConformingDirichletConstraints>
       BackendType;
   typedef DunePdelabCgMapperWrapper<BackendType, rangeDim> MapperType;
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
   typedef BaseFunctionSet::
       DunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType, rangeDim, rangeDimCols>
           BaseFunctionSetType;
   static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
   static const bool needs_grid_view = true;
 
-  typedef typename CommunicationChooser<GridViewType>::Type CommunicatorType;
+  typedef typename CommunicationChooser<GridLayerType>::Type CommunicatorType;
   typedef typename Dune::XT::Common::
       make_identical_tuple<DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>, rangeDim>::type
           SpaceTupleType;
@@ -168,15 +170,15 @@ public:
   static const size_t dimRange = BaseType::dimRange;
   static const size_t dimRangeCols = BaseType::dimRangeCols;
 
-  typedef typename Traits::GridViewType GridViewType;
+  typedef typename Traits::GridLayerType GridLayerType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
 
-  typedef typename GridViewType::ctype DomainFieldType;
+  typedef typename GridLayerType::ctype DomainFieldType;
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
-  typedef CommunicationChooser<GridViewType> CommunicationChooserType;
+  typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 
 private:
@@ -188,12 +190,12 @@ public:
   typedef typename BaseType::PatternType PatternType;
   typedef typename BaseType::BoundaryInfoType BoundaryInfoType;
 
-  explicit DunePdelabCgSpaceWrapper(GridViewType gV)
-    : gridView_(gV)
-    , fe_map_(gridView_)
-    , backend_(gridView_, fe_map_)
+  explicit DunePdelabCgSpaceWrapper(GridLayerType grd_vw)
+    : grid_view_(grd_vw)
+    , fe_map_(grid_view_)
+    , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
-    , communicator_(CommunicationChooser<GridViewImp>::create(gridView_))
+    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
     , communicator_prepared_(false)
   {
   }
@@ -203,11 +205,11 @@ public:
    * \note  Manually implemented bc of the std::mutex + communicator_ unique_ptr
    */
   DunePdelabCgSpaceWrapper(const ThisType& other)
-    : gridView_(other.gridView_)
-    , fe_map_(gridView_)
-    , backend_(gridView_, fe_map_)
+    : grid_view_(other.grid_view_)
+    , fe_map_(grid_view_)
+    , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
-    , communicator_(CommunicationChooser<GridViewImp>::create(gridView_))
+    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
     , communicator_prepared_(false)
   {
     // make sure our new communicator is prepared if other's was
@@ -222,7 +224,7 @@ public:
    * \note  Manually implemented bc of the std::mutex.
    */
   DunePdelabCgSpaceWrapper(ThisType&& source)
-    : gridView_(std::move(source.gridView_))
+    : grid_view_(std::move(source.grid_view_))
     , fe_map_(std::move(source.fe_map_))
     , backend_(std::move(source.backend_))
     , mapper_(std::move(source.mapper_))
@@ -234,9 +236,14 @@ public:
   ThisType& operator=(const ThisType& other) = delete;
   ThisType& operator=(ThisType&& source) = delete;
 
-  const GridViewType& grid_view() const
+  const GridLayerType& grid_layer() const
   {
-    return gridView_;
+    return grid_view_;
+  }
+
+  GridLayerType& grid_layer()
+  {
+    return grid_view_;
   }
 
   const BackendType& backend() const
@@ -273,7 +280,7 @@ public:
   } // ... communicator(...)
 
 private:
-  GridViewType gridView_;
+  GridLayerType grid_view_;
   const FEMapType fe_map_;
   const BackendType backend_;
   const MapperType mapper_;
@@ -322,15 +329,15 @@ public:
   static const size_t dimRange = BaseType::dimRange;
   static const size_t dimRangeCols = BaseType::dimRangeCols;
 
-  typedef typename Traits::GridViewType GridViewType;
+  typedef typename Traits::GridLayerType GridLayerType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
 
-  typedef typename GridViewType::ctype DomainFieldType;
+  typedef typename GridLayerType::ctype DomainFieldType;
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
-  typedef CommunicationChooser<GridViewType> CommunicationChooserType;
+  typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 
   using typename ProductInterfaceType::SpaceTupleType;
@@ -345,13 +352,13 @@ public:
   typedef typename BaseType::PatternType PatternType;
   typedef typename BaseType::BoundaryInfoType BoundaryInfoType;
 
-  explicit DunePdelabCgSpaceWrapper(GridViewType gV)
-    : gridView_(gV)
-    , fe_map_(gridView_)
-    , backend_(gridView_, fe_map_)
+  explicit DunePdelabCgSpaceWrapper(GridLayerType grd_vw)
+    : grid_view_(grd_vw)
+    , fe_map_(grid_view_)
+    , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
-    , factor_space_(gV)
-    , communicator_(CommunicationChooser<GridViewImp>::create(gridView_))
+    , factor_space_(grd_vw)
+    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
     , communicator_prepared_(false)
   {
   }
@@ -361,12 +368,12 @@ public:
    * \note  Manually implemented bc of the std::mutex + communicator_ unique_ptr
    */
   DunePdelabCgSpaceWrapper(const ThisType& other)
-    : gridView_(other.gridView_)
-    , fe_map_(gridView_)
-    , backend_(gridView_, fe_map_)
+    : grid_view_(other.grid_view_)
+    , fe_map_(grid_view_)
+    , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
     , factor_space_(other.factor_space_)
-    , communicator_(CommunicationChooser<GridViewImp>::create(gridView_))
+    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
     , communicator_prepared_(false)
   {
     // make sure our new communicator is prepared if other's was
@@ -379,7 +386,7 @@ public:
    * \note  Manually implemented bc of the std::mutex.
    */
   DunePdelabCgSpaceWrapper(ThisType&& source)
-    : gridView_(source.gridView_)
+    : grid_view_(source.grid_view_)
     , fe_map_(source.fe_map_)
     , backend_(source.backend_)
     , mapper_(source.mapper_)
@@ -393,9 +400,14 @@ public:
 
   ThisType& operator=(ThisType&& source) = delete;
 
-  const GridViewType& grid_view() const
+  const GridLayerType& grid_layer() const
   {
-    return gridView_;
+    return grid_view_;
+  }
+
+  GridLayerType& grid_layer()
+  {
+    return grid_view_;
   }
 
   const BackendType& backend() const
@@ -438,7 +450,7 @@ public:
   }
 
 private:
-  GridViewType gridView_;
+  GridLayerType grid_view_;
   const FEMapType fe_map_;
   const BackendType backend_;
   const MapperType mapper_;

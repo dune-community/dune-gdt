@@ -77,9 +77,9 @@ public:
     auto logger = XT::Common::TimedLogger().get(static_id());
     logger.info() << "Creating space... " << std::endl;
     auto space = SpaceProvider::create(grid_provider, level);
-    logger.debug() << "grid has " << space.grid_view().indexSet().size(0) << " elements" << std::endl;
-    typedef typename SpaceType::GridViewType GridViewType;
-    typedef typename GridViewType::Intersection IntersectionType;
+    logger.debug() << "grid has " << space.grid_layer().indexSet().size(0) << " elements" << std::endl;
+    typedef typename SpaceType::GridLayerType GridLayerType;
+    typedef typename GridLayerType::Intersection IntersectionType;
     auto boundary_info = XT::Grid::BoundaryInfoFactory<IntersectionType>::create(problem.boundary_info_cfg());
     logger.info() << "Assembling... " << std::endl;
     VectorType rhs_vector(space.mapper().size(), 0.0);
@@ -90,11 +90,11 @@ public:
         make_l2_face_vector_functional(problem.neumann(),
                                        rhs_vector,
                                        space,
-                                       new XT::Grid::ApplyOn::NeumannIntersections<GridViewType>(*boundary_info));
+                                       new XT::Grid::ApplyOn::NeumannIntersections<GridLayerType>(*boundary_info));
     // prepare the dirichlet projection
     auto dirichlet_projection = make_discrete_function<VectorType>(space, "dirichlet values");
     auto dirichlet_projection_operator = make_localizable_dirichlet_projection_operator(
-        space.grid_view(), *boundary_info, problem.dirichlet(), dirichlet_projection);
+        space.grid_layer(), *boundary_info, problem.dirichlet(), dirichlet_projection);
     DirichletConstraints<IntersectionType> dirichlet_constraints(*boundary_info, space.mapper().size());
     // register everything for assembly in one grid walk
     SystemAssembler<SpaceType> assembler(space);

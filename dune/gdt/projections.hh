@@ -26,32 +26,32 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridViewType, class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<XT::Grid::is_layer<GridViewType>::value
+template <class GridLayerType, class SourceType, class SpaceType, class VectorType>
+typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value
                             && XT::Functions::is_localizable_function<SourceType>::value
                             && is_cg_space<SpaceType>::value
                             && XT::LA::is_vector<VectorType>::value,
                         void>::type
-project(const GridViewType& grid_view,
+project(const GridLayerType& grid_layer,
         const SourceType& source,
         DiscreteFunction<SpaceType, VectorType>& range,
         const size_t /*over_integrate*/ = 0)
 {
-  project_lagrange(grid_view, source, range);
+  project_lagrange(grid_layer, source, range);
 }
 
-template <class GridViewType, class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<XT::Grid::is_layer<GridViewType>::value
+template <class GridLayerType, class SourceType, class SpaceType, class VectorType>
+typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value
                             && XT::Functions::is_localizable_function<SourceType>::value
                             && !is_cg_space<SpaceType>::value
                             && XT::LA::is_vector<VectorType>::value,
                         void>::type
-project(const GridViewType& grid_view,
+project(const GridLayerType& grid_layer,
         const SourceType& source,
         DiscreteFunction<SpaceType, VectorType>& range,
         const size_t over_integrate = 0)
 {
-  project_l2(grid_view, source, range, over_integrate);
+  project_l2(grid_layer, source, range, over_integrate);
 }
 
 

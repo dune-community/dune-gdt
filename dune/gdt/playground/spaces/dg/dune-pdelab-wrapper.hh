@@ -29,6 +29,7 @@
 #include <dune/xt/common/tuple.hh>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/la/container/istl.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/parallel.hh>
@@ -43,36 +44,36 @@ namespace GDT {
 
 
 // forward, to be used in the traits and to allow for specialization
-template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
+template <class GridLayerImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
 class DunePdelabDgSpaceWrapper
 {
-  static_assert(Dune::AlwaysFalse<GridViewImp>::value, "Untested for this combination of dimensions!");
+  static_assert(Dune::AlwaysFalse<GridLayerImp>::value, "Untested for this combination of dimensions!");
 };
 
 
 // forward, to be used in the traits and to allow for specialization
-template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
+template <class GridLayerImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
 class DunePdelabDgProductSpaceWrapper
 {
-  static_assert(Dune::AlwaysFalse<GridViewImp>::value, "Untested for these dimensions!");
+  static_assert(Dune::AlwaysFalse<GridLayerImp>::value, "Untested for these dimensions!");
 };
 
 
 namespace internal {
 
 
-template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
+template <class GridLayerImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
 class DunePdelabDgSpaceWrapperTraits
 {
 public:
-  typedef DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
-  typedef GridViewImp GridViewType;
+  typedef DunePdelabDgSpaceWrapper<GridLayerImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
+  typedef GridLayerImp GridLayerType;
   static const int polOrder = polynomialOrder;
   static const bool continuous = false;
 
 private:
-  typedef typename GridViewType::ctype DomainFieldType;
-  static const size_t dimDomain = GridViewType::dimension;
+  typedef typename GridLayerType::ctype DomainFieldType;
+  static const size_t dimDomain = GridLayerType::dimension;
 
 public:
   typedef RangeFieldImp RangeFieldType;
@@ -94,7 +95,7 @@ private:
   {
     typedef PDELab::QkDGLocalFiniteElementMap<DomainFieldType, RangeFieldType, polOrder, dimDomain> Type;
   };
-  typedef typename GridViewType::Grid GridType;
+  typedef typename GridLayerType::Grid GridType;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
   static const bool simplicial_ =
       (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId == Impl::SimplexTopology<dimDomain>::type::id);
@@ -103,35 +104,35 @@ private:
   typedef typename FeMap<GridType, single_geom_, simplicial_, cubic_>::Type FEMapType;
 
 public:
-  typedef PDELab::GridFunctionSpace<GridViewType, FEMapType, PDELab::OverlappingConformingDirichletConstraints>
+  typedef PDELab::GridFunctionSpace<GridLayerType, FEMapType, PDELab::OverlappingConformingDirichletConstraints>
       BackendType;
   typedef DunePdelabDgMapperWrapper<BackendType> MapperType;
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
   typedef BaseFunctionSet::
       DunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType, rangeDim, rangeDimCols>
           BaseFunctionSetType;
   static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
   static const bool needs_grid_view = true;
-  typedef CommunicationChooser<GridViewType> CommunicationChooserType;
+  typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 
 private:
-  friend class DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
+  friend class DunePdelabDgSpaceWrapper<GridLayerImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
 }; // class DunePdelabDgSpaceWrapperTraits
 
 
-template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
+template <class GridLayerImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
 class DunePdelabDgProductSpaceWrapperTraits
-    : public DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>
+    : public DunePdelabDgSpaceWrapperTraits<GridLayerImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>
 {
-  typedef DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> BaseType;
+  typedef DunePdelabDgSpaceWrapperTraits<GridLayerImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> BaseType;
 
 public:
-  typedef DunePdelabDgProductSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>
+  typedef DunePdelabDgProductSpaceWrapper<GridLayerImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>
       derived_type;
-  using typename BaseType::GridViewType;
+  using typename BaseType::GridLayerType;
   static const int polOrder = BaseType::polOrder;
-  static const size_t dimDomain = GridViewType::dimension;
+  static const size_t dimDomain = GridLayerType::dimension;
   static const size_t dimRange = rangeDim;
   static const size_t dimRangeCols = rangeDimCols;
   using typename BaseType::BackendType;
@@ -141,7 +142,7 @@ public:
   using BaseType::part_view_type;
   using BaseType::needs_grid_view;
 
-  typedef typename Dune::GDT::DunePdelabDgSpaceWrapper<GridViewType, polOrder, RangeFieldType, 1, dimRangeCols>
+  typedef typename Dune::GDT::DunePdelabDgSpaceWrapper<GridLayerType, polOrder, RangeFieldType, 1, dimRangeCols>
       FactorSpaceType;
   typedef typename Dune::XT::Common::make_identical_tuple<FactorSpaceType, dimRange>::type SpaceTupleType;
 };
@@ -150,17 +151,17 @@ public:
 } // namespace internal
 
 
-template <class GridViewImp, int polynomialOrder, class RangeFieldImp>
-class DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>
+template <class GridLayerImp, int polynomialOrder, class RangeFieldImp>
+class DunePdelabDgSpaceWrapper<GridLayerImp, polynomialOrder, RangeFieldImp, 1, 1>
     : public DgSpaceInterface<internal::
-                                  DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                              GridViewImp::dimension,
+                                  DunePdelabDgSpaceWrapperTraits<GridLayerImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                              GridLayerImp::dimension,
                               1,
                               1>
 {
-  typedef DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
-  typedef DgSpaceInterface<internal::DunePdelabDgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
-                           GridViewImp::dimension,
+  typedef DunePdelabDgSpaceWrapper<GridLayerImp, polynomialOrder, RangeFieldImp, 1, 1> ThisType;
+  typedef DgSpaceInterface<internal::DunePdelabDgSpaceWrapperTraits<GridLayerImp, polynomialOrder, RangeFieldImp, 1, 1>,
+                           GridLayerImp::dimension,
                            1,
                            1>
       BaseType;
@@ -168,7 +169,7 @@ class DunePdelabDgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1
 public:
   using typename BaseType::Traits;
 
-  using typename BaseType::GridViewType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::BackendType;
   using typename BaseType::MapperType;
   using typename BaseType::EntityType;
@@ -181,12 +182,12 @@ private:
 public:
   using typename BaseType::CommunicatorType;
 
-  DunePdelabDgSpaceWrapper(GridViewType gV)
-    : grid_view_(gV)
+  DunePdelabDgSpaceWrapper(GridLayerType grd_vw)
+    : grid_layer_(grd_vw)
     , fe_map_()
-    , backend_(grid_view_, fe_map_)
+    , backend_(grid_layer_, fe_map_)
     , mapper_(backend_)
-    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
+    , communicator_(CommunicationChooser<GridLayerImp>::create(grid_layer_))
     , communicator_prepared_(false)
   {
   }
@@ -196,11 +197,11 @@ public:
    * \note  Manually implemented bc of the std::mutex + communicator_  unique_ptr
    */
   DunePdelabDgSpaceWrapper(const ThisType& other)
-    : grid_view_(other.grid_view_)
+    : grid_layer_(other.grid_layer_)
     , fe_map_()
-    , backend_(grid_view_, fe_map_)
+    , backend_(grid_layer_, fe_map_)
     , mapper_(backend_)
-    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
+    , communicator_(CommunicationChooser<GridLayerImp>::create(grid_layer_))
     , communicator_prepared_(false)
   {
     // make sure our new communicator is prepared if other's was
@@ -213,7 +214,7 @@ public:
    * \note  Manually implemented bc of the std::mutex.
    */
   DunePdelabDgSpaceWrapper(ThisType&& source)
-    : grid_view_(source.grid_view_)
+    : grid_layer_(source.grid_layer_)
     , fe_map_(source.fe_map_)
     , backend_(source.backend_)
     , mapper_(source.mapper_)
@@ -226,9 +227,14 @@ public:
 
   ThisType& operator=(ThisType&& source) = delete;
 
-  const GridViewType& grid_view() const
+  const GridLayerType& grid_layer() const
   {
-    return grid_view_;
+    return grid_layer_;
+  }
+
+  GridLayerType& grid_layer()
+  {
+    return grid_layer_;
   }
 
   const BackendType& backend() const
@@ -250,12 +256,12 @@ public:
   {
     DUNE_UNUSED std::lock_guard<std::mutex> gg(communicator_mutex_);
     if (!communicator_prepared_)
-      communicator_prepared_ = CommunicationChooser<GridViewType>::prepare(*this, *communicator_);
+      communicator_prepared_ = CommunicationChooser<GridLayerType>::prepare(*this, *communicator_);
     return *communicator_;
   } // ... communicator(...)
 
 private:
-  GridViewType grid_view_;
+  GridLayerType grid_layer_;
   const FEMapType fe_map_;
   const BackendType backend_;
   const MapperType mapper_;
@@ -265,41 +271,41 @@ private:
 }; // class DunePdelabDgSpaceWrapper< ..., 1 >
 
 
-template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim>
-class DunePdelabDgProductSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>
-    : public Dune::GDT::SpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp,
+template <class GridLayerImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim>
+class DunePdelabDgProductSpaceWrapper<GridLayerImp, polynomialOrder, RangeFieldImp, rangeDim, 1>
+    : public Dune::GDT::SpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridLayerImp,
                                                                                        polynomialOrder,
                                                                                        RangeFieldImp,
                                                                                        rangeDim,
                                                                                        1>,
-                                       GridViewImp::dimension,
+                                       GridLayerImp::dimension,
                                        rangeDim,
                                        1>,
-      public Dune::GDT::ProductSpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp,
+      public Dune::GDT::ProductSpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridLayerImp,
                                                                                               polynomialOrder,
                                                                                               RangeFieldImp,
                                                                                               rangeDim,
                                                                                               1>,
-                                              GridViewImp::dimension,
+                                              GridLayerImp::dimension,
                                               rangeDim,
                                               1>
 {
-  typedef DunePdelabDgProductSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef typename Dune::GDT::SpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp,
+  typedef DunePdelabDgProductSpaceWrapper<GridLayerImp, polynomialOrder, RangeFieldImp, rangeDim, 1> ThisType;
+  typedef typename Dune::GDT::SpaceInterface<internal::DunePdelabDgProductSpaceWrapperTraits<GridLayerImp,
                                                                                              polynomialOrder,
                                                                                              RangeFieldImp,
                                                                                              rangeDim,
                                                                                              1>,
-                                             GridViewImp::dimension,
+                                             GridLayerImp::dimension,
                                              rangeDim,
                                              1>
       BaseType;
 
 public:
-  typedef
-      typename internal::DunePdelabDgProductSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, 1>
+  typedef typename internal::
+      DunePdelabDgProductSpaceWrapperTraits<GridLayerImp, polynomialOrder, RangeFieldImp, rangeDim, 1>
           Traits;
-  using typename BaseType::GridViewType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::EntityType;
   using typename BaseType::BaseFunctionSetType;
   using typename BaseType::MapperType;
@@ -311,20 +317,20 @@ public:
   typedef typename Traits::SpaceTupleType SpaceTupleType;
   typedef typename Traits::FactorSpaceType FactorSpaceType;
 
-  DunePdelabDgProductSpaceWrapper(GridViewType gv)
-    : grid_view_(gv)
-    , factor_space_(grid_view_)
+  DunePdelabDgProductSpaceWrapper(GridLayerType grd_vw)
+    : grid_layer_(grd_vw)
+    , factor_space_(grid_layer_)
     , factor_mapper_(factor_space_.backend())
-    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
+    , communicator_(CommunicationChooser<GridLayerImp>::create(grid_layer_))
     , communicator_prepared_(false)
   {
   }
 
   DunePdelabDgProductSpaceWrapper(const ThisType& other)
-    : grid_view_(other.grid_view_)
+    : grid_layer_(other.grid_layer_)
     , factor_space_(other.factor_space_)
     , factor_mapper_(other.factor_mapper_)
-    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
+    , communicator_(CommunicationChooser<GridLayerImp>::create(grid_layer_))
     , communicator_prepared_(false)
   {
     // make sure our new communicator is prepared if other's was
@@ -338,9 +344,14 @@ public:
 
   ThisType& operator=(ThisType&& source) = delete;
 
-  const GridViewType& grid_view() const
+  const GridLayerType& grid_layer() const
   {
-    return grid_view_;
+    return grid_layer_;
+  }
+
+  GridLayerType& grid_layer()
+  {
+    return grid_layer_;
   }
 
   const BackendType& backend() const
@@ -362,7 +373,7 @@ public:
   {
     DUNE_UNUSED std::lock_guard<std::mutex> gg(communicator_mutex_);
     if (!communicator_prepared_)
-      communicator_prepared_ = CommunicationChooser<GridViewType>::prepare(*this, *communicator_);
+      communicator_prepared_ = CommunicationChooser<GridLayerType>::prepare(*this, *communicator_);
     return *communicator_;
   } // ... communicator(...)
 
@@ -373,7 +384,7 @@ public:
   }
 
 private:
-  const GridViewType grid_view_;
+  const GridLayerType grid_layer_;
   const FactorSpaceType factor_space_;
   const MapperType factor_mapper_;
   mutable std::unique_ptr<CommunicatorType> communicator_;
@@ -385,10 +396,10 @@ private:
 #else // HAVE_DUNE_PDELAB
 
 
-template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
+template <class GridLayerImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
 class DunePdelabDgSpaceWrapper
 {
-  static_assert(Dune::AlwaysFalse<GridViewImp>::value, "You are missing dune-pdelab!");
+  static_assert(Dune::AlwaysFalse<GridLayerImp>::value, "You are missing dune-pdelab!");
 };
 
 

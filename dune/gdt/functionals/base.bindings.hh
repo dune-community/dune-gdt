@@ -28,7 +28,7 @@ class VectorFunctionalBase
 {
 public:
   typedef FunctionalType type;
-  typedef GDT::SystemAssembler<typename FunctionalType::SpaceType, typename FunctionalType::GridViewType> BaseType;
+  typedef GDT::SystemAssembler<typename FunctionalType::SpaceType, typename FunctionalType::GridLayerType> BaseType;
   typedef pybind11::class_<type, BaseType> bound_type;
 
   static bound_type bind(pybind11::module& m, const std::string& class_id)

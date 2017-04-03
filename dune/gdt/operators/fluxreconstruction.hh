@@ -21,6 +21,7 @@
 
 #include <dune/geometry/quadraturerules.hh>
 
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/functions/constant.hh>
 
@@ -32,23 +33,23 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridViewType, class DiffusionFactorType, class DiffusionTensorType = void>
+template <class GridLayerType, class DiffusionFactorType, class DiffusionTensorType = void>
 class DiffusiveFluxReconstructionOperator;
 
 
-template <class GridViewType, class DiffusionFactorType, class DiffusionTensorType>
+template <class GridLayerType, class DiffusionFactorType, class DiffusionTensorType>
 class DiffusiveFluxReconstructionOperator
 {
-  static_assert(GridViewType::dimension == 2, "Only implemented for dimDomain 2 at the moment!");
+  static_assert(GridLayerType::dimension == 2, "Only implemented for dimDomain 2 at the moment!");
   static_assert(Dune::XT::Functions::is_localizable_function<DiffusionFactorType>::value,
                 "DiffusionFactorType has to be tagged as XT::Functions::is_localizable_function!");
   static_assert(Dune::XT::Functions::is_localizable_function<DiffusionTensorType>::value,
                 "DiffusionTensorType has to be tagged as XT::Functions::is_localizable_function!");
 
 public:
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
-  typedef typename GridViewType::ctype DomainFieldType;
-  static const size_t dimDomain = GridViewType::dimension;
+  using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
+  typedef typename GridLayerType::ctype DomainFieldType;
+  static const size_t dimDomain = GridLayerType::dimension;
   typedef typename DiffusionFactorType::RangeFieldType FieldType;
   typedef typename DiffusionFactorType::DomainType DomainType;
 
@@ -56,21 +57,21 @@ private:
   static_assert(dimDomain == 2, "Not implemented!");
 
 public:
-  DiffusiveFluxReconstructionOperator(const GridViewType& grid_view,
+  DiffusiveFluxReconstructionOperator(const GridLayerType& grid_layer,
                                       const DiffusionFactorType& diffusion_factor,
                                       const DiffusionTensorType& diffusion_tensor,
                                       const size_t over_integrate = 0)
-    : grid_view_(grid_view)
+    : grid_layer_(grid_layer)
     , diffusion_factor_(diffusion_factor)
     , diffusion_tensor_(diffusion_tensor)
     , over_integrate_(over_integrate)
   {
   }
 
-  template <class GV, class V>
+  template <class GL, class V>
   void
   apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
-        DiscreteFunction<DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>, V>& range) const
+        DiscreteFunction<DunePdelabRtSpaceWrapper<GL, 0, FieldType, dimDomain>, V>& range) const
   {
     const auto& rtn0_space = range.space();
     auto& range_vector = range.vector();
@@ -87,12 +88,12 @@ public:
     DynamicMatrix<FieldType> tmp_matrix(1, 1, 0);
     DynamicMatrix<FieldType> tmp_matrix_en_en(1, 1, 0);
     DynamicMatrix<FieldType> tmp_matrix_en_ne(1, 1, 0);
-    std::vector<typename DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType>
+    std::vector<typename DunePdelabRtSpaceWrapper<GL, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType>
         basis_values(rtn0_space.mapper().maxNumDofs(),
-                     typename DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType(0));
+                     typename DunePdelabRtSpaceWrapper<GL, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType(0));
     // walk the grid
-    const auto entity_it_end = grid_view_.template end<0>();
-    for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+    const auto entity_it_end = grid_layer_.template end<0>();
+    for (auto entity_it = grid_layer_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       const auto local_DoF_indices = rtn0_space.local_DoF_indices(entity);
       const auto global_DoF_indices = rtn0_space.mapper().globalIndices(entity);
@@ -103,13 +104,13 @@ public:
       const auto local_basis = rtn0_space.base_function_set(entity);
       const auto local_constant_one = constant_one.local_function(entity);
       // walk the intersections
-      const auto intersection_it_end = grid_view_.iend(entity);
-      for (auto intersection_it = grid_view_.ibegin(entity); intersection_it != intersection_it_end;
+      const auto intersection_it_end = grid_layer_.iend(entity);
+      for (auto intersection_it = grid_layer_.ibegin(entity); intersection_it != intersection_it_end;
            ++intersection_it) {
         const auto& intersection = *intersection_it;
         if (intersection.neighbor() && !intersection.boundary()) {
           const auto neighbor = intersection.outside();
-          if (grid_view_.indexSet().index(entity) < grid_view_.indexSet().index(neighbor)) {
+          if (grid_layer_.indexSet().index(entity) < grid_layer_.indexSet().index(neighbor)) {
             const auto local_diffusion_factor_neighbor = diffusion_factor_.local_function(neighbor);
             const auto local_diffusion_tensor_neighbor = diffusion_tensor_.local_function(neighbor);
             const auto local_source_neighbor = source.local_function(neighbor);
@@ -215,7 +216,7 @@ public:
   } // ... apply(...)
 
 private:
-  const GridViewType& grid_view_;
+  const GridLayerType& grid_layer_;
   const DiffusionFactorType& diffusion_factor_;
   const DiffusionTensorType& diffusion_tensor_;
   const size_t over_integrate_;
@@ -223,20 +224,20 @@ private:
 
 
 /**
- *  \todo Add more static checks that GridViewType and LocalizableFunctionType match.
+ *  \todo Add more static checks that GridLayerType and LocalizableFunctionType match.
  *  \todo Derive from operator interfaces.
  */
-template <class GridViewType, class LocalizableFunctionType>
-class DiffusiveFluxReconstructionOperator<GridViewType, LocalizableFunctionType, void>
+template <class GridLayerType, class LocalizableFunctionType>
+class DiffusiveFluxReconstructionOperator<GridLayerType, LocalizableFunctionType, void>
 {
-  static_assert(GridViewType::dimension == 2, "Only implemented for dimDomain 2 at the moment!");
+  static_assert(GridLayerType::dimension == 2, "Only implemented for dimDomain 2 at the moment!");
   static_assert(XT::Functions::is_localizable_function<LocalizableFunctionType>::value,
                 "LocalizableFunctionType has to be tagged as XT::Functions::is_localizable_function!");
 
 public:
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
-  typedef typename GridViewType::ctype DomainFieldType;
-  static const size_t dimDomain = GridViewType::dimension;
+  using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
+  typedef typename GridLayerType::ctype DomainFieldType;
+  static const size_t dimDomain = GridLayerType::dimension;
   typedef typename LocalizableFunctionType::RangeFieldType FieldType;
   typedef typename LocalizableFunctionType::DomainType DomainType;
 
@@ -244,19 +245,19 @@ private:
   static_assert(dimDomain == 2, "Not implemented!");
 
 public:
-  DiffusiveFluxReconstructionOperator(const GridViewType& grid_view,
+  DiffusiveFluxReconstructionOperator(const GridLayerType& grid_layer,
                                       const LocalizableFunctionType& diffusion,
                                       const size_t over_integrate = 0)
-    : grid_view_(grid_view)
+    : grid_layer_(grid_layer)
     , diffusion_(diffusion)
     , over_integrate_(over_integrate)
   {
   }
 
-  template <class GV, class V>
+  template <class GL, class V>
   void
   apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
-        DiscreteFunction<DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>, V>& range) const
+        DiscreteFunction<DunePdelabRtSpaceWrapper<GL, 0, FieldType, dimDomain>, V>& range) const
   {
     const auto& rtn0_space = range.space();
     auto& range_vector = range.vector();
@@ -271,12 +272,12 @@ public:
     DynamicMatrix<FieldType> tmp_matrix(1, 1, 0);
     DynamicMatrix<FieldType> tmp_matrix_en_en(1, 1, 0);
     DynamicMatrix<FieldType> tmp_matrix_en_ne(1, 1, 0);
-    std::vector<typename DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType>
+    std::vector<typename DunePdelabRtSpaceWrapper<GL, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType>
         basis_values(rtn0_space.mapper().maxNumDofs(),
-                     typename DunePdelabRtSpaceWrapper<GV, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType(0));
+                     typename DunePdelabRtSpaceWrapper<GL, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType(0));
     // walk the grid
-    const auto entity_it_end = grid_view_.template end<0>();
-    for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+    const auto entity_it_end = grid_layer_.template end<0>();
+    for (auto entity_it = grid_layer_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       const auto local_DoF_indices = rtn0_space.local_DoF_indices(entity);
       const auto global_DoF_indices = rtn0_space.mapper().globalIndices(entity);
@@ -286,14 +287,14 @@ public:
       const auto local_basis = rtn0_space.base_function_set(entity);
       const auto local_constant_one = constant_one.local_function(entity);
       // walk the intersections
-      const auto intersection_it_end = grid_view_.iend(entity);
-      for (auto intersection_it = grid_view_.ibegin(entity); intersection_it != intersection_it_end;
+      const auto intersection_it_end = grid_layer_.iend(entity);
+      for (auto intersection_it = grid_layer_.ibegin(entity); intersection_it != intersection_it_end;
            ++intersection_it) {
         const auto& intersection = *intersection_it;
         if (intersection.neighbor() && !intersection.boundary()) {
           const auto neighbor_ptr = intersection.outside();
           const auto& neighbor = *neighbor_ptr;
-          if (grid_view_.indexSet().index(entity) < grid_view_.indexSet().index(neighbor)) {
+          if (grid_layer_.indexSet().index(entity) < grid_layer_.indexSet().index(neighbor)) {
             const auto local_diffusion_neighbor = diffusion_.local_function(neighbor);
             const auto local_source_neighbor = source.local_function(neighbor);
             const auto local_constant_one_neighbor = constant_one.local_function(neighbor);
@@ -389,17 +390,18 @@ public:
   } // ... apply(...)
 
 private:
-  const GridViewType& grid_view_;
+  const GridLayerType& grid_layer_;
   const LocalizableFunctionType& diffusion_;
   const size_t over_integrate_;
 }; // class DiffusiveFluxReconstructionOperator
 
 
-template <class GV, class DF, class DT>
-DiffusiveFluxReconstructionOperator<GV, DF, DT> make_diffusive_flux_reconstruction_operator(
-    const GV& grid_view, const DF& diffusion_factor, const DT& diffusion_tensor, const size_t over_integrate = 0)
+template <class GL, class DF, class DT>
+DiffusiveFluxReconstructionOperator<GL, DF, DT> make_diffusive_flux_reconstruction_operator(
+    const GL& grid_layer, const DF& diffusion_factor, const DT& diffusion_tensor, const size_t over_integrate = 0)
 {
-  return DiffusiveFluxReconstructionOperator<GV, DF, DT>(grid_view, diffusion_factor, diffusion_tensor, over_integrate);
+  return DiffusiveFluxReconstructionOperator<GL, DF, DT>(
+      grid_layer, diffusion_factor, diffusion_tensor, over_integrate);
 }
 
 

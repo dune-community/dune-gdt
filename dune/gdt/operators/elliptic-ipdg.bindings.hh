@@ -15,6 +15,7 @@
 
 #include <dune/xt/common/string.hh>
 #include <dune/xt/grid/grids.bindings.hh>
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/la/container.bindings.hh>
 
 #include <dune/gdt/spaces.bindings.hh>
@@ -32,7 +33,7 @@ template <class DF,
           class RP,
           LocalEllipticIpdgIntegrands::Method method,
           class M /* = typename XT::LA::Container<typename R::RangeFieldType>::MatrixType,
-          class GV = typename RP::type::GridViewType,
+          class GL = typename RP::type::GridLayerType,
           class SP = RP,
           class F = typename RP::type::RangeFieldType*/>
 class EllipticIpdgMatrixOperator
@@ -41,7 +42,7 @@ class EllipticIpdgMatrixOperator
   static_assert(is_space<R>::value, "");
 
 public:
-  typedef GDT::EllipticIpdgMatrixOperator<DF, DT, R, method, M /*, GV, S, F*/> type;
+  typedef GDT::EllipticIpdgMatrixOperator<DF, DT, R, method, M /*, GL, S, F*/> type;
   typedef pybind11::class_<type> bound_type;
 
 private:
@@ -68,7 +69,7 @@ private:
           std::string(method_name + "_" + XT::LA::bindings::container_name<M>::value()).c_str(),
           [](const DF& diffusion_factor,
              const DT& diffusion_tensor,
-             const XT::Grid::BoundaryInfo<typename R::GridViewType::Intersection>& boundary_info,
+             const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename R::GridLayerType>>& boundary_info,
              const R& space,
              const size_t over_integrate) {
             return make_elliptic_ipdg_matrix_operator<M, method>(
@@ -89,7 +90,7 @@ private:
           method_name.c_str(),
           [](const DF& diffusion_factor,
              const DT& diffusion_tensor,
-             const XT::Grid::BoundaryInfo<typename R::GridViewType::Intersection>& boundary_info,
+             const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename R::GridLayerType>>& boundary_info,
              M& matrix,
              const R& space,
              const size_t over_integrate) {
@@ -126,7 +127,7 @@ private:
       m.def(
           method_name.c_str(),
           [](const DF& diffusion,
-             const XT::Grid::BoundaryInfo<typename R::GridViewType::Intersection>& boundary_info,
+             const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename R::GridLayerType>>& boundary_info,
              const R& space,
              const size_t over_integrate) {
             return make_elliptic_ipdg_matrix_operator<M, method>(diffusion, boundary_info, space, over_integrate)
@@ -143,7 +144,7 @@ private:
       m.def(
           method_name.c_str(),
           [](const DF& diffusion,
-             const XT::Grid::BoundaryInfo<typename R::GridViewType::Intersection>& boundary_info,
+             const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename R::GridLayerType>>& boundary_info,
              M& matrix,
              const R& space,
              const size_t over_integrate) {

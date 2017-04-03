@@ -36,7 +36,7 @@ template <class LocalSpaceType>
 class BlockSpaceTraits
 {
   static_assert(is_space<LocalSpaceType>::value, "LocalSpaceType has to be derived from SpaceInterface!");
-  typedef XT::Grid::DD::SubdomainGrid<typename LocalSpaceType::GridViewType::Grid> DdSubdomainsGridType;
+  typedef XT::Grid::DD::SubdomainGrid<typename LocalSpaceType::GridLayerType::Grid> DdSubdomainsGridType;
 
 public:
   typedef BlockSpace<LocalSpaceType> derived_type;
@@ -46,7 +46,7 @@ public:
   typedef BlockMapper<LocalSpaceType> MapperType;
   typedef typename LocalSpaceType::BaseFunctionSetType BaseFunctionSetType;
   typedef typename LocalSpaceType::CommunicatorType CommunicatorType;
-  typedef typename DdSubdomainsGridType::GlobalGridPartType GridViewType;
+  typedef typename DdSubdomainsGridType::GlobalGridPartType GridLayerType;
   typedef typename LocalSpaceType::RangeFieldType RangeFieldType;
 
   static const XT::Grid::Backends part_view_type = XT::Grid::Backends::part;
@@ -58,10 +58,6 @@ public:
 } // namespace internal
 
 
-/**
- * \todo This can be implemented easier by now. Since all local spaces hold a copy of their local grid view it should
- *       be enough to hold a copy of the global grid view in this space (if the dd_grid is not needed elsewhere)
- */
 template <class LocalSpaceImp>
 class BlockSpace : public SpaceInterface<internal::BlockSpaceTraits<LocalSpaceImp>,
                                          LocalSpaceImp::dimDomain,
@@ -83,17 +79,17 @@ public:
   typedef LocalSpaceImp LocalSpaceType;
 
   typedef typename BaseType::PatternType PatternType;
-  typedef typename BaseType::GridViewType GridViewType;
+  typedef typename BaseType::GridLayerType GridLayerType;
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::CommunicatorType CommunicatorType;
 
-  typedef XT::Grid::DD::SubdomainGrid<typename XT::Grid::extract_grid<GridViewType>::type> DdSubdomainsGridType;
+  typedef XT::Grid::DD::SubdomainGrid<typename XT::Grid::extract_grid<GridLayerType>::type> DdSubdomainsGridType;
 
   BlockSpace(const DdSubdomainsGridType& dd_grid, const std::shared_ptr<std::vector<LocalSpaceType>> local_spaces)
     : entity_to_subdomain_map_(dd_grid.entityToSubdomainMap())
-    , grid_view_(new GridViewType(dd_grid.globalGridPart()))
+    , global_grid_part_(new GridLayerType(dd_grid.globalGridPart()))
     , local_spaces_(local_spaces)
-    , mapper_(new MapperType(dd_grid, grid_view_, local_spaces_))
+    , mapper_(new MapperType(dd_grid, global_grid_part_, local_spaces_))
   {
     if (local_spaces_->size() != dd_grid.size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
@@ -111,9 +107,14 @@ public:
   ThisType& operator=(const ThisType& other) = delete;
   ThisType& operator=(ThisType&& source) = delete;
 
-  const GridViewType& grid_view() const
+  const GridLayerType& grid_layer() const
   {
-    return *grid_view_;
+    return *global_grid_part_;
+  }
+
+  GridLayerType& grid_layer()
+  {
+    return *global_grid_part_;
   }
 
   const BackendType& backend() const
@@ -139,7 +140,7 @@ public:
   }
 
   template <class G, class S, size_t d, size_t r, size_t rC>
-  PatternType compute_pattern(const GridView<G>& /*local_grid_view*/,
+  PatternType compute_pattern(const GridView<G>& /*local_grid_layer*/,
                               const SpaceInterface<S, d, r, rC>& /*ansatz_space*/) const
   {
     DUNE_THROW(NotImplemented, "I am not sure yet how to implement this!");
@@ -156,12 +157,12 @@ private:
   template <class EntityType>
   size_t find_block_of(const EntityType& entity) const
   {
-    const auto global_entity_index = grid_view_->indexSet().index(entity);
+    const auto global_entity_index = global_grid_part_->indexSet().index(entity);
     const auto result = entity_to_subdomain_map_->find(global_entity_index);
 #ifndef NDEBUG
     if (result == entity_to_subdomain_map_->end())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
-                 "Entity " << global_entity_index << " of the global grid view was not found in the multiscale grid!");
+                 "Entity " << global_entity_index << " of the global grid part was not found in the multiscale grid!");
 #endif // NDEBUG
     const size_t subdomain = result->second;
 #ifndef NDEBUG
@@ -178,7 +179,7 @@ private:
   } // ... find_block_of(...)
 
   const std::shared_ptr<const typename DdSubdomainsGridType::EntityToSubdomainMapType> entity_to_subdomain_map_;
-  const std::shared_ptr<GridViewType> grid_view_;
+  const std::shared_ptr<GridLayerType> global_grid_part_;
   const std::shared_ptr<std::vector<LocalSpaceType>> local_spaces_;
   const std::shared_ptr<MapperType> mapper_;
 }; // class BlockSpace

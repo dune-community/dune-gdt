@@ -13,7 +13,7 @@
 
 #include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/common/type_traits.hh>
-#include <dune/xt/grid/entity.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/operators/l2-projection.hh>
@@ -26,18 +26,18 @@ namespace GDT {
 
 
 // forward
-template <class GridViewImp, class FieldImp = double>
+template <class GridLayerImp, class FieldImp = double>
 class L2LocalProjectionOperator;
 
 
 namespace internal {
 
 
-template <class GridViewImp, class FieldImp>
+template <class GridLayerImp, class FieldImp>
 class L2LocalProjectionOperatorTraits
 {
 public:
-  typedef L2LocalProjectionOperator<GridViewImp, FieldImp> derived_type;
+  typedef L2LocalProjectionOperator<GridLayerImp, FieldImp> derived_type;
   typedef FieldImp FieldType;
 };
 
@@ -45,14 +45,14 @@ public:
 } // namespace internal
 
 
-template <class GridViewImp, class SourceImp, class RangeImp>
-class L2LocalProjectionLocalizableOperator : public LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp>
+template <class GridLayerImp, class SourceImp, class RangeImp>
+class L2LocalProjectionLocalizableOperator : public LocalizableOperatorBase<GridLayerImp, SourceImp, RangeImp>
 {
-  typedef LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp> BaseType;
+  typedef LocalizableOperatorBase<GridLayerImp, SourceImp, RangeImp> BaseType;
   typedef LocalL2ProjectionOperator LocalOperatorType;
 
 public:
-  using typename BaseType::GridViewType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::SourceType;
   using typename BaseType::RangeType;
 
@@ -110,68 +110,68 @@ private:
 }; // class L2LocalProjectionLocalizableOperator
 
 
-template <class GridViewType, class SourceType, class SpaceType, class VectorType>
+template <class GridLayerType, class SourceType, class SpaceType, class VectorType>
 typename std::
-    enable_if<XT::Grid::is_layer<GridViewType>::value && XT::Functions::is_localizable_function<SourceType>::value
+    enable_if<XT::Grid::is_layer<GridLayerType>::value && XT::Functions::is_localizable_function<SourceType>::value
                   && is_space<SpaceType>::value
                   && XT::LA::is_vector<VectorType>::value,
-              std::unique_ptr<L2LocalProjectionLocalizableOperator<GridViewType,
+              std::unique_ptr<L2LocalProjectionLocalizableOperator<GridLayerType,
                                                                    SourceType,
                                                                    DiscreteFunction<SpaceType, VectorType>>>>::type
-    make_local_l2_projection_localizable_operator(const GridViewType& grid_view,
+    make_local_l2_projection_localizable_operator(const GridLayerType& grid_layer,
                                                   const SourceType& source,
                                                   DiscreteFunction<SpaceType, VectorType>& range,
                                                   const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<L2LocalProjectionLocalizableOperator<GridViewType,
+  return Dune::XT::Common::make_unique<L2LocalProjectionLocalizableOperator<GridLayerType,
                                                                             SourceType,
                                                                             DiscreteFunction<SpaceType, VectorType>>>(
-      over_integrate, grid_view, source, range);
+      over_integrate, grid_layer, source, range);
 } // ... make_local_l2_projection_localizable_operator(...)
 
 template <class SourceType, class SpaceType, class VectorType>
 typename std::
     enable_if<XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
                   && XT::LA::is_vector<VectorType>::value,
-              std::unique_ptr<L2LocalProjectionLocalizableOperator<typename SpaceType::GridViewType,
+              std::unique_ptr<L2LocalProjectionLocalizableOperator<typename SpaceType::GridLayerType,
                                                                    SourceType,
                                                                    DiscreteFunction<SpaceType, VectorType>>>>::type
     make_local_l2_projection_localizable_operator(const SourceType& source,
                                                   DiscreteFunction<SpaceType, VectorType>& range,
                                                   const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<L2LocalProjectionLocalizableOperator<typename SpaceType::GridViewType,
+  return Dune::XT::Common::make_unique<L2LocalProjectionLocalizableOperator<typename SpaceType::GridLayerType,
                                                                             SourceType,
                                                                             DiscreteFunction<SpaceType, VectorType>>>(
-      over_integrate, range.space().grid_view(), source, range);
+      over_integrate, range.space().grid_layer(), source, range);
 } // ... make_local_l2_projection_localizable_operator(...)
 
 
-template <class GridViewImp, class FieldImp>
+template <class GridLayerImp, class FieldImp>
 class L2LocalProjectionOperator
-    : public OperatorInterface<internal::L2LocalProjectionOperatorTraits<GridViewImp, FieldImp>>
+    : public OperatorInterface<internal::L2LocalProjectionOperatorTraits<GridLayerImp, FieldImp>>
 {
-  typedef OperatorInterface<internal::L2LocalProjectionOperatorTraits<GridViewImp, FieldImp>> BaseType;
+  typedef OperatorInterface<internal::L2LocalProjectionOperatorTraits<GridLayerImp, FieldImp>> BaseType;
 
 public:
-  typedef internal::L2LocalProjectionOperatorTraits<GridViewImp, FieldImp> Traits;
-  typedef GridViewImp GridViewType;
+  typedef internal::L2LocalProjectionOperatorTraits<GridLayerImp, FieldImp> Traits;
+  typedef GridLayerImp GridLayerType;
   using typename BaseType::FieldType;
 
 private:
-  typedef typename XT::Grid::Entity<GridViewType>::Type E;
-  typedef typename GridViewType::ctype D;
-  static const size_t d = GridViewType::dimension;
+  using E = XT::Grid::extract_entity_t<GridLayerType>;
+  typedef typename GridLayerType::ctype D;
+  static const size_t d = GridLayerType::dimension;
 
 public:
-  L2LocalProjectionOperator(const size_t over_integrate, GridViewType grid_view)
-    : grid_view_(grid_view)
+  L2LocalProjectionOperator(const size_t over_integrate, GridLayerType grid_layer)
+    : grid_layer_(grid_layer)
     , over_integrate_(over_integrate)
   {
   }
 
-  L2LocalProjectionOperator(GridViewType grid_view)
-    : grid_view_(grid_view)
+  L2LocalProjectionOperator(GridLayerType grid_layer)
+    : grid_layer_(grid_layer)
     , over_integrate_(0)
   {
   }
@@ -181,8 +181,8 @@ public:
              DiscreteFunction<S, V>& range) const
   {
     typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
-    L2LocalProjectionLocalizableOperator<GridViewType, SourceType, DiscreteFunction<S, V>> op(
-        over_integrate_, grid_view_, source, range);
+    L2LocalProjectionLocalizableOperator<GridLayerType, SourceType, DiscreteFunction<S, V>> op(
+        over_integrate_, grid_layer_, source, range);
     op.apply();
   }
 
@@ -210,17 +210,17 @@ public:
   }
 
 private:
-  GridViewType grid_view_;
+  GridLayerType grid_layer_;
   const size_t over_integrate_;
 }; // class L2LocalProjectionOperator
 
 
-template <class GridViewType>
-typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
-                        std::unique_ptr<L2LocalProjectionOperator<GridViewType>>>::type
-make_local_l2_projection_operator(const GridViewType& grid_view, const size_t over_integrate = 0)
+template <class GridLayerType>
+typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value,
+                        std::unique_ptr<L2LocalProjectionOperator<GridLayerType>>>::type
+make_local_l2_projection_operator(const GridLayerType& grid_layer, const size_t over_integrate = 0)
 {
-  return Dune::XT::Common::make_unique<L2LocalProjectionOperator<GridViewType>>(over_integrate, grid_view);
+  return Dune::XT::Common::make_unique<L2LocalProjectionOperator<GridLayerType>>(over_integrate, grid_layer);
 }
 
 

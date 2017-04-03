@@ -22,7 +22,7 @@ class CouplingAssembler
 public:
   typedef LocalSpaceType TestSpaceType;
   typedef LocalSpaceType AnsatzSpaceType;
-  typedef CouplingGridPartType GridViewType;
+  typedef CouplingGridPartType GridLayerType;
 
   CouplingAssembler(const CouplingGridPartType& coupling_grid_part,
                     const LocalSpaceType& inner_test_space,

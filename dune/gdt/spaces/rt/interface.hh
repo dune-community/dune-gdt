@@ -114,8 +114,8 @@ public:
     // now we need to find the intersection opposite to this vertex
     // therefore we walk the intersections
     size_t intersection_counter = 0;
-    const auto intersection_it_end = this->grid_view().iend(entity);
-    for (auto intersection_it = this->grid_view().ibegin(entity); intersection_it != intersection_it_end;
+    const auto intersection_it_end = this->grid_layer().iend(entity);
+    for (auto intersection_it = this->grid_layer().ibegin(entity); intersection_it != intersection_it_end;
          ++intersection_it) {
       const auto& intersection = *intersection_it;
       const auto intersection_geometry = intersection.geometry();
@@ -163,11 +163,11 @@ public:
 
   template <class GL, class S, size_t d, size_t r, size_t rC>
   typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
-  compute_pattern(const GL& grid_layer, const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  compute_pattern(const GL& grd_layr, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     Dune::XT::Common::TimedLogger().get("gdt.spaces.rt.pdelab.compute_pattern").warn()
         << "Returning largest possible pattern!" << std::endl;
-    return BaseType::compute_face_and_volume_pattern(grid_layer, ansatz_space);
+    return BaseType::compute_face_and_volume_pattern(grd_layr, ansatz_space);
   }
 
   using BaseType::local_constraints;

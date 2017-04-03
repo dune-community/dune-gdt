@@ -37,9 +37,9 @@ public:
 
   template <class GL, class S, size_t d, size_t r, size_t rC>
   typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
-  compute_pattern(const GL& grid_layer, const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  compute_pattern(const GL& grd_layr, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
-    return BaseType::compute_face_and_volume_pattern(grid_layer, ansatz_space);
+    return BaseType::compute_face_and_volume_pattern(grd_layr, ansatz_space);
   }
 
   using BaseType::local_constraints;

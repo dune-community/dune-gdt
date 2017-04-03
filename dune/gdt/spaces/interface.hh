@@ -17,10 +17,10 @@
 
 #include <boost/numeric/conversion/cast.hpp>
 
+#include <dune/common/deprecated.hh>
 #include <dune/common/dynvector.hh>
 #include <dune/common/fvector.hh>
 
-#include <dune/grid/common/gridview.hh>
 #include <dune/grid/io/file/vtk/vtkwriter.hh>
 
 #include <dune/xt/common/crtp.hh>
@@ -28,11 +28,11 @@
 #include <dune/xt/common/parallel/threadstorage.hh>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/common/ranges.hh>
-#include <dune/xt/grid/boundaryinfo.hh>
-#include <dune/xt/grid/entity.hh>
-#include <dune/xt/grid/intersection.hh>
-#include <dune/xt/grid/layers.hh>
 #include <dune/xt/la/container/pattern.hh>
+#include <dune/xt/grid/boundaryinfo.hh>
+#include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/grid/layers.hh>
+#include <dune/xt/grid/view/from-part.hh>
 
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 
@@ -133,7 +133,8 @@ public:
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::CommunicatorType CommunicatorType;
-  typedef typename Traits::GridViewType GridViewType;
+  typedef typename Traits::GridLayerType GridViewType DUNE_DEPRECATED_MSG("Use GridLayerType instead (02.04.2017)!");
+  typedef typename Traits::GridLayerType GridLayerType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   static const size_t dimDomain = domainDim;
   static const size_t dimRange = rangeDim;
@@ -143,16 +144,15 @@ private:
   static_assert(dimDomain > 0, "dimDomain has to be positive");
   static_assert(dimRange > 0, "dimRange has to be positive");
   static_assert(dimRangeCols > 0, "dimRangeCols has to be positive");
-  static_assert(XT::Grid::is_grid_view<GridViewType>::value || XT::Grid::is_grid_part<GridViewType>::value,
-                "GridViewType has to be a grid view or grid part!");
-  static_assert(GridViewType::dimension == dimDomain, "Dimension of GridViewType has to match dimDomain");
+  static_assert(XT::Grid::is_layer<GridLayerType>::value, "");
+  static_assert(GridLayerType::dimension == dimDomain, "Dimension of GridLayerType has to match dimDomain");
 
 public:
-  typedef typename GridViewType::ctype DomainFieldType;
+  typedef typename GridLayerType::ctype DomainFieldType;
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
 
-  typedef typename XT::Grid::Entity<GridViewType>::type EntityType;
-  typedef typename XT::Grid::Intersection<GridViewType>::type IntersectionType;
+  using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
+  using IntersectionType = XT::Grid::extract_intersection_t<GridLayerType>;
   typedef XT::Grid::BoundaryInfo<IntersectionType> BoundaryInfoType;
   typedef Dune::XT::LA::SparsityPatternDefault PatternType;
 
@@ -166,10 +166,15 @@ public:
    * @{
    **/
 
-  const GridViewType& grid_view() const
+  const GridLayerType& DUNE_DEPRECATED_MSG("Use grid_layer() instead (02.04.2017)!") grid_view() const
   {
-    CHECK_CRTP(this->as_imp().grid_view());
-    return this->as_imp().grid_view();
+    return this->grid_layer();
+  }
+
+  const GridLayerType& grid_layer() const
+  {
+    CHECK_CRTP(this->as_imp().grid_layer());
+    return this->as_imp().grid_layer();
   }
 
   const BackendType& backend() const
@@ -229,10 +234,10 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
    */
   template <class GL, class S, size_t d, size_t r, size_t rC>
   typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
-  compute_pattern(const GL& grid_layer, const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  compute_pattern(const GL& grd_layr, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
-    CHECK_CRTP(this->as_imp().compute_pattern(grid_layer, ansatz_space.as_imp()));
-    return this->as_imp().compute_pattern(grid_layer, ansatz_space.as_imp());
+    CHECK_CRTP(this->as_imp().compute_pattern(grd_layr, ansatz_space.as_imp()));
+    return this->as_imp().compute_pattern(grd_layr, ansatz_space.as_imp());
   }
   /* @} */
 
@@ -249,13 +254,13 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
   template <class S, size_t d, size_t r, size_t rC>
   PatternType compute_pattern(const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
-    return compute_pattern(grid_view(), ansatz_space);
+    return compute_pattern(grid_layer(), ansatz_space);
   }
 
   template <class GL>
-  typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type compute_pattern(const GL& grid_layer) const
+  typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type compute_pattern(const GL& grd_layr) const
   {
-    return compute_pattern(grid_layer, *this);
+    return compute_pattern(grd_layr, *this);
   }
 
   PatternType compute_volume_pattern() const
@@ -266,14 +271,14 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
   template <class S, size_t d, size_t r, size_t rC>
   PatternType compute_volume_pattern(const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
-    return compute_volume_pattern(grid_view(), ansatz_space);
+    return compute_volume_pattern(grid_layer(), ansatz_space);
   }
 
   template <class GL>
   typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
-  compute_volume_pattern(const GL& grid_layer) const
+  compute_volume_pattern(const GL& grd_layr) const
   {
-    return compute_volume_pattern(grid_layer, *this);
+    return compute_volume_pattern(grd_layr, *this);
   }
 
   /**
@@ -282,13 +287,13 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
    */
   template <class GL, class S, size_t d, size_t r, size_t rC>
   typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
-  compute_volume_pattern(const GL& grid_layer, const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  compute_volume_pattern(const GL& grd_layr, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     PatternType pattern(mapper().size());
     Dune::DynamicVector<size_t> globalRows(mapper().maxNumDofs(), 0);
     Dune::DynamicVector<size_t> globalCols(ansatz_space.mapper().maxNumDofs(), 0);
 
-    for (const auto& entity : elements(grid_layer)) {
+    for (const auto& entity : elements(grd_layr)) {
       const auto testBase = base_function_set(entity);
       const auto ansatzBase = ansatz_space.base_function_set(entity);
       mapper().globalIndices(entity, globalRows);
@@ -305,20 +310,20 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
 
   PatternType compute_face_and_volume_pattern() const
   {
-    return compute_face_and_volume_pattern(grid_view(), *this);
+    return compute_face_and_volume_pattern(grid_layer(), *this);
   }
 
   template <class GL>
   typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
-  compute_face_and_volume_pattern(const GL& grid_layer) const
+  compute_face_and_volume_pattern(const GL& grd_layr) const
   {
-    return compute_face_and_volume_pattern(grid_layer, *this);
+    return compute_face_and_volume_pattern(grd_layr, *this);
   }
 
   template <class S, size_t d, size_t r, size_t rC>
   PatternType compute_face_and_volume_pattern(const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
-    return compute_face_and_volume_pattern(grid_view(), ansatz_space);
+    return compute_face_and_volume_pattern(grid_layer(), ansatz_space);
   }
 
   /**
@@ -327,13 +332,13 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
    */
   template <class GL, class S, size_t d, size_t r, size_t rC>
   typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
-  compute_face_and_volume_pattern(const GL& grid_layer, const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  compute_face_and_volume_pattern(const GL& grd_layr, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     // prepare
     PatternType pattern(mapper().size());
     Dune::DynamicVector<size_t> global_rows(mapper().maxNumDofs(), 0);
     Dune::DynamicVector<size_t> global_cols(ansatz_space.mapper().maxNumDofs(), 0);
-    for (const auto& entity : elements(grid_layer)) {
+    for (const auto& entity : elements(grd_layr)) {
       const auto test_base_entity = base_function_set(entity);
       const auto ansatz_base_entity = ansatz_space.base_function_set(entity);
       mapper().globalIndices(entity, global_rows);
@@ -345,9 +350,8 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
         }
       }
       // walk the intersections
-      const auto intersection_it_end = grid_layer.iend(entity);
-      for (auto intersection_it = grid_layer.ibegin(entity); intersection_it != intersection_it_end;
-           ++intersection_it) {
+      const auto intersection_it_end = grd_layr.iend(entity);
+      for (auto intersection_it = grd_layr.ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
         const auto& intersection = *intersection_it;
         // get the neighbour
         if (intersection.neighbor() && !intersection.boundary()) {
@@ -363,44 +367,43 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
           }
         } // get the neighbour
       } // walk the intersections
-    } // walk the grid view
+    } // walk the grid layer
     pattern.sort();
     return pattern;
   } // ... compute_face_and_volume_pattern(...)
 
   PatternType compute_face_pattern() const
   {
-    return compute_face_pattern(grid_view(), *this);
+    return compute_face_pattern(grid_layer(), *this);
   }
 
   template <class GL>
   typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
-  compute_face_pattern(const GL& grid_layer) const
+  compute_face_pattern(const GL& grd_layr) const
   {
-    return compute_face_pattern(grid_layer, *this);
+    return compute_face_pattern(grd_layr, *this);
   }
 
   template <class S, size_t d, size_t r, size_t rC>
   PatternType compute_face_pattern(const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
-    return compute_face_pattern(grid_view(), ansatz_space);
+    return compute_face_pattern(grid_layer(), ansatz_space);
   }
 
   template <class GL, class S, size_t d, size_t r, size_t rC>
   typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
-  compute_face_pattern(const GL& grid_layer, const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  compute_face_pattern(const GL& grd_layr, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
     // prepare
     PatternType pattern(mapper().size());
     Dune::DynamicVector<size_t> global_rows(mapper().maxNumDofs(), 0);
     Dune::DynamicVector<size_t> global_cols(ansatz_space.mapper().maxNumDofs(), 0);
-    for (const auto& entity : elements(grid_layer)) {
+    for (const auto& entity : elements(grd_layr)) {
       const auto test_base_entity = base_function_set(entity);
       mapper().globalIndices(entity, global_rows);
       // walk the intersections
-      const auto intersection_it_end = grid_layer.iend(entity);
-      for (auto intersection_it = grid_layer.ibegin(entity); intersection_it != intersection_it_end;
-           ++intersection_it) {
+      const auto intersection_it_end = grd_layr.iend(entity);
+      for (auto intersection_it = grd_layr.ibegin(entity); intersection_it != intersection_it_end; ++intersection_it) {
         const auto& intersection = *intersection_it;
         // get the neighbour
         if (intersection.neighbor() && !intersection.boundary()) {
@@ -416,13 +419,14 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
           }
         } // get the neighbour
       } // walk the intersections
-    } // walk the grid view
+    } // walk the grid layer
     pattern.sort();
     return pattern;
   } // ... compute_face_pattern(...)
 
 private:
-  class BasisVisualization : public Dune::VTKFunction<GridViewType>
+  template <class GV>
+  class BasisVisualization : public Dune::VTKFunction<GV>
   {
     static_assert(dimRangeCols == 1, "Not implemented for matrixvalued spaces yet!");
 
@@ -480,11 +484,11 @@ private:
 public:
   void visualize(const std::string filename_prefix = "") const
   {
-    std::string filename = filename_prefix;
-    if (filename.empty()) {
-      filename = "dune.gdt.space";
-    }
-    VTKWriter<GridViewType> vtk_writer(grid_view(), Dune::VTK::nonconforming);
+    const std::string filename = filename_prefix.empty() ? "dune.gdt.space" : filename_prefix;
+    const auto tmp_storage = XT::Grid::make_tmp_view(grid_layer());
+    const auto& grd_vw = tmp_storage.access();
+    using GridViewType = std::decay_t<decltype(grd_vw)>;
+    VTKWriter<GridViewType> vtk_writer(grd_vw, Dune::VTK::nonconforming);
     for (size_t ii = 0; ii < mapper().maxNumDofs(); ++ii) {
       std::string number = "";
       if (ii == 1)
@@ -495,7 +499,8 @@ public:
         number = "3rd";
       else
         number = XT::Common::to_string(ii) + "th";
-      const auto iith_baseFunction = std::make_shared<BasisVisualization>(this->as_imp(*this), ii, number + " basis");
+      const auto iith_baseFunction =
+          std::make_shared<BasisVisualization<GridViewType>>(this->as_imp(*this), ii, number + " basis");
       vtk_writer.addVertexData(iith_baseFunction);
     }
     vtk_writer.write(filename);
@@ -540,17 +545,17 @@ public:
 
 
 template <class Traits, size_t d, size_t r, size_t rC, size_t codim = 0>
-typename Traits::GridViewType::template Codim<codim>::Iterator
+typename Traits::GridLayerType::template Codim<codim>::Iterator
 begin(const Dune::GDT::SpaceInterface<Traits, d, r, rC>& space)
 {
-  return space.grid_view().template begin<codim>();
+  return space.grid_layer().template begin<codim>();
 }
 
 template <class Traits, size_t d, size_t r, size_t rC, size_t codim = 0>
-typename Traits::GridViewType::template Codim<codim>::Iterator
+typename Traits::GridLayerType::template Codim<codim>::Iterator
 end(const Dune::GDT::SpaceInterface<Traits, d, r, rC>& space)
 {
-  return space.grid_view().template end<codim>();
+  return space.grid_layer().template end<codim>();
 }
 
 

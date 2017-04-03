@@ -65,29 +65,30 @@ public:
   virtual const XT::Common::Configuration& boundary_info_cfg() const = 0;
 
   template <class G>
-  void visualize(const GridView<G>& grid_view,
+  void visualize(const GridView<G>& grid_layer,
                  std::string filename,
                  const bool subsampling = true,
                  const VTK::OutputType vtk_output_type = VTK::appendedraw) const
   {
     auto vtk_writer =
-        subsampling ? Dune::XT::Common::make_unique<SubsamplingVTKWriter<GridView<G>>>(grid_view, VTK::nonconforming)
-                    : Dune::XT::Common::make_unique<VTKWriter<GridView<G>>>(grid_view, VTK::nonconforming);
+        subsampling ? Dune::XT::Common::make_unique<SubsamplingVTKWriter<GridView<G>>>(grid_layer, VTK::nonconforming)
+                    : Dune::XT::Common::make_unique<VTKWriter<GridView<G>>>(grid_layer, VTK::nonconforming);
     auto diffusion = XT::Functions::make_product(diffusion_factor(), diffusion_tensor(), "diffusion");
-    add_function_visualization(grid_view, diffusion_factor(), *vtk_writer);
-    add_function_visualization(grid_view, diffusion_tensor(), *vtk_writer);
-    add_function_visualization(grid_view, *diffusion, *vtk_writer);
-    add_function_visualization(grid_view, force(), *vtk_writer);
-    add_function_visualization(grid_view, dirichlet(), *vtk_writer);
-    add_function_visualization(grid_view, neumann(), *vtk_writer);
+    add_function_visualization(grid_layer, diffusion_factor(), *vtk_writer);
+    add_function_visualization(grid_layer, diffusion_tensor(), *vtk_writer);
+    add_function_visualization(grid_layer, *diffusion, *vtk_writer);
+    add_function_visualization(grid_layer, force(), *vtk_writer);
+    add_function_visualization(grid_layer, dirichlet(), *vtk_writer);
+    add_function_visualization(grid_layer, neumann(), *vtk_writer);
     vtk_writer->write(filename, vtk_output_type);
   } // ... visualize(...)
 
 private:
-  template <class GridViewType, class F, class VTKWriterType>
-  void add_function_visualization(const GridViewType& /*grid_view*/, const F& function, VTKWriterType& vtk_writer) const
+  template <class GridLayerType, class F, class VTKWriterType>
+  void
+  add_function_visualization(const GridLayerType& /*grid_layer*/, const F& function, VTKWriterType& vtk_writer) const
   {
-    typedef XT::Functions::VisualizationAdapterFunction<GridViewType, F::dimRange, F::dimRangeCols>
+    typedef XT::Functions::VisualizationAdapterFunction<GridLayerType, F::dimRange, F::dimRangeCols>
         VisualizationAdapter;
     vtk_writer.addVertexData(std::make_shared<VisualizationAdapter>(function));
   }

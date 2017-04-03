@@ -17,9 +17,8 @@
 
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/type_traits.hh>
-#include <dune/xt/grid/intersection.hh>
 #include <dune/xt/grid/grids.bindings.hh>
-
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/la/container.hh>
 #include <dune/xt/la/container.bindings.hh>
 
@@ -106,17 +105,16 @@ public:
     c.def("apply", [](const type& self, M& matrix, V& vector) { self.apply(matrix, vector); }, "matrix"_a, "vector"_a);
   } // ... addbind(...)
 
-  template <class T, class GV, class A>
-  static void addbind(pybind11::class_<GDT::SystemAssembler<T, GV, A>>& bound_system_assembler)
+  template <class T, class GL, class A>
+  static void addbind(pybind11::class_<GDT::SystemAssembler<T, GL, A>>& bound_system_assembler)
   {
     using namespace pybind11::literals;
 
-    bound_system_assembler.def("append",
-                               [](GDT::SystemAssembler<T, GV, A>& self,
-                                  GDT::DirichletConstraints<typename XT::Grid::Intersection<GV>::type>& constraints) {
-                                 self.append(constraints);
-                               },
-                               "dirichlet_constraints"_a);
+    bound_system_assembler.def(
+        "append",
+        [](GDT::SystemAssembler<T, GL, A>& self,
+           GDT::DirichletConstraints<XT::Grid::extract_intersection_t<GL>>& constraints) { self.append(constraints); },
+        "dirichlet_constraints"_a);
   } // ... addbind(...)
 }; // class DirichletConstraints
 

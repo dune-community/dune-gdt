@@ -42,7 +42,7 @@ struct elliptic_ipdg_dirichlet_vector_functional_bind_helper
           [](const DI& dirichlet,
              const DF& diffusion_factor,
              const DT& diffusion_tensor,
-             const XT::Grid::BoundaryInfo<typename S::GridViewType::Intersection>& boundary_info,
+             const XT::Grid::BoundaryInfo<typename S::GridLayerType::Intersection>& boundary_info,
              const S& space,
              const size_t over_integrate) {
             return make_elliptic_ipdg_dirichlet_vector_functional<V, ipdg_method>(
@@ -65,7 +65,7 @@ struct elliptic_ipdg_dirichlet_vector_functional_bind_helper
           [](const DI& dirichlet,
              const DF& diffusion_factor,
              const DT& diffusion_tensor,
-             const XT::Grid::BoundaryInfo<typename S::GridViewType::Intersection>& boundary_info,
+             const XT::Grid::BoundaryInfo<typename S::GridLayerType::Intersection>& boundary_info,
              V& vector,
              const S& space,
              const size_t over_integrate) {
@@ -110,7 +110,7 @@ struct elliptic_ipdg_dirichlet_vector_functional_bind_helper<DI, D, void, ipdg_m
     m.def(std::string(method_id + "__" + la_id).c_str(),
           [](const DI& dirichlet,
              const D& diffusion,
-             const XT::Grid::BoundaryInfo<typename S::GridViewType::Intersection>& boundary_info,
+             const XT::Grid::BoundaryInfo<typename S::GridLayerType::Intersection>& boundary_info,
              const S& space,
              const size_t over_integrate) {
             return make_elliptic_ipdg_dirichlet_vector_functional<V, ipdg_method>(
@@ -130,7 +130,7 @@ struct elliptic_ipdg_dirichlet_vector_functional_bind_helper<DI, D, void, ipdg_m
     m.def(std::string(method_id).c_str(),
           [](const DI& dirichlet,
              const D& diffusion,
-             const XT::Grid::BoundaryInfo<typename S::GridViewType::Intersection>& boundary_info,
+             const XT::Grid::BoundaryInfo<typename S::GridLayerType::Intersection>& boundary_info,
              V& vector,
              const S& space,
              const size_t over_integrate) {
@@ -161,20 +161,20 @@ template <class DI,
           class S,
           LocalEllipticIpdgIntegrands::Method method = LocalEllipticIpdgIntegrands::default_method,
           class V = typename XT::LA::Container<typename S::RangeFieldType>::VectorType,
-          class GV = typename S::GridViewType,
+          class GL = typename S::GridLayerType,
           class F = typename S::RangeFieldType>
-pybind11::class_<EllipticIpdgDirichletVectorFunctional<DI, DF, DT, S, method, V, GV, F>>
+pybind11::class_<EllipticIpdgDirichletVectorFunctional<DI, DF, DT, S, method, V, GL, F>>
 bind_elliptic_ipdg_dirichlet_vector_functional(pybind11::module& m,
                                                const std::string& space_id,
                                                const std::string& la_id,
                                                const std::string& method_id)
 {
-  static_assert(std::is_same<GV, typename S::GridViewType>::value, "Not tested yet!");
+  static_assert(std::is_same<GL, typename S::GridLayerType>::value, "Not tested yet!");
 
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  typedef EllipticIpdgDirichletVectorFunctional<DI, DF, DT, S, method, V, GV, F> C;
+  typedef EllipticIpdgDirichletVectorFunctional<DI, DF, DT, S, method, V, GL, F> C;
   const std::string suffix =
       la_id + "__" + space_id + "_"
       + internal::elliptic_ipdg_dirichlet_vector_functional_bind_helper<DI, DF, DT, method>::suffix();

@@ -58,7 +58,7 @@ class DuneFemLocalfunctionsDgSpaceWrapperTraits
 
 public:
   typedef GridPartImp GridPartType;
-  typedef typename GridPartType::GridViewType GridViewType;
+  typedef typename GridPartType::GridLayerType GridLayerType;
   static const int polOrder = polynomialOrder;
   static const bool continuous = false;
 
@@ -132,7 +132,7 @@ public:
   typedef DuneFemLocalfunctionsDgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> Traits;
 
   typedef typename Traits::GridPartType GridPartType;
-  typedef typename Traits::GridViewType GridViewType;
+  typedef typename Traits::GridLayerType GridLayerType;
   typedef typename GridPartType::ctype DomainFieldType;
   static const int polOrder = Traits::polOrder;
   static const size_t dimDomain = BaseType::dimDomain;
@@ -185,7 +185,7 @@ public:
     return gridPart_;
   }
 
-  const GridViewType& grid_view() const
+  const GridLayerType& grid_layer() const
   {
     return gridView_;
   }
@@ -214,9 +214,9 @@ public:
   using BaseType::compute_pattern;
 
   template <class G, class S>
-  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S>& ansatz_space) const
+  PatternType compute_pattern(const GridView<G>& local_grid_layer, const SpaceInterface<S>& ansatz_space) const
   {
-    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
+    return BaseType::compute_face_and_volume_pattern(local_grid_layer, ansatz_space);
   }
 
   double& communicator() const
@@ -226,7 +226,7 @@ public:
 
 private:
   const GridPartType gridPart_;
-  const GridViewType gridView_;
+  const GridLayerType gridView_;
   BaseFunctionSetMapType baseFunctionSetMap_;
   const BackendType backend_;
   const MapperType mapper_;

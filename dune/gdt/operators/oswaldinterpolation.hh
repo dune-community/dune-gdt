@@ -35,19 +35,19 @@ namespace GDT {
 
 
 // forward
-template <class GridViewImp, class FieldImp = double>
+template <class GridLayerImp, class FieldImp = double>
 class OswaldInterpolationOperator;
 
 
 namespace internal {
 
 
-template <class GridViewImp, class FieldImp>
+template <class GridLayerImp, class FieldImp>
 class OswaldInterpolationOperatorTraits
 {
 public:
-  typedef OswaldInterpolationOperator<GridViewImp, FieldImp> derived_type;
-  typedef GridViewImp GridViewType;
+  typedef OswaldInterpolationOperator<GridLayerImp, FieldImp> derived_type;
+  typedef GridLayerImp GridLayerType;
   typedef FieldImp FieldType;
 };
 
@@ -55,18 +55,18 @@ public:
 } // namespace internal
 
 
-template <class GridViewImp, class FieldImp>
+template <class GridLayerImp, class FieldImp>
 class OswaldInterpolationOperator
-    : public OperatorInterface<internal::OswaldInterpolationOperatorTraits<GridViewImp, FieldImp>>
+    : public OperatorInterface<internal::OswaldInterpolationOperatorTraits<GridLayerImp, FieldImp>>
 {
 public:
-  typedef internal::OswaldInterpolationOperatorTraits<GridViewImp, FieldImp> Traits;
-  typedef typename Traits::GridViewType GridViewType;
+  typedef internal::OswaldInterpolationOperatorTraits<GridLayerImp, FieldImp> Traits;
+  typedef typename Traits::GridLayerType GridLayerType;
   typedef typename Traits::FieldType FieldType;
-  static const size_t dimDomain = GridViewType::dimension;
+  static const size_t dimDomain = GridLayerType::dimension;
 
-  OswaldInterpolationOperator(const GridViewType& grd_vw, const bool zero_boundary = true)
-    : grid_view_(grd_vw)
+  OswaldInterpolationOperator(const GridLayerType& grd_layr, const bool zero_boundary = true)
+    : grid_layer_(grd_layr)
     , zero_boundary_(zero_boundary)
   {
   }
@@ -98,9 +98,9 @@ private:
     // * a set to hold the global id of all boundary vertices
     std::set<size_t> boundary_vertices;
 
-    const auto entity_it_end = grid_view_.template end<0>();
+    const auto entity_it_end = grid_layer_.template end<0>();
     // walk the grid to create the maps explained above and to find the boundary vertices
-    for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+    for (auto entity_it = grid_layer_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       const size_t num_vertices = entity.subEntities(dimDomain);
       const auto basis = source.space().base_function_set(entity);
@@ -110,7 +110,7 @@ private:
       // loop over all vertices of the entitity, to find their associated global DoF indices
       for (size_t local_vertex_id = 0; local_vertex_id < num_vertices; ++local_vertex_id) {
         const auto vertex = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
-        const auto global_vertex_id = grid_view_.indexSet().index(vertex);
+        const auto global_vertex_id = grid_layer_.indexSet().index(vertex);
         const auto vertex_center = vertex.geometry().center();
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex_center));
@@ -132,8 +132,8 @@ private:
         if (ones != 1 || zeros != (basis.size() - 1) || failures > 0) {
           std::stringstream ss;
           ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures
-             << ", num_vertices = " << num_vertices << ", entity " << grid_view_.indexSet().index(entity) << ", vertex "
-             << local_vertex_id << ": [ " << vertex_center << "], ";
+             << ", num_vertices = " << num_vertices << ", entity " << grid_layer_.indexSet().index(entity)
+             << ", vertex " << local_vertex_id << ": [ " << vertex_center << "], ";
           XT::Common::print(basis_values, "basis_values", ss);
           DUNE_THROW(Dune::XT::Common::Exceptions::internal_error, ss.str());
         }
@@ -146,8 +146,8 @@ private:
       if (zero_boundary_) {
         // in order to determine the boundary vertices, we need to
         // loop over all intersections
-        const auto intersectionEndIt = grid_view_.iend(entity);
-        for (auto intersectionIt = grid_view_.ibegin(entity); intersectionIt != intersectionEndIt; ++intersectionIt) {
+        const auto intersectionEndIt = grid_layer_.iend(entity);
+        for (auto intersectionIt = grid_layer_.ibegin(entity); intersectionIt != intersectionEndIt; ++intersectionIt) {
           const auto& intersection = *intersectionIt;
           if (intersection.boundary() && !intersection.neighbor()) {
             const auto& intersection_geometry = intersection.geometry();
@@ -157,7 +157,7 @@ private:
               // loop over all vertices of the entity
               for (size_t local_vertex_id = 0; local_vertex_id < num_vertices; ++local_vertex_id) {
                 const auto vertex = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
-                const auto global_vertex_id = grid_view_.indexSet().index(vertex);
+                const auto global_vertex_id = grid_layer_.indexSet().index(vertex);
                 const auto vertex_center = vertex.geometry().center();
                 if (XT::Common::FloatCmp::eq(global_intersection_corner, vertex_center))
                   boundary_vertices.insert(global_vertex_id);
@@ -169,7 +169,7 @@ private:
     } // walk the grid for the first time
 
     // walk the grid for the second time
-    for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+    for (auto entity_it = grid_layer_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       const auto num_vertices = entity.subEntities(dimDomain);
       // get the local functions
@@ -197,7 +197,7 @@ private:
     } // walk the grid for the second time
   } // ... apply_dg_fem(...)
 
-  const GridViewType& grid_view_;
+  const GridLayerType& grid_layer_;
   const bool zero_boundary_;
 }; // class OswaldInterpolationOperator
 

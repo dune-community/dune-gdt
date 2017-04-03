@@ -26,7 +26,7 @@ namespace GDT {
 
 
 // forward
-template <class GridViewImp, class... MapperTypes>
+template <class GridLayerImp, class... MapperTypes>
 class DefaultProductMapper;
 
 
@@ -130,59 +130,59 @@ struct MapperTuplefromSpaceTupleCreator
 };
 
 
-template <class GridViewImp, class... MapperTypes>
+template <class GridLayerImp, class... MapperTypes>
 class DefaultProductMapperTraits
 {
 public:
-  typedef GridViewImp GridViewType;
-  typedef DefaultProductMapper<GridViewType, MapperTypes...> derived_type;
+  typedef GridLayerImp GridLayerType;
+  typedef DefaultProductMapper<GridLayerType, MapperTypes...> derived_type;
   static const size_t dimRange = GDT::BaseFunctionSet::internal::SumDimRange<MapperTypes...>::dimRange;
-  typedef typename GridViewType::IndexSet BackendType;
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  typedef typename GridLayerType::IndexSet BackendType;
+  using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
 };
 
 
 } // namespace internal
 
 
-template <class GridViewImp, class TupleType>
+template <class GridLayerImp, class TupleType>
 struct DefaultProductMapperFromTuple;
 
-template <class GridViewImp, class... MapperTypes>
-struct DefaultProductMapperFromTuple<GridViewImp, std::tuple<MapperTypes...>>
+template <class GridLayerImp, class... MapperTypes>
+struct DefaultProductMapperFromTuple<GridLayerImp, std::tuple<MapperTypes...>>
 {
-  typedef DefaultProductMapper<GridViewImp, MapperTypes...> type;
+  typedef DefaultProductMapper<GridLayerImp, MapperTypes...> type;
 };
 
 
-template <class GridViewImp, class... MapperTypes>
+template <class GridLayerImp, class... MapperTypes>
 class DefaultProductMapper
-    : public ProductMapperInterface<internal::DefaultProductMapperTraits<GridViewImp, MapperTypes...>>
+    : public ProductMapperInterface<internal::DefaultProductMapperTraits<GridLayerImp, MapperTypes...>>
 {
-  typedef ProductMapperInterface<internal::DefaultProductMapperTraits<GridViewImp, MapperTypes...>> BaseType;
+  typedef ProductMapperInterface<internal::DefaultProductMapperTraits<GridLayerImp, MapperTypes...>> BaseType;
 
 public:
-  typedef internal::DefaultProductMapperTraits<GridViewImp, MapperTypes...> Traits;
-  typedef typename Traits::GridViewType GridViewType;
+  typedef internal::DefaultProductMapperTraits<GridLayerImp, MapperTypes...> Traits;
+  typedef typename Traits::GridLayerType GridLayerType;
   static const size_t dimRange = Traits::dimRange;
   using typename BaseType::EntityType;
   using typename BaseType::BackendType;
 
-  DefaultProductMapper(const GridViewType& grid_view, const MapperTypes&... mappers)
+  DefaultProductMapper(const GridLayerType& grd_layr, const MapperTypes&... mappers)
     : mappers_(std::make_tuple(mappers...))
-    , grid_view_(grid_view)
+    , grid_layer_(grd_layr)
   {
   }
 
-  DefaultProductMapper(const GridViewType& grid_view, const std::tuple<MapperTypes...>& mappers)
+  DefaultProductMapper(const GridLayerType& grd_layr, const std::tuple<MapperTypes...>& mappers)
     : mappers_(mappers)
-    , grid_view_(grid_view)
+    , grid_layer_(grd_layr)
   {
   }
 
   template <class... SpaceTypes>
   DefaultProductMapper(const std::tuple<SpaceTypes...>& spaces)
-    : DefaultProductMapper(std::get<0>(spaces).grid_view(),
+    : DefaultProductMapper(std::get<0>(spaces).grid_layer(),
                            internal::MapperTuplefromSpaceTupleCreator<0, SpaceTypes...>::create(spaces, std::tuple<>()))
   {
   }
@@ -253,8 +253,8 @@ public:
   size_t maxNumDofs() const
   {
     size_t max_num_dofs = 0;
-    const auto it_end = grid_view_.template end<0>();
-    for (auto it = grid_view_.template begin<0>(); it != it_end; ++it) {
+    const auto it_end = grid_layer_.template end<0>();
+    for (auto it = grid_layer_.template begin<0>(); it != it_end; ++it) {
       const auto& entity = *it;
       if (max_num_dofs < numDofs(entity))
         max_num_dofs = numDofs(entity);
@@ -286,7 +286,7 @@ public:
 
 private:
   const std::tuple<MapperTypes...> mappers_;
-  const GridViewType& grid_view_;
+  const GridLayerType& grid_layer_;
 }; // class DefaultProductMapper
 
 

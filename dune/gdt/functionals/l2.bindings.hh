@@ -27,7 +27,7 @@ namespace bindings {
 
 
 template <class F, class SP, class V /*= typename XT::LA::Container<typename SP::type::RangeFieldType>::VectorType,
-          class GridView = typename Space::GridViewType,
+          class GridView = typename Space::GridLayerType,
           class Field = typename Space::RangeFieldType*/>
 class L2VolumeVectorFunctional
 {
@@ -78,7 +78,7 @@ public:
 template <class F,
           class SP,
           class V /*= typename XT::LA::Container<typename SP::type::RangeFieldType>::VectorType*/,
-          class GV /*= typename SP::type::GridViewType,
+          class GL /*= typename SP::type::GridLayerType,
           class Field = typename SP::type::RangeFieldType*/>
 class L2FaceVectorFunctional
 {
@@ -112,7 +112,7 @@ public:
     m.def(std::string("make_" + class_name + "_" + XT::LA::bindings::container_name<V>::value()).c_str(),
           [](const F& function,
              const S& space,
-             const XT::Grid::ApplyOn::WhichIntersection<GV>& which_intersections,
+             const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections,
              const size_t over_integrate) {
             return make_l2_face_vector_functional<V>(function, space, over_integrate, which_intersections.copy())
                 .release(); //                                                                                   <- s.a.
@@ -139,7 +139,7 @@ public:
           [](const F& function,
              V& vector,
              const S& space,
-             const XT::Grid::ApplyOn::WhichIntersection<GV>& which_intersections,
+             const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections,
              const size_t over_integrate) {
             return make_l2_face_vector_functional(function, vector, space, over_integrate, which_intersections.copy())
                 .release(); //                                                                                   <- s.a.

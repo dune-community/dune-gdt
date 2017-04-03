@@ -31,7 +31,7 @@ struct LaplaceLocalizableProductTest : public EllipticProductBase<SpaceType>, pu
 {
   typedef EllipticProductBase<SpaceType> EllipticBaseType;
   typedef LocalizableProductBase<SpaceType> LocalizableBaseType;
-  using typename LocalizableBaseType::GridViewType;
+  using typename LocalizableBaseType::GridLayerType;
   using typename EllipticBaseType::ExpressionFunctionType;
   using typename LocalizableBaseType::ScalarFunctionType;
   using typename LocalizableBaseType::RangeFieldType;
@@ -43,33 +43,34 @@ struct LaplaceLocalizableProductTest : public EllipticProductBase<SpaceType>, pu
 
   void constructible_by_ctor()
   {
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_layer = this->space_.grid_layer();
     const auto& source = this->scalar_function_;
     const auto& range = this->scalar_function_;
 
-    typedef LaplaceLocalizableProduct<GridViewType, ScalarFunctionType, ScalarFunctionType, double> CtorTestProductType;
-    DUNE_UNUSED CtorTestProductType wo_over_integrate(grid_view, range, source);
-    DUNE_UNUSED CtorTestProductType with_over_integrate(1, grid_view, range, source);
+    typedef LaplaceLocalizableProduct<GridLayerType, ScalarFunctionType, ScalarFunctionType, double>
+        CtorTestProductType;
+    DUNE_UNUSED CtorTestProductType wo_over_integrate(grid_layer, range, source);
+    DUNE_UNUSED CtorTestProductType with_over_integrate(1, grid_layer, range, source);
   } // ... constructible_by_ctor(...)
 
   void constructible_by_factory()
   {
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_layer = this->space_.grid_layer();
     const auto& source = this->scalar_function_;
     const auto& range = this->scalar_function_;
 
-    auto wo_over_integrate DUNE_UNUSED = make_laplace_localizable_product(grid_view, range, source);
-    auto with_over_integrate DUNE_UNUSED = make_laplace_localizable_product(grid_view, range, source, 1);
+    auto wo_over_integrate DUNE_UNUSED = make_laplace_localizable_product(grid_layer, range, source);
+    auto with_over_integrate DUNE_UNUSED = make_laplace_localizable_product(grid_layer, range, source, 1);
   } // ... constructible_by_factory()
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
   {
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_layer = this->space_.grid_layer();
 
-    auto product = make_laplace_localizable_product(grid_view, function, function);
+    auto product = make_laplace_localizable_product(grid_layer, function, function);
     const auto result = product->apply2();
 
-    auto product_tbb = make_laplace_localizable_product(grid_view, function, function);
+    auto product_tbb = make_laplace_localizable_product(grid_layer, function, function);
     product_tbb->walk(true);
     const auto result_tbb = product_tbb->apply2();
 
@@ -79,11 +80,11 @@ struct LaplaceLocalizableProductTest : public EllipticProductBase<SpaceType>, pu
 
   void is_localizable_product()
   {
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_layer = this->space_.grid_layer();
     const auto& source = this->scalar_function_;
     const auto& range = this->scalar_function_;
 
-    auto product = make_laplace_localizable_product(grid_view, range, source);
+    auto product = make_laplace_localizable_product(grid_layer, range, source);
     this->localizable_product_test(*product);
   } // ... is_localizable_product(...)
 }; // struct LaplaceLocalizableProductTest
@@ -96,7 +97,7 @@ template <class SpaceType>
 struct LaplaceMatrixOperatorTest : public EllipticMatrixOperatorTest<SpaceType>
 {
   typedef EllipticMatrixOperatorTest<SpaceType> BaseType;
-  using typename BaseType::GridViewType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::ExpressionFunctionType;
   using typename BaseType::DiscreteFunctionType;
   using typename BaseType::RangeFieldType;
@@ -110,78 +111,78 @@ struct LaplaceMatrixOperatorTest : public EllipticMatrixOperatorTest<SpaceType>
   void constructible_by_ctor()
   {
     const auto& space = this->space_;
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_layer = this->space_.grid_layer();
 
     // without matrix
     //   without over_integrate
     //     simplified argument list
     DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_1(space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_2(space, grid_view);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_3(space, space, grid_view);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_2(space, grid_layer);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_3(space, space, grid_layer);
     //     full argument list
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType, SpaceType, double> no_matrix_4(space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType, SpaceType, double> no_matrix_5(space,
-                                                                                                          grid_view);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType, SpaceType, double> no_matrix_6(
-        space, space, grid_view);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_4(space);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_5(space,
+                                                                                                           grid_layer);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_6(
+        space, space, grid_layer);
     //   with over_integrate
     //     simplified argument list
     DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_7(1, space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_8(1, space, grid_view);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_9(1, space, space, grid_view);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_8(1, space, grid_layer);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_9(1, space, space, grid_layer);
     //     full argument list
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType, SpaceType, double> no_matrix_10(1, space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType, SpaceType, double> no_matrix_11(
-        1, space, grid_view);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType, SpaceType, double> no_matrix_12(
-        1, space, space, grid_view);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_10(1, space);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_11(
+        1, space, grid_layer);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_12(
+        1, space, space, grid_layer);
     // with matrix
     MatrixType matrix(space.mapper().size(), space.mapper().size(), space.compute_volume_pattern());
     //   without over_integrate
     //     simplified argument list
     DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_1(matrix, space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_2(matrix, space, grid_view);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_3(matrix, space, space, grid_view);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_2(matrix, space, grid_layer);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_3(matrix, space, space, grid_layer);
     //     full argument list
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType, SpaceType, double> matrix_4(matrix, space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType, SpaceType, double> matrix_5(
-        matrix, space, grid_view);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType, SpaceType, double> matrix_6(
-        matrix, space, space, grid_view);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_4(matrix, space);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_5(
+        matrix, space, grid_layer);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_6(
+        matrix, space, space, grid_layer);
     //   with over_integrate
     //     simplified argument list
     DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_7(1, matrix, space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_8(1, matrix, space, grid_view);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_9(1, matrix, space, space, grid_view);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_8(1, matrix, space, grid_layer);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_9(1, matrix, space, space, grid_layer);
     //     full argument list
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType, SpaceType, double> matrix_10(
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_10(
         1, matrix, space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType, SpaceType, double> matrix_11(
-        1, matrix, space, grid_view);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridViewType, SpaceType, double> matrix_12(
-        1, matrix, space, space, grid_view);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_11(
+        1, matrix, space, grid_layer);
+    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_12(
+        1, matrix, space, space, grid_layer);
   } // ... constructible_by_ctor(...)
 
   void constructible_by_factory()
   {
     const auto& space = this->space_;
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_layer = this->space_.grid_layer();
     MatrixType matrix(space.mapper().size(), space.mapper().size(), space.compute_volume_pattern());
 
     // without matrix
     auto op_01 DUNE_UNUSED = make_laplace_matrix_operator<MatrixType>(space);
     auto op_02 DUNE_UNUSED = make_laplace_matrix_operator<MatrixType>(space, 1);
-    auto op_03 DUNE_UNUSED = make_laplace_matrix_operator<MatrixType>(space, grid_view);
-    auto op_04 DUNE_UNUSED = make_laplace_matrix_operator<MatrixType>(space, grid_view, 1);
-    auto op_05 DUNE_UNUSED = make_laplace_matrix_operator<MatrixType>(space, space, grid_view);
-    auto op_06 DUNE_UNUSED = make_laplace_matrix_operator<MatrixType>(space, space, grid_view, 1);
+    auto op_03 DUNE_UNUSED = make_laplace_matrix_operator<MatrixType>(space, grid_layer);
+    auto op_04 DUNE_UNUSED = make_laplace_matrix_operator<MatrixType>(space, grid_layer, 1);
+    auto op_05 DUNE_UNUSED = make_laplace_matrix_operator<MatrixType>(space, space, grid_layer);
+    auto op_06 DUNE_UNUSED = make_laplace_matrix_operator<MatrixType>(space, space, grid_layer, 1);
     // with matrix
     auto op_07 DUNE_UNUSED = make_laplace_matrix_operator(matrix, space);
     auto op_08 DUNE_UNUSED = make_laplace_matrix_operator(matrix, space, 1);
-    auto op_09 DUNE_UNUSED = make_laplace_matrix_operator(matrix, space, grid_view);
-    auto op_10 DUNE_UNUSED = make_laplace_matrix_operator(matrix, space, grid_view, 1);
-    auto op_11 DUNE_UNUSED = make_laplace_matrix_operator(matrix, space, space, grid_view);
-    auto op_12 DUNE_UNUSED = make_laplace_matrix_operator(matrix, space, space, grid_view, 1);
+    auto op_09 DUNE_UNUSED = make_laplace_matrix_operator(matrix, space, grid_layer);
+    auto op_10 DUNE_UNUSED = make_laplace_matrix_operator(matrix, space, grid_layer, 1);
+    auto op_11 DUNE_UNUSED = make_laplace_matrix_operator(matrix, space, space, grid_layer);
+    auto op_12 DUNE_UNUSED = make_laplace_matrix_operator(matrix, space, space, grid_layer, 1);
   } // ... constructible_by_factory()
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
@@ -216,7 +217,7 @@ struct LaplaceOperatorTest : public EllipticProductBase<SpaceType>, public Opera
 {
   typedef EllipticProductBase<SpaceType> EllipticBaseType;
   typedef OperatorBase<SpaceType> OperatorBaseType;
-  using typename OperatorBaseType::GridViewType;
+  using typename OperatorBaseType::GridLayerType;
   using typename EllipticBaseType::ExpressionFunctionType;
   using typename OperatorBaseType::RangeFieldType;
   using typename OperatorBaseType::VectorType;
@@ -228,34 +229,34 @@ struct LaplaceOperatorTest : public EllipticProductBase<SpaceType>, public Opera
 
   void constructible_by_ctor()
   {
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_layer = this->space_.grid_layer();
 
-    DUNE_UNUSED LaplaceOperator<GridViewType> wo_over_integrate(grid_view);
-    DUNE_UNUSED LaplaceOperator<GridViewType> with_over_integrate(grid_view, 1);
+    DUNE_UNUSED LaplaceOperator<GridLayerType> wo_over_integrate(grid_layer);
+    DUNE_UNUSED LaplaceOperator<GridLayerType> with_over_integrate(grid_layer, 1);
   } // ... constructible_by_ctor(...)
 
   void constructible_by_factory()
   {
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_layer = this->space_.grid_layer();
 
-    auto wo_over_integrate DUNE_UNUSED = make_laplace_operator(grid_view);
-    auto with_over_integrate DUNE_UNUSED = make_laplace_operator(grid_view, 1);
+    auto wo_over_integrate DUNE_UNUSED = make_laplace_operator(grid_layer);
+    auto with_over_integrate DUNE_UNUSED = make_laplace_operator(grid_layer, 1);
   } // ... constructible_by_factory()
 
   virtual RangeFieldType compute(const ExpressionFunctionType& function) const override final
   {
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_layer = this->space_.grid_layer();
 
-    return make_laplace_operator(grid_view)->apply2(function, function);
+    return make_laplace_operator(grid_layer)->apply2(function, function);
   }
 
   void apply_is_callable()
   {
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_layer = this->space_.grid_layer();
     auto& source = this->discrete_function_;
     auto range = make_discrete_function<VectorType>(this->space_);
 
-    auto op = make_laplace_operator(grid_view);
+    auto op = make_laplace_operator(grid_layer);
     op->apply(source, range);
   } // ... apply_is_callable(...)
 }; // struct LaplaceOperatorTest

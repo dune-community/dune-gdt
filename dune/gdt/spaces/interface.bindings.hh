@@ -17,6 +17,7 @@
 #include <dune/xt/grid/grids.bindings.hh>
 #include <dune/xt/grid/layers.bindings.hh>
 #include <dune/xt/grid/dd/subdomains/grid.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/spaces.hh>
 
@@ -222,7 +223,7 @@ class SpaceInterface
 {
   typedef typename SP::type S;
   static_assert(is_space<S>::value, "");
-  typedef typename S::GridViewType::Grid G;
+  using G = XT::Grid::extract_grid_t<typename S::GridLayerType>;
 
   template <bool is_dd_subdomain_layer = (SP::grid_layer == XT::Grid::Layers::dd_subdomain), bool anything = true>
   struct factory_methods

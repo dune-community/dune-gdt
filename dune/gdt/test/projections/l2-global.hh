@@ -25,37 +25,37 @@ template <class SpaceType>
 struct L2GlobalProjectionLocalizableOperatorTest
     : public LocalizableProjectionOperatorBase<SpaceType,
                                                L2GlobalProjectionLocalizableOperator<
-                                                   typename SpaceType::GridViewType,
+                                                   typename SpaceType::GridLayerType,
                                                    typename internal::OperatorBaseTraits<SpaceType>::FunctionType,
                                                    typename internal::OperatorBaseTraits<SpaceType>::
                                                        DiscreteFunctionType>>
 {
   void constructible_by_factory()
   {
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_layer = this->space_.grid_layer();
     const auto& source = this->function_;
     auto& range = this->discrete_function_;
 
-    auto w_grid_view_w_over_integrate DUNE_UNUSED =
-        make_global_l2_projection_localizable_operator(grid_view, source, range, 1);
-    auto w_grid_view_wo_over_integrate DUNE_UNUSED =
-        make_global_l2_projection_localizable_operator(grid_view, source, range);
-    auto wo_grid_view_w_over_integrate DUNE_UNUSED = make_global_l2_projection_localizable_operator(source, range, 1);
-    auto wo_grid_view_wo_over_integrate DUNE_UNUSED = make_global_l2_projection_localizable_operator(source, range);
+    auto w_grid_layer_w_over_integrate DUNE_UNUSED =
+        make_global_l2_projection_localizable_operator(grid_layer, source, range, 1);
+    auto w_grid_layer_wo_over_integrate DUNE_UNUSED =
+        make_global_l2_projection_localizable_operator(grid_layer, source, range);
+    auto wo_grid_layer_w_over_integrate DUNE_UNUSED = make_global_l2_projection_localizable_operator(source, range, 1);
+    auto wo_grid_layer_wo_over_integrate DUNE_UNUSED = make_global_l2_projection_localizable_operator(source, range);
   } // ... constructible_by_factory(...)
 };
 
 
 template <class SpaceType>
 struct L2GlobalProjectionOperatorTest
-    : public ProjectionOperatorBase<SpaceType, L2GlobalProjectionOperator<typename SpaceType::GridViewType, double>>
+    : public ProjectionOperatorBase<SpaceType, L2GlobalProjectionOperator<typename SpaceType::GridLayerType, double>>
 {
   void constructible_by_factory()
   {
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_layer = this->space_.grid_layer();
 
-    auto w_over_integrate DUNE_UNUSED = make_global_l2_projection_operator(grid_view, 1);
-    auto wo_over_integrate DUNE_UNUSED = make_global_l2_projection_operator(grid_view);
+    auto w_over_integrate DUNE_UNUSED = make_global_l2_projection_operator(grid_layer, 1);
+    auto wo_over_integrate DUNE_UNUSED = make_global_l2_projection_operator(grid_layer);
   } // ... constructible_by_factory(...)
 };
 

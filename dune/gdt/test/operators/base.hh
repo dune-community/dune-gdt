@@ -14,12 +14,13 @@
 
 #include <dune/common/unused.hh>
 
-#include <dune/xt/functions/expression.hh>
-#include <dune/xt/functions/constant.hh>
+#include <dune/xt/common/test/gtest/gtest.h>
+#include <dune/xt/la/container.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/grid/walker.hh>
-#include <dune/xt/la/container.hh>
-#include <dune/xt/common/test/gtest/gtest.h>
+#include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/functions/expression.hh>
+#include <dune/xt/functions/constant.hh>
 
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -35,8 +36,8 @@ template <class SpaceType>
 struct OperatorBaseTraits
 {
   static_assert(is_space<SpaceType>::value, "");
-  typedef typename SpaceType::GridViewType GridViewType;
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  typedef typename SpaceType::GridLayerType GridLayerType;
+  using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const size_t dimDomain = SpaceType::dimDomain;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
@@ -62,8 +63,8 @@ template <class SpaceType>
 struct OperatorBase : public ::testing::Test
 {
   typedef internal::OperatorBaseTraits<SpaceType> Traits;
-  typedef typename Traits::GridViewType GridViewType;
-  typedef typename GridViewType::Grid GridType;
+  typedef typename Traits::GridLayerType GridLayerType;
+  typedef typename GridLayerType::Grid GridType;
   typedef Dune::XT::Grid::GridProvider<GridType> GridProviderType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   typedef typename Traits::ScalarFunctionType ScalarFunctionType;
@@ -97,7 +98,7 @@ template <class SpaceType>
 struct LocalizableProductBase : public OperatorBase<SpaceType>
 {
   typedef OperatorBase<SpaceType> BaseType;
-  using typename BaseType::GridViewType;
+  using typename BaseType::GridLayerType;
 
   template <class ProductImp>
   void localizable_product_test(ProductImp& prod)
@@ -106,7 +107,7 @@ struct LocalizableProductBase : public OperatorBase<SpaceType>
     const auto& range DUNE_UNUSED = prod.range();
     auto& non_const_range DUNE_UNUSED = prod.range();
 
-    XT::Grid::Walker<GridViewType> walker(this->space_.grid_view());
+    XT::Grid::Walker<GridLayerType> walker(this->space_.grid_layer());
     walker.append(prod);
     walker.walk();
 
@@ -119,7 +120,7 @@ template <class SpaceType>
 struct MatrixOperatorBase : public OperatorBase<SpaceType>
 {
   typedef OperatorBase<SpaceType> BaseType;
-  using typename BaseType::GridViewType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::MatrixType;
 
   template <class OperatorImp>
@@ -130,7 +131,7 @@ struct MatrixOperatorBase : public OperatorBase<SpaceType>
     const auto& source_space DUNE_UNUSED = op.source_space();
     const auto& range_space DUNE_UNUSED = op.range_space();
 
-    XT::Grid::Walker<GridViewType> walker(this->space_.grid_view());
+    XT::Grid::Walker<GridLayerType> walker(this->space_.grid_layer());
     walker.append(op);
     walker.walk();
   } // ... matrix_operator_test(...)

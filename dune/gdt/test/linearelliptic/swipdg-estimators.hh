@@ -34,7 +34,7 @@ public:
   using typename BaseType::TestCaseType;
   using typename BaseType::Discretizer;
   using typename BaseType::DiscretizationType;
-  using typename BaseType::GridViewType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::FunctionType;
   using typename BaseType::VectorType;
   using typename BaseType::SpaceType;

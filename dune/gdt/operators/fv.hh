@@ -127,9 +127,9 @@ template <class AnalyticalFluxImp,
           class SourceImp,
           class RangeImp>
 class AdvectionLocalizableDefault
-    : public Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp>
+    : public Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridLayerType, SourceImp, RangeImp>
 {
-  typedef Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp> BaseType;
+  typedef Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridLayerType, SourceImp, RangeImp> BaseType;
 
   static_assert(is_analytical_flux<AnalyticalFluxImp>::value,
                 "AnalyticalFluxImp has to be derived from AnalyticalFluxInterface!");
@@ -150,8 +150,8 @@ public:
   typedef SourceImp SourceType;
   typedef RangeImp RangeType;
   typedef typename SourceType::RangeFieldType RangeFieldType;
-  typedef typename RangeType::SpaceType::GridViewType GridViewType;
-  static const size_t dimDomain = GridViewType::dimension;
+  typedef typename RangeType::SpaceType::GridLayerType GridLayerType;
+  static const size_t dimDomain = GridLayerType::dimension;
   typedef typename Dune::GDT::LocalCouplingFvOperator<NumericalCouplingFluxType> LocalCouplingOperatorType;
   typedef typename Dune::GDT::LocalBoundaryFvOperator<NumericalBoundaryFluxType> LocalBoundaryOperatorType;
 
@@ -161,14 +161,14 @@ public:
                               const SourceType& src,
                               RangeType& rng,
                               LocalOperatorArgTypes&&... local_operator_args)
-    : BaseType(rng.space().grid_view(), src, rng)
+    : BaseType(rng.space().grid_layer(), src, rng)
     , local_operator_(analytical_flux, std::forward<LocalOperatorArgTypes>(local_operator_args)...)
     , local_boundary_operator_(
           analytical_flux, boundary_values, std::forward<LocalOperatorArgTypes>(local_operator_args)...)
   {
-    this->append(local_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
-    this->append(local_operator_, new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GridViewType>());
-    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GridViewType>());
+    this->append(local_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
+    this->append(local_operator_, new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GridLayerType>());
+    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GridLayerType>());
   }
 
 private:
@@ -179,9 +179,9 @@ private:
 
 template <class SourceImp, class RangeImp, class BoundaryValueFunctionImp, class MatrixImp, SlopeLimiters slope_limiter>
 class LinearReconstructionLocalizable
-    : public Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp>
+    : public Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridLayerType, SourceImp, RangeImp>
 {
-  typedef Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp> BaseType;
+  typedef Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridLayerType, SourceImp, RangeImp> BaseType;
   typedef LinearReconstructionLocalizable<SourceImp, RangeImp, BoundaryValueFunctionImp, MatrixImp, slope_limiter>
       ThisType;
 
@@ -191,8 +191,8 @@ public:
   typedef BoundaryValueFunctionImp BoundaryValueFunctionType;
   typedef MatrixImp MatrixType;
   typedef typename SourceType::RangeFieldType RangeFieldType;
-  typedef typename RangeType::SpaceType::GridViewType GridViewType;
-  static const size_t dimDomain = GridViewType::dimension;
+  typedef typename RangeType::SpaceType::GridLayerType GridLayerType;
+  static const size_t dimDomain = GridLayerType::dimension;
   typedef typename Dune::GDT::LocalReconstructionFvOperator<MatrixType, BoundaryValueFunctionType, slope_limiter>
       LocalOperatorType;
 
@@ -201,7 +201,7 @@ public:
                                   const MatrixType& eigenvectors,
                                   const MatrixType& eigenvectors_inverse,
                                   const BoundaryValueFunctionType& boundary_values)
-    : BaseType(rng.space().grid_view(), src, rng)
+    : BaseType(rng.space().grid_layer(), src, rng)
     , local_operator_(eigenvectors, eigenvectors_inverse, boundary_values)
     , source_(src)
     , range_(rng)
@@ -295,14 +295,14 @@ struct AdvectionOperatorApplier
   {
     const auto current_boundary_values = boundary_values.evaluate_at_time(time);
     if (use_linear_reconstruction) {
-      typedef DunePdelabDgProductSpaceWrapper<typename SourceType::SpaceType::GridViewType,
+      typedef DunePdelabDgProductSpaceWrapper<typename SourceType::SpaceType::GridLayerType,
                                               1, // polOrder
                                               RangeFieldType,
                                               dimRange,
                                               dimRangeCols>
           DGSpaceType;
       typedef DiscreteFunction<DGSpaceType, typename SourceType::VectorType> ReconstructedDiscreteFunctionType;
-      const auto dg_space = Dune::XT::Common::make_unique<DGSpaceType>(range.space().grid_view());
+      const auto dg_space = Dune::XT::Common::make_unique<DGSpaceType>(range.space().grid_layer());
       const auto reconstruction =
           Dune::XT::Common::make_unique<ReconstructedDiscreteFunctionType>(*dg_space, "reconstructed");
       LinearReconstructionLocalizable<SourceType,
@@ -552,8 +552,8 @@ public:
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const double /*time*/ = 0.0) const
   {
-    LocalizableOperatorBase<typename RangeType::SpaceType::GridViewType, SourceType, RangeType> localizable_operator(
-        range.space().grid_view(), source, range);
+    LocalizableOperatorBase<typename RangeType::SpaceType::GridLayerType, SourceType, RangeType> localizable_operator(
+        range.space().grid_layer(), source, range);
     localizable_operator.append(local_operator_);
     localizable_operator.apply();
   }

@@ -56,18 +56,20 @@ namespace internal {
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
 class DunePdelabRtSpaceWrapperTraits
 {
+  static_assert(XT::Grid::is_view<GridViewImp>::value, "");
+
 public:
   typedef DunePdelabRtSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
-  typedef GridViewImp GridViewType;
+  typedef GridViewImp GridLayerType;
   static const int polOrder = polynomialOrder;
   static const bool continuous = false;
   static_assert(polOrder == 0, "Untested!");
-  static_assert(rangeDim == GridViewType::dimension, "Untested!");
+  static_assert(rangeDim == GridLayerType::dimension, "Untested!");
   static_assert(rangeDimCols == 1, "Untested!");
 
 private:
-  typedef typename GridViewType::ctype DomainFieldType;
-  static const size_t dimDomain = GridViewType::dimension;
+  typedef typename GridLayerType::ctype DomainFieldType;
+  static const size_t dimDomain = GridLayerType::dimension;
 
 public:
   typedef RangeFieldImp RangeFieldType;
@@ -82,7 +84,7 @@ private:
   template <class G>
   struct FeMap<G, true, true, false>
   {
-    typedef PDELab::RaviartThomasLocalFiniteElementMap<GridViewType,
+    typedef PDELab::RaviartThomasLocalFiniteElementMap<GridLayerType,
                                                        DomainFieldType,
                                                        RangeFieldType,
                                                        polOrder,
@@ -92,14 +94,14 @@ private:
   template <class G>
   struct FeMap<G, true, false, true>
   {
-    typedef PDELab::RaviartThomasLocalFiniteElementMap<GridViewType,
+    typedef PDELab::RaviartThomasLocalFiniteElementMap<GridLayerType,
                                                        DomainFieldType,
                                                        RangeFieldType,
                                                        polOrder,
                                                        Dune::GeometryType::cube>
         Type;
   };
-  typedef typename GridViewType::Grid GridType;
+  typedef typename GridLayerType::Grid GridType;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
   static const bool simplicial_ =
       (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId == Impl::SimplexTopology<dimDomain>::type::id);
@@ -108,9 +110,9 @@ private:
   typedef typename FeMap<GridType, single_geom_, simplicial_, cubic_>::Type FEMapType;
 
 public:
-  typedef PDELab::GridFunctionSpace<GridViewType, FEMapType> BackendType;
+  typedef PDELab::GridFunctionSpace<GridLayerType, FEMapType> BackendType;
   typedef DunePdelabCgMapperWrapper<BackendType> MapperType;
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
   typedef BaseFunctionSet::PiolaTransformedDunePdelabWrapper<BackendType,
                                                              EntityType,
                                                              DomainFieldType,
@@ -121,7 +123,7 @@ public:
       BaseFunctionSetType;
   static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
   static const bool needs_grid_view = true;
-  typedef CommunicationChooser<GridViewType> CommunicationChooserType;
+  typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 
 private:
@@ -152,7 +154,7 @@ public:
   using BaseType::dimDomain;
   using BaseType::polOrder;
 
-  using typename BaseType::GridViewType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::BackendType;
   using typename BaseType::MapperType;
   using typename BaseType::BaseFunctionSetType;
@@ -165,12 +167,12 @@ private:
   typedef typename Traits::FEMapType FEMapType;
 
 public:
-  DunePdelabRtSpaceWrapper(GridViewType gV)
-    : grid_view_(gV)
+  DunePdelabRtSpaceWrapper(GridLayerType grd_vw)
+    : grid_view_(grd_vw)
     , fe_map_(grid_view_)
     , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
-    , communicator_(CommunicationChooser<GridViewType>::create(grid_view_))
+    , communicator_(CommunicationChooser<GridLayerType>::create(grid_view_))
     , communicator_prepared_(false)
   {
   }
@@ -185,7 +187,7 @@ public:
     , fe_map_(grid_view_)
     , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
-    , communicator_(CommunicationChooser<GridViewType>::create(grid_view_))
+    , communicator_(CommunicationChooser<GridLayerType>::create(grid_view_))
     , communicator_prepared_(false)
   {
     // make sure our new communicator is prepared if other's was
@@ -212,7 +214,12 @@ public:
 
   ThisType& operator=(ThisType&& source) = delete;
 
-  const GridViewType& grid_view() const
+  const GridLayerType& grid_layer() const
+  {
+    return grid_view_;
+  }
+
+  GridLayerType& grid_layer()
   {
     return grid_view_;
   }
@@ -236,7 +243,7 @@ public:
   {
     DUNE_UNUSED std::lock_guard<std::mutex> gg(communicator_mutex_);
     if (!communicator_prepared_)
-      communicator_prepared_ = CommunicationChooser<GridViewType>::prepare(*this, *communicator_);
+      communicator_prepared_ = CommunicationChooser<GridLayerType>::prepare(*this, *communicator_);
     return *communicator_;
   } // ... communicator(...)
 
@@ -264,7 +271,7 @@ public:
   }
 
 private:
-  GridViewType grid_view_;
+  GridLayerType grid_view_;
   const FEMapType fe_map_;
   const BackendType backend_;
   const MapperType mapper_;

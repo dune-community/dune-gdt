@@ -32,7 +32,7 @@ class MatrixOperatorBase
 public:
   typedef OperatorType type;
   typedef GDT::SystemAssembler<typename OperatorType::RangeSpaceType,
-                               typename OperatorType::GridViewType,
+                               typename OperatorType::GridLayerType,
                                typename OperatorType::SourceSpaceType>
       BaseType;
   typedef pybind11::class_<type, BaseType> bound_type;

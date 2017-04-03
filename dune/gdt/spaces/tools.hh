@@ -20,7 +20,9 @@
 #if HAVE_DUNE_FEM
 #include <dune/fem/gridpart/levelgridpart.hh>
 #include <dune/fem/gridpart/leafgridpart.hh>
-#endif // HAVE_DUNE_FEM
+#endif
+
+#include <dune/xt/grid/type_traits.hh>
 
 namespace Dune {
 namespace GDT {
@@ -97,16 +99,16 @@ class GridPartView
   static const bool needs_grid_view = SpaceType::needs_grid_view;
 
 public:
-  typedef typename SpaceType::GridViewType::Grid GridType;
-  typedef typename LeafGridPartView<GridType, needs_grid_view>::Type LeafGridViewType;
-  typedef typename LevelGridPartView<GridType, needs_grid_view>::Type LevelGridViewType;
+  using GridType = XT::Grid::extract_grid_t<typename SpaceType::GridLayerType>;
+  typedef typename LeafGridPartView<GridType, needs_grid_view>::Type LeafGridLayerType;
+  typedef typename LevelGridPartView<GridType, needs_grid_view>::Type LevelGridLayerType;
 
-  static LeafGridViewType create_leaf(GridType& grid)
+  static LeafGridLayerType create_leaf(GridType& grid)
   {
     return LeafGridPartView<GridType, needs_grid_view>::create(grid);
   }
 
-  static LevelGridViewType create_level(GridType& grid, const int level)
+  static LevelGridLayerType create_level(GridType& grid, const int level)
   {
     return LevelGridPartView<GridType, needs_grid_view>::create(grid, level);
   }

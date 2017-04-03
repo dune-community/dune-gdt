@@ -164,7 +164,7 @@ private:
 };
 
 
-template <class LocalizableFunctionType, class GridViewType>
+template <class LocalizableFunctionType, class GridLayerType>
 class TransportSolution
     : public XT::Functions::TimeDependentFunctionInterface<
           typename XT::Functions::LocalizableFunctionInterface<typename LocalizableFunctionType::EntityType,
@@ -194,12 +194,12 @@ class TransportSolution
 
 public:
   TransportSolution(const LocalizableFunctionType localizable_func,
-                    const GridViewType& grid_view,
+                    const GridLayerType& grid_layer,
                     const DomainType velocity,
                     const DomainType lower_left,
                     const DomainType upper_right)
     : localizable_func_(localizable_func)
-    , grid_view_(grid_view)
+    , grid_layer_(grid_layer)
     , velocity_(velocity)
     , lower_left_(lower_left)
     , upper_right_(upper_right)
@@ -210,9 +210,9 @@ public:
   {
     DomainTransportFunctionType x_minus_t(velocity_, t, lower_left_, upper_right_);
     typedef
-        typename XT::Functions::CompositionFunction<DomainTransportFunctionType, LocalizableFunctionType, GridViewType>
+        typename XT::Functions::CompositionFunction<DomainTransportFunctionType, LocalizableFunctionType, GridLayerType>
             CompositionType;
-    return Dune::XT::Common::make_unique<CompositionType>(x_minus_t, localizable_func_, grid_view_);
+    return Dune::XT::Common::make_unique<CompositionType>(x_minus_t, localizable_func_, grid_layer_);
   }
 
   virtual std::string type() const
@@ -227,7 +227,7 @@ public:
 
 private:
   LocalizableFunctionType localizable_func_;
-  const GridViewType& grid_view_;
+  const GridLayerType& grid_layer_;
   const DomainType velocity_;
   const DomainType lower_left_;
   const DomainType upper_right_;
@@ -402,19 +402,19 @@ private:
 public:
   using typename BaseType::GridType;
   using typename BaseType::SolutionType;
-  using typename BaseType::LevelGridViewType;
+  using typename BaseType::LevelGridLayerType;
 
   TransportTestCase(const size_t num_refs = (d == 1 ? 4 : 2), const double divide_t_end_by = 1.0)
     : BaseType(
           divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(), num_refs)
-    , reference_grid_view_(BaseType::reference_grid_view())
+    , reference_grid_layer_(BaseType::reference_grid_layer())
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {
     typedef InitialValues<E, D, d, R, r, 1> LocalizableInitialValueType;
     const LocalizableInitialValueType initial_values;
-    exact_solution_ = std::make_shared<const TransportSolution<LocalizableInitialValueType, LevelGridViewType>>(
+    exact_solution_ = std::make_shared<const TransportSolution<LocalizableInitialValueType, LevelGridLayerType>>(
         initial_values,
-        reference_grid_view_,
+        reference_grid_layer_,
         Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>("[1.0 2.0]"),
         Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>(
             problem_.grid_config()["lower_left"]),
@@ -466,7 +466,7 @@ public:
   }
 
 private:
-  const LevelGridViewType reference_grid_view_;
+  const LevelGridLayerType reference_grid_layer_;
   const ProblemType problem_;
   std::shared_ptr<const SolutionType> exact_solution_;
 }; // class TransportTestCase

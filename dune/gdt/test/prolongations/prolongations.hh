@@ -30,14 +30,14 @@ struct ProlongationTest : public internal::ProlongationOperatorsBase<SpaceType, 
   {
     prepare(tolerance);
 
-    prolong(fine_space_.grid_view(), coarse_discrete_function_, fine_discrete_function_);
+    prolong(fine_space_.grid_layer(), coarse_discrete_function_, fine_discrete_function_);
     auto fine_l2_error =
-        make_l2_operator(fine_space_.grid_view(), 2)->induced_norm(function_ - fine_discrete_function_);
+        make_l2_operator(fine_space_.grid_layer(), 2)->induced_norm(function_ - fine_discrete_function_);
     EXPECT_LE(fine_l2_error, tolerance);
     fine_discrete_function_.vector() *= 0.0;
 
     prolong(coarse_discrete_function_, fine_discrete_function_);
-    fine_l2_error = make_l2_operator(fine_space_.grid_view(), 2)->induced_norm(function_ - fine_discrete_function_);
+    fine_l2_error = make_l2_operator(fine_space_.grid_layer(), 2)->induced_norm(function_ - fine_discrete_function_);
     EXPECT_LE(fine_l2_error, tolerance);
   } // ... produces_correct_results(...)
 
