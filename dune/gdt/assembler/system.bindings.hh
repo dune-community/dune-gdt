@@ -108,7 +108,7 @@ public:
   auto system_assembler_##_GRID##_##_layer##_fem_cg_##_p##_double_##_r##_##_rC =                                       \
       Dune::GDT::bindings::SystemAssembler<Dune::GDT::CgSpaceProvider<_GRID,                                           \
                                                                       Dune::XT::Grid::Layers::_layer,                  \
-                                                                      Dune::GDT::ChooseSpaceBackend::fem,              \
+                                                                      Dune::GDT::Backends::fem,                        \
                                                                       _p,                                              \
                                                                       double,                                          \
                                                                       _r,                                              \
@@ -157,7 +157,7 @@ public:
   auto system_assembler_##_GRID##_##_layer##_fem_dg_##_p##_double_##_r##_##_rC =                                       \
       Dune::GDT::bindings::SystemAssembler<Dune::GDT::DgSpaceProvider<_GRID,                                           \
                                                                       Dune::XT::Grid::Layers::_layer,                  \
-                                                                      Dune::GDT::ChooseSpaceBackend::fem,              \
+                                                                      Dune::GDT::Backends::fem,                        \
                                                                       _p,                                              \
                                                                       double,                                          \
                                                                       _r,                                              \
@@ -224,7 +224,7 @@ public:
 //  auto system_assembler_##_GRID##_##_layer##_pdelab_cg_##_p##_double_##_r##_##_rC =                                  \
 //      Dune::GDT::bindings::SystemAssembler<Dune::GDT::CgSpaceProvider<_GRID,                                         \
 //                                                                      Dune::XT::Grid::Layers::_layer,                \
-//                                                                      Dune::GDT::ChooseSpaceBackend::pdelab,         \
+//                                                                      Dune::GDT::Backends::pdelab,         \
 //                                                                      _p,                                            \
 //                                                                      double,                                        \
 //                                                                      _r,                                            \
@@ -282,7 +282,7 @@ public:
   auto system_assembler_##_GRID##_##_layer##_gdt_fv_double_##_r##_##_rC =                                              \
       Dune::GDT::bindings::SystemAssembler<Dune::GDT::FvSpaceProvider<_GRID,                                           \
                                                                       Dune::XT::Grid::Layers::_layer,                  \
-                                                                      Dune::GDT::ChooseSpaceBackend::gdt,              \
+                                                                      Dune::GDT::Backends::gdt,                        \
                                                                       double,                                          \
                                                                       _r,                                              \
                                                                       _rC>>::bind(_m);                                 \

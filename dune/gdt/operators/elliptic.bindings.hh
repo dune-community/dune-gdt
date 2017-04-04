@@ -208,7 +208,7 @@ public:
                              Dune::GDT::SpaceProvider<_GRID,                                                           \
                                                       Dune::XT::Grid::Layers::_layer,                                  \
                                                       Dune::GDT::SpaceType::_s_type,                                   \
-                                                      Dune::GDT::ChooseSpaceBackend::_s_backend,                       \
+                                                      Dune::GDT::Backends::_s_backend,                                 \
                                                       _p,                                                              \
                                                       double,                                                          \
                                                       1,                                                               \
@@ -232,7 +232,7 @@ public:
                              Dune::GDT::SpaceProvider<_GRID,                                                           \
                                                       Dune::XT::Grid::Layers::_layer,                                  \
                                                       Dune::GDT::SpaceType::_s_type,                                   \
-                                                      Dune::GDT::ChooseSpaceBackend::_s_backend,                       \
+                                                      Dune::GDT::Backends::_s_backend,                                 \
                                                       _p,                                                              \
                                                       double,                                                          \
                                                       1,                                                               \
@@ -256,7 +256,7 @@ public:
                              Dune::GDT::SpaceProvider<_GRID,                                                           \
                                                       Dune::XT::Grid::Layers::_layer,                                  \
                                                       Dune::GDT::SpaceType::_s_type,                                   \
-                                                      Dune::GDT::ChooseSpaceBackend::_s_backend,                       \
+                                                      Dune::GDT::Backends::_s_backend,                                 \
                                                       _p,                                                              \
                                                       double,                                                          \
                                                       1,                                                               \
@@ -389,7 +389,7 @@ DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_FEM_ISTL(extern template);
                              Dune::GDT::SpaceProvider<_GRID,                                                           \
                                                       Dune::XT::Grid::Layers::_layer,                                  \
                                                       Dune::GDT::SpaceType::_s_type,                                   \
-                                                      Dune::GDT::ChooseSpaceBackend::_s_backend,                       \
+                                                      Dune::GDT::Backends::_s_backend,                                 \
                                                       _p,                                                              \
                                                       double,                                                          \
                                                       1,                                                               \
@@ -414,7 +414,7 @@ DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_FEM_ISTL(extern template);
                              Dune::GDT::SpaceProvider<_GRID,                                                           \
                                                       Dune::XT::Grid::Layers::_layer,                                  \
                                                       Dune::GDT::SpaceType::_s_type,                                   \
-                                                      Dune::GDT::ChooseSpaceBackend::_s_backend,                       \
+                                                      Dune::GDT::Backends::_s_backend,                                 \
                                                       _p,                                                              \
                                                       double,                                                          \
                                                       1,                                                               \
@@ -439,7 +439,7 @@ DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_FEM_ISTL(extern template);
                              Dune::GDT::SpaceProvider<_GRID,                                                           \
                                                       Dune::XT::Grid::Layers::_layer,                                  \
                                                       Dune::GDT::SpaceType::_s_type,                                   \
-                                                      Dune::GDT::ChooseSpaceBackend::_s_backend,                       \
+                                                      Dune::GDT::Backends::_s_backend,                                 \
                                                       _p,                                                              \
                                                       double,                                                          \
                                                       1,                                                               \

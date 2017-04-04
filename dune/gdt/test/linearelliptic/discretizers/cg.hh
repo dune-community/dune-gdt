@@ -42,7 +42,7 @@ namespace LinearElliptic {
  */
 template <class GridType,
           XT::Grid::Layers layer = XT::Grid::Layers::leaf,
-          ChooseSpaceBackend space_backend = default_cg_backend,
+          Backends space_backend = default_cg_backend,
           XT::LA::Backends la = XT::LA::default_sparse_backend,
           int pol = 1,
           class RangeFieldType = double,

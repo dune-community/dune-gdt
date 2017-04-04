@@ -38,7 +38,7 @@ namespace LinearElliptic {
  */
 template <class GridType,
           XT::Grid::Layers layer = XT::Grid::Layers::leaf,
-          ChooseSpaceBackend spacebackend = default_dg_backend,
+          Backends spacebackend = default_dg_backend,
           XT::LA::Backends la = XT::LA::default_sparse_backend,
           int pol = 1,
           class RangeFieldType = double,

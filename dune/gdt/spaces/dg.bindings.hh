@@ -24,7 +24,7 @@
 #define _DUNE_GDT_SPACES_DG_BIND_FEM(_m, _GRID, _layer, _r, _rC)                                                       \
   Dune::GDT::bindings::SpaceInterface<Dune::GDT::DgSpaceProvider<_GRID,                                                \
                                                                  Dune::XT::Grid::Layers::_layer,                       \
-                                                                 Dune::GDT::ChooseSpaceBackend::fem,                   \
+                                                                 Dune::GDT::Backends::fem,                             \
                                                                  1,                                                    \
                                                                  double,                                               \
                                                                  _r,                                                   \

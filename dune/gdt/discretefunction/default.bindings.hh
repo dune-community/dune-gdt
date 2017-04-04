@@ -164,7 +164,7 @@ public:
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG(_m, _GRID, _layer, _p, _r, _rC, _la)                            \
   Dune::GDT::bindings::ConstDiscreteFunction<Dune::GDT::CgSpaceProvider<_GRID,                                         \
                                                                         Dune::XT::Grid::Layers::_layer,                \
-                                                                        Dune::GDT::ChooseSpaceBackend::fem,            \
+                                                                        Dune::GDT::Backends::fem,                      \
                                                                         _p,                                            \
                                                                         double,                                        \
                                                                         _r,                                            \
@@ -207,7 +207,7 @@ public:
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG(_m, _GRID, _layer, _p, _r, _rC, _la)                            \
   Dune::GDT::bindings::ConstDiscreteFunction<Dune::GDT::DgSpaceProvider<_GRID,                                         \
                                                                         Dune::XT::Grid::Layers::_layer,                \
-                                                                        Dune::GDT::ChooseSpaceBackend::fem,            \
+                                                                        Dune::GDT::Backends::fem,                      \
                                                                         _p,                                            \
                                                                         double,                                        \
                                                                         _r,                                            \
@@ -267,7 +267,7 @@ public:
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV(_m, _GRID, _layer, _r, _rC, _la)                                \
   Dune::GDT::bindings::ConstDiscreteFunction<Dune::GDT::FvSpaceProvider<_GRID,                                         \
                                                                         Dune::XT::Grid::Layers::_layer,                \
-                                                                        Dune::GDT::ChooseSpaceBackend::gdt,            \
+                                                                        Dune::GDT::Backends::gdt,                      \
                                                                         double,                                        \
                                                                         _r,                                            \
                                                                         _rC>,                                          \
@@ -317,7 +317,7 @@ public:
 //#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG(_m, _GRID, _layer, _p, _r, _rC, _la)                       \
 //  Dune::GDT::bindings::ConstDiscreteFunction<Dune::GDT::CgSpaceProvider<_GRID,                                       \
 //                                                                        Dune::XT::Grid::Layers::_layer,              \
-//                                                                        Dune::GDT::ChooseSpaceBackend::pdelab,       \
+//                                                                        Dune::GDT::Backends::pdelab,       \
 //                                                                        _p,                                          \
 //                                                                        double,                                      \
 //                                                                        _r,                                          \

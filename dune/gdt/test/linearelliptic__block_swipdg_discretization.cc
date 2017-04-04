@@ -33,7 +33,7 @@ GTEST_TEST(linearelliptic_block_SWIPDG_discretization, coincides_with_SWIPDG)
   block_ipdg_disc.solve(block_ipdg_solution_vector);
 
   auto ipdg_disc =
-      GDT::LinearElliptic::IpdgDiscretizer<GridType, XT::Grid::Layers::leaf, GDT::ChooseSpaceBackend::fem>::discretize(
+      GDT::LinearElliptic::IpdgDiscretizer<GridType, XT::Grid::Layers::leaf, GDT::Backends::fem>::discretize(
           grid_provider, problem);
   auto ipdg_solution_vector = ipdg_disc.create_vector();
   ipdg_disc.solve(ipdg_solution_vector);

@@ -244,7 +244,7 @@ public:
                                  Dune::GDT::SpaceProvider<_GRID,                                                       \
                                                           Dune::XT::Grid::Layers::_layer,                              \
                                                           Dune::GDT::SpaceType::_s_type,                               \
-                                                          Dune::GDT::ChooseSpaceBackend::_s_backend,                   \
+                                                          Dune::GDT::Backends::_s_backend,                             \
                                                           _p,                                                          \
                                                           double,                                                      \
                                                           1,                                                           \
@@ -269,7 +269,7 @@ public:
                                  Dune::GDT::SpaceProvider<_GRID,                                                       \
                                                           Dune::XT::Grid::Layers::_layer,                              \
                                                           Dune::GDT::SpaceType::_s_type,                               \
-                                                          Dune::GDT::ChooseSpaceBackend::_s_backend,                   \
+                                                          Dune::GDT::Backends::_s_backend,                             \
                                                           _p,                                                          \
                                                           double,                                                      \
                                                           1,                                                           \
@@ -294,7 +294,7 @@ public:
                                  Dune::GDT::SpaceProvider<_GRID,                                                       \
                                                           Dune::XT::Grid::Layers::_layer,                              \
                                                           Dune::GDT::SpaceType::_s_type,                               \
-                                                          Dune::GDT::ChooseSpaceBackend::_s_backend,                   \
+                                                          Dune::GDT::Backends::_s_backend,                             \
                                                           _p,                                                          \
                                                           double,                                                      \
                                                           1,                                                           \
@@ -392,7 +392,7 @@ DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, dd_subdomain, pa
                                  Dune::GDT::SpaceProvider<_GRID,                                                       \
                                                           Dune::XT::Grid::Layers::_layer,                              \
                                                           Dune::GDT::SpaceType::_s_type,                               \
-                                                          Dune::GDT::ChooseSpaceBackend::_s_backend,                   \
+                                                          Dune::GDT::Backends::_s_backend,                             \
                                                           _p,                                                          \
                                                           double,                                                      \
                                                           1,                                                           \
@@ -418,7 +418,7 @@ DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, dd_subdomain, pa
                                  Dune::GDT::SpaceProvider<_GRID,                                                       \
                                                           Dune::XT::Grid::Layers::_layer,                              \
                                                           Dune::GDT::SpaceType::_s_type,                               \
-                                                          Dune::GDT::ChooseSpaceBackend::_s_backend,                   \
+                                                          Dune::GDT::Backends::_s_backend,                             \
                                                           _p,                                                          \
                                                           double,                                                      \
                                                           1,                                                           \
@@ -444,7 +444,7 @@ DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, dd_subdomain, pa
                                  Dune::GDT::SpaceProvider<_GRID,                                                       \
                                                           Dune::XT::Grid::Layers::_layer,                              \
                                                           Dune::GDT::SpaceType::_s_type,                               \
-                                                          Dune::GDT::ChooseSpaceBackend::_s_backend,                   \
+                                                          Dune::GDT::Backends::_s_backend,                             \
                                                           _p,                                                          \
                                                           double,                                                      \
                                                           1,                                                           \

@@ -136,7 +136,7 @@ protected:
     typedef typename Dune::XT::LA::CommonDenseVector<R> VectorType;
     //    typedef typename Dune::GDT::CgSpaceProvider< VelocityGridType,
     //                                                    XT::Grid::Layers::leaf,
-    //                                                    Dune::GDT::ChooseSpaceBackend::pdelab,
+    //                                                    Dune::GDT::Backends::pdelab,
     //                                                    1, R, 1, 1 >          CGProviderType;
     //    typedef typename CGProviderType::Type                                             CGSpaceType;
     //    typedef Dune::GDT::DiscreteFunction< CGSpaceType, VectorType >                    CGFunctionType;

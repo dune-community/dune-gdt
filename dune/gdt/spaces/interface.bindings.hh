@@ -31,7 +31,7 @@ namespace GDT {
 namespace bindings {
 
 
-template <ChooseSpaceBackend backend>
+template <Backends backend>
 struct backend_name
 {
   static_assert(AlwaysFalse<typename internal::backend_dependent_typename<backend>::type>::value,
@@ -44,7 +44,7 @@ struct backend_name
 };
 
 template <>
-struct backend_name<ChooseSpaceBackend::fem>
+struct backend_name<Backends::fem>
 {
   static std::string value()
   {
@@ -53,7 +53,7 @@ struct backend_name<ChooseSpaceBackend::fem>
 };
 
 template <>
-struct backend_name<ChooseSpaceBackend::gdt>
+struct backend_name<Backends::gdt>
 {
   static std::string value()
   {
@@ -62,7 +62,7 @@ struct backend_name<ChooseSpaceBackend::gdt>
 };
 
 template <>
-struct backend_name<ChooseSpaceBackend::pdelab>
+struct backend_name<Backends::pdelab>
 {
   static std::string value()
   {
@@ -123,7 +123,7 @@ struct space_type_name<SpaceType::rt>
 namespace internal {
 
 
-template <class G, XT::Grid::Layers layer, ChooseSpaceBackend backend, size_t r, size_t rC>
+template <class G, XT::Grid::Layers layer, Backends backend, size_t r, size_t rC>
 struct space_name_base
 {
   static std::string value_wo_grid()
@@ -155,7 +155,7 @@ struct space_name
   }
 };
 
-template <class G, XT::Grid::Layers layer, ChooseSpaceBackend backend, int p, size_t r, size_t rC>
+template <class G, XT::Grid::Layers layer, Backends backend, int p, size_t r, size_t rC>
 struct space_name<CgSpaceProvider<G, layer, backend, p, double, r, rC>>
 {
   static std::string value()
@@ -171,7 +171,7 @@ struct space_name<CgSpaceProvider<G, layer, backend, p, double, r, rC>>
   }
 };
 
-template <class G, XT::Grid::Layers layer, ChooseSpaceBackend backend, int p, size_t r, size_t rC>
+template <class G, XT::Grid::Layers layer, Backends backend, int p, size_t r, size_t rC>
 struct space_name<DgSpaceProvider<G, layer, backend, p, double, r, rC>>
 {
   static std::string value()
@@ -187,7 +187,7 @@ struct space_name<DgSpaceProvider<G, layer, backend, p, double, r, rC>>
   }
 };
 
-template <class G, XT::Grid::Layers layer, ChooseSpaceBackend backend, size_t r, size_t rC>
+template <class G, XT::Grid::Layers layer, Backends backend, size_t r, size_t rC>
 struct space_name<FvSpaceProvider<G, layer, backend, double, r, rC>>
 {
   static std::string value()
@@ -201,7 +201,7 @@ struct space_name<FvSpaceProvider<G, layer, backend, double, r, rC>>
   }
 };
 
-template <class G, XT::Grid::Layers l, SpaceType tp, ChooseSpaceBackend backend, int p, class R, size_t r, size_t rC>
+template <class G, XT::Grid::Layers l, SpaceType tp, Backends backend, int p, class R, size_t r, size_t rC>
 struct space_name<SpaceProvider<G, l, tp, backend, p, R, r, rC>>
 {
   static std::string value()

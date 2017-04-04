@@ -183,7 +183,7 @@ public:
                                Dune::GDT::SpaceProvider<_GRID,                                                         \
                                                         Dune::XT::Grid::Layers::_layer,                                \
                                                         Dune::GDT::SpaceType::_s_type,                                 \
-                                                        Dune::GDT::ChooseSpaceBackend::_s_backend,                     \
+                                                        Dune::GDT::Backends::_s_backend,                               \
                                                         _p,                                                            \
                                                         double,                                                        \
                                                         1,                                                             \
@@ -206,7 +206,7 @@ public:
                              Dune::GDT::SpaceProvider<_GRID,                                                           \
                                                       Dune::XT::Grid::Layers::_layer,                                  \
                                                       Dune::GDT::SpaceType::_s_type,                                   \
-                                                      Dune::GDT::ChooseSpaceBackend::_s_backend,                       \
+                                                      Dune::GDT::Backends::_s_backend,                                 \
                                                       _p,                                                              \
                                                       double,                                                          \
                                                       1,                                                               \
@@ -267,7 +267,7 @@ DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(extern template, dd_subdomain, part, cg, f
                                Dune::GDT::SpaceProvider<_GRID,                                                         \
                                                         Dune::XT::Grid::Layers::_layer,                                \
                                                         Dune::GDT::SpaceType::_s_type,                                 \
-                                                        Dune::GDT::ChooseSpaceBackend::_s_backend,                     \
+                                                        Dune::GDT::Backends::_s_backend,                               \
                                                         _p,                                                            \
                                                         double,                                                        \
                                                         1,                                                             \
@@ -291,7 +291,7 @@ DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(extern template, dd_subdomain, part, cg, f
                              Dune::GDT::SpaceProvider<_GRID,                                                           \
                                                       Dune::XT::Grid::Layers::_layer,                                  \
                                                       Dune::GDT::SpaceType::_s_type,                                   \
-                                                      Dune::GDT::ChooseSpaceBackend::_s_backend,                       \
+                                                      Dune::GDT::Backends::_s_backend,                                 \
                                                       _p,                                                              \
                                                       double,                                                          \
                                                       1,                                                               \

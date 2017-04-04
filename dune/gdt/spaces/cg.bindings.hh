@@ -24,7 +24,7 @@
 #define _DUNE_GDT_SPACES_CG_BIND_FEM(_m, _GRID, _layer, _r, _rC)                                                       \
   Dune::GDT::bindings::SpaceInterface<Dune::GDT::CgSpaceProvider<_GRID,                                                \
                                                                  Dune::XT::Grid::Layers::_layer,                       \
-                                                                 Dune::GDT::ChooseSpaceBackend::fem,                   \
+                                                                 Dune::GDT::Backends::fem,                             \
                                                                  1,                                                    \
                                                                  double,                                               \
                                                                  _r,                                                   \
@@ -83,7 +83,7 @@
 //#define _DUNE_GDT_SPACES_CG_BIND_PDELAB(_m, _GRID, _layer, _r, _rC)                                                  \
 //  Dune::GDT::bindings::SpaceInterface<Dune::GDT::CgSpaceProvider<_GRID,                                              \
 //                                                                 Dune::XT::Grid::Layers::_layer,                     \
-//                                                                 Dune::GDT::ChooseSpaceBackend::pdelab,              \
+//                                                                 Dune::GDT::Backends::pdelab,              \
 //                                                                 1,                                                  \
 //                                                                 double,                                             \
 //                                                                 _r,                                                 \

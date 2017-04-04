@@ -25,7 +25,7 @@ namespace GDT {
 
 template <class GridType,
           XT::Grid::Layers layer_type,
-          ChooseSpaceBackend backend_type,
+          Backends backend_type,
           class RangeFieldType,
           size_t dimRange,
           size_t dimRangeCols = 1>
@@ -33,21 +33,21 @@ class FvSpaceProvider
 {
 public:
   static const constexpr SpaceType space_type = SpaceType::fv;
-  static const constexpr ChooseSpaceBackend space_backend = backend_type;
+  static const constexpr Backends space_backend = backend_type;
   static const constexpr XT::Grid::Layers grid_layer = layer_type;
   static const constexpr XT::Grid::Backends layer_backend = layer_from_backend<backend_type>::type;
 
   typedef typename XT::Grid::Layer<GridType, layer_type, layer_backend>::type GridLayerType;
 
 private:
-  template <class G, class R, size_t r, size_t rC, GDT::ChooseSpaceBackend b>
+  template <class G, class R, size_t r, size_t rC, GDT::Backends b>
   struct SpaceChooser
   {
     static_assert(AlwaysFalse<G>::value, "No space available for this backend!");
   };
 
   template <class G, class R, size_t r, size_t rC>
-  struct SpaceChooser<G, R, r, rC, GDT::ChooseSpaceBackend::gdt>
+  struct SpaceChooser<G, R, r, rC, GDT::Backends::gdt>
   {
     typedef GDT::FvSpace<GridLayerType, R, r, rC> Type;
   };

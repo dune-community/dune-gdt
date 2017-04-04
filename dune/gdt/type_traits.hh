@@ -21,7 +21,7 @@ namespace GDT {
 
 // forwards
 // from #include <dune/gdt/spaces/interface.hh>
-enum class ChooseSpaceBackend;
+enum class Backends;
 
 enum class ChoosePattern;
 

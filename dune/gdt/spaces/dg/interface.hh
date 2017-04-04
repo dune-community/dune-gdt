@@ -20,7 +20,7 @@ namespace Dune {
 namespace GDT {
 
 
-static constexpr ChooseSpaceBackend default_dg_backend = default_space_backend;
+static constexpr Backends default_dg_backend = default_space_backend;
 
 
 template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>

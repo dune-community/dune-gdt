@@ -84,7 +84,7 @@ public:
   Dune::GDT::bindings::                                                                                                \
       DirichletProjectionLocalizableOperator<Dune::GDT::CgSpaceProvider<_GRID,                                         \
                                                                         Dune::XT::Grid::Layers::_layer,                \
-                                                                        Dune::GDT::ChooseSpaceBackend::_backend,       \
+                                                                        Dune::GDT::Backends::_backend,                 \
                                                                         1,                                             \
                                                                         double,                                        \
                                                                         _r,                                            \

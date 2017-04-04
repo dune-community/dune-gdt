@@ -22,7 +22,7 @@
 #define _DUNE_GDT_SPACES_FV_BIND_GDT(_m, _GRID, _layer, _r, _rC)                                                       \
   Dune::GDT::bindings::SpaceInterface<Dune::GDT::FvSpaceProvider<_GRID,                                                \
                                                                  Dune::XT::Grid::Layers::_layer,                       \
-                                                                 Dune::GDT::ChooseSpaceBackend::gdt,                   \
+                                                                 Dune::GDT::Backends::gdt,                             \
                                                                  double,                                               \
                                                                  _r,                                                   \
                                                                  _rC>>::bind(_m)

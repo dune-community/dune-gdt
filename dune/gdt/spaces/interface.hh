@@ -42,13 +42,17 @@ namespace Dune {
 namespace GDT {
 
 
-enum class ChooseSpaceBackend
+enum class Backends
 {
   gdt,
   pdelab,
   fem
-}; // enum class ChooseSpaceBackend
+};
 
+enum class DUNE_DEPRECATED_MSG("Use Backends instead (04.04.2017)!") ChooseSpaceBackend
+{
+  None
+};
 
 enum class SpaceType
 {
@@ -62,7 +66,7 @@ enum class SpaceType
 namespace internal {
 
 
-template <ChooseSpaceBackend backend>
+template <Backends backend>
 struct backend_dependent_typename
 {
   typedef void type;
@@ -79,13 +83,13 @@ struct space_type_dependent_typename
 } // namespace  internal
 
 
-static constexpr ChooseSpaceBackend default_space_backend =
+static constexpr Backends default_space_backend =
 #if HAVE_DUNE_FEM
-    ChooseSpaceBackend::fem;
+    Backends::fem;
 #elif HAVE_DUNE_PDELAB
-    ChooseSpaceBackend::pdelab;
+    Backends::pdelab;
 #else
-    ChooseSpaceBackend::gdt;
+    Backends::gdt;
 #endif
 
 
@@ -97,29 +101,29 @@ enum class ChoosePattern
 };
 
 
-template <ChooseSpaceBackend type>
+template <Backends type>
 struct layer_from_backend;
 
 template <>
-struct layer_from_backend<ChooseSpaceBackend::gdt>
+struct layer_from_backend<Backends::gdt>
 {
   static const XT::Grid::Backends type = XT::Grid::Backends::view;
 };
 
 template <>
-struct layer_from_backend<ChooseSpaceBackend::pdelab>
+struct layer_from_backend<Backends::pdelab>
 {
   static const XT::Grid::Backends type = XT::Grid::Backends::view;
 };
 
 template <>
-struct layer_from_backend<ChooseSpaceBackend::fem>
+struct layer_from_backend<Backends::fem>
 {
   static const XT::Grid::Backends type = XT::Grid::Backends::part;
 };
 
 
-template <ChooseSpaceBackend type>
+template <Backends type>
 struct DUNE_DEPRECATED_MSG("Use layer_from_backend instead (04.04.2017)!") ChooseGridPartView
     : public layer_from_backend<type>
 {
