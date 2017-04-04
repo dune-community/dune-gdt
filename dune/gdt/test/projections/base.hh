@@ -14,10 +14,10 @@
 
 #include <dune/common/unused.hh>
 
-#include <dune/gdt/operators/l2.hh>
-#include <dune/gdt/spaces/tools.hh>
-#include <dune/gdt/test/operators/base.hh>
 #include <dune/xt/common/test/float_cmp.hh>
+
+#include <dune/gdt/operators/l2.hh>
+#include <dune/gdt/test/operators/base.hh>
 
 namespace Dune {
 namespace GDT {

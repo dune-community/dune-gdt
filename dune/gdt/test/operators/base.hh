@@ -24,7 +24,6 @@
 
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/spaces/tools.hh>
 
 namespace Dune {
 namespace GDT {
@@ -77,7 +76,7 @@ struct OperatorBase : public ::testing::Test
 
   OperatorBase()
     : grid_provider_(XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 6u))
-    , space_(Dune::GDT::SpaceTools::GridPartView<SpaceType>::create_leaf(grid_provider_.grid()))
+    , space_(grid_provider_.leaf<SpaceType::layer_backend>())
     , scalar_function_("x", "x[0]", 1, "scalar function", {{"1.0", "0.0", "0.0"}})
     , function_("x", {"x[0]", "0", "0"}, 1)
     , tensor_function_(XT::Functions::internal::UnitMatrix<RangeFieldType, dimDomain>::value())

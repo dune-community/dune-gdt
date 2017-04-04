@@ -22,7 +22,6 @@
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/operators/laplace.hh>
 #include <dune/gdt/operators/l2.hh>
-#include <dune/gdt/spaces/tools.hh>
 #include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
 #include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
@@ -58,12 +57,11 @@ struct DarcyOperatorTest : public ::testing::Test
   {
     GridProviderType grid_provider(XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 4));
     grid_provider.global_refine(1);
-    auto& grid = grid_provider.grid();
 
     typedef XT::Functions::ExpressionFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1> FunctionType;
     const FunctionType source("x", "x[0] * x[1]", 2, "source", {"x[1]", "x[0]"});
 
-    const RangeSpaceType range_space(SpaceTools::GridPartView<RangeSpaceType>::create_leaf(grid));
+    const RangeSpaceType range_space(grid_provider.leaf<RangeSpaceType::layer_backend>());
     VectorType range_vector(range_space.mapper().size());
     DiscreteFunction<RangeSpaceType, VectorType> range(range_space, range_vector);
 
