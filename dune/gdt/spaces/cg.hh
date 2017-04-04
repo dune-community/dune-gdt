@@ -42,15 +42,13 @@ template <class GridType,
           size_t dimRangeCols = 1>
 class CgSpaceProvider
 {
-  static const XT::Grid::Backends part_view_type = ChooseGridPartView<backend_type>::type;
-
 public:
   static const constexpr SpaceType space_type = SpaceType::cg;
   static const constexpr ChooseSpaceBackend space_backend = backend_type;
   static const constexpr XT::Grid::Layers grid_layer = layer_type;
-  static const constexpr XT::Grid::Backends layer_backend = part_view_type;
+  static const constexpr XT::Grid::Backends layer_backend = layer_from_backend<backend_type>::type;
 
-  typedef typename XT::Grid::Layer<GridType, layer_type, part_view_type>::type GridLayerType;
+  typedef typename XT::Grid::Layer<GridType, layer_type, layer_backend>::type GridLayerType;
 
 private:
   template <class G, int p, class R, size_t r, size_t rC, GDT::ChooseSpaceBackend b>
@@ -83,7 +81,7 @@ public:
   template <class DdGridType>
   static Type create(XT::Grid::GridProvider<GridType, DdGridType>& grid_provider, const int level = 0)
   {
-    return Type(grid_provider.template layer<layer_type, part_view_type>(level));
+    return Type(grid_provider.template layer<layer_type, layer_backend>(level));
   }
 }; // class CgSpaceProvider
 

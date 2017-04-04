@@ -94,31 +94,35 @@ enum class ChoosePattern
   volume,
   face,
   face_and_volume
-}; // enum class ChoosePattern
+};
 
 
 template <ChooseSpaceBackend type>
-struct ChooseGridPartView;
-
+struct layer_from_backend;
 
 template <>
-struct ChooseGridPartView<ChooseSpaceBackend::gdt>
+struct layer_from_backend<ChooseSpaceBackend::gdt>
 {
   static const XT::Grid::Backends type = XT::Grid::Backends::view;
 };
 
-
 template <>
-struct ChooseGridPartView<ChooseSpaceBackend::pdelab>
+struct layer_from_backend<ChooseSpaceBackend::pdelab>
 {
   static const XT::Grid::Backends type = XT::Grid::Backends::view;
 };
 
-
 template <>
-struct ChooseGridPartView<ChooseSpaceBackend::fem>
+struct layer_from_backend<ChooseSpaceBackend::fem>
 {
   static const XT::Grid::Backends type = XT::Grid::Backends::part;
+};
+
+
+template <ChooseSpaceBackend type>
+struct DUNE_DEPRECATED_MSG("Use layer_from_backend instead (04.04.2017)!") ChooseGridPartView
+    : public layer_from_backend<type>
+{
 };
 
 
