@@ -80,7 +80,7 @@ public:
                                           rangeDim,
                                           rangeDimCols>
       BaseFunctionSetType;
-  static const XT::Grid::Backends part_view_type = XT::Grid::Backends::part;
+  static const XT::Grid::Backends layer_backend = XT::Grid::Backends::part;
   static const bool needs_grid_view = false;
   typedef CommunicationChooser<GridLayerType, false> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;

@@ -106,7 +106,7 @@ public:
   typedef BaseFunctionSet::
       DunePdelabWrapper<BackendType, EntityType, DomainFieldType, dimDomain, RangeFieldType, rangeDim, rangeDimCols>
           BaseFunctionSetType;
-  static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
+  static const XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static const bool needs_grid_view = true;
 
   typedef typename CommunicationChooser<GridLayerType>::Type CommunicatorType;

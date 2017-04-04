@@ -160,9 +160,11 @@ public:
   typedef XT::Grid::BoundaryInfo<IntersectionType> BoundaryInfoType;
   typedef Dune::XT::LA::SparsityPatternDefault PatternType;
 
-  static const XT::Grid::Backends part_view_type = Traits::part_view_type;
+  static const XT::Grid::Backends layer_backend = Traits::layer_backend;
 
-  static const bool needs_grid_view = Traits::needs_grid_view;
+  static const XT::Grid::Backends
+      DUNE_DEPRECATED_MSG("Use layer_type instead (03.04.2017)!") part_view_type = layer_backend;
+  static const bool DUNE_DEPRECATED_MSG("Use layer_type instead (03.04.2017)!") needs_grid_view = false;
 
 public:
   /**

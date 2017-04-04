@@ -53,7 +53,7 @@ class DerivedHolder : public BaseHolder<Space>
 
 public:
   DerivedHolder(Provider& p)
-    : BaseType(Space(p.template leaf<Space::part_view_type>()))
+    : BaseType(Space(p.template leaf<Space::layer_backend>()))
   {
   }
 };
@@ -71,7 +71,7 @@ class SpaceBase : public ::testing::Test
 public:
   SpaceBase()
     : grid_provider_(Dune::XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 3u))
-    , space_(grid_provider_.template leaf<SpaceType::part_view_type>())
+    , space_(grid_provider_.template leaf<SpaceType::layer_backend>())
   {
   }
 
@@ -104,7 +104,7 @@ public:
     typedef typename SpaceType::PatternType D_PatternType;
     typedef typename SpaceType::BoundaryInfoType D_BoundaryInfoType;
     typedef typename SpaceType::CommunicatorType D_CommunicatorType;
-    static const bool d_needs_grid_view = SpaceType::needs_grid_view;
+    static const auto d_layer_backend = SpaceType::layer_backend;
     // * as the interface
     typedef SpaceInterface<Traits, d_dimDomain, d_dimRange, d_dimRangeCols> InterfaceType;
     typedef typename InterfaceType::derived_type derived_type;
@@ -123,7 +123,7 @@ public:
     typedef typename InterfaceType::PatternType I_PatternType;
     typedef typename InterfaceType::BoundaryInfoType I_BoundaryInfoType;
     typedef typename InterfaceType::CommunicatorType I_CommunicatorType;
-    static const bool i_needs_grid_view = InterfaceType::needs_grid_view;
+    static const auto i_layer_backend = InterfaceType::layer_backend;
     static_assert(std::is_base_of<InterfaceType, SpaceType>::value, "SpaceType has to be derived from SpaceInterface!");
     static_assert(std::is_same<derived_type, SpaceType>::value, "Types do not match!");
     static_assert(std::is_same<I_GridLayerType, D_GridLayerType>::value, "Types do not match!");
@@ -143,7 +143,7 @@ public:
     static_assert(i_dimRange == d_dimRange, "Dimensions do not match!");
     static_assert(i_dimRangeCols == d_dimRangeCols, "Dimensions do not match!");
     static_assert(i_polOrder == d_polOrder, "Polynomial orders do not match!");
-    static_assert(d_needs_grid_view == i_needs_grid_view, "Information do not match!");
+    static_assert(d_layer_backend == i_layer_backend, "Information do not match!");
     // dynamic checks
     // * as the derived_type
     const D_BackendType& d_backend = space_.backend();

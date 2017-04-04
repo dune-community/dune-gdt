@@ -65,8 +65,8 @@ struct ProlongationOperatorsBase
 
   ProlongationOperatorsBase()
     : function_("x", "x[0]", 1, "function")
-    , coarse_space_(grid_provider_.template level<CoarseSpaceType::part_view_type>(0))
-    , fine_space_(grid_provider_.template level<FineSpaceType::part_view_type>(grid_provider_.grid().maxLevel()))
+    , coarse_space_(grid_provider_.template level<CoarseSpaceType::layer_backend>(0))
+    , fine_space_(grid_provider_.template level<FineSpaceType::layer_backend>(grid_provider_.grid().maxLevel()))
     , coarse_discrete_function_(coarse_space_, "coarse discrete function")
     , fine_discrete_function_(fine_space_, "fine discrete function")
     , prepared_(false)

@@ -83,7 +83,7 @@ public:
   static const int polOrder = internal::maxPolOrder<SpaceImps...>::polOrder;
   static const bool continuous = internal::allContinuous<SpaceImps...>::value;
   using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
-  static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
+  static const XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static const bool needs_grid_view = true;
   typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
