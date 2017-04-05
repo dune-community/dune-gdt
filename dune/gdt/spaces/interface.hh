@@ -151,8 +151,8 @@ public:
   typedef typename GridViewType::ctype DomainFieldType;
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
 
-  typedef typename XT::Grid::Entity<GridViewType>::type EntityType;
-  typedef typename XT::Grid::Intersection<GridViewType>::type IntersectionType;
+  typedef typename XT::Grid::extract_entity_t<GridViewType> EntityType;
+  typedef typename XT::Grid::extract_intersection_t<GridViewType> IntersectionType;
   typedef XT::Grid::BoundaryInfo<IntersectionType> BoundaryInfoType;
   typedef Dune::XT::LA::SparsityPatternDefault PatternType;
 

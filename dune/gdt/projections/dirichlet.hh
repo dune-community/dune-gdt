@@ -49,7 +49,7 @@ template <class GridViewType, class SourceType, class RangeType>
 std::unique_ptr<DirichletProjectionLocalizableOperator<GridViewType, SourceType, RangeType>>
 make_localizable_dirichlet_projection_operator(
     const GridViewType& grid_view,
-    const XT::Grid::BoundaryInfo<typename XT::Grid::Intersection<GridViewType>::Type>& boundary_info,
+    const XT::Grid::BoundaryInfo<typename XT::Grid::extract_intersection_t<GridViewType>>& boundary_info,
     const SourceType& source,
     RangeType& range)
 {

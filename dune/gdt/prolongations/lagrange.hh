@@ -137,7 +137,7 @@ public:
   using typename BaseType::FieldType;
 
 private:
-  typedef typename XT::Grid::Entity<GridViewType>::Type E;
+  typedef typename XT::Grid::extract_entity_t<GridViewType> E;
   typedef typename GridViewType::ctype D;
   static const size_t d = GridViewType::dimension;
 
