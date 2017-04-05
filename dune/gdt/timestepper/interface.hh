@@ -306,9 +306,9 @@ public:
     while (Dune::XT::Common::FloatCmp::lt(t, t_end, 1e-10)) {
       TimeFieldType max_dt = dt;
       // match saving times and t_end exactly
-      if (Dune::XT::Common::FloatCmp::gt(t + dt, t_end))
+      if (Dune::XT::Common::FloatCmp::gt(t + dt, t_end, 1e-10))
         max_dt = t_end - t;
-      if (Dune::XT::Common::FloatCmp::gt(t + dt, next_save_time) && num_save_steps != size_t(-1))
+      if (Dune::XT::Common::FloatCmp::gt(t + dt, next_save_time, 1e-10) && num_save_steps != size_t(-1))
         max_dt = std::min(next_save_time - t, max_dt);
 
       // do a timestep

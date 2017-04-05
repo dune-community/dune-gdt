@@ -36,7 +36,9 @@ struct TimeStepperFactory
                   typename Dune::GDT::
                       AdaptiveRungeKuttaTimeStepper<OperatorImp, DiscreteFunctionImp, TimeFieldImp, method>,
                   typename std::
-                      conditional<method == TimeStepperMethods::implicit_euler,
+                      conditional<method == TimeStepperMethods::implicit_euler
+                                      || method == TimeStepperMethods::implicit_midpoint
+                                      || method == TimeStepperMethods::trapezoidal_rule,
                                   typename Dune::GDT::DiagonallyImplicitRungeKuttaTimeStepper<OperatorImp,
                                                                                               DiscreteFunctionImp,
                                                                                               TimeFieldImp,
