@@ -30,12 +30,12 @@ namespace GDT {
 
 template <class GridView, class Range, class Source = Range, class Field = typename Range::RangeFieldType>
 class L2LocalizableProduct
-    : XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
+    : XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<typename XT::Grid::extract_entity_t<GridView>,
                                                                        typename GridView::ctype,
                                                                        GridView::dimension,
                                                                        Field,
                                                                        1>>,
-      public WeightedL2LocalizableProduct<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
+      public WeightedL2LocalizableProduct<XT::Functions::ConstantFunction<typename XT::Grid::extract_entity_t<GridView>,
                                                                           typename GridView::ctype,
                                                                           GridView::dimension,
                                                                           Field,
@@ -45,13 +45,14 @@ class L2LocalizableProduct
                                           Source,
                                           Field>
 {
-  typedef XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
-                                                                           typename GridView::ctype,
-                                                                           GridView::dimension,
-                                                                           Field,
-                                                                           1>>
-      FunctionProvider;
-  typedef WeightedL2LocalizableProduct<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
+  typedef XT::Common::
+      ConstStorageProvider<XT::Functions::ConstantFunction<typename XT::Grid::extract_entity_t<GridView>,
+                                                           typename GridView::ctype,
+                                                           GridView::dimension,
+                                                           Field,
+                                                           1>>
+          FunctionProvider;
+  typedef WeightedL2LocalizableProduct<XT::Functions::ConstantFunction<typename XT::Grid::extract_entity_t<GridView>,
                                                                        typename GridView::ctype,
                                                                        GridView::dimension,
                                                                        Field,
@@ -154,12 +155,12 @@ template <class RangeSpace,
           class SourceSpace = RangeSpace,
           class Field = typename RangeSpace::RangeFieldType>
 class L2MatrixOperator
-    : XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
+    : XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<typename XT::Grid::extract_entity_t<GridView>,
                                                                        typename GridView::ctype,
                                                                        GridView::dimension,
                                                                        Field,
                                                                        1>>,
-      public WeightedL2MatrixOperator<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
+      public WeightedL2MatrixOperator<XT::Functions::ConstantFunction<typename XT::Grid::extract_entity_t<GridView>,
                                                                       typename GridView::ctype,
                                                                       GridView::dimension,
                                                                       Field,
@@ -170,13 +171,14 @@ class L2MatrixOperator
                                       SourceSpace,
                                       Field>
 {
-  typedef XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
-                                                                           typename GridView::ctype,
-                                                                           GridView::dimension,
-                                                                           Field,
-                                                                           1>>
-      FunctionProvider;
-  typedef WeightedL2MatrixOperator<XT::Functions::ConstantFunction<typename XT::Grid::Entity<GridView>::type,
+  typedef XT::Common::
+      ConstStorageProvider<XT::Functions::ConstantFunction<typename XT::Grid::extract_entity_t<GridView>,
+                                                           typename GridView::ctype,
+                                                           GridView::dimension,
+                                                           Field,
+                                                           1>>
+          FunctionProvider;
+  typedef WeightedL2MatrixOperator<XT::Functions::ConstantFunction<typename XT::Grid::extract_entity_t<GridView>,
                                                                    typename GridView::ctype,
                                                                    GridView::dimension,
                                                                    Field,
