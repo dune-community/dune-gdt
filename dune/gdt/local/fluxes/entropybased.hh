@@ -146,6 +146,26 @@ struct FluxRangeTypeConverter<dimRange, 1>
   }
 };
 
+template <size_t dimRange, size_t dimDomain>
+struct FluxJacobianRangeTypeConverter
+{
+  typedef typename Dune::FieldVector<Dune::FieldMatrix<double, dimRange, dimRange>, dimDomain> FluxJacobianRangeType;
+  static FluxJacobianRangeType convert(const FluxJacobianRangeType& ret)
+  {
+    return ret;
+  }
+};
+
+template <size_t dimRange>
+struct FluxJacobianRangeTypeConverter<dimRange, 1>
+{
+  typedef typename Dune::FieldMatrix<double, dimRange, dimRange> FluxJacobianRangeType;
+  static FluxJacobianRangeType convert(const Dune::FieldVector<FluxJacobianRangeType, 1>& in)
+  {
+    return in[0];
+  }
+};
+
 template <class MatrixType, class VectorType>
 void solve_lower_triangular(const MatrixType& A, VectorType& x, const VectorType& b)
 {
@@ -253,9 +273,17 @@ public:
   }
 
   virtual FluxJacobianRangeType
-  jacobian(const RangeType& /*u*/, const E& /*entity*/, const DomainType& /*x_local*/, const double /*t*/ = 0) const
+  jacobian(const RangeType& u, const E& entity, const DomainType& x_local, const double t) const
   {
-    DUNE_THROW(NotImplemented, "");
+    const auto alpha = get_alpha(u, entity, x_local, t);
+    MatrixType H;
+    Dune::FieldVector<Dune::FieldMatrix<double, dimRange, dimRange>, dimDomain> ret;
+    calculate_hessian(alpha, M_, H);
+    calculate_J(alpha, M_, ret);
+    H.invert();
+    for (size_t dd = 0; dd < dimDomain; ++dd)
+      ret[dd].rightmultiply(H);
+    return ret;
   }
 
   RangeType get_alpha(const RangeType& u, const E& entity, const DomainType& x_local, const double t) const
@@ -445,6 +473,51 @@ public:
   }
 
 private:
+  void calculate_hessian(const RangeType& alpha, const BasisValuesMatrixType& M, MatrixType& H) const
+  {
+    H *= 0;
+    MatrixType tmp;
+    for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
+      const auto& m = M[ll];
+      auto m_times_factor = M[ll];
+      m_times_factor *= std::exp(alpha * m) * quadrature_[ll].weight();
+      // calculate p p^T
+      for (size_t ii = 0; ii < dimRange; ++ii) {
+        tmp[ii] = m_times_factor;
+        tmp[ii] *= m[ii];
+      }
+      H += tmp;
+    } // quadrature points for loop
+  }
+
+  // J = df/dalpha is the derivative of the flux with respect to alpha.
+  // As F = (f_1, f_2, f_3) is matrix-valued
+  // (div f = \sum_{i=1}^d \partial_{x_i} f_i  = \sum_{i=1}^d \partial_{x_i} < v_i m \hat{psi}(alpha) > is
+  // vector-valued),
+  // the derivative is vector of matrices (df_1/dalpha, df_2/dalpha, ...)
+  void calculate_J(const RangeType& alpha,
+                   const BasisValuesMatrixType& M,
+                   Dune::FieldVector<Dune::FieldMatrix<double, dimRange, dimRange>, dimDomain>& J) const
+  {
+    std::fill(J.begin(), J.end(), MatrixType(0));
+    MatrixType tmp;
+    for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
+      const auto& m = M[ll];
+      const auto& v = quadrature_[ll].position();
+      const auto& weight = quadrature_[ll].weight();
+      for (size_t dd = 0; dd < dimDomain; ++dd) {
+        auto m_times_factor = M[ll];
+        m_times_factor *= v[dd] * std::exp(alpha * m) * weight;
+        // calculate p p^T
+        for (size_t ii = 0; ii < dimRange; ++ii) {
+          tmp[ii] = m_times_factor;
+          tmp[ii] *= m[ii];
+        }
+        J[dd] += tmp;
+      } // dd
+    } // quadrature points for loop
+  }
+
   void change_basis(bool& chol_flag,
                     const RangeType& beta_in,
                     RangeType& v_k,
@@ -453,18 +526,8 @@ private:
                     RangeType& g_k,
                     RangeType& beta_out) const
   {
-    MatrixType H(0), tmp(0), L(0);
-    for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
-      const auto& p = P_k[ll];
-      auto p_times_factor = P_k[ll];
-      p_times_factor *= std::exp(beta_in * p) * quadrature_[ll].weight();
-      // calculate p p^T
-      for (size_t ii = 0; ii < dimRange; ++ii) {
-        tmp[ii] = p_times_factor;
-        tmp[ii] *= p[ii];
-      }
-      H += tmp;
-    } // quadrature points for loop
+    MatrixType H(0), L(0);
+    calculate_hessian(beta_in, P_k, H);
     chol_flag = cholesky_L(H, L);
     if (chol_flag == false)
       return;
@@ -1382,6 +1445,7 @@ private:
 };
 #endif
 
+#if 0
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * for the notation see
  * Alldredge, Hauck, O'Leary, Tits, "Adaptive change of basis in entropy-based moment closures for linear kinetic
@@ -1392,7 +1456,7 @@ template <class GridViewType, class E, class D, size_t d, class R, size_t rangeD
 class EntropyBasedLocalFluxHatFunctions1D : public AnalyticalFluxInterface<E, D, d, R, rangeDim, rC>
 {
   typedef AnalyticalFluxInterface<E, D, d, R, rangeDim, rC> BaseType;
-  typedef EntropyBasedLocalFluxHatFunctions<GridViewType, E, D, d, R, rangeDim, rC> ThisType;
+  typedef EntropyBasedLocalFluxHatFunctions1D<GridViewType, E, D, d, R, rangeDim, rC> ThisType;
 
 public:
   using typename BaseType::DomainType;
@@ -1406,7 +1470,7 @@ public:
   using typename BaseType::FluxRangeType;
   using typename BaseType::FluxJacobianRangeType;
 
-  explicit EntropyBasedLocalFluxHatFunctions(
+  explicit EntropyBasedLocalFluxHatFunctions1D(
       const GridViewType& grid_view,
       const RangeType v_points,
       const RangeFieldType tau = 1e-7,
@@ -1852,9 +1916,9 @@ public:
   }
 
   virtual FluxJacobianRangeType
-  jacobian(const RangeType& /*u*/, const E& /*entity*/, const DomainType& /*x_local*/, const double /*t*/ = 1) const
+  jacobian(const RangeType& u, const E& entity, const DomainType& x_local, const double t) const
   {
-    DUNE_THROW(NotImplemented, "");
+    const auto alpha = get_alpha(u, entity, x_local, t);
   }
 
   RangeType get_alpha(const RangeType& u, const E& entity, const DomainType& x_local, const double t) const
@@ -1952,60 +2016,7 @@ public:
           g_k -= v;
 
           // calculate Hessian H
-          H_k *= 0;
-          for (size_t nn = 0; nn < dimRange; ++nn) {
-            if (nn > 0) {
-              if (XT::Common::FloatCmp::ne(alpha_k[nn], alpha_k[nn - 1], taylor_tol_)) {
-                H_k[nn][nn - 1] =
-                    (v_points_[nn] - v_points_[nn - 1])
-                    * ((std::exp(alpha_k[nn]) + std::exp(alpha_k[nn - 1])) / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2)
-                       - 2. * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1]))
-                             / std::pow(alpha_k[nn] - alpha_k[nn - 1], 3));
-                H_k[nn][nn] =
-                    (v_points_[nn] - v_points_[nn - 1])
-                    * ((-2. / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2) + 1. / (alpha_k[nn] - alpha_k[nn - 1]))
-                           * std::exp(alpha_k[nn])
-                       + 2. / std::pow(alpha_k[nn] - alpha_k[nn - 1], 3)
-                             * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1])));
-
-              } else {
-                RangeFieldType taylorsum = 0.;
-                for (size_t ll = 2; ll <= taylor_order_; ++ll)
-                  taylorsum += std::pow(alpha_k[nn - 1] - alpha_k[nn], ll - 2.)
-                               * (1. / XT::Common::factorial(ll) - 2. / XT::Common::factorial(ll + 1));
-                H_k[nn][nn - 1] = taylorsum * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn]);
-                taylorsum = 0.;
-                for (size_t ll = 3; ll <= taylor_order_; ++ll)
-                  taylorsum += std::pow(alpha_k[nn - 1] - alpha_k[nn], ll - 3.) * 2. / XT::Common::factorial(ll);
-                H_k[nn][nn] = taylorsum * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn]);
-              }
-            } // if (nn > 0)
-            if (nn < dimRange - 1) {
-              if (XT::Common::FloatCmp::ne(alpha_k[nn + 1], alpha_k[nn], taylor_tol_)) {
-                H_k[nn][nn + 1] =
-                    (v_points_[nn + 1] - v_points_[nn])
-                    * ((std::exp(alpha_k[nn + 1]) + std::exp(alpha_k[nn])) / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2)
-                       - 2. * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn]))
-                             / std::pow(alpha_k[nn + 1] - alpha_k[nn], 3));
-                H_k[nn][nn] +=
-                    (v_points_[nn + 1] - v_points_[nn])
-                    * ((-2. / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2) - 1. / (alpha_k[nn + 1] - alpha_k[nn]))
-                           * std::exp(alpha_k[nn])
-                       + 2. / std::pow(alpha_k[nn + 1] - alpha_k[nn], 3)
-                             * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn])));
-              } else {
-                RangeFieldType taylorsum = 0.;
-                for (size_t ll = 2; ll <= taylor_order_; ++ll)
-                  taylorsum += std::pow(alpha_k[nn + 1] - alpha_k[nn], ll - 2.)
-                               * (1. / XT::Common::factorial(ll) - 2. / XT::Common::factorial(ll + 1));
-                H_k[nn][nn + 1] = taylorsum * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
-                taylorsum = 0.;
-                for (size_t ll = 3; ll <= taylor_order_; ++ll)
-                  taylorsum += std::pow(alpha_k[nn + 1] - alpha_k[nn], ll - 3.) * 2. / XT::Common::factorial(ll);
-                H_k[nn][nn] += taylorsum * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
-              }
-            } // if (nn < dimRange - 1)
-          } // nn
+          calculate_hessian(alpha_k, H_k);
 
           // calculate descent direction d_k;
           RangeType d_k(0), minus_g_k(g_k);
@@ -2194,6 +2205,62 @@ public:
   }
 
 private:
+  void calculate_hessian(const RangeType& alpha_k, MatrixType& H_k)
+  {
+    H_k *= 0;
+    for (size_t nn = 0; nn < dimRange; ++nn) {
+      if (nn > 0) {
+        if (XT::Common::FloatCmp::ne(alpha_k[nn], alpha_k[nn - 1], taylor_tol_)) {
+          H_k[nn][nn - 1] =
+              (v_points_[nn] - v_points_[nn - 1])
+              * ((std::exp(alpha_k[nn]) + std::exp(alpha_k[nn - 1])) / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2)
+                 - 2. * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1]))
+                       / std::pow(alpha_k[nn] - alpha_k[nn - 1], 3));
+          H_k[nn][nn] = (v_points_[nn] - v_points_[nn - 1])
+                        * ((-2. / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2) + 1. / (alpha_k[nn] - alpha_k[nn - 1]))
+                               * std::exp(alpha_k[nn])
+                           + 2. / std::pow(alpha_k[nn] - alpha_k[nn - 1], 3)
+                                 * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1])));
+
+        } else {
+          RangeFieldType taylorsum = 0.;
+          for (size_t ll = 2; ll <= taylor_order_; ++ll)
+            taylorsum += std::pow(alpha_k[nn - 1] - alpha_k[nn], ll - 2.)
+                         * (1. / XT::Common::factorial(ll) - 2. / XT::Common::factorial(ll + 1));
+          H_k[nn][nn - 1] = taylorsum * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn]);
+          taylorsum = 0.;
+          for (size_t ll = 3; ll <= taylor_order_; ++ll)
+            taylorsum += std::pow(alpha_k[nn - 1] - alpha_k[nn], ll - 3.) * 2. / XT::Common::factorial(ll);
+          H_k[nn][nn] = taylorsum * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn]);
+        }
+      } // if (nn > 0)
+      if (nn < dimRange - 1) {
+        if (XT::Common::FloatCmp::ne(alpha_k[nn + 1], alpha_k[nn], taylor_tol_)) {
+          H_k[nn][nn + 1] =
+              (v_points_[nn + 1] - v_points_[nn])
+              * ((std::exp(alpha_k[nn + 1]) + std::exp(alpha_k[nn])) / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2)
+                 - 2. * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn]))
+                       / std::pow(alpha_k[nn + 1] - alpha_k[nn], 3));
+          H_k[nn][nn] += (v_points_[nn + 1] - v_points_[nn])
+                         * ((-2. / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2) - 1. / (alpha_k[nn + 1] - alpha_k[nn]))
+                                * std::exp(alpha_k[nn])
+                            + 2. / std::pow(alpha_k[nn + 1] - alpha_k[nn], 3)
+                                  * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn])));
+        } else {
+          RangeFieldType taylorsum = 0.;
+          for (size_t ll = 2; ll <= taylor_order_; ++ll)
+            taylorsum += std::pow(alpha_k[nn + 1] - alpha_k[nn], ll - 2.)
+                         * (1. / XT::Common::factorial(ll) - 2. / XT::Common::factorial(ll + 1));
+          H_k[nn][nn + 1] = taylorsum * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
+          taylorsum = 0.;
+          for (size_t ll = 3; ll <= taylor_order_; ++ll)
+            taylorsum += std::pow(alpha_k[nn + 1] - alpha_k[nn], ll - 3.) * 2. / XT::Common::factorial(ll);
+          H_k[nn][nn] += taylorsum * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
+        }
+      } // if (nn < dimRange - 1)
+    } // nn
+  } // void calculate_hessian(...)
+
   const Dune::GlobalIndexSet<GridViewType> global_index_set_;
   const RangeType v_points_;
   const RangeFieldType tau_;
@@ -2209,6 +2276,7 @@ private:
   const std::string name_;
   mutable std::vector<std::unique_ptr<std::pair<double, RangeType>>> alpha_cache_;
 };
+#endif
 
 
 } // namespace GDT
