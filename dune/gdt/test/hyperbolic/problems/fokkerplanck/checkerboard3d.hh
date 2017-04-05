@@ -250,6 +250,7 @@ public:
 
 bool is_absorbing(size_t plane, size_t row, size_t col)
 {
+  assert(plane < 7);
   if (plane == 0 || plane == 6)
     return false;
   if (plane == 2 || plane == 4)
@@ -258,7 +259,8 @@ bool is_absorbing(size_t plane, size_t row, size_t col)
            && (row != 0 && row != 6) && (col != 0 && col != 6) && !(row == 5 && col == 3) && !(row == 3 && col == 3);
   if (plane == 3 || plane == 1 || plane == 5)
     return (row == 1 && col % 2 == 1) || ((row == 2 || row == 4) && (col == 2 || col == 4))
-           || ((row == 3 || row == 5) && (col == 1 || col == 5)) || (plane != 3 && col == 3 && (row == 3 && row == 5));
+           || ((row == 3 || row == 5) && (col == 1 || col == 5)) || (plane != 3 && col == 3 && (row == 3 || row == 5));
+  return false;
 }
 
 
