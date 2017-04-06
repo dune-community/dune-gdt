@@ -61,7 +61,7 @@ public:
     CHECK_AND_CALL_CRTP(this->as_imp(*this).globalIndices(entity, ret));
   }
 
-  Dune::DynamicVector<size_t> globalIndices(const typename Traits::EntityType& entity) const
+  Dune::DynamicVector<size_t> globalIndices(const EntityType& entity) const
   {
     Dune::DynamicVector<size_t> ret(numDofs(entity), 0);
     globalIndices(entity, ret);
