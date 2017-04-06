@@ -10,8 +10,6 @@
 if(dune-pybindxi_FOUND)
   # the main bindings
   set(pybindxi_modules)
-  dune_pybindxi_add_module(__bindings bindings.cc)
-  list(APPEND pybindxi_modules __bindings)
   # some top-level modules
   foreach(_target assembler discretefunction projections spaces)
   dune_pybindxi_add_module(__${_target} ${_target}.bindings.cc)
