@@ -120,9 +120,9 @@ public:
     assert(ret.size() >= size());
     const auto& local_basis = local_view_.tree().finiteElement().localBasis();
     local_basis.evaluateJacobian(xx, tmp_gradients_);
-    auto jacobian = this->entity().geometry().jacobianInverseTransposed(xx);
+    auto jacobian_inv = this->entity().geometry().jacobianInverseTransposed(xx);
     for (size_t ii = 0; ii < size(); ++ii)
-      jacobian.mv(tmp_gradients_[ii][0], ret[ii]);
+      jacobian_inv.mv(tmp_gradients_[ii][0], ret[ii]);
   } // ... jacobian(...)
 
 private:

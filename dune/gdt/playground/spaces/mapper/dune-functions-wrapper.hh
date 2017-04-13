@@ -80,7 +80,7 @@ public:
 
   size_t size() const
   {
-    backend_->size();
+    return backend_->size();
   }
 
   size_t maxNumDofs() const
@@ -90,8 +90,10 @@ public:
 
   size_t numDofs(const EntityType& entity) const
   {
+    auto local_view = backend_->localView();
     auto local_index_set = backend_->localIndexSet();
-    local_index_set.bind(entity);
+    local_view.bind(entity);
+    local_index_set.bind(local_view);
     return local_index_set.size();
   }
 

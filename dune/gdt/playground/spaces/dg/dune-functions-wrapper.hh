@@ -66,6 +66,7 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::GridLayerType;
   using typename BaseType::MapperType;
+  using typename BaseType::PatternType;
 
   DuneFunctionsDgSpaceWrapper(GridLayerType grd_layr)
     : grid_layer_(new GridLayerType(grd_layr))
@@ -104,6 +105,15 @@ public:
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
     return BaseFunctionSetType(backend_, entity);
+  }
+
+  using BaseType::compute_pattern;
+
+  template <class G, class S, size_t d, size_t r, size_t rC>
+  typename std::enable_if<XT::Grid::is_layer<G>::value, PatternType>::type
+  compute_pattern(const G& grd_layr, const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  {
+    return this->compute_face_and_volume_pattern(grd_layr, ansatz_space);
   }
 
   CommunicatorType& communicator() const
