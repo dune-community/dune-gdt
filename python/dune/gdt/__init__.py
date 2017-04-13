@@ -10,7 +10,7 @@
 
 from importlib import import_module
 
-import dune.xt.common # inits MPI via mpi4py
+from dune.xt.common import DEBUG # inits MPI via mpi4py
 
 _init_logger_methods = list()
 _init_mpi_methods = list()
@@ -55,14 +55,17 @@ def init_logger(max_info_level=-1,
                            warning_color)
 
 def init_mpi(args=list()):
-    init_mpi_methods = _init_mpi_methods.copy()
-    for module_name in _other_modules:
-        try:
-            mm = import_module('dune.{}'.format(module_name))
-            for init_mpi_method in mm._init_mpi_methods:
-                init_mpi_methods.append(init_mpi_method)
-        except ModuleNotFoundError:
-            pass
+    if DEBUG:
+        init_mpi_methods = [_init_mpi_methods[0],]
+    else:
+        init_mpi_methods = _init_mpi_methods.copy()
+        for module_name in _other_modules:
+            try:
+                mm = import_module('dune.{}'.format(module_name))
+                for init_mpi_method in mm._init_mpi_methods:
+                    init_mpi_methods.append(init_mpi_method)
+            except ModuleNotFoundError:
+                pass
     for init_mpi_method in init_mpi_methods:
         init_mpi_method(args)
 
