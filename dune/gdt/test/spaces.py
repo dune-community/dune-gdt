@@ -19,10 +19,13 @@ def DG(cache, base=LeafGrids):
     dg = base(cache)
     cg = CG(cache, base=base)
     dg.fem_grids = cg.fem_grids
+    dg.functions_grids = [s.format(d) for s, d in itertools.product(cg.all_views_fmt, cg.world_dim)]
     dg.pdelab_grids = [dg.yasp_view_fmt.format(1)] + [s.format(d) for s, d in itertools.product([dg.alu_cube_view_fmt, dg.yasp_view_fmt], dg.world_dim)]
     dg.fem = ['Dune::GDT::DuneFemDgSpaceWrapper<{}, 1, double, 1>'.format(grid) for grid in dg.fem_grids]
+    dg.functions = ['Dune::GDT::DuneFunctionsDgSpaceWrapper<{}, 1, double, 1>'.format(grid)
+                    for grid in dg.functions_grids]
     dg.pdelab = ['Dune::GDT::DunePdelabDgSpaceWrapper<{}, 1, double, 1>'.format(grid) for grid in dg.pdelab_grids]
-    dg.spaces = dg.fem + dg.pdelab
+    dg.spaces = dg.fem + dg.functions + dg.pdelab
     dg.names = [typeid_to_typedef_name(sp) for sp in dg.spaces]
     return dg
 
