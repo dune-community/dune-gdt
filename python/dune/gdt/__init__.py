@@ -70,6 +70,6 @@ def init_mpi(args=list()):
         init_mpi_method(args)
 
 
-HAVE_DUNE_FEM = 'Cg2dCubeYaspgridLeafTo1x1FemSpace' in globals()
-HAVE_DUNE_PDELAB = 'Cg2dCubeYaspgridLeafTo1x1PdelabSpace' in globals()
+HAVE_DUNE_FEM = 'Cg2dCubeYaspgridLeafTo1x1FemP1Space' in globals()
+HAVE_DUNE_PDELAB = 'Cg2dCubeYaspgridLeafTo1x1PdelabP1Space' in globals()
 
