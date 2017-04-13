@@ -17,6 +17,7 @@
 #include <dune/alugrid/common/declaration.hh>
 #endif
 
+#include <dune/xt/grid/layers.hh>
 #include <dune/xt/grid/type_traits.hh>
 
 #define YASPGRID_TYPES(dim)                                                                                            \
