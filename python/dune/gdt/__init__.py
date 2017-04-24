@@ -21,6 +21,7 @@ _gdt_modules = ['spaces', # is required by all others (aka: needs to be loaded f
                 'assembler', # requires spaces and is required by others
                 'discretefunction',
                 'projections',
+                'functionals_elliptic_ipdg',
                 'functionals_l2',
                 'operators_elliptic',
                 'operators_elliptic_ipdg']
