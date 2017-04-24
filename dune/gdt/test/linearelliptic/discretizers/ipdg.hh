@@ -14,8 +14,9 @@
 #include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/grid/boundaryinfo.hh>
-#include <dune/xt/grid/layers.hh>
 #include <dune/xt/grid/gridprovider.hh>
+#include <dune/xt/grid/layers.hh>
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/assembler/system.hh>
@@ -107,8 +108,8 @@ public:
     auto space = SpaceProvider::create(grid_provider, level);
     logger.debug() << "grid has " << space.grid_layer().indexSet().size(0) << " elements" << std::endl;
     typedef typename SpaceType::GridLayerType GridLayerType;
-    typedef typename GridLayerType::Intersection IntersectionType;
-    auto boundary_info = XT::Grid::BoundaryInfoFactory<IntersectionType>::create(problem.boundary_info_cfg());
+    auto boundary_info = XT::Grid::BoundaryInfoFactory<XT::Grid::extract_intersection_t<GridLayerType>>::create(
+        problem.boundary_info_cfg());
     logger.info() << "Assembling... " << std::endl;
     VectorType rhs_vector(space.mapper().size(), 0.0);
     auto ipdg_operator = make_elliptic_ipdg_matrix_operator<MatrixType, method>(
