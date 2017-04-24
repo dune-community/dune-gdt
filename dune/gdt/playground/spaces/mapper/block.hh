@@ -14,6 +14,7 @@
 
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/type_traits.hh>
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/dd/subdomains/grid.hh>
 
 #include <dune/gdt/spaces/interface.hh>
@@ -57,7 +58,8 @@ public:
   typedef typename Traits::EntityType EntityType;
   typedef LocalSpaceImp LocalSpaceType;
 
-  typedef XT::Grid::DD::SubdomainGrid<typename LocalSpaceType::GridLayerType::Grid> DdSubdomainsGridType;
+  typedef XT::Grid::DD::SubdomainGrid<XT::Grid::extract_grid_t<typename LocalSpaceType::GridLayerType>>
+      DdSubdomainsGridType;
 
 private:
   typedef typename DdSubdomainsGridType::GlobalGridPartType GridLayerType;

@@ -36,7 +36,8 @@ template <class LocalSpaceType>
 class BlockSpaceTraits
 {
   static_assert(is_space<LocalSpaceType>::value, "LocalSpaceType has to be derived from SpaceInterface!");
-  typedef XT::Grid::DD::SubdomainGrid<typename LocalSpaceType::GridLayerType::Grid> DdSubdomainsGridType;
+  typedef XT::Grid::DD::SubdomainGrid<XT::Grid::extract_grid_t<typename LocalSpaceType::GridLayerType>>
+      DdSubdomainsGridType;
 
 public:
   typedef BlockSpace<LocalSpaceType> derived_type;
