@@ -121,11 +121,11 @@ private:
       namespace py = pybind11;
       using namespace pybind11::literals;
 
-      const auto method_name = "make_elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value()
-                               + "_matrix_operator_" + XT::LA::bindings::container_name<M>::value();
+      const auto method_name =
+          "make_elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value() + "_matrix_operator";
 
       m.def(
-          method_name.c_str(),
+          std::string(method_name + "_" + XT::LA::bindings::container_name<M>::value()).c_str(),
           [](const DF& diffusion,
              const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename R::GridLayerType>>& boundary_info,
              const R& space,
@@ -201,7 +201,6 @@ public:
 
     return c;
   } // ... bind(...)
-
 }; // EllipticIpdgMatrixOperator
 
 
