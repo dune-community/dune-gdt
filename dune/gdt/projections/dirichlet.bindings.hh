@@ -114,6 +114,7 @@ public:
 //#endif
 
 #define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_YASP(_m, _layer, _backend, _la)                                           \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _backend, 1, 1, _la);                   \
   _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _backend, 1, 1, _la)
 
 #if HAVE_DUNE_FEM

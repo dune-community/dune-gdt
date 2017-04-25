@@ -228,6 +228,8 @@ public:
 
 #define DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(_prefix, _layer, _g_backend, _s_type, _s_backend, _p, _la)               \
   _DUNE_GDT_FUNCTIONALS_L2_BIND_LIB(                                                                                   \
+      _prefix, 1, YASP_1D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la);                       \
+  _DUNE_GDT_FUNCTIONALS_L2_BIND_LIB(                                                                                   \
       _prefix, 2, YASP_2D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la)
 
 // alu_fem_istl.cc
@@ -311,6 +313,7 @@ DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(extern template, dd_subdomain, part, cg, f
 #endif
 
 #define DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)                        \
+  _DUNE_GDT_FUNCTIONALS_L2_BIND(_m, 1, YASP_1D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la);  \
   _DUNE_GDT_FUNCTIONALS_L2_BIND(_m, 2, YASP_2D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la)
 
 

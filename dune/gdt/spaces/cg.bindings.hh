@@ -63,6 +63,7 @@
 //#endif
 
 #define _DUNE_GDT_SPACES_CG_BIND_FEM_YASP_LAYER(_m, _layer)                                                            \
+  _DUNE_GDT_SPACES_CG_BIND_FEM(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, 1, 1);                                          \
   _DUNE_GDT_SPACES_CG_BIND_FEM(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1)
 #define _DUNE_GDT_SPACES_CG_BIND_FEM_YASP(_m)                                                                          \
   _DUNE_GDT_SPACES_CG_BIND_FEM_YASP_LAYER(_m, dd_subdomain);                                                           \
@@ -120,6 +121,7 @@
 ////#endif
 
 //#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_YASP_LAYER(_m, _layer)                                                       \
+//  _DUNE_GDT_SPACES_CG_BIND_PDELAB(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, 1, 1);\
 //  _DUNE_GDT_SPACES_CG_BIND_PDELAB(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1)
 //#define _DUNE_GDT_SPACES_CG_BIND_PDELAB_YASP(_m)                                                                     \
 //  _DUNE_GDT_SPACES_CG_BIND_PDELAB_YASP_LAYER(_m, leaf);                                                              \

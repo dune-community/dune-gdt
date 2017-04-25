@@ -143,6 +143,7 @@ public:
 //#endif
 
 #define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_YASP(_m, _layer, _p)                                                    \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1);                            \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1)
 
 #define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_ALL(_m, _layer, _p)                                                     \
@@ -192,6 +193,7 @@ public:
 //#endif
 
 #define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_YASP(_m, _layer, _p)                                                    \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1);                            \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1)
 
 #define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_ALL(_m, _layer, _p)                                                     \

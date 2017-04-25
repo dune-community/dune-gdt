@@ -209,6 +209,7 @@ public:
 //#endif
 
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_YASP(_m, _layer, _p, _la)                                       \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la);               \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la)
 
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_ALL(_m, _layer, _p, _la)                                        \
@@ -261,6 +262,7 @@ public:
 //#endif
 
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_YASP(_m, _layer, _p, _la)                                       \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la);               \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la)
 
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALL(_m, _layer, _p, _la)                                        \
@@ -328,6 +330,7 @@ public:
 //#endif
 
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_YASP(_m, _layer, _la)                                           \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, 1, 1, _la);                   \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1, _la)
 
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_ALL(_m, _layer, _la)                                            \
@@ -388,6 +391,7 @@ public:
 ////#endif
 
 //#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_YASP(_m, _layer, _p, _la)                                  \
+//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la);\
 //  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la)
 
 //#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_ALL(_m, _layer, _p, _la)                                   \
