@@ -42,10 +42,150 @@
 #include <dune/gdt/timestepper/fractional-step.hh>
 #include <dune/gdt/timestepper/implicit-rungekutta.hh>
 #include <dune/gdt/timestepper/implicit-rungekutta-parallel.hh>
+#include <dune/gdt/timestepper/matrix_exponential.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/sourcebeam.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/planesource.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/pointsource.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/checkerboard3d.hh>
+
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/point_generators_3.h>
+#include <CGAL/algorithm.h>
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/convex_hull_3.h>
+#include <CGAL/Origin.h>
+
+struct CGALWrapper
+{
+
+  //  // A vertex type with indices.
+  //  template <class Refs, class Traits>
+  //  struct My_vertex : public CGAL::HalfedgeDS_vertex_base<Refs, CGAL::Tag_true, typename Traits::Point_3>
+  //  {
+  //    typedef typename CGAL::HalfedgeDS_vertex_base<Refs, CGAL::Tag_true, typename Traits::Point_3> BaseType;
+  //    typedef typename Traits::Point_3 Point_3;
+
+  //    template <class... Args>
+  //    My_vertex(Args&&... args)
+  //      : BaseType(std::forward<Args>(args)...)
+  //    {
+  //    }
+
+  //    size_t index;
+  //  };
+
+  //  // A face type with indices.
+  //  template <class Refs>
+  //  struct My_face : public CGAL::HalfedgeDS_face_base<Refs>
+  //  {
+  //    size_t index;
+  //  };
+
+  //  // An items type using the vertex and face type with indices.
+  //  struct My_items : public CGAL::Polyhedron_items_3
+  //  {
+  //    template <class Refs, class Traits>
+  //    struct Vertex_wrapper
+  //    {
+  //      typedef typename Traits::Point_3 Point;
+  //      typedef My_vertex<Refs, Traits> Vertex;
+  //    };
+  //    template <class Refs, class Traits>
+  //    struct Face_wrapper
+  //    {
+  //      typedef typename Traits::Plane_3 Plane;
+  //      typedef My_face<Refs> Face;
+  //    };
+  //  };
+
+  typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+  typedef CGAL::Polyhedron_3<K> Polyhedron_3;
+  typedef typename Polyhedron_3::Vertex_const_handle VertexHandleType;
+  typedef typename Polyhedron_3::Facet_const_handle FacetHandleType;
+  // define point creator
+  typedef K::Point_3 Point_3;
+  typedef K::Vector_3 Vector_3;
+  typedef typename Polyhedron_3::Plane_3 Plane_3;
+
+  // a functor computing the plane containing a triangular facet
+  struct Plane_from_facet
+  {
+    Plane_3 operator()(Polyhedron_3::Facet& f)
+    {
+      Polyhedron_3::Halfedge_handle h = f.halfedge();
+      return Plane_3(h->vertex()->point(), h->next()->vertex()->point(), h->opposite()->vertex()->point());
+    }
+  };
+
+  static Polyhedron_3 get_convex_hull(Dune::QuadratureRule<double, 3> quadrature)
+  {
+    // define polyhedron to hold convex hull
+    Polyhedron_3 poly;
+    std::vector<Point_3> points(quadrature.size());
+    for (size_t ii = 0; ii < quadrature.size(); ++ii) {
+      const auto quad_point = quadrature[ii].position();
+      points[ii] = Point_3(quad_point[0], quad_point[1], quad_point[2]);
+    }
+    // generate convex hull
+    CGAL::convex_hull_3(points.begin(), points.end(), poly);
+    std::cout << "The convex hull contains " << poly.size_of_vertices() << " vertices and " << poly.size_of_facets()
+              << " faces" << std::endl;
+
+    // assign a plane equation to each polyhedron facet using functor Plane_from_facet
+    std::transform(poly.facets_begin(), poly.facets_end(), poly.planes_begin(), Plane_from_facet());
+
+    return poly;
+  }
+}; // struct CGALWrapper
+
+
+#if 0
+    for (size_t ii = 0; ii < num_refinements; ++ii) {
+      points.clear();
+      std::for_each(
+          poly.points_begin(), poly.points_end(), [&points](const Point_3& point) { points.push_back(point); });
+      // add edge_centers and face centers
+      const auto face_it_end = poly.facets_end();
+      for (auto face_it = poly.facets_begin(); face_it != face_it_end; ++face_it) {
+        assert(face_it->is_triangle());
+        // a circulator does not have a past-the-end concept, but starts over at the beginning
+        auto halfedge_circ = face_it->facet_begin();
+        auto halfedge_circ_begin = halfedge_circ;
+        // insert face center
+        const Point_3 sum3 = halfedge_circ->vertex()->point()
+                             + Vector_3(CGAL::ORIGIN, halfedge_circ->next()->vertex()->point())
+                             + Vector_3(CGAL::ORIGIN, halfedge_circ->next()->next()->vertex()->point());
+        Dune::FieldVector<double, 3> center({sum3.x() / 3., sum3.y() / 3., sum3.z() / 3.});
+        center /= center.two_norm(); // projection onto sphere
+        //      points.push_back(Point_3(center[0], center[1], center[2]));
+        // insert edge center (inserts each edge center twice, but this shouldn't be a problem due to the convex hull
+        // call
+        do {
+          const Point_3& point = halfedge_circ->vertex()->point();
+          const Point_3& next_point = halfedge_circ->next()->vertex()->point();
+          const Point_3 sum2 = point + Vector_3(CGAL::ORIGIN, next_point);
+          center = {sum2.x() / 2., sum2.y() / 2., sum2.z() / 2.};
+          center /= center.two_norm();
+          points.push_back(Point_3(center[0], center[1], center[2]));
+        } while (++halfedge_circ != halfedge_circ_begin);
+      } // iterate over faces
+      poly.clear();
+      CGAL::convex_hull_3(points.begin(), points.end(), poly);
+      std::cout << "The convex hull contains " << poly.size_of_vertices() << " vertices and " << poly.size_of_facets()
+                << " faces" << std::endl;
+    } // refinement loop
+
+    // add indices to vertices and facets
+    size_t index = 0;
+    const auto vertices_it_end = poly.vertices_end();
+    for (auto vertices_it = poly.vertices_begin(); vertices_it != vertices_it_end; ++vertices_it, ++index)
+      vertices_it->index = index;
+    index = 0;
+    const auto facets_it_end = poly.facets_end();
+    for (auto facets_it = poly.facets_begin(); facets_it != facets_it_end; ++facets_it, ++index)
+      facets_it->index = index;
+    return poly;
+#endif
 
 
 int main(int argc, char** argv)
@@ -58,15 +198,23 @@ int main(int argc, char** argv)
   size_t num_save_steps = -1;
   std::string grid_size("100"), overlap_size("1");
   double t_end = 0;
-  double rel_tol = 1e-2;
-  double abs_tol = 1e-2;
+  //  double rel_tol = 1e-2;
+  //  double abs_tol = 1e-2;
   bool visualize = true;
+  std::string filename;
   for (int i = 1; i < argc; ++i) {
     if (std::string(argv[i]) == "-num_threads") {
       if (i + 1 < argc) {
         num_threads = Dune::XT::Common::from_string<size_t>(argv[++i]);
       } else {
         std::cerr << "-num_threads option requires one argument." << std::endl;
+        return 1;
+      }
+    } else if (std::string(argv[i]) == "-filename") {
+      if (i + 1 < argc) {
+        filename = std::string(argv[++i]);
+      } else {
+        std::cerr << "-num_save_steps option requires one argument." << std::endl;
         return 1;
       }
     } else if (std::string(argv[i]) == "-num_save_steps") {
@@ -97,20 +245,20 @@ int main(int argc, char** argv)
         std::cerr << "-t_end option requires one argument." << std::endl;
         return 1;
       }
-    } else if (std::string(argv[i]) == "-quadrature_rel_tol") {
-      if (i + 1 < argc) {
-        rel_tol = XT::Common::from_string<double>(argv[++i]);
-      } else {
-        std::cerr << "-quadrature_rel_tol option requires one argument." << std::endl;
-        return 1;
-      }
-    } else if (std::string(argv[i]) == "-quadrature_abs_tol") {
-      if (i + 1 < argc) {
-        abs_tol = XT::Common::from_string<double>(argv[++i]);
-      } else {
-        std::cerr << "-quadrature_abs_tol option requires one argument." << std::endl;
-        return 1;
-      }
+      //    } else if (std::string(argv[i]) == "-quadrature_rel_tol") {
+      //      if (i + 1 < argc) {
+      //        rel_tol = XT::Common::from_string<double>(argv[++i]);
+      //      } else {
+      //        std::cerr << "-quadrature_rel_tol option requires one argument." << std::endl;
+      //        return 1;
+      //      }
+      //    } else if (std::string(argv[i]) == "-quadrature_abs_tol") {
+      //      if (i + 1 < argc) {
+      //        abs_tol = XT::Common::from_string<double>(argv[++i]);
+      //      } else {
+      //        std::cerr << "-quadrature_abs_tol option requires one argument." << std::endl;
+      //        return 1;
+      //      }
     } else if (std::string(argv[i]) == "--no_visualization") {
       visualize = false;
     } else {
@@ -132,12 +280,18 @@ int main(int argc, char** argv)
   // ********************* choose dimensions, fluxes and grid type ************************
   static const int dimDomain = 3;
   //  static const int dimDomain = 1;
-  static const int momentOrder = 3;
+  static const int momentOrder = 7;
   //  const auto numerical_flux = NumericalFluxes::kinetic;
   const auto numerical_flux = NumericalFluxes::godunov;
   //  const auto numerical_flux = NumericalFluxes::laxfriedrichs;
+  //  const auto numerical_flux = NumericalFluxes::laxfriedrichs_with_reconstruction;
+  //  const auto numerical_flux = NumericalFluxes::local_laxfriedrichs_with_reconstruction;
+  //      const auto numerical_flux = NumericalFluxes::local_laxfriedrichs;
   const auto time_stepper_method = TimeStepperMethods::explicit_euler;
+  //  const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_second_order_ssp;
+  //  const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_third_order_ssp;
   const auto rhs_time_stepper_method = TimeStepperMethods::implicit_euler;
+  //  const auto rhs_time_stepper_method = TimeStepperMethods::trapezoidal_rule;
   const auto container_backend = Dune::XT::LA::default_sparse_backend;
 
   typedef typename Dune::YaspGrid<dimDomain, Dune::EquidistantOffsetCoordinates<double, dimDomain>> GridType;
@@ -156,8 +310,8 @@ int main(int argc, char** argv)
   //  typedef typename Hyperbolic::Problems::
   //      SourceBeamPnLegendreLaplaceBeltrami<EntityType, double, dimDomain, double, momentOrder>
   //          ProblemType;
-  //  typedef typename Hyperbolic::Problems::SourceBeamPnFirstOrderDG<EntityType, double, dimDomain, double,
-  //  momentOrder>
+  //    typedef typename Hyperbolic::Problems::SourceBeamPnFirstOrderDG<EntityType, double, dimDomain, double,
+  //    momentOrder>
   //      ProblemType;
   //  typedef typename Hyperbolic::Problems::
   //      PlaneSourcePnLegendre<EntityType, double, dimDomain, double, momentOrder>
@@ -168,18 +322,18 @@ int main(int argc, char** argv)
   //  typedef typename Hyperbolic::Problems::PlaneSourcePnFirstOrderDG<EntityType, double, dimDomain, double,
   //  momentOrder>
   //      ProblemType;
-  //  typedef typename Hyperbolic::Problems::
-  //      PointSourcePnLegendre<EntityType, double, dimDomain, double, momentOrder>
-  //          ProblemType;
-  //  typedef typename Hyperbolic::Problems::PointSourcePnHatFunctions<EntityType, double, dimDomain, double, 6>
-  //      ProblemType;
+  //    typedef typename Hyperbolic::Problems::
+  //        PointSourcePnLegendre<EntityType, double, dimDomain, double, momentOrder>
+  //            ProblemType;
+  typedef typename Hyperbolic::Problems::PointSourcePnHatFunctions<EntityType, double, dimDomain, double, 6>
+      ProblemType;
   //  typedef typename Hyperbolic::Problems::PointSourcePnPartialMoments<EntityType, double, dimDomain, double, 8>
   //      ProblemType;
   //  typedef typename Hyperbolic::Problems::CheckerboardPnHatFunctions<EntityType, double, dimDomain, double, 6>
   //      ProblemType;
 
-  typedef typename Hyperbolic::Problems::CheckerboardPnPartialMoments<EntityType, double, dimDomain, double, 8>
-      ProblemType;
+  // typedef typename Hyperbolic::Problems::CheckerboardPnPartialMoments<EntityType, double, dimDomain, double, 8>
+  //    ProblemType;
 
   //******************* get typedefs and constants from ProblemType **********************//
   using DomainFieldType = typename ProblemType::DomainFieldType;
@@ -190,7 +344,7 @@ int main(int argc, char** argv)
   typedef typename ProblemType::RHSType RHSType;
   typedef typename ProblemType::InitialValueType InitialValueType;
   typedef typename ProblemType::BoundaryValueType BoundaryValueType;
-  static const bool linear = ProblemType::linear;
+  static const bool linear = true; // ProblemType::linear;
 
   //******************* create grid and FV space ***************************************
   auto grid_config = ProblemType::default_grid_config();
@@ -205,7 +359,7 @@ int main(int argc, char** argv)
 
   // ***************** get quadrature rule *********************************************
 
-  //  // 1D quadrature that consists of a Gauss-Legendre quadrature on each cell of the velocity grid
+  //  //  // 1D quadrature that consists of a Gauss-Legendre quadrature on each cell of the velocity grid
   //  Dune::QuadratureRule<double, dimDomain> quadrature_rule;
   //  static const int num_cells = 100;
   //  Dune::FieldVector<double, dimDomain> lower_left(-1);
@@ -214,8 +368,6 @@ int main(int argc, char** argv)
   //  GridType velocity_grid(lower_left, upper_right, s);
   //  const auto velocity_grid_view = velocity_grid.leafGridView();
   //  const size_t quadrature_order = 20;
-
-
   //  for (const auto& entity : elements(velocity_grid_view)) {
   //    const auto local_quadrature_rule = Dune::QuadratureRules<double, dimDomain>::rule(
   //        entity.type(), quadrature_order, Dune::QuadratureType::GaussLegendre);
@@ -227,9 +379,9 @@ int main(int argc, char** argv)
   //  }
 
 
-  //  // Lebedev quadrature on unit sphere (in polar coordinates)
-  //  const size_t quadrature_order = 20;
-  //  const auto quadrature_rule = Hyperbolic::Problems::get_lebedev_quadrature(quadrature_order);
+  //    // Lebedev quadrature on unit sphere (in polar coordinates)
+  //    const size_t quadrature_order = 20;
+  //    const auto quadrature_rule = Hyperbolic::Problems::get_lebedev_quadrature(quadrature_order);
 
   // 3D quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
   const size_t octaeder_refinements = 0;
@@ -237,7 +389,7 @@ int main(int argc, char** argv)
       {1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}};
   const Dune::GDT::Hyperbolic::Problems::SphericalTriangulation<double> triangulation(initial_points,
                                                                                       octaeder_refinements);
-  const size_t max_quadrature_refinements = 5;
+  const size_t max_quadrature_refinements = 6;
   Dune::GDT::Hyperbolic::Problems::SphericalTriangulation<double> quadrature_triangulation(initial_points, 0);
   std::vector<Dune::QuadratureRule<double, dimDomain>> quadrature_rules(max_quadrature_refinements);
   for (size_t ii = 0; ii < max_quadrature_refinements; ++ii) {
@@ -246,6 +398,20 @@ int main(int argc, char** argv)
   }
   const auto& quadrature_rule = quadrature_rules.back();
 
+  const auto& poly = CGALWrapper::get_convex_hull(quadrature_rule);
+  std::vector<FieldVector<double, dimDomain>> coefficients_a(poly.size_of_facets());
+  std::vector<double> coefficients_b(poly.size_of_facets());
+  const auto plane_it_end = poly_.planes_end();
+  size_t ii = 0;
+  for (auto plane_it = poly_.planes_begin(); plane_it != plane_it_end; ++plane_it, ++ii) {
+    const auto& plane = *plane_it;
+    auto& a = coefficients_a[ii];
+    auto& b = coefficients_b[ii];
+    a[0] = plane.a();
+    a[1] = plane.b();
+    a[2] = plane.c();
+    b = -plane.d();
+  }
 
   // 3d adaptive quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
   //  typedef typename GDT::Hyperbolic::Problems::AdaptiveQuadrature<DomainType, RangeType, RangeType>
@@ -352,39 +518,51 @@ int main(int argc, char** argv)
     return std::make_pair(u_iso, alpha_iso);
   };
 
-
   // ********************** store evaluation of basisfunctions at quadrature points in matrix **********************
   // ********************** (for non-adaptive quadratures)                                    **********************
   using BasisValuesMatrixType = std::vector<Dune::FieldVector<double, dimRange>>;
   BasisValuesMatrixType basis_values_matrix(quadrature_rule.size());
   //  std::vector<BasisValuesMatrixType> basis_values_matrices(max_quadrature_refinements);
   //  using BasisValuesMatrixType = std::vector<VectorType>;
-  //  BasisValuesMatrixType basis_values_matrix(quadrature_rule.size(), VectorType(dimRange));
+  //    BasisValuesMatrixType basis_values_matrix(quadrature_rule.size(), VectorType(dimRange));
   //  for (size_t qq = 0; qq < max_quadrature_refinements; ++qq) {
   //    const auto& current_quadrature = quadrature_rules[qq];
   //    basis_values_matrices[qq].resize(current_quadrature.size());
   for (size_t ii = 0; ii < quadrature_rule.size(); ++ii) {
-    // 3D hatfunctions on sphere
-    //    const auto hatfunctions_evaluated =
-    //        Hyperbolic::Problems::evaluate_spherical_barycentric_coordinates<RangeType, DomainType>(
-    //            quadrature_rule[ii].position(), triangulation);
+    //    3D hatfunctions on sphere
+    const auto hatfunctions_evaluated =
+        Hyperbolic::Problems::evaluate_spherical_barycentric_coordinates<RangeType, DomainType>(
+            quadrature_rule[ii].position(), triangulation);
 
     // 3D partial moments
-    const auto partial_basis_evaluated =
-        GDT::Hyperbolic::Problems::evaluate_linear_partial_basis<RangeType, DomainType>(quadrature_rule[ii].position(),
-                                                                                        triangulation);
+    //    const auto partial_basis_evaluated =
+    //        GDT::Hyperbolic::Problems::evaluate_linear_partial_basis<RangeType,
+    //        DomainType>(quadrature_rule[ii].position(),
+    //        triangulation);
 
     for (size_t nn = 0; nn < dimRange; ++nn) {
-      //      basis_values_matrix[ii][nn] = hatfunctions_evaluated[nn];
-      //        basis_values_matrices[qq][ii][nn] = hatfunctions_evaluated[nn];
-      basis_values_matrix[ii][nn] = partial_basis_evaluated[nn];
-      //      basis_values_matrix[ii][nn] =
-      //          Hyperbolic::Problems::evaluate_legendre_polynomial(quadrature_rule[ii].position(), nn);
+      basis_values_matrix[ii][nn] = hatfunctions_evaluated[nn];
+      //        basis_values_matrices[qq][ii][nn]
+      //        =
+      //        hatfunctions_evaluated[nn];
+      //      basis_values_matrix[ii][nn]
+      //      =
+      //      partial_basis_evaluated[nn];
+      //      basis_values_matrix[ii][nn]
+      //      =
+      //          Hyperbolic::Problems::evaluate_legendre_polynomial(quadrature_rule[ii].position(),
+      //          nn);
       //      basis_values_matrix[ii][nn] = Hyperbolic::Problems::evaluate_hat_function(
       //          quadrature_rule[ii].position()[0], nn, ProblemType::create_equidistant_points());
-      //      basis_values_matrix[ii][nn] = Hyperbolic::Problems::evaluate_first_order_dg(
-      //          quadrature_rule[ii].position()[0], nn, ProblemType::create_equidistant_points());
-      //      basis_values_matrix[ii][nn] = Hyperbolic::Problems::evaluate_real_spherical_harmonics(
+      //      basis_values_matrix[ii][nn]
+      //      =
+      //      Hyperbolic::Problems::evaluate_first_order_dg(
+      //          quadrature_rule[ii].position()[0],
+      //          nn,
+      //          ProblemType::create_equidistant_points());
+      //      basis_values_matrix[ii][nn]
+      //      =
+      //      Hyperbolic::Problems::evaluate_real_spherical_harmonics(
       //          quadrature_rule[ii].position()[0],
       //          quadrature_rule[ii].position()[1],
       //          Hyperbolic::Problems::get_l_and_m(nn).first,
@@ -398,8 +576,7 @@ int main(int argc, char** argv)
 
   //*********************** choose analytical flux *************************************************************
 
-  //  typedef EntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
-  //  AnalyticalFluxType;
+  typedef EntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1> AnalyticalFluxType;
 
   //  typedef AdaptiveEntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
   //      AnalyticalFluxType;
@@ -418,7 +595,7 @@ int main(int argc, char** argv)
   //      AnalyticalFluxType;
 
 
-  typedef typename ProblemType::FluxType AnalyticalFluxType;
+  //  typedef typename ProblemType::FluxType AnalyticalFluxType;
 
   //  typedef typename EntropyBasedLocalFluxHatFunctions<GridViewType,
   //                                                                typename SpaceType::EntityType,
@@ -432,7 +609,7 @@ int main(int argc, char** argv)
 
   // ************************* create analytical flux object ***************************************
 
-  const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem.flux();
+  //  const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem.flux();
 
   //  const auto analytical_flux =
   //      std::make_shared<const AnalyticalFluxType>(grid_view, ProblemType::create_equidistant_points());
@@ -440,14 +617,14 @@ int main(int argc, char** argv)
   //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
   //      grid_view, quadrature_rule, basis_values_matrix, ProblemType::create_equidistant_points());
 
-  //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
-  //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_1d_hatfunctions);
+  //    const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
+  //        grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_1d_hatfunctions);
 
   //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
   //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_1d_firstorderdg);
 
-  //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
-  //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
+  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
+      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
 
   //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
   //      grid_view, quadrature_rules, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
@@ -467,27 +644,53 @@ int main(int argc, char** argv)
   typedef typename Dune::XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
       ConstantFunctionType;
   typedef AdvectionRHSOperator<RHSType> RHSOperatorType;
-  typedef typename std::
-      conditional<numerical_flux == NumericalFluxes::kinetic,
-                  AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType>,
-                  std::conditional<numerical_flux == NumericalFluxes::laxfriedrichs
-                                       || numerical_flux == NumericalFluxes::laxfriedrichs_with_reconstruction
-                                       || numerical_flux == NumericalFluxes::local_laxfriedrichs
-                                       || numerical_flux == NumericalFluxes::local_laxfriedrichs_with_reconstruction,
-                                   AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
-                                                                  BoundaryValueType,
-                                                                  ConstantFunctionType>,
-                                   AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType>>::type>::type
-          AdvectionOperatorType;
+
+  //  typedef typename std::
+  //      conditional<numerical_flux == NumericalFluxes::kinetic,
+  //                  AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType>,
+  //                  std::conditional<numerical_flux == NumericalFluxes::laxfriedrichs
+  //                                       || numerical_flux == NumericalFluxes::laxfriedrichs_with_reconstruction
+  //                                       || numerical_flux == NumericalFluxes::local_laxfriedrichs
+  //                                       || numerical_flux ==
+  //                                       NumericalFluxes::local_laxfriedrichs_with_reconstruction,
+  //                                   AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
+  //                                                                  BoundaryValueType,
+  //                                                                  ConstantFunctionType,
+  //                                                                  SlopeLimiters::minmod>,
+  //                                   AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType>>::type>::type
+  //          AdvectionOperatorType;
+
+  typedef AdvectionLaxFriedrichsWENOOperator<AnalyticalFluxType,
+                                             BoundaryValueType,
+                                             ConstantFunctionType,
+                                             GridViewType,
+                                             CGALWrapper::Polyhedron_3,
+                                             1>
+      AdvectionOperatorType;
+
+  //  typedef AdvectionGodunovWENOOperator<AnalyticalFluxType,
+  //                                       BoundaryValueType,
+  //                                       GridViewType,
+  //                                       CGALWrapper::Polyhedron_3,
+  //                                       1,
+  //                                       SlopeLimiters::minmod>
+  //      AdvectionOperatorType;
+
+
   typedef
       typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, RangeFieldType, time_stepper_method>::
           TimeStepperType OperatorTimeStepperType;
-  typedef typename TimeStepperFactory<RHSOperatorType,
-                                      DiscreteFunctionType,
-                                      RangeFieldType,
-                                      rhs_time_stepper_method,
-                                      Dune::XT::LA::default_sparse_backend>::TimeStepperType RHSOperatorTimeStepperType;
+  //  typedef typename TimeStepperFactory<RHSOperatorType,
+  //                                      DiscreteFunctionType,
+  //                                      RangeFieldType,
+  //                                      rhs_time_stepper_method,
+  //                                      Dune::XT::LA::default_sparse_backend>::TimeStepperType
+  //                                      RHSOperatorTimeStepperType;
+  typedef MatrixExponentialTimeStepper<RHSOperatorType, DiscreteFunctionType, RangeFieldType>
+      RHSOperatorTimeStepperType;
   typedef FractionalTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType> TimeStepperType;
+  //  typedef StrangSplittingTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType> TimeStepperType;
+
 
   // *************** choose t_end and initial dt **************************************
   // calculate dx and choose initial dt
@@ -503,9 +706,19 @@ int main(int argc, char** argv)
 
   // *********************** create operators and timesteppers ************************************
   const ConstantFunctionType dx_function(dx);
-  AdvectionOperatorType advection_operator =
-      internal::AdvectionOperatorCreator<AdvectionOperatorType, numerical_flux>::create(
-          *analytical_flux, *boundary_values, dx_function, dt, linear);
+
+  //  AdvectionOperatorType advection_operator =
+  //      internal::AdvectionOperatorCreator<AdvectionOperatorType, numerical_flux>::create(
+  //          *analytical_flux, *boundary_values, dx_function, linear);
+
+  FieldVector<size_t, dimDomain> grid_sizes;
+  std::fill(grid_sizes.begin(), grid_sizes.end(), XT::Common::from_string<size_t>(grid_size));
+  AdvectionOperatorType advection_operator(
+      *analytical_flux, *boundary_values, dx_function, grid_view, grid_sizes, poly, linear, true, 2);
+
+  //  AdvectionOperatorType advection_operator(
+  //      *analytical_flux, *boundary_values, grid_view, grid_sizes, poly, linear, true, 2);
+
   RHSOperatorType rhs_operator(*rhs);
 
   // create timestepper
@@ -516,13 +729,16 @@ int main(int argc, char** argv)
     // use fractional step method
     RHSOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
     TimeStepperType timestepper(timestepper_op, timestepper_rhs);
-    std::string filename = ProblemType::static_id();
+    //    std::string filename = ProblemType::static_id() + "WENO";
+    //    std::string filename = ProblemType::static_id() + "MinMod";
+    //    std::string filename = ProblemType::static_id();
+    filename += "_" + ProblemType::static_id();
     filename +=
         std::string("_") + (std::is_same<typename ProblemType::FluxType, AnalyticalFluxType>::value ? "p" : "m");
     filename += Dune::XT::Common::to_string(dimRange);
     filename += rhs_time_stepper_method == TimeStepperMethods::implicit_euler ? "_implicit" : "_explicit";
 
-    timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 3);
+    timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 1);
   } else {
     timestepper_op.solve(t_end, dt, num_save_steps, false, true, visualize, "entropy_implicit_trapezoidal");
   }
