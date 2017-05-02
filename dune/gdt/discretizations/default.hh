@@ -243,11 +243,10 @@ namespace internal {
 template <class OperatorType, NumericalFluxes numerical_flux = NumericalFluxes::godunov>
 struct AdvectionOperatorCreator
 {
-  template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType, class RangeFieldType>
+  template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType>
   static OperatorType create(const AnalyticalFluxType& analytical_flux,
                              const BoundaryValueType& boundary_values,
                              const ConstantFunctionType& /*dx_function*/,
-                             const RangeFieldType /*dt*/,
                              const bool is_linear)
   {
     return OperatorType(analytical_flux, boundary_values, is_linear, false);
@@ -257,11 +256,10 @@ struct AdvectionOperatorCreator
 template <class OperatorType>
 struct AdvectionOperatorCreator<OperatorType, NumericalFluxes::godunov_with_reconstruction>
 {
-  template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType, class RangeFieldType>
+  template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType>
   static OperatorType create(const AnalyticalFluxType& analytical_flux,
                              const BoundaryValueType& boundary_values,
                              const ConstantFunctionType& /*dx_function*/,
-                             const RangeFieldType /*dt*/,
                              const bool is_linear)
   {
     return OperatorType(analytical_flux, boundary_values, is_linear, true);
@@ -271,67 +269,62 @@ struct AdvectionOperatorCreator<OperatorType, NumericalFluxes::godunov_with_reco
 template <class OperatorType>
 struct AdvectionOperatorCreator<OperatorType, NumericalFluxes::laxfriedrichs>
 {
-  template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType, class RangeFieldType>
+  template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType>
   static OperatorType create(const AnalyticalFluxType& analytical_flux,
                              const BoundaryValueType& boundary_values,
                              const ConstantFunctionType& dx_function,
-                             const RangeFieldType dt,
                              const bool is_linear)
   {
-    return OperatorType(analytical_flux, boundary_values, dx_function, dt, is_linear, false, false);
+    return OperatorType(analytical_flux, boundary_values, dx_function, is_linear, false, false);
   }
 };
 
 template <class OperatorType>
 struct AdvectionOperatorCreator<OperatorType, NumericalFluxes::laxfriedrichs_with_reconstruction>
 {
-  template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType, class RangeFieldType>
+  template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType>
   static OperatorType create(const AnalyticalFluxType& analytical_flux,
                              const BoundaryValueType& boundary_values,
                              const ConstantFunctionType& dx_function,
-                             const RangeFieldType dt,
                              const bool is_linear)
   {
-    return OperatorType(analytical_flux, boundary_values, dx_function, dt, is_linear, true, false);
+    return OperatorType(analytical_flux, boundary_values, dx_function, is_linear, true, false);
   }
 };
 
 template <class OperatorType>
 struct AdvectionOperatorCreator<OperatorType, NumericalFluxes::local_laxfriedrichs>
 {
-  template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType, class RangeFieldType>
+  template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType>
   static OperatorType create(const AnalyticalFluxType& analytical_flux,
                              const BoundaryValueType& boundary_values,
                              const ConstantFunctionType& dx_function,
-                             const RangeFieldType dt,
                              const bool is_linear)
   {
-    return OperatorType(analytical_flux, boundary_values, dx_function, dt, is_linear, false, true);
+    return OperatorType(analytical_flux, boundary_values, dx_function, is_linear, false, true);
   }
 };
 
 template <class OperatorType>
 struct AdvectionOperatorCreator<OperatorType, NumericalFluxes::local_laxfriedrichs_with_reconstruction>
 {
-  template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType, class RangeFieldType>
+  template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType>
   static OperatorType create(const AnalyticalFluxType& analytical_flux,
                              const BoundaryValueType& boundary_values,
                              const ConstantFunctionType& dx_function,
-                             const RangeFieldType dt,
                              const bool is_linear)
   {
-    return OperatorType(analytical_flux, boundary_values, dx_function, dt, is_linear, true, true);
+    return OperatorType(analytical_flux, boundary_values, dx_function, is_linear, true, true);
   }
 };
 
 template <class OperatorType>
 struct AdvectionOperatorCreator<OperatorType, NumericalFluxes::kinetic>
 {
-  template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType, class RangeFieldType>
+  template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType>
   static OperatorType create(const AnalyticalFluxType& analytical_flux,
                              const BoundaryValueType& boundary_values,
                              const ConstantFunctionType& /*dx_function*/,
-                             const RangeFieldType /*dt*/,
                              const bool /*is_linear*/)
   {
     return OperatorType(analytical_flux, boundary_values);

@@ -115,12 +115,13 @@ public:
   static const size_t dimRange = Traits::dimRange;
 
   explicit GodunovLocalNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
-                                             const bool is_linear = false,
-                                             const bool reinit_jacobians = true)
+                                             const XT::Common::Parameter& param,
+                                             const bool is_linear = false)
     : analytical_flux_(analytical_flux)
     , is_linear_(is_linear)
   {
-    if (is_linear_ && (!jacobians_constructed_ || reinit_jacobians))
+    if (is_linear_
+        && (!jacobians_constructed_ || (param.has_key("reinit_jacobians") && param.get("reinit_jacobians")[0] == 1)))
       initialize_jacobians();
   }
 
@@ -293,12 +294,13 @@ public:
       AffineFunctionType;
 
   explicit GodunovLocalNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
-                                             const bool is_linear,
-                                             const bool reinit_jacobians = true)
+                                             const XT::Common::Parameter& param,
+                                             const bool is_linear)
     : analytical_flux_(analytical_flux)
     , is_linear_(is_linear)
   {
-    if (is_linear_ && (!jacobians_constructed_ || reinit_jacobians))
+    if (is_linear_
+        && (!jacobians_constructed_ || (param.has_key("reinit_jacobians") && param.get("reinit_jacobians")[0] == 1)))
       initialize_jacobians();
   }
 
@@ -466,13 +468,15 @@ public:
 
   explicit GodunovLocalNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
                                              const std::shared_ptr<BoundaryValueFunctionType>& boundary_values,
-                                             const bool is_linear = false,
-                                             const bool reinit_jacobians = true)
+                                             const XT::Common::Parameter& param,
+                                             const bool is_linear = false)
+
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
   {
-    if (is_linear_ && (!jacobians_constructed_ || reinit_jacobians))
+    if (is_linear_
+        && (!jacobians_constructed_ || (param.has_key("reinit_jacobians") && param.get("reinit_jacobians")[0] == 1)))
       initialize_jacobians();
   }
 
@@ -653,13 +657,14 @@ public:
       AffineFunctionType;
   explicit GodunovLocalNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
                                              const std::shared_ptr<BoundaryValueFunctionType>& boundary_values,
-                                             const bool is_linear = false,
-                                             const bool reinit_jacobians = true)
+                                             const XT::Common::Parameter& param,
+                                             const bool is_linear = false)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
   {
-    if (is_linear_ && (!jacobians_constructed_ || reinit_jacobians))
+    if (is_linear_
+        && (!jacobians_constructed_ || (param.has_key("reinit_jacobians") && param.get("reinit_jacobians")[0] == 1)))
       initialize_jacobians();
   }
 

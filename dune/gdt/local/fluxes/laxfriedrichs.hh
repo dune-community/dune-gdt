@@ -132,13 +132,14 @@ public:
 
   explicit LaxFriedrichsLocalNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
                                                    const LocalizableFunctionType& dx,
-                                                   const XT::Common::Parameter param,
+                                                   const XT::Common::Parameter& param,
                                                    const bool is_linear = false,
                                                    const bool use_local = false,
                                                    const bool entity_geometries_equal = false)
     : analytical_flux_(analytical_flux)
     , dx_(dx)
-    , param_(param)
+    , dt_(param.get("dt")[0])
+    , t_(param.get("t")[0])
     , is_linear_(is_linear)
     , use_local_(use_local)
     , entity_geometries_equal_(entity_geometries_equal)
@@ -162,16 +163,14 @@ public:
       const IntersectionType& intersection,
       const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
-    const double dt = param_.get("dt");
-    const double t = param_.get("t");
     // get function values
     const auto& x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
     const auto& x_intersection_neighbor_coords = intersection.geometryInOutside().global(x_intersection);
     const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
     RangeType u_j = local_source_neighbor.evaluate(x_intersection_neighbor_coords);
     FluxRangeType f_u_i_plus_f_u_j =
-        analytical_flux_.evaluate(u_i, intersection.inside(), x_intersection_entity_coords, t);
-    f_u_i_plus_f_u_j += analytical_flux_.evaluate(u_j, intersection.outside(), x_intersection_neighbor_coords, t);
+        analytical_flux_.evaluate(u_i, intersection.inside(), x_intersection_entity_coords, t_);
+    f_u_i_plus_f_u_j += analytical_flux_.evaluate(u_j, intersection.outside(), x_intersection_neighbor_coords, t_);
     auto n_ij = intersection.unitOuterNormal(x_intersection);
     // find direction of unit outer normal
     size_t coord = 0;
@@ -193,14 +192,14 @@ public:
     if (!use_local_) {
       const RangeFieldType dx = std::get<0>(local_functions_tuple_entity)
                                     ->evaluate(intersection.geometryInInside().global(x_intersection))[0];
-      *max_derivative_ = DomainType(dx / dt);
+      *max_derivative_ = DomainType(dx / dt_);
     } else {
       if (!is_linear_ || !(*max_derivative_calculated_)) {
         *max_derivative_ = 0;
         const auto jacobian_u_i =
-            analytical_flux_.jacobian(u_i, intersection.inside(), x_intersection_entity_coords, t);
+            analytical_flux_.jacobian(u_i, intersection.inside(), x_intersection_entity_coords, t_);
         const auto jacobian_u_j =
-            analytical_flux_.jacobian(u_j, intersection.outside(), x_intersection_neighbor_coords, t);
+            analytical_flux_.jacobian(u_j, intersection.outside(), x_intersection_neighbor_coords, t_);
         std::vector<EigenMatrixType> jacobian_u_i_eigen;
         std::vector<EigenMatrixType> jacobian_u_j_eigen;
         for (size_t ii = 0; ii < dimDomain; ++ii) {
@@ -271,7 +270,8 @@ public:
 private:
   const AnalyticalFluxType& analytical_flux_;
   const LocalizableFunctionType& dx_;
-  const XT::Common::Parameter param_;
+  const double dt_;
+  const double t_;
   const bool is_linear_;
   const bool use_local_;
   const bool entity_geometries_equal_;
@@ -325,13 +325,14 @@ public:
 
   explicit LaxFriedrichsLocalNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
                                                    const LocalizableFunctionType& dx,
-                                                   const XT::Common::Parameter param,
+                                                   const XT::Common::Parameter& param,
                                                    const bool is_linear,
                                                    const bool use_local = false,
                                                    const bool /*entity_geometries_equal*/ = false)
     : analytical_flux_(analytical_flux)
     , dx_(dx)
-    , param_(param)
+    , dt_(param.get("dt")[0])
+    , t_(param.get("t")[0])
     , is_linear_(is_linear)
     , use_local_(use_local)
   {
@@ -351,10 +352,8 @@ public:
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
           local_source_neighbor,
       const IntersectionType& intersection,
-      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection,
-      const double t = 0) const
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
-    const double dt = param_.get("dt");
     // get function values
     RangeType u_i = local_source_entity.evaluate(intersection.geometryInInside().global(x_intersection));
     const RangeType u_j = local_source_neighbor.evaluate(intersection.geometryInOutside().global(x_intersection));
@@ -362,7 +361,7 @@ public:
     const auto n_ij = intersection.unitOuterNormal(x_intersection);
     const RangeFieldType dx =
         std::get<0>(local_functions_tuple_entity)->evaluate(intersection.geometryInInside().global(x_intersection))[0];
-    *max_derivative_ = dx / dt;
+    *max_derivative_ = dx / dt_;
     if (use_local_) {
       if (!is_linear_ || !(*max_derivative_calculated_)) {
         *max_derivative_ = 0;
@@ -416,9 +415,9 @@ public:
     // expression.
     // calculate n_ij*(f(u_i) + f(u_j)) first
     ret = analytical_flux_.evaluate(
-        u_i, intersection.inside(), intersection.geometryInInside().global(x_intersection), t);
+        u_i, intersection.inside(), intersection.geometryInInside().global(x_intersection), t_);
     ret += analytical_flux_.evaluate(
-        u_j, intersection.outside(), intersection.geometryInOutside().global(x_intersection), t);
+        u_j, intersection.outside(), intersection.geometryInOutside().global(x_intersection), t_);
     if (n_ij < 0)
       ret *= n_ij;
     // add max_derivative*(u_i - u_j)
@@ -432,7 +431,8 @@ public:
 private:
   const AnalyticalFluxType& analytical_flux_;
   const LocalizableFunctionType& dx_;
-  const XT::Common::Parameter param_;
+  const double dt_;
+  const double t_;
   const bool is_linear_;
   const bool use_local_;
   static typename Dune::XT::Common::PerThreadValue<RangeFieldType> max_derivative_;
@@ -485,17 +485,19 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
-  explicit LaxFriedrichsLocalDirichletNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
-                                                            const BoundaryValueFunctionType& boundary_values,
-                                                            const LocalizableFunctionType& dx,
-                                                            const XT::Common::Parameter param,
-                                                            const bool is_linear = false,
-                                                            const bool use_local = false,
-                                                            const bool entity_geometries_equal = false)
+  explicit LaxFriedrichsLocalDirichletNumericalBoundaryFlux(
+      const AnalyticalFluxType& analytical_flux,
+      const std::shared_ptr<BoundaryValueFunctionType>& boundary_values,
+      const LocalizableFunctionType& dx,
+      const XT::Common::Parameter param,
+      const bool is_linear = false,
+      const bool use_local = false,
+      const bool entity_geometries_equal = false)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , dx_(dx)
-    , param_(param)
+    , dt_(param.get("dt")[0])
+    , t_(param.get("t")[0])
     , is_linear_(is_linear)
     , use_local_(use_local)
     , entity_geometries_equal_(entity_geometries_equal)
@@ -505,7 +507,7 @@ public:
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
-    return std::make_tuple(dx_.local_function(entity), boundary_values_.local_function(entity));
+    return std::make_tuple(dx_.local_function(entity), boundary_values_->local_function(entity));
   }
 
   template <class IntersectionType>
@@ -516,15 +518,13 @@ public:
       const IntersectionType& intersection,
       const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
-    const double dt = param_.get("dt");
-    const double t = param_.get("t");
     // get function values
     const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
     const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
     auto u_j = std::get<1>(local_functions_tuple)->evaluate(x_intersection_entity_coords);
     FluxRangeType f_u_i_plus_f_u_j =
-        analytical_flux_.evaluate(u_i, intersection.inside(), x_intersection_entity_coords, t);
-    f_u_i_plus_f_u_j += analytical_flux_.evaluate(u_j, intersection.inside(), DomainType(200), t);
+        analytical_flux_.evaluate(u_i, intersection.inside(), x_intersection_entity_coords, t_);
+    f_u_i_plus_f_u_j += analytical_flux_.evaluate(u_j, intersection.inside(), DomainType(200), t_);
     auto n_ij = intersection.unitOuterNormal(x_intersection);
     // find direction of unit outer normal
     size_t coord = 0;
@@ -545,13 +545,13 @@ public:
 
     if (!use_local_) {
       const RangeFieldType dx = std::get<0>(local_functions_tuple)->evaluate(x_intersection_entity_coords)[0];
-      *max_derivative_ = DomainType(dx / dt);
+      *max_derivative_ = DomainType(dx / dt_);
     } else {
       if (!is_linear_ || !(*max_derivative_calculated_)) {
         *max_derivative_ = 0;
         const auto jacobian_u_i =
-            analytical_flux_.jacobian(u_i, intersection.inside(), x_intersection_entity_coords, t);
-        const auto jacobian_u_j = analytical_flux_.jacobian(u_j, intersection.inside(), DomainType(200), t);
+            analytical_flux_.jacobian(u_i, intersection.inside(), x_intersection_entity_coords, t_);
+        const auto jacobian_u_j = analytical_flux_.jacobian(u_j, intersection.inside(), DomainType(200), t_);
         std::vector<EigenMatrixType> jacobian_u_i_eigen;
         std::vector<EigenMatrixType> jacobian_u_j_eigen;
         for (size_t ii = 0; ii < dimDomain; ++ii) {
@@ -621,9 +621,10 @@ public:
 
 private:
   const AnalyticalFluxType& analytical_flux_;
-  const BoundaryValueFunctionType& boundary_values_;
+  const std::shared_ptr<BoundaryValueFunctionType>& boundary_values_;
   const LocalizableFunctionType& dx_;
-  const XT::Common::Parameter param_;
+  const double dt_;
+  const double t_;
   const bool is_linear_;
   const bool use_local_;
   const bool entity_geometries_equal_;
@@ -695,17 +696,19 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
-  explicit LaxFriedrichsLocalDirichletNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
-                                                            const BoundaryValueFunctionType& boundary_values,
-                                                            const LocalizableFunctionType& dx,
-                                                            const XT::Common::Parameter param,
-                                                            const bool is_linear = false,
-                                                            const bool use_local = false,
-                                                            const bool /*entity_geometries_equal*/ = false)
+  explicit LaxFriedrichsLocalDirichletNumericalBoundaryFlux(
+      const AnalyticalFluxType& analytical_flux,
+      const std::shared_ptr<BoundaryValueFunctionType>& boundary_values,
+      const LocalizableFunctionType& dx,
+      const XT::Common::Parameter& param,
+      const bool is_linear = false,
+      const bool use_local = false,
+      const bool /*entity_geometries_equal*/ = false)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , dx_(dx)
-    , param_(param)
+    , dt_(param.get("dt")[0])
+    , t_(param.get("t")[0])
     , is_linear_(is_linear)
     , use_local_(use_local)
   {
@@ -713,7 +716,7 @@ public:
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
-    return std::make_tuple(dx_.local_function(entity), boundary_values_.local_function(entity));
+    return std::make_tuple(dx_.local_function(entity), boundary_values_->local_function(entity));
   }
 
   template <class IntersectionType>
@@ -724,8 +727,6 @@ public:
       const IntersectionType& intersection,
       const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
-    const double dt = param_.get("dt");
-    const double t = param_.get("t");
     // get function values
     const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
     RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
@@ -733,7 +734,7 @@ public:
 
     const auto n_ij = intersection.unitOuterNormal(x_intersection);
     const RangeFieldType dx = std::get<0>(local_functions_tuple)->evaluate(x_intersection_entity_coords)[0];
-    *max_derivative_ = dx / dt;
+    *max_derivative_ = dx / dt_;
     if (use_local_) {
       if (!is_linear_ || !(*max_derivative_calculated_)) {
         *max_derivative_ = 0;
@@ -785,9 +786,9 @@ public:
     // we dont use the local LxF method. As the FieldVector does not provide an operator+, we have to split the
     // expression.
     // calculate n_ij*(f(u_i) + f(u_j)) first
-    ret = analytical_flux_.evaluate(u_i, intersection.inside(), x_intersection_entity_coords, t);
+    ret = analytical_flux_.evaluate(u_i, intersection.inside(), x_intersection_entity_coords, t_);
     // TODO: is this the right definition if jacobian really depends on the entity coordinates?
-    ret += analytical_flux_.evaluate(u_j, intersection.inside(), DomainType(200), t);
+    ret += analytical_flux_.evaluate(u_j, intersection.inside(), DomainType(200), t_);
     if (n_ij < 0)
       ret *= n_ij;
     // add max_derivative*(u_i - u_j)
@@ -800,9 +801,10 @@ public:
 
 private:
   const AnalyticalFluxType& analytical_flux_;
-  const BoundaryValueFunctionType& boundary_values_;
+  const std::shared_ptr<BoundaryValueFunctionType>& boundary_values_;
   const LocalizableFunctionType& dx_;
-  const XT::Common::Parameter param_;
+  const double dt_;
+  const double t_;
   const bool is_linear_;
   const bool use_local_;
   static typename Dune::XT::Common::PerThreadValue<RangeFieldType> max_derivative_;
