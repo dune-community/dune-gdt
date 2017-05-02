@@ -73,13 +73,27 @@ PYBIND11_PLUGIN(__functionals_l2)
           Dune::XT::Common::TimedLogger().create(
               max_info_level, max_debug_level, enable_warnings, enable_colors, info_color, debug_color, warning_color);
         },
-        "max_info_level"_a = -1,
-        "max_debug_level"_a = -1,
+        "max_info_level"_a = std::numeric_limits<ssize_t>::max(),
+        "max_debug_level"_a = std::numeric_limits<ssize_t>::max(),
         "enable_warnings"_a = true,
         "enable_colors"_a = true,
         "info_color"_a = "blue",
         "debug_color"_a = "darkgray",
         "warning_color"_a = "red");
+
+  m.def("_test_logger",
+        [](const bool info, const bool debug, const bool warning) {
+          auto logger = Dune::XT::Common::TimedLogger().get("dune.gdt.functionals.l2");
+          if (info)
+            logger.info() << "info logging works!" << std::endl;
+          if (debug)
+            logger.debug() << "debug logging works!" << std::endl;
+          if (warning)
+            logger.warn() << "warning logging works!" << std::endl;
+        },
+        "info"_a = true,
+        "debug"_a = true,
+        "warning"_a = true);
 
   return m.ptr();
 }
