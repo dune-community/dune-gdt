@@ -15,6 +15,8 @@ if(dune-pybindxi_FOUND)
     dune_pybindxi_add_module(__${_target} ${_target}.bindings.cc)
     list(APPEND pybindxi_modules __${_target})
   endforeach()
+  dune_pybindxi_add_module(__spaces_block playground/spaces/block.bindings.cc)
+  list(APPEND pybindxi_modules __spaces_block)
   # the operators
   # * elliptic
   dune_pybindxi_add_helper_lib(__operators_elliptic_helper
