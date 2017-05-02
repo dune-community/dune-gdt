@@ -28,7 +28,6 @@ enum class ChoosePattern;
 template <class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols>
 class SpaceInterface;
 
-
 // from #include <dune/gdt/local/integrands/interfaces.hh>
 template <class Traits, size_t numArguments>
 class LocalVolumeIntegrandInterface;

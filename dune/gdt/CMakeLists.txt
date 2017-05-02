@@ -12,8 +12,8 @@ if(dune-pybindxi_FOUND)
   set(pybindxi_modules)
   # some top-level modules
   foreach(_target assembler discretefunction projections spaces)
-  dune_pybindxi_add_module(__${_target} ${_target}.bindings.cc)
-  list(APPEND pybindxi_modules __${_target})
+    dune_pybindxi_add_module(__${_target} ${_target}.bindings.cc)
+    list(APPEND pybindxi_modules __${_target})
   endforeach()
   # the operators
   # * elliptic
