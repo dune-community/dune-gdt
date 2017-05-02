@@ -100,6 +100,7 @@ public:
   PdelabWrapperBase(const ThisType& other)
     : space_(other.space_)
     , backend_(space_)
+    , index_map_(other.index_map_)
   {
   }
 
