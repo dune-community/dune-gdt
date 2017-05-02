@@ -230,6 +230,7 @@ class SpaceInterface
   {
     static void addbind(pybind11::module& m)
     {
+      namespace py = pybind11;
       using namespace pybind11::literals;
       const std::string factory_method_name = "make_" + space_name<SP>::value_wo_grid();
 
@@ -238,7 +239,8 @@ class SpaceInterface
               return SP::create(grid_provider, level);
             },
             "grid_provider"_a,
-            "level"_a = 0);
+            "level"_a = 0,
+            py::keep_alive<0, 1>());
     }
   };
 
@@ -247,19 +249,22 @@ class SpaceInterface
   {
     static void addbind(pybind11::module& m)
     {
+      namespace py = pybind11;
       using namespace pybind11::literals;
       const std::string factory_method_name = "make_" + space_name<SP>::value_wo_grid();
 
       m.def(factory_method_name.c_str(),
             [](XT::Grid::GridProvider<G>& grid_provider, int level) { return SP::create(grid_provider, level); },
             "grid_provider"_a,
-            "level"_a = 0);
+            "level"_a = 0,
+            py::keep_alive<0, 1>());
       m.def(factory_method_name.c_str(),
             [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& grid_provider, int level) {
               return SP::create(grid_provider, level);
             },
             "grid_provider"_a,
-            "level"_a = 0);
+            "level"_a = 0,
+            py::keep_alive<0, 1>());
     }
   };
 
@@ -289,10 +294,23 @@ public:
     c.def("visualize",
           [](const type& self, const std::string& filename) { self.visualize(filename); },
           "filename"_a = "");
-    c.def("compute_pattern", [](const type& self) { return self.compute_pattern(); });
-    c.def("compute_volume_pattern", [](const type& self) { return self.compute_volume_pattern(); });
-    c.def("compute_face_pattern", [](const type& self) { return self.compute_face_pattern(); });
-    c.def("compute_face_and_volume_pattern", [](const type& self) { return self.compute_face_and_volume_pattern(); });
+    c.def("compute_pattern",
+          [](const type& self, const std::string tp) {
+            if (tp == "default")
+              return self.compute_pattern();
+            else if (tp == "volume")
+              return self.compute_volume_pattern();
+            else if (tp == "face")
+              return self.compute_face_pattern();
+            else if (tp == "face_and_volume")
+              return self.compute_face_and_volume_pattern();
+            else
+              DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
+                         "  type has to be one of ('default', volume', 'face', 'face_and_volume'), is '" << tp << "'!");
+            // we will never get here
+            return XT::LA::SparsityPatternDefault();
+          },
+          "type"_a = "default");
 
     factory_methods<>::addbind(m);
 
