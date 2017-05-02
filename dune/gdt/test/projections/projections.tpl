@@ -59,7 +59,7 @@ TEST_F(L2ProjectionOperatorTest_{{Name}}, free_function_callable)
 TEST_F(L2ProjectionOperatorTest_{{Name}}, produces_correct_results)
 {
   // RT : 0.0925927
-  typedef typename L2ProjectionOperatorTest_{{Name}}::GridViewType::Grid Grid;
+  using Grid = Dune::XT::Grid::extract_grid_t<typename L2ProjectionOperatorTest_{{Name}}::GridLayerType>;
   {% if 'FvSpace' in SpaceType %}
     const auto tolerance{0.096226};
   {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}

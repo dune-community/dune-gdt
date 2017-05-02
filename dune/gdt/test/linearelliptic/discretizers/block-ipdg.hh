@@ -29,7 +29,7 @@ namespace LinearElliptic {
  * \todo add pattern() to StationaryContainerBasedDefaultDiscretization, avoid computation of local_pattern below
  */
 template <class GridType,
-          ChooseSpaceBackend spacebackend = ChooseSpaceBackend::fem, // we only have local grid parts atm
+          Backends spacebackend = Backends::fem, // we only have local grid parts atm
           XT::LA::Backends la = XT::LA::default_sparse_backend,
           int pol = 1,
           class RangeFieldType = double,
@@ -77,7 +77,7 @@ public:
     const auto& dd_grid = grid_provider.dd_grid();
     logger.info() << "Creating " << dd_grid.size() << " local discretizations... " << std::endl;
     XT::Common::Configuration local_boundary_cfg;
-    local_boundary_cfg["type"] = "xt.grid.boundaryinfo.boundarysegment";
+    local_boundary_cfg["type"] = "xt.grid.boundaryinfo.boundarysegmentindexbased";
     local_boundary_cfg["default"] = "dirichlet";
     local_boundary_cfg["neumann"] =
         "[" + XT::Common::to_string(inner_boundary_index) + " " + XT::Common::to_string(inner_boundary_index + 1) + "]";

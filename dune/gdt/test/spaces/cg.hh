@@ -20,6 +20,7 @@
 #include <dune/xt/common/print.hh>
 #include <dune/xt/common/ranges.hh>
 #include <dune/xt/grid/walker.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
 #include <dune/gdt/spaces/cg/dune-pdelab-wrapper.hh>
@@ -38,8 +39,8 @@ class CG_Space : public SpaceBase<SpaceType>
 template <class SpaceType>
 struct P1Q1_CG_Space : public SpaceBase<SpaceType>
 {
-  typedef typename SpaceType::GridViewType GridViewType;
-  typedef typename GridViewType::Grid GridType;
+  typedef typename SpaceType::GridLayerType GridLayerType;
+  using GridType = Dune::XT::Grid::extract_grid_t<typename SpaceType::GridLayerType>;
   static const size_t dimDomain = GridType::dimension;
   typedef typename GridType::ctype DomainFieldType;
   typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
@@ -65,7 +66,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
   {
 
     matches_signature(this->space_);
-    const auto entity_ptr = this->space_.grid_view().template begin<0>();
+    const auto entity_ptr = this->space_.grid_layer().template begin<0>();
     const auto& entity = *entity_ptr;
     const auto basis = this->space_.base_function_set(entity);
     std::vector<DomainType> lagrange_points = this->space_.lagrange_points(entity);
@@ -87,8 +88,8 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
     using namespace Dune::XT;
     // walk the grid to create a map of all vertices
     std::map<std::vector<DomainFieldType>, std::set<size_t>> vertex_to_indices_map;
-    const auto entity_end_it = this->space_.grid_view().template end<0>();
-    for (auto entity_it = this->space_.grid_view().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
+    const auto entity_end_it = this->space_.grid_layer().template end<0>();
+    for (auto entity_it = this->space_.grid_layer().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
       const auto& entity = *entity_it;
       for (auto cc : Dune::XT::Common::value_range(entity.subEntities(dimDomain))) {
         const auto vertex = entity.template subEntity<dimDomain>(cc);
@@ -98,7 +99,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
     }
 
     // walk the grid again to find all DoF ids
-    auto functor = [&](const typename Dune::XT::Grid::Entity<GridViewType>::Type& entity) {
+    auto functor = [&](const Dune::XT::Grid::extract_entity_t<GridLayerType>& entity) {
       const size_t num_vertices = entity.subEntities(dimDomain);
       const auto basis = this->space_.base_function_set(entity);
       EXPECT_EQ(basis.size(), num_vertices);
@@ -124,7 +125,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
         if (ones != 1 || zeros != (basis.size() - 1) || failures > 0) {
           std::stringstream ss;
           ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures
-             << ", num_vertices = " << num_vertices << ", entity " << this->space_.grid_view().indexSet().index(entity)
+             << ", num_vertices = " << num_vertices << ", entity " << this->space_.grid_layer().indexSet().index(entity)
              << ", vertex " << cc << ": [ " << vertex_center << "], ";
           Dune::XT::Common::print(basis_values, "basis_values", ss);
           EXPECT_TRUE(false) << ss.str();
@@ -134,7 +135,7 @@ struct P1Q1_CG_Space : public SpaceBase<SpaceType>
         vertex_to_indices_map[convert_vector(vertex_center)].insert(global_DoF_index);
       }
     };
-    Dune::XT::Grid::Walker<GridViewType> walker(this->space_.grid_view());
+    Dune::XT::Grid::Walker<GridLayerType> walker(this->space_.grid_layer());
     walker.append(functor);
     walker.walk();
     // check that all vertices have indeed one and only one global DoF id and that the numbering is consecutive

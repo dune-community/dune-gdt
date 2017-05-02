@@ -26,7 +26,7 @@ namespace internal {
 
 
 // forward, needed for friendlyness
-template <class TestSpaceType, class AnsatzSpaceType, class GridViewType, class ConstraintsType>
+template <class TestSpaceType, class AnsatzSpaceType, class GridLayerType, class ConstraintsType>
 class ConstraintsWrapper;
 
 
@@ -152,7 +152,7 @@ public:
   } // ... apply(...)
 
 private:
-  template <class T, class A, class GV, class C>
+  template <class T, class A, class GL, class C>
   friend class GDT::internal::ConstraintsWrapper;
 
   const BoundaryInfoType& boundary_info_;

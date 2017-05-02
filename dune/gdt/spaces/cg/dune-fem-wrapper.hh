@@ -48,17 +48,18 @@ class DuneFemCgSpaceWrapper
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
 class DuneFemCgSpaceWrapperTraits
 {
+  static_assert(XT::Grid::is_part<GridPartImp>::value, "");
+
 public:
   typedef DuneFemCgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
-  typedef GridPartImp GridPartType;
-  typedef typename GridPartType::GridViewType GridViewType;
+  typedef GridPartImp GridLayerType;
   static const int polOrder = polynomialOrder;
   static const bool continuous = true;
   static_assert(polOrder >= 1, "Wrong polOrder given!");
 
 private:
-  typedef typename GridPartType::ctype DomainFieldType;
-  static const size_t dimDomain = GridPartType::dimension;
+  typedef typename GridLayerType::ctype DomainFieldType;
+  static const size_t dimDomain = GridLayerType::dimension;
 
 public:
   typedef RangeFieldImp RangeFieldType;
@@ -67,9 +68,9 @@ private:
   typedef Dune::Fem::FunctionSpace<DomainFieldType, RangeFieldType, dimDomain, rangeDim> FunctionSpaceType;
 
 public:
-  typedef Dune::Fem::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridPartType, polOrder> BackendType;
+  typedef Dune::Fem::LagrangeDiscreteFunctionSpace<FunctionSpaceType, GridLayerType, polOrder> BackendType;
   typedef Mapper::FemDofWrapper<typename BackendType::BlockMapperType, BackendType::Traits::localBlockSize> MapperType;
-  typedef typename GridPartType::template Codim<0>::EntityType EntityType;
+  using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
   typedef BaseFunctionSet::DuneFemWrapper<typename BackendType::BasisFunctionSetType,
                                           EntityType,
                                           DomainFieldType,
@@ -78,9 +79,9 @@ public:
                                           rangeDim,
                                           rangeDimCols>
       BaseFunctionSetType;
-  static const XT::Grid::Backends part_view_type = XT::Grid::Backends::part;
+  static const XT::Grid::Backends layer_backend = XT::Grid::Backends::part;
   static const bool needs_grid_view = false;
-  typedef CommunicationChooser<GridViewType, false> CommunicationChooserType;
+  typedef CommunicationChooser<GridLayerType, false> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 }; // class DuneFemCgSpaceWrapperTraits
 
@@ -108,8 +109,7 @@ public:
   static const size_t dimRange = BaseType::dimRange;
   static const size_t dimRangeCols = BaseType::dimRangeCols;
 
-  typedef typename Traits::GridPartType GridPartType;
-  typedef typename Traits::GridViewType GridViewType;
+  typedef typename Traits::GridLayerType GridLayerType;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
@@ -124,12 +124,11 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::BoundaryInfoType;
 
-  explicit DuneFemCgSpaceWrapper(GridPartType gridP)
-    : gridPart_(new GridPartType(gridP))
-    , gridView_(new GridViewType(GridViewType(*gridPart_)))
-    , backend_(new BackendType(*gridPart_))
+  explicit DuneFemCgSpaceWrapper(GridLayerType grd_prt)
+    : grid_part_(new GridLayerType(grd_prt))
+    , backend_(new BackendType(*grid_part_))
     , mapper_(new MapperType(backend_->blockMapper()))
-    , communicator_(CommunicationChooserType::create(*gridView_))
+    , communicator_(CommunicationChooserType::create(*grid_part_))
   {
   }
 
@@ -139,14 +138,19 @@ public:
   ThisType& operator=(const ThisType& other) = delete;
   ThisType& operator=(ThisType&& source) = delete;
 
-  const GridPartType& grid_part() const
+  const GridLayerType& DUNE_DEPRECATED_MSG("Use grid_layer() instead (03.04.2017)!") grid_part() const
   {
-    return *gridPart_;
+    return *grid_part_;
   }
 
-  const GridViewType& grid_view() const
+  const GridLayerType& grid_layer() const
   {
-    return *gridView_;
+    return *grid_part_;
+  }
+
+  GridLayerType& grid_part()
+  {
+    return *grid_part_;
   }
 
   const BackendType& backend() const
@@ -181,8 +185,7 @@ public:
   }
 
 private:
-  std::shared_ptr<GridPartType> gridPart_;
-  const std::shared_ptr<const GridViewType> gridView_;
+  std::shared_ptr<GridLayerType> grid_part_;
   const std::shared_ptr<const BackendType> backend_;
   const std::shared_ptr<const MapperType> mapper_;
   mutable std::shared_ptr<CommunicatorType> communicator_;

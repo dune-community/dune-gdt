@@ -115,7 +115,7 @@ protected:
   typedef typename DiscreteSolutionType::key_type TimeFieldType;
 
   typedef typename TestCaseType::InitialValueType InitialValueType;
-  typedef typename TestCaseType::LevelGridViewType GridViewType;
+  typedef typename TestCaseType::LevelGridLayerType GridLayerType;
 
 public:
   NonStationaryEocStudy(TestCaseType& test_case,
@@ -193,8 +193,8 @@ public:
     assert(current_refinement_ <= num_refinements());
     if (grid_widths_[current_refinement_] < 0.0) {
       const int level = test_case_.level_of(current_refinement_);
-      const auto grid_view = test_case_.template level<XT::Grid::Backends::view>(level);
-      XT::Grid::Dimensions<GridViewType> dimensions(grid_view);
+      const auto grid_layer = test_case_.template level<XT::Grid::Backends::view>(level);
+      XT::Grid::Dimensions<GridLayerType> dimensions(grid_layer);
       grid_widths_[current_refinement_] = dimensions.entity_width.max();
       assert(grid_widths_[current_refinement_] > 0.0);
     }

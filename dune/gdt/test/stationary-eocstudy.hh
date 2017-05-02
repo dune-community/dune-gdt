@@ -44,7 +44,7 @@ protected:
   typedef GDT::ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
 
   typedef typename TestCaseType::FunctionType FunctionType;
-  typedef typename TestCaseType::LevelGridViewType GridViewType;
+  typedef typename TestCaseType::LevelGridLayerType GridLayerType;
 
 public:
   StationaryEocStudy(TestCaseType& test_case,
@@ -97,16 +97,16 @@ public:
     if (test_case_.provides_exact_solution()) {
       // visualize
       if (!visualize_prefix_.empty()) {
-        test_case_.exact_solution().visualize(test_case_.reference_grid_view(), visualize_prefix_ + "_exact_solution");
+        test_case_.exact_solution().visualize(test_case_.reference_grid_layer(), visualize_prefix_ + "_exact_solution");
       }
-      return compute_norm(test_case_.reference_grid_view(), test_case_.exact_solution(), type);
+      return compute_norm(test_case_.reference_grid_layer(), test_case_.exact_solution(), type);
     } else {
       compute_reference_solution();
       assert(reference_discretization_);
       assert(reference_solution_vector_);
       const ConstDiscreteFunctionType reference_solution(
           reference_discretization_->ansatz_space(), *reference_solution_vector_, "reference solution");
-      return compute_norm(test_case_.reference_grid_view(), reference_solution, type);
+      return compute_norm(test_case_.reference_grid_layer(), reference_solution, type);
     }
   } // ... norm_reference_solution(...)
 
@@ -134,8 +134,8 @@ public:
     assert(current_refinement_ <= num_refinements());
     if (grid_widths_[current_refinement_] < 0.0) {
       const int level = test_case_.level_of(current_refinement_);
-      const auto grid_view = test_case_.template level<XT::Grid::Backends::view>(level);
-      XT::Grid::Dimensions<GridViewType> dimensions(grid_view);
+      const auto grid_layer = test_case_.template level<XT::Grid::Backends::view>(level);
+      XT::Grid::Dimensions<GridLayerType> dimensions(grid_layer);
       grid_widths_[current_refinement_] = dimensions.entity_width.max();
       assert(grid_widths_[current_refinement_] > 0.0);
     }
@@ -165,7 +165,7 @@ public:
       last_computed_refinement_ = current_refinement_;
       // visualize
       if (!visualize_prefix_.empty()) {
-        this->test_case_.problem().visualize(current_discretization_->ansatz_space().grid_view(),
+        this->test_case_.problem().visualize(current_discretization_->ansatz_space().grid_layer(),
                                              visualize_prefix_ + "_problem_"
                                                  + Dune::XT::Common::to_string(current_refinement_));
         current_refinement_solution.visualize(visualize_prefix_ + "_solution_"
@@ -189,7 +189,7 @@ public:
           reference_discretization_->ansatz_space(), *current_solution_vector_, "current solution");
       // compute error
       if (test_case_.provides_exact_solution()) {
-        return compute_norm(test_case_.reference_grid_view(), test_case_.exact_solution() - current_solution, type);
+        return compute_norm(test_case_.reference_grid_layer(), test_case_.exact_solution() - current_solution, type);
       } else {
         // get reference solution
         compute_reference_solution();
@@ -197,7 +197,7 @@ public:
         assert(reference_solution_vector_);
         const ConstDiscreteFunctionType reference_solution(
             reference_discretization_->ansatz_space(), *reference_solution_vector_, "reference solution");
-        return compute_norm(test_case_.reference_grid_view(), reference_solution - current_solution, type);
+        return compute_norm(test_case_.reference_grid_layer(), reference_solution - current_solution, type);
       }
     } else {
       assert(current_solution_vector_on_level_);
@@ -226,7 +226,7 @@ protected:
       reference_solution_computed_ = true;
       // visualize
       if (!visualize_prefix_.empty()) {
-        this->test_case_.problem().visualize(reference_discretization_->ansatz_space().grid_view(),
+        this->test_case_.problem().visualize(reference_discretization_->ansatz_space().grid_layer(),
                                              visualize_prefix_ + "_problem_reference");
         ConstDiscreteFunctionType(
             reference_discretization_->ansatz_space(), *reference_solution_vector_, "reference solution")
@@ -247,7 +247,8 @@ protected:
 
   virtual double estimate(const VectorType& vector, const std::string type) = 0;
 
-  virtual double compute_norm(const GridViewType& grid_view, const FunctionType& function, const std::string type) = 0;
+  virtual double
+  compute_norm(const GridLayerType& grid_layer, const FunctionType& function, const std::string type) = 0;
 
   TestCaseType& test_case_;
   size_t current_refinement_;

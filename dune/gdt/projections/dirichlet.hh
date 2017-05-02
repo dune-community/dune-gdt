@@ -12,7 +12,7 @@
 #define DUNE_GDT_PROJECTIONS_DIRICHLET_HH
 
 #include <dune/xt/common/memory.hh>
-#include <dune/xt/grid/intersection.hh>
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/layers.hh>
 
 #include <dune/gdt/local/operators/dirichlet-projection.hh>
@@ -22,10 +22,10 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridViewImp, class SourceImp, class RangeImp, class FieldImp = double>
-class DirichletProjectionLocalizableOperator : public LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp>
+template <class GridLayerImp, class SourceImp, class RangeImp, class FieldImp = double>
+class DirichletProjectionLocalizableOperator : public LocalizableOperatorBase<GridLayerImp, SourceImp, RangeImp>
 {
-  typedef LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp> BaseType;
+  typedef LocalizableOperatorBase<GridLayerImp, SourceImp, RangeImp> BaseType;
 
 public:
   using typename BaseType::IntersectionType;
@@ -45,16 +45,16 @@ private:
 }; // class DirichletProjectionLocalizableOperator
 
 
-template <class GridViewType, class SourceType, class RangeType>
-std::unique_ptr<DirichletProjectionLocalizableOperator<GridViewType, SourceType, RangeType>>
+template <class GridLayerType, class SourceType, class RangeType>
+std::unique_ptr<DirichletProjectionLocalizableOperator<GridLayerType, SourceType, RangeType>>
 make_localizable_dirichlet_projection_operator(
-    const GridViewType& grid_view,
-    const XT::Grid::BoundaryInfo<typename XT::Grid::extract_intersection_t<GridViewType>>& boundary_info,
+    const GridLayerType& grid_layer,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
     const SourceType& source,
     RangeType& range)
 {
-  return Dune::XT::Common::make_unique<DirichletProjectionLocalizableOperator<GridViewType, SourceType, RangeType>>(
-      boundary_info, grid_view, source, range);
+  return Dune::XT::Common::make_unique<DirichletProjectionLocalizableOperator<GridLayerType, SourceType, RangeType>>(
+      boundary_info, grid_layer, source, range);
 }
 
 

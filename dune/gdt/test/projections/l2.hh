@@ -24,43 +24,44 @@ template <class SpaceType>
 struct L2ProjectionLocalizableOperatorTest
     : public LocalizableProjectionOperatorBase<SpaceType,
                                                L2ProjectionLocalizableOperator<
-                                                   typename SpaceType::GridViewType,
+                                                   typename SpaceType::GridLayerType,
                                                    typename internal::OperatorBaseTraits<SpaceType>::FunctionType,
                                                    typename internal::OperatorBaseTraits<SpaceType>::
                                                        DiscreteFunctionType>>
 {
   void constructible_by_factory()
   {
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_layer = this->space_.grid_layer();
     const auto& source = this->function_;
     auto& range = this->discrete_function_;
 
-    auto w_grid_view_w_over_integrate DUNE_UNUSED =
-        make_l2_projection_localizable_operator(grid_view, source, range, 1);
-    auto w_grid_view_wo_over_integrate DUNE_UNUSED = make_l2_projection_localizable_operator(grid_view, source, range);
-    auto wo_grid_view_w_over_integrate DUNE_UNUSED = make_l2_projection_localizable_operator(source, range, 1);
-    auto wo_grid_view_wo_over_integrate DUNE_UNUSED = make_l2_projection_localizable_operator(source, range);
+    auto w_grid_layer_w_over_integrate DUNE_UNUSED =
+        make_l2_projection_localizable_operator(grid_layer, source, range, 1);
+    auto w_grid_layer_wo_over_integrate DUNE_UNUSED =
+        make_l2_projection_localizable_operator(grid_layer, source, range);
+    auto wo_grid_layer_w_over_integrate DUNE_UNUSED = make_l2_projection_localizable_operator(source, range, 1);
+    auto wo_grid_layer_wo_over_integrate DUNE_UNUSED = make_l2_projection_localizable_operator(source, range);
   } // ... constructible_by_factory(...)
 };
 
 template <class SpaceType>
 struct L2ProjectionOperatorTest
-    : public ProjectionOperatorBase<SpaceType, L2ProjectionOperator<typename SpaceType::GridViewType, double>>
+    : public ProjectionOperatorBase<SpaceType, L2ProjectionOperator<typename SpaceType::GridLayerType, double>>
 {
   void constructible_by_factory()
   {
-    const auto& grid_view = this->space_.grid_view();
-    auto op_w_over_integrate DUNE_UNUSED = make_l2_projection_operator(grid_view, 1);
-    auto op_wo_over_integrate DUNE_UNUSED = make_l2_projection_operator(grid_view);
+    const auto& grid_layer = this->space_.grid_layer();
+    auto op_w_over_integrate DUNE_UNUSED = make_l2_projection_operator(grid_layer, 1);
+    auto op_wo_over_integrate DUNE_UNUSED = make_l2_projection_operator(grid_layer);
   } // ... constructible_by_factory(...)
 
   void free_function_callable()
   {
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_layer = this->space_.grid_layer();
     const auto& source = this->function_;
     auto& range = this->discrete_function_;
 
-    project_l2(grid_view, source, range);
+    project_l2(grid_layer, source, range);
     project_l2(source, range);
   } // ... free_function_callable(...)
 };

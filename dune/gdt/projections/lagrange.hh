@@ -30,10 +30,10 @@ namespace GDT {
  *       for those spaces).
  * \note Do we have to set all range DoFs to infinity here?
  */
-template <class GridViewImp, class SourceImp, class RangeImp>
-class LagrangeProjectionLocalizableOperator : public LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp>
+template <class GridLayerImp, class SourceImp, class RangeImp>
+class LagrangeProjectionLocalizableOperator : public LocalizableOperatorBase<GridLayerImp, SourceImp, RangeImp>
 {
-  typedef LocalizableOperatorBase<GridViewImp, SourceImp, RangeImp> BaseType;
+  typedef LocalizableOperatorBase<GridLayerImp, SourceImp, RangeImp> BaseType;
 
 public:
   template <class... Args>
@@ -49,22 +49,22 @@ private:
 }; // class LagrangeProjectionLocalizableOperator
 
 
-template <class GridViewType, class SourceType, class SpaceType, class VectorType>
+template <class GridLayerType, class SourceType, class SpaceType, class VectorType>
 typename std::
-    enable_if<XT::Grid::is_layer<GridViewType>::value && XT::Functions::is_localizable_function<SourceType>::value
+    enable_if<XT::Grid::is_layer<GridLayerType>::value && XT::Functions::is_localizable_function<SourceType>::value
                   && is_space<SpaceType>::value
                   && XT::LA::is_vector<VectorType>::value,
-              std::unique_ptr<LagrangeProjectionLocalizableOperator<GridViewType,
+              std::unique_ptr<LagrangeProjectionLocalizableOperator<GridLayerType,
                                                                     SourceType,
                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
-    make_lagrange_projection_localizable_operator(const GridViewType& grid_view,
+    make_lagrange_projection_localizable_operator(const GridLayerType& grid_layer,
                                                   const SourceType& source,
                                                   DiscreteFunction<SpaceType, VectorType>& range)
 {
-  return Dune::XT::Common::make_unique<LagrangeProjectionLocalizableOperator<GridViewType,
+  return Dune::XT::Common::make_unique<LagrangeProjectionLocalizableOperator<GridLayerType,
                                                                              SourceType,
                                                                              DiscreteFunction<SpaceType, VectorType>>>(
-      grid_view, source, range);
+      grid_layer, source, range);
 }
 
 
@@ -72,32 +72,32 @@ template <class SourceType, class SpaceType, class VectorType>
 typename std::
     enable_if<XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
                   && XT::LA::is_vector<VectorType>::value,
-              std::unique_ptr<LagrangeProjectionLocalizableOperator<typename SpaceType::GridViewType,
+              std::unique_ptr<LagrangeProjectionLocalizableOperator<typename SpaceType::GridLayerType,
                                                                     SourceType,
                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
     make_lagrange_projection_localizable_operator(const SourceType& source,
                                                   DiscreteFunction<SpaceType, VectorType>& range)
 {
-  return Dune::XT::Common::make_unique<LagrangeProjectionLocalizableOperator<typename SpaceType::GridViewType,
+  return Dune::XT::Common::make_unique<LagrangeProjectionLocalizableOperator<typename SpaceType::GridLayerType,
                                                                              SourceType,
                                                                              DiscreteFunction<SpaceType, VectorType>>>(
-      range.space().grid_view(), source, range);
+      range.space().grid_layer(), source, range);
 }
 
 
 // forward
-template <class GridViewImp, class FieldImp = double>
+template <class GridLayerImp, class FieldImp = double>
 class LagrangeProjectionOperator;
 
 
 namespace internal {
 
 
-template <class GridViewImp, class FieldImp>
+template <class GridLayerImp, class FieldImp>
 class LagrangeProjectionOperatorTraits
 {
 public:
-  typedef LagrangeProjectionOperator<GridViewImp, FieldImp> derived_type;
+  typedef LagrangeProjectionOperator<GridLayerImp, FieldImp> derived_type;
   typedef FieldImp FieldType;
 };
 
@@ -105,25 +105,25 @@ public:
 } // namespace internal
 
 
-template <class GridViewImp, class FieldImp>
+template <class GridLayerImp, class FieldImp>
 class LagrangeProjectionOperator
-    : public OperatorInterface<internal::LagrangeProjectionOperatorTraits<GridViewImp, FieldImp>>
+    : public OperatorInterface<internal::LagrangeProjectionOperatorTraits<GridLayerImp, FieldImp>>
 {
-  typedef OperatorInterface<internal::LagrangeProjectionOperatorTraits<GridViewImp, FieldImp>> BaseType;
+  typedef OperatorInterface<internal::LagrangeProjectionOperatorTraits<GridLayerImp, FieldImp>> BaseType;
 
 public:
-  typedef internal::LagrangeProjectionOperatorTraits<GridViewImp, FieldImp> Traits;
-  typedef GridViewImp GridViewType;
+  typedef internal::LagrangeProjectionOperatorTraits<GridLayerImp, FieldImp> Traits;
+  typedef GridLayerImp GridLayerType;
   using typename BaseType::FieldType;
 
 private:
-  typedef typename XT::Grid::extract_entity_t<GridViewType> E;
-  typedef typename GridViewType::ctype D;
-  static const size_t d = GridViewType::dimension;
+  using E = XT::Grid::extract_entity_t<GridLayerType>;
+  typedef typename GridLayerType::ctype D;
+  static const size_t d = GridLayerType::dimension;
 
 public:
-  LagrangeProjectionOperator(GridViewType grid_view)
-    : grid_view_(grid_view)
+  LagrangeProjectionOperator(GridLayerType grid_layer)
+    : grid_layer_(grid_layer)
   {
   }
 
@@ -131,7 +131,7 @@ public:
   void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
              DiscreteFunction<S, V>& range) const
   {
-    make_lagrange_projection_localizable_operator(grid_view_, source, range)->apply();
+    make_lagrange_projection_localizable_operator(grid_layer_, source, range)->apply();
   }
 
   template <class RangeType, class SourceType>
@@ -158,30 +158,30 @@ public:
   }
 
 private:
-  GridViewType grid_view_;
+  GridLayerType grid_layer_;
 }; // class LagrangeProjectionOperator
 
 
-template <class GridViewType>
-typename std::enable_if<XT::Grid::is_layer<GridViewType>::value,
-                        std::unique_ptr<LagrangeProjectionOperator<GridViewType>>>::type
-make_lagrange_projection_operator(const GridViewType& grid_view)
+template <class GridLayerType>
+typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value,
+                        std::unique_ptr<LagrangeProjectionOperator<GridLayerType>>>::type
+make_lagrange_projection_operator(const GridLayerType& grid_layer)
 {
-  return Dune::XT::Common::make_unique<LagrangeProjectionOperator<GridViewType>>(grid_view);
+  return Dune::XT::Common::make_unique<LagrangeProjectionOperator<GridLayerType>>(grid_layer);
 }
 
 
-template <class GridViewType, class SourceType, class SpaceType, class VectorType>
-typename std::enable_if<XT::Grid::is_layer<GridViewType>::value
+template <class GridLayerType, class SourceType, class SpaceType, class VectorType>
+typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value
                             && XT::Functions::is_localizable_function<SourceType>::value
                             && is_space<SpaceType>::value
                             && XT::LA::is_vector<VectorType>::value,
                         void>::type
-project_lagrange(const GridViewType& grid_view,
+project_lagrange(const GridLayerType& grid_layer,
                  const SourceType& source,
                  DiscreteFunction<SpaceType, VectorType>& range)
 {
-  make_lagrange_projection_operator(grid_view)->apply(source, range);
+  make_lagrange_projection_operator(grid_layer)->apply(source, range);
 }
 
 
@@ -191,7 +191,7 @@ typename std::enable_if<XT::Functions::is_localizable_function<SourceType>::valu
                         void>::type
 project_lagrange(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range)
 {
-  make_lagrange_projection_operator(range.space().grid_view())->apply(source, range);
+  make_lagrange_projection_operator(range.space().grid_layer())->apply(source, range);
 }
 
 

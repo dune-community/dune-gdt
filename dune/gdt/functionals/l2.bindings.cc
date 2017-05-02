@@ -11,45 +11,58 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include <boost/numeric/conversion/cast.hpp>
+#include <dune/xt/common/exceptions.hh>
 
-#include <dune/pybindxi/pybind11.h>
-#include <dune/pybindxi/stl.h>
+#include <dune/common/parallel/mpihelper.hh>
 
 #if HAVE_DUNE_FEM
 #include <dune/fem/misc/mpimanager.hh>
 #endif
 
-#include <dune/xt/common/string.hh>
-#include <dune/xt/common/timedlogging.hh>
+#include <dune/pybindxi/pybind11.h>
+#include <dune/pybindxi/stl.h>
 
-namespace py = pybind11;
-using namespace pybind11::literals;
-using namespace Dune;
+#include <dune/gdt/functionals/l2.bindings.hh>
 
 
-PYBIND11_PLUGIN(__bindings)
+PYBIND11_PLUGIN(__functionals_l2)
 {
-  py::module m("__bindings", "dune-gdt: main");
+  namespace py = pybind11;
+  using namespace pybind11::literals;
+
+  py::module m("__functionals_l2", "dune-gdt: l2 functionals");
 
   py::module::import("dune.xt.common");
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
   py::module::import("dune.xt.la");
 
-  m.def("init_mpi",
+// alu_fem_istl.cc
+#if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_ISTL
+  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, leaf, part, cg, fem, 1, istl_sparse);
+  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, level, part, cg, fem, 1, istl_sparse);
+  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, dd_subdomain, part, cg, fem, 1, istl_sparse);
+#endif
+
+// yasp_fem_istl.cc
+#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
+  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, leaf, part, cg, fem, 1, istl_sparse);
+  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, level, part, cg, fem, 1, istl_sparse);
+  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, dd_subdomain, part, cg, fem, 1, istl_sparse);
+#endif
+
+  m.def("_init_mpi",
         [](const std::vector<std::string>& args) {
           int argc = boost::numeric_cast<int>(args.size());
           char** argv = Dune::XT::Common::vector_to_main_args(args);
+          Dune::MPIHelper::instance(argc, argv);
 #if HAVE_DUNE_FEM
           Dune::Fem::MPIManager::initialize(argc, argv);
-#else
-          Dune::MPIHelper::instance(argc, argv);
 #endif
         },
         "args"_a = std::vector<std::string>());
 
-  m.def("init_logger",
+  m.def("_init_logger",
         [](const ssize_t max_info_level,
            const ssize_t max_debug_level,
            const bool enable_warnings,
@@ -70,6 +83,5 @@ PYBIND11_PLUGIN(__bindings)
 
   return m.ptr();
 }
-
 
 #endif // HAVE_DUNE_PYBINDXI

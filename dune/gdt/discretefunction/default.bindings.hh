@@ -110,7 +110,7 @@ private:
 public:
   typedef pybind11::class_<type, BaseType> bound_type;
 
-  static bound_type bind(pybind11::module& m, const std::string& space_id, const std::string& la_id)
+  static bound_type bind(pybind11::module& m)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -134,6 +134,12 @@ public:
           "filename"_a,
           "subsampling"_a = (S::polOrder > 1));
 
+    m.def(std::string("make_discrete_function_" + XT::LA::bindings::container_name<V>::value()).c_str(),
+          [](const S& space, const std::string& name) { return make_discrete_function<V>(space, name); },
+          "space"_a,
+          "name"_a = "gdt.discretefunction",
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
     m.def(
         std::string("make_discrete_function").c_str(),
         [](const S& space, V& vector, const std::string& name) { return make_discrete_function(space, vector, name); },
@@ -164,13 +170,22 @@ public:
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG(_m, _GRID, _layer, _p, _r, _rC, _la)                            \
   Dune::GDT::bindings::ConstDiscreteFunction<Dune::GDT::CgSpaceProvider<_GRID,                                         \
                                                                         Dune::XT::Grid::Layers::_layer,                \
-                                                                        Dune::GDT::ChooseSpaceBackend::fem,            \
+                                                                        Dune::GDT::Backends::fem,                      \
                                                                         _p,                                            \
                                                                         double,                                        \
                                                                         _r,                                            \
                                                                         _rC>,                                          \
                                              typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::   \
-                                                 VectorType>::bind(_m)
+                                                 VectorType>::bind(_m);                                                \
+  Dune::GDT::bindings::                                                                                                \
+      DiscreteFunction<Dune::GDT::CgSpaceProvider<_GRID,                                                               \
+                                                  Dune::XT::Grid::Layers::_layer,                                      \
+                                                  Dune::GDT::Backends::fem,                                            \
+                                                  _p,                                                                  \
+                                                  double,                                                              \
+                                                  _r,                                                                  \
+                                                  _rC>,                                                                \
+                       typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
 
 //#if HAVE_ALBERTA
 //#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_ALBERTA(_m, _layer, _p, _la)                                  \
@@ -194,6 +209,7 @@ public:
 //#endif
 
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_YASP(_m, _layer, _p, _la)                                       \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la);               \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la)
 
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_ALL(_m, _layer, _p, _la)                                        \
@@ -207,13 +223,22 @@ public:
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG(_m, _GRID, _layer, _p, _r, _rC, _la)                            \
   Dune::GDT::bindings::ConstDiscreteFunction<Dune::GDT::DgSpaceProvider<_GRID,                                         \
                                                                         Dune::XT::Grid::Layers::_layer,                \
-                                                                        Dune::GDT::ChooseSpaceBackend::fem,            \
+                                                                        Dune::GDT::Backends::fem,                      \
                                                                         _p,                                            \
                                                                         double,                                        \
                                                                         _r,                                            \
                                                                         _rC>,                                          \
                                              typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::   \
-                                                 VectorType>::bind(_m)
+                                                 VectorType>::bind(_m);                                                \
+  Dune::GDT::bindings::                                                                                                \
+      DiscreteFunction<Dune::GDT::DgSpaceProvider<_GRID,                                                               \
+                                                  Dune::XT::Grid::Layers::_layer,                                      \
+                                                  Dune::GDT::Backends::fem,                                            \
+                                                  _p,                                                                  \
+                                                  double,                                                              \
+                                                  _r,                                                                  \
+                                                  _rC>,                                                                \
+                       typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
 
 //#if HAVE_ALBERTA
 //#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALBERTA(_m, _layer, _p, _la)                                  \
@@ -237,6 +262,7 @@ public:
 //#endif
 
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_YASP(_m, _layer, _p, _la)                                       \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la);               \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la)
 
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALL(_m, _layer, _p, _la)                                        \
@@ -267,12 +293,20 @@ public:
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV(_m, _GRID, _layer, _r, _rC, _la)                                \
   Dune::GDT::bindings::ConstDiscreteFunction<Dune::GDT::FvSpaceProvider<_GRID,                                         \
                                                                         Dune::XT::Grid::Layers::_layer,                \
-                                                                        Dune::GDT::ChooseSpaceBackend::gdt,            \
+                                                                        Dune::GDT::Backends::gdt,                      \
                                                                         double,                                        \
                                                                         _r,                                            \
                                                                         _rC>,                                          \
                                              typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::   \
-                                                 VectorType>::bind(_m)
+                                                 VectorType>::bind(_m);                                                \
+  Dune::GDT::bindings::                                                                                                \
+      DiscreteFunction<Dune::GDT::FvSpaceProvider<_GRID,                                                               \
+                                                  Dune::XT::Grid::Layers::_layer,                                      \
+                                                  Dune::GDT::Backends::gdt,                                            \
+                                                  double,                                                              \
+                                                  _r,                                                                  \
+                                                  _rC>,                                                                \
+                       typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
 
 //#if HAVE_ALBERTA
 //#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_ALBERTA(_m, _layer, _la)                                      \
@@ -296,6 +330,7 @@ public:
 //#endif
 
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_YASP(_m, _layer, _la)                                           \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, 1, 1, _la);                   \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1, _la)
 
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_ALL(_m, _layer, _la)                                            \
@@ -317,7 +352,16 @@ public:
 //#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG(_m, _GRID, _layer, _p, _r, _rC, _la)                       \
 //  Dune::GDT::bindings::ConstDiscreteFunction<Dune::GDT::CgSpaceProvider<_GRID,                                       \
 //                                                                        Dune::XT::Grid::Layers::_layer,              \
-//                                                                        Dune::GDT::ChooseSpaceBackend::pdelab,       \
+//                                                                        Dune::GDT::Backends::pdelab,                 \
+//                                                                        _p,                                          \
+//                                                                        double,                                      \
+//                                                                        _r,                                          \
+//                                                                        _rC>,                                        \
+//                                             typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>:: \
+//                                                 VectorType>::bind(_m);                                              \
+//  Dune::GDT::bindings::DiscreteFunction<Dune::GDT::CgSpaceProvider<_GRID,                                            \
+//                                                                        Dune::XT::Grid::Layers::_layer,              \
+//                                                                        Dune::GDT::Backends::pdelab,                 \
 //                                                                        _p,                                          \
 //                                                                        double,                                      \
 //                                                                        _r,                                          \
@@ -347,6 +391,7 @@ public:
 ////#endif
 
 //#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_YASP(_m, _layer, _p, _la)                                  \
+//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la);\
 //  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la)
 
 //#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_ALL(_m, _layer, _p, _la)                                   \

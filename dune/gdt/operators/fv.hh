@@ -255,9 +255,9 @@ template <class AnalyticalFluxImp,
           class SourceImp,
           class RangeImp>
 class AdvectionLocalizableDefault
-    : public Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp>
+    : public Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridLayerType, SourceImp, RangeImp>
 {
-  typedef Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp> BaseType;
+  typedef Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridLayerType, SourceImp, RangeImp> BaseType;
 
   static_assert(is_analytical_flux<AnalyticalFluxImp>::value,
                 "AnalyticalFluxImp has to be derived from AnalyticalFluxInterface!");
@@ -278,8 +278,8 @@ public:
   typedef SourceImp SourceType;
   typedef RangeImp RangeType;
   typedef typename SourceType::RangeFieldType RangeFieldType;
-  typedef typename RangeType::SpaceType::GridViewType GridViewType;
-  static const size_t dimDomain = GridViewType::dimension;
+  typedef typename RangeType::SpaceType::GridLayerType GridLayerType;
+  static const size_t dimDomain = GridLayerType::dimension;
   typedef typename Dune::GDT::LocalCouplingFvOperator<NumericalCouplingFluxType> LocalCouplingOperatorType;
   typedef typename Dune::GDT::LocalBoundaryFvOperator<NumericalBoundaryFluxType> LocalBoundaryOperatorType;
 
@@ -297,9 +297,9 @@ public:
                                boundary_values,
                                std::forward<LocalOperatorArgTypes>(local_operator_args)...)
   {
-    this->append(local_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
-    this->append(local_operator_, new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GridViewType>());
-    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GridViewType>());
+    this->append(local_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
+    this->append(local_operator_, new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GridLayerType>());
+    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GridLayerType>());
   }
 
 private:
@@ -310,9 +310,9 @@ private:
 
 template <class SourceImp, class RangeImp, class BoundaryValueFunctionImp, class MatrixImp, SlopeLimiters slope_limiter>
 class LinearReconstructionLocalizable
-    : public Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp>
+    : public Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridLayerType, SourceImp, RangeImp>
 {
-  typedef Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridViewType, SourceImp, RangeImp> BaseType;
+  typedef Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridLayerType, SourceImp, RangeImp> BaseType;
   typedef LinearReconstructionLocalizable<SourceImp, RangeImp, BoundaryValueFunctionImp, MatrixImp, slope_limiter>
       ThisType;
 
@@ -322,8 +322,8 @@ public:
   typedef BoundaryValueFunctionImp BoundaryValueFunctionType;
   typedef MatrixImp MatrixType;
   typedef typename SourceType::RangeFieldType RangeFieldType;
-  typedef typename RangeType::SpaceType::GridViewType GridViewType;
-  static const size_t dimDomain = GridViewType::dimension;
+  typedef typename RangeType::SpaceType::GridLayerType GridLayerType;
+  static const size_t dimDomain = GridLayerType::dimension;
   typedef typename Dune::GDT::LocalReconstructionFvOperator<MatrixType, BoundaryValueFunctionType, slope_limiter>
       LocalOperatorType;
 
@@ -434,14 +434,14 @@ struct AdvectionOperatorApplier
     const auto quadrature_rule = Dune::QuadratureRules<RangeFieldType, GridViewType::dimension - 1>::rule(
         grid_view.ibegin(*(grid_view.template begin<0>()))->geometry().type(), 0);
     if (use_linear_reconstruction) {
-      typedef DunePdelabDgProductSpaceWrapper<GridViewType,
+      typedef DunePdelabDgProductSpaceWrapper<typename SourceType::SpaceType::GridLayerType,
                                               1, // polOrder
                                               RangeFieldType,
                                               dimRange,
                                               dimRangeCols>
           DGSpaceType;
       typedef DiscreteFunction<DGSpaceType, typename SourceType::VectorType> ReconstructedDiscreteFunctionType;
-      const auto dg_space = Dune::XT::Common::make_unique<const DGSpaceType>(range.space().grid_view());
+      const auto dg_space = Dune::XT::Common::make_unique<const DGSpaceType>(range.space().grid_layer());
       const auto reconstruction =
           Dune::XT::Common::make_unique<ReconstructedDiscreteFunctionType>(*dg_space, "reconstructed");
       LinearReconstructionLocalizable<SourceType,

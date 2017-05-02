@@ -48,12 +48,13 @@ public:
   static const constexpr NumericalFluxes numerical_flux_type = numerical_flux;
   static const constexpr TimeStepperMethods time_stepper_type = time_stepper_method;
 
-  typedef typename XT::Grid::PeriodicGridView<typename XT::Grid::GridProvider<GridType>::LevelGridViewType> GridViewImp;
+  typedef typename XT::Grid::PeriodicGridView<typename XT::Grid::GridProvider<GridType>::LevelGridLayerType>
+      GridLayerImp;
   typedef Dune::
-      GridView<XT::Grid::internal::PeriodicGridViewTraits<typename XT::Grid::GridProvider<GridType>::LevelGridViewType,
+      GridView<XT::Grid::internal::PeriodicGridViewTraits<typename XT::Grid::GridProvider<GridType>::LevelGridLayerType,
                                                           false>>
-          GridViewType;
-  typedef FvProductSpace<GridViewType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;
+          GridLayerType;
+  typedef FvProductSpace<GridLayerType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;
   typedef HyperbolicFVDefaultDiscretization<TestCaseType,
                                             FVSpaceType,
                                             numerical_flux,
@@ -74,9 +75,9 @@ public:
   {
     auto logger = XT::Common::TimedLogger().get(static_id());
     logger.info() << "Creating space... " << std::endl;
-    GridViewImp imp(grid_provider.level_view(level), periodic_directions);
-    auto space = std::make_shared<const FVSpaceType>(GridViewType(imp));
-    logger.debug() << "grid has " << space->grid_view().indexSet().size(0) << " elements" << std::endl;
+    GridLayerImp imp(grid_provider.level_view(level), periodic_directions);
+    auto space = std::make_shared<const FVSpaceType>(GridLayerType(imp));
+    logger.debug() << "grid has " << space->grid_layer().indexSet().size(0) << " elements" << std::endl;
     return DiscretizationType(test_case, space);
   } // ... discretize(...)
 }; // class HyperbolicFvDiscretizer

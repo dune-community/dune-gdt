@@ -10,6 +10,7 @@
 #ifndef DUNE_GDT_SPACES_TH_DUNE_PDELAB_WRAPPER_HH
 #define DUNE_GDT_SPACES_TH_DUNE_PDELAB_WRAPPER_HH
 
+#include <dune/gdt/spaces/cg/dune-pdelab-wrapper.hh>
 #include <dune/gdt/spaces/product.hh>
 
 namespace Dune {
@@ -21,10 +22,13 @@ class DunePdelabTaylorHoodSpaceWrapper
     : public DefaultProductSpace<DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, domainDim, 1>,
                                  DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder - 1, RangeFieldImp, 1, 1>>
 {
+  static_assert(polynomialOrder > 0, "");
+
 public:
   typedef DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, domainDim, 1> VelocitySpaceType;
   typedef DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder - 1, RangeFieldImp, 1, 1> PressureSpaceType;
   typedef DefaultProductSpace<VelocitySpaceType, PressureSpaceType> BaseType;
+
   DunePdelabTaylorHoodSpaceWrapper(const GridViewImp& grid_view)
     : BaseType(VelocitySpaceType(grid_view), PressureSpaceType(grid_view))
   {

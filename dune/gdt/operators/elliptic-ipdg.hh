@@ -12,7 +12,7 @@
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_OPERATORS_ELLIPTIC_IPDG_HH
 
 #include <dune/xt/grid/boundaryinfo.hh>
-#include <dune/xt/grid/intersection.hh>
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/local/operators/integrals.hh>
@@ -34,19 +34,20 @@ template <class DiffusionFactorType,
           class RangeSpace,
           LocalEllipticIpdgIntegrands::Method method = LocalEllipticIpdgIntegrands::default_method,
           class Matrix = typename XT::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
-          class GridView = typename RangeSpace::GridViewType,
+          class GridLayer = typename RangeSpace::GridLayerType,
           class SourceSpace = RangeSpace,
           class Field = typename RangeSpace::RangeFieldType>
 class EllipticIpdgMatrixOperator
-    : public MatrixOperatorBase<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::face_and_volume>
+    : public MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::face_and_volume>
 {
-  typedef MatrixOperatorBase<Matrix, RangeSpace, GridView, SourceSpace, Field, ChoosePattern::face_and_volume> BaseType;
+  typedef MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::face_and_volume>
+      BaseType;
   typedef EllipticIpdgMatrixOperator<DiffusionFactorType,
                                      DiffusionTensorType,
                                      RangeSpace,
                                      method,
                                      Matrix,
-                                     GridView,
+                                     GridLayer,
                                      SourceSpace,
                                      Field>
       ThisType;
@@ -60,7 +61,7 @@ class EllipticIpdgMatrixOperator
       LocalBoundaryOperatorType;
 
 public:
-  using typename BaseType::GridViewType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::IntersectionType;
 
   /// \sa MatrixOperatorBase
@@ -89,8 +90,8 @@ public:
     , local_boundary_operator_(diffusion)
   {
     this->append(local_volume_operator_);
-    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
-    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
+    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
   }
 
   template <typename DiffusionImp,
@@ -108,8 +109,8 @@ public:
     , local_boundary_operator_(over_integrate, diffusion)
   {
     this->append(local_volume_operator_);
-    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
-    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
+    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
   }
 
   /// \}
@@ -132,8 +133,8 @@ public:
     , local_boundary_operator_(diffusion_factor, diffusion_tensor)
   {
     this->append(local_volume_operator_);
-    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
-    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
+    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
   }
 
   template <typename DiffusionFactorImp,
@@ -153,8 +154,8 @@ public:
     , local_boundary_operator_(over_integrate, diffusion_factor, diffusion_tensor)
   {
     this->append(local_volume_operator_);
-    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridViewType>());
-    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridViewType>(boundary_info));
+    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
+    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
   }
 
   /// \}
@@ -174,7 +175,7 @@ private:
 
 /**
  * \brief Creates an elliptic matrix IPDG operator (MatrixType has to be supllied, a matrix is created automatically,
- *        default IPDG method is used, source and range space are given by space, grid_view of the space is used).
+ *        default IPDG method is used, source and range space are given by space, grid_layer of the space is used).
  * \note  MatrixType has to be supplied, i.e., use like
 \code
 auto op = make_elliptic_ipdg_matrix_operator<MatrixType>(factor, tensor, boundary_info, space);
@@ -193,7 +194,7 @@ typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
 make_elliptic_ipdg_matrix_operator(
     const DiffusionFactorType& diffusion_factor,
     const DiffusionTensorType& diffusion_tensor,
-    const XT::Grid::BoundaryInfo<typename SpaceType::GridViewType::Intersection>& boundary_info,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename SpaceType::GridLayerType>>& boundary_info,
     const SpaceType& space,
     const size_t over_integrate = 0)
 {
@@ -207,7 +208,7 @@ make_elliptic_ipdg_matrix_operator(
 
 /**
  * \brief Creates an elliptic matrix IPDG operator (MatrixType has to be supllied, a matrix is created automatically,
- *        IPDG method has to be supplied, source and range space are given by space, grid_view of the space is used).
+ *        IPDG method has to be supplied, source and range space are given by space, grid_layer of the space is used).
  * \note  MatrixType and IPDG method have to be supplied, i.e., use like
 \code
 auto op = make_elliptic_ipdg_matrix_operator<MatrixType, LocalEllipticIpdgIntegrands::swipdg>(factor,
@@ -233,7 +234,7 @@ typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
 make_elliptic_ipdg_matrix_operator(
     const DiffusionFactorType& diffusion_factor,
     const DiffusionTensorType& diffusion_tensor,
-    const XT::Grid::BoundaryInfo<typename SpaceType::GridViewType::Intersection>& boundary_info,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename SpaceType::GridLayerType>>& boundary_info,
     const SpaceType& space,
     const size_t over_integrate = 0)
 {
@@ -247,35 +248,36 @@ make_elliptic_ipdg_matrix_operator(
  *        default IPDG method is used, source and range space are given by space).
  * \note  MatrixType has to be supplied, i.e., use like
 \code
-auto op = make_elliptic_ipdg_matrix_operator<MatrixType>(factor, tensor, boundary_info, space, grid_view);
+auto op = make_elliptic_ipdg_matrix_operator<MatrixType>(factor, tensor, boundary_info, space, grid_layer);
 \endcode
  */
-template <class MatrixType, class DiffusionFactorType, class DiffusionTensorType, class SpaceType, class GridViewType>
+template <class MatrixType, class DiffusionFactorType, class DiffusionTensorType, class SpaceType, class GridLayerType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
                             && is_space<SpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                    DiffusionTensorType,
                                                                    SpaceType,
                                                                    LocalEllipticIpdgIntegrands::default_method,
                                                                    MatrixType,
-                                                                   GridViewType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionFactorType& diffusion_factor,
-                                   const DiffusionTensorType& diffusion_tensor,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   const SpaceType& space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+                                                                   GridLayerType>>>::type
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionFactorType& diffusion_factor,
+    const DiffusionTensorType& diffusion_tensor,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    const SpaceType& space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                   DiffusionTensorType,
                                                                   SpaceType,
                                                                   LocalEllipticIpdgIntegrands::default_method,
                                                                   MatrixType,
-                                                                  GridViewType>>(
-      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, space, grid_view);
+                                                                  GridLayerType>>(
+      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, space, grid_layer);
 }
 
 /**
@@ -287,7 +289,7 @@ auto op = make_elliptic_ipdg_matrix_operator<MatrixType, LocalEllipticIpdgIntegr
                                                                                               tensor,
                                                                                               boundary_info,
                                                                                               space,
-                                                                                              grid_view);
+                                                                                              grid_layer);
 \endcode
  */
 template <class MatrixType,
@@ -295,32 +297,33 @@ template <class MatrixType,
           class DiffusionFactorType,
           class DiffusionTensorType,
           class SpaceType,
-          class GridViewType>
+          class GridLayerType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
                             && is_space<SpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                    DiffusionTensorType,
                                                                    SpaceType,
                                                                    method,
                                                                    MatrixType,
-                                                                   GridViewType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionFactorType& diffusion_factor,
-                                   const DiffusionTensorType& diffusion_tensor,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   const SpaceType& space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+                                                                   GridLayerType>>>::type
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionFactorType& diffusion_factor,
+    const DiffusionTensorType& diffusion_tensor,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    const SpaceType& space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                   DiffusionTensorType,
                                                                   SpaceType,
                                                                   method,
                                                                   MatrixType,
-                                                                  GridViewType>>(
-      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, space, grid_view);
+                                                                  GridLayerType>>(
+      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, space, grid_layer);
 }
 
 /**
@@ -333,7 +336,7 @@ auto op = make_elliptic_ipdg_matrix_operator<MatrixType>(factor,
                                                          boundary_info,
                                                          range_space,
                                                          source_space,
-                                                         grid_view);
+                                                         grid_layer);
 \endcode
  */
 template <class MatrixType,
@@ -341,36 +344,37 @@ template <class MatrixType,
           class DiffusionTensorType,
           class RangeSpaceType,
           class SourceSpaceType,
-          class GridViewType>
+          class GridLayerType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
                             && is_space<RangeSpaceType>::value
                             && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                    DiffusionTensorType,
                                                                    RangeSpaceType,
                                                                    LocalEllipticIpdgIntegrands::default_method,
                                                                    MatrixType,
-                                                                   GridViewType,
+                                                                   GridLayerType,
                                                                    SourceSpaceType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionFactorType& diffusion_factor,
-                                   const DiffusionTensorType& diffusion_tensor,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   const RangeSpaceType& range_space,
-                                   const SourceSpaceType& source_space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionFactorType& diffusion_factor,
+    const DiffusionTensorType& diffusion_tensor,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    const RangeSpaceType& range_space,
+    const SourceSpaceType& source_space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                   DiffusionTensorType,
                                                                   RangeSpaceType,
                                                                   LocalEllipticIpdgIntegrands::default_method,
                                                                   MatrixType,
-                                                                  GridViewType,
+                                                                  GridLayerType,
                                                                   SourceSpaceType>>(
-      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, range_space, source_space, grid_view);
+      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, range_space, source_space, grid_layer);
 }
 
 /**
@@ -383,7 +387,7 @@ auto op = make_elliptic_ipdg_matrix_operator<MatrixType, LocalEllipticIpdgIntegr
                                                                                               boundary_info,
                                                                                               range_space,
                                                                                               source_space,
-                                                                                              grid_view);
+                                                                                              grid_layer);
 \endcode
  */
 template <class MatrixType,
@@ -392,43 +396,44 @@ template <class MatrixType,
           class DiffusionTensorType,
           class RangeSpaceType,
           class SourceSpaceType,
-          class GridViewType>
+          class GridLayerType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
                             && is_space<RangeSpaceType>::value
                             && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                    DiffusionTensorType,
                                                                    RangeSpaceType,
                                                                    method,
                                                                    MatrixType,
-                                                                   GridViewType,
+                                                                   GridLayerType,
                                                                    SourceSpaceType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionFactorType& diffusion_factor,
-                                   const DiffusionTensorType& diffusion_tensor,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   const RangeSpaceType& range_space,
-                                   const SourceSpaceType& source_space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionFactorType& diffusion_factor,
+    const DiffusionTensorType& diffusion_tensor,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    const RangeSpaceType& range_space,
+    const SourceSpaceType& source_space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                   DiffusionTensorType,
                                                                   RangeSpaceType,
                                                                   method,
                                                                   MatrixType,
-                                                                  GridViewType,
+                                                                  GridLayerType,
                                                                   SourceSpaceType>>(
-      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, range_space, source_space, grid_view);
+      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, range_space, source_space, grid_layer);
 }
 
 // both diffusion factor and tensor, with matrix
 
 /**
  * \brief Creates an elliptic matrix IPDG operator (default IPDG method is used, source and range space are given by
- *        space, grid_view of the space is used).
+ *        space, grid_layer of the space is used).
  */
 template <class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class SpaceType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
@@ -443,7 +448,7 @@ typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorTy
 make_elliptic_ipdg_matrix_operator(
     const DiffusionFactorType& diffusion_factor,
     const DiffusionTensorType& diffusion_tensor,
-    const XT::Grid::BoundaryInfo<typename SpaceType::GridViewType::Intersection>& boundary_info,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename SpaceType::GridLayerType>>& boundary_info,
     MatrixType& matrix,
     const SpaceType& space,
     const size_t over_integrate = 0)
@@ -458,7 +463,7 @@ make_elliptic_ipdg_matrix_operator(
 
 /**
  * \brief Creates an elliptic matrix IPDG operator (IPDG method has to be supplied, source and range space are given by
- *        space, grid_view of the space is used).
+ *        space, grid_layer of the space is used).
  * \note  IPDG method has to be supplied, i.e., use like
 \code
 auto op = make_elliptic_ipdg_matrix_operator<LocalEllipticIpdgIntegrands::swipdg>(factor,
@@ -485,7 +490,7 @@ typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorTy
 make_elliptic_ipdg_matrix_operator(
     const DiffusionFactorType& diffusion_factor,
     const DiffusionTensorType& diffusion_tensor,
-    const XT::Grid::BoundaryInfo<typename SpaceType::GridViewType::Intersection>& boundary_info,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename SpaceType::GridLayerType>>& boundary_info,
     MatrixType& matrix,
     const SpaceType& space,
     const size_t over_integrate = 0)
@@ -499,33 +504,34 @@ make_elliptic_ipdg_matrix_operator(
  * \brief Creates an elliptic matrix IPDG operator (default IPDG method is used, source and range space are given by
  *        space).
  */
-template <class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class SpaceType, class GridViewType>
+template <class DiffusionFactorType, class DiffusionTensorType, class MatrixType, class SpaceType, class GridLayerType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
                             && XT::LA::is_matrix<MatrixType>::value
                             && is_space<SpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                    DiffusionTensorType,
                                                                    SpaceType,
                                                                    LocalEllipticIpdgIntegrands::default_method,
                                                                    MatrixType,
-                                                                   GridViewType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionFactorType& diffusion_factor,
-                                   const DiffusionTensorType& diffusion_tensor,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   MatrixType& matrix,
-                                   const SpaceType& space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+                                                                   GridLayerType>>>::type
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionFactorType& diffusion_factor,
+    const DiffusionTensorType& diffusion_tensor,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    MatrixType& matrix,
+    const SpaceType& space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                   DiffusionTensorType,
                                                                   SpaceType,
                                                                   LocalEllipticIpdgIntegrands::default_method,
                                                                   MatrixType,
-                                                                  GridViewType>>(
-      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, space, grid_view);
+                                                                  GridLayerType>>(
+      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, space, grid_layer);
 }
 
 /**
@@ -538,7 +544,7 @@ auto op = make_elliptic_ipdg_matrix_operator<LocalEllipticIpdgIntegrands::swipdg
                                                                                   boundary_info,
                                                                                   matrix,
                                                                                   space,
-                                                                                  grid_view);
+                                                                                  grid_layer);
 \endcode
  */
 template <LocalEllipticIpdgIntegrands::Method method,
@@ -546,33 +552,34 @@ template <LocalEllipticIpdgIntegrands::Method method,
           class DiffusionTensorType,
           class MatrixType,
           class SpaceType,
-          class GridViewType>
+          class GridLayerType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
                             && XT::LA::is_matrix<MatrixType>::value
                             && is_space<SpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                    DiffusionTensorType,
                                                                    SpaceType,
                                                                    method,
                                                                    MatrixType,
-                                                                   GridViewType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionFactorType& diffusion_factor,
-                                   const DiffusionTensorType& diffusion_tensor,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   MatrixType& matrix,
-                                   const SpaceType& space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+                                                                   GridLayerType>>>::type
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionFactorType& diffusion_factor,
+    const DiffusionTensorType& diffusion_tensor,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    MatrixType& matrix,
+    const SpaceType& space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                   DiffusionTensorType,
                                                                   SpaceType,
                                                                   method,
                                                                   MatrixType,
-                                                                  GridViewType>>(
-      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, space, grid_view);
+                                                                  GridLayerType>>(
+      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, space, grid_layer);
 }
 
 /**
@@ -583,37 +590,38 @@ template <class DiffusionFactorType,
           class MatrixType,
           class RangeSpaceType,
           class SourceSpaceType,
-          class GridViewType>
+          class GridLayerType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
                             && XT::LA::is_matrix<MatrixType>::value
                             && is_space<RangeSpaceType>::value
                             && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                    DiffusionTensorType,
                                                                    RangeSpaceType,
                                                                    LocalEllipticIpdgIntegrands::default_method,
                                                                    MatrixType,
-                                                                   GridViewType,
+                                                                   GridLayerType,
                                                                    SourceSpaceType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionFactorType& diffusion_factor,
-                                   const DiffusionTensorType& diffusion_tensor,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   MatrixType& matrix,
-                                   const RangeSpaceType& range_space,
-                                   const SourceSpaceType& source_space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionFactorType& diffusion_factor,
+    const DiffusionTensorType& diffusion_tensor,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    MatrixType& matrix,
+    const RangeSpaceType& range_space,
+    const SourceSpaceType& source_space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                   DiffusionTensorType,
                                                                   RangeSpaceType,
                                                                   LocalEllipticIpdgIntegrands::default_method,
                                                                   MatrixType,
-                                                                  GridViewType,
+                                                                  GridLayerType,
                                                                   SourceSpaceType>>(
-      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, range_space, source_space, grid_view);
+      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, range_space, source_space, grid_layer);
 }
 
 /**
@@ -626,7 +634,7 @@ auto op = make_elliptic_ipdg_matrix_operator<LocalEllipticIpdgIntegrands::swipdg
                                                                                   matrix,
                                                                                   range_space,
                                                                                   source_space,
-                                                                                  grid_view);
+                                                                                  grid_layer);
 \endcode
  */
 template <LocalEllipticIpdgIntegrands::Method method,
@@ -635,44 +643,45 @@ template <LocalEllipticIpdgIntegrands::Method method,
           class MatrixType,
           class RangeSpaceType,
           class SourceSpaceType,
-          class GridViewType>
+          class GridLayerType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionFactorType>::value
                             && XT::Functions::is_localizable_function<DiffusionTensorType>::value
                             && XT::LA::is_matrix<MatrixType>::value
                             && is_space<RangeSpaceType>::value
                             && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                    DiffusionTensorType,
                                                                    RangeSpaceType,
                                                                    method,
                                                                    MatrixType,
-                                                                   GridViewType,
+                                                                   GridLayerType,
                                                                    SourceSpaceType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionFactorType& diffusion_factor,
-                                   const DiffusionTensorType& diffusion_tensor,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   MatrixType& matrix,
-                                   const RangeSpaceType& range_space,
-                                   const SourceSpaceType& source_space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionFactorType& diffusion_factor,
+    const DiffusionTensorType& diffusion_tensor,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    MatrixType& matrix,
+    const RangeSpaceType& range_space,
+    const SourceSpaceType& source_space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionFactorType,
                                                                   DiffusionTensorType,
                                                                   RangeSpaceType,
                                                                   method,
                                                                   MatrixType,
-                                                                  GridViewType,
+                                                                  GridLayerType,
                                                                   SourceSpaceType>>(
-      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, range_space, source_space, grid_view);
+      over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, range_space, source_space, grid_layer);
 }
 
 // single diffusion, without matrix
 
 /**
  * \brief Creates an elliptic matrix IPDG operator (MatrixType has to be supllied, a matrix is created automatically,
- *        default IPDG method is used, source and range space are given by space, grid_view of the space is used).
+ *        default IPDG method is used, source and range space are given by space, grid_layer of the space is used).
  * \note  MatrixType has to be supplied, i.e., use like
 \code
 auto op = make_elliptic_ipdg_matrix_operator<MatrixType>(diffusion, boundary_info, space);
@@ -689,7 +698,7 @@ typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                                                                    MatrixType>>>::type
 make_elliptic_ipdg_matrix_operator(
     const DiffusionType& diffusion,
-    const XT::Grid::BoundaryInfo<typename SpaceType::GridViewType::Intersection>& boundary_info,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename SpaceType::GridLayerType>>& boundary_info,
     const SpaceType& space,
     const size_t over_integrate = 0)
 {
@@ -703,7 +712,7 @@ make_elliptic_ipdg_matrix_operator(
 
 /**
  * \brief Creates an elliptic matrix IPDG operator (MatrixType has to be supllied, a matrix is created automatically,
- *        IPDG method has to be supplied, source and range space are given by space, grid_view of the space is used).
+ *        IPDG method has to be supplied, source and range space are given by space, grid_layer of the space is used).
  * \note  MatrixType and IPDG method have to be supplied, i.e., use like
 \code
 auto op = make_elliptic_ipdg_matrix_operator<MatrixType, LocalEllipticIpdgIntegrands::swipdg>(diffusion,
@@ -718,7 +727,8 @@ typename std::
               std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType>>>::type
     make_elliptic_ipdg_matrix_operator(
         const DiffusionType& diffusion,
-        const XT::Grid::BoundaryInfo<typename SpaceType::GridViewType::Intersection>& boundary_info,
+        const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename SpaceType::GridLayerType>>&
+            boundary_info,
         const SpaceType& space,
         const size_t over_integrate = 0)
 {
@@ -731,33 +741,34 @@ typename std::
  *        default IPDG method is used, source and range space are given by space).
  * \note  MatrixType has to be supplied, i.e., use like
 \code
-auto op = make_elliptic_ipdg_matrix_operator<MatrixType>(diffusion, boundary_info, space, grid_view);
+auto op = make_elliptic_ipdg_matrix_operator<MatrixType>(diffusion, boundary_info, space, grid_layer);
 \endcode
  */
-template <class MatrixType, class DiffusionType, class SpaceType, class GridViewType>
+template <class MatrixType, class DiffusionType, class SpaceType, class GridLayerType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionType>::value
                             && is_space<SpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
                                                                    void,
                                                                    SpaceType,
                                                                    LocalEllipticIpdgIntegrands::default_method,
                                                                    MatrixType,
-                                                                   GridViewType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionType& diffusion,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   const SpaceType& space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+                                                                   GridLayerType>>>::type
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionType& diffusion,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    const SpaceType& space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionType,
                                                                   void,
                                                                   SpaceType,
                                                                   LocalEllipticIpdgIntegrands::default_method,
                                                                   MatrixType,
-                                                                  GridViewType>>(
-      over_integrate, boundary_info, diffusion, space, grid_view);
+                                                                  GridLayerType>>(
+      over_integrate, boundary_info, diffusion, space, grid_layer);
 }
 
 /**
@@ -768,33 +779,34 @@ make_elliptic_ipdg_matrix_operator(const DiffusionType& diffusion,
 auto op = make_elliptic_ipdg_matrix_operator<MatrixType, LocalEllipticIpdgIntegrands::swipdg>(diffusion,
                                                                                               boundary_info,
                                                                                               space,
-                                                                                              grid_view);
+                                                                                              grid_layer);
 \endcode
  */
 template <class MatrixType,
           LocalEllipticIpdgIntegrands::Method method,
           class DiffusionType,
           class SpaceType,
-          class GridViewType>
+          class GridLayerType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionType>::value
                             && is_space<SpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
                                                                    void,
                                                                    SpaceType,
                                                                    method,
                                                                    MatrixType,
-                                                                   GridViewType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionType& diffusion,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   const SpaceType& space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+                                                                   GridLayerType>>>::type
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionType& diffusion,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    const SpaceType& space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::
-      make_unique<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType, GridViewType>>(
-          over_integrate, boundary_info, diffusion, space, grid_view);
+      make_unique<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType, GridLayerType>>(
+          over_integrate, boundary_info, diffusion, space, grid_layer);
 }
 
 /**
@@ -806,37 +818,38 @@ auto op = make_elliptic_ipdg_matrix_operator<MatrixType>(diffusion,
                                                          boundary_info,
                                                          range_space,
                                                          source_space,
-                                                         grid_view);
+                                                         grid_layer);
 \endcode
  */
-template <class MatrixType, class DiffusionType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
+template <class MatrixType, class DiffusionType, class RangeSpaceType, class SourceSpaceType, class GridLayerType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionType>::value
                             && is_space<RangeSpaceType>::value
                             && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
                                                                    void,
                                                                    RangeSpaceType,
                                                                    LocalEllipticIpdgIntegrands::default_method,
                                                                    MatrixType,
-                                                                   GridViewType,
+                                                                   GridLayerType,
                                                                    SourceSpaceType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionType& diffusion,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   const RangeSpaceType& range_space,
-                                   const SourceSpaceType& source_space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionType& diffusion,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    const RangeSpaceType& range_space,
+    const SourceSpaceType& source_space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionType,
                                                                   void,
                                                                   RangeSpaceType,
                                                                   LocalEllipticIpdgIntegrands::default_method,
                                                                   MatrixType,
-                                                                  GridViewType,
+                                                                  GridLayerType,
                                                                   SourceSpaceType>>(
-      over_integrate, boundary_info, diffusion, range_space, source_space, grid_view);
+      over_integrate, boundary_info, diffusion, range_space, source_space, grid_layer);
 }
 
 /**
@@ -848,7 +861,7 @@ auto op = make_elliptic_ipdg_matrix_operator<MatrixType, LocalEllipticIpdgIntegr
                                                                                               boundary_info,
                                                                                               range_space,
                                                                                               source_space,
-                                                                                              grid_view);
+                                                                                              grid_layer);
 \endcode
  */
 template <class MatrixType,
@@ -856,41 +869,42 @@ template <class MatrixType,
           class DiffusionType,
           class RangeSpaceType,
           class SourceSpaceType,
-          class GridViewType>
+          class GridLayerType>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
                             && XT::Functions::is_localizable_function<DiffusionType>::value
                             && is_space<RangeSpaceType>::value
                             && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
                                                                    void,
                                                                    RangeSpaceType,
                                                                    method,
                                                                    MatrixType,
-                                                                   GridViewType,
+                                                                   GridLayerType,
                                                                    SourceSpaceType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionType& diffusion,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   const RangeSpaceType& range_space,
-                                   const SourceSpaceType& source_space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionType& diffusion,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    const RangeSpaceType& range_space,
+    const SourceSpaceType& source_space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionType,
                                                                   void,
                                                                   RangeSpaceType,
                                                                   method,
                                                                   MatrixType,
-                                                                  GridViewType,
+                                                                  GridLayerType,
                                                                   SourceSpaceType>>(
-      over_integrate, boundary_info, diffusion, range_space, source_space, grid_view);
+      over_integrate, boundary_info, diffusion, range_space, source_space, grid_layer);
 }
 
 // single diffusion, with matrix
 
 /**
  * \brief Creates an elliptic matrix IPDG operator (default IPDG method is used, source and range space are given by
- *        space, grid_view of the space is used).
+ *        space, grid_layer of the space is used).
  */
 template <class DiffusionType, class MatrixType, class SpaceType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionType>::value
@@ -903,7 +917,7 @@ typename std::enable_if<XT::Functions::is_localizable_function<DiffusionType>::v
                                                                    MatrixType>>>::type
 make_elliptic_ipdg_matrix_operator(
     const DiffusionType& diffusion,
-    const XT::Grid::BoundaryInfo<typename SpaceType::GridViewType::Intersection>& boundary_info,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename SpaceType::GridLayerType>>& boundary_info,
     MatrixType& matrix,
     const SpaceType& space,
     const size_t over_integrate = 0)
@@ -918,7 +932,7 @@ make_elliptic_ipdg_matrix_operator(
 
 /**
  * \brief Creates an elliptic matrix IPDG operator (IPDG method has to be supplied, source and range space are given by
- *        space, grid_view of the space is used).
+ *        space, grid_layer of the space is used).
  * \note  IPDG method has to be supplied, i.e., use like
 \code
 auto op = make_elliptic_ipdg_matrix_operator<LocalEllipticIpdgIntegrands::swipdg>(diffusion,
@@ -934,7 +948,8 @@ typename std::
               std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType>>>::type
     make_elliptic_ipdg_matrix_operator(
         const DiffusionType& diffusion,
-        const XT::Grid::BoundaryInfo<typename SpaceType::GridViewType::Intersection>& boundary_info,
+        const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename SpaceType::GridLayerType>>&
+            boundary_info,
         MatrixType& matrix,
         const SpaceType& space,
         const size_t over_integrate = 0)
@@ -947,31 +962,32 @@ typename std::
  * \brief Creates an elliptic matrix IPDG operator (default IPDG method is used, source and range space are given by
  *        space).
  */
-template <class DiffusionType, class MatrixType, class SpaceType, class GridViewType>
+template <class DiffusionType, class MatrixType, class SpaceType, class GridLayerType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionType>::value
                             && XT::LA::is_matrix<MatrixType>::value
                             && is_space<SpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
                                                                    void,
                                                                    SpaceType,
                                                                    LocalEllipticIpdgIntegrands::default_method,
                                                                    MatrixType,
-                                                                   GridViewType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionType& diffusion,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   MatrixType& matrix,
-                                   const SpaceType& space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+                                                                   GridLayerType>>>::type
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionType& diffusion,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    MatrixType& matrix,
+    const SpaceType& space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionType,
                                                                   void,
                                                                   SpaceType,
                                                                   LocalEllipticIpdgIntegrands::default_method,
                                                                   MatrixType,
-                                                                  GridViewType>>(
-      over_integrate, boundary_info, diffusion, matrix, space, grid_view);
+                                                                  GridLayerType>>(
+      over_integrate, boundary_info, diffusion, matrix, space, grid_layer);
 }
 
 /**
@@ -983,68 +999,70 @@ auto op = make_elliptic_ipdg_matrix_operator<LocalEllipticIpdgIntegrands::swipdg
                                                                                   boundary_info,
                                                                                   matrix,
                                                                                   space,
-                                                                                  grid_view);
+                                                                                  grid_layer);
 \endcode
  */
 template <LocalEllipticIpdgIntegrands::Method method,
           class DiffusionType,
           class MatrixType,
           class SpaceType,
-          class GridViewType>
+          class GridLayerType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionType>::value
                             && XT::LA::is_matrix<MatrixType>::value
                             && is_space<SpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
                                                                    void,
                                                                    SpaceType,
                                                                    method,
                                                                    MatrixType,
-                                                                   GridViewType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionType& diffusion,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   MatrixType& matrix,
-                                   const SpaceType& space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+                                                                   GridLayerType>>>::type
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionType& diffusion,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    MatrixType& matrix,
+    const SpaceType& space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::
-      make_unique<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType, GridViewType>>(
-          over_integrate, boundary_info, diffusion, matrix, space, grid_view);
+      make_unique<EllipticIpdgMatrixOperator<DiffusionType, void, SpaceType, method, MatrixType, GridLayerType>>(
+          over_integrate, boundary_info, diffusion, matrix, space, grid_layer);
 }
 
 /**
  * \brief Creates an elliptic matrix IPDG operator (default IPDG method is used).
  */
-template <class DiffusionType, class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridViewType>
+template <class DiffusionType, class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridLayerType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionType>::value
                             && XT::LA::is_matrix<MatrixType>::value
                             && is_space<RangeSpaceType>::value
                             && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
                                                                    void,
                                                                    RangeSpaceType,
                                                                    LocalEllipticIpdgIntegrands::default_method,
                                                                    MatrixType,
-                                                                   GridViewType,
+                                                                   GridLayerType,
                                                                    SourceSpaceType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionType& diffusion,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   MatrixType& matrix,
-                                   const RangeSpaceType& range_space,
-                                   const SourceSpaceType& source_space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionType& diffusion,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    MatrixType& matrix,
+    const RangeSpaceType& range_space,
+    const SourceSpaceType& source_space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionType,
                                                                   void,
                                                                   RangeSpaceType,
                                                                   LocalEllipticIpdgIntegrands::default_method,
                                                                   MatrixType,
-                                                                  GridViewType,
+                                                                  GridLayerType,
                                                                   SourceSpaceType>>(
-      over_integrate, boundary_info, diffusion, matrix, range_space, source_space, grid_view);
+      over_integrate, boundary_info, diffusion, matrix, range_space, source_space, grid_layer);
 }
 
 /**
@@ -1056,7 +1074,7 @@ auto op = make_elliptic_ipdg_matrix_operator<LocalEllipticIpdgIntegrands::swipdg
                                                                                   matrix,
                                                                                   range_space,
                                                                                   source_space,
-                                                                                  grid_view);
+                                                                                  grid_layer);
 \endcode
  */
 template <LocalEllipticIpdgIntegrands::Method method,
@@ -1064,35 +1082,36 @@ template <LocalEllipticIpdgIntegrands::Method method,
           class MatrixType,
           class RangeSpaceType,
           class SourceSpaceType,
-          class GridViewType>
+          class GridLayerType>
 typename std::enable_if<XT::Functions::is_localizable_function<DiffusionType>::value
                             && XT::LA::is_matrix<MatrixType>::value
                             && is_space<RangeSpaceType>::value
                             && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridViewType>::value,
+                            && XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<EllipticIpdgMatrixOperator<DiffusionType,
                                                                    void,
                                                                    RangeSpaceType,
                                                                    method,
                                                                    MatrixType,
-                                                                   GridViewType,
+                                                                   GridLayerType,
                                                                    SourceSpaceType>>>::type
-make_elliptic_ipdg_matrix_operator(const DiffusionType& diffusion,
-                                   const XT::Grid::BoundaryInfo<typename GridViewType::Intersection>& boundary_info,
-                                   MatrixType& matrix,
-                                   const RangeSpaceType& range_space,
-                                   const SourceSpaceType& source_space,
-                                   const GridViewType& grid_view,
-                                   const size_t over_integrate = 0)
+make_elliptic_ipdg_matrix_operator(
+    const DiffusionType& diffusion,
+    const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
+    MatrixType& matrix,
+    const RangeSpaceType& range_space,
+    const SourceSpaceType& source_space,
+    const GridLayerType& grid_layer,
+    const size_t over_integrate = 0)
 {
   return Dune::XT::Common::make_unique<EllipticIpdgMatrixOperator<DiffusionType,
                                                                   void,
                                                                   RangeSpaceType,
                                                                   method,
                                                                   MatrixType,
-                                                                  GridViewType,
+                                                                  GridLayerType,
                                                                   SourceSpaceType>>(
-      over_integrate, boundary_info, diffusion, matrix, range_space, source_space, grid_view);
+      over_integrate, boundary_info, diffusion, matrix, range_space, source_space, grid_layer);
 }
 
 } // namespace GDT

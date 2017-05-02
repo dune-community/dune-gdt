@@ -10,6 +10,31 @@
 
 from importlib import import_module
 
+from dune.xt.common import DEBUG # inits MPI via mpi4py
+
+_init_logger_methods = list()
+_init_mpi_methods = list()
+_other_modules = ('xt.common', 'xt.grid', 'xt.functions', 'xt.la')
+
+# the following ordering is not arbitrary
+_gdt_modules = ['spaces', # is required by all others (aka: needs to be loaded first)
+                'assembler', # requires spaces and is required by others
+                'discretefunction',
+                'projections',
+                'functionals_elliptic_ipdg',
+                'functionals_l2',
+                'operators_elliptic',
+                'operators_elliptic_ipdg']
+
+for module_name in _gdt_modules:
+    mod = import_module('.__{}'.format(module_name), 'dune.gdt')
+    to_import = [name for name in mod.__dict__ if not name.startswith('_')]
+    globals().update({name: mod.__dict__[name] for name in to_import})
+    _init_logger_methods.append(mod.__dict__['_init_logger'])
+    _init_mpi_methods.append(mod.__dict__['_init_mpi'])
+
+del _gdt_modules
+
 
 def init_logger(max_info_level=-1,
                 max_debug_level=-1,
@@ -18,32 +43,34 @@ def init_logger(max_info_level=-1,
                 info_color='blue',
                 debug_color='darkgray',
                 warning_color='red'):
-    from ._gdt import init_logger as _init_logger
-    initializers = [_init_logger]
-    for module_name in ('xt.common', 'xt.grid', 'xt.functions', 'xt.la'):
+    init_logger_methods = _init_logger_methods.copy()
+    for module_name in _other_modules:
         try:
             mm = import_module('dune.{}'.format(module_name))
-            initializers.append(mm.init_logger)
+            for init_logger_method in mm._init_logger_methods:
+                init_logger_methods.append(init_logger_method)
         except ModuleNotFoundError:
             pass
-    for initializer in initializers:
-        initializer(max_info_level, max_debug_level, enable_warnings, enable_colors, info_color, debug_color,
-                        warning_color)
+    for init_logger_method in init_logger_methods:
+        init_logger_method(max_info_level, max_debug_level, enable_warnings, enable_colors, info_color, debug_color,
+                           warning_color)
+
+def init_mpi(args=list()):
+    if DEBUG:
+        init_mpi_methods = [_init_mpi_methods[0],]
+    else:
+        init_mpi_methods = _init_mpi_methods.copy()
+        for module_name in _other_modules:
+            try:
+                mm = import_module('dune.{}'.format(module_name))
+                for init_mpi_method in mm._init_mpi_methods:
+                    init_mpi_methods.append(init_mpi_method)
+            except ModuleNotFoundError:
+                pass
+    for init_mpi_method in init_mpi_methods:
+        init_mpi_method(args)
 
 
-modules = ['assembler', 'discretefunction', 'projections']
-#for space_backend in ('fem', 'pdelab'):
-for space_backend in ('fem',):
-    #for la_backend in ('common', 'eigen', 'istl'):
-    for la_backend in ('istl',):
-        modules.append('operators_elliptic_{}_{}'.format(space_backend, la_backend))
-        #for grid in ('alberta', 'alu', 'ug', 'yasp'):
-        for grid in ('alu', 'yasp'):
-            modules.append('operators_elliptic_ipdg_{}_{}_{}'.format(grid, space_backend, la_backend))
-modules.append('bindings')
-
-for module_name in modules:
-    mod = import_module('.__{}'.format(module_name), 'dune.gdt')
-    to_import = [name for name in mod.__dict__ if not name.startswith('_')]
-    globals().update({name: mod.__dict__[name] for name in to_import})
+HAVE_DUNE_FEM = 'Cg2dCubeYaspgridLeafTo1x1FemP1Space' in globals()
+HAVE_DUNE_PDELAB = 'Cg2dCubeYaspgridLeafTo1x1PdelabP1Space' in globals()
 

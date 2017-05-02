@@ -20,7 +20,7 @@ namespace Dune {
 namespace GDT {
 
 
-static constexpr ChooseSpaceBackend default_dg_backend = default_space_backend;
+static constexpr Backends default_dg_backend = default_space_backend;
 
 
 template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
@@ -35,10 +35,11 @@ public:
 
   using BaseType::compute_pattern;
 
-  template <class G, class S, size_t d, size_t r, size_t rC>
-  PatternType compute_pattern(const GridView<G>& local_grid_view, const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  template <class GL, class S, size_t d, size_t r, size_t rC>
+  typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
+  compute_pattern(const GL& grd_layr, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
-    return BaseType::compute_face_and_volume_pattern(local_grid_view, ansatz_space);
+    return BaseType::compute_face_and_volume_pattern(grd_layr, ansatz_space);
   }
 
   using BaseType::local_constraints;

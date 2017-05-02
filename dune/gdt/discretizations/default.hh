@@ -441,7 +441,7 @@ public:
       const RangeFieldType CFL = problem().CFL();
 
       // calculate dx and choose initial dt
-      Dune::XT::Grid::Dimensions<typename SpaceType::GridViewType> dimensions(fv_space_->grid_view());
+      Dune::XT::Grid::Dimensions<typename SpaceType::GridLayerType> dimensions(fv_space_->grid_layer());
       RangeFieldType dx = dimensions.entity_width.max();
       if (dimDomain == 2)
         dx /= std::sqrt(2);

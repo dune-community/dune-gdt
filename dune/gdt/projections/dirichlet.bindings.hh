@@ -31,7 +31,7 @@ class DirichletProjectionLocalizableOperator
   typedef typename SP::type SpaceType;
   static_assert(is_space<SpaceType>::value, "");
   static_assert(XT::LA::is_vector<V>::value, "");
-  typedef typename SpaceType::GridViewType GridViewType;
+  typedef typename SpaceType::GridLayerType GridLayerType;
   typedef typename XT::Functions::LocalizableFunctionInterface<typename SpaceType::EntityType,
                                                                typename SpaceType::DomainFieldType,
                                                                SpaceType::dimDomain,
@@ -40,10 +40,10 @@ class DirichletProjectionLocalizableOperator
                                                                SpaceType::dimRangeCols>
       SourceType;
   typedef DiscreteFunction<SpaceType, V> RangeType;
-  typedef XT::Grid::Walker<GridViewType> BaseType;
+  typedef XT::Grid::Walker<GridLayerType> BaseType;
 
 public:
-  typedef GDT::DirichletProjectionLocalizableOperator<GridViewType, SourceType, RangeType, double> type;
+  typedef GDT::DirichletProjectionLocalizableOperator<GridLayerType, SourceType, RangeType, double> type;
   typedef pybind11::class_<type, BaseType> bound_type;
 
   static bound_type bind(pybind11::module& m)
@@ -59,11 +59,11 @@ public:
     c.def("apply", [](type& self) { self.apply(); });
 
     m.def(std::string("make_localizable_dirichlet_projection_operator").c_str(),
-          [](const XT::Grid::BoundaryInfo<typename XT::Grid::Intersection<GridViewType>::Type>& boundary_info,
+          [](const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info,
              const SourceType& source,
              RangeType& range) {
             return make_localizable_dirichlet_projection_operator(
-                       range.space().grid_view(), boundary_info, source, range)
+                       range.space().grid_layer(), boundary_info, source, range)
                 .release();
           },
           "boundary_info"_a,
@@ -84,7 +84,7 @@ public:
   Dune::GDT::bindings::                                                                                                \
       DirichletProjectionLocalizableOperator<Dune::GDT::CgSpaceProvider<_GRID,                                         \
                                                                         Dune::XT::Grid::Layers::_layer,                \
-                                                                        Dune::GDT::ChooseSpaceBackend::_backend,       \
+                                                                        Dune::GDT::Backends::_backend,                 \
                                                                         1,                                             \
                                                                         double,                                        \
                                                                         _r,                                            \
@@ -114,6 +114,7 @@ public:
 //#endif
 
 #define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_YASP(_m, _layer, _backend, _la)                                           \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _backend, 1, 1, _la);                   \
   _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _backend, 1, 1, _la)
 
 #if HAVE_DUNE_FEM

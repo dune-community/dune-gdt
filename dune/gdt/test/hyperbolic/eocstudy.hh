@@ -34,7 +34,7 @@ public:
   using typename BaseType::TestCaseType;
   using typename BaseType::Discretizer;
   using typename BaseType::DiscretizationType;
-  using typename BaseType::GridViewType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::DiscreteSolutionType;
 
   // a perfect forwarding ctor did not do the job here, since it was not able to match the std::initializer_list: {"L2"}
@@ -61,7 +61,7 @@ public:
     // For a new TestCaseType you have to add a specialization in a separate object file
     // (see linearelliptic-block-swipdg-expectations_os2014_2daluconform.cxx for example) and adjust the
     // CMakeLists.txt accordingly. For a new polOrder or Discretizer::type add
-    //     template class HyperbolicEocExpectations< TestCasesType, Discretizer::type, GridViewType::dimension >;
+    //     template class HyperbolicEocExpectations< TestCasesType, Discretizer::type, GridLayerType::dimension >;
     // in the appropriate (existing) object file and implement a specialization for this polOrder and Discretizer::type,
     // if needed!
     //
@@ -70,7 +70,7 @@ public:
     // to each test source using these results!
     return HyperbolicEocExpectations<TestCaseType,
                                      Discretizer::type,
-                                     GridViewType::dimension,
+                                     GridLayerType::dimension,
                                      Discretizer::numerical_flux_type,
                                      Discretizer::time_stepper_type>::rate(type);
   } // ... expected_rate(...)
@@ -80,7 +80,7 @@ public:
     // If you get an undefined reference here from the linker, see the explanation above in expected_rate()!
     return HyperbolicEocExpectations<TestCaseType,
                                      Discretizer::type,
-                                     GridViewType::dimension,
+                                     GridLayerType::dimension,
                                      Discretizer::numerical_flux_type,
                                      Discretizer::time_stepper_type>::results(this->test_case_, type);
   }
@@ -99,9 +99,9 @@ public:
       for (auto solution_it = solution.begin(); solution_it != solution_it_end; ++solution_it) {
         double spatial_integral = 0;
         // walk over all entities, solution is constant on each entity
-        const auto& grid_view = solution_it->second.space().grid_view();
-        const auto it_end = grid_view.template end<0>();
-        for (auto it = grid_view.template begin<0>(); it != it_end; ++it) {
+        const auto& grid_layer = solution_it->second.space().grid_layer();
+        const auto it_end = grid_layer.template end<0>();
+        for (auto it = grid_layer.template begin<0>(); it != it_end; ++it) {
           const auto& entity = *it;
           double value = 0;
           for (const auto& index : solution_it->second.space().mapper().globalIndices(entity))

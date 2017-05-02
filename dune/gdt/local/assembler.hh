@@ -144,12 +144,12 @@ private:
 }; // class LocalVolumeTwoFormAssembler
 
 
-template <class GridViewImp,
+template <class GridLayerImp,
           class LocalVolumeTwoFormType,
           class TestFunctionType,
           class AnsatzFunctionType,
           class FieldType>
-class LocalVolumeTwoFormAccumulator : public XT::Grid::internal::Codim0ReturnObject<GridViewImp, FieldType>
+class LocalVolumeTwoFormAccumulator : public XT::Grid::internal::Codim0ReturnObject<GridLayerImp, FieldType>
 {
   static_assert(std::is_base_of<LocalVolumeTwoFormInterface<typename LocalVolumeTwoFormType::Traits>,
                                 LocalVolumeTwoFormType>::value,
@@ -159,24 +159,24 @@ class LocalVolumeTwoFormAccumulator : public XT::Grid::internal::Codim0ReturnObj
   static_assert(XT::Functions::is_localizable_function<AnsatzFunctionType>::value,
                 "AnsatzFunctionType has to be derived from XT::Functions::LocalizableFunctionInterface!");
 
-  typedef LocalVolumeTwoFormAccumulator<GridViewImp,
+  typedef LocalVolumeTwoFormAccumulator<GridLayerImp,
                                         LocalVolumeTwoFormType,
                                         TestFunctionType,
                                         AnsatzFunctionType,
                                         FieldType>
       ThisType;
-  typedef XT::Grid::internal::Codim0ReturnObject<GridViewImp, FieldType> BaseType;
+  typedef XT::Grid::internal::Codim0ReturnObject<GridLayerImp, FieldType> BaseType;
 
 public:
-  typedef typename BaseType::GridViewType GridViewType;
+  typedef typename BaseType::GridLayerType GridLayerType;
   typedef typename BaseType::EntityType EntityType;
 
-  LocalVolumeTwoFormAccumulator(const GridViewType& grd_vw,
+  LocalVolumeTwoFormAccumulator(const GridLayerType& grd_layr,
                                 const LocalVolumeTwoFormType& local_op,
                                 const TestFunctionType& test_function,
                                 const AnsatzFunctionType& ansatz_function,
-                                const XT::Grid::ApplyOn::WhichEntity<GridViewType>& where)
-    : grid_view_(grd_vw)
+                                const XT::Grid::ApplyOn::WhichEntity<GridLayerType>& where)
+    : grid_layer_(grd_layr)
     , local_operator_(local_op)
     , test_function_(test_function)
     , ansatz_function_(ansatz_function)
@@ -189,9 +189,9 @@ public:
   LocalVolumeTwoFormAccumulator(const ThisType& other) = default;
   virtual ~LocalVolumeTwoFormAccumulator() = default;
 
-  virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const override final
+  virtual bool apply_on(const GridLayerType& grid_layer, const EntityType& entity) const override final
   {
-    return where_.apply_on(grid_view, entity);
+    return where_.apply_on(grid_layer, entity);
   }
 
   virtual FieldType compute_locally(const EntityType& entity) override final
@@ -211,7 +211,7 @@ public:
   {
     if (!finalized_) {
       finalized_result_ = result_.sum();
-      finalized_result_ = grid_view_.comm().sum(finalized_result_);
+      finalized_result_ = grid_layer_.comm().sum(finalized_result_);
       finalized_ = true;
     }
   } // ... finalize(...)
@@ -224,36 +224,36 @@ public:
   }
 
 private:
-  const GridViewType& grid_view_;
+  const GridLayerType& grid_layer_;
   const LocalVolumeTwoFormType& local_operator_;
   const TestFunctionType& test_function_;
   const AnsatzFunctionType& ansatz_function_;
   Dune::XT::Common::PerThreadValue<FieldType> result_;
   bool finalized_;
-  const XT::Grid::ApplyOn::WhichEntity<GridViewType>& where_;
+  const XT::Grid::ApplyOn::WhichEntity<GridLayerType>& where_;
   FieldType finalized_result_;
 }; // class LocalVolumeTwoFormAccumulator
 
 
-template <class GridViewType, class LocalOperatorType, class SourceType, class RangeType>
-class LocalOperatorApplicator : public XT::Grid::internal::Codim0Object<GridViewType>
+template <class GridLayerType, class LocalOperatorType, class SourceType, class RangeType>
+class LocalOperatorApplicator : public XT::Grid::internal::Codim0Object<GridLayerType>
 {
   static_assert(is_local_operator<LocalOperatorType>::value,
                 "LocalOperatorType has to be derived from LocalOperatorInterface!");
   static_assert(XT::Functions::is_localizable_function<SourceType>::value,
                 "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
   static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
-  typedef XT::Grid::internal::Codim0Object<GridViewType> BaseType;
+  typedef XT::Grid::internal::Codim0Object<GridLayerType> BaseType;
 
 public:
   using typename BaseType::EntityType;
 
-  LocalOperatorApplicator(const GridViewType& grid_view,
+  LocalOperatorApplicator(const GridLayerType& grid_layer,
                           const LocalOperatorType& local_operator,
                           const SourceType& source,
                           RangeType& range,
-                          const XT::Grid::ApplyOn::WhichEntity<GridViewType>& where)
-    : grid_view_(grid_view)
+                          const XT::Grid::ApplyOn::WhichEntity<GridLayerType>& where)
+    : grid_layer_(grid_layer)
     , local_operator_(local_operator)
     , source_(source)
     , range_(range)
@@ -261,9 +261,9 @@ public:
   {
   }
 
-  virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const
+  virtual bool apply_on(const GridLayerType& grid_layer, const EntityType& entity) const
   {
-    return where_.apply_on(grid_view, entity);
+    return where_.apply_on(grid_layer, entity);
   }
 
   virtual void apply_local(const EntityType& entity)
@@ -272,11 +272,11 @@ public:
   }
 
 private:
-  const GridViewType& grid_view_;
+  const GridLayerType& grid_layer_;
   const LocalOperatorType& local_operator_;
   const SourceType& source_;
   RangeType& range_;
-  const XT::Grid::ApplyOn::WhichEntity<GridViewType>& where_;
+  const XT::Grid::ApplyOn::WhichEntity<GridLayerType>& where_;
 }; // class LocalOperatorApplicator
 
 
@@ -488,26 +488,26 @@ private:
 }; // class LocalCouplingTwoFormAssembler
 
 
-template <class GridViewType, class LocalOperatorType, class SourceType, class RangeType>
-class LocalCouplingOperatorApplicator : public XT::Grid::internal::Codim1Object<GridViewType>
+template <class GridLayerType, class LocalOperatorType, class SourceType, class RangeType>
+class LocalCouplingOperatorApplicator : public XT::Grid::internal::Codim1Object<GridLayerType>
 {
   static_assert(is_local_coupling_operator<LocalOperatorType>::value,
                 "LocalOperatorType has to be derived from LocalCouplingOperatorInterface!");
   static_assert(XT::Functions::is_localizable_function<SourceType>::value,
                 "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
   static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
-  typedef XT::Grid::internal::Codim1Object<GridViewType> BaseType;
+  typedef XT::Grid::internal::Codim1Object<GridLayerType> BaseType;
 
 public:
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
 
-  LocalCouplingOperatorApplicator(const GridViewType& grid_view,
+  LocalCouplingOperatorApplicator(const GridLayerType& grid_layer,
                                   const LocalOperatorType& local_operator,
                                   const SourceType& source,
                                   RangeType& range,
-                                  const XT::Grid::ApplyOn::WhichIntersection<GridViewType>& where)
-    : grid_view_(grid_view)
+                                  const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>& where)
+    : grid_layer_(grid_layer)
     , local_operator_(local_operator)
     , source_(source)
     , range_(range)
@@ -515,9 +515,9 @@ public:
   {
   }
 
-  virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& intersection) const
+  virtual bool apply_on(const GridLayerType& grid_layer, const IntersectionType& intersection) const
   {
-    return where_.apply_on(grid_view, intersection);
+    return where_.apply_on(grid_layer, intersection);
   }
 
   virtual void
@@ -530,11 +530,11 @@ public:
   }
 
 private:
-  const GridViewType& grid_view_;
+  const GridLayerType& grid_layer_;
   const LocalOperatorType& local_operator_;
   const SourceType& source_;
   RangeType& range_;
-  const XT::Grid::ApplyOn::WhichIntersection<GridViewType>& where_;
+  const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>& where_;
 }; // class LocalCouplingOperatorApplicator
 
 
@@ -598,26 +598,26 @@ private:
 }; // class LocalBoundaryTwoFormAssembler
 
 
-template <class GridViewType, class LocalOperatorType, class SourceType, class RangeType>
-class LocalBoundaryOperatorApplicator : public XT::Grid::internal::Codim1Object<GridViewType>
+template <class GridLayerType, class LocalOperatorType, class SourceType, class RangeType>
+class LocalBoundaryOperatorApplicator : public XT::Grid::internal::Codim1Object<GridLayerType>
 {
   static_assert(is_local_boundary_operator<LocalOperatorType>::value,
                 "LocalOperatorType has to be derived from LocalCouplingOperatorInterface!");
   static_assert(XT::Functions::is_localizable_function<SourceType>::value,
                 "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
   static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
-  typedef XT::Grid::internal::Codim1Object<GridViewType> BaseType;
+  typedef XT::Grid::internal::Codim1Object<GridLayerType> BaseType;
 
 public:
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
 
-  LocalBoundaryOperatorApplicator(const GridViewType& grid_view,
+  LocalBoundaryOperatorApplicator(const GridLayerType& grid_layer,
                                   const LocalOperatorType& local_operator,
                                   const SourceType& source,
                                   RangeType& range,
-                                  const XT::Grid::ApplyOn::WhichIntersection<GridViewType>& where)
-    : grid_view_(grid_view)
+                                  const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>& where)
+    : grid_layer_(grid_layer)
     , local_operator_(local_operator)
     , source_(source)
     , range_(range)
@@ -625,9 +625,9 @@ public:
   {
   }
 
-  virtual bool apply_on(const GridViewType& grid_view, const IntersectionType& intersection) const
+  virtual bool apply_on(const GridLayerType& grid_layer, const IntersectionType& intersection) const
   {
-    return where_.apply_on(grid_view, intersection);
+    return where_.apply_on(grid_layer, intersection);
   }
 
   virtual void apply_local(const IntersectionType& intersection,
@@ -638,11 +638,11 @@ public:
   }
 
 private:
-  const GridViewType& grid_view_;
+  const GridLayerType& grid_layer_;
   const LocalOperatorType& local_operator_;
   const SourceType& source_;
   RangeType& range_;
-  const XT::Grid::ApplyOn::WhichIntersection<GridViewType>& where_;
+  const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>& where_;
 }; // class LocalBoundaryOperatorApplicator
 
 

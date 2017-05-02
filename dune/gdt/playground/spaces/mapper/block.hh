@@ -14,6 +14,7 @@
 
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/type_traits.hh>
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/dd/subdomains/grid.hh>
 
 #include <dune/gdt/spaces/interface.hh>
@@ -57,10 +58,11 @@ public:
   typedef typename Traits::EntityType EntityType;
   typedef LocalSpaceImp LocalSpaceType;
 
-  typedef XT::Grid::DD::SubdomainGrid<typename LocalSpaceType::GridViewType::Grid> DdSubdomainsGridType;
+  typedef XT::Grid::DD::SubdomainGrid<XT::Grid::extract_grid_t<typename LocalSpaceType::GridLayerType>>
+      DdSubdomainsGridType;
 
 private:
-  typedef typename DdSubdomainsGridType::GlobalGridPartType GridViewType;
+  typedef typename DdSubdomainsGridType::GlobalGridPartType GridLayerType;
   typedef typename DdSubdomainsGridType::EntityToSubdomainMapType EntityToSubdomainMapType;
 
   template <class L, class E>
@@ -101,13 +103,13 @@ private:
   private:
     static size_t find_block_of(const ThisType& self, const Comdim0EntityType& entity)
     {
-      const auto global_entity_index = self.grid_view_->indexSet().index(entity);
+      const auto global_entity_index = self.global_grid_part_->indexSet().index(entity);
       const auto result = self.entity_to_subdomain_map_->find(global_entity_index);
 #ifndef NDEBUG
       if (result == self.entity_to_subdomain_map_->end())
         DUNE_THROW(XT::Common::Exceptions::internal_error,
                    "Entity " << global_entity_index
-                             << " of the global grid view was not found in the dd subdomain grid!");
+                             << " of the global grid part was not found in the dd subdomain grid!");
 #endif // NDEBUG
       const size_t subdomain = result->second;
 #ifndef NDEBUG
@@ -126,9 +128,9 @@ private:
 
 public:
   BlockMapper(const DdSubdomainsGridType& dd_grid,
-              const std::shared_ptr<GridViewType> grid_view,
+              const std::shared_ptr<GridLayerType> grid_layer,
               const std::shared_ptr<std::vector<LocalSpaceType>> local_spaces)
-    : grid_view_(grid_view)
+    : global_grid_part_(grid_layer)
     , entity_to_subdomain_map_(dd_grid.entityToSubdomainMap())
     , local_spaces_(local_spaces)
     , num_blocks_(local_spaces_->size())
@@ -208,7 +210,7 @@ private:
   template <class L, class E>
   friend class Compute;
 
-  const std::shared_ptr<GridViewType> grid_view_;
+  const std::shared_ptr<GridLayerType> global_grid_part_;
   const std::shared_ptr<const typename DdSubdomainsGridType::EntityToSubdomainMapType> entity_to_subdomain_map_;
   const std::shared_ptr<std::vector<LocalSpaceType>> local_spaces_;
   size_t num_blocks_;

@@ -837,7 +837,7 @@ public:
   void apply(const SourceType& source, LocalDiscreteFunction<RangeSpaceType, VectorType>& local_range) const
   {
     const auto& entity = local_range.entity();
-    const auto& grid_view = local_range.space().grid_view();
+    const auto& grid_layer = local_range.space().grid_layer();
     // get reconstruction vector and mapper
     auto& reconstruction_vector = local_range.vector();
     const auto& reconstruction_mapper = local_range.space().mapper();
@@ -846,8 +846,8 @@ public:
     typename SourceType::RangeType u_left, u_right;
     typename SourceType::RangeType u_entity =
         source.local_discrete_function(entity)->evaluate(entity.geometry().local(entity_center));
-    const auto i_it_end = grid_view.iend(entity);
-    for (auto i_it = grid_view.ibegin(entity); i_it != i_it_end; ++i_it) {
+    const auto i_it_end = grid_layer.iend(entity);
+    for (auto i_it = grid_layer.ibegin(entity); i_it != i_it_end; ++i_it) {
       const auto& intersection = *i_it;
       if (intersection.neighbor()) {
         const auto neighbor = intersection.outside();

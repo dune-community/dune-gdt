@@ -26,23 +26,23 @@ namespace GDT {
 namespace bindings {
 
 
-template <class TP /*, class GV = typename TP::type::GridViewType, class AP = TP*/>
+template <class TP /*, class GL = typename TP::type::GridLayerType, class AP = TP*/>
 class SystemAssembler
 {
   typedef typename TP::type T;
   static_assert(is_space<T>::value, "");
 
 public:
-  typedef GDT::SystemAssembler<T /*, GV, A*/> type;
+  typedef GDT::SystemAssembler<T /*, GL, A*/> type;
   typedef pybind11::class_<type> bound_type;
 
 private:
   typedef typename type::TestSpaceType TestSpaceType;
-  typedef typename type::GridViewType GridViewType;
+  typedef typename type::GridLayerType GridLayerType;
   typedef typename type::AnsatzSpaceType AnsatzSpaceType;
 
   template <bool do_bind = (std::is_same<TestSpaceType, AnsatzSpaceType>::value
-                            && std::is_same<GridViewType, typename TestSpaceType::GridViewType>::value),
+                            && std::is_same<GridLayerType, typename TestSpaceType::GridLayerType>::value),
             bool anything = true>
   struct addbind_ctor_single
   {
@@ -52,7 +52,7 @@ private:
       using namespace pybind11::literals;
       c.def(py::init<T>(),
             "space"_a,
-            "Uses given space as test and ansatz space, and the grid view of the given space as grid view.",
+            "Uses given space as test and ansatz space, and the grid layer of the given space as grid layer.",
             py::keep_alive<1, 2>());
     }
   }; // struct addbind_ctor_single
@@ -78,7 +78,7 @@ public:
 
     c.def("append", [](type& self, type& other) { self.append(other); }, "system_assembler"_a, py::keep_alive<1, 2>());
     c.def("append",
-          [](type& self, XT::Grid::Walker<GridViewType>& other) { self.append(other); },
+          [](type& self, XT::Grid::Walker<GridLayerType>& other) { self.append(other); },
           "grid_walker"_a,
           py::keep_alive<1, 2>());
     c.def("assemble", [](type& self, const bool use_tbb) { self.assemble(use_tbb); }, "use_tbb"_a = false);
@@ -108,7 +108,7 @@ public:
   auto system_assembler_##_GRID##_##_layer##_fem_cg_##_p##_double_##_r##_##_rC =                                       \
       Dune::GDT::bindings::SystemAssembler<Dune::GDT::CgSpaceProvider<_GRID,                                           \
                                                                       Dune::XT::Grid::Layers::_layer,                  \
-                                                                      Dune::GDT::ChooseSpaceBackend::fem,              \
+                                                                      Dune::GDT::Backends::fem,                        \
                                                                       _p,                                              \
                                                                       double,                                          \
                                                                       _r,                                              \
@@ -143,6 +143,7 @@ public:
 //#endif
 
 #define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_YASP(_m, _layer, _p)                                                    \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1);                            \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1)
 
 #define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_CG_ALL(_m, _layer, _p)                                                     \
@@ -157,7 +158,7 @@ public:
   auto system_assembler_##_GRID##_##_layer##_fem_dg_##_p##_double_##_r##_##_rC =                                       \
       Dune::GDT::bindings::SystemAssembler<Dune::GDT::DgSpaceProvider<_GRID,                                           \
                                                                       Dune::XT::Grid::Layers::_layer,                  \
-                                                                      Dune::GDT::ChooseSpaceBackend::fem,              \
+                                                                      Dune::GDT::Backends::fem,                        \
                                                                       _p,                                              \
                                                                       double,                                          \
                                                                       _r,                                              \
@@ -192,6 +193,7 @@ public:
 //#endif
 
 #define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_YASP(_m, _layer, _p)                                                    \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1);                            \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1)
 
 #define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM_DG_ALL(_m, _layer, _p)                                                     \
@@ -224,7 +226,7 @@ public:
 //  auto system_assembler_##_GRID##_##_layer##_pdelab_cg_##_p##_double_##_r##_##_rC =                                  \
 //      Dune::GDT::bindings::SystemAssembler<Dune::GDT::CgSpaceProvider<_GRID,                                         \
 //                                                                      Dune::XT::Grid::Layers::_layer,                \
-//                                                                      Dune::GDT::ChooseSpaceBackend::pdelab,         \
+//                                                                      Dune::GDT::Backends::pdelab,         \
 //                                                                      _p,                                            \
 //                                                                      double,                                        \
 //                                                                      _r,                                            \
@@ -282,7 +284,7 @@ public:
   auto system_assembler_##_GRID##_##_layer##_gdt_fv_double_##_r##_##_rC =                                              \
       Dune::GDT::bindings::SystemAssembler<Dune::GDT::FvSpaceProvider<_GRID,                                           \
                                                                       Dune::XT::Grid::Layers::_layer,                  \
-                                                                      Dune::GDT::ChooseSpaceBackend::gdt,              \
+                                                                      Dune::GDT::Backends::gdt,                        \
                                                                       double,                                          \
                                                                       _r,                                              \
                                                                       _rC>>::bind(_m);                                 \

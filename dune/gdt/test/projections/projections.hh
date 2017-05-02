@@ -24,11 +24,11 @@ struct ProjectionTest : public internal::ProjectionOperatorBase<SPACETYPE>
 {
   void produces_correct_results(const double& tolerance = 1e-15)
   {
-    const auto& grid_view = this->space_.grid_view();
+    const auto& grid_layer = this->space_.grid_layer();
     const auto& source = this->function_;
     auto& range = this->discrete_function_;
 
-    project(grid_view, source, range);
+    project(grid_layer, source, range);
     project(source, range);
 
     this->measure_error(tolerance);

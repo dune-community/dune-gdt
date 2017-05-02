@@ -70,22 +70,22 @@ class DefaultProductSpaceTraits
 {
 public:
   typedef DefaultProductSpace<SpaceImps...> derived_type;
-  typedef typename std::tuple_element<0, std::tuple<SpaceImps...>>::type::GridViewType GridViewType;
-  static const size_t dimDomain = GridViewType::dimension;
+  typedef typename std::tuple_element<0, std::tuple<SpaceImps...>>::type::GridLayerType GridLayerType;
+  static const size_t dimDomain = GridLayerType::dimension;
   static const size_t dimRange = GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange;
   static const size_t dimRangeCols = 1;
-  typedef typename GridViewType::IndexSet BackendType;
+  typedef typename GridLayerType::IndexSet BackendType;
   typedef typename std::tuple_element<0, std::tuple<SpaceImps...>>::type::RangeFieldType RangeFieldType;
   typedef typename std::tuple<SpaceImps...> SpaceTupleType;
-  typedef typename Dune::GDT::DefaultProductMapper<GridViewType, typename SpaceImps::MapperType...> MapperType;
+  typedef typename Dune::GDT::DefaultProductMapper<GridLayerType, typename SpaceImps::MapperType...> MapperType;
   typedef typename Dune::GDT::BaseFunctionSet::ProductDefault<typename SpaceImps::BaseFunctionSetType...>
       BaseFunctionSetType;
   static const int polOrder = internal::maxPolOrder<SpaceImps...>::polOrder;
   static const bool continuous = internal::allContinuous<SpaceImps...>::value;
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
-  static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
+  using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
+  static const XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static const bool needs_grid_view = true;
-  typedef CommunicationChooser<GridViewType> CommunicationChooserType;
+  typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 }; // class ProductSpaceTraits
 
@@ -113,7 +113,7 @@ class DefaultProductSpace
 
 public:
   typedef typename internal::DefaultProductSpaceTraits<SpaceImps...> Traits;
-  using typename BaseType::GridViewType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::BackendType;
   using typename BaseType::MapperType;
   using typename BaseType::EntityType;
@@ -129,14 +129,14 @@ public:
   DefaultProductSpace(const SpaceImps&... spaces)
     : spaces_(std::make_tuple(spaces...))
     , product_mapper_(spaces_)
-    , communicator_(CommunicationChooserType::create(std::get<0>(spaces_).grid_view()))
+    , communicator_(CommunicationChooserType::create(std::get<0>(spaces_).grid_layer()))
   {
   }
 
   DefaultProductSpace(const ThisType& other)
     : spaces_(other.spaces_)
     , product_mapper_(other.product_mapper_)
-    , communicator_(CommunicationChooserType::create(std::get<0>(spaces_).grid_view()))
+    , communicator_(CommunicationChooserType::create(std::get<0>(spaces_).grid_layer()))
   {
   }
 
@@ -159,14 +159,19 @@ public:
   }
 
   // The remaining methods are redirected to Default
-  const GridViewType& grid_view() const
+  const GridLayerType& grid_layer() const
   {
-    return std::get<0>(spaces_).grid_view();
+    return std::get<0>(spaces_).grid_layer();
+  }
+
+  GridLayerType& grid_layer()
+  {
+    return std::get<0>(spaces_).grid_layer();
   }
 
   const BackendType& backend() const
   {
-    return std::get<0>(spaces_).grid_view().indexSet();
+    return std::get<0>(spaces_).grid_layer().indexSet();
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const

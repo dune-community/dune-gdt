@@ -61,7 +61,7 @@ TEST_F(L2GlobalProjectionLocalizableOperatorTest_{{Name}}, constructible_by_fact
 TEST_F(L2GlobalProjectionLocalizableOperatorTest_{{Name}}, produces_correct_results)
 {
 
-  typedef typename L2GlobalProjectionLocalizableOperatorTest_{{Name}}::GridViewType::Grid Grid;
+  using Grid = Dune::XT::Grid::extract_grid_t<typename L2GlobalProjectionLocalizableOperatorTest_{{Name}}::GridLayerType>;
   const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
   this->produces_correct_results(tolerance);
   this->produces_correct_results(tolerance);

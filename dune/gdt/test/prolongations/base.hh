@@ -11,10 +11,11 @@
 #ifndef DUNE_GDT_TEST_PROLONGATIONS_BASE_HH
 #define DUNE_GDT_TEST_PROLONGATIONS_BASE_HH
 
-#include <dune/xt/grid/gridprovider/cube.hh>
-#include <dune/xt/functions/expression.hh>
-#include <dune/xt/la/container.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
+#include <dune/xt/la/container.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
+#include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/functions/expression.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/projections.hh>
@@ -43,11 +44,11 @@ struct ProlongationOperatorsBaseGridHolder
 template <class CoarseSpaceType, class FineSpaceType>
 struct ProlongationOperatorsBase
     : public ::testing::Test,
-      public ProlongationOperatorsBaseGridHolder<typename FineSpaceType::GridViewType::Grid>
+      public ProlongationOperatorsBaseGridHolder<typename FineSpaceType::GridLayerType::Grid>
 {
-  typedef ProlongationOperatorsBaseGridHolder<typename FineSpaceType::GridViewType::Grid> BaseType;
-  typedef typename FineSpaceType::GridViewType GridViewType;
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  typedef ProlongationOperatorsBaseGridHolder<typename FineSpaceType::GridLayerType::Grid> BaseType;
+  typedef typename FineSpaceType::GridLayerType GridLayerType;
+  using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
   typedef typename FineSpaceType::DomainFieldType DomainFieldType;
   static const size_t dimDomain = FineSpaceType::dimDomain;
   typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
@@ -64,8 +65,8 @@ struct ProlongationOperatorsBase
 
   ProlongationOperatorsBase()
     : function_("x", "x[0]", 1, "function")
-    , coarse_space_(grid_provider_.template level<CoarseSpaceType::part_view_type>(0))
-    , fine_space_(grid_provider_.template level<FineSpaceType::part_view_type>(grid_provider_.grid().maxLevel()))
+    , coarse_space_(grid_provider_.template level<CoarseSpaceType::layer_backend>(0))
+    , fine_space_(grid_provider_.template level<FineSpaceType::layer_backend>(grid_provider_.grid().maxLevel()))
     , coarse_discrete_function_(coarse_space_, "coarse discrete function")
     , fine_discrete_function_(fine_space_, "fine discrete function")
     , prepared_(false)
@@ -80,7 +81,7 @@ struct ProlongationOperatorsBase
     project(function_, coarse_discrete_function_);
     // since the projection operator is tested elsewhere we are confident this worked, but we check anyway
     const auto coarse_l2_error =
-        make_l2_operator(coarse_space_.grid_view(), 2)->induced_norm(function_ - coarse_discrete_function_);
+        make_l2_operator(coarse_space_.grid_layer(), 2)->induced_norm(function_ - coarse_discrete_function_);
     if (coarse_l2_error > tolerance)
       DUNE_THROW(Dune::XT::Common::Exceptions::internal_error,
                  "This should not happen, the L2 product and projection operators are tested elsewhere!\n"
@@ -93,9 +94,9 @@ struct ProlongationOperatorsBase
   void produces_correct_results(const RangeFieldType& tolerance = default_tolerance)
   {
     prepare(tolerance);
-    ProlongationOperatorType(fine_space_.grid_view()).apply(coarse_discrete_function_, fine_discrete_function_);
+    ProlongationOperatorType(fine_space_.grid_layer()).apply(coarse_discrete_function_, fine_discrete_function_);
     const auto fine_l2_error =
-        make_l2_operator(fine_space_.grid_view(), 2)->induced_norm(function_ - fine_discrete_function_);
+        make_l2_operator(fine_space_.grid_layer(), 2)->induced_norm(function_ - fine_discrete_function_);
     EXPECT_LE(fine_l2_error, tolerance);
   } // ... produces_correct_results(...)
 
@@ -124,11 +125,11 @@ template <class CoarseSpaceType, class FineSpaceType, template <class, class, cl
 struct LocalizableProlongationOperatorBase : public internal::ProlongationOperatorsBase<CoarseSpaceType, FineSpaceType>
 {
   typedef internal::ProlongationOperatorsBase<CoarseSpaceType, FineSpaceType> BaseType;
-  using typename BaseType::GridViewType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::CoarseDiscreteFunctionType;
   using typename BaseType::FineDiscreteFunctionType;
   using typename BaseType::RangeFieldType;
-  typedef ProlongationOperatorImp<GridViewType, CoarseDiscreteFunctionType, FineDiscreteFunctionType>
+  typedef ProlongationOperatorImp<GridLayerType, CoarseDiscreteFunctionType, FineDiscreteFunctionType>
       ProlongationOperatorType;
 
   using BaseType::prepare;
@@ -136,9 +137,9 @@ struct LocalizableProlongationOperatorBase : public internal::ProlongationOperat
   void produces_correct_results(const RangeFieldType& tolerance = double(BaseType::default_tolerance))
   {
     prepare(tolerance);
-    ProlongationOperatorType(fine_space_.grid_view(), coarse_discrete_function_, fine_discrete_function_).apply();
+    ProlongationOperatorType(fine_space_.grid_layer(), coarse_discrete_function_, fine_discrete_function_).apply();
     const auto fine_l2_error =
-        make_l2_operator(fine_space_.grid_view(), 2)->induced_norm(function_ - fine_discrete_function_);
+        make_l2_operator(fine_space_.grid_layer(), 2)->induced_norm(function_ - fine_discrete_function_);
     EXPECT_LE(fine_l2_error, tolerance);
   } // ... produces_correct_results(...)
 
@@ -156,21 +157,21 @@ template <class CoarseSpaceType, class FineSpaceType, template <class, class> cl
 struct ProlongationOperatorBase : public internal::ProlongationOperatorsBase<CoarseSpaceType, FineSpaceType>
 {
   typedef internal::ProlongationOperatorsBase<CoarseSpaceType, FineSpaceType> BaseType;
-  using typename BaseType::GridViewType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::CoarseDiscreteFunctionType;
   using typename BaseType::FineDiscreteFunctionType;
   using typename BaseType::RangeFieldType;
-  typedef ProlongationOperatorImp<GridViewType, RangeFieldType> ProlongationOperatorType;
+  typedef ProlongationOperatorImp<GridLayerType, RangeFieldType> ProlongationOperatorType;
 
   using BaseType::prepare;
 
   void produces_correct_results(const RangeFieldType& tolerance = double(BaseType::default_tolerance))
   {
     prepare(tolerance);
-    ProlongationOperatorType op(fine_space_.grid_view());
+    ProlongationOperatorType op(fine_space_.grid_layer());
     op.apply(coarse_discrete_function_, fine_discrete_function_);
     const auto fine_l2_error =
-        make_l2_operator(fine_space_.grid_view(), 2)->induced_norm(function_ - fine_discrete_function_);
+        make_l2_operator(fine_space_.grid_layer(), 2)->induced_norm(function_ - fine_discrete_function_);
     EXPECT_LE(fine_l2_error, tolerance);
   } // ... produces_correct_results(...)
 

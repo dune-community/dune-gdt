@@ -12,6 +12,8 @@
 #ifndef DUNE_GDT_SPACE_TOOLS_HH
 #define DUNE_GDT_SPACE_TOOLS_HH
 
+#warning This header is deprecated, all information is in the space now (04.04.2017)!
+
 #include <memory>
 #include <type_traits>
 
@@ -20,7 +22,9 @@
 #if HAVE_DUNE_FEM
 #include <dune/fem/gridpart/levelgridpart.hh>
 #include <dune/fem/gridpart/leafgridpart.hh>
-#endif // HAVE_DUNE_FEM
+#endif
+
+#include <dune/xt/grid/type_traits.hh>
 
 namespace Dune {
 namespace GDT {
@@ -28,7 +32,7 @@ namespace SpaceTools {
 
 
 template <class GridType, bool view = true>
-struct LeafGridPartView
+struct DUNE_DEPRECATED_MSG("Do not use this any more, all information is in the space (04.04.2017)!") LeafGridPartView
 {
   typedef typename GridType::LeafGridView Type;
 
@@ -40,7 +44,7 @@ struct LeafGridPartView
 
 
 template <class GridType, bool view = true>
-struct LevelGridPartView
+struct DUNE_DEPRECATED_MSG("Do not use this any more, all information is in the space (04.04.2017)!") LevelGridPartView
 {
   typedef typename GridType::LevelGridView Type;
 
@@ -57,7 +61,8 @@ struct LevelGridPartView
 
 
 template <class GridType>
-struct LeafGridPartView<GridType, false>
+struct DUNE_DEPRECATED_MSG("Do not use this any more, all information is in the space (04.04.2017)!")
+    LeafGridPartView<GridType, false>
 {
   typedef Dune::Fem::LeafGridPart<GridType> Type;
 
@@ -69,7 +74,8 @@ struct LeafGridPartView<GridType, false>
 
 
 template <class GridType>
-struct LevelGridPartView<GridType, false>
+struct DUNE_DEPRECATED_MSG("Do not use this any more, all information is in the space (04.04.2017)!")
+    LevelGridPartView<GridType, false>
 {
   typedef Dune::Fem::LevelGridPart<GridType> Type;
 
@@ -86,7 +92,7 @@ struct LevelGridPartView<GridType, false>
 
 
 template <class SpaceType>
-class GridPartView
+class DUNE_DEPRECATED_MSG("Do not use this any more, all information is in the space (04.04.2017)!") GridPartView
 {
   static_assert(std::is_base_of<SpaceInterface<typename SpaceType::Traits,
                                                SpaceType::dimDomain,
@@ -94,19 +100,19 @@ class GridPartView
                                                SpaceType::dimRangeCols>,
                                 SpaceType>::value,
                 "SpaceType has to be derived from SpaceInterface!");
-  static const bool needs_grid_view = SpaceType::needs_grid_view;
+  static const bool needs_grid_view = (SpaceType::layer_backend == XT::Grid::Backends::view);
 
 public:
-  typedef typename SpaceType::GridViewType::Grid GridType;
-  typedef typename LeafGridPartView<GridType, needs_grid_view>::Type LeafGridViewType;
-  typedef typename LevelGridPartView<GridType, needs_grid_view>::Type LevelGridViewType;
+  using GridType = XT::Grid::extract_grid_t<typename SpaceType::GridLayerType>;
+  typedef typename LeafGridPartView<GridType, needs_grid_view>::Type LeafGridLayerType;
+  typedef typename LevelGridPartView<GridType, needs_grid_view>::Type LevelGridLayerType;
 
-  static LeafGridViewType create_leaf(GridType& grid)
+  static LeafGridLayerType create_leaf(GridType& grid)
   {
     return LeafGridPartView<GridType, needs_grid_view>::create(grid);
   }
 
-  static LevelGridViewType create_level(GridType& grid, const int level)
+  static LevelGridLayerType create_level(GridType& grid, const int level)
   {
     return LevelGridPartView<GridType, needs_grid_view>::create(grid, level);
   }

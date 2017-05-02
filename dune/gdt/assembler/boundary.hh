@@ -22,7 +22,7 @@ class BoundaryAssembler
 public:
   typedef LocalSpaceType TestSpaceType;
   typedef LocalSpaceType AnsatzSpaceType;
-  typedef BoundaryGridPartType GridViewType;
+  typedef BoundaryGridPartType GridLayerType;
 
   BoundaryAssembler(const BoundaryGridPartType& boundary_grid_part,
                     const LocalSpaceType& test_space,

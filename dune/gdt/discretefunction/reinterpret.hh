@@ -22,16 +22,16 @@ namespace GDT {
 template <class DiscreteFunctionType>
 class ReinterpretDiscreteFunction
     : public XT::Functions::ReinterpretFunction<DiscreteFunctionType,
-                                                typename DiscreteFunctionType::SpaceType::GridViewType>
+                                                typename DiscreteFunctionType::SpaceType::GridLayerType>
 {
   static_assert(is_const_discrete_function<DiscreteFunctionType>::value, "");
   typedef XT::Functions::ReinterpretFunction<DiscreteFunctionType,
-                                             typename DiscreteFunctionType::SpaceType::GridViewType>
+                                             typename DiscreteFunctionType::SpaceType::GridLayerType>
       BaseType;
 
 public:
   ReinterpretDiscreteFunction(const DiscreteFunctionType& source)
-    : BaseType(source, source.space().grid_view())
+    : BaseType(source, source.space().grid_layer())
   {
   }
 }; // class ReinterpretDiscreteFunction

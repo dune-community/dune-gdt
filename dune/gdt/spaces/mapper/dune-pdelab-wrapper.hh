@@ -167,13 +167,13 @@ protected:
 template <class PdelabSpaceImp, size_t rangeDim = 1>
 class DunePdelabCgMapperWrapper
     : public DefaultProductMapperFromTuple<
-          typename PdelabSpaceImp::Traits::GridViewType,
+          typename PdelabSpaceImp::Traits::GridLayerType,
           typename Dune::XT::Common::make_identical_tuple<DunePdelabCgMapperWrapper<PdelabSpaceImp, 1>,
                                                           rangeDim>::type>::type
 {
   typedef DunePdelabCgMapperWrapper<PdelabSpaceImp, 1> ScalarValuedMapperType;
   typedef typename DefaultProductMapperFromTuple<
-      typename PdelabSpaceImp::Traits::GridViewType,
+      typename PdelabSpaceImp::Traits::GridLayerType,
       typename Dune::XT::Common::make_identical_tuple<ScalarValuedMapperType, rangeDim>::type>::type BaseType;
 
 public:

@@ -36,7 +36,7 @@ typedef L2LocalProjectionLocalizableOperatorTest<{{SpaceType}}>
 {% elif 'FemCg' in SpaceType %}
     const auto {{Name}}_tolerance = fem_cg_tolerance<L2LocalProjectionOperatorTest_{{Name}}>();
 {% else %}
-  const auto {{Name}}_tolerance = Dune::XT::Grid::is_alugrid<typename {{SpaceType}}::GridViewType::Grid>::value
+  const auto {{Name}}_tolerance = Dune::XT::Grid::is_alugrid<Dune::XT::Grid::extract_grid_t<typename {{SpaceType}}::GridLayerType>>::value
       ? L2LocalProjectionOperatorTest_{{Name}}::alugrid_tolerance
       : L2LocalProjectionOperatorTest_{{Name}}::default_tolerance;
 {% endif %}

@@ -1,3 +1,5 @@
+#define DUNE_XT_COMMON_TEST_MAIN_CATCH_EXCEPTIONS 1
+
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
 #include <dune/xt/grid/gridprovider/cube.hh>
@@ -16,13 +18,7 @@ GTEST_TEST(linearelliptic_block_SWIPDG_discretization, coincides_with_SWIPDG)
   auto grid_provider = XT::Grid::make_cube_dd_subdomains_grid<GridType>(
       {-1, -1}, {1, 1}, {9, 9}, 1, {0, 0}, {3, 3}, 0, inner_boundary_index);
 
-  XT::Common::Configuration local_boundary_cfg;
-  local_boundary_cfg["type"] = "xt.grid.boundaryinfo.boundarysegment";
-  local_boundary_cfg["default"] = "dirichlet";
-  local_boundary_cfg["neumann"] =
-      "[" + XT::Common::to_string(inner_boundary_index) + " " + XT::Common::to_string(inner_boundary_index + 1) + "]";
-
-  grid_provider.visualize_dd("grid", local_boundary_cfg);
+  grid_provider.visualize_dd("grid_dd", /*with_coupling=*/true);
 
   GDT::LinearElliptic::ESV2007TestCase<GridType> test_case;
   const auto& problem = test_case.problem();
@@ -33,7 +29,7 @@ GTEST_TEST(linearelliptic_block_SWIPDG_discretization, coincides_with_SWIPDG)
   block_ipdg_disc.solve(block_ipdg_solution_vector);
 
   auto ipdg_disc =
-      GDT::LinearElliptic::IpdgDiscretizer<GridType, XT::Grid::Layers::leaf, GDT::ChooseSpaceBackend::fem>::discretize(
+      GDT::LinearElliptic::IpdgDiscretizer<GridType, XT::Grid::Layers::leaf, GDT::Backends::fem>::discretize(
           grid_provider, problem);
   auto ipdg_solution_vector = ipdg_disc.create_vector();
   ipdg_disc.solve(ipdg_solution_vector);

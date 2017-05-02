@@ -22,59 +22,59 @@ namespace GDT {
 
 
 // forward, to be used in the traits and to allow for specialization
-template <class GridViewImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
+template <class GridLayerImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
 class FvProductSpace
 {
-  static_assert(Dune::AlwaysFalse<GridViewImp>::value, "Untested for these dimensions!");
+  static_assert(Dune::AlwaysFalse<GridLayerImp>::value, "Untested for these dimensions!");
 };
 
 
 namespace internal {
 
 
-template <class GridViewImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
-class FvProductSpaceTraits : public FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols>
+template <class GridLayerImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
+class FvProductSpaceTraits : public FvSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, rangeDimCols>
 {
-  typedef FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols> BaseType;
+  typedef FvSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, rangeDimCols> BaseType;
 
 public:
-  typedef FvProductSpace<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
-  using typename BaseType::GridViewType;
-  static const size_t dimDomain = GridViewType::dimension;
+  typedef FvProductSpace<GridLayerImp, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
+  using typename BaseType::GridLayerType;
+  static const size_t dimDomain = GridLayerType::dimension;
   static const size_t dimRange = rangeDim;
   static const size_t dimRangeCols = rangeDimCols;
   using typename BaseType::RangeFieldType;
-  typedef typename Dune::GDT::FvSpace<GridViewType, RangeFieldType, 1, dimRangeCols> FactorSpaceType;
+  typedef typename Dune::GDT::FvSpace<GridLayerType, RangeFieldType, 1, dimRangeCols> FactorSpaceType;
   typedef typename Dune::XT::Common::make_identical_tuple<FactorSpaceType, dimRange>::type SpaceTupleType;
-  typedef typename Dune::GDT::FvProductMapper<GridViewType, dimRange, 1> MapperType;
+  typedef typename Dune::GDT::FvProductMapper<GridLayerType, dimRange, 1> MapperType;
 }; // class FvProductSpaceTraits
 
 
 } // namespace internal
 
 
-template <class GridViewImp, class RangeFieldImp, size_t rangeDim>
-class FvProductSpace<GridViewImp, RangeFieldImp, rangeDim, 1>
-    : public Dune::GDT::FvSpaceInterface<internal::FvProductSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
-                                         GridViewImp::dimension,
+template <class GridLayerImp, class RangeFieldImp, size_t rangeDim>
+class FvProductSpace<GridLayerImp, RangeFieldImp, rangeDim, 1>
+    : public Dune::GDT::FvSpaceInterface<internal::FvProductSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1>,
+                                         GridLayerImp::dimension,
                                          rangeDim,
                                          1>,
-      public Dune::GDT::ProductSpaceInterface<internal::FvProductSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
-                                              GridViewImp::dimension,
+      public Dune::GDT::ProductSpaceInterface<internal::FvProductSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1>,
+                                              GridLayerImp::dimension,
                                               rangeDim,
                                               1>
 {
-  typedef FvProductSpace<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef Dune::GDT::FvSpaceInterface<internal::FvProductSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
-                                      GridViewImp::dimension,
+  typedef FvProductSpace<GridLayerImp, RangeFieldImp, rangeDim, 1> ThisType;
+  typedef Dune::GDT::FvSpaceInterface<internal::FvProductSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1>,
+                                      GridLayerImp::dimension,
                                       rangeDim,
                                       1>
       BaseType;
-  typedef FvSpace<GridViewImp, RangeFieldImp, rangeDim, 1> FvSpaceFVSpaceType;
+  typedef FvSpace<GridLayerImp, RangeFieldImp, rangeDim, 1> FvSpaceFVSpaceType;
 
 public:
-  typedef typename internal::FvProductSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1> Traits;
-  using typename BaseType::GridViewType;
+  typedef typename internal::FvProductSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1> Traits;
+  using typename BaseType::GridLayerType;
   using typename BaseType::BackendType;
   using typename BaseType::MapperType;
   using typename BaseType::EntityType;
@@ -82,10 +82,10 @@ public:
   using typename BaseType::CommunicatorType;
   typedef typename Traits::FactorSpaceType FactorSpaceType;
 
-  FvProductSpace(GridViewType gv)
-    : default_fv_space_(gv)
-    , product_fv_mapper_(gv)
-    , factor_space_(gv)
+  FvProductSpace(GridLayerType grd_layr)
+    : default_fv_space_(grd_layr)
+    , product_fv_mapper_(grd_layr)
+    , factor_space_(grd_layr)
   {
   }
 
@@ -93,7 +93,6 @@ public:
   FvProductSpace(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;
-
   ThisType& operator=(ThisType&& source) = delete;
 
   // These methods are required by ProductSpaceInterface
@@ -109,9 +108,9 @@ public:
   }
 
   // The remaining methods are redirected to FvSpace
-  const GridViewType& grid_view() const
+  const GridLayerType& grid_layer() const
   {
-    return default_fv_space_.grid_view();
+    return default_fv_space_.grid_layer();
   }
 
   const BackendType& backend() const

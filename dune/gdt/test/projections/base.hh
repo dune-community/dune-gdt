@@ -14,10 +14,10 @@
 
 #include <dune/common/unused.hh>
 
-#include <dune/gdt/operators/l2.hh>
-#include <dune/gdt/spaces/tools.hh>
-#include <dune/gdt/test/operators/base.hh>
 #include <dune/xt/common/test/float_cmp.hh>
+
+#include <dune/gdt/operators/l2.hh>
+#include <dune/gdt/test/operators/base.hh>
 
 namespace Dune {
 namespace GDT {
@@ -33,12 +33,12 @@ struct ProjectionOperatorBase : public OperatorBase<SpaceType>
 {
   typedef OperatorBase<SpaceType> BaseType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::GridViewType;
+  using typename BaseType::GridLayerType;
 
   void measure_error(const RangeFieldType& expected_error) const
   {
     const auto l2_error =
-        make_l2_operator(this->space_.grid_view(), 2)->induced_norm(this->function_ - this->discrete_function_);
+        make_l2_operator(this->space_.grid_layer(), 2)->induced_norm(this->function_ - this->discrete_function_);
     DXTC_EXPECT_FLOAT_LE(l2_error, expected_error);
   }
 
@@ -63,14 +63,14 @@ struct LocalizableProjectionOperatorBase : public internal::ProjectionOperatorBa
   void constructible_by_ctor()
   {
     DUNE_UNUSED LocalizableProjectionOperatorType projection_operator(
-        this->space_.grid_view(), this->function_, this->discrete_function_);
+        this->space_.grid_layer(), this->function_, this->discrete_function_);
   }
 
   void produces_correct_results(const RangeFieldType& tolerance = BaseType::default_tolerance)
   {
     this->discrete_function_.vector() *= 0.0;
     LocalizableProjectionOperatorType projection_operator(
-        this->space_.grid_view(), this->function_, this->discrete_function_);
+        this->space_.grid_layer(), this->function_, this->discrete_function_);
     projection_operator.apply();
     this->measure_error(tolerance);
   }
@@ -85,13 +85,13 @@ struct ProjectionOperatorBase : public internal::ProjectionOperatorBase<SpaceTyp
 
   void constructible_by_ctor()
   {
-    DUNE_UNUSED ProjectionOperatorType projection_operator(this->space_.grid_view());
+    DUNE_UNUSED ProjectionOperatorType projection_operator(this->space_.grid_layer());
   }
 
   void produces_correct_results(const RangeFieldType& tolerance = 1e-15)
   {
     this->discrete_function_.vector() *= 0.0;
-    ProjectionOperatorType projection_operator(this->space_.grid_view());
+    ProjectionOperatorType projection_operator(this->space_.grid_layer());
     projection_operator.apply(this->function_, this->discrete_function_);
     this->measure_error(tolerance);
   }

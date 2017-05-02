@@ -25,32 +25,32 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridViewType,
+template <class GridLayerType,
           class SourceSpaceType,
           class SourceVectorType,
           class RangeSpaceType,
           class RangeVectorType>
-typename std::enable_if<XT::Grid::is_layer<GridViewType>::value && is_cg_space<RangeSpaceType>::value, void>::type
-prolong(const GridViewType& grid_view,
+typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value && is_cg_space<RangeSpaceType>::value, void>::type
+prolong(const GridLayerType& grid_layer,
         const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
         DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
         const size_t /*over_integrate*/ = 0)
 {
-  prolong_lagrange(grid_view, source, range);
+  prolong_lagrange(grid_layer, source, range);
 }
 
-template <class GridViewType,
+template <class GridLayerType,
           class SourceSpaceType,
           class SourceVectorType,
           class RangeSpaceType,
           class RangeVectorType>
-typename std::enable_if<XT::Grid::is_layer<GridViewType>::value && !is_cg_space<RangeSpaceType>::value, void>::type
-prolong(const GridViewType& grid_view,
+typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value && !is_cg_space<RangeSpaceType>::value, void>::type
+prolong(const GridLayerType& grid_layer,
         const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
         DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
         const size_t over_integrate = 0)
 {
-  prolong_l2(grid_view, source, range, over_integrate);
+  prolong_l2(grid_layer, source, range, over_integrate);
 }
 
 

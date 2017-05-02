@@ -21,7 +21,7 @@ namespace GDT {
 
 // forwards
 // from #include <dune/gdt/spaces/interface.hh>
-enum class ChooseSpaceBackend;
+enum class Backends;
 
 enum class ChoosePattern;
 
@@ -41,13 +41,13 @@ template <class Traits>
 class OperatorInterface;
 
 // from #include <dune/gdt/operators/base.hh>
-template <class M, class RS, class GV, class SS, class F, ChoosePattern pt>
+template <class M, class RS, class GL, class SS, class F, ChoosePattern pt>
 class MatrixOperatorBase;
 
-template <class GridViewImp, class RangeImp, class SourceImp, class FieldImp>
+template <class GridLayerImp, class RangeImp, class SourceImp, class FieldImp>
 class LocalizableProductBase;
 
-template <class GridViewImp, class SourceImp, class RangeImp>
+template <class GridLayerImp, class SourceImp, class RangeImp>
 class LocalizableOperatorBase;
 
 
@@ -109,11 +109,11 @@ struct is_operator_helper
 template <class Tt>
 struct is_localizable_product_helper
 {
-  DXTC_has_typedef_initialize_once(GridViewType);
+  DXTC_has_typedef_initialize_once(GridLayerType);
   DXTC_has_typedef_initialize_once(RangeType);
   DXTC_has_typedef_initialize_once(SourceType);
   DXTC_has_typedef_initialize_once(FieldType);
-  static const bool is_candidate = DXTC_has_typedef(GridViewType)<Tt>::value && DXTC_has_typedef(RangeType)<Tt>::value
+  static const bool is_candidate = DXTC_has_typedef(GridLayerType)<Tt>::value && DXTC_has_typedef(RangeType)<Tt>::value
                                    && DXTC_has_typedef(SourceType)<Tt>::value && DXTC_has_typedef(FieldType)<Tt>::value;
 };
 
@@ -123,13 +123,13 @@ struct is_matrix_operator_helper
 {
   DXTC_has_typedef_initialize_once(MatrixType);
   DXTC_has_typedef_initialize_once(RangeSpaceType);
-  DXTC_has_typedef_initialize_once(GridViewType);
+  DXTC_has_typedef_initialize_once(GridLayerType);
   DXTC_has_typedef_initialize_once(SourceSpaceType);
   DXTC_has_typedef_initialize_once(FieldType);
   DXTC_has_static_member_initialize_once(pattern_type);
   static const bool is_candidate =
       DXTC_has_typedef(MatrixType)<Tt>::value && DXTC_has_typedef(RangeSpaceType)<Tt>::value
-      && DXTC_has_typedef(GridViewType)<Tt>::value && DXTC_has_typedef(SourceSpaceType)<Tt>::value
+      && DXTC_has_typedef(GridLayerType)<Tt>::value && DXTC_has_typedef(SourceSpaceType)<Tt>::value
       && DXTC_has_typedef(FieldType)<Tt>::value && DXTC_has_static_member(pattern_type)<Tt>::value;
 };
 
@@ -208,7 +208,7 @@ struct is_operator<T, false> : public std::false_type
 
 // from #include <dune/gdt/operators/base.hh>
 template <class T, bool candidate = internal::is_localizable_product_helper<T>::is_candidate>
-struct is_localizable_product : public std::is_base_of<LocalizableProductBase<typename T::GridViewType,
+struct is_localizable_product : public std::is_base_of<LocalizableProductBase<typename T::GridLayerType,
                                                                               typename T::RangeType,
                                                                               typename T::SourceType,
                                                                               typename T::FieldType>,
@@ -225,7 +225,7 @@ struct is_localizable_product<T, false> : public std::false_type
 template <class T, bool candidate = internal::is_matrix_operator_helper<T>::is_candidate>
 struct is_matrix_operator : public std::is_base_of<MatrixOperatorBase<typename T::MatrixType,
                                                                       typename T::RangeSpaceType,
-                                                                      typename T::GridViewType,
+                                                                      typename T::GridLayerType,
                                                                       typename T::SourceSpaceType,
                                                                       typename T::FieldType,
                                                                       T::pattern_type>,

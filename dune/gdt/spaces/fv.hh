@@ -25,31 +25,32 @@ namespace GDT {
 
 template <class GridType,
           XT::Grid::Layers layer_type,
-          ChooseSpaceBackend backend_type,
+          Backends backend_type,
           class RangeFieldType,
           size_t dimRange,
           size_t dimRangeCols = 1>
 class FvSpaceProvider
 {
-  static const XT::Grid::Backends part_view_type = ChooseGridPartView<backend_type>::type;
-
 public:
-  typedef typename XT::Grid::Layer<GridType, layer_type, part_view_type>::type GridLayerType;
+  static const constexpr SpaceType space_type = SpaceType::fv;
+  static const constexpr Backends space_backend = backend_type;
+  static const constexpr XT::Grid::Layers grid_layer = layer_type;
+  static const constexpr XT::Grid::Backends layer_backend = layer_from_backend<backend_type>::type;
+
+  typedef typename XT::Grid::Layer<GridType, layer_type, layer_backend>::type GridLayerType;
 
 private:
-  template <class G, class R, size_t r, size_t rC, GDT::ChooseSpaceBackend b>
+  template <class G, class R, size_t r, size_t rC, GDT::Backends b>
   struct SpaceChooser
   {
     static_assert(AlwaysFalse<G>::value, "No space available for this backend!");
   };
 
   template <class G, class R, size_t r, size_t rC>
-  struct SpaceChooser<G, R, r, rC, GDT::ChooseSpaceBackend::gdt>
+  struct SpaceChooser<G, R, r, rC, GDT::Backends::gdt>
   {
     typedef GDT::FvSpace<GridLayerType, R, r, rC> Type;
   };
-
-  typedef XT::Grid::GridProvider<GridType> GridProviderType;
 
 public:
   typedef typename SpaceChooser<GridType, RangeFieldType, dimRange, dimRangeCols, backend_type>::Type Type;
@@ -60,9 +61,10 @@ public:
     return Type(grid_layer);
   }
 
-  static Type create(GridProviderType& grid_provider, const int level = 0)
+  template <class DdGridType>
+  static Type create(XT::Grid::GridProvider<GridType, DdGridType>& grid_provider, const int level = 0)
   {
-    return create(grid_provider.template layer<layer_type, part_view_type>(level));
+    return Type(grid_provider.template layer<layer_type, layer_backend>(level));
   }
 }; // class FvSpaceProvider
 

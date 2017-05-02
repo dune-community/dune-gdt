@@ -13,6 +13,7 @@
 #define DUNE_GDT_SPACES_FV_SPACE_HH
 
 #include <dune/xt/common/type_traits.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/spaces/basefunctionset/fv.hh>
 #include <dune/gdt/spaces/mapper/fv.hh>
@@ -25,10 +26,10 @@ namespace GDT {
 
 
 // forward, to be used in the traits and to allow for specialization
-template <class GridViewImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
+template <class GridLayerImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
 class FvSpace
 {
-  static_assert(Dune::AlwaysFalse<GridViewImp>::value, "Untested for these dimensions!");
+  static_assert(Dune::AlwaysFalse<GridLayerImp>::value, "Untested for these dimensions!");
 };
 
 
@@ -38,28 +39,30 @@ namespace internal {
 /**
  *  \brief Traits class for FvSpace.
  */
-template <class GridViewImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
+template <class GridLayerImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
 class FvSpaceTraits
 {
+  static_assert(XT::Grid::is_layer<GridLayerImp>::value, "");
+
 public:
-  typedef FvSpace<GridViewImp, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
+  typedef FvSpace<GridLayerImp, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
   static const int polOrder = 0;
   static const bool continuous = false;
-  typedef GridViewImp GridViewType;
-  typedef typename GridViewType::IndexSet BackendType;
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  typedef GridLayerImp GridLayerType;
+  typedef typename GridLayerType::IndexSet BackendType;
+  using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
   typedef RangeFieldImp RangeFieldType;
-  typedef FvMapper<GridViewType, rangeDim, rangeDimCols> MapperType;
-  typedef BaseFunctionSet::FiniteVolume<typename GridViewType::template Codim<0>::Entity,
-                                        typename GridViewType::ctype,
-                                        GridViewType::dimension,
+  typedef FvMapper<GridLayerType, rangeDim, rangeDimCols> MapperType;
+  typedef BaseFunctionSet::FiniteVolume<EntityType,
+                                        typename GridLayerType::ctype,
+                                        GridLayerType::dimension,
                                         RangeFieldType,
                                         rangeDim,
                                         rangeDimCols>
       BaseFunctionSetType;
-  static const XT::Grid::Backends part_view_type = XT::Grid::Backends::view;
+  static const XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static const bool needs_grid_view = true;
-  typedef CommunicationChooser<GridViewType> CommunicationChooserType;
+  typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 }; // class FvSpaceTraits
 
@@ -67,23 +70,23 @@ public:
 } // namespace internal
 
 
-template <class GridViewImp, class RangeFieldImp, size_t rangeDim>
-class FvSpace<GridViewImp, RangeFieldImp, rangeDim, 1>
-    : public FvSpaceInterface<internal::FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
-                              GridViewImp::dimension,
+template <class GridLayerImp, class RangeFieldImp, size_t rangeDim>
+class FvSpace<GridLayerImp, RangeFieldImp, rangeDim, 1>
+    : public FvSpaceInterface<internal::FvSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1>,
+                              GridLayerImp::dimension,
                               rangeDim,
                               1>
 {
-  typedef FvSpace<GridViewImp, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef FvSpaceInterface<internal::FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1>,
-                           GridViewImp::dimension,
+  typedef FvSpace<GridLayerImp, RangeFieldImp, rangeDim, 1> ThisType;
+  typedef FvSpaceInterface<internal::FvSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1>,
+                           GridLayerImp::dimension,
                            rangeDim,
                            1>
       BaseType;
 
 public:
-  typedef typename internal::FvSpaceTraits<GridViewImp, RangeFieldImp, rangeDim, 1> Traits;
-  using typename BaseType::GridViewType;
+  typedef typename internal::FvSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1> Traits;
+  using typename BaseType::GridLayerType;
   using typename BaseType::BackendType;
   using typename BaseType::MapperType;
   using typename BaseType::EntityType;
@@ -95,17 +98,17 @@ private:
 public:
   using typename BaseType::CommunicatorType;
 
-  FvSpace(GridViewType gv)
-    : grid_view_(gv)
-    , mapper_(grid_view_)
-    , communicator_(CommunicationChooserType::create(grid_view_))
+  FvSpace(GridLayerType grd_layr)
+    : grid_layer_(grd_layr)
+    , mapper_(grid_layer_)
+    , communicator_(CommunicationChooserType::create(grid_layer_))
   {
   }
 
   FvSpace(const ThisType& other)
-    : grid_view_(other.grid_view_)
+    : grid_layer_(other.grid_layer_)
     , mapper_(other.mapper_)
-    , communicator_(CommunicationChooserType::create(grid_view_))
+    , communicator_(CommunicationChooserType::create(grid_layer_))
   {
   }
 
@@ -115,14 +118,19 @@ public:
 
   ThisType& operator=(ThisType&& source) = delete;
 
-  const GridViewType& grid_view() const
+  const GridLayerType& grid_layer() const
   {
-    return grid_view_;
+    return grid_layer_;
+  }
+
+  GridLayerType& grid_layer()
+  {
+    return grid_layer_;
   }
 
   const BackendType& backend() const
   {
-    return grid_view_.indexSet();
+    return grid_layer_.indexSet();
   }
 
   const MapperType& mapper() const
@@ -142,22 +150,22 @@ public:
   }
 
 private:
-  const GridViewType grid_view_;
+  GridLayerType grid_layer_;
   const MapperType mapper_;
   const std::unique_ptr<CommunicatorType> communicator_;
 }; // class FvSpace< ..., 1, 1 >
 
 
-template <class R, size_t r, size_t rC, class GV>
-FvSpace<GV, R, r, rC> make_fv_space(const GV& grid_view)
+template <class R, size_t r, size_t rC, class GL>
+FvSpace<GL, R, r, rC> make_fv_space(const GL& grid_layer)
 {
-  return FvSpace<GV, R, r, rC>(grid_view);
+  return FvSpace<GL, R, r, rC>(grid_layer);
 }
 
-template <class R, size_t r, class GV>
-FvSpace<GV, R, r, 1> make_fv_space(const GV& grid_view)
+template <class R, size_t r, class GL>
+FvSpace<GL, R, r, 1> make_fv_space(const GL& grid_layer)
 {
-  return FvSpace<GV, R, r, 1>(grid_view);
+  return FvSpace<GL, R, r, 1>(grid_layer);
 }
 
 

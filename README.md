@@ -12,22 +12,20 @@
 
 [![Build Status](https://travis-ci.org/dune-community/dune-gdt.png?branch=master)](https://travis-ci.org/dune-community/dune-gdt)
 
-dune-gdt is a DUNE (http://www.dune-project.org) module which provides a
-generic discretization toolbox for grid-based numerical methods. It contains
-building blocks - like local operators, local evaluations, local assemblers -
-for discretization methods as well as generic interfaces for objects like
-discrete function spaces and basefunction sets. Implementations are provided
-using the main DUNE discretization modules, like dune-fem
-(http://dune.mathematik.uni-freiburg.de/), dune-fem-localfunctions
-(http://users.dune-project.org/projects/dune-fem-localfunctions) and
-dune-pdelab (http://www.dune-project.org/pdelab/).
+dune-gdt is a [DUNE](http://www.dune-project.org/) module which provides a generic
+discretization toolbox for grid-based numerical methods. It contains building blocks - like
+local operators, local evaluations, local assemblers - for discretization methods as well as
+generic interfaces for objects like discrete function spaces and basefunction sets.
+Implementations are provided using the main DUNE discretization modules, like
+[dune-fem](https://www.dune-project.org/modules/dune-fem/),
+[dune-functions](https://www.dune-project.org/modules/dune-functions/) and
+[dune-pdelab](https://gitlab.dune-project.org/pdelab/dune-pdelab).
 
 New users may best try out this module by using the git supermodule
-dune-gdt-super (https://github.com/dune-community/dune-gdt-super).
-Experienced DUNE users may go ahead. As usual, you will have to call
-configure and make using dunecontrol
-(see http://www.dune-project.org/doc/installation-notes.html), working
-examples are located in 'dune/gdt/test/'...
+[dune-gdt-super](https://github.com/dune-community/dune-gdt-super). Experienced DUNE users
+may go ahead. As usual, you will have to use
+[dunecontrol](https://www.dune-project.org/doc/installation/), working examples are located
+in 'dune/gdt/test/'...
 
-If you want to start hacking go ahead and fork us on github.com:
-https://github.com/dune-community/dune-gdt/
+If you want to start hacking go ahead and
+[fork us on github.com](https://github.com/dune-community/dune-gdt/)!

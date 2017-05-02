@@ -24,7 +24,7 @@
 #define _DUNE_GDT_SPACES_DG_BIND_FEM(_m, _GRID, _layer, _r, _rC)                                                       \
   Dune::GDT::bindings::SpaceInterface<Dune::GDT::DgSpaceProvider<_GRID,                                                \
                                                                  Dune::XT::Grid::Layers::_layer,                       \
-                                                                 Dune::GDT::ChooseSpaceBackend::fem,                   \
+                                                                 Dune::GDT::Backends::fem,                             \
                                                                  1,                                                    \
                                                                  double,                                               \
                                                                  _r,                                                   \
@@ -63,6 +63,7 @@
 //#endif
 
 #define _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, _layer)                                                            \
+  _DUNE_GDT_SPACES_DG_BIND_FEM(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, 1, 1);                                          \
   _DUNE_GDT_SPACES_DG_BIND_FEM(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1)
 #define _DUNE_GDT_SPACES_DG_BIND_FEM_YASP(_m)                                                                          \
   _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, dd_subdomain);                                                           \

@@ -13,6 +13,7 @@
 
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/grid/walker/apply-on.hh>
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/la/container/vector-interface.hh>
 
 #include <dune/gdt/assembler/wrapper.hh>
@@ -28,24 +29,24 @@ namespace GDT {
 
 
 // forward, required for the traits
-template <class V, class S, class GV = typename S::GridViewType, class F = typename V::RealType>
+template <class V, class S, class GL = typename S::GridLayerType, class F = typename V::RealType>
 class VectorFunctionalBase;
 
 
 namespace internal {
 
 
-template <class VectorImp, class SpaceImp, class GridViewImp, class FieldImp>
+template <class VectorImp, class SpaceImp, class GridLayerImp, class FieldImp>
 class VectorFunctionalBaseTraits
 {
   static_assert(XT::LA::is_vector<VectorImp>::value, "VectorType has to be derived from XT::LA::vectorInterface!");
   static_assert(is_space<SpaceImp>::value, "SpaceType has to be derived from SpaceInterface!");
-  static_assert(std::is_same<typename SpaceImp::GridViewType::template Codim<0>::Entity,
-                             typename GridViewImp::template Codim<0>::Entity>::value,
-                "SpaceType and GridViewType have to match!");
+  static_assert(std::is_same<XT::Grid::extract_entity_t<typename SpaceImp::GridLayerType>,
+                             XT::Grid::extract_entity_t<GridLayerImp>>::value,
+                "SpaceType and GridLayerType have to match!");
 
 public:
-  typedef VectorFunctionalBase<VectorImp, SpaceImp, GridViewImp, FieldImp> derived_type;
+  typedef VectorFunctionalBase<VectorImp, SpaceImp, GridLayerImp, FieldImp> derived_type;
   typedef FieldImp FieldType;
 };
 
@@ -56,20 +57,20 @@ public:
 /**
  * \note Does a const_cast in apply(), not sure yet if this is fine.
  */
-template <class VectorImp, class SpaceImp, class GridViewImp, class FieldImp>
+template <class VectorImp, class SpaceImp, class GridLayerImp, class FieldImp>
 class VectorFunctionalBase
-    : public FunctionalInterface<internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridViewImp, FieldImp>>,
-      public SystemAssembler<SpaceImp, GridViewImp>
+    : public FunctionalInterface<internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridLayerImp, FieldImp>>,
+      public SystemAssembler<SpaceImp, GridLayerImp>
 {
-  typedef FunctionalInterface<internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridViewImp, FieldImp>>
+  typedef FunctionalInterface<internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridLayerImp, FieldImp>>
       BaseFunctionalType;
-  typedef SystemAssembler<SpaceImp, GridViewImp> BaseAssemblerType;
-  typedef VectorFunctionalBase<VectorImp, SpaceImp, GridViewImp, FieldImp> ThisType;
+  typedef SystemAssembler<SpaceImp, GridLayerImp> BaseAssemblerType;
+  typedef VectorFunctionalBase<VectorImp, SpaceImp, GridLayerImp, FieldImp> ThisType;
 
 public:
-  typedef internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridViewImp, FieldImp> Traits;
+  typedef internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridLayerImp, FieldImp> Traits;
   typedef typename BaseAssemblerType::AnsatzSpaceType SpaceType;
-  using typename BaseAssemblerType::GridViewType;
+  using typename BaseAssemblerType::GridLayerType;
   typedef VectorImp VectorType;
   using typename BaseFunctionalType::FieldType;
   using typename BaseFunctionalType::derived_type;
@@ -121,9 +122,9 @@ public:
   using BaseAssemblerType::append;
 
   template <class F>
-  ThisType&
-  append(const LocalVolumeFunctionalInterface<F>& local_volume_functional,
-         const XT::Grid::ApplyOn::WhichEntity<GridViewType>* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
+  ThisType& append(
+      const LocalVolumeFunctionalInterface<F>& local_volume_functional,
+      const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
     typedef internal::LocalVolumeFunctionalWrapper<ThisType,
                                                    typename LocalVolumeFunctionalInterface<F>::derived_type,
@@ -136,8 +137,8 @@ public:
 
   template <class F>
   ThisType& append(const LocalFaceFunctionalInterface<F>& local_face_functional,
-                   const XT::Grid::ApplyOn::WhichIntersection<GridViewType>* where =
-                       new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
+                   const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where =
+                       new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
     typedef internal::LocalFaceFunctionalWrapper<ThisType,
                                                  typename LocalFaceFunctionalInterface<F>::derived_type,

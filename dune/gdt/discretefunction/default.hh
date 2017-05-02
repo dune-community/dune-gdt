@@ -25,10 +25,8 @@
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/ranges.hh>
-#include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/la/container/interfaces.hh>
 #include <dune/xt/functions/interfaces.hh>
-#include <dune/xt/common/memory.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -76,8 +74,8 @@ struct visualize_helper<ii, true>
     const auto& space = discrete_function.space();
     const auto& factor_space = space.template factor<ii>();
     typename DiscreteFunctionType::VectorType factor_vector(factor_space.mapper().size());
-    const auto it_end = space.grid_view().template end<0>();
-    for (auto it = space.grid_view().template begin<0>(); it != it_end; ++it) {
+    const auto it_end = space.grid_layer().template end<0>();
+    for (auto it = space.grid_layer().template begin<0>(); it != it_end; ++it) {
       const auto& entity = *it;
       for (size_t jj = 0; jj < factor_space.mapper().numDofs(entity); ++jj)
         factor_vector[factor_space.mapper().mapToGlobal(entity, jj)] =
@@ -206,7 +204,7 @@ public:
 
   std::unique_ptr<ConstLocalDiscreteFunctionType> local_discrete_function(const EntityType& entity) const
   {
-    assert(space_->grid_view().indexSet().contains(entity));
+    assert(space_->grid_layer().indexSet().contains(entity));
     return Dune::XT::Common::make_unique<ConstLocalDiscreteFunctionType>(*space_, vector_, entity);
   }
 
@@ -216,7 +214,7 @@ public:
   }
 
   /**
-   * \brief Visualizes the function using Dune::XT::Functions::LocalizableFunctionInterface::visualize on the grid view
+   * \brief Visualizes the function using Dune::XT::Functions::LocalizableFunctionInterface::visualize on the grid layer
    *        associated with the space.
    * \sa    Dune::XT::Functions::LocalizableFunctionInterface::visualize
    * \note  Subsampling is enabled by default for functions of order greater than one.
@@ -261,8 +259,8 @@ protected:
                     const bool subsampling,
                     const VTK::OutputType vtk_output_type)
     {
-      static_cast<const BaseType&>(self).template visualize<typename SpaceType::GridViewType>(
-          self.space().grid_view(), filename_prefix + filename_suffix, subsampling, vtk_output_type);
+      static_cast<const BaseType&>(self).template visualize<typename SpaceType::GridLayerType>(
+          self.space().grid_layer(), filename_prefix + filename_suffix, subsampling, vtk_output_type);
     }
   };
 
@@ -359,7 +357,7 @@ public:
 
   std::unique_ptr<LocalDiscreteFunctionType> local_discrete_function(const EntityType& entity)
   {
-    assert(space_->grid_view().indexSet().contains(entity));
+    assert(space_->grid_layer().indexSet().contains(entity));
     return Dune::XT::Common::make_unique<LocalDiscreteFunctionType>(*space_, this->access(), entity);
   }
 

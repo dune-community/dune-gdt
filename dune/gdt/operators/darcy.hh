@@ -22,6 +22,7 @@
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/fmatrix.hh>
 #include <dune/xt/common/type_traits.hh>
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/la/container.hh>
 #include <dune/xt/la/solver.hh>
@@ -38,26 +39,26 @@ namespace GDT {
 
 
 // forward, to be used in the traits
-template <class GridViewImp, class FunctionImp>
+template <class GridLayerImp, class FunctionImp>
 class DarcyOperator;
 
 
 namespace internal {
 
 
-template <class GridViewImp, class FunctionImp>
+template <class GridLayerImp, class FunctionImp>
 class DarcyOperatorTraits
 {
   static_assert(XT::Functions::is_localizable_function<FunctionImp>::value,
                 "FunctionImp has to be derived from XT::Functions::is_localizable_function!");
-  static_assert(std::is_same<typename GridViewImp::ctype, typename FunctionImp::DomainFieldType>::value,
+  static_assert(std::is_same<typename GridLayerImp::ctype, typename FunctionImp::DomainFieldType>::value,
                 "Types do not match!");
-  static_assert(GridViewImp::dimension == FunctionImp::dimDomain, "Dimensions do not match!");
+  static_assert(GridLayerImp::dimension == FunctionImp::dimDomain, "Dimensions do not match!");
   static_assert(FunctionImp::dimRange == FunctionImp::dimRangeCols, "Dimensions do not match!");
 
 public:
-  typedef DarcyOperator<GridViewImp, FunctionImp> derived_type;
-  typedef GridViewImp GridViewType;
+  typedef DarcyOperator<GridLayerImp, FunctionImp> derived_type;
+  typedef GridLayerImp GridLayerType;
   typedef typename FunctionImp::RangeFieldType FieldType;
   typedef NoJacobian JacobianType;
 }; // class DarcyOperatorTraits
@@ -70,22 +71,21 @@ public:
   * \note Only works for scalar valued function atm.
   * \todo add make_darcy_operator
   **/
-template <class GridViewImp, class FunctionImp>
-class DarcyOperator : public OperatorInterface<internal::DarcyOperatorTraits<GridViewImp, FunctionImp>>
+template <class GridLayerImp, class FunctionImp>
+class DarcyOperator : public OperatorInterface<internal::DarcyOperatorTraits<GridLayerImp, FunctionImp>>
 {
   typedef OperatorInterface<internal::DarcyOperatorTraits<GridViewImp, FunctionImp>> BaseType;
 
 public:
-  using typename BaseType::JacobianType;
-  typedef internal::DarcyOperatorTraits<GridViewImp, FunctionImp> Traits;
-  typedef typename Traits::GridViewType GridViewType;
+  typedef internal::DarcyOperatorTraits<GridLayerImp, FunctionImp> Traits;
+  typedef typename Traits::GridLayerType GridLayerType;
   typedef typename Traits::FieldType FieldType;
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
-  typedef typename GridViewType::ctype DomainFieldType;
-  static const size_t dimDomain = GridViewType::dimension;
+  using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
+  typedef typename GridLayerType::ctype DomainFieldType;
+  static const size_t dimDomain = GridLayerType::dimension;
 
-  DarcyOperator(const GridViewType& grd_vw, const FunctionImp& function)
-    : grid_view_(grd_vw)
+  DarcyOperator(const GridLayerType& grd_vw, const FunctionImp& function)
+    : grid_layer_(grd_vw)
     , function_(function)
   {
   }
@@ -157,8 +157,8 @@ private:
     V rhs(range.space().mapper().size());
 
     // walk the grid
-    const auto entity_it_end = grid_view_.template end<0>();
-    for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+    const auto entity_it_end = grid_layer_.template end<0>();
+    for (auto entity_it = grid_layer_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       const auto local_function = function_.local_function(entity);
       const auto local_source = source.local_function(entity);
@@ -214,8 +214,8 @@ private:
     for (size_t ii = 0; ii < range_vector.size(); ++ii)
       range_vector[ii] = infinity;
     // walk the grid
-    const auto entity_it_end = grid_view_.template end<0>();
-    for (auto entity_it = grid_view_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
+    const auto entity_it_end = grid_layer_.template end<0>();
+    for (auto entity_it = grid_layer_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       const auto local_DoF_indices = rtn0_space.local_DoF_indices(entity);
       const auto global_DoF_indices = rtn0_space.mapper().globalIndices(entity);
@@ -224,13 +224,13 @@ private:
       const auto local_source = source.local_function(entity);
       const auto local_basis = rtn0_space.base_function_set(entity);
       // walk the intersections
-      const auto intersection_it_end = grid_view_.iend(entity);
-      for (auto intersection_it = grid_view_.ibegin(entity); intersection_it != intersection_it_end;
+      const auto intersection_it_end = grid_layer_.iend(entity);
+      for (auto intersection_it = grid_layer_.ibegin(entity); intersection_it != intersection_it_end;
            ++intersection_it) {
         const auto& intersection = *intersection_it;
         if (intersection.neighbor() && !intersection.boundary()) {
           const auto neighbor = intersection.outside();
-          if (grid_view_.indexSet().index(entity) < grid_view_.indexSet().index(neighbor)) {
+          if (grid_layer_.indexSet().index(entity) < grid_layer_.indexSet().index(neighbor)) {
             const auto local_function_neighbor = function_.local_function(neighbor);
             const auto local_source_neighbor = source.local_function(neighbor);
             const size_t local_intersection_index = intersection.indexInInside();
@@ -322,15 +322,15 @@ private:
     return (function_value * source_gradient) * normal;
   }
 
-  const GridViewType& grid_view_;
+  const GridLayerType& grid_layer_;
   const FunctionImp& function_;
 }; // class DarcyOperator
 
 
 template <class G, class F>
-std::unique_ptr<DarcyOperator<G, F>> make_darcy(const G& grid_view, const F& function)
+std::unique_ptr<DarcyOperator<G, F>> make_darcy(const G& grid_layer, const F& function)
 {
-  return std::unique_ptr<DarcyOperator<G, F>>(new DarcyOperator<G, F>(grid_view, function));
+  return std::unique_ptr<DarcyOperator<G, F>>(new DarcyOperator<G, F>(grid_layer, function));
 }
 
 

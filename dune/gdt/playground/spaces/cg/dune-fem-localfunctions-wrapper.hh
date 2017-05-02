@@ -56,7 +56,7 @@ class DuneFemLocalfunctionsCgSpaceWrapperTraits
 {
 public:
   typedef GridPartImp GridPartType;
-  typedef typename GridPartType::GridViewType GridViewType;
+  typedef typename GridPartType::GridLayerType GridLayerType;
   static const int polOrder = polynomialOrder;
   static const bool continuous = true;
   static_assert(polOrder >= 1, "Wrong polOrder given!");
@@ -104,7 +104,7 @@ public:
                                                         rangeDimCols>
       BaseFunctionSetType;
   typedef typename BaseFunctionSetType::EntityType EntityType;
-  static const XT::Grid::Backends part_view_type = XT::Grid::Backends::part;
+  static const XT::Grid::Backends layer_backend = XT::Grid::Backends::part;
   static const bool needs_grid_view = false;
   typedef double CommunicatorType;
 
@@ -138,7 +138,7 @@ public:
   typedef DuneFemLocalfunctionsCgSpaceWrapperTraits<GridPartImp, polynomialOrder, RangeFieldImp, 1, 1> Traits;
 
   typedef typename Traits::GridPartType GridPartType;
-  typedef typename Traits::GridViewType GridViewType;
+  typedef typename Traits::GridLayerType GridLayerType;
   static const int polOrder = Traits::polOrder;
   typedef typename GridPartType::ctype DomainFieldType;
   static const size_t dimDomain = BaseType::dimension;
@@ -196,7 +196,7 @@ public:
     return gridPart_;
   }
 
-  const GridViewType& grid_view() const
+  const GridLayerType& grid_layer() const
   {
     return gridView_;
   }
@@ -238,7 +238,7 @@ public:
 
 private:
   const GridPartType gridPart_;
-  const GridViewType gridView_;
+  const GridLayerType gridView_;
   BaseFunctionSetMapType baseFunctionSetMap_;
   const BackendType backend_;
   const MapperType mapper_;

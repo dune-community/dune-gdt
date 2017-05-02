@@ -32,55 +32,55 @@ namespace GDT {
 
 
 template <class TestSpaceImp,
-          class GridViewImp = typename TestSpaceImp::GridViewType,
+          class GridLayerImp = typename TestSpaceImp::GridLayerType,
           class AnsatzSpaceImp = TestSpaceImp>
-class SystemAssembler : public XT::Grid::Walker<GridViewImp>
+class SystemAssembler : public XT::Grid::Walker<GridLayerImp>
 {
   static_assert(GDT::is_space<TestSpaceImp>::value, "TestSpaceImp has to be derived from SpaceInterface!");
   static_assert(GDT::is_space<AnsatzSpaceImp>::value, "AnsatzSpaceImp has to be derived from SpaceInterface!");
   static_assert(std::is_same<typename TestSpaceImp::RangeFieldType, typename AnsatzSpaceImp::RangeFieldType>::value,
                 "Types do not match!");
-  typedef XT::Grid::Walker<GridViewImp> BaseType;
-  typedef SystemAssembler<TestSpaceImp, GridViewImp, AnsatzSpaceImp> ThisType;
+  typedef XT::Grid::Walker<GridLayerImp> BaseType;
+  typedef SystemAssembler<TestSpaceImp, GridLayerImp, AnsatzSpaceImp> ThisType;
 
 public:
   typedef TestSpaceImp TestSpaceType;
   typedef AnsatzSpaceImp AnsatzSpaceType;
   typedef typename TestSpaceType::RangeFieldType RangeFieldType;
 
-  typedef typename BaseType::GridViewType GridViewType;
+  typedef typename BaseType::GridLayerType GridLayerType;
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::IntersectionType IntersectionType;
 
-  typedef XT::Grid::ApplyOn::WhichEntity<GridViewType> ApplyOnWhichEntity;
-  typedef XT::Grid::ApplyOn::WhichIntersection<GridViewType> ApplyOnWhichIntersection;
+  typedef XT::Grid::ApplyOn::WhichEntity<GridLayerType> ApplyOnWhichEntity;
+  typedef XT::Grid::ApplyOn::WhichIntersection<GridLayerType> ApplyOnWhichIntersection;
 
-  SystemAssembler(TestSpaceType test, AnsatzSpaceType ansatz, GridViewType grd_vw)
-    : BaseType(grd_vw)
+  SystemAssembler(TestSpaceType test, AnsatzSpaceType ansatz, GridLayerType grd_layr)
+    : BaseType(grd_layr)
     , test_space_(test)
     , ansatz_space_(ansatz)
   {
   }
 
-  /// \todo Guard against GridViewType != TestSpaceImp::GridViewType
+  /// \todo Guard against GridLayerType != TestSpaceImp::GridLayerType
   SystemAssembler(TestSpaceType test, AnsatzSpaceType ansatz)
-    : BaseType(test.grid_view())
+    : BaseType(test.grid_layer())
     , test_space_(test)
     , ansatz_space_(ansatz)
   {
   }
 
-  /// \todo Guard against AnsatzSpaceType != GridViewType || GridViewType != TestSpaceType::GridViewType
+  /// \todo Guard against AnsatzSpaceType != GridLayerType || GridLayerType != TestSpaceType::GridLayerType
   explicit SystemAssembler(TestSpaceType test)
-    : BaseType(test.grid_view())
+    : BaseType(test.grid_layer())
     , test_space_(test)
     , ansatz_space_(test)
   {
   }
 
   /// \todo Guard against AnsatzSpaceType != TestSpaceType
-  SystemAssembler(TestSpaceType test, GridViewType grd_vw)
-    : BaseType(grd_vw)
+  SystemAssembler(TestSpaceType test, GridLayerType grd_layr)
+    : BaseType(grd_layr)
     , test_space_(test)
     , ansatz_space_(test)
   {
@@ -106,9 +106,9 @@ public:
 
   template <class C>
   ThisType& append(ConstraintsInterface<C>& constraints,
-                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
+                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
-    typedef internal::ConstraintsWrapper<TestSpaceType, AnsatzSpaceType, GridViewType, typename C::derived_type>
+    typedef internal::ConstraintsWrapper<TestSpaceType, AnsatzSpaceType, GridLayerType, typename C::derived_type>
         WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, ansatz_space_, where, constraints.as_imp()));
     return *this;
@@ -117,7 +117,7 @@ public:
   template <class V, class M>
   ThisType& append(const LocalVolumeTwoFormAssembler<V>& local_assembler,
                    XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
-                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
+                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
@@ -147,7 +147,7 @@ public:
   template <class V, class M>
   ThisType& append(const LocalCouplingTwoFormAssembler<V>& local_assembler,
                    XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
-                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
+                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
@@ -163,7 +163,7 @@ public:
   template <class V, class M>
   ThisType& append(const LocalBoundaryTwoFormAssembler<V>& local_assembler,
                    XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
-                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
+                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
@@ -179,7 +179,7 @@ public:
   template <class L, class V>
   ThisType& append(const LocalVolumeFunctionalAssembler<L>& local_assembler,
                    XT::LA::VectorInterface<V, RangeFieldType>& vector,
-                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
+                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
     assert(vector.size() == test_space_->mapper().size());
     typedef internal::LocalVolumeFunctionalVectorAssemblerWrapper<ThisType,
@@ -193,7 +193,7 @@ public:
   template <class L, class V>
   ThisType& append(const LocalFaceFunctionalAssembler<L>& local_assembler,
                    XT::LA::VectorInterface<V, RangeFieldType>& vector,
-                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridViewType>())
+                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
     assert(vector.size() == test_space_->mapper().size());
     typedef internal::LocalFaceFunctionalVectorAssemblerWrapper<ThisType,

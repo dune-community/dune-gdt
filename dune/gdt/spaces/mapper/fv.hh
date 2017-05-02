@@ -18,6 +18,7 @@
 
 #include <dune/xt/common/unused.hh>
 #include <dune/xt/common/type_traits.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include "interfaces.hh"
 
@@ -26,40 +27,40 @@ namespace GDT {
 
 
 // forward
-template <class GridViewImp, size_t rangeDim = 1, size_t rangeDimCols = 1>
+template <class GridLayerImp, size_t rangeDim = 1, size_t rangeDimCols = 1>
 class FvMapper
 {
-  static_assert(AlwaysFalse<GridViewImp>::value, "Not available for these dimensions!");
+  static_assert(AlwaysFalse<GridLayerImp>::value, "Not available for these dimensions!");
 };
 
-template <class GridViewImp, size_t rangeDim = 1, size_t rangeDimCols = 1>
+template <class GridLayerImp, size_t rangeDim = 1, size_t rangeDimCols = 1>
 class FvProductMapper
 {
-  static_assert(AlwaysFalse<GridViewImp>::value, "Not available for these dimensions!");
+  static_assert(AlwaysFalse<GridLayerImp>::value, "Not available for these dimensions!");
 };
 
 
 namespace internal {
 
 
-template <class GridViewImp, size_t rangeDim, size_t rangeDimCols>
+template <class GridLayerImp, size_t rangeDim, size_t rangeDimCols>
 class FvMapperTraits
 {
   static_assert(rangeDim >= 1, "Really?");
   static_assert(rangeDimCols >= 1, "Really?");
 
 public:
-  typedef GridViewImp GridViewType;
-  typedef FvMapper<GridViewType, rangeDim, rangeDimCols> derived_type;
-  typedef typename GridViewImp::IndexSet BackendType;
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  typedef GridLayerImp GridLayerType;
+  typedef FvMapper<GridLayerType, rangeDim, rangeDimCols> derived_type;
+  typedef typename GridLayerImp::IndexSet BackendType;
+  using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
 };
 
-template <class GridViewImp, size_t rangeDim, size_t rangeDimCols>
-class FvProductMapperTraits : public internal::FvMapperTraits<GridViewImp, rangeDim, rangeDimCols>
+template <class GridLayerImp, size_t rangeDim, size_t rangeDimCols>
+class FvProductMapperTraits : public internal::FvMapperTraits<GridLayerImp, rangeDim, rangeDimCols>
 {
 public:
-  typedef FvProductMapper<GridViewImp, rangeDim, rangeDimCols> derived_type;
+  typedef FvProductMapper<GridLayerImp, rangeDim, rangeDimCols> derived_type;
   static const size_t dimRange = rangeDim;
 };
 
@@ -67,20 +68,20 @@ public:
 } // namespace internal
 
 
-template <class GridViewImp, size_t rangeDim>
-class FvMapper<GridViewImp, rangeDim, 1> : public MapperInterface<internal::FvMapperTraits<GridViewImp, rangeDim, 1>>
+template <class GridLayerImp, size_t rangeDim>
+class FvMapper<GridLayerImp, rangeDim, 1> : public MapperInterface<internal::FvMapperTraits<GridLayerImp, rangeDim, 1>>
 {
-  typedef MapperInterface<internal::FvMapperTraits<GridViewImp, rangeDim, 1>> InterfaceType;
+  typedef MapperInterface<internal::FvMapperTraits<GridLayerImp, rangeDim, 1>> InterfaceType;
   static const size_t dimRange = rangeDim;
 
 public:
-  typedef internal::FvMapperTraits<GridViewImp, rangeDim, 1> Traits;
-  typedef typename Traits::GridViewType GridViewType;
+  typedef internal::FvMapperTraits<GridLayerImp, rangeDim, 1> Traits;
+  typedef typename Traits::GridLayerType GridLayerType;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  FvMapper(const GridViewType& grid_view)
-    : backend_(grid_view.indexSet())
+  FvMapper(const GridLayerType& grd_layr)
+    : backend_(grd_layr.indexSet())
   {
   }
 
@@ -126,19 +127,19 @@ private:
 }; // class FvMapper< ..., rangeDim, 1 >
 
 
-template <class GridViewImp>
-class FvMapper<GridViewImp, 1, 1> : public MapperInterface<internal::FvMapperTraits<GridViewImp, 1, 1>>
+template <class GridLayerImp>
+class FvMapper<GridLayerImp, 1, 1> : public MapperInterface<internal::FvMapperTraits<GridLayerImp, 1, 1>>
 {
-  typedef MapperInterface<internal::FvMapperTraits<GridViewImp, 1, 1>> InterfaceType;
+  typedef MapperInterface<internal::FvMapperTraits<GridLayerImp, 1, 1>> InterfaceType;
 
 public:
-  typedef internal::FvMapperTraits<GridViewImp, 1, 1> Traits;
-  typedef typename Traits::GridViewType GridViewType;
+  typedef internal::FvMapperTraits<GridLayerImp, 1, 1> Traits;
+  typedef typename Traits::GridLayerType GridLayerType;
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  FvMapper(const GridViewType& grid_view)
-    : backend_(grid_view.indexSet())
+  FvMapper(const GridLayerType& grd_layr)
+    : backend_(grd_layr.indexSet())
   {
   }
 
@@ -182,22 +183,22 @@ private:
 }; // class FvMapper< ..., 1, 1 >
 
 
-template <class GridViewImp, size_t rangeDim>
-class FvProductMapper<GridViewImp, rangeDim, 1>
-    : public ProductMapperInterface<internal::FvProductMapperTraits<GridViewImp, rangeDim, 1>>
+template <class GridLayerImp, size_t rangeDim>
+class FvProductMapper<GridLayerImp, rangeDim, 1>
+    : public ProductMapperInterface<internal::FvProductMapperTraits<GridLayerImp, rangeDim, 1>>
 {
-  typedef ProductMapperInterface<internal::FvProductMapperTraits<GridViewImp, rangeDim, 1>> BaseType;
-  typedef FvMapper<GridViewImp, rangeDim, 1> FvMapperMapperType;
+  typedef ProductMapperInterface<internal::FvProductMapperTraits<GridLayerImp, rangeDim, 1>> BaseType;
+  typedef FvMapper<GridLayerImp, rangeDim, 1> FvMapperMapperType;
 
 public:
-  typedef internal::FvProductMapperTraits<GridViewImp, rangeDim, 1> Traits;
-  typedef typename Traits::GridViewType GridViewType;
+  typedef internal::FvProductMapperTraits<GridLayerImp, rangeDim, 1> Traits;
+  typedef typename Traits::GridLayerType GridLayerType;
   static const size_t dimRange = Traits::dimRange;
   using typename BaseType::EntityType;
   using typename BaseType::BackendType;
 
-  FvProductMapper(const GridViewType& grid_view)
-    : fv_mapper_(grid_view)
+  FvProductMapper(const GridLayerType& grd_layr)
+    : fv_mapper_(grd_layr)
   {
   }
 
