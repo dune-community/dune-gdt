@@ -9,7 +9,6 @@
 #include <dune/xt/grid/view/subdomain/part.hh>
 #include <dune/xt/la/container.hh>
 
-#include <dune/gdt/assembler/boundary.hh>
 #include <dune/gdt/playground/spaces/block.hh>
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
@@ -182,8 +181,8 @@ public:
         MatrixType boundary_matrix(
             local_spaces[ss].mapper().size(), local_spaces[ss].mapper().size(), boundary_pattern);
         VectorType boundary_vector(local_spaces[ss].mapper().size());
-        BoundaryAssembler<LocalSpaceType, decltype(boundary_grid_part)> boundary_assembler(
-            boundary_grid_part, local_spaces[ss], local_spaces[ss]);
+        SystemAssembler<LocalSpaceType, decltype(boundary_grid_part)> boundary_assembler(local_spaces[ss],
+                                                                                         boundary_grid_part);
         auto boundary_info =
             XT::Grid::BoundaryInfoFactory<XT::Grid::extract_intersection_t<decltype(boundary_grid_part)>>::create(
                 problem.boundary_info_cfg());
