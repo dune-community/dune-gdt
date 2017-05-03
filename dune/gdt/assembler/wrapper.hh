@@ -204,15 +204,15 @@ public:
   using typename BaseType::IntersectionType;
 
   LocalCouplingTwoFormMatrixAssemblerWrapper(
-      const Dune::XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space,
-      const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space,
+      const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+      const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
       const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
       const LocalCouplingTwoFormAssemblerType& local_assembler,
       MatrixType& matrix)
-    : inner_test_space_(inner_test_space)
-    , inner_ansatz_space_(inner_ansatz_space)
-    , outer_test_space_(inner_test_space)
-    , outer_ansatz_space_(inner_ansatz_space)
+    : inner_test_space_(test_space)
+    , inner_ansatz_space_(ansatz_space)
+    , outer_test_space_(test_space)
+    , outer_ansatz_space_(ansatz_space)
     , where_(where)
     , local_assembler_(local_assembler)
     , in_in_matrix_(matrix)
@@ -300,6 +300,8 @@ class LocalCouplingTwoFormWrapper
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
+  typedef typename AssemblerType::OuterTestSpaceType OuterTestSpaceType;
+  typedef typename AssemblerType::OuterAnsatzSpaceType OuterAnsatzSpaceType;
   typedef typename AssemblerType::GridLayerType GridLayerType;
 
   LocalCouplingTwoFormWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
@@ -309,6 +311,30 @@ public:
                               MatrixType& matrix)
     : LocalAssemblerProvider(local_twoform)
     , BaseType(test_space, ansatz_space, where, LocalAssemblerProvider::access(), matrix)
+  {
+  }
+
+  LocalCouplingTwoFormWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space,
+                              const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space,
+                              const Dune::XT::Common::PerThreadValue<const OuterTestSpaceType>& outer_test_space,
+                              const Dune::XT::Common::PerThreadValue<const OuterAnsatzSpaceType>& outer_ansatz_space,
+                              const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
+                              const LocalCouplingTwoFormType& local_twoform,
+                              MatrixType& matrix_in_in,
+                              MatrixType& matrix_out_out,
+                              MatrixType& matrix_in_out,
+                              MatrixType& matrix_out_in)
+    : LocalAssemblerProvider(local_twoform)
+    , BaseType(inner_test_space,
+               inner_ansatz_space,
+               outer_test_space,
+               outer_ansatz_space,
+               where,
+               LocalAssemblerProvider::access(),
+               matrix_in_in,
+               matrix_out_out,
+               matrix_in_out,
+               matrix_out_in)
   {
   }
 }; // class LocalCouplingTwoFormWrapper
