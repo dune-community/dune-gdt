@@ -57,7 +57,7 @@ public:
 
   template <typename DiffusionImp // This ctor is only enabled if we are given a single diffusion data function.
             ,
-            typename = typename std::enable_if<(std::is_same<DiffusionTensorType, void>::value) //
+            typename = typename std::enable_if<(std::is_same<DiffusionTensorType, void>::value)
                                                && (std::is_same<DiffusionImp, DiffusionFactorType>::value)
                                                && sizeof(DiffusionImp)>::type,
             class... Args>
@@ -81,10 +81,8 @@ public:
     this->append(local_elliptic_operator_);
   }
 
-  template <typename DiffusionFactorImp // This ctor is only enabled
-            ,
-            typename DiffusionTensorImp // if we are given two diffusion data functions (factor and tensor).
-            ,
+  template <typename DiffusionFactorImp, // This ctor is only enabled if we are given two diffusion data functions
+            typename DiffusionTensorImp, //                                                   (factor and tensor).
             typename = typename std::enable_if<(!std::is_same<DiffusionTensorType, void>::value)
                                                && (std::is_same<DiffusionFactorImp, DiffusionFactorType>::value)
                                                && sizeof(DiffusionFactorImp)>::type,
@@ -98,10 +96,8 @@ public:
     this->append(local_elliptic_operator_);
   }
 
-  template <typename DiffusionFactorImp // This ctor is only enabled
-            ,
-            typename DiffusionTensorImp // if we are given two diffusion data functions (factor and tensor).
-            ,
+  template <typename DiffusionFactorImp, // This ctor is only enabled if we are given two diffusion data functions
+            typename DiffusionTensorImp, //                                                   (factor and tensor).
             typename = typename std::enable_if<(!std::is_same<DiffusionTensorType, void>::value)
                                                && (std::is_same<DiffusionFactorImp, DiffusionFactorType>::value)
                                                && sizeof(DiffusionFactorImp)>::type,
