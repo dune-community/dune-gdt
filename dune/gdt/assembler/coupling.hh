@@ -1,6 +1,10 @@
 #ifndef DUNE_GDT_ASSEMBLER_COUPLING_HH
 #define DUNE_GDT_ASSEMBLER_COUPLING_HH
 
+#warning This header is deprecated, #include <dune/gdt/assembler/system.hh> instead (03.05.2017)!
+
+#include <dune/common/deprecated.hh>
+
 #include <dune/xt/common/parallel/threadstorage.hh>
 
 #include <dune/grid/common/rangegenerators.hh>
@@ -15,7 +19,7 @@ namespace GDT {
  * \todo merge with SystemAssembler
  */
 template <class LocalSpaceType, class CouplingGridPartType>
-class CouplingAssembler
+class DUNE_DEPRECATED_MSG("Use SystemAssembler instead (03.05.2017)!") CouplingAssembler
 {
   typedef CouplingAssembler<LocalSpaceType, CouplingGridPartType> ThisType;
 
