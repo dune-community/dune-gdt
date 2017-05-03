@@ -40,7 +40,7 @@ template <class Traits>
 class OperatorInterface;
 
 // from #include <dune/gdt/operators/base.hh>
-template <class M, class RS, class GL, class SS, class F, ChoosePattern pt>
+template <class M, class RS, class GL, class SS, class F, ChoosePattern pt, class ORS, class OSS>
 class MatrixOperatorBase;
 
 template <class GridLayerImp, class RangeImp, class SourceImp, class FieldImp>
@@ -126,10 +126,13 @@ struct is_matrix_operator_helper
   DXTC_has_typedef_initialize_once(SourceSpaceType);
   DXTC_has_typedef_initialize_once(FieldType);
   DXTC_has_static_member_initialize_once(pattern_type);
+  DXTC_has_typedef_initialize_once(OuterRangeSpaceType);
+  DXTC_has_typedef_initialize_once(OuterSourceSpaceType);
   static const bool is_candidate =
       DXTC_has_typedef(MatrixType)<Tt>::value && DXTC_has_typedef(RangeSpaceType)<Tt>::value
       && DXTC_has_typedef(GridLayerType)<Tt>::value && DXTC_has_typedef(SourceSpaceType)<Tt>::value
-      && DXTC_has_typedef(FieldType)<Tt>::value && DXTC_has_static_member(pattern_type)<Tt>::value;
+      && DXTC_has_typedef(FieldType)<Tt>::value && DXTC_has_static_member(pattern_type)<Tt>::value
+      && DXTC_has_typedef(OuterRangeSpaceType)<Tt>::value && DXTC_has_typedef(OuterSourceSpaceType)<Tt>::value;
 };
 
 
@@ -227,7 +230,9 @@ struct is_matrix_operator : public std::is_base_of<MatrixOperatorBase<typename T
                                                                       typename T::GridLayerType,
                                                                       typename T::SourceSpaceType,
                                                                       typename T::FieldType,
-                                                                      T::pattern_type>,
+                                                                      T::pattern_type,
+                                                                      typename T::OuterRangeSpaceType,
+                                                                      typename T::OuterSourceSpaceType>,
                                                    T>
 {
 };
