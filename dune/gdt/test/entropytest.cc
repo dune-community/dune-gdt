@@ -48,148 +48,20 @@
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/pointsource.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/checkerboard3d.hh>
 
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/point_generators_3.h>
-#include <CGAL/algorithm.h>
-#include <CGAL/Polyhedron_3.h>
-#include <CGAL/convex_hull_3.h>
-#include <CGAL/Origin.h>
+#include <libqhullcpp/RboxPoints.h>
+#include <libqhullcpp/QhullError.h>
+#include <libqhullcpp/QhullQh.h>
+#include <libqhullcpp/QhullFacet.h>
+#include <libqhullcpp/QhullFacetList.h>
+#include <libqhullcpp/QhullLinkedList.h>
+#include <libqhullcpp/QhullVertex.h>
+#include <libqhullcpp/Qhull.h>
 
-struct CGALWrapper
-{
-
-  //  // A vertex type with indices.
-  //  template <class Refs, class Traits>
-  //  struct My_vertex : public CGAL::HalfedgeDS_vertex_base<Refs, CGAL::Tag_true, typename Traits::Point_3>
-  //  {
-  //    typedef typename CGAL::HalfedgeDS_vertex_base<Refs, CGAL::Tag_true, typename Traits::Point_3> BaseType;
-  //    typedef typename Traits::Point_3 Point_3;
-
-  //    template <class... Args>
-  //    My_vertex(Args&&... args)
-  //      : BaseType(std::forward<Args>(args)...)
-  //    {
-  //    }
-
-  //    size_t index;
-  //  };
-
-  //  // A face type with indices.
-  //  template <class Refs>
-  //  struct My_face : public CGAL::HalfedgeDS_face_base<Refs>
-  //  {
-  //    size_t index;
-  //  };
-
-  //  // An items type using the vertex and face type with indices.
-  //  struct My_items : public CGAL::Polyhedron_items_3
-  //  {
-  //    template <class Refs, class Traits>
-  //    struct Vertex_wrapper
-  //    {
-  //      typedef typename Traits::Point_3 Point;
-  //      typedef My_vertex<Refs, Traits> Vertex;
-  //    };
-  //    template <class Refs, class Traits>
-  //    struct Face_wrapper
-  //    {
-  //      typedef typename Traits::Plane_3 Plane;
-  //      typedef My_face<Refs> Face;
-  //    };
-  //  };
-
-  typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-  typedef CGAL::Polyhedron_3<K> Polyhedron_3;
-  typedef typename Polyhedron_3::Vertex_const_handle VertexHandleType;
-  typedef typename Polyhedron_3::Facet_const_handle FacetHandleType;
-  // define point creator
-  typedef K::Point_3 Point_3;
-  typedef K::Vector_3 Vector_3;
-  typedef typename Polyhedron_3::Plane_3 Plane_3;
-
-  // a functor computing the plane containing a triangular facet
-  struct Plane_from_facet
-  {
-    Plane_3 operator()(Polyhedron_3::Facet& f)
-    {
-      Polyhedron_3::Halfedge_handle h = f.halfedge();
-      return Plane_3(h->vertex()->point(), h->next()->vertex()->point(), h->opposite()->vertex()->point());
-    }
-  };
-
-  static Polyhedron_3 get_convex_hull(Dune::QuadratureRule<double, 3> quadrature)
-  {
-    // define polyhedron to hold convex hull
-    Polyhedron_3 poly;
-    std::vector<Point_3> points(quadrature.size());
-    for (size_t ii = 0; ii < quadrature.size(); ++ii) {
-      const auto quad_point = quadrature[ii].position();
-      points[ii] = Point_3(quad_point[0], quad_point[1], quad_point[2]);
-    }
-    // generate convex hull
-    CGAL::convex_hull_3(points.begin(), points.end(), poly);
-    std::cout << "The convex hull contains " << poly.size_of_vertices() << " vertices and " << poly.size_of_facets()
-              << " faces" << std::endl;
-
-    // assign a plane equation to each polyhedron facet using functor Plane_from_facet
-    std::transform(poly.facets_begin(), poly.facets_end(), poly.planes_begin(), Plane_from_facet());
-
-    return poly;
-  }
-}; // struct CGALWrapper
-
-
-#if 0
-    for (size_t ii = 0; ii < num_refinements; ++ii) {
-      points.clear();
-      std::for_each(
-          poly.points_begin(), poly.points_end(), [&points](const Point_3& point) { points.push_back(point); });
-      // add edge_centers and face centers
-      const auto face_it_end = poly.facets_end();
-      for (auto face_it = poly.facets_begin(); face_it != face_it_end; ++face_it) {
-        assert(face_it->is_triangle());
-        // a circulator does not have a past-the-end concept, but starts over at the beginning
-        auto halfedge_circ = face_it->facet_begin();
-        auto halfedge_circ_begin = halfedge_circ;
-        // insert face center
-        const Point_3 sum3 = halfedge_circ->vertex()->point()
-                             + Vector_3(CGAL::ORIGIN, halfedge_circ->next()->vertex()->point())
-                             + Vector_3(CGAL::ORIGIN, halfedge_circ->next()->next()->vertex()->point());
-        Dune::FieldVector<double, 3> center({sum3.x() / 3., sum3.y() / 3., sum3.z() / 3.});
-        center /= center.two_norm(); // projection onto sphere
-        //      points.push_back(Point_3(center[0], center[1], center[2]));
-        // insert edge center (inserts each edge center twice, but this shouldn't be a problem due to the convex hull
-        // call
-        do {
-          const Point_3& point = halfedge_circ->vertex()->point();
-          const Point_3& next_point = halfedge_circ->next()->vertex()->point();
-          const Point_3 sum2 = point + Vector_3(CGAL::ORIGIN, next_point);
-          center = {sum2.x() / 2., sum2.y() / 2., sum2.z() / 2.};
-          center /= center.two_norm();
-          points.push_back(Point_3(center[0], center[1], center[2]));
-        } while (++halfedge_circ != halfedge_circ_begin);
-      } // iterate over faces
-      poly.clear();
-      CGAL::convex_hull_3(points.begin(), points.end(), poly);
-      std::cout << "The convex hull contains " << poly.size_of_vertices() << " vertices and " << poly.size_of_facets()
-                << " faces" << std::endl;
-    } // refinement loop
-
-    // add indices to vertices and facets
-    size_t index = 0;
-    const auto vertices_it_end = poly.vertices_end();
-    for (auto vertices_it = poly.vertices_begin(); vertices_it != vertices_it_end; ++vertices_it, ++index)
-      vertices_it->index = index;
-    index = 0;
-    const auto facets_it_end = poly.facets_end();
-    for (auto facets_it = poly.facets_begin(); facets_it != facets_it_end; ++facets_it, ++index)
-      facets_it->index = index;
-    return poly;
-#endif
-
+#include <Eigen/Core>
 
 int main(int argc, char** argv)
 {
+  Eigen::initParallel();
   using namespace Dune;
   using namespace Dune::GDT;
 
@@ -389,7 +261,7 @@ int main(int argc, char** argv)
       {1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}};
   const Dune::GDT::Hyperbolic::Problems::SphericalTriangulation<double> triangulation(initial_points,
                                                                                       octaeder_refinements);
-  const size_t max_quadrature_refinements = 6;
+  const size_t max_quadrature_refinements = 4;
   Dune::GDT::Hyperbolic::Problems::SphericalTriangulation<double> quadrature_triangulation(initial_points, 0);
   std::vector<Dune::QuadratureRule<double, dimDomain>> quadrature_rules(max_quadrature_refinements);
   for (size_t ii = 0; ii < max_quadrature_refinements; ++ii) {
@@ -397,21 +269,6 @@ int main(int argc, char** argv)
     quadrature_rules[ii] = quadrature_triangulation.quadrature_rule();
   }
   const auto& quadrature_rule = quadrature_rules.back();
-
-  const auto& poly = CGALWrapper::get_convex_hull(quadrature_rule);
-  std::vector<FieldVector<double, dimDomain>> coefficients_a(poly.size_of_facets());
-  std::vector<double> coefficients_b(poly.size_of_facets());
-  const auto plane_it_end = poly_.planes_end();
-  size_t ii = 0;
-  for (auto plane_it = poly_.planes_begin(); plane_it != plane_it_end; ++plane_it, ++ii) {
-    const auto& plane = *plane_it;
-    auto& a = coefficients_a[ii];
-    auto& b = coefficients_b[ii];
-    a[0] = plane.a();
-    a[1] = plane.b();
-    a[2] = plane.c();
-    b = -plane.d();
-  }
 
   // 3d adaptive quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
   //  typedef typename GDT::Hyperbolic::Problems::AdaptiveQuadrature<DomainType, RangeType, RangeType>
@@ -573,6 +430,28 @@ int main(int argc, char** argv)
 
   //  const auto& basis_values_matrix = basis_values_matrices.back();
 
+  // ********************* calculate half-space representation of realizable set **********************
+  using orgQhull::Qhull;
+  Qhull qhull;
+  //  void     runQhull(const char *inputComment2, int pointDimension, int pointCount, const realT *pointCoordinates,
+  //  const char *qhullCommand2);
+  // realT is double if the constant REALfloat is not set to 1 manually
+  std::vector<FieldVector<double, dimRange>> points(quadrature_rule.size() + 1);
+  points[0] = FieldVector<double, dimRange>(0);
+  size_t ii = 1;
+  for (const auto& basis_value : basis_values_matrix)
+    points[ii++] = basis_value;
+
+  qhull.runQhull("Realizable set", dimRange, points.size(), &(points[0][0]), "Qt");
+  qhull.outputQhull("n");
+  const auto facet_end = qhull.endFacet();
+  std::vector<FieldVector<double, dimRange + 1>> plane_coefficients(qhull.facetList().count());
+  ii = 0;
+  for (auto facet = qhull.beginFacet(); facet != facet_end; facet = facet.next()) {
+    for (size_t jj = 0; jj < dimRange; ++jj)
+      plane_coefficients[ii][jj] = *(facet.hyperplane().coordinates() + jj);
+    plane_coefficients[ii][dimRange] = -facet.hyperplane().offset();
+  }
 
   //*********************** choose analytical flux *************************************************************
 
@@ -664,14 +543,14 @@ int main(int argc, char** argv)
                                              BoundaryValueType,
                                              ConstantFunctionType,
                                              GridViewType,
-                                             CGALWrapper::Polyhedron_3,
+                                             BasisFunctionType::hat_functions,
                                              1>
       AdvectionOperatorType;
 
   //  typedef AdvectionGodunovWENOOperator<AnalyticalFluxType,
   //                                       BoundaryValueType,
   //                                       GridViewType,
-  //                                       CGALWrapper::Polyhedron_3,
+  //    BasisFunctionType::hat_functions,
   //                                       1,
   //                                       SlopeLimiters::minmod>
   //      AdvectionOperatorType;
@@ -703,6 +582,15 @@ int main(int argc, char** argv)
   RangeFieldType dt = CFL * dx;
   t_end = XT::Common::FloatCmp::eq(t_end, 0.) ? problem.t_end() : t_end;
 
+  // *********************** get quadrature rules for the FV reconstruction ***********************
+
+  // get 1D quadrature rules
+  Dune::QuadratureRule<double, 1> space_quadrature_rule;
+  space_quadrature_rule.push_back(Dune::QuadraturePoint<double, 1>(0.5 * (1. - 1. / std::sqrt(3)), 0.5));
+  space_quadrature_rule.push_back(Dune::QuadraturePoint<double, 1>(0.5 * (1. + 1. / std::sqrt(3)), 0.5));
+  FieldVector<Dune::QuadratureRule<double, 1>, dimDomain> space_quadrature_rules;
+  std::fill(space_quadrature_rules.begin(), space_quadrature_rules.end(), space_quadrature_rule);
+
 
   // *********************** create operators and timesteppers ************************************
   const ConstantFunctionType dx_function(dx);
@@ -713,8 +601,15 @@ int main(int argc, char** argv)
 
   FieldVector<size_t, dimDomain> grid_sizes;
   std::fill(grid_sizes.begin(), grid_sizes.end(), XT::Common::from_string<size_t>(grid_size));
-  AdvectionOperatorType advection_operator(
-      *analytical_flux, *boundary_values, dx_function, grid_view, grid_sizes, poly, linear, true, 2);
+  AdvectionOperatorType advection_operator(*analytical_flux,
+                                           *boundary_values,
+                                           dx_function,
+                                           grid_view,
+                                           grid_sizes,
+                                           plane_coefficients,
+                                           linear,
+                                           true,
+                                           space_quadrature_rules);
 
   //  AdvectionOperatorType advection_operator(
   //      *analytical_flux, *boundary_values, grid_view, grid_sizes, poly, linear, true, 2);
@@ -742,4 +637,5 @@ int main(int argc, char** argv)
   } else {
     timestepper_op.solve(t_end, dt, num_save_steps, false, true, visualize, "entropy_implicit_trapezoidal");
   }
+  return 0;
 }

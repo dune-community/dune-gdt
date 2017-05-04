@@ -68,7 +68,7 @@ template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class LocalizableFunctionImp,
           class GridViewType,
-          class Polyhedron_3,
+          BasisFunctionType basis_function_type,
           size_t polOrder = 2,
           SlopeLimiters slope_limiter = SlopeLimiters::minmod>
 class AdvectionLaxFriedrichsWENOOperator;
@@ -76,7 +76,7 @@ class AdvectionLaxFriedrichsWENOOperator;
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class GridViewType,
-          class Polyhedron_3,
+          BasisFunctionType basis_function_type,
           size_t polOrder = 2,
           SlopeLimiters slope_limiter = SlopeLimiters::minmod>
 class AdvectionGodunovWENOOperator;
@@ -154,7 +154,7 @@ template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class LocalizableFunctionImp,
           class GridViewType,
-          class Polyhedron_3,
+          BasisFunctionType basis_function_type,
           size_t polOrder,
           SlopeLimiters slope_limiter_type>
 class AdvectionLaxFriedrichsWENOOperatorTraits : public AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp,
@@ -167,7 +167,7 @@ public:
                                              BoundaryValueFunctionImp,
                                              LocalizableFunctionImp,
                                              GridViewType,
-                                             Polyhedron_3,
+                                             basis_function_type,
                                              polOrder,
                                              slope_limiter_type>
       derived_type;
@@ -196,7 +196,7 @@ public:
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class GridViewType,
-          class Polyhedron_3,
+          BasisFunctionType basis_function_type,
           size_t polOrder,
           SlopeLimiters slope_limiter_type>
 class AdvectionGodunovWENOOperatorTraits
@@ -206,7 +206,7 @@ public:
   typedef AdvectionGodunovWENOOperator<AnalyticalFluxImp,
                                        BoundaryValueFunctionImp,
                                        GridViewType,
-                                       Polyhedron_3,
+                                       basis_function_type,
                                        polOrder,
                                        slope_limiter_type>
       derived_type;
@@ -763,7 +763,7 @@ struct QuadratureRuleGetter<FieldType, 1>
 template <class NumericalCouplingFluxType,
           class NumericalBoundaryFluxType,
           class RangeFieldType,
-          class Polyhedron_3,
+          BasisFunctionType basis_function_type,
           size_t dimDomain,
           size_t dimRange,
           size_t dimRangeCols,
@@ -782,10 +782,10 @@ struct AdvectionWENOOperatorApplier
                     RangeType& range,
                     const XT::Common::Parameter& param,
                     const bool use_reconstruction,
-                    const size_t quadrature_order,
+                    const FieldVector<Dune::QuadratureRule<double, 1>, dimDomain> quadrature_rules,
                     const std::vector<FieldVector<size_t, dimDomain>>& entity_indices,
                     const FieldVector<size_t, dimDomain>& grid_sizes,
-                    const Polyhedron_3& poly,
+                    const std::vector<FieldVector<RangeFieldType, dimRange + 1>>& plane_coefficients,
                     LocalOperatorArgTypes&&... local_operator_args)
   {
     typedef double FieldType;
@@ -805,13 +805,6 @@ struct AdvectionWENOOperatorApplier
                                                                                   grid_sizes,
                                                                                   entity_indices,
                                                                                   source);
-
-      // get 1D quadrature rules
-      const auto quadrature_rule = Dune::QuadratureRules<FieldType, 1>::rule(
-          grid_view.begin<dimDomain - 1>()->geometry().type(), quadrature_order, QuadratureType::Enum::GaussLegendre);
-      FieldVector<Dune::QuadratureRule<FieldType, 1>, dimDomain> quadrature_rules;
-      std::fill(quadrature_rules.begin(), quadrature_rules.end(), quadrature_rule);
-
       // do reconstruction
       std::vector<std::map<typename GridViewType::template Codim<0>::Geometry::LocalCoordinate,
                            typename AnalyticalFluxType::RangeType,
@@ -830,11 +823,12 @@ struct AdvectionWENOOperatorApplier
       walker.walk(true);
 
       // do limiting for realizability in M_N models
-      auto local_realizability_limiter = LocalRealizabilityLimiter<GridViewType, Polyhedron_3, dimDomain, dimRange>(
-          grid_view, poly, cell_averages, entity_indices, reconstructed_values);
+      auto local_realizability_limiter =
+          LocalRealizabilityLimiter<GridViewType, dimDomain, dimRange, basis_function_type>(
+              grid_view, plane_coefficients, cell_averages, entity_indices, reconstructed_values);
       walker.clear();
       walker.append(local_realizability_limiter);
-      walker.walk(false);
+      walker.walk(true);
 
       typedef ReconstructedLocalizableFunction<GridViewType, FieldType, dimDomain, RangeFieldType, dimRange>
           ReconstructedLocalizableFunctionType;
@@ -1031,12 +1025,23 @@ private:
   std::shared_ptr<MatrixType> eigenvectors_inverse_;
 }; // class AdvectionLaxFriedrichsOperator
 
+template <class GridViewType>
+FieldVector<Dune::QuadratureRule<typename GridViewType::ctype, 1>, GridViewType::dimension>
+default_quadrature_rules(const GridViewType& grid_view)
+{
+  // get 1D quadrature rules
+  const auto quadrature_rule = Dune::QuadratureRules<typename GridViewType::ctype, 1>::rule(
+      grid_view.begin<GridViewType::dimension - 1>()->geometry().type(), 2);
+  FieldVector<Dune::QuadratureRule<typename GridViewType::ctype, 1>, GridViewType::dimension> quadrature_rules;
+  std::fill(quadrature_rules.begin(), quadrature_rules.end(), quadrature_rule);
+  return quadrature_rules;
+}
 
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class LocalizableFunctionImp,
           class GridViewType,
-          class Polyhedron_3,
+          BasisFunctionType basis_function_type,
           size_t polOrder,
           SlopeLimiters slope_lim>
 class AdvectionLaxFriedrichsWENOOperator
@@ -1044,7 +1049,7 @@ class AdvectionLaxFriedrichsWENOOperator
                                                                                              BoundaryValueFunctionImp,
                                                                                              LocalizableFunctionImp,
                                                                                              GridViewType,
-                                                                                             Polyhedron_3,
+                                                                                             basis_function_type,
                                                                                              polOrder,
                                                                                              slope_lim>>
 {
@@ -1053,7 +1058,7 @@ public:
                                                              BoundaryValueFunctionImp,
                                                              LocalizableFunctionImp,
                                                              GridViewType,
-                                                             Polyhedron_3,
+                                                             basis_function_type,
                                                              polOrder,
                                                              slope_lim>
       Traits;
@@ -1073,25 +1078,27 @@ protected:
   typedef typename Dune::XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
 
 public:
-  AdvectionLaxFriedrichsWENOOperator(const AnalyticalFluxType& analytical_flux,
-                                     const BoundaryValueFunctionType& boundary_values,
-                                     const LocalizableFunctionType& dx,
-                                     const GridViewType& grid_view,
-                                     const FieldVector<size_t, dimDomain> grid_sizes,
-                                     const Polyhedron_3& poly,
-                                     const bool flux_is_linear = false,
-                                     const bool use_reconstruction = false,
-                                     const size_t quadrature_order = 2,
-                                     const bool use_local_laxfriedrichs_flux = false,
-                                     const bool entity_geometries_equal = false)
+  AdvectionLaxFriedrichsWENOOperator(
+      const AnalyticalFluxType& analytical_flux,
+      const BoundaryValueFunctionType& boundary_values,
+      const LocalizableFunctionType& dx,
+      const GridViewType& grid_view,
+      const FieldVector<size_t, dimDomain> grid_sizes,
+      const std::vector<FieldVector<RangeFieldType, dimRange + 1>>& plane_coefficients,
+      const bool flux_is_linear = false,
+      const bool use_reconstruction = false,
+      const FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain> quadrature_rules =
+          FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain>(),
+      const bool use_local_laxfriedrichs_flux = false,
+      const bool entity_geometries_equal = false)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , dx_(dx)
     , grid_sizes_(grid_sizes)
-    , poly_(poly)
+    , plane_coefficients_(plane_coefficients)
     , flux_is_linear_(flux_is_linear)
     , use_reconstruction_(use_reconstruction)
-    , quadrature_order_(quadrature_order)
+    , quadrature_rules_(quadrature_rules)
     , use_local_laxfriedrichs_flux_(use_local_laxfriedrichs_flux)
     , entity_geometries_equal_(entity_geometries_equal)
     , entity_indices_(grid_view.size(0))
@@ -1104,6 +1111,8 @@ public:
         indices[dd] = indices_array[dd];
       entity_indices_[index] = indices;
     }
+    if (quadrature_rules_[0].empty())
+      quadrature_rules_ = default_quadrature_rules(grid_view);
   }
 
   template <class SourceType, class RangeType>
@@ -1112,7 +1121,7 @@ public:
     internal::AdvectionWENOOperatorApplier<NumericalCouplingFluxType,
                                            NumericalBoundaryFluxType,
                                            RangeFieldType,
-                                           Polyhedron_3,
+                                           basis_function_type,
                                            dimDomain,
                                            dimRange,
                                            dimRangeCols,
@@ -1123,10 +1132,10 @@ public:
                                                                  range,
                                                                  param,
                                                                  use_reconstruction_,
-                                                                 quadrature_order_,
+                                                                 quadrature_rules_,
                                                                  entity_indices_,
                                                                  grid_sizes_,
-                                                                 poly_,
+                                                                 plane_coefficients_,
                                                                  dx_,
                                                                  param,
                                                                  flux_is_linear_,
@@ -1139,10 +1148,10 @@ private:
   const BoundaryValueFunctionType& boundary_values_;
   const LocalizableFunctionType& dx_;
   const FieldVector<size_t, dimDomain> grid_sizes_;
-  const Polyhedron_3& poly_;
+  const std::vector<FieldVector<RangeFieldType, dimRange + 1>>& plane_coefficients_;
   const bool flux_is_linear_;
   const bool use_reconstruction_;
-  const size_t quadrature_order_;
+  FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain> quadrature_rules_;
   const bool use_local_laxfriedrichs_flux_;
   const bool entity_geometries_equal_;
   std::vector<FieldVector<size_t, dimDomain>> entity_indices_;
@@ -1152,14 +1161,14 @@ private:
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class GridViewType,
-          class Polyhedron_3,
+          BasisFunctionType basis_function_type,
           size_t polOrder,
           SlopeLimiters slope_lim>
 class AdvectionGodunovWENOOperator
     : public Dune::GDT::OperatorInterface<internal::AdvectionGodunovWENOOperatorTraits<AnalyticalFluxImp,
                                                                                        BoundaryValueFunctionImp,
                                                                                        GridViewType,
-                                                                                       Polyhedron_3,
+                                                                                       basis_function_type,
                                                                                        polOrder,
                                                                                        slope_lim>>
 {
@@ -1167,7 +1176,7 @@ public:
   typedef internal::AdvectionGodunovWENOOperatorTraits<AnalyticalFluxImp,
                                                        BoundaryValueFunctionImp,
                                                        GridViewType,
-                                                       Polyhedron_3,
+                                                       basis_function_type,
                                                        polOrder,
                                                        slope_lim>
       Traits;
@@ -1190,17 +1199,18 @@ public:
                                const BoundaryValueFunctionType& boundary_values,
                                const GridViewType& grid_view,
                                const FieldVector<size_t, dimDomain> grid_sizes,
-                               const Polyhedron_3& poly,
+                               const std::vector<FieldVector<RangeFieldType, dimRange + 1>>& plane_coefficients,
                                const bool flux_is_linear = false,
                                const bool use_reconstruction = false,
-                               const size_t quadrature_order = 2)
+                               const FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain> quadrature_rules =
+                                   FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain>())
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , grid_sizes_(grid_sizes)
-    , poly_(poly)
+    , plane_coefficients_(plane_coefficients)
     , flux_is_linear_(flux_is_linear)
     , use_reconstruction_(use_reconstruction)
-    , quadrature_order_(quadrature_order)
+    , quadrature_rules_(quadrature_rules)
     , entity_indices_(grid_view.size(0))
   {
     FieldVector<size_t, dimDomain> indices;
@@ -1211,6 +1221,8 @@ public:
         indices[dd] = indices_array[dd];
       entity_indices_[index] = indices;
     }
+    if (quadrature_rules_[0].empty())
+      quadrature_rules_ = default_quadrature_rules(grid_view);
   }
 
   template <class SourceType, class RangeType>
@@ -1219,7 +1231,7 @@ public:
     internal::AdvectionWENOOperatorApplier<NumericalCouplingFluxType,
                                            NumericalBoundaryFluxType,
                                            RangeFieldType,
-                                           Polyhedron_3,
+                                           basis_function_type,
                                            dimDomain,
                                            dimRange,
                                            dimRangeCols,
@@ -1230,10 +1242,10 @@ public:
                                                                  range,
                                                                  param,
                                                                  use_reconstruction_,
-                                                                 quadrature_order_,
+                                                                 quadrature_rules_,
                                                                  entity_indices_,
                                                                  grid_sizes_,
-                                                                 poly_,
+                                                                 plane_coefficients_,
                                                                  param,
                                                                  flux_is_linear_);
   }
@@ -1242,10 +1254,10 @@ private:
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueFunctionType& boundary_values_;
   const FieldVector<size_t, dimDomain> grid_sizes_;
-  const Polyhedron_3& poly_;
+  const std::vector<FieldVector<RangeFieldType, dimRange + 1>>& plane_coefficients_;
   const bool flux_is_linear_;
   const bool use_reconstruction_;
-  const size_t quadrature_order_;
+  FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain> quadrature_rules_;
   std::vector<FieldVector<size_t, dimDomain>> entity_indices_;
 }; // class AdvectionGodunovWENOOperator
 

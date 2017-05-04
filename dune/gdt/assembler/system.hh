@@ -133,7 +133,7 @@ public:
   template <class V, class R>
   ThisType& append(const LocalVolumeTwoFormAssembler<V>& local_assembler,
                    std::vector<DynamicMatrix<R>>& matrix,
-                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridViewType>())
+                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
     assert(matrix.size() == test_space_->grid_view().size(0));
     typedef internal::LocalVolumeTwoFormMatrixAssemblerWrapper<ThisType,

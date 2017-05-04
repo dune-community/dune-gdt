@@ -346,7 +346,63 @@ private:
   const NumericalFluxType numerical_flux_;
 };
 
-template <class GridViewType, class Polyhedron_3, size_t dimDomain, size_t dimRange>
+enum class BasisFunctionType
+{
+  legendre,
+  hat_functions,
+  first_order_dg
+};
+
+template <class RangeType, BasisFunctionType basis_function_type>
+struct rescale_factor
+{
+  static typename RangeType::field_type get(const RangeType& /*u*/, const RangeType& /*u_bar*/)
+  {
+    DUNE_THROW(NotImplemented, "Not implemented for this basisfunction type");
+    return 0;
+  }
+};
+
+template <class RangeType>
+class rescale_factor<RangeType, BasisFunctionType::legendre>
+{
+  static typename RangeType::field_type get(const RangeType& u, const RangeType& u_bar)
+  {
+    return 2 * std::max(u[0], u_bar[0]);
+  }
+};
+
+template <class RangeType>
+struct rescale_factor<RangeType, BasisFunctionType::hat_functions>
+{
+  static typename RangeType::field_type get(const RangeType& u, const RangeType& u_bar)
+  {
+    typedef typename RangeType::field_type FieldType;
+    return 2 * std::max(std::accumulate(u.begin(), u.end(), FieldType(0)),
+                        std::accumulate(u_bar.begin(), u_bar.end(), FieldType(0)));
+  }
+};
+
+template <class RangeType>
+struct rescale_factor<RangeType, BasisFunctionType::first_order_dg>
+{
+  static typename RangeType::field_type get(const RangeType& u, const RangeType& u_bar)
+  {
+    typename RangeType::FieldType u_sum;
+    auto u_bar_sum = u_sum;
+    for (size_t ii = 0; ii < u.size(); ii += 4) {
+      u_sum += u[ii];
+      u_bar_sum += u_bar[ii];
+    }
+    return 2 * std::max(u_sum, u_bar_sum);
+  }
+};
+
+
+template <class GridViewType,
+          size_t dimDomain,
+          size_t dimRange,
+          BasisFunctionType basis_function_type = BasisFunctionType::legendre>
 class LocalRealizabilityLimiter : public XT::Grid::Functor::Codim0<GridViewType>
 {
   typedef typename GridViewType::ctype FieldType;
@@ -358,14 +414,14 @@ public:
   // cell averages includes left and right boundary values as the two last indices in each dimension
   explicit LocalRealizabilityLimiter(
       const GridViewType& grid_view,
-      const Polyhedron_3& poly,
+      const std::vector<FieldVector<FieldType, dimRange + 1>>& plane_coefficients,
       const std::vector<std::vector<std::vector<EigenVectorType>>>& cell_averages,
       const std::vector<FieldVector<size_t, dimDomain>>& entity_indices,
       std::vector<std::map<typename GridViewType::template Codim<0>::Geometry::LocalCoordinate,
                            RangeType,
                            internal::FieldVectorLess>>& reconstructed_values)
     : grid_view_(grid_view)
-    , poly_(poly)
+    , plane_coefficients_(plane_coefficients)
     , cell_averages_(cell_averages)
     , entity_indices_(entity_indices)
     , reconstructed_values_(reconstructed_values)
@@ -392,25 +448,27 @@ public:
     // vector to store thetas for each local reconstructed value
     std::vector<FieldType> thetas(local_reconstructed_values.size(), -epsilon);
 
-    FieldVector<FieldType, 3> a;
-    const auto plane_it_end = poly_.planes_end();
-    for (auto plane_it = poly_.planes_begin(); plane_it != plane_it_end; ++plane_it) {
-      const auto& plane = *plane_it;
-      a[0] = plane.a();
-      a[1] = plane.b();
-      a[2] = plane.c();
-      FieldType b = -plane.d();
-
-      size_t ii = -1;
-      for (auto& pair : local_reconstructed_values) {
-        ++ii;
-        auto& u = pair.second;
-        // if u equals u_bar, no limiting is necessary
-        if (XT::Common::FloatCmp::eq(u, u_bar))
+    FieldVector<FieldType, dimRange> a;
+    FieldType b;
+    for (const auto& coeffs : plane_coefficients_) {
+      std::copy_n(coeffs.begin(), dimRange, a.begin());
+      b = coeffs[dimRange];
+      size_t ll = -1;
+      for (const auto& pair : local_reconstructed_values) {
+        ++ll;
+        auto u_l = pair.second;
+        // if u_l equals u_bar, no limiting is necessary
+        if (XT::Common::FloatCmp::eq(u_l, u_bar))
           continue;
-        FieldType theta = (b - a * u) / (a * (u_bar - u));
-        if (XT::Common::FloatCmp::ge(theta, -epsilon) && XT::Common::FloatCmp::le(theta, 1.))
-          thetas[ii] = std::max(thetas[ii], theta);
+        // rescale u_l, u_bar
+        const auto factor = rescale_factor<RangeType, basis_function_type>::get(u_l, u_bar);
+        u_l /= factor;
+        auto u_bar_l = u_bar;
+        u_bar_l /= factor;
+
+        FieldType theta_li = (b - a * u_l) / (a * (u_bar_l - u_l));
+        if (XT::Common::FloatCmp::ge(theta_li, -epsilon) && XT::Common::FloatCmp::le(theta_li, 1.))
+          thetas[ll] = std::max(thetas[ll], theta_li);
       }
     }
     for (auto& theta : thetas)
@@ -430,7 +488,7 @@ public:
 
 private:
   const GridViewType& grid_view_;
-  const Polyhedron_3& poly_;
+  const std::vector<FieldVector<FieldType, dimRange + 1>>& plane_coefficients_;
   const std::vector<std::vector<std::vector<EigenVectorType>>>& cell_averages_;
   const std::vector<FieldVector<size_t, 3>>& entity_indices_;
   std::vector<std::map<typename GridViewType::template Codim<0>::Geometry::LocalCoordinate,
