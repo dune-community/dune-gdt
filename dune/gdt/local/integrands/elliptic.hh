@@ -170,12 +170,11 @@ public:
   {
   }
 
-  template <
-      typename DiffusionType // This disables the ctor if dimDomain == 1, since factor and tensor are then identical
-      ,
-      typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the ctors
-                                         && (dimDomain > 1)
-                                         && sizeof(DiffusionType)>::type> // ambiguous.
+
+  template < // This disables the ctor if dimDomain == 1, since factor and tensor are then identical and the
+      typename DiffusionType, //                                                            ctors ambiguous.
+      typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) && (dimDomain > 1)
+                                         && sizeof(DiffusionType)>::type>
   LocalEllipticIntegrand(const DiffusionType& diffusion)
     : diffusion_factor_(new DiffusionFactorType(1.))
     , diffusion_tensor_(diffusion)
