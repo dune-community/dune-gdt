@@ -181,7 +181,16 @@ public:
   {
   }
 
-  LocalEllipticIntegrand(const ThisType& other) = default;
+  /**
+   * \attention Due to the nature of XT::Common::ConstStorageProvider, this copy may leave you with a dead reference,
+   *            if other is destructed.
+   */
+  LocalEllipticIntegrand(const ThisType& other)
+    : diffusion_factor_(other.diffusion_factor())
+    , diffusion_tensor_(other.diffusion_tensor())
+  {
+  }
+
   LocalEllipticIntegrand(ThisType&& source) = default;
 
   /// \name Required by LocalVolumeIntegrandInterface< ..., 2 >
