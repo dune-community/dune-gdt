@@ -596,7 +596,7 @@ public:
     return append(std::forward<Args>(args)...);
   }
 
-  void apply(const bool use_tbb = true)
+  void apply(const bool use_tbb = false)
   {
     if (!walked_) {
       this->walk(use_tbb);

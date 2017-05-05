@@ -12,6 +12,8 @@
 #ifndef DUNE_GDT_LOCAL_FLUXES_GODUNOV_HH
 #define DUNE_GDT_LOCAL_FLUXES_GODUNOV_HH
 
+#include <config.h>
+
 #include <tuple>
 #include <memory>
 
@@ -120,8 +122,8 @@ public:
     : analytical_flux_(analytical_flux)
     , is_linear_(is_linear)
   {
-    if (is_linear_
-        && (!jacobians_constructed_ || (param.has_key("reinit_jacobians") && param.get("reinit_jacobians")[0] == 1)))
+    if (is_linear_ && (!jacobians_constructed_ || (param.has_key("reinit_jacobians")
+                                                   && XT::Common::FloatCmp::eq(param.get("reinit_jacobians")[0], 1.))))
       initialize_jacobians();
   }
 
@@ -299,8 +301,8 @@ public:
     : analytical_flux_(analytical_flux)
     , is_linear_(is_linear)
   {
-    if (is_linear_
-        && (!jacobians_constructed_ || (param.has_key("reinit_jacobians") && param.get("reinit_jacobians")[0] == 1)))
+    if (is_linear_ && (!jacobians_constructed_ || (param.has_key("reinit_jacobians")
+                                                   && XT::Common::FloatCmp::eq(param.get("reinit_jacobians")[0], 1.))))
       initialize_jacobians();
   }
 
@@ -475,8 +477,8 @@ public:
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
   {
-    if (is_linear_
-        && (!jacobians_constructed_ || (param.has_key("reinit_jacobians") && param.get("reinit_jacobians")[0] == 1)))
+    if (is_linear_ && (!jacobians_constructed_ || (param.has_key("reinit_jacobians")
+                                                   && XT::Common::FloatCmp::eq(param.get("reinit_jacobians")[0], 1.))))
       initialize_jacobians();
   }
 
@@ -663,8 +665,8 @@ public:
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
   {
-    if (is_linear_
-        && (!jacobians_constructed_ || (param.has_key("reinit_jacobians") && param.get("reinit_jacobians")[0] == 1)))
+    if (is_linear_ && (!jacobians_constructed_ || (param.has_key("reinit_jacobians")
+                                                   && XT::Common::FloatCmp::eq(param.get("reinit_jacobians")[0], 1.))))
       initialize_jacobians();
   }
 

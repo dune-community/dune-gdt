@@ -442,7 +442,7 @@ int main(int argc, char** argv)
   for (const auto& basis_value : basis_values_matrix)
     points[ii++] = basis_value;
 
-  qhull.runQhull("Realizable set", dimRange, points.size(), &(points[0][0]), "Qt");
+  qhull.runQhull("Realizable set", int(dimRange), int(points.size()), &(points[0][0]), "Qt");
   qhull.outputQhull("n");
   const auto facet_end = qhull.endFacet();
   std::vector<FieldVector<double, dimRange + 1>> plane_coefficients(qhull.facetList().count());

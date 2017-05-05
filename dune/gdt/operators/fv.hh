@@ -1031,7 +1031,7 @@ default_quadrature_rules(const GridViewType& grid_view)
 {
   // get 1D quadrature rules
   const auto quadrature_rule = Dune::QuadratureRules<typename GridViewType::ctype, 1>::rule(
-      grid_view.begin<GridViewType::dimension - 1>()->geometry().type(), 2);
+      grid_view.template begin<GridViewType::dimension - 1>()->geometry().type(), 2);
   FieldVector<Dune::QuadratureRule<typename GridViewType::ctype, 1>, GridViewType::dimension> quadrature_rules;
   std::fill(quadrature_rules.begin(), quadrature_rules.end(), quadrature_rule);
   return quadrature_rules;

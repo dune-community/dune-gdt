@@ -468,7 +468,7 @@ public:
   {
     std::vector<std::function<RangeType(DomainType)>> ret;
     const auto basis_integrated = basisfunctions_integrated(quadrature, poly);
-    ret.push_back([basis_integrated, psi_vac](const DomainType& x) {
+    ret.push_back([basis_integrated, psi_vac](const DomainType& /*x*/) {
       RangeType result = basis_integrated;
       result *= psi_vac;
       return result;
@@ -709,7 +709,7 @@ public:
   {
     std::vector<std::function<RangeType(DomainType)>> ret;
     const auto basis_integrated = basisfunctions_integrated(quadrature, poly);
-    ret.push_back([basis_integrated, psi_vac](const DomainType& x) {
+    ret.push_back([basis_integrated, psi_vac](const DomainType& /*x*/) {
       RangeType result = basis_integrated;
       result *= psi_vac;
       return result;
