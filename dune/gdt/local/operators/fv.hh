@@ -457,9 +457,6 @@ public:
       for (const auto& pair : local_reconstructed_values) {
         ++ll;
         auto u_l = pair.second;
-        // if u_l equals u_bar, no limiting is necessary
-        if (XT::Common::FloatCmp::eq(u_l, u_bar))
-          continue;
         // rescale u_l, u_bar
         const auto factor = rescale_factor<RangeType, basis_function_type>::get(u_l, u_bar);
         u_l /= factor;
@@ -474,7 +471,7 @@ public:
     for (auto& theta : thetas)
       theta = std::min(epsilon + theta, 1.);
 
-    auto theta_entity = *std::max(thetas.begin(), thetas.end());
+    auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
 
     for (auto& pair : local_reconstructed_values) {
       auto& u = pair.second;
