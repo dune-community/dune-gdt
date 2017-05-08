@@ -20,6 +20,7 @@
 #include <dune/xt/grid/dd/subdomains/grid.hh>
 #include <dune/xt/grid/grids.bindings.hh>
 
+#include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/spaces.bindings.hh>
 
 #include "block.hh"
@@ -276,6 +277,20 @@ public:
           "block_subdomain"_a,
           "neighboring_subdomain"_a,
           "type"_a);
+    c.def("coupling_assembler",
+          [](const type& self, const ssize_t subdomain, const ssize_t neighbor) {
+            auto ss = XT::Common::numeric_cast<size_t>(subdomain);
+            auto nn = XT::Common::numeric_cast<size_t>(neighbor);
+            auto coupling_grid_part = self.dd_grid().couplingGridPart(ss, nn);
+            typedef typename type::LocalSpaceType L;
+            return new GDT::SystemAssembler<L, decltype(coupling_grid_part), L>(coupling_grid_part, //   SystemAssembler
+                                                                                self.local_space(ss), // is not copyable
+                                                                                self.local_space(ss), // or movable,
+                                                                                self.local_space(nn), // thus the raw
+                                                                                self.local_space(nn)); // pointer
+          },
+          "subdomain"_a,
+          "neighbor"_a);
 
     const std::string factory_method_name = "make_block_" + space_name<SP>::value_wo_grid();
 
