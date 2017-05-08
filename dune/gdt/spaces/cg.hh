@@ -27,6 +27,7 @@
 #include "interface.hh"
 #include "cg/dune-fem-wrapper.hh"
 #include "cg/dune-pdelab-wrapper.hh"
+#include <dune/gdt/playground/spaces/block.hh>
 
 
 namespace Dune {
@@ -39,14 +40,15 @@ template <class GridType,
           int polOrder,
           class RangeFieldType,
           size_t dimRange,
-          size_t dimRangeCols = 1>
+          size_t dimRangeCols = 1,
+          XT::Grid::Backends grid_backend_type = layer_from_backend<backend_type>::type>
 class CgSpaceProvider
 {
 public:
   static const constexpr SpaceType space_type = SpaceType::cg;
   static const constexpr Backends space_backend = backend_type;
   static const constexpr XT::Grid::Layers grid_layer = layer_type;
-  static const constexpr XT::Grid::Backends layer_backend = layer_from_backend<backend_type>::type;
+  static const constexpr XT::Grid::Backends layer_backend = grid_backend_type;
 
   typedef typename XT::Grid::Layer<GridType, layer_type, layer_backend>::type GridLayerType;
 
@@ -84,6 +86,51 @@ public:
     return Type(grid_provider.template layer<layer_type, layer_backend>(level));
   }
 }; // class CgSpaceProvider
+
+
+template <class GridType,
+          XT::Grid::Layers layer_type,
+          Backends backend_type,
+          int polOrder,
+          class RangeFieldType,
+          size_t dimRange,
+          size_t dimRangeCols = 1,
+          XT::Grid::Backends grid_backend_type = layer_from_backend<backend_type>::type>
+class BlockCgSpaceProvider
+{
+public:
+  static const constexpr SpaceType space_type = SpaceType::block_cg;
+  static const constexpr Backends space_backend = backend_type;
+  static const constexpr XT::Grid::Layers grid_layer = layer_type;
+  static const constexpr XT::Grid::Backends layer_backend = grid_backend_type;
+
+  typedef typename XT::Grid::Layer<GridType, grid_layer, layer_backend>::type GridLayerType;
+
+private:
+  typedef typename CgSpaceProvider<GridType,
+                                   grid_layer,
+                                   space_backend,
+                                   polOrder,
+                                   RangeFieldType,
+                                   dimRange,
+                                   dimRangeCols,
+                                   layer_backend>::Type LocalType;
+
+public:
+  typedef GDT::BlockSpace<LocalType> Type;
+  typedef Type type;
+
+  static Type create(GridLayerType /*grid_layer*/)
+  {
+    DUNE_THROW(NotImplemented, "Only usable to extract the correct type");
+  }
+
+  template <class DdGridType>
+  static Type create(XT::Grid::GridProvider<GridType, DdGridType>& /*grid_provider*/, const int /*level*/ = 0)
+  {
+    DUNE_THROW(NotImplemented, "Only usable to extract the correct type");
+  }
+}; // class BlockCgSpaceProvider
 
 
 } // namespace GDT
