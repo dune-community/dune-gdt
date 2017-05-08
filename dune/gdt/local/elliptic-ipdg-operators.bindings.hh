@@ -13,9 +13,12 @@
 
 #include <dune/pybindxi/pybind11.h>
 
+#include <dune/xt/la/container.hh>
 #include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/grid/grids.bindings.hh>
 #include <dune/xt/grid/dd/subdomains/grid.hh>
+
+#include <dune/gdt/assembler/system.hh>
 
 #include "integrands/elliptic-ipdg.hh"
 #include "operators/integrals.hh"
@@ -127,6 +130,204 @@ public:
     return c;
   } // ... bind(...)
 }; // class LocalEllipticIpdgInnerIntegralOperator
+
+
+namespace internal {
+
+
+template <LocalEllipticIpdgIntegrands::Method method,
+          XT::LA::Backends la,
+          class T,
+          bool oned = (T::dimDomain == 1),
+          bool anything = true>
+struct LocalEllipticIpdgInnerIntegralOperatorAddBindHelper
+{
+  typedef typename T::EntityType E;
+  static const size_t d = T::dimDomain;
+  typedef typename T::DomainFieldType D;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, double, 1, 1> DF;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, double, d, d> DT;
+  typedef typename XT::LA::Container<double, la>::MatrixType M;
+
+  template <class GL, class A, class OT, class OA>
+  void operator()(pybind11::class_<GDT::SystemAssembler<T, GL, A, OT, OA>>& c)
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+
+    c.def("append",
+          [](GDT::SystemAssembler<T, GL, A, OT, OA>& self,
+             const GDT::LocalCouplingTwoFormAssembler<LocalCouplingIntegralOperator<LocalEllipticIpdgIntegrands::
+                                                                                        Inner<DF, DT, method>>>&
+                 local_assembler,
+             M& matrix,
+             const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+            self.append(local_assembler, matrix, which_intersections.copy());
+          },
+          "local_assembler"_a,
+          "matrix"_a,
+          "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    c.def("append",
+          [](GDT::SystemAssembler<T, GL, A, OT, OA>& self,
+             const GDT::LocalCouplingTwoFormAssembler<LocalCouplingIntegralOperator<LocalEllipticIpdgIntegrands::
+                                                                                        Inner<DF, void, method>>>&
+                 local_assembler,
+             M& matrix,
+             const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+            self.append(local_assembler, matrix, which_intersections.copy());
+          },
+          "local_assembler"_a,
+          "matrix"_a,
+          "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+
+    c.def(
+        "append",
+        [](GDT::SystemAssembler<T, GL, A, OT, OA>& self,
+           const GDT::LocalCouplingTwoFormAssembler<LocalCouplingIntegralOperator<LocalEllipticIpdgIntegrands::
+                                                                                      Inner<DF, DT, method>>>&
+               local_assembler,
+           M& matrix_in_in,
+           M& matrix_out_out,
+           M& matrix_in_out,
+           M& matrix_out_in,
+           const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+          self.append(
+              local_assembler, matrix_in_in, matrix_out_out, matrix_in_out, matrix_out_in, which_intersections.copy());
+        },
+        "local_assembler"_a,
+        "matrix_in_in"_a,
+        "matrix_out_out"_a,
+        "matrix_in_out"_a,
+        "matrix_out_in"_a,
+        "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::keep_alive<0, 3>(),
+        py::keep_alive<0, 4>(),
+        py::keep_alive<0, 5>());
+    c.def(
+        "append",
+        [](GDT::SystemAssembler<T, GL, A, OT, OA>& self,
+           const GDT::LocalCouplingTwoFormAssembler<LocalCouplingIntegralOperator<LocalEllipticIpdgIntegrands::
+                                                                                      Inner<DF, void, method>>>&
+               local_assembler,
+           M& matrix_in_in,
+           M& matrix_out_out,
+           M& matrix_in_out,
+           M& matrix_out_in,
+           const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+          self.append(
+              local_assembler, matrix_in_in, matrix_out_out, matrix_in_out, matrix_out_in, which_intersections.copy());
+        },
+        "local_assembler"_a,
+        "matrix_in_in"_a,
+        "matrix_out_out"_a,
+        "matrix_in_out"_a,
+        "matrix_out_in"_a,
+        "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::keep_alive<0, 3>(),
+        py::keep_alive<0, 4>(),
+        py::keep_alive<0, 5>());
+  }
+}; // struct LocalEllipticIpdgInnerIntegralOperatorAddBindHelper<..., true, ...>
+
+
+template <LocalEllipticIpdgIntegrands::Method method, XT::LA::Backends la, class T, bool anything>
+struct LocalEllipticIpdgInnerIntegralOperatorAddBindHelper<method, la, T, false, anything>
+{
+  typedef LocalEllipticIpdgInnerIntegralOperatorAddBindHelper<method, la, T, true, anything> BaseType;
+  typedef typename BaseType::DT DT;
+  typedef typename BaseType::M M;
+
+  template <class GL, class A, class OT, class OA>
+  void operator()(pybind11::class_<GDT::SystemAssembler<T, GL, A, OT, OA>>& c)
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+
+    BaseType()(c);
+
+    c.def("append",
+          [](GDT::SystemAssembler<T, GL, A, OT, OA>& self,
+             const GDT::LocalCouplingTwoFormAssembler<LocalCouplingIntegralOperator<LocalEllipticIpdgIntegrands::
+                                                                                        Inner<DT, void, method>>>&
+                 local_assembler,
+             M& matrix,
+             const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+            self.append(local_assembler, matrix, which_intersections.copy());
+          },
+          "local_assembler"_a,
+          "matrix"_a,
+          "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+
+    c.def(
+        "append",
+        [](GDT::SystemAssembler<T, GL, A, OT, OA>& self,
+           const GDT::LocalCouplingTwoFormAssembler<LocalCouplingIntegralOperator<LocalEllipticIpdgIntegrands::
+                                                                                      Inner<DT, void, method>>>&
+               local_assembler,
+           M& matrix_in_in,
+           M& matrix_out_out,
+           M& matrix_in_out,
+           M& matrix_out_in,
+           const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+          self.append(
+              local_assembler, matrix_in_in, matrix_out_out, matrix_in_out, matrix_out_in, which_intersections.copy());
+        },
+        "local_assembler"_a,
+        "matrix_in_in"_a,
+        "matrix_out_out"_a,
+        "matrix_in_out"_a,
+        "matrix_out_in"_a,
+        "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::keep_alive<0, 3>(),
+        py::keep_alive<0, 4>(),
+        py::keep_alive<0, 5>());
+  }
+}; // struct LocalEllipticIpdgInnerIntegralOperatorAddBindHelper<..., false, ...>
+
+
+template <XT::LA::Backends la, class T, class GL, class A, class OT, class OA>
+static void
+addbind_local_elliptic_ipdg_inner_integral_operator(pybind11::class_<GDT::SystemAssembler<T, GL, A, OT, OA>>& c)
+{
+  LocalEllipticIpdgInnerIntegralOperatorAddBindHelper<LocalEllipticIpdgIntegrands::Method::sipdg, la, T>()(c);
+  LocalEllipticIpdgInnerIntegralOperatorAddBindHelper<LocalEllipticIpdgIntegrands::Method::swipdg, la, T>()(c);
+  LocalEllipticIpdgInnerIntegralOperatorAddBindHelper<LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor,
+                                                      la,
+                                                      T>()(c);
+  LocalEllipticIpdgInnerIntegralOperatorAddBindHelper<LocalEllipticIpdgIntegrands::Method::swipdg_affine_tensor,
+                                                      la,
+                                                      T>()(c);
+}
+
+
+} // namespace internal
+
+
+template <class T, class GL, class A, class OT, class OA>
+static void
+addbind_local_elliptic_ipdg_inner_integral_operator(pybind11::class_<GDT::SystemAssembler<T, GL, A, OT, OA>>& c)
+{
+  internal::addbind_local_elliptic_ipdg_inner_integral_operator<XT::LA::Backends::common_sparse>(c);
+#if HAVE_EIGEN
+  internal::addbind_local_elliptic_ipdg_inner_integral_operator<XT::LA::Backends::eigen_dense>(c);
+  internal::addbind_local_elliptic_ipdg_inner_integral_operator<XT::LA::Backends::eigen_sparse>(c);
+#endif
+#if HAVE_DUNE_ISTL
+  internal::addbind_local_elliptic_ipdg_inner_integral_operator<XT::LA::Backends::istl_sparse>(c);
+#endif
+}
 
 
 } // namespace bindings

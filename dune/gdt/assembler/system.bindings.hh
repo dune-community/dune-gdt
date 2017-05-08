@@ -136,6 +136,9 @@ public:
 
     addbind_factory_methods<>()(m);
 
+    // the local operators and functionals
+    addbind_local_elliptic_ipdg_inner_integral_operator(c);
+
     return c;
   } // ... bind(...)
 }; // class SystemAssembler
