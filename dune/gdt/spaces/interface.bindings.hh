@@ -9,7 +9,7 @@
 
 #ifndef DUNE_GDT_SPACES_INTERFACE_BINDINGS_HH
 #define DUNE_GDT_SPACES_INTERFACE_BINDINGS_HH
-//#if HAVE_DUNE_PYBINDXI
+#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -93,11 +93,29 @@ struct space_type_name<SpaceType::cg>
 };
 
 template <>
+struct space_type_name<SpaceType::block_cg>
+{
+  static std::string value()
+  {
+    return "block_cg";
+  }
+};
+
+template <>
 struct space_type_name<SpaceType::dg>
 {
   static std::string value()
   {
     return "dg";
+  }
+};
+
+template <>
+struct space_type_name<SpaceType::block_dg>
+{
+  static std::string value()
+  {
+    return "block_dg";
   }
 };
 
@@ -111,6 +129,15 @@ struct space_type_name<SpaceType::fv>
 };
 
 template <>
+struct space_type_name<SpaceType::block_fv>
+{
+  static std::string value()
+  {
+    return "block_fv";
+  }
+};
+
+template <>
 struct space_type_name<SpaceType::rt>
 {
   static std::string value()
@@ -119,23 +146,31 @@ struct space_type_name<SpaceType::rt>
   }
 };
 
+template <>
+struct space_type_name<SpaceType::block_rt>
+{
+  static std::string value()
+  {
+    return "block_rt";
+  }
+};
+
 
 namespace internal {
 
 
-template <class G, XT::Grid::Layers layer, Backends backend, size_t r, size_t rC>
+template <class G, XT::Grid::Layers layer, Backends backend, size_t r, size_t rC, XT::Grid::Backends g>
 struct space_name_base
 {
   static std::string value_wo_grid()
   {
     using XT::Common::to_string;
-    return XT::Grid::bindings::layer_name<layer>::value() + "_to_" + to_string(r) + "x" + to_string(rC) + "_"
-           + backend_name<backend>::value();
+    return XT::Grid::bindings::layer_name<layer>::value() + "_" + XT::Grid::bindings::backend_name<g>::value() + "_to_"
+           + to_string(r) + "x" + to_string(rC) + "_" + backend_name<backend>::value();
   }
 
   static std::string value()
   {
-    using XT::Common::to_string;
     return XT::Grid::bindings::grid_name<G>::value() + "_" + value_wo_grid();
   }
 };
@@ -155,64 +190,166 @@ struct space_name
   }
 };
 
-template <class G, XT::Grid::Layers layer, Backends backend, int p, size_t r, size_t rC>
-struct space_name<CgSpaceProvider<G, layer, backend, p, double, r, rC>>
+template <class G, XT::Grid::Layers layer, Backends backend, int p, size_t r, size_t rC, XT::Grid::Backends g>
+struct space_name<CgSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return std::string("cg_") + internal::space_name_base<G, layer, backend, r, rC>::value() + "_p"
-           + XT::Common::to_string(p) + "_space";
+    return space_type_name<SpaceType::cg>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
+           + "_space";
   }
 
   static std::string value_wo_grid()
   {
-    return std::string("cg_") + internal::space_name_base<G, layer, backend, r, rC>::value_wo_grid() + "_p"
-           + XT::Common::to_string(p) + "_space";
+    return space_type_name<SpaceType::cg>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_p" + XT::Common::to_string(p)
+           + "_space";
   }
 };
 
-template <class G, XT::Grid::Layers layer, Backends backend, int p, size_t r, size_t rC>
-struct space_name<DgSpaceProvider<G, layer, backend, p, double, r, rC>>
+template <class G, XT::Grid::Layers layer, Backends backend, int p, size_t r, size_t rC, XT::Grid::Backends g>
+struct space_name<BlockCgSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return std::string("dg_") + internal::space_name_base<G, layer, backend, r, rC>::value() + "_p"
-           + XT::Common::to_string(p) + "_space";
+    return space_type_name<SpaceType::block_cg>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
+           + "_space";
   }
 
   static std::string value_wo_grid()
   {
-    return std::string("dg_") + internal::space_name_base<G, layer, backend, r, rC>::value_wo_grid() + "_p"
-           + XT::Common::to_string(p) + "_space";
+    return space_type_name<SpaceType::block_cg>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_p" + XT::Common::to_string(p)
+           + "_space";
   }
 };
 
-template <class G, XT::Grid::Layers layer, Backends backend, size_t r, size_t rC>
-struct space_name<FvSpaceProvider<G, layer, backend, double, r, rC>>
+template <class G, XT::Grid::Layers layer, Backends backend, int p, size_t r, size_t rC, XT::Grid::Backends g>
+struct space_name<DgSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return std::string("fv_") + internal::space_name_base<G, layer, backend, r, rC>::value() + "_space";
+    return space_type_name<SpaceType::dg>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
+           + "_space";
   }
 
   static std::string value_wo_grid()
   {
-    return std::string("fv_") + internal::space_name_base<G, layer, backend, r, rC>::value_wo_grid() + "_space";
+    return space_type_name<SpaceType::dg>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_p" + XT::Common::to_string(p)
+           + "_space";
   }
 };
 
-template <class G, XT::Grid::Layers l, SpaceType tp, Backends backend, int p, class R, size_t r, size_t rC>
-struct space_name<SpaceProvider<G, l, tp, backend, p, R, r, rC>>
+template <class G, XT::Grid::Layers layer, Backends backend, int p, size_t r, size_t rC, XT::Grid::Backends g>
+struct space_name<BlockDgSpaceProvider<G, layer, backend, p, double, r, rC, g>>
 {
   static std::string value()
   {
-    return space_type_name<tp>::value() + "_" + internal::space_name_base<G, l, backend, r, rC>::value() + "_p"
+    return space_type_name<SpaceType::block_dg>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
+           + "_space";
+  }
+
+  static std::string value_wo_grid()
+  {
+    return space_type_name<SpaceType::block_dg>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_p" + XT::Common::to_string(p)
+           + "_space";
+  }
+};
+
+template <class G, XT::Grid::Layers layer, Backends backend, size_t r, size_t rC, XT::Grid::Backends g>
+struct space_name<FvSpaceProvider<G, layer, backend, double, r, rC, g>>
+{
+  static std::string value()
+  {
+    return space_type_name<SpaceType::fv>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_space";
+  }
+
+  static std::string value_wo_grid()
+  {
+    return space_type_name<SpaceType::fv>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_space";
+  }
+};
+
+template <class G, XT::Grid::Layers layer, Backends backend, size_t r, size_t rC, XT::Grid::Backends g>
+struct space_name<BlockFvSpaceProvider<G, layer, backend, double, r, rC, g>>
+{
+  static std::string value()
+  {
+    return space_type_name<SpaceType::block_fv>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_space";
+  }
+
+  static std::string value_wo_grid()
+  {
+    return space_type_name<SpaceType::block_fv>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_space";
+  }
+};
+
+template <class G, XT::Grid::Layers layer, Backends backend, int p, size_t r, size_t rC, XT::Grid::Backends g>
+struct space_name<RtSpaceProvider<G, layer, backend, p, double, r, rC, g>>
+{
+  static std::string value()
+  {
+    return space_type_name<SpaceType::rt>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
+           + "_space";
+  }
+
+  static std::string value_wo_grid()
+  {
+    return space_type_name<SpaceType::rt>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_p" + XT::Common::to_string(p)
+           + "_space";
+  }
+};
+
+template <class G, XT::Grid::Layers layer, Backends backend, int p, size_t r, size_t rC, XT::Grid::Backends g>
+struct space_name<BlockRtSpaceProvider<G, layer, backend, p, double, r, rC, g>>
+{
+  static std::string value()
+  {
+    return space_type_name<SpaceType::block_rt>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value() + "_p" + XT::Common::to_string(p)
+           + "_space";
+  }
+
+  static std::string value_wo_grid()
+  {
+    return space_type_name<SpaceType::block_rt>::value() + "_"
+           + internal::space_name_base<G, layer, backend, r, rC, g>::value_wo_grid() + "_p" + XT::Common::to_string(p)
+           + "_space";
+  }
+};
+
+template <class G,
+          XT::Grid::Layers l,
+          SpaceType tp,
+          Backends b,
+          int p,
+          class R,
+          size_t r,
+          size_t rC,
+          XT::Grid::Backends g>
+struct space_name<SpaceProvider<G, l, tp, b, p, R, r, rC, g>>
+{
+  static std::string value()
+  {
+    return space_type_name<tp>::value() + "_" + internal::space_name_base<G, l, b, r, rC, g>::value() + "_p"
            + XT::Common::to_string(p) + "_space";
   }
 
   static std::string value_wo_grid()
   {
-    return space_type_name<tp>::value() + "_" + internal::space_name_base<G, l, backend, r, rC>::value_wo_grid() + "_p"
+    return space_type_name<tp>::value() + "_" + internal::space_name_base<G, l, b, r, rC, g>::value_wo_grid() + "_p"
            + XT::Common::to_string(p) + "_space";
   }
 };
@@ -323,5 +460,5 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-//#endif // HAVE_DUNE_PYBINDXI
+#endif // HAVE_DUNE_PYBINDXI
 #endif // DUNE_GDT_SPACES_INTERFACE_BINDINGS_HH
