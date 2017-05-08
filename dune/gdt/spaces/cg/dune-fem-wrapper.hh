@@ -122,7 +122,6 @@ public:
   typedef typename Traits::CommunicatorType CommunicatorType;
 
   using typename BaseType::DomainType;
-  using typename BaseType::BoundaryInfoType;
 
   explicit DuneFemCgSpaceWrapper(GridLayerType grd_prt)
     : grid_part_(new GridLayerType(grd_prt))
@@ -168,7 +167,8 @@ public:
     return BaseType::lagrange_points_order_1(entity);
   }
 
-  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
+  template <class I>
+  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const XT::Grid::BoundaryInfo<I>& boundaryInfo) const
   {
     return BaseType::local_dirichlet_DoFs_order_1(entity, boundaryInfo);
   }
