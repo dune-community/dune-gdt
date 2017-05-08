@@ -64,7 +64,11 @@ public:
   typedef XT::Grid::ApplyOn::WhichEntity<GridLayerType> ApplyOnWhichEntity;
   typedef XT::Grid::ApplyOn::WhichIntersection<GridLayerType> ApplyOnWhichIntersection;
 
-  SystemAssembler(TestSpaceType test, AnsatzSpaceType ansatz, GridLayerType grd_layr)
+  template <typename TestSpace,
+            typename AnsatzSpace,
+            typename = typename std::enable_if<std::is_same<OuterTestSpaceType, TestSpace>::value
+                                               && std::is_same<OuterAnsatzSpaceType, AnsatzSpace>::value>::type>
+  SystemAssembler(TestSpace test, AnsatzSpace ansatz, GridLayerType grd_layr)
     : BaseType(grd_layr)
     , test_space_(test)
     , ansatz_space_(ansatz)
@@ -73,8 +77,13 @@ public:
   {
   }
 
-  /// \todo Guard against GridLayerType != TestSpaceImp::GridLayerType
-  SystemAssembler(TestSpaceType test, AnsatzSpaceType ansatz)
+  template <typename TestSpace,
+            typename AnsatzSpace,
+            typename =
+                typename std::enable_if<std::is_same<OuterTestSpaceType, TestSpace>::value
+                                        && std::is_same<OuterAnsatzSpaceType, AnsatzSpace>::value
+                                        && std::is_same<typename TestSpace::GridLayerType, GridLayerType>::value>::type>
+  explicit SystemAssembler(TestSpace test, AnsatzSpace ansatz)
     : BaseType(test.grid_layer())
     , test_space_(test)
     , ansatz_space_(ansatz)
@@ -83,8 +92,13 @@ public:
   {
   }
 
-  /// \todo Guard against AnsatzSpaceType != GridLayerType || GridLayerType != TestSpaceType::GridLayerType
-  explicit SystemAssembler(TestSpaceType test)
+  template <typename TestSpace,
+            typename =
+                typename std::enable_if<std::is_same<AnsatzSpaceType, TestSpace>::value
+                                        && std::is_same<OuterTestSpaceType, TestSpace>::value
+                                        && std::is_same<OuterAnsatzSpaceType, TestSpace>::value
+                                        && std::is_same<typename TestSpace::GridLayerType, GridLayerType>::value>::type>
+  explicit SystemAssembler(TestSpace test)
     : BaseType(test.grid_layer())
     , test_space_(test)
     , ansatz_space_(test)
@@ -93,8 +107,11 @@ public:
   {
   }
 
-  /// \todo Guard against AnsatzSpaceType != TestSpaceType
-  SystemAssembler(TestSpaceType test, GridLayerType grd_layr)
+  template <typename TestSpace,
+            typename = typename std::enable_if<std::is_same<AnsatzSpaceType, TestSpace>::value
+                                               && std::is_same<OuterTestSpaceType, TestSpace>::value
+                                               && std::is_same<OuterAnsatzSpaceType, TestSpace>::value>::type>
+  explicit SystemAssembler(TestSpace test, GridLayerType grd_layr)
     : BaseType(grd_layr)
     , test_space_(test)
     , ansatz_space_(test)
