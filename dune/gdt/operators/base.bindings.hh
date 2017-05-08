@@ -44,7 +44,7 @@ public:
 
     typedef typename type::RangeSpaceType R;
     typedef typename type::SourceSpaceType S;
-    typedef typename XT::LA::Container<typename type::RangeFieldType, type::MatrixType::vector_type>::VectorType V;
+    typedef typename XT::LA::Container<typename type::FieldType, type::MatrixType::vector_type>::VectorType V;
 
     bound_type c(m, std::string(class_id).c_str(), std::string(class_id).c_str());
 

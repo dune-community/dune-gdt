@@ -146,8 +146,7 @@ public:
                      << "  Number of local spaces given: "
                      << local_spaces_->size());
     for (size_t bb = 0; bb < num_blocks_; ++bb) {
-      auto foo = backend()[bb].mapper().maxNumDofs();
-      max_num_dofs_ = std::max(max_num_dofs_, foo);
+      max_num_dofs_ = std::max(max_num_dofs_, backend()[bb].mapper().maxNumDofs());
       global_start_indices_.push_back(size_);
       size_ += backend()[bb].mapper().size();
     }

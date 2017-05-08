@@ -375,7 +375,7 @@ public:
     assert(global_matrix_en_en.rows() >= test_space_en.mapper().size());
     assert(global_matrix_en_en.cols() >= ansatz_space_en.mapper().size());
     assert(global_matrix_ne_ne.rows() >= test_space_ne.mapper().size());
-    assert(global_matrix_en_en.cols() >= ansatz_space_ne.mapper().size());
+    assert(global_matrix_ne_ne.cols() >= ansatz_space_ne.mapper().size());
     assert(global_matrix_en_ne.rows() >= test_space_en.mapper().size());
     assert(global_matrix_en_ne.cols() >= ansatz_space_ne.mapper().size());
     assert(global_matrix_ne_en.rows() >= test_space_ne.mapper().size());

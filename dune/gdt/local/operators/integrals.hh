@@ -35,7 +35,7 @@ namespace GDT {
 template <class BinaryEvaluationType>
 class LocalVolumeIntegralOperator;
 
-template <class QuaternaryFaceIntegrandTypeType>
+template <class QuaternaryFaceIntegrandType>
 class LocalCouplingIntegralOperator;
 
 template <class BinaryEvaluationType>
@@ -56,14 +56,14 @@ public:
 };
 
 
-template <class QuaternaryFaceIntegrandTypeType>
+template <class QuaternaryFaceIntegrandType>
 class LocalCouplingIntegralOperatorTraits
 {
-  static_assert(is_quaternary_face_integrand<QuaternaryFaceIntegrandTypeType>::value,
-                "QuaternaryFaceIntegrandTypeType has to be derived from LocalFaceIntegrandInterface< ..., 4 >!");
+  static_assert(is_quaternary_face_integrand<QuaternaryFaceIntegrandType>::value,
+                "QuaternaryFaceIntegrandType has to be derived from LocalFaceIntegrandInterface< ..., 4 >!");
 
 public:
-  typedef LocalCouplingIntegralOperator<QuaternaryFaceIntegrandTypeType> derived_type;
+  typedef LocalCouplingIntegralOperator<QuaternaryFaceIntegrandType> derived_type;
 };
 
 
@@ -159,13 +159,12 @@ private:
 }; // class LocalVolumeIntegralOperator
 
 
-template <class QuaternaryFaceIntegrandTypeType>
+template <class QuaternaryFaceIntegrandType>
 class LocalCouplingIntegralOperator
-    : public LocalCouplingTwoFormInterface<internal::
-                                               LocalCouplingIntegralOperatorTraits<QuaternaryFaceIntegrandTypeType>>
+    : public LocalCouplingTwoFormInterface<internal::LocalCouplingIntegralOperatorTraits<QuaternaryFaceIntegrandType>>
 {
 public:
-  typedef internal::LocalCouplingIntegralOperatorTraits<QuaternaryFaceIntegrandTypeType> Traits;
+  typedef internal::LocalCouplingIntegralOperatorTraits<QuaternaryFaceIntegrandType> Traits;
 
   template <class... Args>
   explicit LocalCouplingIntegralOperator(Args&&... args)
@@ -298,7 +297,7 @@ public:
   } // void apply(...) const
 
 private:
-  const QuaternaryFaceIntegrandTypeType integrand_;
+  const QuaternaryFaceIntegrandType integrand_;
   const size_t over_integrate_;
 }; // class LocalCouplingIntegralOperator
 

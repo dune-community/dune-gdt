@@ -22,40 +22,22 @@
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
 
-#include <dune/gdt/functionals/l2.bindings.hh>
+#include "block.bindings.hh"
 
 
-PYBIND11_PLUGIN(__functionals_l2)
+PYBIND11_PLUGIN(__spaces_block)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  py::module m("__functionals_l2", "dune-gdt: l2 functionals");
+  py::module m("__spaces_block", "dune-gdt: Block spaces");
 
   py::module::import("dune.xt.common");
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
   py::module::import("dune.xt.la");
 
-// alu_fem_istl.cc
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_ISTL
-  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, leaf, part, cg, fem, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, level, part, cg, fem, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, dd_subdomain, part, cg, fem, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, leaf, part, dg, fem, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, level, part, dg, fem, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, dd_subdomain, part, dg, fem, 1, istl_sparse);
-#endif
-
-// yasp_fem_istl.cc
-#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, leaf, part, cg, fem, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, level, part, cg, fem, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, dd_subdomain, part, cg, fem, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, leaf, part, dg, fem, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, level, part, dg, fem, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, dd_subdomain, part, dg, fem, 1, istl_sparse);
-#endif
+  DUNE_GDT_SPACES_BLOCK_BIND(m);
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {
@@ -89,7 +71,7 @@ PYBIND11_PLUGIN(__functionals_l2)
 
   m.def("_test_logger",
         [](const bool info, const bool debug, const bool warning) {
-          auto logger = Dune::XT::Common::TimedLogger().get("dune.gdt.functionals.l2");
+          auto logger = Dune::XT::Common::TimedLogger().get("dune.gdt.spaces.block");
           if (info)
             logger.info() << "info logging works!" << std::endl;
           if (debug)

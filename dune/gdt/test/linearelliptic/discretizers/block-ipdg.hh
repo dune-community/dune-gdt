@@ -1,3 +1,12 @@
+// This file is part of the dune-gdt project:
+//   https://github.com/dune-community/dune-gdt
+// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+//      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
+//          with "runtime exception" (http://www.dune-project.org/license.html)
+// Authors:
+//   Felix Schindler (2017)
+
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_DISCRETIZERS_BLOCK_IPDG_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_DISCRETIZERS_BLOCK_IPDG_HH
 
@@ -9,8 +18,6 @@
 #include <dune/xt/grid/view/subdomain/part.hh>
 #include <dune/xt/la/container.hh>
 
-#include <dune/gdt/assembler/boundary.hh>
-#include <dune/gdt/assembler/coupling.hh>
 #include <dune/gdt/playground/spaces/block.hh>
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
@@ -151,7 +158,7 @@ public:
               local_spaces[nn].mapper().size(), local_spaces[ss].mapper().size(), outside_inside_patterns[nn][ss]);
           auto coupling_grid_part = dd_grid.couplingGridPart(ss, nn);
           // put all of this into a coupling operator
-          CouplingAssembler<LocalSpaceType, decltype(coupling_grid_part)> coupling_assembler(
+          SystemAssembler<LocalSpaceType, decltype(coupling_grid_part)> coupling_assembler(
               coupling_grid_part, local_spaces[ss], local_spaces[ss], local_spaces[nn], local_spaces[nn]);
           typedef LocalEllipticIpdgIntegrands::Inner<typename ProblemType::DiffusionFactorType,
                                                      typename ProblemType::DiffusionTensorType,
@@ -183,10 +190,10 @@ public:
         MatrixType boundary_matrix(
             local_spaces[ss].mapper().size(), local_spaces[ss].mapper().size(), boundary_pattern);
         VectorType boundary_vector(local_spaces[ss].mapper().size());
-        BoundaryAssembler<LocalSpaceType, decltype(boundary_grid_part)> boundary_assembler(
-            boundary_grid_part, local_spaces[ss], local_spaces[ss]);
+        SystemAssembler<LocalSpaceType, decltype(boundary_grid_part)> boundary_assembler(local_spaces[ss],
+                                                                                         boundary_grid_part);
         auto boundary_info =
-            XT::Grid::BoundaryInfoFactory<typename decltype(boundary_grid_part)::IntersectionType>::create(
+            XT::Grid::BoundaryInfoFactory<XT::Grid::extract_intersection_t<decltype(boundary_grid_part)>>::create(
                 problem.boundary_info_cfg());
         typedef LocalEllipticIpdgIntegrands::BoundaryLHS<typename ProblemType::DiffusionFactorType,
                                                          typename ProblemType::DiffusionTensorType,

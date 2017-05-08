@@ -8,13 +8,17 @@
 #   Felix Schindler (2010, 2013 - 2017)
 
 if(dune-pybindxi_FOUND)
-  # the main bindings
   set(pybindxi_modules)
   # some top-level modules
   foreach(_target assembler discretefunction projections spaces)
-  dune_pybindxi_add_module(__${_target} ${_target}.bindings.cc)
-  list(APPEND pybindxi_modules __${_target})
+    dune_pybindxi_add_module(__${_target} ${_target}.bindings.cc)
+    list(APPEND pybindxi_modules __${_target})
   endforeach()
+  dune_pybindxi_add_module(__spaces_block playground/spaces/block.bindings.cc)
+  list(APPEND pybindxi_modules __spaces_block)
+  # the local operators
+  dune_pybindxi_add_module(__local_elliptic_ipdg_operators local/elliptic-ipdg-operators.bindings.cc)
+  list(APPEND pybindxi_modules __local_elliptic_ipdg_operators)
   # the operators
   # * elliptic
   dune_pybindxi_add_helper_lib(__operators_elliptic_helper

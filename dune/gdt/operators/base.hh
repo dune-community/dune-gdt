@@ -38,7 +38,9 @@ template <class M,
           class GL = typename RS::GridLayerType,
           class SS = RS,
           class F = typename M::RealType,
-          ChoosePattern pt = ChoosePattern::face_and_volume>
+          ChoosePattern pt = ChoosePattern::face_and_volume,
+          class ORS = RS,
+          class OSS = SS>
 class MatrixOperatorBase;
 
 
@@ -50,7 +52,9 @@ template <class MatrixImp,
           class GridLayerImp,
           class SourceSpaceImp,
           class FieldImp,
-          ChoosePattern pt>
+          ChoosePattern pt,
+          class OuterRangeSpaceImp,
+          class OuterSourceSpaceImp>
 class MatrixOperatorBaseTraits
 {
   static_assert(XT::LA::is_matrix<MatrixImp>::value, "MatrixType has to be derived from XT::LA::MatrixInterface!");
@@ -62,9 +66,23 @@ class MatrixOperatorBaseTraits
   static_assert(std::is_same<XT::Grid::extract_entity_t<typename SourceSpaceImp::GridLayerType>,
                              XT::Grid::extract_entity_t<GridLayerImp>>::value,
                 "SourceSpaceType and GridLayerType have to match!");
+  static_assert(std::is_same<XT::Grid::extract_entity_t<typename OuterRangeSpaceImp::GridLayerType>,
+                             XT::Grid::extract_entity_t<GridLayerImp>>::value,
+                "SourceSpaceType and GridLayerType have to match!");
+  static_assert(std::is_same<XT::Grid::extract_entity_t<typename OuterSourceSpaceImp::GridLayerType>,
+                             XT::Grid::extract_entity_t<GridLayerImp>>::value,
+                "SourceSpaceType and GridLayerType have to match!");
 
 public:
-  typedef MatrixOperatorBase<MatrixImp, RangeSpaceImp, GridLayerImp, SourceSpaceImp, FieldImp, pt> derived_type;
+  typedef MatrixOperatorBase<MatrixImp,
+                             RangeSpaceImp,
+                             GridLayerImp,
+                             SourceSpaceImp,
+                             FieldImp,
+                             pt,
+                             OuterRangeSpaceImp,
+                             OuterSourceSpaceImp>
+      derived_type;
   typedef FieldImp FieldType;
   typedef std::unique_ptr<derived_type> JacobianType;
 };
@@ -203,30 +221,55 @@ template <class MatrixImp,
           class GridLayerImp,
           class SourceSpaceImp,
           class FieldImp,
-          ChoosePattern pt>
-class MatrixOperatorBase : public OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp,
-                                                                                       RangeSpaceImp,
-                                                                                       GridLayerImp,
-                                                                                       SourceSpaceImp,
-                                                                                       FieldImp,
-                                                                                       pt>>,
-                           public SystemAssembler<RangeSpaceImp, GridLayerImp, SourceSpaceImp>
+          ChoosePattern pt,
+          class OuterRangeSpaceImp,
+          class OuterSourceSpaceImp>
+class MatrixOperatorBase
+    : public OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp,
+                                                                  RangeSpaceImp,
+                                                                  GridLayerImp,
+                                                                  SourceSpaceImp,
+                                                                  FieldImp,
+                                                                  pt,
+                                                                  OuterRangeSpaceImp,
+                                                                  OuterSourceSpaceImp>>,
+      public SystemAssembler<RangeSpaceImp, GridLayerImp, SourceSpaceImp, OuterRangeSpaceImp, OuterSourceSpaceImp>
 {
   typedef OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp,
                                                                RangeSpaceImp,
                                                                GridLayerImp,
                                                                SourceSpaceImp,
                                                                FieldImp,
-                                                               pt>>
+                                                               pt,
+                                                               OuterRangeSpaceImp,
+                                                               OuterSourceSpaceImp>>
       BaseOperatorType;
-  typedef SystemAssembler<RangeSpaceImp, GridLayerImp, SourceSpaceImp> BaseAssemblerType;
-  typedef MatrixOperatorBase<MatrixImp, RangeSpaceImp, GridLayerImp, SourceSpaceImp, FieldImp, pt> ThisType;
+  typedef SystemAssembler<RangeSpaceImp, GridLayerImp, SourceSpaceImp, OuterRangeSpaceImp, OuterSourceSpaceImp>
+      BaseAssemblerType;
+  typedef MatrixOperatorBase<MatrixImp,
+                             RangeSpaceImp,
+                             GridLayerImp,
+                             SourceSpaceImp,
+                             FieldImp,
+                             pt,
+                             OuterRangeSpaceImp,
+                             OuterSourceSpaceImp>
+      ThisType;
 
 public:
-  typedef internal::MatrixOperatorBaseTraits<MatrixImp, RangeSpaceImp, GridLayerImp, SourceSpaceImp, FieldImp, pt>
+  typedef internal::MatrixOperatorBaseTraits<MatrixImp,
+                                             RangeSpaceImp,
+                                             GridLayerImp,
+                                             SourceSpaceImp,
+                                             FieldImp,
+                                             pt,
+                                             OuterRangeSpaceImp,
+                                             OuterSourceSpaceImp>
       Traits;
   typedef typename BaseAssemblerType::TestSpaceType RangeSpaceType;
   typedef typename BaseAssemblerType::AnsatzSpaceType SourceSpaceType;
+  typedef typename BaseAssemblerType::OuterTestSpaceType OuterRangeSpaceType;
+  typedef typename BaseAssemblerType::OuterAnsatzSpaceType OuterSourceSpaceType;
   typedef XT::LA::SparsityPatternDefault PatternType;
   typedef MatrixImp MatrixType;
   using typename BaseOperatorType::FieldType;
@@ -293,27 +336,87 @@ public:
   template <class... Args>
   explicit MatrixOperatorBase(MatrixType& mtrx, Args&&... args)
     : BaseAssemblerType(std::forward<Args>(args)...)
-    , matrix_(mtrx)
+    , matrix_in_in_(mtrx)
+    , matrix_out_out_(matrix_in_in_.access())
+    , matrix_in_out_(matrix_in_in_.access())
+    , matrix_out_in_(matrix_in_in_.access())
   {
-    if (matrix_.access().rows() != this->range_space().mapper().size())
+    if (matrix_in_in_.access().rows() != this->range_space().mapper().size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "matrix.rows(): " << matrix_.access().rows() << "\n"
+                 "matrix.rows(): " << matrix_in_in_.access().rows() << "\n"
                                    << "range_space().mapper().size(): "
                                    << this->range_space().mapper().size());
-    if (matrix_.access().cols() != this->source_space().mapper().size())
+    if (matrix_in_in_.access().cols() != this->source_space().mapper().size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "matrix.cols(): " << matrix_.access().cols() << "\n"
+                 "matrix.cols(): " << matrix_in_in_.access().cols() << "\n"
                                    << "source_space().mapper().size(): "
                                    << this->source_space().mapper().size());
+  } // MatrixOperatorBase(...)
+
+  template <class... Args>
+  explicit MatrixOperatorBase(MatrixType& mtrx_in_in,
+                              MatrixType& mtrx_out_out,
+                              MatrixType& mtrx_in_out,
+                              MatrixType& mtrx_out_in,
+                              Args&&... args)
+    : BaseAssemblerType(std::forward<Args>(args)...)
+    , matrix_in_in_(mtrx_in_in)
+    , matrix_out_out_(mtrx_out_out)
+    , matrix_in_out_(mtrx_in_out)
+    , matrix_out_in_(mtrx_out_in)
+  {
+    if (matrix_in_in_.access().rows() != this->range_space().mapper().size())
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
+                 "matrix_in_in.rows(): " << matrix_in_in_.access().rows() << "\n"
+                                         << "range_space().mapper().size(): "
+                                         << this->range_space().mapper().size());
+    if (matrix_in_in_.access().cols() != this->source_space().mapper().size())
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
+                 "matrix_in_in.cols(): " << matrix_in_in_.access().cols() << "\n"
+                                         << "source_space().mapper().size(): "
+                                         << this->source_space().mapper().size());
+    if (matrix_out_out_.access().rows() != this->outer_range_space().mapper().size())
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
+                 "matrix_out_out.rows(): " << matrix_out_out_.access().rows() << "\n"
+                                           << "outer_range_space().mapper().size(): "
+                                           << this->outer_range_space().mapper().size());
+    if (matrix_out_out_.access().cols() != this->outer_source_space().mapper().size())
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
+                 "matrix_out_out.cols(): " << matrix_out_out_.access().cols() << "\n"
+                                           << "outer_source_space().mapper().size(): "
+                                           << this->outer_source_space().mapper().size());
+    if (matrix_in_out_.access().rows() != this->range_space().mapper().size())
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
+                 "matrix_in_out.rows(): " << matrix_in_out_.access().rows() << "\n"
+                                          << "range_space().mapper().size(): "
+                                          << this->range_space().mapper().size());
+    if (matrix_in_out_.access().cols() != this->outer_source_space().mapper().size())
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
+                 "matrix_in_out.cols(): " << matrix_in_out_.access().cols() << "\n"
+                                          << "outer_source_space().mapper().size(): "
+                                          << this->outer_source_space().mapper().size());
+    if (matrix_out_in_.access().rows() != this->outer_range_space().mapper().size())
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
+                 "matrix_out_in.rows(): " << matrix_out_in_.access().rows() << "\n"
+                                          << "outer_range_space().mapper().size(): "
+                                          << this->outer_range_space().mapper().size());
+    if (matrix_out_in_.access().cols() != this->source_space().mapper().size())
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
+                 "matrix_out_in.cols(): " << matrix_out_in_.access().cols() << "\n"
+                                          << "source_space().mapper().size(): "
+                                          << this->source_space().mapper().size());
   } // MatrixOperatorBase(...)
 
   /// \todo Guard against copy and move ctor (Args = ThisType)!
   template <class... Args>
   explicit MatrixOperatorBase(Args&&... args)
     : BaseAssemblerType(std::forward<Args>(args)...)
-    , matrix_(new MatrixType(this->range_space().mapper().size(),
-                             this->source_space().mapper().size(),
-                             pattern(this->range_space(), this->source_space(), this->grid_layer())))
+    , matrix_in_in_(new MatrixType(this->range_space().mapper().size(),
+                                   this->source_space().mapper().size(),
+                                   pattern(this->range_space(), this->source_space(), this->grid_layer())))
+    , matrix_out_out_(matrix_in_in_.access())
+    , matrix_in_out_(matrix_in_in_.access())
+    , matrix_out_in_(matrix_in_in_.access())
   {
   }
 
@@ -327,12 +430,12 @@ public:
 
   const MatrixType& matrix() const
   {
-    return matrix_.access();
+    return matrix_in_in_.access();
   }
 
   MatrixType& matrix()
   {
-    return matrix_.access();
+    return matrix_in_in_.access();
   }
 
   const SourceSpaceType& source_space() const
@@ -343,6 +446,16 @@ public:
   const RangeSpaceType& range_space() const
   {
     return this->test_space();
+  }
+
+  const OuterSourceSpaceType& outer_source_space() const
+  {
+    return this->outer_ansatz_space();
+  }
+
+  const OuterRangeSpaceType& outer_range_space() const
+  {
+    return this->outer_test_space();
   }
 
   using BaseAssemblerType::append;
@@ -357,7 +470,7 @@ public:
                                                 MatrixType>
         WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(
-        this->test_space_, this->ansatz_space_, where, local_volume_twoform.as_imp(), matrix_.access()));
+        this->test_space_, this->ansatz_space_, where, local_volume_twoform.as_imp(), matrix_in_in_.access()));
     return *this;
   } // ... append(...)
 
@@ -370,8 +483,16 @@ public:
                                                   typename LocalCouplingTwoFormInterface<C>::derived_type,
                                                   MatrixType>
         WrapperType;
-    this->codim1_functors_.emplace_back(new WrapperType(
-        this->test_space_, this->ansatz_space_, where, local_coupling_twoform.as_imp(), matrix_.access()));
+    this->codim1_functors_.emplace_back(new WrapperType(this->test_space_,
+                                                        this->ansatz_space_,
+                                                        this->outer_test_space_,
+                                                        this->outer_ansatz_space_,
+                                                        where,
+                                                        local_coupling_twoform.as_imp(),
+                                                        matrix_in_in_.access(),
+                                                        matrix_out_out_.access(),
+                                                        matrix_in_out_.access(),
+                                                        matrix_out_in_.access()));
     return *this;
   } // ... append(...)
 
@@ -385,7 +506,7 @@ public:
                                                   MatrixType>
         WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(
-        this->test_space_, this->ansatz_space_, where, local_boundary_twoform.as_imp(), matrix_.access()));
+        this->test_space_, this->ansatz_space_, where, local_boundary_twoform.as_imp(), matrix_in_in_.access()));
     return *this;
   } // ... append(...)
 
@@ -483,7 +604,10 @@ protected:
   using BaseAssemblerType::codim1_functors_;
 
 private:
-  Dune::XT::Common::StorageProvider<MatrixType> matrix_;
+  Dune::XT::Common::StorageProvider<MatrixType> matrix_in_in_;
+  Dune::XT::Common::StorageProvider<MatrixType> matrix_out_out_;
+  Dune::XT::Common::StorageProvider<MatrixType> matrix_in_out_;
+  Dune::XT::Common::StorageProvider<MatrixType> matrix_out_in_;
 }; // class MatrixOperatorBase
 
 

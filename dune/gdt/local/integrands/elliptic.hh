@@ -170,19 +170,27 @@ public:
   {
   }
 
-  template <
-      typename DiffusionType // This disables the ctor if dimDomain == 1, since factor and tensor are then identical
-      ,
-      typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) // and the ctors
-                                         && (dimDomain > 1)
-                                         && sizeof(DiffusionType)>::type> // ambiguous.
+
+  template < // This disables the ctor if dimDomain == 1, since factor and tensor are then identical and the
+      typename DiffusionType, //                                                            ctors ambiguous.
+      typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) && (dimDomain > 1)
+                                         && sizeof(DiffusionType)>::type>
   LocalEllipticIntegrand(const DiffusionType& diffusion)
     : diffusion_factor_(new DiffusionFactorType(1.))
     , diffusion_tensor_(diffusion)
   {
   }
 
-  LocalEllipticIntegrand(const ThisType& other) = default;
+  /**
+   * \attention Due to the nature of XT::Common::ConstStorageProvider, this copy may leave you with a dead reference,
+   *            if other is destructed.
+   */
+  LocalEllipticIntegrand(const ThisType& other)
+    : diffusion_factor_(other.diffusion_factor())
+    , diffusion_tensor_(other.diffusion_tensor())
+  {
+  }
+
   LocalEllipticIntegrand(ThisType&& source) = default;
 
   /// \name Required by LocalVolumeIntegrandInterface< ..., 2 >

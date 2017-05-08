@@ -29,7 +29,6 @@
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/common/ranges.hh>
 #include <dune/xt/la/container/pattern.hh>
-#include <dune/xt/grid/boundaryinfo.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/layers.hh>
 #include <dune/xt/grid/view/from-part.hh>
@@ -160,8 +159,6 @@ public:
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
 
   using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
-  using IntersectionType = XT::Grid::extract_intersection_t<GridLayerType>;
-  typedef XT::Grid::BoundaryInfo<IntersectionType> BoundaryInfoType;
   typedef Dune::XT::LA::SparsityPatternDefault PatternType;
 
   static const XT::Grid::Backends layer_backend = Traits::layer_backend;

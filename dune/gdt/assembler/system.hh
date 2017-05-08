@@ -33,20 +33,29 @@ namespace GDT {
 
 template <class TestSpaceImp,
           class GridLayerImp = typename TestSpaceImp::GridLayerType,
-          class AnsatzSpaceImp = TestSpaceImp>
+          class AnsatzSpaceImp = TestSpaceImp,
+          class OuterTestSpaceImp = TestSpaceImp,
+          class OuterAnsatzSpaceImp = AnsatzSpaceImp>
 class SystemAssembler : public XT::Grid::Walker<GridLayerImp>
 {
-  static_assert(GDT::is_space<TestSpaceImp>::value, "TestSpaceImp has to be derived from SpaceInterface!");
-  static_assert(GDT::is_space<AnsatzSpaceImp>::value, "AnsatzSpaceImp has to be derived from SpaceInterface!");
-  static_assert(std::is_same<typename TestSpaceImp::RangeFieldType, typename AnsatzSpaceImp::RangeFieldType>::value,
-                "Types do not match!");
+  static_assert(is_space<TestSpaceImp>::value, "");
+  static_assert(is_space<AnsatzSpaceImp>::value, "");
+  static_assert(is_space<OuterTestSpaceImp>::value, "");
+  static_assert(is_space<OuterAnsatzSpaceImp>::value, "");
+  static_assert(std::is_same<typename TestSpaceImp::EntityType, XT::Grid::extract_entity_t<GridLayerImp>>::value, "");
+  static_assert(std::is_same<typename AnsatzSpaceImp::EntityType, XT::Grid::extract_entity_t<GridLayerImp>>::value, "");
+  static_assert(std::is_same<typename OuterTestSpaceImp::EntityType, XT::Grid::extract_entity_t<GridLayerImp>>::value,
+                "");
+  static_assert(std::is_same<typename OuterAnsatzSpaceImp::EntityType, XT::Grid::extract_entity_t<GridLayerImp>>::value,
+                "");
   typedef XT::Grid::Walker<GridLayerImp> BaseType;
-  typedef SystemAssembler<TestSpaceImp, GridLayerImp, AnsatzSpaceImp> ThisType;
+  typedef SystemAssembler<TestSpaceImp, GridLayerImp, AnsatzSpaceImp, OuterTestSpaceImp, OuterAnsatzSpaceImp> ThisType;
 
 public:
   typedef TestSpaceImp TestSpaceType;
   typedef AnsatzSpaceImp AnsatzSpaceType;
-  typedef typename TestSpaceType::RangeFieldType RangeFieldType;
+  typedef OuterTestSpaceImp OuterTestSpaceType;
+  typedef OuterAnsatzSpaceImp OuterAnsatzSpaceType;
 
   typedef typename BaseType::GridLayerType GridLayerType;
   typedef typename BaseType::EntityType EntityType;
@@ -55,34 +64,72 @@ public:
   typedef XT::Grid::ApplyOn::WhichEntity<GridLayerType> ApplyOnWhichEntity;
   typedef XT::Grid::ApplyOn::WhichIntersection<GridLayerType> ApplyOnWhichIntersection;
 
-  SystemAssembler(TestSpaceType test, AnsatzSpaceType ansatz, GridLayerType grd_layr)
+  template <typename TestSpace,
+            typename AnsatzSpace,
+            typename = typename std::enable_if<std::is_same<OuterTestSpaceType, TestSpace>::value
+                                               && std::is_same<OuterAnsatzSpaceType, AnsatzSpace>::value>::type>
+  SystemAssembler(TestSpace test, AnsatzSpace ansatz, GridLayerType grd_layr)
     : BaseType(grd_layr)
     , test_space_(test)
     , ansatz_space_(ansatz)
+    , outer_test_space_(test)
+    , outer_ansatz_space_(ansatz)
   {
   }
 
-  /// \todo Guard against GridLayerType != TestSpaceImp::GridLayerType
-  SystemAssembler(TestSpaceType test, AnsatzSpaceType ansatz)
+  template <typename TestSpace,
+            typename AnsatzSpace,
+            typename =
+                typename std::enable_if<std::is_same<OuterTestSpaceType, TestSpace>::value
+                                        && std::is_same<OuterAnsatzSpaceType, AnsatzSpace>::value
+                                        && std::is_same<typename TestSpace::GridLayerType, GridLayerType>::value>::type>
+  explicit SystemAssembler(TestSpace test, AnsatzSpace ansatz)
     : BaseType(test.grid_layer())
     , test_space_(test)
     , ansatz_space_(ansatz)
+    , outer_test_space_(test)
+    , outer_ansatz_space_(ansatz)
   {
   }
 
-  /// \todo Guard against AnsatzSpaceType != GridLayerType || GridLayerType != TestSpaceType::GridLayerType
-  explicit SystemAssembler(TestSpaceType test)
+  template <typename TestSpace,
+            typename =
+                typename std::enable_if<std::is_same<AnsatzSpaceType, TestSpace>::value
+                                        && std::is_same<OuterTestSpaceType, TestSpace>::value
+                                        && std::is_same<OuterAnsatzSpaceType, TestSpace>::value
+                                        && std::is_same<typename TestSpace::GridLayerType, GridLayerType>::value>::type>
+  explicit SystemAssembler(TestSpace test)
     : BaseType(test.grid_layer())
     , test_space_(test)
     , ansatz_space_(test)
+    , outer_test_space_(test)
+    , outer_ansatz_space_(test)
   {
   }
 
-  /// \todo Guard against AnsatzSpaceType != TestSpaceType
-  SystemAssembler(TestSpaceType test, GridLayerType grd_layr)
+  template <typename TestSpace,
+            typename = typename std::enable_if<std::is_same<AnsatzSpaceType, TestSpace>::value
+                                               && std::is_same<OuterTestSpaceType, TestSpace>::value
+                                               && std::is_same<OuterAnsatzSpaceType, TestSpace>::value>::type>
+  explicit SystemAssembler(TestSpace test, GridLayerType grd_layr)
     : BaseType(grd_layr)
     , test_space_(test)
     , ansatz_space_(test)
+    , outer_test_space_(test)
+    , outer_ansatz_space_(test)
+  {
+  }
+
+  SystemAssembler(GridLayerType grd_layr,
+                  TestSpaceType inner_test,
+                  AnsatzSpaceType inner_ansatz,
+                  OuterTestSpaceType outer_test,
+                  OuterAnsatzSpaceType outer_ansatz)
+    : BaseType(grd_layr)
+    , test_space_(inner_test)
+    , ansatz_space_(inner_ansatz)
+    , outer_test_space_(outer_test)
+    , outer_ansatz_space_(outer_ansatz)
   {
   }
 
@@ -102,6 +149,16 @@ public:
     return *ansatz_space_;
   }
 
+  const OuterTestSpaceType& outer_test_space() const
+  {
+    return *outer_test_space_;
+  }
+
+  const OuterAnsatzSpaceType& outer_ansatz_space() const
+  {
+    return *outer_ansatz_space_;
+  }
+
   using BaseType::append;
 
   template <class C>
@@ -114,9 +171,9 @@ public:
     return *this;
   } // ... append(...)
 
-  template <class V, class M>
+  template <class V, class M, class R>
   ThisType& append(const LocalVolumeTwoFormAssembler<V>& local_assembler,
-                   XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
+                   XT::LA::MatrixInterface<M, R>& matrix,
                    const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
@@ -144,9 +201,9 @@ public:
     return *this;
   } // ... append(...)
 
-  template <class V, class M>
+  template <class V, class M, class R>
   ThisType& append(const LocalCouplingTwoFormAssembler<V>& local_assembler,
-                   XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
+                   XT::LA::MatrixInterface<M, R>& matrix,
                    const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
@@ -160,9 +217,42 @@ public:
     return *this;
   } // ... append(...)
 
-  template <class V, class M>
+  template <class V, class M, class R>
+  ThisType& append(const LocalCouplingTwoFormAssembler<V>& local_assembler,
+                   XT::LA::MatrixInterface<M, R>& matrix_in_in,
+                   XT::LA::MatrixInterface<M, R>& matrix_out_out,
+                   XT::LA::MatrixInterface<M, R>& matrix_in_out,
+                   XT::LA::MatrixInterface<M, R>& matrix_out_in,
+                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
+  {
+    assert(matrix_in_in.rows() == test_space_->mapper().size());
+    assert(matrix_in_in.cols() == ansatz_space_->mapper().size());
+    assert(matrix_out_out.rows() == outer_test_space_->mapper().size());
+    assert(matrix_out_out.cols() == outer_ansatz_space_->mapper().size());
+    assert(matrix_in_out.rows() == test_space_->mapper().size());
+    assert(matrix_in_out.cols() == outer_ansatz_space_->mapper().size());
+    assert(matrix_out_in.rows() == outer_test_space_->mapper().size());
+    assert(matrix_out_in.cols() == ansatz_space_->mapper().size());
+    typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType,
+                                                                 LocalCouplingTwoFormAssembler<V>,
+                                                                 typename M::derived_type>
+        WrapperType;
+    this->codim1_functors_.emplace_back(new WrapperType(test_space_,
+                                                        ansatz_space_,
+                                                        outer_test_space_,
+                                                        outer_ansatz_space_,
+                                                        where,
+                                                        local_assembler,
+                                                        matrix_in_in.as_imp(),
+                                                        matrix_out_out.as_imp(),
+                                                        matrix_in_out.as_imp(),
+                                                        matrix_out_in.as_imp()));
+    return *this;
+  } // ... append(...)
+
+  template <class V, class M, class R>
   ThisType& append(const LocalBoundaryTwoFormAssembler<V>& local_assembler,
-                   XT::LA::MatrixInterface<M, RangeFieldType>& matrix,
+                   XT::LA::MatrixInterface<M, R>& matrix,
                    const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
@@ -176,9 +266,9 @@ public:
     return *this;
   } // ... append(...)
 
-  template <class L, class V>
+  template <class L, class V, class R>
   ThisType& append(const LocalVolumeFunctionalAssembler<L>& local_assembler,
-                   XT::LA::VectorInterface<V, RangeFieldType>& vector,
+                   XT::LA::VectorInterface<V, R>& vector,
                    const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
     assert(vector.size() == test_space_->mapper().size());
@@ -190,9 +280,9 @@ public:
     return *this;
   } // ... append(...)
 
-  template <class L, class V>
+  template <class L, class V, class R>
   ThisType& append(const LocalFaceFunctionalAssembler<L>& local_assembler,
-                   XT::LA::VectorInterface<V, RangeFieldType>& vector,
+                   XT::LA::VectorInterface<V, R>& vector,
                    const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
     assert(vector.size() == test_space_->mapper().size());
@@ -227,6 +317,8 @@ public:
 protected:
   const Dune::XT::Common::PerThreadValue<const TestSpaceType> test_space_;
   const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType> ansatz_space_;
+  const Dune::XT::Common::PerThreadValue<const OuterTestSpaceType> outer_test_space_;
+  const Dune::XT::Common::PerThreadValue<const OuterAnsatzSpaceType> outer_ansatz_space_;
 }; // class SystemAssembler
 
 

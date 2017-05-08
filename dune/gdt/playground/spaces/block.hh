@@ -86,17 +86,18 @@ public:
 
   typedef XT::Grid::DD::SubdomainGrid<typename XT::Grid::extract_grid<GridLayerType>::type> DdSubdomainsGridType;
 
-  BlockSpace(const DdSubdomainsGridType& dd_grid, const std::shared_ptr<std::vector<LocalSpaceType>> local_spaces)
-    : entity_to_subdomain_map_(dd_grid.entityToSubdomainMap())
-    , global_grid_part_(new GridLayerType(dd_grid.globalGridPart()))
-    , local_spaces_(local_spaces)
-    , mapper_(new MapperType(dd_grid, global_grid_part_, local_spaces_))
+  BlockSpace(const DdSubdomainsGridType& grid, const std::shared_ptr<std::vector<LocalSpaceType>> spaces)
+    : dd_grid_(grid)
+    , entity_to_subdomain_map_(dd_grid_.entityToSubdomainMap())
+    , global_grid_part_(new GridLayerType(dd_grid_.globalGridPart()))
+    , local_spaces_(spaces)
+    , mapper_(new MapperType(dd_grid_, global_grid_part_, local_spaces_))
   {
-    if (local_spaces_->size() != dd_grid.size())
+    if (local_spaces_->size() != dd_grid_.size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                  "You have to provide a local space for each subdomain of the DD subdomains grid!\n"
                      << "  Number of subdomains: "
-                     << dd_grid.size()
+                     << dd_grid_.size()
                      << "\n"
                      << "  Number of local spaces given: "
                      << local_spaces_->size());
@@ -154,6 +155,24 @@ public:
     return backend()[0].communicator();
   }
 
+  const DdSubdomainsGridType& dd_grid() const
+  {
+    return dd_grid_;
+  }
+
+  size_t num_blocks() const
+  {
+    return local_spaces_->size();
+  }
+
+  const LocalSpaceType& local_space(const size_t block) const
+  {
+    if (block >= num_blocks())
+      DUNE_THROW(XT::Common::Exceptions::index_out_of_range,
+                 "  num_blocks: " << num_blocks() << "\n  block: " << block);
+    return (*local_spaces_)[block];
+  }
+
 private:
   template <class EntityType>
   size_t find_block_of(const EntityType& entity) const
@@ -179,6 +198,7 @@ private:
     return subdomain;
   } // ... find_block_of(...)
 
+  const DdSubdomainsGridType& dd_grid_;
   const std::shared_ptr<const typename DdSubdomainsGridType::EntityToSubdomainMapType> entity_to_subdomain_map_;
   const std::shared_ptr<GridLayerType> global_grid_part_;
   const std::shared_ptr<std::vector<LocalSpaceType>> local_spaces_;

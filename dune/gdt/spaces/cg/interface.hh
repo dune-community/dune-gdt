@@ -23,6 +23,7 @@
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/common/ranges.hh>
+#include <dune/xt/grid/boundaryinfo.hh>
 
 #include "../interface.hh"
 
@@ -53,8 +54,6 @@ public:
   using BaseType::dimRangeCols;
 
   using typename BaseType::EntityType;
-  using typename BaseType::IntersectionType;
-  using typename BaseType::BoundaryInfoType;
   using typename BaseType::PatternType;
 
 private:
@@ -72,7 +71,8 @@ public:
     return this->as_imp().lagrange_points(entity);
   } // ... lagrange_points(...)
 
-  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
+  template <class I>
+  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const XT::Grid::BoundaryInfo<I>& boundaryInfo) const
   {
     CHECK_CRTP(this->as_imp().local_dirichlet_DoFs(entity, boundaryInfo));
     return this->as_imp().local_dirichlet_DoFs(entity, boundaryInfo);
@@ -124,7 +124,9 @@ public:
     return local_vertices;
   } // ... lagrange_points_order_1(...)
 
-  std::set<size_t> local_dirichlet_DoFs_order_1(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
+  template <class I>
+  std::set<size_t> local_dirichlet_DoFs_order_1(const EntityType& entity,
+                                                const XT::Grid::BoundaryInfo<I>& boundaryInfo) const
   {
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
     static const XT::Grid::DirichletBoundary dirichlet{};
@@ -179,9 +181,10 @@ public:
     return localDirichletDofs;
   } // ... local_dirichlet_DoFs_order_1(...)
 
-
-  std::set<size_t> local_dirichlet_DoFs_simplicial_lagrange_elements(const EntityType& entity,
-                                                                     const BoundaryInfoType& boundaryInfo) const
+  template <class I>
+  std::set<size_t>
+  local_dirichlet_DoFs_simplicial_lagrange_elements(const EntityType& entity,
+                                                    const XT::Grid::BoundaryInfo<I>& boundaryInfo) const
   {
     if (!entity.type().isSimplex())
       DUNE_THROW(NotImplemented, "Only implemented for simplex elements!");
@@ -267,10 +270,10 @@ public:
     static_assert(AlwaysFalse<S>::value, "Not implemented for these constraints!");
   }
 
-  template <class S, size_t d, size_t r, size_t rC>
+  template <class S, size_t d, size_t r, size_t rC, class I>
   void local_constraints(const SpaceInterface<S, d, r, rC>& /*other*/,
                          const EntityType& entity,
-                         DirichletConstraints<IntersectionType>& ret) const
+                         DirichletConstraints<I>& ret) const
   {
     const auto local_DoFs = this->local_dirichlet_DoFs(entity, ret.boundary_info());
     if (local_DoFs.size() > 0) {

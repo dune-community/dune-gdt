@@ -15,9 +15,9 @@
 
 
 #if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_ISTL
-DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_ALU(template, leaf, part, cg, fem, 1, istl_sparse);
-DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_ALU(template, level, part, cg, fem, 1, istl_sparse);
-DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_ALU(template, dd_subdomain, part, cg, fem, 1, istl_sparse);
+DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_ALU(template, leaf, part, dg, fem, 1, istl_sparse);
+DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_ALU(template, level, part, dg, fem, 1, istl_sparse);
+DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_ALU(template, dd_subdomain, part, dg, fem, 1, istl_sparse);
 #endif
 
 
