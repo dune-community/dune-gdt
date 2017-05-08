@@ -9,9 +9,9 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_PYBINDXI
+#if HAVE_DUNE_PYBINDXI && HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM
 
-#include "system.bindings.hh"
+#include "../system.bindings.hh"
 
 
 namespace Dune {
@@ -19,11 +19,11 @@ namespace GDT {
 namespace bindings {
 
 
-DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB(template);
+DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_FEM(template);
 
 
 } // namespace bindings
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_DUNE_PYBINDXI
+#endif // HAVE_DUNE_PYBINDXI && HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM
