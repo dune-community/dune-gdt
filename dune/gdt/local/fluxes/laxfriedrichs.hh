@@ -366,9 +366,9 @@ public:
       if (!is_linear_ || !(*max_derivative_calculated_)) {
         *max_derivative_ = 0;
         const auto jacobian_u_i = analytical_flux_.jacobian(
-            u_i, intersection.inside(), intersection.geometryInInside().global(x_intersection));
+            u_i, intersection.inside(), intersection.geometryInInside().global(x_intersection), t_);
         const auto jacobian_u_j = analytical_flux_.jacobian(
-            u_j, intersection.outside(), intersection.geometryInOutside().global(x_intersection));
+            u_j, intersection.outside(), intersection.geometryInOutside().global(x_intersection), t_);
         EigenMatrixType jacobian_u_i_eigen(
             Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i, 15)));
         EigenMatrixType jacobian_u_j_eigen(
@@ -738,9 +738,11 @@ public:
     if (use_local_) {
       if (!is_linear_ || !(*max_derivative_calculated_)) {
         *max_derivative_ = 0;
-        const auto jacobian_u_i = analytical_flux_.jacobian(u_i, intersection.inside(), x_intersection_entity_coords);
+        const auto jacobian_u_i =
+            analytical_flux_.jacobian(u_i, intersection.inside(), x_intersection_entity_coords, t_);
         // TODO: is this the right definition if jacobian really depends on the entity coordinates?
-        const auto jacobian_u_j = analytical_flux_.jacobian(u_j, intersection.inside(), x_intersection_entity_coords);
+        const auto jacobian_u_j =
+            analytical_flux_.jacobian(u_j, intersection.inside(), x_intersection_entity_coords, t_);
         EigenMatrixType jacobian_u_i_eigen(
             Dune::XT::Common::from_string<EigenMatrixType>(Dune::XT::Common::to_string(jacobian_u_i, 15)));
         EigenMatrixType jacobian_u_j_eigen(

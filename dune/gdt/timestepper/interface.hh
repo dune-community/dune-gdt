@@ -70,8 +70,8 @@ auto function_factor(const DiscreteFunctionType& discrete_function) -> typename 
   const auto& space = discrete_function.space();
   const auto& factor_space = space.template factor<ii>();
   typename DiscreteFunctionType::VectorType factor_vector(factor_space.mapper().size());
-  const auto it_end = space.grid_view().template end<0>();
-  for (auto it = space.grid_view().template begin<0>(); it != it_end; ++it) {
+  const auto it_end = space.grid_layer().template end<0>();
+  for (auto it = space.grid_layer().template begin<0>(); it != it_end; ++it) {
     const auto& entity = *it;
     for (size_t jj = 0; jj < factor_space.mapper().numDofs(entity); ++jj)
       factor_vector[factor_space.mapper().mapToGlobal(entity, jj)] =
@@ -81,7 +81,7 @@ auto function_factor(const DiscreteFunctionType& discrete_function) -> typename 
   factor_discrete_function.vector() = factor_vector;
   typedef Dune::GDT::DiscreteFunctionDataHandle<FactorDiscreteFunctionType> DataHandleType;
   DataHandleType handle(factor_discrete_function);
-  factor_space.grid_view().template communicate<DataHandleType>(
+  factor_space.grid_layer().template communicate<DataHandleType>(
       handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
   return factor_discrete_function;
 }

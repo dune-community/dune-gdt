@@ -237,10 +237,10 @@ public:
     RangeFieldType norm = 0;
     const auto& vector = disc_func.vector();
     const auto& mapper = disc_func.space().mapper();
-    for (const auto& entity : Dune::elements(disc_func.space().grid_view(), Dune::Partitions::interiorBorder))
+    for (const auto& entity : Dune::elements(disc_func.space().grid_layer(), Dune::Partitions::interiorBorder))
       for (const auto& index : mapper.globalIndices(entity))
         norm += std::pow(vector[index], 2);
-    disc_func.space().grid_view().comm().sum(norm);
+    disc_func.space().grid_layer().comm().sum(norm);
     norm = std::sqrt(norm);
     return norm;
   }
@@ -265,7 +265,7 @@ public:
         stages_k_[ii].vector() *= RangeFieldType(0);
         op_.apply(
             u_i_expl_, stages_k_[ii], XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}}, {"dt", {actual_dt}}}));
-        stages_k_[ii].space().grid_view().template communicate<DataHandleType>(
+        stages_k_[ii].space().grid_layer().template communicate<DataHandleType>(
             stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
       } else {
         // stage is implicit, Newton method with Armijo backtracking
@@ -275,7 +275,7 @@ public:
         // calculate residual with current iterate
         stages_k_[ii].vector() *= RangeFieldType(0);
         op_.apply(u_i_, stages_k_[ii], XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}}, {"dt", {actual_dt}}}));
-        stages_k_[ii].space().grid_view().template communicate<DataHandleType>(
+        stages_k_[ii].space().grid_layer().template communicate<DataHandleType>(
             stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
         res_.vector() = u_i_expl_.vector() - u_i_.vector() + stages_k_[ii].vector() * (actual_dt * r_ * A_[ii][ii]);
         // calculate norm of residual
@@ -288,7 +288,7 @@ public:
           // assemble Newton matrix N = I - dt * a_{ii} * J_L
           newton_matrix_ *= 0;
           op_.assemble_jacobian(newton_matrix_, u_i_, t + actual_dt * c_[ii]);
-          //          u_i_.space().grid_view().template communicate<SolverMatrixDataHandleType>(
+          //          u_i_.space().grid_layer().template communicate<SolverMatrixDataHandleType>(
           //              newton_matrix_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
           newton_matrix_ *= -actual_dt * r_ * A_[ii][ii];
           for (size_t kk = 0; kk < newton_matrix_.rows(); ++kk)
@@ -314,7 +314,7 @@ public:
             op_.apply(u_i_plus_alpha_d_,
                       stages_k_[ii],
                       XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}}, {"dt", {actual_dt}}}));
-            stages_k_[ii].space().grid_view().template communicate<DataHandleType>(
+            stages_k_[ii].space().grid_layer().template communicate<DataHandleType>(
                 stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
             new_res_.vector() = u_i_expl_.vector() - u_i_plus_alpha_d_.vector()
                                 + stages_k_[ii].vector() * (actual_dt * r_ * A_[ii][ii]);

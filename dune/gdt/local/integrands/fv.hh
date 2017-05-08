@@ -57,7 +57,7 @@ public:
   typedef LocalFvRhsIntegrand<RhsEvaluationImp, SourceType> derived_type;
   typedef std::tuple<size_t,
                      std::unique_ptr<typename SourceType::LocalfunctionType>,
-                     typename SourceType::SpaceType::GridViewType::ctype>
+                     typename SourceType::SpaceType::GridLayerType::ctype>
       LocalfunctionTupleType;
 }; // class LocalFvRhsIntegrandTraits
 
@@ -77,7 +77,7 @@ public:
   typedef LocalFvRhsJacobianIntegrand<RhsEvaluationImp, SourceType> derived_type;
   typedef std::tuple<size_t,
                      std::unique_ptr<typename SourceType::LocalfunctionType>,
-                     typename SourceType::SpaceType::GridViewType::ctype>
+                     typename SourceType::SpaceType::GridLayerType::ctype>
       LocalfunctionTupleType;
 }; // class LocalFvRhsJacobianIntegrandTraits
 
@@ -96,7 +96,7 @@ public:
   typedef LocalFvRhsNewtonIntegrand<RhsEvaluationImp, SourceType> derived_type;
   typedef std::tuple<size_t,
                      std::unique_ptr<typename SourceType::LocalfunctionType>,
-                     typename SourceType::SpaceType::GridViewType::ctype>
+                     typename SourceType::SpaceType::GridLayerType::ctype>
       LocalfunctionTupleType;
 }; // class LocalFvRhsNewtonIntegrandTraits
 

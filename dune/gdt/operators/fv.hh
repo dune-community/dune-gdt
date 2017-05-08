@@ -67,23 +67,31 @@ class AdvectionLaxFriedrichsOperator;
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class LocalizableFunctionImp,
-          class GridViewType,
+          class GridLayerType,
           BasisFunctionType basis_function_type,
-          size_t polOrder = 2,
+          size_t polOrder = 1,
           SlopeLimiters slope_limiter = SlopeLimiters::minmod>
 class AdvectionLaxFriedrichsWENOOperator;
 
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
-          class GridViewType,
+          class GridLayerType,
           BasisFunctionType basis_function_type,
-          size_t polOrder = 2,
+          size_t polOrder = 1,
           SlopeLimiters slope_limiter = SlopeLimiters::minmod>
 class AdvectionGodunovWENOOperator;
 
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter = SlopeLimiters::minmod>
 class AdvectionGodunovOperator;
+
+template <class AnalyticalFluxImp,
+          class BoundaryValueFunctionImp,
+          class GridLayerType,
+          BasisFunctionType basis_function_type,
+          size_t polOrder = 1,
+          SlopeLimiters slope_limiter = SlopeLimiters::minmod>
+class AdvectionKineticWENOOperator;
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter = SlopeLimiters::minmod>
 class AdvectionKineticOperator;
@@ -153,7 +161,7 @@ public:
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class LocalizableFunctionImp,
-          class GridViewType,
+          class GridLayerType,
           BasisFunctionType basis_function_type,
           size_t polOrder,
           SlopeLimiters slope_limiter_type>
@@ -166,7 +174,7 @@ public:
   typedef AdvectionLaxFriedrichsWENOOperator<AnalyticalFluxImp,
                                              BoundaryValueFunctionImp,
                                              LocalizableFunctionImp,
-                                             GridViewType,
+                                             GridLayerType,
                                              basis_function_type,
                                              polOrder,
                                              slope_limiter_type>
@@ -195,7 +203,7 @@ public:
 
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
-          class GridViewType,
+          class GridLayerType,
           BasisFunctionType basis_function_type,
           size_t polOrder,
           SlopeLimiters slope_limiter_type>
@@ -205,7 +213,7 @@ class AdvectionGodunovWENOOperatorTraits
 public:
   typedef AdvectionGodunovWENOOperator<AnalyticalFluxImp,
                                        BoundaryValueFunctionImp,
-                                       GridViewType,
+                                       GridLayerType,
                                        basis_function_type,
                                        polOrder,
                                        slope_limiter_type>
@@ -232,6 +240,25 @@ public:
       NumericalBoundaryFluxType;
   typedef AdvectionKineticOperator<AnalyticalFluxImp, BoundaryValueFunctionImp, slope_limiter> derived_type;
 }; // class AdvectionKineticOperatorTraits
+
+template <class AnalyticalFluxImp,
+          class BoundaryValueFunctionImp,
+          class GridLayerType,
+          BasisFunctionType basis_function_type,
+          size_t polOrder,
+          SlopeLimiters slope_limiter_type>
+class AdvectionKineticWENOOperatorTraits
+    : public AdvectionKineticOperatorTraits<AnalyticalFluxImp, BoundaryValueFunctionImp, slope_limiter_type>
+{
+public:
+  typedef AdvectionKineticWENOOperator<AnalyticalFluxImp,
+                                       BoundaryValueFunctionImp,
+                                       GridLayerType,
+                                       basis_function_type,
+                                       polOrder,
+                                       slope_limiter_type>
+      derived_type;
+}; // class AdvectionKineticWENOOperatorTraits
 
 
 template <class RHSEvaluationImp>
@@ -290,7 +317,7 @@ public:
                               RangeType& range,
                               const QuadratureRuleType& quadrature_rule,
                               LocalOperatorArgTypes&&... local_operator_args)
-    : BaseType(range.space().grid_view(), source, range)
+    : BaseType(range.space().grid_layer(), source, range)
     , local_operator_(quadrature_rule, analytical_flux, std::forward<LocalOperatorArgTypes>(local_operator_args)...)
     , local_boundary_operator_(quadrature_rule,
                                analytical_flux,
@@ -332,7 +359,7 @@ public:
                                   const MatrixType& eigenvectors,
                                   const MatrixType& eigenvectors_inverse,
                                   const std::shared_ptr<BoundaryValueFunctionType>& boundary_values)
-    : BaseType(range.space().grid_view(), source, range)
+    : BaseType(range.space().grid_layer(), source, range)
     , local_operator_(eigenvectors, eigenvectors_inverse, boundary_values)
     , source_(source)
     , range_(range)
@@ -386,7 +413,8 @@ struct EigenvectorInitializer<1, rangeDim, MatrixType, EigenMatrixType, Analytic
               Dune::XT::Common::to_string(
                   analytical_flux.jacobian(typename AnalyticalFluxType::RangeType(0),
                                            typename AnalyticalFluxType::EntityType{},
-                                           typename AnalyticalFluxType::EntityType::Geometry::LocalCoordinate(0))))
+                                           typename AnalyticalFluxType::EntityType::Geometry::LocalCoordinate(0),
+                                           0.0)))
               .backend());
       assert(eigen_solver.info() == ::Eigen::Success);
       const auto eigen_eigenvectors = eigen_solver.eigenvectors();
@@ -429,10 +457,10 @@ struct AdvectionOperatorApplier
   {
     const std::shared_ptr<typename BoundaryValueFunctionType::NonparametricType> current_boundary_values =
         boundary_values.with_parameter(param);
-    typedef typename SourceType::SpaceType::GridViewType GridViewType;
-    const GridViewType& grid_view = source.space().grid_view();
-    const auto quadrature_rule = Dune::QuadratureRules<RangeFieldType, GridViewType::dimension - 1>::rule(
-        grid_view.ibegin(*(grid_view.template begin<0>()))->geometry().type(), 0);
+    typedef typename SourceType::SpaceType::GridLayerType GridLayerType;
+    const GridLayerType& grid_layer = source.space().grid_layer();
+    const auto quadrature_rule = Dune::QuadratureRules<RangeFieldType, GridLayerType::dimension - 1>::rule(
+        grid_layer.ibegin(*(grid_layer.template begin<0>()))->geometry().type(), 0);
     if (use_linear_reconstruction) {
       typedef DunePdelabDgProductSpaceWrapper<typename SourceType::SpaceType::GridLayerType,
                                               1, // polOrder
@@ -514,15 +542,15 @@ public:
   static const constexpr size_t dimRange = BaseType::dimRange;
   static const constexpr size_t dimRangeCols = BaseType::dimRangeCols;
 
-  typedef GridViewImp GridViewType;
-  typedef typename GridViewType::IndexSet IndexSetType;
+  typedef GridViewImp GridLayerType;
+  typedef typename GridLayerType::IndexSet IndexSetType;
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::DomainFieldType DomainFieldType;
   typedef typename BaseType::RangeFieldType RangeFieldType;
   typedef typename BaseType::DomainType DomainType;
   typedef typename BaseType::RangeType RangeType;
   typedef typename BaseType::JacobianRangeType JacobianRangeType;
-  typedef typename GridViewType::template Codim<0>::Geometry::LocalCoordinate LocalCoordinateType;
+  typedef typename GridLayerType::template Codim<0>::Geometry::LocalCoordinate LocalCoordinateType;
 
 private:
   class ReconstructedLocalfunction
@@ -575,9 +603,9 @@ public:
   static const bool available = true;
 
   ReconstructedLocalizableFunction(
-      const GridViewType& grid_view,
+      const GridLayerType& grid_layer,
       const std::vector<std::map<LocalCoordinateType, RangeType, internal::FieldVectorLess>>& reconstructed_values)
-    : index_set_(grid_view.indexSet())
+    : index_set_(grid_layer.indexSet())
     , reconstructed_values_(reconstructed_values)
   {
   }
@@ -608,12 +636,12 @@ private:
 }; // class ReconstructedLocalizableFunction
 
 
-template <class BoundaryValueType, class GridViewType, class SourceType, class VectorType, size_t dimDomain>
+template <class BoundaryValueType, class GridLayerType, class SourceType, class VectorType, size_t dimDomain>
 struct CellAveragesGetter
 {
   static std::vector<std::vector<std::vector<VectorType>>>
   get_cell_averages(const BoundaryValueType& boundary_values,
-                    const GridViewType& grid_view,
+                    const GridLayerType& grid_layer,
                     const FieldVector<size_t, dimDomain>& grid_sizes,
                     const std::vector<FieldVector<size_t, dimDomain>>& entity_indices,
                     const SourceType& source)
@@ -622,14 +650,14 @@ struct CellAveragesGetter
     std::vector<std::vector<std::vector<VectorType>>> cell_averages(
         grid_sizes[0] + 2,
         std::vector<std::vector<VectorType>>(grid_sizes[1] + 2, std::vector<VectorType>(grid_sizes[2] + 2)));
-    for (const auto& entity : Dune::elements(grid_view)) {
+    for (const auto& entity : Dune::elements(grid_layer)) {
       const auto& local_source = source.local_function(entity);
-      const auto& indices = entity_indices[grid_view.indexSet().index(entity)];
+      const auto& indices = entity_indices[grid_layer.indexSet().index(entity)];
       cell_averages[indices[0]][indices[1]][indices[2]] = XT::Common::from_string<VectorType>(XT::Common::to_string(
           local_source->evaluate(entity.geometry().local(entity.geometry().center())), precision));
       if (entity.hasBoundaryIntersections()) {
         const auto local_boundary_values = boundary_values.local_function(entity);
-        for (const auto& intersection : Dune::intersections(grid_view, entity)) {
+        for (const auto& intersection : Dune::intersections(grid_layer, entity)) {
           if (intersection.boundary()) {
             const auto intersection_center = intersection.geometry().local(intersection.geometry().center());
             const auto& n = intersection.unitOuterNormal(intersection_center);
@@ -696,25 +724,25 @@ struct CellAveragesGetter
   } // ... get_cell_averages(...)
 }; // class CellAverageGetter<...>
 
-template <class BoundaryValueType, class GridViewType, class SourceType, class VectorType>
-struct CellAveragesGetter<BoundaryValueType, GridViewType, SourceType, VectorType, 1>
+template <class BoundaryValueType, class GridLayerType, class SourceType, class VectorType>
+struct CellAveragesGetter<BoundaryValueType, GridLayerType, SourceType, VectorType, 1>
 {
   static std::vector<VectorType> get_cell_averages(const BoundaryValueType& boundary_values,
-                                                   const GridViewType& grid_view,
+                                                   const GridLayerType& grid_layer,
                                                    const FieldVector<size_t, 1>& grid_sizes,
                                                    const std::vector<FieldVector<size_t, 1>>& entity_indices,
                                                    const SourceType& source)
   {
     static const size_t precision = 15;
     std::vector<VectorType> cell_averages(grid_sizes[0] + 2);
-    for (const auto& entity : Dune::elements(grid_view)) {
+    for (const auto& entity : Dune::elements(grid_layer)) {
       const auto& local_source = source.local_function(entity);
-      const auto& indices = entity_indices[grid_view.indexSet().index(entity)];
+      const auto& indices = entity_indices[grid_layer.indexSet().index(entity)];
       const auto& value = local_source->evaluate(entity.geometry().local(entity.geometry().center()));
       cell_averages[indices[0]] = XT::Common::from_string<VectorType>(XT::Common::to_string(value, 15));
       if (entity.hasBoundaryIntersections()) {
         const auto local_boundary_values = boundary_values.local_function(entity);
-        for (const auto& intersection : Dune::intersections(grid_view, entity)) {
+        for (const auto& intersection : Dune::intersections(grid_layer, entity)) {
           if (intersection.boundary()) {
             const auto intersection_center = intersection.geometry().local(intersection.geometry().center());
             bool right =
@@ -776,67 +804,68 @@ struct AdvectionWENOOperatorApplier
             class SourceType,
             class RangeType,
             class... LocalOperatorArgTypes>
-  static void apply(const AnalyticalFluxType& analytical_flux,
-                    const BoundaryValueFunctionType& boundary_values,
-                    const SourceType& source,
-                    RangeType& range,
-                    const XT::Common::Parameter& param,
-                    const bool use_reconstruction,
-                    const FieldVector<Dune::QuadratureRule<double, 1>, dimDomain> quadrature_rules,
-                    const std::vector<FieldVector<size_t, dimDomain>>& entity_indices,
-                    const FieldVector<size_t, dimDomain>& grid_sizes,
-                    const std::vector<FieldVector<RangeFieldType, dimRange + 1>>& plane_coefficients,
-                    LocalOperatorArgTypes&&... local_operator_args)
+  static void
+  apply(const AnalyticalFluxType& analytical_flux,
+        const BoundaryValueFunctionType& boundary_values,
+        const SourceType& source,
+        RangeType& range,
+        const XT::Common::Parameter& param,
+        const bool use_reconstruction,
+        const FieldVector<Dune::QuadratureRule<double, 1>, dimDomain> quadrature_rules,
+        const RangeFieldType epsilon,
+        const std::vector<FieldVector<size_t, dimDomain>>& entity_indices,
+        const FieldVector<size_t, dimDomain>& grid_sizes,
+        const std::vector<std::pair<FieldVector<RangeFieldType, dimRange>, RangeFieldType>>& plane_coefficients,
+        LocalOperatorArgTypes&&... local_operator_args)
   {
-    typedef double FieldType;
-    typedef XT::LA::EigenDenseVector<FieldType> EigenVectorType;
+    typedef XT::LA::EigenDenseVector<RangeFieldType> EigenVectorType;
     const std::shared_ptr<typename BoundaryValueFunctionType::NonparametricType> current_boundary_values =
         boundary_values.with_parameter(param);
     if (use_reconstruction) {
-      typedef typename SourceType::SpaceType::GridViewType GridViewType;
-      const GridViewType& grid_view = source.space().grid_view();
+      typedef typename SourceType::SpaceType::GridLayerType GridLayerType;
+      const GridLayerType& grid_layer = source.space().grid_layer();
       // collect cell averages in array
       const auto cell_averages = CellAveragesGetter<typename BoundaryValueFunctionType::NonparametricType,
-                                                    typename SourceType::SpaceType::GridViewType,
+                                                    typename SourceType::SpaceType::GridLayerType,
                                                     SourceType,
                                                     EigenVectorType,
                                                     dimDomain>::get_cell_averages(*current_boundary_values,
-                                                                                  grid_view,
+                                                                                  grid_layer,
                                                                                   grid_sizes,
                                                                                   entity_indices,
                                                                                   source);
       // do reconstruction
-      std::vector<std::map<typename GridViewType::template Codim<0>::Geometry::LocalCoordinate,
+      std::vector<std::map<typename GridLayerType::template Codim<0>::Geometry::LocalCoordinate,
                            typename AnalyticalFluxType::RangeType,
                            internal::FieldVectorLess>>
-          reconstructed_values(grid_view.size(0));
+          reconstructed_values(grid_layer.size(0));
 
-      auto local_reconstruction_operator = LocalWENOReconstructionFvOperator<GridViewType,
+      auto local_reconstruction_operator = LocalWENOReconstructionFvOperator<GridLayerType,
                                                                              AnalyticalFluxType,
                                                                              dimDomain,
                                                                              dimRange,
                                                                              polOrder,
                                                                              slope_limiter>(
-          grid_view, analytical_flux, param, cell_averages, entity_indices, quadrature_rules, reconstructed_values);
-      auto walker = XT::Grid::Walker<GridViewType>(grid_view);
+          grid_layer, analytical_flux, param, cell_averages, entity_indices, quadrature_rules, reconstructed_values);
+      auto walker = XT::Grid::Walker<GridLayerType>(grid_layer);
       walker.append(local_reconstruction_operator);
       walker.walk(true);
 
-      // do limiting for realizability in M_N models
+      //       do limiting for realizability in M_N models
       auto local_realizability_limiter =
-          LocalRealizabilityLimiter<GridViewType, dimDomain, dimRange, basis_function_type>(
-              grid_view, plane_coefficients, cell_averages, entity_indices, reconstructed_values);
+          LocalRealizabilityLimiter<SourceType, dimDomain, dimRange, basis_function_type>(
+              source, plane_coefficients, reconstructed_values, epsilon);
       walker.clear();
       walker.append(local_realizability_limiter);
       walker.walk(true);
 
-      typedef ReconstructedLocalizableFunction<GridViewType, FieldType, dimDomain, RangeFieldType, dimRange>
+      typedef ReconstructedLocalizableFunction<GridLayerType, RangeFieldType, dimDomain, RangeFieldType, dimRange>
           ReconstructedLocalizableFunctionType;
-      const ReconstructedLocalizableFunctionType reconstructed_function(grid_view, reconstructed_values);
+      const ReconstructedLocalizableFunctionType reconstructed_function(grid_layer, reconstructed_values);
 
       // get quadrature rule on intersection from 1d quadratures;
       const auto intersection_quadrature_rule =
-          QuadratureRuleGetter<FieldType, dimDomain>::get_quadrature(quadrature_rules);
+          QuadratureRuleGetter<RangeFieldType, dimDomain>::get_quadrature(quadrature_rules);
 
       AdvectionLocalizableDefault<AnalyticalFluxType,
                                   NumericalCouplingFluxType,
@@ -852,11 +881,11 @@ struct AdvectionWENOOperatorApplier
                                std::forward<LocalOperatorArgTypes>(local_operator_args)...);
       localizable_operator.apply(true);
     } else {
-      typedef typename SourceType::SpaceType::GridViewType GridViewType;
-      const GridViewType& grid_view = source.space().grid_view();
+      typedef typename SourceType::SpaceType::GridLayerType GridLayerType;
+      const GridLayerType& grid_layer = source.space().grid_layer();
       const auto intersection_quadrature_rule =
-          Dune::QuadratureRules<RangeFieldType, GridViewType::dimension - 1>::rule(
-              grid_view.ibegin(*(grid_view.template begin<0>()))->geometry().type(), 0);
+          Dune::QuadratureRules<RangeFieldType, GridLayerType::dimension - 1>::rule(
+              grid_layer.ibegin(*(grid_layer.template begin<0>()))->geometry().type(), 0);
       AdvectionLocalizableDefault<AnalyticalFluxType,
                                   NumericalCouplingFluxType,
                                   NumericalBoundaryFluxType,
@@ -1025,14 +1054,14 @@ private:
   std::shared_ptr<MatrixType> eigenvectors_inverse_;
 }; // class AdvectionLaxFriedrichsOperator
 
-template <class GridViewType>
-FieldVector<Dune::QuadratureRule<typename GridViewType::ctype, 1>, GridViewType::dimension>
-default_quadrature_rules(const GridViewType& grid_view)
+template <class GridLayerType>
+FieldVector<Dune::QuadratureRule<typename GridLayerType::ctype, 1>, GridLayerType::dimension>
+default_quadrature_rules(const GridLayerType& grid_layer)
 {
   // get 1D quadrature rules
-  const auto quadrature_rule = Dune::QuadratureRules<typename GridViewType::ctype, 1>::rule(
-      grid_view.template begin<GridViewType::dimension - 1>()->geometry().type(), 2);
-  FieldVector<Dune::QuadratureRule<typename GridViewType::ctype, 1>, GridViewType::dimension> quadrature_rules;
+  const auto quadrature_rule = Dune::QuadratureRules<typename GridLayerType::ctype, 1>::rule(
+      grid_layer.template begin<GridLayerType::dimension - 1>()->geometry().type(), 2);
+  FieldVector<Dune::QuadratureRule<typename GridLayerType::ctype, 1>, GridLayerType::dimension> quadrature_rules;
   std::fill(quadrature_rules.begin(), quadrature_rules.end(), quadrature_rule);
   return quadrature_rules;
 }
@@ -1040,7 +1069,7 @@ default_quadrature_rules(const GridViewType& grid_view)
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class LocalizableFunctionImp,
-          class GridViewType,
+          class GridLayerType,
           BasisFunctionType basis_function_type,
           size_t polOrder,
           SlopeLimiters slope_lim>
@@ -1048,7 +1077,7 @@ class AdvectionLaxFriedrichsWENOOperator
     : public Dune::GDT::OperatorInterface<internal::AdvectionLaxFriedrichsWENOOperatorTraits<AnalyticalFluxImp,
                                                                                              BoundaryValueFunctionImp,
                                                                                              LocalizableFunctionImp,
-                                                                                             GridViewType,
+                                                                                             GridLayerType,
                                                                                              basis_function_type,
                                                                                              polOrder,
                                                                                              slope_lim>>
@@ -1057,7 +1086,7 @@ public:
   typedef internal::AdvectionLaxFriedrichsWENOOperatorTraits<AnalyticalFluxImp,
                                                              BoundaryValueFunctionImp,
                                                              LocalizableFunctionImp,
-                                                             GridViewType,
+                                                             GridLayerType,
                                                              basis_function_type,
                                                              polOrder,
                                                              slope_lim>
@@ -1082,13 +1111,14 @@ public:
       const AnalyticalFluxType& analytical_flux,
       const BoundaryValueFunctionType& boundary_values,
       const LocalizableFunctionType& dx,
-      const GridViewType& grid_view,
+      const GridLayerType& grid_layer,
       const FieldVector<size_t, dimDomain> grid_sizes,
-      const std::vector<FieldVector<RangeFieldType, dimRange + 1>>& plane_coefficients,
+      const std::vector<std::pair<FieldVector<RangeFieldType, dimRange>, RangeFieldType>>& plane_coefficients,
       const bool flux_is_linear = false,
       const bool use_reconstruction = false,
       const FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain> quadrature_rules =
           FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain>(),
+      const RangeFieldType epsilon = 1e-10,
       const bool use_local_laxfriedrichs_flux = false,
       const bool entity_geometries_equal = false)
     : analytical_flux_(analytical_flux)
@@ -1099,20 +1129,21 @@ public:
     , flux_is_linear_(flux_is_linear)
     , use_reconstruction_(use_reconstruction)
     , quadrature_rules_(quadrature_rules)
+    , epsilon_(epsilon)
     , use_local_laxfriedrichs_flux_(use_local_laxfriedrichs_flux)
     , entity_geometries_equal_(entity_geometries_equal)
-    , entity_indices_(grid_view.size(0))
+    , entity_indices_(grid_layer.size(0))
   {
     FieldVector<size_t, dimDomain> indices;
-    for (const auto& entity : Dune::elements(grid_view)) {
-      const auto& index = grid_view.indexSet().index(entity);
+    for (const auto& entity : Dune::elements(grid_layer)) {
+      const auto& index = grid_layer.indexSet().index(entity);
       const auto indices_array = entity.seed().impl().coord();
       for (size_t dd = 0; dd < dimDomain; ++dd)
         indices[dd] = indices_array[dd];
       entity_indices_[index] = indices;
     }
     if (quadrature_rules_[0].empty())
-      quadrature_rules_ = default_quadrature_rules(grid_view);
+      quadrature_rules_ = default_quadrature_rules(grid_layer);
   }
 
   template <class SourceType, class RangeType>
@@ -1133,6 +1164,7 @@ public:
                                                                  param,
                                                                  use_reconstruction_,
                                                                  quadrature_rules_,
+                                                                 epsilon_,
                                                                  entity_indices_,
                                                                  grid_sizes_,
                                                                  plane_coefficients_,
@@ -1148,10 +1180,11 @@ private:
   const BoundaryValueFunctionType& boundary_values_;
   const LocalizableFunctionType& dx_;
   const FieldVector<size_t, dimDomain> grid_sizes_;
-  const std::vector<FieldVector<RangeFieldType, dimRange + 1>>& plane_coefficients_;
+  const std::vector<std::pair<FieldVector<RangeFieldType, dimRange>, RangeFieldType>>& plane_coefficients_;
   const bool flux_is_linear_;
   const bool use_reconstruction_;
   FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain> quadrature_rules_;
+  const RangeFieldType epsilon_;
   const bool use_local_laxfriedrichs_flux_;
   const bool entity_geometries_equal_;
   std::vector<FieldVector<size_t, dimDomain>> entity_indices_;
@@ -1160,14 +1193,14 @@ private:
 
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
-          class GridViewType,
+          class GridLayerType,
           BasisFunctionType basis_function_type,
           size_t polOrder,
           SlopeLimiters slope_lim>
 class AdvectionGodunovWENOOperator
     : public Dune::GDT::OperatorInterface<internal::AdvectionGodunovWENOOperatorTraits<AnalyticalFluxImp,
                                                                                        BoundaryValueFunctionImp,
-                                                                                       GridViewType,
+                                                                                       GridLayerType,
                                                                                        basis_function_type,
                                                                                        polOrder,
                                                                                        slope_lim>>
@@ -1175,7 +1208,7 @@ class AdvectionGodunovWENOOperator
 public:
   typedef internal::AdvectionGodunovWENOOperatorTraits<AnalyticalFluxImp,
                                                        BoundaryValueFunctionImp,
-                                                       GridViewType,
+                                                       GridLayerType,
                                                        basis_function_type,
                                                        polOrder,
                                                        slope_lim>
@@ -1195,15 +1228,16 @@ protected:
   typedef typename Dune::XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
 
 public:
-  AdvectionGodunovWENOOperator(const AnalyticalFluxType& analytical_flux,
-                               const BoundaryValueFunctionType& boundary_values,
-                               const GridViewType& grid_view,
-                               const FieldVector<size_t, dimDomain> grid_sizes,
-                               const std::vector<FieldVector<RangeFieldType, dimRange + 1>>& plane_coefficients,
-                               const bool flux_is_linear = false,
-                               const bool use_reconstruction = false,
-                               const FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain> quadrature_rules =
-                                   FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain>())
+  AdvectionGodunovWENOOperator(
+      const AnalyticalFluxType& analytical_flux,
+      const BoundaryValueFunctionType& boundary_values,
+      const GridLayerType& grid_layer,
+      const FieldVector<size_t, dimDomain> grid_sizes,
+      const std::vector<std::pair<FieldVector<RangeFieldType, dimRange>, RangeFieldType>>& plane_coefficients,
+      const bool flux_is_linear = false,
+      const bool use_reconstruction = false,
+      const FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain> quadrature_rules =
+          FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain>())
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , grid_sizes_(grid_sizes)
@@ -1211,18 +1245,18 @@ public:
     , flux_is_linear_(flux_is_linear)
     , use_reconstruction_(use_reconstruction)
     , quadrature_rules_(quadrature_rules)
-    , entity_indices_(grid_view.size(0))
+    , entity_indices_(grid_layer.size(0))
   {
     FieldVector<size_t, dimDomain> indices;
-    for (const auto& entity : Dune::elements(grid_view)) {
-      const auto& index = grid_view.indexSet().index(entity);
+    for (const auto& entity : Dune::elements(grid_layer)) {
+      const auto& index = grid_layer.indexSet().index(entity);
       const auto indices_array = entity.seed().impl().coord();
       for (size_t dd = 0; dd < dimDomain; ++dd)
         indices[dd] = indices_array[dd];
       entity_indices_[index] = indices;
     }
     if (quadrature_rules_[0].empty())
-      quadrature_rules_ = default_quadrature_rules(grid_view);
+      quadrature_rules_ = default_quadrature_rules(grid_layer);
   }
 
   template <class SourceType, class RangeType>
@@ -1254,12 +1288,116 @@ private:
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueFunctionType& boundary_values_;
   const FieldVector<size_t, dimDomain> grid_sizes_;
-  const std::vector<FieldVector<RangeFieldType, dimRange + 1>>& plane_coefficients_;
+  const std::vector<std::pair<FieldVector<RangeFieldType, dimRange>, RangeFieldType>>& plane_coefficients_;
   const bool flux_is_linear_;
   const bool use_reconstruction_;
   FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain> quadrature_rules_;
   std::vector<FieldVector<size_t, dimDomain>> entity_indices_;
 }; // class AdvectionGodunovWENOOperator
+
+template <class AnalyticalFluxImp,
+          class BoundaryValueFunctionImp,
+          class GridLayerType,
+          BasisFunctionType basis_function_type,
+          size_t polOrder,
+          SlopeLimiters slope_lim>
+class AdvectionKineticWENOOperator
+    : public Dune::GDT::OperatorInterface<internal::AdvectionKineticWENOOperatorTraits<AnalyticalFluxImp,
+                                                                                       BoundaryValueFunctionImp,
+                                                                                       GridLayerType,
+                                                                                       basis_function_type,
+                                                                                       polOrder,
+                                                                                       slope_lim>>
+{
+public:
+  typedef internal::AdvectionKineticWENOOperatorTraits<AnalyticalFluxImp,
+                                                       BoundaryValueFunctionImp,
+                                                       GridLayerType,
+                                                       basis_function_type,
+                                                       polOrder,
+                                                       slope_lim>
+      Traits;
+  typedef typename Traits::AnalyticalFluxType AnalyticalFluxType;
+  typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
+  static const size_t dimDomain = Traits::dimDomain;
+  static const size_t dimRange = Traits::dimRange;
+  static const size_t dimRangeCols = Traits::dimRangeCols;
+  static const SlopeLimiters slope_limiter = Traits::slope_limiter;
+  typedef typename AnalyticalFluxType::RangeFieldType RangeFieldType;
+  typedef typename Traits::NumericalCouplingFluxType NumericalCouplingFluxType;
+  typedef typename Traits::NumericalBoundaryFluxType NumericalBoundaryFluxType;
+
+protected:
+  typedef typename Dune::XT::LA::EigenDenseMatrix<RangeFieldType> EigenMatrixType;
+  typedef typename Dune::XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+
+public:
+  AdvectionKineticWENOOperator(
+      const AnalyticalFluxType& analytical_flux,
+      const BoundaryValueFunctionType& boundary_values,
+      const GridLayerType& grid_layer,
+      const FieldVector<size_t, dimDomain> grid_sizes,
+      const std::vector<std::pair<FieldVector<RangeFieldType, dimRange>, RangeFieldType>>& plane_coefficients,
+      const bool flux_is_linear = false,
+      const bool use_reconstruction = false,
+      const FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain> quadrature_rules =
+          FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain>())
+    : analytical_flux_(analytical_flux)
+    , boundary_values_(boundary_values)
+    , grid_sizes_(grid_sizes)
+    , plane_coefficients_(plane_coefficients)
+    , flux_is_linear_(flux_is_linear)
+    , use_reconstruction_(use_reconstruction)
+    , quadrature_rules_(quadrature_rules)
+    , entity_indices_(grid_layer.size(0))
+  {
+    FieldVector<size_t, dimDomain> indices;
+    for (const auto& entity : Dune::elements(grid_layer)) {
+      const auto& index = grid_layer.indexSet().index(entity);
+      const auto indices_array = entity.seed().impl().coord();
+      for (size_t dd = 0; dd < dimDomain; ++dd)
+        indices[dd] = indices_array[dd];
+      entity_indices_[index] = indices;
+    }
+    if (quadrature_rules_[0].empty())
+      quadrature_rules_ = default_quadrature_rules(grid_layer);
+  }
+
+  template <class SourceType, class RangeType>
+  void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter param) const
+  {
+    internal::AdvectionWENOOperatorApplier<NumericalCouplingFluxType,
+                                           NumericalBoundaryFluxType,
+                                           RangeFieldType,
+                                           basis_function_type,
+                                           dimDomain,
+                                           dimRange,
+                                           dimRangeCols,
+                                           polOrder,
+                                           slope_limiter>::apply(analytical_flux_,
+                                                                 boundary_values_,
+                                                                 source,
+                                                                 range,
+                                                                 param,
+                                                                 use_reconstruction_,
+                                                                 quadrature_rules_,
+                                                                 entity_indices_,
+                                                                 grid_sizes_,
+                                                                 plane_coefficients_,
+                                                                 param);
+  }
+
+private:
+  const AnalyticalFluxType& analytical_flux_;
+  const BoundaryValueFunctionType& boundary_values_;
+  const FieldVector<size_t, dimDomain> grid_sizes_;
+  const std::vector<std::pair<FieldVector<RangeFieldType, dimRange>, RangeFieldType>>& plane_coefficients_;
+  const bool flux_is_linear_;
+  const bool use_reconstruction_;
+  FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain> quadrature_rules_;
+  std::vector<FieldVector<size_t, dimDomain>> entity_indices_;
+}; // class AdvectionKineticWENOOperator
+
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_lim>
 class AdvectionKineticOperator
@@ -1408,10 +1546,10 @@ class AdvectionGodunovOperator
 
 #endif // HAVE_EIGEN
 
-template <class GridViewType, class MatrixType, class DiscreteFunctionType>
-class MatrixSolveFunctor : public XT::Grid::Functor::Codim0<GridViewType>
+template <class GridLayerType, class MatrixType, class DiscreteFunctionType>
+class MatrixSolveFunctor : public XT::Grid::Functor::Codim0<GridLayerType>
 {
-  typedef typename XT::Grid::Functor::Codim0<GridViewType> BaseType;
+  typedef typename XT::Grid::Functor::Codim0<GridLayerType> BaseType;
 
 public:
   using typename BaseType::EntityType;
@@ -1439,7 +1577,7 @@ public:
     for (size_t ii = 0; ii < local_rhs.size(); ++ii)
       local_rhs[ii] = rhs_vector.get_entry(global_indices[ii]);
     // solve
-    matrices_[rhs_.space().grid_view().indexSet().index(entity)].solve(local_solution, local_rhs);
+    matrices_[rhs_.space().grid_layer().indexSet().index(entity)].solve(local_solution, local_rhs);
     // write solution
     for (size_t ii = 0; ii < local_rhs.size(); ++ii)
       solution_vector.set_entry(global_indices[ii], local_solution[ii]);
@@ -1453,9 +1591,9 @@ private:
 
 template <class DiscreteFunctionType, class RhsEvaluationType>
 class MatrixExponentialFunctor
-    : public XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridViewType>
+    : public XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType>
 {
-  typedef typename XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridViewType> BaseType;
+  typedef typename XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType> BaseType;
   typedef typename RhsEvaluationType::RangeFieldType FieldType;
   static const size_t dimRange = RhsEvaluationType::dimRange;
 
@@ -1528,10 +1666,10 @@ private:
 };
 
 
-template <class GridViewType, class MatrixType, class DiscreteFunctionType>
-class MatrixApplyFunctor : public XT::Grid::Functor::Codim0<GridViewType>
+template <class GridLayerType, class MatrixType, class DiscreteFunctionType>
+class MatrixApplyFunctor : public XT::Grid::Functor::Codim0<GridLayerType>
 {
-  typedef typename XT::Grid::Functor::Codim0<GridViewType> BaseType;
+  typedef typename XT::Grid::Functor::Codim0<GridLayerType> BaseType;
 
 public:
   using typename BaseType::EntityType;
@@ -1559,7 +1697,7 @@ public:
     for (size_t ii = 0; ii < local_vector.size(); ++ii)
       local_vector[ii] = vector_vector.get_entry(global_indices[ii]);
     // solve
-    matrices_[vector_.space().grid_view().indexSet().index(entity)].mv(local_vector, local_result);
+    matrices_[vector_.space().grid_layer().indexSet().index(entity)].mv(local_vector, local_result);
 
     // write solution
     for (size_t ii = 0; ii < local_vector.size(); ++ii)
@@ -1595,7 +1733,7 @@ public:
                                                                                                        source);
     VectorFunctionalBase<typename RangeType::VectorType,
                          typename RangeType::SpaceType,
-                         typename RangeType::SpaceType::GridViewType,
+                         typename RangeType::SpaceType::GridLayerType,
                          typename RangeType::DomainFieldType>
         functional_assembler(range.vector(), range.space());
     functional_assembler.append(local_functional);
@@ -1616,19 +1754,19 @@ public:
     assembler.assemble(true);
   }
 
-  // assembles jacobian (jacobian is assumed to be zero initially)
-  template <class SourceType, class MatrixType>
-  void assemble_newton_matrix(std::vector<MatrixType>& newton_matrices,
-                              const SourceType& source,
-                              const XT::Common::Parameter& param) const
-  {
-    typedef LocalVolumeIntegralOperator<LocalFvRhsNewtonIntegrand<RHSEvaluationType, SourceType>> LocalOperatorType;
-    LocalOperatorType local_operator(rhs_evaluation_, source, param);
-    LocalVolumeTwoFormAssembler<LocalOperatorType> local_assembler(local_operator);
-    SystemAssembler<typename SourceType::SpaceType> assembler(source.space());
-    assembler.append(local_assembler, newton_matrices);
-    assembler.assemble(false);
-  }
+  //  // assembles jacobian (jacobian is assumed to be zero initially)
+  //  template <class SourceType, class MatrixType>
+  //  void assemble_newton_matrix(std::vector<MatrixType>& newton_matrices,
+  //                              const SourceType& source,
+  //                              const XT::Common::Parameter& param) const
+  //  {
+  //    typedef LocalVolumeIntegralOperator<LocalFvRhsNewtonIntegrand<RHSEvaluationType, SourceType>> LocalOperatorType;
+  //    LocalOperatorType local_operator(rhs_evaluation_, source, param);
+  //    LocalVolumeTwoFormAssembler<LocalOperatorType> local_assembler(local_operator);
+  //    SystemAssembler<typename SourceType::SpaceType> assembler(source.space());
+  //    assembler.append(local_assembler, newton_matrices);
+  //    assembler.assemble(false);
+  //  }
 
   // solves with matrix exponential on each entity
   template <class SourceType>
@@ -1640,36 +1778,36 @@ public:
     MatrixExponentialFunctor<SourceType, RHSEvaluationType> functor(solution, t, dt, rhs_evaluation_);
     SystemAssembler<typename SourceType::SpaceType> assembler(solution.space());
     assembler.append(functor);
-    assembler.assemble(false);
+    assembler.assemble(true);
   }
 
-  // solves with local jacobian on each entity
-  template <class SourceType, class RangeType, class MatrixType>
-  void solve(const std::vector<MatrixType>& newton_matrices,
-             const SourceType& rhs,
-             RangeType& solution,
-             const XT::Common::Parameter& /*param*/ = {}) const
-  {
-    MatrixSolveFunctor<typename SourceType::SpaceType::GridViewType, MatrixType, SourceType> functor(
-        newton_matrices, rhs, solution);
-    SystemAssembler<typename SourceType::SpaceType> assembler(rhs.space());
-    assembler.append(functor);
-    assembler.assemble(false);
-  }
+  //  // solves with local jacobian on each entity
+  //  template <class SourceType, class RangeType, class MatrixType>
+  //  void solve(const std::vector<MatrixType>& newton_matrices,
+  //             const SourceType& rhs,
+  //             RangeType& solution,
+  //             const XT::Common::Parameter& /*param*/ = {}) const
+  //  {
+  //    MatrixSolveFunctor<typename SourceType::SpaceType::GridLayerType, MatrixType, SourceType> functor(
+  //        newton_matrices, rhs, solution);
+  //    SystemAssembler<typename SourceType::SpaceType> assembler(rhs.space());
+  //    assembler.append(functor);
+  //    assembler.assemble(false);
+  //  }
 
-  // applies local jacobian on each entity
-  template <class SourceType, class RangeType, class MatrixType>
-  void mv(const std::vector<MatrixType>& newton_matrices,
-          const SourceType& vector,
-          RangeType& result,
-          const XT::Common::Parameter& /*param*/ = {}) const
-  {
-    MatrixApplyFunctor<typename SourceType::SpaceType::GridViewType, MatrixType, SourceType> functor(
-        newton_matrices, vector, result);
-    SystemAssembler<typename SourceType::SpaceType> assembler(vector.space());
-    assembler.append(functor);
-    assembler.assemble(false);
-  }
+  //  // applies local jacobian on each entity
+  //  template <class SourceType, class RangeType, class MatrixType>
+  //  void mv(const std::vector<MatrixType>& newton_matrices,
+  //          const SourceType& vector,
+  //          RangeType& result,
+  //          const XT::Common::Parameter& /*param*/ = {}) const
+  //  {
+  //    MatrixApplyFunctor<typename SourceType::SpaceType::GridLayerType, MatrixType, SourceType> functor(
+  //        newton_matrices, vector, result);
+  //    SystemAssembler<typename SourceType::SpaceType> assembler(vector.space());
+  //    assembler.append(functor);
+  //    assembler.assemble(false);
+  //  }
 
 private:
   const RHSEvaluationType& rhs_evaluation_;

@@ -289,8 +289,8 @@ public:
             A[rr][cc] = 5 * integrated_basis[rr] * c[cc] - 10. * (rr == cc);
         } // cc
       } // rr
-      rhs_config["A." + XT::Common::to_string(ii)] = XT::Common::to_string(A);
-      rhs_config["b." + XT::Common::to_string(ii)] = XT::Common::to_string(b);
+      rhs_config["A." + XT::Common::to_string(ii)] = XT::Common::to_string(A, precision);
+      rhs_config["b." + XT::Common::to_string(ii)] = XT::Common::to_string(b, precision);
     } // ii
     return rhs_config;
   } // ... create_rhs_config(...)

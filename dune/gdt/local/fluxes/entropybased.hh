@@ -294,105 +294,105 @@ public:
     const auto index = index_set_.index(entity) + index_set_.size(0) * (x_local[0] > 100);
     RangeType alpha;
 
-    // if value has already been calculated for this entity at this time, skip computation
-    //    if (alpha_cache_[index] && XT::Common::FloatCmp::eq(alpha_cache_[index]->first, t)) {
-    //      alpha = alpha_cache_[index]->second;
-    //    } else {
+    //    if value has already been calculated for this entity at this time, skip computation
+    if (alpha_cache_[index] && XT::Common::FloatCmp::eq(alpha_cache_[index]->first, t)) {
+      alpha = alpha_cache_[index]->second;
+    } else {
 
-    RangeType u_iso, alpha_iso;
-    std::tie(u_iso, alpha_iso) = isotropic_dist_calculator_(u);
+      RangeType u_iso, alpha_iso;
+      std::tie(u_iso, alpha_iso) = isotropic_dist_calculator_(u);
 
-    // define further variables
-    bool chol_flag = false;
-    RangeType g_k, beta_out;
-    MatrixType T_k;
-    BasisValuesMatrixType P_k(M_.size());
+      // define further variables
+      bool chol_flag = false;
+      RangeType g_k, beta_out;
+      MatrixType T_k;
+      BasisValuesMatrixType P_k(M_.size());
 
-    const auto r_max = r_sequence_.back();
-    for (const auto& r : r_sequence_) {
-      RangeType beta_in = beta_cache_[index] ? *(beta_cache_[index]) : alpha_iso;
-      T_k = T_cache_[index] ? *(T_cache_[index]) : T_minus_one_;
-      // normalize u
-      RangeType r_times_u_iso = u_iso;
-      r_times_u_iso *= r;
-      RangeType v = u;
-      v *= 1 - r;
-      v += r_times_u_iso;
-      // calculate T_k u
-      RangeType v_k;
-      solve_lower_triangular(T_k, v_k, v);
-      // calculate values of basis p = T_k m
-      for (size_t ii = 0; ii < M_.size(); ++ii)
-        solve_lower_triangular(T_k, P_k[ii], M_[ii]);
-      // calculate f_0
-      RangeFieldType f_k(0);
-      for (size_t ll = 0; ll < quadrature_.size(); ++ll)
-        f_k += quadrature_[ll].weight() * std::exp(beta_in * P_k[ll]);
-      f_k -= beta_in * v_k;
+      const auto r_max = r_sequence_.back();
+      for (const auto& r : r_sequence_) {
+        RangeType beta_in = beta_cache_[index] ? *(beta_cache_[index]) : alpha_iso;
+        T_k = T_cache_[index] ? *(T_cache_[index]) : T_minus_one_;
+        // normalize u
+        RangeType r_times_u_iso = u_iso;
+        r_times_u_iso *= r;
+        RangeType v = u;
+        v *= 1 - r;
+        v += r_times_u_iso;
+        // calculate T_k u
+        RangeType v_k;
+        solve_lower_triangular(T_k, v_k, v);
+        // calculate values of basis p = T_k m
+        for (size_t ii = 0; ii < M_.size(); ++ii)
+          solve_lower_triangular(T_k, P_k[ii], M_[ii]);
+        // calculate f_0
+        RangeFieldType f_k(0);
+        for (size_t ll = 0; ll < quadrature_.size(); ++ll)
+          f_k += quadrature_[ll].weight() * std::exp(beta_in * P_k[ll]);
+        f_k -= beta_in * v_k;
 
-      for (size_t kk = 0; kk < k_max_; ++kk) {
-        change_basis(chol_flag, beta_in, v_k, P_k, T_k, g_k, beta_out);
-        if (chol_flag == false && r == r_max)
-          DUNE_THROW(Dune::MathError, "Failure to converge!");
-        // exit inner for loop to increase r if to many iterations are used or cholesky decomposition fails
-        if ((kk > k_0_ || chol_flag == false) && r < r_max)
-          break;
-        // calculate current error
-        RangeType error(0);
-        for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
-          auto m = M_[ll];
-          RangeType Tinv_m(0);
-          solve_lower_triangular(T_k, Tinv_m, m);
-          m *= std::exp(beta_out * Tinv_m) * quadrature_[ll].weight();
-          error += m;
-        }
-        error -= v;
-        // calculate descent direction d_k;
-        RangeType d_k = g_k;
-        d_k *= -1;
-        RangeType T_k_inv_transp_d_k;
-        try {
-          solve_lower_triangular_transposed(T_k, T_k_inv_transp_d_k, d_k);
-        } catch (const Dune::FMatrixError& e) {
-          if (r < r_max)
+        for (size_t kk = 0; kk < k_max_; ++kk) {
+          change_basis(chol_flag, beta_in, v_k, P_k, T_k, g_k, beta_out);
+          if (chol_flag == false && r == r_max)
+            DUNE_THROW(Dune::MathError, "Failure to converge!");
+          // exit inner for loop to increase r if to many iterations are used or cholesky decomposition fails
+          if ((kk > k_0_ || chol_flag == false) && r < r_max)
             break;
-          else
-            DUNE_THROW(Dune::FMatrixError, e.what());
-        }
-        if (error.two_norm() < tau_ && std::exp(5 * T_k_inv_transp_d_k.one_norm()) < 1 + epsilon_gamma_) {
-          solve_lower_triangular_transposed(T_k, alpha, beta_out);
-          goto outside_all_loops;
-        } else {
-          RangeFieldType zeta_k = 1;
-          beta_in = beta_out;
-          // backtracking line search
-          while (zeta_k > epsilon_ * beta_out.two_norm() / d_k.two_norm()) {
-            RangeFieldType f(0);
-            auto beta_new = d_k;
-            beta_new *= zeta_k;
-            beta_new += beta_out;
-            for (size_t ll = 0; ll < quadrature_.size(); ++ll)
-              f += quadrature_[ll].weight() * std::exp(beta_new * P_k[ll]);
-            f -= beta_new * v_k;
-            if (XT::Common::FloatCmp::le(f, f_k + xi_ * zeta_k * (g_k * d_k))) {
-              beta_in = beta_new;
-              f_k = f;
+          // calculate current error
+          RangeType error(0);
+          for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
+            auto m = M_[ll];
+            RangeType Tinv_m(0);
+            solve_lower_triangular(T_k, Tinv_m, m);
+            m *= std::exp(beta_out * Tinv_m) * quadrature_[ll].weight();
+            error += m;
+          }
+          error -= v;
+          // calculate descent direction d_k;
+          RangeType d_k = g_k;
+          d_k *= -1;
+          RangeType T_k_inv_transp_d_k;
+          try {
+            solve_lower_triangular_transposed(T_k, T_k_inv_transp_d_k, d_k);
+          } catch (const Dune::FMatrixError& e) {
+            if (r < r_max)
               break;
-            }
-            zeta_k = chi_ * zeta_k;
-          } // backtracking linesearch while
-        } // else (stopping conditions)
-      } // k loop (Newton iterations)
-    } // r loop (Regularization parameter)
+            else
+              DUNE_THROW(Dune::FMatrixError, e.what());
+          }
+          if (error.two_norm() < tau_ && std::exp(5 * T_k_inv_transp_d_k.one_norm()) < 1 + epsilon_gamma_) {
+            solve_lower_triangular_transposed(T_k, alpha, beta_out);
+            goto outside_all_loops;
+          } else {
+            RangeFieldType zeta_k = 1;
+            beta_in = beta_out;
+            // backtracking line search
+            while (zeta_k > epsilon_ * beta_out.two_norm() / d_k.two_norm()) {
+              RangeFieldType f(0);
+              auto beta_new = d_k;
+              beta_new *= zeta_k;
+              beta_new += beta_out;
+              for (size_t ll = 0; ll < quadrature_.size(); ++ll)
+                f += quadrature_[ll].weight() * std::exp(beta_new * P_k[ll]);
+              f -= beta_new * v_k;
+              if (XT::Common::FloatCmp::le(f, f_k + xi_ * zeta_k * (g_k * d_k))) {
+                beta_in = beta_new;
+                f_k = f;
+                break;
+              }
+              zeta_k = chi_ * zeta_k;
+            } // backtracking linesearch while
+          } // else (stopping conditions)
+        } // k loop (Newton iterations)
+      } // r loop (Regularization parameter)
 
-    DUNE_THROW(MathError, "Failed to converge");
+      DUNE_THROW(MathError, "Failed to converge");
 
-  outside_all_loops:
-    // store values as initial conditions for next time step on this entity
-    alpha_cache_[index] = std::make_unique<std::pair<double, RangeType>>(std::make_pair(t, alpha));
-    beta_cache_[index] = std::make_unique<RangeType>(beta_out);
-    T_cache_[index] = std::make_unique<MatrixType>(T_k);
-    //    } // else ( value has not been calculated before )
+    outside_all_loops:
+      // store values as initial conditions for next time step on this entity
+      alpha_cache_[index] = std::make_unique<std::pair<double, RangeType>>(std::make_pair(t, alpha));
+      beta_cache_[index] = std::make_unique<RangeType>(beta_out);
+      T_cache_[index] = std::make_unique<MatrixType>(T_k);
+    } // else ( value has not been calculated before )
 
     return alpha;
   }
@@ -417,8 +417,8 @@ public:
         omega[1] = std::sqrt(1. - mu * mu) * std::sin(phi);
         omega[2] = mu;
       }
-      const auto factor = std::exp(alpha * m) * weight;
       m = M_[ll];
+      const auto factor = std::exp(alpha * m) * weight;
       for (size_t dd = 0; dd < dimDomain; ++dd) {
         m *= omega[dd] * factor;
         for (size_t rr = 0; rr < dimRange; ++rr)

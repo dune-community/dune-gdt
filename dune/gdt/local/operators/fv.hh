@@ -399,77 +399,70 @@ struct rescale_factor<RangeType, BasisFunctionType::first_order_dg>
 };
 
 
-template <class GridViewType,
+template <class SourceType,
           size_t dimDomain,
           size_t dimRange,
           BasisFunctionType basis_function_type = BasisFunctionType::legendre>
-class LocalRealizabilityLimiter : public XT::Grid::Functor::Codim0<GridViewType>
+class LocalRealizabilityLimiter : public XT::Grid::Functor::Codim0<typename SourceType::SpaceType::GridViewType>
 {
-  typedef typename GridViewType::ctype FieldType;
+  typedef typename SourceType::SpaceType::GridViewType GridViewType;
+  typedef typename SourceType::EntityType EntityType;
+  typedef typename SourceType::RangeType RangeType;
+  typedef typename GridViewType::IndexSet IndexSetType;
+  typedef typename SourceType::RangeFieldType FieldType;
   typedef typename XT::LA::EigenDenseVector<FieldType> EigenVectorType;
-  typedef FieldVector<FieldType, dimRange> RangeType;
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
 
 public:
   // cell averages includes left and right boundary values as the two last indices in each dimension
   explicit LocalRealizabilityLimiter(
-      const GridViewType& grid_view,
-      const std::vector<FieldVector<FieldType, dimRange + 1>>& plane_coefficients,
-      const std::vector<std::vector<std::vector<EigenVectorType>>>& cell_averages,
-      const std::vector<FieldVector<size_t, dimDomain>>& entity_indices,
+      const SourceType& source,
+      const std::vector<std::pair<RangeType, FieldType>>& plane_coefficients,
       std::vector<std::map<typename GridViewType::template Codim<0>::Geometry::LocalCoordinate,
                            RangeType,
-                           internal::FieldVectorLess>>& reconstructed_values)
-    : grid_view_(grid_view)
+                           internal::FieldVectorLess>>& reconstructed_values,
+      FieldType epsilon = 1e-14)
+    : source_(source)
+    , index_set_(source_.space().grid_view().indexSet())
     , plane_coefficients_(plane_coefficients)
-    , cell_averages_(cell_averages)
-    , entity_indices_(entity_indices)
     , reconstructed_values_(reconstructed_values)
+    , epsilon_(epsilon)
   {
   }
 
   void apply_local(const EntityType& entity)
   {
-    const auto& entity_index = grid_view_.indexSet().index(entity);
-    auto& local_reconstructed_values = reconstructed_values_[entity_index];
+    auto& local_reconstructed_values = reconstructed_values_[index_set_.index(entity)];
 
     // get cell average
-    const size_t i_x = entity_indices_[entity_index][0];
-    const size_t i_y = entity_indices_[entity_index][1];
-    const size_t i_z = entity_indices_[entity_index][2];
-    const auto& u_bar_eigen = cell_averages_[i_x][i_y][i_z];
-    assert(u_bar_eigen.size() == dimRange);
+    const auto& local_source = source_.local_discrete_function(entity);
+    const auto& local_vector = local_source->vector();
     RangeType u_bar;
     for (size_t ii = 0; ii < dimRange; ++ii)
-      u_bar[ii] = u_bar_eigen.get_entry(ii);
-
-    const FieldType epsilon = 1e-3;
+      u_bar[ii] = local_vector.get(ii);
 
     // vector to store thetas for each local reconstructed value
-    std::vector<FieldType> thetas(local_reconstructed_values.size(), -epsilon);
+    std::vector<FieldType> thetas(local_reconstructed_values.size(), -epsilon_);
 
-    FieldVector<FieldType, dimRange> a;
-    FieldType b;
-    for (const auto& coeffs : plane_coefficients_) {
-      std::copy_n(coeffs.begin(), dimRange, a.begin());
-      b = coeffs[dimRange];
-      size_t ll = -1;
-      for (const auto& pair : local_reconstructed_values) {
-        ++ll;
-        auto u_l = pair.second;
-        // rescale u_l, u_bar
-        const auto factor = rescale_factor<RangeType, basis_function_type>::get(u_l, u_bar);
-        u_l /= factor;
-        auto u_bar_l = u_bar;
-        u_bar_l /= factor;
+    size_t ll = -1;
+    for (const auto& pair : local_reconstructed_values) {
+      ++ll;
+      auto u_l = pair.second;
+      // rescale u_l, u_bar
+      const auto factor = rescale_factor<RangeType, basis_function_type>::get(u_l, u_bar);
+      u_l /= factor;
+      auto u_bar_l = u_bar;
+      u_bar_l /= factor;
 
+      for (const auto& coeffs : plane_coefficients_) {
+        const RangeType& a = coeffs.first;
+        const FieldType& b = coeffs.second;
         FieldType theta_li = (b - a * u_l) / (a * (u_bar_l - u_l));
-        if (XT::Common::FloatCmp::ge(theta_li, -epsilon) && XT::Common::FloatCmp::le(theta_li, 1.))
+        if (XT::Common::FloatCmp::ge(theta_li, -epsilon_) && XT::Common::FloatCmp::le(theta_li, 1.))
           thetas[ll] = std::max(thetas[ll], theta_li);
-      }
-    }
+      } // coeffs
+    } // ll
     for (auto& theta : thetas)
-      theta = std::min(epsilon + theta, 1.);
+      theta = std::min(epsilon_ + theta, 1.);
 
     auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
 
@@ -484,13 +477,13 @@ public:
   } // void apply_local(...)
 
 private:
-  const GridViewType& grid_view_;
-  const std::vector<FieldVector<FieldType, dimRange + 1>>& plane_coefficients_;
-  const std::vector<std::vector<std::vector<EigenVectorType>>>& cell_averages_;
-  const std::vector<FieldVector<size_t, 3>>& entity_indices_;
+  const SourceType& source_;
+  const IndexSetType& index_set_;
+  const std::vector<std::pair<RangeType, FieldType>>& plane_coefficients_;
   std::vector<std::map<typename GridViewType::template Codim<0>::Geometry::LocalCoordinate,
                        RangeType,
                        internal::FieldVectorLess>>& reconstructed_values_;
+  const FieldType epsilon_;
 }; // class LocalRealizabilityLimiter
 
 template <class GridViewType,
