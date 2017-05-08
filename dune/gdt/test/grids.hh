@@ -6,7 +6,7 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2014 - 2017)
-//   Rene Milk       (2016)
+//   Rene Milk       (2016 - 2017)
 //   Tobias Leibner  (2014, 2016)
 
 #ifndef DUNE_GDT_TEST_GRIDS_HH

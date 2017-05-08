@@ -6,7 +6,7 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2016 - 2017)
-//   Rene Milk       (2016)
+//   Rene Milk       (2016 - 2017)
 //   Tobias Leibner  (2016)
 
 #ifndef DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING
