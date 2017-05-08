@@ -9,6 +9,7 @@
 
 #ifndef DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BINDINGS_HH
 #define DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BINDINGS_HH
+#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -18,6 +19,7 @@
 
 #include "integrands/elliptic-ipdg.hh"
 #include "operators/integrals.hh"
+#include "assembler.bindings.hh"
 
 namespace Dune {
 namespace GDT {
@@ -118,6 +120,9 @@ public:
     bound_type c(m, ClassName.c_str());
 
     diffusion_switch<>::addbind_factory_methods(m);
+
+    // the matching assembler
+    bindings::LocalCouplingTwoFormAssembler<type>::bind(m, ClassName);
 
     return c;
   } // ... bind(...)
@@ -241,5 +246,5 @@ public:
 
 // end: this is what we need for the .so
 
-
+#endif // HAVE_DUNE_PYBINDXI
 #endif // DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BINDINGS_HH
