@@ -583,7 +583,7 @@ int main(int argc, char** argv)
   //  typedef MatrixExponentialTimeStepper<RHSOperatorType, DiscreteFunctionType, RangeFieldType>
   //      RHSOperatorTimeStepperType;
   //  typedef FractionalTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType> TimeStepperType;
-  typedef StrangSplittingTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType> TimeStepperType;
+  typedef StrangSplittingTimeStepper<RHSOperatorTimeStepperType, OperatorTimeStepperType> TimeStepperType;
 
 
   // *************** choose t_end and initial dt **************************************
@@ -645,7 +645,7 @@ int main(int argc, char** argv)
   if (problem.has_non_zero_rhs()) {
     // use fractional step method
     RHSOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
-    TimeStepperType timestepper(timestepper_op, timestepper_rhs);
+    TimeStepperType timestepper(timestepper_rhs, timestepper_op);
     //    std::string filename = ProblemType::static_id() + "WENO";
     //    std::string filename = ProblemType::static_id() + "MinMod";
     //    std::string filename = ProblemType::static_id();
