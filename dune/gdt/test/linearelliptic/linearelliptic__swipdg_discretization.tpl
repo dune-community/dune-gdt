@@ -23,7 +23,7 @@
 #include <dune/gdt/test/linearelliptic/eocstudy.hh>
 #include <dune/gdt/test/linearelliptic/discretizers/ipdg.hh>
 
-template <class TestCaseType, Dune::GDT::ChooseSpaceBackend SpaceBackend, Dune::XT::LA::Backends LaBackend>
+template <class TestCaseType, Dune::GDT::Backends SpaceBackend, Dune::XT::LA::Backends LaBackend>
 struct linearelliptic_SWIPDG_discretization : public ::testing::Test
 {
   template <int polOrder>
@@ -60,7 +60,7 @@ using namespace Dune::GDT;
 // clang-format off
 {% for TestCase, SpaceBackend, LaBackend, Name in config.permutations %}
 
-typedef linearelliptic_SWIPDG_discretization<{{TestCase}}, Dune::GDT::ChooseSpaceBackend::{{SpaceBackend}},
+typedef linearelliptic_SWIPDG_discretization<{{TestCase}}, Dune::GDT::Backends::{{SpaceBackend}},
                                              Dune::XT::LA::Backends::{{LaBackend}}>
     linearelliptic_SWIPDG_discretization{{Name}};
 

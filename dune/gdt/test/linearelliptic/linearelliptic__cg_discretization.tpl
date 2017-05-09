@@ -26,7 +26,7 @@
 #include <dune/gdt/test/linearelliptic/problems.hh>
 #include <dune/gdt/test/grids.hh>
 
-template <class TestCaseType, Dune::GDT::ChooseSpaceBackend SpaceBackend, Dune::XT::LA::Backends LaBackend>
+template <class TestCaseType, Dune::GDT::Backends SpaceBackend, Dune::XT::LA::Backends LaBackend>
 struct linearelliptic_CG_discretization : public ::testing::Test
 {
 
@@ -59,7 +59,7 @@ struct linearelliptic_CG_discretization : public ::testing::Test
 {% for TestCase, SpaceBackend, LaBackend, Name in config.permutations %}
 // clang-format on
 
-typedef linearelliptic_CG_discretization<{{TestCase}}, Dune::GDT::ChooseSpaceBackend::{{SpaceBackend}},
+typedef linearelliptic_CG_discretization<{{TestCase}}, Dune::GDT::Backends::{{SpaceBackend}},
                                          Dune::XT::LA::Backends::{{LaBackend}}>
     linearelliptic_CG_discretization_{{Name}};
 
