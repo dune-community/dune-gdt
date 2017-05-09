@@ -119,6 +119,7 @@ public:
   static const size_t dimRange = AnalyticalFluxType::dimRange;
   static const size_t dimRangeCols = AnalyticalFluxType::dimRangeCols;
   typedef typename AnalyticalFluxType::DomainFieldType FieldType;
+  typedef typename AnalyticalFluxType::DomainType DomainType;
   typedef typename AnalyticalFluxType::FluxJacobianRangeType JacobianType;
 }; // class AdvectionTraitsBase
 
@@ -987,6 +988,7 @@ public:
   typedef typename Traits::AnalyticalFluxType AnalyticalFluxType;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
+  typedef typename Traits::DomainType DomainType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
   static const size_t dimRangeCols = Traits::dimRangeCols;
@@ -1006,14 +1008,14 @@ public:
                                  const bool flux_is_linear = false,
                                  const bool use_linear_reconstruction = false,
                                  const bool use_local_laxfriedrichs_flux = false,
-                                 const bool entity_geometries_equal = false)
+                                 const DomainType lambda = DomainType(0))
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , dx_(dx)
     , flux_is_linear_(flux_is_linear)
     , use_linear_reconstruction_(use_linear_reconstruction)
     , use_local_laxfriedrichs_flux_(use_local_laxfriedrichs_flux)
-    , entity_geometries_equal_(entity_geometries_equal)
+    , lambda_(lambda)
   {
     internal::EigenvectorInitializer<dimDomain, dimRange, MatrixType, EigenMatrixType, AnalyticalFluxType>::initialize(
         analytical_flux_, flux_is_linear, use_linear_reconstruction, eigenvectors_, eigenvectors_inverse_);
@@ -1037,19 +1039,19 @@ public:
                                                              eigenvectors_inverse_,
                                                              dx_,
                                                              param,
-                                                             flux_is_linear_,
                                                              use_local_laxfriedrichs_flux_,
-                                                             entity_geometries_equal_);
+                                                             flux_is_linear_,
+                                                             lambda_);
   }
 
 private:
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueFunctionType& boundary_values_;
   const LocalizableFunctionType& dx_;
+  const bool use_local_laxfriedrichs_flux_;
   const bool flux_is_linear_;
   const bool use_linear_reconstruction_;
-  const bool use_local_laxfriedrichs_flux_;
-  const bool entity_geometries_equal_;
+  const DomainType lambda_;
   std::shared_ptr<MatrixType> eigenvectors_;
   std::shared_ptr<MatrixType> eigenvectors_inverse_;
 }; // class AdvectionLaxFriedrichsOperator
@@ -1094,6 +1096,7 @@ public:
   typedef typename Traits::AnalyticalFluxType AnalyticalFluxType;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
+  typedef typename Traits::DomainType DomainType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
   static const size_t dimRangeCols = Traits::dimRangeCols;
@@ -1120,7 +1123,7 @@ public:
           FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain>(),
       const RangeFieldType epsilon = 1e-10,
       const bool use_local_laxfriedrichs_flux = false,
-      const bool entity_geometries_equal = false)
+      const DomainType lambda = DomainType(0))
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , dx_(dx)
@@ -1131,7 +1134,7 @@ public:
     , quadrature_rules_(quadrature_rules)
     , epsilon_(epsilon)
     , use_local_laxfriedrichs_flux_(use_local_laxfriedrichs_flux)
-    , entity_geometries_equal_(entity_geometries_equal)
+    , lambda_(lambda)
     , entity_indices_(grid_layer.size(0))
   {
     FieldVector<size_t, dimDomain> indices;
@@ -1170,9 +1173,9 @@ public:
                                                                  plane_coefficients_,
                                                                  dx_,
                                                                  param,
-                                                                 flux_is_linear_,
                                                                  use_local_laxfriedrichs_flux_,
-                                                                 entity_geometries_equal_);
+                                                                 flux_is_linear_,
+                                                                 lambda_);
   }
 
 private:
@@ -1186,7 +1189,7 @@ private:
   FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain> quadrature_rules_;
   const RangeFieldType epsilon_;
   const bool use_local_laxfriedrichs_flux_;
-  const bool entity_geometries_equal_;
+  const DomainType lambda_;
   std::vector<FieldVector<size_t, dimDomain>> entity_indices_;
 }; // class AdvectionLaxFriedrichsWENOOperator
 
@@ -1341,7 +1344,8 @@ public:
       const bool flux_is_linear = false,
       const bool use_reconstruction = false,
       const FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain> quadrature_rules =
-          FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain>())
+          FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain>(),
+      const RangeFieldType epsilon = 1e-10)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , grid_sizes_(grid_sizes)
@@ -1349,6 +1353,7 @@ public:
     , flux_is_linear_(flux_is_linear)
     , use_reconstruction_(use_reconstruction)
     , quadrature_rules_(quadrature_rules)
+    , epsilon_(epsilon)
     , entity_indices_(grid_layer.size(0))
   {
     FieldVector<size_t, dimDomain> indices;
@@ -1381,6 +1386,7 @@ public:
                                                                  param,
                                                                  use_reconstruction_,
                                                                  quadrature_rules_,
+                                                                 epsilon_,
                                                                  entity_indices_,
                                                                  grid_sizes_,
                                                                  plane_coefficients_,
@@ -1395,6 +1401,7 @@ private:
   const bool flux_is_linear_;
   const bool use_reconstruction_;
   FieldVector<Dune::QuadratureRule<RangeFieldType, 1>, dimDomain> quadrature_rules_;
+  const RangeFieldType epsilon_;
   std::vector<FieldVector<size_t, dimDomain>> entity_indices_;
 }; // class AdvectionKineticWENOOperator
 

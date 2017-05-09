@@ -124,48 +124,6 @@ struct EntropyBasedLocalFluxEvaluator<EntityType,
   }
 };
 
-template <size_t dimRange, size_t dimDomain>
-struct FluxRangeTypeConverter
-{
-  static Dune::FieldMatrix<double, dimRange, dimDomain>
-  convert(const Dune::FieldMatrix<double, dimRange, dimDomain>& ret)
-  {
-    return ret;
-  }
-};
-
-template <size_t dimRange>
-struct FluxRangeTypeConverter<dimRange, 1>
-{
-  static Dune::FieldVector<double, dimRange> convert(const Dune::FieldMatrix<double, dimRange, 1>& in)
-  {
-    Dune::FieldVector<double, dimRange> ret;
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      ret[ii] = in[ii][0];
-    return ret;
-  }
-};
-
-template <size_t dimRange, size_t dimDomain>
-struct FluxJacobianRangeTypeConverter
-{
-  typedef typename Dune::FieldVector<Dune::FieldMatrix<double, dimRange, dimRange>, dimDomain> FluxJacobianRangeType;
-  static FluxJacobianRangeType convert(const FluxJacobianRangeType& ret)
-  {
-    return ret;
-  }
-};
-
-template <size_t dimRange>
-struct FluxJacobianRangeTypeConverter<dimRange, 1>
-{
-  typedef typename Dune::FieldMatrix<double, dimRange, dimRange> FluxJacobianRangeType;
-  static FluxJacobianRangeType convert(const Dune::FieldVector<FluxJacobianRangeType, 1>& in)
-  {
-    return in[0];
-  }
-};
-
 template <class MatrixType, class VectorType>
 void solve_lower_triangular(const MatrixType& A, VectorType& x, const VectorType& b)
 {
@@ -187,7 +145,7 @@ void solve_lower_triangular_transposed(const MatrixType& A, VectorType& x, const
   // backsolve
   double min_eigval(std::abs(A[0][0]));
   double max_eigval = min_eigval;
-  for (int ii = A.N() - 1; ii >= 0; ii--) {
+  for (int ii = int(A.N() - 1); ii >= 0; ii--) {
     auto abs = std::abs(A[ii][ii]);
     min_eigval = std::min(abs, min_eigval);
     max_eigval = std::max(abs, max_eigval);
@@ -295,104 +253,104 @@ public:
     RangeType alpha;
 
     //    if value has already been calculated for this entity at this time, skip computation
-    if (alpha_cache_[index] && XT::Common::FloatCmp::eq(alpha_cache_[index]->first, t)) {
-      alpha = alpha_cache_[index]->second;
-    } else {
+    //    if (alpha_cache_[index] && XT::Common::FloatCmp::eq(alpha_cache_[index]->first, t)) {
+    //      alpha = alpha_cache_[index]->second;
+    //    } else {
 
-      RangeType u_iso, alpha_iso;
-      std::tie(u_iso, alpha_iso) = isotropic_dist_calculator_(u);
+    RangeType u_iso, alpha_iso;
+    std::tie(u_iso, alpha_iso) = isotropic_dist_calculator_(u);
 
-      // define further variables
-      bool chol_flag = false;
-      RangeType g_k, beta_out;
-      MatrixType T_k;
-      BasisValuesMatrixType P_k(M_.size());
+    // define further variables
+    bool chol_flag = false;
+    RangeType g_k, beta_out;
+    MatrixType T_k;
+    BasisValuesMatrixType P_k(M_.size());
 
-      const auto r_max = r_sequence_.back();
-      for (const auto& r : r_sequence_) {
-        RangeType beta_in = beta_cache_[index] ? *(beta_cache_[index]) : alpha_iso;
-        T_k = T_cache_[index] ? *(T_cache_[index]) : T_minus_one_;
-        // normalize u
-        RangeType r_times_u_iso = u_iso;
-        r_times_u_iso *= r;
-        RangeType v = u;
-        v *= 1 - r;
-        v += r_times_u_iso;
-        // calculate T_k u
-        RangeType v_k;
-        solve_lower_triangular(T_k, v_k, v);
-        // calculate values of basis p = T_k m
-        for (size_t ii = 0; ii < M_.size(); ++ii)
-          solve_lower_triangular(T_k, P_k[ii], M_[ii]);
-        // calculate f_0
-        RangeFieldType f_k(0);
-        for (size_t ll = 0; ll < quadrature_.size(); ++ll)
-          f_k += quadrature_[ll].weight() * std::exp(beta_in * P_k[ll]);
-        f_k -= beta_in * v_k;
+    const auto r_max = r_sequence_.back();
+    for (const auto& r : r_sequence_) {
+      RangeType beta_in = beta_cache_[index] ? *(beta_cache_[index]) : alpha_iso;
+      T_k = T_cache_[index] ? *(T_cache_[index]) : T_minus_one_;
+      // normalize u
+      RangeType r_times_u_iso = u_iso;
+      r_times_u_iso *= r;
+      RangeType v = u;
+      v *= 1 - r;
+      v += r_times_u_iso;
+      // calculate T_k u
+      RangeType v_k;
+      solve_lower_triangular(T_k, v_k, v);
+      // calculate values of basis p = T_k m
+      for (size_t ii = 0; ii < M_.size(); ++ii)
+        solve_lower_triangular(T_k, P_k[ii], M_[ii]);
+      // calculate f_0
+      RangeFieldType f_k(0);
+      for (size_t ll = 0; ll < quadrature_.size(); ++ll)
+        f_k += quadrature_[ll].weight() * std::exp(beta_in * P_k[ll]);
+      f_k -= beta_in * v_k;
 
-        for (size_t kk = 0; kk < k_max_; ++kk) {
-          change_basis(chol_flag, beta_in, v_k, P_k, T_k, g_k, beta_out);
-          if (chol_flag == false && r == r_max)
-            DUNE_THROW(Dune::MathError, "Failure to converge!");
-          // exit inner for loop to increase r if to many iterations are used or cholesky decomposition fails
-          if ((kk > k_0_ || chol_flag == false) && r < r_max)
+      for (size_t kk = 0; kk < k_max_; ++kk) {
+        change_basis(chol_flag, beta_in, v_k, P_k, T_k, g_k, beta_out);
+        if (chol_flag == false && r == r_max)
+          DUNE_THROW(Dune::MathError, "Failure to converge!");
+        // exit inner for loop to increase r if to many iterations are used or cholesky decomposition fails
+        if ((kk > k_0_ || chol_flag == false) && r < r_max)
+          break;
+        // calculate current error
+        RangeType error(0);
+        for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
+          auto m = M_[ll];
+          RangeType Tinv_m(0);
+          solve_lower_triangular(T_k, Tinv_m, m);
+          m *= std::exp(beta_out * Tinv_m) * quadrature_[ll].weight();
+          error += m;
+        }
+        error -= v;
+        // calculate descent direction d_k;
+        RangeType d_k = g_k;
+        d_k *= -1;
+        RangeType T_k_inv_transp_d_k;
+        try {
+          solve_lower_triangular_transposed(T_k, T_k_inv_transp_d_k, d_k);
+        } catch (const Dune::FMatrixError& e) {
+          if (r < r_max)
             break;
-          // calculate current error
-          RangeType error(0);
-          for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
-            auto m = M_[ll];
-            RangeType Tinv_m(0);
-            solve_lower_triangular(T_k, Tinv_m, m);
-            m *= std::exp(beta_out * Tinv_m) * quadrature_[ll].weight();
-            error += m;
-          }
-          error -= v;
-          // calculate descent direction d_k;
-          RangeType d_k = g_k;
-          d_k *= -1;
-          RangeType T_k_inv_transp_d_k;
-          try {
-            solve_lower_triangular_transposed(T_k, T_k_inv_transp_d_k, d_k);
-          } catch (const Dune::FMatrixError& e) {
-            if (r < r_max)
+          else
+            DUNE_THROW(Dune::FMatrixError, e.what());
+        }
+        if (error.two_norm() < tau_ && std::exp(5 * T_k_inv_transp_d_k.one_norm()) < 1 + epsilon_gamma_) {
+          solve_lower_triangular_transposed(T_k, alpha, beta_out);
+          goto outside_all_loops;
+        } else {
+          RangeFieldType zeta_k = 1;
+          beta_in = beta_out;
+          // backtracking line search
+          while (zeta_k > epsilon_ * beta_out.two_norm() / d_k.two_norm()) {
+            RangeFieldType f(0);
+            auto beta_new = d_k;
+            beta_new *= zeta_k;
+            beta_new += beta_out;
+            for (size_t ll = 0; ll < quadrature_.size(); ++ll)
+              f += quadrature_[ll].weight() * std::exp(beta_new * P_k[ll]);
+            f -= beta_new * v_k;
+            if (XT::Common::FloatCmp::le(f, f_k + xi_ * zeta_k * (g_k * d_k))) {
+              beta_in = beta_new;
+              f_k = f;
               break;
-            else
-              DUNE_THROW(Dune::FMatrixError, e.what());
-          }
-          if (error.two_norm() < tau_ && std::exp(5 * T_k_inv_transp_d_k.one_norm()) < 1 + epsilon_gamma_) {
-            solve_lower_triangular_transposed(T_k, alpha, beta_out);
-            goto outside_all_loops;
-          } else {
-            RangeFieldType zeta_k = 1;
-            beta_in = beta_out;
-            // backtracking line search
-            while (zeta_k > epsilon_ * beta_out.two_norm() / d_k.two_norm()) {
-              RangeFieldType f(0);
-              auto beta_new = d_k;
-              beta_new *= zeta_k;
-              beta_new += beta_out;
-              for (size_t ll = 0; ll < quadrature_.size(); ++ll)
-                f += quadrature_[ll].weight() * std::exp(beta_new * P_k[ll]);
-              f -= beta_new * v_k;
-              if (XT::Common::FloatCmp::le(f, f_k + xi_ * zeta_k * (g_k * d_k))) {
-                beta_in = beta_new;
-                f_k = f;
-                break;
-              }
-              zeta_k = chi_ * zeta_k;
-            } // backtracking linesearch while
-          } // else (stopping conditions)
-        } // k loop (Newton iterations)
-      } // r loop (Regularization parameter)
+            }
+            zeta_k = chi_ * zeta_k;
+          } // backtracking linesearch while
+        } // else (stopping conditions)
+      } // k loop (Newton iterations)
+    } // r loop (Regularization parameter)
 
-      DUNE_THROW(MathError, "Failed to converge");
+    DUNE_THROW(MathError, "Failed to converge");
 
-    outside_all_loops:
-      // store values as initial conditions for next time step on this entity
-      alpha_cache_[index] = std::make_unique<std::pair<double, RangeType>>(std::make_pair(t, alpha));
-      beta_cache_[index] = std::make_unique<RangeType>(beta_out);
-      T_cache_[index] = std::make_unique<MatrixType>(T_k);
-    } // else ( value has not been calculated before )
+  outside_all_loops:
+    // store values as initial conditions for next time step on this entity
+    alpha_cache_[index] = std::make_unique<std::pair<double, RangeType>>(std::make_pair(t, alpha));
+    beta_cache_[index] = std::make_unique<RangeType>(beta_out);
+    T_cache_[index] = std::make_unique<MatrixType>(T_k);
+    //    } // else ( value has not been calculated before )
 
     return alpha;
   }
@@ -425,7 +383,7 @@ public:
           ret[rr][dd] += m[rr];
       }
     }
-    return FluxRangeTypeConverter<dimRange, dimDomain>::convert(ret);
+    return XT::Functions::internal::RangeTypeConverter<dimRange, dimDomain>::convert_back(ret);
     //    return ret;
   } // FluxRangeType evaluate(...)
 
@@ -902,7 +860,7 @@ public:
           ret[rr][dd] += m[rr];
       }
     }
-    return FluxRangeTypeConverter<dimRange, dimDomain>::convert(ret);
+    return FluxRangeTypeConverter<dimRange, dimDomain>::convert_back(ret);
     //    return ret;
   } // FluxRangeType evaluate(...)
 
@@ -1301,7 +1259,7 @@ public:
     //      }
     //    }
 
-    // return FluxRangeTypeConverter<dimRange, dimDomain>::convert(ret);
+    // return FluxRangeTypeConverter<dimRange, dimDomain>::convert_back(ret);
     return FluxRangeType(0);
 
   } // FluxRangeType evaluate(...)
