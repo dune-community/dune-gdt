@@ -19,6 +19,7 @@
 
 #include <dune/gdt/type_traits.hh>
 #include <dune/gdt/spaces.bindings.hh>
+#include <dune/gdt/playground/spaces/block.hh>
 
 #include "default.hh"
 
@@ -115,6 +116,8 @@ public:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
+    bindings::ConstDiscreteFunction<SP, V>::bind(m);
+
     const auto ClassName = XT::Common::to_camel_case("discrete_function_" + space_name<SP>::value() + "_"
                                                      + XT::LA::bindings::container_name<V>::value());
 
@@ -162,276 +165,74 @@ public:
 
 // begin: this is what we need for the .so
 
-#if HAVE_DUNE_FEM
 
-// * fem backend
-//   - cg spaces
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG(_m, _GRID, _layer, _p, _r, _rC, _la)                            \
-  Dune::GDT::bindings::ConstDiscreteFunction<Dune::GDT::CgSpaceProvider<_GRID,                                         \
-                                                                        Dune::XT::Grid::Layers::_layer,                \
-                                                                        Dune::GDT::Backends::fem,                      \
-                                                                        _p,                                            \
-                                                                        double,                                        \
-                                                                        _r,                                            \
-                                                                        _rC>,                                          \
-                                             typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::   \
-                                                 VectorType>::bind(_m);                                                \
+#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, _la)               \
   Dune::GDT::bindings::                                                                                                \
-      DiscreteFunction<Dune::GDT::CgSpaceProvider<_GRID,                                                               \
-                                                  Dune::XT::Grid::Layers::_layer,                                      \
-                                                  Dune::GDT::Backends::fem,                                            \
-                                                  _p,                                                                  \
-                                                  double,                                                              \
-                                                  _r,                                                                  \
-                                                  _rC>,                                                                \
+      DiscreteFunction<Dune::GDT::SpaceProvider<_G,                                                                    \
+                                                Dune::XT::Grid::Layers::_g_layer,                                      \
+                                                Dune::GDT::SpaceType::_s_type,                                         \
+                                                Dune::GDT::Backends::_s_backend,                                       \
+                                                _p,                                                                    \
+                                                double,                                                                \
+                                                _r,                                                                    \
+                                                _rC>,                                                                  \
                        typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
 
-//#if HAVE_ALBERTA
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_ALBERTA(_m, _layer, _p, _la)                                  \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG(_m, ALBERTA_2D, _layer, _p, 1, 1, _la)
-//#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_ALBERTA(_m, _p, _layer, _la)
-//#endif
+#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_COMMON(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)             \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, common_dense)
 
-#if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_ALU(_m, _layer, _p, _la)                                        \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, _p, 1, 1, _la)
+#if HAVE_EIGEN
+#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)              \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, eigen_dense)
 #else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_ALU(_m, _layer, _p, _la)
+#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)
 #endif
-
-//#if HAVE_DUNE_UGGRID || HAVE_UG
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_UG(_m, _layer, _p, _la)                                       \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG(_m, UG_2D, _layer, _p, 1, 1, _la)
-//#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_UG(_m, _layer, _p, _la)
-//#endif
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_YASP(_m, _layer, _p, _la)                                       \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la);               \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la)
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_ALL(_m, _layer, _p, _la)                                        \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_ALBERTA(_m, _layer, _p, _la);                                         \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_ALU(_m, _layer, _p, _la);                                             \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_UG(_m, _layer, _p, _la);                                              \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_YASP(_m, _layer, _p, _la)
-
-//   - dg spaces
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG(_m, _GRID, _layer, _p, _r, _rC, _la)                            \
-  Dune::GDT::bindings::ConstDiscreteFunction<Dune::GDT::DgSpaceProvider<_GRID,                                         \
-                                                                        Dune::XT::Grid::Layers::_layer,                \
-                                                                        Dune::GDT::Backends::fem,                      \
-                                                                        _p,                                            \
-                                                                        double,                                        \
-                                                                        _r,                                            \
-                                                                        _rC>,                                          \
-                                             typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::   \
-                                                 VectorType>::bind(_m);                                                \
-  Dune::GDT::bindings::                                                                                                \
-      DiscreteFunction<Dune::GDT::DgSpaceProvider<_GRID,                                                               \
-                                                  Dune::XT::Grid::Layers::_layer,                                      \
-                                                  Dune::GDT::Backends::fem,                                            \
-                                                  _p,                                                                  \
-                                                  double,                                                              \
-                                                  _r,                                                                  \
-                                                  _rC>,                                                                \
-                       typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
-
-//#if HAVE_ALBERTA
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALBERTA(_m, _layer, _p, _la)                                  \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG(_m, ALBERTA_2D, _layer, _p, 1, 1, _la)
-//#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALBERTA(_m, _p, _layer, _la)
-//#endif
-
-#if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALU(_m, _layer, _p, _la)                                        \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, _p, 1, 1, _la)
-#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALU(_m, _layer, _p, _la)
-#endif
-
-//#if HAVE_DUNE_UGGRID || HAVE_UG // <- does not work
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_UG(_m, _layer, _p, _la)
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG(_m, UG_2D, _layer, _p, 1, 1, _la)
-//#else
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_UG(_m, _layer, _p, _la)
-//#endif
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_YASP(_m, _layer, _p, _la)                                       \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la);               \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la)
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALL(_m, _layer, _p, _la)                                        \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALBERTA(_m, _layer, _p, _la);                                         \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALU(_m, _layer, _p, _la);                                             \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_YASP(_m, _layer, _p, _la)
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_UG(_m, _layer, _p, _la); // <- does not work
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM(_m, _la)                                                           \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_ALL(_m, dd_subdomain, 1, _la);                                        \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_ALL(_m, leaf, 1, _la);                                                \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_CG_ALL(_m, level, 1, _la);                                               \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALL(_m, dd_subdomain, 1, _la);                                        \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALL(_m, leaf, 1, _la);                                                \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALL(_m, level, 1, _la)
-//;                                               \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALL(_m, dd_subdomain, 2, _la);                                      \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALL(_m, leaf, 2, _la);                                              \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM_DG_ALL(_m, level, 2, _la)
-
-#else // HAVE_DUNE_FEM
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM(_m, _la)
-#endif
-
-// * gdt backend
-//   - fv spaces
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV(_m, _GRID, _layer, _r, _rC, _la)                                \
-  Dune::GDT::bindings::ConstDiscreteFunction<Dune::GDT::FvSpaceProvider<_GRID,                                         \
-                                                                        Dune::XT::Grid::Layers::_layer,                \
-                                                                        Dune::GDT::Backends::gdt,                      \
-                                                                        double,                                        \
-                                                                        _r,                                            \
-                                                                        _rC>,                                          \
-                                             typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::   \
-                                                 VectorType>::bind(_m);                                                \
-  Dune::GDT::bindings::                                                                                                \
-      DiscreteFunction<Dune::GDT::FvSpaceProvider<_GRID,                                                               \
-                                                  Dune::XT::Grid::Layers::_layer,                                      \
-                                                  Dune::GDT::Backends::gdt,                                            \
-                                                  double,                                                              \
-                                                  _r,                                                                  \
-                                                  _rC>,                                                                \
-                       typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
-
-//#if HAVE_ALBERTA
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_ALBERTA(_m, _layer, _la)                                      \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV(_m, ALBERTA_2D, _layer, 1, 1, _la)
-//#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_ALBERTA(_m, _layer, _la)
-//#endif
-
-#if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_ALU(_m, _layer, _la)                                            \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, 1, 1, _la)
-#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_ALU(_m, _layer, _la)
-#endif
-
-//#if HAVE_DUNE_UGGRID || HAVE_UG
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_UG(_m, _layer, _la)                                           \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV(_m, UG_2D, _layer, 1, 1, _la)
-//#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_UG(_m, _layer, _la)
-//#endif
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_YASP(_m, _layer, _la)                                           \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, 1, 1, _la);                   \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1, _la)
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_ALL(_m, _layer, _la)                                            \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_ALBERTA(_m, _layer, _la);                                             \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_ALU(_m, _layer, _la);                                                 \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_UG(_m, _layer, _la);                                                  \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_YASP(_m, _layer, _la)
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT(_m, _la)                                                           \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_ALL(_m, leaf, _la);                                                   \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT_FV_ALL(_m, level, _la)
-
-
-//#if HAVE_DUNE_PDELAB
-
-//// * pdelab backend
-////   - cg spaces
-
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG(_m, _GRID, _layer, _p, _r, _rC, _la)                       \
-//  Dune::GDT::bindings::ConstDiscreteFunction<Dune::GDT::CgSpaceProvider<_GRID,                                       \
-//                                                                        Dune::XT::Grid::Layers::_layer,              \
-//                                                                        Dune::GDT::Backends::pdelab,                 \
-//                                                                        _p,                                          \
-//                                                                        double,                                      \
-//                                                                        _r,                                          \
-//                                                                        _rC>,                                        \
-//                                             typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>:: \
-//                                                 VectorType>::bind(_m);                                              \
-//  Dune::GDT::bindings::DiscreteFunction<Dune::GDT::CgSpaceProvider<_GRID,                                            \
-//                                                                        Dune::XT::Grid::Layers::_layer,              \
-//                                                                        Dune::GDT::Backends::pdelab,                 \
-//                                                                        _p,                                          \
-//                                                                        double,                                      \
-//                                                                        _r,                                          \
-//                                                                        _rC>,                                        \
-//                                             typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>:: \
-//                                                 VectorType>::bind(_m)
-
-//#if HAVE_ALBERTA
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_ALBERTA(_m, _layer, _p, _la)                               \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG(_m, ALBERTA_2D, _layer, _p, 1, 1, _la)
-//#else
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_ALBERTA(_m, _p, _layer, _la)
-//#endif
-
-//#if HAVE_DUNE_ALUGRID
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_ALU(_m, _layer, _p, _la)                                   \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, _p, 1, 1, _la)
-//#else
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_ALU(_m, _layer, _p, _la)
-//#endif
-
-////#if HAVE_DUNE_UGGRID || HAVE_UG // <- does not work
-////#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_UG(_m, _layer, _p, _la)
-////  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG(_m, UG_2D, _layer, _p, 1, 1, _la)
-////#else
-////#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_UG(_m, _layer, _p, _la)
-////#endif
-
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_YASP(_m, _layer, _p, _la)                                  \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la);\
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _p, 1, 1, _la)
-
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_ALL(_m, _layer, _p, _la)                                   \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_ALBERTA(_m, _layer, _p, _la);                                    \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_ALU(_m, _layer, _p, _la);                                        \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_YASP(_m, _layer, _p, _la)
-////_DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_UG(_m, _layer, _p, _la); // <- does not work
-
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB(_m, _la)                                                      \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_ALL(_m, leaf, 1, _la);                                           \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB_CG_ALL(_m, level, 1, _la);
-
-//#else // HAVE_DUNE_PDELAB
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB(_m, _la)
-//#endif
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_LA(_m, _la)                                                            \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM(_m, _la);                                                                \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT(_m, _la);                                                                \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB(_m, _la)
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_COMMON(_m)
-//_DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_LA(_m, common_dense)
-
-//#if HAVE_EIGEN
-//#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m) _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_LA(_m, eigen_dense)
-//#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m)
-//#endif
 
 #if HAVE_DUNE_ISTL
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ISTL(_m) _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_LA(_m, istl_dense)
+#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ISTL(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)               \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, istl_dense)
 #else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ISTL(_m)
+#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ISTL(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)
 #endif
 
-#define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m)                                                                     \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_COMMON(_m);                                                                  \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m);                                                                   \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ISTL(_m)
+#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)             \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_COMMON(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC);                  \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC);                   \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ISTL(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)
+
+#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_YASP(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)                   \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(                                                                      \
+      _m, YASP_1D_EQUIDISTANT_OFFSET, _g_layer, _s_type, _s_backend, _p, _r, _rC);                                     \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(                                                                      \
+      _m, YASP_2D_EQUIDISTANT_OFFSET, _g_layer, _s_type, _s_backend, _p, _r, _rC)
+
+#if HAVE_DUNE_ALUGRID
+#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)                    \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(                                                                      \
+      _m, ALU_2D_SIMPLEX_CONFORMING, _g_layer, _s_type, _s_backend, _p, _r, _rC)
+#else
+#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)
+#endif
+
+#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)              \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_YASP(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC);                        \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)
+
+#if HAVE_DUNE_FEM
+#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM(_m)                                                                \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, cg, fem, 1, 1, 1);                                       \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, cg, fem, 1, 1, 1);                                      \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, cg, fem, 1, 1, 1);                               \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, block_cg, fem, 1, 1, 1);                         \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, dg, fem, 1, 1, 1);                                       \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, dg, fem, 1, 1, 1);                                      \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, dg, fem, 1, 1, 1);                               \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, block_dg, fem, 1, 1, 1)
+#else
+#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM(_m)
+#endif
+
+#define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m) _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM(_m)
 
 // end: this is what we need for the .so
 

@@ -56,9 +56,13 @@ enum class DUNE_DEPRECATED_MSG("Use Backends instead (04.04.2017)!") ChooseSpace
 enum class SpaceType
 {
   cg,
+  block_cg,
   dg,
+  block_dg,
   fv,
-  rt
+  block_fv,
+  rt,
+  block_rt
 };
 
 

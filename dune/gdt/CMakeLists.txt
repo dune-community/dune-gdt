@@ -14,6 +14,12 @@ if(dune-pybindxi_FOUND)
     dune_pybindxi_add_module(__${_target} ${_target}.bindings.cc)
     list(APPEND pybindxi_modules __${_target})
   endforeach()
+  dune_pybindxi_add_helper_lib(__assembler_helper
+                               assembler/system.bindings/alu_fem.cc
+                               assembler/system.bindings/alu_gdt.cc
+                               assembler/system.bindings/yasp_fem.cc
+                               assembler/system.bindings/yasp_gdt.cc)
+  target_link_libraries(__assembler __assembler_helper)
   dune_pybindxi_add_module(__spaces_block playground/spaces/block.bindings.cc)
   list(APPEND pybindxi_modules __spaces_block)
   # the local operators
