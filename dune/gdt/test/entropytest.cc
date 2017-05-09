@@ -161,9 +161,9 @@ int main(int argc, char** argv)
   //  static const int dimDomain = 3;
   static const int dimDomain = 1;
   static const int momentOrder = 7;
-  //  const auto numerical_flux = NumericalFluxes::kinetic;
+  const auto numerical_flux = NumericalFluxes::kinetic;
   //  const auto numerical_flux = NumericalFluxes::godunov;
-  const auto numerical_flux = NumericalFluxes::laxfriedrichs;
+  //  const auto numerical_flux = NumericalFluxes::laxfriedrichs;
   //  const auto numerical_flux = NumericalFluxes::laxfriedrichs_with_reconstruction;
   //  const auto numerical_flux = NumericalFluxes::local_laxfriedrichs_with_reconstruction;
   //      const auto numerical_flux = NumericalFluxes::local_laxfriedrichs;
@@ -204,8 +204,8 @@ int main(int argc, char** argv)
   //    typedef typename Hyperbolic::Problems::
   //        PointSourcePnLegendre<EntityType, double, dimDomain, double, momentOrder>
   //            ProblemType;
-  //  typedef typename Hyperbolic::Problems::PointSourcePnHatFunctions<EntityType, double, dimDomain, double, 6>
-  //      ProblemType;
+  //    typedef typename Hyperbolic::Problems::PointSourcePnHatFunctions<EntityType, double, dimDomain, double, 6>
+  //        ProblemType;
   //  typedef typename Hyperbolic::Problems::PointSourcePnPartialMoments<EntityType, double, dimDomain, double, 8>
   //      ProblemType;
   //  typedef typename Hyperbolic::Problems::CheckerboardPnHatFunctions<EntityType, double, dimDomain, double, 6>
@@ -262,20 +262,20 @@ int main(int argc, char** argv)
   //    const size_t quadrature_order = 20;
   //    const auto quadrature_rule = Hyperbolic::Problems::get_lebedev_quadrature(quadrature_order);
 
-  //  // 3D quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
-  //  const size_t octaeder_refinements = 0;
-  //  std::vector<Dune::XT::Common::FieldVector<double, dimDomain>> initial_points{
-  //      {1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}};
-  //  const Dune::GDT::Hyperbolic::Problems::SphericalTriangulation<double> triangulation(initial_points,
-  //                                                                                      octaeder_refinements);
-  //  const size_t max_quadrature_refinements = 4;
-  //  Dune::GDT::Hyperbolic::Problems::SphericalTriangulation<double> quadrature_triangulation(initial_points, 0);
-  //  std::vector<Dune::QuadratureRule<double, dimDomain>> quadrature_rules(max_quadrature_refinements);
-  //  for (size_t ii = 0; ii < max_quadrature_refinements; ++ii) {
-  //    quadrature_triangulation.refine();
-  //    quadrature_rules[ii] = quadrature_triangulation.quadrature_rule();
-  //  }
-  //  const auto& quadrature_rule = quadrature_rules.back();
+  //    // 3D quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
+  //    const size_t octaeder_refinements = 0;
+  //    std::vector<Dune::XT::Common::FieldVector<double, dimDomain>> initial_points{
+  //        {1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}};
+  //    const Dune::GDT::Hyperbolic::Problems::SphericalTriangulation<double> triangulation(initial_points,
+  //                                                                                        octaeder_refinements);
+  //    const size_t max_quadrature_refinements = 4;
+  //    Dune::GDT::Hyperbolic::Problems::SphericalTriangulation<double> quadrature_triangulation(initial_points, 0);
+  //    std::vector<Dune::QuadratureRule<double, dimDomain>> quadrature_rules(max_quadrature_refinements);
+  //    for (size_t ii = 0; ii < max_quadrature_refinements; ++ii) {
+  //      quadrature_triangulation.refine();
+  //      quadrature_rules[ii] = quadrature_triangulation.quadrature_rule();
+  //    }
+  //    const auto& quadrature_rule = quadrature_rules.back();
 
   // 3d adaptive quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
   //  typedef typename GDT::Hyperbolic::Problems::AdaptiveQuadrature<DomainType, RangeType, RangeType>
@@ -294,8 +294,8 @@ int main(int argc, char** argv)
 
   //******************* create ProblemType object ***************************************
   const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config));
-  //  const auto problem_ptr = ProblemType::create(
-  //      quadrature_rule, triangulation, ProblemType::default_config(grid_config, quadrature_rule, triangulation));
+  //    const auto problem_ptr = ProblemType::create(
+  //        quadrature_rule, triangulation, ProblemType::default_config(grid_config, quadrature_rule, triangulation));
   //  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config, true));
   const ProblemType& problem = *problem_ptr;
   const std::shared_ptr<const InitialValueType> initial_values = problem.initial_values();
@@ -356,31 +356,31 @@ int main(int argc, char** argv)
     return std::make_pair(u_iso, alpha_iso);
   };
 
-  //  const auto basis_integrated = ProblemType::basisfunctions_integrated(quadrature_rule, triangulation);
-  //  auto isotropic_dist_calculator_3d_hatfunctions = [basis_integrated](const typename ProblemType::RangeType& uu) {
-  //    typename ProblemType::RangeFieldType psi_iso(0);
-  //    for (size_t ii = 0; ii < ProblemType::dimRange; ++ii)
-  //      psi_iso += uu[ii];
-  //    psi_iso /= 4. * M_PI;
-  //    ProblemType::RangeType alpha_iso(std::log(psi_iso));
-  //    auto u_iso = basis_integrated;
-  //    u_iso *= psi_iso;
-  //    return std::make_pair(u_iso, alpha_iso);
-  //  };
+  //    const auto basis_integrated = ProblemType::basisfunctions_integrated(quadrature_rule, triangulation);
+  //    auto isotropic_dist_calculator_3d_hatfunctions = [basis_integrated](const typename ProblemType::RangeType& uu) {
+  //      typename ProblemType::RangeFieldType psi_iso(0);
+  //      for (size_t ii = 0; ii < ProblemType::dimRange; ++ii)
+  //        psi_iso += uu[ii];
+  //      psi_iso /= 4. * M_PI;
+  //      ProblemType::RangeType alpha_iso(std::log(psi_iso));
+  //      auto u_iso = basis_integrated;
+  //      u_iso *= psi_iso;
+  //      return std::make_pair(u_iso, alpha_iso);
+  //    };
 
-  //  auto isotropic_dist_calculator_3d_partialbasis = [basis_integrated](const typename ProblemType::RangeType& uu) {
-  //    typename ProblemType::RangeFieldType psi_iso(0);
-  //    ProblemType::RangeType alpha_iso(0);
-  //    for (size_t ii = 0; ii < ProblemType::dimRange; ii += 4) {
-  //      psi_iso += uu[ii];
-  //      alpha_iso[ii] = 1.;
-  //    }
-  //    psi_iso /= 4. * M_PI;
-  //    alpha_iso *= std::log(psi_iso);
-  //    auto u_iso = basis_integrated;
-  //    u_iso *= psi_iso;
-  //    return std::make_pair(u_iso, alpha_iso);
-  //  };
+  //    auto isotropic_dist_calculator_3d_partialbasis = [basis_integrated](const typename ProblemType::RangeType& uu) {
+  //      typename ProblemType::RangeFieldType psi_iso(0);
+  //      ProblemType::RangeType alpha_iso(0);
+  //      for (size_t ii = 0; ii < ProblemType::dimRange; ii += 4) {
+  //        psi_iso += uu[ii];
+  //        alpha_iso[ii] = 1.;
+  //      }
+  //      psi_iso /= 4. * M_PI;
+  //      alpha_iso *= std::log(psi_iso);
+  //      auto u_iso = basis_integrated;
+  //      u_iso *= psi_iso;
+  //      return std::make_pair(u_iso, alpha_iso);
+  //    };
 
   // ********************** store evaluation of basisfunctions at quadrature points in matrix **********************
   // ********************** (for non-adaptive quadratures)                                    **********************
@@ -394,9 +394,9 @@ int main(int argc, char** argv)
   //    basis_values_matrices[qq].resize(current_quadrature.size());
   for (size_t ii = 0; ii < quadrature_rule.size(); ++ii) {
     //    3D hatfunctions on sphere
-    //    const auto hatfunctions_evaluated =
-    //        Hyperbolic::Problems::evaluate_spherical_barycentric_coordinates<RangeType, DomainType>(
-    //            quadrature_rule[ii].position(), triangulation);
+    //        const auto hatfunctions_evaluated =
+    //            Hyperbolic::Problems::evaluate_spherical_barycentric_coordinates<RangeType, DomainType>(
+    //                quadrature_rule[ii].position(), triangulation);
 
     // 3D partial moments
     //    const auto partial_basis_evaluated =
@@ -405,7 +405,7 @@ int main(int argc, char** argv)
     //        triangulation);
 
     for (size_t nn = 0; nn < dimRange; ++nn) {
-      //      basis_values_matrix[ii][nn] = hatfunctions_evaluated[nn];
+      //            basis_values_matrix[ii][nn] = hatfunctions_evaluated[nn];
       //        basis_values_matrices[qq][ii][nn]
       //        =
       //        hatfunctions_evaluated[nn];
@@ -509,8 +509,8 @@ int main(int argc, char** argv)
   //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
   //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_1d_firstorderdg);
 
-  //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
-  //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
+  //    const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
+  //        grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
 
   //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
   //      grid_view, quadrature_rules, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
@@ -563,25 +563,26 @@ int main(int argc, char** argv)
   //                                       SlopeLimiters::minmod>
   //      AdvectionOperatorType;
 
-  //  typedef AdvectionKineticWENOOperator<AnalyticalFluxType,
-  //                                       BoundaryValueType,
-  //                                       GridViewType,
-  //                                       BasisFunctionType::hat_functions,
-  //                                       1,
-  //                                       SlopeLimiters::minmod>
-  //      AdvectionOperatorType;
+  //    typedef AdvectionKineticWENOOperator<AnalyticalFluxType,
+  //                                         BoundaryValueType,
+  //                                         GridViewType,
+  //                                         BasisFunctionType::hat_functions,
+  //                                         1,
+  //                                         SlopeLimiters::minmod>
+  //        AdvectionOperatorType;
 
 
   typedef
       typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, RangeFieldType, time_stepper_method>::
           TimeStepperType OperatorTimeStepperType;
-  typedef typename TimeStepperFactory<RHSOperatorType,
-                                      DiscreteFunctionType,
-                                      RangeFieldType,
-                                      rhs_time_stepper_method,
-                                      Dune::XT::LA::default_sparse_backend>::TimeStepperType RHSOperatorTimeStepperType;
-  //  typedef MatrixExponentialTimeStepper<RHSOperatorType, DiscreteFunctionType, RangeFieldType>
-  //      RHSOperatorTimeStepperType;
+  //  typedef typename TimeStepperFactory<RHSOperatorType,
+  //                                      DiscreteFunctionType,
+  //                                      RangeFieldType,
+  //                                      rhs_time_stepper_method,
+  //                                      Dune::XT::LA::default_sparse_backend>::TimeStepperType
+  //                                      RHSOperatorTimeStepperType;
+  typedef MatrixExponentialTimeStepper<RHSOperatorType, DiscreteFunctionType, RangeFieldType>
+      RHSOperatorTimeStepperType;
   //  typedef FractionalTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType> TimeStepperType;
   typedef StrangSplittingTimeStepper<RHSOperatorTimeStepperType, OperatorTimeStepperType> TimeStepperType;
 
@@ -610,9 +611,9 @@ int main(int argc, char** argv)
   // *********************** create operators and timesteppers ************************************
   const ConstantFunctionType dx_function(dx);
 
-  //  AdvectionOperatorType advection_operator =
-  //      internal::AdvectionOperatorCreator<AdvectionOperatorType, numerical_flux>::create(
-  //          *analytical_flux, *boundary_values, dx_function, linear);
+  //    AdvectionOperatorType advection_operator =
+  //        internal::AdvectionOperatorCreator<AdvectionOperatorType, numerical_flux>::create(
+  //            *analytical_flux, *boundary_values, dx_function, linear);
 
   FieldVector<size_t, dimDomain> grid_sizes;
   std::fill(grid_sizes.begin(), grid_sizes.end(), XT::Common::from_string<size_t>(grid_size));
@@ -625,16 +626,18 @@ int main(int argc, char** argv)
                                            linear,
                                            true,
                                            space_quadrature_rules,
-                                           epsilon);
+                                           epsilon,
+                                           true,
+                                           DomainType(1));
 
-  //  AdvectionOperatorType advection_operator(*analytical_flux,
-  //                                           *boundary_values,
-  //                                           grid_view,
-  //                                           grid_sizes,
-  //                                           plane_coefficients,
-  //                                           linear,
-  //                                           true,
-  //                                           space_quadrature_rules);
+  //    AdvectionOperatorType advection_operator(*analytical_flux,
+  //                                             *boundary_values,
+  //                                             grid_view,
+  //                                             grid_sizes,
+  //                                             plane_coefficients,
+  //                                             linear,
+  //                                             true,
+  //                                             space_quadrature_rules);
 
   RHSOperatorType rhs_operator(*rhs);
 

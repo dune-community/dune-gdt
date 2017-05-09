@@ -41,7 +41,7 @@ class LocalBoundaryFvOperator;
 template <class MatrixImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter>
 class LocalReconstructionFvOperator;
 
-template <class GridViewType,
+template <class GridLayerType,
           class AnalyticalFluxType,
           size_t dimDomain,
           size_t dimRange,
@@ -76,13 +76,13 @@ struct LocalReconstructionFvOperatorTraits
   static const size_t dimRange = BoundaryValueFunctionType::dimRange;
 };
 
-// template<class GridViewType, size_t domainDim, size_t rangeDim, size_t polOrder>
+// template<class GridLayerType, size_t domainDim, size_t rangeDim, size_t polOrder>
 // struct LocalWENOReconstructionFvOperatorTraits
 //{
 //  static const size_t dimRange = rangeDim;
 //  static const size_t dimDomain = domainDim;
-//  typedef LocalWENOReconstructionFvOperator<GridViewType, domainDim, rangeDim, polOrder> derived_type;
-//  typedef typename GridViewType::ctype RangeFieldType;
+//  typedef LocalWENOReconstructionFvOperator<GridLayerType, domainDim, rangeDim, polOrder> derived_type;
+//  typedef typename GridLayerType::ctype RangeFieldType;
 //  typedef FieldVector<RangeFieldType, dimRange> RangeType;
 //};
 
@@ -290,7 +290,7 @@ public:
                                                     *local_source_neighbor,
                                                     intersection,
                                                     quad_point.position()))
-                * quad_point.weight();
+                * quad_point.weight() * intersection.geometry().integrationElement(quad_point.position());
     }
     local_range_entity.vector().add(result * (1.0 / entity.geometry().volume()));
     local_range_neighbor.vector().add(result * (-1.0 / neighbor.geometry().volume()));
@@ -336,7 +336,7 @@ public:
     for (const auto& quad_point : quadrature_rule_) {
       result += ResultType(numerical_flux_.evaluate(
                     local_functions_tuple, *local_source_entity, intersection, quad_point.position()))
-                * quad_point.weight();
+                * quad_point.weight() * intersection.geometry().integrationElement(quad_point.position());
     }
     local_range_entity.vector().add(result / entity.geometry().volume());
   }
@@ -403,12 +403,12 @@ template <class SourceType,
           size_t dimDomain,
           size_t dimRange,
           BasisFunctionType basis_function_type = BasisFunctionType::legendre>
-class LocalRealizabilityLimiter : public XT::Grid::Functor::Codim0<typename SourceType::SpaceType::GridViewType>
+class LocalRealizabilityLimiter : public XT::Grid::Functor::Codim0<typename SourceType::SpaceType::GridLayerType>
 {
-  typedef typename SourceType::SpaceType::GridViewType GridViewType;
+  typedef typename SourceType::SpaceType::GridLayerType GridLayerType;
   typedef typename SourceType::EntityType EntityType;
   typedef typename SourceType::RangeType RangeType;
-  typedef typename GridViewType::IndexSet IndexSetType;
+  typedef typename GridLayerType::IndexSet IndexSetType;
   typedef typename SourceType::RangeFieldType FieldType;
   typedef typename XT::LA::EigenDenseVector<FieldType> EigenVectorType;
 
@@ -417,12 +417,12 @@ public:
   explicit LocalRealizabilityLimiter(
       const SourceType& source,
       const std::vector<std::pair<RangeType, FieldType>>& plane_coefficients,
-      std::vector<std::map<typename GridViewType::template Codim<0>::Geometry::LocalCoordinate,
+      std::vector<std::map<typename GridLayerType::template Codim<0>::Geometry::LocalCoordinate,
                            RangeType,
                            internal::FieldVectorLess>>& reconstructed_values,
       FieldType epsilon = 1e-14)
     : source_(source)
-    , index_set_(source_.space().grid_view().indexSet())
+    , index_set_(source_.space().grid_layer().indexSet())
     , plane_coefficients_(plane_coefficients)
     , reconstructed_values_(reconstructed_values)
     , epsilon_(epsilon)
@@ -480,42 +480,42 @@ private:
   const SourceType& source_;
   const IndexSetType& index_set_;
   const std::vector<std::pair<RangeType, FieldType>>& plane_coefficients_;
-  std::vector<std::map<typename GridViewType::template Codim<0>::Geometry::LocalCoordinate,
+  std::vector<std::map<typename GridLayerType::template Codim<0>::Geometry::LocalCoordinate,
                        RangeType,
                        internal::FieldVectorLess>>& reconstructed_values_;
   const FieldType epsilon_;
 }; // class LocalRealizabilityLimiter
 
-template <class GridViewType,
+template <class GridLayerType,
           class AnalyticalFluxType,
           size_t dimDomain,
           size_t dimRange,
           size_t polOrder,
           SlopeLimiters slope_limiter>
-class LocalWENOReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridViewType>
+class LocalWENOReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayerType>
 {
-  typedef typename GridViewType::ctype FieldType;
+  typedef typename GridLayerType::ctype FieldType;
   // stencil is (i-r, i+r) in all dimensions, where r = polOrder + 1
   static const size_t stencil_size = 2 * polOrder + 1;
   typedef typename Dune::XT::Common::FieldVector<FieldType, dimRange> XTFieldVectorType;
   typedef typename XT::LA::EigenDenseVector<FieldType> EigenVectorType;
   typedef typename XT::LA::EigenDenseMatrix<FieldType> EigenMatrixType;
   typedef FieldVector<FieldType, dimRange> RangeType;
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  typedef typename GridLayerType::template Codim<0>::Entity EntityType;
 
 public:
   // cell averages includes left and right boundary values as the two last indices in each dimension
   explicit LocalWENOReconstructionFvOperator(
-      const GridViewType& grid_view,
+      const GridLayerType& grid_layer,
       const AnalyticalFluxType& analytical_flux,
       const XT::Common::Parameter& param,
       const std::vector<std::vector<std::vector<EigenVectorType>>>& cell_averages,
       const std::vector<FieldVector<size_t, dimDomain>>& entity_indices,
       const FieldVector<Dune::QuadratureRule<FieldType, 1>, dimDomain>& quadrature_rules,
-      std::vector<std::map<typename GridViewType::template Codim<0>::Geometry::LocalCoordinate,
+      std::vector<std::map<typename GridLayerType::template Codim<0>::Geometry::LocalCoordinate,
                            RangeType,
                            internal::FieldVectorLess>>& reconstructed_values)
-    : grid_view_(grid_view)
+    : grid_layer_(grid_layer)
     , analytical_flux_(analytical_flux)
     , t_(param.get("t")[0])
     , cell_averages_(cell_averages)
@@ -550,7 +550,7 @@ public:
   void apply_local(const EntityType& entity)
   {
     const auto& entity_center = entity.geometry().center();
-    const auto& entity_index = grid_view_.indexSet().index(entity);
+    const auto& entity_index = grid_layer_.indexSet().index(entity);
     auto& local_reconstructed_values = reconstructed_values_[entity_index];
     // get cell averages on stencil
     const size_t i_x = entity_indices_[entity_index][0];
@@ -592,8 +592,8 @@ public:
         analytical_flux_.jacobian(u_entity, entity, entity.geometry().local(entity_center), t_);
 
     // get intersections
-    FieldVector<typename GridViewType::Intersection, 2 * dimDomain> faces;
-    for (const auto& intersection : Dune::intersections(grid_view_, entity)) {
+    FieldVector<typename GridLayerType::Intersection, 2 * dimDomain> faces;
+    for (const auto& intersection : Dune::intersections(grid_layer_, entity)) {
       const auto& n = intersection.unitOuterNormal(intersection.geometry().local(intersection.geometry().center()));
       for (size_t dd = 0; dd < dimDomain; ++dd) {
         if (XT::Common::FloatCmp::eq(n[dd], -1.))
@@ -691,7 +691,7 @@ public:
       }
 
       // convert coordinates on face to local entity coordinates and store
-      typedef typename GridViewType::Intersection::Geometry::LocalCoordinate IntersectionLocalCoordType;
+      typedef typename GridLayerType::Intersection::Geometry::LocalCoordinate IntersectionLocalCoordType;
       for (size_t kk = 0; kk < 2; ++kk) {
         for (size_t ll = 0; ll < num_quad_points_y; ++ll) {
           for (size_t mm = 0; mm < num_quad_points_z; ++mm) {
@@ -708,43 +708,43 @@ public:
   } // void apply_local(...)
 
 private:
-  const GridViewType& grid_view_;
+  const GridLayerType& grid_layer_;
   const AnalyticalFluxType& analytical_flux_;
   const double t_;
   const std::vector<std::vector<std::vector<EigenVectorType>>>& cell_averages_;
   const std::vector<FieldVector<size_t, 3>>& entity_indices_;
   const FieldVector<Dune::QuadratureRule<FieldType, 1>, dimDomain>& quadrature_rules_;
-  std::vector<std::map<typename GridViewType::template Codim<0>::Geometry::LocalCoordinate,
+  std::vector<std::map<typename GridLayerType::template Codim<0>::Geometry::LocalCoordinate,
                        RangeType,
                        internal::FieldVectorLess>>& reconstructed_values_;
 }; // class LocalWENOReconstructionFvOperator
 
-template <class GridViewType, class AnalyticalFluxType, size_t dimRange, size_t polOrder, SlopeLimiters slope_limiter>
-class LocalWENOReconstructionFvOperator<GridViewType, AnalyticalFluxType, 1, dimRange, polOrder, slope_limiter>
-    : public XT::Grid::Functor::Codim0<GridViewType>
+template <class GridLayerType, class AnalyticalFluxType, size_t dimRange, size_t polOrder, SlopeLimiters slope_limiter>
+class LocalWENOReconstructionFvOperator<GridLayerType, AnalyticalFluxType, 1, dimRange, polOrder, slope_limiter>
+    : public XT::Grid::Functor::Codim0<GridLayerType>
 {
   static const size_t dimDomain = 1;
-  typedef typename GridViewType::ctype FieldType;
+  typedef typename GridLayerType::ctype FieldType;
   // stencil is (i-r, i+r) in all dimensions, where r = polOrder + 1
   static const size_t stencil_size = 2 * polOrder + 1;
   typedef typename XT::LA::EigenDenseVector<FieldType> EigenVectorType;
   typedef typename XT::LA::EigenDenseMatrix<FieldType> EigenMatrixType;
   typedef FieldVector<FieldType, dimRange> RangeType;
-  typedef typename GridViewType::template Codim<0>::Entity EntityType;
+  typedef typename GridLayerType::template Codim<0>::Entity EntityType;
 
 public:
   // cell averages includes left and right boundary values as the two last indices in each dimension
   explicit LocalWENOReconstructionFvOperator(
-      const GridViewType& grid_view,
+      const GridLayerType& grid_layer,
       const AnalyticalFluxType& analytical_flux,
       const XT::Common::Parameter& param,
       const std::vector<EigenVectorType>& cell_averages,
       const std::vector<FieldVector<size_t, 1>>& entity_indices,
       const FieldVector<Dune::QuadratureRule<FieldType, 1>, dimDomain>& /*quadrature_rules*/,
-      std::vector<std::map<typename GridViewType::template Codim<0>::Geometry::LocalCoordinate,
+      std::vector<std::map<typename GridLayerType::template Codim<0>::Geometry::LocalCoordinate,
                            RangeType,
                            internal::FieldVectorLess>>& reconstructed_values)
-    : grid_view_(grid_view)
+    : grid_layer_(grid_layer)
     , analytical_flux_(analytical_flux)
     , t_(param.get("t")[0])
     , cell_averages_(cell_averages)
@@ -775,7 +775,7 @@ public:
 
   void apply_local(const EntityType& entity)
   {
-    const auto& entity_index = grid_view_.indexSet().index(entity);
+    const auto& entity_index = grid_layer_.indexSet().index(entity);
     auto& local_reconstructed_values = reconstructed_values_[entity_index];
     // get cell averages on stencil
     const size_t i_x = entity_indices_[entity_index];
@@ -797,8 +797,8 @@ public:
         analytical_flux_.jacobian(u_entity, entity, entity.geometry().local(entity.geometry().center()), t_);
 
     // get intersections
-    std::vector<typename GridViewType::Intersection> faces(2);
-    for (const auto& intersection : Dune::intersections(grid_view_, entity)) {
+    std::vector<typename GridLayerType::Intersection> faces(2);
+    for (const auto& intersection : Dune::intersections(grid_layer_, entity)) {
       const auto& n = intersection.unitOuterNormal(intersection.geometry().local(intersection.geometry().center()));
       if (XT::Common::FloatCmp::eq(n[0], -1.))
         faces[0] = intersection;
@@ -836,7 +836,7 @@ public:
     slope_reconstruction(char_values, reconstructed_values);
 
     // convert coordinates on face to local entity coordinates and store
-    typedef typename GridViewType::Intersection::Geometry::LocalCoordinate IntersectionLocalCoordType;
+    typedef typename GridLayerType::Intersection::Geometry::LocalCoordinate IntersectionLocalCoordType;
     for (size_t kk = 0; kk < 2; ++kk) {
       // convert back to non-characteristic variables and to FieldVector instead of EigenVector
       const auto value =
@@ -847,12 +847,12 @@ public:
   } // void apply_local(...)
 
 private:
-  const GridViewType& grid_view_;
+  const GridLayerType& grid_layer_;
   const AnalyticalFluxType& analytical_flux_;
   const double t_;
   const std::vector<EigenVectorType>& cell_averages_;
   const std::vector<FieldVector<size_t, 1>>& entity_indices_;
-  std::vector<std::map<typename GridViewType::template Codim<0>::Geometry::LocalCoordinate,
+  std::vector<std::map<typename GridLayerType::template Codim<0>::Geometry::LocalCoordinate,
                        RangeType,
                        internal::FieldVectorLess>>& reconstructed_values_;
 }; // class LocalWENOReconstructionFvOperator

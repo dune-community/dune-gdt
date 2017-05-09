@@ -264,7 +264,7 @@ public:
         u_i_.vector() += stages_k_[ii - 1].vector() * (actual_dt * r_ * (A_[ii][ii - 1]));
       op_.apply(u_i_, stages_k_[ii], XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}}, {"dt", {actual_dt}}}));
       DataHandleType stages_k_ii_handle(stages_k_[ii]);
-      stages_k_[ii].space().grid_view().template communicate<DataHandleType>(
+      stages_k_[ii].space().grid_layer().template communicate<DataHandleType>(
           stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
     }
 

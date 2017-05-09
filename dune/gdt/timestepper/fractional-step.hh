@@ -125,9 +125,9 @@ public:
   {
     auto& t = current_time();
     const TimeFieldType actual_dt = std::min(dt, max_dt);
-    const auto dt_1 = first_stepper_.solve(t + actual_dt / 2, actual_dt / 2, -1, false);
-    const auto dt_2 = second_stepper_.solve(t + actual_dt, actual_dt, -1, false);
-    const auto dt_3 = first_stepper_.solve(t + actual_dt, actual_dt / 2, -1, false);
+    first_stepper_.solve(t + actual_dt / 2, actual_dt / 2, -1, false);
+    second_stepper_.solve(t + actual_dt, actual_dt, -1, false);
+    first_stepper_.solve(t + actual_dt, actual_dt / 2, -1, false);
     t += actual_dt;
     return dt;
   } // ... step(...)
