@@ -10,8 +10,10 @@
 #ifndef DUNE_GDT_SPACES_CG_DUNE_FEM_WRAPPER_LIB_HH
 #define DUNE_GDT_SPACES_CG_DUNE_FEM_WRAPPER_LIB_HH
 
-#include "dune-fem-wrapper.hh"
+#include <dune/xt/grid/grids.hh>
+#include <dune/xt/grid/layers.hh>
 
+#include "dune-fem-wrapper.hh"
 
 #if DUNE_XT_WITH_PYTHON_BINDINGS && HAVE_DUNE_FEM
 
