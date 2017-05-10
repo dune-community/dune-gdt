@@ -121,16 +121,14 @@ public:
     const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
     RangeType u_j = local_source_neighbor.evaluate(x_intersection_neighbor_coords);
     auto n_ij = intersection.unitOuterNormal(x_intersection);
-    RangeType ret = analytical_flux_.calculate_flux_integral(u_i,
-                                                             intersection.inside(),
-                                                             x_intersection_entity_coords,
-                                                             u_j,
-                                                             intersection.outside(),
-                                                             x_intersection_neighbor_coords,
-                                                             n_ij,
-                                                             t);
-    ret *= intersection.geometry().volume();
-    return ret;
+    return analytical_flux_.calculate_flux_integral(u_i,
+                                                    intersection.inside(),
+                                                    x_intersection_entity_coords,
+                                                    u_j,
+                                                    intersection.outside(),
+                                                    x_intersection_neighbor_coords,
+                                                    n_ij,
+                                                    t);
   } // RangeType evaluate(...) const
 
 private:
@@ -192,10 +190,8 @@ public:
     const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
     auto u_j = std::get<0>(local_functions_tuple)->evaluate(x_intersection_entity_coords);
     auto n_ij = intersection.unitOuterNormal(x_intersection);
-    RangeType ret = analytical_flux_.calculate_flux_integral(
+    return analytical_flux_.calculate_flux_integral(
         u_i, intersection.inside(), x_intersection_entity_coords, u_j, intersection.inside(), DomainType(200), n_ij, t);
-    ret *= intersection.geometry().volume();
-    return ret;
   } // RangeType evaluate(...) const
 
 private:

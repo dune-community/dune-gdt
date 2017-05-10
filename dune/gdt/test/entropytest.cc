@@ -160,15 +160,15 @@ int main(int argc, char** argv)
   // ********************* choose dimensions, fluxes and grid type ************************
   static const int dimDomain = 3;
   //  static const int dimDomain = 1;
-  static const int momentOrder = 7;
-  const auto numerical_flux = NumericalFluxes::kinetic;
+  static const int momentOrder = 6;
+  //  const auto numerical_flux = NumericalFluxes::kinetic;
   //  const auto numerical_flux = NumericalFluxes::godunov;
-  //  const auto numerical_flux = NumericalFluxes::laxfriedrichs;
+  const auto numerical_flux = NumericalFluxes::laxfriedrichs;
   //  const auto numerical_flux = NumericalFluxes::laxfriedrichs_with_reconstruction;
   //  const auto numerical_flux = NumericalFluxes::local_laxfriedrichs_with_reconstruction;
   //      const auto numerical_flux = NumericalFluxes::local_laxfriedrichs;
-  const auto time_stepper_method = TimeStepperMethods::explicit_euler;
-  //    const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_second_order_ssp;
+  // const auto time_stepper_method = TimeStepperMethods::explicit_euler;
+  const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_second_order_ssp;
   //  const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_third_order_ssp;
   const auto rhs_time_stepper_method = TimeStepperMethods::implicit_euler;
   //  const auto rhs_time_stepper_method = TimeStepperMethods::trapezoidal_rule;
@@ -629,7 +629,7 @@ int main(int argc, char** argv)
                                            space_quadrature_rules,
                                            epsilon,
                                            false,
-                                           DomainType(1));
+                                           DomainType(0));
 
   //    AdvectionOperatorType advection_operator(*analytical_flux,
   //                                             *boundary_values,
