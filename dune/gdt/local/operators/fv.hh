@@ -623,17 +623,18 @@ public:
       const Dune::QuadratureRule<FieldType, 1>& quadrature_y = quadrature_rules_[(dd + 1) % 3];
       const Dune::QuadratureRule<FieldType, 1>& quadrature_z = quadrature_rules_[(dd + 2) % 3];
 
-      // convert to characteristic variables
+      // convert to characteristic variables and reorder
+      // reordering is done such that the indices in char_values are in the order z, y, x
       FieldVector<FieldVector<FieldVector<EigenVectorType, stencil_size>, stencil_size>, stencil_size> char_values;
       for (size_t ii = 0; ii < stencil_size; ++ii)
         for (size_t jj = 0; jj < stencil_size; ++jj)
           for (size_t kk = 0; kk < stencil_size; ++kk) {
             if (dd == 0)
-              char_values[ii][jj][kk] = eigenvectors_inverse * values[ii][jj][kk];
+              char_values[kk][jj][ii] = eigenvectors_inverse * values[ii][jj][kk];
             else if (dd == 1)
-              char_values[jj][kk][ii] = eigenvectors_inverse * values[ii][jj][kk];
+              char_values[ii][kk][jj] = eigenvectors_inverse * values[ii][jj][kk];
             else if (dd == 2)
-              char_values[kk][ii][jj] = eigenvectors_inverse * values[ii][jj][kk];
+              char_values[jj][ii][kk] = eigenvectors_inverse * values[ii][jj][kk];
             else
               DUNE_THROW(NotImplemented, "Not implemented in more than 3 dimensions!");
           }
