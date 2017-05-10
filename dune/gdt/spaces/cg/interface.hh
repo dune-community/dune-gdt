@@ -53,6 +53,7 @@ public:
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
 
+  using typename BaseType::GridLayerType;
   using typename BaseType::EntityType;
   using typename BaseType::PatternType;
 
@@ -69,14 +70,15 @@ public:
   {
     CHECK_CRTP(this->as_imp().lagrange_points(entity));
     return this->as_imp().lagrange_points(entity);
-  } // ... lagrange_points(...)
+  }
 
-  template <class I>
-  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const XT::Grid::BoundaryInfo<I>& boundaryInfo) const
+  std::set<size_t> local_dirichlet_DoFs(
+      const EntityType& entity,
+      const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundaryInfo) const
   {
     CHECK_CRTP(this->as_imp().local_dirichlet_DoFs(entity, boundaryInfo));
     return this->as_imp().local_dirichlet_DoFs(entity, boundaryInfo);
-  } // ... local_dirichlet_DoFs(...)
+  }
   /** @} */
 
   /**
@@ -124,9 +126,9 @@ public:
     return local_vertices;
   } // ... lagrange_points_order_1(...)
 
-  template <class I>
-  std::set<size_t> local_dirichlet_DoFs_order_1(const EntityType& entity,
-                                                const XT::Grid::BoundaryInfo<I>& boundaryInfo) const
+  std::set<size_t> local_dirichlet_DoFs_order_1(
+      const EntityType& entity,
+      const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundaryInfo) const
   {
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
     static const XT::Grid::DirichletBoundary dirichlet{};
@@ -181,10 +183,9 @@ public:
     return localDirichletDofs;
   } // ... local_dirichlet_DoFs_order_1(...)
 
-  template <class I>
-  std::set<size_t>
-  local_dirichlet_DoFs_simplicial_lagrange_elements(const EntityType& entity,
-                                                    const XT::Grid::BoundaryInfo<I>& boundaryInfo) const
+  std::set<size_t> local_dirichlet_DoFs_simplicial_lagrange_elements(
+      const EntityType& entity,
+      const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundaryInfo) const
   {
     if (!entity.type().isSimplex())
       DUNE_THROW(NotImplemented, "Only implemented for simplex elements!");
@@ -270,10 +271,10 @@ public:
     static_assert(AlwaysFalse<S>::value, "Not implemented for these constraints!");
   }
 
-  template <class S, size_t d, size_t r, size_t rC, class I>
+  template <class S, size_t d, size_t r, size_t rC>
   void local_constraints(const SpaceInterface<S, d, r, rC>& /*other*/,
                          const EntityType& entity,
-                         DirichletConstraints<I>& ret) const
+                         DirichletConstraints<XT::Grid::extract_intersection_t<GridLayerType>>& ret) const
   {
     const auto local_DoFs = this->local_dirichlet_DoFs(entity, ret.boundary_info());
     if (local_DoFs.size() > 0) {
@@ -282,7 +283,7 @@ public:
         ret.insert(global_indices[local_DoF]);
       }
     }
-  } // ... local_constraints(..., Constraints::Dirichlet< ... > ...)
+  } // ... local_constraints(..., Constraints::Dirichlet<...> ...)
   /** @} */
 
 private:

@@ -19,16 +19,15 @@
 #if HAVE_DUNE_FEM
 #include <dune/fem/space/common/functionspace.hh>
 #include <dune/fem/space/lagrange/space.hh>
-#endif // HAVE_DUNE_FEM
+#endif
 
 #include <dune/xt/common/type_traits.hh>
 
 #include <dune/gdt/spaces/parallel.hh>
 
+#include "interface.hh"
 #include "../mapper/dune-fem-wrapper.hh"
 #include "../basefunctionset/dune-fem-wrapper.hh"
-
-#include "interface.hh"
 #include "../constraints.hh"
 
 namespace Dune {
@@ -48,7 +47,7 @@ class DuneFemCgSpaceWrapper
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
 class DuneFemCgSpaceWrapperTraits
 {
-  static_assert(XT::Grid::is_part<GridPartImp>::value, "");
+  static_assert(XT::Grid::is_layer<GridPartImp>::value && !XT::Grid::is_view<GridPartImp>::value, "");
 
 public:
   typedef DuneFemCgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
@@ -167,8 +166,9 @@ public:
     return BaseType::lagrange_points_order_1(entity);
   }
 
-  template <class I>
-  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const XT::Grid::BoundaryInfo<I>& boundaryInfo) const
+  std::set<size_t> local_dirichlet_DoFs(
+      const EntityType& entity,
+      const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundaryInfo) const
   {
     return BaseType::local_dirichlet_DoFs_order_1(entity, boundaryInfo);
   }
