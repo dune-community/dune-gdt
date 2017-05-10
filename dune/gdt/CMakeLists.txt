@@ -7,6 +7,15 @@
 # Authors:
 #   Felix Schindler (2010, 2013 - 2017)
 
+if(DUNE_XT_WITH_PYTHON_BINDINGS)
+  set(dunegdt_sources
+      spaces/cg/dune-fem-wrapper.lib/alu_2d_simplex_conforming.cc
+      spaces/cg/dune-fem-wrapper.lib/yasp_1d_equidistant_offset.cc
+      spaces/cg/dune-fem-wrapper.lib/yasp_2d_equidistant_offset.cc
+      spaces/cg/dune-fem-wrapper.lib/yasp_3d_equidistant_offset.cc)
+  dune_library_add_sources(dunegdt SOURCES ${dunegdt_sources})
+endif()
+
 if(dune-pybindxi_FOUND)
   set(pybindxi_modules)
   # some top-level modules

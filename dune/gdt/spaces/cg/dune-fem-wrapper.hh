@@ -22,6 +22,10 @@
 #endif
 
 #include <dune/xt/common/type_traits.hh>
+#include <dune/xt/grid/dd/subdomains/grid.hh>
+#include <dune/xt/grid/grids.hh>
+#include <dune/xt/grid/layers.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/spaces/parallel.hh>
 
@@ -207,5 +211,9 @@ class DuneFemCgSpaceWrapper
 
 } // namespace GDT
 } // namespace Dune
+
+
+#include "dune-fem-wrapper.lib.hh"
+
 
 #endif // DUNE_GDT_SPACES_CG_DUNE_FEM_WRAPPER_HH

@@ -11,7 +11,11 @@
 
 enable_testing()
 
-BEGIN_TESTCASES()
+if(DUNE_XT_WITH_PYTHON_BINDINGS)
+  BEGIN_TESTCASES(dunegdt)
+else()
+  BEGIN_TESTCASES()
+endif()
 
 END_TESTCASES()
 
