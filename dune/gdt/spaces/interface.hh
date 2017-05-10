@@ -43,15 +43,18 @@ namespace GDT {
 
 enum class Backends
 {
+  fem,
+  functions,
   gdt,
-  pdelab,
-  fem
+  pdelab
 };
+
 
 enum class DUNE_DEPRECATED_MSG("Use Backends instead (04.04.2017)!") ChooseSpaceBackend
 {
   None
 };
+
 
 enum class SpaceType
 {
@@ -108,6 +111,18 @@ template <Backends type>
 struct layer_from_backend;
 
 template <>
+struct layer_from_backend<Backends::fem>
+{
+  static const XT::Grid::Backends type = XT::Grid::Backends::part;
+};
+
+template <>
+struct layer_from_backend<Backends::functions>
+{
+  static const XT::Grid::Backends type = XT::Grid::Backends::view;
+};
+
+template <>
 struct layer_from_backend<Backends::gdt>
 {
   static const XT::Grid::Backends type = XT::Grid::Backends::view;
@@ -117,12 +132,6 @@ template <>
 struct layer_from_backend<Backends::pdelab>
 {
   static const XT::Grid::Backends type = XT::Grid::Backends::view;
-};
-
-template <>
-struct layer_from_backend<Backends::fem>
-{
-  static const XT::Grid::Backends type = XT::Grid::Backends::part;
 };
 
 
