@@ -174,12 +174,11 @@ struct ChooseLimiter<SlopeLimiters::minmod, XT::LA::EigenDenseVector<FieldType>>
             ret.set_entry(ii, slope_left.get_entry(ii));
           else
             ret.set_entry(ii, centered_slope.get_entry(ii));
-        } else if (Dune::XT::Common::FloatCmp::gt(slope_left_abs, slope_right_abs)) {
+        } else {
           if (XT::Common::FloatCmp::lt(slope_right_abs, slope_centered_abs))
             ret.set_entry(ii, slope_right.get_entry(ii));
           else
             ret.set_entry(ii, centered_slope.get_entry(ii));
-        } else {
         }
       }
     }
@@ -465,6 +464,8 @@ public:
       theta = std::min(epsilon_ + theta, 1.);
 
     auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
+    if (theta_entity > 0)
+      std::cout << theta_entity << std::endl;
 
     for (auto& pair : local_reconstructed_values) {
       auto& u = pair.second;
@@ -623,8 +624,8 @@ public:
       const Dune::QuadratureRule<FieldType, 1>& quadrature_y = quadrature_rules_[(dd + 1) % 3];
       const Dune::QuadratureRule<FieldType, 1>& quadrature_z = quadrature_rules_[(dd + 2) % 3];
 
-      // convert to characteristic variables and reorder
-      // reordering is done such that the indices in char_values are in the order z, y, x
+      // convert to characteristic variables and reorder x, y, z to x', y', z'
+      // reordering is done such that the indices in char_values are in the order z', y', x'
       FieldVector<FieldVector<FieldVector<EigenVectorType, stencil_size>, stencil_size>, stencil_size> char_values;
       for (size_t ii = 0; ii < stencil_size; ++ii)
         for (size_t jj = 0; jj < stencil_size; ++jj)
@@ -649,12 +650,12 @@ public:
       Dune::QuadratureRule<FieldType, 1> points;
       points.push_back(Dune::QuadraturePoint<FieldType, 1>(0., 0.5));
       points.push_back(Dune::QuadraturePoint<FieldType, 1>(1., 0.5));
-      for (size_t ii = 0; ii < stencil_size; ++ii) {
+      for (size_t kk = 0; kk < stencil_size; ++kk) {
         for (size_t jj = 0; jj < stencil_size; ++jj) {
           //         WENOreconstruction(char_values[ii][jj], result);
-          slope_reconstruction(char_values[ii][jj], result, points);
-          first_reconstructed_values[ii][0][jj] = result[0];
-          first_reconstructed_values[ii][1][jj] = result[1];
+          slope_reconstruction(char_values[kk][jj], result, points);
+          first_reconstructed_values[kk][0][jj] = result[0];
+          first_reconstructed_values[kk][1][jj] = result[1];
         }
       }
 
@@ -666,14 +667,14 @@ public:
       FieldVector<std::vector<FieldVector<EigenVectorType, stencil_size>>, 2> second_reconstructed_values(
           (std::vector<FieldVector<EigenVectorType, stencil_size>>(num_quad_points_y)));
       result.resize(num_quad_points_y);
-      for (size_t ii = 0; ii < stencil_size; ++ii) {
-        for (size_t kk = 0; kk < 2; ++kk) {
+      for (size_t kk = 0; kk < stencil_size; ++kk) {
+        for (size_t ii = 0; ii < 2; ++ii) {
           //          WENOreconstruction(first_reordered[ii][kk], result, 1d_quadrature_points_y);
-          slope_reconstruction(first_reconstructed_values[ii][kk], result, quadrature_y);
-          for (size_t ll = 0; ll < num_quad_points_y; ++ll)
-            second_reconstructed_values[kk][ll][ii] = result[ll];
-        } // kk
-      } // ii
+          slope_reconstruction(first_reconstructed_values[kk][ii], result, quadrature_y);
+          for (size_t jj = 0; jj < num_quad_points_y; ++jj)
+            second_reconstructed_values[ii][jj][kk] = result[jj];
+        } // ii
+      } // kk
 
       const size_t num_quad_points_z = quadrature_z.size();
       // reconstruction in z direction
@@ -683,28 +684,28 @@ public:
       FieldVector<std::vector<std::vector<EigenVectorType>>, 2> reconstructed_values(
           std::vector<std::vector<EigenVectorType>>(num_quad_points_y,
                                                     std::vector<EigenVectorType>(num_quad_points_z)));
-      for (size_t kk = 0; kk < 2; ++kk) {
-        for (size_t ll = 0; ll < num_quad_points_y; ++ll) {
+      for (size_t ii = 0; ii < 2; ++ii) {
+        for (size_t jj = 0; jj < num_quad_points_y; ++jj) {
           //          WENOreconstruction(second_reconstructed_values[kk][ll], reconstructed_values[kk][ll],
           //          1d_quadrature_points_z);
-          slope_reconstruction(second_reconstructed_values[kk][ll], reconstructed_values[kk][ll], quadrature_z);
+          slope_reconstruction(second_reconstructed_values[ii][jj], reconstructed_values[ii][jj], quadrature_z);
         }
       }
 
       // convert coordinates on face to local entity coordinates and store
       typedef typename GridLayerType::Intersection::Geometry::LocalCoordinate IntersectionLocalCoordType;
-      for (size_t kk = 0; kk < 2; ++kk) {
-        for (size_t ll = 0; ll < num_quad_points_y; ++ll) {
-          for (size_t mm = 0; mm < num_quad_points_z; ++mm) {
+      for (size_t ii = 0; ii < 2; ++ii) {
+        for (size_t jj = 0; jj < num_quad_points_y; ++jj) {
+          for (size_t kk = 0; kk < num_quad_points_z; ++kk) {
             // convert back to non-characteristic variables and to FieldVector instead of EigenVector
             const auto value = XT::Common::from_string<RangeType>(
-                XT::Common::to_string(eigenvectors * reconstructed_values[kk][ll][mm], precision));
-            IntersectionLocalCoordType quadrature_point{quadrature_y[ll].position()[0], quadrature_z[mm].position()[0]};
+                XT::Common::to_string(eigenvectors * reconstructed_values[ii][jj][kk], precision));
+            IntersectionLocalCoordType quadrature_point{quadrature_y[jj].position()[0], quadrature_z[kk].position()[0]};
             local_reconstructed_values.insert(
-                std::make_pair(faces[2 * dd + kk].geometryInInside().global(quadrature_point), value));
-          } // mm
-        } // ll
-      } // kk
+                std::make_pair(faces[2 * dd + ii].geometryInInside().global(quadrature_point), value));
+          } // kk
+        } // jj
+      } // ii
     } // dd
   } // void apply_local(...)
 

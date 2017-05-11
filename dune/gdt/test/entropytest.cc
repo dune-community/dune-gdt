@@ -170,7 +170,8 @@ int main(int argc, char** argv)
   // const auto time_stepper_method = TimeStepperMethods::explicit_euler;
   const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_second_order_ssp;
   //  const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_third_order_ssp;
-  const auto rhs_time_stepper_method = TimeStepperMethods::implicit_euler;
+  //  const auto rhs_time_stepper_method = TimeStepperMethods::implicit_euler;
+  const auto rhs_time_stepper_method = TimeStepperMethods::matrix_exponential;
   //  const auto rhs_time_stepper_method = TimeStepperMethods::trapezoidal_rule;
   const auto container_backend = Dune::XT::LA::default_sparse_backend;
 

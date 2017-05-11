@@ -38,7 +38,8 @@ enum class TimeStepperMethods
   implicit_euler,
   implicit_midpoint,
   trapezoidal_rule,
-  diagonally_implicit_other
+  diagonally_implicit_other,
+  matrix_exponential
 };
 
 
