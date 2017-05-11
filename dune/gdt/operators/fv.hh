@@ -1048,9 +1048,9 @@ private:
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueFunctionType& boundary_values_;
   const LocalizableFunctionType& dx_;
-  const bool use_local_laxfriedrichs_flux_;
   const bool flux_is_linear_;
   const bool use_linear_reconstruction_;
+  const bool use_local_laxfriedrichs_flux_;
   const DomainType lambda_;
   std::shared_ptr<MatrixType> eigenvectors_;
   std::shared_ptr<MatrixType> eigenvectors_inverse_;
