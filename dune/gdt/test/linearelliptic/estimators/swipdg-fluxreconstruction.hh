@@ -198,7 +198,7 @@ class LocalResidualESV2007 : public XT::Grid::Functor::Codim0Return<GridLayerTyp
   typedef ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
   typedef DunePdelabRtSpaceWrapper<GridLayerType, 0, RangeFieldType, SpaceType::dimDomain> RTN0SpaceType;
   typedef DiscreteFunction<RTN0SpaceType, VectorType> DiffusiveFluxType;
-  typedef typename DiffusiveFluxType::DivergenceType DivergenceType;
+  typedef XT::Functions::DivergenceFunction<DiffusiveFluxType> DivergenceType;
   typedef typename DivergenceType::DifferenceType DifferenceType;
   typedef typename XT::Functions::ESV2007::CutoffFunction<DiffusionFactorType, DiffusionTensorType> CutoffFunctionType;
   typedef LocalVolumeIntegralOperator<LocalProductIntegrand<CutoffFunctionType>> LocalOperatorType;
@@ -251,8 +251,8 @@ public:
     , discrete_solution_(space, vector)
     , rtn0_space_(grid_layer_)
     , diffusive_flux_(rtn0_space_)
-    , divergence_(diffusive_flux_.divergence())
-    , difference_(force - divergence_)
+    , divergence_(XT::Functions::make_divergence(diffusive_flux_))
+    , difference_(force - *divergence_)
     , cutoff_function_(diffusion_factor_, diffusion_tensor_)
     , local_operator_(over_integrate_, cutoff_function_)
     , prepared_(false)
@@ -298,7 +298,7 @@ private:
   const ConstDiscreteFunctionType discrete_solution_;
   const RTN0SpaceType rtn0_space_;
   DiffusiveFluxType diffusive_flux_;
-  const DivergenceType divergence_;
+  const std::shared_ptr<DivergenceType> divergence_;
   const DifferenceType difference_;
   const CutoffFunctionType cutoff_function_;
   const LocalOperatorType local_operator_;
@@ -316,12 +316,11 @@ template <class SpaceType,
           class DiffusionTensorType,
           class GridLayerType = typename SpaceType::GridLayerType>
 class LocalDiffusiveFluxESV2007
-    : public XT::Grid::Functor::Codim0Return<typename SpaceType::GridLayerType, typename SpaceType::RangeFieldType>
+    : public XT::Grid::Functor::Codim0Return<GridLayerType, typename SpaceType::RangeFieldType>
 {
   typedef LocalDiffusiveFluxESV2007<SpaceType, VectorType, DiffusionFactorType, DiffusionTensorType, GridLayerType>
       ThisType;
-  typedef XT::Grid::Functor::Codim0Return<typename SpaceType::GridLayerType, typename SpaceType::RangeFieldType>
-      BaseType;
+  typedef XT::Grid::Functor::Codim0Return<GridLayerType, typename SpaceType::RangeFieldType> BaseType;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   typedef ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
   typedef DunePdelabRtSpaceWrapper<GridLayerType, 0, RangeFieldType, SpaceType::dimDomain> RTN0SpaceType;
