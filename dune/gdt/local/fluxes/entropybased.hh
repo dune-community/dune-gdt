@@ -361,7 +361,6 @@ public:
     // calculate ret[ii] = < omega[ii] m G_\alpha(u) >
     Dune::FieldMatrix<RangeFieldType, dimRange, dimDomain> ret(0);
     Dune::FieldVector<RangeFieldType, dimDomain> omega;
-    RangeType m;
     for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
       const auto& position = quadrature_[ll].position();
       const auto& weight = quadrature_[ll].weight();
@@ -375,9 +374,10 @@ public:
         omega[1] = std::sqrt(1. - mu * mu) * std::sin(phi);
         omega[2] = mu;
       }
-      m = M_[ll];
-      const auto factor = std::exp(alpha * m) * weight;
+      const auto factor = std::exp(alpha * M_[ll]) * weight;
+      RangeType m;
       for (size_t dd = 0; dd < dimDomain; ++dd) {
+        m = M_[ll];
         m *= omega[dd] * factor;
         for (size_t rr = 0; rr < dimRange; ++rr)
           ret[rr][dd] += m[rr];
