@@ -25,11 +25,10 @@ using namespace Dune::GDT;
 {% for TestCase, SpaceBackend, LaBackend, Name in config.permutations %}
 // clang-format on
 
-typedef linearelliptic_SWIPDG_estimators<{{TestCase}}, Dune::GDT::Backends::{{SpaceBackend}},
-                                         Dune::XT::LA::Backends::{{LaBackend}}>
+typedef linearelliptic_SWIPDG_estimators<{{TestCase}}>
     linearelliptic_SWIPDG_estimators_{{Name}};
 
-GTEST_F(linearelliptic_SWIPDG_estimators_{{Name}}, eoc_study)
+TEST_F(linearelliptic_SWIPDG_estimators_{{Name}}, eoc_study)
 {
   this->template eoc_study<Backends::fem, XT::LA::Backends::eigen_sparse, 1>();
 }
