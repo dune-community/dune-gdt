@@ -137,4 +137,8 @@ public:
 } // namespace GDT
 } // namespace Dune
 
+
+#include "dg.lib.hh"
+
+
 #endif // DUNE_GDT_SPACES_DG_HH
