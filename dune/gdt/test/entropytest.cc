@@ -533,29 +533,28 @@ int main(int argc, char** argv)
       ConstantFunctionType;
   typedef AdvectionRHSOperator<RHSType> RHSOperatorType;
 
-  //  typedef typename std::
-  //      conditional<numerical_flux == NumericalFluxes::kinetic,
-  //                  AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType>,
-  //                  std::conditional<numerical_flux == NumericalFluxes::laxfriedrichs
-  //                                       || numerical_flux == NumericalFluxes::laxfriedrichs_with_reconstruction
-  //                                       || numerical_flux == NumericalFluxes::local_laxfriedrichs
-  //                                       || numerical_flux ==
-  //                                       NumericalFluxes::local_laxfriedrichs_with_reconstruction,
-  //                                   AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
-  //                                                                  BoundaryValueType,
-  //                                                                  ConstantFunctionType,
-  //                                                                  SlopeLimiters::minmod>,
-  //                                   AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType>>::type>::type
-  //          AdvectionOperatorType;
+  typedef typename std::
+      conditional<numerical_flux == NumericalFluxes::kinetic,
+                  AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType>,
+                  std::conditional<numerical_flux == NumericalFluxes::laxfriedrichs
+                                       || numerical_flux == NumericalFluxes::laxfriedrichs_with_reconstruction
+                                       || numerical_flux == NumericalFluxes::local_laxfriedrichs
+                                       || numerical_flux == NumericalFluxes::local_laxfriedrichs_with_reconstruction,
+                                   AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
+                                                                  BoundaryValueType,
+                                                                  ConstantFunctionType,
+                                                                  SlopeLimiters::minmod>,
+                                   AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType>>::type>::type
+          AdvectionOperatorType;
 
-  typedef AdvectionLaxFriedrichsWENOOperator<AnalyticalFluxType,
-                                             BoundaryValueType,
-                                             ConstantFunctionType,
-                                             GridViewType,
-                                             BasisFunctionType::hat_functions,
-                                             1,
-                                             SlopeLimiters::minmod>
-      AdvectionOperatorType;
+  //  typedef AdvectionLaxFriedrichsWENOOperator<AnalyticalFluxType,
+  //                                             BoundaryValueType,
+  //                                             ConstantFunctionType,
+  //                                             GridViewType,
+  //                                             BasisFunctionType::hat_functions,
+  //                                             1,
+  //                                             SlopeLimiters::minmod>
+  //      AdvectionOperatorType;
 
   //  typedef AdvectionGodunovWENOOperator<AnalyticalFluxType,
   //                                       BoundaryValueType,
@@ -613,24 +612,24 @@ int main(int argc, char** argv)
   // *********************** create operators and timesteppers ************************************
   const ConstantFunctionType dx_function(dx);
 
-  //    AdvectionOperatorType advection_operator =
-  //        internal::AdvectionOperatorCreator<AdvectionOperatorType, numerical_flux>::create(
-  //            *analytical_flux, *boundary_values, dx_function, linear);
+  AdvectionOperatorType advection_operator =
+      internal::AdvectionOperatorCreator<AdvectionOperatorType, numerical_flux>::create(
+          *analytical_flux, *boundary_values, dx_function, linear);
 
-  FieldVector<size_t, dimDomain> grid_sizes;
-  std::fill(grid_sizes.begin(), grid_sizes.end(), XT::Common::from_string<size_t>(grid_size));
-  AdvectionOperatorType advection_operator(*analytical_flux,
-                                           *boundary_values,
-                                           dx_function,
-                                           grid_view,
-                                           grid_sizes,
-                                           plane_coefficients,
-                                           linear,
-                                           true,
-                                           space_quadrature_rules,
-                                           epsilon,
-                                           false,
-                                           DomainType(0));
+  //  FieldVector<size_t, dimDomain> grid_sizes;
+  //  std::fill(grid_sizes.begin(), grid_sizes.end(), XT::Common::from_string<size_t>(grid_size));
+  //  AdvectionOperatorType advection_operator(*analytical_flux,
+  //                                           *boundary_values,
+  //                                           dx_function,
+  //                                           grid_view,
+  //                                           grid_sizes,
+  //                                           plane_coefficients,
+  //                                           linear,
+  //                                           true,
+  //                                           space_quadrature_rules,
+  //                                           epsilon,
+  //                                           false,
+  //                                           DomainType(0));
 
   //    AdvectionOperatorType advection_operator(*analytical_flux,
   //                                             *boundary_values,

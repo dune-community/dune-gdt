@@ -186,21 +186,7 @@ public:
         analytical_flux_.evaluate(u_j, outside_entity, x_in_outside_coords, t_));
     auto n_ij = intersection.unitOuterNormal(x_in_intersection_coords);
     // find direction of unit outer normal
-    size_t coord = 0;
-#ifndef NDEBUG
-    size_t num_zeros = 0;
-#endif // NDEBUG
-    for (size_t ii = 0; ii < dimDomain; ++ii) {
-      if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(1))
-          || Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(-1)))
-        coord = ii;
-      else if (Dune::XT::Common::FloatCmp::eq(n_ij[ii], RangeFieldType(0))) {
-#ifndef NDEBUG
-        ++num_zeros;
-#endif // NDEBUG
-      } else
-        DUNE_THROW(Dune::NotImplemented, "LaxFriedrichs flux is only implemented for axis parallel cube grids");
-    }
+    size_t direction = intersection.indexInInside() / 2;
 
     if (use_local_) {
       if (!is_linear_ || !max_derivative_calculated_) {
@@ -254,10 +240,10 @@ public:
           lambda_ij_[ii] = 1. / max_derivative[ii];
       }
     } else if (lambda_provided_) {
-      lambda_ij_ = DomainType(lambda_);
+      lambda_ij_[direction] = lambda_[direction];
     } else {
       const RangeFieldType dx = std::get<1>(local_functions_tuple)->evaluate(x_in_inside_coords)[0];
-      lambda_ij_ = DomainType(dt_ / dx);
+      lambda_ij_[direction] = dt_ / dx;
     } // if (use_local)
 
     // calculate flux evaluation as
@@ -266,10 +252,10 @@ public:
     const size_t num_neighbors = std::get<0>(local_functions_tuple);
     auto second_part = u_j;
     second_part -= u_i;
-    second_part /= lambda_ij_[coord] * num_neighbors;
-    n_ij[coord] *= 0.5;
+    second_part /= lambda_ij_[direction] * num_neighbors;
+    n_ij[direction] *= 0.5;
     for (size_t kk = 0; kk < dimRange; ++kk)
-      ret[kk] = f_u_i_plus_f_u_j[kk][coord] * n_ij[coord] - second_part[kk];
+      ret[kk] = f_u_i_plus_f_u_j[kk][direction] * n_ij[direction] - second_part[kk];
     return ret;
   }
 

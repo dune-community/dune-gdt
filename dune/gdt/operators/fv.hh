@@ -1785,7 +1785,7 @@ public:
     MatrixExponentialFunctor<SourceType, RHSEvaluationType> functor(solution, t, dt, rhs_evaluation_);
     SystemAssembler<typename SourceType::SpaceType> assembler(solution.space());
     assembler.append(functor);
-    assembler.assemble(true);
+    assembler.assemble(false);
   }
 
   //  // solves with local jacobian on each entity

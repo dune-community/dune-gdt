@@ -464,7 +464,7 @@ public:
       theta = std::min(epsilon_ + theta, 1.);
 
     auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
-    if (theta_entity > 0)
+    if (XT::Common::FloatCmp::ne(theta_entity, 0.))
       std::cout << theta_entity << std::endl;
 
     for (auto& pair : local_reconstructed_values) {
