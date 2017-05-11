@@ -49,7 +49,7 @@ namespace internal {
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
 class DuneFemDgSpaceWrapperTraits
 {
-  static_assert(XT::Grid::is_part<GridPartImp>::value, "");
+  static_assert(XT::Grid::is_layer<GridPartImp>::value && !XT::Grid::is_view<GridPartImp>::value, "");
 
 public:
   typedef DuneFemDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
