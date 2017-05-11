@@ -36,7 +36,7 @@ public:
   using typename BaseType::TestCaseType;
   using typename BaseType::Discretizer;
   using typename BaseType::DiscretizationType;
-  using typename BaseType::GridLayerType;
+  using typename BaseType::GridViewType;
   using typename BaseType::FunctionType;
   using typename BaseType::VectorType;
 
@@ -90,14 +90,14 @@ public:
   }
 
   virtual double
-  compute_norm(const GridLayerType& grid_layer, const FunctionType& function, const std::string type) override final
+  compute_norm(const GridViewType& grid_view, const FunctionType& function, const std::string type) override final
   {
     if (type == "L2")
-      return make_l2_operator(grid_layer, over_integrate_)->induced_norm(function);
+      return make_l2_operator(grid_view, over_integrate_)->induced_norm(function);
     else if (type == "H1_semi")
-      return make_laplace_operator(grid_layer, over_integrate_)->induced_norm(function);
+      return make_laplace_operator(grid_view, over_integrate_)->induced_norm(function);
     else if (type == "energy")
-      return make_elliptic_operator(grid_layer,
+      return make_elliptic_operator(grid_view,
                                     this->test_case_.problem().diffusion_factor(),
                                     this->test_case_.problem().diffusion_tensor(),
                                     over_integrate_)

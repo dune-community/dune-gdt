@@ -44,7 +44,7 @@ protected:
   typedef GDT::ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
 
   typedef typename TestCaseType::FunctionType FunctionType;
-  typedef typename SpaceType::GridLayerType GridLayerType;
+  typedef typename TestCaseType::LevelGridViewType GridViewType;
 
 public:
   StationaryEocStudy(TestCaseType& test_case,
@@ -97,18 +97,16 @@ public:
     if (test_case_.provides_exact_solution()) {
       // visualize
       if (!visualize_prefix_.empty()) {
-        test_case_.exact_solution().visualize(test_case_.template reference_layer<SpaceType::layer_backend>(),
-                                              visualize_prefix_ + "_exact_solution");
+        test_case_.exact_solution().visualize(test_case_.reference_grid_view(), visualize_prefix_ + "_exact_solution");
       }
-      return compute_norm(
-          test_case_.template reference_layer<SpaceType::layer_backend>(), test_case_.exact_solution(), type);
+      return compute_norm(test_case_.reference_grid_view(), test_case_.exact_solution(), type);
     } else {
       compute_reference_solution();
       assert(reference_discretization_);
       assert(reference_solution_vector_);
       const ConstDiscreteFunctionType reference_solution(
           reference_discretization_->ansatz_space(), *reference_solution_vector_, "reference solution");
-      return compute_norm(test_case_.template reference_layer<SpaceType::layer_backend>(), reference_solution, type);
+      return compute_norm(test_case_.reference_grid_view(), reference_solution, type);
     }
   } // ... norm_reference_solution(...)
 
@@ -136,7 +134,7 @@ public:
     assert(current_refinement_ <= num_refinements());
     if (grid_widths_[current_refinement_] < 0.0) {
       const int level = test_case_.level_of(current_refinement_);
-      const auto grid_layer = test_case_.template level<XT::Grid::Backends::view>(level);
+      const auto grid_layer = test_case_.level_view(level);
       grid_widths_[current_refinement_] = XT::Grid::dimensions(grid_layer).entity_width.max();
       assert(grid_widths_[current_refinement_] > 0.0);
     }
@@ -190,9 +188,7 @@ public:
           reference_discretization_->ansatz_space(), *current_solution_vector_, "current solution");
       // compute error
       if (test_case_.provides_exact_solution()) {
-        return compute_norm(test_case_.template reference_layer<SpaceType::layer_backend>(),
-                            test_case_.exact_solution() - current_solution,
-                            type);
+        return compute_norm(test_case_.reference_grid_view(), test_case_.exact_solution() - current_solution, type);
       } else {
         // get reference solution
         compute_reference_solution();
@@ -200,9 +196,7 @@ public:
         assert(reference_solution_vector_);
         const ConstDiscreteFunctionType reference_solution(
             reference_discretization_->ansatz_space(), *reference_solution_vector_, "reference solution");
-        return compute_norm(test_case_.template reference_layer<SpaceType::layer_backend>(),
-                            reference_solution - current_solution,
-                            type);
+        return compute_norm(test_case_.reference_grid_view(), reference_solution - current_solution, type);
       }
     } else {
       assert(current_solution_vector_on_level_);
@@ -252,8 +246,7 @@ protected:
 
   virtual double estimate(const VectorType& vector, const std::string type) = 0;
 
-  virtual double
-  compute_norm(const GridLayerType& grid_layer, const FunctionType& function, const std::string type) = 0;
+  virtual double compute_norm(const GridViewType& grid_view, const FunctionType& function, const std::string type) = 0;
 
   TestCaseType& test_case_;
   size_t current_refinement_;
