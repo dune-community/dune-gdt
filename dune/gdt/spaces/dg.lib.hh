@@ -18,6 +18,14 @@
 #if DUNE_XT_WITH_PYTHON_BINDINGS
 
 
+#if HAVE_DUNE_FEM
+#define _DUNE_GDT_SPACES_DG_LIB_BLOCK(_prefix, _GRID, _layer_type, _backend, _p, _R, _r, _rC)                          \
+  _prefix class Dune::GDT::                                                                                            \
+      BlockDgSpaceProvider<_GRID, Dune::XT::Grid::Layers::_layer_type, Dune::GDT::Backends::_backend, _p, _R, _r, _rC>
+#else
+#define _DUNE_GDT_SPACES_DG_LIB_BLOCK(_prefix, _GRID, _layer_type, _backend, _p, _R, _r, _rC)
+#endif
+
 #define _DUNE_GDT_SPACES_DG_LIB(_prefix, _GRID, _layer_type, _backend, _p, _R, _r, _rC)                                \
   _prefix class Dune::GDT::                                                                                            \
       DgSpaceProvider<_GRID, Dune::XT::Grid::Layers::_layer_type, Dune::GDT::Backends::_backend, _p, _R, _r, _rC>
@@ -30,7 +38,8 @@
   _DUNE_GDT_SPACES_DG_LIB(_prefix, _GRID, level, fem, _p, _R, _r, _rC);                                                \
   _DUNE_GDT_SPACES_DG_LIB(_prefix, _GRID, dd_subdomain, fem, _p, _R, _r, _rC);                                         \
   _DUNE_GDT_SPACES_DG_LIB(_prefix, _GRID, dd_subdomain_boundary, fem, _p, _R, _r, _rC);                                \
-  _DUNE_GDT_SPACES_DG_LIB(_prefix, _GRID, dd_subdomain_coupling, fem, _p, _R, _r, _rC)
+  _DUNE_GDT_SPACES_DG_LIB(_prefix, _GRID, dd_subdomain_coupling, fem, _p, _R, _r, _rC);                                \
+  _DUNE_GDT_SPACES_DG_LIB_BLOCK(_prefix, _GRID, dd_subdomain, fem, _p, _R, _r, _rC)
 
 #define DUNE_GDT_SPACES_DG_FEM_LIB(_prefix, _GRID) _DUNE_GDT_SPACES_DG_FEM_LIB(_prefix, _GRID, 1, double, 1, 1)
 
