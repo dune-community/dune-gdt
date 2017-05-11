@@ -14,6 +14,8 @@
 
 #include <memory>
 
+#include <boost/config.hpp>
+
 #include <dune/common/deprecated.hh>
 
 #if HAVE_DUNE_FEM
@@ -132,11 +134,15 @@ public:
   {
   }
 
+#if !(defined(BOOST_GCC) && BOOST_GCC && __GNUC__ < 5)
+  // There is a bug in older gccs which prevents copy ctors which are manually marked as default to end up in a lib ...
   DuneFemCgSpaceWrapper(const ThisType& other) = default;
-  explicit DuneFemCgSpaceWrapper(ThisType&& source) = default;
+  DuneFemCgSpaceWrapper(ThisType&& source) = default;
 
+  // ... and we need to guard these operators as well since they would hinder the creation of the respective ctors.
   ThisType& operator=(const ThisType& other) = delete;
   ThisType& operator=(ThisType&& source) = delete;
+#endif // !(defined(BOOST_GCC) && BOOST_GCC && __GNUC__ < 5)
 
   const GridLayerType& DUNE_DEPRECATED_MSG("Use grid_layer() instead (03.04.2017)!") grid_part() const
   {
