@@ -76,8 +76,8 @@ struct OperatorBase : public ::testing::Test
 
   OperatorBase()
     : grid_provider_(XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 6u))
-    , space_(grid_provider_.leaf<SpaceType::layer_backend>())
-    , scalar_function_("x", "x[0]", 1, "scalar function", {{"1.0", "0.0", "0.0"}})
+    , space_(grid_provider_.template layer<XT::Grid::Layers::leaf, SpaceType::layer_backend>())
+    , scalar_function_("x", "x[0]", 1, "scalar function", {"1.0", "0.0", "0.0"})
     , function_("x", {"x[0]", "0", "0"}, 1)
     , tensor_function_(XT::Functions::internal::UnitMatrix<RangeFieldType, dimDomain>::value())
     , discrete_function_(space_)
