@@ -90,7 +90,7 @@ private:
   {
     typedef PDELab::QkLocalFiniteElementMap<GridLayerType, DomainFieldType, RangeFieldType, polOrder> Type;
   };
-  typedef typename GridLayerType::Grid GridType;
+  typedef XT::Grid::extract_grid_t<GridLayerType> GridType;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
   static const bool simplicial_ =
       (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId == Impl::SimplexTopology<dimDomain>::type::id);

@@ -63,7 +63,7 @@ struct OperatorBase : public ::testing::Test
 {
   typedef internal::OperatorBaseTraits<SpaceType> Traits;
   typedef typename Traits::GridLayerType GridLayerType;
-  typedef typename GridLayerType::Grid GridType;
+  typedef XT::Grid::extract_grid_t<GridLayerType> GridType;
   typedef Dune::XT::Grid::GridProvider<GridType> GridProviderType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   typedef typename Traits::ScalarFunctionType ScalarFunctionType;
