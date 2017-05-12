@@ -83,7 +83,7 @@ TEST_F(L2ProjectionLocalizableOperatorTest_{{Name}}, constructible_by_factory)
 TEST_F(L2ProjectionLocalizableOperatorTest_{{Name}}, produces_correct_results)
 {
   // RT : 0.096226
-  typedef typename L2ProjectionLocalizableOperatorTest_{{Name}}::GridViewType::Grid Grid;
+  typedef Dune::XT::Grid::extract_grid_t<L2ProjectionLocalizableOperatorTest_{{Name}}::GridLayerType> Grid;
   {% if 'FvSpace' in SpaceType %}
     const double tolerance = 0.096226;
   {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}

@@ -48,10 +48,10 @@ public:
   static const constexpr NumericalFluxes numerical_flux_type = numerical_flux;
   static const constexpr TimeStepperMethods time_stepper_type = time_stepper_method;
 
-  typedef typename XT::Grid::PeriodicGridView<typename XT::Grid::GridProvider<GridType>::LevelGridLayerType>
+  typedef typename XT::Grid::PeriodicGridView<typename XT::Grid::GridProvider<GridType>::LevelGridViewType>
       GridLayerImp;
   typedef Dune::
-      GridView<XT::Grid::internal::PeriodicGridViewTraits<typename XT::Grid::GridProvider<GridType>::LevelGridLayerType,
+      GridView<XT::Grid::internal::PeriodicGridViewTraits<typename XT::Grid::GridProvider<GridType>::LevelGridViewType,
                                                           false>>
           GridLayerType;
   typedef FvProductSpace<GridLayerType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;

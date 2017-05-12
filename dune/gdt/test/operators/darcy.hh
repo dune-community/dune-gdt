@@ -61,7 +61,8 @@ struct DarcyOperatorTest : public ::testing::Test
     typedef XT::Functions::ExpressionFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1> FunctionType;
     const FunctionType source("x", "x[0] * x[1]", 2, "source", {"x[1]", "x[0]"});
 
-    const RangeSpaceType range_space(grid_provider.leaf<RangeSpaceType::layer_backend>());
+    const RangeSpaceType range_space(
+        grid_provider.template layer<XT::Grid::Layers::leaf, RangeSpaceType::layer_backend>());
     VectorType range_vector(range_space.mapper().size());
     DiscreteFunction<RangeSpaceType, VectorType> range(range_space, range_vector);
 
@@ -87,7 +88,6 @@ struct DarcyOperatorTest : public ::testing::Test
   RangeFieldType
   expected_result_(const std::string type, const FunctionType& desired_output, const GL& grid_layer) const
   {
-    typedef XT::Grid::Layer<GridType, XT::Grid::Layers::leaf, RangeSpaceType::layer_backend>::type GL;
     if (std::is_base_of<DuneFemCgSpaceWrapper<GL, 1, RangeFieldType, dimDomain>, RangeSpaceType>::value) {
       if (type == "l2")
         return 2.18e-16;

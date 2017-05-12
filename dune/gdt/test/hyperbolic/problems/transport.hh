@@ -402,19 +402,19 @@ private:
 public:
   using typename BaseType::GridType;
   using typename BaseType::SolutionType;
-  using typename BaseType::LevelGridLayerType;
+  using typename BaseType::LevelGridViewType;
 
   TransportTestCase(const size_t num_refs = (d == 1 ? 4 : 2), const double divide_t_end_by = 1.0)
     : BaseType(
           divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(), num_refs)
-    , reference_grid_layer_(BaseType::reference_grid_layer())
+    , reference_grid_view_(BaseType::reference_grid_view())
     , problem_(*(ProblemType::create(ProblemType::default_config())))
   {
     typedef InitialValues<E, D, d, R, r, 1> LocalizableInitialValueType;
     const LocalizableInitialValueType initial_values;
-    exact_solution_ = std::make_shared<const TransportSolution<LocalizableInitialValueType, LevelGridLayerType>>(
+    exact_solution_ = std::make_shared<const TransportSolution<LocalizableInitialValueType, LevelGridViewType>>(
         initial_values,
-        reference_grid_layer_,
+        reference_grid_view_,
         Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>("[1.0 2.0]"),
         Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>(
             problem_.grid_config()["lower_left"]),
@@ -466,7 +466,7 @@ public:
   }
 
 private:
-  const LevelGridLayerType reference_grid_layer_;
+  const LevelGridViewType reference_grid_view_;
   const ProblemType problem_;
   std::shared_ptr<const SolutionType> exact_solution_;
 }; // class TransportTestCase
