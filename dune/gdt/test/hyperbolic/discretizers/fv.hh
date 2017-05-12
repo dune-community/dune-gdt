@@ -14,7 +14,7 @@
 
 #include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/grid/gridprovider/provider.hh>
-#include <dune/xt/grid/periodic_gridview.hh>
+#include <dune/xt/grid/view/periodic.hh>
 
 #include <dune/gdt/discretizations/default.hh>
 #include <dune/gdt/spaces/fv/product.hh>
