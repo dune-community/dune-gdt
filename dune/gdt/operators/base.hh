@@ -128,6 +128,11 @@ private:
                 "The dimDomain of RangeType and GridLayerType have to match!");
 
 public:
+  typedef LocalVolumeTwoFormInterface<typename RangeType::LocalfunctionType,
+                                      typename SourceType::LocalfunctionType,
+                                      FieldType>
+      LocalVolumeTwoFormType;
+
   LocalizableProductBase(GridLayerType grd_layr, const RangeType& rng, const SourceType& src)
     : BaseType(grd_layr)
     , range_(rng)
@@ -157,19 +162,13 @@ public:
   using BaseType::grid_layer;
   using BaseType::append;
 
-  template <class V>
   ThisType& append(
-      const LocalVolumeTwoFormInterface<V>& local_volume_twoform,
+      const LocalVolumeTwoFormType& local_volume_twoform,
       const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
-    typedef LocalVolumeTwoFormAccumulator<GridLayerType,
-                                          typename LocalVolumeTwoFormInterface<V>::derived_type,
-                                          RangeType,
-                                          SourceType,
-                                          FieldType>
-        AccumulateFunctor;
+    typedef LocalVolumeTwoFormAccumulator<GridLayerType, RangeType, SourceType, FieldType> AccumulateFunctor;
     local_volume_twoforms_.emplace_back(
-        new AccumulateFunctor(grid_layer(), local_volume_twoform.as_imp(), range_, source_, *where));
+        new AccumulateFunctor(grid_layer(), local_volume_twoform, range_, source_, *where));
     BaseType::append(*local_volume_twoforms_.back(), where);
     return *this;
   } // ... append(...)
@@ -275,6 +274,23 @@ public:
   using typename BaseOperatorType::derived_type;
   using typename BaseAssemblerType::GridLayerType;
   static const constexpr ChoosePattern pattern_type = pt;
+
+  typedef LocalVolumeTwoFormInterface<typename RangeSpaceType::BaseFunctionSetType,
+                                      typename SourceSpaceType::BaseFunctionSetType,
+                                      FieldType>
+      LocalVolumeTwoFormType;
+  typedef LocalCouplingTwoFormInterface<typename RangeSpaceType::BaseFunctionSetType,
+                                        XT::Grid::extract_intersection_t<GridLayerType>,
+                                        typename SourceSpaceType::BaseFunctionSetType,
+                                        typename OuterRangeSpaceType::BaseFunctionSetType,
+                                        typename OuterSourceSpaceType::BaseFunctionSetType,
+                                        FieldType>
+      LocalCouplingTwoFormType;
+  typedef LocalBoundaryTwoFormInterface<typename RangeSpaceType::BaseFunctionSetType,
+                                        XT::Grid::extract_intersection_t<GridLayerType>,
+                                        typename SourceSpaceType::BaseFunctionSetType,
+                                        FieldType>
+      LocalBoundaryTwoFormType;
 
 private:
   typedef XT::LA::Solver<MatrixType, typename SourceSpaceType::CommunicatorType> LinearSolverType;
@@ -458,35 +474,27 @@ public:
 
   using BaseAssemblerType::append;
 
-  template <class V>
   ThisType& append(
-      const LocalVolumeTwoFormInterface<V>& local_volume_twoform,
+      const LocalVolumeTwoFormType& local_volume_twoform,
       const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
-    typedef internal::LocalVolumeTwoFormWrapper<ThisType,
-                                                typename LocalVolumeTwoFormInterface<V>::derived_type,
-                                                MatrixType>
-        WrapperType;
-    this->codim0_functors_.emplace_back(new WrapperType(
-        this->test_space_, this->ansatz_space_, where, local_volume_twoform.as_imp(), matrix_in_in_.access()));
+    typedef internal::LocalVolumeTwoFormWrapper<ThisType, MatrixType> WrapperType;
+    this->codim0_functors_.emplace_back(
+        new WrapperType(this->test_space_, this->ansatz_space_, where, local_volume_twoform, matrix_in_in_.access()));
     return *this;
   } // ... append(...)
 
-  template <class C>
-  ThisType& append(const LocalCouplingTwoFormInterface<C>& local_coupling_twoform,
+  ThisType& append(const LocalCouplingTwoFormType& local_coupling_twoform,
                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where =
                        new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>())
   {
-    typedef internal::LocalCouplingTwoFormWrapper<ThisType,
-                                                  typename LocalCouplingTwoFormInterface<C>::derived_type,
-                                                  MatrixType>
-        WrapperType;
+    typedef internal::LocalCouplingTwoFormWrapper<ThisType, MatrixType> WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(this->test_space_,
                                                         this->ansatz_space_,
                                                         this->outer_test_space_,
                                                         this->outer_ansatz_space_,
                                                         where,
-                                                        local_coupling_twoform.as_imp(),
+                                                        local_coupling_twoform,
                                                         matrix_in_in_.access(),
                                                         matrix_out_out_.access(),
                                                         matrix_in_out_.access(),
@@ -494,17 +502,13 @@ public:
     return *this;
   } // ... append(...)
 
-  template <class B>
-  ThisType& append(const LocalBoundaryTwoFormInterface<B>& local_boundary_twoform,
+  ThisType& append(const LocalBoundaryTwoFormType& local_boundary_twoform,
                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where =
                        new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>())
   {
-    typedef internal::LocalBoundaryTwoFormWrapper<ThisType,
-                                                  typename LocalBoundaryTwoFormInterface<B>::derived_type,
-                                                  MatrixType>
-        WrapperType;
-    this->codim1_functors_.emplace_back(new WrapperType(
-        this->test_space_, this->ansatz_space_, where, local_boundary_twoform.as_imp(), matrix_in_in_.access()));
+    typedef internal::LocalBoundaryTwoFormWrapper<ThisType, MatrixType> WrapperType;
+    this->codim1_functors_.emplace_back(
+        new WrapperType(this->test_space_, this->ansatz_space_, where, local_boundary_twoform, matrix_in_in_.access()));
     return *this;
   } // ... append(...)
 

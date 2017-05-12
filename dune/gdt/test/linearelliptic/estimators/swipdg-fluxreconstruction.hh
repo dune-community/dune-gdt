@@ -84,13 +84,19 @@ class LocalNonconformityESV2007
   typedef ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
   typedef typename ConstDiscreteFunctionType::DifferenceType DifferenceType;
-  typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>>
-      LocalOperatorType;
 
 public:
   using typename BaseType::EntityType;
   using typename BaseType::ReturnType;
 
+private:
+  typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>,
+                                      typename DifferenceType::LocalfunctionType,
+                                      typename DifferenceType::LocalfunctionType,
+                                      ReturnType>
+      LocalOperatorType;
+
+public:
   static std::string id()
   {
     return local_nonconformity_ESV2007_id();
@@ -201,12 +207,19 @@ class LocalResidualESV2007 : public XT::Grid::Functor::Codim0Return<GridLayerTyp
   typedef XT::Functions::DivergenceFunction<DiffusiveFluxType> DivergenceType;
   typedef typename DivergenceType::DifferenceType DifferenceType;
   typedef typename XT::Functions::ESV2007::CutoffFunction<DiffusionFactorType, DiffusionTensorType> CutoffFunctionType;
-  typedef LocalVolumeIntegralOperator<LocalProductIntegrand<CutoffFunctionType>> LocalOperatorType;
 
 public:
   using typename BaseType::EntityType;
   using typename BaseType::ReturnType;
 
+private:
+  typedef LocalVolumeIntegralOperator<LocalProductIntegrand<CutoffFunctionType>,
+                                      typename DifferenceType::LocalfunctionType,
+                                      typename DifferenceType::LocalfunctionType,
+                                      ReturnType>
+      LocalOperatorType;
+
+public:
   static std::string id()
   {
     return local_residual_ESV2007_id();
@@ -325,15 +338,21 @@ class LocalDiffusiveFluxESV2007
   typedef ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
   typedef DunePdelabRtSpaceWrapper<GridLayerType, 0, RangeFieldType, SpaceType::dimDomain> RTN0SpaceType;
   typedef DiscreteFunction<RTN0SpaceType, VectorType> RTN0DiscreteFunctionType;
-  typedef LocalVolumeIntegralOperator<LocalDiffusiveFluxEstimateESV2007Integrand<DiffusionFactorType,
-                                                                                 RTN0DiscreteFunctionType,
-                                                                                 DiffusionTensorType>>
-      LocalOperatorType;
 
 public:
   using typename BaseType::EntityType;
   using typename BaseType::ReturnType;
 
+private:
+  typedef LocalVolumeIntegralOperator<LocalDiffusiveFluxEstimateESV2007Integrand<DiffusionFactorType,
+                                                                                 RTN0DiscreteFunctionType,
+                                                                                 DiffusionTensorType>,
+                                      typename ConstDiscreteFunctionType::LocalfunctionType,
+                                      typename ConstDiscreteFunctionType::LocalfunctionType,
+                                      ReturnType>
+      LocalOperatorType;
+
+public:
   static std::string id()
   {
     return local_diffusive_flux_ESV2007_id();

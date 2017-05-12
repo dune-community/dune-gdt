@@ -38,7 +38,6 @@ template <class WeightFunctionType,
 class WeightedL2LocalizableProduct : public LocalizableProductBase<GridLayer, Range, Source, Field>
 {
   typedef LocalizableProductBase<GridLayer, Range, Source, Field> BaseType;
-  typedef LocalVolumeIntegralOperator<LocalProductIntegrand<WeightFunctionType>> LocalWeightedL2OperatorType;
 
 public:
   template <class... Args>
@@ -58,7 +57,11 @@ public:
   }
 
 private:
-  const LocalWeightedL2OperatorType local_weighted_l2_operator_;
+  const LocalVolumeIntegralOperator<LocalProductIntegrand<WeightFunctionType>,
+                                    typename Range::LocalfunctionType,
+                                    typename Source::LocalfunctionType,
+                                    Field>
+      local_weighted_l2_operator_;
 }; // class WeightedL2LocalizableProduct
 
 
@@ -98,12 +101,11 @@ template <class WeightFunctionType,
           class Matrix = typename XT::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
           class GridLayer = typename RangeSpace::GridLayerType,
           class SourceSpace = RangeSpace,
-          class Field = typename RangeSpace::RangeFieldType>
+          class Field = typename Matrix::ScalarType>
 class WeightedL2MatrixOperator
     : public MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::volume>
 {
   typedef MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::volume> BaseType;
-  typedef LocalVolumeIntegralOperator<LocalProductIntegrand<WeightFunctionType>> LocalWeightedL2OperatorType;
 
 public:
   template <class... Args>
@@ -123,7 +125,11 @@ public:
   }
 
 private:
-  const LocalWeightedL2OperatorType local_weighted_l2_operator_;
+  const LocalVolumeIntegralOperator<LocalProductIntegrand<WeightFunctionType>,
+                                    typename RangeSpace::BaseFunctionSetType,
+                                    typename SourceSpace::BaseFunctionSetType,
+                                    Field>
+      local_weighted_l2_operator_;
 }; // class WeightedL2MatrixOperator
 
 

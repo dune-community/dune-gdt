@@ -59,8 +59,8 @@ class ConstraintsWrapper<TestSpaceType,
 public:
   using typename BaseType::EntityType;
 
-  ConstraintsWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-                     const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+  ConstraintsWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+                     const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
                      const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where,
                      ConstraintsType& constraints)
     : test_space_(test_space)
@@ -71,19 +71,17 @@ public:
   {
   }
 
-  virtual ~ConstraintsWrapper() = default;
-
-  virtual bool apply_on(const GridLayerType& gv, const EntityType& entity) const override final
+  bool apply_on(const GridLayerType& gv, const EntityType& entity) const override final
   {
     return where_->apply_on(gv, entity);
   }
 
-  virtual void apply_local(const EntityType& entity) override final
+  void apply_local(const EntityType& entity) override final
   {
     test_space_->local_constraints(*ansatz_space_, entity, *thread_local_constraints_);
   }
 
-  virtual void finalize() override final
+  void finalize() override final
   {
     DUNE_UNUSED std::lock_guard<std::mutex> mutex_guard(constraints_.mutex_);
     constraints_.dirichlet_DoFs_.insert(thread_local_constraints_->dirichlet_DoFs_.begin(),
@@ -91,11 +89,11 @@ public:
   }
 
 private:
-  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
-  const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
+  const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichEntity<GridLayerType>> where_;
   ConstraintsType& constraints_;
-  Dune::XT::Common::PerThreadValue<ConstraintsType> thread_local_constraints_;
+  XT::Common::PerThreadValue<ConstraintsType> thread_local_constraints_;
 }; // class ConstraintsWrapper
 
 
@@ -105,7 +103,7 @@ private:
 
 // given a local assembler
 
-template <class AssemblerType, class LocalVolumeTwoFormAssemblerType, class MatrixType>
+template <class AssemblerType, class MatrixType>
 class LocalVolumeTwoFormMatrixAssemblerWrapper
     : public XT::Grid::internal::Codim0Object<typename AssemblerType::GridLayerType>
 {
@@ -116,9 +114,10 @@ public:
   typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
   typedef typename AssemblerType::GridLayerType GridLayerType;
   using typename BaseType::EntityType;
+  typedef LocalVolumeTwoFormAssembler<TestSpaceType, MatrixType, AnsatzSpaceType> LocalVolumeTwoFormAssemblerType;
 
-  LocalVolumeTwoFormMatrixAssemblerWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-                                           const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+  LocalVolumeTwoFormMatrixAssemblerWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+                                           const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
                                            const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where,
                                            const LocalVolumeTwoFormAssemblerType& local_assembler,
                                            MatrixType& matrix)
@@ -130,21 +129,19 @@ public:
   {
   }
 
-  virtual ~LocalVolumeTwoFormMatrixAssemblerWrapper() = default;
-
-  virtual bool apply_on(const GridLayerType& gv, const EntityType& entity) const override final
+  bool apply_on(const GridLayerType& gv, const EntityType& entity) const override final
   {
     return where_->apply_on(gv, entity);
   }
 
-  virtual void apply_local(const EntityType& entity) override final
+  void apply_local(const EntityType& entity) override final
   {
     local_assembler_.assemble(*test_space_, *ansatz_space_, entity, matrix_);
   }
 
 private:
-  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
-  const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
+  const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichEntity<GridLayerType>> where_;
   const LocalVolumeTwoFormAssemblerType& local_assembler_;
   MatrixType& matrix_;
@@ -153,27 +150,30 @@ private:
 
 // without a given local assembler
 
-template <class AssemblerType, class LocalVolumeTwoFormType, class MatrixType>
+template <class AssemblerType, class MatrixType>
 class LocalVolumeTwoFormWrapper
-    : private Dune::XT::Common::ConstStorageProvider<LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>>,
-      public LocalVolumeTwoFormMatrixAssemblerWrapper<AssemblerType,
-                                                      LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>,
-                                                      MatrixType>
+    : private XT::Common::ConstStorageProvider<LocalVolumeTwoFormAssembler<typename AssemblerType::TestSpaceType,
+                                                                           MatrixType,
+                                                                           typename AssemblerType::AnsatzSpaceType>>,
+      public LocalVolumeTwoFormMatrixAssemblerWrapper<AssemblerType, MatrixType>
 {
-  typedef Dune::XT::Common::ConstStorageProvider<LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>>
+  typedef XT::Common::ConstStorageProvider<LocalVolumeTwoFormAssembler<typename AssemblerType::TestSpaceType,
+                                                                       MatrixType,
+                                                                       typename AssemblerType::AnsatzSpaceType>>
       LocalAssemblerProvider;
-  typedef LocalVolumeTwoFormMatrixAssemblerWrapper<AssemblerType,
-                                                   LocalVolumeTwoFormAssembler<LocalVolumeTwoFormType>,
-                                                   MatrixType>
-      BaseType;
+  typedef LocalVolumeTwoFormMatrixAssemblerWrapper<AssemblerType, MatrixType> BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
   typedef typename AssemblerType::GridLayerType GridLayerType;
+  typedef LocalVolumeTwoFormInterface<typename TestSpaceType::BaseFunctionSetType,
+                                      typename AnsatzSpaceType::BaseFunctionSetType,
+                                      typename MatrixType::ScalarType>
+      LocalVolumeTwoFormType;
 
-  LocalVolumeTwoFormWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-                            const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+  LocalVolumeTwoFormWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+                            const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
                             const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where,
                             const LocalVolumeTwoFormType& local_twoform,
                             MatrixType& matrix)
@@ -190,25 +190,41 @@ public:
 
 // given a local assembler
 
-template <class AssemblerType, class LocalCouplingTwoFormAssemblerType, class MatrixType>
+template <class AssemblerType, class MatrixType>
 class LocalCouplingTwoFormMatrixAssemblerWrapper
     : public XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType>
 {
+  static_assert(XT::LA::is_matrix<MatrixType>::value, "");
+
   typedef XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType> BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
+  typedef typename AssemblerType::OuterTestSpaceType OuterTestSpaceType;
+  typedef typename AssemblerType::OuterAnsatzSpaceType OuterAnsatzSpaceType;
   typedef typename AssemblerType::GridLayerType GridLayerType;
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
+  typedef LocalCouplingTwoFormAssembler<TestSpaceType,
+                                        IntersectionType,
+                                        MatrixType,
+                                        AnsatzSpaceType,
+                                        OuterTestSpaceType,
+                                        OuterAnsatzSpaceType>
+      LocalCouplingTwoFormAssemblerType;
 
-  LocalCouplingTwoFormMatrixAssemblerWrapper(
-      const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-      const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
-      const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
-      const LocalCouplingTwoFormAssemblerType& local_assembler,
-      MatrixType& matrix)
+  template <typename TestSpace,
+            typename AnsatzSpace,
+            typename = typename std::enable_if<(std::is_same<TestSpace, OuterTestSpaceType>::value)
+                                               && (std::is_same<AnsatzSpace, OuterAnsatzSpaceType>::value)
+                                               && sizeof(TestSpace)
+                                               && sizeof(AnsatzSpace)>::type>
+  LocalCouplingTwoFormMatrixAssemblerWrapper(const XT::Common::PerThreadValue<const TestSpace>& test_space,
+                                             const XT::Common::PerThreadValue<const AnsatzSpace>& ansatz_space,
+                                             const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
+                                             const LocalCouplingTwoFormAssemblerType& local_assembler,
+                                             MatrixType& matrix)
     : inner_test_space_(test_space)
     , inner_ansatz_space_(ansatz_space)
     , outer_test_space_(test_space)
@@ -223,10 +239,10 @@ public:
   }
 
   LocalCouplingTwoFormMatrixAssemblerWrapper(
-      const Dune::XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space,
-      const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space,
-      const Dune::XT::Common::PerThreadValue<const TestSpaceType>& outer_test_space,
-      const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& outer_ansatz_space,
+      const XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space,
+      const XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space,
+      const XT::Common::PerThreadValue<const OuterTestSpaceType>& outer_test_space,
+      const XT::Common::PerThreadValue<const OuterAnsatzSpaceType>& outer_ansatz_space,
       const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
       const LocalCouplingTwoFormAssemblerType& local_assembler,
       MatrixType& in_in_matrix,
@@ -246,16 +262,14 @@ public:
   {
   }
 
-  virtual ~LocalCouplingTwoFormMatrixAssemblerWrapper() = default;
-
-  virtual bool apply_on(const GridLayerType& gv, const IntersectionType& intersection) const override final
+  bool apply_on(const GridLayerType& gv, const IntersectionType& intersection) const override final
   {
     return where_->apply_on(gv, intersection);
   }
 
-  virtual void apply_local(const IntersectionType& intersection,
-                           const EntityType& /*inside_entity*/,
-                           const EntityType& /*outside_entity*/) override final
+  void apply_local(const IntersectionType& intersection,
+                   const EntityType& /*inside_entity*/,
+                   const EntityType& /*outside_entity*/) override final
   {
     local_assembler_.assemble(*inner_test_space_,
                               *inner_ansatz_space_,
@@ -269,10 +283,10 @@ public:
   } // ... apply_local(...)
 
 private:
-  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space_;
-  const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space_;
-  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& outer_test_space_;
-  const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& outer_ansatz_space_;
+  const XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space_;
+  const XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space_;
+  const XT::Common::PerThreadValue<const OuterTestSpaceType>& outer_test_space_;
+  const XT::Common::PerThreadValue<const OuterAnsatzSpaceType>& outer_ansatz_space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>> where_;
   const LocalCouplingTwoFormAssemblerType& local_assembler_;
   MatrixType& in_in_matrix_;
@@ -283,19 +297,24 @@ private:
 
 // without a given local assembler
 
-template <class AssemblerType, class LocalCouplingTwoFormType, class MatrixType>
-class LocalCouplingTwoFormWrapper
-    : private Dune::XT::Common::ConstStorageProvider<LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>>,
-      public LocalCouplingTwoFormMatrixAssemblerWrapper<AssemblerType,
-                                                        LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>,
-                                                        MatrixType>
+template <class AssemblerType, class MatrixType>
+class LocalCouplingTwoFormWrapper : private XT::Common::ConstStorageProvider<LocalCouplingTwoFormAssembler<
+                                        typename AssemblerType::TestSpaceType,
+                                        typename AssemblerType::IntersectionType,
+                                        MatrixType,
+                                        typename AssemblerType::AnsatzSpaceType,
+                                        typename AssemblerType::OuterTestSpaceType,
+                                        typename AssemblerType::OuterAnsatzSpaceType>>,
+                                    public LocalCouplingTwoFormMatrixAssemblerWrapper<AssemblerType, MatrixType>
 {
-  typedef Dune::XT::Common::ConstStorageProvider<LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>>
+  typedef XT::Common::ConstStorageProvider<LocalCouplingTwoFormAssembler<typename AssemblerType::TestSpaceType,
+                                                                         typename AssemblerType::IntersectionType,
+                                                                         MatrixType,
+                                                                         typename AssemblerType::AnsatzSpaceType,
+                                                                         typename AssemblerType::OuterTestSpaceType,
+                                                                         typename AssemblerType::OuterAnsatzSpaceType>>
       LocalAssemblerProvider;
-  typedef LocalCouplingTwoFormMatrixAssemblerWrapper<AssemblerType,
-                                                     LocalCouplingTwoFormAssembler<LocalCouplingTwoFormType>,
-                                                     MatrixType>
-      BaseType;
+  typedef LocalCouplingTwoFormMatrixAssemblerWrapper<AssemblerType, MatrixType> BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
@@ -303,9 +322,22 @@ public:
   typedef typename AssemblerType::OuterTestSpaceType OuterTestSpaceType;
   typedef typename AssemblerType::OuterAnsatzSpaceType OuterAnsatzSpaceType;
   typedef typename AssemblerType::GridLayerType GridLayerType;
+  typedef LocalCouplingTwoFormInterface<typename TestSpaceType::BaseFunctionSetType,
+                                        XT::Grid::extract_intersection_t<GridLayerType>,
+                                        typename AnsatzSpaceType::BaseFunctionSetType,
+                                        typename OuterTestSpaceType::BaseFunctionSetType,
+                                        typename OuterAnsatzSpaceType::BaseFunctionSetType,
+                                        typename MatrixType::ScalarType>
+      LocalCouplingTwoFormType;
 
-  LocalCouplingTwoFormWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-                              const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+  template <typename TestSpace,
+            typename AnsatzSpace,
+            typename = typename std::enable_if<(std::is_same<TestSpace, OuterTestSpaceType>::value)
+                                               && (std::is_same<AnsatzSpace, OuterAnsatzSpaceType>::value)
+                                               && sizeof(TestSpace)
+                                               && sizeof(AnsatzSpace)>::type>
+  LocalCouplingTwoFormWrapper(const XT::Common::PerThreadValue<const TestSpace>& test_space,
+                              const XT::Common::PerThreadValue<const AnsatzSpace>& ansatz_space,
                               const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                               const LocalCouplingTwoFormType& local_twoform,
                               MatrixType& matrix)
@@ -314,10 +346,10 @@ public:
   {
   }
 
-  LocalCouplingTwoFormWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space,
-                              const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space,
-                              const Dune::XT::Common::PerThreadValue<const OuterTestSpaceType>& outer_test_space,
-                              const Dune::XT::Common::PerThreadValue<const OuterAnsatzSpaceType>& outer_ansatz_space,
+  LocalCouplingTwoFormWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space,
+                              const XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space,
+                              const XT::Common::PerThreadValue<const OuterTestSpaceType>& outer_test_space,
+                              const XT::Common::PerThreadValue<const OuterAnsatzSpaceType>& outer_ansatz_space,
                               const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                               const LocalCouplingTwoFormType& local_twoform,
                               MatrixType& matrix_in_in,
@@ -346,7 +378,7 @@ public:
 
 // given a local assembler
 
-template <class AssemblerType, class LocalBoundaryTwoFormAssemblerType, class MatrixType>
+template <class AssemblerType, class MatrixType>
 class LocalBoundaryTwoFormMatrixAssemblerWrapper
     : public XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType>
 {
@@ -358,13 +390,14 @@ public:
   typedef typename AssemblerType::GridLayerType GridLayerType;
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
+  typedef LocalBoundaryTwoFormAssembler<TestSpaceType, IntersectionType, MatrixType, AnsatzSpaceType>
+      LocalBoundaryTwoFormAssemblerType;
 
-  LocalBoundaryTwoFormMatrixAssemblerWrapper(
-      const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-      const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
-      const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
-      const LocalBoundaryTwoFormAssemblerType& local_assembler,
-      MatrixType& matrix)
+  LocalBoundaryTwoFormMatrixAssemblerWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+                                             const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+                                             const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
+                                             const LocalBoundaryTwoFormAssemblerType& local_assembler,
+                                             MatrixType& matrix)
     : test_space_(test_space)
     , ansatz_space_(ansatz_space)
     , where_(where)
@@ -373,23 +406,21 @@ public:
   {
   }
 
-  virtual ~LocalBoundaryTwoFormMatrixAssemblerWrapper() = default;
-
-  virtual bool apply_on(const GridLayerType& gv, const IntersectionType& intersection) const override final
+  bool apply_on(const GridLayerType& gv, const IntersectionType& intersection) const override final
   {
     return where_->apply_on(gv, intersection);
   }
 
-  virtual void apply_local(const IntersectionType& intersection,
-                           const EntityType& /*inside_entity*/,
-                           const EntityType& /*outside_entity*/) override final
+  void apply_local(const IntersectionType& intersection,
+                   const EntityType& /*inside_entity*/,
+                   const EntityType& /*outside_entity*/) override final
   {
     local_assembler_.assemble(*test_space_, *ansatz_space_, intersection, matrix_);
   } // ... apply_local(...)
 
 private:
-  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
-  const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
+  const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>> where_;
   const LocalBoundaryTwoFormAssemblerType& local_assembler_;
   MatrixType& matrix_;
@@ -397,27 +428,33 @@ private:
 
 // without a given local assembler
 
-template <class AssemblerType, class LocalBoundaryTwoFormType, class MatrixType>
+template <class AssemblerType, class MatrixType>
 class LocalBoundaryTwoFormWrapper
-    : private Dune::XT::Common::ConstStorageProvider<LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>>,
-      public LocalBoundaryTwoFormMatrixAssemblerWrapper<AssemblerType,
-                                                        LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>,
-                                                        MatrixType>
+    : private XT::Common::ConstStorageProvider<LocalBoundaryTwoFormAssembler<typename AssemblerType::TestSpaceType,
+                                                                             typename AssemblerType::IntersectionType,
+                                                                             MatrixType,
+                                                                             typename AssemblerType::AnsatzSpaceType>>,
+      public LocalBoundaryTwoFormMatrixAssemblerWrapper<AssemblerType, MatrixType>
 {
-  typedef Dune::XT::Common::ConstStorageProvider<LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>>
+  typedef XT::Common::ConstStorageProvider<LocalBoundaryTwoFormAssembler<typename AssemblerType::TestSpaceType,
+                                                                         typename AssemblerType::IntersectionType,
+                                                                         MatrixType,
+                                                                         typename AssemblerType::AnsatzSpaceType>>
       LocalAssemblerProvider;
-  typedef LocalBoundaryTwoFormMatrixAssemblerWrapper<AssemblerType,
-                                                     LocalBoundaryTwoFormAssembler<LocalBoundaryTwoFormType>,
-                                                     MatrixType>
-      BaseType;
+  typedef LocalBoundaryTwoFormMatrixAssemblerWrapper<AssemblerType, MatrixType> BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
   typedef typename AssemblerType::GridLayerType GridLayerType;
+  typedef LocalBoundaryTwoFormInterface<typename TestSpaceType::BaseFunctionSetType,
+                                        XT::Grid::extract_intersection_t<GridLayerType>,
+                                        typename AnsatzSpaceType::BaseFunctionSetType,
+                                        typename MatrixType::ScalarType>
+      LocalBoundaryTwoFormType;
 
-  LocalBoundaryTwoFormWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-                              const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+  LocalBoundaryTwoFormWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+                              const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
                               const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                               const LocalBoundaryTwoFormType& local_twoform,
                               MatrixType& matrix)
@@ -434,7 +471,7 @@ public:
 
 // given a local assembler
 
-template <class AssemblerType, class LocalVolumeFunctionalAssemblerType, class VectorType>
+template <class AssemblerType, class VectorType>
 class LocalVolumeFunctionalVectorAssemblerWrapper
     : public XT::Grid::internal::Codim0Object<typename AssemblerType::GridLayerType>
 {
@@ -444,8 +481,9 @@ public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::GridLayerType GridLayerType;
   using typename BaseType::EntityType;
+  typedef LocalVolumeFunctionalAssembler<TestSpaceType, VectorType> LocalVolumeFunctionalAssemblerType;
 
-  LocalVolumeFunctionalVectorAssemblerWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& space,
+  LocalVolumeFunctionalVectorAssemblerWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& space,
                                               const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where,
                                               const LocalVolumeFunctionalAssemblerType& local_assembler,
                                               VectorType& vector)
@@ -456,20 +494,18 @@ public:
   {
   }
 
-  virtual ~LocalVolumeFunctionalVectorAssemblerWrapper() = default;
-
-  virtual bool apply_on(const GridLayerType& gv, const EntityType& entity) const override final
+  bool apply_on(const GridLayerType& gv, const EntityType& entity) const override final
   {
     return where_->apply_on(gv, entity);
   }
 
-  virtual void apply_local(const EntityType& entity) override final
+  void apply_local(const EntityType& entity) override final
   {
     local_assembler_.assemble(*space_, entity, vector_);
   }
 
 private:
-  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& space_;
+  const XT::Common::PerThreadValue<const TestSpaceType>& space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichEntity<GridLayerType>> where_;
   const LocalVolumeFunctionalAssemblerType& local_assembler_;
   VectorType& vector_;
@@ -478,27 +514,26 @@ private:
 
 // without a given local assembler
 
-template <class AssemblerType, class LocalFunctionalType, class VectorType>
+template <class AssemblerType, class VectorType>
 class LocalVolumeFunctionalWrapper
-    : private Dune::XT::Common::ConstStorageProvider<LocalVolumeFunctionalAssembler<LocalFunctionalType>>,
-      public LocalVolumeFunctionalVectorAssemblerWrapper<AssemblerType,
-                                                         LocalVolumeFunctionalAssembler<LocalFunctionalType>,
-                                                         VectorType>
+    : private XT::Common::ConstStorageProvider<LocalVolumeFunctionalAssembler<typename AssemblerType::TestSpaceType,
+                                                                              VectorType>>,
+      public LocalVolumeFunctionalVectorAssemblerWrapper<AssemblerType, VectorType>
 {
-  typedef Dune::XT::Common::ConstStorageProvider<LocalVolumeFunctionalAssembler<LocalFunctionalType>>
+  typedef XT::Common::ConstStorageProvider<LocalVolumeFunctionalAssembler<typename AssemblerType::TestSpaceType,
+                                                                          VectorType>>
       LocalAssemblerProvider;
-  typedef LocalVolumeFunctionalVectorAssemblerWrapper<AssemblerType,
-                                                      LocalVolumeFunctionalAssembler<LocalFunctionalType>,
-                                                      VectorType>
-      BaseType;
+  typedef LocalVolumeFunctionalVectorAssemblerWrapper<AssemblerType, VectorType> BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::GridLayerType GridLayerType;
+  typedef LocalVolumeFunctionalInterface<typename TestSpaceType::BaseFunctionSetType, typename VectorType::ScalarType>
+      LocalVolumeFunctionalType;
 
-  LocalVolumeFunctionalWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+  LocalVolumeFunctionalWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
                                const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where,
-                               const LocalFunctionalType& local_functional,
+                               const LocalVolumeFunctionalType& local_functional,
                                VectorType& vector)
     : LocalAssemblerProvider(local_functional)
     , BaseType(test_space, where, LocalAssemblerProvider::access(), vector)
@@ -513,7 +548,7 @@ public:
 
 // given a local assembler
 
-template <class AssemblerType, class LocalFaceFunctionalAssemblerType, class VectorType>
+template <class AssemblerType, class VectorType>
 class LocalFaceFunctionalVectorAssemblerWrapper
     : public XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType>
 {
@@ -524,8 +559,9 @@ public:
   typedef typename AssemblerType::GridLayerType GridLayerType;
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
+  typedef LocalFaceFunctionalAssembler<TestSpaceType, IntersectionType, VectorType> LocalFaceFunctionalAssemblerType;
 
-  LocalFaceFunctionalVectorAssemblerWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& space,
+  LocalFaceFunctionalVectorAssemblerWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& space,
                                             const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                                             const LocalFaceFunctionalAssemblerType& local_assembler,
                                             VectorType& vector)
@@ -536,22 +572,20 @@ public:
   {
   }
 
-  virtual ~LocalFaceFunctionalVectorAssemblerWrapper() = default;
-
-  virtual bool apply_on(const GridLayerType& gv, const IntersectionType& intersection) const override final
+  bool apply_on(const GridLayerType& gv, const IntersectionType& intersection) const override final
   {
     return where_->apply_on(gv, intersection);
   }
 
-  virtual void apply_local(const IntersectionType& intersection,
-                           const EntityType& /*inside_entity*/,
-                           const EntityType& /*outside_entity*/) override final
+  void apply_local(const IntersectionType& intersection,
+                   const EntityType& /*inside_entity*/,
+                   const EntityType& /*outside_entity*/) override final
   {
     local_assembler_.assemble(*space_, intersection, vector_);
   }
 
 private:
-  const Dune::XT::Common::PerThreadValue<const TestSpaceType>& space_;
+  const XT::Common::PerThreadValue<const TestSpaceType>& space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>> where_;
   const LocalFaceFunctionalAssemblerType& local_assembler_;
   VectorType& vector_;
@@ -560,29 +594,32 @@ private:
 
 // wihtout a given local assembler
 
-template <class AssemblerType, class LocalFaceFunctionalType, class VectorType>
+template <class AssemblerType, class VectorType>
 class LocalFaceFunctionalWrapper
-    : private Dune::XT::Common::ConstStorageProvider<LocalFaceFunctionalAssembler<LocalFaceFunctionalType>>,
-      public LocalFaceFunctionalVectorAssemblerWrapper<AssemblerType,
-                                                       LocalFaceFunctionalAssembler<LocalFaceFunctionalType>,
-                                                       VectorType>
+    : private XT::Common::ConstStorageProvider<LocalFaceFunctionalAssembler<typename AssemblerType::TestSpaceType,
+                                                                            typename AssemblerType::IntersectionType,
+                                                                            VectorType>>,
+      public LocalFaceFunctionalVectorAssemblerWrapper<AssemblerType, VectorType>
 {
-  typedef Dune::XT::Common::ConstStorageProvider<LocalFaceFunctionalAssembler<LocalFaceFunctionalType>>
+  typedef XT::Common::ConstStorageProvider<LocalFaceFunctionalAssembler<typename AssemblerType::TestSpaceType,
+                                                                        typename AssemblerType::IntersectionType,
+                                                                        VectorType>>
       LocalAssemblerProvider;
-  typedef LocalFaceFunctionalVectorAssemblerWrapper<AssemblerType,
-                                                    LocalFaceFunctionalAssembler<LocalFaceFunctionalType>,
-                                                    VectorType>
-      BaseType;
+  typedef LocalFaceFunctionalVectorAssemblerWrapper<AssemblerType, VectorType> BaseType;
 
 public:
-  typedef typename AssemblerType::TestSpaceType TestSpaceType;
-  typedef typename AssemblerType::GridLayerType GridLayerType;
+  using typename BaseType::TestSpaceType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::IntersectionType;
+  typedef typename VectorType::ScalarType FieldType;
+  typedef LocalFaceFunctionalInterface<typename TestSpaceType::BaseFunctionSetType, IntersectionType, FieldType>
+      LocalFaceFunctionalType;
 
-  LocalFaceFunctionalWrapper(const Dune::XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+  LocalFaceFunctionalWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
                              const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
-                             const LocalFaceFunctionalType& local_functional,
+                             const LocalFaceFunctionalType& local_face_functional,
                              VectorType& vector)
-    : LocalAssemblerProvider(local_functional)
+    : LocalAssemblerProvider(local_face_functional)
     , BaseType(test_space, where, LocalAssemblerProvider::access(), vector)
   {
   }

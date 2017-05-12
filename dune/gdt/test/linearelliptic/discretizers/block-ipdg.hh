@@ -160,13 +160,16 @@ public:
           // put all of this into a coupling operator
           SystemAssembler<LocalSpaceType, decltype(coupling_grid_part)> coupling_assembler(
               coupling_grid_part, local_spaces[ss], local_spaces[ss], local_spaces[nn], local_spaces[nn]);
+          typedef XT::Grid::extract_intersection_t<decltype(coupling_grid_part)> IntersectionType;
           typedef LocalEllipticIpdgIntegrands::Inner<typename ProblemType::DiffusionFactorType,
                                                      typename ProblemType::DiffusionTensorType,
                                                      coupling_method>
               CouplingIntegrandType;
-          LocalCouplingIntegralOperator<CouplingIntegrandType> local_coupling_operator(problem.diffusion_factor(),
-                                                                                       problem.diffusion_tensor());
-          LocalCouplingTwoFormAssembler<LocalCouplingIntegralOperator<CouplingIntegrandType>> local_coupling_assembler(
+          LocalCouplingIntegralOperator<CouplingIntegrandType,
+                                        typename LocalSpaceType::BaseFunctionSetType,
+                                        IntersectionType>
+              local_coupling_operator(problem.diffusion_factor(), problem.diffusion_tensor());
+          LocalCouplingTwoFormAssembler<LocalSpaceType, IntersectionType, MatrixType> local_coupling_assembler(
               local_coupling_operator);
           coupling_assembler.append(local_coupling_assembler,
                                     inside_inside_matrix,
@@ -192,17 +195,18 @@ public:
         VectorType boundary_vector(local_spaces[ss].mapper().size());
         SystemAssembler<LocalSpaceType, decltype(boundary_grid_part)> boundary_assembler(local_spaces[ss],
                                                                                          boundary_grid_part);
-        auto boundary_info =
-            XT::Grid::BoundaryInfoFactory<XT::Grid::extract_intersection_t<decltype(boundary_grid_part)>>::create(
-                problem.boundary_info_cfg());
+        typedef XT::Grid::extract_intersection_t<decltype(boundary_grid_part)> IntersectionType;
+        auto boundary_info = XT::Grid::BoundaryInfoFactory<IntersectionType>::create(problem.boundary_info_cfg());
         typedef LocalEllipticIpdgIntegrands::BoundaryLHS<typename ProblemType::DiffusionFactorType,
                                                          typename ProblemType::DiffusionTensorType,
                                                          coupling_method>
             BoundaryLhsIntegrandType;
-        LocalBoundaryIntegralOperator<BoundaryLhsIntegrandType> local_boundary_operator(problem.diffusion_factor(),
-                                                                                        problem.diffusion_tensor());
-        LocalBoundaryTwoFormAssembler<LocalBoundaryIntegralOperator<BoundaryLhsIntegrandType>>
-            local_boundary_operator_assembler(local_boundary_operator);
+        LocalBoundaryIntegralOperator<BoundaryLhsIntegrandType,
+                                      typename LocalSpaceType::BaseFunctionSetType,
+                                      IntersectionType>
+            local_boundary_operator(problem.diffusion_factor(), problem.diffusion_tensor());
+        LocalBoundaryTwoFormAssembler<LocalSpaceType, IntersectionType, MatrixType> local_boundary_operator_assembler(
+            local_boundary_operator);
         boundary_assembler.append(
             local_boundary_operator_assembler,
             boundary_matrix,
@@ -212,10 +216,12 @@ public:
                                                          typename ProblemType::DiffusionTensorType,
                                                          coupling_method>
             BoundaryRhsIntegrandType;
-        LocalFaceIntegralFunctional<BoundaryRhsIntegrandType> local_boundary_functional(
-            problem.dirichlet(), problem.diffusion_factor(), problem.diffusion_tensor());
-        LocalFaceFunctionalAssembler<LocalFaceIntegralFunctional<BoundaryRhsIntegrandType>>
-            local_boundary_functional_assembler(local_boundary_functional);
+        LocalFaceIntegralFunctional<BoundaryRhsIntegrandType,
+                                    typename LocalSpaceType::BaseFunctionSetType,
+                                    IntersectionType>
+            local_boundary_functional(problem.dirichlet(), problem.diffusion_factor(), problem.diffusion_tensor());
+        LocalFaceFunctionalAssembler<LocalSpaceType, IntersectionType, VectorType> local_boundary_functional_assembler(
+            local_boundary_functional);
         boundary_assembler.append(
             local_boundary_functional_assembler,
             boundary_vector,

@@ -171,40 +171,45 @@ public:
     return *this;
   } // ... append(...)
 
-  template <class V, class M, class R>
-  ThisType& append(const LocalVolumeTwoFormAssembler<V>& local_assembler,
-                   XT::LA::MatrixInterface<M, R>& matrix,
-                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
+  template <class M, class R>
+  ThisType&
+  append(const LocalVolumeTwoFormAssembler<TestSpaceType, typename M::derived_type, AnsatzSpaceType>& local_assembler,
+         XT::LA::MatrixInterface<M, R>& matrix,
+         const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
-    typedef internal::LocalVolumeTwoFormMatrixAssemblerWrapper<ThisType,
-                                                               LocalVolumeTwoFormAssembler<V>,
-                                                               typename M::derived_type>
-        WrapperType;
+    typedef internal::LocalVolumeTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim0_functors_.emplace_back(
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
     return *this;
   } // ... append(...)
 
-  template <class V, class M, class R>
-  ThisType& append(const LocalCouplingTwoFormAssembler<V>& local_assembler,
+  template <class M, class R>
+  ThisType& append(const LocalCouplingTwoFormAssembler<TestSpaceType,
+                                                       IntersectionType,
+                                                       typename M::derived_type,
+                                                       AnsatzSpaceType,
+                                                       OuterTestSpaceType,
+                                                       OuterAnsatzSpaceType>& local_assembler,
                    XT::LA::MatrixInterface<M, R>& matrix,
                    const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
-    typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType,
-                                                                 LocalCouplingTwoFormAssembler<V>,
-                                                                 typename M::derived_type>
-        WrapperType;
+    typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
     return *this;
   } // ... append(...)
 
-  template <class V, class M, class R>
-  ThisType& append(const LocalCouplingTwoFormAssembler<V>& local_assembler,
+  template <class M, class R>
+  ThisType& append(const LocalCouplingTwoFormAssembler<TestSpaceType,
+                                                       IntersectionType,
+                                                       typename M::derived_type,
+                                                       AnsatzSpaceType,
+                                                       OuterTestSpaceType,
+                                                       OuterAnsatzSpaceType>& local_assembler,
                    XT::LA::MatrixInterface<M, R>& matrix_in_in,
                    XT::LA::MatrixInterface<M, R>& matrix_out_out,
                    XT::LA::MatrixInterface<M, R>& matrix_in_out,
@@ -219,10 +224,7 @@ public:
     assert(matrix_in_out.cols() == outer_ansatz_space_->mapper().size());
     assert(matrix_out_in.rows() == outer_test_space_->mapper().size());
     assert(matrix_out_in.cols() == ansatz_space_->mapper().size());
-    typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType,
-                                                                 LocalCouplingTwoFormAssembler<V>,
-                                                                 typename M::derived_type>
-        WrapperType;
+    typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(test_space_,
                                                         ansatz_space_,
                                                         outer_test_space_,
@@ -236,46 +238,40 @@ public:
     return *this;
   } // ... append(...)
 
-  template <class V, class M, class R>
-  ThisType& append(const LocalBoundaryTwoFormAssembler<V>& local_assembler,
-                   XT::LA::MatrixInterface<M, R>& matrix,
-                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
+  template <class M, class R>
+  ThisType& append(
+      const LocalBoundaryTwoFormAssembler<TestSpaceType, IntersectionType, typename M::derived_type, AnsatzSpaceType>&
+          local_assembler,
+      XT::LA::MatrixInterface<M, R>& matrix,
+      const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
-    typedef internal::LocalBoundaryTwoFormMatrixAssemblerWrapper<ThisType,
-                                                                 LocalBoundaryTwoFormAssembler<V>,
-                                                                 typename M::derived_type>
-        WrapperType;
+    typedef internal::LocalBoundaryTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
     return *this;
   } // ... append(...)
 
-  template <class L, class V, class R>
-  ThisType& append(const LocalVolumeFunctionalAssembler<L>& local_assembler,
+  template <class V, class R>
+  ThisType& append(const LocalVolumeFunctionalAssembler<TestSpaceType, typename V::derived_type>& local_assembler,
                    XT::LA::VectorInterface<V, R>& vector,
                    const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
     assert(vector.size() == test_space_->mapper().size());
-    typedef internal::LocalVolumeFunctionalVectorAssemblerWrapper<ThisType,
-                                                                  LocalVolumeFunctionalAssembler<L>,
-                                                                  typename V::derived_type>
-        WrapperType;
+    typedef internal::LocalVolumeFunctionalVectorAssemblerWrapper<ThisType, typename V::derived_type> WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
     return *this;
   } // ... append(...)
 
-  template <class L, class V, class R>
-  ThisType& append(const LocalFaceFunctionalAssembler<L>& local_assembler,
-                   XT::LA::VectorInterface<V, R>& vector,
-                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
+  template <class V, class R>
+  ThisType&
+  append(const LocalFaceFunctionalAssembler<TestSpaceType, IntersectionType, typename V::derived_type>& local_assembler,
+         XT::LA::VectorInterface<V, R>& vector,
+         const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
     assert(vector.size() == test_space_->mapper().size());
-    typedef internal::LocalFaceFunctionalVectorAssemblerWrapper<ThisType,
-                                                                LocalFaceFunctionalAssembler<L>,
-                                                                typename V::derived_type>
-        WrapperType;
+    typedef internal::LocalFaceFunctionalVectorAssemblerWrapper<ThisType, typename V::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
     return *this;
   } // ... append(...)

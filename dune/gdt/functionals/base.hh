@@ -74,8 +74,12 @@ public:
   typedef VectorImp VectorType;
   using typename BaseFunctionalType::FieldType;
   using typename BaseFunctionalType::derived_type;
+  typedef LocalVolumeFunctionalInterface<typename SpaceType::BaseFunctionSetType, FieldType> LocalVolumeFunctionalType;
+  typedef LocalFaceFunctionalInterface<typename SpaceType::BaseFunctionSetType,
+                                       XT::Grid::extract_intersection_t<GridLayerType>,
+                                       FieldType>
+      LocalFaceFunctionalType;
 
-public:
   template <class... Args>
   explicit VectorFunctionalBase(VectorType& vec, Args&&... args)
     : BaseAssemblerType(std::forward<Args>(args)...)
@@ -121,31 +125,23 @@ public:
 
   using BaseAssemblerType::append;
 
-  template <class F>
   ThisType& append(
-      const LocalVolumeFunctionalInterface<F>& local_volume_functional,
+      const LocalVolumeFunctionalType& local_volume_functional,
       const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
-    typedef internal::LocalVolumeFunctionalWrapper<ThisType,
-                                                   typename LocalVolumeFunctionalInterface<F>::derived_type,
-                                                   VectorType>
-        WrapperType;
+    typedef internal::LocalVolumeFunctionalWrapper<ThisType, VectorType> WrapperType;
     this->codim0_functors_.emplace_back(
-        new WrapperType(this->test_space_, where, local_volume_functional.as_imp(), vector_.access()));
+        new WrapperType(this->test_space_, where, local_volume_functional, vector_.access()));
     return *this;
   }
 
-  template <class F>
-  ThisType& append(const LocalFaceFunctionalInterface<F>& local_face_functional,
+  ThisType& append(const LocalFaceFunctionalType& local_face_functional,
                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where =
                        new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
-    typedef internal::LocalFaceFunctionalWrapper<ThisType,
-                                                 typename LocalFaceFunctionalInterface<F>::derived_type,
-                                                 VectorType>
-        WrapperType;
+    typedef internal::LocalFaceFunctionalWrapper<ThisType, VectorType> WrapperType;
     this->codim1_functors_.emplace_back(
-        new WrapperType(this->test_space_, where, local_face_functional.as_imp(), vector_.access()));
+        new WrapperType(this->test_space_, where, local_face_functional, vector_.access()));
     return *this;
   }
 

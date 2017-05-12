@@ -20,51 +20,19 @@ namespace Dune {
 namespace GDT {
 
 
-// forwards
-template <class UnaryEvaluationImp>
-class LocalVolumeIntegralFunctional;
-
-template <class UnaryEvaluationImp>
-class LocalFaceIntegralFunctional;
-
-
-namespace internal {
-
-
-template <class UnaryEvaluationImp>
-class LocalVolumeIntegralFunctionalTraits
+template <class UnaryEvaluationType, class TestBase, class Field = typename TestBase::RangeFieldType>
+class LocalVolumeIntegralFunctional : public LocalVolumeFunctionalInterface<TestBase, Field>
 {
-  static_assert(is_unary_volume_integrand<UnaryEvaluationImp>::value,
-                "UnaryEvaluationImp has to be derived from LocalVolumeIntegrandInterface< ..., 1 >!");
+  static_assert(is_unary_volume_integrand<UnaryEvaluationType>::value, "");
+  typedef LocalVolumeIntegralFunctional<UnaryEvaluationType, TestBase, Field> ThisType;
+  typedef LocalVolumeFunctionalInterface<TestBase, Field> BaseType;
+
+  typedef typename TestBase::DomainFieldType D;
+  static const size_t d = TestBase::dimDomain;
 
 public:
-  typedef LocalVolumeIntegralFunctional<UnaryEvaluationImp> derived_type;
-};
-
-
-template <class UnaryEvaluationImp>
-class LocalFaceIntegralFunctionalTraits
-{
-  static_assert(is_unary_face_integrand<UnaryEvaluationImp>::value,
-                "UnaryEvaluationImp has to be derived from LocalFaceIntegrandInterface< ..., 1 >!");
-
-public:
-  typedef LocalFaceIntegralFunctional<UnaryEvaluationImp> derived_type;
-};
-
-
-} // namespace internal
-
-
-template <class UnaryEvaluationType>
-class LocalVolumeIntegralFunctional
-    : public LocalVolumeFunctionalInterface<internal::LocalVolumeIntegralFunctionalTraits<UnaryEvaluationType>>
-{
-  typedef LocalVolumeIntegralFunctional<UnaryEvaluationType> ThisType;
-  typedef LocalVolumeFunctionalInterface<internal::LocalVolumeIntegralFunctionalTraits<UnaryEvaluationType>> BaseType;
-
-public:
-  typedef internal::LocalVolumeIntegralFunctionalTraits<UnaryEvaluationType> Traits;
+  using typename BaseType::TestBaseType;
+  using typename BaseType::FieldType;
 
   template <class... Args>
   explicit LocalVolumeIntegralFunctional(Args&&... args)
@@ -92,9 +60,7 @@ public:
 
   using BaseType::apply;
 
-  template <class E, class D, size_t d, class R, size_t r, size_t rC>
-  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_base,
-             Dune::DynamicVector<R>& ret) const
+  void apply(const TestBaseType& test_base, DynamicVector<FieldType>& ret) const override final
   {
     const auto& entity = test_base.entity();
     const auto local_functions = integrand_.localFunctions(entity);
@@ -105,7 +71,7 @@ public:
     const size_t size = test_base.size();
     ret *= 0.0;
     assert(ret.size() >= size);
-    Dune::DynamicVector<R> evaluation_result(size, 0.); // \todo: make mutable member, after SMP refactor
+    DynamicVector<FieldType> evaluation_result(size, 0.); // \todo: make mutable member, after SMP refactor
     // loop over all quadrature points
     for (const auto& quadrature_point : quadrature) {
       const auto xx = quadrature_point.position();
@@ -126,15 +92,23 @@ private:
 }; // class LocalVolumeIntegralFunctional
 
 
-template <class UnaryEvaluationType>
-class LocalFaceIntegralFunctional
-    : public LocalFaceFunctionalInterface<internal::LocalFaceIntegralFunctionalTraits<UnaryEvaluationType>>
+template <class UnaryEvaluationType,
+          class TestBase,
+          class Intersection,
+          class Field = typename TestBase::RangeFieldType>
+class LocalFaceIntegralFunctional : public LocalFaceFunctionalInterface<TestBase, Intersection, Field>
 {
-  typedef LocalFaceIntegralFunctional<UnaryEvaluationType> ThisType;
-  typedef LocalFaceFunctionalInterface<internal::LocalFaceIntegralFunctionalTraits<UnaryEvaluationType>> BaseType;
+  static_assert(is_unary_face_integrand<UnaryEvaluationType>::value, "");
+  typedef LocalFaceIntegralFunctional<UnaryEvaluationType, TestBase, Intersection, Field> ThisType;
+  typedef LocalFaceFunctionalInterface<TestBase, Intersection, Field> BaseType;
+
+  typedef typename TestBase::DomainFieldType D;
+  static const size_t d = TestBase::dimDomain;
 
 public:
-  typedef internal::LocalFaceIntegralFunctionalTraits<UnaryEvaluationType> Traits;
+  using typename BaseType::TestBaseType;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::FieldType;
 
   template <class... Args>
   explicit LocalFaceIntegralFunctional(Args&&... args)
@@ -162,10 +136,9 @@ public:
 
   using BaseType::apply;
 
-  template <class E, class D, size_t d, class R, size_t r, size_t rC, class IntersectionType>
-  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_base,
+  void apply(const TestBaseType& test_base,
              const IntersectionType& intersection,
-             Dune::DynamicVector<R>& ret) const
+             DynamicVector<FieldType>& ret) const override final
   {
     const auto& entity = test_base.entity();
     const auto local_functions = integrand_.localFunctions(entity);
@@ -177,7 +150,7 @@ public:
     const size_t size = test_base.size();
     ret *= 0.0;
     assert(ret.size() >= size);
-    Dune::DynamicVector<R> evaluation_result(size, 0.); // \todo: make mutable member, after SMP refactor
+    DynamicVector<FieldType> evaluation_result(size, 0.); // \todo: make mutable member, after SMP refactor
     // loop over all quadrature points
     for (const auto& quadrature_point : quadrature) {
       const auto xx = quadrature_point.position();

@@ -24,54 +24,45 @@
 #include <dune/gdt/local/operators/interfaces.hh>
 #include <dune/gdt/local/functionals/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/type_traits.hh>
 
 namespace Dune {
 namespace GDT {
 
 
-template <class LocalVolumeTwoFormType>
+template <class TestSpace, class Matrix, class AnsatzSpace = TestSpace>
 class LocalVolumeTwoFormAssembler
 {
-  static_assert(is_local_volume_twoform<LocalVolumeTwoFormType>::value,
-                "LocalVolumeTwoFormType has to be derived from LocalVolumeTwoFormInterface!");
+  static_assert(is_space<TestSpace>::value, "");
+  static_assert(XT::LA::is_matrix<Matrix>::value, "");
+  static_assert(is_space<AnsatzSpace>::value, "");
+  static_assert(std::is_same<typename TestSpace::EntityType, typename AnsatzSpace::EntityType>::value, "");
 
 public:
+  typedef TestSpace TestSpaceType;
+  typedef AnsatzSpace AnsatzSpaceType;
+  typedef typename TestSpaceType::EntityType EntityType;
+  typedef Matrix MatrixType;
+  typedef typename MatrixType::ScalarType FieldType;
+  typedef LocalVolumeTwoFormInterface<typename TestSpaceType::BaseFunctionSetType,
+                                      typename AnsatzSpaceType::BaseFunctionSetType,
+                                      FieldType>
+      LocalVolumeTwoFormType;
+
   explicit LocalVolumeTwoFormAssembler(const LocalVolumeTwoFormType& local_twoform)
     : local_volume_twoform_(local_twoform)
   {
   }
 
-  /**
-   *  \tparam T           Traits of the SpaceInterface implementation, representing the type of test_space
-   *  \tparam A           Traits of the SpaceInterface implementation, representing the type of ansatz_space
-   *  \tparam *d          dimDomain of test_space (* == T) or ansatz_space (* == A)
-   *  \tparam *r          dimRange of test_space (* == T) or ansatz_space (* == A)
-   *  \tparam *rC         dimRangeCols of test_space (* == T) or ansatz_space (* == A)
-   *  \tparam EntityType  A model of Dune::Entity< 0 >
-   *  \tparam M           Traits of the Dune::XT::LA::Container::MatrixInterface implementation, representing the
-   * type of global_matrix
-   *  \tparam R           RangeFieldType, i.e. double
-   */
-  template <class T,
-            size_t Td,
-            size_t Tr,
-            size_t TrC,
-            class A,
-            size_t Ad,
-            size_t Ar,
-            size_t ArC,
-            class EntityType,
-            class M,
-            class R>
-  void assemble(const SpaceInterface<T, Td, Tr, TrC>& test_space,
-                const SpaceInterface<A, Ad, Ar, ArC>& ansatz_space,
+  void assemble(const TestSpaceType& test_space,
+                const AnsatzSpaceType& ansatz_space,
                 const EntityType& entity,
-                XT::LA::MatrixInterface<M, R>& global_matrix) const
+                MatrixType& global_matrix) const
   {
     // prepare
     const size_t rows = test_space.mapper().numDofs(entity);
     const size_t cols = ansatz_space.mapper().numDofs(entity);
-    Dune::DynamicMatrix<R> local_matrix(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
+    DynamicMatrix<FieldType> local_matrix(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
     // apply local two-form
     const auto test_base = test_space.base_function_set(entity);
     const auto ansatz_base = ansatz_space.base_function_set(entity);
@@ -101,29 +92,24 @@ private:
 
 
 template <class GridLayerImp,
-          class LocalVolumeTwoFormType,
           class TestFunctionType,
           class AnsatzFunctionType,
-          class FieldType>
+          class FieldType = typename TestFunctionType::RangeFieldType>
 class LocalVolumeTwoFormAccumulator : public XT::Grid::internal::Codim0ReturnObject<GridLayerImp, FieldType>
 {
-  static_assert(std::is_base_of<LocalVolumeTwoFormInterface<typename LocalVolumeTwoFormType::Traits>,
-                                LocalVolumeTwoFormType>::value,
-                "LocalVolumeTwoFormType has to be derived from LocalVolumeTwoFormInterface!");
   static_assert(XT::Functions::is_localizable_function<TestFunctionType>::value,
                 "TestFunctionType has to be derived from XT::Functions::LocalizableFunctionInterface!");
   static_assert(XT::Functions::is_localizable_function<AnsatzFunctionType>::value,
                 "AnsatzFunctionType has to be derived from XT::Functions::LocalizableFunctionInterface!");
 
-  typedef LocalVolumeTwoFormAccumulator<GridLayerImp,
-                                        LocalVolumeTwoFormType,
-                                        TestFunctionType,
-                                        AnsatzFunctionType,
-                                        FieldType>
-      ThisType;
+  typedef LocalVolumeTwoFormAccumulator<GridLayerImp, TestFunctionType, AnsatzFunctionType, FieldType> ThisType;
   typedef XT::Grid::internal::Codim0ReturnObject<GridLayerImp, FieldType> BaseType;
 
 public:
+  typedef LocalVolumeTwoFormInterface<typename TestFunctionType::LocalfunctionType,
+                                      typename AnsatzFunctionType::LocalfunctionType,
+                                      FieldType>
+      LocalVolumeTwoFormType;
   typedef typename BaseType::GridLayerType GridLayerType;
   typedef typename BaseType::EntityType EntityType;
 
@@ -236,154 +222,135 @@ private:
 }; // class LocalOperatorApplicator
 
 
-template <class LocalCouplingTwoFormType>
+template <class TestSpace,
+          class Intersection,
+          class Matrix,
+          class AnsatzSpace = TestSpace,
+          class OuterTestSpace = TestSpace,
+          class OuterAnsatzSpace = AnsatzSpace>
 class LocalCouplingTwoFormAssembler
 {
-  static_assert(is_local_coupling_twoform<LocalCouplingTwoFormType>::value,
-                "LocalCouplingTwoFormType has to be derived from LocalCouplingTwoFormInterface!");
+  static_assert(is_space<TestSpace>::value, "");
+  static_assert(is_space<AnsatzSpace>::value, "");
+  static_assert(is_space<OuterTestSpace>::value, "");
+  static_assert(is_space<OuterAnsatzSpace>::value, "");
+  static_assert(XT::LA::is_matrix<Matrix>::value, "");
+  static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
 public:
+  typedef TestSpace TestSpaceType;
+  typedef AnsatzSpace AnsatzSpaceType;
+  typedef OuterTestSpace OuterTestSpaceType;
+  typedef OuterAnsatzSpace OuterAnsatzSpaceType;
+  typedef Matrix MatrixType;
+  typedef Intersection IntersectionType;
+  typedef typename MatrixType::ScalarType FieldType;
+  typedef LocalCouplingTwoFormInterface<typename TestSpaceType::BaseFunctionSetType,
+                                        IntersectionType,
+                                        typename AnsatzSpaceType::BaseFunctionSetType,
+                                        typename OuterTestSpaceType::BaseFunctionSetType,
+                                        typename OuterAnsatzSpaceType::BaseFunctionSetType,
+                                        FieldType>
+      LocalCouplingTwoFormType;
+
   explicit LocalCouplingTwoFormAssembler(const LocalCouplingTwoFormType& local_twoform)
     : local_coupling_twoform_(local_twoform)
   {
   }
 
-  template <class TE,
-            size_t TEd,
-            size_t TEr,
-            size_t TErC,
-            class AE,
-            size_t AEd,
-            size_t AEr,
-            size_t AErC,
-            class TN,
-            size_t TNd,
-            size_t TNr,
-            size_t TNrC,
-            class AN,
-            size_t ANd,
-            size_t ANr,
-            size_t ANrC,
-            class IntersectionType,
-            class MEE,
-            class MNN,
-            class MEN,
-            class MNE,
-            class R>
-  void assemble(const SpaceInterface<TE, TEd, TEr, TErC>& test_space_en,
-                const SpaceInterface<AE, AEd, AEr, AErC>& ansatz_space_en,
-                const SpaceInterface<TN, TNd, TNr, TNrC>& test_space_ne,
-                const SpaceInterface<AN, ANd, ANr, ANrC>& ansatz_space_ne,
+  void assemble(const TestSpaceType& inner_test_space,
+                const AnsatzSpaceType& inner_ansatz_space,
+                const OuterTestSpaceType& outer_test_space,
+                const OuterAnsatzSpaceType& outer_ansatz_space,
                 const IntersectionType& intersection,
-                XT::LA::MatrixInterface<MEE, R>& global_matrix_en_en,
-                XT::LA::MatrixInterface<MNN, R>& global_matrix_ne_ne,
-                XT::LA::MatrixInterface<MEN, R>& global_matrix_en_ne,
-                XT::LA::MatrixInterface<MNE, R>& global_matrix_ne_en) const
+                MatrixType& global_matrix_in_in,
+                MatrixType& global_matrix_out_out,
+                MatrixType& global_matrix_in_out,
+                MatrixType& global_matrix_out_in) const
   {
-    assert(global_matrix_en_en.rows() >= test_space_en.mapper().size());
-    assert(global_matrix_en_en.cols() >= ansatz_space_en.mapper().size());
-    assert(global_matrix_ne_ne.rows() >= test_space_ne.mapper().size());
-    assert(global_matrix_ne_ne.cols() >= ansatz_space_ne.mapper().size());
-    assert(global_matrix_en_ne.rows() >= test_space_en.mapper().size());
-    assert(global_matrix_en_ne.cols() >= ansatz_space_ne.mapper().size());
-    assert(global_matrix_ne_en.rows() >= test_space_ne.mapper().size());
-    assert(global_matrix_ne_en.cols() >= ansatz_space_en.mapper().size());
+    assert(global_matrix_in_in.rows() >= inner_test_space.mapper().size());
+    assert(global_matrix_in_in.cols() >= inner_ansatz_space.mapper().size());
+    assert(global_matrix_out_out.rows() >= outer_test_space.mapper().size());
+    assert(global_matrix_out_out.cols() >= outer_ansatz_space.mapper().size());
+    assert(global_matrix_in_out.rows() >= inner_test_space.mapper().size());
+    assert(global_matrix_in_out.cols() >= outer_ansatz_space.mapper().size());
+    assert(global_matrix_out_in.rows() >= outer_test_space.mapper().size());
+    assert(global_matrix_out_in.cols() >= inner_ansatz_space.mapper().size());
     const auto entity = intersection.inside();
     const auto neighbor = intersection.outside();
     // prepare
-    const size_t rows_en = test_space_en.mapper().numDofs(entity);
-    const size_t cols_en = ansatz_space_en.mapper().numDofs(entity);
-    const size_t rows_ne = test_space_ne.mapper().numDofs(neighbor);
-    const size_t cols_ne = ansatz_space_ne.mapper().numDofs(neighbor);
-    Dune::DynamicMatrix<R> local_matrix_en_en(rows_en, cols_en, 0.); // \todo: make mutable member, after SMP refactor
-    Dune::DynamicMatrix<R> local_matrix_ne_ne(rows_ne, cols_ne, 0.); // \todo: make mutable member, after SMP refactor
-    Dune::DynamicMatrix<R> local_matrix_en_ne(rows_en, cols_ne, 0.); // \todo: make mutable member, after SMP refactor
-    Dune::DynamicMatrix<R> local_matrix_ne_en(rows_ne, cols_en, 0.); // \todo: make mutable member, after SMP refactor
+    const size_t rows_in = inner_test_space.mapper().numDofs(entity);
+    const size_t cols_in = inner_ansatz_space.mapper().numDofs(entity);
+    const size_t rows_out = outer_test_space.mapper().numDofs(neighbor);
+    const size_t cols_out = outer_ansatz_space.mapper().numDofs(neighbor);
+    // \todo: make mutable member, after SMP refactor
+    DynamicMatrix<FieldType> local_matrix_in_in(rows_in, cols_in, 0.);
+    DynamicMatrix<FieldType> local_matrix_out_out(rows_out, cols_out, 0.);
+    DynamicMatrix<FieldType> local_matrix_in_out(rows_in, cols_out, 0.);
+    DynamicMatrix<FieldType> local_matrix_out_in(rows_out, cols_in, 0.);
     // apply local two-form
-    const auto test_base_en = test_space_en.base_function_set(entity);
-    const auto ansatz_base_en = ansatz_space_en.base_function_set(entity);
-    const auto test_base_ne = test_space_ne.base_function_set(neighbor);
-    const auto ansatz_base_ne = ansatz_space_ne.base_function_set(neighbor);
-    local_coupling_twoform_.apply2(test_base_en,
-                                   ansatz_base_en,
-                                   test_base_ne,
-                                   ansatz_base_ne,
+    const auto test_base_in = inner_test_space.base_function_set(entity);
+    const auto ansatz_base_in = inner_ansatz_space.base_function_set(entity);
+    const auto test_base_out = outer_test_space.base_function_set(neighbor);
+    const auto ansatz_base_out = outer_ansatz_space.base_function_set(neighbor);
+    local_coupling_twoform_.apply2(test_base_in,
+                                   ansatz_base_in,
+                                   test_base_out,
+                                   ansatz_base_out,
                                    intersection,
-                                   local_matrix_en_en,
-                                   local_matrix_ne_ne,
-                                   local_matrix_en_ne,
-                                   local_matrix_ne_en);
+                                   local_matrix_in_in,
+                                   local_matrix_out_out,
+                                   local_matrix_in_out,
+                                   local_matrix_out_in);
     // write local matrix to global
-    const auto global_row_indices_en =
-        test_space_en.mapper().globalIndices(entity); // \todo: make mutable member, after SMP refactor
-    const auto global_col_indices_en =
-        ansatz_space_en.mapper().globalIndices(entity); // \todo: make mutable member, after SMP refactor
-    const auto global_row_indices_ne =
-        test_space_ne.mapper().globalIndices(neighbor); // \todo: make mutable member, after SMP refactor
-    const auto global_col_indices_ne =
-        ansatz_space_ne.mapper().globalIndices(neighbor); // \todo: make mutable member, after SMP refactor
-    assert(global_row_indices_en.size() == rows_en);
-    assert(global_col_indices_en.size() == cols_en);
-    assert(global_row_indices_ne.size() == rows_ne);
-    assert(global_col_indices_ne.size() == cols_ne);
-    for (size_t ii = 0; ii < rows_en; ++ii) {
-      const auto& local_matrix_en_en_row = local_matrix_en_en[ii];
-      const auto& local_matrix_en_ne_row = local_matrix_en_ne[ii];
-      const size_t global_ii = global_row_indices_en[ii];
-      for (size_t jj = 0; jj < cols_en; ++jj) {
-        const size_t global_jj = global_col_indices_en[jj];
-        global_matrix_en_en.add_to_entry(global_ii, global_jj, local_matrix_en_en_row[jj]);
+    // \todo: make mutable member, after SMP refactor
+    const auto global_row_indices_in = inner_test_space.mapper().globalIndices(entity);
+    const auto global_col_indices_in = inner_ansatz_space.mapper().globalIndices(entity);
+    const auto global_row_indices_out = outer_test_space.mapper().globalIndices(neighbor);
+    const auto global_col_indices_out = outer_ansatz_space.mapper().globalIndices(neighbor);
+    assert(global_row_indices_in.size() == rows_in);
+    assert(global_col_indices_in.size() == cols_in);
+    assert(global_row_indices_out.size() == rows_out);
+    assert(global_col_indices_out.size() == cols_out);
+    for (size_t ii = 0; ii < rows_in; ++ii) {
+      const auto& local_matrix_in_in_row = local_matrix_in_in[ii];
+      const auto& local_matrix_in_out_row = local_matrix_in_out[ii];
+      const size_t global_ii = global_row_indices_in[ii];
+      for (size_t jj = 0; jj < cols_in; ++jj) {
+        const size_t global_jj = global_col_indices_in[jj];
+        global_matrix_in_in.add_to_entry(global_ii, global_jj, local_matrix_in_in_row[jj]);
       }
-      for (size_t jj = 0; jj < cols_ne; ++jj) {
-        const size_t global_jj = global_col_indices_ne[jj];
-        global_matrix_en_ne.add_to_entry(global_ii, global_jj, local_matrix_en_ne_row[jj]);
+      for (size_t jj = 0; jj < cols_out; ++jj) {
+        const size_t global_jj = global_col_indices_out[jj];
+        global_matrix_in_out.add_to_entry(global_ii, global_jj, local_matrix_in_out_row[jj]);
       }
     }
-    for (size_t ii = 0; ii < rows_ne; ++ii) {
-      const auto& local_matrix_ne_en_row = local_matrix_ne_en[ii];
-      const auto& local_matrix_ne_ne_row = local_matrix_ne_ne[ii];
-      const size_t global_ii = global_row_indices_ne[ii];
-      for (size_t jj = 0; jj < cols_en; ++jj) {
-        const size_t global_jj = global_col_indices_en[jj];
-        global_matrix_ne_en.add_to_entry(global_ii, global_jj, local_matrix_ne_en_row[jj]);
+    for (size_t ii = 0; ii < rows_out; ++ii) {
+      const auto& local_matrix_out_in_row = local_matrix_out_in[ii];
+      const auto& local_matrix_out_out_row = local_matrix_out_out[ii];
+      const size_t global_ii = global_row_indices_out[ii];
+      for (size_t jj = 0; jj < cols_in; ++jj) {
+        const size_t global_jj = global_col_indices_in[jj];
+        global_matrix_out_in.add_to_entry(global_ii, global_jj, local_matrix_out_in_row[jj]);
       }
-      for (size_t jj = 0; jj < cols_ne; ++jj) {
-        const size_t global_jj = global_col_indices_ne[jj];
-        global_matrix_ne_ne.add_to_entry(global_ii, global_jj, local_matrix_ne_ne_row[jj]);
+      for (size_t jj = 0; jj < cols_out; ++jj) {
+        const size_t global_jj = global_col_indices_out[jj];
+        global_matrix_out_out.add_to_entry(global_ii, global_jj, local_matrix_out_out_row[jj]);
       }
     }
   } // ... assemble(...)
 
-  template <class TE,
-            size_t TEd,
-            size_t TEr,
-            size_t TErC,
-            class AE,
-            size_t AEd,
-            size_t AEr,
-            size_t AErC,
-            class TN,
-            size_t TNd,
-            size_t TNr,
-            size_t TNrC,
-            class AN,
-            size_t ANd,
-            size_t ANr,
-            size_t ANrC,
-            class IntersectionType,
-            class M,
-            class R>
-  void assemble(const SpaceInterface<TE, TEd, TEr, TErC>& test_space_en,
-                const SpaceInterface<AE, AEd, AEr, AErC>& ansatz_space_en,
-                const SpaceInterface<TN, TNd, TNr, TNrC>& test_space_ne,
-                const SpaceInterface<AN, ANd, ANr, ANrC>& ansatz_space_ne,
+  void assemble(const TestSpaceType& inner_test_space,
+                const AnsatzSpaceType& inner_ansatz_space,
+                const OuterTestSpaceType& outer_test_space,
+                const OuterAnsatzSpaceType& outer_ansatz_space,
                 const IntersectionType& intersection,
-                XT::LA::MatrixInterface<M, R>& global_matrix) const
+                MatrixType& global_matrix) const
   {
-    assemble(test_space_en,
-             ansatz_space_en,
-             test_space_ne,
-             ansatz_space_ne,
+    assemble(inner_test_space,
+             inner_ansatz_space,
+             outer_test_space,
+             outer_ansatz_space,
              intersection,
              global_matrix,
              global_matrix,
@@ -446,10 +413,25 @@ private:
 }; // class LocalCouplingOperatorApplicator
 
 
-template <class LocalBoundaryTwoFormType>
+template <class TestSpace, class Intersection, class Matrix, class AnsatzSpace = TestSpace>
 class LocalBoundaryTwoFormAssembler
 {
-  static_assert(is_local_boundary_twoform<LocalBoundaryTwoFormType>::value, "");
+  static_assert(is_space<TestSpace>::value, "");
+  static_assert(is_space<AnsatzSpace>::value, "");
+  static_assert(XT::LA::is_matrix<Matrix>::value, "");
+  static_assert(XT::Grid::is_intersection<Intersection>::value, "");
+
+public:
+  typedef TestSpace TestSpaceType;
+  typedef AnsatzSpace AnsatzSpaceType;
+  typedef Matrix MatrixType;
+  typedef Intersection IntersectionType;
+  typedef typename MatrixType::ScalarType FieldType;
+  typedef LocalBoundaryTwoFormInterface<typename TestSpaceType::BaseFunctionSetType,
+                                        IntersectionType,
+                                        typename AnsatzSpaceType::BaseFunctionSetType,
+                                        FieldType>
+      LocalBoundaryTwoFormType;
 
 public:
   explicit LocalBoundaryTwoFormAssembler(const LocalBoundaryTwoFormType& local_twoform)
@@ -457,27 +439,16 @@ public:
   {
   }
 
-  template <class T,
-            size_t Td,
-            size_t Tr,
-            size_t TrC,
-            class A,
-            size_t Ad,
-            size_t Ar,
-            size_t ArC,
-            class IntersectionType,
-            class M,
-            class R>
-  void assemble(const SpaceInterface<T, Td, Tr, TrC>& test_space,
-                const SpaceInterface<A, Ad, Ar, ArC>& ansatz_space,
+  void assemble(const TestSpaceType& test_space,
+                const AnsatzSpaceType& ansatz_space,
                 const IntersectionType& intersection,
-                XT::LA::MatrixInterface<M, R>& global_matrix) const
+                MatrixType& global_matrix) const
   {
     const auto entity = intersection.inside();
     // prepare
     const size_t rows = test_space.mapper().numDofs(entity);
     const size_t cols = ansatz_space.mapper().numDofs(entity);
-    Dune::DynamicMatrix<R> local_matrix(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
+    Dune::DynamicMatrix<FieldType> local_matrix(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
     // apply local two-form
     const auto test_base = test_space.base_function_set(entity);
     const auto ansatz_base = ansatz_space.base_function_set(entity);
@@ -485,10 +456,9 @@ public:
     assert(ansatz_base.size() == cols);
     local_twoform_.apply2(test_base, ansatz_base, intersection, local_matrix);
     // write local matrix to global
-    const auto global_row_indices =
-        test_space.mapper().globalIndices(entity); // \todo: make mutable member, after SMP refactor
-    const auto global_col_indices =
-        ansatz_space.mapper().globalIndices(entity); // \todo: make mutable member, after SMP refactor
+    // \todo: make mutable member, after SMP refactor
+    const auto global_row_indices = test_space.mapper().globalIndices(entity);
+    const auto global_col_indices = ansatz_space.mapper().globalIndices(entity);
     assert(global_row_indices.size() == rows);
     assert(global_col_indices.size() == cols);
     for (size_t ii = 0; ii < rows; ++ii) {
@@ -554,43 +524,37 @@ private:
 }; // class LocalBoundaryOperatorApplicator
 
 
-template <class LocalVolumeFunctionalType>
+template <class TestSpace, class Vector>
 class LocalVolumeFunctionalAssembler
 {
-  static_assert(is_local_volume_functional<LocalVolumeFunctionalType>::value,
-                "LocalVolumeFunctionalType has to be derived from LocalVolumeFunctionalInterface!");
+  static_assert(is_space<TestSpace>::value, "");
+  static_assert(XT::LA::is_vector<Vector>::value, "");
 
 public:
+  typedef TestSpace TestSpaceType;
+  typedef Vector VectorType;
+  typedef typename TestSpaceType::EntityType EntityType;
+  typedef typename VectorType::ScalarType FieldType;
+  typedef LocalVolumeFunctionalInterface<typename TestSpaceType::BaseFunctionSetType, FieldType>
+      LocalVolumeFunctionalType;
+
   explicit LocalVolumeFunctionalAssembler(const LocalVolumeFunctionalType& local_volume_functional)
     : local_volume_functional_(local_volume_functional)
   {
   }
 
-  /**
-   *  \tparam S          Traits of the SpaceInterface implementation, representing the type of test_space
-   *  \tparam d          dimDomain of test_space
-   *  \tparam r          dimRange of test_space
-   *  \tparam rC         dimRangeCols of test_space
-   *  \tparam EntityType A model of Dune::Entity< 0 >
-   *  \tparam V          Traits of the Dune::XT::LA::Container::VectorInterface implementation, representing the type
-   * of global_vector
-   *  \tparam R          RangeFieldType, i.e. double
-   */
-  template <class S, size_t d, size_t r, size_t rC, class EntityType, class V, class R>
-  void assemble(const SpaceInterface<S, d, r, rC>& test_space,
-                const EntityType& entity,
-                XT::LA::VectorInterface<V, R>& global_vector) const
+  void assemble(const TestSpaceType& test_space, const EntityType& entity, VectorType& global_vector) const
   {
     // prepare
     const size_t size = test_space.mapper().numDofs(entity);
-    Dune::DynamicVector<R> local_vector(size, 0.); // \todo: make mutable member, after SMP refactor
+    DynamicVector<FieldType> local_vector(size, 0.); // \todo: make mutable member, after SMP refactor
     // apply local functional
     const auto test_basis = test_space.base_function_set(entity);
     assert(test_basis.size() == size);
     local_volume_functional_.apply(test_basis, local_vector);
     // write local vector to global
-    const auto global_indices =
-        test_space.mapper().globalIndices(entity); // \todo: make mutable member, after SMP refactor
+    // \todo: make mutable member, after SMP refactor
+    const auto global_indices = test_space.mapper().globalIndices(entity);
     assert(global_indices.size() == size);
     for (size_t jj = 0; jj < size; ++jj)
       global_vector.add_to_entry(global_indices[jj], local_vector[jj]);
@@ -601,42 +565,46 @@ private:
 }; // class LocalVolumeFunctionalAssembler
 
 
-template <class LocalFunctionalType>
+template <class TestSpace, class Intersection, class Vector>
 class LocalFaceFunctionalAssembler
 {
-  static_assert(
-      std::is_base_of<LocalFaceFunctionalInterface<typename LocalFunctionalType::Traits>, LocalFunctionalType>::value,
-      "LocalFunctionalType has to be derived from LocalFaceFunctionalInterface!");
+  static_assert(is_space<TestSpace>::value, "");
+  static_assert(XT::Grid::is_intersection<Intersection>::value, "");
+  static_assert(XT::LA::is_vector<Vector>::value, "");
 
 public:
-  explicit LocalFaceFunctionalAssembler(const LocalFunctionalType& local_face_functional)
+  typedef TestSpace TestSpaceType;
+  typedef Intersection IntersectionType;
+  typedef Vector VectorType;
+  typedef typename VectorType::ScalarType FieldType;
+  typedef LocalFaceFunctionalInterface<typename TestSpaceType::BaseFunctionSetType, IntersectionType, FieldType>
+      LocalFaceFunctionalType;
+
+  explicit LocalFaceFunctionalAssembler(const LocalFaceFunctionalType& local_face_functional)
     : local_face_functional_(local_face_functional)
   {
   }
 
-  template <class T, size_t d, size_t r, size_t rC, class IntersectionType, class V, class R>
-  void assemble(const SpaceInterface<T, d, r, rC>& test_space,
-                const IntersectionType& intersection,
-                XT::LA::VectorInterface<V, R>& global_vector) const
+  void assemble(const TestSpaceType& test_space, const IntersectionType& intersection, VectorType& global_vector) const
   {
     // prepare
     const auto entity = intersection.inside();
     const size_t size = test_space.mapper().numDofs(entity);
-    Dune::DynamicVector<R> local_vector(size, 0.); // \todo: make mutable member, after SMP refactor
+    Dune::DynamicVector<FieldType> local_vector(size, 0.); // \todo: make mutable member, after SMP refactor
     // apply local functional
     const auto test_basis = test_space.base_function_set(entity);
     assert(test_basis.size() == size);
     local_face_functional_.apply(test_basis, intersection, local_vector);
     // write local vector to global
-    const auto global_indices =
-        test_space.mapper().globalIndices(entity); // \todo: make mutable member, after SMP refactor
+    // \todo: make mutable member, after SMP refactor
+    const auto global_indices = test_space.mapper().globalIndices(entity);
     assert(global_indices.size() == size);
     for (size_t jj = 0; jj < size; ++jj)
       global_vector.add_to_entry(global_indices[jj], local_vector[jj]);
   } // ... assemble(...)
 
 private:
-  const LocalFunctionalType& local_face_functional_;
+  const LocalFaceFunctionalType& local_face_functional_;
 }; // class LocalFaceFunctionalAssembler
 
 
