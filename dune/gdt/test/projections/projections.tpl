@@ -34,9 +34,9 @@ typedef ProjectionTest<{{SpaceType}}> ProjectionTest_{{Name}};
 TEST_F(ProjectionTest_{{Name}}, produces_correct_results)
 {
   {% if 'FvSpace' in SpaceType %}
-    const auto tolerance{0.096226};
+    const double tolerance = 0.096226;
   {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
-    const auto tolerance{0.0925927};
+    const double tolerance = 0.0925927;
   {% else %}
     const auto tolerance = this->default_tolerance;
   {% endif %}
@@ -61,9 +61,9 @@ TEST_F(L2ProjectionOperatorTest_{{Name}}, produces_correct_results)
   // RT : 0.0925927
   using Grid = Dune::XT::Grid::extract_grid_t<typename L2ProjectionOperatorTest_{{Name}}::GridLayerType>;
   {% if 'FvSpace' in SpaceType %}
-    const auto tolerance{0.096226};
+    const double tolerance = 0.096226;
   {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
-    const auto tolerance{0.0925927};
+    const double tolerance = 0.0925927;
   {% else %}
     const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
   {% endif %}
@@ -85,9 +85,9 @@ TEST_F(L2ProjectionLocalizableOperatorTest_{{Name}}, produces_correct_results)
   // RT : 0.096226
   typedef typename L2ProjectionLocalizableOperatorTest_{{Name}}::GridViewType::Grid Grid;
   {% if 'FvSpace' in SpaceType %}
-    const auto tolerance{0.096226};
+    const double tolerance = 0.096226;
   {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
-      const auto tolerance{0.0925927};
+    const double tolerance = 0.0925927;
   {% else %}
     const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
   {% endif %}

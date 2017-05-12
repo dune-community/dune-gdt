@@ -35,7 +35,7 @@ typedef L2GlobalProlongationLocalizableOperatorTest<{{SpaceType}}>
     LagrangeProlongationLocalizableOperatorTest_{{Name}};
 
 {% if 'FvSpace' in SpaceType %}
-  const auto {{Name}}_tolerance{1.45e-1};
+  const double {{Name}}_tolerance = 1.45e-1;
 {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
     const auto {{Name}}_tolerance = pdelab_rt_tolerance<L2GlobalProlongationOperatorTest_{{Name}}>();
 {% elif 'FemCg' in SpaceType %}

@@ -30,7 +30,7 @@ typedef L2LocalProlongationLocalizableOperatorTest<{{SpaceType}}>
   L2LocalProlongationLocalizableOperatorTest_{{Name}};
 
 {% if 'FvSpace' in SpaceType %}
-  const auto {{Name}}_tolerance{1.45e-1};
+  const double {{Name}}_tolerance = 1.45e-1;
 {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
     const auto {{Name}}_tolerance = pdelab_rt_tolerance<L2LocalProlongationOperatorTest_{{Name}}>();
 {% elif 'FemCg' in SpaceType %}
