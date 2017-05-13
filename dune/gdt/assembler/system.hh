@@ -307,4 +307,8 @@ protected:
 } // namespace GDT
 } // namespace Dune
 
+
+#include "system.lib.hh"
+
+
 #endif // DUNE_GDT_ASSEMBLER_SYSTEM_HH
