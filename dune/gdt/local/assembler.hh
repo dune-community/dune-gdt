@@ -30,8 +30,11 @@ namespace Dune {
 namespace GDT {
 
 
+/**
+ * \todo \attention Rename LocalVolumeTwoFormAssemblerFunctor -> LocalVolumeTwoFormAssembler after removing this class!
+ */
 template <class TestSpace, class Matrix, class AnsatzSpace = TestSpace>
-class LocalVolumeTwoFormAssembler
+class DUNE_DEPRECATED_MSG("Use LocalVolumeTwoFormAssemblerFunctor instead (13.05.2017)!") LocalVolumeTwoFormAssembler
 {
   static_assert(is_space<TestSpace>::value, "");
   static_assert(XT::LA::is_matrix<Matrix>::value, "");

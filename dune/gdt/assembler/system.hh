@@ -25,6 +25,7 @@
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/constraints.hh>
 
+#include "local-assemblers.hh"
 #include "wrapper.hh"
 
 namespace Dune {
@@ -172,16 +173,29 @@ public:
   } // ... append(...)
 
   template <class M, class R>
-  ThisType&
-  append(const LocalVolumeTwoFormAssembler<TestSpaceType, typename M::derived_type, AnsatzSpaceType>& local_assembler,
-         XT::LA::MatrixInterface<M, R>& matrix,
-         const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
+  ThisType& DUNE_DEPRECATED_MSG("Directly append the LocalVolumeTwoForm (13.05.2017)!") append(
+      const LocalVolumeTwoFormAssembler<TestSpaceType, typename M::derived_type, AnsatzSpaceType>& local_assembler,
+      XT::LA::MatrixInterface<M, R>& matrix,
+      const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
     typedef internal::LocalVolumeTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim0_functors_.emplace_back(
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
+    return *this;
+  } // ... append(...)
+
+  template <class M, class R>
+  ThisType& append(const LocalVolumeTwoFormInterface<typename TestSpaceType::BaseFunctionSetType,
+                                                     typename AnsatzSpaceType::BaseFunctionSetType,
+                                                     typename M::ScalarType>& local_volume_two_form,
+                   XT::LA::MatrixInterface<M, R>& matrix,
+                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
+  {
+    this->codim0_functors_.emplace_back(
+        new LocalVolumeTwoFormAssemblerFunctor<TestSpaceType, typename M::derived_type, GridLayerType, AnsatzSpaceType>(
+            test_space_, ansatz_space_, where, local_volume_two_form, matrix.as_imp()));
     return *this;
   } // ... append(...)
 

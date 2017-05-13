@@ -275,10 +275,6 @@ public:
   using typename BaseAssemblerType::GridLayerType;
   static const constexpr ChoosePattern pattern_type = pt;
 
-  typedef LocalVolumeTwoFormInterface<typename RangeSpaceType::BaseFunctionSetType,
-                                      typename SourceSpaceType::BaseFunctionSetType,
-                                      FieldType>
-      LocalVolumeTwoFormType;
   typedef LocalCouplingTwoFormInterface<typename RangeSpaceType::BaseFunctionSetType,
                                         XT::Grid::extract_intersection_t<GridLayerType>,
                                         typename SourceSpaceType::BaseFunctionSetType,
@@ -475,14 +471,12 @@ public:
   using BaseAssemblerType::append;
 
   ThisType& append(
-      const LocalVolumeTwoFormType& local_volume_twoform,
+      const LocalVolumeTwoFormInterface<RangeBaseType, SourceBaseType, FieldType>& local_volume_twoform,
       const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
-    typedef internal::LocalVolumeTwoFormWrapper<ThisType, MatrixType> WrapperType;
-    this->codim0_functors_.emplace_back(
-        new WrapperType(this->test_space_, this->ansatz_space_, where, local_volume_twoform, matrix_in_in_.access()));
+    this->append(local_volume_twoform, matrix_in_in_.access(), where);
     return *this;
-  } // ... append(...)
+  }
 
   ThisType& append(const LocalCouplingTwoFormType& local_coupling_twoform,
                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where =

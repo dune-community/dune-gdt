@@ -104,7 +104,8 @@ private:
 // given a local assembler
 
 template <class AssemblerType, class MatrixType>
-class LocalVolumeTwoFormMatrixAssemblerWrapper
+class DUNE_DEPRECATED_MSG("Use LocalVolumeTwoFormAssemblerFunctor instead or directly add the LocalVolumeTwoForm to "
+                          "the SystemAssembler (13.05.2017)!") LocalVolumeTwoFormMatrixAssemblerWrapper
     : public XT::Grid::internal::Codim0Object<typename AssemblerType::GridLayerType>
 {
   typedef XT::Grid::internal::Codim0Object<typename AssemblerType::GridLayerType> BaseType;
@@ -151,7 +152,8 @@ private:
 // without a given local assembler
 
 template <class AssemblerType, class MatrixType>
-class LocalVolumeTwoFormWrapper
+class DUNE_DEPRECATED_MSG("Use LocalVolumeTwoFormAssemblerFunctor instead or directly add the LocalVolumeTwoForm to "
+                          "the SystemAssembler (13.05.2017)!") LocalVolumeTwoFormWrapper
     : private XT::Common::ConstStorageProvider<LocalVolumeTwoFormAssembler<typename AssemblerType::TestSpaceType,
                                                                            MatrixType,
                                                                            typename AssemblerType::AnsatzSpaceType>>,
