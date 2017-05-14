@@ -104,7 +104,7 @@ private:
 // given a local assembler
 
 template <class AssemblerType, class MatrixType>
-class DUNE_DEPRECATED_MSG("Use LocalVolumeTwoFormAssemblerFunctor instead or directly add the LocalVolumeTwoForm to "
+class DUNE_DEPRECATED_MSG("Use LocalVolumeTwoFormAssemblerFunctor instead or directly append the LocalVolumeTwoForm to "
                           "the SystemAssembler (13.05.2017)!") LocalVolumeTwoFormMatrixAssemblerWrapper
     : public XT::Grid::internal::Codim0Object<typename AssemblerType::GridLayerType>
 {
@@ -152,7 +152,7 @@ private:
 // without a given local assembler
 
 template <class AssemblerType, class MatrixType>
-class DUNE_DEPRECATED_MSG("Use LocalVolumeTwoFormAssemblerFunctor instead or directly add the LocalVolumeTwoForm to "
+class DUNE_DEPRECATED_MSG("Use LocalVolumeTwoFormAssemblerFunctor instead or directly append the LocalVolumeTwoForm to "
                           "the SystemAssembler (13.05.2017)!") LocalVolumeTwoFormWrapper
     : private XT::Common::ConstStorageProvider<LocalVolumeTwoFormAssembler<typename AssemblerType::TestSpaceType,
                                                                            MatrixType,
@@ -193,7 +193,9 @@ public:
 // given a local assembler
 
 template <class AssemblerType, class MatrixType>
-class LocalCouplingTwoFormMatrixAssemblerWrapper
+class DUNE_DEPRECATED_MSG("Use LocalCouplingTwoFormAssemblerFunctor instead or directly append the "
+                          "LocalCouplingTwoForm to the SystemAssembler (13.05.2017)!")
+    LocalCouplingTwoFormMatrixAssemblerWrapper
     : public XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType>
 {
   static_assert(XT::LA::is_matrix<MatrixType>::value, "");
@@ -300,14 +302,16 @@ private:
 // without a given local assembler
 
 template <class AssemblerType, class MatrixType>
-class LocalCouplingTwoFormWrapper : private XT::Common::ConstStorageProvider<LocalCouplingTwoFormAssembler<
-                                        typename AssemblerType::TestSpaceType,
-                                        typename AssemblerType::IntersectionType,
-                                        MatrixType,
-                                        typename AssemblerType::AnsatzSpaceType,
-                                        typename AssemblerType::OuterTestSpaceType,
-                                        typename AssemblerType::OuterAnsatzSpaceType>>,
-                                    public LocalCouplingTwoFormMatrixAssemblerWrapper<AssemblerType, MatrixType>
+class DUNE_DEPRECATED_MSG("Use LocalCouplingTwoFormAssemblerFunctor instead or directly append the "
+                          "LocalCouplingTwoForm to the SystemAssembler (13.05.2017)!") LocalCouplingTwoFormWrapper
+    : private XT::Common::
+          ConstStorageProvider<LocalCouplingTwoFormAssembler<typename AssemblerType::TestSpaceType,
+                                                             typename AssemblerType::IntersectionType,
+                                                             MatrixType,
+                                                             typename AssemblerType::AnsatzSpaceType,
+                                                             typename AssemblerType::OuterTestSpaceType,
+                                                             typename AssemblerType::OuterAnsatzSpaceType>>,
+      public LocalCouplingTwoFormMatrixAssemblerWrapper<AssemblerType, MatrixType>
 {
   typedef XT::Common::ConstStorageProvider<LocalCouplingTwoFormAssembler<typename AssemblerType::TestSpaceType,
                                                                          typename AssemblerType::IntersectionType,

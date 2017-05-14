@@ -225,13 +225,18 @@ private:
 }; // class LocalOperatorApplicator
 
 
+/**
+ * \todo \attention Rename LocalCouplingTwoFormAssemblerFunctor -> LocalCouplingTwoFormAssembler after removing this
+ *                  class!
+ */
 template <class TestSpace,
           class Intersection,
           class Matrix,
           class AnsatzSpace = TestSpace,
           class OuterTestSpace = TestSpace,
           class OuterAnsatzSpace = AnsatzSpace>
-class LocalCouplingTwoFormAssembler
+class DUNE_DEPRECATED_MSG("Use LocalCouplingTwoFormAssemblerFunctor instead (13.05.2017)!")
+    LocalCouplingTwoFormAssembler
 {
   static_assert(is_space<TestSpace>::value, "");
   static_assert(is_space<AnsatzSpace>::value, "");

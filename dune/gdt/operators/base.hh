@@ -268,20 +268,18 @@ public:
   typedef typename BaseAssemblerType::AnsatzSpaceType SourceSpaceType;
   typedef typename BaseAssemblerType::OuterTestSpaceType OuterRangeSpaceType;
   typedef typename BaseAssemblerType::OuterAnsatzSpaceType OuterSourceSpaceType;
+  typedef typename RangeSpaceType::BaseFunctionSetType RangeBaseType;
+  typedef typename SourceSpaceType::BaseFunctionSetType SourceBaseType;
+  typedef typename OuterRangeSpaceType::BaseFunctionSetType OuterRangeBaseType;
+  typedef typename OuterSourceSpaceType::BaseFunctionSetType OuterSourceBaseType;
   typedef XT::LA::SparsityPatternDefault PatternType;
   typedef MatrixImp MatrixType;
   using typename BaseOperatorType::FieldType;
   using typename BaseOperatorType::derived_type;
   using typename BaseAssemblerType::GridLayerType;
+  using typename BaseAssemblerType::IntersectionType;
   static const constexpr ChoosePattern pattern_type = pt;
 
-  typedef LocalCouplingTwoFormInterface<typename RangeSpaceType::BaseFunctionSetType,
-                                        XT::Grid::extract_intersection_t<GridLayerType>,
-                                        typename SourceSpaceType::BaseFunctionSetType,
-                                        typename OuterRangeSpaceType::BaseFunctionSetType,
-                                        typename OuterSourceSpaceType::BaseFunctionSetType,
-                                        FieldType>
-      LocalCouplingTwoFormType;
   typedef LocalBoundaryTwoFormInterface<typename RangeSpaceType::BaseFunctionSetType,
                                         XT::Grid::extract_intersection_t<GridLayerType>,
                                         typename SourceSpaceType::BaseFunctionSetType,
@@ -478,23 +476,23 @@ public:
     return *this;
   }
 
-  ThisType& append(const LocalCouplingTwoFormType& local_coupling_twoform,
+  ThisType& append(const LocalCouplingTwoFormInterface<RangeBaseType,
+                                                       IntersectionType,
+                                                       SourceBaseType,
+                                                       OuterRangeBaseType,
+                                                       OuterSourceBaseType,
+                                                       FieldType>& local_coupling_twoform,
                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where =
                        new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>())
   {
-    typedef internal::LocalCouplingTwoFormWrapper<ThisType, MatrixType> WrapperType;
-    this->codim1_functors_.emplace_back(new WrapperType(this->test_space_,
-                                                        this->ansatz_space_,
-                                                        this->outer_test_space_,
-                                                        this->outer_ansatz_space_,
-                                                        where,
-                                                        local_coupling_twoform,
-                                                        matrix_in_in_.access(),
-                                                        matrix_out_out_.access(),
-                                                        matrix_in_out_.access(),
-                                                        matrix_out_in_.access()));
+    this->append(local_coupling_twoform,
+                 matrix_in_in_.access(),
+                 matrix_out_out_.access(),
+                 matrix_in_out_.access(),
+                 matrix_out_in_.access(),
+                 where);
     return *this;
-  } // ... append(...)
+  }
 
   ThisType& append(const LocalBoundaryTwoFormType& local_boundary_twoform,
                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where =
