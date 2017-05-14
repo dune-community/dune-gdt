@@ -360,15 +360,6 @@ public:
     return *this;
   } // ... append(...)
 
-  using BaseType::add;
-
-  template <class... Args>
-  DUNE_DEPRECATED_MSG("Use append() instead (since 11.01.2017)!")
-  ThisType& add(Args&&... args)
-  {
-    return append(std::forward<Args>(args)...);
-  }
-
   void assemble(const bool use_tbb = false)
   {
     this->walk(use_tbb);

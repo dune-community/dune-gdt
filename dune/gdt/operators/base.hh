@@ -173,15 +173,6 @@ public:
     return *this;
   } // ... append(...)
 
-  using BaseType::add;
-
-  template <class... Args>
-  DUNE_DEPRECATED_MSG("Use append() instead (since 11.01.2017)!")
-  ThisType& add(Args&&... args)
-  {
-    return append(std::forward<Args>(args)...);
-  }
-
   FieldType compute_locally(const EntityType& entity) const
   {
     FieldType local_result = 0.;
@@ -497,15 +488,6 @@ public:
     return *this;
   }
 
-  using BaseAssemblerType::add;
-
-  template <class... Args>
-  DUNE_DEPRECATED_MSG("Use append() instead (since 11.01.2017)!")
-  ThisType& add(Args&&... args)
-  {
-    return append(std::forward<Args>(args)...);
-  }
-
   template <class S, class R>
   void apply(const XT::LA::VectorInterface<S>& source, XT::LA::VectorInterface<R>& range) const
   {
@@ -683,15 +665,6 @@ public:
     BaseType::append(*local_operators_codim_1.back(), where);
     return *this;
   } // ... append(...)
-
-  using BaseType::add;
-
-  template <class... Args>
-  DUNE_DEPRECATED_MSG("Use append() instead (since 11.01.2017)!")
-  ThisType& add(Args&&... args)
-  {
-    return append(std::forward<Args>(args)...);
-  }
 
   void apply()
   {
