@@ -280,12 +280,6 @@ public:
   using typename BaseAssemblerType::IntersectionType;
   static const constexpr ChoosePattern pattern_type = pt;
 
-  typedef LocalBoundaryTwoFormInterface<typename RangeSpaceType::BaseFunctionSetType,
-                                        XT::Grid::extract_intersection_t<GridLayerType>,
-                                        typename SourceSpaceType::BaseFunctionSetType,
-                                        FieldType>
-      LocalBoundaryTwoFormType;
-
 private:
   typedef XT::LA::Solver<MatrixType, typename SourceSpaceType::CommunicatorType> LinearSolverType;
 
@@ -494,15 +488,14 @@ public:
     return *this;
   }
 
-  ThisType& append(const LocalBoundaryTwoFormType& local_boundary_twoform,
+  ThisType& append(const LocalBoundaryTwoFormInterface<RangeBaseType, IntersectionType, SourceBaseType, FieldType>&
+                       local_boundary_twoform,
                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where =
                        new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>())
   {
-    typedef internal::LocalBoundaryTwoFormWrapper<ThisType, MatrixType> WrapperType;
-    this->codim1_functors_.emplace_back(
-        new WrapperType(this->test_space_, this->ansatz_space_, where, local_boundary_twoform, matrix_in_in_.access()));
+    this->append(local_boundary_twoform, matrix_in_in_.access(), where);
     return *this;
-  } // ... append(...)
+  }
 
   using BaseAssemblerType::add;
 

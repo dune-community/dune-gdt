@@ -385,7 +385,9 @@ public:
 // given a local assembler
 
 template <class AssemblerType, class MatrixType>
-class LocalBoundaryTwoFormMatrixAssemblerWrapper
+class DUNE_DEPRECATED_MSG("Use LocalBoundaryTwoFormAssemblerFunctor instead or directly append the "
+                          "LocalBoundaryTwoForm to the SystemAssembler (13.05.2017)!")
+    LocalBoundaryTwoFormMatrixAssemblerWrapper
     : public XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType>
 {
   typedef XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType> BaseType;
@@ -435,7 +437,8 @@ private:
 // without a given local assembler
 
 template <class AssemblerType, class MatrixType>
-class LocalBoundaryTwoFormWrapper
+class DUNE_DEPRECATED_MSG("Use LocalBoundaryTwoFormAssemblerFunctor instead or directly append the "
+                          "LocalBoundaryTwoForm to the SystemAssembler (13.05.2017)!") LocalBoundaryTwoFormWrapper
     : private XT::Common::ConstStorageProvider<LocalBoundaryTwoFormAssembler<typename AssemblerType::TestSpaceType,
                                                                              typename AssemblerType::IntersectionType,
                                                                              MatrixType,
