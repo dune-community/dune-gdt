@@ -24,59 +24,109 @@
 
 // everything related to dd subdomain
 #if HAVE_DUNE_FEM
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_APPEND_DD_SUBDOMAIN(                                                            \
-    _pre, _G, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC, _la)                              \
-  _pre Dune::GDT::SystemAssembler<typename Dune::GDT::SpaceProvider<_G,                                                \
-                                                                    Dune::XT::Grid::Layers::_s_grid_layer,             \
-                                                                    Dune::GDT::SpaceType::_s_type,                     \
-                                                                    Dune::GDT::Backends::_s_backend,                   \
-                                                                    _p,                                                \
-                                                                    double,                                            \
-                                                                    _r,                                                \
-                                                                    _rC>::type,                                        \
-                                  typename Dune::XT::Grid::Layer<_G,                                                   \
-                                                                 Dune::XT::Grid::Layers::_g_layer,                     \
-                                                                 Dune::XT::Grid::Backends::_g_backend,                 \
-                                                                 Dune::XT::Grid::DD::SubdomainGrid<_G>>::type>&        \
-  Dune::GDT::SystemAssembler<typename Dune::GDT::SpaceProvider<_G,                                                     \
-                                                               Dune::XT::Grid::Layers::_s_grid_layer,                  \
-                                                               Dune::GDT::SpaceType::_s_type,                          \
-                                                               Dune::GDT::Backends::_s_backend,                        \
-                                                               _p,                                                     \
-                                                               double,                                                 \
-                                                               _r,                                                     \
-                                                               _rC>::type,                                             \
-                             typename Dune::XT::Grid::Layer<_G,                                                        \
-                                                            Dune::XT::Grid::Layers::_g_layer,                          \
-                                                            Dune::XT::Grid::Backends::_g_backend,                      \
-                                                            Dune::XT::Grid::DD::SubdomainGrid<_G>>::type>::            \
-      append<typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::MatrixType::Traits, double>(       \
-          const Dune::GDT::LocalVolumeTwoFormAssembler<                                                                \
-              typename Dune::GDT::SpaceProvider<_G,                                                                    \
-                                                Dune::XT::Grid::Layers::_s_grid_layer,                                 \
-                                                Dune::GDT::SpaceType::_s_type,                                         \
-                                                Dune::GDT::Backends::_s_backend,                                       \
-                                                _p,                                                                    \
-                                                double,                                                                \
-                                                _r,                                                                    \
-                                                _rC>::type,                                                            \
-              typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::MatrixType,                       \
-              typename Dune::GDT::SpaceProvider<_G,                                                                    \
-                                                Dune::XT::Grid::Layers::_s_grid_layer,                                 \
-                                                Dune::GDT::SpaceType::_s_type,                                         \
-                                                Dune::GDT::Backends::_s_backend,                                       \
-                                                _p,                                                                    \
-                                                double,                                                                \
-                                                _r,                                                                    \
-                                                _rC>::type>&,                                                          \
-          Dune::XT::LA::MatrixInterface<                                                                               \
-              typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::MatrixType::Traits,               \
-              double>&,                                                                                                \
-          const XT::Grid::ApplyOn::WhichEntity<                                                                        \
-              typename Dune::XT::Grid::Layer<_G,                                                                       \
-                                             Dune::XT::Grid::Layers::_g_layer,                                         \
-                                             Dune::XT::Grid::Backends::_g_backend,                                     \
-                                             Dune::XT::Grid::DD::SubdomainGrid<_G>>::type>*)
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_APPEND_DD_SUBDOMAIN(                                                                                                    \
+    _pre, _G, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC, _la)                                                                      \
+  typedef typename Dune::GDT::SpaceProvider<_G,                                                                                                                \
+                                            Dune::XT::Grid::Layers::_s_grid_layer,                                                                             \
+                                            Dune::GDT::SpaceType::_s_type,                                                                                     \
+                                            Dune::GDT::Backends::_s_backend,                                                                                   \
+                                            _p,                                                                                                                \
+                                            double,                                                                                                            \
+                                            _r,                                                                                                                \
+                                            _rC>::type                                                                                                         \
+      _DUNE_GDT_ASLADS_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la;                                                 \
+  typedef typename _DUNE_GDT_ASLADS_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                                   \
+      BaseFunctionSetType                                                                                                                                      \
+          _DUNE_GDT_ASLADS_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la;                                   \
+  typedef typename Dune::XT::Grid::Layer<_G,                                                                                                                   \
+                                         Dune::XT::Grid::Layers::_g_layer,                                                                                     \
+                                         Dune::XT::Grid::Backends::_g_backend,                                                                                 \
+                                         Dune::XT::Grid::DD::SubdomainGrid<_G>>::type                                                                          \
+      _DUNE_GDT_ASLADS_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la;                                             \
+  typedef Dune::XT::Grid::                                                                                                                                     \
+      extract_intersection_t<_DUNE_GDT_ASLADS_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>                      \
+          _DUNE_GDT_ASLADS_Intersection_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la;                                      \
+  typedef typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::istl_sparse>::MatrixType                                                            \
+      _DUNE_GDT_ASLADS_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la;                                                \
+  _pre Dune::GDT::SystemAssembler<_DUNE_GDT_ASLADS_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                     \
+                                  _DUNE_GDT_ASLADS_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>&                \
+  Dune::GDT::SystemAssembler<_DUNE_GDT_ASLADS_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                          \
+                             _DUNE_GDT_ASLADS_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>::                    \
+      append(                                                                                                                                                  \
+          const Dune::GDT::                                                                                                                                    \
+              LocalVolumeTwoFormInterface<_DUNE_GDT_ASLADS_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,   \
+                                          _DUNE_GDT_ASLADS_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,   \
+                                          double>&,                                                                                                            \
+          Dune::XT::LA::MatrixInterface<                                                                                                                       \
+              typename _DUNE_GDT_ASLADS_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                              \
+                  Traits,                                                                                                                                      \
+              double>&,                                                                                                                                        \
+          const XT::Grid::ApplyOn::                                                                                                                            \
+              WhichEntity<_DUNE_GDT_ASLADS_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>*);                      \
+  _pre Dune::GDT::SystemAssembler<_DUNE_GDT_ASLADS_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                     \
+                                  _DUNE_GDT_ASLADS_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>&                \
+  Dune::GDT::SystemAssembler<_DUNE_GDT_ASLADS_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                          \
+                             _DUNE_GDT_ASLADS_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>::                    \
+      append(                                                                                                                                                  \
+          const Dune::GDT::                                                                                                                                    \
+              LocalCouplingTwoFormInterface<_DUNE_GDT_ASLADS_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            _DUNE_GDT_ASLADS_Intersection_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,    \
+                                            _DUNE_GDT_ASLADS_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            _DUNE_GDT_ASLADS_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            _DUNE_GDT_ASLADS_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            double>&,                                                                                                          \
+          Dune::XT::LA::MatrixInterface<                                                                                                                       \
+              typename _DUNE_GDT_ASLADS_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                              \
+                  Traits,                                                                                                                                      \
+              double>&,                                                                                                                                        \
+          const Dune::XT::Grid::ApplyOn::                                                                                                                      \
+              WhichIntersection<_DUNE_GDT_ASLADS_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>*);                \
+  _pre Dune::GDT::SystemAssembler<_DUNE_GDT_ASLADS_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                     \
+                                  _DUNE_GDT_ASLADS_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>&                \
+  Dune::GDT::SystemAssembler<_DUNE_GDT_ASLADS_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                          \
+                             _DUNE_GDT_ASLADS_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>::                    \
+      append(                                                                                                                                                  \
+          const Dune::GDT::                                                                                                                                    \
+              LocalCouplingTwoFormInterface<_DUNE_GDT_ASLADS_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            _DUNE_GDT_ASLADS_Intersection_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,    \
+                                            _DUNE_GDT_ASLADS_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            _DUNE_GDT_ASLADS_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            _DUNE_GDT_ASLADS_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            double>&,                                                                                                          \
+          Dune::XT::LA::MatrixInterface<                                                                                                                       \
+              typename _DUNE_GDT_ASLADS_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                              \
+                  Traits,                                                                                                                                      \
+              double>&,                                                                                                                                        \
+          Dune::XT::LA::MatrixInterface<                                                                                                                       \
+              typename _DUNE_GDT_ASLADS_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                              \
+                  Traits,                                                                                                                                      \
+              double>&,                                                                                                                                        \
+          Dune::XT::LA::MatrixInterface<                                                                                                                       \
+              typename _DUNE_GDT_ASLADS_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                              \
+                  Traits,                                                                                                                                      \
+              double>&,                                                                                                                                        \
+          Dune::XT::LA::MatrixInterface<                                                                                                                       \
+              typename _DUNE_GDT_ASLADS_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                              \
+                  Traits,                                                                                                                                      \
+              double>&,                                                                                                                                        \
+          const Dune::XT::Grid::ApplyOn::                                                                                                                      \
+              WhichIntersection<_DUNE_GDT_ASLADS_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>*);                \
+  _pre Dune::GDT::SystemAssembler<_DUNE_GDT_ASLADS_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                     \
+                                  _DUNE_GDT_ASLADS_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>&                \
+  Dune::GDT::SystemAssembler<_DUNE_GDT_ASLADS_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                          \
+                             _DUNE_GDT_ASLADS_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>::                    \
+      append(                                                                                                                                                  \
+          const Dune::GDT::                                                                                                                                    \
+              LocalBoundaryTwoFormInterface<_DUNE_GDT_ASLADS_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            _DUNE_GDT_ASLADS_Intersection_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,    \
+                                            _DUNE_GDT_ASLADS_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            double>&,                                                                                                          \
+          Dune::XT::LA::MatrixInterface<                                                                                                                       \
+              typename _DUNE_GDT_ASLADS_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                              \
+                  Traits,                                                                                                                                      \
+              double>&,                                                                                                                                        \
+          const Dune::XT::Grid::ApplyOn::                                                                                                                      \
+              WhichIntersection<_DUNE_GDT_ASLADS_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>*)
 
 #if HAVE_DUNE_ISTL
 #define _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_APPEND_DD_SUBDOMAIN_ISTL(                                                       \
@@ -110,55 +160,107 @@
 #endif
 
 // everything not related to dd subdomain
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_APPEND(                                                                         \
-    _pre, _G, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC, _la)                              \
-  _pre Dune::GDT::SystemAssembler<typename Dune::GDT::SpaceProvider<_G,                                                \
-                                                                    Dune::XT::Grid::Layers::_s_grid_layer,             \
-                                                                    Dune::GDT::SpaceType::_s_type,                     \
-                                                                    Dune::GDT::Backends::_s_backend,                   \
-                                                                    _p,                                                \
-                                                                    double,                                            \
-                                                                    _r,                                                \
-                                                                    _rC>::type,                                        \
-                                  typename Dune::XT::Grid::Layer<_G,                                                   \
-                                                                 Dune::XT::Grid::Layers::_g_layer,                     \
-                                                                 Dune::XT::Grid::Backends::_g_backend>::type>&         \
-  Dune::GDT::SystemAssembler<                                                                                          \
-      typename Dune::GDT::SpaceProvider<_G,                                                                            \
-                                        Dune::XT::Grid::Layers::_s_grid_layer,                                         \
-                                        Dune::GDT::SpaceType::_s_type,                                                 \
-                                        Dune::GDT::Backends::_s_backend,                                               \
-                                        _p,                                                                            \
-                                        double,                                                                        \
-                                        _r,                                                                            \
-                                        _rC>::type,                                                                    \
-      typename Dune::XT::Grid::Layer<_G, Dune::XT::Grid::Layers::_g_layer, Dune::XT::Grid::Backends::_g_backend>::     \
-          type>::append<typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::MatrixType::Traits,     \
-                        double>(                                                                                       \
-      const Dune::GDT::LocalVolumeTwoFormAssembler<                                                                    \
-          typename Dune::GDT::SpaceProvider<_G,                                                                        \
-                                            Dune::XT::Grid::Layers::_s_grid_layer,                                     \
-                                            Dune::GDT::SpaceType::_s_type,                                             \
-                                            Dune::GDT::Backends::_s_backend,                                           \
-                                            _p,                                                                        \
-                                            double,                                                                    \
-                                            _r,                                                                        \
-                                            _rC>::type,                                                                \
-          typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::MatrixType,                           \
-          typename Dune::GDT::SpaceProvider<_G,                                                                        \
-                                            Dune::XT::Grid::Layers::_s_grid_layer,                                     \
-                                            Dune::GDT::SpaceType::_s_type,                                             \
-                                            Dune::GDT::Backends::_s_backend,                                           \
-                                            _p,                                                                        \
-                                            double,                                                                    \
-                                            _r,                                                                        \
-                                            _rC>::type>&,                                                              \
-      Dune::XT::LA::MatrixInterface<                                                                                   \
-          typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::MatrixType::Traits,                   \
-          double>&,                                                                                                    \
-      const XT::Grid::ApplyOn::WhichEntity<                                                                            \
-          typename Dune::XT::Grid::Layer<_G, Dune::XT::Grid::Layers::_g_layer, Dune::XT::Grid::Backends::_g_backend>:: \
-              type>*)
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_APPEND(                                                                                                               \
+    _pre, _G, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC, _la)                                                                    \
+  typedef typename Dune::GDT::SpaceProvider<_G,                                                                                                              \
+                                            Dune::XT::Grid::Layers::_s_grid_layer,                                                                           \
+                                            Dune::GDT::SpaceType::_s_type,                                                                                   \
+                                            Dune::GDT::Backends::_s_backend,                                                                                 \
+                                            _p,                                                                                                              \
+                                            double,                                                                                                          \
+                                            _r,                                                                                                              \
+                                            _rC>::type                                                                                                       \
+      _DUNE_GDT_ASLA_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la;                                                 \
+  typedef typename _DUNE_GDT_ASLA_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                                   \
+      BaseFunctionSetType                                                                                                                                    \
+          _DUNE_GDT_ASLA_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la;                                   \
+  typedef                                                                                                                                                    \
+      typename Dune::XT::Grid::Layer<_G, Dune::XT::Grid::Layers::_g_layer, Dune::XT::Grid::Backends::_g_backend>::type                                       \
+          _DUNE_GDT_ASLA_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la;                                         \
+  typedef Dune::XT::Grid::                                                                                                                                   \
+      extract_intersection_t<_DUNE_GDT_ASLA_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>                      \
+          _DUNE_GDT_ASLA_Intersection_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la;                                      \
+  typedef typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::istl_sparse>::MatrixType                                                          \
+      _DUNE_GDT_ASLA_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la;                                                \
+  _pre Dune::GDT::SystemAssembler<_DUNE_GDT_ASLA_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                     \
+                                  _DUNE_GDT_ASLA_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>&                \
+  Dune::GDT::SystemAssembler<_DUNE_GDT_ASLA_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                          \
+                             _DUNE_GDT_ASLA_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>::                    \
+      append(                                                                                                                                                \
+          const Dune::GDT::                                                                                                                                  \
+              LocalVolumeTwoFormInterface<_DUNE_GDT_ASLA_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,   \
+                                          _DUNE_GDT_ASLA_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,   \
+                                          double>&,                                                                                                          \
+          Dune::XT::LA::MatrixInterface<                                                                                                                     \
+              typename _DUNE_GDT_ASLA_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                              \
+                  Traits,                                                                                                                                    \
+              double>&,                                                                                                                                      \
+          const XT::Grid::ApplyOn::                                                                                                                          \
+              WhichEntity<_DUNE_GDT_ASLA_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>*);                      \
+  _pre Dune::GDT::SystemAssembler<_DUNE_GDT_ASLA_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                     \
+                                  _DUNE_GDT_ASLA_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>&                \
+  Dune::GDT::SystemAssembler<_DUNE_GDT_ASLA_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                          \
+                             _DUNE_GDT_ASLA_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>::                    \
+      append(                                                                                                                                                \
+          const Dune::GDT::                                                                                                                                  \
+              LocalCouplingTwoFormInterface<_DUNE_GDT_ASLA_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            _DUNE_GDT_ASLA_Intersection_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,    \
+                                            _DUNE_GDT_ASLA_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            _DUNE_GDT_ASLA_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            _DUNE_GDT_ASLA_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            double>&,                                                                                                        \
+          Dune::XT::LA::MatrixInterface<                                                                                                                     \
+              typename _DUNE_GDT_ASLA_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                              \
+                  Traits,                                                                                                                                    \
+              double>&,                                                                                                                                      \
+          const Dune::XT::Grid::ApplyOn::                                                                                                                    \
+              WhichIntersection<_DUNE_GDT_ASLA_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>*);                \
+  _pre Dune::GDT::SystemAssembler<_DUNE_GDT_ASLA_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                     \
+                                  _DUNE_GDT_ASLA_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>&                \
+  Dune::GDT::SystemAssembler<_DUNE_GDT_ASLA_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                          \
+                             _DUNE_GDT_ASLA_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>::                    \
+      append(                                                                                                                                                \
+          const Dune::GDT::                                                                                                                                  \
+              LocalCouplingTwoFormInterface<_DUNE_GDT_ASLA_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            _DUNE_GDT_ASLA_Intersection_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,    \
+                                            _DUNE_GDT_ASLA_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            _DUNE_GDT_ASLA_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            _DUNE_GDT_ASLA_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            double>&,                                                                                                        \
+          Dune::XT::LA::MatrixInterface<                                                                                                                     \
+              typename _DUNE_GDT_ASLA_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                              \
+                  Traits,                                                                                                                                    \
+              double>&,                                                                                                                                      \
+          Dune::XT::LA::MatrixInterface<                                                                                                                     \
+              typename _DUNE_GDT_ASLA_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                              \
+                  Traits,                                                                                                                                    \
+              double>&,                                                                                                                                      \
+          Dune::XT::LA::MatrixInterface<                                                                                                                     \
+              typename _DUNE_GDT_ASLA_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                              \
+                  Traits,                                                                                                                                    \
+              double>&,                                                                                                                                      \
+          Dune::XT::LA::MatrixInterface<                                                                                                                     \
+              typename _DUNE_GDT_ASLA_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                              \
+                  Traits,                                                                                                                                    \
+              double>&,                                                                                                                                      \
+          const Dune::XT::Grid::ApplyOn::                                                                                                                    \
+              WhichIntersection<_DUNE_GDT_ASLA_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>*);                \
+  _pre Dune::GDT::SystemAssembler<_DUNE_GDT_ASLA_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                     \
+                                  _DUNE_GDT_ASLA_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>&                \
+  Dune::GDT::SystemAssembler<_DUNE_GDT_ASLA_Space_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,                          \
+                             _DUNE_GDT_ASLA_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>::                    \
+      append(                                                                                                                                                \
+          const Dune::GDT::                                                                                                                                  \
+              LocalBoundaryTwoFormInterface<_DUNE_GDT_ASLA_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            _DUNE_GDT_ASLA_Intersection_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la,    \
+                                            _DUNE_GDT_ASLA_BaseFunctionSet_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la, \
+                                            double>&,                                                                                                        \
+          Dune::XT::LA::MatrixInterface<                                                                                                                     \
+              typename _DUNE_GDT_ASLA_Matrix_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la::                              \
+                  Traits,                                                                                                                                    \
+              double>&,                                                                                                                                      \
+          const Dune::XT::Grid::ApplyOn::                                                                                                                    \
+              WhichIntersection<_DUNE_GDT_ASLA_GridLayer_##_G##_g_layer##_g_backend##_s_type##_s_backend##_s_grid_layer##_p##_r##_rC##_la>*)
 
 #if HAVE_DUNE_ISTL
 #define _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_APPEND_ISTL(                                                                    \
