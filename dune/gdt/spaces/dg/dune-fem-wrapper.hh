@@ -14,8 +14,6 @@
 
 #include <memory>
 
-#include <boost/config.hpp>
-
 #include <dune/common/unused.hh>
 #include <dune/common/deprecated.hh>
 
@@ -129,15 +127,15 @@ public:
   {
   }
 
-#if !(defined(BOOST_GCC) && BOOST_GCC && __GNUC__ < 5)
-  // There is a bug in older gccs which prevents copy ctors which are manually marked as default to end up in a lib ...
+#if DUNE_XT_WITH_PYTHON_BINDINGS
+  // There is a problem which prevents copy ctors which are manually marked as default to end up in a lib ...
   DuneFemDgSpaceWrapper(const ThisType& other) = default;
   DuneFemDgSpaceWrapper(ThisType&& source) = default;
 
   // ... and we need to guard these operators as well since they would hinder the creation of the respective ctors.
   ThisType& operator=(const ThisType& other) = delete;
   ThisType& operator=(ThisType&& source) = delete;
-#endif // !(defined(BOOST_GCC) && BOOST_GCC && __GNUC__ < 5)
+#endif // DUNE_XT_WITH_PYTHON_BINDINGS
 
   const GridLayerType& DUNE_DEPRECATED_MSG("Use grid_layer() instead (03.04.2017)!") grid_part() const
   {
