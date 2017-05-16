@@ -38,6 +38,7 @@ PYBIND11_PLUGIN(__spaces_block)
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
   py::module::import("dune.xt.la");
+  py::module::import("dune.gdt.__spaces");
 
   DUNE_GDT_SPACES_BLOCK_BIND(m);
 

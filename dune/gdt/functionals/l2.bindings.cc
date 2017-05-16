@@ -38,6 +38,7 @@ PYBIND11_PLUGIN(__functionals_l2)
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
   py::module::import("dune.xt.la");
+  py::module::import("dune.gdt.__spaces");
 
 // alu_fem_istl.cc
 #if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_ISTL

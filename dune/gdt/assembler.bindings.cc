@@ -39,6 +39,7 @@ PYBIND11_PLUGIN(__assembler)
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
   py::module::import("dune.xt.la");
+  py::module::import("dune.gdt.__spaces");
 
   DUNE_GDT_SPACES_CONSTRAINTS_BIND(m);
   DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m);

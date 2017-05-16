@@ -30,14 +30,15 @@ PYBIND11_PLUGIN(__local_elliptic_ipdg_operators)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  Dune::XT::Common::bindings::addbind_exceptions(m);
-
   py::module m("__local_elliptic_ipdg_operators", "dune-gdt");
+
+  Dune::XT::Common::bindings::addbind_exceptions(m);
 
   py::module::import("dune.xt.common");
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
   py::module::import("dune.xt.la");
+  py::module::import("dune.gdt.__spaces");
 
   DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND(m);
 
