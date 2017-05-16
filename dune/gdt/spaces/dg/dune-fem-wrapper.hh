@@ -127,7 +127,7 @@ public:
   {
   }
 
-#if DUNE_XT_WITH_PYTHON_BINDINGS
+#if !DUNE_XT_WITH_PYTHON_BINDINGS
   // There is a problem which prevents copy ctors which are manually marked as default to end up in a lib ...
   DuneFemDgSpaceWrapper(const ThisType& other) = default;
   DuneFemDgSpaceWrapper(ThisType&& source) = default;
