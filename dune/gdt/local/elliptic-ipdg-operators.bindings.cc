@@ -11,7 +11,7 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/exceptions.bindings.hh>
 
 #include <dune/common/parallel/mpihelper.hh>
 
@@ -29,6 +29,8 @@ PYBIND11_PLUGIN(__local_elliptic_ipdg_operators)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
+
+  Dune::XT::Common::bindings::addbind_exceptions(m);
 
   py::module m("__local_elliptic_ipdg_operators", "dune-gdt");
 

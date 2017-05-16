@@ -11,7 +11,7 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/exceptions.bindings.hh>
 
 #include <dune/common/parallel/mpihelper.hh>
 
@@ -32,6 +32,8 @@ PYBIND11_PLUGIN(__assembler)
   using namespace pybind11::literals;
 
   py::module m("__assembler", "dune-gdt: SystemAssembler");
+
+  Dune::XT::Common::bindings::addbind_exceptions(m);
 
   py::module::import("dune.xt.common");
   py::module::import("dune.xt.grid");

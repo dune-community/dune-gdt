@@ -11,7 +11,7 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/exceptions.bindings.hh>
 
 #include <dune/common/parallel/mpihelper.hh>
 
@@ -31,6 +31,8 @@ PYBIND11_PLUGIN(__operators_elliptic)
   using namespace pybind11::literals;
 
   py::module m("__operators_elliptic", "dune-gdt: EllipticMatrixOperator");
+
+  Dune::XT::Common::bindings::addbind_exceptions(m);
 
   py::module::import("dune.xt.common");
   py::module::import("dune.xt.grid");
