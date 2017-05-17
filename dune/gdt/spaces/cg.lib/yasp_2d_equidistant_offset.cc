@@ -12,4 +12,4 @@
 #include "../cg.lib.hh"
 
 
-DUNE_GDT_SPACES_CG_LIB(template, YASP_2D_EQUIDISTANT_OFFSET);
+// DUNE_GDT_SPACES_CG_LIB(template, YASP_2D_EQUIDISTANT_OFFSET);

@@ -52,12 +52,12 @@ PYBIND11_PLUGIN(__functionals_l2)
 
 // yasp_istl.cc
 #if HAVE_DUNE_ISTL
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, leaf, view, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, level, view, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, dd_subdomain, view, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, leaf, view, cg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, level, view, cg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, dd_subdomain, view, cg, gdt, 1, istl_sparse);
+//  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, leaf, view, dg, gdt, 1, istl_sparse);
+//  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, level, view, dg, gdt, 1, istl_sparse);
+//  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, dd_subdomain, view, dg, gdt, 1, istl_sparse);
+//  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, leaf, view, cg, gdt, 1, istl_sparse);
+//  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, level, view, cg, gdt, 1, istl_sparse);
+//  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, dd_subdomain, view, cg, gdt, 1, istl_sparse);
 #endif
 
   m.def("_init_mpi",

@@ -170,22 +170,22 @@ public:
           "ansatz_block"_a,
           "global_sparsity_pattern"_a);
 
-    // matrices
-    addbind_matrix<XT::LA::Backends::common_dense>(c);
-    addbind_matrix<XT::LA::Backends::common_sparse>(c);
-#if HAVE_EIGEN
-    addbind_matrix<XT::LA::Backends::eigen_dense>(c);
-    addbind_matrix<XT::LA::Backends::eigen_sparse>(c);
-#endif
+// matrices
+//    addbind_matrix<XT::LA::Backends::common_dense>(c);
+//    addbind_matrix<XT::LA::Backends::common_sparse>(c);
+//#if HAVE_EIGEN
+//    addbind_matrix<XT::LA::Backends::eigen_dense>(c);
+//    addbind_matrix<XT::LA::Backends::eigen_sparse>(c);
+//#endif
 #if HAVE_DUNE_ISTL
     addbind_matrix<XT::LA::Backends::istl_sparse>(c);
 #endif
 
-    // vectors
-    addbind_vector<XT::LA::Backends::common_dense>(c);
-#if HAVE_EIGEN
-    addbind_vector<XT::LA::Backends::eigen_dense>(c);
-#endif
+// vectors
+//    addbind_vector<XT::LA::Backends::common_dense>(c);
+//#if HAVE_EIGEN
+//    addbind_vector<XT::LA::Backends::eigen_dense>(c);
+//#endif
 #if HAVE_DUNE_ISTL
     addbind_vector<XT::LA::Backends::istl_dense>(c);
 #endif
@@ -383,10 +383,10 @@ public:
           },
           "neighborhood"_a);
 
-    addbind_vector<XT::LA::Backends::common_dense>(c);
-#if HAVE_EIGEN
-    addbind_vector<XT::LA::Backends::eigen_dense>(c);
-#endif
+//    addbind_vector<XT::LA::Backends::common_dense>(c);
+//#if HAVE_EIGEN
+//    addbind_vector<XT::LA::Backends::eigen_dense>(c);
+//#endif
 #if HAVE_DUNE_ISTL
     addbind_vector<XT::LA::Backends::istl_dense>(c);
 #endif
@@ -431,9 +431,9 @@ public:
 #define _DUNE_GDT_SPACES_BLOCK_BIND_ALU(_m, _s_type, _s_backend, _p)
 #endif
 
-#define _DUNE_GDT_SPACES_BLOCK_BIND_YASP(_m, _s_type, _s_backend, _p)                                                  \
-  _DUNE_GDT_SPACES_BLOCK_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _s_type, _s_backend, _p);                                \
-  _DUNE_GDT_SPACES_BLOCK_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _s_type, _s_backend, _p)
+#define _DUNE_GDT_SPACES_BLOCK_BIND_YASP(_m, _s_type, _s_backend, _p)
+//  _DUNE_GDT_SPACES_BLOCK_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _s_type, _s_backend, _p);                                \
+//  _DUNE_GDT_SPACES_BLOCK_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _s_type, _s_backend, _p)
 
 #define _DUNE_GDT_SPACES_BLOCK_BIND_ALL_GRIDS(_m, _s_type, _s_backend, _p)                                             \
   _DUNE_GDT_SPACES_BLOCK_BIND_ALU(_m, _s_type, _s_backend, _p);                                                        \

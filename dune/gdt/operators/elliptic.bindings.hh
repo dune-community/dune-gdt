@@ -435,11 +435,11 @@ DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_ISTL(extern template);
 #define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_UG(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
 //#endif
 
-#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_YASP(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)                   \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_1D(                                                                                \
-      _m, 1, YASP_1D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la);                            \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_D(                                                                                 \
-      _m, 2, YASP_2D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la)
+#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_YASP(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
+//  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_1D(                                                                                \
+//      _m, 1, YASP_1D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la);                            \
+//  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_D(                                                                                 \
+//      _m, 2, YASP_2D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la)
 
 #define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)                  \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_ALBERTA(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la);                     \

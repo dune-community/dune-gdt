@@ -14,7 +14,7 @@
 #include "../dg.lib.hh"
 
 
-DUNE_GDT_SPACES_DG_LIB(template, ALU_2D_SIMPLEX_CONFORMING);
+// DUNE_GDT_SPACES_DG_LIB(template, ALU_2D_SIMPLEX_CONFORMING);
 
 
 #endif // HAVE_DUNE_ALUGRID

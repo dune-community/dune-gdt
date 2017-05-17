@@ -15,9 +15,9 @@
 
 
 #if HAVE_DUNE_ISTL
-DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(template, leaf, view, cg, gdt, 1, istl_sparse);
-DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(template, level, view, cg, gdt, 1, istl_sparse);
-DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(template, dd_subdomain, view, cg, gdt, 1, istl_sparse);
+// DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(template, leaf, view, cg, gdt, 1, istl_sparse);
+// DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(template, level, view, cg, gdt, 1, istl_sparse);
+// DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(template, dd_subdomain, view, cg, gdt, 1, istl_sparse);
 #endif
 
 

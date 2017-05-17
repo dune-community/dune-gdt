@@ -353,12 +353,11 @@ DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB(extern template);
                                        Dune::XT::Grid::Layers::_g_layer,                                               \
                                        Dune::XT::Grid::Backends::_g_backend>::bind(_m)
 
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_YASP(                                                                          \
-    _m, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)                                         \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND(                                                                                     \
-      _m, YASP_1D_EQUIDISTANT_OFFSET, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC);          \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND(                                                                                     \
-      _m, YASP_2D_EQUIDISTANT_OFFSET, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_YASP(_m, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)
+//  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND(                                                                                     \
+//      _m, YASP_1D_EQUIDISTANT_OFFSET, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC);          \
+//  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND(                                                                                     \
+//      _m, YASP_2D_EQUIDISTANT_OFFSET, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)
 
 #if HAVE_DUNE_ALUGRID
 #define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALU(_m, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC) \
