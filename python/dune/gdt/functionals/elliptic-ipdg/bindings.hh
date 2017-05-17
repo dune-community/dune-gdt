@@ -545,10 +545,10 @@ DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, level, view, cg
 
 // yasp_istl.cc
 #if HAVE_DUNE_ISTL
-DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, leaf, view, cg, gdt, 1, istl_dense);
-DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, level, view, cg, gdt, 1, istl_dense);
+// DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, leaf, view, cg, gdt, 1, istl_dense);
+// DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, level, view, cg, gdt, 1, istl_dense);
 // DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, dd_subdomain, part, cg, gdt, 1, istl_dense);
-#endif
+//#endif
 
 // end: this is what we need for the lib
 
