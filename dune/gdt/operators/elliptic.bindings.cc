@@ -11,8 +11,6 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include <dune/xt/common/exceptions.bindings.hh>
-
 #include <dune/common/parallel/mpihelper.hh>
 
 #if HAVE_DUNE_FEM
@@ -21,6 +19,8 @@
 
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
+
+#include <dune/xt/common/bindings.hh>
 
 #include <dune/gdt/operators/elliptic.bindings.hh>
 
@@ -44,7 +44,7 @@ PYBIND11_PLUGIN(__operators_elliptic)
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {
-          int argc = boost::numeric_cast<int>(args.size());
+          int argc = Dune::XT::Common::numeric_cast<int>(args.size());
           char** argv = Dune::XT::Common::vector_to_main_args(args);
           Dune::MPIHelper::instance(argc, argv);
 #if HAVE_DUNE_FEM
