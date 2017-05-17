@@ -114,9 +114,9 @@ public:
 #define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, _layer, _backend, _la)
 //#endif
 
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_YASP(_m, _layer, _backend, _la)                                           \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _backend, 1, 1, _la);                   \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _backend, 1, 1, _la)
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_YASP(_m, _layer, _backend, _la)
+//  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _backend, 1, 1, _la);                   \
+//  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _backend, 1, 1, _la)
 
 #if HAVE_DUNE_FEM
 #define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_FEM(_m, _la)                                                              \
@@ -158,10 +158,9 @@ public:
 #endif
 
 
-#define DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m)                                                                        \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_COMMON(_m);                                                                     \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_EIGEN(_m);                                                                      \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ISTL(_m)
+#define DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m) _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ISTL(_m)
+//  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_COMMON(_m);                                                                     \
+//  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_EIGEN(_m);                                                                      \
 
 // end: this is what we need for the .so
 

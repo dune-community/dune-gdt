@@ -65,10 +65,10 @@
 #define _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, _layer)                                                            \
   _DUNE_GDT_SPACES_DG_BIND_FEM(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, 1, 1);                                          \
   _DUNE_GDT_SPACES_DG_BIND_FEM(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1)
-#define _DUNE_GDT_SPACES_DG_BIND_FEM_YASP(_m)                                                                          \
-  _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, dd_subdomain);                                                           \
-  _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, leaf);                                                                   \
-  _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, level)
+#define _DUNE_GDT_SPACES_DG_BIND_FEM_YASP(_m)
+//  _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, dd_subdomain);                                                           \
+//  _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, leaf);                                                                   \
+//  _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, level)
 
 #define _DUNE_GDT_SPACES_DG_BIND_FEM_ALL(_m)                                                                           \
   _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA(_m);                                                                            \

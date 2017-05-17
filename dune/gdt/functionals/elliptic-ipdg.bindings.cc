@@ -47,12 +47,12 @@ PYBIND11_PLUGIN(__functionals_elliptic_ipdg)
   DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_ALU(m, dd_subdomain, part, dg, fem, 1, istl_dense);
 #endif
 
-// yasp_fem_istl.cc
-#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
-  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_YASP(m, leaf, part, dg, fem, 1, istl_dense);
-  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_YASP(m, level, part, dg, fem, 1, istl_dense);
-  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_YASP(m, dd_subdomain, part, dg, fem, 1, istl_dense);
-#endif
+  // yasp_fem_istl.cc
+  //#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
+  //  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_YASP(m, leaf, part, dg, fem, 1, istl_dense);
+  //  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_YASP(m, level, part, dg, fem, 1, istl_dense);
+  //  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_YASP(m, dd_subdomain, part, dg, fem, 1, istl_dense);
+  //#endif
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {

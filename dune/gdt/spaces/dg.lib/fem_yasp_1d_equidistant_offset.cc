@@ -14,7 +14,7 @@
 #include "../dg.lib.hh"
 
 
-DUNE_GDT_SPACES_DG_FEM_LIB(template, YASP_1D_EQUIDISTANT_OFFSET);
+// DUNE_GDT_SPACES_DG_FEM_LIB(template, YASP_1D_EQUIDISTANT_OFFSET);
 
 
 #endif // HAVE_DUNE_FEM

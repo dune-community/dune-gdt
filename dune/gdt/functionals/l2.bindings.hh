@@ -242,9 +242,9 @@ DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_ALU(extern template, dd_subdomain, part, cg, fe
 
 // yasp_fem_istl.cc
 #if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
-DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(extern template, leaf, part, cg, fem, 1, istl_sparse);
-DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(extern template, level, part, cg, fem, 1, istl_sparse);
-DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(extern template, dd_subdomain, part, cg, fem, 1, istl_sparse);
+// DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(extern template, leaf, part, cg, fem, 1, istl_sparse);
+// DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(extern template, level, part, cg, fem, 1, istl_sparse);
+// DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(extern template, dd_subdomain, part, cg, fem, 1, istl_sparse);
 #endif
 
 // end: this is what we need for the lib

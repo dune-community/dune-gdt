@@ -92,9 +92,9 @@ public:
 #define _DUNE_GDT_PROJECTIONS_BIND_UG(_m, _g_layer, _s_backend, _s_type, _p, _la)
 //#endif
 
-#define _DUNE_GDT_PROJECTIONS_BIND_YASP(_m, _g_layer, _s_backend, _s_type, _p, _la)                                    \
-  _DUNE_GDT_PROJECTIONS_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _g_layer, _s_backend, _s_type, _p, _la);                  \
-  _DUNE_GDT_PROJECTIONS_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _g_layer, _s_backend, _s_type, _p, _la)
+#define _DUNE_GDT_PROJECTIONS_BIND_YASP(_m, _g_layer, _s_backend, _s_type, _p, _la)
+//  _DUNE_GDT_PROJECTIONS_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _g_layer, _s_backend, _s_type, _p, _la);                \
+//  _DUNE_GDT_PROJECTIONS_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _g_layer, _s_backend, _s_type, _p, _la)
 
 #define _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, _g_layer, _s_backend, _s_type, _p, _la)                               \
   _DUNE_GDT_PROJECTIONS_BIND_ALBERTA(_m, _g_layer, _s_backend, _s_type, _p, _la);                                      \
@@ -155,10 +155,9 @@ public:
 #define _DUNE_GDT_PROJECTIONS_BIND_ISTL(_m)
 #endif
 
-#define DUNE_GDT_PROJECTIONS_BIND(_m)                                                                                  \
-  _DUNE_GDT_PROJECTIONS_BIND_COMMON(_m);                                                                               \
-  _DUNE_GDT_PROJECTIONS_BIND_EIGEN(_m);                                                                                \
-  _DUNE_GDT_PROJECTIONS_BIND_ISTL(_m)
+#define DUNE_GDT_PROJECTIONS_BIND(_m) _DUNE_GDT_PROJECTIONS_BIND_ISTL(_m)
+//  _DUNE_GDT_PROJECTIONS_BIND_COMMON(_m);                                                                             \
+//  _DUNE_GDT_PROJECTIONS_BIND_EIGEN(_m);                                                                              \
 
 // end: this is what we need for the .so
 

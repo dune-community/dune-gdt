@@ -574,11 +574,11 @@ DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, dd_subdomain, pa
 #define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_UG(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
 //#endif
 
-#define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)               \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_METHODS_1D(                                                                   \
-      _m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la);                               \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_METHODS_D(                                                                    \
-      _m, 2, YASP_2D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la)
+#define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
+//  _DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_METHODS_1D(                                                                   \
+//      _m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la);                               \
+//  _DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_METHODS_D(                                                                    \
+//      _m, 2, YASP_2D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la)
 
 
 // end: this is what we need for the .so
