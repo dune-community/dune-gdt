@@ -20,8 +20,6 @@
 #include <dune/gdt/spaces.bindings.hh>
 #include <dune/gdt/spaces/constraints.bindings.hh>
 
-#include <dune/gdt/local/elliptic-ipdg-operators.bindings.hh>
-
 #include "system.hh"
 
 namespace Dune {
