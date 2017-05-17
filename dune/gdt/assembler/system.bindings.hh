@@ -14,6 +14,7 @@
 #include <dune/pybindxi/pybind11.h>
 
 #include <dune/xt/common/memory.hh>
+#include <dune/xt/la/container.hh>
 #include <dune/xt/grid/grids.bindings.hh>
 #include <dune/xt/grid/layers.bindings.hh>
 
@@ -110,6 +111,56 @@ private:
     }
   };
 
+  template <XT::LA::Backends la>
+  static void addbind_matrix(bound_type& c)
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+
+    typedef typename XT::LA::Container<typename T::RangeFieldType, la>::MatrixType M;
+
+    c.def("append",
+          [](type& self,
+             const GDT::LocalCouplingTwoFormInterface<typename T::BaseFunctionSetType,
+                                                      XT::Grid::extract_intersection_t<GL>>& local_coupling_two_form,
+             M& matrix,
+             const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+            self.append(local_coupling_two_form, matrix, which_intersections.copy());
+          },
+          "local_coupling_two_form"_a,
+          "matrix"_a,
+          "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    c.def("append",
+          [](type& self,
+             const GDT::LocalCouplingTwoFormInterface<typename T::BaseFunctionSetType,
+                                                      XT::Grid::extract_intersection_t<GL>>& local_coupling_two_form,
+             M& matrix_in_in,
+             M& matrix_out_out,
+             M& matrix_in_out,
+             M& matrix_out_in,
+             const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+            self.append(local_coupling_two_form,
+                        matrix_in_in,
+                        matrix_out_out,
+                        matrix_in_out,
+                        matrix_out_in,
+                        which_intersections.copy());
+          },
+          "local_coupling_two_form"_a,
+          "matrix_in_in"_a,
+          "matrix_out_out"_a,
+          "matrix_in_out"_a,
+          "matrix_out_in"_a,
+          "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>(),
+          py::keep_alive<0, 4>(),
+          py::keep_alive<0, 5>());
+  } // ... addbind_matrix(...)
+
 public:
   static bound_type bind(pybind11::module& m)
   {
@@ -131,6 +182,10 @@ public:
 
     bindings::DirichletConstraints<XT::Grid::extract_intersection_t<typename type::GridLayerType>,
                                    XT::Grid::extract_grid_t<typename type::GridLayerType>>::addbind(c);
+
+#if HAVE_DUNE_ISTL
+    addbind_matrix<XT::LA::Backends::istl_sparse>(c);
+#endif
 
     addbind_factory_methods<>()(m);
 
