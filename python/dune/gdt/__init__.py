@@ -19,10 +19,10 @@ _other_modules = ('xt.common', 'xt.grid', 'xt.functions', 'xt.la')
 
 _gdt_modules = ['spaces',
                 'spaces_block',
+                'local_elliptic_ipdg_operators',
                 'assembler',
                 'discretefunction',
                 'projections',
-                'local_elliptic_ipdg_operators',
                 'functionals_elliptic_ipdg',
                 'functionals_l2',
                 'operators_elliptic',
