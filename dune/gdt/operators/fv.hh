@@ -1596,6 +1596,9 @@ private:
   DiscreteFunctionType& solution_;
 };
 
+// TODO: make thread-safe
+// TODO: clean up matrix exponential files
+// TODO: make usable for non-invertable jacobians
 template <class DiscreteFunctionType, class RhsEvaluationType>
 class MatrixExponentialFunctor
     : public XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType>

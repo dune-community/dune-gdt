@@ -12,25 +12,28 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_TWOBEAMS_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_TWOBEAMS_HH
 
-#include <memory>
-#include <vector>
-#include <string>
-
-#include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/operators/l2.hh>
-#include <dune/gdt/spaces/cg.hh>
-
-#include <dune/xt/common/string.hh>
 #include <dune/xt/functions/affine.hh>
-#include <dune/xt/grid/gridprovider/cube.hh>
-#include <dune/xt/la/container.hh>
+#include <dune/xt/functions/checkerboard.hh>
+#include <dune/xt/functions/global.hh>
 
-#include "../default.hh"
+#include "../base.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
+
+
+// forwards
+template <class BasisFunctionImp,
+          class EntityImp,
+          class DomainFieldImp,
+          size_t dimDomain,
+          class U_,
+          class RangeFieldImp,
+          size_t dimRange>
+class TwoBeamsPn;
+
 
 /** Testcase for the \f$P_n\f$ moment approximation of the Fokker-Planck equation in one dimension
  * \f[
@@ -51,10 +54,10 @@ namespace Problems {
  * Once suitable basis functions are found, a Galerkin semidiscretization in v is done, so the \f$\phi_i\f$ are also
  * taken as basis for the test space. This results in an equation of the form
  * \f[
- * M \partial_t u + DomainFieldType \partial_x u = q - (\sigma_a*M + 0.5*T*S) u,
+ * M \partial_t u + B \partial_x u = q - (\sigma_a*M + 0.5*T*S) u,
  * \f]
- *  where \f$u = (u_1, \ldots, u_n)^T\f$, \f$M, DomainFieldType, S \in \mathbb{R}^{n\times n}\f$ with
- * \f$ M_{ji} = (\phi_i, \phi_j)_v\f$, \f$DomainFieldType_{ji} = (v*\phi_i, \phi_j)_v\f$,
+ *  where \f$u = (u_1, \ldots, u_n)^T\f$, \f$M, B, S \in \mathbb{R}^{n\times n}\f$ with
+ * \f$ M_{ji} = (\phi_i, \phi_j)_v\f$, \f$B{ji} = (v*\phi_i, \phi_j)_v\f$,
  * \f$S_{ji} = ((1-v^2)\partial_v \phi_i, \partial_v \phi_j)_v\f$ and
  * \f$q_i(x) = (Q(x), \phi_i(v))_v = Q(x) (1, \phi_i(v))_v\f$. Here, \f$(a,b)_v = \int \limits_{-1}^1 a(v)b(v)dv\f$
  * is the \f$L^2\f$ inner product with respect to \f$v\f$.
@@ -62,218 +65,352 @@ namespace Problems {
  * the \f$ \phi_i \f$ are an orthogonal basis, \f$M\f$ is invertible and the rescaling corresponds to a multiplication
  * of \f$u\f$ by \f$M^{-1}\f$ from the left, giving the equation
  * \f[
- * \partial_t u + DomainFieldType M^{-1} \partial_x u = q - (\sigma_a*I_{n\times n} + 0.5*T*S M^{-1}) u.
+ * \partial_t u + B M^{-1} \partial_x u = q - (\sigma_a*I_{n\times n} + 0.5*T*S M^{-1}) u.
  * \f]
  * For details on the parameters of the test cases implemented here (OneBeam, TwoBeams, TwoPulses, RectangularIC,
  * SourceBeam) see Schneider, Alldredge, Frank, Klar, "Higher Order Mixed-Moment Approximations for the
  * Fokker-Planck Equation in One Space Dimension", SIAM J. Appl. Math., 74(4), 1087–1114
  */
-template <class TwoBeamsImp, class E, class D, size_t d, class R, size_t r, size_t rC>
-class TwoBeamsBase : public Default<TwoBeamsImp, E, D, d, R, r, rC>
+template <class BasisfunctionImp,
+          class EntityImp,
+          class DomainFieldImp,
+          size_t domainDim,
+          class U_,
+          class RangeFieldImp,
+          size_t rangeDim>
+class KineticProblemTraitsBase
 {
-  typedef TwoBeamsBase<TwoBeamsImp, E, D, d, R, r, rC> ThisType;
-  typedef Default<TwoBeamsImp, E, D, d, R, r, rC> BaseType;
+  typedef XT::Functions::GlobalLambdaFunction<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+      GlobalLambdaFunctionType;
+  typedef XT::Functions::
+      GlobalLambdaMetaFunction<EntityImp, DomainFieldImp, domainDim, U_, 0, RangeFieldImp, rangeDim, 1>
+          GlobalLambdaMetaFunctionType;
 
 public:
-  using BaseType::dimDomain;
-  using BaseType::dimRange;
-  using BaseType::dimRangeCols;
-  static const bool linear = true;
+  typedef BasisfunctionImp BasisFunctionType;
+  typedef EntityImp EntityType;
+  typedef DomainFieldImp DomainFieldType;
+  typedef U_ StateType;
+  typedef RangeFieldImp RangeFieldType;
+  static const size_t dimDomain = domainDim;
+  static const size_t dimRange = rangeDim;
+
+  typedef
+      typename XT::Functions::AffineMetaFunction<EntityImp, DomainFieldImp, dimDomain, U_, RangeFieldImp, dimRange, 1>
+          RhsAffineFunctionType;
+  typedef typename XT::Functions::
+      AffineMetaFunction<EntityImp, DomainFieldImp, dimDomain, U_, RangeFieldImp, dimRange, dimDomain>
+          ActualFluxType;
+  typedef XT::Functions::
+      CheckerboardFunction<EntityImp, DomainFieldImp, dimDomain, RangeFieldImp, dimRange, 1, RhsAffineFunctionType>
+          ActualRhsType;
+  typedef XT::Functions::
+      CheckerboardFunction<EntityImp, DomainFieldImp, dimDomain, RangeFieldImp, dimRange, 1, GlobalLambdaFunctionType>
+          ActualInitialValueType;
+  typedef GlobalLambdaFunctionType ActualBoundaryValueType;
+}; // class KineticProblemTraitsBase<...>
+
+template <class BasisfunctionImp,
+          class EntityImp,
+          class DomainFieldImp,
+          size_t domainDim,
+          class U_,
+          class RangeFieldImp,
+          size_t rangeDim>
+class TwoBeamsPnTraits : public KineticProblemTraitsBase<BasisfunctionImp,
+                                                         EntityImp,
+                                                         DomainFieldImp,
+                                                         domainDim,
+                                                         U_,
+                                                         RangeFieldImp,
+                                                         rangeDim>
+{
+  typedef TwoBeamsPn<BasisfunctionImp, EntityImp, DomainFieldImp, domainDim, U_, RangeFieldImp, rangeDim> derived_type;
+}; // class TwoBeamPnTraits<...>
+
+template <class Traits>
+class KineticTransportEquation : public ProblemBase<typename Traits::EntityType,
+                                                    typename Traits::DomainFieldType,
+                                                    Traits::dimDomain,
+                                                    typename Traits::StateType,
+                                                    0,
+                                                    typename Traits::RangeFieldType,
+                                                    Traits::dimRange>
+{
+  typedef ProblemBase<typename Traits::EntityType,
+                      typename Traits::DomainFieldType,
+                      dimDomain,
+                      typename Traits::StateType,
+                      0,
+                      typename Traits::RangeFieldType,
+                      dimRange>
+      BaseType;
+  typedef Traits::derived_type ProblemType;
+
+public:
+  using typename BaseType::BasisfunctionType;
   using typename BaseType::EntityType;
   using typename BaseType::DomainFieldType;
+  using typename BaseType::StateType;
+  using typename BaseType::StateRangeType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::ConfigType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  static const size_t dimDomain = BaseType::dimDomain;
+  static const size_t dimRange = BaseType::dimRange;
+  using typename BaseType::FluxType;
+  using typename BaseType::RhsType;
+  using typename BaseType::InitialValueType;
+  using typename BaseType::BoundaryValueType;
+  typedef typename Traits::ActualFluxType ActualFluxType;
+  typedef typename Traits::ActualRhsType ActualRhsType;
+  typedef typename Traits::ActualInitialValueType ActualInitialValueType;
+  typedef typename Traits::ActualBoundaryValueType ActualBoundaryValueType;
 
-protected:
-  static const int precision = 15; // precision for to_string
-  using typename BaseType::DummyEntityType;
-  typedef typename Dune::XT::Functions::
-      AffineFunction<DummyEntityType, RangeFieldType, dimRange, RangeFieldType, dimRange, dimDomain>
-          FluxAffineFunctionType;
-  typedef typename XT::Functions::AffineFunction<DummyEntityType, RangeFieldType, dimRange, RangeFieldType, dimRange, 1>
-      RHSAffineFunctionType;
-  typedef typename XT::Functions::FunctionCheckerboardFunction<RHSAffineFunctionType,
-                                                               EntityType,
-                                                               DomainFieldType,
-                                                               dimDomain,
-                                                               RangeFieldType,
-                                                               dimRange,
-                                                               1>
-      RHSCheckerboardFunctionType;
-
-public:
-  using typename BaseType::DefaultInitialValueType;
-  using typename BaseType::DefaultBoundaryValueType;
-  typedef typename Dune::GDT::CheckerboardBasedRhsEvaluation<RHSCheckerboardFunctionType,
-                                                             EntityType,
-                                                             DomainFieldType,
-                                                             dimDomain,
-                                                             RangeFieldType,
-                                                             dimRange,
-                                                             dimRangeCols>
-      DefaultRHSType;
-  typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType,
-                                                                EntityType,
-                                                                DomainFieldType,
-                                                                dimDomain,
-                                                                RangeFieldType,
-                                                                dimRange,
-                                                                1>
-      DefaultFluxType;
-  typedef typename DefaultFluxType::RangeType RangeType;
-  typedef typename DefaultFluxType::FluxRangeType FluxRangeType;
-  typedef typename FluxAffineFunctionType::FieldMatrixType MatrixType;
-  typedef typename DefaultRHSType::DomainType DomainType;
-
-  static ConfigType default_grid_config()
+  static XT::Common::Configuration default_grid_config()
   {
-    ConfigType grid_config;
-    grid_config["type"] = "provider.cube";
-    grid_config["lower_left"] = "[0.0]";
-    grid_config["upper_right"] = "[1.0]";
-    grid_config["num_elements"] = "[100]";
-    grid_config["overlap_size"] = "[1 1 1 1]";
-    return grid_config;
+    return ProblemType::default_grid_config();
   }
 
-  static ConfigType default_boundary_info_config()
+  static XT::Common::Configuration default_boundary_info_config()
   {
     ConfigType boundary_config;
     boundary_config["type"] = "dirichlet";
     return boundary_config;
   }
 
-  static ConfigType default_config(const ConfigType grid_config = default_grid_config(),
-                                   const RangeFieldType psi_vac = 1e-4)
+  template <class... Args>
+  KineticTransportEquation(const BasisfunctionType& basis_functions,
+                           const XT::Common::Configuration& grd_cfg = ProblemType::default_grid_cfg(),
+                           const XT::Common::Configuration& bnd_cfg = ProblemType::default_boundary_info_cfg(),
+                           Args&&... args)
+    : BaseType(ProblemType::create_flux(basis_functions, grid_cfg, std::forward<Args>(args)...),
+               ProblemType::create_rhs(basis_functions, grid_cfg, std::forward<Args>(args)...),
+               ProblemType::create_initial_values(basis_functions, grid_cfg, std::forward<Args>(args)...),
+               ProblemType::create_boundary_values(basis_functions, grid_cfg, std::forward<Args>(args)...),
+               grd_cfg,
+               bnd_cfg)
   {
-    ConfigType config;
-    config.add(grid_config, "grid");
-    config.add(default_boundary_info_config(), "boundary_info");
-    config.add(TwoBeamsImp::create_flux_config(), "flux");
-    config.add(TwoBeamsImp::create_rhs_config(grid_config), "rhs");
-    config.add(TwoBeamsImp::create_initial_value_config(grid_config, psi_vac), "initial_values");
-    config.add(TwoBeamsImp::create_boundary_value_config(), "boundary_values");
-    return config;
-  } // ... default_config(...)
+  }
+
+protected:
+  // flux matrix A = B M^{-1} with B_{ij} = <v h_i h_j>
+  static FluxType* create_flux(const BasisFunctionType& basis_functions, const XT::Common::Configuration& /*grd_cfg*/)
+  {
+    auto A = basis_functions.mass_matrix_with_v();
+    auto M_inv = basis_functions.mass_matrix_inverse();
+    for (size_t dd = 0; dd < dimDomain; ++dd)
+      A[dd].rightmultiply(M_inv);
+    return new ActualFluxType(A, RangeType(0));
+  }
+
+  static RangeFieldType volume()
+  {
+    if (dimDomain == 1)
+      return 2;
+    else if (dimDomain == 2)
+      return 2 * M_PI;
+    else if (dimDomain == 3)
+      return 4 * M_PI;
+    else {
+      DUNE_THROW(NotImplemented, "");
+      return 0;
+    }
+  }
+
+  // RHS is (sigma_s/vol*G - sigma_t * I)u + Q<b>,
+  // where sigma_t = sigma_s + sigma_a, G = <b><b>^T M^{-1} = <b>*c^T and
+  // vol = <1> is the volume of the integration domain.
+  static FluxType* create_rhs(const BasisfunctionType& basis_functions, const XT::Common::Configuration& grd_cfg)
+  {
+    typedef typename ProblemTraits::RhsAffineFunctionType AffineFunctionType;
+    typedef typename AffineFunctionType::FieldMatrixType MatrixType;
+    const FieldVector<size_t, 3> num_elements = ProblemType::num_elements();
+    const std::vector<RangeFieldType> sigma_a = ProblemType::sigma_a();
+    const std::vector<RangeFieldType> sigma_s = ProblemType::sigma_s();
+    const std::vector<RangeFieldType> Q = TestcaseType::Q();
+    const size_t num_regions = std::accumulate(num_elements.begin(), num_elements.end());
+    assert(sigma_a.size() == sigma_s.size() && sigma_a.size() == Q.size() && sigma_a.size() == num_regions);
+    const DomainType lower_left = XT::Common::from_string<DomainType>(grd_cfg["lower_left"]);
+    const DomainType upper_right = XT::Common::from_string<DomainType>(grd_cfg["upper_right"]);
+    const auto sigma_t = sigma_a;
+    for (size_t ii = 0; ii < num_regions; ++ii)
+      sigma_t[ii] += sigma_s[ii];
+    const RangeType basis_integrated = basis_functions.integrated();
+    const MatrixType M_inv = basis_functions.mass_matrix_inverse();
+    RangeType c(0);
+    M_inv.mtv(basis_integrated, c);
+    MatrixType I(0);
+    for (size_t rr = 0; rr < dimRange; ++rr)
+      I[rr][rr] = 1;
+    MatrixType G(0);
+    for (size_t rr = 0; rr < dimRange; ++rr)
+      for (size_t cc = 0; cc < dimRange; ++cc)
+        G[rr][cc] = basis_integrated[rr] * c[cc];
+    const auto vol = volume();
+
+    std::vector<typename ProblemTraits::RhsAffineFunctionType> affine_functions;
+    for (size_t ii = 0; ii < num_regions; ++ii) {
+      MatrixType G_scaled = G;
+      G_scaled *= sigma_s[ii] / vol;
+      MatrixType I_scaled = I;
+      I_scaled *= sigma_t[ii];
+      MatrixType A = G_scaled;
+      A -= I_scaled;
+      RangeType b = basis_integrated;
+      b *= Q[ii];
+      affine_functions.emplace_back(A, b);
+    } // ii
+    return std::make_unique<ActualRhsType>(lower_left, upper_right, num_elements, affine_functions);
+  } // ... create_rhs(...)
+}; // class KineticTransportEquation<...>
+
+template <class Traits>
+class KineticFokkerPlanckEquation : public KineticTransportEquation<Traits>
+{
+  typedef KineticTransportEquation<Traits> BaseType;
+  using typename BaseType::ProblemType;
+
+public:
+  using typename BaseType::BasisfunctionType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  static_assert(BaseType::dimDomain == 1, "Not implemented for dimDomain > 1!");
+  static const size_t dimRange = BaseType::dimRange;
+  using typename BaseType::RhsType;
+  typedef typename Traits::ActualRhsType ActualRhsType;
+  using typename BaseType::BasisFunctionType;
 
   template <class... Args>
-  TwoBeamsBase(Args&&... args)
+  KineticFokkerPlanckEquation(Args&&... args)
     : BaseType(std::forward<Args>(args)...)
   {
   }
 
-  static double CFL()
+protected:
+  // RHS is (-\sigma_a*I + 0.5*T*S M^{-1}) u + Q<b>
+  static RhsType* create_rhs(const BasisfunctionType& basis_functions, const XT::Common::Configuration& grd_cfg)
   {
-    return 0.4;
-  }
-
-  static double t_end()
-  {
-    return 4.0;
-  }
-
-  static bool has_non_zero_rhs()
-  {
-    return true;
-  }
-
-  // n-th component of RHS is (T/2 n(n+1) - sigma_a) u_n + 2Q delta(n).
-  // here, T = 0, Q = 0, sigma_a = 4
-  static ConfigType create_rhs_config(const ConfigType grid_config = default_grid_config())
-  {
-    ConfigType rhs_config;
-    rhs_config["lower_left"] = grid_config["lower_left"];
-    rhs_config["upper_right"] = grid_config["upper_right"];
-    rhs_config["num_elements"] = "[1]";
-    rhs_config["name"] = DefaultRHSType::static_id();
-    Dune::FieldMatrix<RangeFieldType, dimRange, dimRange> A(0);
+    typedef typename Traits::RhsAffineFunctionType AffineFunctionType;
+    typedef typename AffineFunctionType::FieldMatrixType MatrixType;
+    const FieldVector<size_t, 3> num_elements = ProblemType::num_elements();
+    const std::vector<RangeFieldType> sigma_a = ProblemType::sigma_a();
+    const std::vector<RangeFieldType> T = ProblemType::T();
+    const std::vector<RangeFieldType> Q = TestcaseType::Q();
+    const size_t num_regions = std::accumulate(num_elements.begin(), num_elements.end());
+    assert(sigma_a.size() == sigma_s.size() && sigma_a.size() == Q.size() && sigma_a.size() == num_regions);
+    const DomainType lower_left = XT::Common::from_string<DomainType>(grd_cfg["lower_left"]);
+    const DomainType upper_right = XT::Common::from_string<DomainType>(grd_cfg["upper_right"]);
+    const RangeType basis_integrated = basis_functions.integrated();
+    const MatrixType M_inv = basis_functions.mass_matrix_inverse();
+    const S = basis_functions.S();
+    MatrixType I(0);
     for (size_t rr = 0; rr < dimRange; ++rr)
-      A[rr][rr] = -4;
-    rhs_config["A.0"] = XT::Common::to_string(A, precision);
-    rhs_config["b.0"] = Dune::XT::Common::to_string(FluxRangeType(0));
-    return rhs_config;
-  } // ... create_rhs_config()
+      I[rr][rr] = 1;
+    MatrixType K = S;
+    K.rightmultiply(M_inv);
 
-  // flux matrix F[rr][cc] = rr/(2*rr + 1)       if cc == rr - 1
-  //                       = (rr + 1)/(2*rr + 1) if cc == rr + 1
-  //                       = 0                   else
-  static ConfigType create_flux_config()
+    std::vector<AffineFunctionType> affine_functions;
+    for (size_t ii = 0; ii < num_regions; ++ii) {
+      MatrixType K_scaled = K;
+      K_scaled *= T[ii] / 2.;
+      MatrixType I_scaled = I;
+      I_scaled *= sigma_a[ii];
+      MatrixType A = K_scaled;
+      A -= I_scaled;
+      RangeType b = basis_integrated;
+      b *= Q[ii];
+      affine_functions.emplace_back(A, b);
+    } // ii
+    return std::make_unique<ActualRhsType>(lower_left, upper_right, num_elements, affine_functions);
+  } // ... create_rhs(...)
+}; // class KineticFokkerPlanckEquation<...>
+
+
+template <class BasisfunctionImp,
+          class EntityImp,
+          class DomainFieldImp,
+          size_t dimDomain,
+          class U_,
+          class RangeFieldImp,
+          size_t dimRange,
+          class Traits =
+              TwoBeamsPnTraits<BasisfunctionImp, EntityImp, DomainFieldImp, dimDomain, U_, RangeFieldImp, dimRange>>
+class TwoBeamsPn : public KineticFokkerPlanckEquation<Traits>
+{
+  typedef typename KineticTransportEquation<Traits> BaseType;
+
+public:
+  using typename BaseType::InitialValueType;
+  using typename BaseType::BoundaryValueType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
+
+  template <class... Args>
+  TwoBeamsPn(Args... args)
+    : BaseType(std::forward<Args>(args)...)
   {
-    ConfigType flux_config;
-    flux_config["type"] = DefaultFluxType::static_id();
-    Dune::FieldMatrix<RangeFieldType, dimRange, dimRange> A(0);
-    for (size_t rr = 0; rr < dimRange; ++rr) {
-      for (size_t cc = 0; cc < dimRange; ++cc) {
-        if (cc == rr - 1)
-          A[rr][cc] = rr / (2.0 * rr + 1.0);
-        else if (cc == rr + 1)
-          A[rr][cc] = (rr + 1.) / (2.0 * rr + 1.0);
-      }
-    }
-    flux_config["A"] = XT::Common::to_string(A, precision);
-    flux_config["b"] = Dune::XT::Common::to_string(RangeType(0));
-    return flux_config;
-  } // ... create_flux_matrix()
+  }
+
+  static FieldVector<size_t, dimDomain> num_elements()
+  {
+    return FieldVector<size_t, dimDomain>(1);
+  }
+
+  static RangeFieldType sigma_a()
+  {
+    return 4;
+  }
+
+  static RangeFieldType T()
+  {
+    return 0;
+  }
+
+  static RangeFieldType Q()
+  {
+    return 0;
+  }
 
   // Initial value of the kinetic equation is a constant vacuum concentration psi_vac.
   // Thus, the initial value of the n-th moment is 2 psi_vac if n == 0 and 0 else.
-  static ConfigType create_initial_value_config(const ConfigType grid_config = default_grid_config(),
-                                                const RangeFieldType psi_vac = 1e-4)
+  static InitialValueType* create_initial_values(const BasisfunctionImp& basis_functions,
+                                                 const XT::Common::Configuration& grd_cfg,
+                                                 const RangeFieldType psi_vac = 1e-4)
   {
-    ConfigType initial_value_config;
-    initial_value_config["lower_left"] = grid_config["lower_left"];
-    initial_value_config["upper_right"] = grid_config["upper_right"];
-    initial_value_config["num_elements"] = "[1]";
-    initial_value_config["variable"] = "x";
-    initial_value_config["name"] = DefaultInitialValueType::static_id();
-    Dune::FieldVector<RangeFieldType, dimRange> initial_vals(0);
-    initial_vals[0] = 2 * psi_vac;
-    initial_value_config["values.0"] = XT::Common::to_string(initial_vals, precision);
-    initial_value_config["order.0"] = "1";
-    return initial_value_config;
+    const DomainType lower_left = XT::Common::from_string<DomainType>(grd_cfg["lower_left"]);
+    const DomainType upper_right = XT::Common::from_string<DomainType>(grd_cfg["upper_right"]);
+    RangeType value(0);
+    value[0] = 2 * psi_vac;
+    std::vector<typename ActualInitialValueType::LocalizableFunctionType> initial_vals;
+    initial_vals.emplace_back([=](const DomainType&) { return value; });
+    return new ActualInitialValueType(
+        lower_left, upper_right, TwoBeamsPn::num_elements(), initial_vals, "initial_values");
   } // ... create_initial_values()
 
   // boundary value of kinetic equation is 100*delta(v-1) at x = 0 and 100*delta(v+1) at x = 1,
   // so k-th component of boundary value has to be 50*\phi_k(1) at x = 0 and 50*\phi_k(-1) at x = 1.
-  // Model with function(x) = 50*((\phi_k(-1) - \phi_k(1))*x + \phi_k(1)).
-  // For Legendre polynomials, this is [50 50 50 ...] at x = 0 and [50 -50 50 -50 ... ] at x = 1,
-  // so the function used is function(x) = 50*((-1)^n - 1)*x + 1)
-  static std::string create_boundary_value_config()
+  // Model with function(x) = 50*\phi_k(-1)*x + 50*\phi_k(1)*(1-x).
+  static BoundaryValueType* create_boundary_values(const BasisfunctionImp& basis_functions,
+                                                   const XT::Common::Configuration& /*grd_cfg*/)
   {
-    ConfigType boundary_value_config;
-    boundary_value_config["type"] = DefaultBoundaryValueType::static_id();
-    boundary_value_config["variable"] = "x";
-    boundary_value_config["order"] = "10";
-    std::string str = "[";
-    for (size_t rr = 0; rr < dimRange; ++rr) {
-      if (rr > 0)
-        str += " ";
-      str += "50*(" + Dune::XT::Common::to_string(((1.0 - 2.0 * (rr % 2)) - 1.0), precision) + "*x[0]+1)";
-    }
-    str += "]";
-    boundary_value_config["expression"] = str;
-    return boundary_value_config;
+    const auto basis_evaluated_at_one = basis_functions.evaluate(DomainType(1));
+    const auto basis_evaluated_at_minus_one = basis_functions.evaluate(DomainType(-1));
+    return new ActualBoundaryValueType(
+        [=](const DomainType& x) {
+          RangeType ret = basis_evaluated_at_minus_one;
+          ret *= x[0] * 50;
+          RangeType summand2 = basis_evaluated_at_one;
+          summand2 *= (1 - x[0]) * 50;
+          ret += summand_2;
+          return ret;
+        },
+        1);
   } // ... create_boundary_value_config()
-}; // class TwoBeamsBase<...>
-
-
-template <class E, class D, size_t d, class R, size_t order>
-class TwoBeamsPnLegendreLaplaceBeltrami
-    : public TwoBeamsBase<TwoBeamsPnLegendreLaplaceBeltrami<E, D, d, R, order>, E, D, d, R, order + 1, 1>
-{
-  typedef TwoBeamsBase<TwoBeamsPnLegendreLaplaceBeltrami<E, D, d, R, order>, E, D, d, R, order + 1, 1> BaseType;
-
-public:
-  static std::string static_id()
-  {
-    return "TwoBeamsPnLegendreLaplaceBeltrami";
-  }
-
-  template <class... Args>
-  TwoBeamsPnLegendreLaplaceBeltrami(Args&&... args)
-    : BaseType(std::forward<Args>(args)...)
-  {
-  }
 };
 
 

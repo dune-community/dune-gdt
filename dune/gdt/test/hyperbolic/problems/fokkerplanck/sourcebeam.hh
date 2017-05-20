@@ -17,7 +17,6 @@
 #include <vector>
 #include <string>
 
-#include <boost/math/special_functions/legendre.hpp>
 
 #include <dune/pdelab/common/crossproduct.hh>
 
@@ -34,92 +33,174 @@ namespace Hyperbolic {
 namespace Problems {
 
 
-template <class FieldType>
-FieldType evaluate_legendre_polynomial(const FieldType& v, const size_t n)
+template <class TestcaseType, class E, class D, size_t d, class R, size_t r, size_t rC = 1>
+class KineticFokkerPlanck : public TwoBeamsBase<SourceBeamImp, E, D, d, R, r, rC>
 {
-  FieldType ret(0);
-  for (size_t k = 0; k <= n; ++k)
-    ret += std::pow(-v, k) * XT::Common::binomial_coefficient(n, k)
-           * XT::Common::binomial_coefficient((n + k - 1) / 2., n);
-  ret *= std::pow(-1, n) * (1 << n); // 2^n
-  return ret;
-}
+  typedef SourceBeamBase<SourceBeamImp, E, D, d, R, r, rC, PointsVectorType> ThisType;
+  typedef TwoBeamsBase<SourceBeamImp, E, D, d, R, r, rC> BaseType;
 
-template <class FieldType, class RangeType>
-FieldType evaluate_hat_function(const FieldType& v, const size_t n, const RangeType& v_points)
-{
-  if (n == 0 && XT::Common::FloatCmp::ge(v, v_points[0]) && XT::Common::FloatCmp::le(v, v_points[1]))
-    return (v - v_points[1]) / (v_points[0] - v_points[1]);
-  else if (n == v_points.size() - 1 && XT::Common::FloatCmp::ge(v, v_points[v_points.size() - 2])
-           && XT::Common::FloatCmp::le(v, v_points[v_points.size() - 1]))
-    return (v - v_points[v_points.size() - 2]) / (v_points[v_points.size() - 1] - v_points[v_points.size() - 2]);
-  else if (XT::Common::FloatCmp::ge(v, v_points[n - 1]) && XT::Common::FloatCmp::le(v, v_points[n + 1]))
-    if (XT::Common::FloatCmp::le(v, v_points[n]))
-      return (v - v_points[n - 1]) / (v_points[n] - v_points[n - 1]);
-    else
-      return (v - v_points[n + 1]) / (v_points[n] - v_points[n + 1]);
-  else
-    return 0;
-}
+public:
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  using BaseType::precision;
+  static const size_t numPoints = 0;
+  using typename BaseType::DefaultFluxType;
+  using typename BaseType::DefaultInitialValueType;
+  using typename BaseType::DefaultRHSType;
+  using typename BaseType::DefaultBoundaryValueType;
 
-template <class FieldType, class PointsVectorType>
-FieldType evaluate_first_order_dg(const FieldType& v, const size_t n, const PointsVectorType& v_points)
-{
-  if (XT::Common::FloatCmp::ge(v, v_points[n / 2]) && XT::Common::FloatCmp::le(v, v_points[n / 2 + 1]))
-    if (n % 2)
-      return v;
-    else
-      return 1;
-  else
-    return 0;
-}
+  using typename BaseType::ConfigType;
+  using typename BaseType::MatrixType;
+  using typename BaseType::RangeType;
+  using typename BaseType::RangeFieldType;
 
-// calculates position of \psi_l^m in vector.
-// The \psi_l^m are ordered by l first and then by m,
-// i.e. (\psi_0^0, \psi_1^{-1}, \psi_1^0, psi_1^1, \psi_2^{-2},\psi_2^{-1},...,\psi_N^{-N}, \psi_N^{-N+1}, ...)
-// Thus \psi_l^m has position l + m + \sum_{k=0}^(l-1) (2k+1) = l^2 + l + m in the vector.
-constexpr size_t pos(const int l = 0, const int m = 0)
-{
-  return l * l + l + m;
-}
-
-std::pair<int, int> get_l_and_m(int pos)
-{
-  int l = 0;
-  while (pos >= 2 * l + 1) {
-    pos -= 2 * l + 1;
-    ++l;
+  static std::string static_id()
+  {
+    return TestcaseType::static_id();
   }
-  int m = pos - l;
-  return std::make_pair(l, m);
-}
 
-template <class FieldType>
-FieldType evaluate_associated_legendre_polynomial(const FieldType& v, const int l, int m)
-{
-  return boost::math::legendre_p(l, m, v);
-}
+  //  static ConfigType default_grid_config()
+  //  {
+  //    ConfigType grid_config;
+  //    grid_config["type"] = "provider.cube";
+  //    grid_config["lower_left"] = "[0.0]";
+  //    grid_config["upper_right"] = "[3.0]";
+  //    grid_config["num_elements"] = "[3000]";
+  //    grid_config["overlap_size"] = "[1 1 1 1]";
+  //    return grid_config;
+  //  }
 
-// Notation from Garrett, Hauck, "A Comparison of Moment Closures for Linear Kinetic Transport Equations: The Line
-// Source Benchmark",
-// http://www.tandfonline.com/doi/full/10.1080/00411450.2014.910226?src=recsys&, Section 4.1
-double N_lm(const int l, const int m)
-{
-  assert(l >= 0 && m >= 0 && m <= l);
-  return std::sqrt((2. * l + 1.) * XT::Common::factorial(l - m) / (XT::Common::factorial(l + m) * 4. * M_PI));
-}
+  using BaseType::default_boundary_info_config;
 
-template <class FieldType>
-FieldType evaluate_real_spherical_harmonics(const FieldType v, const FieldType phi, const int l, const int m)
-{
-  assert(l >= 0 && std::abs(m) <= l);
-  if (m < 0)
-    return std::sqrt(2) * N_lm(l, -m) * evaluate_associated_legendre_polynomial(v, l, -m) * std::sin(-m * phi);
-  else if (m == 0)
-    return N_lm(l, 0) * evaluate_associated_legendre_polynomial(v, l, 0);
-  else
-    return std::sqrt(2) * N_lm(l, m) * evaluate_associated_legendre_polynomial(v, l, m) * std::cos(m * phi);
-}
+  static ConfigType default_config(const ConfigType grid_config = default_grid_config(),
+                                   const PointsVectorType v_points = create_equidistant_points(),
+                                   const RangeFieldType psi_vac = 5e-9)
+  {
+    ConfigType config;
+    config.add(grid_config, "grid");
+    config.add(default_boundary_info_config(), "boundary_info");
+    config.add(SourceBeamImp::create_flux_config(v_points), "flux");
+    config.add(SourceBeamImp::create_rhs_config(grid_config, v_points), "rhs");
+    config.add(SourceBeamImp::create_initial_value_config(grid_config, v_points, psi_vac), "initial_values");
+    config.add(SourceBeamImp::create_boundary_value_config(v_points, psi_vac), "boundary_values");
+    return config;
+  } // ... default_config(...)
+
+  template <class... Args>
+  SourceBeamBase(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
+  {
+  }
+
+  static bool has_non_zero_rhs()
+  {
+    return true;
+  }
+
+  static MatrixType mass_matrix()
+  {
+    return BasisFunctionType::mass_matrix();
+  }
+
+  static MatrixType mass_matrix_with_v()
+  {
+    return BasisFunctionType::mass_matrix_with_v();
+  }
+
+  // flux matrix A = B M^{-1} with B_{ij} = <v h_i h_j>
+  static std::unique_ptr<FluxType> create_flux()
+  {
+    MatrixType A = mass_matrix_with_v(v_points);
+    const MatrixType M_inv = BasisFunctionType::mass_matrix_inverse();
+    //    const MatrixType M_inv = tridiagonal_matrix_inverse(M);
+    A.rightmultiply(M_inv);
+    return std::make_unique<DefaultFluxType>(FluxAffineFunctionType(A));
+  } // ... create_flux(...)
+
+  // Initial value of the kinetic equation is a constant vacuum concentration psi_vac.
+  // Thus, the initial value of the moment vector is psi_vac * <b>.
+  static ConfigType create_initial_value_config(const ConfigType grid_config = default_grid_config(),
+                                                const PointsVectorType& v_points = create_equidistant_points(),
+                                                const RangeFieldType psi_vac = 5e-9)
+  {
+    ConfigType initial_value_config;
+    initial_value_config["lower_left"] = grid_config["lower_left"];
+    initial_value_config["upper_right"] = grid_config["upper_right"];
+    initial_value_config["num_elements"] = "[1]";
+    initial_value_config["variable"] = "x";
+    initial_value_config["name"] = SourceBeamImp::DefaultInitialValueType::static_id();
+    RangeType initial_vals = SourceBeamImp::basisfunctions_integrated(v_points);
+    initial_vals *= psi_vac;
+    initial_value_config["values.0"] = XT::Common::to_string(initial_vals, precision);
+    initial_value_config["order.0"] = "1";
+    return initial_value_config;
+  } // ... create_initial_values()
+
+  // RHS is (sigma_s/vol*G - sigma_t * I)u + Q<b>,
+  // where sigma_t = sigma_s + sigma_a, G = <b><b>^T M^{-1} = <b>*c^T and
+  // vol = <1> is the volume of the integration domain.
+  static DefaultRHSType create_rhs(const ConfigType& grid_config = default_grid_config())
+  {
+    const FieldVector<size_t, 3> num_elements = TestcaseType::num_elements();
+    const std::vector<RangeFieldType> sigma_a = TestcaseType::sigma_a(grid_config);
+    const std::vector<RangeFieldType> sigma_s = TestcaseType::sigma_s(grid_config);
+    const std::vector<RangeFieldType> Q = TestcaseType::Q(grid_config);
+    const size_t num_regions = std::accumulate(num_elements.begin(), num_elements.end());
+    assert(sigma_a.size() == sigma_s.size() && sigma_a.size() == Q.size() && sigma_a.size() == num_regions);
+    const DomainType lower_left = XT::Common::from_string<DomainType>(grid_config["lower_left"]);
+    const DomainType upper_right = XT::Common::from_string<DomainType>(grid_config["upper_right"]);
+    const auto sigma_t = sigma_a;
+    for (size_t ii = 0; ii < num_regions; ++ii)
+      sigma_t[ii] += sigma_s[ii];
+    const RangeType basis_integrated = BasisFunctionType::integrated();
+    const MatrixType M_inv = BasisFunctionType::mass_matrix_inverse();
+    RangeType c(0);
+    M_inv.mtv(integrated_basis, c);
+    MatrixType I(0);
+    for (size_t rr = 0; rr < dimRange; ++rr)
+      I[rr][rr] = 1;
+    MatrixType G(0);
+    for (size_t rr = 0; rr < dimRange; ++rr)
+      for (size_t cc = 0; cc < dimRange; ++cc)
+        G[rr][cc] = basis_integrated[rr] * c[cc];
+    const auto vol = vol();
+
+    std::vector<RHSAffineFunctionType> affine_functions;
+    for (size_t ii = 0; ii < num_regions; ++ii) {
+      MatrixType G_scaled = G;
+      G_scaled *= sigma_s[ii] / vol;
+      MatrixType I_scaled = I;
+      I_scaled *= sigma_t[ii];
+      MatrixType A = G_scaled;
+      A -= I_scaled;
+      RangeType b = basis_integrated;
+      b *= Q[ii];
+      affine_functions.emplace_back(A, b);
+    } // ii
+    return std::make_unique<DefaultRHSType>(lower_left, upper_right, num_elements, affine_functions);
+  } // ... create_rhs(...)
+
+  // returns the numerator g of the left boundary value (see create_boundary_values)
+  static RangeFieldType numerator(const RangeFieldType v)
+  {
+    return std::exp(-1e5 * (v - 1) * (v - 1));
+  }
+
+  // returns the denominator <g> of the left boundary value (see create_boundary_values)
+  static RangeFieldType denominator()
+  {
+    static constexpr auto pi = M_PI;
+    return 1 / 200. * std::sqrt(pi / 10) * std::erf(200 * std::sqrt(10));
+  }
+
+  // calculates integral from v_l to v_u of numerator g
+  static RangeFieldType integral_1(RangeFieldType v_l, RangeFieldType v_u)
+  {
+    static constexpr auto pi = M_PI;
+    return 1 / 200. * std::sqrt(pi / 10)
+           * (std::erf(100 * std::sqrt(10) * (v_u - 1)) - std::erf(100 * std::sqrt(10) * (v_l - 1)));
+  }
+}; // class SourceBeamBase
 
 
 /** \see class TwoBeams in twobeams.hh */
@@ -202,14 +283,6 @@ public:
   static bool has_non_zero_rhs()
   {
     return true;
-  }
-
-  static PointsVectorType create_equidistant_points()
-  {
-    PointsVectorType ret;
-    for (size_t ii = 0; ii < SourceBeamImp::numPoints; ++ii)
-      ret[ii] = -1. + 2. * ii / (SourceBeamImp::numPoints - 1.);
-    return ret;
   }
 
   static MatrixType mass_matrix(const PointsVectorType& /*v_points*/)
@@ -414,6 +487,7 @@ public:
 
   static RangeType basisfunctions_integrated(const PointsVectorType& v_points = create_equidistant_points())
   {
+
     RangeType ret(0);
     ret[0] = v_points[1] - v_points[0];
     for (size_t ii = 1; ii < dimRange - 1; ++ii)
@@ -462,45 +536,6 @@ public:
     return boundary_value_config;
   } // ... create_boundary_value_config()
 
-  // returns matrix with entries <h_i h_j>
-  static MatrixType mass_matrix(const PointsVectorType& v_points)
-  {
-    MatrixType ret(0);
-    ret[0][0] = (v_points[1] - v_points[0]) / 3.;
-    for (size_t rr = 0; rr < dimRange; ++rr) {
-      if (rr > 0 && rr < dimRange - 1)
-        ret[rr][rr] = (v_points[rr + 1] - v_points[rr - 1]) / 3.;
-      if (rr > 0)
-        ret[rr][rr - 1] = (v_points[rr] - v_points[rr - 1]) / 6.;
-      if (rr < dimRange - 1)
-        ret[rr][rr + 1] = (v_points[rr + 1] - v_points[rr]) / 6.;
-    }
-    ret[dimRange - 1][dimRange - 1] = (v_points[dimRange - 1] - v_points[dimRange - 2]) / 3.;
-    return ret;
-  }
-
-  // returns matrix with entries <v h_i h_j>
-  static MatrixType mass_matrix_with_v(const PointsVectorType& v_points)
-  {
-    MatrixType ret(0);
-    ret[0][0] = (v_points[1] * v_points[1] + 2 * v_points[1] * v_points[0] - 3 * v_points[0] * v_points[0]) / 12.;
-    for (size_t rr = 0; rr < dimRange; ++rr) {
-      if (rr > 0 && rr < dimRange - 1)
-        ret[rr][rr] = (v_points[rr + 1] * v_points[rr + 1] + 2 * v_points[rr + 1] * v_points[rr]
-                       - 2 * v_points[rr] * v_points[rr - 1]
-                       - v_points[rr - 1] * v_points[rr - 1])
-                      / 12.;
-      if (rr > 0)
-        ret[rr][rr - 1] = (v_points[rr] * v_points[rr] - v_points[rr - 1] * v_points[rr - 1]) / 12.;
-      if (rr < dimRange - 1)
-        ret[rr][rr + 1] = (v_points[rr + 1] * v_points[rr + 1] - v_points[rr] * v_points[rr]) / 12.;
-    }
-    ret[dimRange - 1][dimRange - 1] =
-        (3 * v_points[dimRange - 1] * v_points[dimRange - 1] - 2 * v_points[dimRange - 1] * v_points[dimRange - 2]
-         - v_points[dimRange - 2] * v_points[dimRange - 2])
-        / 12.;
-    return ret;
-  }
 }; // class SourceBeamPnHatFunctions
 
 
@@ -551,43 +586,6 @@ public:
   }
 
   using BaseType::create_equidistant_points;
-
-  // returns <b>, where b is the basis functions vector
-  static RangeType basisfunctions_integrated(const PointsVectorType& v_points = create_equidistant_points())
-  {
-    RangeType ret(0);
-    for (size_t ii = 0; ii < numPoints - 1; ++ii) {
-      ret[2 * ii] = v_points[ii + 1] - v_points[ii];
-      ret[2 * ii + 1] = (std::pow(v_points[ii + 1], 2) - std::pow(v_points[ii], 2)) / 2.;
-    }
-    return ret;
-  }
-
-  // returns matrix with entries <h_i h_j>
-  static MatrixType mass_matrix(const PointsVectorType& v_points = create_equidistant_points())
-  {
-    MatrixType ret(0);
-    for (size_t ii = 0; ii < num_points - 1; ++ii) {
-      ret[2 * ii][2 * ii] = v_points[ii + 1] - v_points[ii];
-      ret[2 * ii + 1][2 * ii + 1] = (std::pow(v_points[ii + 1], 3) - std::pow(v_points[ii], 3)) / 3.;
-      ret[2 * ii][2 * ii + 1] = (std::pow(v_points[ii + 1], 2) - std::pow(v_points[ii], 2)) / 2.;
-      ret[2 * ii + 1][2 * ii] = ret[2 * ii][2 * ii + 1];
-    }
-    return ret;
-  }
-
-  // returns matrix with entries <v h_i h_j>
-  static MatrixType mass_matrix_with_v(const PointsVectorType& v_points = create_equidistant_points())
-  {
-    MatrixType ret(0);
-    for (size_t ii = 0; ii < num_points - 1; ++ii) {
-      ret[2 * ii][2 * ii] = (std::pow(v_points[ii + 1], 2) - std::pow(v_points[ii], 2)) / 2.;
-      ret[2 * ii + 1][2 * ii + 1] = (std::pow(v_points[ii + 1], 4) - std::pow(v_points[ii], 4)) / 4.;
-      ret[2 * ii][2 * ii + 1] = (std::pow(v_points[ii + 1], 3) - std::pow(v_points[ii], 3)) / 3.;
-      ret[2 * ii + 1][2 * ii] = ret[2 * ii][2 * ii + 1];
-    }
-    return ret;
-  }
 
   using BaseType::numerator;
   using BaseType::denominator;

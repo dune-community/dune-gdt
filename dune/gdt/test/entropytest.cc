@@ -47,6 +47,7 @@
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/planesource.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/pointsource.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/checkerboard3d.hh>
+#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/basisfunctions.hh>
 
 #include <libqhullcpp/RboxPoints.h>
 #include <libqhullcpp/QhullError.h>
@@ -179,7 +180,16 @@ int main(int argc, char** argv)
   typedef typename GridType::LeafGridView GridViewType;
   typedef typename GridType::Codim<0>::Entity EntityType;
 
+  //******************** choose BasisfunctionType *****************************************
+  typedef typename Hyperbolic::Problems::LegendrePolynomials<double, dimDomain, double, dimRange> BasisfunctionType;
+  BasisfunctionType basis_functions;
+
   //******************** choose ProblemType ***********************************************
+
+  typedef typename Hyperbolic::Problems::KineticTransportEquation<
+      typename Hyperbolic::Problems::
+          TwoBeamsPnTraits<BasisfunctionType, EntityType, double, dimDomain, StateType, double, dimRange>>
+      ProblemType;
 
   //  typedef typename Hyperbolic::Problems::SourceBeamPnHatFunctions<EntityType, double, dimDomain, double,
   //  momentOrder>
@@ -206,8 +216,8 @@ int main(int argc, char** argv)
   //    typedef typename Hyperbolic::Problems::
   //        PointSourcePnLegendre<EntityType, double, dimDomain, double, momentOrder>
   //            ProblemType;
-  typedef typename Hyperbolic::Problems::PointSourcePnHatFunctions<EntityType, double, dimDomain, double, 6>
-      ProblemType;
+  // typedef typename Hyperbolic::Problems::PointSourcePnHatFunctions<EntityType, double, dimDomain, double, 6>
+  //    ProblemType;
   //  typedef typename Hyperbolic::Problems::PointSourcePnPartialMoments<EntityType, double, dimDomain, double, 8>
   //      ProblemType;
   //  typedef typename Hyperbolic::Problems::CheckerboardPnHatFunctions<EntityType, double, dimDomain, double, 6>
@@ -265,19 +275,6 @@ int main(int argc, char** argv)
   //    const auto quadrature_rule = Hyperbolic::Problems::get_lebedev_quadrature(quadrature_order);
 
   // 3D quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
-  const size_t octaeder_refinements = 0;
-  std::vector<Dune::XT::Common::FieldVector<double, dimDomain>> initial_points{
-      {1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}};
-  const Dune::GDT::Hyperbolic::Problems::SphericalTriangulation<double> triangulation(initial_points,
-                                                                                      octaeder_refinements);
-  const size_t max_quadrature_refinements = 4;
-  Dune::GDT::Hyperbolic::Problems::SphericalTriangulation<double> quadrature_triangulation(initial_points, 0);
-  std::vector<Dune::QuadratureRule<double, dimDomain>> quadrature_rules(max_quadrature_refinements);
-  for (size_t ii = 0; ii < max_quadrature_refinements; ++ii) {
-    quadrature_triangulation.refine();
-    quadrature_rules[ii] = quadrature_triangulation.quadrature_rule();
-  }
-  const auto& quadrature_rule = quadrature_rules.back();
 
   // 3d adaptive quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
   //  typedef typename GDT::Hyperbolic::Problems::AdaptiveQuadrature<DomainType, RangeType, RangeType>
@@ -296,10 +293,10 @@ int main(int argc, char** argv)
 
   //******************* create ProblemType object ***************************************
   //  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config));
-  const auto problem_ptr = ProblemType::create(
-      quadrature_rule, triangulation, ProblemType::default_config(grid_config, quadrature_rule, triangulation));
+  //  const auto problem_ptr = ProblemType::create(
+  //      quadrature_rule, triangulation, ProblemType::default_config(grid_config, quadrature_rule, triangulation));
   //  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config, true));
-  const ProblemType& problem = *problem_ptr;
+  const ProblemType problem = ProblemType(basis_functions);
   const std::shared_ptr<const InitialValueType> initial_values = problem.initial_values();
   const std::shared_ptr<const BoundaryValueType> boundary_values = problem.boundary_values();
   const std::shared_ptr<const RHSType> rhs = problem.rhs();
@@ -533,28 +530,29 @@ int main(int argc, char** argv)
       ConstantFunctionType;
   typedef AdvectionRHSOperator<RHSType> RHSOperatorType;
 
-  typedef typename std::
-      conditional<numerical_flux == NumericalFluxes::kinetic,
-                  AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType>,
-                  std::conditional<numerical_flux == NumericalFluxes::laxfriedrichs
-                                       || numerical_flux == NumericalFluxes::laxfriedrichs_with_reconstruction
-                                       || numerical_flux == NumericalFluxes::local_laxfriedrichs
-                                       || numerical_flux == NumericalFluxes::local_laxfriedrichs_with_reconstruction,
-                                   AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
-                                                                  BoundaryValueType,
-                                                                  ConstantFunctionType,
-                                                                  SlopeLimiters::minmod>,
-                                   AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType>>::type>::type
-          AdvectionOperatorType;
+  //  typedef typename std::
+  //      conditional<numerical_flux == NumericalFluxes::kinetic,
+  //                  AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType>,
+  //                  std::conditional<numerical_flux == NumericalFluxes::laxfriedrichs
+  //                                       || numerical_flux == NumericalFluxes::laxfriedrichs_with_reconstruction
+  //                                       || numerical_flux == NumericalFluxes::local_laxfriedrichs
+  //                                       || numerical_flux ==
+  //                                       NumericalFluxes::local_laxfriedrichs_with_reconstruction,
+  //                                   AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
+  //                                                                  BoundaryValueType,
+  //                                                                  ConstantFunctionType,
+  //                                                                  SlopeLimiters::minmod>,
+  //                                   AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType>>::type>::type
+  //          AdvectionOperatorType;
 
-  //  typedef AdvectionLaxFriedrichsWENOOperator<AnalyticalFluxType,
-  //                                             BoundaryValueType,
-  //                                             ConstantFunctionType,
-  //                                             GridViewType,
-  //                                             BasisFunctionType::hat_functions,
-  //                                             1,
-  //                                             SlopeLimiters::minmod>
-  //      AdvectionOperatorType;
+  typedef AdvectionLaxFriedrichsWENOOperator<AnalyticalFluxType,
+                                             BoundaryValueType,
+                                             ConstantFunctionType,
+                                             GridViewType,
+                                             BasisFunctionType::hat_functions,
+                                             1,
+                                             SlopeLimiters::minmod>
+      AdvectionOperatorType;
 
   //  typedef AdvectionGodunovWENOOperator<AnalyticalFluxType,
   //                                       BoundaryValueType,
@@ -612,24 +610,24 @@ int main(int argc, char** argv)
   // *********************** create operators and timesteppers ************************************
   const ConstantFunctionType dx_function(dx);
 
-  AdvectionOperatorType advection_operator =
-      internal::AdvectionOperatorCreator<AdvectionOperatorType, numerical_flux>::create(
-          *analytical_flux, *boundary_values, dx_function, linear);
+  //  AdvectionOperatorType advection_operator =
+  //      internal::AdvectionOperatorCreator<AdvectionOperatorType, numerical_flux>::create(
+  //          *analytical_flux, *boundary_values, dx_function, linear);
 
-  //  FieldVector<size_t, dimDomain> grid_sizes;
-  //  std::fill(grid_sizes.begin(), grid_sizes.end(), XT::Common::from_string<size_t>(grid_size));
-  //  AdvectionOperatorType advection_operator(*analytical_flux,
-  //                                           *boundary_values,
-  //                                           dx_function,
-  //                                           grid_view,
-  //                                           grid_sizes,
-  //                                           plane_coefficients,
-  //                                           linear,
-  //                                           true,
-  //                                           space_quadrature_rules,
-  //                                           epsilon,
-  //                                           false,
-  //                                           DomainType(0));
+  FieldVector<size_t, dimDomain> grid_sizes;
+  std::fill(grid_sizes.begin(), grid_sizes.end(), XT::Common::from_string<size_t>(grid_size));
+  AdvectionOperatorType advection_operator(*analytical_flux,
+                                           *boundary_values,
+                                           dx_function,
+                                           grid_view,
+                                           grid_sizes,
+                                           plane_coefficients,
+                                           linear,
+                                           true,
+                                           space_quadrature_rules,
+                                           epsilon,
+                                           false,
+                                           DomainType(0));
 
   //    AdvectionOperatorType advection_operator(*analytical_flux,
   //                                             *boundary_values,
@@ -657,7 +655,9 @@ int main(int argc, char** argv)
     filename +=
         std::string("_") + (std::is_same<typename ProblemType::FluxType, AnalyticalFluxType>::value ? "p" : "m");
     filename += Dune::XT::Common::to_string(dimRange);
-    filename += rhs_time_stepper_method == TimeStepperMethods::implicit_euler ? "_implicit" : "_explicit";
+    filename += rhs_time_stepper_method == TimeStepperMethods::implicit_euler
+                    ? "_implicit"
+                    : (rhs_time_stepper_method == TimeStepperMethods::matrix_exponential ? "_matexp" : "_explicit");
 
     timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 1);
   } else {
