@@ -217,26 +217,30 @@ public:
     return 0;
   }
 
-  virtual size_t size() const override final
+  size_t size() const override final
   {
     return internal::DynamicTupleGetter<0>::sumSize(basefunctionsets_);
   }
 
-  virtual size_t order() const override final
+  size_t order() const override final
   {
     size_t ret = 0;
     internal::DynamicTupleGetter<0>::order(basefunctionsets_, ret);
     return ret;
   }
 
-  virtual void evaluate(const DomainType& xx, std::vector<RangeType>& ret) const override final
+  void evaluate(const DomainType& xx,
+                std::vector<RangeType>& ret,
+                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
   {
     internal::DynamicTupleGetter<0>::evaluate(basefunctionsets_, xx, ret);
   } // ... evaluate(...)
 
   using BaseType::evaluate;
 
-  virtual void jacobian(const DomainType& xx, std::vector<JacobianRangeType>& ret) const override final
+  void jacobian(const DomainType& xx,
+                std::vector<JacobianRangeType>& ret,
+                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
   {
     internal::DynamicTupleGetter<0>::jacobian(basefunctionsets_, xx, ret);
   } // ... jacobian(...)
