@@ -188,7 +188,7 @@ public:
                      2
 #endif
                  )
-    : BaseType(XT::Grid::make_cube_grid<GridType>(grid_cfg()).grid_ptr(), num_refs)
+    : BaseType(grid_cfg(), num_refs)
     , problem_()
     , exact_solution_("x",
                       "cos(8.0*pi*x[0])+cos(8.0*pi*x[1])",

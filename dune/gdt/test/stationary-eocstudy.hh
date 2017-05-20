@@ -114,11 +114,12 @@ public:
   {
     if (current_refinement_ != last_computed_refinement_) {
       assert(current_refinement_ <= num_refinements());
-      current_num_DoFs_ =
-          Discretizer::discretize(test_case_, test_case_.problem(), test_case_.level_of(current_refinement_))
-              .ansatz_space()
-              .mapper()
-              .size();
+      current_num_DoFs_ = Discretizer::discretize(test_case_.level_provider(current_refinement_),
+                                                  test_case_.problem(),
+                                                  test_case_.level_of(current_refinement_))
+                              .ansatz_space()
+                              .mapper()
+                              .size();
     }
     return current_num_DoFs_;
   } // ... current_num_DoFs(...)
@@ -126,7 +127,10 @@ public:
   virtual size_t current_grid_size() const override final
   {
     assert(current_refinement_ <= num_refinements());
-    return test_case_.level_view(test_case_.level_of(current_refinement_)).indexSet().size(0);
+    return test_case_.level_provider(current_refinement_)
+        .template layer<TestCaseType::layer_type, XT::Grid::Backends::view>(test_case_.level_of(current_refinement_))
+        .indexSet()
+        .size(0);
   } // ... current_grid_size(...)
 
   virtual double current_grid_width() override final
@@ -134,7 +138,8 @@ public:
     assert(current_refinement_ <= num_refinements());
     if (grid_widths_[current_refinement_] < 0.0) {
       const int level = test_case_.level_of(current_refinement_);
-      const auto grid_layer = test_case_.level_view(level);
+      const auto grid_layer = test_case_.level_provider(current_refinement_)
+                                  .template layer<TestCaseType::layer_type, XT::Grid::Backends::view>(level);
       grid_widths_[current_refinement_] = XT::Grid::dimensions(grid_layer).entity_width.max();
       assert(grid_widths_[current_refinement_] > 0.0);
     }
@@ -148,7 +153,9 @@ public:
       // compute solution
       Timer timer;
       current_discretization_ = XT::Common::make_unique<DiscretizationType>(
-          Discretizer::discretize(test_case_, test_case_.problem(), test_case_.level_of(current_refinement_)));
+          Discretizer::discretize(test_case_.level_provider(current_refinement_),
+                                  test_case_.problem(),
+                                  test_case_.level_of(current_refinement_)));
       current_solution_vector_on_level_ = XT::Common::make_unique<VectorType>(current_discretization_->solve());
       time_to_solution_ = timer.elapsed();
       const ConstDiscreteFunctionType current_refinement_solution(
@@ -164,7 +171,7 @@ public:
       last_computed_refinement_ = current_refinement_;
       // visualize
       if (!visualize_prefix_.empty()) {
-        this->test_case_.problem().visualize(test_case_.level_view(test_case_.level_of(current_refinement_)),
+        this->test_case_.problem().visualize(test_case_.reference_grid_view(),
                                              visualize_prefix_ + "_problem_"
                                                  + Dune::XT::Common::to_string(current_refinement_));
         current_refinement_solution.visualize(visualize_prefix_ + "_solution_"
@@ -220,7 +227,7 @@ protected:
   {
     if (!reference_solution_computed_) {
       reference_discretization_ = XT::Common::make_unique<DiscretizationType>(
-          Discretizer::discretize(test_case_, test_case_.problem(), test_case_.reference_level()));
+          Discretizer::discretize(test_case_.reference_provider(), test_case_.problem(), test_case_.reference_level()));
       reference_solution_vector_ = XT::Common::make_unique<VectorType>(reference_discretization_->solve());
       reference_solution_computed_ = true;
       // visualize

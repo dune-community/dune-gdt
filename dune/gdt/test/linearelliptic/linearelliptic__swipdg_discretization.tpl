@@ -35,7 +35,7 @@ struct linearelliptic_SWIPDG_discretization : public ::testing::Test
     test_case.print_header(DXTC_LOG_INFO_0);
     DXTC_LOG_INFO_0 << std::endl;
     typedef LinearElliptic::IpdgDiscretizer<typename TestCaseType::GridType,
-                                            XT::Grid::Layers::level,
+                                            TestCaseType::layer_type,
                                             SpaceBackend,
                                             LaBackend,
                                             polOrder,

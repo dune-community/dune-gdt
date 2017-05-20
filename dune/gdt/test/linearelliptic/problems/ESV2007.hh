@@ -180,8 +180,6 @@ private:
   }
 
 public:
-  using typename BaseType::GridType;
-
   ESV2007TestCase(const size_t num_refs =
 #if DXT_DISABLE_LARGE_TESTS
                       1
@@ -189,18 +187,18 @@ public:
                       3
 #endif
                   )
-    : BaseType(XT::Grid::make_cube_grid<GridType>(grid_cfg()).grid_ptr(), num_refs)
+    : BaseType(grid_cfg(), num_refs)
     , problem_()
     , exact_solution_()
   {
   }
 
-  virtual const ProblemType& problem() const override final
+  const ProblemType& problem() const override final
   {
     return problem_;
   }
 
-  virtual void print_header(std::ostream& out = std::cout) const override final
+  void print_header(std::ostream& out = std::cout) const override final
   {
     out << "+==================================================================+\n"
         << "|+================================================================+|\n"
@@ -216,12 +214,12 @@ public:
         << "+==================================================================+" << std::endl;
   }
 
-  virtual bool provides_exact_solution() const override final
+  bool provides_exact_solution() const override final
   {
     return true;
   }
 
-  virtual const ExactSolutionType& exact_solution() const override final
+  const ExactSolutionType& exact_solution() const override final
   {
     return exact_solution_;
   }

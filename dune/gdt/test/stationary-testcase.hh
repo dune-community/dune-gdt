@@ -54,9 +54,7 @@ public:
   {
   }
 
-  virtual ~StationaryTestCase()
-  {
-  }
+  virtual ~StationaryTestCase() = default;
 
   virtual const ProblemType& problem() const = 0;
 
