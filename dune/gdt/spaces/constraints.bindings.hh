@@ -23,6 +23,7 @@
 #include <dune/xt/la/container.bindings.hh>
 
 #include <dune/gdt/assembler/system.hh>
+#include <dune/gdt/spaces/cg/interface.hh>
 #include <dune/gdt/spaces/cg.bindings.hh>
 
 #include "constraints.hh"
@@ -105,17 +106,39 @@ public:
     c.def("apply", [](const type& self, M& matrix, V& vector) { self.apply(matrix, vector); }, "matrix"_a, "vector"_a);
   } // ... addbind(...)
 
+private:
+  template <class T, bool is_cg = is_cg_space<T>::value>
+  struct addbind_assembler
+  {
+    template <class GL, class A>
+    void operator()(pybind11::class_<GDT::SystemAssembler<T, GL, A>>& bound_system_assembler)
+    {
+      using namespace pybind11::literals;
+
+      bound_system_assembler.def("append",
+                                 [](GDT::SystemAssembler<T, GL, A>& self,
+                                    GDT::DirichletConstraints<XT::Grid::extract_intersection_t<GL>>& constraints) {
+                                   self.append(constraints);
+                                 },
+                                 "dirichlet_constraints"_a);
+    } // ... addbind(...)
+  }; // struct addbind_assembler
+
+  template <class T>
+  struct addbind_assembler<T, false>
+  {
+    template <class GL, class A>
+    void operator()(pybind11::class_<GDT::SystemAssembler<T, GL, A>>& /*bound_system_assembler*/)
+    {
+    }
+  };
+
+public:
   template <class T, class GL, class A>
   static void addbind(pybind11::class_<GDT::SystemAssembler<T, GL, A>>& bound_system_assembler)
   {
-    using namespace pybind11::literals;
-
-    bound_system_assembler.def(
-        "append",
-        [](GDT::SystemAssembler<T, GL, A>& self,
-           GDT::DirichletConstraints<XT::Grid::extract_intersection_t<GL>>& constraints) { self.append(constraints); },
-        "dirichlet_constraints"_a);
-  } // ... addbind(...)
+    addbind_assembler<T>()(bound_system_assembler);
+  }
 }; // class DirichletConstraints
 
 

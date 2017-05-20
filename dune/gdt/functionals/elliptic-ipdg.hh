@@ -142,7 +142,10 @@ public:
 
 private:
   const LocalFaceIntegralFunctional<LocalEllipticIpdgIntegrands::
-                                        BoundaryRHS<DirichletType, DiffusionFactorType, DiffusionTensorType>>
+                                        BoundaryRHS<DirichletType, DiffusionFactorType, DiffusionTensorType>,
+                                    typename Space::BaseFunctionSetType,
+                                    IntersectionType,
+                                    Field>
       local_functional_;
 }; // class EllipticIpdgDirichletVectorFunctional
 

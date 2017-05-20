@@ -36,7 +36,7 @@ template <class DiffusionFactorType,
           class Matrix = typename XT::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
           class GridLayer = typename RangeSpace::GridLayerType,
           class SourceSpace = RangeSpace,
-          class Field = typename RangeSpace::RangeFieldType>
+          class Field = typename Matrix::ScalarType>
 class EllipticIpdgMatrixOperator
     : public MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::face_and_volume>
 {
@@ -51,14 +51,6 @@ class EllipticIpdgMatrixOperator
                                      SourceSpace,
                                      Field>
       ThisType;
-  typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>>
-      LocalVolumeOperatorType;
-  typedef LocalCouplingIntegralOperator<LocalEllipticIpdgIntegrands::
-                                            Inner<DiffusionFactorType, DiffusionTensorType, method>>
-      LocalCouplingOperatorType;
-  typedef LocalBoundaryIntegralOperator<LocalEllipticIpdgIntegrands::
-                                            BoundaryLHS<DiffusionFactorType, DiffusionTensorType, method>>
-      LocalBoundaryOperatorType;
 
 public:
   using typename BaseType::GridLayerType;
@@ -161,9 +153,30 @@ public:
   /// \}
 
 private:
-  const LocalVolumeOperatorType local_volume_operator_;
-  const LocalCouplingOperatorType local_coupling_operator_;
-  const LocalBoundaryOperatorType local_boundary_operator_;
+  typedef typename RangeSpace::BaseFunctionSetType RangeBaseType;
+  typedef typename SourceSpace::BaseFunctionSetType SourceBaseType;
+
+  const LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>,
+                                    RangeBaseType,
+                                    SourceBaseType,
+                                    Field>
+      local_volume_operator_;
+  const LocalCouplingIntegralOperator<LocalEllipticIpdgIntegrands::
+                                          Inner<DiffusionFactorType, DiffusionTensorType, method>,
+                                      RangeBaseType,
+                                      IntersectionType,
+                                      SourceBaseType,
+                                      RangeBaseType,
+                                      SourceBaseType,
+                                      Field>
+      local_coupling_operator_;
+  const LocalBoundaryIntegralOperator<LocalEllipticIpdgIntegrands::
+                                          BoundaryLHS<DiffusionFactorType, DiffusionTensorType, method>,
+                                      RangeBaseType,
+                                      IntersectionType,
+                                      SourceBaseType,
+                                      Field>
+      local_boundary_operator_;
 }; // class EllipticIpdgMatrixOperator
 
 

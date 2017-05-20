@@ -25,6 +25,7 @@
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/constraints.hh>
 
+#include "local-assemblers.hh"
 #include "wrapper.hh"
 
 namespace Dune {
@@ -56,6 +57,10 @@ public:
   typedef AnsatzSpaceImp AnsatzSpaceType;
   typedef OuterTestSpaceImp OuterTestSpaceType;
   typedef OuterAnsatzSpaceImp OuterAnsatzSpaceType;
+  typedef typename TestSpaceType::BaseFunctionSetType TestBaseType;
+  typedef typename AnsatzSpaceType::BaseFunctionSetType AnsatzBaseType;
+  typedef typename OuterTestSpaceType::BaseFunctionSetType OuterTestBaseType;
+  typedef typename OuterAnsatzSpaceType::BaseFunctionSetType OuterAnsatzBaseType;
 
   typedef typename BaseType::GridLayerType GridLayerType;
   typedef typename BaseType::EntityType EntityType;
@@ -171,59 +176,52 @@ public:
     return *this;
   } // ... append(...)
 
-  template <class V, class M, class R>
-  ThisType& append(const LocalVolumeTwoFormAssembler<V>& local_assembler,
-                   XT::LA::MatrixInterface<M, R>& matrix,
-                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
+  template <class M, class R>
+  ThisType& DUNE_DEPRECATED_MSG("Directly append the LocalVolumeTwoForm (13.05.2017)!") append(
+      const LocalVolumeTwoFormAssembler<TestSpaceType, typename M::derived_type, AnsatzSpaceType>& local_assembler,
+      XT::LA::MatrixInterface<M, R>& matrix,
+      const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
-    typedef internal::LocalVolumeTwoFormMatrixAssemblerWrapper<ThisType,
-                                                               LocalVolumeTwoFormAssembler<V>,
-                                                               typename M::derived_type>
-        WrapperType;
+    typedef internal::LocalVolumeTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim0_functors_.emplace_back(
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
     return *this;
   } // ... append(...)
 
-  template <class V, class R>
-  ThisType& append(const LocalVolumeTwoFormAssembler<V>& local_assembler,
-                   std::vector<DynamicMatrix<R>>& matrix,
-                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
-  {
-    assert(matrix.size() == test_space_->grid_view().size(0));
-    typedef internal::LocalVolumeTwoFormMatrixAssemblerWrapper<ThisType,
-                                                               LocalVolumeTwoFormAssembler<V>,
-                                                               std::vector<DynamicMatrix<R>>>
-        WrapperType;
-    this->codim0_functors_.emplace_back(new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix));
-    return *this;
-  } // ... append(...)
-
-  template <class V, class M, class R>
-  ThisType& append(const LocalCouplingTwoFormAssembler<V>& local_assembler,
-                   XT::LA::MatrixInterface<M, R>& matrix,
-                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
+  template <class M, class R>
+  ThisType& DUNE_DEPRECATED_MSG("Directly append the LocalCouplingTwoForm (13.05.2017)!")
+      append(const LocalCouplingTwoFormAssembler<TestSpaceType,
+                                                 IntersectionType,
+                                                 typename M::derived_type,
+                                                 AnsatzSpaceType,
+                                                 OuterTestSpaceType,
+                                                 OuterAnsatzSpaceType>& local_assembler,
+             XT::LA::MatrixInterface<M, R>& matrix,
+             const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
-    typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType,
-                                                                 LocalCouplingTwoFormAssembler<V>,
-                                                                 typename M::derived_type>
-        WrapperType;
+    typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
     return *this;
   } // ... append(...)
 
-  template <class V, class M, class R>
-  ThisType& append(const LocalCouplingTwoFormAssembler<V>& local_assembler,
-                   XT::LA::MatrixInterface<M, R>& matrix_in_in,
-                   XT::LA::MatrixInterface<M, R>& matrix_out_out,
-                   XT::LA::MatrixInterface<M, R>& matrix_in_out,
-                   XT::LA::MatrixInterface<M, R>& matrix_out_in,
-                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
+  template <class M, class R>
+  ThisType& DUNE_DEPRECATED_MSG("Directly append the LocalCouplingTwoForm (13.05.2017)!")
+      append(const LocalCouplingTwoFormAssembler<TestSpaceType,
+                                                 IntersectionType,
+                                                 typename M::derived_type,
+                                                 AnsatzSpaceType,
+                                                 OuterTestSpaceType,
+                                                 OuterAnsatzSpaceType>& local_assembler,
+             XT::LA::MatrixInterface<M, R>& matrix_in_in,
+             XT::LA::MatrixInterface<M, R>& matrix_out_out,
+             XT::LA::MatrixInterface<M, R>& matrix_in_out,
+             XT::LA::MatrixInterface<M, R>& matrix_out_in,
+             const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
     assert(matrix_in_in.rows() == test_space_->mapper().size());
     assert(matrix_in_in.cols() == ansatz_space_->mapper().size());
@@ -233,10 +231,7 @@ public:
     assert(matrix_in_out.cols() == outer_ansatz_space_->mapper().size());
     assert(matrix_out_in.rows() == outer_test_space_->mapper().size());
     assert(matrix_out_in.cols() == ansatz_space_->mapper().size());
-    typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType,
-                                                                 LocalCouplingTwoFormAssembler<V>,
-                                                                 typename M::derived_type>
-        WrapperType;
+    typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(test_space_,
                                                         ansatz_space_,
                                                         outer_test_space_,
@@ -250,58 +245,120 @@ public:
     return *this;
   } // ... append(...)
 
-  template <class V, class M, class R>
-  ThisType& append(const LocalBoundaryTwoFormAssembler<V>& local_assembler,
-                   XT::LA::MatrixInterface<M, R>& matrix,
-                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
+  template <class M, class R>
+  ThisType& DUNE_DEPRECATED_MSG("Directly append the LocalBoundaryTwoForm (13.05.2017)!") append(
+      const LocalBoundaryTwoFormAssembler<TestSpaceType, IntersectionType, typename M::derived_type, AnsatzSpaceType>&
+          local_assembler,
+      XT::LA::MatrixInterface<M, R>& matrix,
+      const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
     assert(matrix.rows() == test_space_->mapper().size());
     assert(matrix.cols() == ansatz_space_->mapper().size());
-    typedef internal::LocalBoundaryTwoFormMatrixAssemblerWrapper<ThisType,
-                                                                 LocalBoundaryTwoFormAssembler<V>,
-                                                                 typename M::derived_type>
-        WrapperType;
+    typedef internal::LocalBoundaryTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(
         new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
     return *this;
   } // ... append(...)
 
-  template <class L, class V, class R>
-  ThisType& append(const LocalVolumeFunctionalAssembler<L>& local_assembler,
+  template <class M, class R>
+  ThisType& append(const LocalVolumeTwoFormInterface<TestBaseType, AnsatzBaseType, R>& local_volume_two_form,
+                   XT::LA::MatrixInterface<M, R>& matrix,
+                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
+  {
+    this->codim0_functors_.emplace_back(
+        new LocalVolumeTwoFormAssemblerFunctor<TestSpaceType, typename M::derived_type, GridLayerType, AnsatzSpaceType>(
+            test_space_, ansatz_space_, where, local_volume_two_form, matrix.as_imp()));
+    return *this;
+  } // ... append(...)
+
+  template <class M, class R>
+  ThisType& append(const LocalCouplingTwoFormInterface<TestBaseType,
+                                                       IntersectionType,
+                                                       AnsatzBaseType,
+                                                       OuterTestBaseType,
+                                                       OuterAnsatzBaseType,
+                                                       R>& local_coupling_two_form,
+                   XT::LA::MatrixInterface<M, R>& matrix,
+                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
+  {
+    this->codim1_functors_.emplace_back(new LocalCouplingTwoFormAssemblerFunctor<TestSpaceType,
+                                                                                 typename M::derived_type,
+                                                                                 GridLayerType,
+                                                                                 AnsatzSpaceType,
+                                                                                 OuterTestSpaceType,
+                                                                                 OuterAnsatzSpaceType>(
+        test_space_, ansatz_space_, where, local_coupling_two_form, matrix.as_imp()));
+    return *this;
+  } // ... append(...)
+
+  template <class M, class R>
+  ThisType& append(const LocalCouplingTwoFormInterface<TestBaseType,
+                                                       IntersectionType,
+                                                       AnsatzBaseType,
+                                                       OuterTestBaseType,
+                                                       OuterAnsatzBaseType,
+                                                       R>& local_coupling_two_form,
+                   XT::LA::MatrixInterface<M, R>& matrix_in_in,
+                   XT::LA::MatrixInterface<M, R>& matrix_out_out,
+                   XT::LA::MatrixInterface<M, R>& matrix_in_out,
+                   XT::LA::MatrixInterface<M, R>& matrix_out_in,
+                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
+  {
+    this->codim1_functors_.emplace_back(
+        new LocalCouplingTwoFormAssemblerFunctor<TestSpaceType,
+                                                 typename M::derived_type,
+                                                 GridLayerType,
+                                                 AnsatzSpaceType,
+                                                 OuterTestSpaceType,
+                                                 OuterAnsatzSpaceType>(test_space_,
+                                                                       ansatz_space_,
+                                                                       outer_test_space_,
+                                                                       outer_ansatz_space_,
+                                                                       where,
+                                                                       local_coupling_two_form,
+                                                                       matrix_in_in.as_imp(),
+                                                                       matrix_out_out.as_imp(),
+                                                                       matrix_in_out.as_imp(),
+                                                                       matrix_out_in.as_imp()));
+    return *this;
+  } // ... append(...)
+
+  template <class M, class R>
+  ThisType& append(
+      const LocalBoundaryTwoFormInterface<TestBaseType, IntersectionType, AnsatzBaseType, R>& local_boundary_two_form,
+      XT::LA::MatrixInterface<M, R>& matrix,
+      const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
+  {
+    this->codim1_functors_.emplace_back(new LocalBoundaryTwoFormAssemblerFunctor<TestSpaceType,
+                                                                                 typename M::derived_type,
+                                                                                 GridLayerType,
+                                                                                 AnsatzSpaceType>(
+        test_space_, ansatz_space_, where, local_boundary_two_form, matrix.as_imp()));
+    return *this;
+  }
+
+  template <class V, class R>
+  ThisType& append(const LocalVolumeFunctionalAssembler<TestSpaceType, typename V::derived_type>& local_assembler,
                    XT::LA::VectorInterface<V, R>& vector,
                    const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
     assert(vector.size() == test_space_->mapper().size());
-    typedef internal::LocalVolumeFunctionalVectorAssemblerWrapper<ThisType,
-                                                                  LocalVolumeFunctionalAssembler<L>,
-                                                                  typename V::derived_type>
-        WrapperType;
+    typedef internal::LocalVolumeFunctionalVectorAssemblerWrapper<ThisType, typename V::derived_type> WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
     return *this;
   } // ... append(...)
 
-  template <class L, class V, class R>
-  ThisType& append(const LocalFaceFunctionalAssembler<L>& local_assembler,
-                   XT::LA::VectorInterface<V, R>& vector,
-                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
+  template <class V, class R>
+  ThisType&
+  append(const LocalFaceFunctionalAssembler<TestSpaceType, IntersectionType, typename V::derived_type>& local_assembler,
+         XT::LA::VectorInterface<V, R>& vector,
+         const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
     assert(vector.size() == test_space_->mapper().size());
-    typedef internal::LocalFaceFunctionalVectorAssemblerWrapper<ThisType,
-                                                                LocalFaceFunctionalAssembler<L>,
-                                                                typename V::derived_type>
-        WrapperType;
+    typedef internal::LocalFaceFunctionalVectorAssemblerWrapper<ThisType, typename V::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
     return *this;
   } // ... append(...)
-
-  using BaseType::add;
-
-  template <class... Args>
-  DUNE_DEPRECATED_MSG("Use append() instead (since 11.01.2017)!")
-  ThisType& add(Args&&... args)
-  {
-    return append(std::forward<Args>(args)...);
-  }
 
   void assemble(const bool use_tbb = false)
   {
@@ -324,5 +381,9 @@ protected:
 
 } // namespace GDT
 } // namespace Dune
+
+
+#include "system.lib.hh"
+
 
 #endif // DUNE_GDT_ASSEMBLER_SYSTEM_HH

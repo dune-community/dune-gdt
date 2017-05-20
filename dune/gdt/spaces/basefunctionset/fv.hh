@@ -99,17 +99,19 @@ public:
     return backend_;
   }
 
-  virtual size_t size() const override final
+  size_t size() const override final
   {
     return 1;
   }
 
-  virtual size_t order() const override final
+  size_t order() const override final
   {
     return 0;
   }
 
-  virtual void evaluate(const DomainType& /*xx*/, std::vector<RangeType>& ret) const override final
+  void evaluate(const DomainType& /*xx*/,
+                std::vector<RangeType>& ret,
+                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
   {
     assert(ret.size() >= 0);
     ret[0] = 1.0;
@@ -117,7 +119,9 @@ public:
 
   using BaseType::evaluate;
 
-  virtual void jacobian(const DomainType& /*xx*/, std::vector<JacobianRangeType>& ret) const override final
+  void jacobian(const DomainType& /*xx*/,
+                std::vector<JacobianRangeType>& ret,
+                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
   {
     assert(ret.size() >= 0);
     ret[0] *= 0.0;
@@ -185,17 +189,19 @@ public:
     return backend_;
   }
 
-  virtual size_t size() const override final
+  size_t size() const override final
   {
     return dimRange;
   }
 
-  virtual size_t order() const override final
+  size_t order() const override final
   {
     return 0;
   }
 
-  virtual void evaluate(const DomainType& /*xx*/, std::vector<RangeType>& ret) const override final
+  void evaluate(const DomainType& /*xx*/,
+                std::vector<RangeType>& ret,
+                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
   {
     assert(ret.size() >= dimRange);
     for (size_t ii = 0; ii < dimRange; ++ii) {
@@ -206,7 +212,9 @@ public:
 
   using BaseType::evaluate;
 
-  virtual void jacobian(const DomainType& /*xx*/, std::vector<JacobianRangeType>& ret) const override final
+  void jacobian(const DomainType& /*xx*/,
+                std::vector<JacobianRangeType>& ret,
+                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
   {
     assert(ret.size() >= dimRange);
     for (size_t ii = 0; ii < dimRange; ++ii)

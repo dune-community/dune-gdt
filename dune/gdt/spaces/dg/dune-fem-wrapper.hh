@@ -49,7 +49,7 @@ namespace internal {
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
 class DuneFemDgSpaceWrapperTraits
 {
-  static_assert(XT::Grid::is_part<GridPartImp>::value, "");
+  static_assert(XT::Grid::is_layer<GridPartImp>::value && !XT::Grid::is_view<GridPartImp>::value, "");
 
 public:
   typedef DuneFemDgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
@@ -127,11 +127,15 @@ public:
   {
   }
 
+#if !DUNE_XT_WITH_PYTHON_BINDINGS
+  // There is a problem which prevents copy ctors which are manually marked as default to end up in a lib ...
   DuneFemDgSpaceWrapper(const ThisType& other) = default;
   DuneFemDgSpaceWrapper(ThisType&& source) = default;
 
+  // ... and we need to guard these operators as well since they would hinder the creation of the respective ctors.
   ThisType& operator=(const ThisType& other) = delete;
   ThisType& operator=(ThisType&& source) = delete;
+#endif // DUNE_XT_WITH_PYTHON_BINDINGS
 
   const GridLayerType& DUNE_DEPRECATED_MSG("Use grid_layer() instead (03.04.2017)!") grid_part() const
   {
@@ -192,5 +196,9 @@ class DuneFemDgSpaceWrapper
 
 } // namespace GDT
 } // namespace Dune
+
+
+#include "dune-fem-wrapper.lib.hh"
+
 
 #endif // DUNE_GDT_SPACES_DG_DUNE_FEM_WRAPPER_HH

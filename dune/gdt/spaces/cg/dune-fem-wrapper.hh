@@ -19,16 +19,17 @@
 #if HAVE_DUNE_FEM
 #include <dune/fem/space/common/functionspace.hh>
 #include <dune/fem/space/lagrange/space.hh>
-#endif // HAVE_DUNE_FEM
+#endif
 
 #include <dune/xt/common/type_traits.hh>
+#include <dune/xt/grid/dd/subdomains/grid.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/spaces/parallel.hh>
 
+#include "interface.hh"
 #include "../mapper/dune-fem-wrapper.hh"
 #include "../basefunctionset/dune-fem-wrapper.hh"
-
-#include "interface.hh"
 #include "../constraints.hh"
 
 namespace Dune {
@@ -48,7 +49,7 @@ class DuneFemCgSpaceWrapper
 template <class GridPartImp, int polynomialOrder, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
 class DuneFemCgSpaceWrapperTraits
 {
-  static_assert(XT::Grid::is_part<GridPartImp>::value, "");
+  static_assert(XT::Grid::is_layer<GridPartImp>::value && !XT::Grid::is_view<GridPartImp>::value, "");
 
 public:
   typedef DuneFemCgSpaceWrapper<GridPartImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
@@ -131,11 +132,15 @@ public:
   {
   }
 
+#if !DUNE_XT_WITH_PYTHON_BINDINGS
+  // There is a problem which prevents copy ctors which are manually marked as default to end up in a lib ...
   DuneFemCgSpaceWrapper(const ThisType& other) = default;
-  explicit DuneFemCgSpaceWrapper(ThisType&& source) = default;
+  DuneFemCgSpaceWrapper(ThisType&& source) = default;
 
+  // ... and we need to guard these operators as well since they would hinder the creation of the respective ctors.
   ThisType& operator=(const ThisType& other) = delete;
   ThisType& operator=(ThisType&& source) = delete;
+#endif // DUNE_XT_WITH_PYTHON_BINDINGS
 
   const GridLayerType& DUNE_DEPRECATED_MSG("Use grid_layer() instead (03.04.2017)!") grid_part() const
   {
@@ -167,8 +172,9 @@ public:
     return BaseType::lagrange_points_order_1(entity);
   }
 
-  template <class I>
-  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const XT::Grid::BoundaryInfo<I>& boundaryInfo) const
+  std::set<size_t> local_dirichlet_DoFs(
+      const EntityType& entity,
+      const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundaryInfo) const
   {
     return BaseType::local_dirichlet_DoFs_order_1(entity, boundaryInfo);
   }
@@ -207,5 +213,9 @@ class DuneFemCgSpaceWrapper
 
 } // namespace GDT
 } // namespace Dune
+
+
+#include "dune-fem-wrapper.lib.hh"
+
 
 #endif // DUNE_GDT_SPACES_CG_DUNE_FEM_WRAPPER_HH

@@ -17,7 +17,7 @@
 #include <dune/common/dynvector.hh>
 
 #include <dune/xt/common/crtp.hh>
-#include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/functions/type_traits.hh>
 
 #include <dune/gdt/spaces/basefunctionset/interface.hh>
 
@@ -25,78 +25,51 @@ namespace Dune {
 namespace GDT {
 
 
-template <class Traits>
-class LocalVolumeFunctionalInterface : public XT::CRTPInterface<LocalVolumeFunctionalInterface<Traits>, Traits>
+template <class TestBase, class Field = typename TestBase::RangeFieldType>
+class LocalVolumeFunctionalInterface
 {
+  static_assert(XT::Functions::is_localfunction_set<TestBase>::value, "");
+
 public:
-  typedef typename Traits::derived_type derived_type;
+  typedef TestBase TestBaseType;
+  typedef Field FieldType;
 
-  template <class E, class D, size_t d, class R, size_t r, size_t rC>
-  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_basis,
-             Dune::DynamicVector<R>& ret) const
-  {
-    CHECK_AND_CALL_CRTP(this->as_imp().apply(test_basis, ret));
-  }
+  virtual ~LocalVolumeFunctionalInterface() = default;
 
-  template <class E, class D, size_t d, class R, size_t r, size_t rC>
-  Dune::DynamicVector<R> apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_basis) const
+  virtual void apply(const TestBaseType& test_basis, DynamicVector<FieldType>& ret) const = 0;
+
+  DynamicVector<FieldType> apply(const TestBaseType& test_basis) const
   {
-    Dune::DynamicVector<R> ret(test_basis.size(), 0.);
+    DynamicVector<FieldType> ret(test_basis.size(), 0.);
     apply(test_basis, ret);
     return ret;
   }
 }; // class LocalFunctionalInterface
 
 
-template <class Traits>
-class LocalFaceFunctionalInterface : public XT::CRTPInterface<LocalFaceFunctionalInterface<Traits>, Traits>
+template <class TestBase, class Intersection, class Field = typename TestBase::RangeFieldType>
+class LocalFaceFunctionalInterface
 {
+  static_assert(XT::Functions::is_localfunction_set<TestBase>::value, "");
+  static_assert(XT::Grid::is_intersection<Intersection>::value, "");
+
 public:
-  typedef typename Traits::derived_type derived_type;
+  typedef TestBase TestBaseType;
+  typedef Intersection IntersectionType;
+  typedef Field FieldType;
 
-  template <class E, class D, size_t d, class R, size_t r, size_t rC, class IntersectionType>
-  void apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_basis,
-             const IntersectionType& intersection,
-             Dune::DynamicVector<R>& ret) const
-  {
-    CHECK_AND_CALL_CRTP(this->as_imp().apply(test_basis, intersection, ret));
-  }
+  virtual ~LocalFaceFunctionalInterface() = default;
 
-  template <class E, class D, size_t d, class R, size_t r, size_t rC, class IntersectionType>
-  Dune::DynamicVector<R> apply(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& test_basis,
-                               const IntersectionType& intersection) const
+  virtual void
+  apply(const TestBaseType& test_basis, const IntersectionType& intersection, DynamicVector<FieldType>& ret) const = 0;
+
+  DynamicVector<FieldType> apply(const TestBaseType& test_basis, const IntersectionType& intersection) const
   {
-    Dune::DynamicVector<R> ret(test_basis.size(), 0.);
+    DynamicVector<FieldType> ret(test_basis.size(), 0.);
     apply(test_basis, intersection, ret);
     return ret;
   }
 }; // class LocalFaceFunctionalInterface
-
-
-namespace internal {
-
-
-template <class Tt>
-struct is_local_volume_functional_helper
-{
-  DXTC_has_typedef_initialize_once(Traits);
-
-  static const bool is_candidate = DXTC_has_typedef(Traits)<Tt>::value;
-};
-
-
-} // namespace internal
-
-
-template <class T, bool candidate = internal::is_local_volume_functional_helper<T>::is_candidate>
-struct is_local_volume_functional : public std::is_base_of<LocalVolumeFunctionalInterface<typename T::Traits>, T>
-{
-};
-
-template <class T>
-struct is_local_volume_functional<T, false> : public std::false_type
-{
-};
 
 
 } // namespace GDT

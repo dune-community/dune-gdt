@@ -78,7 +78,7 @@ TEST_F(L2GlobalProjectionOperatorTest_{{Name}}, constructible_by_factory)
 }
 TEST_F(L2GlobalProjectionOperatorTest_{{Name}}, produces_correct_results)
 {
-  typedef typename L2GlobalProjectionOperatorTest_{{Name}}::GridViewType::Grid Grid;
+  typedef Dune::XT::Grid::extract_grid_t<L2GlobalProjectionOperatorTest_{{Name}}::GridLayerType> Grid;
   const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
   this->produces_correct_results(tolerance);
   this->produces_correct_results(tolerance);

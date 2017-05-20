@@ -90,7 +90,7 @@ private:
   {
     typedef PDELab::QkLocalFiniteElementMap<GridLayerType, DomainFieldType, RangeFieldType, polOrder> Type;
   };
-  typedef typename GridLayerType::Grid GridType;
+  typedef XT::Grid::extract_grid_t<GridLayerType> GridType;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
   static const bool simplicial_ =
       (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId == Impl::SimplexTopology<dimDomain>::type::id);
@@ -125,8 +125,9 @@ namespace internal {
 template <int polOrder, class SpaceType>
 struct LocalDirichletDoFs
 {
+  template <class I>
   static std::set<size_t> get(const typename SpaceType::EntityType& entity,
-                              const typename SpaceType::BoundaryInfoType& boundaryInfo,
+                              const XT::Grid::BoundaryInfo<I>& boundaryInfo,
                               const SpaceType& space)
   {
     return space.local_dirichlet_DoFs_simplicial_lagrange_elements(entity, boundaryInfo);
@@ -136,8 +137,9 @@ struct LocalDirichletDoFs
 template <class SpaceType>
 struct LocalDirichletDoFs<1, SpaceType>
 {
+  template <class I>
   static std::set<size_t> get(const typename SpaceType::EntityType& entity,
-                              const typename SpaceType::BoundaryInfoType& boundaryInfo,
+                              const XT::Grid::BoundaryInfo<I>& boundaryInfo,
                               const SpaceType& space)
   {
     return space.local_dirichlet_DoFs_order_1(entity, boundaryInfo);
@@ -185,10 +187,8 @@ private:
   typedef typename Traits::FEMapType FEMapType;
 
 public:
-  typedef typename BaseType::IntersectionType IntersectionType;
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::PatternType PatternType;
-  typedef typename BaseType::BoundaryInfoType BoundaryInfoType;
 
   explicit DunePdelabCgSpaceWrapper(GridLayerType grd_vw)
     : grid_view_(grd_vw)
@@ -261,7 +261,8 @@ public:
     return BaseType::lagrange_points_order_1(entity);
   }
 
-  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
+  template <class I>
+  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const XT::Grid::BoundaryInfo<I>& boundaryInfo) const
   {
     return internal::LocalDirichletDoFs<polynomialOrder, ThisType>::get(entity, boundaryInfo, *this);
   }
@@ -347,10 +348,8 @@ private:
   typedef typename Traits::FEMapType FEMapType;
 
 public:
-  typedef typename BaseType::IntersectionType IntersectionType;
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::PatternType PatternType;
-  typedef typename BaseType::BoundaryInfoType BoundaryInfoType;
 
   explicit DunePdelabCgSpaceWrapper(GridLayerType grd_vw)
     : grid_view_(grd_vw)
@@ -425,7 +424,8 @@ public:
     return BaseType::lagrange_points_order_1(entity);
   }
 
-  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const BoundaryInfoType& boundaryInfo) const
+  template <class I>
+  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const XT::Grid::BoundaryInfo<I>& boundaryInfo) const
   {
     return internal::LocalDirichletDoFs<polynomialOrder, ThisType>::get(entity, boundaryInfo, *this);
   }

@@ -45,8 +45,6 @@ template <class DiffusionFactorType,
 class EllipticLocalizableProduct : public LocalizableProductBase<GridLayer, Range, Source, Field>
 {
   typedef LocalizableProductBase<GridLayer, Range, Source, Field> BaseType;
-  typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>>
-      LocalEllipticOperatorType;
 
 public:
   // Usually, we only have to hold the data functions for the local operator and perfect forward the rest of the
@@ -113,7 +111,11 @@ public:
   }
 
 private:
-  const LocalEllipticOperatorType local_elliptic_operator_;
+  const LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>,
+                                    typename Range::LocalfunctionType,
+                                    typename Source::LocalfunctionType,
+                                    Field>
+      local_elliptic_operator_;
 }; // class EllipticLocalizableProduct
 
 
@@ -182,7 +184,7 @@ template <class DiffusionFactorType,
           class Matrix = typename XT::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
           class GridLayer = typename RangeSpace::GridLayerType,
           class SourceSpace = RangeSpace,
-          class Field = typename RangeSpace::RangeFieldType>
+          class Field = typename Matrix::ScalarType>
 class EllipticMatrixOperator
     : public MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::volume>
 {
@@ -195,8 +197,6 @@ class EllipticMatrixOperator
                                  Field>
       ThisType;
   typedef MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::volume> BaseType;
-  typedef LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>>
-      LocalEllipticOperatorType;
 
 public:
   /// \sa MatrixOperatorBase
@@ -270,7 +270,11 @@ public:
   }
 
 private:
-  const LocalEllipticOperatorType local_elliptic_operator_;
+  const LocalVolumeIntegralOperator<LocalEllipticIntegrand<DiffusionFactorType, DiffusionTensorType>,
+                                    typename RangeSpace::BaseFunctionSetType,
+                                    typename SourceSpace::BaseFunctionSetType,
+                                    Field>
+      local_elliptic_operator_;
 }; // class EllipticMatrixOperator
 
 

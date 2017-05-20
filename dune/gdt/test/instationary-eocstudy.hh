@@ -17,6 +17,7 @@
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/grid/information.hh>
 #include <dune/xt/grid/gridprovider/eoc.hh>
 
 #include <dune/gdt/discretizations/default.hh>
@@ -115,7 +116,7 @@ protected:
   typedef typename DiscreteSolutionType::key_type TimeFieldType;
 
   typedef typename TestCaseType::InitialValueType InitialValueType;
-  typedef typename TestCaseType::LevelGridLayerType GridLayerType;
+  typedef typename TestCaseType::LevelGridViewType GridLayerType;
 
 public:
   NonStationaryEocStudy(TestCaseType& test_case,
@@ -193,9 +194,8 @@ public:
     assert(current_refinement_ <= num_refinements());
     if (grid_widths_[current_refinement_] < 0.0) {
       const int level = test_case_.level_of(current_refinement_);
-      const auto grid_layer = test_case_.template level<XT::Grid::Backends::view>(level);
-      XT::Grid::Dimensions<GridLayerType> dimensions(grid_layer);
-      grid_widths_[current_refinement_] = dimensions.entity_width.max();
+      const auto grid_layer = test_case_.template layer<XT::Grid::Layers::level, XT::Grid::Backends::view>(level);
+      grid_widths_[current_refinement_] = XT::Grid::dimensions(grid_layer).entity_width.max();
       assert(grid_widths_[current_refinement_] > 0.0);
     }
     return grid_widths_[current_refinement_];

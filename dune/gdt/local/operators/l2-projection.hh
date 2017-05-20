@@ -78,10 +78,17 @@ public:
     // create local L2 operator
     typedef XT::Functions::ConstantFunction<E, D, d, R, 1> OneType;
     const OneType one(1.); // <- is not actually used, just needed for the product evaluation
-    const LocalVolumeIntegralOperator<LocalProductIntegrand<OneType>> local_l2_operator(over_integrate_, one);
+    const LocalVolumeIntegralOperator<LocalProductIntegrand<OneType>,
+                                      typename RangeSpaceType::BaseFunctionSetType,
+                                      typename RangeSpaceType::BaseFunctionSetType,
+                                      R>
+        local_l2_operator(over_integrate_, one);
     // and functional
     typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
-    const LocalVolumeIntegralFunctional<LocalProductIntegrand<SourceType>> local_l2_functional(over_integrate_, source);
+    const LocalVolumeIntegralFunctional<LocalProductIntegrand<SourceType>,
+                                        typename RangeSpaceType::BaseFunctionSetType,
+                                        R>
+        local_l2_functional(over_integrate_, source);
     // create local lhs and rhs
     const auto& local_basis = local_range.basis();
     const size_t size = local_basis.size();
@@ -117,7 +124,10 @@ public:
   {
     // create local L2 volume integral functional
     typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
-    const LocalVolumeIntegralFunctional<LocalProductIntegrand<SourceType>> local_l2_functional(over_integrate_, source);
+    const LocalVolumeIntegralFunctional<LocalProductIntegrand<SourceType>,
+                                        typename RangeSpaceType::BaseFunctionSetType,
+                                        R>
+        local_l2_functional(over_integrate_, source);
     XT::LA::CommonDenseVector<R> local_vector(local_range.basis().size());
     const auto& entity = local_range.entity();
     local_l2_functional.apply(local_range.basis(), local_vector.backend());

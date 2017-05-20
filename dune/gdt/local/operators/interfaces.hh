@@ -19,6 +19,7 @@
 #include <dune/xt/common/crtp.hh>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/functions/type_traits.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
 
@@ -39,21 +40,6 @@ class IsLocalCouplingOperator
 
 /// \todo drop and implement the is_... properly
 class IsLocalBoundaryOperator
-{
-};
-
-/// \todo drop and implement the is_... properly
-class IsLocalVolumeTwoForm
-{
-};
-
-/// \todo drop and implement the is_... properly
-class IsLocalCouplingTwoForm
-{
-};
-
-/// \todo drop and implement the is_... properly
-class IsLocalBoundaryTwoForm
 {
 };
 
@@ -111,134 +97,96 @@ public:
 }; // class LocalBoundaryOperatorInterface
 
 
-template <class Traits>
-class LocalVolumeTwoFormInterface : public XT::CRTPInterface<LocalVolumeTwoFormInterface<Traits>, Traits>,
-                                    internal::IsLocalVolumeTwoForm
+template <class TestBase, class AnsatzBase = TestBase, class Field = typename TestBase::RangeFieldType>
+class LocalVolumeTwoFormInterface
 {
+  static_assert(XT::Functions::is_localfunction_set<TestBase>::value, "");
+  static_assert(XT::Functions::is_localfunction_set<AnsatzBase>::value, "");
+
 public:
-  typedef typename Traits::derived_type derived_type;
+  typedef TestBase TestBaseType;
+  typedef AnsatzBase AnsatzBaseType;
+  typedef Field FieldType;
 
-  /**
-   *  \brief Applies the local operator as a two-form.
-   *  \tparam T       Traits of the test XT::Functions::LocalfunctionSetInterface implementation
-   *  \tparam A       Traits of the ansatz XT::Functions::LocalfunctionSetInterface implementation
-   *  \tparam D       DomainFieldType
-   *  \tparam d       dimDomain
-   *  \tparam R       RangeFieldType
-   *  \tparam r{T,A}  dimRange of the of the {test_base,ansatz_base}
-   *  \tparam rC{T,a} dimRangeCols of the {test_base,ansatz_base}
-   */
-  template <class T, class A, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void apply2(const XT::Functions::LocalfunctionSetInterface<T, D, d, R, rT, rCT>& test_base,
-              const XT::Functions::LocalfunctionSetInterface<A, D, d, R, rA, rCA>& ansatz_base,
-              Dune::DynamicMatrix<R>& ret) const
-  {
-    CHECK_AND_CALL_CRTP(this->as_imp().apply2(test_base, ansatz_base, ret));
-  }
+  virtual ~LocalVolumeTwoFormInterface() = default;
 
-  /**
-   * \sa apply2
-   */
-  template <class T, class A, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  Dune::DynamicMatrix<R> apply2(const XT::Functions::LocalfunctionSetInterface<T, D, d, R, rT, rCT>& test_base,
-                                const XT::Functions::LocalfunctionSetInterface<A, D, d, R, rA, rCA>& ansatz_base) const
+  virtual void
+  apply2(const TestBaseType& test_base, const AnsatzBaseType& ansatz_base, DynamicMatrix<FieldType>& ret) const = 0;
+
+  DynamicMatrix<FieldType> apply2(const TestBaseType& test_base, const AnsatzBaseType& ansatz_base) const
   {
-    Dune::DynamicMatrix<R> ret(test_base.size(), ansatz_base.size(), 0.);
+    DynamicMatrix<FieldType> ret(test_base.size(), ansatz_base.size(), 0.);
     apply2(test_base, ansatz_base, ret);
     return ret;
   }
 }; // class LocalVolumeTwoFormInterface
 
 
-template <class Traits>
-class LocalCouplingTwoFormInterface : public XT::CRTPInterface<LocalCouplingTwoFormInterface<Traits>, Traits>,
-                                      internal::IsLocalCouplingTwoForm
+template <class TestBaseEntity,
+          class Intersection,
+          class AnsatzBaseEntity = TestBaseEntity,
+          class TestBaseNeighbor = TestBaseEntity,
+          class AnsatzBaseNeighbor = AnsatzBaseEntity,
+          class Field = typename TestBaseEntity::RangeFieldType>
+class LocalCouplingTwoFormInterface
 {
-public:
-  typedef typename Traits::derived_type derived_type;
+  static_assert(XT::Functions::is_localfunction_set<TestBaseEntity>::value, "");
+  static_assert(XT::Functions::is_localfunction_set<AnsatzBaseEntity>::value, "");
+  static_assert(XT::Functions::is_localfunction_set<TestBaseNeighbor>::value, "");
+  static_assert(XT::Functions::is_localfunction_set<AnsatzBaseNeighbor>::value, "");
+  static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
-  /**
-   *  \brief Applies the local operator associated with inner faces as a two-form.
-   *  \tparam TE      Traits of the entity test XT::Functions::LocalfunctionSetInterface implementation
-   *  \tparam AE      Traits of the entity ansatz XT::Functions::LocalfunctionSetInterface implementation
-   *  \tparam TN      Traits of the neighbor test XT::Functions::LocalfunctionSetInterface implementation
-   *  \tparam AN      Traits of the neighbor ansatz XT::Functions::LocalfunctionSetInterface implementation
-   *  \tparam IntersectionType
-   *  \tparam D       DomainFieldType
-   *  \tparam d       dimDomain
-   *  \tparam R       RangeFieldType
-   *  \tparam r{T,A}  dimRange of the of the {test_base*,ansatz_base*}
-   *  \tparam rC{T,a} dimRangeCols of the {test_base*,ansatz_base*}
-   */
-  template <class TE,
-            class AE,
-            class TN,
-            class AN,
-            class IntersectionType,
-            class D,
-            size_t d,
-            class R,
-            size_t rT,
-            size_t rCT,
-            size_t rA,
-            size_t rCA>
-  void apply2(const XT::Functions::LocalfunctionSetInterface<TE, D, d, R, rT, rCT>& test_base_en,
-              const XT::Functions::LocalfunctionSetInterface<AE, D, d, R, rA, rCA>& ansatz_base_en,
-              const XT::Functions::LocalfunctionSetInterface<TN, D, d, R, rT, rCT>& test_base_ne,
-              const XT::Functions::LocalfunctionSetInterface<AN, D, d, R, rA, rCA>& ansatz_base_ne,
-              const IntersectionType& intersection,
-              Dune::DynamicMatrix<R>& ret_en_en,
-              Dune::DynamicMatrix<R>& ret_ne_ne,
-              Dune::DynamicMatrix<R>& ret_en_ne,
-              Dune::DynamicMatrix<R>& ret_ne_en) const
-  {
-    CHECK_AND_CALL_CRTP(this->as_imp().apply2(test_base_en,
-                                              ansatz_base_en,
-                                              test_base_ne,
-                                              ansatz_base_ne,
-                                              intersection,
-                                              ret_en_en,
-                                              ret_ne_ne,
-                                              ret_en_ne,
-                                              ret_ne_en));
-  }
+public:
+  typedef TestBaseEntity TestBaseEntityType;
+  typedef AnsatzBaseEntity AnsatzBaseEntityType;
+  typedef TestBaseNeighbor TestBaseNeighborType;
+  typedef AnsatzBaseNeighbor AnsatzBaseNeighborType;
+  typedef Intersection IntersectionType;
+  typedef Field FieldType;
+
+  virtual ~LocalCouplingTwoFormInterface() = default;
+
+  virtual void apply2(const TestBaseEntityType& test_base_en,
+                      const AnsatzBaseEntityType& ansatz_base_en,
+                      const TestBaseNeighborType& test_base_ne,
+                      const AnsatzBaseNeighborType& ansatz_base_ne,
+                      const IntersectionType& intersection,
+                      DynamicMatrix<FieldType>& ret_en_en,
+                      DynamicMatrix<FieldType>& ret_ne_ne,
+                      DynamicMatrix<FieldType>& ret_en_ne,
+                      DynamicMatrix<FieldType>& ret_ne_en) const = 0;
 }; // class LocalCouplingTwoFormInterface
 
 
-template <class Traits>
-class LocalBoundaryTwoFormInterface : public XT::CRTPInterface<LocalBoundaryTwoFormInterface<Traits>, Traits>,
-                                      internal::IsLocalBoundaryTwoForm
+template <class TestBase,
+          class Intersection,
+          class AnsatzBase = TestBase,
+          class Field = typename TestBase::RangeFieldType>
+class LocalBoundaryTwoFormInterface
 {
-public:
-  typedef typename Traits::derived_type derived_type;
+  static_assert(XT::Functions::is_localfunction_set<TestBase>::value, "");
+  static_assert(XT::Functions::is_localfunction_set<AnsatzBase>::value, "");
+  static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
-  /**
-   *  \brief Applies the local operator associated with boundary faces as a two-form.
-   *  \tparam T       Traits of the test XT::Functions::LocalfunctionSetInterface implementation
-   *  \tparam A       Traits of the ansatz XT::Functions::LocalfunctionSetInterface implementation
-   *  \tparam IntersectionType
-   *  \tparam D       DomainFieldType
-   *  \tparam d       dimDomain
-   *  \tparam R       RangeFieldType
-   *  \tparam r{T,A}  dimRange of the of the {test_base,ansatz_base}
-   *  \tparam rC{T,a} dimRangeCols of the {test_base,ansatz_base}
-   */
-  template <class T,
-            class A,
-            class IntersectionType,
-            class D,
-            size_t d,
-            class R,
-            size_t rT,
-            size_t rCT,
-            size_t rA,
-            size_t rCA>
-  void apply2(const XT::Functions::LocalfunctionSetInterface<T, D, d, R, rT, rCT>& test_base,
-              const XT::Functions::LocalfunctionSetInterface<A, D, d, R, rA, rCA>& ansatz_base,
-              const IntersectionType& intersection,
-              Dune::DynamicMatrix<R>& ret) const
+public:
+  typedef TestBase TestBaseType;
+  typedef AnsatzBase AnsatzBaseType;
+  typedef Intersection IntersectionType;
+  typedef Field FieldType;
+
+  virtual ~LocalBoundaryTwoFormInterface() = default;
+
+  virtual void apply2(const TestBaseType& test_base,
+                      const AnsatzBaseType& ansatz_base,
+                      const IntersectionType& intersection,
+                      Dune::DynamicMatrix<FieldType>& ret) const = 0;
+
+  DynamicMatrix<FieldType>
+  apply2(const TestBaseType& test_base, const AnsatzBaseType& ansatz_base, const IntersectionType& intersection) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp().apply2(test_base, ansatz_base, intersection, ret));
+    DynamicMatrix<FieldType> ret(test_base.size(), ansatz_base.size(), 0.);
+    apply2(test_base, ansatz_base, ret);
+    return ret;
   }
 }; // class LocalBoundaryTwoFormInterface
 
@@ -258,24 +206,6 @@ struct is_local_coupling_operator : public std::is_base_of<internal::IsLocalCoup
 /// \todo move to type_traits.hh
 template <class T>
 struct is_local_boundary_operator : public std::is_base_of<internal::IsLocalBoundaryOperator, T>
-{
-};
-
-/// \todo move to type_traits.hh
-template <class T>
-struct is_local_volume_twoform : public std::is_base_of<internal::IsLocalVolumeTwoForm, T>
-{
-};
-
-/// \todo move to type_traits.hh
-template <class T>
-struct is_local_coupling_twoform : public std::is_base_of<internal::IsLocalCouplingTwoForm, T>
-{
-};
-
-/// \todo move to type_traits.hh
-template <class T>
-struct is_local_boundary_twoform : public std::is_base_of<internal::IsLocalBoundaryTwoForm, T>
 {
 };
 

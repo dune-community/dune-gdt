@@ -12,7 +12,9 @@
 
 #include <dune/common/typetraits.hh>
 
+#if HAVE_DUNE_FUNCTIONS
 #include <dune/functions/functionspacebases/lagrangedgbasis.hh>
+#endif
 
 #include <dune/xt/grid/type_traits.hh>
 

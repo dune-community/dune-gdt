@@ -21,6 +21,7 @@
 #include "interface.hh"
 #include "dg/dune-fem-wrapper.hh"
 #include "../playground/spaces/dg/dune-pdelab-wrapper.hh"
+#include "../playground/spaces/dg/dune-functions-wrapper.hh"
 #include <dune/gdt/playground/spaces/block.hh>
 
 
@@ -57,6 +58,12 @@ private:
   struct SpaceChooser<G, p, R, r, rC, GDT::Backends::fem>
   {
     typedef GDT::DuneFemDgSpaceWrapper<GridLayerType, p, R, r, rC> Type;
+  };
+
+  template <class G, int p, class R, size_t r, size_t rC>
+  struct SpaceChooser<G, p, R, r, rC, GDT::Backends::functions>
+  {
+    typedef GDT::DuneFunctionsDgSpaceWrapper<GridLayerType, p, R, r, rC> Type;
   };
 
   template <class G, int p, class R, size_t r, size_t rC>
@@ -129,5 +136,9 @@ public:
 
 } // namespace GDT
 } // namespace Dune
+
+
+#include "dg.lib.hh"
+
 
 #endif // DUNE_GDT_SPACES_DG_HH

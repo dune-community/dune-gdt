@@ -140,18 +140,20 @@ public:
     return *backend_;
   }
 
-  virtual size_t size() const override final
+  size_t size() const override final
   {
     return backend_->size();
   }
 
-  virtual size_t order() const override final
+  size_t order() const override final
   {
     assert(backend_->order() >= 0);
     return backend_->order();
   }
 
-  virtual void evaluate(const DomainType& xx, std::vector<RangeType>& ret) const override final
+  void evaluate(const DomainType& xx,
+                std::vector<RangeType>& ret,
+                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
   {
     assert(ret.size() >= size());
     backend_->evaluateAll(xx, ret);
@@ -159,7 +161,9 @@ public:
 
   using BaseType::evaluate;
 
-  virtual void jacobian(const DomainType& xx, std::vector<JacobianRangeType>& ret) const override final
+  void jacobian(const DomainType& xx,
+                std::vector<JacobianRangeType>& ret,
+                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
   {
     assert(ret.size() >= size());
     backend_->jacobianAll(xx, ret);

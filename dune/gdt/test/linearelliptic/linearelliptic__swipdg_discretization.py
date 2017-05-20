@@ -25,7 +25,7 @@ try:
 except KeyError:
     pass
 
-space_backends = ['fem', 'pdelab']
+space_backends = ['fem', 'functions']
 
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 

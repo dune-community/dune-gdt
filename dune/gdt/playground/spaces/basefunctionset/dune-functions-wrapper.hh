@@ -12,7 +12,9 @@
 
 #include <dune/common/typetraits.hh>
 
+#if HAVE_DUNE_FUNCTIONS
 #include <dune/functions/functionspacebases/lagrangedgbasis.hh>
+#endif
 
 #include <dune/xt/grid/type_traits.hh>
 
@@ -101,19 +103,21 @@ public:
     return *backend_;
   }
 
-  virtual size_t size() const
+  size_t size() const override final
   {
     return local_view_.size();
   }
 
-  virtual size_t order() const
+  size_t order() const override final
   {
     return local_view_.tree().finiteElement().localBasis().order();
   }
 
   using BaseType::evaluate;
 
-  virtual void evaluate(const DomainType& xx, std::vector<RangeType>& ret) const
+  void evaluate(const DomainType& xx,
+                std::vector<RangeType>& ret,
+                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
   {
     assert(this->is_a_valid_point(xx));
     assert(ret.size() >= size());
@@ -123,7 +127,9 @@ public:
 
   using BaseType::jacobian;
 
-  virtual void jacobian(const DomainType& xx, std::vector<JacobianRangeType>& ret) const
+  void jacobian(const DomainType& xx,
+                std::vector<JacobianRangeType>& ret,
+                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
   {
     assert(this->is_a_valid_point(xx));
     assert(ret.size() >= size());

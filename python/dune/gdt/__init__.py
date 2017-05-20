@@ -17,11 +17,10 @@ _test_logger_methods = list()
 _init_mpi_methods = list()
 _other_modules = ('xt.common', 'xt.grid', 'xt.functions', 'xt.la')
 
-# the following ordering is not arbitrary
-_gdt_modules = ['spaces', # is required by most others (aka: needs to be loaded first)
+_gdt_modules = ['spaces',
                 'spaces_block',
-                'local_elliptic_ipdg_operators', # required by assembler
-                'assembler', # requires spaces and is required by others
+                'local_elliptic_ipdg_operators',
+                'assembler',
                 'discretefunction',
                 'projections',
                 'functionals_elliptic_ipdg',

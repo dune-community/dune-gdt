@@ -34,11 +34,11 @@ public:
   using typename BaseType::TestCaseType;
   using typename BaseType::Discretizer;
   using typename BaseType::DiscretizationType;
-  using typename BaseType::GridLayerType;
   using typename BaseType::FunctionType;
   using typename BaseType::VectorType;
   using typename BaseType::SpaceType;
   using typename BaseType::ProblemType;
+  using typename BaseType::GridViewType;
 
 private:
   typedef typename ProblemType::DiffusionFactorType DiffusionFactorType;
@@ -47,20 +47,24 @@ private:
   static const int polOrder = Discretizer::polOrder;
 
   typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::
-      LocalNonconformityESV2007<SpaceType, VectorType, DiffusionFactorType, DiffusionTensorType>
+      LocalNonconformityESV2007<SpaceType, VectorType, DiffusionFactorType, DiffusionTensorType, GridViewType>
           LocalNonconformityESV2007Estimator;
   typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::
-      LocalResidualESV2007<SpaceType, VectorType, FunctionType, DiffusionFactorType, DiffusionTensorType>
+      LocalResidualESV2007<SpaceType, VectorType, FunctionType, DiffusionFactorType, DiffusionTensorType, GridViewType>
           LocalResidualESV2007Estimator;
   typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::
-      LocalDiffusiveFluxESV2007<SpaceType, VectorType, DiffusionFactorType, DiffusionTensorType>
+      LocalDiffusiveFluxESV2007<SpaceType, VectorType, DiffusionFactorType, DiffusionTensorType, GridViewType>
           LocalDiffusiveFluxESV2007Estimator;
   typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::
-      ESV2007<SpaceType, VectorType, FunctionType, DiffusionFactorType, DiffusionTensorType>
+      ESV2007<SpaceType, VectorType, FunctionType, DiffusionFactorType, DiffusionTensorType, GridViewType>
           ESV2007Estimator;
-  typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::
-      ESV2007AlternativeSummation<SpaceType, VectorType, FunctionType, DiffusionFactorType, DiffusionTensorType>
-          ESV2007AlternativeSummationEstimator;
+  typedef LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007AlternativeSummation<SpaceType,
+                                                                                         VectorType,
+                                                                                         FunctionType,
+                                                                                         DiffusionFactorType,
+                                                                                         DiffusionTensorType,
+                                                                                         GridViewType>
+      ESV2007AlternativeSummationEstimator;
 
 public:
   // a perfect forwarding ctor did not do the job here, since it was not able to match the std::initializer_list: {"L2"}
@@ -112,18 +116,21 @@ public:
     const auto& force = this->test_case_.problem().force();
     const auto& diffusion_factor = this->test_case_.problem().diffusion_factor();
     const auto& diffusion_tensor = this->test_case_.problem().diffusion_tensor();
+    const auto grid_view = this->test_case_.level_view(this->test_case_.level_of(this->current_refinement_));
     if (type == LocalNonconformityESV2007Estimator::id())
-      return LocalNonconformityESV2007Estimator::estimate(space, vector, diffusion_factor, diffusion_tensor);
+      return LocalNonconformityESV2007Estimator::estimate(grid_view, space, vector, diffusion_factor, diffusion_tensor);
     else if (type == LocalResidualESV2007Estimator::id())
-      return LocalResidualESV2007Estimator::estimate(space, vector, force, diffusion_factor, diffusion_tensor);
+      return LocalResidualESV2007Estimator::estimate(
+          grid_view, space, vector, force, diffusion_factor, diffusion_tensor);
     else if (type == LocalDiffusiveFluxESV2007Estimator::id())
-      return LocalDiffusiveFluxESV2007Estimator::estimate(space, vector, diffusion_factor, diffusion_tensor);
+      return LocalDiffusiveFluxESV2007Estimator::estimate(grid_view, space, vector, diffusion_factor, diffusion_tensor);
     else if (type == ESV2007Estimator::id())
-      return ESV2007Estimator::estimate(space, vector, force, diffusion_factor, diffusion_tensor);
+      return ESV2007Estimator::estimate(grid_view, space, vector, force, diffusion_factor, diffusion_tensor);
     else if (type == "efficiency_" + ESV2007Estimator::id())
       return estimate(vector, ESV2007Estimator::id()) / this->current_error_norm("energy");
     else if (type == ESV2007AlternativeSummationEstimator::id())
-      return ESV2007AlternativeSummationEstimator::estimate(space, vector, force, diffusion_factor, diffusion_tensor);
+      return ESV2007AlternativeSummationEstimator::estimate(
+          grid_view, space, vector, force, diffusion_factor, diffusion_tensor);
     else if (type == "efficiency_" + ESV2007AlternativeSummationEstimator::id())
       return estimate(vector, ESV2007AlternativeSummationEstimator::id()) / this->current_error_norm("energy");
     else

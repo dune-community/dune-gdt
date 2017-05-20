@@ -19,6 +19,7 @@
 #include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
 #include <dune/gdt/spaces/cg/dune-pdelab-wrapper.hh>
 #include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
+#include <dune/gdt/playground/spaces/dg/dune-functions-wrapper.hh>
 #include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
 
@@ -34,9 +35,9 @@ typedef ProjectionTest<{{SpaceType}}> ProjectionTest_{{Name}};
 TEST_F(ProjectionTest_{{Name}}, produces_correct_results)
 {
   {% if 'FvSpace' in SpaceType %}
-    const auto tolerance{0.096226};
+    const double tolerance = 0.096226;
   {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
-    const auto tolerance{0.0925927};
+    const double tolerance = 0.0925927;
   {% else %}
     const auto tolerance = this->default_tolerance;
   {% endif %}
@@ -61,9 +62,9 @@ TEST_F(L2ProjectionOperatorTest_{{Name}}, produces_correct_results)
   // RT : 0.0925927
   using Grid = Dune::XT::Grid::extract_grid_t<typename L2ProjectionOperatorTest_{{Name}}::GridLayerType>;
   {% if 'FvSpace' in SpaceType %}
-    const auto tolerance{0.096226};
+    const double tolerance = 0.096226;
   {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
-    const auto tolerance{0.0925927};
+    const double tolerance = 0.0925927;
   {% else %}
     const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
   {% endif %}
@@ -83,11 +84,11 @@ TEST_F(L2ProjectionLocalizableOperatorTest_{{Name}}, constructible_by_factory)
 TEST_F(L2ProjectionLocalizableOperatorTest_{{Name}}, produces_correct_results)
 {
   // RT : 0.096226
-  typedef typename L2ProjectionLocalizableOperatorTest_{{Name}}::GridViewType::Grid Grid;
+  typedef Dune::XT::Grid::extract_grid_t<L2ProjectionLocalizableOperatorTest_{{Name}}::GridLayerType> Grid;
   {% if 'FvSpace' in SpaceType %}
-    const auto tolerance{0.096226};
+    const double tolerance = 0.096226;
   {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
-      const auto tolerance{0.0925927};
+    const double tolerance = 0.0925927;
   {% else %}
     const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
   {% endif %}

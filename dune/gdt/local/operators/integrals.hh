@@ -31,65 +31,27 @@ namespace Dune {
 namespace GDT {
 
 
-// forwards, to be used in the traits
-template <class BinaryEvaluationType>
-class LocalVolumeIntegralOperator;
-
-template <class QuaternaryFaceIntegrandType>
-class LocalCouplingIntegralOperator;
-
-template <class BinaryEvaluationType>
-class LocalBoundaryIntegralOperator;
-
-
-namespace internal {
-
-
-template <class BinaryEvaluationType>
-class LocalVolumeIntegralOperatorTraits
+template <class BinaryEvaluationType,
+          class TestBase,
+          class AnsatzBase = TestBase,
+          class Field = typename TestBase::RangeFieldType>
+class LocalVolumeIntegralOperator : public LocalVolumeTwoFormInterface<TestBase, AnsatzBase, Field>
 {
-  static_assert(is_binary_volume_integrand<BinaryEvaluationType>::value,
-                "BinaryEvaluationType has to be derived from LocalVolumeIntegrandInterface< ..., 2 >!");
+  static_assert(is_binary_volume_integrand<BinaryEvaluationType>::value, "");
+  static_assert(std::is_same<typename TestBase::EntityType, typename AnsatzBase::EntityType>::value, "");
+  static_assert(std::is_same<typename TestBase::DomainFieldType, typename AnsatzBase::DomainFieldType>::value, "");
+  static_assert(TestBase::dimDomain == AnsatzBase::dimDomain, "");
+
+  typedef LocalVolumeIntegralOperator<BinaryEvaluationType, TestBase, AnsatzBase, Field> ThisType;
+  typedef LocalVolumeTwoFormInterface<TestBase, AnsatzBase, Field> BaseType;
+
+  typedef typename TestBase::DomainFieldType D;
+  static const size_t d = TestBase::dimDomain;
 
 public:
-  typedef LocalVolumeIntegralOperator<BinaryEvaluationType> derived_type;
-};
-
-
-template <class QuaternaryFaceIntegrandType>
-class LocalCouplingIntegralOperatorTraits
-{
-  static_assert(is_quaternary_face_integrand<QuaternaryFaceIntegrandType>::value,
-                "QuaternaryFaceIntegrandType has to be derived from LocalFaceIntegrandInterface< ..., 4 >!");
-
-public:
-  typedef LocalCouplingIntegralOperator<QuaternaryFaceIntegrandType> derived_type;
-};
-
-
-template <class BinaryEvaluationType>
-class LocalBoundaryIntegralOperatorTraits
-{
-  static_assert(is_binary_face_integrand<BinaryEvaluationType>::value,
-                "BinaryEvaluationType has to be derived from LocalFaceIntegrandInterface< ..., 2 >!");
-
-public:
-  typedef LocalBoundaryIntegralOperator<BinaryEvaluationType> derived_type;
-};
-
-
-} // namespace internal
-
-
-template <class BinaryEvaluationType>
-class LocalVolumeIntegralOperator
-    : public LocalVolumeTwoFormInterface<internal::LocalVolumeIntegralOperatorTraits<BinaryEvaluationType>>
-{
-  typedef LocalVolumeIntegralOperator<BinaryEvaluationType> ThisType;
-  typedef LocalVolumeTwoFormInterface<internal::LocalVolumeIntegralOperatorTraits<BinaryEvaluationType>> BaseType;
-
-public:
-  typedef internal::LocalVolumeIntegralOperatorTraits<BinaryEvaluationType> Traits;
+  using typename BaseType::TestBaseType;
+  using typename BaseType::AnsatzBaseType;
+  using typename BaseType::FieldType;
 
   template <class... Args>
   explicit LocalVolumeIntegralOperator(Args&&... args)
@@ -117,12 +79,9 @@ public:
 
   using BaseType::apply2;
 
-  template <class E, class EO, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void apply2(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base,
-              const XT::Functions::LocalfunctionSetInterface<EO, D, d, R, rA, rCA>& ansatz_base,
-              Dune::DynamicMatrix<R>& ret) const
+  void
+  apply2(const TestBaseType& test_base, const AnsatzBaseType& ansatz_base, DynamicMatrix<FieldType>& ret) const override
   {
-    static_assert(std::is_same<EO, E>::value, "Additional EO tpl only added for clang compat");
     const auto& entity = ansatz_base.entity();
     const auto local_functions = integrand_.localFunctions(entity);
     // create quadrature
@@ -134,7 +93,7 @@ public:
     ret *= 0.0;
     assert(ret.rows() >= rows);
     assert(ret.cols() >= cols);
-    Dune::DynamicMatrix<R> evaluation_result(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
+    DynamicMatrix<FieldType> integrand_eval(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
     // loop over all quadrature points
     for (const auto& quadrature_point : quadrature) {
       const auto xx = quadrature_point.position();
@@ -142,13 +101,13 @@ public:
       const auto integration_factor = entity.geometry().integrationElement(xx);
       const auto quadrature_weight = quadrature_point.weight();
       // evaluate the integrand
-      integrand_.evaluate(local_functions, test_base, ansatz_base, xx, evaluation_result);
+      integrand_.evaluate(local_functions, test_base, ansatz_base, xx, integrand_eval);
       // compute integral
       for (size_t ii = 0; ii < rows; ++ii) {
-        const auto& evaluation_result_row = evaluation_result[ii];
+        const auto& integrand_eval_row = integrand_eval[ii];
         auto& ret_row = ret[ii];
         for (size_t jj = 0; jj < cols; ++jj)
-          ret_row[jj] += evaluation_result_row[jj] * integration_factor * quadrature_weight;
+          ret_row[jj] += integrand_eval_row[jj] * integration_factor * quadrature_weight;
       } // compute integral
     } // loop over all quadrature points
   } // ... apply2(...)
@@ -159,12 +118,59 @@ private:
 }; // class LocalVolumeIntegralOperator
 
 
-template <class QuaternaryFaceIntegrandType>
-class LocalCouplingIntegralOperator
-    : public LocalCouplingTwoFormInterface<internal::LocalCouplingIntegralOperatorTraits<QuaternaryFaceIntegrandType>>
+template <class QuaternaryFaceIntegrandType,
+          class TestBaseEntity,
+          class Intersection,
+          class AnsatzBaseEntity = TestBaseEntity,
+          class TestBaseNeighbor = TestBaseEntity,
+          class AnsatzBaseNeighbor = AnsatzBaseEntity,
+          class Field = typename TestBaseEntity::RangeFieldType>
+class LocalCouplingIntegralOperator : public LocalCouplingTwoFormInterface<TestBaseEntity,
+                                                                           Intersection,
+                                                                           AnsatzBaseEntity,
+                                                                           TestBaseNeighbor,
+                                                                           AnsatzBaseNeighbor,
+                                                                           Field>
 {
+  static_assert(is_quaternary_face_integrand<QuaternaryFaceIntegrandType>::value, "");
+  static_assert(std::is_same<typename TestBaseEntity::EntityType, typename AnsatzBaseEntity::EntityType>::value, "");
+  static_assert(std::is_same<typename TestBaseEntity::EntityType, typename TestBaseNeighbor::EntityType>::value, "");
+  static_assert(std::is_same<typename TestBaseEntity::EntityType, typename AnsatzBaseNeighbor::EntityType>::value, "");
+  static_assert(
+      std::is_same<typename TestBaseEntity::DomainFieldType, typename AnsatzBaseEntity::DomainFieldType>::value, "");
+  static_assert(
+      std::is_same<typename TestBaseEntity::DomainFieldType, typename TestBaseNeighbor::DomainFieldType>::value, "");
+  static_assert(
+      std::is_same<typename TestBaseEntity::DomainFieldType, typename AnsatzBaseNeighbor::DomainFieldType>::value, "");
+  static_assert(TestBaseEntity::dimDomain == AnsatzBaseEntity::dimDomain, "");
+  static_assert(TestBaseEntity::dimDomain == TestBaseNeighbor::dimDomain, "");
+  static_assert(TestBaseEntity::dimDomain == AnsatzBaseNeighbor::dimDomain, "");
+
+  typedef LocalCouplingIntegralOperator<QuaternaryFaceIntegrandType,
+                                        TestBaseEntity,
+                                        Intersection,
+                                        AnsatzBaseEntity,
+                                        TestBaseNeighbor,
+                                        AnsatzBaseNeighbor,
+                                        Field>
+      ThisType;
+  typedef LocalCouplingTwoFormInterface<TestBaseEntity,
+                                        Intersection,
+                                        AnsatzBaseEntity,
+                                        TestBaseNeighbor,
+                                        AnsatzBaseNeighbor,
+                                        Field>
+      BaseType;
+  typedef typename TestBaseEntity::DomainFieldType D;
+  static const size_t d = TestBaseEntity::dimDomain;
+
 public:
-  typedef internal::LocalCouplingIntegralOperatorTraits<QuaternaryFaceIntegrandType> Traits;
+  using typename BaseType::TestBaseEntityType;
+  using typename BaseType::AnsatzBaseEntityType;
+  using typename BaseType::TestBaseNeighborType;
+  using typename BaseType::AnsatzBaseNeighborType;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::FieldType;
 
   template <class... Args>
   explicit LocalCouplingIntegralOperator(Args&&... args)
@@ -187,25 +193,18 @@ public:
   {
   }
 
-  template <class E,
-            class N,
-            class IntersectionType,
-            class D,
-            size_t d,
-            class R,
-            size_t rT,
-            size_t rCT,
-            size_t rA,
-            size_t rCA>
-  void apply2(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base_en,
-              const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base_en,
-              const XT::Functions::LocalfunctionSetInterface<N, D, d, R, rT, rCT>& test_base_ne,
-              const XT::Functions::LocalfunctionSetInterface<N, D, d, R, rA, rCA>& ansatz_base_ne,
+  LocalCouplingIntegralOperator(const ThisType& other) = default;
+  LocalCouplingIntegralOperator(ThisType&& source) = default;
+
+  void apply2(const TestBaseEntityType& test_base_en,
+              const AnsatzBaseEntityType& ansatz_base_en,
+              const TestBaseNeighborType& test_base_ne,
+              const AnsatzBaseNeighborType& ansatz_base_ne,
               const IntersectionType& intersection,
-              Dune::DynamicMatrix<R>& ret_en_en,
-              Dune::DynamicMatrix<R>& ret_ne_ne,
-              Dune::DynamicMatrix<R>& ret_en_ne,
-              Dune::DynamicMatrix<R>& ret_ne_en) const
+              DynamicMatrix<FieldType>& ret_en_en,
+              DynamicMatrix<FieldType>& ret_ne_ne,
+              DynamicMatrix<FieldType>& ret_en_ne,
+              DynamicMatrix<FieldType>& ret_ne_en) const override
   {
     // local inducing function
     const auto& entity = test_base_en.entity();
@@ -236,14 +235,11 @@ public:
     assert(ret_en_ne.cols() >= cols_ne);
     assert(ret_ne_en.rows() >= rows_en);
     assert(ret_ne_en.cols() >= cols_en);
-    Dune::DynamicMatrix<R> evaluation_result_en_en(
-        rows_en, cols_en, 0.); // \todo: make mutable member, after SMP refactor
-    Dune::DynamicMatrix<R> evaluation_result_ne_ne(
-        rows_ne, cols_ne, 0.); // \todo: make mutable member, after SMP refactor
-    Dune::DynamicMatrix<R> evaluation_result_en_ne(
-        rows_en, cols_ne, 0.); // \todo: make mutable member, after SMP refactor
-    Dune::DynamicMatrix<R> evaluation_result_ne_en(
-        rows_ne, cols_en, 0.); // \todo: make mutable member, after SMP refactor
+    // \todo: make mutable member, after SMP refactor
+    DynamicMatrix<FieldType> integrand_eval_en_en(rows_en, cols_en, 0.);
+    DynamicMatrix<FieldType> integrand_eval_ne_ne(rows_ne, cols_ne, 0.);
+    DynamicMatrix<FieldType> integrand_eval_en_ne(rows_en, cols_ne, 0.);
+    DynamicMatrix<FieldType> integrand_eval_ne_en(rows_ne, cols_en, 0.);
     // loop over all quadrature points
     for (const auto& quadrature_point : quadrature) {
       const auto xx = quadrature_point.position();
@@ -258,39 +254,39 @@ public:
                           ansatz_base_ne,
                           intersection,
                           xx,
-                          evaluation_result_en_en,
-                          evaluation_result_ne_ne,
-                          evaluation_result_en_ne,
-                          evaluation_result_ne_en);
+                          integrand_eval_en_en,
+                          integrand_eval_ne_ne,
+                          integrand_eval_en_ne,
+                          integrand_eval_ne_en);
       // compute integrals
       // loop over all entity test basis functions
       for (size_t ii = 0; ii < rows_en; ++ii) {
         auto& ret_en_en_row = ret_en_en[ii];
         auto& ret_en_ne_row = ret_en_ne[ii];
-        const auto& evaluation_result_en_en_row = evaluation_result_en_en[ii];
-        const auto& evaluation_result_en_ne_row = evaluation_result_en_ne[ii];
+        const auto& integrand_eval_en_en_row = integrand_eval_en_en[ii];
+        const auto& integrand_eval_en_ne_row = integrand_eval_en_ne[ii];
         // loop over all entity ansatz basis functions
         for (size_t jj = 0; jj < cols_en; ++jj) {
-          ret_en_en_row[jj] += evaluation_result_en_en_row[jj] * integration_factor * quadrature_weight;
+          ret_en_en_row[jj] += integrand_eval_en_en_row[jj] * integration_factor * quadrature_weight;
         }
         // loop over all neighbor ansatz basis functions
         for (size_t jj = 0; jj < cols_ne; ++jj) {
-          ret_en_ne_row[jj] += evaluation_result_en_ne_row[jj] * integration_factor * quadrature_weight;
+          ret_en_ne_row[jj] += integrand_eval_en_ne_row[jj] * integration_factor * quadrature_weight;
         }
       }
       // loop over all neighbor test basis functions
       for (size_t ii = 0; ii < rows_ne; ++ii) {
         auto& ret_ne_ne_row = ret_ne_ne[ii];
         auto& ret_ne_en_row = ret_ne_en[ii];
-        const auto& evaluation_result_ne_ne_row = evaluation_result_ne_ne[ii];
-        const auto& evaluation_result_ne_en_row = evaluation_result_ne_en[ii];
+        const auto& integrand_eval_ne_ne_row = integrand_eval_ne_ne[ii];
+        const auto& integrand_eval_ne_en_row = integrand_eval_ne_en[ii];
         // loop over all neighbor ansatz basis functions
         for (size_t jj = 0; jj < cols_ne; ++jj) {
-          ret_ne_ne_row[jj] += evaluation_result_ne_ne_row[jj] * integration_factor * quadrature_weight;
+          ret_ne_ne_row[jj] += integrand_eval_ne_ne_row[jj] * integration_factor * quadrature_weight;
         }
         // loop over all entity ansatz basis functions
         for (size_t jj = 0; jj < cols_en; ++jj) {
-          ret_ne_en_row[jj] += evaluation_result_ne_en_row[jj] * integration_factor * quadrature_weight;
+          ret_ne_en_row[jj] += integrand_eval_ne_en_row[jj] * integration_factor * quadrature_weight;
         }
       }
     } // loop over all quadrature points
@@ -302,12 +298,28 @@ private:
 }; // class LocalCouplingIntegralOperator
 
 
-template <class BinaryFaceIntegrandType>
-class LocalBoundaryIntegralOperator
-    : public LocalBoundaryTwoFormInterface<internal::LocalBoundaryIntegralOperatorTraits<BinaryFaceIntegrandType>>
+template <class BinaryFaceIntegrandType,
+          class TestBase,
+          class Intersection,
+          class AnsatzBase = TestBase,
+          class Field = typename TestBase::RangeFieldType>
+class LocalBoundaryIntegralOperator : public LocalBoundaryTwoFormInterface<TestBase, Intersection, AnsatzBase, Field>
 {
+  static_assert(is_binary_face_integrand<BinaryFaceIntegrandType>::value, "");
+  static_assert(std::is_same<typename TestBase::EntityType, typename AnsatzBase::EntityType>::value, "");
+  static_assert(std::is_same<typename TestBase::DomainFieldType, typename AnsatzBase::DomainFieldType>::value, "");
+  static_assert(TestBase::dimDomain == AnsatzBase::dimDomain, "");
+
+  typedef LocalBoundaryIntegralOperator<BinaryFaceIntegrandType, TestBase, Intersection, AnsatzBase, Field> ThisType;
+  typedef LocalBoundaryTwoFormInterface<TestBase, Intersection, AnsatzBase, Field> BaseType;
+  typedef typename TestBase::DomainFieldType D;
+  static const size_t d = TestBase::dimDomain;
+
 public:
-  typedef internal::LocalBoundaryIntegralOperatorTraits<BinaryFaceIntegrandType> Traits;
+  using typename BaseType::TestBaseType;
+  using typename BaseType::AnsatzBaseType;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::FieldType;
 
   template <class... Args>
   LocalBoundaryIntegralOperator(Args&&... args)
@@ -330,11 +342,10 @@ public:
   {
   }
 
-  template <class E, class IntersectionType, class D, size_t d, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void apply2(const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& test_base,
-              const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatz_base,
+  void apply2(const TestBaseType& test_base,
+              const AnsatzBaseType& ansatz_base,
               const IntersectionType& intersection,
-              Dune::DynamicMatrix<R>& ret) const
+              DynamicMatrix<FieldType>& ret) const override
   {
     // local inducing function
     const auto& entity = test_base.entity();
@@ -349,24 +360,24 @@ public:
     const size_t cols = ansatz_base.size();
     assert(ret.rows() >= rows);
     assert(ret.cols() >= cols);
-    Dune::DynamicMatrix<R> evaluation_result(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
+    DynamicMatrix<FieldType> integrand_eval(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
     // loop over all quadrature points
     for (const auto& quadrature_point : quadrature) {
       const auto xx = quadrature_point.position();
-      const R integration_factor = intersection.geometry().integrationElement(xx);
-      const R quadrature_weight = quadrature_point.weight();
+      const auto integration_factor = intersection.geometry().integrationElement(xx);
+      const auto quadrature_weight = quadrature_point.weight();
       // evaluate local
-      integrand_.evaluate(local_functions, test_base, ansatz_base, intersection, xx, evaluation_result);
+      integrand_.evaluate(local_functions, test_base, ansatz_base, intersection, xx, integrand_eval);
       // compute integral
-      assert(evaluation_result.rows() >= rows);
-      assert(evaluation_result.cols() >= cols);
+      assert(integrand_eval.rows() >= rows);
+      assert(integrand_eval.cols() >= cols);
       // loop over all test basis functions
       for (size_t ii = 0; ii < rows; ++ii) {
         auto& ret_row = ret[ii];
-        const auto& evaluation_result_row = evaluation_result[ii];
+        const auto& integrand_eval_row = integrand_eval[ii];
         // loop over all ansatz basis functions
         for (size_t jj = 0; jj < cols; ++jj) {
-          ret_row[jj] += evaluation_result_row[jj] * integration_factor * quadrature_weight;
+          ret_row[jj] += integrand_eval_row[jj] * integration_factor * quadrature_weight;
         }
       }
     }

@@ -34,7 +34,7 @@ template <class SpaceType>
 struct WeightedL2ProductBase
 {
   typedef typename SpaceType::GridLayerType GridLayerType;
-  typedef typename GridLayerType::Grid GridType;
+  typedef XT::Grid::extract_grid_t<GridLayerType> GridType;
   using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
   typedef typename SpaceType::DomainFieldType DomainFieldType;
   static const size_t dimDomain = SpaceType::dimDomain;

@@ -100,9 +100,7 @@ public:
     typedef typename SpaceType::MapperType D_MapperType;
     typedef typename SpaceType::BaseFunctionSetType D_BaseFunctionSetType;
     typedef typename SpaceType::EntityType D_EntityType;
-    typedef typename SpaceType::IntersectionType D_IntersectionType;
     typedef typename SpaceType::PatternType D_PatternType;
-    typedef typename SpaceType::BoundaryInfoType D_BoundaryInfoType;
     typedef typename SpaceType::CommunicatorType D_CommunicatorType;
     static const auto d_layer_backend = SpaceType::layer_backend;
     // * as the interface
@@ -119,9 +117,7 @@ public:
     typedef typename InterfaceType::MapperType I_MapperType;
     typedef typename InterfaceType::BaseFunctionSetType I_BaseFunctionSetType;
     typedef typename InterfaceType::EntityType I_EntityType;
-    typedef typename InterfaceType::IntersectionType I_IntersectionType;
     typedef typename InterfaceType::PatternType I_PatternType;
-    typedef typename InterfaceType::BoundaryInfoType I_BoundaryInfoType;
     typedef typename InterfaceType::CommunicatorType I_CommunicatorType;
     static const auto i_layer_backend = InterfaceType::layer_backend;
     static_assert(std::is_base_of<InterfaceType, SpaceType>::value, "SpaceType has to be derived from SpaceInterface!");
@@ -133,9 +129,7 @@ public:
     static_assert(std::is_same<I_MapperType, D_MapperType>::value, "Types do not match!");
     static_assert(std::is_same<I_BaseFunctionSetType, D_BaseFunctionSetType>::value, "Types do not match!");
     static_assert(std::is_same<I_EntityType, D_EntityType>::value, "Types do not match!");
-    static_assert(std::is_same<I_IntersectionType, D_IntersectionType>::value, "Types do not match!");
     static_assert(std::is_same<I_PatternType, D_PatternType>::value, "Types do not match!");
-    static_assert(std::is_same<I_BoundaryInfoType, D_BoundaryInfoType>::value, "Types do not match!");
     static_assert(std::is_same<I_CommunicatorType, D_CommunicatorType>::value, "Types do not match!");
     static_assert(std::is_move_constructible<SpaceType>::value, "SpaceType isn't move constructible");
     static_assert(std::is_copy_constructible<SpaceType>::value, "SpaceType isn't copy constructible");

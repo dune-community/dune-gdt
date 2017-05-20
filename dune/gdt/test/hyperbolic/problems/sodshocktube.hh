@@ -373,7 +373,6 @@ private:
 public:
   using typename BaseType::GridType;
   using typename BaseType::SolutionType;
-  using typename BaseType::LevelGridLayerType;
 
   ShockTubeTestCase(const size_t num_refs = 3, const double divide_t_end_by = 1.0)
     : BaseType(

@@ -75,7 +75,8 @@ public:
   }
 
 private:
-  const LocalVolumeIntegralFunctional<LocalProductIntegrand<FunctionType>> local_l2_functional_;
+  const LocalVolumeIntegralFunctional<LocalProductIntegrand<FunctionType>, typename Space::BaseFunctionSetType, Field>
+      local_l2_functional_;
 }; // class L2VolumeVectorFunctional
 
 
@@ -197,7 +198,11 @@ public:
   }
 
 private:
-  const LocalFaceIntegralFunctional<LocalProductIntegrand<FunctionType>> local_l2_functional_;
+  const LocalFaceIntegralFunctional<LocalProductIntegrand<FunctionType>,
+                                    typename Space::BaseFunctionSetType,
+                                    XT::Grid::extract_intersection_t<GridLayer>,
+                                    Field>
+      local_l2_functional_;
 }; // class L2FaceVectorFunctional
 
 
