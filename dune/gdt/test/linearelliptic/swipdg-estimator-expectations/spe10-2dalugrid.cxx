@@ -98,6 +98,80 @@ template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
                                                          1>;
 
 
+// polorder 1, nonconforming
+
+template <bool anything>
+class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::Spe10Model1TestCase<AluSimplex2dGridType, double, 1>,
+                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                1,
+                                                anything>
+{
+  typedef LinearElliptic::Spe10Model1TestCase<AluSimplex2dGridType, double, 1> TestCaseType;
+
+public:
+  static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type)
+  {
+    if (type == "energy") {
+#if DXT_DISABLE_LARGE_TESTS
+      return {3.81e+01, 2.72e+01};
+#else
+      return {1.06e+00, 5.18e-01};
+#endif
+    } else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_nonconformity_ESV2007_id()) {
+#if DXT_DISABLE_LARGE_TESTS
+      return {3.20e+01, 4.28e+01};
+#else
+      return {2.90e+00, 1.91e+00};
+#endif
+    } else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_residual_ESV2007_id()) {
+      return {0.0, 0.0};
+    } else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_diffusive_flux_ESV2007_id()) {
+#if DXT_DISABLE_LARGE_TESTS
+      return {9.93e+00, 8.07e+00};
+#else
+      return {1.65e+00, 1.02e+00};
+#endif
+    } else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_id()) {
+#if DXT_DISABLE_LARGE_TESTS
+      return {};
+#else
+      return {};
+#endif
+    } else if (type == "efficiency_" + LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_id()) {
+#if DXT_DISABLE_LARGE_TESTS
+      return {8.79e-01, 1.60e+00};
+#else
+      return {3.16e+00, 4.18e+00};
+#endif
+    } else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_alternative_summation_id()) {
+#if DXT_DISABLE_LARGE_TESTS
+      return {};
+#else
+      return {};
+#endif
+    } else if (type
+               == "efficiency_"
+                      + LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_alternative_summation_id()) {
+#if DXT_DISABLE_LARGE_TESTS
+      return {1.70e-01, 2.62e-01};
+#else
+      return {2.02e+00, 3.30e+00};
+#endif
+    } else
+      EXPECT_TRUE(false) << "test results missing for type: " << type;
+    return {};
+  }
+}; // LinearEllipticSwipdgEstimatorExpectations
+
+
+template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
+                                                             Spe10Model1TestCase<ALUGrid<2, 2, simplex, nonconforming>,
+                                                                                 double,
+                                                                                 1>,
+                                                         LinearElliptic::ChooseDiscretizer::swipdg,
+                                                         1>;
+
+
 } // namespace Test
 } // namespace GDT
 } // namespace Dune

@@ -51,11 +51,27 @@ extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
                                                                                    1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg,
                                                                 1>;
+extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::AO2013TestCase<ALUGrid<2,
+                                                                                                       2,
+                                                                                                       simplex,
+                                                                                                       nonconforming>,
+                                                                                               double,
+                                                                                               1>,
+                                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                                1>;
 
 extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
                                                                     ESV2007TestCase<ALUGrid<2, 2, simplex, conforming>,
                                                                                     double,
                                                                                     1>,
+                                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                                1>;
+extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::ESV2007TestCase<ALUGrid<2,
+                                                                                                        2,
+                                                                                                        simplex,
+                                                                                                        nonconforming>,
+                                                                                                double,
+                                                                                                1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg,
                                                                 1>;
 
@@ -65,6 +81,15 @@ extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
                                                                                                             conforming>,
                                                                                                     double,
                                                                                                     1>,
+                                                                LinearElliptic::ChooseDiscretizer::swipdg,
+                                                                1>;
+extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
+                                                                    Spe10Model1TestCase<ALUGrid<2,
+                                                                                                2,
+                                                                                                simplex,
+                                                                                                nonconforming>,
+                                                                                        double,
+                                                                                        1>,
                                                                 LinearElliptic::ChooseDiscretizer::swipdg,
                                                                 1>;
 
