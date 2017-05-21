@@ -27,7 +27,7 @@ except KeyError:
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 
 space_backends = []
-for s in ('fem', 'functions'):
+for s in ('fem',):
     try:
         if cache['dune-{}'.format(s)]:
             space_backends.extend([s])
