@@ -30,7 +30,7 @@ typedef linearelliptic_SWIPDG_estimators<{{TestCase}}>
 
 TEST_F(linearelliptic_SWIPDG_estimators_{{Name}}, eoc_study)
 {
-  this->template eoc_study<Backends::fem, XT::LA::Backends::eigen_sparse, 1>();
+  this->template eoc_study<Dune::GDT::Backends::{{SpaceBackend}}, Dune::XT::LA::Backends::{{LaBackend}}, 1>();
 }
 
 // clang-format off
