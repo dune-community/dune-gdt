@@ -27,10 +27,10 @@ namespace Test {
  * which
  *         defines the type of the solution of the problem.
  */
-template <class GridImp, class ProblemImp>
-class StationaryTestCase : public XT::Grid::EOCGridProvider<GridImp>
+template <class GridImp, class ProblemImp, typename DdGridImp = int>
+class StationaryTestCase : public XT::Grid::EOCGridProvider<GridImp, DdGridImp>
 {
-  typedef XT::Grid::EOCGridProvider<GridImp> EocBaseType;
+  typedef XT::Grid::EOCGridProvider<GridImp, DdGridImp> EocBaseType;
 
 public:
   typedef ProblemImp ProblemType;
