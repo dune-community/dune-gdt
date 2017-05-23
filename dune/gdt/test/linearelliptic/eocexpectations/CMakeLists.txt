@@ -9,6 +9,10 @@
 #   Rene Milk       (2016)
 
 # expectation targets
+dune_add_library(block_swipdg_expectations
+                 NO_EXPORT
+                 SOURCES
+                 block-swipdg-esv2007-2dalugrid.cxx)
 dune_add_library(cg_expectations
                  NO_EXPORT
                  SOURCES
