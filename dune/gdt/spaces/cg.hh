@@ -18,11 +18,7 @@
 
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/grid/layers.hh>
-#include <dune/xt/grid/gridprovider.hh>
-
-#if HAVE_DUNE_GRID_MULTISCALE
-#include <dune/grid/multiscale/provider/interface.hh>
-#endif
+#include <dune/xt/grid/gridprovider/provider.hh>
 
 #include "interface.hh"
 #include "cg/dune-fem-wrapper.hh"
