@@ -27,7 +27,6 @@ space_backends = []
 for s in ('fem', 'pdelab'):
     try:
         if cache['dune-{}'.format(s)]:
-            print('{}: {}'.format(s, cache['dune-{}'.format(s)]))
             space_backends.extend([s])
     except KeyError:
         pass
