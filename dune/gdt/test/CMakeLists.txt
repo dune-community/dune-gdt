@@ -47,6 +47,9 @@ add_subdirectory(hyperbolic)
 
 
 foreach(test_target ${dxt_test_binaries})
+    if(${test_target} MATCHES linearelliptic__block_swipdg_discretization)
+        target_link_libraries(${test_target} block_swipdg_expectations)
+    endif()
     if(${test_target} MATCHES linearelliptic__cg_discretization)
         target_link_libraries(${test_target} cg_expectations)
     endif()
