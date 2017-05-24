@@ -121,6 +121,19 @@ private:
 
     c.def("append",
           [](type& self,
+             const GDT::LocalBoundaryTwoFormInterface<typename T::BaseFunctionSetType,
+                                                      XT::Grid::extract_intersection_t<GL>>& local_boundary_two_form,
+             M& matrix,
+             const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+            self.append(local_boundary_two_form, matrix, which_intersections.copy());
+          },
+          "local_boundary_two_form"_a,
+          "matrix"_a,
+          "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    c.def("append",
+          [](type& self,
              const GDT::LocalCouplingTwoFormInterface<typename T::BaseFunctionSetType,
                                                       XT::Grid::extract_intersection_t<GL>>& local_coupling_two_form,
              M& matrix,
@@ -246,11 +259,13 @@ public:
 #define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_FEM(_pre)                                                               \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_FEM(_pre, cg, 1, 1, 1);                                                      \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_FEM(_pre, dg, 1, 1, 1);                                                      \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre, dd_subdomain_boundary, part, dg, fem, dd_subdomain, 1, 1, 1);          \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre, dd_subdomain_coupling, part, dg, fem, dd_subdomain, 1, 1, 1)
 
 #define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_FEM(_pre)                                                              \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_FEM(_pre, cg, 1, 1, 1);                                                     \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_FEM(_pre, dg, 1, 1, 1);                                                     \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre, dd_subdomain_boundary, part, dg, fem, dd_subdomain, 1, 1, 1);         \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre, dd_subdomain_coupling, part, dg, fem, dd_subdomain, 1, 1, 1)
 
 #else // HAVE_DUNE_FEM
@@ -331,6 +346,7 @@ DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB(extern template);
 #define DUNE_GDT_ASSEMBLER_SYSTEM_BIND(_m)                                                                             \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_m, cg, 1, 1, 1);                                                                \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_m, dg, 1, 1, 1);                                                                \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain_boundary, part, dg, fem, dd_subdomain, 1, 1, 1);          \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain_coupling, part, dg, fem, dd_subdomain, 1, 1, 1);          \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT(_m, fv, 0, 1, 1)
 
