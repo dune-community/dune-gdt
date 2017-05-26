@@ -96,19 +96,10 @@ class DiscreteFunction
   static_assert(is_space<S>::value, "");
   static_assert(XT::LA::is_vector<V>::value, "");
 
+  typedef GDT::ConstDiscreteFunction<S, V> BaseType;
+
 public:
   typedef GDT::DiscreteFunction<S, V> type;
-
-private:
-  typedef XT::Functions::LocalizableFunctionInterface<typename S::EntityType,
-                                                      typename S::DomainFieldType,
-                                                      S::dimDomain,
-                                                      typename S::RangeFieldType,
-                                                      S::dimRange,
-                                                      S::dimRangeCols>
-      BaseType;
-
-public:
   typedef pybind11::class_<type, BaseType> bound_type;
 
   static bound_type bind(pybind11::module& m)
