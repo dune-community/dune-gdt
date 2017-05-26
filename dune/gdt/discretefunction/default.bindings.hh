@@ -66,23 +66,13 @@ public:
           py::keep_alive<1, 2>(),
           py::keep_alive<1, 3>());
     c.def("space", [](type& self) { return self.space(); });
-    c.def("vector", [](type& self) { return self.vector(); });
+    c.def("vector_copy", [](type& self) { return self.vector(); });
     c.def("visualize",
           [](type& self, const std::string filename, const bool subsampling) {
             return self.visualize(filename, subsampling);
           },
           "filename"_a,
           "subsampling"_a = (S::polOrder > 1));
-
-    m.def(std::string("make_const_discrete_function").c_str(),
-          [](const S& space, V& vector, const std::string& name) {
-            return make_const_discrete_function(space, vector, name);
-          },
-          "space"_a,
-          "vector"_a,
-          "name"_a = "gdt.constdiscretefunction",
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
 
     return c;
   } // ... bind(...)
@@ -120,7 +110,7 @@ public:
           py::keep_alive<1, 2>(),
           py::keep_alive<1, 3>());
     c.def("space", [](type& self) { return self.space(); });
-    c.def("vector", [](type& self) { return self.vector(); });
+    c.def("vector_copy", [](type& self) { return self.vector(); });
     c.def("visualize",
           [](type& self, const std::string filename, const bool subsampling) {
             return self.visualize(filename, subsampling);
@@ -128,12 +118,6 @@ public:
           "filename"_a,
           "subsampling"_a = (S::polOrder > 1));
 
-    m.def(std::string("make_discrete_function_" + XT::LA::bindings::container_name<V>::value()).c_str(),
-          [](const S& space, const std::string& name) { return make_discrete_function<V>(space, name); },
-          "space"_a,
-          "name"_a = "gdt.discretefunction",
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
     m.def(
         std::string("make_discrete_function").c_str(),
         [](const S& space, V& vector, const std::string& name) { return make_discrete_function(space, vector, name); },
