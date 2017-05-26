@@ -153,7 +153,6 @@ private:
 public:
   static bound_type bind(pybind11::module& m)
   {
-
     namespace py = pybind11;
     using namespace pybind11::literals;
 
