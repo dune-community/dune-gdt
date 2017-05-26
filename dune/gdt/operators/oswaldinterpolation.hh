@@ -104,6 +104,7 @@ private:
   template <class SourceType, class RangeType>
   void apply_dg(const SourceType& source, RangeType& range) const
   {
+    range.vector() *= 0.;
     // data structures we need
     // * a map from a global vertex index to global DoF indices
     //   given a vertex, one obtains a set of all global DoF ids, which are associated with this vertex
