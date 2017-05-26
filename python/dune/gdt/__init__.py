@@ -26,7 +26,8 @@ _gdt_modules = ['spaces',
                 'functionals_elliptic_ipdg',
                 'functionals_l2',
                 'operators_elliptic',
-                'operators_elliptic_ipdg']
+                'operators_elliptic_ipdg',
+                'operators_oswaldinterpolation']
 
 for module_name in _gdt_modules:
     mod = import_module('.__{}'.format(module_name), 'dune.gdt')
