@@ -64,6 +64,9 @@ if(dune-pybindxi_FOUND)
   dune_pybindxi_add_module(__operators_elliptic_ipdg operators/elliptic-ipdg.bindings.cc)
   target_link_libraries(__operators_elliptic_ipdg __operators_elliptic_ipdg_helper)
   list(APPEND pybindxi_modules __operators_elliptic_ipdg)
+  # * flux reconstruction
+  dune_pybindxi_add_module(__operators_fluxreconstruction operators/fluxreconstruction.bindings.cc)
+  list(APPEND pybindxi_modules __operators_fluxreconstruction)
   # * oswald interpolation
   dune_pybindxi_add_module(__operators_oswaldinterpolation operators/oswaldinterpolation.bindings.cc)
   list(APPEND pybindxi_modules __operators_oswaldinterpolation)
