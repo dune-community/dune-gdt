@@ -16,6 +16,7 @@
 #include "spaces/cg.bindings.hh"
 #include "spaces/dg.bindings.hh"
 #include "spaces/fv.bindings.hh"
+#include "spaces/rt.bindings.hh"
 
 #endif // HAVE_DUNE_PYBINDXI
 #endif // DUNE_GDT_SPACES_BINDINGS_HH

@@ -42,6 +42,7 @@ PYBIND11_PLUGIN(__spaces)
   DUNE_GDT_SPACES_CG_BIND(m);
   DUNE_GDT_SPACES_DG_BIND(m);
   DUNE_GDT_SPACES_FV_BIND(m);
+  DUNE_GDT_SPACES_RT_BIND(m);
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {
