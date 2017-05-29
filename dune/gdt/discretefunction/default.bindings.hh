@@ -207,6 +207,10 @@ public:
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM(_m)
 #endif
 
+#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT(_m)                                                                \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, fv, gdt, 0, 1, 1);                                       \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, fv, gdt, 0, 1, 1)
+
 #if HAVE_DUNE_PDELAB
 #define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB(_m)                                                             \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, leaf, rt, pdelab, 0, 2, 1);                                          \
@@ -217,6 +221,7 @@ public:
 
 #define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m)                                                                     \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM(_m);                                                                     \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT(_m);                                                                     \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB(_m)
 
 // end: this is what we need for the .so
