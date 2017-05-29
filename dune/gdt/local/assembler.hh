@@ -94,11 +94,16 @@ private:
 }; // class LocalVolumeTwoFormAssembler
 
 
+/**
+ * \todo \attention Rename LocalVolumeTwoFormAccumulatorFunctor -> LocalVolumeTwoFormAccumulator after removing this
+ *                  class!
+ */
 template <class GridLayerImp,
           class TestFunctionType,
           class AnsatzFunctionType,
           class FieldType = typename TestFunctionType::RangeFieldType>
-class LocalVolumeTwoFormAccumulator : public XT::Grid::internal::Codim0ReturnObject<GridLayerImp, FieldType>
+class DUNE_DEPRECATED_MSG("User LocalVolumeTwoFormAccumulatorFunctor instead (29.05.2017)!")
+    LocalVolumeTwoFormAccumulator : public XT::Grid::internal::Codim0ReturnObject<GridLayerImp, FieldType>
 {
   static_assert(XT::Functions::is_localizable_function<TestFunctionType>::value,
                 "TestFunctionType has to be derived from XT::Functions::LocalizableFunctionInterface!");
