@@ -35,6 +35,9 @@ class SystemAssembler
   static_assert(is_space<T>::value, "");
   typedef XT::Grid::extract_grid_t<typename T::GridLayerType> G;
   typedef typename XT::Grid::Layer<G, grid_layer, grid_backend, XT::Grid::DD::SubdomainGrid<G>>::type GL;
+  typedef XT::Grid::extract_entity_t<GL> E;
+  typedef typename G::ctype D;
+  static const constexpr size_t d = G::dimension;
 
 public:
   typedef GDT::SystemAssembler<T, GL> type;
@@ -210,6 +213,26 @@ public:
 #if HAVE_DUNE_ISTL
     addbind_matrix<XT::LA::Backends::istl_sparse>(c);
 #endif
+
+    c.def("append",
+          [](type& self,
+             const GDT::LocalVolumeTwoFormInterface<XT::Functions::LocalfunctionInterface<E, D, d, double, 1>,
+                                                    XT::Functions::LocalfunctionInterface<E, D, d, double, 1>,
+                                                    double>& local_volume_two_form,
+             const XT::Functions::LocalizableFunctionInterface<E, D, d, double, 1>& test_function,
+             const XT::Functions::LocalizableFunctionInterface<E, D, d, double, 1>& ansatz_function,
+             double& result,
+             const XT::Grid::ApplyOn::WhichEntity<GL>& where) {
+            self.append(local_volume_two_form, test_function, ansatz_function, result, where.copy());
+          },
+          "local_volume_two_form"_a,
+          "test_function"_a,
+          "ansatz_function"_a,
+          "result"_a,
+          "where"_a = XT::Grid::ApplyOn::AllEntities<GL>(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>());
 
     addbind_factory_methods<>()(m);
 
