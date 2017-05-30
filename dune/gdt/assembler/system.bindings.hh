@@ -28,6 +28,35 @@ namespace GDT {
 namespace bindings {
 
 
+class ResultStorage
+{
+public:
+  ResultStorage()
+    : result_(0.)
+  {
+  }
+
+  ResultStorage(const ResultStorage& other) = delete;
+  ResultStorage(ResultStorage&& source) = delete;
+
+  ResultStorage& operator=(const ResultStorage& other) = delete;
+  ResultStorage& operator=(ResultStorage&& source) = delete;
+
+  double& result()
+  {
+    return result_;
+  }
+
+  const double& result() const
+  {
+    return result_;
+  }
+
+private:
+  double result_;
+}; // class ResultStorage
+
+
 template <class TP, XT::Grid::Layers grid_layer, XT::Grid::Backends grid_backend>
 class SystemAssembler
 {
@@ -221,15 +250,15 @@ public:
                                                     double>& local_volume_two_form,
              const XT::Functions::LocalizableFunctionInterface<E, D, d, double, 1>& test_function,
              const XT::Functions::LocalizableFunctionInterface<E, D, d, double, 1>& ansatz_function,
-             double& result,
-             const XT::Grid::ApplyOn::WhichEntity<GL>& where) {
-            self.append(local_volume_two_form, test_function, ansatz_function, result, where.copy());
+             ResultStorage& result /*,
+             const XT::Grid::ApplyOn::WhichEntity<GL>& where*/) {
+            self.append(local_volume_two_form, test_function, ansatz_function, result.result() /*, where.copy()*/);
           },
           "local_volume_two_form"_a,
           "test_function"_a,
           "ansatz_function"_a,
-          "result"_a,
-          "where"_a = XT::Grid::ApplyOn::AllEntities<GL>(),
+          "result"_a /*,
+          "where"_a = XT::Grid::ApplyOn::AllEntities<GL>()*/,
           py::keep_alive<0, 1>(),
           py::keep_alive<0, 2>(),
           py::keep_alive<0, 3>());
