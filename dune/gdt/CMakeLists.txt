@@ -48,6 +48,10 @@ if(dune-pybindxi_FOUND)
   dune_pybindxi_add_module(__spaces_block playground/spaces/block.bindings.cc)
   list(APPEND pybindxi_modules __spaces_block)
   # the local operators
+  # * diffusive flux estimation
+  dune_pybindxi_add_module(__local_diffusive_flux_estimation_operator local/diffusive-flux-estimation-operator.bindings.cc)
+  list(APPEND pybindxi_modules __local_diffusive_flux_estimation_operator)
+  # * elliptic ipdg
   dune_pybindxi_add_module(__local_elliptic_ipdg_operators local/elliptic-ipdg-operators.bindings.cc)
   list(APPEND pybindxi_modules __local_elliptic_ipdg_operators)
   # the operators
