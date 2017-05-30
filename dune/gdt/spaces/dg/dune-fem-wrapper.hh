@@ -57,7 +57,7 @@ public:
   static const int polOrder = polynomialOrder;
   static const bool continuous = false;
   static_assert(polOrder >= 1, "Wrong polOrder given!");
-  static const constexpr auto backend_type{Backends::fem};
+  static const constexpr Backends backend_type{Backends::fem};
 
 private:
   typedef typename GridLayerType::ctype DomainFieldType;
@@ -83,7 +83,7 @@ public:
       BaseFunctionSetType;
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::part;
   static const bool needs_grid_view = false;
-  typedef CommunicationChooser<GridLayerType, false> CommunicationChooserType;
+  typedef CommunicationChooser<GridLayerType, true> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 }; // class DuneFemDgSpaceWrapperTraits
 

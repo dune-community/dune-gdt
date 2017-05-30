@@ -51,7 +51,7 @@ public:
   typedef typename LocalSpaceType::RangeFieldType RangeFieldType;
 
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::part;
-  static const constexpr auto backend_type{Backends::gdt};
+  static const constexpr Backends backend_type{Backends::gdt};
   using CommunicationChooserType = CommunicationChooser<GridLayerType, true>;
   using CommunicatorType = typename CommunicationChooserType::type;
 
@@ -89,14 +89,16 @@ public:
   typedef typename CommunicationChooserType::Type CommunicatorType;
 
   typedef XT::Grid::DD::SubdomainGrid<typename XT::Grid::extract_grid<GridLayerType>::type> DdSubdomainsGridType;
+  static const constexpr Backends backend_type{Backends::gdt};
 
   BlockSpace(const DdSubdomainsGridType& grid, const std::vector<std::shared_ptr<const LocalSpaceType>>& spaces)
     : dd_grid_(grid)
     , entity_to_subdomain_map_(dd_grid_.entityToSubdomainMap())
     , global_grid_part_(new GridLayerType(dd_grid_.globalGridPart()))
     , local_spaces_(new std::vector<std::shared_ptr<const LocalSpaceType>>(spaces))
-    , communicator_(CommunicationChooserType::create(*grid_view_))
-    , communicator__prepared_(false)
+    , mapper_(new MapperType(dd_grid_, global_grid_part_, local_spaces_))
+    , communicator_(Traits::CommunicationChooserType::create(*global_grid_part_))
+    , communicator_prepared_(false)
   {
     if (local_spaces_->size() != dd_grid_.size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
