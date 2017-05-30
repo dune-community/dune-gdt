@@ -109,35 +109,25 @@ public:
   typedef RangeImp RangeType;
   typedef SourceImp SourceType;
   typedef FieldImp FieldType;
+  typedef typename RangeType::LocalfunctionType LocalRangeType;
+  typedef typename SourceType::LocalfunctionType LocalSourceType;
 
 private:
-  static_assert(XT::Functions::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
-  static_assert(XT::Functions::is_localizable_function<RangeType>::value,
-                "RangeType has to be derived from XT::Functions::LocalizableFunctionInterface!");
-  static_assert(std::is_same<typename SourceType::EntityType, EntityType>::value,
-                "The EntityType of SourceType and GridLayerType have to match!");
-  static_assert(std::is_same<typename RangeType::EntityType, EntityType>::value,
-                "The EntityType of RangeType and GridLayerType have to match!");
-  static_assert(std::is_same<typename SourceType::DomainFieldType, typename GridLayerType::ctype>::value,
-                "The DomainFieldType of SourceType and GridLayerType have to match!");
-  static_assert(std::is_same<typename RangeType::DomainFieldType, typename GridLayerType::ctype>::value,
-                "The DomainFieldType of RangeType and GridLayerType have to match!");
-  static_assert(SourceType::dimDomain == GridLayerType::dimension,
-                "The dimDomain of SourceType and GridLayerType have to match!");
-  static_assert(RangeType::dimDomain == GridLayerType::dimension,
-                "The dimDomain of RangeType and GridLayerType have to match!");
+  static_assert(XT::Functions::is_localizable_function<SourceType>::value, "");
+  static_assert(XT::Functions::is_localizable_function<RangeType>::value, "");
+  static_assert(std::is_same<typename SourceType::EntityType, EntityType>::value, "");
+  static_assert(std::is_same<typename RangeType::EntityType, EntityType>::value, "");
+  static_assert(std::is_same<typename SourceType::DomainFieldType, typename GridLayerType::ctype>::value, "");
+  static_assert(std::is_same<typename RangeType::DomainFieldType, typename GridLayerType::ctype>::value, "");
+  static_assert(SourceType::dimDomain == GridLayerType::dimension, "");
+  static_assert(RangeType::dimDomain == GridLayerType::dimension, "");
 
 public:
-  typedef LocalVolumeTwoFormInterface<typename RangeType::LocalfunctionType,
-                                      typename SourceType::LocalfunctionType,
-                                      FieldType>
-      LocalVolumeTwoFormType;
-
   LocalizableProductBase(GridLayerType grd_layr, const RangeType& rng, const SourceType& src)
     : BaseType(grd_layr)
     , range_(rng)
     , source_(src)
+    , result_(0.)
     , walked_(false)
   {
   }
@@ -146,6 +136,7 @@ public:
     : BaseType(grd_layr)
     , range_(rng)
     , source_(rng)
+    , result_(0.)
     , walked_(false)
   {
   }
@@ -164,12 +155,12 @@ public:
   using BaseType::append;
 
   ThisType& append(
-      const LocalVolumeTwoFormType& local_volume_twoform,
+      const LocalVolumeTwoFormInterface<LocalRangeType, LocalSourceType, FieldType>& local_volume_twoform,
       const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
-    typedef LocalVolumeTwoFormAccumulator<GridLayerType, RangeType, SourceType, FieldType> AccumulateFunctor;
     local_volume_twoforms_.emplace_back(
-        new AccumulateFunctor(grid_layer(), local_volume_twoform, range_, source_, *where));
+        new LocalVolumeTwoFormAccumulatorFunctor<GridLayerType, RangeType, SourceType, FieldType>(
+            this->grid_layer_, local_volume_twoform, range_, source_, result_, where->copy()));
     BaseType::append(*local_volume_twoforms_.back(), where);
     return *this;
   } // ... append(...)
@@ -188,15 +179,13 @@ public:
       this->walk();
       walked_ = true;
     }
-    FieldType result = 0.;
-    for (const auto& local_volume_twoform : local_volume_twoforms_)
-      result += local_volume_twoform->result();
-    return result;
+    return result_;
   }
 
 protected:
   const RangeType& range_;
   const SourceType& source_;
+  FieldType result_;
   std::vector<std::unique_ptr<XT::Grid::internal::Codim0ReturnObject<GridLayerType, FieldType>>> local_volume_twoforms_;
   bool walked_;
 }; // class LocalizableProductBase

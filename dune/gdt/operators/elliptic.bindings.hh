@@ -153,7 +153,6 @@ private:
 public:
   static bound_type bind(pybind11::module& m)
   {
-
     namespace py = pybind11;
     using namespace pybind11::literals;
 
@@ -304,7 +303,10 @@ public:
 #define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_FEM(_prefix, _la)                                                        \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, leaf, part, cg, fem, 1, _la);                                   \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, level, part, cg, fem, 1, _la);                                  \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, dd_subdomain, part, cg, fem, 1, _la)
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, dd_subdomain, part, cg, fem, 1, _la);                           \
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, leaf, part, dg, fem, 1, _la);                                   \
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, level, part, dg, fem, 1, _la);                                  \
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, dd_subdomain, part, dg, fem, 1, _la)
 #define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_FEM_COMMON(_prefix)
 //_DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_FEM(_prefix, common_dense)
 //#if HAVE_EIGEN
@@ -493,7 +495,10 @@ DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_FEM_ISTL(extern template);
 #define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM(_m, _la)                                                                 \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, leaf, part, cg, fem, 1, _la);                                            \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, level, part, cg, fem, 1, _la);                                           \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, dd_subdomain, part, cg, fem, 1, _la)
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, dd_subdomain, part, cg, fem, 1, _la);                                    \
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, leaf, part, dg, fem, 1, _la);                                            \
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, level, part, dg, fem, 1, _la);                                           \
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, dd_subdomain, part, dg, fem, 1, _la)
 #define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM_COMMON(_m)
 //_DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM(_m, common_dense)
 //#if HAVE_EIGEN

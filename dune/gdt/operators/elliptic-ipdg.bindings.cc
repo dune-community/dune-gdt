@@ -39,6 +39,7 @@ PYBIND11_PLUGIN(__operators_elliptic_ipdg)
   py::module::import("dune.xt.functions");
   py::module::import("dune.xt.la");
   py::module::import("dune.gdt.__spaces");
+  py::module::import("dune.gdt.__discretefunction");
 
 // alu_fem_istl.cc
 #if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_ISTL

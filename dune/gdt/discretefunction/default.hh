@@ -17,7 +17,6 @@
 #include <vector>
 #include <type_traits>
 
-#include <dune/common/exceptions.hh>
 #include <dune/common/fvector.hh>
 
 #include <dune/grid/io/file/vtk.hh>
@@ -148,6 +147,7 @@ class ConstDiscreteFunction : public XT::Functions::LocalizableFunctionInterface
                                                       SpaceImp::dimRange,
                                                       SpaceImp::dimRangeCols>
       BaseType;
+  typedef XT::Common::ConstStorageProvider<VectorImp> VectorStorageProvider;
   typedef ConstDiscreteFunction<SpaceImp, VectorImp> ThisType;
 
 public:
@@ -160,55 +160,57 @@ public:
   typedef ConstLocalDiscreteFunction<SpaceType, VectorType> ConstLocalDiscreteFunctionType;
 
   ConstDiscreteFunction(const SpaceType& sp, const VectorType& vec, const std::string nm = "gdt.constdiscretefunction")
-    : space_(sp)
-    , vector_(vec)
+    : space_(new XT::Common::PerThreadValue<SpaceType>(sp))
+    , vector_(new VectorStorageProvider(vec))
     , name_(nm)
   {
-    assert(vector_.size() == space_->mapper().size() && "Given vector has wrong size!");
+    if (vector().size() != (*space_)->mapper().size())
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
+                 "space.mapper().size(): " << (*space_)->mapper().size() << "\n   "
+                                           << "vector.size(): "
+                                           << vector_->access().size());
   }
 
   ConstDiscreteFunction(const ThisType& other)
-    : space_(other.space())
-    , vector_(other.vector_)
+    : space_(new XT::Common::PerThreadValue<SpaceType>(other.space()))
+    , vector_(new VectorStorageProvider(other.vector()))
     , name_(other.name_)
   {
   }
 
   ConstDiscreteFunction(ThisType&& source)
-    : space_(source.space())
-    , vector_(source.vector_)
+    : space_(std::move(source.space_))
+    , vector_(std::move(source.vector_))
     , name_(source.name_)
-  {
-  }
-
-  virtual ~ConstDiscreteFunction()
   {
   }
 
   ThisType& operator=(const ThisType& other) = delete;
 
-  virtual std::string name() const override
+  ThisType& operator=(ThisType&& source) = default;
+
+  std::string name() const override final
   {
     return name_;
   }
 
   const SpaceType& space() const
   {
-    return *space_;
+    return *(*space_);
   }
 
   const VectorType& vector() const
   {
-    return vector_;
+    return vector_->access();
   }
 
   std::unique_ptr<ConstLocalDiscreteFunctionType> local_discrete_function(const EntityType& entity) const
   {
-    assert(space_->grid_layer().indexSet().contains(entity));
-    return Dune::XT::Common::make_unique<ConstLocalDiscreteFunctionType>(*space_, vector_, entity);
+    assert((*space_)->grid_layer().indexSet().contains(entity));
+    return Dune::XT::Common::make_unique<ConstLocalDiscreteFunctionType>(*(*space_), vector_->access(), entity);
   }
 
-  virtual std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const override
+  std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const override final
   {
     return local_discrete_function(entity);
   }
@@ -285,11 +287,11 @@ protected:
     }
   };
 
-  const Dune::XT::Common::PerThreadValue<SpaceType> space_;
+  std::unique_ptr<XT::Common::PerThreadValue<SpaceType>> space_;
 
 private:
-  const VectorType& vector_;
-  const std::string name_;
+  std::unique_ptr<VectorStorageProvider> vector_;
+  std::string name_;
 }; // class ConstDiscreteFunction
 
 
@@ -326,25 +328,11 @@ public:
   {
   }
 
-  // manual copy ctor needed bc. of the storage provider
-  DiscreteFunction(const ThisType& other)
-    : VectorProviderBaseType(new VectorType(other.vector()))
-    , BaseType(other.space(), VectorProviderBaseType::access(), other.name())
-  {
-  }
-
-  // manual move ctor needed bc. of the storage provider
-  DiscreteFunction(ThisType&& source)
-    : VectorProviderBaseType(new VectorType(source.vector()))
-    , BaseType(source.space(), VectorProviderBaseType::access(), source.name())
-  {
-  }
-
-  virtual ~DiscreteFunction()
-  {
-  }
+  DiscreteFunction(const ThisType& other) = default;
+  DiscreteFunction(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& source) = default;
 
   using BaseType::vector;
 
@@ -357,8 +345,8 @@ public:
 
   std::unique_ptr<LocalDiscreteFunctionType> local_discrete_function(const EntityType& entity)
   {
-    assert(space_->grid_layer().indexSet().contains(entity));
-    return Dune::XT::Common::make_unique<LocalDiscreteFunctionType>(*space_, this->access(), entity);
+    assert((*space_)->grid_layer().indexSet().contains(entity));
+    return Dune::XT::Common::make_unique<LocalDiscreteFunctionType>(*(*space_), this->access(), entity);
   }
 
 private:

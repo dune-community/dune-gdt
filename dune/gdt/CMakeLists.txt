@@ -48,6 +48,10 @@ if(dune-pybindxi_FOUND)
   dune_pybindxi_add_module(__spaces_block playground/spaces/block.bindings.cc)
   list(APPEND pybindxi_modules __spaces_block)
   # the local operators
+  # * diffusive flux estimation
+  dune_pybindxi_add_module(__local_diffusive_flux_estimation_operator local/diffusive-flux-estimation-operator.bindings.cc)
+  list(APPEND pybindxi_modules __local_diffusive_flux_estimation_operator)
+  # * elliptic ipdg
   dune_pybindxi_add_module(__local_elliptic_ipdg_operators local/elliptic-ipdg-operators.bindings.cc)
   list(APPEND pybindxi_modules __local_elliptic_ipdg_operators)
   # the operators
@@ -64,6 +68,15 @@ if(dune-pybindxi_FOUND)
   dune_pybindxi_add_module(__operators_elliptic_ipdg operators/elliptic-ipdg.bindings.cc)
   target_link_libraries(__operators_elliptic_ipdg __operators_elliptic_ipdg_helper)
   list(APPEND pybindxi_modules __operators_elliptic_ipdg)
+  # * flux reconstruction
+  dune_pybindxi_add_module(__operators_fluxreconstruction operators/fluxreconstruction.bindings.cc)
+  list(APPEND pybindxi_modules __operators_fluxreconstruction)
+  # * oswald interpolation
+  dune_pybindxi_add_module(__operators_oswaldinterpolation operators/oswaldinterpolation.bindings.cc)
+  list(APPEND pybindxi_modules __operators_oswaldinterpolation)
+  # * weighted L2 operator
+  dune_pybindxi_add_module(__operators_weighted_l2 operators/weighted-l2.bindings.cc)
+  list(APPEND pybindxi_modules __operators_weighted_l2)
   # the functionals
   dune_pybindxi_add_helper_lib(__functionals_elliptic_ipdg_helper
                                functionals/elliptic-ipdg.bindings/alu_fem_istl.cc

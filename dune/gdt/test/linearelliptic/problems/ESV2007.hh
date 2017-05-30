@@ -32,6 +32,11 @@ namespace GDT {
 namespace LinearElliptic {
 
 
+// forward
+template <class G, class R = double, int r = 1>
+class ESV2007DdSubdomainsTestCase;
+
+
 template <class E, class D, int d, class R, int r = 1>
 class ESV2007Problem : public ProblemBase<E, D, d, R, r>
 {
@@ -180,8 +185,6 @@ private:
   }
 
 public:
-  using typename BaseType::GridType;
-
   ESV2007TestCase(const size_t num_refs =
 #if DXT_DISABLE_LARGE_TESTS
                       1
@@ -189,18 +192,18 @@ public:
                       3
 #endif
                   )
-    : BaseType(XT::Grid::make_cube_grid<GridType>(grid_cfg()).grid_ptr(), num_refs)
+    : BaseType(grid_cfg(), num_refs)
     , problem_()
     , exact_solution_()
   {
   }
 
-  virtual const ProblemType& problem() const override final
+  const ProblemType& problem() const override final
   {
     return problem_;
   }
 
-  virtual void print_header(std::ostream& out = std::cout) const override final
+  void print_header(std::ostream& out = std::cout) const override final
   {
     out << "+==================================================================+\n"
         << "|+================================================================+|\n"
@@ -216,12 +219,96 @@ public:
         << "+==================================================================+" << std::endl;
   }
 
-  virtual bool provides_exact_solution() const override final
+  bool provides_exact_solution() const override final
   {
     return true;
   }
 
-  virtual const ExactSolutionType& exact_solution() const override final
+  const ExactSolutionType& exact_solution() const override final
+  {
+    return exact_solution_;
+  }
+
+private:
+  template <class G_, class R_, int r_>
+  friend class ESV2007DdSubdomainsTestCase;
+
+  const ProblemType problem_;
+  const ExactSolutionType exact_solution_;
+}; // class ESV2007TestCase
+
+
+template <class G, class R, int r>
+class ESV2007DdSubdomainsTestCase
+    : public Test::StationaryTestCase<G,
+                                      LinearElliptic::ESV2007Problem<typename G::template Codim<0>::Entity,
+                                                                     typename G::ctype,
+                                                                     G::dimension,
+                                                                     R,
+                                                                     r>,
+                                      XT::Grid::DD::SubdomainGrid<G>>
+{
+  typedef typename G::template Codim<0>::Entity E;
+  typedef typename G::ctype D;
+  static const size_t d = G::dimension;
+  typedef XT::Functions::ESV2007::Testcase1ExactSolution<E, D, d, R, r> ExactSolutionType;
+
+public:
+  typedef LinearElliptic::ESV2007Problem<E, D, d, R, r> ProblemType;
+
+private:
+  typedef Test::StationaryTestCase<G, ProblemType, XT::Grid::DD::SubdomainGrid<G>> BaseType;
+
+  static XT::Common::Configuration grid_cfg()
+  {
+    auto cfg = ESV2007TestCase<G, R, r>::grid_cfg();
+    cfg["type"] = XT::Grid::cube_dd_subdomains_gridprovider_id();
+    cfg["num_partitions"] = "[1 1 1 1]";
+    return cfg;
+  }
+
+public:
+  ESV2007DdSubdomainsTestCase(const size_t num_refs =
+#if DXT_DISABLE_LARGE_TESTS
+                                  1
+#else
+                                  3
+#endif
+                              )
+    : BaseType(grid_cfg(), num_refs)
+    , problem_()
+    , exact_solution_()
+  {
+  }
+
+  const ProblemType& problem() const override final
+  {
+    return problem_;
+  }
+
+  void print_header(std::ostream& out = std::cout) const override final
+  {
+    out << "+==================================================================+\n"
+        << "|+================================================================+|\n"
+        << "||  Testcase ESV2007: smooth data, homogeneous dirichlet          ||\n"
+        << "||    DD::SubdomainGrid variant                                   ||\n"
+        << "||  (see testcase 1, page 23 in Ern, Stephansen, Vohralik, 2007)  ||\n"
+        << "|+----------------------------------------------------------------+|\n"
+        << "||  domain = [-1, 1] x [-1, 1]                                    ||\n"
+        << "||  diffusion = 1                                                 ||\n"
+        << "||  force     = 1/2 pi^2 cos(1/2 pi x) cos(1/2 pi y)              ||\n"
+        << "||  dirichlet = 0                                                 ||\n"
+        << "||  exact solution = cos(1/2 pi x) cos(1/2 pi y)                  ||\n"
+        << "|+================================================================+|\n"
+        << "+==================================================================+" << std::endl;
+  }
+
+  bool provides_exact_solution() const override final
+  {
+    return true;
+  }
+
+  const ExactSolutionType& exact_solution() const override final
   {
     return exact_solution_;
   }
@@ -229,7 +316,7 @@ public:
 private:
   const ProblemType problem_;
   const ExactSolutionType exact_solution_;
-}; // class ESV2007TestCase
+}; // class ESV2007DdSubdomainsTestCase
 
 
 } // namespace LinearElliptic

@@ -25,6 +25,7 @@
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/constraints.hh>
 
+#include "local-accumulators.hh"
 #include "local-assemblers.hh"
 #include "wrapper.hh"
 
@@ -51,6 +52,9 @@ class SystemAssembler : public XT::Grid::Walker<GridLayerImp>
                 "");
   typedef XT::Grid::Walker<GridLayerImp> BaseType;
   typedef SystemAssembler<TestSpaceImp, GridLayerImp, AnsatzSpaceImp, OuterTestSpaceImp, OuterAnsatzSpaceImp> ThisType;
+  typedef typename TestSpaceImp::EntityType E;
+  typedef typename TestSpaceImp::DomainFieldType D;
+  static const constexpr size_t d = TestSpaceImp::dimDomain;
 
 public:
   typedef TestSpaceImp TestSpaceType;
@@ -271,6 +275,25 @@ public:
     return *this;
   } // ... append(...)
 
+  template <class R, size_t r, size_t rC>
+  ThisType& append(const LocalVolumeTwoFormInterface<XT::Functions::LocalfunctionInterface<E, D, d, R, r, rC>,
+                                                     XT::Functions::LocalfunctionInterface<E, D, d, R, r, rC>,
+                                                     R>& local_volume_two_form,
+                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& test_function,
+                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& ansatz_function,
+                   R& final_result,
+                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
+  {
+    this->codim0_return_functors_.emplace_back(
+        new LocalVolumeTwoFormAccumulatorFunctor<GridLayerType,
+                                                 XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>,
+                                                 XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>,
+                                                 R>(
+            this->grid_layer_, local_volume_two_form, test_function, ansatz_function, final_result, where->copy()));
+    BaseType::append(*codim0_return_functors_.back(), where);
+    return *this;
+  } // ... append(...)
+
   template <class M, class R>
   ThisType& append(const LocalCouplingTwoFormInterface<TestBaseType,
                                                        IntersectionType,
@@ -376,6 +399,8 @@ protected:
   const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType> ansatz_space_;
   const Dune::XT::Common::PerThreadValue<const OuterTestSpaceType> outer_test_space_;
   const Dune::XT::Common::PerThreadValue<const OuterAnsatzSpaceType> outer_ansatz_space_;
+  // this is a hack and should be removed after applying https://github.com/dune-community/dune-xt-grid/pull/28
+  std::vector<std::unique_ptr<XT::Grid::internal::Codim0ReturnObject<GridLayerType, double>>> codim0_return_functors_;
 }; // class SystemAssembler
 
 

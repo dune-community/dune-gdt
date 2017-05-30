@@ -38,7 +38,7 @@ struct linearelliptic_CG_discretization : public ::testing::Test
     test_case.print_header(DXTC_LOG_INFO);
     DXTC_LOG_INFO << std::endl;
     typedef LinearElliptic::CGDiscretizer<typename TestCaseType::GridType,
-                                          XT::Grid::Layers::level,
+                                          TestCaseType::layer_type,
                                           SpaceBackend,
                                           LaBackend,
                                           1,

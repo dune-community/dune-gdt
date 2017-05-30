@@ -27,6 +27,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
 #include <dune/gdt/playground/spaces/block.hh>
+#include <dune/gdt/playground/spaces/dg/dune-functions-wrapper.hh>
 
 #include "interfaces.hh"
 
@@ -78,7 +79,14 @@ public:
              DiscreteFunction<DuneFemDgSpaceWrapper<RGP, 1, FieldType, 1, 1>, RV>& range,
              const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
-    apply_dg_fem(source, range);
+    apply_dg(source, range);
+  }
+
+  template <class SGP, class SV, class RGP, class RV>
+  void apply(const ConstDiscreteFunction<DuneFunctionsDgSpaceWrapper<SGP, 1, FieldType, 1, 1>, SV>& source,
+             DiscreteFunction<DuneFunctionsDgSpaceWrapper<RGP, 1, FieldType, 1, 1>, RV>& range) const
+  {
+    apply_dg(source, range);
   }
 
   template <class SGP, class SV, class RGP, class RV>
@@ -86,7 +94,14 @@ public:
              DiscreteFunction<BlockSpace<DuneFemDgSpaceWrapper<RGP, 1, FieldType, 1, 1>>, RV>& range,
              const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
-    apply_dg_fem(source, range);
+    apply_dg(source, range);
+  }
+
+  template <class SGP, class SV, class RGP, class RV>
+  void apply(const ConstDiscreteFunction<BlockSpace<DuneFunctionsDgSpaceWrapper<SGP, 1, FieldType, 1, 1>>, SV>& source,
+             DiscreteFunction<BlockSpace<DuneFunctionsDgSpaceWrapper<RGP, 1, FieldType, 1, 1>>, RV>& range) const
+  {
+    apply_dg(source, range);
   }
 
   template <class SourceType>
@@ -114,8 +129,9 @@ public:
 
 private:
   template <class SourceType, class RangeType>
-  void apply_dg_fem(const SourceType& source, RangeType& range) const
+  void apply_dg(const SourceType& source, RangeType& range) const
   {
+    range.vector() *= 0.;
     // data structures we need
     // * a map from a global vertex index to global DoF indices
     //   given a vertex, one obtains a set of all global DoF ids, which are associated with this vertex
@@ -222,7 +238,7 @@ private:
         } // if (boundary_vertices.find(global_vertex_id))
       } // loop over all local DoFs
     } // walk the grid for the second time
-  } // ... apply_dg_fem(...)
+  } // ... apply_dg(...)
 
   const GridLayerType& grid_layer_;
   const bool zero_boundary_;

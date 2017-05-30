@@ -6,34 +6,31 @@
 #          with "runtime exception" (http://www.dune-project.org/license.html)
 # Authors:
 #   Felix Schindler (2017)
-#   Rene Milk       (2017)
 
 import itertools
+from dune.xt.codegen import typeid_to_typedef_name, la_backends
 
-from dune.xt.codegen import typeid_to_typedef_name, la_backends, is_found
-
-
-grids = ['Yasp2Grid']
+grids = []
 try:
     if cache['dune-alugrid']:
-        grids.extend(['AluSimplex2dGridType', 'AluConform2dGridType'])
+        grids.extend(['AluConform2dGridType'])
 except KeyError:
     pass
 
-casenames = ['AO2013TestCase', 'ER2007TestCase', 'ESV2007TestCase', 'MixedBoundaryTestCase', 'Spe10Model1TestCase']
+casenames = ['ESV2007DdSubdomainsTestCase',]
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 
 space_backends = []
-for s in ('fem', 'pdelab'):
+for s in ('fem',):
     try:
         if cache['dune-{}'.format(s)]:
             space_backends.extend([s])
     except KeyError:
         pass
 
-if len(space_backends) == 0:
+if len(space_backends) == 0 or len(la_backends(cache)) == 0:
     # prevent unusable iteration in template
     permutations = []
 else:
-    permutations = itertools.product(testcases, space_backends, la_backends(cache))
-    permutations = [(t,s,l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]
+    permutations = itertools.product(testcases, space_backends, ('istl_sparse', ))
+    permutations = [(t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]

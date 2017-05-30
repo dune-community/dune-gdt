@@ -21,16 +21,19 @@
 #include <dune/pybindxi/stl.h>
 
 #include <dune/xt/common/bindings.hh>
+#include <dune/xt/grid/dd/subdomains/grid.hh>
+#include <dune/xt/grid/grids.hh>
 
-#include "spaces.bindings.hh"
+#include <dune/gdt/spaces.hh>
+#include <dune/gdt/operators/oswaldinterpolation.bindings.hh>
 
 
-PYBIND11_PLUGIN(__spaces)
+PYBIND11_PLUGIN(__operators_oswaldinterpolation)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  py::module m("__spaces", "dune-gdt: Spaces");
+  py::module m("__operators_oswaldinterpolation", "dune-gdt: OswaldInterpolationOperator");
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
@@ -38,11 +41,27 @@ PYBIND11_PLUGIN(__spaces)
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
   py::module::import("dune.xt.la");
+  py::module::import("dune.gdt.__spaces");
+  py::module::import("dune.gdt.__discretefunction");
 
-  DUNE_GDT_SPACES_CG_BIND(m);
-  DUNE_GDT_SPACES_DG_BIND(m);
-  DUNE_GDT_SPACES_FV_BIND(m);
-  DUNE_GDT_SPACES_RT_BIND(m);
+#if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_ISTL
+  Dune::GDT::bindings::OswaldInterpolationOperator<ALU_2D_SIMPLEX_CONFORMING,
+                                                   Dune::GDT::SpaceType::dg,
+                                                   Dune::GDT::Backends::fem,
+                                                   Dune::XT::Grid::Layers::leaf,
+                                                   1,
+                                                   double,
+                                                   1,
+                                                   Dune::XT::LA::Backends::istl_dense>::bind(m);
+  Dune::GDT::bindings::OswaldInterpolationOperator<ALU_2D_SIMPLEX_CONFORMING,
+                                                   Dune::GDT::SpaceType::block_dg,
+                                                   Dune::GDT::Backends::fem,
+                                                   Dune::XT::Grid::Layers::leaf,
+                                                   1,
+                                                   double,
+                                                   1,
+                                                   Dune::XT::LA::Backends::istl_dense>::bind(m);
+#endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_ISTL
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {
@@ -76,7 +95,7 @@ PYBIND11_PLUGIN(__spaces)
 
   m.def("_test_logger",
         [](const bool info, const bool debug, const bool warning) {
-          auto logger = Dune::XT::Common::TimedLogger().get("dune.gdt.spaces");
+          auto logger = Dune::XT::Common::TimedLogger().get("dune.gdt.operators.elliptic");
           if (info)
             logger.info() << "info logging works!" << std::endl;
           if (debug)

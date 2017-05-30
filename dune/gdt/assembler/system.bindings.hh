@@ -28,6 +28,35 @@ namespace GDT {
 namespace bindings {
 
 
+class ResultStorage
+{
+public:
+  ResultStorage()
+    : result_(0.)
+  {
+  }
+
+  ResultStorage(const ResultStorage& other) = delete;
+  ResultStorage(ResultStorage&& source) = delete;
+
+  ResultStorage& operator=(const ResultStorage& other) = delete;
+  ResultStorage& operator=(ResultStorage&& source) = delete;
+
+  double& result()
+  {
+    return result_;
+  }
+
+  const double& result() const
+  {
+    return result_;
+  }
+
+private:
+  double result_;
+}; // class ResultStorage
+
+
 template <class TP, XT::Grid::Layers grid_layer, XT::Grid::Backends grid_backend>
 class SystemAssembler
 {
@@ -35,6 +64,9 @@ class SystemAssembler
   static_assert(is_space<T>::value, "");
   typedef XT::Grid::extract_grid_t<typename T::GridLayerType> G;
   typedef typename XT::Grid::Layer<G, grid_layer, grid_backend, XT::Grid::DD::SubdomainGrid<G>>::type GL;
+  typedef XT::Grid::extract_entity_t<GL> E;
+  typedef typename G::ctype D;
+  static const constexpr size_t d = G::dimension;
 
 public:
   typedef GDT::SystemAssembler<T, GL> type;
@@ -121,6 +153,19 @@ private:
 
     c.def("append",
           [](type& self,
+             const GDT::LocalBoundaryTwoFormInterface<typename T::BaseFunctionSetType,
+                                                      XT::Grid::extract_intersection_t<GL>>& local_boundary_two_form,
+             M& matrix,
+             const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+            self.append(local_boundary_two_form, matrix, which_intersections.copy());
+          },
+          "local_boundary_two_form"_a,
+          "matrix"_a,
+          "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>());
+    c.def("append",
+          [](type& self,
              const GDT::LocalCouplingTwoFormInterface<typename T::BaseFunctionSetType,
                                                       XT::Grid::extract_intersection_t<GL>>& local_coupling_two_form,
              M& matrix,
@@ -173,10 +218,21 @@ public:
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
     addbind_ctor_single<>()(c);
 
-    c.def("append", [](type& self, type& other) { self.append(other); }, "system_assembler"_a, py::keep_alive<1, 2>());
     c.def("append",
-          [](type& self, XT::Grid::Walker<GridLayerType>& other) { self.append(other); },
+          [](type& self, type& other, const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+            self.append(other, which_intersections.copy());
+          },
+          "system_assembler"_a,
+          "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+          py::keep_alive<1, 2>());
+    c.def("append",
+          [](type& self,
+             XT::Grid::Walker<GridLayerType>& other,
+             const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+            self.append(other, which_intersections.copy());
+          },
           "grid_walker"_a,
+          "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
           py::keep_alive<1, 2>());
     c.def("assemble", [](type& self, const bool use_tbb) { self.assemble(use_tbb); }, "use_tbb"_a = false);
 
@@ -186,6 +242,26 @@ public:
 #if HAVE_DUNE_ISTL
     addbind_matrix<XT::LA::Backends::istl_sparse>(c);
 #endif
+
+    c.def("append",
+          [](type& self,
+             const GDT::LocalVolumeTwoFormInterface<XT::Functions::LocalfunctionInterface<E, D, d, double, 1>,
+                                                    XT::Functions::LocalfunctionInterface<E, D, d, double, 1>,
+                                                    double>& local_volume_two_form,
+             const XT::Functions::LocalizableFunctionInterface<E, D, d, double, 1>& test_function,
+             const XT::Functions::LocalizableFunctionInterface<E, D, d, double, 1>& ansatz_function,
+             ResultStorage& result /*,
+             const XT::Grid::ApplyOn::WhichEntity<GL>& where*/) {
+            self.append(local_volume_two_form, test_function, ansatz_function, result.result() /*, where.copy()*/);
+          },
+          "local_volume_two_form"_a,
+          "test_function"_a,
+          "ansatz_function"_a,
+          "result"_a /*,
+          "where"_a = XT::Grid::ApplyOn::AllEntities<GL>()*/,
+          py::keep_alive<0, 1>(),
+          py::keep_alive<0, 2>(),
+          py::keep_alive<0, 3>());
 
     addbind_factory_methods<>()(m);
 
@@ -246,11 +322,13 @@ public:
 #define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_FEM(_pre)                                                               \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_FEM(_pre, cg, 1, 1, 1);                                                      \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_FEM(_pre, dg, 1, 1, 1);                                                      \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre, dd_subdomain_boundary, part, dg, fem, dd_subdomain, 1, 1, 1);          \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre, dd_subdomain_coupling, part, dg, fem, dd_subdomain, 1, 1, 1)
 
 #define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_FEM(_pre)                                                              \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_FEM(_pre, cg, 1, 1, 1);                                                     \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_FEM(_pre, dg, 1, 1, 1);                                                     \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre, dd_subdomain_boundary, part, dg, fem, dd_subdomain, 1, 1, 1);         \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre, dd_subdomain_coupling, part, dg, fem, dd_subdomain, 1, 1, 1)
 
 #else // HAVE_DUNE_FEM
@@ -331,6 +409,7 @@ DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB(extern template);
 #define DUNE_GDT_ASSEMBLER_SYSTEM_BIND(_m)                                                                             \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_m, cg, 1, 1, 1);                                                                \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_m, dg, 1, 1, 1);                                                                \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain_boundary, part, dg, fem, dd_subdomain, 1, 1, 1);          \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain_coupling, part, dg, fem, dd_subdomain, 1, 1, 1);          \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT(_m, fv, 0, 1, 1)
 

@@ -189,7 +189,7 @@ public:
   using typename BaseType::GridType;
 
   Spe10Model1TestCase(const size_t num_refs = 1)
-    : BaseType(XT::Grid::make_cube_grid<GridType>(grid_cfg()).grid_ptr(), num_refs)
+    : BaseType(grid_cfg(), num_refs)
     , problem_()
   {
   }

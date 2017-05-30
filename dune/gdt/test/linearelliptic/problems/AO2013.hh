@@ -190,7 +190,7 @@ public:
                      3
 #endif
                  )
-    : BaseType(XT::Grid::make_cube_grid<GridType>(grid_cfg()).grid_ptr(), num_refs)
+    : BaseType(grid_cfg(), num_refs)
     , problem_()
   {
   }

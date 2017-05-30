@@ -58,12 +58,12 @@ public:
 
 // begin: this is what we need for the .so
 
-#define _DUNE_GDT_PROJECTIONS_BIND(_m, _GRID, _g_layer, _s_backend, _s_type, _la)                                      \
+#define _DUNE_GDT_PROJECTIONS_BIND(_m, _GRID, _g_layer, _s_backend, _s_type, _p, _la)                                  \
   Dune::GDT::bindings::project<Dune::GDT::SpaceProvider<_GRID,                                                         \
                                                         Dune::XT::Grid::Layers::_g_layer,                              \
                                                         Dune::GDT::SpaceType::_s_type,                                 \
                                                         Dune::GDT::Backends::_s_backend,                               \
-                                                        1,                                                             \
+                                                        _p,                                                            \
                                                         double,                                                        \
                                                         1,                                                             \
                                                         1>,                                                            \
@@ -75,49 +75,55 @@ public:
 //#if HAVE_ALBERTA
 //  ...
 //#else
-#define _DUNE_GDT_PROJECTIONS_BIND_ALBERTA(_m, _g_layer, _s_backend, _s_type, _la)
+#define _DUNE_GDT_PROJECTIONS_BIND_ALBERTA(_m, _g_layer, _s_backend, _s_type, _p, _la)
 //#endif
 
 #if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_PROJECTIONS_BIND_ALU(_m, _g_layer, _s_backend, _s_type, _la)                                         \
-  _DUNE_GDT_PROJECTIONS_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, _g_layer, _s_backend, _s_type, _la)
+#define _DUNE_GDT_PROJECTIONS_BIND_ALU(_m, _g_layer, _s_backend, _s_type, _p, _la)                                     \
+  _DUNE_GDT_PROJECTIONS_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, _g_layer, _s_backend, _s_type, _p, _la)
 #else
-#define _DUNE_GDT_PROJECTIONS_BIND_ALU(_m, _g_layer, _s_backend, _s_type, _la)
+#define _DUNE_GDT_PROJECTIONS_BIND_ALU(_m, _g_layer, _s_backend, _s_type, _p, _la)
 #endif
 
 //#if HAVE_DUNE_UGGRID || HAVE_UG
 //  ...
 //#else
-#define _DUNE_GDT_PROJECTIONS_BIND_UG(_m, _g_layer, _s_backend, _s_type, _la)
+#define _DUNE_GDT_PROJECTIONS_BIND_UG(_m, _g_layer, _s_backend, _s_type, _p, _la)
 //#endif
 
-#define _DUNE_GDT_PROJECTIONS_BIND_YASP(_m, _g_layer, _s_backend, _s_type, _la)                                        \
-  _DUNE_GDT_PROJECTIONS_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _g_layer, _s_backend, _s_type, _la);                      \
-  _DUNE_GDT_PROJECTIONS_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _g_layer, _s_backend, _s_type, _la)
+#define _DUNE_GDT_PROJECTIONS_BIND_YASP(_m, _g_layer, _s_backend, _s_type, _p, _la)                                    \
+  _DUNE_GDT_PROJECTIONS_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _g_layer, _s_backend, _s_type, _p, _la);                  \
+  _DUNE_GDT_PROJECTIONS_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _g_layer, _s_backend, _s_type, _p, _la)
 
-#define _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, _g_layer, _s_backend, _s_type, _la)                                   \
-  _DUNE_GDT_PROJECTIONS_BIND_ALBERTA(_m, _g_layer, _s_backend, _s_type, _la);                                          \
-  _DUNE_GDT_PROJECTIONS_BIND_ALU(_m, _g_layer, _s_backend, _s_type, _la);                                              \
-  _DUNE_GDT_PROJECTIONS_BIND_UG(_m, _g_layer, _s_backend, _s_type, _la);                                               \
-  _DUNE_GDT_PROJECTIONS_BIND_YASP(_m, _g_layer, _s_backend, _s_type, _la)
+#define _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, _g_layer, _s_backend, _s_type, _p, _la)                               \
+  _DUNE_GDT_PROJECTIONS_BIND_ALBERTA(_m, _g_layer, _s_backend, _s_type, _p, _la);                                      \
+  _DUNE_GDT_PROJECTIONS_BIND_ALU(_m, _g_layer, _s_backend, _s_type, _p, _la);                                          \
+  _DUNE_GDT_PROJECTIONS_BIND_UG(_m, _g_layer, _s_backend, _s_type, _p, _la);                                           \
+  _DUNE_GDT_PROJECTIONS_BIND_YASP(_m, _g_layer, _s_backend, _s_type, _p, _la)
 
 // for each space backend
 
-#define _DUNE_GDT_PROJECTIONS_BIND_DEFAULT(_m, _la)
+#define _DUNE_GDT_PROJECTIONS_BIND_DEFAULT(_m, _la)                                                                    \
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, gdt, fv, 0, _la);                                                     \
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, gdt, fv, 0, _la)
 
 #if HAVE_DUNE_FEM
 #define _DUNE_GDT_PROJECTIONS_BIND_FEM(_m, _la)                                                                        \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, fem, cg, _la);                                                        \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, fem, cg, _la);                                                       \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, cg, _la);                                                \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, fem, dg, _la);                                                        \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, fem, dg, _la);                                                       \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, dg, _la)
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, fem, cg, 1, _la);                                                     \
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, fem, cg, 1, _la);                                                    \
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, cg, 1, _la);                                             \
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, fem, dg, 1, _la);                                                     \
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, fem, dg, 1, _la);                                                    \
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, dg, 1, _la)
 #else
 #define _DUNE_GDT_PROJECTIONS_BIND_FEM(_m, _la)
 #endif
 
+//#if HAVE_DUNE_FUNCTIONS
+//  ...
+//#else
 #define _DUNE_GDT_PROJECTIONS_BIND_FUNCTIONS(_m, _la)
+//#endif
 
 //#if HAVE_DUNE_PDELAB
 //  ...

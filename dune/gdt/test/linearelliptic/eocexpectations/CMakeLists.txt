@@ -9,28 +9,34 @@
 #   Rene Milk       (2016)
 
 # expectation targets
-# CG
+dune_add_library(block_swipdg_expectations
+                 NO_EXPORT
+                 SOURCES
+                 block-swipdg-esv2007-2dalugrid.cxx)
 dune_add_library(cg_expectations
-            NO_EXPORT
-            SOURCES
-            cg-ao2013-2dyaspgrid.cxx
-            cg-er2007-2dyaspgrid.cxx
-            cg-esv2007-2dyaspgrid.cxx
-            cg-mixedboundary-2dyaspgrid.cxx
-            cg-spe10-2dyaspgrid.cxx
-            cg-ao2013-2dalugrid.cxx
-            cg-er2007-2dalugrid.cxx
-            cg-esv2007-2dalugrid.cxx
-            cg-mixedboundary-2dalugrid.cxx
-            cg-spe10-2dalugrid.cxx
-            swipdg-ao2013-2dyaspgrid.cxx
-            swipdg-er2007-2dyaspgrid.cxx
-            swipdg-esv2007-2dyaspgrid.cxx
-            swipdg-mixedboundary-2dyaspgrid.cxx
-            swipdg-spe10-2dyaspgrid.cxx
-            swipdg-ao2013-2dalugrid.cxx
-            swipdg-er2007-2dalugrid.cxx
-            swipdg-esv2007-2dalugrid.cxx
-            swipdg-mixedboundary-2dalugrid.cxx
-            swipdg-spe10-2dalugrid.cxx)
+                 NO_EXPORT
+                 SOURCES
+                 cg-ao2013-2dyaspgrid.cxx
+                 cg-er2007-2dyaspgrid.cxx
+                 cg-esv2007-2dyaspgrid.cxx
+                 cg-mixedboundary-2dyaspgrid.cxx
+                 cg-spe10-2dyaspgrid.cxx
+                 cg-ao2013-2dalugrid.cxx
+                 cg-er2007-2dalugrid.cxx
+                 cg-esv2007-2dalugrid.cxx
+                 cg-mixedboundary-2dalugrid.cxx
+                 cg-spe10-2dalugrid.cxx)
+dune_add_library(swipdg_expectations
+                 NO_EXPORT
+                 SOURCES
+                 swipdg-ao2013-2dyaspgrid.cxx
+                 swipdg-er2007-2dyaspgrid.cxx
+                 swipdg-esv2007-2dyaspgrid.cxx
+                 swipdg-mixedboundary-2dyaspgrid.cxx
+                 swipdg-spe10-2dyaspgrid.cxx
+                 swipdg-ao2013-2dalugrid.cxx
+                 swipdg-er2007-2dalugrid.cxx
+                 swipdg-esv2007-2dalugrid.cxx
+                 swipdg-mixedboundary-2dalugrid.cxx
+                 swipdg-spe10-2dalugrid.cxx)
 

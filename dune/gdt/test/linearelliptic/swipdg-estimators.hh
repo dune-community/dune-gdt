@@ -116,7 +116,9 @@ public:
     const auto& force = this->test_case_.problem().force();
     const auto& diffusion_factor = this->test_case_.problem().diffusion_factor();
     const auto& diffusion_tensor = this->test_case_.problem().diffusion_tensor();
-    const auto grid_view = this->test_case_.level_view(this->test_case_.level_of(this->current_refinement_));
+    const auto grid_view = this->test_case_.level_provider(this->current_refinement_)
+                               .template layer<TestCaseType::layer_type, XT::Grid::Backends::view>(
+                                   this->test_case_.level_of(this->current_refinement_));
     if (type == LocalNonconformityESV2007Estimator::id())
       return LocalNonconformityESV2007Estimator::estimate(grid_view, space, vector, diffusion_factor, diffusion_tensor);
     else if (type == LocalResidualESV2007Estimator::id())
@@ -163,7 +165,7 @@ struct linearelliptic_SWIPDG_estimators : public ::testing::Test
     test_case.print_header(DXTC_LOG_INFO);
     DXTC_LOG_INFO << std::endl;
     typedef LinearElliptic::IpdgDiscretizer<typename TestCaseType::GridType,
-                                            XT::Grid::Layers::level,
+                                            TestCaseType::layer_type,
                                             space_backend,
                                             la_backend,
                                             polOrder,

@@ -22,15 +22,16 @@
 
 #include <dune/xt/common/bindings.hh>
 
-#include "spaces.bindings.hh"
+#include "diffusive-flux-estimation-operator.bindings.hh"
 
 
-PYBIND11_PLUGIN(__spaces)
+PYBIND11_PLUGIN(__local_diffusive_flux_estimation_operator)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  py::module m("__spaces", "dune-gdt: Spaces");
+  py::module m("__local_diffusive_flux_estimation_operator",
+               "dune-gdt: LocalVolumeIntegralOperator<LocalDiffusiveFluxEstimateESV2007Integrand<...>>");
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
@@ -39,10 +40,7 @@ PYBIND11_PLUGIN(__spaces)
   py::module::import("dune.xt.functions");
   py::module::import("dune.xt.la");
 
-  DUNE_GDT_SPACES_CG_BIND(m);
-  DUNE_GDT_SPACES_DG_BIND(m);
-  DUNE_GDT_SPACES_FV_BIND(m);
-  DUNE_GDT_SPACES_RT_BIND(m);
+  DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(m);
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {
@@ -76,7 +74,7 @@ PYBIND11_PLUGIN(__spaces)
 
   m.def("_test_logger",
         [](const bool info, const bool debug, const bool warning) {
-          auto logger = Dune::XT::Common::TimedLogger().get("dune.gdt.spaces");
+          auto logger = Dune::XT::Common::TimedLogger().get("dune.gdt.assembler");
           if (info)
             logger.info() << "info logging works!" << std::endl;
           if (debug)

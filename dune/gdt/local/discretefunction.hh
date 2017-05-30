@@ -94,10 +94,6 @@ public:
 
   ThisType& operator=(const ThisType& other) = delete;
 
-  virtual ~ConstLocalDiscreteFunction()
-  {
-  }
-
   const SpaceType& space() const
   {
     return space_;
@@ -113,12 +109,14 @@ public:
     return *localVector_;
   }
 
-  virtual size_t order() const override
+  size_t order() const override
   {
     return base_->order();
   }
 
-  void evaluate(const DomainType& xx, RangeType& ret) const override final
+  void evaluate(const DomainType& xx,
+                RangeType& ret,
+                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
   {
     assert(this->is_a_valid_point(xx));
     if (!GDT::is_fv_space<SpaceType>::value) {
@@ -135,7 +133,9 @@ public:
     }
   } // ... evaluate(...)
 
-  virtual void jacobian(const DomainType& xx, JacobianRangeType& ret) const override final
+  void jacobian(const DomainType& xx,
+                JacobianRangeType& ret,
+                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
   {
     assert(this->is_a_valid_point(xx));
     if (!GDT::is_fv_space<SpaceType>::value) {
@@ -201,10 +201,6 @@ public:
   LocalDiscreteFunction(const ThisType& other) = delete;
 
   ThisType& operator=(const ThisType& other) = delete;
-
-  virtual ~LocalDiscreteFunction()
-  {
-  }
 
   LocalDoFVectorType& vector()
   {

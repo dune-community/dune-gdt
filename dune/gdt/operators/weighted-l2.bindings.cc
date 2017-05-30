@@ -21,16 +21,20 @@
 #include <dune/pybindxi/stl.h>
 
 #include <dune/xt/common/bindings.hh>
+#include <dune/xt/grid/grids.bindings.hh>
+#include <dune/xt/grid/layers.hh>
 
-#include "spaces.bindings.hh"
+#include <dune/gdt/operators/weighted-l2.bindings.hh>
 
 
-PYBIND11_PLUGIN(__spaces)
+PYBIND11_PLUGIN(__operators_weighted_l2)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
+  using Dune::XT::Grid::Layers;
+  using Dune::XT::Grid::Backends;
 
-  py::module m("__spaces", "dune-gdt: Spaces");
+  py::module m("__operators_weighted_l2", "dune-gdt: WeightedL2LocalizableProduct");
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
@@ -38,11 +42,20 @@ PYBIND11_PLUGIN(__spaces)
   py::module::import("dune.xt.grid");
   py::module::import("dune.xt.functions");
   py::module::import("dune.xt.la");
+  py::module::import("dune.gdt.__spaces");
+  py::module::import("dune.gdt.__discretefunction");
 
-  DUNE_GDT_SPACES_CG_BIND(m);
-  DUNE_GDT_SPACES_DG_BIND(m);
-  DUNE_GDT_SPACES_FV_BIND(m);
-  DUNE_GDT_SPACES_RT_BIND(m);
+#if HAVE_DUNE_ALUGRID
+  Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
+  Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::level, Backends::view>::bind(m);
+#if HAVE_DUNE_FEM
+  Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::part>::bind(m);
+  Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::level, Backends::part>::bind(m);
+  Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING,
+                                                    Layers::dd_subdomain,
+                                                    Backends::part>::bind(m);
+#endif // HAVE_DUNE_FEM
+#endif // HAVE_DUNE_ALUGRID
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {
@@ -76,7 +89,7 @@ PYBIND11_PLUGIN(__spaces)
 
   m.def("_test_logger",
         [](const bool info, const bool debug, const bool warning) {
-          auto logger = Dune::XT::Common::TimedLogger().get("dune.gdt.spaces");
+          auto logger = Dune::XT::Common::TimedLogger().get("dune.gdt.operators.elliptic");
           if (info)
             logger.info() << "info logging works!" << std::endl;
           if (debug)

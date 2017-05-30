@@ -285,6 +285,15 @@ public:
           "block_subdomain"_a,
           "neighboring_subdomain"_a,
           "type"_a);
+    c.def("boundary_assembler",
+          [](const type& self, const ssize_t subdomain) {
+            auto ss = XT::Common::numeric_cast<size_t>(subdomain);
+            auto boundary_grid_part = self.dd_grid().boundaryGridPart(ss);
+            typedef typename type::LocalSpaceType L;
+            return new GDT::SystemAssembler<L, decltype(boundary_grid_part), L>(self.local_space(ss), // see below for
+                                                                                boundary_grid_part); //  the 'new'
+          },
+          "subdomain"_a);
     c.def("coupling_assembler",
           [](const type& self, const ssize_t subdomain, const ssize_t neighbor) {
             auto ss = XT::Common::numeric_cast<size_t>(subdomain);

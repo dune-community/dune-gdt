@@ -42,6 +42,13 @@ PYBIND11_PLUGIN(__assembler)
   py::module::import("dune.gdt.__spaces");
   py::module::import("dune.gdt.__local_elliptic_ipdg_operators");
 
+  py::class_<Dune::GDT::bindings::ResultStorage> ResultStorage(m, "ResultStorage", "dune-gdt: ResultStorage");
+  ResultStorage.def(pybind11::init<>());
+  ResultStorage.def_property(
+      "result",
+      [](const Dune::GDT::bindings::ResultStorage& self) { return self.result(); },
+      [](Dune::GDT::bindings::ResultStorage& self, const double& value) { self.result() = value; });
+
   DUNE_GDT_SPACES_CONSTRAINTS_BIND(m);
   DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m);
 

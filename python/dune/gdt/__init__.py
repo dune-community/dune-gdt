@@ -19,6 +19,7 @@ _other_modules = ('xt.common', 'xt.grid', 'xt.functions', 'xt.la')
 
 _gdt_modules = ['spaces',
                 'spaces_block',
+                'local_diffusive_flux_estimation_operator',
                 'local_elliptic_ipdg_operators',
                 'assembler',
                 'discretefunction',
@@ -26,7 +27,10 @@ _gdt_modules = ['spaces',
                 'functionals_elliptic_ipdg',
                 'functionals_l2',
                 'operators_elliptic',
-                'operators_elliptic_ipdg']
+                'operators_elliptic_ipdg',
+                'operators_fluxreconstruction',
+                'operators_oswaldinterpolation',
+                'operators_weighted_l2']
 
 for module_name in _gdt_modules:
     mod = import_module('.__{}'.format(module_name), 'dune.gdt')
