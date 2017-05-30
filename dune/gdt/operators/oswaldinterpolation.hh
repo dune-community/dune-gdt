@@ -9,20 +9,21 @@
 //   Rene Milk       (2016 - 2017)
 //   Tobias Leibner  (2014)
 
-#ifndef DUNE_GDT_OPERATORS_OSWALD_HH
-#define DUNE_GDT_OPERATORS_OSWALD_HH
+#ifndef DUNE_GDT_OPERATORS_OSWALDINTERPOLATION_HH
+#define DUNE_GDT_OPERATORS_OSWALDINTERPOLATION_HH
 
 #include <vector>
 #include <set>
 #include <limits>
 
-#include <boost/numeric/conversion/cast.hpp>
-
-#include <dune/xt/common/vector.hh>
 #include <dune/xt/common/float_cmp.hh>
+#include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/common/print.hh>
+#include <dune/xt/common/vector.hh>
 #include <dune/xt/common/ranges.hh>
 #include <dune/xt/grid/walker.hh>
+#include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/functions/interfaces/localizable-function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
@@ -66,43 +67,49 @@ public:
   typedef typename Traits::FieldType FieldType;
   static const size_t dimDomain = GridLayerType::dimension;
 
+private:
+  typedef XT::Grid::extract_entity_t<GridLayerType> E;
+  typedef typename GridLayerType::ctype D;
+  static const constexpr size_t d = dimDomain;
+
+public:
   OswaldInterpolationOperator(const GridLayerType& grd_layr, const bool zero_boundary = true)
     : grid_layer_(grd_layr)
     , zero_boundary_(zero_boundary)
   {
   }
 
-  template <class SGP, class SV, class RGP, class RV>
-  void apply(const ConstDiscreteFunction<DuneFemDgSpaceWrapper<SGP, 1, FieldType, 1, 1>, SV>& source,
-             DiscreteFunction<DuneFemDgSpaceWrapper<RGP, 1, FieldType, 1, 1>, RV>& range) const
+  template <class GL, class V>
+  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, FieldType, 1>& source,
+             DiscreteFunction<DuneFemDgSpaceWrapper<GL, 1, FieldType, 1, 1>, V>& range) const
   {
-    apply_dg(source, range);
+    apply_p1_dg(source, range);
   }
 
-  template <class SGP, class SV, class RGP, class RV>
-  void apply(const ConstDiscreteFunction<DuneFunctionsDgSpaceWrapper<SGP, 1, FieldType, 1, 1>, SV>& source,
-             DiscreteFunction<DuneFunctionsDgSpaceWrapper<RGP, 1, FieldType, 1, 1>, RV>& range) const
+  template <class GL, class V>
+  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, FieldType, 1>& source,
+             DiscreteFunction<DuneFunctionsDgSpaceWrapper<GL, 1, FieldType, 1, 1>, V>& range) const
   {
-    apply_dg(source, range);
+    apply_p1_dg(source, range);
   }
 
-  template <class SGP, class SV, class RGP, class RV>
-  void apply(const ConstDiscreteFunction<BlockSpace<DuneFemDgSpaceWrapper<SGP, 1, FieldType, 1, 1>>, SV>& source,
-             DiscreteFunction<BlockSpace<DuneFemDgSpaceWrapper<RGP, 1, FieldType, 1, 1>>, RV>& range) const
+  template <class GL, class V>
+  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, FieldType, 1>& source,
+             DiscreteFunction<BlockSpace<DuneFemDgSpaceWrapper<GL, 1, FieldType, 1, 1>>, V>& range) const
   {
-    apply_dg(source, range);
+    apply_p1_dg(source, range);
   }
 
-  template <class SGP, class SV, class RGP, class RV>
-  void apply(const ConstDiscreteFunction<BlockSpace<DuneFunctionsDgSpaceWrapper<SGP, 1, FieldType, 1, 1>>, SV>& source,
-             DiscreteFunction<BlockSpace<DuneFunctionsDgSpaceWrapper<RGP, 1, FieldType, 1, 1>>, RV>& range) const
+  template <class GL, class V>
+  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, FieldType, 1>& source,
+             DiscreteFunction<BlockSpace<DuneFunctionsDgSpaceWrapper<GL, 1, FieldType, 1, 1>>, V>& range) const
   {
-    apply_dg(source, range);
+    apply_p1_dg(source, range);
   }
 
 private:
   template <class SourceType, class RangeType>
-  void apply_dg(const SourceType& source, RangeType& range) const
+  void apply_p1_dg(const SourceType& source, RangeType& range) const
   {
     range.vector() *= 0.;
     // data structures we need
@@ -110,7 +117,7 @@ private:
     //   given a vertex, one obtains a set of all global DoF ids, which are associated with this vertex
     std::map<size_t, std::set<size_t>> global_vertex_id_to_global_DoF_id_map;
     // * a map from a global DoF index to the global index of its associated vertex
-    std::vector<size_t> global_DoF_id_to_global_vertex_id_map(source.space().mapper().size());
+    std::vector<size_t> global_DoF_id_to_global_vertex_id_map(range.space().mapper().size());
     // * a set to hold the global id of all boundary vertices
     std::set<size_t> boundary_vertices;
 
@@ -119,19 +126,19 @@ private:
     for (auto entity_it = grid_layer_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
       const auto& entity = *entity_it;
       const size_t num_vertices = entity.subEntities(dimDomain);
-      const auto basis = source.space().base_function_set(entity);
+      const auto basis = range.space().base_function_set(entity);
       if (basis.size() != num_vertices)
-        DUNE_THROW(Dune::XT::Common::Exceptions::internal_error, "basis.size() = " << basis.size());
+        DUNE_THROW(XT::Common::Exceptions::internal_error, "basis.size() = " << basis.size());
 
       // loop over all vertices of the entitity, to find their associated global DoF indices
-      for (size_t local_vertex_id = 0; local_vertex_id < num_vertices; ++local_vertex_id) {
-        const auto vertex = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
+      for (auto local_vertex_id : XT::Common::value_range(num_vertices)) {
+        const auto vertex = entity.template subEntity<dimDomain>(local_vertex_id);
         const auto global_vertex_id = grid_layer_.indexSet().index(vertex);
         const auto vertex_center = vertex.geometry().center();
         // find the local basis function which corresponds to this vertex
         const auto basis_values = basis.evaluate(entity.geometry().local(vertex_center));
         if (basis_values.size() != num_vertices)
-          DUNE_THROW(Dune::XT::Common::Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
+          DUNE_THROW(XT::Common::Exceptions::internal_error, "basis_values.size() = " << basis_values.size());
         size_t ones = 0;
         size_t zeros = 0;
         size_t failures = 0;
@@ -151,10 +158,10 @@ private:
              << ", num_vertices = " << num_vertices << ", entity " << grid_layer_.indexSet().index(entity)
              << ", vertex " << local_vertex_id << ": [ " << vertex_center << "], ";
           XT::Common::print(basis_values, "basis_values", ss);
-          DUNE_THROW(Dune::XT::Common::Exceptions::internal_error, ss.str());
+          DUNE_THROW(XT::Common::Exceptions::internal_error, ss.str());
         }
         // now we know that the local DoF index of this vertex is ii
-        const size_t global_DoF_index = source.space().mapper().mapToGlobal(entity, local_DoF_index);
+        const size_t global_DoF_index = range.space().mapper().mapToGlobal(entity, local_DoF_index);
         global_DoF_id_to_global_vertex_id_map[global_DoF_index] = global_vertex_id;
         global_vertex_id_to_global_DoF_id_map[global_vertex_id].insert(global_DoF_index);
       } // loop over all vertices
@@ -167,12 +174,12 @@ private:
           const auto& intersection = *intersectionIt;
           if (intersection.boundary() && !intersection.neighbor()) {
             const auto& intersection_geometry = intersection.geometry();
-            for (auto local_intersection_corner_id : Dune::XT::Common::value_range(intersection_geometry.corners())) {
+            for (auto local_intersection_corner_id : XT::Common::value_range(intersection_geometry.corners())) {
               const auto global_intersection_corner = intersection_geometry.corner(local_intersection_corner_id);
               // now, we need to find the entity's vertex this intersection's corner point equals to, so we
               // loop over all vertices of the entity
-              for (size_t local_vertex_id = 0; local_vertex_id < num_vertices; ++local_vertex_id) {
-                const auto vertex = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(local_vertex_id));
+              for (auto local_vertex_id : XT::Common::value_range(num_vertices)) {
+                const auto vertex = entity.template subEntity<dimDomain>(local_vertex_id);
                 const auto global_vertex_id = grid_layer_.indexSet().index(vertex);
                 const auto vertex_center = vertex.geometry().center();
                 if (XT::Common::FloatCmp::eq(global_intersection_corner, vertex_center))
@@ -189,12 +196,12 @@ private:
       const auto& entity = *entity_it;
       const auto num_vertices = entity.subEntities(dimDomain);
       // get the local functions
-      const auto local_source = source.local_discrete_function(entity);
-      const auto& local_source_DoF_vector = local_source->vector();
+      const auto local_source = source.local_function(entity);
 
       // * loop over all local DoFs
-      for (size_t local_DoF_id = 0; local_DoF_id < num_vertices; ++local_DoF_id) {
-        const size_t global_DoF_index = source.space().mapper().mapToGlobal(entity, local_DoF_id);
+      for (auto local_vertex_id : XT::Common::value_range(num_vertices)) {
+        const size_t global_DoF_index =
+            range.space().mapper().mapToGlobal(entity, XT::Common::numeric_cast<size_t>(local_vertex_id));
         const size_t global_vertex_id = global_DoF_id_to_global_vertex_id_map[global_DoF_index];
         // if we are on the domain boundary
         if (zero_boundary_ && boundary_vertices.count(global_vertex_id)) {
@@ -203,15 +210,16 @@ private:
         } else {
           // do the oswald projection
           const size_t num_DoFS_per_vertex = global_vertex_id_to_global_DoF_id_map[global_vertex_id].size();
-          // * get the source DoF
-          const FieldType source_DoF_value = local_source_DoF_vector.get(local_DoF_id);
+          // * get the source value
+          const auto vertex = entity.template subEntity<dimDomain>(local_vertex_id).geometry().center();
+          const FieldType source_value = local_source->evaluate(entity.geometry().local(vertex));
           // * and add it to all target DoFs
           for (size_t target_global_DoF_id : global_vertex_id_to_global_DoF_id_map[global_vertex_id])
-            range.vector().add_to_entry(target_global_DoF_id, source_DoF_value / num_DoFS_per_vertex);
+            range.vector().add_to_entry(target_global_DoF_id, source_value / num_DoFS_per_vertex);
         } // if (boundary_vertices.find(global_vertex_id))
       } // loop over all local DoFs
     } // walk the grid for the second time
-  } // ... apply_dg(...)
+  } // ... apply_p1_dg(...)
 
   const GridLayerType& grid_layer_;
   const bool zero_boundary_;
@@ -221,4 +229,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_OSWALD_HH
+#endif // DUNE_GDT_OPERATORS_OSWALDINTERPOLATION_HH
