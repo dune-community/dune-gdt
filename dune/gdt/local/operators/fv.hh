@@ -337,7 +337,8 @@ public:
                     local_functions_tuple, *local_source_entity, intersection, quad_point.position()))
                 * quad_point.weight() * intersection.geometry().integrationElement(quad_point.position());
     }
-    local_range_entity.vector().add(result / entity.geometry().volume());
+    result /= entity.geometry().volume();
+    local_range_entity.vector().add(result);
   }
 
 private:
@@ -345,14 +346,14 @@ private:
   const NumericalFluxType numerical_flux_;
 };
 
-enum class BasisFunctionType
+enum class BasisFunction
 {
   legendre,
   hat_functions,
   first_order_dg
 };
 
-template <class RangeType, BasisFunctionType basis_function_type>
+template <class RangeType, BasisFunction basis_function_type>
 struct rescale_factor
 {
   static typename RangeType::field_type get(const RangeType& /*u*/, const RangeType& /*u_bar*/)
@@ -363,7 +364,7 @@ struct rescale_factor
 };
 
 template <class RangeType>
-class rescale_factor<RangeType, BasisFunctionType::legendre>
+class rescale_factor<RangeType, BasisFunction::legendre>
 {
   static typename RangeType::field_type get(const RangeType& u, const RangeType& u_bar)
   {
@@ -372,7 +373,7 @@ class rescale_factor<RangeType, BasisFunctionType::legendre>
 };
 
 template <class RangeType>
-struct rescale_factor<RangeType, BasisFunctionType::hat_functions>
+struct rescale_factor<RangeType, BasisFunction::hat_functions>
 {
   static typename RangeType::field_type get(const RangeType& u, const RangeType& u_bar)
   {
@@ -383,7 +384,7 @@ struct rescale_factor<RangeType, BasisFunctionType::hat_functions>
 };
 
 template <class RangeType>
-struct rescale_factor<RangeType, BasisFunctionType::first_order_dg>
+struct rescale_factor<RangeType, BasisFunction::first_order_dg>
 {
   static typename RangeType::field_type get(const RangeType& u, const RangeType& u_bar)
   {
@@ -401,7 +402,7 @@ struct rescale_factor<RangeType, BasisFunctionType::first_order_dg>
 template <class SourceType,
           size_t dimDomain,
           size_t dimRange,
-          BasisFunctionType basis_function_type = BasisFunctionType::legendre>
+          BasisFunction basis_function_type = BasisFunction::legendre>
 class LocalRealizabilityLimiter : public XT::Grid::Functor::Codim0<typename SourceType::SpaceType::GridLayerType>
 {
   typedef typename SourceType::SpaceType::GridLayerType GridLayerType;
@@ -876,7 +877,7 @@ public:
 
   explicit LocalReconstructionFvOperator(const MatrixType& eigenvectors,
                                          const MatrixType& eigenvectors_inverse,
-                                         const std::shared_ptr<BoundaryValueFunctionType>& boundary_values)
+                                         const BoundaryValueFunctionType& boundary_values)
     : eigenvectors_(eigenvectors)
     , eigenvectors_inverse_(eigenvectors_inverse)
     , boundary_values_(boundary_values)
@@ -909,9 +910,9 @@ public:
           u_right = source.local_discrete_function(neighbor)->evaluate(neighbor.geometry().local(neighbor_center));
       } else {
         if (intersection.geometry().center()[0] < entity_center[0])
-          u_left = boundary_values_->local_function(entity)->evaluate(intersection.geometryInInside().center());
+          u_left = boundary_values_.local_function(entity)->evaluate(intersection.geometryInInside().center());
         else
-          u_right = boundary_values_->local_function(entity)->evaluate(intersection.geometryInInside().center());
+          u_right = boundary_values_.local_function(entity)->evaluate(intersection.geometryInInside().center());
       }
     }
 
@@ -947,7 +948,7 @@ public:
 private:
   const MatrixType& eigenvectors_;
   const MatrixType& eigenvectors_inverse_;
-  const std::shared_ptr<BoundaryValueFunctionImp>& boundary_values_;
+  const BoundaryValueFunctionImp& boundary_values_;
 }; // class LocalReconstructionFvOperator
 
 } // namespace GDT

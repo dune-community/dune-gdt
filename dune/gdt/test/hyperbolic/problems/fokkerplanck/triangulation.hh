@@ -7,8 +7,8 @@
 // Authors:
 //   Tobias Leibner  (2017)
 
-#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_BASISFUNCTIONS_HH
-#define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_BASISFUNCTIONS_HH
+#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_TRIANGULATION_HH
+#define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_TRIANGULATION_HH
 
 #include <memory>
 #include <vector>
@@ -23,12 +23,13 @@
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/la/container.hh>
 
-#include "../default.hh"
+#include <dune/pdelab/common/crossproduct.hh>
 
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
+
 
 template <class FieldType, size_t dimDomain>
 class Vertex
@@ -338,4 +339,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_BASISFUNCTIONS_HH
+#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_TRIANGULATION_HH

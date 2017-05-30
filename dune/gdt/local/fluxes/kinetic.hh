@@ -114,21 +114,21 @@ public:
       const IntersectionType& intersection,
       const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
-    const double t = param_.get("t")[0];
     // get function values
     const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
     const auto x_intersection_neighbor_coords = intersection.geometryInOutside().global(x_intersection);
     const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
     RangeType u_j = local_source_neighbor.evaluate(x_intersection_neighbor_coords);
     auto n_ij = intersection.unitOuterNormal(x_intersection);
-    return analytical_flux_.calculate_flux_integral(u_i,
-                                                    intersection.inside(),
-                                                    x_intersection_entity_coords,
-                                                    u_j,
-                                                    intersection.outside(),
-                                                    x_intersection_neighbor_coords,
-                                                    n_ij,
-                                                    t);
+    return analytical_flux_.calculate_kinetic_integral(u_i,
+                                                       intersection.inside(),
+                                                       x_intersection_entity_coords,
+                                                       u_j,
+                                                       intersection.outside(),
+                                                       x_intersection_neighbor_coords,
+                                                       n_ij,
+                                                       param_,
+                                                       param_);
   } // RangeType evaluate(...) const
 
 private:
@@ -184,14 +184,22 @@ public:
       const IntersectionType& intersection,
       const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
   {
-    const double t = param_.get("t")[0];
+    auto param_neighbor = param_;
+    param_neighbor.set("boundary", {1.});
     // get function values
     const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
     const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
     auto u_j = std::get<0>(local_functions_tuple)->evaluate(x_intersection_entity_coords);
     auto n_ij = intersection.unitOuterNormal(x_intersection);
-    return analytical_flux_.calculate_flux_integral(
-        u_i, intersection.inside(), x_intersection_entity_coords, u_j, intersection.inside(), DomainType(200), n_ij, t);
+    return analytical_flux_.calculate_kinetic_integral(intersection.inside(),
+                                                       x_intersection_entity_coords,
+                                                       u_i,
+                                                       intersection.inside(),
+                                                       x_intersection_entity_coords,
+                                                       u_j,
+                                                       n_ij,
+                                                       param_,
+                                                       param_neighbor);
   } // RangeType evaluate(...) const
 
 private:

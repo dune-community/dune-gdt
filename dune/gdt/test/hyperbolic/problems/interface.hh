@@ -33,10 +33,10 @@ public:
   static const size_t dimRange = rangeDim;
 
   typedef XT::Functions::
-      LocalizableMetaFunctionInterface<EntityType, DomainFieldType, dimDomain, U_, 0, RangeFieldType, dimRange, 1>
+      LocalizableFluxFunctionInterface<EntityType, DomainFieldType, dimDomain, U_, 0, RangeFieldType, dimRange, 1>
           FluxType;
   typedef XT::Functions::
-      LocalizableMetaFunctionInterface<EntityType, DomainFieldType, dimDomain, U_, 0, RangeFieldType, dimRange, 1>
+      LocalizableFluxFunctionInterface<EntityType, DomainFieldType, dimDomain, U_, 0, RangeFieldType, dimRange, 1>
           RhsType;
   typedef XT::Functions::
       LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>
@@ -62,13 +62,13 @@ public:
 
   virtual const BoundaryValueType& boundary_values() const = 0;
 
-  virtual const XT::Common::Configuration grid_cfg() const = 0;
+  virtual const XT::Common::Configuration& grid_cfg() const = 0;
 
-  virtual const XT::Common::Configuration boundary_cfg() const = 0;
+  virtual const XT::Common::Configuration& boundary_cfg() const = 0;
 
-  virtual RangeFieldType CFL() = 0;
+  virtual RangeFieldType CFL() const = 0;
 
-  virtual RangeFieldType t_end() = 0;
+  virtual RangeFieldType t_end() const = 0;
 }; // ProblemInterface
 
 

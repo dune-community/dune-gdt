@@ -68,7 +68,7 @@ template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class LocalizableFunctionImp,
           class GridLayerType,
-          BasisFunctionType basis_function_type,
+          BasisFunction basis_function_type,
           size_t polOrder = 1,
           SlopeLimiters slope_limiter = SlopeLimiters::minmod>
 class AdvectionLaxFriedrichsWENOOperator;
@@ -76,7 +76,7 @@ class AdvectionLaxFriedrichsWENOOperator;
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class GridLayerType,
-          BasisFunctionType basis_function_type,
+          BasisFunction basis_function_type,
           size_t polOrder = 1,
           SlopeLimiters slope_limiter = SlopeLimiters::minmod>
 class AdvectionGodunovWENOOperator;
@@ -88,7 +88,7 @@ class AdvectionGodunovOperator;
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class GridLayerType,
-          BasisFunctionType basis_function_type,
+          BasisFunction basis_function_type,
           size_t polOrder = 1,
           SlopeLimiters slope_limiter = SlopeLimiters::minmod>
 class AdvectionKineticWENOOperator;
@@ -107,8 +107,8 @@ namespace internal {
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter_type>
 class AdvectionTraitsBase
 {
-  static_assert(is_analytical_flux<AnalyticalFluxImp>::value,
-                "AnalyticalFluxImp has to be derived from AnalyticalFluxInterface!");
+  //  static_assert(is_analytical_flux<AnalyticalFluxImp>::value,
+  //                "AnalyticalFluxImp has to be derived from AnalyticalFluxInterface!");
   //  static_assert(Stuff::is_???< BoundaryValueFunctionImp >::value,
   //                "BoundaryValueFunctionImp has to be derived from ???!");
 public:
@@ -117,10 +117,10 @@ public:
   typedef BoundaryValueFunctionImp BoundaryValueFunctionType;
   static const size_t dimDomain = AnalyticalFluxType::dimDomain;
   static const size_t dimRange = AnalyticalFluxType::dimRange;
-  static const size_t dimRangeCols = AnalyticalFluxType::dimRangeCols;
+  static const size_t dimRangeCols = 1; // AnalyticalFluxType::dimRangeCols;
   typedef typename AnalyticalFluxType::DomainFieldType FieldType;
   typedef typename AnalyticalFluxType::DomainType DomainType;
-  typedef typename AnalyticalFluxType::FluxJacobianRangeType JacobianType;
+  typedef typename AnalyticalFluxType::JacobianWrtURangeType JacobianType;
 }; // class AdvectionTraitsBase
 
 
@@ -146,12 +146,11 @@ public:
                                                                       LocalizableFunctionType,
                                                                       dimDomain>
       NumericalCouplingFluxType;
-  typedef typename Dune::GDT::
-      LaxFriedrichsLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType,
-                                                       typename BoundaryValueFunctionType::NonparametricType,
-                                                       LocalizableFunctionType,
-                                                       dimDomain>
-          NumericalBoundaryFluxType;
+  typedef typename Dune::GDT::LaxFriedrichsLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType,
+                                                                               BoundaryValueFunctionType,
+                                                                               LocalizableFunctionType,
+                                                                               dimDomain>
+      NumericalBoundaryFluxType;
   typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxImp,
                                          BoundaryValueFunctionImp,
                                          LocalizableFunctionImp,
@@ -163,7 +162,7 @@ template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class LocalizableFunctionImp,
           class GridLayerType,
-          BasisFunctionType basis_function_type,
+          BasisFunction basis_function_type,
           size_t polOrder,
           SlopeLimiters slope_limiter_type>
 class AdvectionLaxFriedrichsWENOOperatorTraits : public AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp,
@@ -205,7 +204,7 @@ public:
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class GridLayerType,
-          BasisFunctionType basis_function_type,
+          BasisFunction basis_function_type,
           size_t polOrder,
           SlopeLimiters slope_limiter_type>
 class AdvectionGodunovWENOOperatorTraits
@@ -235,17 +234,16 @@ public:
   using BaseType::dimDomain;
   typedef typename Dune::GDT::KineticLocalNumericalCouplingFlux<AnalyticalFluxType, dimDomain>
       NumericalCouplingFluxType;
-  typedef typename Dune::GDT::KineticLocalNumericalBoundaryFlux<AnalyticalFluxType,
-                                                                typename BoundaryValueFunctionType::NonparametricType,
-                                                                dimDomain>
-      NumericalBoundaryFluxType;
+  typedef
+      typename Dune::GDT::KineticLocalNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueFunctionType, dimDomain>
+          NumericalBoundaryFluxType;
   typedef AdvectionKineticOperator<AnalyticalFluxImp, BoundaryValueFunctionImp, slope_limiter> derived_type;
 }; // class AdvectionKineticOperatorTraits
 
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class GridLayerType,
-          BasisFunctionType basis_function_type,
+          BasisFunction basis_function_type,
           size_t polOrder,
           SlopeLimiters slope_limiter_type>
 class AdvectionKineticWENOOperatorTraits
@@ -269,7 +267,7 @@ public:
   typedef AdvectionRHSOperator<RHSEvaluationImp> derived_type;
   typedef RHSEvaluationImp RHSEvaluationType;
   typedef typename RHSEvaluationImp::DomainFieldType FieldType;
-  typedef typename RHSEvaluationImp::RhsJacobianRangeType JacobianType;
+  typedef typename RHSEvaluationImp::JacobianWrtURangeType JacobianType;
 }; // class AdvectionRHSOperatorTraits
 
 
@@ -287,8 +285,8 @@ class AdvectionLocalizableDefault
 {
   typedef Dune::GDT::LocalizableOperatorBase<typename RangeImp::SpaceType::GridLayerType, SourceImp, RangeImp> BaseType;
 
-  static_assert(is_analytical_flux<AnalyticalFluxImp>::value,
-                "AnalyticalFluxImp has to be derived from AnalyticalFluxInterface!");
+  //  static_assert(is_analytical_flux<AnalyticalFluxImp>::value,
+  //                "AnalyticalFluxImp has to be derived from AnalyticalFluxInterface!");
   static_assert(is_local_numerical_coupling_flux<NumericalCouplingFluxImp>::value,
                 "NumericalCouplingFluxImp has to be derived from LocalNumericalCouplingFluxInterface!");
   static_assert(is_local_numerical_boundary_flux<NumericalBoundaryFluxImp>::value,
@@ -313,7 +311,7 @@ public:
 
   template <class QuadratureRuleType, class... LocalOperatorArgTypes>
   AdvectionLocalizableDefault(const AnalyticalFluxType& analytical_flux,
-                              const std::shared_ptr<BoundaryValueFunctionType>& boundary_values,
+                              const BoundaryValueFunctionType& boundary_values,
                               const SourceType& source,
                               RangeType& range,
                               const QuadratureRuleType& quadrature_rule,
@@ -359,7 +357,7 @@ public:
                                   RangeType& range,
                                   const MatrixType& eigenvectors,
                                   const MatrixType& eigenvectors_inverse,
-                                  const std::shared_ptr<BoundaryValueFunctionType>& boundary_values)
+                                  const BoundaryValueFunctionType& boundary_values)
     : BaseType(range.space().grid_layer(), source, range)
     , local_operator_(eigenvectors, eigenvectors_inverse, boundary_values)
     , source_(source)
@@ -381,56 +379,58 @@ private:
 namespace internal {
 
 
-template <size_t domainDim, size_t rangeDim, class MatrixType, class EigenMatrixType, class AnalyticalFluxType>
-struct EigenvectorInitializer
-{
-  static void initialize(const AnalyticalFluxType& /*analytical_flux*/,
-                         const bool /*flux_is_linear*/,
-                         const bool use_linear_reconstruction,
-                         std::shared_ptr<MatrixType>& /*eigenvectors*/,
-                         std::shared_ptr<MatrixType>& /*eigenvectors_inverse*/)
-  {
-    if (use_linear_reconstruction) {
-      DUNE_THROW(Dune::NotImplemented, "Linear reconstruction is only implemented in 1D!");
-    }
-  }
-}; // struct EigenvectorInitializer<...>
+// template <size_t domainDim, size_t rangeDim, class MatrixType, class EigenMatrixType, class AnalyticalFluxType>
+// struct EigenvectorInitializer
+//{
+//  static void initialize(const AnalyticalFluxType& /*analytical_flux*/,
+//                         const bool /*flux_is_linear*/,
+//                         const bool use_linear_reconstruction,
+//                         std::shared_ptr<MatrixType>& /*eigenvectors*/,
+//                         std::shared_ptr<MatrixType>& /*eigenvectors_inverse*/)
+//  {
+//    if (use_linear_reconstruction) {
+//      DUNE_THROW(Dune::NotImplemented, "Linear reconstruction is only implemented in 1D!");
+//    }
+//  }
+//}; // struct EigenvectorInitializer<...>
 
-template <size_t rangeDim, class MatrixType, class EigenMatrixType, class AnalyticalFluxType>
-struct EigenvectorInitializer<1, rangeDim, MatrixType, EigenMatrixType, AnalyticalFluxType>
-{
-  static void initialize(const AnalyticalFluxType& analytical_flux,
-                         const bool flux_is_linear,
-                         const bool use_linear_reconstruction,
-                         std::shared_ptr<MatrixType>& eigenvectors,
-                         std::shared_ptr<MatrixType>& eigenvectors_inverse)
-  {
-    if (use_linear_reconstruction) {
-      assert(flux_is_linear && "Linear reconstruction is only implemented for linear analytical fluxes!");
-      // calculate matrix of eigenvectors of A, where A is the jacobian of the linear analytical flux, i.e. u_t + A*u_x
-      // = 0. As the analytical flux is linear, the jacobian A is constant, so it is enough to evaluate at 0.
-      ::Eigen::EigenSolver<typename EigenMatrixType::BackendType> eigen_solver(
-          Dune::XT::Common::from_string<EigenMatrixType>(
-              Dune::XT::Common::to_string(
-                  analytical_flux.jacobian(typename AnalyticalFluxType::RangeType(0),
-                                           typename AnalyticalFluxType::EntityType{},
-                                           typename AnalyticalFluxType::EntityType::Geometry::LocalCoordinate(0),
-                                           0.0)))
-              .backend());
-      assert(eigen_solver.info() == ::Eigen::Success);
-      const auto eigen_eigenvectors = eigen_solver.eigenvectors();
-#ifndef NDEBUG
-      for (size_t ii = 0; ii < rangeDim; ++ii)
-        for (size_t jj = 0; jj < rangeDim; ++jj)
-          assert(eigen_eigenvectors(ii, jj).imag() < 1e-15);
-#endif
-      eigenvectors = std::make_shared<MatrixType>(Dune::XT::Common::from_string<MatrixType>(
-          Dune::XT::Common::to_string(EigenMatrixType(eigen_eigenvectors.real()))));
-      eigenvectors_inverse = std::make_shared<MatrixType>(Dune::XT::Common::from_string<MatrixType>(
-          Dune::XT::Common::to_string(EigenMatrixType(eigen_eigenvectors.inverse().real()))));
-    }
-  }
-}; // struct EigenvectorInitializer<1, ...>
+// template <size_t rangeDim, class MatrixType, class EigenMatrixType, class AnalyticalFluxType>
+// struct EigenvectorInitializer<1, rangeDim, MatrixType, EigenMatrixType, AnalyticalFluxType>
+//{
+//  static void initialize(const AnalyticalFluxType& analytical_flux,
+//                         const bool flux_is_linear,
+//                         const bool use_linear_reconstruction,
+//                         std::shared_ptr<MatrixType>& eigenvectors,
+//                         std::shared_ptr<MatrixType>& eigenvectors_inverse)
+//  {
+//    if (use_linear_reconstruction) {
+//      assert(flux_is_linear && "Linear reconstruction is only implemented for linear analytical fluxes!");
+//      // calculate matrix of eigenvectors of A, where A is the jacobian of the linear analytical flux, i.e. u_t +
+//      A*u_x
+//      // = 0. As the analytical flux is linear, the jacobian A is constant, so it is enough to evaluate at 0.
+//      ::Eigen::EigenSolver<typename EigenMatrixType::BackendType> eigen_solver(
+//          Dune::XT::Common::from_string<EigenMatrixType>(
+//              Dune::XT::Common::to_string(
+//                  analytical_flux.jacobian_wrt_u(typename AnalyticalFluxType::EntityType{},
+//                                                 typename
+//                                                 AnalyticalFluxType::EntityType::Geometry::LocalCoordinate(0),
+//                                                 typename AnalyticalFluxType::RangeType(0),
+//                                                 0.0)))
+//              .backend());
+//      assert(eigen_solver.info() == ::Eigen::Success);
+//      const auto eigen_eigenvectors = eigen_solver.eigenvectors();
+//#ifndef NDEBUG
+//      for (size_t ii = 0; ii < rangeDim; ++ii)
+//        for (size_t jj = 0; jj < rangeDim; ++jj)
+//          assert(eigen_eigenvectors(ii, jj).imag() < 1e-15);
+//#endif
+//      eigenvectors = std::make_shared<MatrixType>(Dune::XT::Common::from_string<MatrixType>(
+//          Dune::XT::Common::to_string(EigenMatrixType(eigen_eigenvectors.real()))));
+//      eigenvectors_inverse = std::make_shared<MatrixType>(Dune::XT::Common::from_string<MatrixType>(
+//          Dune::XT::Common::to_string(EigenMatrixType(eigen_eigenvectors.inverse().real()))));
+//    }
+//  }
+//}; // struct EigenvectorInitializer<1, ...>
 
 template <class NumericalCouplingFluxType,
           class NumericalBoundaryFluxType,
@@ -456,8 +456,6 @@ struct AdvectionOperatorApplier
                     const std::shared_ptr<MatrixType>& eigenvectors_inverse,
                     LocalOperatorArgTypes&&... local_operator_args)
   {
-    const std::shared_ptr<typename BoundaryValueFunctionType::NonparametricType> current_boundary_values =
-        boundary_values.with_parameter(param);
     typedef typename SourceType::SpaceType::GridLayerType GridLayerType;
     const GridLayerType& grid_layer = source.space().grid_layer();
     const auto quadrature_rule = Dune::QuadratureRules<RangeFieldType, GridLayerType::dimension - 1>::rule(
@@ -475,20 +473,19 @@ struct AdvectionOperatorApplier
           Dune::XT::Common::make_unique<ReconstructedDiscreteFunctionType>(*dg_space, "reconstructed");
       LinearReconstructionLocalizable<SourceType,
                                       ReconstructedDiscreteFunctionType,
-                                      typename BoundaryValueFunctionType::NonparametricType,
+                                      BoundaryValueFunctionType,
                                       MatrixType,
                                       slope_limiter>
-          reconstruction_operator(
-              source, *reconstruction, *eigenvectors, *eigenvectors_inverse, current_boundary_values);
+          reconstruction_operator(source, *reconstruction, *eigenvectors, *eigenvectors_inverse, boundary_values);
       reconstruction_operator.apply();
       AdvectionLocalizableDefault<AnalyticalFluxType,
                                   NumericalCouplingFluxType,
                                   NumericalBoundaryFluxType,
-                                  typename BoundaryValueFunctionType::NonparametricType,
+                                  BoundaryValueFunctionType,
                                   ReconstructedDiscreteFunctionType,
                                   RangeType>
           localizable_operator(analytical_flux,
-                               current_boundary_values,
+                               boundary_values,
                                *reconstruction,
                                range,
                                quadrature_rule,
@@ -498,11 +495,11 @@ struct AdvectionOperatorApplier
       AdvectionLocalizableDefault<AnalyticalFluxType,
                                   NumericalCouplingFluxType,
                                   NumericalBoundaryFluxType,
-                                  typename BoundaryValueFunctionType::NonparametricType,
+                                  BoundaryValueFunctionType,
                                   SourceType,
                                   RangeType>
           localizable_operator(analytical_flux,
-                               current_boundary_values,
+                               boundary_values,
                                source,
                                range,
                                quadrature_rule,
@@ -645,7 +642,8 @@ struct CellAveragesGetter
                     const GridLayerType& grid_layer,
                     const FieldVector<size_t, dimDomain>& grid_sizes,
                     const std::vector<FieldVector<size_t, dimDomain>>& entity_indices,
-                    const SourceType& source)
+                    const SourceType& source,
+                    const XT::Common::Parameter param)
   {
     static const size_t precision = 15;
     std::vector<std::vector<std::vector<VectorType>>> cell_averages(
@@ -676,20 +674,20 @@ struct CellAveragesGetter
               }
             } // dd
             if (direction == 0)
-              cell_averages[grid_sizes[0] + right][indices[1]][indices[2]] =
-                  XT::Common::from_string<VectorType>(XT::Common::to_string(
-                      local_boundary_values->evaluate(intersection.geometryInInside().global(intersection_center)),
-                      precision));
+              cell_averages[grid_sizes[0] + right][indices[1]][indices[2]] = XT::Common::from_string<VectorType>(
+                  XT::Common::to_string(local_boundary_values->evaluate(
+                                            intersection.geometryInInside().global(intersection_center), param),
+                                        precision));
             else if (direction == 1)
-              cell_averages[indices[0]][grid_sizes[1] + right][indices[2]] =
-                  XT::Common::from_string<VectorType>(XT::Common::to_string(
-                      local_boundary_values->evaluate(intersection.geometryInInside().global(intersection_center)),
-                      precision));
+              cell_averages[indices[0]][grid_sizes[1] + right][indices[2]] = XT::Common::from_string<VectorType>(
+                  XT::Common::to_string(local_boundary_values->evaluate(
+                                            intersection.geometryInInside().global(intersection_center), param),
+                                        precision));
             else
-              cell_averages[indices[0]][indices[1]][grid_sizes[2] + right] =
-                  XT::Common::from_string<VectorType>(XT::Common::to_string(
-                      local_boundary_values->evaluate(intersection.geometryInInside().global(intersection_center)),
-                      precision));
+              cell_averages[indices[0]][indices[1]][grid_sizes[2] + right] = XT::Common::from_string<VectorType>(
+                  XT::Common::to_string(local_boundary_values->evaluate(
+                                            intersection.geometryInInside().global(intersection_center), param),
+                                        precision));
           } // intersection.boundary()
         } // intersections
       } // entity.hasBoundaryIntersections()
@@ -732,7 +730,8 @@ struct CellAveragesGetter<BoundaryValueType, GridLayerType, SourceType, VectorTy
                                                    const GridLayerType& grid_layer,
                                                    const FieldVector<size_t, 1>& grid_sizes,
                                                    const std::vector<FieldVector<size_t, 1>>& entity_indices,
-                                                   const SourceType& source)
+                                                   const SourceType& source,
+                                                   const XT::Common::Parameter& param)
   {
     static const size_t precision = 15;
     std::vector<VectorType> cell_averages(grid_sizes[0] + 2);
@@ -749,7 +748,7 @@ struct CellAveragesGetter<BoundaryValueType, GridLayerType, SourceType, VectorTy
             bool right =
                 XT::Common::FloatCmp::eq(intersection.unitOuterNormal(intersection_center)[0], 1.) ? true : false;
             cell_averages[grid_sizes[0] + right] = XT::Common::from_string<VectorType>(XT::Common::to_string(
-                local_boundary_values->evaluate(intersection.geometryInInside().global(intersection_center)),
+                local_boundary_values->evaluate(intersection.geometryInInside().global(intersection_center), param),
                 precision));
           } // intersection.boundary()
         } // intersections
@@ -792,7 +791,7 @@ struct QuadratureRuleGetter<FieldType, 1>
 template <class NumericalCouplingFluxType,
           class NumericalBoundaryFluxType,
           class RangeFieldType,
-          BasisFunctionType basis_function_type,
+          BasisFunction basis_function_type,
           size_t dimDomain,
           size_t dimRange,
           size_t dimRangeCols,
@@ -820,21 +819,20 @@ struct AdvectionWENOOperatorApplier
         LocalOperatorArgTypes&&... local_operator_args)
   {
     typedef XT::LA::EigenDenseVector<RangeFieldType> EigenVectorType;
-    const std::shared_ptr<typename BoundaryValueFunctionType::NonparametricType> current_boundary_values =
-        boundary_values.with_parameter(param);
     if (use_reconstruction) {
       typedef typename SourceType::SpaceType::GridLayerType GridLayerType;
       const GridLayerType& grid_layer = source.space().grid_layer();
       // collect cell averages in array
-      const auto cell_averages = CellAveragesGetter<typename BoundaryValueFunctionType::NonparametricType,
+      const auto cell_averages = CellAveragesGetter<BoundaryValueFunctionType,
                                                     typename SourceType::SpaceType::GridLayerType,
                                                     SourceType,
                                                     EigenVectorType,
-                                                    dimDomain>::get_cell_averages(*current_boundary_values,
+                                                    dimDomain>::get_cell_averages(boundary_values,
                                                                                   grid_layer,
                                                                                   grid_sizes,
                                                                                   entity_indices,
-                                                                                  source);
+                                                                                  source,
+                                                                                  param);
       // do reconstruction
       std::vector<std::map<typename GridLayerType::template Codim<0>::Geometry::LocalCoordinate,
                            typename AnalyticalFluxType::RangeType,
@@ -871,11 +869,11 @@ struct AdvectionWENOOperatorApplier
       AdvectionLocalizableDefault<AnalyticalFluxType,
                                   NumericalCouplingFluxType,
                                   NumericalBoundaryFluxType,
-                                  typename BoundaryValueFunctionType::NonparametricType,
+                                  BoundaryValueFunctionType,
                                   ReconstructedLocalizableFunctionType,
                                   RangeType>
           localizable_operator(analytical_flux,
-                               current_boundary_values,
+                               boundary_values,
                                reconstructed_function,
                                range,
                                intersection_quadrature_rule,
@@ -890,11 +888,11 @@ struct AdvectionWENOOperatorApplier
       AdvectionLocalizableDefault<AnalyticalFluxType,
                                   NumericalCouplingFluxType,
                                   NumericalBoundaryFluxType,
-                                  typename BoundaryValueFunctionType::NonparametricType,
+                                  BoundaryValueFunctionType,
                                   SourceType,
                                   RangeType>
           localizable_operator(analytical_flux,
-                               current_boundary_values,
+                               boundary_values,
                                source,
                                range,
                                intersection_quadrature_rule,
@@ -904,67 +902,67 @@ struct AdvectionWENOOperatorApplier
   }
 }; // struct AdvectionWENOOperatorApplier
 
-template <class AnalyticalFluxType,
-          class BoundaryValueFunctionType,
-          class SourceType,
-          class RangeType,
-          class MatrixType,
-          class Tuple,
-          class FunctionType,
-          size_t... Is>
-constexpr auto apply_impl(const AnalyticalFluxType& analytical_flux,
-                          const BoundaryValueFunctionType& boundary_values,
-                          const SourceType& source,
-                          RangeType& range,
-                          const XT::Common::Parameter& param,
-                          const bool use_linear_reconstruction,
-                          std::shared_ptr<MatrixType> eigenvectors,
-                          std::shared_ptr<MatrixType> eigenvectors_inverse,
-                          Tuple t,
-                          FunctionType f,
-                          std::index_sequence<Is...>)
-{
-  return f(analytical_flux,
-           boundary_values,
-           source,
-           range,
-           param,
-           use_linear_reconstruction,
-           eigenvectors,
-           eigenvectors_inverse,
-           get<Is>(t)...);
-}
+// template <class AnalyticalFluxType,
+//          class BoundaryValueFunctionType,
+//          class SourceType,
+//          class RangeType,
+//          class MatrixType,
+//          class Tuple,
+//          class FunctionType,
+//          size_t... Is>
+// constexpr auto apply_impl(const AnalyticalFluxType& analytical_flux,
+//                          const BoundaryValueFunctionType& boundary_values,
+//                          const SourceType& source,
+//                          RangeType& range,
+//                          const XT::Common::Parameter& param,
+//                          const bool use_linear_reconstruction,
+//                          std::shared_ptr<MatrixType> eigenvectors,
+//                          std::shared_ptr<MatrixType> eigenvectors_inverse,
+//                          Tuple t,
+//                          FunctionType f,
+//                          std::index_sequence<Is...>)
+//{
+//  return f(analytical_flux,
+//           boundary_values,
+//           source,
+//           range,
+//           param,
+//           use_linear_reconstruction,
+//           eigenvectors,
+//           eigenvectors_inverse,
+//           get<Is>(t)...);
+//}
 
-template <class AnalyticalFluxType,
-          class BoundaryValueFunctionType,
-          class SourceType,
-          class RangeType,
-          class MatrixType,
-          class Tuple,
-          class FunctionType>
-constexpr auto apply(const AnalyticalFluxType& analytical_flux,
-                     const BoundaryValueFunctionType& boundary_values,
-                     const SourceType& source,
-                     RangeType& range,
-                     const XT::Common::Parameter& param,
-                     const bool use_linear_reconstruction,
-                     std::shared_ptr<MatrixType> eigenvectors,
-                     std::shared_ptr<MatrixType> eigenvectors_inverse,
-                     Tuple t,
-                     FunctionType f)
-{
-  return apply_impl(analytical_flux,
-                    boundary_values,
-                    source,
-                    range,
-                    param,
-                    use_linear_reconstruction,
-                    eigenvectors,
-                    eigenvectors_inverse,
-                    t,
-                    f,
-                    std::make_index_sequence<std::tuple_size<Tuple>{}>{});
-}
+// template <class AnalyticalFluxType,
+//          class BoundaryValueFunctionType,
+//          class SourceType,
+//          class RangeType,
+//          class MatrixType,
+//          class Tuple,
+//          class FunctionType>
+// constexpr auto apply(const AnalyticalFluxType& analytical_flux,
+//                     const BoundaryValueFunctionType& boundary_values,
+//                     const SourceType& source,
+//                     RangeType& range,
+//                     const XT::Common::Parameter& param,
+//                     const bool use_linear_reconstruction,
+//                     std::shared_ptr<MatrixType> eigenvectors,
+//                     std::shared_ptr<MatrixType> eigenvectors_inverse,
+//                     Tuple t,
+//                     FunctionType f)
+//{
+//  return apply_impl(analytical_flux,
+//                    boundary_values,
+//                    source,
+//                    range,
+//                    param,
+//                    use_linear_reconstruction,
+//                    eigenvectors,
+//                    eigenvectors_inverse,
+//                    t,
+//                    f,
+//                    std::make_index_sequence<std::tuple_size<Tuple>{}>{});
+//}
 
 
 } // namespace internal
@@ -1017,8 +1015,9 @@ public:
     , use_local_laxfriedrichs_flux_(use_local_laxfriedrichs_flux)
     , lambda_(lambda)
   {
-    internal::EigenvectorInitializer<dimDomain, dimRange, MatrixType, EigenMatrixType, AnalyticalFluxType>::initialize(
-        analytical_flux_, flux_is_linear, use_linear_reconstruction, eigenvectors_, eigenvectors_inverse_);
+    //    internal::EigenvectorInitializer<dimDomain, dimRange, MatrixType, EigenMatrixType,
+    //    AnalyticalFluxType>::initialize(
+    //        analytical_flux_, flux_is_linear, use_linear_reconstruction, eigenvectors_, eigenvectors_inverse_);
   }
 
   template <class SourceType, class RangeType>
@@ -1072,7 +1071,7 @@ template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class LocalizableFunctionImp,
           class GridLayerType,
-          BasisFunctionType basis_function_type,
+          BasisFunction basis_function_type,
           size_t polOrder,
           SlopeLimiters slope_lim>
 class AdvectionLaxFriedrichsWENOOperator
@@ -1197,7 +1196,7 @@ private:
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class GridLayerType,
-          BasisFunctionType basis_function_type,
+          BasisFunction basis_function_type,
           size_t polOrder,
           SlopeLimiters slope_lim>
 class AdvectionGodunovWENOOperator
@@ -1301,7 +1300,7 @@ private:
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
           class GridLayerType,
-          BasisFunctionType basis_function_type,
+          BasisFunction basis_function_type,
           size_t polOrder,
           SlopeLimiters slope_lim>
 class AdvectionKineticWENOOperator
@@ -1496,8 +1495,9 @@ public:
     , flux_is_linear_(flux_is_linear)
     , use_linear_reconstruction_(use_linear_reconstruction)
   {
-    internal::EigenvectorInitializer<dimDomain, dimRange, MatrixType, EigenMatrixType, AnalyticalFluxType>::initialize(
-        analytical_flux_, flux_is_linear, use_linear_reconstruction, eigenvectors_, eigenvectors_inverse_);
+    //    internal::EigenvectorInitializer<dimDomain, dimRange, MatrixType, EigenMatrixType,
+    //    AnalyticalFluxType>::initialize(
+    //        analytical_flux_, flux_is_linear, use_linear_reconstruction, eigenvectors_, eigenvectors_inverse_);
   }
 
   template <class SourceType, class RangeType>
@@ -1633,8 +1633,9 @@ public:
     // get A and b
     auto zero = u0;
     zero *= 0.;
-    const FieldMatrix<FieldType, dimRange, dimRange> A = rhs_evaluation_.jacobian(u0, entity, center);
-    const auto b = rhs_evaluation_.evaluate(zero, entity, center);
+    const auto local_rhs = rhs_evaluation_.local_function(entity);
+    FieldMatrix<FieldType, dimRange, dimRange> A = local_rhs->jacobian_wrt_u(center, u0);
+    const auto b = local_rhs->evaluate(center, u0);
 
     // calculate matrix exponential exp(A*dt)
     auto Adt = A;
@@ -1648,17 +1649,26 @@ public:
     std::copy_n(exp_Adt_array, dimRange * dimRange, &(exp_Adt[0][0]));
     delete[] exp_Adt_array;
 
-    // get inverse of A
-    auto A_inverse = A;
-    A_inverse.invert();
+    // calculate integral of exp(-Adt) int_exp_mAdt
+    // see https://math.stackexchange.com/questions/658276/integral-of-matrix-exponential
+    // if A is invertible, the integral is A^{-1}(exp(Adt)-I)
+    // in general, it is the power series dt*(I + AT/(2!) + (AT)^2/(3!) + ... + (AT)^{n-1}/(n!)
+    FieldMatrix<FieldType, dimRange, dimRange> int_exp_mAdt;
+    try {
+      auto A_inverse = A;
+      A_inverse.invert();
+      int_exp_mAdt = exp_Adt;
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        int_exp_mAdt[ii][ii] -= 1.;
+      int_exp_mAdt.leftmultiply(A_inverse);
+    } catch (Dune::FMatrixError&) {
+      const double* int_exp_mAdt_array = r8mat_expm_integral(dimRange, &(A[0][0]), -dt_);
+      std::copy_n(int_exp_mAdt_array, dimRange * dimRange, &(int_exp_mAdt[0][0]));
+    }
 
-    // calculate solution u = exp(A dt) (u0 + A^{-1} (exp(A dt) - I) b)
+    // calculate solution u = exp(A dt) (u0 + int_exp_mAdt b)
     FieldVector<FieldType, dimRange> u(0), ret;
-    auto exp_Adt_m_I = exp_Adt;
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      exp_Adt_m_I[ii][ii] -= 1.;
-    exp_Adt_m_I.leftmultiply(A_inverse);
-    exp_Adt_m_I.mv(b, u);
+    int_exp_mAdt.mv(b, u);
     u += u0;
     exp_Adt.mv(u, ret);
 
@@ -1723,7 +1733,8 @@ private:
 template <class RHSEvaluationImp>
 class AdvectionRHSOperator : public Dune::GDT::OperatorInterface<internal::AdvectionRHSOperatorTraits<RHSEvaluationImp>>
 {
-  static_assert(is_rhs_evaluation<RHSEvaluationImp>::value, "RHSEvaluationImp has to be derived from RHSInterface!");
+  //  static_assert(is_rhs_evaluation<RHSEvaluationImp>::value, "RHSEvaluationImp has to be derived from
+  //  RHSInterface!");
 
 public:
   typedef internal::AdvectionRHSOperatorTraits<RHSEvaluationImp> Traits;
@@ -1739,8 +1750,9 @@ public:
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& /*param*/) const
   {
     std::fill(range.vector().begin(), range.vector().end(), 0);
-    LocalVolumeIntegralFunctional<LocalFvRhsIntegrand<RHSEvaluationType, SourceType>> local_functional(rhs_evaluation_,
-                                                                                                       source);
+    LocalVolumeIntegralFunctional<LocalFvRhsIntegrand<RHSEvaluationType, SourceType>,
+                                  typename RangeType::SpaceType::BaseFunctionSetType>
+        local_functional(rhs_evaluation_, source);
     VectorFunctionalBase<typename RangeType::VectorType,
                          typename RangeType::SpaceType,
                          typename RangeType::SpaceType::GridLayerType,
@@ -1756,9 +1768,17 @@ public:
                          const SourceType& source,
                          const XT::Common::Parameter& /*param*/ = {}) const
   {
-    typedef LocalVolumeIntegralOperator<LocalFvRhsJacobianIntegrand<RHSEvaluationType, SourceType>> LocalOperatorType;
+    typedef typename SourceType::SpaceType::BaseFunctionSetType BasisType;
+    typedef LocalVolumeIntegralOperator<LocalFvRhsJacobianIntegrand<RHSEvaluationType, SourceType>, BasisType>
+        LocalOperatorType;
     LocalOperatorType local_operator(rhs_evaluation_, source);
-    LocalVolumeTwoFormAssembler<LocalOperatorType> local_assembler(local_operator);
+    LocalVolumeTwoFormAssemblerFunctor<
+        typename SourceType::SpaceType,
+        typename XT::LA::MatrixInterface<MatrixTraits, typename SourceType::RangeFieldType>>
+        local_assembler(source.space(),
+                        source.space(),
+                        new XT::Grid::ApplyOn::AllEntities<typename SourceType::SpaceType::GridLayerType>(),
+                        local_operator);
     SystemAssembler<typename SourceType::SpaceType> assembler(source.space());
     assembler.append(local_assembler, jac);
     assembler.assemble(true);

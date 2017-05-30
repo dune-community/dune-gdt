@@ -27,7 +27,7 @@
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/la/container.hh>
 
-#include "../default.hh"
+#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/triangulation.hh>
 
 namespace Dune {
 namespace GDT {
@@ -35,43 +35,45 @@ namespace Hyperbolic {
 namespace Problems {
 
 // see https://en.wikipedia.org/wiki/Tridiagonal_matrix#Inversion
-template <class MatrixType>
-MatrixType tridiagonal_matrix_inverse(const MatrixType& matrix)
+template <class FieldType, int rows>
+Dune::FieldMatrix<FieldType, rows, rows> tridiagonal_matrix_inverse(const FieldMatrix<FieldType, rows, rows>& matrix)
 {
+  typedef Dune::FieldMatrix<FieldType, rows, rows> MatrixType;
+  size_t cols = rows;
 #ifndef NDEBUG
-  for (size_t rr = 0; rr < dimRange; ++rr)
-    for (size_t cc = 0; cc < dimRange; ++cc)
+  for (size_t rr = 0; rr < rows; ++rr)
+    for (size_t cc = 0; cc < cols; ++cc)
       if ((cc > rr + 1 || cc + 1 < rr) && XT::Common::FloatCmp::ne(matrix[rr][cc], 0.))
         DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong, "Matrix has to be tridiagonal!");
 #endif // NDEBUG
   MatrixType ret(0);
-  Dune::FieldVector<RangeFieldType, dimRange + 1> a(0), b(0), c(0), theta(0);
-  Dune::FieldVector<RangeFieldType, dimRange + 2> phi(0);
-  for (size_t ii = 1; ii < dimRange + 1; ++ii) {
+  Dune::FieldVector<FieldType, rows + 1> a(0), b(0), c(0), theta(0);
+  Dune::FieldVector<FieldType, rows + 2> phi(0);
+  for (size_t ii = 1; ii < rows + 1; ++ii) {
     a[ii] = matrix[ii - 1][ii - 1];
-    if (ii < dimRange) {
+    if (ii < rows) {
       b[ii] = matrix[ii - 1][ii];
       c[ii] = matrix[ii][ii - 1];
     }
   }
   theta[0] = 1;
   theta[1] = a[1];
-  for (size_t ii = 2; ii < dimRange + 1; ++ii)
+  for (size_t ii = 2; ii < rows + 1; ++ii)
     theta[ii] = a[ii] * theta[ii - 1] - b[ii - 1] * c[ii - 1] * theta[ii - 2];
-  phi[dimRange + 1] = 1;
-  phi[dimRange] = a[dimRange];
-  for (size_t ii = dimRange - 1; ii > 0; --ii)
+  phi[rows + 1] = 1;
+  phi[rows] = a[rows];
+  for (size_t ii = rows - 1; ii > 0; --ii)
     phi[ii] = a[ii] * phi[ii + 1] - b[ii] * c[ii] * phi[ii + 2];
-  for (size_t ii = 1; ii < dimRange + 1; ++ii) {
-    for (size_t jj = 1; jj < dimRange + 1; ++jj) {
+  for (size_t ii = 1; ii < rows + 1; ++ii) {
+    for (size_t jj = 1; jj < cols + 1; ++jj) {
       if (ii == jj)
-        ret[ii - 1][jj - 1] = theta[ii - 1] * phi[jj + 1] / theta[dimRange];
+        ret[ii - 1][jj - 1] = theta[ii - 1] * phi[jj + 1] / theta[rows];
       else if (ii < jj) {
-        ret[ii - 1][jj - 1] = std::pow(-1, ii + jj) * theta[ii - 1] * phi[jj + 1] / theta[dimRange];
+        ret[ii - 1][jj - 1] = std::pow(-1, ii + jj) * theta[ii - 1] * phi[jj + 1] / theta[rows];
         for (size_t kk = ii; kk < jj; ++kk)
           ret[ii - 1][jj - 1] *= b[kk];
       } else if (ii > jj) {
-        ret[ii - 1][jj - 1] = std::pow(-1, ii + jj) * theta[jj - 1] * phi[ii + 1] / theta[dimRange];
+        ret[ii - 1][jj - 1] = std::pow(-1, ii + jj) * theta[jj - 1] * phi[ii + 1] / theta[rows];
         for (size_t kk = jj; kk < ii; ++kk)
           ret[ii - 1][jj - 1] *= c[kk];
       }
@@ -86,7 +88,10 @@ class BasisfunctionsInterface
 {
 public:
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
-  typedef typename XT::Functions::internal::RangeTypeSelector<RangeFieldType, dimRange, dimRangeCols>::type RangeType;
+  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+  typedef typename XT::Functions::RangeTypeSelector<RangeFieldType, dimRange, dimRangeCols>::type RangeType;
+
+  virtual ~BasisfunctionsInterface(){};
 
   virtual RangeType evaluate(const DomainType& v) const = 0;
 
@@ -100,22 +105,22 @@ public:
 };
 
 
-template <class DomainFieldType, size_t dimDomain, class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1>
+template <class DomainFieldType, size_t dimDomain, class RangeFieldType, size_t order, size_t dimRangeCols = 1>
 class LegendrePolynomials
 {
-  static_assert(false, "Not implemented for this dimension!");
+  //  static_assert(false, "Not implemented for this dimension!");
 };
 
 template <class DomainFieldType, size_t dimDomain, class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1>
 class RealSphericalHarmonics
 {
-  static_assert(false, "Not implemented for this dimension!");
+  //  static_assert(false, "Not implemented for this dimension!");
 };
 
 template <class DomainFieldType, size_t dimDomain, class RangeFieldType, size_t dimRange, size_t dimRangeCols = 1>
 class HatFunctions
 {
-  static_assert(false, "Not implemented for this dimension!");
+  //  static_assert(false, "Not implemented for this dimension!");
 };
 
 template <class DomainFieldType,
@@ -126,20 +131,25 @@ template <class DomainFieldType,
           size_t order = 1>
 class PiecewiseMonomials
 {
-  static_assert(false, "Not implemented for this combination of dimension and order!");
+  //  static_assert(false, "Not implemented for this combination of dimension and order!");
 };
 
-template <class DomainFieldType, class RangeFieldType, size_t dimRange, size_t dimRangeCols>
-class LegendrePolynomials<DomainFieldType, 1, RangeFieldType, dimRange, dimRangeCols>
-    : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, dimRange, dimRangeCols>
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t dimRangeCols>
+class LegendrePolynomials<DomainFieldType, 1, RangeFieldType, order, dimRangeCols>
+    : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, order + 1, dimRangeCols>
 {
+public:
   static const size_t dimDomain = 1;
+  static const size_t dimRange = order + 1;
+
+private:
   typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseType;
 
 public:
   typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
-  using BaseType::DomainType;
-  using BaseType::RangeType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::MatrixType;
 
   virtual RangeType evaluate(const DomainType& v) const override
   {
@@ -176,7 +186,7 @@ public:
     return Minv;
   }
 
-  virtual FieldVector<MatrixType, dimRange> mass_matrix_with_v() const override
+  virtual FieldVector<MatrixType, dimDomain> mass_matrix_with_v() const override
   {
     MatrixType B(0);
     for (size_t rr = 0; rr < dimRange; ++rr) {
@@ -197,6 +207,14 @@ public:
       S[rr][rr] = -2. * rr * (rr + 1.) / (2 * rr + 1);
     return S;
   }
+
+  std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
+  {
+    RangeType u_iso(0), alpha_iso(0);
+    u_iso[0] = u[0];
+    alpha_iso[0] = std::log(u[0] / 2.);
+    return std::make_pair(u_iso, alpha_iso);
+  }
 }; // class LegendrePolynomials<DomainFieldType, 1, ...>
 
 // converts from (x, y, z) to (theta, phi) on the unit sphere s.t.
@@ -204,11 +222,13 @@ public:
 template <class DomainFieldType>
 struct CoordinateConverter
 {
-  typedef typename FieldVector<DomainFieldType, 3> CartesianCoordType;
-  typedef typename FieldVector<DomainFieldType, 2> SphericalCoordType;
-  typedef typename boost::geometry::point<DomainFieldType, dimDomain, boost::geometry::cs::cartesian>
+  typedef FieldVector<DomainFieldType, 3> CartesianCoordType;
+  typedef FieldVector<DomainFieldType, 2> SphericalCoordType;
+  typedef typename boost::geometry::model::point<DomainFieldType, 3, typename boost::geometry::cs::cartesian>
       BoostCartesianCoordType;
-  typedef typename boost::geometry::point<DomainFieldType, 2, boost::geometry::cs::spherical<boost::geometry::radian>>
+  typedef typename boost::geometry::model::point<DomainFieldType,
+                                                 2,
+                                                 typename boost::geometry::cs::spherical<boost::geometry::radian>>
       BoostSphericalCoordType;
 
   static SphericalCoordType to_spherical(const CartesianCoordType& x)
@@ -228,56 +248,26 @@ struct CoordinateConverter
   }
 };
 
-
-template <class DomainFieldType, class RangeFieldType>
-struct RealSphericalHarmonicsBase<DomainFieldType, 3, RangeFieldType>
-{
-  static RangeFieldType evaluate_associated_legendre_polynomial(const FieldType& mu, const int l, int m) const
-  {
-    return boost::math::legendre_p(l, m, mu);
-  }
-
-  // Notation from Garrett, Hauck, "A Comparison of Moment Closures for Linear Kinetic Transport Equations: The Line
-  // Source Benchmark",
-  // http://www.tandfonline.com/doi/full/10.1080/00411450.2014.910226?src=recsys&, Section 4.1
-  RangeFieldType N_lm(const int l, const int m) const
-  {
-    assert(l >= 0 && m >= 0 && m <= l);
-    return std::sqrt((2. * l + 1.) * XT::Common::factorial(l - m) / (XT::Common::factorial(l + m) * 4. * M_PI));
-  }
-
-  template <class FieldType>
-  DomainFieldType evaluate_real_spherical_harmonics(const DomainFieldType theta,
-                                                    const DomainFieldType phi,
-                                                    const int l,
-                                                    const int m) const
-  {
-    const auto cos_theta = std::cos(theta);
-    assert(l >= 0 && std::abs(m) <= l);
-    if (m < 0)
-      return std::sqrt(2) * N_lm(l, -m) * evaluate_associated_legendre_polynomial(cos_theta, l, -m)
-             * std::sin(-m * phi);
-    else if (m == 0)
-      return N_lm(l, 0) * evaluate_associated_legendre_polynomial(cos_theta, l, 0);
-    else
-      return std::sqrt(2) * N_lm(l, m) * evaluate_associated_legendre_polynomial(cos_theta, l, m) * std::cos(m * phi);
-  }
-}; // class RealSphericalHarmonicsBase<DomainFieldType, 3, ...>
-
-template <class DomainFieldType, class RangeFieldType, size_t order>
-class FullSphericalHarmonics<DomainFieldType, 3, RangeFieldType, order>
-    : public BasisfunctionsInterface<DomainFieldType, 3, RangeFieldType, (order + 1) * (order + 1), 1>
+template <class DomainFieldType, class RangeFieldType, size_t order, bool only_positive = false>
+class SphericalHarmonics3D
+    : public BasisfunctionsInterface<DomainFieldType,
+                                     3,
+                                     RangeFieldType,
+                                     only_positive ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1),
+                                     1>
 {
   static const size_t dimDomain = 3;
-  typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseType;
+  static const size_t dimRange = only_positive ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1);
+  typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1> BaseType;
 
 public:
-  using BaseType::DomainType;
-  using BaseType::RangeType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::MatrixType;
 
   virtual RangeType evaluate(const DomainType& v) const override
   {
-    const auto v_spherical = CoordinateConverter::to_spherical(v);
+    const auto v_spherical = CoordinateConverter<DomainFieldType>::to_spherical(v);
     return evaluate_in_spherical_coords(v_spherical);
   } // ... evaluate(...)
 
@@ -287,8 +277,8 @@ public:
     const DomainFieldType phi = coords[1];
     RangeType ret(0);
     for (int ll = 0; ll <= order; ++ll)
-      for (int mm = -ll; mm <= ll; ++mm)
-        ret[pos(ll, mm)] = boost::math::spherical_harmonic(ll, mm, theta, phi);
+      for (int mm = only_positive ? 0 : -ll; mm <= ll; ++mm)
+        ret[helper<only_positive>::pos(ll, mm)] = boost::math::spherical_harmonic(ll, mm, theta, phi);
     return ret;
   } // ... evaluate(...)
 
@@ -318,31 +308,32 @@ public:
     const auto& Bx = ret[0];
     const auto& By = ret[1];
     const auto& Bz = ret[2];
+    const auto& pos = helper<only_positive>::pos;
     for (size_t l1 = 0; l1 <= order; ++l1) {
-      for (int m1 = -l1; std::abs(m1) <= l1; ++m1) {
+      for (int m1 = only_positive ? 0 : -l1; std::abs(m1) <= l1; ++m1) {
         for (size_t l2 = 0; l2 <= order; ++l2) {
-          for (int m2 = -l2; std::abs(m2) <= l2; ++m2) {
+          for (int m2 = only_positive ? 0 : -l2; std::abs(m2) <= l2; ++m2) {
             if (l1 == l2 + 1 && m1 == m2 + 1) {
               Bx[pos(l1, m1)][pos(l2, m2)] =
                   -0.5 * std::sqrt((l2 + m2 + 1) * (l2 + m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
-              By[pos(l1, m1)][pos(l2, m2)] =
-                  0.5 * std::complex(0, 1) * std::sqrt((l2 + m2 + 1) * (l2 + m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
+              By[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::complex<RangeFieldType>(0, 1)
+                                             * std::sqrt((l2 + m2 + 1) * (l2 + m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
             }
             if (l1 == l2 - 1 && m1 == m2 + 1) {
               Bx[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::sqrt((l2 - m2) * (l2 - m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
-              By[pos(l1, m1)][pos(l2, m2)] =
-                  -0.5 * std::complex(0, 1) * std::sqrt((l2 - m2) * (l2 - m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
+              By[pos(l1, m1)][pos(l2, m2)] = -0.5 * std::complex<RangeFieldType>(0, 1)
+                                             * std::sqrt((l2 - m2) * (l2 - m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
             }
             if (l1 == l2 + 1 && m1 == m2 - 1) {
               Bx[pos(l1, m1)][pos(l2, m2)] =
                   0.5 * std::sqrt((l2 - m2 + 1) * (l2 - m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
-              By[pos(l1, m1)][pos(l2, m2)] =
-                  0.5 * std::complex(0, 1) * std::sqrt((l2 - m2 + 1) * (l2 - m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
+              By[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::complex<RangeFieldType>(0, 1)
+                                             * std::sqrt((l2 - m2 + 1) * (l2 - m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
             }
             if (l1 == l2 - 1 && m1 == m2 - 1) {
               Bx[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::sqrt((l2 + m2) * (l2 + m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
-              By[pos(l1, m1)][pos(l2, m2)] =
-                  -0.5 * std::complex(0, 1) * std::sqrt((l2 + m2) * (l2 + m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
+              By[pos(l1, m1)][pos(l2, m2)] = -0.5 * std::complex<RangeFieldType>(0, 1)
+                                             * std::sqrt((l2 + m2) * (l2 + m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
             }
             if (m1 == m2 && l1 == l2 + 1)
               Bz[pos(l1, m1)][pos(l2, m2)] = std::sqrt((l2 - m2 + 1) * (l2 + m2 + 1) / ((2 * l2 + 1) * (2 * l2 + 3)));
@@ -355,31 +346,61 @@ public:
     return ret;
   }
 
-private:
-  // Converts a pair (l, m) to a vector index. The vector is ordered by l first, then by m.
-  // Each l has 2l+1 values of m, so (l, m) has position
-  // (\sum_{k=0}^{l-1} (2k+1)) + (m+l) = l^2 + m + l
-  size_t pos(const size_t l, const int m) const
+  std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
   {
-    return l * l + m + l;
+    RangeType u_iso(0), alpha_iso(0);
+    u_iso[0] = u[0];
+    alpha_iso[0] = std::log(u[0] / (4. * M_PI));
+    return std::make_pair(u_iso, alpha_iso);
   }
-}; // class FullRealSphericalHarmonics<DomainFieldType, 3, ...>
 
-template <class DomainFieldType, class RangeFieldType, size_t order>
-class PositiveSphericalHarmonics<DomainFieldType, 3, RangeFieldType, order>
-    : public BasisfunctionsInterface<DomainFieldType, 3, RangeFieldType, (order + 1) * (order + 2) / 2, 1>
+private:
+  template <bool positive, class anything = void>
+  struct helper
+  {
+    // Converts a pair (l, m) to a vector index. The vector is ordered by l first, then by m.
+    // Each l has 2l+1 values of m, so (l, m) has position
+    // (\sum_{k=0}^{l-1} (2k+1)) + (m+l) = l^2 + m + l
+    static size_t pos(const int l, const int m)
+    {
+      return size_t(l * l + m + l);
+    }
+  };
+
+  template <class anything>
+  struct helper<true, anything>
+  {
+    // Converts a pair (l, m) to a vector index. The vector is ordered by l first, then by m.
+    // Each l has l+1 non-negative values of m, so (l, m) has position
+    // (\sum_{k=0}^{l-1} (l+1)) + m = l(l+1)/2 + m
+    static size_t pos(const size_t l, const int m)
+    {
+      return l * (l + 1) / 2 + m;
+    }
+  };
+}; // class SphericalHarmonics<DomainFieldType, 3, ...>
+
+template <class DomainFieldType, class RangeFieldType, size_t order, bool only_even = false>
+class RealSphericalHarmonics3D
+    : public BasisfunctionsInterface<DomainFieldType,
+                                     3,
+                                     RangeFieldType,
+                                     only_even ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1),
+                                     1>
 {
   static const size_t dimDomain = 3;
-  static const size_t dimRange = (order + 1) * (order + 2) / 2;
-  typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseType;
+  static const size_t dimRange = only_even ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1);
+  typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1> BaseType;
 
 public:
-  using BaseType::DomainType;
-  using BaseType::RangeType;
+  typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::MatrixType;
 
   virtual RangeType evaluate(const DomainType& v) const override
   {
-    const auto v_spherical = CoordinateConverter::to_spherical(v);
+    const auto v_spherical = CoordinateConverter<DomainFieldType>::to_spherical(v);
     return evaluate_in_spherical_coords(v_spherical);
   } // ... evaluate(...)
 
@@ -388,9 +409,10 @@ public:
     const DomainFieldType theta = coords[0];
     const DomainFieldType phi = coords[1];
     RangeType ret(0);
-    for (size_t ll = 0; ll <= order; ++ll)
-      for (int mm = 0; size_t(mm) <= ll; ++mm)
-        ret[pos(ll, mm)] = boost::math::spherical_harmonic(ll, mm, theta, phi);
+    for (int ll = 0; ll <= order; ++ll)
+      for (int mm = -ll; mm <= ll; ++mm)
+        if (!only_even || !((mm + ll) % 2))
+          ret[helper<only_even>::pos(ll, mm)] = evaluate(theta, phi, ll, mm);
     return ret;
   } // ... evaluate(...)
 
@@ -420,228 +442,12 @@ public:
     const auto& Bx = ret[0];
     const auto& By = ret[1];
     const auto& Bz = ret[2];
-    for (size_t l1 = 0; l1 <= order; ++l1) {
-      for (size_t m1 = 0; m1 <= l1; ++m1) {
-        for (size_t l2 = 0; l2 <= order; ++l2) {
-          for (size_t m2 = 0; m2 <= l2; ++m2) {
-            if (l1 == l2 + 1 && m1 == m2 + 1) {
-              Bx[pos(l1, m1)][pos(l2, m2)] =
-                  -0.5 * std::sqrt((l2 + m2 + 1) * (l2 + m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
-              By[pos(l1, m1)][pos(l2, m2)] =
-                  0.5 * std::complex(0, 1) * std::sqrt((l2 + m2 + 1) * (l2 + m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
-            }
-            if (l1 == l2 - 1 && m1 == m2 + 1) {
-              Bx[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::sqrt((l2 - m2) * (l2 - m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
-              By[pos(l1, m1)][pos(l2, m2)] =
-                  -0.5 * std::complex(0, 1) * std::sqrt((l2 - m2) * (l2 - m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
-            }
-            if (l1 == l2 + 1 && m1 == m2 - 1) {
-              Bx[pos(l1, m1)][pos(l2, m2)] =
-                  0.5 * std::sqrt((l2 - m2 + 1) * (l2 - m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
-              By[pos(l1, m1)][pos(l2, m2)] =
-                  0.5 * std::complex(0, 1) * std::sqrt((l2 - m2 + 1) * (l2 - m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
-            }
-            if (l1 == l2 - 1 && m1 == m2 - 1) {
-              Bx[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::sqrt((l2 + m2) * (l2 + m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
-              By[pos(l1, m1)][pos(l2, m2)] =
-                  -0.5 * std::complex(0, 1) * std::sqrt((l2 + m2) * (l2 + m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
-            }
-            if (m1 == m2 && l1 == l2 + 1)
-              Bz[pos(l1, m1)][pos(l2, m2)] = std::sqrt((l2 - m2 + 1) * (l2 + m2 + 1) / ((2 * l2 + 1) * (2 * l2 + 3)));
-            if (m1 == m2 && l1 == l2 - 1)
-              Bz[pos(l1, m1)][pos(l2, m2)] = std::sqrt((l2 - m2) * (l2 + m2) / ((2 * l2 - 1) * (2 * l2 + 1)));
-          } // m2
-        } // l2
-      } // m1
-    } // l1
-    return ret;
-  }
-
-private:
-  // Converts a pair (l, m) to a vector index. The vector is ordered by l first, then by m.
-  // Each l has l+1 non-negative values of m, so (l, m) has position
-  // (\sum_{k=0}^{l-1} (l+1)) + m = l(l+1)/2 + m
-  size_t pos(const size_t l, const int m) const
-  {
-    return l * (l + 1) / 2 + m;
-  }
-}; // class PositiveSphericalHarmonics<DomainFieldType, 3, ...>
-
-
-template <class DomainFieldType, class RangeFieldType, size_t order>
-class FullRealSphericalHarmonics<DomainFieldType, 3, RangeFieldType, order>
-    : public BasisfunctionsInterface<DomainFieldType, 3, RangeFieldType, (order + 1) * (order + 1), 1>,
-      public RealSphericalHarmonicsBase<DomainFieldType, 3, RangeFieldType>
-{
-  static const size_t dimDomain = 3;
-  typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseType;
-  typedef RealSphericalHarmonicsBase<DomainFieldType, 3, RangeFieldType> SecondBaseType;
-
-public:
-  typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
-  using BaseType::DomainType;
-  using BaseType::RangeType;
-
-  virtual RangeType evaluate(const DomainType& v) const override
-  {
-    const auto v_spherical = CoordinateConverter::to_spherical(v);
-    return evaluate_in_spherical_coords(v_spherical);
-  } // ... evaluate(...)
-
-  RangeType evaluate_in_spherical_coords(const FieldVector<DomainFieldType, 2>& coords) const
-  {
-    const DomainFieldType theta = coords[0];
-    const DomainFieldType phi = coords[1];
-    RangeType ret(0);
-    for (int ll = 0; ll <= order; ++ll)
-      for (int mm = -ll; mm <= ll; ++mm)
-        ret[pos(ll, mm)] = evaluate_real_spherical_harmonics(theta, phi, ll, mm);
-    return ret;
-  } // ... evaluate(...)
-
-  virtual RangeType integrated() const override
-  {
-    RangeType ret(0);
-    ret[0] = std::sqrt(4. * M_PI);
-    return ret;
-  }
-
-  virtual MatrixType mass_matrix() const override
-  {
-    MatrixType M(0);
-    for (size_t rr = 0; rr < dimRange; ++rr)
-      M[rr][rr] = 1;
-    return M;
-  }
-
-  virtual MatrixType mass_matrix_inverse() const override
-  {
-    return mass_matrix();
-  }
-
-  virtual FieldVector<MatrixType, dimDomain> mass_matrix_with_v() const override
-  {
-    FieldVector<MatrixType, dimDomain> ret(MatrixType(0));
-    const auto& Bx = ret[0];
-    const auto& By = ret[1];
-    const auto& Bz = ret[2];
+    const auto& pos = helper<only_even>::pos;
     for (size_t l1 = 0; l1 <= order; ++l1) {
       for (int m1 = -l1; std::abs(m1) <= l1; ++m1) {
         for (size_t l2 = 0; l2 <= order; ++l2) {
           for (int m2 = -l2; std::abs(m2) <= l2; ++m2) {
-            if (l1 == l2 + 1 && m1 == m2 + 1)
-              Bx[pos(l1, m1)][pos(l2, m2)] =
-                  -0.5 * std::sqrt((l2 + m2 + 1) * (l2 + m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
-            if (l1 == l2 - 1 && m1 == m2 + 1)
-              Bx[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::sqrt((l2 - m2) * (l2 - m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
-            if (l1 == l2 + 1 && m1 == m2 - 1)
-              Bx[pos(l1, m1)][pos(l2, m2)] =
-                  0.5 * std::sqrt((l2 - m2 + 1) * (l2 - m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
-            if (l1 == l2 - 1 && m1 == m2 - 1)
-              Bx[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::sqrt((l2 + m2) * (l2 + m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
-            if (l1 == l2 + 1 && m1 == -m2 - 1)
-              By[pos(l1, m1)][pos(l2, m2)] =
-                  0.5 * sgn(m2) * std::sqrt((l2 + m2 + 1) * (l2 + m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
-            if (l1 == l2 - 1 && m1 == -m2 - 1)
-              By[pos(l1, m1)][pos(l2, m2)] =
-                  -0.5 * sgn(m2) * std::sqrt((l2 - m2) * (l2 - m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
-            if (l1 == l2 + 1 && m1 == -m2 + 1)
-              By[pos(l1, m1)][pos(l2, m2)] =
-                  0.5 * sgn(m2) * std::sqrt((l2 - m2 + 1) * (l2 - m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
-            if (l1 == l2 - 1 && m1 == -m2 + 1)
-              By[pos(l1, m1)][pos(l2, m2)] =
-                  -0.5 * sgn(m2) * std::sqrt((l2 + m2) * (l2 + m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
-            if (m1 == m2 && l1 == l2 + 1)
-              Bz[pos(l1, m1)][pos(l2, m2)] = std::sqrt((l2 - m2 + 1) * (l2 + m2 + 1) / ((2 * l2 + 1) * (2 * l2 + 3)));
-            if (m1 == m2 && l1 == l2 - 1)
-              Bz[pos(l1, m1)][pos(l2, m2)] = std::sqrt((l2 - m2) * (l2 + m2) / ((2 * l2 - 1) * (2 * l2 + 1)));
-          } // m2
-        } // l2
-      } // m1
-    } // l1
-    return ret;
-  }
-
-private:
-  template <typename T>
-  int sgn(T val)
-  {
-    return (T(0) < val) - (val < T(0));
-  }
-  // Converts a pair (l, m) to a vector index. The vector is ordered by l first, then by m.
-  // Each l has 2l+1 values of m, so (l, m) has position
-  // (\sum_{k=0}^{l-1} (2k+1)) + (m+l) = l^2 + m + l
-  size_t pos(const int l, const int m) const
-  {
-    return size_t(l * l + m + l);
-  }
-
-  using SecondBaseType::evaluate_real_spherical_harmonics;
-}; // class FullRealSphericalHarmonics<DomainFieldType, 3, ...>
-
-template <class DomainFieldType, class RangeFieldType, size_t order>
-class EvenRealSphericalHarmonics<DomainFieldType, 3, RangeFieldType, order>
-    : public BasisfunctionsInterface<DomainFieldType, 3, RangeFieldType, (order + 1) * (order + 2) / 2, 1>,
-      public RealSphericalHarmonicsBase<DomainFieldType, 3, RangeFieldType>
-{
-  static const size_t dimDomain = 3;
-  typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseType;
-  typedef RealSphericalHarmonicsBase<DomainFieldType, 3, RangeFieldType> SecondBaseType;
-
-public:
-  typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
-  using BaseType::DomainType;
-  using BaseType::RangeType;
-
-  virtual RangeType evaluate(const DomainType& v) const override
-  {
-    const auto v_spherical = CoordinateConverter::to_spherical(v);
-    return evaluate_in_spherical_coords(v_spherical);
-  } // ... evaluate(...)
-
-  RangeType evaluate_in_spherical_coords(const FieldVector<DomainFieldType, 2>& coords) const
-  {
-    const DomainFieldType theta = coords[0];
-    const DomainFieldType phi = coords[1];
-    RangeType ret(0);
-    for (int ll = 0; ll <= order; ++ll)
-      for (int mm = -ll; mm <= ll; ++mm)
-        if (!((mm + ll) % 2))
-          ret[pos(ll, mm)] = evaluate_real_spherical_harmonics(theta, phi, ll, mm);
-    return ret;
-  } // ... evaluate(...)
-
-  virtual RangeType integrated() const override
-  {
-    RangeType ret(0);
-    ret[0] = std::sqrt(4. * M_PI);
-    return ret;
-  }
-
-  virtual MatrixType mass_matrix() const override
-  {
-    MatrixType M(0);
-    for (size_t rr = 0; rr < dimRange; ++rr)
-      M[rr][rr] = 1;
-    return M;
-  }
-
-  MatrixType mass_matrix_inverse() const
-  {
-    return mass_matrix();
-  }
-
-  virtual FieldVector<MatrixType, dimDomain> mass_matrix_with_v() const override
-  {
-    FieldVector<MatrixType, dimDomain> ret(MatrixType(0));
-    const auto& Bx = ret[0];
-    const auto& By = ret[1];
-    const auto& Bz = ret[2];
-    for (size_t l1 = 0; l1 <= order; ++l1) {
-      for (int m1 = -l1; std::abs(m1) <= l1; ++m1) {
-        for (size_t l2 = 0; l2 <= order; ++l2) {
-          for (int m2 = -l2; std::abs(m2) <= l2; ++m2) {
-            if (!((m + l) % 2) && !((m2 + l2) % 2)) {
+            if (!only_even || !((m1 + l1) % 2) && !((m2 + l2) % 2)) {
               if (l1 == l2 + 1 && m1 == m2 + 1)
                 Bx[pos(l1, m1)][pos(l2, m2)] =
                     -0.5 * std::sqrt((l2 + m2 + 1) * (l2 + m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
@@ -676,35 +482,82 @@ public:
       } // m1
     } // l1
     return ret;
-  }
+  } // ... mass_matrix_with_v()
 
 private:
-  // Converts a pair (l, m) to a vector index. The vector is ordered by l first, then by m.
-  // Each l has l+1 values of m (as only m s.t. m+l is even are considered), so (l, m) has position
-  // (\sum_{k=0}^{l-1} (k+1)) + (m+l)/2 = l(l+1)/2 + (l+m)/2
-  size_t pos(const int l, const int m) const
+  template <bool even, class anything = void>
+  struct helper
   {
-    return size_t(l * (l + 1) / 2 + (m + l) / 2);
+    // Converts a pair (l, m) to a vector index. The vector is ordered by l first, then by m.
+    // Each l has 2l+1 values of m, so (l, m) has position
+    // (\sum_{k=0}^{l-1} (2k+1)) + (m+l) = l^2 + m + l
+    static size_t pos(const int l, const int m)
+    {
+      return size_t(l * l + m + l);
+    }
+  };
+
+  template <class anything>
+  struct helper<true, anything>
+  {
+    // Converts a pair (l, m) to a vector index. The vector is ordered by l first, then by m.
+    // Each l has l+1 values of m (as only m s.t. m+l is even are considered), so (l, m) has position
+    // (\sum_{k=0}^{l-1} (k+1)) + (m+l)/2 = l(l+1)/2 + (l+m)/2
+    static size_t pos(const int l, const int m)
+    {
+      return size_t(l * (l + 1) / 2 + (m + l) / 2);
+    }
+  };
+
+  template <typename T>
+  int sgn(T val)
+  {
+    return (T(0) < val) - (val < T(0));
   }
 
-  using SecondBaseType::evaluate_real_spherical_harmonics;
-}; // class EvenRealSphericalHarmonics<DomainFieldType, 3, ...>
+  // Notation from Garrett, Hauck, "A Comparison of Moment Closures for Linear Kinetic Transport Equations: The Line
+  // Source Benchmark",
+  // http://www.tandfonline.com/doi/full/10.1080/00411450.2014.910226?src=recsys&, Section 4.1
+  RangeFieldType N_lm(const int l, const int m) const
+  {
+    assert(l >= 0 && m >= 0 && m <= l);
+    return std::sqrt((2. * l + 1.) * XT::Common::factorial(l - m) / (XT::Common::factorial(l + m) * 4. * M_PI));
+  }
 
+  RangeFieldType evaluate_lm(const DomainFieldType theta, const DomainFieldType phi, const int l, const int m) const
+  {
+    const auto cos_theta = std::cos(theta);
+    assert(l >= 0 && std::abs(m) <= l);
+    if (m < 0)
+      return std::sqrt(2) * N_lm(l, -m) * boost::math::legendre_p(l, -m, cos_theta) * std::sin(-m * phi);
+    else if (m == 0)
+      return N_lm(l, 0) * boost::math::legendre_p(l, 0, cos_theta);
+    else
+      return std::sqrt(2) * N_lm(l, m) * boost::math::legendre_p(l, m, cos_theta) * std::cos(m * phi);
+  }
+}; // class RealSphericalHarmonics<DomainFieldType, 3, ...>
 
-template <class DomainFieldType, class RangeFieldType, size_t dimRange, size_t dimRangeCols>
-class HatFunctions<DomainFieldType, 1, RangeFieldType, dimRange, dimRangeCols>
-    : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, dimRange, dimRangeCols>
+template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols>
+class HatFunctions<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols>
+    : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols>
 {
+public:
   static const size_t dimDomain = 1;
+  static const size_t dimRange = rangeDim;
+  static const size_t dimRangeCols = rangeDimCols;
+
+private:
   typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseType;
 
 public:
   typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
-  using BaseType::DomainType;
-  using BaseType::RangeType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::MatrixType;
   typedef RangeType TriangulationType;
 
-  HatFunctions(const TriangulationType& triangulation, const QuadratureType& /*quadrature*/ = QuadratureType())
+  HatFunctions(const TriangulationType triangulation = create_triangulation(),
+               const QuadratureType& /*quadrature*/ = QuadratureType())
     : triangulation_(triangulation)
   {
   }
@@ -721,11 +574,11 @@ public:
   {
     RangeType ret(0);
     for (size_t ii = 0; ii < dimRange; ++ii) {
-      if (ii < dimRange - 1 && XT::Common::FloatCmp::ge(v, triangulation_[ii])
-          && XT::Common::FloatCmp::le(v, triangulation_[ii + 1]))
+      if (ii < dimRange - 1 && XT::Common::FloatCmp::ge(v[0], triangulation_[ii])
+          && XT::Common::FloatCmp::le(v[0], triangulation_[ii + 1]))
         ret[ii] = (v - triangulation_[ii + 1]) / (triangulation_[ii] - triangulation_[ii + 1]);
-      if (ii > 0 && XT::Common::FloatCmp::ge(v, triangulation_[ii - 1])
-          && XT::Common::FloatCmp::le(v, triangulation_[ii]))
+      if (ii > 0 && XT::Common::FloatCmp::ge(v[0], triangulation_[ii - 1])
+          && XT::Common::FloatCmp::le(v[0], triangulation_[ii]))
         ret[ii] = (v - triangulation_[ii - 1]) / (triangulation_[ii] - triangulation_[ii - 1]);
     }
     return ret;
@@ -761,11 +614,11 @@ public:
 
   virtual MatrixType mass_matrix_inverse() const override
   {
-    return tridiagonal_matrix_inverse(mass_matrix);
+    return tridiagonal_matrix_inverse(mass_matrix());
   }
 
   // returns matrix with entries <v h_i h_j>
-  virtual MatrixType mass_matrix_with_v() const override
+  virtual FieldVector<MatrixType, 1> mass_matrix_with_v() const override
   {
     MatrixType ret(0);
     ret[0][0] = (triangulation_[1] * triangulation_[1] + 2 * triangulation_[1] * triangulation_[0]
@@ -791,8 +644,28 @@ public:
     return ret;
   }
 
+  std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
+  {
+    RangeFieldType psi_iso(0);
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      psi_iso += u[ii];
+    psi_iso /= 2.;
+    RangeType alpha_iso(std::log(psi_iso)), u_iso;
+    u_iso[0] = triangulation_[1] - triangulation_[0];
+    for (size_t ii = 1; ii < dimRange - 1; ++ii)
+      u_iso[ii] = triangulation_[ii + 1] - triangulation_[ii - 1];
+    u_iso[dimRange - 1] = triangulation_[dimRange - 1] - triangulation_[dimRange - 2];
+    u_iso *= psi_iso / 2.;
+    return std::make_pair(u_iso, alpha_iso);
+  }
+
+  const TriangulationType& triangulation() const
+  {
+    return triangulation_;
+  }
+
 private:
-  const TriangulationType& triangulation_;
+  const TriangulationType triangulation_;
 }; // class HatFunctions<DomainFieldType, 1, ...>
 
 
@@ -841,18 +714,24 @@ struct OctaederStatistics<0>
   }
 };
 
-template <class DomainFieldType, class RangeFieldType, size_t dimRange, size_t dimRangeCols>
-class HatFunctions<DomainFieldType, 3, RangeFieldType, dimRange, dimRangeCols>
-    : public BasisfunctionsInterface<DomainFieldType, 3, RangeFieldType, dimRange, dimRangeCols>
+template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols>
+class HatFunctions<DomainFieldType, 3, RangeFieldType, rangeDim, rangeDimCols>
+    : public BasisfunctionsInterface<DomainFieldType, 3, RangeFieldType, rangeDim, rangeDimCols>
 {
+public:
   static const size_t dimDomain = 3;
+  static const size_t dimRange = rangeDim;
+  static const size_t dimRangeCols = rangeDimCols;
+
+private:
   typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseType;
 
 public:
   typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
-  typedef typename SphericalTriangulation<DomainFieldType> TriangulationType;
-  using BaseType::DomainType;
-  using BaseType::RangeType;
+  typedef SphericalTriangulation<DomainFieldType> TriangulationType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::MatrixType;
 
   HatFunctions(const TriangulationType& triangulation, const QuadratureType& quadrature)
     : triangulation_(triangulation)
@@ -876,7 +755,7 @@ public:
     RangeType ret(0);
     bool success = false;
     // walk over faces
-    for (const auto& face : triangulation.faces()) {
+    for (const auto& face : triangulation_.faces()) {
       const auto& vertices = face->vertices();
       DomainType barycentric_coords(0);
       success = calculate_barycentric_coordinates(v, vertices, barycentric_coords);
@@ -936,11 +815,23 @@ public:
             B[dd][nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * v[dd] * weight;
     } // quadrature
     return B;
-  } // ... create_flux_config(...)
+  } // ... mass_matrix_with_v()
+
+  std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
+  {
+    RangeFieldType psi_iso(0);
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      psi_iso += u[ii];
+    psi_iso /= 4. * M_PI;
+    RangeType alpha_iso(std::log(psi_iso));
+    auto u_iso = integrated();
+    u_iso *= psi_iso;
+    return std::make_pair(u_iso, alpha_iso);
+  }
 
 protected:
   template <class VertexVectorType>
-  bool calculate_barycentric_coordinates(const DomainType& v, const VertexVectorType& vertices, DomainType& ret)
+  bool calculate_barycentric_coordinates(const DomainType& v, const VertexVectorType& vertices, DomainType& ret) const
   {
     Dune::FieldMatrix<double, 3, 3> gradients(0);
     for (size_t ii = 0; ii < 3; ++ii) {
@@ -1012,6 +903,7 @@ public:
   typedef FieldVector<DomainFieldType, dimRange + 1> TriangulationType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
+  using typename BaseType::MatrixType;
 
   PiecewiseMonomials(const TriangulationType& triangulation, const QuadratureType& /*quadrature*/ = QuadratureType())
     : triangulation_(triangulation)
@@ -1057,9 +949,9 @@ public:
       M[2 * ii][2 * ii] = triangulation_[ii + 1] - triangulation_[ii];
       M[2 * ii + 1][2 * ii + 1] = (std::pow(triangulation_[ii + 1], 3) - std::pow(triangulation_[ii], 3)) / 3.;
       M[2 * ii][2 * ii + 1] = (std::pow(triangulation_[ii + 1], 2) - std::pow(triangulation_[ii], 2)) / 2.;
-      M[2 * ii + 1][2 * ii] = ret[2 * ii][2 * ii + 1];
+      M[2 * ii + 1][2 * ii] = M[2 * ii][2 * ii + 1];
     }
-    return ret;
+    return M;
   }
 
   // returns matrix with entries <v h_i h_j>
@@ -1070,13 +962,32 @@ public:
       B[2 * ii][2 * ii] = (std::pow(triangulation_[ii + 1], 2) - std::pow(triangulation_[ii], 2)) / 2.;
       B[2 * ii + 1][2 * ii + 1] = (std::pow(triangulation_[ii + 1], 4) - std::pow(triangulation_[ii], 4)) / 4.;
       B[2 * ii][2 * ii + 1] = (std::pow(triangulation_[ii + 1], 3) - std::pow(triangulation_[ii], 3)) / 3.;
-      B[2 * ii + 1][2 * ii] = ret[2 * ii][2 * ii + 1];
+      B[2 * ii + 1][2 * ii] = B[2 * ii][2 * ii + 1];
     }
     return FieldVector<MatrixType, dimDomain>(B);
   }
 
+  std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
+  {
+    RangeType alpha_iso(0);
+    RangeFieldType psi_iso(0);
+    for (size_t ii = 0; ii < dimRange; ii += 2) {
+      psi_iso += u[ii];
+      alpha_iso[ii] = 1;
+    }
+    psi_iso /= 2.;
+    alpha_iso *= std::log(psi_iso);
+    RangeType u_iso(0);
+    for (size_t ii = 0; ii < dimRange / 2; ++ii) {
+      u_iso[2 * ii] = triangulation_[ii + 1] - triangulation_[ii];
+      u_iso[2 * ii + 1] = (std::pow(triangulation_[ii + 1], 2) - std::pow(triangulation_[ii], 2)) / 2.;
+    }
+    u_iso *= psi_iso;
+    return std::make_pair(u_iso, alpha_iso);
+  }
+
 private:
-  using BaseType::triangulation_;
+  const TriangulationType triangulation_;
 }; // class PiecewiseMonomials<DomainFieldType, 1, ...>
 
 
@@ -1089,9 +1000,10 @@ class PiecewiseMonomials<DomainFieldType, 3, RangeFieldType, dimRange, dimRangeC
 
 public:
   typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
-  typedef typename SphericalTriangulation<DomainFieldType> TriangulationType;
+  typedef SphericalTriangulation<DomainFieldType> TriangulationType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
+  using typename BaseType::MatrixType;
 
   PiecewiseMonomials(const TriangulationType& triangulation, const QuadratureType& quadrature)
     : triangulation_(triangulation)
@@ -1163,10 +1075,10 @@ public:
   {
     MatrixType M(0);
     for (const auto& quad_point : quadrature_) {
-      const auto basis_evaluated = evaluate(quad_point.weight());
+      const auto basis_evaluated = evaluate(quad_point.position());
       for (size_t nn = 0; nn < dimRange; ++nn)
         for (size_t mm = 0; mm < dimRange; ++mm)
-          M[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * weight;
+          M[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * quad_point.weight();
     } // quadrature
     return M;
   } // ... mass_matrix()
@@ -1184,6 +1096,21 @@ public:
             B[dd][nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * v[dd] * weight;
     } // quadrature
     return B;
+  }
+
+  std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
+  {
+    RangeFieldType psi_iso(0);
+    RangeType alpha_iso(0);
+    for (size_t ii = 0; ii < dimRange; ii += 4) {
+      psi_iso += u[ii];
+      alpha_iso[ii] = 1.;
+    }
+    psi_iso /= 4. * M_PI;
+    alpha_iso *= std::log(psi_iso);
+    auto u_iso = integrated();
+    u_iso *= psi_iso;
+    return std::make_pair(u_iso, alpha_iso);
   }
 
 private:

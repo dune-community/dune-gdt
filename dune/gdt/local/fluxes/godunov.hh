@@ -57,8 +57,8 @@ namespace internal {
 template <class AnalyticalFluxImp, size_t domainDim = AnalyticalFluxImp::dimDomain>
 class GodunovLocalNumericalCouplingFluxTraits
 {
-  static_assert(is_analytical_flux<AnalyticalFluxImp>::value,
-                "AnalyticalFluxImp has to be derived from AnalyticalFluxInterface");
+  //  static_assert(is_analytical_flux<AnalyticalFluxImp>::value,
+  //                "AnalyticalFluxImp has to be derived from AnalyticalFluxInterface");
 
 public:
   typedef AnalyticalFluxImp AnalyticalFluxType;
@@ -67,9 +67,9 @@ public:
   typedef typename AnalyticalFluxType::DomainFieldType DomainFieldType;
   typedef typename AnalyticalFluxType::DomainType DomainType;
   typedef typename AnalyticalFluxType::RangeFieldType RangeFieldType;
-  typedef typename AnalyticalFluxType::RangeType RangeType;
-  typedef typename AnalyticalFluxType::FluxRangeType FluxRangeType;
-  typedef typename AnalyticalFluxType::FluxJacobianRangeType FluxJacobianRangeType;
+  typedef typename AnalyticalFluxType::StateRangeType RangeType;
+  typedef typename AnalyticalFluxType::RangeType FluxRangeType;
+  typedef typename AnalyticalFluxType::JacobianWrtURangeType FluxJacobianRangeType;
   typedef std::tuple<double> LocalfunctionTupleType;
   static const size_t dimDomain = domainDim;
   static const size_t dimRange = AnalyticalFluxType::dimRange;

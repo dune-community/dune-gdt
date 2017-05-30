@@ -9,6 +9,8 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_PLANESOURCE_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_PLANESOURCE_HH
 
+#if 0
+
 #include <memory>
 #include <vector>
 #include <string>
@@ -363,4 +365,5 @@ public:
 } // namespace GDT
 } // namespace Dune
 
+#endif
 #endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_PLANESOURCE_HH

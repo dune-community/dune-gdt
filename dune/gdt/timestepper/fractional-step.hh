@@ -135,7 +135,7 @@ public:
 private:
   FirstStepperType& first_stepper_;
   SecondStepperType& second_stepper_;
-}; // class FractionalTimeStepper
+}; // class StrangSplittingTimeStepper
 
 
 } // namespace GDT

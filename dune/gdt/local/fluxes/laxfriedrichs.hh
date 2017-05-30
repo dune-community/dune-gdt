@@ -26,6 +26,7 @@
 #include <dune/grid/yaspgrid.hh>
 
 #include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/functions/type_traits.hh>
 
 #include "interfaces.hh"
 #include "godunov.hh"
@@ -139,11 +140,14 @@ public:
   static const size_t dimRange = Traits::dimRange;
 
   explicit LaxFriedrichsFluxImplementation(const AnalyticalFluxType& analytical_flux,
-                                           const XT::Common::Parameter param,
+                                           XT::Common::Parameter param,
                                            const bool use_local = false,
                                            const bool is_linear = false,
-                                           const DomainType lambda = DomainType(0))
+                                           const DomainType lambda = DomainType(0),
+                                           const bool boundary = false)
     : analytical_flux_(analytical_flux)
+    , param_inside_(param)
+    , param_outside_(param)
     , dt_(param.get("dt")[0])
     , t_(param.get("t")[0])
     , use_local_(use_local)
@@ -151,6 +155,8 @@ public:
     , lambda_(lambda)
     , lambda_provided_(XT::Common::FloatCmp::ne(lambda_, DomainType(0)))
   {
+    param_inside_.set("boundary", {0.}, true);
+    param_outside_.set("boundary", {double(boundary)}, true);
     if (lambda_provided_ && use_local_)
       std::cerr << "WARNING: Parameter lambda in Lax-Friedrichs flux set but will have no effect because local "
                    "Lax-Friedrichs flux is requested."
@@ -180,10 +186,12 @@ public:
                      const RangeType& u_i,
                      const RangeType& u_j) const
   {
-    auto f_u_i_plus_f_u_j = XT::Functions::internal::RangeTypeConverter<dimRange, dimDomain>::convert(
-        analytical_flux_.evaluate(u_i, inside_entity, x_in_inside_coords, t_));
-    f_u_i_plus_f_u_j += XT::Functions::internal::RangeTypeConverter<dimRange, dimDomain>::convert(
-        analytical_flux_.evaluate(u_j, outside_entity, x_in_outside_coords, t_));
+    const auto local_flux_inside = analytical_flux_.local_function(inside_entity);
+    const auto local_flux_outside = analytical_flux_.local_function(outside_entity);
+    auto f_u_i_plus_f_u_j = XT::Functions::RangeTypeConverter<dimRange, dimDomain>::convert(
+        local_flux_inside->evaluate(x_in_inside_coords, u_i, param_inside_));
+    f_u_i_plus_f_u_j += XT::Functions::RangeTypeConverter<dimRange, dimDomain>::convert(
+        local_flux_outside->evaluate(x_in_outside_coords, u_j, param_outside_));
     auto n_ij = intersection.unitOuterNormal(x_in_intersection_coords);
     // find direction of unit outer normal
     size_t direction = intersection.indexInInside() / 2;
@@ -191,12 +199,10 @@ public:
     if (use_local_) {
       if (!is_linear_ || !max_derivative_calculated_) {
         DomainType max_derivative(0);
-        const auto jacobian_u_i =
-            XT::Functions::internal::JacobianRangeTypeConverter<dimRange, dimRange, dimDomain>::convert(
-                analytical_flux_.jacobian(u_i, inside_entity, x_in_inside_coords, t_));
-        const auto jacobian_u_j =
-            XT::Functions::internal::JacobianRangeTypeConverter<dimRange, dimRange, dimDomain>::convert(
-                analytical_flux_.jacobian(u_j, outside_entity, x_in_outside_coords, t_));
+        const auto jacobian_u_i = XT::Functions::JacobianRangeTypeConverter<dimRange, dimRange, dimDomain>::convert(
+            local_flux_inside->jacobian_wrt_u(x_in_inside_coords, u_i, param_inside_));
+        const auto jacobian_u_j = XT::Functions::JacobianRangeTypeConverter<dimRange, dimRange, dimDomain>::convert(
+            local_flux_inside->jacobian_wrt_u(x_in_outside_coords, u_j, param_outside_));
         std::vector<EigenMatrixType> jacobian_u_i_eigen;
         std::vector<EigenMatrixType> jacobian_u_j_eigen;
         for (size_t ii = 0; ii < dimDomain; ++ii) {
@@ -261,6 +267,8 @@ public:
 
 private:
   const AnalyticalFluxType& analytical_flux_;
+  XT::Common::Parameter param_inside_;
+  XT::Common::Parameter param_outside_;
   const double dt_;
   const double t_;
   const bool use_local_;
@@ -348,7 +356,7 @@ public:
                                                    const bool is_linear = false,
                                                    const DomainType lambda = DomainType(0))
     : dx_(dx)
-    , implementation_(analytical_flux, param, use_local, is_linear, lambda)
+    , implementation_(analytical_flux, param, use_local, is_linear, lambda, false)
   {
   }
 
@@ -425,23 +433,22 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
-  explicit LaxFriedrichsLocalDirichletNumericalBoundaryFlux(
-      const AnalyticalFluxType& analytical_flux,
-      const std::shared_ptr<BoundaryValueFunctionType>& boundary_values,
-      const LocalizableFunctionType& dx,
-      const XT::Common::Parameter param,
-      const bool use_local = false,
-      const bool is_linear = false,
-      const DomainType lambda = DomainType(0))
+  explicit LaxFriedrichsLocalDirichletNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
+                                                            const BoundaryValueFunctionType& boundary_values,
+                                                            const LocalizableFunctionType& dx,
+                                                            const XT::Common::Parameter param,
+                                                            const bool use_local = false,
+                                                            const bool is_linear = false,
+                                                            const DomainType lambda = DomainType(0))
     : boundary_values_(boundary_values)
     , dx_(dx)
-    , implementation_(analytical_flux, param, use_local, is_linear, lambda)
+    , implementation_(analytical_flux, param, use_local, is_linear, lambda, true)
   {
   }
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
-    return std::make_tuple(entity.subEntities(1), dx_.local_function(entity), boundary_values_->local_function(entity));
+    return std::make_tuple(entity.subEntities(1), dx_.local_function(entity), boundary_values_.local_function(entity));
   }
 
   template <class IntersectionType>
@@ -470,7 +477,7 @@ public:
   } // RangeType evaluate(...) const
 
 private:
-  const std::shared_ptr<BoundaryValueFunctionType>& boundary_values_;
+  const BoundaryValueFunctionType& boundary_values_;
   const LocalizableFunctionType& dx_;
   const internal::LaxFriedrichsFluxImplementation<Traits> implementation_;
 }; // class LaxFriedrichsLocalDirichletNumericalBoundaryFlux
@@ -510,7 +517,7 @@ public:
                                                             const bool is_linear = false,
                                                             const DomainType lambda = DomainType(0))
     : dx_(dx)
-    , implementation_(analytical_flux, param, use_local, is_linear, lambda)
+    , implementation_(analytical_flux, param, use_local, is_linear, lambda, false)
   {
   }
 

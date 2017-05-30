@@ -273,7 +273,7 @@ public:
   {
     TimeFieldType dt = initial_dt;
     TimeFieldType t = current_time();
-    assert(Dune::XT::Common::FloatCmp::ge(t_end - t, 0.0));
+    assert(Dune::XT::Common::FloatCmp::ge(t_end, t));
     size_t time_step_counter = 0;
 
     const TimeFieldType save_interval = (t_end - t) / num_save_steps;
@@ -304,12 +304,12 @@ public:
     }
 
 
-    while (Dune::XT::Common::FloatCmp::lt(t, t_end, 1e-10)) {
+    while (Dune::XT::Common::FloatCmp::lt(t, t_end)) {
       TimeFieldType max_dt = dt;
       // match saving times and t_end exactly
-      if (Dune::XT::Common::FloatCmp::gt(t + dt, t_end, 1e-10))
+      if (Dune::XT::Common::FloatCmp::gt(t + dt, t_end))
         max_dt = t_end - t;
-      if (Dune::XT::Common::FloatCmp::gt(t + dt, next_save_time, 1e-10) && num_save_steps != size_t(-1))
+      if (Dune::XT::Common::FloatCmp::gt(t + dt, next_save_time) && num_save_steps != size_t(-1))
         max_dt = std::min(next_save_time - t, max_dt);
 
       // do a timestep

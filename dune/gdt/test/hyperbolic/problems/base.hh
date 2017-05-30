@@ -20,11 +20,11 @@ namespace GDT {
 namespace Hyperbolic {
 
 
-template <class EntityImp, class DomainFieldImp, int domainDim, class U_, class RangeFieldImp, int rangeDim>
-class ProblemBase : public ProblemInterface<EntityImp, DomainFieldImp, domainDim, U_, RangeFieldImp, rangeDim>
+template <class EntityType, class DomainFieldType, int domainDim, class U_, class RangeFieldType, int rangeDim>
+class ProblemBase : public ProblemInterface<EntityType, DomainFieldType, domainDim, U_, RangeFieldType, rangeDim>
 {
 private:
-  typedef ProblemInterface<EntityImp, DomainFieldImp, domainDim, U_, RangeFieldImp, rangeDim> BaseType;
+  typedef ProblemInterface<EntityType, DomainFieldType, domainDim, U_, RangeFieldType, rangeDim> BaseType;
 
 public:
   using typename BaseType::FluxType;
@@ -37,13 +37,17 @@ public:
               const InitialValueType& _initial_values,
               const BoundaryValueType& _boundary_values,
               XT::Common::Configuration _grid_cfg,
-              XT::Common::Configuration _boundary_cfg)
+              XT::Common::Configuration _boundary_cfg,
+              const RangeFieldType _CFL,
+              const RangeFieldType _t_end)
     : flux_(_flux)
     , rhs_(_rhs)
     , initial_values_(_initial_values)
     , boundary_values_(_boundary_values)
     , grid_cfg_(_grid_cfg)
     , boundary_cfg_(_boundary_cfg)
+    , CFL_(_CFL)
+    , t_end_(_t_end)
   {
   }
 
@@ -55,13 +59,17 @@ public:
               const InitialValueType*&& _initial_values,
               const BoundaryValueType*&& _boundary_values,
               XT::Common::Configuration _grid_cfg,
-              XT::Common::Configuration _boundary_cfg)
+              XT::Common::Configuration _boundary_cfg,
+              const RangeFieldType _CFL,
+              const RangeFieldType _t_end)
     : flux_(std::move(_flux))
     , rhs_(std::move(_rhs))
     , initial_values_(std::move(_initial_values))
     , boundary_values_(std::move(_boundary_values))
     , grid_cfg_(_grid_cfg)
     , boundary_cfg_(_boundary_cfg)
+    , CFL_(_CFL)
+    , t_end_(_t_end)
   {
   }
 
@@ -95,6 +103,16 @@ public:
     return boundary_cfg_;
   }
 
+  virtual RangeFieldType CFL() const override
+  {
+    return CFL_;
+  }
+
+  virtual RangeFieldType t_end() const override
+  {
+    return t_end_;
+  }
+
 protected:
   const XT::Common::ConstStorageProvider<FluxType> flux_;
   const XT::Common::ConstStorageProvider<RhsType> rhs_;
@@ -102,6 +120,8 @@ protected:
   const XT::Common::ConstStorageProvider<BoundaryValueType> boundary_values_;
   const XT::Common::Configuration grid_cfg_;
   const XT::Common::Configuration boundary_cfg_;
+  const RangeFieldType CFL_;
+  const RangeFieldType t_end_;
 }; // class ProblemBase
 
 

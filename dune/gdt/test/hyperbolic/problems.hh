@@ -19,7 +19,7 @@
 #include <dune/gdt/test/hyperbolic/problems/transport.hh>
 #include <dune/gdt/test/hyperbolic/problems/shallowwater.hh>
 #include <dune/gdt/test/hyperbolic/problems/sodshocktube.hh>
-#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/sourcebeam.hh>
+//#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/sourcebeam.hh>
 
 using Yasp1 = Dune::YaspGrid<1, Dune::EquidistantOffsetCoordinates<double, 1>>;
 using Yasp2 = Yasp2Grid;
@@ -29,7 +29,7 @@ typedef testing::Types<Dune::GDT::Hyperbolic::Boltzmann2DCheckerboardTestCase<Ya
                        Dune::GDT::Hyperbolic::BurgersTestCase<Yasp2>,
                        Dune::GDT::Hyperbolic::ShallowWaterTestCase<Yasp1>,
                        Dune::GDT::Hyperbolic::ShockTubeTestCase<Yasp1>,
-                       Dune::GDT::Hyperbolic::SourceBeamTestCase<Yasp1, double, 5>,
+                       //                       Dune::GDT::Hyperbolic::SourceBeamTestCase<Yasp1, double, 5>,
                        Dune::GDT::Hyperbolic::TransportTestCase<Yasp1, double, 1, 1>,
                        Dune::GDT::Hyperbolic::TransportTestCase<Yasp2, double, 1, 1>>
     YaspGridTestCasesAll;
@@ -40,8 +40,9 @@ typedef testing::Types<Dune::GDT::Hyperbolic::BurgersTestCase<Yasp1>,
                        Dune::GDT::Hyperbolic::TransportTestCase<Yasp2, double, 1, 1>>
     YaspGridTestCasesPartial;
 
-typedef testing::Types<Dune::GDT::Hyperbolic::SourceBeamTestCase<Yasp1, double, 5>,
-                       Dune::GDT::Hyperbolic::TransportTestCase<Yasp1, double, 1, 1>>
+typedef testing::Types<
+    // Dune::GDT::Hyperbolic::SourceBeamTestCase<Yasp1, double, 5>,
+    Dune::GDT::Hyperbolic::TransportTestCase<Yasp1, double, 1, 1>>
     YaspGridTestCasesLinear1D;
 
 
@@ -103,17 +104,17 @@ extern template class HyperbolicEocExpectations<Hyperbolic::ShockTubeTestCase<Ya
                                                 NumericalFluxes::laxfriedrichs,
                                                 TimeStepperMethods::explicit_euler>;
 
-extern template class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
-                                                Hyperbolic::ChooseDiscretizer::fv,
-                                                1,
-                                                NumericalFluxes::godunov,
-                                                TimeStepperMethods::explicit_euler>;
+// extern template class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
+//                                                Hyperbolic::ChooseDiscretizer::fv,
+//                                                1,
+//                                                NumericalFluxes::godunov,
+//                                                TimeStepperMethods::explicit_euler>;
 
-extern template class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
-                                                Hyperbolic::ChooseDiscretizer::fv,
-                                                1,
-                                                NumericalFluxes::godunov_with_reconstruction,
-                                                TimeStepperMethods::explicit_euler>;
+// extern template class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
+//                                                Hyperbolic::ChooseDiscretizer::fv,
+//                                                1,
+//                                                NumericalFluxes::godunov_with_reconstruction,
+//                                                TimeStepperMethods::explicit_euler>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp1, double, 1>,
                                                 Hyperbolic::ChooseDiscretizer::fv,
