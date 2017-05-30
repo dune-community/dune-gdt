@@ -45,7 +45,7 @@ public:
     const size_t size{descriptor_.size(space_, entity)};
     resize(size);
     if (size == 1) {
-      global_indices_[0] = space_.grid_view().indexSet().index(entity);
+      global_indices_[0] = space_.grid_layer().indexSet().index(entity);
     } else {
       space_.mapper().globalIndices(entity, global_indices_);
     }

@@ -37,12 +37,12 @@ class GenericParallelHelper
 public:
   GenericParallelHelper(const SpaceType& space, int verbose = 1)
     : space_(space)
-    , rank_(space.grid_view().comm().rank())
-    , rank_vector_(space.grid_view().grid().size(0), rank_)
-    , ghosts_(space.grid_view().grid().size(0), false)
+    , rank_(space.grid_layer().comm().rank())
+    , rank_vector_(space.grid_layer().grid().size(0), rank_)
+    , ghosts_(space.grid_layer().grid().size(0), false)
     , verbose_(verbose)
   {
-    auto view = space.grid_view();
+    auto view = space.grid_layer();
 
     // not optimal
     _interiorBorder_all_interface = InteriorBorder_All_Interface;
@@ -51,13 +51,13 @@ public:
     if (view.comm().size() > 1) {
       // find out about ghosts
       GDT::GhostDataHandle<SpaceType, GhostVector> gdh(space, ghosts_, false);
-      space.grid_view().grid().communicate(gdh, _interiorBorder_all_interface, Dune::ForwardCommunication);
+      space.grid_layer().grid().communicate(gdh, _interiorBorder_all_interface, Dune::ForwardCommunication);
 
       // create disjoint DOF partitioning
       //            SpaceTypeDataHandle<SpaceType,RankVector,DisjointPartitioningGatherScatter<RankIndex> >
       //  ibdh(space_,rank_vector_,DisjointPartitioningGatherScatter<RankIndex>(rank_));
       GDT::DisjointPartitioningDataHandle<SpaceType, RankVector> pdh(space, rank_vector_);
-      space.grid_view().communicate(pdh, _interiorBorder_all_interface, Dune::ForwardCommunication);
+      space.grid_layer().communicate(pdh, _interiorBorder_all_interface, Dune::ForwardCommunication);
     }
   }
 
@@ -129,8 +129,8 @@ void GenericParallelHelper<SpaceType>::createIndexSetAndProjectForAMG(Communicat
   // first entry of the blocks in the diverse BlockVectors.
   // ********************************************************************************
 
-  const auto& view = space_.grid_view();
-  const auto vector_size = space_.grid_view().grid().size(0) * space_.mapper().maxNumDofs();
+  const auto& view = space_.grid_layer();
+  const auto vector_size = space_.grid_layer().grid().size(0) * space_.mapper().maxNumDofs();
 
   // Do we need to communicate at all?
   const bool need_communication = view.comm().size() > 1;

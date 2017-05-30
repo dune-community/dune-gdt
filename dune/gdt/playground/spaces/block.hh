@@ -51,8 +51,8 @@ public:
   typedef typename LocalSpaceType::RangeFieldType RangeFieldType;
 
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::part;
-  static const constexpr ChooseSpaceBackend backend_type{ChooseSpaceBackend::gdt};
-  using CommunicationChooserType = CommunicationChooser<GridViewType, true>;
+  static const constexpr auto backend_type{Backends::gdt};
+  using CommunicationChooserType = CommunicationChooser<GridLayerType, true>;
   using CommunicatorType = typename CommunicationChooserType::type;
 
   static const bool needs_grid_view = false;

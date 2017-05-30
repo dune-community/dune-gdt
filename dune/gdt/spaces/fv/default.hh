@@ -64,7 +64,7 @@ public:
   static const bool needs_grid_view = true;
   typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
-  static const constexpr ChooseSpaceBackend backend_type{ChooseSpaceBackend::gdt};
+  static const constexpr auto backend_type{GDT::Backends::gdt};
 }; // class FvSpaceTraits
 
 

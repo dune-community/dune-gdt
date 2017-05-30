@@ -72,7 +72,7 @@ struct CommunicationChooser<ViewImp, true>
   }
 
   template <class Space>
-  static typename std::enable_if<Space::backend_type == Dune::GDT::ChooseSpaceBackend::pdelab, bool>::type
+  static typename std::enable_if<Space::backend_type == Dune::GDT::Backends::pdelab, bool>::type
   prepare(const Space& space, Type& communicator)
   {
 #if HAVE_DUNE_PDELAB
@@ -84,7 +84,7 @@ struct CommunicationChooser<ViewImp, true>
   } // ... prepare(...)
 
   template <class Space>
-  static typename std::enable_if<Space::backend_type == Dune::GDT::ChooseSpaceBackend::block, bool>::type
+  static typename std::enable_if<Space::backend_type == Dune::GDT::Backends::gdt, bool>::type
   prepare(const Space& space, Type& communicator)
   {
 #if HAVE_DUNE_PDELAB
@@ -93,8 +93,7 @@ struct CommunicationChooser<ViewImp, true>
   } // ... prepare(...)
 
   template <class Space>
-  static typename std::enable_if<Space::backend_type == Dune::GDT::ChooseSpaceBackend::gdt, bool>::type
-  static typename std::enable_if<Space::backend_type == Dune::GDT::ChooseSpaceBackend::fem, bool>::type
+  static typename std::enable_if<Space::backend_type == Dune::GDT::Backends::fem, bool>::type
   prepare(const Space& space, Type& communicator)
   {
     GDT::GenericParallelHelper<Space>(space, 1).createIndexSetAndProjectForAMG(communicator);

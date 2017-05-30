@@ -35,7 +35,7 @@ struct DOFDataCommunicationDescriptor
   template <typename SpaceType, typename Entity>
   std::size_t size(const SpaceType& space, const Entity& e) const
   {
-    return space.grid_view().indexSet().contains(e) ? space.mapper().numDofs(e) : 0u;
+    return space.grid_layer().indexSet().contains(e) ? space.mapper().numDofs(e) : 0u;
   }
 };
 
@@ -61,7 +61,7 @@ struct EntityDataCommunicationDescriptor
   template <typename SpaceType, typename Entity>
   std::size_t size(const SpaceType& space, const Entity& e) const
   {
-    return space.grid_view().indexSet().contains(e) ? _count : 0;
+    return space.grid_layer().indexSet().contains(e) ? _count : 0;
   }
 
   explicit EntityDataCommunicationDescriptor(std::size_t count = 1)
@@ -371,7 +371,7 @@ public:
     : BaseType(space_, v_)
   {
     if (init_vector)
-      v_ = false;
+      v_.set_all(false);
   }
 };
 
@@ -481,10 +481,10 @@ public:
   DisjointPartitioningDataHandle(const SpaceType& space_, VectorType& v_, bool init_vector = true)
     : BaseType(space_,
                v_,
-               DisjointPartitioningGatherScatter<typename VectorType::ScalarType>(space_.grid_view().comm().rank()))
+               DisjointPartitioningGatherScatter<typename VectorType::ScalarType>(space_.grid_layer().comm().rank()))
   {
     if (init_vector)
-      v_ = space_.grid_view().comm().rank();
+      v_.set_all(space_.grid_layer().comm().rank());
   }
 };
 
@@ -552,7 +552,7 @@ public:
     : BaseType(space_, v_)
   {
     if (init_vector)
-      v_ = false;
+      v_.set_all(false);
   }
 };
 

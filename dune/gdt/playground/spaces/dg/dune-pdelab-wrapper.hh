@@ -70,7 +70,7 @@ public:
   typedef GridLayerImp GridLayerType;
   static const int polOrder = polynomialOrder;
   static const bool continuous = false;
-  static const constexpr ChooseSpaceBackend backend_type{ChooseSpaceBackend::pdelab};
+  static const constexpr auto backend_type{Backends::pdelab};
 
 private:
   typedef typename GridLayerType::ctype DomainFieldType;
@@ -96,7 +96,7 @@ private:
   {
     typedef PDELab::QkDGLocalFiniteElementMap<DomainFieldType, RangeFieldType, polOrder, dimDomain> Type;
   };
-  typedef XT::Grid::extract_grid_t<GridLayerType> GridType;
+
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
   static const bool simplicial_ =
       (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId == Impl::SimplexTopology<dimDomain>::type::id);

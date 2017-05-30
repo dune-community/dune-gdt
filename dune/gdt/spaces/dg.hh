@@ -39,6 +39,7 @@ template <class GridType,
           XT::Grid::Backends grid_backend_type = layer_from_backend<backend_type>::type>
 class DgSpaceProvider
 {
+
 public:
   static const constexpr SpaceType space_type = SpaceType::dg;
   static const constexpr Backends space_backend = backend_type;
