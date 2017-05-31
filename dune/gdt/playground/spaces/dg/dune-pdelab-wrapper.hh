@@ -30,6 +30,7 @@
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/la/container/istl.hh>
 #include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/grid/grids.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/parallel.hh>
@@ -83,18 +84,10 @@ private:
   template <class G, bool single_geom, bool is_simplex, bool is_cube>
   struct FeMap
   {
-    static_assert(Dune::AlwaysFalse<G>::value,
+    static_assert(single_geom, "This space is only implemented for grids with a single geometry type!");
+    static_assert(is_simplex != is_cube,
                   "This space is only implemented for either fully simplicial or fully cubic grids!");
-  };
-  template <class G>
-  struct FeMap<G, true, true, false>
-  {
-    static_assert(Dune::AlwaysFalse<G>::value, "Not yet implemented for simplicial grids!");
-  };
-  template <class G>
-  struct FeMap<G, true, false, true>
-  {
-    typedef PDELab::QkDGLocalFiniteElementMap<DomainFieldType, RangeFieldType, polOrder, dimDomain> Type;
+    using Type = PDELab::QkDGLocalFiniteElementMap<DomainFieldType, RangeFieldType, polOrder, dimDomain>;
   };
 
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
