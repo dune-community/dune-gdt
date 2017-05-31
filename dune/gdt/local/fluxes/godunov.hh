@@ -287,12 +287,13 @@ public:
   typedef typename Traits::EigenMatrixType EigenMatrixType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
-  typedef typename XT::Functions::AffineFunction<typename AnalyticalFluxType::FluxDummyEntityType,
-                                                 RangeFieldType,
-                                                 dimRange,
-                                                 RangeFieldType,
-                                                 dimRange,
-                                                 1>
+  typedef typename XT::Functions::AffineFluxFunction<EntityType,
+                                                     DomainFieldType,
+                                                     dimDomain,
+                                                     typename AnalyticalFluxType::StateType,
+                                                     RangeFieldType,
+                                                     dimRange,
+                                                     1>
       AffineFunctionType;
 
   explicit GodunovLocalNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
@@ -650,12 +651,13 @@ public:
   typedef typename Traits::EigenMatrixType EigenMatrixType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
-  typedef typename XT::Functions::AffineFunction<typename AnalyticalFluxType::FluxDummyEntityType,
-                                                 RangeFieldType,
-                                                 dimRange,
-                                                 RangeFieldType,
-                                                 dimRange,
-                                                 1>
+  typedef typename XT::Functions::AffineFluxFunction<EntityType,
+                                                     DomainFieldType,
+                                                     dimDomain,
+                                                     typename AnalyticalFluxType::StateType,
+                                                     RangeFieldType,
+                                                     dimRange,
+                                                     1>
       AffineFunctionType;
   explicit GodunovLocalNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
                                              const std::shared_ptr<BoundaryValueFunctionType>& boundary_values,

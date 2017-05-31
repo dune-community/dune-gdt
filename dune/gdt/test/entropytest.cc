@@ -175,7 +175,8 @@ int main(int argc, char** argv)
   // const auto time_stepper_method = TimeStepperMethods::explicit_euler;
   const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_second_order_ssp;
   //  const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_third_order_ssp;
-  const auto rhs_time_stepper_method = TimeStepperMethods::implicit_euler;
+  const auto rhs_time_stepper_method = TimeStepperMethods::explicit_euler;
+  //  const auto rhs_time_stepper_method = TimeStepperMethods::implicit_euler;
   //  const auto rhs_time_stepper_method = TimeStepperMethods::matrix_exponential;
   //  const auto rhs_time_stepper_method = TimeStepperMethods::trapezoidal_rule;
   const auto container_backend = Dune::XT::LA::default_sparse_backend;
@@ -185,9 +186,8 @@ int main(int argc, char** argv)
   typedef typename GridType::Codim<0>::Entity EntityType;
 
   //******************** choose BasisfunctionType *****************************************
-  //  typedef typename Hyperbolic::Problems::LegendrePolynomials<double, dimDomain, double, momentOrder>
-  //  BasisfunctionType;
-  typedef typename Hyperbolic::Problems::HatFunctions<double, dimDomain, double, momentOrder> BasisfunctionType;
+  typedef typename Hyperbolic::Problems::LegendrePolynomials<double, dimDomain, double, momentOrder> BasisfunctionType;
+  //  typedef typename Hyperbolic::Problems::HatFunctions<double, dimDomain, double, momentOrder> BasisfunctionType;
   BasisfunctionType basis_functions;
   static const size_t dimRange = BasisfunctionType::dimRange;
   typedef FvProductSpace<GridViewType, double, dimRange, 1> SpaceType;
@@ -195,17 +195,16 @@ int main(int argc, char** argv)
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
 
   //******************** choose ProblemType ***********************************************
-  //  typedef typename Hyperbolic::Problems::
-  //      TwoBeamsFokkerPlanckPn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double,
-  //      dimRange>
-  //          ProblemImp;
+  typedef typename Hyperbolic::Problems::
+      TwoBeamsFokkerPlanckPn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
+          ProblemImp;
   //    typedef typename Hyperbolic::Problems::
   //      TwoBeamsMn<GridViewType, BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double,
   //      dimRange>
   //          ProblemImp;
-  typedef typename Hyperbolic::Problems::
-      SourceBeamPn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
-          ProblemImp;
+  //  typedef typename Hyperbolic::Problems::
+  //      SourceBeamPn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
+  //          ProblemImp;
   //  typedef typename Hyperbolic::Problems::SourceBeamMn<GridViewType,
   //                                                      BasisfunctionType,
   //                                                      EntityType,

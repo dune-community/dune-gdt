@@ -55,7 +55,7 @@ public:
   typedef typename RhsEvaluationImp::DomainFieldType DomainFieldType;
   static const size_t dimDomain = RhsEvaluationImp::dimDomain;
   typedef LocalFvRhsIntegrand<RhsEvaluationImp, SourceType> derived_type;
-  typedef std::tuple<size_t,
+  typedef std::tuple<std::unique_ptr<typename RhsEvaluationType::LocalfunctionType>,
                      std::unique_ptr<typename SourceType::LocalfunctionType>,
                      typename SourceType::SpaceType::GridLayerType::ctype>
       LocalfunctionTupleType;
@@ -75,7 +75,7 @@ public:
   typedef typename RhsEvaluationImp::DomainFieldType DomainFieldType;
   static const size_t dimDomain = RhsEvaluationImp::dimDomain;
   typedef LocalFvRhsJacobianIntegrand<RhsEvaluationImp, SourceType> derived_type;
-  typedef std::tuple<size_t,
+  typedef std::tuple<std::unique_ptr<typename RhsEvaluationType::LocalfunctionType>,
                      std::unique_ptr<typename SourceType::LocalfunctionType>,
                      typename SourceType::SpaceType::GridLayerType::ctype>
       LocalfunctionTupleType;
@@ -133,7 +133,8 @@ public:
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
-    return std::make_tuple(rhs_evaluation_.order(entity), source_.local_function(entity), entity.geometry().volume());
+    return std::make_tuple(
+        rhs_evaluation_.local_function(entity), source_.local_function(entity), entity.geometry().volume());
   }
 
   template <class R, size_t r, size_t rC>
@@ -142,7 +143,7 @@ public:
         const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& /*test_base*/)
       const
   {
-    return std::get<0>(local_functions_tuple);
+    return std::get<0>(local_functions_tuple)->order();
   }
 
   template <class R, size_t r, size_t rC>
@@ -152,9 +153,8 @@ public:
            const Dune::FieldVector<DomainFieldType, dimDomain>& x_local,
            Dune::DynamicVector<R>& ret) const
   {
-    const auto& entity = test_base.entity();
     const auto u = std::get<1>(local_functions_tuple)->evaluate(x_local);
-    ret = rhs_evaluation_.evaluate(u, entity, x_local);
+    ret = std::get<0>(local_functions_tuple)->evaluate(x_local, u);
     ret /= std::get<2>(local_functions_tuple);
   }
 
@@ -194,7 +194,8 @@ public:
 
   LocalfunctionTupleType localFunctions(const EntityType& entity) const
   {
-    return std::make_tuple(rhs_evaluation_.order(entity), source_.local_function(entity), entity.geometry().volume());
+    return std::make_tuple(
+        rhs_evaluation_.local_function(entity), source_.local_function(entity), entity.geometry().volume());
   }
 
   template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
@@ -204,21 +205,20 @@ public:
       const XT::Functions::
           LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& /*ansatzBase*/) const
   {
-    return std::get<0>(local_functions_tuple);
+    return std::get<0>(local_functions_tuple)->order();
   }
 
   template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
   void evaluate(
       const LocalfunctionTupleType& local_functions_tuple,
-      const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& test_base,
+      const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>& /*test_base*/,
       const XT::Functions::
           LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& /*ansatzBase*/,
       const Dune::FieldVector<DomainFieldType, dimDomain>& x_local,
       Dune::DynamicMatrix<R>& ret) const
   {
-    const auto& entity = test_base.entity();
     const auto u = std::get<1>(local_functions_tuple)->evaluate(x_local);
-    ret = rhs_evaluation_.jacobian(u, entity, x_local);
+    ret = std::get<0>(local_functions_tuple)->jacobian_wrt_u(x_local, u);
     ret /= std::get<2>(local_functions_tuple);
   }
 

@@ -194,10 +194,9 @@ public:
   using BaseType::dimDomain;
   typedef typename Dune::GDT::GodunovLocalNumericalCouplingFlux<AnalyticalFluxType, dimDomain>
       NumericalCouplingFluxType;
-  typedef typename Dune::GDT::GodunovLocalNumericalBoundaryFlux<AnalyticalFluxType,
-                                                                typename BoundaryValueFunctionType::NonparametricType,
-                                                                dimDomain>
-      NumericalBoundaryFluxType;
+  typedef
+      typename Dune::GDT::GodunovLocalNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueFunctionType, dimDomain>
+          NumericalBoundaryFluxType;
   typedef AdvectionGodunovOperator<AnalyticalFluxImp, BoundaryValueFunctionImp, slope_limiter> derived_type;
 }; // class AdvectionGodunovOperatorTraits
 
@@ -1516,6 +1515,7 @@ public:
                                                              use_linear_reconstruction_,
                                                              eigenvectors_,
                                                              eigenvectors_inverse_,
+                                                             param,
                                                              flux_is_linear_);
   }
 
@@ -1768,19 +1768,13 @@ public:
                          const SourceType& source,
                          const XT::Common::Parameter& /*param*/ = {}) const
   {
-    typedef typename SourceType::SpaceType::BaseFunctionSetType BasisType;
+    typedef typename SourceType::SpaceType SpaceType;
+    typedef typename SpaceType::BaseFunctionSetType BasisType;
     typedef LocalVolumeIntegralOperator<LocalFvRhsJacobianIntegrand<RHSEvaluationType, SourceType>, BasisType>
         LocalOperatorType;
     LocalOperatorType local_operator(rhs_evaluation_, source);
-    LocalVolumeTwoFormAssemblerFunctor<
-        typename SourceType::SpaceType,
-        typename XT::LA::MatrixInterface<MatrixTraits, typename SourceType::RangeFieldType>>
-        local_assembler(source.space(),
-                        source.space(),
-                        new XT::Grid::ApplyOn::AllEntities<typename SourceType::SpaceType::GridLayerType>(),
-                        local_operator);
-    SystemAssembler<typename SourceType::SpaceType> assembler(source.space());
-    assembler.append(local_assembler, jac);
+    SystemAssembler<SpaceType> assembler(source.space());
+    assembler.append(local_operator, jac);
     assembler.assemble(true);
   }
 

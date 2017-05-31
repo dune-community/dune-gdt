@@ -384,7 +384,7 @@ public:
   }
 
 private:
-  const GridLayerType grid_layer_;
+  GridLayerType grid_layer_;
   const FactorSpaceType factor_space_;
   const MapperType factor_mapper_;
   mutable std::unique_ptr<CommunicatorType> communicator_;
