@@ -66,7 +66,7 @@ public:
   static_assert(polOrder == 0, "Untested!");
   static_assert(rangeDim == GridLayerType::dimension, "Untested!");
   static_assert(rangeDimCols == 1, "Untested!");
-  static const constexpr ChooseSpaceBackend backend_type{ChooseSpaceBackend::pdelab};
+  static const constexpr Backends backend_type{Backends::pdelab};
 
 private:
   typedef typename GridLayerType::ctype DomainFieldType;

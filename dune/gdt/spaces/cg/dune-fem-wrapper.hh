@@ -57,7 +57,7 @@ public:
   static const int polOrder = polynomialOrder;
   static const bool continuous = true;
   static_assert(polOrder >= 1, "Wrong polOrder given!");
-  static const constexpr ChooseSpaceBackend backend_type{ChooseSpaceBackend::fem};
+  static const constexpr Backends backend_type{Backends::fem};
 
 private:
   typedef typename GridLayerType::ctype DomainFieldType;
