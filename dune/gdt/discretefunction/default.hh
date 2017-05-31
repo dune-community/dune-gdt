@@ -328,7 +328,12 @@ public:
   {
   }
 
-  DiscreteFunction(const ThisType& other) = default;
+  DiscreteFunction(const ThisType& other)
+    : VectorProviderBaseType(VectorType(other.vector()))
+    , BaseType(other.space(), VectorProviderBaseType::access(), other.name())
+  {
+  }
+
   DiscreteFunction(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;
