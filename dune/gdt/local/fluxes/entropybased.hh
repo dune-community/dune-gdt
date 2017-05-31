@@ -390,6 +390,11 @@ public:
       return alpha;
     }
 
+    virtual size_t order() const override
+    {
+      return 1;
+    }
+
     virtual void evaluate(const DomainType& x_local,
                           const StateRangeType& u,
                           RangeType& ret,

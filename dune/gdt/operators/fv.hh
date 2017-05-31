@@ -1598,7 +1598,6 @@ private:
 
 // TODO: make thread-safe
 // TODO: clean up matrix exponential files
-// TODO: make usable for non-invertable jacobians
 template <class DiscreteFunctionType, class RhsEvaluationType>
 class MatrixExponentialFunctor
     : public XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType>
@@ -1621,7 +1620,12 @@ public:
   {
   }
 
-  // solves d_t u(t) = A u(t) + b locally on each entity
+  // Solves d_t u(t) = A u(t) + b locally on each entity
+  // Multiplying by exp(-At) we get
+  // (see https://en.wikipedia.org/wiki/Matrix_exponential#Linear_differential_equations)
+  // d_t (exp(-At)u(t)) = exp(-At) b
+  // By integrating over (0, dt) wrt. t, we get
+  // u(dt) = exp(Adt)(u(0) + (\int_0^{dt} exp(-At)) b)
   virtual void apply_local(const EntityType& entity)
   {
     auto solution_local = solution_.local_discrete_function(entity);
@@ -1649,20 +1653,33 @@ public:
     std::copy_n(exp_Adt_array, dimRange * dimRange, &(exp_Adt[0][0]));
     delete[] exp_Adt_array;
 
-    // calculate integral of exp(-Adt) int_exp_mAdt
+    // calculate integral of exp(-At) int_exp_mAt
     // see https://math.stackexchange.com/questions/658276/integral-of-matrix-exponential
-    // if A is invertible, the integral is A^{-1}(exp(Adt)-I)
-    // in general, it is the power series dt*(I + AT/(2!) + (AT)^2/(3!) + ... + (AT)^{n-1}/(n!)
+    // if A is invertible, the integral is -A^{-1}(exp(-Adt)-I)
+    // in general, it is the power series dt*(I + (-Adt)/(2!) + (-Adt)^2/(3!) + ... + (-Adt)^{n-1}/(n!) + ...)
     FieldMatrix<FieldType, dimRange, dimRange> int_exp_mAdt;
     try {
       auto A_inverse = A;
       A_inverse.invert();
-      int_exp_mAdt = exp_Adt;
+      A_inverse *= -1.;
+
+      // calculate matrix exponential exp(-A*dt)
+      auto mAdt = A;
+      mAdt *= -dt_;
+      // get pointer to the underlying array of the FieldMatrix
+      double* mAdt_array = &(mAdt[0][0]);
+      const double* exp_mAdt_array = r8mat_expm1(dimRange, mAdt_array);
+
+      std::copy_n(exp_mAdt_array, dimRange * dimRange, &(int_exp_mAdt[0][0]));
+      delete[] exp_mAdt_array;
+
       for (size_t ii = 0; ii < dimRange; ++ii)
         int_exp_mAdt[ii][ii] -= 1.;
       int_exp_mAdt.leftmultiply(A_inverse);
     } catch (Dune::FMatrixError&) {
-      const double* int_exp_mAdt_array = r8mat_expm_integral(dimRange, &(A[0][0]), -dt_);
+      auto minus_A = A;
+      minus_A *= -1.;
+      const double* int_exp_mAdt_array = r8mat_expm_integral(dimRange, &(minus_A[0][0]), dt_);
       std::copy_n(int_exp_mAdt_array, dimRange * dimRange, &(int_exp_mAdt[0][0]));
     }
 

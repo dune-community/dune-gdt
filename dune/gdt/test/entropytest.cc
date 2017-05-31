@@ -175,9 +175,9 @@ int main(int argc, char** argv)
   // const auto time_stepper_method = TimeStepperMethods::explicit_euler;
   const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_second_order_ssp;
   //  const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_third_order_ssp;
-  const auto rhs_time_stepper_method = TimeStepperMethods::explicit_euler;
+  // const auto rhs_time_stepper_method = TimeStepperMethods::explicit_euler;
   //  const auto rhs_time_stepper_method = TimeStepperMethods::implicit_euler;
-  //  const auto rhs_time_stepper_method = TimeStepperMethods::matrix_exponential;
+  const auto rhs_time_stepper_method = TimeStepperMethods::matrix_exponential;
   //  const auto rhs_time_stepper_method = TimeStepperMethods::trapezoidal_rule;
   const auto container_backend = Dune::XT::LA::default_sparse_backend;
 
@@ -186,8 +186,10 @@ int main(int argc, char** argv)
   typedef typename GridType::Codim<0>::Entity EntityType;
 
   //******************** choose BasisfunctionType *****************************************
-  typedef typename Hyperbolic::Problems::LegendrePolynomials<double, dimDomain, double, momentOrder> BasisfunctionType;
-  //  typedef typename Hyperbolic::Problems::HatFunctions<double, dimDomain, double, momentOrder> BasisfunctionType;
+  //  typedef typename Hyperbolic::Problems::LegendrePolynomials<double, dimDomain, double, momentOrder>
+  //  BasisfunctionType;
+  //    typedef typename Hyperbolic::Problems::HatFunctions<double, dimDomain, double, momentOrder> BasisfunctionType;
+  typedef typename Hyperbolic::Problems::PiecewiseMonomials<double, dimDomain, double, momentOrder> BasisfunctionType;
   BasisfunctionType basis_functions;
   static const size_t dimRange = BasisfunctionType::dimRange;
   typedef FvProductSpace<GridViewType, double, dimRange, 1> SpaceType;
@@ -195,9 +197,10 @@ int main(int argc, char** argv)
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
 
   //******************** choose ProblemType ***********************************************
-  typedef typename Hyperbolic::Problems::
-      TwoBeamsFokkerPlanckPn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
-          ProblemImp;
+  //  typedef typename Hyperbolic::Problems::
+  //      TwoBeamsFokkerPlanckPn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double,
+  //      dimRange>
+  //          ProblemImp;
   //    typedef typename Hyperbolic::Problems::
   //      TwoBeamsMn<GridViewType, BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double,
   //      dimRange>
@@ -205,15 +208,15 @@ int main(int argc, char** argv)
   //  typedef typename Hyperbolic::Problems::
   //      SourceBeamPn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
   //          ProblemImp;
-  //  typedef typename Hyperbolic::Problems::SourceBeamMn<GridViewType,
-  //                                                      BasisfunctionType,
-  //                                                      EntityType,
-  //                                                      double,
-  //                                                      dimDomain,
-  //                                                      DiscreteFunctionType,
-  //                                                      double,
-  //                                                      dimRange>
-  //      ProblemImp;
+  typedef typename Hyperbolic::Problems::SourceBeamMn<GridViewType,
+                                                      BasisfunctionType,
+                                                      EntityType,
+                                                      double,
+                                                      dimDomain,
+                                                      DiscreteFunctionType,
+                                                      double,
+                                                      dimRange>
+      ProblemImp;
   typedef typename Hyperbolic::Problems::KineticEquation<ProblemImp> ProblemType;
 
   //  typedef typename Hyperbolic::Problems::SourceBeamPnHatFunctions<EntityType, double, dimDomain, double,
@@ -301,8 +304,8 @@ int main(int argc, char** argv)
   //  const auto problem_ptr = ProblemType::create(
   //      quadrature_rule, triangulation, ProblemType::default_config(grid_config, quadrature_rule, triangulation));
   //  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config, true));
-  const ProblemImp problem_imp(basis_functions);
-  //  const ProblemImp problem_imp(basis_functions, grid_view);
+  //  const ProblemImp problem_imp(basis_functions);
+  const ProblemImp problem_imp(basis_functions, grid_view);
   const ProblemType problem(problem_imp);
   const InitialValueType& initial_values = problem.initial_values();
   const BoundaryValueType& boundary_values = problem.boundary_values();
@@ -457,14 +460,15 @@ int main(int argc, char** argv)
   typedef
       typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, RangeFieldType, time_stepper_method>::
           TimeStepperType OperatorTimeStepperType;
-  typedef typename TimeStepperFactory<RHSOperatorType,
-                                      DiscreteFunctionType,
-                                      RangeFieldType,
-                                      rhs_time_stepper_method,
-                                      Dune::XT::LA::default_sparse_backend>::TimeStepperType RHSOperatorTimeStepperType;
-  //  typedef MatrixExponentialTimeStepper<RHSOperatorType, DiscreteFunctionType, RangeFieldType>
-  //      RHSOperatorTimeStepperType;
-  //  typedef FractionalTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType> TimeStepperType;
+  //  typedef typename TimeStepperFactory<RHSOperatorType,
+  //                                      DiscreteFunctionType,
+  //                                      RangeFieldType,
+  //                                      rhs_time_stepper_method,
+  //                                      Dune::XT::LA::default_sparse_backend>::TimeStepperType
+  //                                      RHSOperatorTimeStepperType;
+  typedef MatrixExponentialTimeStepper<RHSOperatorType, DiscreteFunctionType, RangeFieldType>
+      RHSOperatorTimeStepperType;
+  //    typedef FractionalTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType> TimeStepperType;
   typedef StrangSplittingTimeStepper<RHSOperatorTimeStepperType, OperatorTimeStepperType> TimeStepperType;
 
 

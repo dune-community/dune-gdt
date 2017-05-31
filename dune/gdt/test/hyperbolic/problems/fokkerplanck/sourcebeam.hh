@@ -62,6 +62,7 @@ public:
   using typename BaseType::QuadratureType;
 
   using BaseType::default_boundary_cfg;
+  using BaseType::default_quadrature;
 
   SourceBeamPn(const BasisfunctionType& basis_functions,
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
@@ -83,6 +84,8 @@ public:
     grid_config["upper_right"] = "[3.0]";
     grid_config["num_elements"] = "[300]";
     grid_config["overlap_size"] = "[1]";
+    grid_config["num_quad_cells"] = "[50]";
+    grid_config["quad_order"] = "50";
     return grid_config;
   }
 
@@ -96,8 +99,7 @@ public:
                                   std::make_pair("Q", std::vector<double>{0, 0, 1, 0, 0, 0}),
                                   std::make_pair("CFL", std::vector<double>{0.4}),
                                   std::make_pair("t_end", std::vector<double>{4.0}),
-                                  std::make_pair("num_elements", std::vector<double>{6.}),
-                                  std::make_pair("quad_order", std::vector<double>{20})});
+                                  std::make_pair("num_elements", std::vector<double>{6.})});
   }
 
   // Boundary value of kinetic equation is \frac{g}{<g>} at x = 0 and
@@ -349,8 +351,7 @@ public:
                                   std::make_pair("Q", std::vector<double>{0, 0, 1, 0, 0, 0}),
                                   std::make_pair("CFL", std::vector<double>{0.4}),
                                   std::make_pair("t_end", std::vector<double>{4.0}),
-                                  std::make_pair("num_elements", std::vector<double>{6.}),
-                                  std::make_pair("quad_order", std::vector<double>{20})});
+                                  std::make_pair("num_elements", std::vector<double>{6.})});
   }
 
   // Boundary value of kinetic equation is delta(v-1) at x = 0 and psi_vac at x = 3,

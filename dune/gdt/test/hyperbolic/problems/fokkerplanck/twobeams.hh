@@ -83,6 +83,8 @@ public:
     grid_config["upper_right"] = "[1.0]";
     grid_config["num_elements"] = "[100]";
     grid_config["overlap_size"] = "[1]";
+    grid_config["num_quad_cells"] = "[20]";
+    grid_config["quad_order"] = "50";
     return grid_config;
   }
 
@@ -93,8 +95,7 @@ public:
                                   std::make_pair("Q", std::vector<double>{0}),
                                   std::make_pair("CFL", std::vector<double>{0.5}),
                                   std::make_pair("t_end", std::vector<double>{4.0}),
-                                  std::make_pair("num_elements", std::vector<double>{1.}),
-                                  std::make_pair("quad_order", std::vector<double>{20.})});
+                                  std::make_pair("num_elements", std::vector<double>{1.})});
   }
 
 

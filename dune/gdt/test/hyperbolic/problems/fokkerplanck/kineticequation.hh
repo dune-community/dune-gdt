@@ -180,14 +180,15 @@ public:
     return boundary_config;
   }
 
-  static QuadratureType default_quadrature(const size_t quad_order = 20)
+  static QuadratureType default_quadrature(const XT::Common::Configuration& grid_cfg = default_grid_cfg())
   {
+    int num_quad_cells = grid_cfg.get("num_quad_cells", std::vector<int>{2})[0];
+    size_t quad_order = grid_cfg.get("quad_order", 20);
     // 1D quadrature that consists of a Gauss-Legendre quadrature on each cell of the velocity grid
     QuadratureType quadrature;
-    static const int num_cells = 2;
     Dune::FieldVector<double, dimDomain> lower_left(-1);
     Dune::FieldVector<double, dimDomain> upper_right(1);
-    static const std::array<int, dimDomain> s({num_cells});
+    static const std::array<int, dimDomain> s({num_quad_cells});
     typedef typename Dune::YaspGrid<dimDomain, Dune::EquidistantOffsetCoordinates<double, dimDomain>> GridType;
     GridType velocity_grid(lower_left, upper_right, s);
     const auto velocity_grid_view = velocity_grid.leafGridView();
@@ -211,12 +212,8 @@ public:
     , grid_cfg_(grid_cfg)
     , boundary_cfg_(boundary_cfg)
     , psi_vac_(psi_vac)
+    , quadrature_(default_quadrature(grid_cfg))
   {
-    size_t quad_order = 20;
-    const auto param = parameters();
-    if (param.has_key("quad_order"))
-      quad_order = size_t(param.get("quad_order")[0] + 0.1);
-    quadrature_ = default_quadrature(quad_order);
   }
 
   // flux matrix A = B M^{-1} with B_{ij} = <v h_i h_j>
@@ -362,8 +359,8 @@ protected:
   const BasisfunctionType& basis_functions_;
   const XT::Common::Configuration grid_cfg_;
   const XT::Common::Configuration boundary_cfg_;
-  QuadratureType quadrature_;
   const RangeFieldType psi_vac_;
+  const QuadratureType& quadrature_;
 }; // class KineticTransportEquation<...>
 
 
