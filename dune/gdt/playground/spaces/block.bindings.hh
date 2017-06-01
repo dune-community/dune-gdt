@@ -215,9 +215,9 @@ public:
     c.def("__init__",
           [](type& self, XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider) {
             const auto& dd_grid = dd_grid_provider.dd_grid();
-            auto local_spaces = std::make_shared<std::vector<S>>();
+            std::vector<std::shared_ptr<const S>> local_spaces(dd_grid.size());
             for (size_t ss = 0; ss < dd_grid.size(); ++ss)
-              local_spaces->emplace_back(SP::create(dd_grid_provider, boost::numeric_cast<int>(ss)));
+              local_spaces[ss] = std::make_shared<S>(SP::create(dd_grid_provider, boost::numeric_cast<int>(ss)));
             try {
               new (&self) type(dd_grid, local_spaces);
             } catch (...) {
@@ -311,13 +311,15 @@ public:
 
     const std::string factory_method_name = "make_block_" + space_name<SP>::value_wo_grid();
 
-    m.def(factory_method_name.c_str(), [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider) {
-      const auto& dd_grid = dd_grid_provider.dd_grid();
-      auto local_spaces = std::make_shared<std::vector<S>>();
-      for (size_t ss = 0; ss < dd_grid.size(); ++ss)
-        local_spaces->emplace_back(SP::create(dd_grid_provider, boost::numeric_cast<int>(ss)));
-      return type(dd_grid, local_spaces);
-    });
+    m.def(factory_method_name.c_str(),
+          [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider) {
+            const auto& dd_grid = dd_grid_provider.dd_grid();
+            std::vector<std::shared_ptr<const S>> local_spaces(dd_grid.size());
+            for (size_t ss = 0; ss < dd_grid.size(); ++ss)
+              local_spaces[ss] = std::make_shared<S>(SP::create(dd_grid_provider, boost::numeric_cast<int>(ss)));
+            return type(dd_grid, local_spaces);
+          },
+          "dd_grid_provider"_a);
 
     return c;
   } // ... bind(...)

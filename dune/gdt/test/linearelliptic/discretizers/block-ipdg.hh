@@ -96,16 +96,15 @@ public:
                       XT::Common::Configuration(),
                       XT::Grid::allneumann_boundaryinfo_default_config());
     std::vector<LocalDiscretizationType> local_discretizations;
-    auto local_spaces_ptr = std::make_shared<std::vector<LocalSpaceType>>();
-    auto& local_spaces = *local_spaces_ptr;
     for (size_t ss = 0; ss < dd_grid.size(); ++ss)
       local_discretizations.emplace_back(
           LocalDiscretizer::discretize(grid_provider, local_problem, XT::Common::numeric_cast<int>(ss)));
 
     logger.info() << "Creating space... " << std::endl;
+    std::vector<std::shared_ptr<LocalSpaceType>> local_spaces(dd_grid.size());
     for (size_t ss = 0; ss < dd_grid.size(); ++ss)
-      local_spaces.emplace_back(local_discretizations[ss].test_space());
-    SpaceType space(dd_grid, local_spaces_ptr);
+      local_spaces[ss] = std::make_shared<LocalSpaceType>(local_discretizations[ss].test_space());
+    SpaceType space(dd_grid, local_spaces);
 
     logger.info() << "Preparing container..." << std::endl;
     std::vector<XT::LA::SparsityPatternDefault> local_patterns(dd_grid.size());
@@ -113,19 +112,20 @@ public:
     std::vector<std::map<size_t, XT::LA::SparsityPatternDefault>> coupling_patterns(dd_grid.size());
     XT::LA::SparsityPatternDefault pattern(space.mapper().size());
     for (size_t ss = 0; ss < dd_grid.size(); ++ss) {
-      local_patterns[ss] = local_spaces[ss].compute_face_and_volume_pattern();
+      local_patterns[ss] = local_spaces[ss]->compute_face_and_volume_pattern();
       copy_local_to_global(local_patterns[ss], space, ss, ss, pattern);
       if (dd_grid.boundary(ss)) {
-        boundary_patterns[ss] = local_spaces[ss].compute_volume_pattern(dd_grid.boundaryGridPart(ss));
+        boundary_patterns[ss] = local_spaces[ss]->compute_volume_pattern(dd_grid.boundaryGridPart(ss));
         copy_local_to_global(boundary_patterns[ss], space, ss, ss, pattern);
       }
-      coupling_patterns[ss][ss] = local_spaces[ss].compute_volume_pattern(); // this is too much, but we are relazy here
+      coupling_patterns[ss][ss] =
+          local_spaces[ss]->compute_volume_pattern(); // this is too much, but we are relazy here
       for (auto&& nn : dd_grid.neighborsOf(ss)) {
         if (ss < nn) { //  each coupling only once
           coupling_patterns[ss][nn] =
-              local_spaces[ss].compute_face_pattern(dd_grid.couplingGridPart(ss, nn), local_spaces[nn]);
+              local_spaces[ss]->compute_face_pattern(dd_grid.couplingGridPart(ss, nn), *local_spaces[nn]);
           coupling_patterns[nn][ss] =
-              local_spaces[nn].compute_face_pattern(dd_grid.couplingGridPart(nn, ss), local_spaces[ss]);
+              local_spaces[nn]->compute_face_pattern(dd_grid.couplingGridPart(nn, ss), *local_spaces[ss]);
           copy_local_to_global(coupling_patterns[ss][ss], space, ss, ss, pattern);
           copy_local_to_global(coupling_patterns[ss][nn], space, ss, nn, pattern);
           copy_local_to_global(coupling_patterns[nn][ss], space, nn, ss, pattern);
@@ -145,17 +145,17 @@ public:
       for (auto&& nn : dd_grid.neighborsOf(ss)) {
         if (ss < nn) { //  each coupling only once
           MatrixType inside_inside_matrix(
-              local_spaces[ss].mapper().size(), local_spaces[ss].mapper().size(), coupling_patterns[ss][ss]);
+              local_spaces[ss]->mapper().size(), local_spaces[ss]->mapper().size(), coupling_patterns[ss][ss]);
           MatrixType outside_outside_matrix(
-              local_spaces[nn].mapper().size(), local_spaces[nn].mapper().size(), coupling_patterns[nn][nn]);
+              local_spaces[nn]->mapper().size(), local_spaces[nn]->mapper().size(), coupling_patterns[nn][nn]);
           MatrixType inside_outside_matrix(
-              local_spaces[ss].mapper().size(), local_spaces[nn].mapper().size(), coupling_patterns[ss][nn]);
+              local_spaces[ss]->mapper().size(), local_spaces[nn]->mapper().size(), coupling_patterns[ss][nn]);
           MatrixType outside_inside_matrix(
-              local_spaces[nn].mapper().size(), local_spaces[ss].mapper().size(), coupling_patterns[nn][ss]);
+              local_spaces[nn]->mapper().size(), local_spaces[ss]->mapper().size(), coupling_patterns[nn][ss]);
           auto coupling_grid_part = dd_grid.couplingGridPart(ss, nn);
           // put all of this into a coupling operator
           SystemAssembler<LocalSpaceType, decltype(coupling_grid_part)> coupling_assembler(
-              coupling_grid_part, local_spaces[ss], local_spaces[ss], local_spaces[nn], local_spaces[nn]);
+              coupling_grid_part, *local_spaces[ss], *local_spaces[ss], *local_spaces[nn], *local_spaces[nn]);
           typedef XT::Grid::extract_intersection_t<decltype(coupling_grid_part)> IntersectionType;
           typedef LocalEllipticIpdgIntegrands::Inner<typename ProblemType::DiffusionFactorType,
                                                      typename ProblemType::DiffusionTensorType,
@@ -184,9 +184,9 @@ public:
       if (dd_grid.boundary(ss)) {
         auto boundary_grid_part = dd_grid.boundaryGridPart(ss);
         MatrixType boundary_matrix(
-            local_spaces[ss].mapper().size(), local_spaces[ss].mapper().size(), boundary_patterns[ss]);
-        VectorType boundary_vector(local_spaces[ss].mapper().size());
-        SystemAssembler<LocalSpaceType, decltype(boundary_grid_part)> boundary_assembler(local_spaces[ss],
+            local_spaces[ss]->mapper().size(), local_spaces[ss]->mapper().size(), boundary_patterns[ss]);
+        VectorType boundary_vector(local_spaces[ss]->mapper().size());
+        SystemAssembler<LocalSpaceType, decltype(boundary_grid_part)> boundary_assembler(*local_spaces[ss],
                                                                                          boundary_grid_part);
         typedef XT::Grid::extract_intersection_t<decltype(boundary_grid_part)> IntersectionType;
         auto boundary_info = XT::Grid::BoundaryInfoFactory<IntersectionType>::create(problem.boundary_info_cfg());
