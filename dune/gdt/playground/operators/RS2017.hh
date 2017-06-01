@@ -13,6 +13,7 @@
 #include <dune/common/typetraits.hh>
 
 #include <dune/xt/common/fmatrix.hh>
+#include <dune/xt/grid/boundaryinfo/interfaces.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces/localizable-function.hh>
 
@@ -65,6 +66,8 @@ public:
 
   NonconformityProduct(GridLayerType grd_layr,
                        InterpolationGridLayerType interpolation_grid_layer,
+                       const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<InterpolationGridLayerType>>&
+                           interpolation_boundary_info,
                        const ScalarFunctionType& lambda,
                        const TensorFunctionType& kappa,
                        const ScalarFunctionType& u,
@@ -96,7 +99,8 @@ public:
             ret[0][0] = (diffusion * (grad_u - grad_interpolated_u)) * (grad_v - grad_interpolated_v);
           })
   {
-    OswaldInterpolationOperator<InterpolationGridLayerType> oswald_interpolation(interpolation_grid_layer_, true);
+    OswaldInterpolationOperator<InterpolationGridLayerType> oswald_interpolation(interpolation_grid_layer_,
+                                                                                 interpolation_boundary_info);
     oswald_interpolation.apply(this->range(), interpolated_u_);
     oswald_interpolation.apply(this->source(), interpolated_v_);
     this->append(local_product_);
