@@ -70,49 +70,116 @@ struct NonconformityProduct
     }
   }; // struct interpolation_layer_suffix<false, ...>
 
-  static bound_type bind(py::module& m)
+  static std::string class_name()
+  {
+    return "rs2017_parabolic_lrbms_nonconformity_product";
+  }
+
+  static std::string layer_suffix()
+  {
+    return XT::Grid::bindings::layer_name<layer_type>::value() + "_"
+           + XT::Grid::bindings::backend_name<layer_backend>::value() + interpolation_layer_suffix<>::value();
+  }
+
+  template <bool is_dd = (layer_type == Layers::dd_subdomain) || (layer_type == Layers::dd_subdomain_boundary)
+                         || (layer_type == Layers::dd_subdomain_coupling)
+                         || (layer_type == Layers::dd_subdomain_oversampled)
+                         || (interpolation_layer_type == Layers::dd_subdomain)
+                         || (interpolation_layer_type == Layers::dd_subdomain_boundary)
+                         || (interpolation_layer_type == Layers::dd_subdomain_coupling)
+                         || (interpolation_layer_type == Layers::dd_subdomain_oversampled),
+            bool anything = true>
+  struct factory_method
+  {
+    static void addbind(py::module& m)
+    {
+      using namespace pybind11::literals;
+
+      m.def(std::string("make_" + class_name() + "_" + layer_suffix()).c_str(),
+            [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+               const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<IGL>>& interpolation_boundary_info,
+               const typename type::ScalarFunctionType& lambda,
+               const typename type::TensorFunctionType& kappa,
+               const typename type::ScalarFunctionType& u,
+               const typename type::ScalarFunctionType& v,
+               const ssize_t layer_level_or_subdomain,
+               const ssize_t interpolation_layer_level_or_subdomain) {
+              return new type(dd_grid_provider.template layer<layer_type, layer_backend>(
+                                  XT::Common::numeric_cast<int>(layer_level_or_subdomain)),
+                              dd_grid_provider.template layer<interpolation_layer_type, Backends::part>(
+                                  XT::Common::numeric_cast<int>(interpolation_layer_level_or_subdomain)),
+                              interpolation_boundary_info,
+                              lambda,
+                              kappa,
+                              u,
+                              v);
+            },
+            "dd_grid_provider"_a,
+            "interpolation_boundary_info"_a,
+            "lambda"_a,
+            "kappa"_a,
+            "u"_a,
+            "v"_a,
+            "layer_level_or_subdomain"_a = -1,
+            "interpolation_layer_level_or_subdomain"_a = -1);
+    }
+  }; // struct factory_method<true, ...>
+
+  template <bool anything>
+  struct factory_method<false, anything>
+  {
+    static void addbind(py::module& m)
+    {
+      using namespace pybind11::literals;
+
+      m.def(std::string("make_" + class_name() + "_" + layer_suffix()).c_str(),
+            [](XT::Grid::GridProvider<G>& grid_provider,
+               const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<IGL>>& interpolation_boundary_info,
+               const typename type::ScalarFunctionType& lambda,
+               const typename type::TensorFunctionType& kappa,
+               const typename type::ScalarFunctionType& u,
+               const typename type::ScalarFunctionType& v,
+               const ssize_t layer_level,
+               const ssize_t interpolation_layer_level) {
+              return new type(
+                  grid_provider.template layer<layer_type, layer_backend>(XT::Common::numeric_cast<int>(layer_level)),
+                  grid_provider.template layer<interpolation_layer_type, Backends::part>(
+                      XT::Common::numeric_cast<int>(interpolation_layer_level)),
+                  interpolation_boundary_info,
+                  lambda,
+                  kappa,
+                  u,
+                  v);
+            },
+            "grid_provider"_a,
+            "interpolation_boundary_info"_a,
+            "lambda"_a,
+            "kappa"_a,
+            "u"_a,
+            "v"_a,
+            "layer_level"_a = -1,
+            "interpolation_layer_level"_a = -1);
+
+      factory_method<true>::addbind(m);
+    }
+  }; // struct factory_method<false, ...>
+
+  static void bind(py::module& m)
   {
     using namespace pybind11::literals;
 
-    const std::string class_name = "rs2017_parabolic_lrbms_nonconformity_product";
-    const auto layer_suffix = XT::Grid::bindings::layer_name<layer_type>::value() + "_"
-                              + XT::Grid::bindings::backend_name<layer_backend>::value()
-                              + interpolation_layer_suffix<>::value();
+    try { // we might not be the first ones to add this type
+      bound_type c(m,
+                   XT::Common::to_camel_case(class_name() + "_" + XT::Grid::bindings::grid_name<G>::value() + "_"
+                                             + layer_suffix())
+                       .c_str(),
+                   "RS2017ParabolicLrbms::NonconformityProduct");
+      c.def("apply2", [](type& self) { return self.apply2(); });
+      c.def("result", [](type& self) { return self.apply2(); });
+    } catch (std::runtime_error& ee) {
+    }
 
-    bound_type c(
-        m,
-        XT::Common::to_camel_case(class_name + "_" + XT::Grid::bindings::grid_name<G>::value() + "_" + layer_suffix)
-            .c_str(),
-        "RS2017ParabolicLrbms::NonconformityProduct");
-    c.def("apply2", [](type& self) { return self.apply2(); });
-    c.def("result", [](type& self) { return self.apply2(); });
-
-    m.def(std::string("make_" + class_name + "_" + layer_suffix).c_str(),
-          [](XT::Grid::GridProvider<G>& grid_provider,
-             const typename type::ScalarFunctionType& lambda,
-             const typename type::TensorFunctionType& kappa,
-             const typename type::ScalarFunctionType& u,
-             const typename type::ScalarFunctionType& v,
-             const ssize_t layer_level,
-             const ssize_t interpolation_layer_level) {
-            return new type(
-                grid_provider.template layer<layer_type, layer_backend>(XT::Common::numeric_cast<int>(layer_level)),
-                grid_provider.template layer<interpolation_layer_type, Backends::part>(
-                    XT::Common::numeric_cast<int>(interpolation_layer_level)),
-                lambda,
-                kappa,
-                u,
-                v);
-          },
-          "grid_provider"_a,
-          "lambda"_a,
-          "kappa"_a,
-          "u"_a,
-          "v"_a,
-          "layer_level"_a = -1,
-          "interpolation_layer_level"_a = -1);
-
-    return c;
+    factory_method<>::addbind(m);
   } // ... bind(...)
 }; // struct NonconformityProduct
 
@@ -133,6 +200,11 @@ PYBIND11_PLUGIN(__operators_RS2017)
 #if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM
   NonconformityProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
   NonconformityProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::part>::bind(m);
+  NonconformityProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::part>::bind(m);
+  NonconformityProduct<ALU_2D_SIMPLEX_CONFORMING,
+                       Layers::dd_subdomain,
+                       Backends::part,
+                       Layers::dd_subdomain_oversampled>::bind(m);
 #endif
 
   m.def("_init_mpi",
