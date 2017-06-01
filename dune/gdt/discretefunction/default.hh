@@ -197,12 +197,7 @@ public:
   {
   }
 
-  ConstDiscreteFunction(ThisType&& source)
-    : space_(std::move(source.space_))
-    , vector_(std::move(source.vector_))
-    , name_(source.name_)
-  {
-  }
+  ConstDiscreteFunction(ThisType&& source) = default;
 
   ThisType& operator=(const ThisType& other) = delete;
 
