@@ -13,6 +13,8 @@
 
 #include <dune/pybindxi/pybind11.h>
 
+#include <dune/grid/common/rangegenerators.hh>
+
 #include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/xt/la/container.hh>
@@ -21,6 +23,8 @@
 #include <dune/xt/grid/grids.bindings.hh>
 
 #include <dune/gdt/assembler/system.hh>
+#include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/projections.hh>
 #include <dune/gdt/spaces.bindings.hh>
 
 #include "block.hh"
@@ -201,6 +205,69 @@ public:
   typedef GDT::BlockSpace<S> type;
   typedef pybind11::class_<type> bound_type;
 
+private:
+  template <bool is_dg = (SP::space_type == SpaceType::dg), bool anything = false>
+  struct projector
+  {
+    template <class V>
+    static V project(const type& self, const std::vector<V>& local_vectors, const std::vector<size_t>& subdomains)
+    {
+      V neighborhood_vector(self.mapper().size(), 0.);
+      assert(local_vectors.size() == subdomains.size() && "This should not happen, blame the caller!");
+      for (size_t ii = 0; ii < local_vectors.size(); ++ii) {
+        const auto subdomain = subdomains[ii];
+        const auto& local_vector = local_vectors[ii];
+        for (size_t jj = 0; jj < local_vector.size(); ++jj)
+          neighborhood_vector[self.mapper().mapToGlobal(subdomain, jj)] = local_vector[jj];
+      }
+      return neighborhood_vector;
+    }
+  }; // struct projector<true, ...>
+
+  template <bool anything>
+  struct projector<false, anything>
+  {
+    template <class V>
+    static V project(const type&, const std::vector<V>&, const std::vector<size_t>&)
+    {
+      static_assert(AlwaysFalse<V>::value, "Not implemented for non DG spaces");
+    }
+  };
+
+  template <XT::LA::Backends la>
+  static void addbind_vector(bound_type& c)
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+
+    typedef typename XT::LA::Container<double, la>::VectorType V;
+
+    c.def("project_onto_neighborhood",
+          [](const type& self, const std::vector<V>& local_vectors, const std::set<ssize_t>& neighborhood) {
+            if (local_vectors.size() != neighborhood.size())
+              DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
+                         "local_vectors.size(): " << local_vectors.size() << "\n   neighborhood.size(): "
+                                                  << neighborhood.size());
+            std::vector<std::shared_ptr<const S>> neighborhood_spaces(self.dd_grid().size(), nullptr);
+            for (const auto& subdomain : neighborhood) {
+              const auto ss = XT::Common::numeric_cast<size_t>(subdomain);
+              if (self.backend()[ss] == nullptr)
+                DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
+                           "This BlockSpace (restricted to a neighborhood) does not have a local space for subdomain "
+                               << ss
+                               << "!");
+              neighborhood_spaces[subdomain] = self.backend()[ss];
+            }
+            const type neighborhood_space(self.dd_grid(), neighborhood_spaces);
+            std::vector<size_t> subdomains(neighborhood.size());
+            size_t counter = 0;
+            for (const auto& ss : neighborhood)
+              subdomains[counter++] = XT::Common::numeric_cast<size_t>(ss);
+            return projector<>::project(neighborhood_space, local_vectors, subdomains);
+          });
+  } // ... addbind_vector(...)
+
+public:
   static bound_type bind(pybind11::module& m)
   {
     BlockMapper<SP>::bind(m);
@@ -289,8 +356,7 @@ public:
           [](const type& self, const ssize_t subdomain) {
             auto ss = XT::Common::numeric_cast<size_t>(subdomain);
             auto boundary_grid_part = self.dd_grid().boundaryGridPart(ss);
-            typedef typename type::LocalSpaceType L;
-            return new GDT::SystemAssembler<L, decltype(boundary_grid_part), L>(self.local_space(ss), // see below for
+            return new GDT::SystemAssembler<S, decltype(boundary_grid_part), S>(self.local_space(ss), // see below for
                                                                                 boundary_grid_part); //  the 'new'
           },
           "subdomain"_a);
@@ -299,8 +365,7 @@ public:
             auto ss = XT::Common::numeric_cast<size_t>(subdomain);
             auto nn = XT::Common::numeric_cast<size_t>(neighbor);
             auto coupling_grid_part = self.dd_grid().couplingGridPart(ss, nn);
-            typedef typename type::LocalSpaceType L;
-            return new GDT::SystemAssembler<L, decltype(coupling_grid_part), L>(coupling_grid_part, //   SystemAssembler
+            return new GDT::SystemAssembler<S, decltype(coupling_grid_part), S>(coupling_grid_part, //   SystemAssembler
                                                                                 self.local_space(ss), // is not copyable
                                                                                 self.local_space(ss), // or movable,
                                                                                 self.local_space(nn), // thus the raw
@@ -308,9 +373,24 @@ public:
           },
           "subdomain"_a,
           "neighbor"_a);
+    c.def("restricted_to_neighborhood",
+          [](const type& self, const std::set<ssize_t>& neighborhood) {
+            std::vector<std::shared_ptr<const S>> neighborhood_spaces(self.dd_grid().size(), nullptr);
+            for (const auto& subdomain : neighborhood)
+              neighborhood_spaces[subdomain] = self.backend()[XT::Common::numeric_cast<size_t>(subdomain)];
+            return type(self.dd_grid(), neighborhood_spaces);
+          },
+          "neighborhood"_a);
+
+    addbind_vector<XT::LA::Backends::common_dense>(c);
+#if HAVE_EIGEN
+    addbind_vector<XT::LA::Backends::eigen_dense>(c);
+#endif
+#if HAVE_DUNE_ISTL
+    addbind_vector<XT::LA::Backends::istl_dense>(c);
+#endif
 
     const std::string factory_method_name = "make_block_" + space_name<SP>::value_wo_grid();
-
     m.def(factory_method_name.c_str(),
           [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider) {
             const auto& dd_grid = dd_grid_provider.dd_grid();
