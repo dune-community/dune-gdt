@@ -21,6 +21,8 @@
 #include <dune/xt/common/print.hh>
 #include <dune/xt/common/vector.hh>
 #include <dune/xt/common/ranges.hh>
+#include <dune/xt/grid/boundaryinfo/interfaces.hh>
+#include <dune/xt/grid/boundaryinfo/types.hh>
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces/localizable-function.hh>
@@ -73,9 +75,11 @@ private:
   static const constexpr size_t d = dimDomain;
 
 public:
-  OswaldInterpolationOperator(const GridLayerType& grd_layr, const bool zero_boundary = true)
+  OswaldInterpolationOperator(
+      const GridLayerType& grd_layr,
+      const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info)
     : grid_layer_(grd_layr)
-    , zero_boundary_(zero_boundary)
+    , boundary_info_(boundary_info)
   {
   }
 
@@ -166,29 +170,28 @@ private:
         global_vertex_id_to_global_DoF_id_map[global_vertex_id].insert(global_DoF_index);
       } // loop over all vertices
 
-      if (zero_boundary_) {
-        // in order to determine the boundary vertices, we need to
-        // loop over all intersections
-        const auto intersectionEndIt = grid_layer_.iend(entity);
-        for (auto intersectionIt = grid_layer_.ibegin(entity); intersectionIt != intersectionEndIt; ++intersectionIt) {
-          const auto& intersection = *intersectionIt;
-          if (intersection.boundary() && !intersection.neighbor()) {
-            const auto& intersection_geometry = intersection.geometry();
-            for (auto local_intersection_corner_id : XT::Common::value_range(intersection_geometry.corners())) {
-              const auto global_intersection_corner = intersection_geometry.corner(local_intersection_corner_id);
-              // now, we need to find the entity's vertex this intersection's corner point equals to, so we
-              // loop over all vertices of the entity
-              for (auto local_vertex_id : XT::Common::value_range(num_vertices)) {
-                const auto vertex = entity.template subEntity<dimDomain>(local_vertex_id);
-                const auto global_vertex_id = grid_layer_.indexSet().index(vertex);
-                const auto vertex_center = vertex.geometry().center();
-                if (XT::Common::FloatCmp::eq(global_intersection_corner, vertex_center))
-                  boundary_vertices.insert(global_vertex_id);
-              } // loop over all vertices of the entity
-            } // loop over all intersection corners
-          } // if (intersection.boundary() && !intersection.neighbor())
-        } // loop over all intersections
-      } // if(zero_boundary)
+      static const constexpr auto dirichlet = XT::Grid::DirichletBoundary();
+      // in order to determine the boundary vertices, we need to
+      // loop over all intersections
+      const auto intersectionEndIt = grid_layer_.iend(entity);
+      for (auto intersectionIt = grid_layer_.ibegin(entity); intersectionIt != intersectionEndIt; ++intersectionIt) {
+        const auto& intersection = *intersectionIt;
+        if (boundary_info_.type(intersection) == dirichlet) {
+          const auto& intersection_geometry = intersection.geometry();
+          for (auto local_intersection_corner_id : XT::Common::value_range(intersection_geometry.corners())) {
+            const auto global_intersection_corner = intersection_geometry.corner(local_intersection_corner_id);
+            // now, we need to find the entity's vertex this intersection's corner point equals to, so we
+            // loop over all vertices of the entity
+            for (auto local_vertex_id : XT::Common::value_range(num_vertices)) {
+              const auto vertex = entity.template subEntity<dimDomain>(local_vertex_id);
+              const auto global_vertex_id = grid_layer_.indexSet().index(vertex);
+              const auto vertex_center = vertex.geometry().center();
+              if (XT::Common::FloatCmp::eq(global_intersection_corner, vertex_center))
+                boundary_vertices.insert(global_vertex_id);
+            } // loop over all vertices of the entity
+          } // loop over all intersection corners
+        } // if (intersection.boundary() && !intersection.neighbor())
+      } // loop over all intersections
     } // walk the grid for the first time
 
     // walk the grid for the second time
@@ -204,7 +207,7 @@ private:
             range.space().mapper().mapToGlobal(entity, XT::Common::numeric_cast<size_t>(local_vertex_id));
         const size_t global_vertex_id = global_DoF_id_to_global_vertex_id_map[global_DoF_index];
         // if we are on the domain boundary
-        if (zero_boundary_ && boundary_vertices.count(global_vertex_id)) {
+        if (boundary_vertices.count(global_vertex_id)) {
           // set the dof to zero (we have dirichlet zero)
           range.vector().set_entry(global_DoF_index, FieldType(0));
         } else {
@@ -222,7 +225,7 @@ private:
   } // ... apply_p1_dg(...)
 
   const GridLayerType& grid_layer_;
-  const bool zero_boundary_;
+  const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundary_info_;
 }; // class OswaldInterpolationOperator
 
 
