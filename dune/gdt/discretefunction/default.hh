@@ -215,6 +215,8 @@ public:
     return local_discrete_function(entity);
   }
 
+  using BaseType::visualize;
+
   /**
    * \brief Visualizes the function using Dune::XT::Functions::LocalizableFunctionInterface::visualize on the grid layer
    *        associated with the space.
