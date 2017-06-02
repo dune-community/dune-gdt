@@ -38,8 +38,8 @@ public:
   GenericParallelHelper(const SpaceType& space, int verbose = 1)
     : space_(space)
     , rank_(space.grid_layer().comm().rank())
-    , rank_vector_(space.grid_layer().grid().size(0), rank_)
-    , ghosts_(space.grid_layer().grid().size(0), false)
+    , rank_vector_(space.mapper().size(), rank_)
+    , ghosts_(space.mapper().size(), false)
     , verbose_(verbose)
   {
     auto view = space.grid_layer();
@@ -130,7 +130,7 @@ void GenericParallelHelper<SpaceType>::createIndexSetAndProjectForAMG(Communicat
   // ********************************************************************************
 
   const auto& view = space_.grid_layer();
-  const auto vector_size = space_.grid_layer().grid().size(0) * space_.mapper().maxNumDofs();
+  const auto vector_size = space_.mapper().size();
 
   // Do we need to communicate at all?
   const bool need_communication = view.comm().size() > 1;
