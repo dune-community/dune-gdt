@@ -190,6 +190,128 @@ struct NonconformityProduct
 }; // struct NonconformityProduct
 
 
+template <class G, Layers layer_type, Backends layer_backend, Layers reconstruction_layer_type = layer_type>
+struct ResidualProduct
+{
+  static_assert(XT::Grid::is_grid<G>::value, "");
+  typedef typename XT::Grid::Layer<G, layer_type, layer_backend, XT::Grid::DD::SubdomainGrid<G>>::type GL;
+  typedef
+      typename XT::Grid::Layer<G, reconstruction_layer_type, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type RGL;
+
+  typedef GDT::ESV2007::ResidualProduct<GL, RGL> type;
+  typedef py::class_<type, XT::Grid::Walker<GL>> bound_type;
+
+  template <bool is_same = (reconstruction_layer_type == layer_type) && (layer_backend == Backends::view),
+            bool anything = true>
+  struct reconstruction_layer_suffix
+  {
+    static std::string value()
+    {
+      return "";
+    }
+  }; // struct reconstruction_layer_suffix<true, ...>
+
+  template <bool anything>
+  struct reconstruction_layer_suffix<false, anything>
+  {
+    static std::string value()
+    {
+      return "_" + XT::Grid::bindings::layer_name<reconstruction_layer_type>::value() + "_"
+             + XT::Grid::bindings::backend_name<Backends::view>::value();
+    }
+  }; // struct reconstruction_layer_suffix<false, ...>
+
+  static std::string class_name()
+  {
+    return "ESV2007_residual_product";
+  }
+
+  static std::string layer_suffix()
+  {
+    return XT::Grid::bindings::layer_name<layer_type>::value() + "_"
+           + XT::Grid::bindings::backend_name<layer_backend>::value() + reconstruction_layer_suffix<>::value();
+  }
+
+  template <bool is_dd = (layer_type == Layers::dd_subdomain) || (layer_type == Layers::dd_subdomain_boundary)
+                         || (layer_type == Layers::dd_subdomain_coupling)
+                         || (layer_type == Layers::dd_subdomain_oversampled)
+                         || (reconstruction_layer_type == Layers::dd_subdomain)
+                         || (reconstruction_layer_type == Layers::dd_subdomain_boundary)
+                         || (reconstruction_layer_type == Layers::dd_subdomain_coupling)
+                         || (reconstruction_layer_type == Layers::dd_subdomain_oversampled),
+            bool anything = true>
+  struct factory_method
+  {
+    static void addbind(py::module& /*m*/)
+    {
+    }
+  }; // struct factory_method<true, ...>
+
+  template <bool anything>
+  struct factory_method<false, anything>
+  {
+    static void addbind(py::module& m)
+    {
+      using namespace pybind11::literals;
+
+      m.def(std::string("make_" + class_name() + "_" + layer_suffix()).c_str(),
+            [](XT::Grid::GridProvider<G>& grid_provider,
+               const ssize_t layer_level,
+               const ssize_t reconstruction_layer_level,
+               const typename type::ScalarFunctionType& lambda,
+               const typename type::TensorFunctionType& kappa,
+               const typename type::ScalarFunctionType& f,
+               const typename type::ScalarFunctionType& u,
+               const typename type::ScalarFunctionType& v,
+               const ssize_t over_integrate,
+               const double& poincare_constant) {
+              return new type(
+                  grid_provider.template layer<layer_type, layer_backend>(XT::Common::numeric_cast<int>(layer_level)),
+                  grid_provider.template layer<reconstruction_layer_type, Backends::view>(
+                      XT::Common::numeric_cast<int>(reconstruction_layer_level)),
+                  lambda,
+                  kappa,
+                  f,
+                  u,
+                  v,
+                  poincare_constant,
+                  XT::Common::numeric_cast<size_t>(over_integrate));
+            },
+            "grid_provider"_a,
+            "layer_level"_a = -1,
+            "reconstruction_layer_level"_a = -1,
+            "lambda"_a,
+            "kappa"_a,
+            "f"_a,
+            "u"_a,
+            "v"_a,
+            "over_integrate"_a = 2,
+            "poincare_constant"_a = 1.0 / (M_PIl * M_PIl));
+
+      factory_method<true>::addbind(m);
+    }
+  }; // struct factory_method<false, ...>
+
+  static void bind(py::module& m)
+  {
+    using namespace pybind11::literals;
+
+    try { // we might not be the first ones to add this type
+      bound_type c(m,
+                   XT::Common::to_camel_case(class_name() + "_" + XT::Grid::bindings::grid_name<G>::value() + "_"
+                                             + layer_suffix())
+                       .c_str(),
+                   "ESV2007::ResidualProduct");
+      c.def("apply2", [](type& self) { return self.apply2(); });
+      c.def("result", [](type& self) { return self.apply2(); });
+    } catch (std::runtime_error& ee) {
+    }
+
+    factory_method<>::addbind(m);
+  } // ... bind(...)
+}; // struct ResidualProduct
+
+
 PYBIND11_PLUGIN(__operators_ESV2007)
 {
   using namespace pybind11::literals;
@@ -211,6 +333,8 @@ PYBIND11_PLUGIN(__operators_ESV2007)
                        Layers::dd_subdomain,
                        Backends::part,
                        Layers::dd_subdomain_oversampled>::bind(m);
+  ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
+  ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::part>::bind(m);
 #endif
 
   m.def("_init_mpi",

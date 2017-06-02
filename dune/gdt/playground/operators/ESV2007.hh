@@ -144,7 +144,8 @@ class NonconformityProduct
 
 
 #endif // HAVE_DUNE_FEM
-#if HAVE_DUNE_PDELAB && HAVE_EIGEN
+#if HAVE_DUNE_PDELAB
+#if HAVE_EIGEN
 
 namespace internal {
 
@@ -269,10 +270,7 @@ public:
           // the order lambda
           [&](const auto& local_f_minus_divergence_of_reconstructed_u,
               const auto& local_f_minus_divergence_of_reconstructed_v) {
-            const auto& entity = local_f_minus_divergence_of_reconstructed_u.entity();
-            // we can only guess the order of (lamba*kappa)^-1
-            return lambda_.local_function(entity)->order() + kappa_.local_function(entity)->order()
-                   + local_f_minus_divergence_of_reconstructed_u.order()
+            return local_f_minus_divergence_of_reconstructed_u.order()
                    + local_f_minus_divergence_of_reconstructed_v.order() + over_integrate_;
           },
           // the evaluate lambda
@@ -281,8 +279,10 @@ public:
               const auto& local_point,
               auto& ret) {
             const auto& entity = local_f_minus_divergence_of_reconstructed_u.entity();
-            XT::LA::EigenDenseMatrix<R> diffusion = kappa_.local_function(entity)->evaluate(local_point);
-            diffusion *= lambda_.local_function(entity)->evaluate(local_point);
+            // we need the min_ev for this entity, so we just evaluate in one point
+            const auto center = entity.geometry().local(entity.geometry().center());
+            XT::LA::EigenDenseMatrix<R> diffusion = kappa_.local_function(entity)->evaluate(center);
+            diffusion *= lambda_.local_function(entity)->evaluate(center);
             const auto min_ev = XT::LA::make_eigen_solver(diffusion).min_eigenvalue();
             const auto h = XT::Grid::entity_diameter(entity);
             ret[0][0] = (poincare_constant_ / min_ev) * h * h
@@ -302,17 +302,30 @@ private:
 }; // class ResidualProduct
 
 
-#else // HAVE_DUNE_PDELAB && HAVE_EIGEN
+#else // HAVE_EIGEN
 
 
 template <class ProductGridLayer, class ReconstructionGridLayer>
 class ResidualProduct
 {
-  static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing dune-pdelab or eigen!");
+  static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing eigen!");
 };
 
 
-#endif // HAVE_DUNE_PDELAB && HAVE_EIGEN
+#endif // HAVE_EIGEN
+
+
+#else // HAVE_DUNE_PDELAB
+
+
+template <class ProductGridLayer, class ReconstructionGridLayer>
+class ResidualProduct
+{
+  static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing dune-pdelab!");
+};
+
+
+#endif // HAVE_DUNE_PDELAB
 
 } // namespace ESV2007
 } // namespace GDT
