@@ -31,7 +31,7 @@
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/grid/type_traits.hh>
 
-#include "RS2017.hh"
+#include "ESV2007.hh"
 
 using namespace Dune;
 using XT::Grid::Layers;
@@ -47,7 +47,7 @@ struct NonconformityProduct
   typedef
       typename XT::Grid::Layer<G, interpolation_layer_type, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type IGL;
 
-  typedef GDT::RS2017ParabolicLrbms::NonconformityProduct<GL, IGL> type;
+  typedef GDT::ESV2007::NonconformityProduct<GL, IGL> type;
   typedef py::class_<type, XT::Grid::Walker<GL>> bound_type;
 
   template <bool is_same = (interpolation_layer_type == layer_type) && (layer_backend == Backends::part),
@@ -72,7 +72,7 @@ struct NonconformityProduct
 
   static std::string class_name()
   {
-    return "rs2017_parabolic_lrbms_nonconformity_product";
+    return "ESV2007_nonconformity_product";
   }
 
   static std::string layer_suffix()
@@ -173,7 +173,7 @@ struct NonconformityProduct
                    XT::Common::to_camel_case(class_name() + "_" + XT::Grid::bindings::grid_name<G>::value() + "_"
                                              + layer_suffix())
                        .c_str(),
-                   "RS2017ParabolicLrbms::NonconformityProduct");
+                   "ESV2007::NonconformityProduct");
       c.def("apply2", [](type& self) { return self.apply2(); });
       c.def("result", [](type& self) { return self.apply2(); });
     } catch (std::runtime_error& ee) {
@@ -184,11 +184,11 @@ struct NonconformityProduct
 }; // struct NonconformityProduct
 
 
-PYBIND11_PLUGIN(__operators_RS2017)
+PYBIND11_PLUGIN(__operators_ESV2007)
 {
   using namespace pybind11::literals;
 
-  py::module m("__operators_RS2017", "dune-gdt");
+  py::module m("__operators_ESV2007", "dune-gdt");
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 

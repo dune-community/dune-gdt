@@ -77,9 +77,9 @@ if(dune-pybindxi_FOUND)
   # * weighted L2 operator
   dune_pybindxi_add_module(__operators_weighted_l2 operators/weighted-l2.bindings.cc)
   list(APPEND pybindxi_modules __operators_weighted_l2)
-  # * the operators from RS2017
-  dune_pybindxi_add_module(__operators_RS2017 playground/operators/RS2017.bindings.cc)
-  list(APPEND pybindxi_modules __operators_RS2017)
+  # * the operators from ESV2007
+  dune_pybindxi_add_module(__operators_ESV2007 playground/operators/ESV2007.bindings.cc)
+  list(APPEND pybindxi_modules __operators_ESV2007)
   # the functionals
   dune_pybindxi_add_helper_lib(__functionals_elliptic_ipdg_helper
                                functionals/elliptic-ipdg.bindings/alu_fem_istl.cc

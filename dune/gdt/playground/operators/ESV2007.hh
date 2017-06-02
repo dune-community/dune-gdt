@@ -26,7 +26,7 @@
 
 namespace Dune {
 namespace GDT {
-namespace RS2017ParabolicLrbms {
+namespace ESV2007 {
 
 #if HAVE_DUNE_FEM
 
@@ -132,7 +132,7 @@ class NonconformityProduct
 
 #endif // HAVE_DUNE_FEM
 
-} // namespace RS2017ParabolicLrbms
+} // namespace ESV2007
 } // namespace GDT
 } // namespace Dune
 
