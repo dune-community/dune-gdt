@@ -97,13 +97,14 @@ struct NonconformityProduct
 
       m.def(std::string("make_" + class_name() + "_" + layer_suffix()).c_str(),
             [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+               const ssize_t layer_level_or_subdomain,
+               const ssize_t interpolation_layer_level_or_subdomain,
                const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<IGL>>& interpolation_boundary_info,
                const typename type::ScalarFunctionType& lambda,
                const typename type::TensorFunctionType& kappa,
                const typename type::ScalarFunctionType& u,
                const typename type::ScalarFunctionType& v,
-               const ssize_t layer_level_or_subdomain,
-               const ssize_t interpolation_layer_level_or_subdomain) {
+               const ssize_t over_integrate) {
               return new type(dd_grid_provider.template layer<layer_type, layer_backend>(
                                   XT::Common::numeric_cast<int>(layer_level_or_subdomain)),
                               dd_grid_provider.template layer<interpolation_layer_type, Backends::part>(
@@ -112,16 +113,18 @@ struct NonconformityProduct
                               lambda,
                               kappa,
                               u,
-                              v);
+                              v,
+                              XT::Common::numeric_cast<size_t>(over_integrate));
             },
             "dd_grid_provider"_a,
+            "layer_level_or_subdomain"_a = -1,
+            "interpolation_layer_level_or_subdomain"_a = -1,
             "interpolation_boundary_info"_a,
             "lambda"_a,
             "kappa"_a,
             "u"_a,
             "v"_a,
-            "layer_level_or_subdomain"_a = -1,
-            "interpolation_layer_level_or_subdomain"_a = -1);
+            "over_integrate"_a = 2);
     }
   }; // struct factory_method<true, ...>
 
@@ -134,13 +137,14 @@ struct NonconformityProduct
 
       m.def(std::string("make_" + class_name() + "_" + layer_suffix()).c_str(),
             [](XT::Grid::GridProvider<G>& grid_provider,
+               const ssize_t layer_level,
+               const ssize_t interpolation_layer_level,
                const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<IGL>>& interpolation_boundary_info,
                const typename type::ScalarFunctionType& lambda,
                const typename type::TensorFunctionType& kappa,
                const typename type::ScalarFunctionType& u,
                const typename type::ScalarFunctionType& v,
-               const ssize_t layer_level,
-               const ssize_t interpolation_layer_level) {
+               const ssize_t over_integrate) {
               return new type(
                   grid_provider.template layer<layer_type, layer_backend>(XT::Common::numeric_cast<int>(layer_level)),
                   grid_provider.template layer<interpolation_layer_type, Backends::part>(
@@ -149,16 +153,18 @@ struct NonconformityProduct
                   lambda,
                   kappa,
                   u,
-                  v);
+                  v,
+                  XT::Common::numeric_cast<size_t>(over_integrate));
             },
             "grid_provider"_a,
+            "layer_level"_a = -1,
+            "interpolation_layer_level"_a = -1,
             "interpolation_boundary_info"_a,
             "lambda"_a,
             "kappa"_a,
             "u"_a,
             "v"_a,
-            "layer_level"_a = -1,
-            "interpolation_layer_level"_a = -1);
+            "over_integrate"_a = 2);
 
       factory_method<true>::addbind(m);
     }

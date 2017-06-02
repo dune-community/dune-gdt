@@ -31,21 +31,22 @@ namespace ESV2007 {
 #if HAVE_DUNE_FEM
 
 
-template <class GL, class InterpolationGridLayerType>
+template <class ProductGridLayer, class InterpolationGridLayerType>
 class NonconformityProduct
-    : public LocalizableProductBase<GL,
-                                    XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GL>,
-                                                                                typename GL::ctype,
-                                                                                GL::dimension,
-                                                                                double,
-                                                                                1>>
+    : public LocalizableProductBase<ProductGridLayer,
+                                    XT::Functions::
+                                        LocalizableFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
+                                                                     typename ProductGridLayer::ctype,
+                                                                     ProductGridLayer::dimension,
+                                                                     double,
+                                                                     1>>
 {
-  static_assert(XT::Grid::is_layer<GL>::value, "");
+  static_assert(XT::Grid::is_layer<ProductGridLayer>::value, "");
   static_assert(XT::Grid::is_layer<InterpolationGridLayerType>::value, "");
-  typedef XT::Grid::extract_entity_t<GL> E;
+  typedef XT::Grid::extract_entity_t<ProductGridLayer> E;
   static_assert(std::is_same<XT::Grid::extract_entity_t<InterpolationGridLayerType>, E>::value, "");
-  typedef typename GL::ctype D;
-  static const constexpr size_t d = GL::dimension;
+  typedef typename ProductGridLayer::ctype D;
+  static const constexpr size_t d = ProductGridLayer::dimension;
   typedef double R;
 
 public:
@@ -53,8 +54,8 @@ public:
   typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
 
 private:
-  typedef LocalizableProductBase<GL, ScalarFunctionType> BaseType;
-  typedef NonconformityProduct<GL, InterpolationGridLayerType> ThisType;
+  typedef LocalizableProductBase<ProductGridLayer, ScalarFunctionType> BaseType;
+  typedef NonconformityProduct<ProductGridLayer, InterpolationGridLayerType> ThisType;
   typedef LocalVolumeIntegralOperator<LocalLambdaBinaryVolumeIntegrand<E>,
                                       typename ScalarFunctionType::LocalfunctionType>
       LocalProductType;
@@ -64,30 +65,35 @@ private:
 public:
   using typename BaseType::GridLayerType;
 
-  NonconformityProduct(GridLayerType grd_layr,
+  NonconformityProduct(GridLayerType product_grid_layer,
                        InterpolationGridLayerType interpolation_grid_layer,
                        const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<InterpolationGridLayerType>>&
                            interpolation_boundary_info,
                        const ScalarFunctionType& lambda,
                        const TensorFunctionType& kappa,
                        const ScalarFunctionType& u,
-                       const ScalarFunctionType& v)
-    : BaseType(grd_layr, u, v)
+                       const ScalarFunctionType& v,
+                       const size_t over_integrate = 2)
+    : BaseType(product_grid_layer, u, v)
     , interpolation_grid_layer_(interpolation_grid_layer)
     , lambda_(lambda)
     , kappa_(kappa)
     , dg_space_(interpolation_grid_layer_)
     , interpolated_u_(dg_space_)
     , interpolated_v_(dg_space_)
+    , over_integrate_(over_integrate)
     , local_product_(
+          // the order lambda
           [&](const auto& local_u, const auto& local_v) {
             const auto& entity = local_u.entity();
             const auto local_lambda = lambda_.local_function(entity);
             const auto local_kappa = kappa_.local_function(entity);
             return local_lambda->order() + local_kappa->order()
                    + size_t(std::max(ssize_t(local_u.order()) - 1, ssize_t(0))
-                            + std::max(ssize_t(local_v.order()) - 1, ssize_t(0)));
+                            + std::max(ssize_t(local_v.order()) - 1, ssize_t(0)))
+                   + over_integrate_;
           },
+          // the evaluate lambda
           [&](const auto& local_u, const auto& local_v, const auto& local_point, auto& ret) {
             const auto& entity = local_u.entity();
             XT::Common::FieldMatrix<R, d, d> diffusion = kappa_.local_function(entity)->evaluate(local_point);
@@ -116,6 +122,7 @@ private:
   const DgSpaceType dg_space_;
   DiscreteFunctionType interpolated_u_;
   DiscreteFunctionType interpolated_v_;
+  const size_t over_integrate_;
   const LocalProductType local_product_;
 }; // class NonconformityProduct
 
@@ -123,10 +130,10 @@ private:
 #else // HAVE_DUNE_FEM
 
 
-template <class GL, class InterpolationGridLayerType>
+template <class ProductGridLayer, class InterpolationGridLayerType>
 class NonconformityProduct
 {
-  static_assert(AlwaysFalse<GL>::value, "You are missing dune-fem!");
+  static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing dune-fem!");
 };
 
 
