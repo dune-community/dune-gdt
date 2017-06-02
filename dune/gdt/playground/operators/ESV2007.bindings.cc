@@ -242,8 +242,43 @@ struct ResidualProduct
             bool anything = true>
   struct factory_method
   {
-    static void addbind(py::module& /*m*/)
+    static void addbind(py::module& m)
     {
+      using namespace pybind11::literals;
+
+      m.def(std::string("make_" + class_name() + "_" + layer_suffix()).c_str(),
+            [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+               const ssize_t layer_level_or_subdomain,
+               const ssize_t reconstruction_layer_level_or_subdomain,
+               const typename type::ScalarFunctionType& lambda,
+               const typename type::TensorFunctionType& kappa,
+               const typename type::ScalarFunctionType& f,
+               const typename type::ScalarFunctionType& u,
+               const typename type::ScalarFunctionType& v,
+               const ssize_t over_integrate,
+               const double& poincare_constant) {
+              return new type(dd_grid_provider.template layer<layer_type, layer_backend>(
+                                  XT::Common::numeric_cast<int>(layer_level_or_subdomain)),
+                              dd_grid_provider.template layer<reconstruction_layer_type, Backends::view>(
+                                  XT::Common::numeric_cast<int>(reconstruction_layer_level_or_subdomain)),
+                              lambda,
+                              kappa,
+                              f,
+                              u,
+                              v,
+                              poincare_constant,
+                              XT::Common::numeric_cast<size_t>(over_integrate));
+            },
+            "dd_grid_provider"_a,
+            "layer_level"_a = -1,
+            "reconstruction_layer_level"_a = -1,
+            "lambda"_a,
+            "kappa"_a,
+            "f"_a,
+            "u"_a,
+            "v"_a,
+            "over_integrate"_a = 2,
+            "poincare_constant"_a = 1.0 / (M_PIl * M_PIl));
     }
   }; // struct factory_method<true, ...>
 
@@ -335,6 +370,10 @@ PYBIND11_PLUGIN(__operators_ESV2007)
                        Layers::dd_subdomain_oversampled>::bind(m);
   ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
   ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::part>::bind(m);
+  // This is not efficient: we reconstruct on the whole leaf instead of only the neighborhood, but the rt pdelab space
+  //                        on a dd_subdomain_oversampled grid view (which is a wrapped part) is broken, if based on
+  //                        a 2d simplex alugrid.
+  ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::part, Layers::leaf>::bind(m);
 #endif
 
   m.def("_init_mpi",
