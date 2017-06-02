@@ -13,16 +13,22 @@
 #include <dune/common/typetraits.hh>
 
 #include <dune/xt/common/fmatrix.hh>
+#include <dune/xt/la/container/eigen.hh>
+#include <dune/xt/la/eigen-solver.hh>
 #include <dune/xt/grid/boundaryinfo/interfaces.hh>
+#include <dune/xt/grid/entity.hh>
 #include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/functions/derived.hh>
 #include <dune/xt/functions/interfaces/localizable-function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/operators/integrals.hh>
 #include <dune/gdt/local/integrands/lambda.hh>
 #include <dune/gdt/operators/base.hh>
+#include <dune/gdt/operators/fluxreconstruction.hh>
 #include <dune/gdt/operators/oswaldinterpolation.hh>
 #include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
+#include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
 
 namespace Dune {
 namespace GDT {
@@ -138,6 +144,175 @@ class NonconformityProduct
 
 
 #endif // HAVE_DUNE_FEM
+#if HAVE_DUNE_PDELAB && HAVE_EIGEN
+
+namespace internal {
+
+
+template <class ProductGridLayer, class ReconstructionGridLayer>
+class ResidualProductBase
+{
+  static_assert(XT::Grid::is_layer<ProductGridLayer>::value, "");
+  static_assert(XT::Grid::is_layer<ReconstructionGridLayer>::value, "");
+
+protected:
+  typedef XT::Grid::extract_entity_t<ProductGridLayer> E;
+  typedef typename ProductGridLayer::ctype D;
+  static const constexpr size_t d = ProductGridLayer::dimension;
+  typedef double R;
+
+private:
+  static_assert(std::is_same<XT::Grid::extract_entity_t<ReconstructionGridLayer>, E>::value, "");
+  typedef ResidualProductBase<ProductGridLayer, ReconstructionGridLayer> ThisType;
+
+public:
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
+
+private:
+  typedef DunePdelabRtSpaceWrapper<ReconstructionGridLayer, 0, R, d> RtSpaceType;
+  typedef DiscreteFunction<RtSpaceType> FluxReconstructionType;
+  typedef XT::Functions::DivergenceFunction<FluxReconstructionType> DivergenceOfFluxReconstructionType;
+  typedef typename ScalarFunctionType::DifferenceType DifferenceType;
+
+public:
+  ResidualProductBase(ReconstructionGridLayer reconstruction_grid_layer,
+                      const ScalarFunctionType& lambda,
+                      const TensorFunctionType& kappa,
+                      const ScalarFunctionType& f,
+                      const ScalarFunctionType& u,
+                      const ScalarFunctionType& v)
+    : f_(f)
+    , rt_space_(reconstruction_grid_layer)
+    , reconstructed_u_(rt_space_)
+    , reconstructed_v_(rt_space_)
+    , divergence_of_reconstructed_u_(reconstructed_u_)
+    , divergence_of_reconstructed_v_(reconstructed_v_)
+    , f_minus_divergence_of_reconstructed_u_(f_ - divergence_of_reconstructed_u_)
+    , f_minus_divergence_of_reconstructed_v_(f_ - divergence_of_reconstructed_v_)
+  {
+    DiffusiveFluxReconstructionOperator<ReconstructionGridLayer, ScalarFunctionType, TensorFunctionType>
+        flux_reconstruction(reconstruction_grid_layer, lambda, kappa);
+    flux_reconstruction.apply(u, reconstructed_u_);
+    flux_reconstruction.apply(v, reconstructed_v_);
+  }
+
+  ResidualProductBase(const ThisType&) = delete;
+  ResidualProductBase(ThisType&&) = delete;
+
+protected:
+  const ScalarFunctionType& f_;
+  const RtSpaceType rt_space_;
+  FluxReconstructionType reconstructed_u_;
+  FluxReconstructionType reconstructed_v_;
+  const DivergenceOfFluxReconstructionType divergence_of_reconstructed_u_;
+  const DivergenceOfFluxReconstructionType divergence_of_reconstructed_v_;
+  const DifferenceType f_minus_divergence_of_reconstructed_u_;
+  const DifferenceType f_minus_divergence_of_reconstructed_v_;
+}; // class ResidualProductBase
+
+
+} // namespace internal
+
+
+template <class ProductGridLayer, class ReconstructionGridLayer>
+class ResidualProduct
+    : internal::ResidualProductBase<ProductGridLayer, ReconstructionGridLayer>,
+      public LocalizableProductBase<ProductGridLayer,
+                                    XT::Functions::
+                                        LocalizableFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
+                                                                     typename ProductGridLayer::ctype,
+                                                                     ProductGridLayer::dimension,
+                                                                     double,
+                                                                     1>>
+{
+  typedef internal::ResidualProductBase<ProductGridLayer, ReconstructionGridLayer> ResidualProductBaseType;
+  typedef LocalizableProductBase<ProductGridLayer,
+                                 XT::Functions::
+                                     LocalizableFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
+                                                                  typename ProductGridLayer::ctype,
+                                                                  ProductGridLayer::dimension,
+                                                                  double,
+                                                                  1>>
+      LocalizableProductBaseType;
+
+public:
+  using typename ResidualProductBaseType::ScalarFunctionType;
+  using typename ResidualProductBaseType::TensorFunctionType;
+
+private:
+  using typename ResidualProductBaseType::E;
+  using typename ResidualProductBaseType::R;
+  typedef LocalVolumeIntegralOperator<LocalLambdaBinaryVolumeIntegrand<E>,
+                                      typename ScalarFunctionType::LocalfunctionType>
+      LocalProductType;
+
+public:
+  ResidualProduct(ProductGridLayer product_grid_layer,
+                  ReconstructionGridLayer reconstruction_grid_layer,
+                  const ScalarFunctionType& lambda,
+                  const TensorFunctionType& kappa,
+                  const ScalarFunctionType& f,
+                  const ScalarFunctionType& u,
+                  const ScalarFunctionType& v,
+                  const double& poincare_constant = 1.0 / (M_PIl * M_PIl),
+                  const size_t over_integrate = 2)
+    : ResidualProductBaseType(reconstruction_grid_layer, lambda, kappa, f, u, v)
+    , LocalizableProductBaseType(product_grid_layer,
+                                 this->f_minus_divergence_of_reconstructed_u_,
+                                 this->f_minus_divergence_of_reconstructed_v_)
+    , lambda_(lambda)
+    , kappa_(kappa)
+    , poincare_constant_(poincare_constant)
+    , over_integrate_(over_integrate)
+    , local_product_(
+          // the order lambda
+          [&](const auto& local_f_minus_divergence_of_reconstructed_u,
+              const auto& local_f_minus_divergence_of_reconstructed_v) {
+            const auto& entity = local_f_minus_divergence_of_reconstructed_u.entity();
+            // we can only guess the order of (lamba*kappa)^-1
+            return lambda_.local_function(entity)->order() + kappa_.local_function(entity)->order()
+                   + local_f_minus_divergence_of_reconstructed_u.order()
+                   + local_f_minus_divergence_of_reconstructed_v.order() + over_integrate_;
+          },
+          // the evaluate lambda
+          [&](const auto& local_f_minus_divergence_of_reconstructed_u,
+              const auto& local_f_minus_divergence_of_reconstructed_v,
+              const auto& local_point,
+              auto& ret) {
+            const auto& entity = local_f_minus_divergence_of_reconstructed_u.entity();
+            XT::LA::EigenDenseMatrix<R> diffusion = kappa_.local_function(entity)->evaluate(local_point);
+            diffusion *= lambda_.local_function(entity)->evaluate(local_point);
+            const auto min_ev = XT::LA::make_eigen_solver(diffusion).min_eigenvalue();
+            const auto h = XT::Grid::entity_diameter(entity);
+            ret[0][0] = (poincare_constant_ / min_ev) * h * h
+                        * local_f_minus_divergence_of_reconstructed_u.evaluate(local_point).at(0)[0]
+                        * local_f_minus_divergence_of_reconstructed_v.evaluate(local_point).at(0)[0];
+          })
+  {
+    this->append(local_product_);
+  }
+
+private:
+  const ScalarFunctionType& lambda_;
+  const TensorFunctionType& kappa_;
+  const double poincare_constant_;
+  const size_t over_integrate_;
+  const LocalProductType local_product_;
+}; // class ResidualProduct
+
+
+#else // HAVE_DUNE_PDELAB && HAVE_EIGEN
+
+
+template <class ProductGridLayer, class ReconstructionGridLayer>
+class ResidualProduct
+{
+  static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing dune-pdelab or eigen!");
+};
+
+
+#endif // HAVE_DUNE_PDELAB && HAVE_EIGEN
 
 } // namespace ESV2007
 } // namespace GDT
