@@ -315,11 +315,109 @@ class ResidualProduct
 #endif // HAVE_EIGEN
 
 
+template <class ProductGridLayer, class ReconstructionGridLayer>
+class DiffusiveFluxProduct
+    : public LocalizableProductBase<ProductGridLayer,
+                                    XT::Functions::
+                                        LocalizableFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
+                                                                     typename ProductGridLayer::ctype,
+                                                                     ProductGridLayer::dimension,
+                                                                     double,
+                                                                     1>>
+{
+  static_assert(XT::Grid::is_layer<ProductGridLayer>::value, "");
+  static_assert(XT::Grid::is_layer<ReconstructionGridLayer>::value, "");
+  typedef XT::Grid::extract_entity_t<ProductGridLayer> E;
+  static_assert(std::is_same<XT::Grid::extract_entity_t<ReconstructionGridLayer>, E>::value, "");
+  typedef typename ProductGridLayer::ctype D;
+  static const constexpr size_t d = ProductGridLayer::dimension;
+  typedef double R;
+  typedef DiffusiveFluxProduct<ProductGridLayer, ReconstructionGridLayer> ThisType;
+
+public:
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
+
+private:
+  typedef DunePdelabRtSpaceWrapper<ReconstructionGridLayer, 0, R, d> RtSpaceType;
+  typedef DiscreteFunction<RtSpaceType> FluxReconstructionType;
+  typedef LocalizableProductBase<ProductGridLayer, XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>> BaseType;
+  typedef LocalVolumeIntegralOperator<LocalLambdaBinaryVolumeIntegrand<E>,
+                                      typename ScalarFunctionType::LocalfunctionType>
+      LocalProductType;
+
+public:
+  DiffusiveFluxProduct(ProductGridLayer product_grid_layer,
+                       ReconstructionGridLayer reconstruction_grid_layer,
+                       const ScalarFunctionType& lambda,
+                       const TensorFunctionType& kappa,
+                       const ScalarFunctionType& u,
+                       const ScalarFunctionType& v,
+                       const size_t over_integrate = 2)
+    : BaseType(product_grid_layer, u, v)
+    , lambda_(lambda)
+    , kappa_(kappa)
+    , rt_space_(reconstruction_grid_layer)
+    , reconstructed_u_(rt_space_)
+    , reconstructed_v_(rt_space_)
+    , over_integrate_(over_integrate)
+    , local_product_(
+          // the order lambda
+          [&](const auto& local_u, const auto& local_v) {
+            const auto& entity = local_u.entity();
+            const size_t diffusion_order =
+                lambda_.local_function(entity)->order() + kappa_.local_function(entity)->order();
+            return 3 * diffusion_order + size_t(std::max(ssize_t(local_u.order()) - 1, ssize_t(0)))
+                   + size_t(std::max(ssize_t(local_v.order()) - 1, ssize_t(0))) + over_integrate_;
+          },
+          // the evaluate lambda
+          [&](const auto& local_u, const auto& local_v, const auto& local_point, auto& ret) {
+            const auto& entity = local_u.entity();
+            XT::Common::FieldMatrix<R, d, d> diffusion = kappa_.local_function(entity)->evaluate(local_point);
+            diffusion *= lambda_.local_function(entity)->evaluate(local_point);
+            XT::Common::FieldMatrix<R, d, d> one_over_diffusion = diffusion;
+            one_over_diffusion.invert(); // there is no documented way to assert that the inversion was successfull
+            const auto grad_u = local_u.jacobian(local_point).at(0)[0];
+            const auto grad_v = local_v.jacobian(local_point).at(0)[0];
+            const auto val_reconstructed_u = reconstructed_u_.local_function(entity)->evaluate(local_point);
+            const auto val_reconstructed_v = reconstructed_v_.local_function(entity)->evaluate(local_point);
+            ret[0][0] = (one_over_diffusion * ((diffusion * grad_u) + val_reconstructed_u)) // clang-format off
+                                            * ((diffusion * grad_v) + val_reconstructed_v); // clang-format on
+          })
+  {
+    DiffusiveFluxReconstructionOperator<ReconstructionGridLayer, ScalarFunctionType, TensorFunctionType>
+        flux_reconstruction(reconstruction_grid_layer, lambda, kappa);
+    flux_reconstruction.apply(u, reconstructed_u_);
+    flux_reconstruction.apply(v, reconstructed_v_);
+    this->append(local_product_);
+  }
+
+  DiffusiveFluxProduct(const ThisType&) = delete;
+  DiffusiveFluxProduct(ThisType&&) = delete;
+
+private:
+  const ScalarFunctionType& lambda_;
+  const TensorFunctionType& kappa_;
+  const RtSpaceType rt_space_;
+  FluxReconstructionType reconstructed_u_;
+  FluxReconstructionType reconstructed_v_;
+  const size_t over_integrate_;
+  const LocalProductType local_product_;
+}; // class DiffusiveFluxProduct
+
+
 #else // HAVE_DUNE_PDELAB
 
 
 template <class ProductGridLayer, class ReconstructionGridLayer>
 class ResidualProduct
+{
+  static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing dune-pdelab!");
+};
+
+
+template <class ProductGridLayer, class ReconstructionGridLayer>
+class DiffusiveFluxProduct
 {
   static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing dune-pdelab!");
 };
