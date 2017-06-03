@@ -33,11 +33,17 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridLayerType, class DiffusionFactorType, class DiffusionTensorType = void>
+template <class GridLayerType,
+          class DiffusionFactorType,
+          class DiffusionTensorType = void,
+          LocalEllipticIpdgIntegrands::Method method = LocalEllipticIpdgIntegrands::default_method>
 class DiffusiveFluxReconstructionOperator;
 
 
-template <class GridLayerType, class DiffusionFactorType, class DiffusionTensorType>
+template <class GridLayerType,
+          class DiffusionFactorType,
+          class DiffusionTensorType,
+          LocalEllipticIpdgIntegrands::Method method>
 class DiffusiveFluxReconstructionOperator
 {
   static_assert(GridLayerType::dimension == 2, "Only implemented for dimDomain 2 at the moment!");
@@ -78,10 +84,10 @@ public:
     const FieldType infinity = std::numeric_limits<FieldType>::infinity();
     for (size_t ii = 0; ii < range_vector.size(); ++ii)
       range_vector[ii] = infinity;
-    const LocalEllipticIpdgIntegrands::Inner<DiffusionFactorType, DiffusionTensorType> inner_evaluation(
+    const LocalEllipticIpdgIntegrands::Inner<DiffusionFactorType, DiffusionTensorType, method> inner_evaluation(
         diffusion_factor_, diffusion_tensor_);
-    const LocalEllipticIpdgIntegrands::BoundaryLHS<DiffusionFactorType, DiffusionTensorType> boundary_evaluation(
-        diffusion_factor_, diffusion_tensor_);
+    const LocalEllipticIpdgIntegrands::BoundaryLHS<DiffusionFactorType, DiffusionTensorType, method>
+        boundary_evaluation(diffusion_factor_, diffusion_tensor_);
     const XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, FieldType, 1> constant_one(1);
     DomainType normal(0);
     DomainType xx_entity(0);
@@ -227,8 +233,8 @@ private:
  *  \todo Add more static checks that GridLayerType and LocalizableFunctionType match.
  *  \todo Derive from operator interfaces.
  */
-template <class GridLayerType, class LocalizableFunctionType>
-class DiffusiveFluxReconstructionOperator<GridLayerType, LocalizableFunctionType, void>
+template <class GridLayerType, class LocalizableFunctionType, LocalEllipticIpdgIntegrands::Method method>
+class DiffusiveFluxReconstructionOperator<GridLayerType, LocalizableFunctionType, void, method>
 {
   static_assert(GridLayerType::dimension == 2, "Only implemented for dimDomain 2 at the moment!");
   static_assert(XT::Functions::is_localizable_function<LocalizableFunctionType>::value,
@@ -264,8 +270,9 @@ public:
     const FieldType infinity = std::numeric_limits<FieldType>::infinity();
     for (size_t ii = 0; ii < range_vector.size(); ++ii)
       range_vector[ii] = infinity;
-    const LocalEllipticIpdgIntegrands::Inner<LocalizableFunctionType> inner_evaluation(diffusion_);
-    const LocalEllipticIpdgIntegrands::BoundaryLHS<LocalizableFunctionType> boundary_evaluation(diffusion_);
+    const LocalEllipticIpdgIntegrands::Inner<LocalizableFunctionType, void, method> inner_evaluation(diffusion_);
+    const LocalEllipticIpdgIntegrands::BoundaryLHS<LocalizableFunctionType, void, method> boundary_evaluation(
+        diffusion_);
     const XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, FieldType, 1> constant_one(1);
     DomainType normal(0);
     DomainType xx_entity(0);
@@ -395,11 +402,11 @@ private:
 }; // class DiffusiveFluxReconstructionOperator
 
 
-template <class GL, class DF, class DT>
-DiffusiveFluxReconstructionOperator<GL, DF, DT> make_diffusive_flux_reconstruction_operator(
+template <LocalEllipticIpdgIntegrands::Method m, class GL, class DF, class DT>
+DiffusiveFluxReconstructionOperator<GL, DF, DT, m> make_diffusive_flux_reconstruction_operator(
     const GL& grid_layer, const DF& diffusion_factor, const DT& diffusion_tensor, const size_t over_integrate = 0)
 {
-  return DiffusiveFluxReconstructionOperator<GL, DF, DT>(
+  return DiffusiveFluxReconstructionOperator<GL, DF, DT, m>(
       grid_layer, diffusion_factor, diffusion_tensor, over_integrate);
 }
 
