@@ -176,6 +176,8 @@ public:
           "name"_a = "gdt.discretefunction",
           py::keep_alive<1, 2>(),
           py::keep_alive<1, 3>());
+    c.def(
+        py::init<const S&, const std::string>(), "space"_a, "name"_a = "gdt.discretefunction", py::keep_alive<1, 2>());
 
     m.def(
         std::string("make_discrete_function").c_str(),
@@ -185,6 +187,11 @@ public:
         "name"_a = "gdt.discretefunction",
         py::keep_alive<0, 1>(),
         py::keep_alive<0, 2>());
+    m.def(std::string("make_discrete_function").c_str(),
+          [](const S& space, const std::string& name) { return make_discrete_function<V>(space, name); },
+          "space"_a,
+          "name"_a = "gdt.discretefunction",
+          py::keep_alive<0, 1>());
 
     return c;
   } // ... bind(...)
