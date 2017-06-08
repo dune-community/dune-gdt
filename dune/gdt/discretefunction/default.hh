@@ -24,7 +24,7 @@
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/ranges.hh>
-#include <dune/xt/la/container/interfaces.hh>
+#include <dune/xt/la/container.hh>
 #include <dune/xt/functions/interfaces.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
@@ -215,6 +215,8 @@ public:
     return local_discrete_function(entity);
   }
 
+  using BaseType::visualize;
+
   /**
    * \brief Visualizes the function using Dune::XT::Functions::LocalizableFunctionInterface::visualize on the grid layer
    *        associated with the space.
@@ -295,7 +297,7 @@ private:
 }; // class ConstDiscreteFunction
 
 
-template <class SpaceImp, class VectorImp>
+template <class SpaceImp, class VectorImp = typename XT::LA::Container<typename SpaceImp::RangeFieldType>::VectorType>
 class DiscreteFunction : XT::Common::StorageProvider<VectorImp>, public ConstDiscreteFunction<SpaceImp, VectorImp>
 {
   typedef XT::Common::StorageProvider<VectorImp> VectorProviderBaseType;

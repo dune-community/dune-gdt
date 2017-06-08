@@ -43,7 +43,7 @@ public:
   typedef BlockSpace<LocalSpaceType> derived_type;
   static const int polOrder = LocalSpaceType::polOrder;
   static const bool continuous = false;
-  typedef std::vector<LocalSpaceType> BackendType;
+  typedef std::vector<std::shared_ptr<const LocalSpaceType>> BackendType;
   typedef BlockMapper<LocalSpaceType> MapperType;
   typedef typename LocalSpaceType::BaseFunctionSetType BaseFunctionSetType;
   typedef typename LocalSpaceType::CommunicatorType CommunicatorType;
@@ -86,16 +86,16 @@ public:
 
   typedef XT::Grid::DD::SubdomainGrid<typename XT::Grid::extract_grid<GridLayerType>::type> DdSubdomainsGridType;
 
-  BlockSpace(const DdSubdomainsGridType& grid, const std::shared_ptr<std::vector<LocalSpaceType>> spaces)
+  BlockSpace(const DdSubdomainsGridType& grid, const std::vector<std::shared_ptr<const LocalSpaceType>>& spaces)
     : dd_grid_(grid)
     , entity_to_subdomain_map_(dd_grid_.entityToSubdomainMap())
     , global_grid_part_(new GridLayerType(dd_grid_.globalGridPart()))
-    , local_spaces_(spaces)
+    , local_spaces_(new std::vector<std::shared_ptr<const LocalSpaceType>>(spaces))
     , mapper_(new MapperType(dd_grid_, global_grid_part_, local_spaces_))
   {
     if (local_spaces_->size() != dd_grid_.size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "You have to provide a local space for each subdomain of the DD subdomains grid!\n"
+                 "You have to provide a local space (or a nullptr) for each subdomain of the DD subdomains grid!\n"
                      << "  Number of subdomains: "
                      << dd_grid_.size()
                      << "\n"
@@ -132,7 +132,9 @@ public:
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
     const size_t block = find_block_of(entity);
-    return backend()[block].base_function_set(entity);
+    if (backend()[block] == nullptr)
+      DUNE_THROW(InvalidStateException, "You did not provide a local space for block " << block << "!");
+    return backend()[block]->base_function_set(entity);
   }
 
   template <class ConstraintsType>
@@ -170,7 +172,7 @@ public:
     if (block >= num_blocks())
       DUNE_THROW(XT::Common::Exceptions::index_out_of_range,
                  "  num_blocks: " << num_blocks() << "\n  block: " << block);
-    return (*local_spaces_)[block];
+    return *(local_spaces_->at(block));
   }
 
 private:
@@ -186,13 +188,13 @@ private:
 #endif // NDEBUG
     const size_t subdomain = result->second;
 #ifndef NDEBUG
-    if (subdomain >= local_spaces_->size())
+    if (subdomain >= dd_grid_.size())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "The DD subdomains grid is corrupted!\nIt reports Entity " << global_entity_index
                                                                             << " to be in subdomain "
                                                                             << subdomain
                                                                             << " while only having "
-                                                                            << local_spaces_->size()
+                                                                            << dd_grid_.size()
                                                                             << " subdomains!");
 #endif // NDEBUG
     return subdomain;
@@ -201,7 +203,7 @@ private:
   const DdSubdomainsGridType& dd_grid_;
   const std::shared_ptr<const typename DdSubdomainsGridType::EntityToSubdomainMapType> entity_to_subdomain_map_;
   const std::shared_ptr<GridLayerType> global_grid_part_;
-  const std::shared_ptr<std::vector<LocalSpaceType>> local_spaces_;
+  const std::shared_ptr<std::vector<std::shared_ptr<const LocalSpaceType>>> local_spaces_;
   const std::shared_ptr<MapperType> mapper_;
 }; // class BlockSpace
 

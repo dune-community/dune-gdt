@@ -39,7 +39,7 @@ class BlockMapperTraits
 public:
   typedef BlockMapper<LocalSpaceType> derived_type;
   typedef typename LocalSpaceType::EntityType EntityType;
-  typedef std::vector<LocalSpaceType> BackendType;
+  typedef std::vector<std::shared_ptr<const LocalSpaceType>> BackendType;
 }; // class BlockMapperTraits
 
 
@@ -80,14 +80,18 @@ private:
     static size_t numDofs(const ThisType& self, const Comdim0EntityType& entity)
     {
       const size_t block = find_block_of(self, entity);
-      return self.backend()[block].mapper().numDofs(entity);
+      if (self.backend()[block] == nullptr)
+        DUNE_THROW(InvalidStateException, "You did not provide a local space for block " << block << "!");
+      return self.backend()[block]->mapper().numDofs(entity);
     }
 
     static void globalIndices(const ThisType& self, const Comdim0EntityType& entity, Dune::DynamicVector<size_t>& ret)
     {
       const size_t block = find_block_of(self, entity);
-      self.backend()[block].mapper().globalIndices(entity, ret);
-      const size_t num_dofs = self.backend()[block].mapper().numDofs(entity);
+      if (self.backend()[block] == nullptr)
+        DUNE_THROW(InvalidStateException, "You did not provide a local space for block " << block << "!");
+      self.backend()[block]->mapper().globalIndices(entity, ret);
+      const size_t num_dofs = self.backend()[block]->mapper().numDofs(entity);
       assert(ret.size() >= num_dofs);
       for (size_t ii = 0; ii < num_dofs; ++ii)
         ret[ii] += self.global_start_indices_[block];
@@ -96,7 +100,9 @@ private:
     static size_t mapToGlobal(const ThisType& self, const Comdim0EntityType& entity, const size_t& localIndex)
     {
       const size_t block = find_block_of(self, entity);
-      const size_t block_local_index = self.backend()[block].mapper().mapToGlobal(entity, localIndex);
+      if (self.backend()[block] == nullptr)
+        DUNE_THROW(InvalidStateException, "You did not provide a local space for block " << block << "!");
+      const size_t block_local_index = self.backend()[block]->mapper().mapToGlobal(entity, localIndex);
       return self.global_start_indices_[block] + block_local_index;
     }
 
@@ -129,7 +135,7 @@ private:
 public:
   BlockMapper(const DdSubdomainsGridType& dd_grid,
               const std::shared_ptr<GridLayerType> grid_layer,
-              const std::shared_ptr<std::vector<LocalSpaceType>> local_spaces)
+              const std::shared_ptr<std::vector<std::shared_ptr<const LocalSpaceType>>> local_spaces)
     : global_grid_part_(grid_layer)
     , entity_to_subdomain_map_(dd_grid.entityToSubdomainMap())
     , local_spaces_(local_spaces)
@@ -146,9 +152,13 @@ public:
                      << "  Number of local spaces given: "
                      << local_spaces_->size());
     for (size_t bb = 0; bb < num_blocks_; ++bb) {
-      max_num_dofs_ = std::max(max_num_dofs_, backend()[bb].mapper().maxNumDofs());
-      global_start_indices_.push_back(size_);
-      size_ += backend()[bb].mapper().size();
+      if (backend()[bb] != nullptr) {
+        max_num_dofs_ = std::max(max_num_dofs_, backend()[bb]->mapper().maxNumDofs());
+        global_start_indices_.push_back(size_);
+        size_ += backend()[bb]->mapper().size();
+      } else {
+        global_start_indices_.push_back(size_);
+      }
     }
   } // BlockMapper(...)
 
@@ -211,7 +221,7 @@ private:
 
   const std::shared_ptr<GridLayerType> global_grid_part_;
   const std::shared_ptr<const typename DdSubdomainsGridType::EntityToSubdomainMapType> entity_to_subdomain_map_;
-  const std::shared_ptr<std::vector<LocalSpaceType>> local_spaces_;
+  const std::shared_ptr<std::vector<std::shared_ptr<const LocalSpaceType>>> local_spaces_;
   size_t num_blocks_;
   size_t size_;
   size_t max_num_dofs_;

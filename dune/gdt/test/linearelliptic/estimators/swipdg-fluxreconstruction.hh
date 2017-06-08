@@ -12,6 +12,7 @@
 #ifndef DUNE_GDT_TEST_LINEARELLIPTIC_ESTIMATORS_SWIPDG_FLUXRECONSTRUCTION_HH
 #define DUNE_GDT_TEST_LINEARELLIPTIC_ESTIMATORS_SWIPDG_FLUXRECONSTRUCTION_HH
 
+#include <dune/xt/grid/boundaryinfo/alldirichlet.hh>
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/grid/walker/functors.hh>
 #include <dune/xt/functions/ESV2007.hh>
@@ -145,7 +146,8 @@ public:
   {
     if (prepared_)
       return;
-    const OswaldInterpolationOperator<GridLayerType> oswald_interpolation_operator(grid_layer_);
+    const XT::Grid::AllDirichletBoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>> boundary_info;
+    const OswaldInterpolationOperator<GridLayerType> oswald_interpolation_operator(grid_layer_, boundary_info);
     oswald_interpolation_operator.apply(discrete_solution_, oswald_interpolation_);
     result_ = 0.0;
     prepared_ = true;

@@ -30,6 +30,7 @@ _gdt_modules = ['spaces',
                 'operators_elliptic_ipdg',
                 'operators_fluxreconstruction',
                 'operators_oswaldinterpolation',
+                'operators_RS2017',
                 'operators_weighted_l2']
 
 for module_name in _gdt_modules:

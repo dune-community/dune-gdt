@@ -19,7 +19,7 @@
 
 #include <dune/xt/common/crtp.hh>
 #include <dune/xt/common/type_traits.hh>
-#include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/functions/interfaces/localizable-function.hh>
 
 namespace Dune {
 namespace GDT {

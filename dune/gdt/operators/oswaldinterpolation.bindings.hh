@@ -50,12 +50,12 @@ public:
     m.def("apply_oswald_interpolation_operator",
           [](const GDT::ConstDiscreteFunction<S, V>& source,
              GDT::DiscreteFunction<S, V>& range,
-             const bool zero_boundary) {
-            GDT::OswaldInterpolationOperator<GL, R>(source.space().grid_layer(), zero_boundary).apply(source, range);
+             const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GL>>& boundary_info) {
+            GDT::OswaldInterpolationOperator<GL, R>(source.space().grid_layer(), boundary_info).apply(source, range);
           },
           "source"_a,
           "range"_a,
-          "zero_boundary"_a = true);
+          "boundary_info"_a = true);
   }
 }; // class OswaldInterpolationOperator
 

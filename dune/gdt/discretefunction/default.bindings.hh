@@ -13,13 +13,16 @@
 
 #include <dune/pybindxi/pybind11.h>
 
+#include <dune/xt/common/bindings.hh>
+#include <dune/xt/grid/dd/subdomains/grid.hh>
 #include <dune/xt/grid/grids.bindings.hh>
+#include <dune/xt/grid/layers.hh>
 #include <dune/xt/la/type_traits.hh>
 #include <dune/xt/la/container.bindings.hh>
 
-#include <dune/gdt/type_traits.hh>
 #include <dune/gdt/spaces.bindings.hh>
 #include <dune/gdt/playground/spaces/block.hh>
+#include <dune/gdt/type_traits.hh>
 
 #include "default.hh"
 
@@ -34,6 +37,7 @@ class ConstDiscreteFunction
   typedef typename SP::type S;
   static_assert(is_space<S>::value, "");
   static_assert(XT::LA::is_vector<V>::value, "");
+  typedef XT::Grid::extract_grid_t<typename S::GridLayerType> G;
 
 public:
   typedef GDT::ConstDiscreteFunction<S, V> type;
@@ -73,7 +77,70 @@ public:
           },
           "filename"_a,
           "subsampling"_a = (S::polOrder > 1));
-
+    // these two are copied from <dune/xt/functions/interfaces.pbh>, would be nicer to inherit them
+    c.def("visualize",
+          [](const type& self,
+             const XT::Grid::GridProvider<G>& grid_provider,
+             const std::string& layer,
+             const ssize_t lvl,
+             const std::string& path,
+             const bool subsampling) {
+            const auto level = XT::Common::numeric_cast<int>(lvl);
+            if (layer == "leaf")
+              self.visualize(grid_provider.leaf_view(), path, subsampling);
+            else if (layer == "level")
+              self.visualize(grid_provider.template layer<XT::Grid::Layers::level, XT::Grid::Backends::view>(level),
+                             path,
+                             subsampling);
+            else
+              DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
+                         "Given layer has to be one of ('leaf', 'level'), is '" << layer << "'!");
+          },
+          "grid_provider"_a,
+          "layer"_a = "leaf",
+          "level"_a = -1,
+          "path"_a,
+          "subsampling"_a = true);
+#if HAVE_DUNE_FEM
+    c.def("visualize",
+          [](const type& self,
+             const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+             const std::string& layer,
+             const ssize_t lvl_or_sbdmn,
+             const std::string& path,
+             const bool subsampling) {
+            const auto level_or_subdomain = XT::Common::numeric_cast<int>(lvl_or_sbdmn);
+            if (layer == "leaf")
+              self.visualize(dd_grid_provider.leaf_view(), path, subsampling);
+            else if (layer == "level")
+              self.visualize(dd_grid_provider.template layer<XT::Grid::Layers::level, XT::Grid::Backends::view>(
+                                 level_or_subdomain),
+                             path,
+                             subsampling);
+            else if (layer == "dd_subdomain")
+              self.visualize(dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
+                                 level_or_subdomain),
+                             path,
+                             subsampling);
+            else if (layer == "dd_subdomain_oversampled")
+              self.visualize(
+                  dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+                      level_or_subdomain),
+                  path,
+                  subsampling);
+            else
+              DUNE_THROW(
+                  XT::Common::Exceptions::wrong_input_given,
+                  "Given layer has to be one of ('leaf', 'level', 'dd_subdomain', 'dd_subdomain_oversampled'), is '"
+                      << layer
+                      << "'!");
+          },
+          "dd_grid_provider"_a,
+          "layer"_a = "leaf",
+          "level_or_subdomain"_a = -1,
+          "path"_a,
+          "subsampling"_a = true);
+#endif // HAVE_DUNE_FEM
     return c;
   } // ... bind(...)
 }; // class ConstDiscreteFunction
@@ -109,14 +176,6 @@ public:
           "name"_a = "gdt.discretefunction",
           py::keep_alive<1, 2>(),
           py::keep_alive<1, 3>());
-    c.def("space", [](type& self) { return self.space(); });
-    c.def("vector_copy", [](type& self) { return self.vector(); });
-    c.def("visualize",
-          [](type& self, const std::string filename, const bool subsampling) {
-            return self.visualize(filename, subsampling);
-          },
-          "filename"_a,
-          "subsampling"_a = (S::polOrder > 1));
 
     m.def(
         std::string("make_discrete_function").c_str(),
