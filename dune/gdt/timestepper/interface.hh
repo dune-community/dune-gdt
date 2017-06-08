@@ -300,6 +300,10 @@ public:
         auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
         static_for_loop<1, dimRange - 1>::sum_with_step_of_four(u_n, sum_function);
         sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
+      } else if (visualize_tag == 4) {
+        auto u_n_copy = u_n;
+        u_n_copy.vector() *= std::sqrt(4 * M_PI);
+        u_n_copy.template visualize_factor<0>(filename_prefix, Dune::XT::Common::to_string(save_step_counter));
       }
     }
 

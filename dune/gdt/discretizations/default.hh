@@ -372,7 +372,7 @@ private:
   static const bool linear = ProblemType::linear;
   static const size_t dimDomain = ProblemType::dimDomain;
   typedef typename ProblemType::FluxType AnalyticalFluxType;
-  typedef typename ProblemType::RHSType RHSType;
+  typedef typename ProblemType::RhsType RhsType;
   typedef typename ProblemType::InitialValueType InitialValueType;
   typedef typename ProblemType::BoundaryValueType BoundaryValueType;
   typedef typename ProblemType::DomainFieldType DomainFieldType;
@@ -380,7 +380,7 @@ private:
   typedef typename Dune::XT::Functions::
       ConstantFunction<typename SpaceType::EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
           ConstantFunctionType;
-  typedef typename Dune::GDT::AdvectionRHSOperator<RHSType> RHSOperatorType;
+  typedef typename Dune::GDT::AdvectionRhsOperator<RhsType> RhsOperatorType;
   typedef
       typename std::conditional<numerical_flux == NumericalFluxes::laxfriedrichs
                                     || numerical_flux == NumericalFluxes::laxfriedrichs_with_reconstruction
@@ -394,9 +394,9 @@ private:
   typedef
       typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, RangeFieldType, time_stepper_method>::
           TimeStepperType OperatorTimeStepperType;
-  typedef typename TimeStepperFactory<RHSOperatorType, DiscreteFunctionType, RangeFieldType, rhs_time_stepper_method>::
-      TimeStepperType RHSOperatorTimeStepperType;
-  typedef typename Dune::GDT::FractionalTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType>
+  typedef typename TimeStepperFactory<RhsOperatorType, DiscreteFunctionType, RangeFieldType, rhs_time_stepper_method>::
+      TimeStepperType RhsOperatorTimeStepperType;
+  typedef typename Dune::GDT::FractionalTimeStepper<OperatorTimeStepperType, RhsOperatorTimeStepperType>
       TimeStepperType;
 
 public:
@@ -429,7 +429,7 @@ public:
       const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem().flux();
       const std::shared_ptr<const InitialValueType> initial_values = problem().initial_values();
       const std::shared_ptr<const BoundaryValueType> boundary_values = problem().boundary_values();
-      const std::shared_ptr<const RHSType> rhs = problem().rhs();
+      const std::shared_ptr<const RhsType> rhs = problem().rhs();
 
       // create a discrete function for the solution
       DiscreteFunctionType u(*fv_space_, "solution");
@@ -452,7 +452,7 @@ public:
       AdvectionOperatorType advection_operator =
           internal::AdvectionOperatorCreator<AdvectionOperatorType, numerical_flux>::create(
               *analytical_flux, *boundary_values, dx_function, dt, linear);
-      RHSOperatorType rhs_operator(*rhs);
+      RhsOperatorType rhs_operator(*rhs);
 
       // create timestepper
       OperatorTimeStepperType timestepper_op(advection_operator, u, -1.0);
@@ -462,7 +462,7 @@ public:
       solution.clear();
       if (problem().has_non_zero_rhs()) {
         // use fractional step method
-        RHSOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
+        RhsOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
         TimeStepperType timestepper(timestepper_op, timestepper_rhs);
         timestepper.solve(t_end, dt, num_save_steps, solution);
       } else {

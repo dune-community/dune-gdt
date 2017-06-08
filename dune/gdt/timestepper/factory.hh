@@ -16,7 +16,7 @@
 #include <dune/gdt/timestepper/adaptive-rungekutta.hh>
 #include <dune/gdt/timestepper/explicit-rungekutta.hh>
 #include <dune/gdt/timestepper/implicit-rungekutta.hh>
-#include <dune/gdt/timestepper/implicit-rungekutta-parallel.hh>
+#include <dune/gdt/timestepper/matrix-exponential.hh>
 
 
 namespace Dune {
@@ -30,6 +30,7 @@ template <class OperatorImp,
           XT::LA::Backends container_backend = XT::LA::default_sparse_backend>
 struct TimeStepperFactory
 {
+
   typedef typename std::
       conditional<method == TimeStepperMethods::bogacki_shampine || method == TimeStepperMethods::dormand_prince
                       || method == TimeStepperMethods::adaptive_rungekutta_other,
@@ -43,11 +44,17 @@ struct TimeStepperFactory
                                                                                               DiscreteFunctionImp,
                                                                                               TimeFieldImp,
                                                                                               method>,
-                                  typename Dune::GDT::ExplicitRungeKuttaTimeStepper<OperatorImp,
-                                                                                    DiscreteFunctionImp,
-                                                                                    TimeFieldImp,
-                                                                                    method>>::type>::type
-          TimeStepperType;
+                                  typename std::
+                                      conditional<method == TimeStepperMethods::matrix_exponential,
+                                                  typename Dune::GDT::MatrixExponentialTimeStepper<OperatorImp,
+                                                                                                   DiscreteFunctionImp,
+                                                                                                   TimeFieldImp>,
+                                                  typename Dune::GDT::ExplicitRungeKuttaTimeStepper<OperatorImp,
+                                                                                                    DiscreteFunctionImp,
+                                                                                                    TimeFieldImp,
+                                                                                                    method>>::type>::
+                          type>::type TimeStepperType;
+
 
   static TimeStepperType create(const OperatorImp& op,
                                 const DiscreteFunctionImp& initial_values,

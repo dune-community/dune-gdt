@@ -41,10 +41,6 @@
 #include <dune/gdt/projections/l2.hh>
 #include <dune/gdt/spaces/fv/product.hh>
 #include <dune/gdt/timestepper/factory.hh>
-#include <dune/gdt/timestepper/fractional-step.hh>
-#include <dune/gdt/timestepper/implicit-rungekutta.hh>
-#include <dune/gdt/timestepper/implicit-rungekutta-parallel.hh>
-#include <dune/gdt/timestepper/matrix_exponential.hh>
 //#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/sourcebeam.hh>
 //#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/checkerboard3d.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/basisfunctions.hh>
@@ -373,7 +369,7 @@ int main(int argc, char** argv)
 
   typedef typename Dune::XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
       ConstantFunctionType;
-  typedef AdvectionRHSOperator<RhsType> RHSOperatorType;
+  typedef AdvectionRhsOperator<RhsType> RhsOperatorType;
 
   typedef typename std::
       conditional<numerical_flux == NumericalFluxes::kinetic,
@@ -418,16 +414,13 @@ int main(int argc, char** argv)
   typedef
       typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, RangeFieldType, time_stepper_method>::
           TimeStepperType OperatorTimeStepperType;
-  //  typedef typename TimeStepperFactory<RHSOperatorType,
-  //                                      DiscreteFunctionType,
-  //                                      RangeFieldType,
-  //                                      rhs_time_stepper_method,
-  //                                      Dune::XT::LA::default_sparse_backend>::TimeStepperType
-  //                                      RHSOperatorTimeStepperType;
-  typedef MatrixExponentialTimeStepper<RHSOperatorType, DiscreteFunctionType, RangeFieldType>
-      RHSOperatorTimeStepperType;
-  //    typedef FractionalTimeStepper<OperatorTimeStepperType, RHSOperatorTimeStepperType> TimeStepperType;
-  typedef StrangSplittingTimeStepper<RHSOperatorTimeStepperType, OperatorTimeStepperType> TimeStepperType;
+  typedef typename TimeStepperFactory<RhsOperatorType,
+                                      DiscreteFunctionType,
+                                      RangeFieldType,
+                                      rhs_time_stepper_method,
+                                      Dune::XT::LA::default_sparse_backend>::TimeStepperType RhsOperatorTimeStepperType;
+  //    typedef FractionalTimeStepper<OperatorTimeStepperType, RhsOperatorTimeStepperType> TimeStepperType;
+  typedef StrangSplittingTimeStepper<RhsOperatorTimeStepperType, OperatorTimeStepperType> TimeStepperType;
 
 
   // *************** choose t_end and initial dt **************************************
@@ -482,14 +475,12 @@ int main(int argc, char** argv)
   //                                           true,
   //                                           space_quadrature_rules);
 
-  RHSOperatorType rhs_operator(rhs);
+  RhsOperatorType rhs_operator(rhs);
 
-  // create timestepper
-  OperatorTimeStepperType timestepper_op(advection_operator, u, -1.0);
 
   // ******************************** do the time steps ***********************************************************
-  // use fractional step method
-  RHSOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
+  OperatorTimeStepperType timestepper_op(advection_operator, u, -1.0);
+  RhsOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
   TimeStepperType timestepper(timestepper_rhs, timestepper_op);
   filename += "_" + ProblemType::static_id();
   filename += Dune::XT::Common::to_string(dimRange);
