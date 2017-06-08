@@ -40,7 +40,6 @@
 
 #include "interfaces.hh"
 #include "base.hh"
-#include "matrix_exponential.cpp"
 
 namespace Dune {
 namespace GDT {
@@ -96,8 +95,8 @@ class AdvectionKineticWENOOperator;
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, SlopeLimiters slope_limiter = SlopeLimiters::minmod>
 class AdvectionKineticOperator;
 
-template <class RHSEvaluationImp>
-class AdvectionRHSOperator;
+template <class RhsEvaluationImp>
+class AdvectionRhsOperator;
 
 
 namespace internal {
@@ -259,15 +258,15 @@ public:
 }; // class AdvectionKineticWENOOperatorTraits
 
 
-template <class RHSEvaluationImp>
-class AdvectionRHSOperatorTraits
+template <class RhsEvaluationImp>
+class AdvectionRhsOperatorTraits
 {
 public:
-  typedef AdvectionRHSOperator<RHSEvaluationImp> derived_type;
-  typedef RHSEvaluationImp RHSEvaluationType;
-  typedef typename RHSEvaluationImp::DomainFieldType FieldType;
-  typedef typename RHSEvaluationImp::JacobianWrtURangeType JacobianType;
-}; // class AdvectionRHSOperatorTraits
+  typedef AdvectionRhsOperator<RhsEvaluationImp> derived_type;
+  typedef RhsEvaluationImp RhsEvaluationType;
+  typedef typename RhsEvaluationImp::DomainFieldType FieldType;
+  typedef typename RhsEvaluationImp::JacobianWrtURangeType JacobianType;
+}; // class AdvectionRhsOperatorTraits
 
 
 } // namespace internal
@@ -1596,113 +1595,6 @@ private:
   DiscreteFunctionType& solution_;
 };
 
-// TODO: make thread-safe
-// TODO: clean up matrix exponential files
-template <class DiscreteFunctionType, class RhsEvaluationType>
-class MatrixExponentialFunctor
-    : public XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType>
-{
-  typedef typename XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType> BaseType;
-  typedef typename RhsEvaluationType::RangeFieldType FieldType;
-  static const size_t dimRange = RhsEvaluationType::dimRange;
-
-public:
-  using typename BaseType::EntityType;
-
-  MatrixExponentialFunctor(DiscreteFunctionType& solution,
-                           const double t,
-                           const double dt,
-                           const RhsEvaluationType& rhs_evaluation)
-    : solution_(solution)
-    , t_(t)
-    , dt_(dt)
-    , rhs_evaluation_(rhs_evaluation)
-  {
-  }
-
-  // Solves d_t u(t) = A u(t) + b locally on each entity
-  // Multiplying by exp(-At) we get
-  // (see https://en.wikipedia.org/wiki/Matrix_exponential#Linear_differential_equations)
-  // d_t (exp(-At)u(t)) = exp(-At) b
-  // By integrating over (0, dt) wrt. t, we get
-  // u(dt) = exp(Adt)(u(0) + (\int_0^{dt} exp(-At)) b)
-  virtual void apply_local(const EntityType& entity)
-  {
-    auto solution_local = solution_.local_discrete_function(entity);
-
-    // get u
-    const auto center = entity.geometry().local(entity.geometry().center());
-    const auto u0 = solution_local->evaluate(center);
-
-    // get A and b
-    auto zero = u0;
-    zero *= 0.;
-    const auto local_rhs = rhs_evaluation_.local_function(entity);
-    FieldMatrix<FieldType, dimRange, dimRange> A = local_rhs->jacobian_wrt_u(center, u0);
-    const auto b = local_rhs->evaluate(center, u0);
-
-    // calculate matrix exponential exp(A*dt)
-    auto Adt = A;
-    Adt *= dt_;
-    // get pointer to the underlying array of the FieldMatrix
-    double* Adt_array = &(Adt[0][0]);
-
-    const double* exp_Adt_array = r8mat_expm1(dimRange, Adt_array);
-
-    FieldMatrix<FieldType, dimRange, dimRange> exp_Adt;
-    std::copy_n(exp_Adt_array, dimRange * dimRange, &(exp_Adt[0][0]));
-    delete[] exp_Adt_array;
-
-    // calculate integral of exp(-At) int_exp_mAt
-    // see https://math.stackexchange.com/questions/658276/integral-of-matrix-exponential
-    // if A is invertible, the integral is -A^{-1}(exp(-Adt)-I)
-    // in general, it is the power series dt*(I + (-Adt)/(2!) + (-Adt)^2/(3!) + ... + (-Adt)^{n-1}/(n!) + ...)
-    FieldMatrix<FieldType, dimRange, dimRange> int_exp_mAdt;
-    try {
-      auto A_inverse = A;
-      A_inverse.invert();
-      A_inverse *= -1.;
-
-      // calculate matrix exponential exp(-A*dt)
-      auto mAdt = A;
-      mAdt *= -dt_;
-      // get pointer to the underlying array of the FieldMatrix
-      double* mAdt_array = &(mAdt[0][0]);
-      const double* exp_mAdt_array = r8mat_expm1(dimRange, mAdt_array);
-
-      std::copy_n(exp_mAdt_array, dimRange * dimRange, &(int_exp_mAdt[0][0]));
-      delete[] exp_mAdt_array;
-
-      for (size_t ii = 0; ii < dimRange; ++ii)
-        int_exp_mAdt[ii][ii] -= 1.;
-      int_exp_mAdt.leftmultiply(A_inverse);
-    } catch (Dune::FMatrixError&) {
-      auto minus_A = A;
-      minus_A *= -1.;
-      const double* int_exp_mAdt_array = r8mat_expm_integral(dimRange, &(minus_A[0][0]), dt_);
-      std::copy_n(int_exp_mAdt_array, dimRange * dimRange, &(int_exp_mAdt[0][0]));
-    }
-
-    // calculate solution u = exp(A dt) (u0 + int_exp_mAdt b)
-    FieldVector<FieldType, dimRange> u(0), ret;
-    int_exp_mAdt.mv(b, u);
-    u += u0;
-    exp_Adt.mv(u, ret);
-
-    // write to return vector
-    auto& local_vector = solution_local->vector();
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      local_vector.set(ii, ret[ii]);
-  }
-
-private:
-  DiscreteFunctionType& solution_;
-  const double t_;
-  const double dt_;
-  const RhsEvaluationType& rhs_evaluation_;
-};
-
-
 template <class GridLayerType, class MatrixType, class DiscreteFunctionType>
 class MatrixApplyFunctor : public XT::Grid::Functor::Codim0<GridLayerType>
 {
@@ -1747,18 +1639,18 @@ private:
   DiscreteFunctionType& result_;
 };
 
-template <class RHSEvaluationImp>
-class AdvectionRHSOperator : public Dune::GDT::OperatorInterface<internal::AdvectionRHSOperatorTraits<RHSEvaluationImp>>
+template <class RhsEvaluationImp>
+class AdvectionRhsOperator : public Dune::GDT::OperatorInterface<internal::AdvectionRhsOperatorTraits<RhsEvaluationImp>>
 {
-  //  static_assert(is_rhs_evaluation<RHSEvaluationImp>::value, "RHSEvaluationImp has to be derived from
-  //  RHSInterface!");
+  //  static_assert(is_rhs_evaluation<RhsEvaluationImp>::value, "RhsEvaluationImp has to be derived from
+  //  RhsInterface!");
 
 public:
-  typedef internal::AdvectionRHSOperatorTraits<RHSEvaluationImp> Traits;
-  typedef typename Traits::RHSEvaluationType RHSEvaluationType;
-  using BaseType = typename Dune::GDT::OperatorInterface<internal::AdvectionRHSOperatorTraits<RHSEvaluationImp>>;
+  typedef internal::AdvectionRhsOperatorTraits<RhsEvaluationImp> Traits;
+  typedef typename Traits::RhsEvaluationType RhsEvaluationType;
+  using BaseType = typename Dune::GDT::OperatorInterface<internal::AdvectionRhsOperatorTraits<RhsEvaluationImp>>;
 
-  AdvectionRHSOperator(const RHSEvaluationType& rhs_evaluation)
+  AdvectionRhsOperator(const RhsEvaluationType& rhs_evaluation)
     : rhs_evaluation_(rhs_evaluation)
   {
   }
@@ -1767,7 +1659,7 @@ public:
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& /*param*/) const
   {
     std::fill(range.vector().begin(), range.vector().end(), 0);
-    LocalVolumeIntegralFunctional<LocalFvRhsIntegrand<RHSEvaluationType, SourceType>,
+    LocalVolumeIntegralFunctional<LocalFvRhsIntegrand<RhsEvaluationType, SourceType>,
                                   typename RangeType::SpaceType::BaseFunctionSetType>
         local_functional(rhs_evaluation_, source);
     VectorFunctionalBase<typename RangeType::VectorType,
@@ -1779,6 +1671,11 @@ public:
     functional_assembler.assemble(true);
   }
 
+  const RhsEvaluationType& evaluation() const
+  {
+    return rhs_evaluation_;
+  }
+
   // assembles jacobian (jacobian is assumed to be zero initially)
   template <class SourceType, class MatrixTraits>
   void assemble_jacobian(XT::LA::MatrixInterface<MatrixTraits, typename SourceType::RangeFieldType>& jac,
@@ -1787,7 +1684,7 @@ public:
   {
     typedef typename SourceType::SpaceType SpaceType;
     typedef typename SpaceType::BaseFunctionSetType BasisType;
-    typedef LocalVolumeIntegralOperator<LocalFvRhsJacobianIntegrand<RHSEvaluationType, SourceType>, BasisType>
+    typedef LocalVolumeIntegralOperator<LocalFvRhsJacobianIntegrand<RhsEvaluationType, SourceType>, BasisType>
         LocalOperatorType;
     LocalOperatorType local_operator(rhs_evaluation_, source);
     SystemAssembler<SpaceType> assembler(source.space());
@@ -1801,26 +1698,13 @@ public:
   //                              const SourceType& source,
   //                              const XT::Common::Parameter& param) const
   //  {
-  //    typedef LocalVolumeIntegralOperator<LocalFvRhsNewtonIntegrand<RHSEvaluationType, SourceType>> LocalOperatorType;
+  //    typedef LocalVolumeIntegralOperator<LocalFvRhsNewtonIntegrand<RhsEvaluationType, SourceType>> LocalOperatorType;
   //    LocalOperatorType local_operator(rhs_evaluation_, source, param);
   //    LocalVolumeTwoFormAssembler<LocalOperatorType> local_assembler(local_operator);
   //    SystemAssembler<typename SourceType::SpaceType> assembler(source.space());
   //    assembler.append(local_assembler, newton_matrices);
   //    assembler.assemble(false);
   //  }
-
-  // solves with matrix exponential on each entity
-  template <class SourceType>
-  void apply_matrix_exponential(SourceType& solution,
-                                const double t,
-                                const double dt,
-                                const XT::Common::Parameter& /*param*/ = {}) const
-  {
-    MatrixExponentialFunctor<SourceType, RHSEvaluationType> functor(solution, t, dt, rhs_evaluation_);
-    SystemAssembler<typename SourceType::SpaceType> assembler(solution.space());
-    assembler.append(functor);
-    assembler.assemble(false);
-  }
 
   //  // solves with local jacobian on each entity
   //  template <class SourceType, class RangeType, class MatrixType>
@@ -1851,8 +1735,8 @@ public:
   //  }
 
 private:
-  const RHSEvaluationType& rhs_evaluation_;
-}; // class AdvectionRHSOperator
+  const RhsEvaluationType& rhs_evaluation_;
+}; // class AdvectionRhsOperator
 
 
 } // namespace GDT
