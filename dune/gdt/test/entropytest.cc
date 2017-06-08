@@ -46,12 +46,14 @@
 #include <dune/gdt/timestepper/implicit-rungekutta-parallel.hh>
 #include <dune/gdt/timestepper/matrix_exponential.hh>
 //#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/sourcebeam.hh>
-//#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/planesource.hh>
-//#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/pointsource.hh>
 //#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/checkerboard3d.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/basisfunctions.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/twobeams.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/sourcebeam.hh>
+#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/planesource.hh>
+#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/pointsource.hh>
+#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/linesource.hh>
+#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/lebedevquadrature.hh>
 
 #include <libqhullcpp/RboxPoints.h>
 #include <libqhullcpp/QhullError.h>
@@ -163,7 +165,7 @@ int main(int argc, char** argv)
 #endif
 
   // ********************* choose dimensions, fluxes and grid type ************************
-  static const int dimDomain = 1;
+  static const int dimDomain = 2;
   //  static const int dimDomain = 1;
   static const int momentOrder = 6;
   //  const auto numerical_flux = NumericalFluxes::kinetic;
@@ -175,7 +177,7 @@ int main(int argc, char** argv)
   // const auto time_stepper_method = TimeStepperMethods::explicit_euler;
   const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_second_order_ssp;
   //  const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_third_order_ssp;
-  // const auto rhs_time_stepper_method = TimeStepperMethods::explicit_euler;
+  //  const auto rhs_time_stepper_method = TimeStepperMethods::explicit_euler;
   //  const auto rhs_time_stepper_method = TimeStepperMethods::implicit_euler;
   const auto rhs_time_stepper_method = TimeStepperMethods::matrix_exponential;
   //  const auto rhs_time_stepper_method = TimeStepperMethods::trapezoidal_rule;
@@ -189,8 +191,32 @@ int main(int argc, char** argv)
   //  typedef typename Hyperbolic::Problems::LegendrePolynomials<double, dimDomain, double, momentOrder>
   //  BasisfunctionType;
   //    typedef typename Hyperbolic::Problems::HatFunctions<double, dimDomain, double, momentOrder> BasisfunctionType;
-  typedef typename Hyperbolic::Problems::PiecewiseMonomials<double, dimDomain, double, momentOrder> BasisfunctionType;
+  static const size_t refinements = 0;
+
+  //  typedef
+  //      typename Hyperbolic::Problems::HatFunctions<double,
+  //                                                  dimDomain,
+  //                                                  double,
+  //                                                  Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(),
+  //                                                  1,
+  //                                                  3>
+  //          BasisfunctionType;
+
+  //  typedef typename Hyperbolic::Problems::
+  //      HatFunctions<double, 3, double, Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(), 1, 2>
+  //          BasisfunctionType;
+
+  typedef typename Hyperbolic::Problems::RealSphericalHarmonics<double, double, momentOrder, dimDomain, true>
+      BasisfunctionType;
+
+  //  typedef typename Hyperbolic::Problems::
+  //      PiecewiseMonomials<double,
+  //                         dimDomain,
+  //                         double,
+  //                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces()>
+  //          BasisfunctionType;
   BasisfunctionType basis_functions;
+  //  BasisfunctionType basis_functions(refinements, refinements + 4);
   static const size_t dimRange = BasisfunctionType::dimRange;
   typedef FvProductSpace<GridViewType, double, dimRange, 1> SpaceType;
   typedef typename Dune::XT::LA::Container<double, container_backend>::VectorType VectorType;
@@ -201,60 +227,71 @@ int main(int argc, char** argv)
   //      TwoBeamsFokkerPlanckPn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double,
   //      dimRange>
   //          ProblemImp;
+
   //    typedef typename Hyperbolic::Problems::
   //      TwoBeamsMn<GridViewType, BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double,
   //      dimRange>
   //          ProblemImp;
+
   //  typedef typename Hyperbolic::Problems::
   //      SourceBeamPn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
   //          ProblemImp;
-  typedef typename Hyperbolic::Problems::SourceBeamMn<GridViewType,
-                                                      BasisfunctionType,
-                                                      EntityType,
-                                                      double,
-                                                      dimDomain,
-                                                      DiscreteFunctionType,
-                                                      double,
-                                                      dimRange>
-      ProblemImp;
-  typedef typename Hyperbolic::Problems::KineticEquation<ProblemImp> ProblemType;
 
-  //  typedef typename Hyperbolic::Problems::SourceBeamPnHatFunctions<EntityType, double, dimDomain, double,
-  //  momentOrder>
-  //      ProblemType;
-  //  typedef
-  //      typename Hyperbolic::Problems::SourceBeamPnLegendre<EntityType, double, dimDomain, double,
-  //      momentOrder>
-  //          ProblemType;
+  //  typedef typename Hyperbolic::Problems::SourceBeamMn<GridViewType,
+  //                                                      BasisfunctionType,
+  //                                                      EntityType,
+  //                                                      double,
+  //                                                      dimDomain,
+  //                                                      DiscreteFunctionType,
+  //                                                      double,
+  //                                                      dimRange>
+  //      ProblemImp;
+
   //  typedef typename Hyperbolic::Problems::
-  //      SourceBeamPnLegendreLaplaceBeltrami<EntityType, double, dimDomain, double, momentOrder>
-  //          ProblemType;
-  //    typedef typename Hyperbolic::Problems::SourceBeamPnFirstOrderDG<EntityType, double, dimDomain, double,
-  //    momentOrder>
-  //      ProblemType;
-  //  typedef typename Hyperbolic::Problems::
-  //      PlaneSourcePnLegendre<EntityType, double, dimDomain, double, momentOrder>
-  //          ProblemType;
-  //  typedef typename Hyperbolic::Problems::PlaneSourcePnHatFunctions<EntityType, double, dimDomain, double,
-  //  momentOrder>
-  //      ProblemType;
-  //  typedef typename Hyperbolic::Problems::PlaneSourcePnFirstOrderDG<EntityType, double, dimDomain, double,
-  //  momentOrder>
-  //      ProblemType;
+  //      PlaneSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
+  //          ProblemImp;
+
+  //  typedef typename Hyperbolic::Problems::PlaneSourceMn<GridViewType,
+  //                                                       BasisfunctionType,
+  //                                                       EntityType,
+  //                                                       double,
+  //                                                       dimDomain,
+  //                                                       DiscreteFunctionType,
+  //                                                       double,
+  //                                                       dimRange>
+  //      ProblemImp;
+
   //    typedef typename Hyperbolic::Problems::
-  //        PointSourcePnLegendre<EntityType, double, dimDomain, double, momentOrder>
-  //            ProblemType;
-  // typedef typename Hyperbolic::Problems::PointSourcePnHatFunctions<EntityType, double, dimDomain, double, 6>
-  //    ProblemType;
-  //  typedef typename Hyperbolic::Problems::PointSourcePnPartialMoments<EntityType, double, dimDomain, double, 8>
-  //      ProblemType;
-  //  typedef typename Hyperbolic::Problems::CheckerboardPnHatFunctions<EntityType, double, dimDomain, double, 6>
-  //      ProblemType;
+  //        PointSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
+  //            ProblemImp;
 
-  // typedef typename Hyperbolic::Problems::CheckerboardPnPartialMoments<EntityType, double, dimDomain, double, 8>
-  //    ProblemType;
+  //  typedef typename Hyperbolic::Problems::PointSourceMn<GridViewType,
+  //                                                       BasisfunctionType,
+  //                                                       EntityType,
+  //                                                       double,
+  //                                                       dimDomain,
+  //                                                       DiscreteFunctionType,
+  //                                                       double,
+  //                                                       dimRange>
+  //      ProblemImp;
+
+  //  typedef typename Hyperbolic::Problems::
+  //      ModifiedLineSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
+  //          ProblemImp;
+
+  typedef typename Hyperbolic::Problems::ModifiedLineSourceMn<GridViewType,
+                                                              BasisfunctionType,
+                                                              EntityType,
+                                                              double,
+                                                              dimDomain,
+                                                              DiscreteFunctionType,
+                                                              double,
+                                                              dimRange>
+      ProblemImp;
+
 
   //******************* get typedefs and constants from ProblemType **********************//
+  typedef typename Hyperbolic::Problems::KineticEquation<ProblemImp> ProblemType;
   using DomainFieldType = typename ProblemType::DomainFieldType;
   using DomainType = typename ProblemType::DomainType;
   using RangeFieldType = typename ProblemType::RangeFieldType;
@@ -275,52 +312,33 @@ int main(int argc, char** argv)
   const GridViewType& grid_view = grid_ptr->leafGridView();
   const SpaceType fv_space(grid_view);
 
-  // ***************** get quadrature rule *********************************************
-
-
-  //    // Lebedev quadrature on unit sphere (in polar coordinates)
-  //    const size_t quadrature_order = 20;
-  //    const auto quadrature_rule = Hyperbolic::Problems::get_lebedev_quadrature(quadrature_order);
-
-  // 3D quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
-
-  // 3d adaptive quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
-  //  typedef typename GDT::Hyperbolic::Problems::AdaptiveQuadrature<DomainType, RangeType, RangeType>
-  //      AdaptiveQuadratureType;
-  //  typedef typename AdaptiveQuadratureType::QuadraturePointType QuadraturePointType;
-  //  typedef std::function<RangeType(const QuadraturePointType&)> BasisfunctionsType;
-  //  std::function<RangeType(const DomainType&, const CGALWrapper::Polyhedron_3&)> basisevaluation =
-  //      GDT::Hyperbolic::Problems::evaluate_linear_partial_basis<RangeType, DomainType, CGALWrapper::Polyhedron_3>;
-  //  std::function<RangeType(const DomainType&, const CGALWrapper::Polyhedron_3&)> basisevaluation =
-  //      GDT::Hyperbolic::Problems::evaluate_spherical_barycentric_coordinates<RangeType,
-  //                                                                            DomainType,
-  //                                                                            CGALWrapper::Polyhedron_3>;
-  //  BasisfunctionsType basisfunctions(
-  //      [&](const QuadraturePointType& quadpoint) { return basisevaluation(quadpoint.position(), poly); });
-  //  AdaptiveQuadratureType adaptive_quadrature(poly, basisfunctions, rel_tol, abs_tol);
-
   //******************* create ProblemType object ***************************************
-  //  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config));
-  //  const auto problem_ptr = ProblemType::create(
-  //      quadrature_rule, triangulation, ProblemType::default_config(grid_config, quadrature_rule, triangulation));
-  //  const auto problem_ptr = ProblemType::create(ProblemType::default_config(grid_config, true));
   //  const ProblemImp problem_imp(basis_functions);
-  const ProblemImp problem_imp(basis_functions, grid_view);
+  //  const ProblemImp problem_imp(basis_functions, grid_view);
+  //  const ProblemImp problem_imp(basis_functions, basis_functions.quadrature(), grid_view);
+  //  const ProblemImp problem_imp(
+  //      basis_functions, Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(1000), grid_view);
+
+  const ProblemImp problem_imp(basis_functions,
+                               grid_view,
+                               ProblemImp::default_grid_cfg(),
+                               ProblemImp::default_boundary_cfg(),
+                               //                               basis_functions.quadrature());
+                               Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(100));
+
   const ProblemType problem(problem_imp);
   const InitialValueType& initial_values = problem.initial_values();
   const BoundaryValueType& boundary_values = problem.boundary_values();
   const RhsType& rhs = problem.rhs();
   const RangeFieldType CFL = problem.CFL();
 
+  //  Hyperbolic::Problems::print_lebedev_quadrature();
+
   // ***************** project initial values to discrete function *********************
   // create a discrete function for the solution
   DiscreteFunctionType u(fv_space, "solution");
   // project initial values
   project_l2(initial_values, u);
-
-  // ********************** store evaluation of basisfunctions at quadrature points in matrix **********************
-  // ********************** (for non-adaptive quadratures)                                    **********************
-  //  const auto& basis_values_matrix = basis_values_matrices.back();
 
   // ********************* calculate half-space representation of realizable set **********************
   //  using orgQhull::Qhull;
@@ -345,73 +363,13 @@ int main(int argc, char** argv)
   //    plane_coefficients[ii].second = -facet.hyperplane().offset();
   //  }
 
-  //*********************** choose analytical flux *************************************************************
-
-  //  typedef EntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
-  //  AnalyticalFluxType;
-
-  //  typedef AdaptiveEntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
-  //      AnalyticalFluxType;
-
-  //  typedef AdaptiveEntropyBasedLocalFlux<GridViewType, EntityType, double, dimDomain, double, dimRange, 1>
-  //      AnalyticalFluxType;
-
-  //  typedef typename EntropyBasedLocalFlux3D<GridViewType,
-  //                                                      EntityType,
-  //                                                      double,
-  //                                                      dimDomain,
-  //                                                      double,
-  //                                                      dimRange,
-  //                                                      1,
-  //                                                      container_backend>
-  //      AnalyticalFluxType;
-
-
-  typedef typename ProblemType::FluxType AnalyticalFluxType;
-
-  //  typedef typename EntropyBasedLocalFluxHatFunctions<GridViewType,
-  //                                                                typename SpaceType::EntityType,
-  //                                                                double,
-  //                                                                dimDomain,
-  //                                                                double,
-  //                                                                dimRange,
-  //                                                                1>
-  //      AnalyticalFluxType;
-
 
   // ************************* create analytical flux object ***************************************
-
+  typedef typename ProblemType::FluxType AnalyticalFluxType;
   const AnalyticalFluxType& analytical_flux = problem.flux();
 
-  //  const auto analytical_flux =
-  //      std::make_shared<const AnalyticalFluxType>(grid_view, ProblemType::create_equidistant_points());
 
-  //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
-  //      grid_view, quadrature_rule, basis_values_matrix, ProblemType::create_equidistant_points());
-
-  //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
-  //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_1d_hatfunctions);
-
-  //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
-  //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_1d_firstorderdg);
-
-  //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
-  //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
-
-  //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
-  //      grid_view, quadrature_rules, basis_values_matrix, isotropic_dist_calculator_3d_hatfunctions);
-
-  //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(
-  //      grid_view, quadrature_rule, basis_values_matrix, isotropic_dist_calculator_3d_partialbasis);
-
-  //  const auto analytical_flux = std::make_shared<const AnalyticalFluxType>(grid_view,
-  // isotropic_dist_calculator_3d_partialbasis,
-  //                                                                          isotropic_dist_calculator_3d_hatfunctions,
-  //                                                                          adaptive_quadrature);
-
-
-  // ******************** choose flux and rhs operator and timestepper
-  // *************************************************
+  // ******************** choose flux and rhs operator and timestepper ******************************************
 
   typedef typename Dune::XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
       ConstantFunctionType;
@@ -533,15 +491,12 @@ int main(int argc, char** argv)
   // use fractional step method
   RHSOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
   TimeStepperType timestepper(timestepper_rhs, timestepper_op);
-  //    std::string filename = ProblemType::static_id() + "WENO";
-  //    std::string filename = ProblemType::static_id() + "MinMod";
-  //    std::string filename = ProblemType::static_id();
   filename += "_" + ProblemType::static_id();
-  filename += Dune::XT::Common::to_string(momentOrder);
+  filename += Dune::XT::Common::to_string(dimRange);
   filename += rhs_time_stepper_method == TimeStepperMethods::implicit_euler
                   ? "_implicit"
                   : (rhs_time_stepper_method == TimeStepperMethods::matrix_exponential ? "_matexp" : "_explicit");
 
-  timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 0);
+  timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 4);
   return 0;
 }

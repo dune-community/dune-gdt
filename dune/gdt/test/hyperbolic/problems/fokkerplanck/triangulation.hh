@@ -30,6 +30,87 @@ namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
 
+// template <class FieldType>
+// class LebedevQuadrature
+//{
+// public:
+//  static Dune::QuadratureRule<FieldType, 2> get(size_t requested_order)
+//  {
+//    size_t index = -1;
+//    for (size_t ii = 0; ii < allowed_orders.size(); ++ii) {
+//      if (allowed_orders[ii] >= requested_order) {
+//        index = ii;
+//        break;
+//      }
+//    }
+//    size_t order = allowed_orders[index];
+//    char orderstring[4];
+//    sprintf(orderstring, "%03lu", order);
+//    std::string filename =
+//        std::string("/home/tobias/Software/dune-gdt-super-2.5/dune-gdt/dune/gdt/LebedevTables/lebedev_") + orderstring
+//        + ".txt";
+
+//    Dune::QuadratureRule<double, 2> quadrature_rule;
+//    std::string current_line;
+//    std::ifstream quadrature_file(filename);
+//    while (getline(quadrature_file, current_line)) {
+//      current_line = trim(current_line);
+//      auto quadrature_values =
+//          XT::Common::tokenize(current_line, " ", boost::algorithm::token_compress_mode_type::token_compress_on);
+//      double phi = XT::Common::from_string<double>(quadrature_values[0]) / 360. * 2 * M_PI;
+//      double theta = XT::Common::from_string<double>(quadrature_values[1]) / 360. * 2 * M_PI;
+//      double mu = std::cos(theta);
+//      const double weight = 4 * M_PI * XT::Common::from_string<double>(quadrature_values[2]);
+//      if (XT::Common::FloatCmp::eq(weight, 0.))
+//        DUNE_THROW(NotImplemented, "");
+//      if (XT::Common::FloatCmp::eq(mu, 0.))
+//        mu = 0.;
+//      if (XT::Common::FloatCmp::eq(phi, 0.))
+//        phi = 0.;
+//      Dune::QuadraturePoint<double, 2> quadrature_point(FieldVector<double, 2>{mu, phi}, weight);
+//      quadrature_rule.push_back(quadrature_point);
+//    }
+//    filename = std::string("/home/tobias/Software/dune-gdt-super-2.5/dune-gdt/dune/gdt/LebedevTables/lebedev_")
+//               + orderstring + "_dune.txt";
+//    std::ofstream outfile(filename);
+//    outfile << "if (order == " + XT::Common::to_string(order) + ") {" << std::endl;
+//    outfile << "positions = {";
+//    for (size_t ii = 0; ii < quadrature_rule.size(); ++ii) {
+//      const auto& quad_point = quadrature_rule[ii];
+//      outfile << XT::Common::to_string(quad_point.position(), 15);
+//      if (ii != quadrature_rule.size() - 1)
+//        outfile << ", ";
+//    }
+//    outfile << "};" << std::endl;
+//    outfile << "weights = {";
+//    for (size_t ii = 0; ii < quadrature_rule.size(); ++ii) {
+//      const auto& quad_point = quadrature_rule[ii];
+//      outfile << XT::Common::to_string(quad_point.weight(), 15);
+//      if (ii != quadrature_rule.size() - 1)
+//        outfile << ", ";
+//    }
+//    outfile << "};" << std::endl;
+//    outfile << "}" << std::endl;
+//    outfile.close();
+//    return quadrature_rule;
+//  }
+
+// private:
+//  static std::string trim(const std::string& s)
+//  {
+//    auto wsfront = std::find_if_not(s.begin(), s.end(), [](int c) { return std::isspace(c); });
+//    auto wsback = std::find_if_not(s.rbegin(), s.rend(), [](int c) { return std::isspace(c); }).base();
+//    return (wsback <= wsfront ? std::string() : std::string(wsfront, wsback));
+//  }
+
+//  static const std::vector<size_t> allowed_orders;
+//}; // class LebedevQuadrature
+
+// template <class FieldType>
+// const std::vector<size_t> LebedevQuadrature<FieldType>::allowed_orders = {
+//    3,  5,  7,  9,  11, 13, 15, 17, 19, 21, 23,  25,  27,  29,  31,  35,
+//    41, 47, 53, 59, 65, 71, 77, 83, 89, 95, 101, 107, 113, 119, 125, 131};
+
 
 template <class FieldType, size_t dimDomain>
 class Vertex
@@ -197,15 +278,17 @@ private:
 
   void calculate_barycentre_rule() const
   {
-    const auto ff = (vertices_[0]->position() + vertices_[1]->position() + vertices_[2]->position()) / 3.;
-    const auto norm_ff = ff.two_norm();
-    const auto bb = ff / norm_ff;
-    const auto norm_ff_3 = std::pow(norm_ff, 3);
-    const auto vertices_1_minus_0 = vertices_[1]->position() - vertices_[0]->position();
-    const auto vertices_2_minus_0 = vertices_[2]->position() - vertices_[0]->position();
-    const auto partial_s_gg = vertices_2_minus_0 / norm_ff - ff * (ff * vertices_2_minus_0 / norm_ff_3);
-    const auto partial_t_gg = vertices_1_minus_0 / norm_ff - ff * (ff * vertices_1_minus_0 / norm_ff_3);
-    const auto weight = Dune::PDELab::crossproduct(partial_s_gg, partial_t_gg).two_norm() / 2.;
+    typedef XT::Common::FieldVector<RangeFieldImp, 3> FieldVectorType;
+    FieldVectorType ff =
+        FieldVectorType(vertices_[0]->position() + vertices_[1]->position() + vertices_[2]->position()) / 3.;
+    const RangeFieldImp norm_ff = ff.two_norm();
+    const FieldVectorType bb = ff / norm_ff;
+    const RangeFieldImp norm_ff_3 = std::pow(norm_ff, 3);
+    const FieldVectorType vertices_1_minus_0 = vertices_[1]->position() - vertices_[0]->position();
+    const FieldVectorType vertices_2_minus_0 = vertices_[2]->position() - vertices_[0]->position();
+    const FieldVectorType partial_s_gg = vertices_2_minus_0 / norm_ff - ff * (ff * vertices_2_minus_0 / norm_ff_3);
+    const FieldVectorType partial_t_gg = vertices_1_minus_0 / norm_ff - ff * (ff * vertices_1_minus_0 / norm_ff_3);
+    const RangeFieldImp weight = Dune::PDELab::crossproduct(partial_s_gg, partial_t_gg).two_norm() / 2.;
     quadrature_point_ = std::make_unique<QuadraturePointType>(bb, weight);
   }
 
@@ -248,21 +331,48 @@ public:
     return faces_;
   }
 
+  const VertexVectorType& vertices() const
+  {
+    return vertices_;
+  }
+
+  VertexVectorType& vertices()
+  {
+    return vertices_;
+  }
+
   void refine(size_t times = 1)
   {
     faces_ = get_subtriangles(times);
+    vertices_ = get_vertices(faces_);
   } // void refine(...)
 
+  // 3D quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
   Dune::QuadratureRule<RangeFieldImp, 3> quadrature_rule(size_t refinements = 0) const
   {
     TriangleVectorType quadrature_faces = get_subtriangles(refinements);
-    Dune::QuadratureRule<RangeFieldImp, 3> ret(quadrature_faces.size());
+    Dune::QuadratureRule<RangeFieldImp, 3> ret;
     for (size_t ii = 0; ii < quadrature_faces.size(); ++ii)
-      ret[ii] = quadrature_faces[ii]->quadrature_point();
+      ret.push_back(quadrature_faces[ii]->quadrature_point());
     return ret;
   }
 
 private:
+  static VertexVectorType get_vertices(const TriangleVectorType& faces)
+  {
+    VertexVectorType vertices;
+    for (const auto& face : faces) {
+      for (const auto& face_vertex : face->vertices()) {
+        const auto it = std::find_if(vertices.begin(), vertices.end(), [&](const std::shared_ptr<VertexType>& vertex) {
+          return XT::Common::FloatCmp::eq(vertex->position(), face_vertex->position());
+        });
+        if (it == vertices.end())
+          vertices.emplace_back(face_vertex);
+      }
+    }
+    return vertices;
+  }
+
   TriangleVectorType get_subtriangles(size_t refinements = 1) const
   {
     TriangleVectorType subtriangles = faces_;
@@ -278,12 +388,13 @@ private:
     return subtriangles;
   } // ... get_subtriangles(...)
 
-  void calculate_faces(std::vector<DomainType> points0)
+  void calculate_faces(const std::vector<DomainType>& points0)
   {
     for (const auto& point : points0)
-      vertices_.emplace_back(std::make_shared<VertexType>(point, current_vertex_index_++));
-    const auto all_vertices = vertices_;
-    auto vertices0 = vertices_;
+      all_vertices_.emplace_back(std::make_shared<VertexType>(point, current_vertex_index_++));
+    vertices_ = all_vertices_;
+    const auto all_vertices = all_vertices_;
+    auto vertices0 = all_vertices_;
     while (vertices0.size() > 0) {
       const auto v0 = vertices0.back();
       vertices0.pop_back();
@@ -315,10 +426,10 @@ private:
               // i.e the normal points outwards and thus p0, p1, p2 are oriented counterclockwise, which is what we want
               if (XT::Common::FloatCmp::le(max_value, 0.))
                 faces_.emplace_back(std::make_shared<TriangleType>(
-                    vertices_, v0, v1, v2, &current_face_index_, &current_vertex_index_, &vertices_mutex_));
+                    all_vertices_, v0, v1, v2, &current_face_index_, &current_vertex_index_, &all_vertices_mutex_));
               else
                 faces_.emplace_back(std::make_shared<TriangleType>(
-                    vertices_, v0, v2, v1, &current_face_index_, &current_vertex_index_, &vertices_mutex_));
+                    all_vertices_, v0, v2, v1, &current_face_index_, &current_vertex_index_, &all_vertices_mutex_));
             } // if (is_face)
           } // check if points define a plane
         } // p2
@@ -328,7 +439,8 @@ private:
 
   TriangleVectorType faces_;
   VertexVectorType vertices_;
-  mutable std::mutex vertices_mutex_;
+  VertexVectorType all_vertices_;
+  mutable std::mutex all_vertices_mutex_;
   std::atomic<size_t> current_face_index_;
   std::atomic<size_t> current_vertex_index_;
 }; // class SphericalTriangulation<...>

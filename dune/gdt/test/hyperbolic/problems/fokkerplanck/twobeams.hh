@@ -17,8 +17,6 @@
 #include <dune/xt/functions/lambda/global-function.hh>
 #include <dune/xt/functions/lambda/global-flux-function.hh>
 
-#include <dune/gdt/local/fluxes/entropybased.hh>
-
 #include "kineticequation.hh"
 
 namespace Dune {
@@ -95,7 +93,7 @@ public:
                                   std::make_pair("Q", std::vector<double>{0}),
                                   std::make_pair("CFL", std::vector<double>{0.5}),
                                   std::make_pair("t_end", std::vector<double>{4.0}),
-                                  std::make_pair("num_elements", std::vector<double>{1.})});
+                                  std::make_pair("num_segments", std::vector<double>{1.})});
   }
 
 

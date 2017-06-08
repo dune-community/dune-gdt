@@ -17,6 +17,8 @@
 #include <dune/xt/functions/lambda/global-function.hh>
 #include <dune/xt/functions/lambda/global-flux-function.hh>
 
+#include <dune/gdt/local/fluxes/entropybased.hh>
+
 #include "../base.hh"
 
 namespace Dune {
@@ -116,7 +118,8 @@ template <class BasisfunctionImp,
           size_t domainDim,
           class U_,
           class RangeFieldImp,
-          size_t rangeDim>
+          size_t rangeDim,
+          size_t quadratureDim = domainDim>
 class KineticTransportEquation
 {
   typedef KineticTransportEquation ThisType;
@@ -156,7 +159,7 @@ public:
   typedef typename RhsAffineFunctionType::FieldMatrixType MatrixType;
   typedef typename RhsAffineFunctionType::DomainType DomainType;
   typedef typename RhsAffineFunctionType::RangeType RangeType;
-  typedef Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
+  typedef Dune::QuadratureRule<DomainFieldType, quadratureDim> QuadratureType;
 
   virtual ~KineticTransportEquation()
   {
@@ -182,21 +185,23 @@ public:
 
   static QuadratureType default_quadrature(const XT::Common::Configuration& grid_cfg = default_grid_cfg())
   {
-    int num_quad_cells = grid_cfg.get("num_quad_cells", std::vector<int>{2})[0];
+    std::vector<int> num_quad_cells = grid_cfg.get("num_quad_cells", std::vector<int>{2, 2, 2});
     size_t quad_order = grid_cfg.get("quad_order", 20);
-    // 1D quadrature that consists of a Gauss-Legendre quadrature on each cell of the velocity grid
+    // quadrature that consists of a Gauss-Legendre quadrature on each cell of the velocity grid
     QuadratureType quadrature;
-    Dune::FieldVector<double, dimDomain> lower_left(-1);
-    Dune::FieldVector<double, dimDomain> upper_right(1);
-    static const std::array<int, dimDomain> s({num_quad_cells});
-    typedef typename Dune::YaspGrid<dimDomain, Dune::EquidistantOffsetCoordinates<double, dimDomain>> GridType;
+    Dune::FieldVector<double, quadratureDim> lower_left(-1);
+    Dune::FieldVector<double, quadratureDim> upper_right(1);
+    std::array<int, quadratureDim> s;
+    for (size_t ii = 0; ii < quadratureDim; ++ii)
+      s[ii] = num_quad_cells[ii];
+    typedef typename Dune::YaspGrid<quadratureDim, Dune::EquidistantOffsetCoordinates<double, quadratureDim>> GridType;
     GridType velocity_grid(lower_left, upper_right, s);
     const auto velocity_grid_view = velocity_grid.leafGridView();
     for (const auto& entity : elements(velocity_grid_view)) {
-      const auto local_quadrature = Dune::QuadratureRules<DomainFieldType, dimDomain>::rule(
+      const auto local_quadrature = Dune::QuadratureRules<DomainFieldType, quadratureDim>::rule(
           entity.type(), quad_order, Dune::QuadratureType::GaussLegendre);
       for (const auto& quad_point : local_quadrature) {
-        quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, dimDomain>(
+        quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, quadratureDim>(
             entity.geometry().global(quad_point.position()),
             quad_point.weight() * entity.geometry().integrationElement(quad_point.position())));
       }
@@ -207,13 +212,16 @@ public:
   KineticTransportEquation(const BasisfunctionType& basis_functions,
                            const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                            const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
+                           const QuadratureType quadrature = QuadratureType(),
                            const RangeFieldType psi_vac = 5e-9)
     : basis_functions_(basis_functions)
     , grid_cfg_(grid_cfg)
     , boundary_cfg_(boundary_cfg)
     , psi_vac_(psi_vac)
-    , quadrature_(default_quadrature(grid_cfg))
+    , quadrature_(quadrature)
   {
+    if (quadrature_.empty())
+      quadrature_ = default_quadrature(grid_cfg);
   }
 
   // flux matrix A = B M^{-1} with B_{ij} = <v h_i h_j>
@@ -223,7 +231,7 @@ public:
     auto M_inv = basis_functions_.mass_matrix_inverse();
     for (size_t dd = 0; dd < dimDomain; ++dd)
       A[dd].rightmultiply(M_inv);
-    return new ActualFluxType(A, RangeType(0));
+    return new ActualFluxType(A, typename ActualFluxType::RangeType(0));
   }
 
   virtual XT::Common::Parameter parameters() const
@@ -233,7 +241,7 @@ public:
                                   std::make_pair("Q", std::vector<double>{0}),
                                   std::make_pair("CFL", std::vector<double>{0.5}),
                                   std::make_pair("t_end", std::vector<double>{1.0}),
-                                  std::make_pair("num_elements", std::vector<double>{1.})});
+                                  std::make_pair("num_segments", std::vector<double>{1.})});
   }
 
   // RHS is (sigma_s/vol*G - sigma_t * I)u + Q<b>,
@@ -242,12 +250,12 @@ public:
   virtual RhsType* create_rhs() const
   {
     const auto param = parameters();
-    const auto num_elements = get_num_elements(param);
+    const auto num_segments = get_num_segments(param);
     auto sigma_a = param.get("sigma_a");
     auto sigma_s = param.get("sigma_s");
     auto Q = param.get("Q");
     const size_t num_regions =
-        std::accumulate(num_elements.begin(), num_elements.end(), 1, [](auto a, auto b) { return a * b; });
+        std::accumulate(num_segments.begin(), num_segments.end(), 1, [](auto a, auto b) { return a * b; });
     assert(sigma_a.size() == sigma_s.size() && sigma_a.size() == Q.size() && sigma_a.size() == num_regions);
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
@@ -279,7 +287,7 @@ public:
       b *= Q[ii];
       affine_functions.emplace_back(A, b, "rhs");
     } // ii
-    return new ActualRhsType(lower_left, upper_right, num_elements, affine_functions);
+    return new ActualRhsType(lower_left, upper_right, num_segments, affine_functions);
   } // ... create_rhs(...)
 
   // Initial value of the kinetic equation is a constant vacuum concentration psi_vac.
@@ -289,14 +297,14 @@ public:
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
     RangeType value = basis_functions_.integrated();
-    const auto num_elements = get_num_elements(parameters());
+    const auto num_segments = get_num_segments(parameters());
     const size_t num_regions =
-        std::accumulate(num_elements.begin(), num_elements.end(), 1, [](auto a, auto b) { return a * b; });
+        std::accumulate(num_segments.begin(), num_segments.end(), 1, [](auto a, auto b) { return a * b; });
     value *= psi_vac_;
     std::vector<typename ActualInitialValueType::LocalizableFunctionType> initial_vals;
     for (size_t ii = 0; ii < num_regions; ++ii)
       initial_vals.emplace_back([=](DomainType) { return value; }, 0);
-    return new ActualInitialValueType(lower_left, upper_right, num_elements, initial_vals, "initial_values");
+    return new ActualInitialValueType(lower_left, upper_right, num_segments, initial_vals, "initial_values");
   } // ... create_initial_values()
 
   // Use a constant vacuum concentration basis_integrated * psi_vac as boundary value
@@ -309,12 +317,12 @@ public:
 
   virtual RangeFieldType CFL() const
   {
-    return 0.5;
+    return parameters().get("CFL")[0];
   }
 
   virtual RangeFieldType t_end() const
   {
-    return 1.0;
+    return parameters().get("t_end")[0];
   }
 
   virtual XT::Common::Configuration grid_config() const
@@ -333,13 +341,13 @@ public:
   }
 
 protected:
-  FieldVector<size_t, dimDomain> get_num_elements(const XT::Common::Parameter& param) const
+  FieldVector<size_t, dimDomain> get_num_segments(const XT::Common::Parameter& param) const
   {
-    FieldVector<size_t, dimDomain> num_elements;
-    std::vector<double> stdvec_num_elements = param.get("num_elements");
+    FieldVector<size_t, dimDomain> num_segments;
+    std::vector<double> stdvec_num_segments = param.get("num_segments");
     for (size_t dd = 0; dd < dimDomain; ++dd)
-      num_elements[dd] = size_t(stdvec_num_elements[dd] + 0.1); // 0.1 ensures correct conversion in all cases
-    return num_elements;
+      num_segments[dd] = size_t(stdvec_num_segments[dd] + 0.1); // 0.1 ensures correct conversion in all cases
+    return num_segments;
   }
 
   static RangeFieldType volume()
@@ -360,7 +368,7 @@ protected:
   const XT::Common::Configuration grid_cfg_;
   const XT::Common::Configuration boundary_cfg_;
   const RangeFieldType psi_vac_;
-  const QuadratureType& quadrature_;
+  QuadratureType quadrature_;
 }; // class KineticTransportEquation<...>
 
 
@@ -414,19 +422,19 @@ public:
                                   std::make_pair("Q", std::vector<double>{0}),
                                   std::make_pair("CFL", std::vector<double>{0.5}),
                                   std::make_pair("t_end", std::vector<double>{4.0}),
-                                  std::make_pair("num_elements", std::vector<double>{1.})});
+                                  std::make_pair("num_segments", std::vector<double>{1.})});
   }
 
   // RHS is (-\sigma_a*I + 0.5*T*S M^{-1}) u + Q<b>
   virtual RhsType* create_rhs() const override
   {
     const auto param = parameters();
-    const auto num_elements = get_num_elements(param);
+    const auto num_segments = get_num_segments(param);
     const std::vector<RangeFieldType> sigma_a = param.get("sigma_a");
     const std::vector<RangeFieldType> T = param.get("T");
     const std::vector<RangeFieldType> Q = param.get("Q");
     const size_t num_regions =
-        std::accumulate(num_elements.begin(), num_elements.end(), 1, [](auto a, auto b) { return a * b; });
+        std::accumulate(num_segments.begin(), num_segments.end(), 1, [](auto a, auto b) { return a * b; });
     assert(sigma_a.size() == T.size() && sigma_a.size() == Q.size() && sigma_a.size() == num_regions);
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
@@ -451,11 +459,11 @@ public:
       b *= Q[ii];
       affine_functions.emplace_back(A, b);
     } // ii
-    return new ActualRhsType(lower_left, upper_right, num_elements, affine_functions);
+    return new ActualRhsType(lower_left, upper_right, num_segments, affine_functions);
   } // ... create_rhs(...)
 
 protected:
-  using BaseType::get_num_elements;
+  using BaseType::get_num_segments;
   using BaseType::basis_functions_;
   using BaseType::grid_cfg_;
 }; // class KineticFokkerPlanckEquation<...>

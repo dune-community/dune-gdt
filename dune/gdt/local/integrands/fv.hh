@@ -147,11 +147,11 @@ public:
   }
 
   template <class R, size_t r, size_t rC>
-  void
-  evaluate(const LocalfunctionTupleType& local_functions_tuple,
-           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& test_base,
-           const Dune::FieldVector<DomainFieldType, dimDomain>& x_local,
-           Dune::DynamicVector<R>& ret) const
+  void evaluate(
+      const LocalfunctionTupleType& local_functions_tuple,
+      const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& /*test_base*/,
+      const Dune::FieldVector<DomainFieldType, dimDomain>& x_local,
+      Dune::DynamicVector<R>& ret) const
   {
     const auto u = std::get<1>(local_functions_tuple)->evaluate(x_local);
     ret = std::get<0>(local_functions_tuple)->evaluate(x_local, u);

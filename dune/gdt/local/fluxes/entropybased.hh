@@ -19,7 +19,6 @@
 #include <dune/xt/common/math.hh>
 
 #include <dune/gdt/local/fluxes/interfaces.hh>
-#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/pointsource.hh>
 
 namespace Dune {
 namespace GDT {
@@ -162,8 +161,6 @@ void solve_lower_triangular_transposed(const MatrixType& A, VectorType& x, const
  * for the notation see
  * Alldredge, Hauck, O'Leary, Tits, "Adaptive change of basis in entropy-based moment closures for linear kinetic
  * equations"
- * domainDim, rangeDim, rangeDimCols are the respective dimensions of pde solution u, not the dimensions of
- \mathbf{f}.
  */
 template <class GridViewType,
           class BasisfunctionType,
@@ -173,12 +170,11 @@ template <class GridViewType,
           class U,
           class R,
           size_t rangeDim,
-          bool quadrature_is_cartesian = true>
-class EntropyBasedLocalFlux : public XT::Functions::LocalizableFluxFunctionInterface<E, D, d, U, 0, R, rangeDim>
+          size_t quadratureDim = d>
+class EntropyBasedLocalFlux : public XT::Functions::LocalizableFluxFunctionInterface<E, D, d, U, 0, R, rangeDim, d>
 {
-  typedef XT::Functions::LocalizableFluxFunctionInterface<E, D, d, U, 0, R, rangeDim> BaseType;
-  typedef EntropyBasedLocalFlux<GridViewType, BasisfunctionType, E, D, d, U, R, rangeDim, quadrature_is_cartesian>
-      ThisType;
+  typedef XT::Functions::LocalizableFluxFunctionInterface<E, D, d, U, 0, R, rangeDim, d> BaseType;
+  typedef EntropyBasedLocalFlux<GridViewType, BasisfunctionType, E, D, d, U, R, rangeDim, quadratureDim> ThisType;
 
 public:
   using typename BaseType::EntityType;
@@ -193,16 +189,15 @@ public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
+  static const size_t dimQuadrature = quadratureDim;
   using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
   using BasisValuesMatrixType = std::vector<StateRangeType>;
-  typedef Dune::QuadratureRule<DomainFieldType,
-                               quadrature_is_cartesian ? dimDomain : (dimDomain == 1 ? 1 : dimDomain - 1)>
-      QuadratureRuleType;
+  typedef Dune::QuadratureRule<DomainFieldType, dimQuadrature> QuadratureRuleType;
 
   explicit EntropyBasedLocalFlux(
       const GridViewType& grid_view,
       const QuadratureRuleType& quadrature,
-      const BasisfunctionType basis_functions,
+      const BasisfunctionType& basis_functions,
       const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
@@ -240,7 +235,6 @@ public:
   {
   public:
     Localfunction(const EntityType& e,
-                  const typename GridViewType::IndexSet& index_set,
                   const QuadratureRuleType& quadrature,
                   const BasisValuesMatrixType& M,
                   const BasisfunctionType& basis_functions,
@@ -255,9 +249,11 @@ public:
                   const MatrixType& T_minus_one,
                   std::unique_ptr<std::pair<double, StateRangeType>>& alpha_cache,
                   std::unique_ptr<StateRangeType>& beta_cache,
-                  std::unique_ptr<MatrixType>& T_cache)
+                  std::unique_ptr<MatrixType>& T_cache,
+                  std::unique_ptr<std::pair<double, StateRangeType>>& alpha_cache_boundary,
+                  std::unique_ptr<StateRangeType>& beta_cache_boundary,
+                  std::unique_ptr<MatrixType>& T_cache_boundary)
       : LocalfunctionType(e)
-      , index_set_(index_set)
       , quadrature_(quadrature)
       , M_(M)
       , basis_functions_(basis_functions)
@@ -273,6 +269,9 @@ public:
       , alpha_cache_(alpha_cache)
       , beta_cache_(beta_cache)
       , T_cache_(T_cache)
+      , alpha_cache_boundary_(alpha_cache_boundary)
+      , beta_cache_boundary_(beta_cache_boundary)
+      , T_cache_boundary_(T_cache_boundary)
     {
     }
 
@@ -284,7 +283,6 @@ public:
       const double t = param.get("t")[0];
       const bool boundary = bool(param.get("boundary")[0]);
       // get initial multiplier and basis matrix from last time step
-      const auto index = index_set_.index(entity()) + index_set_.size(0) * boundary;
       StateRangeType alpha;
 
       //    if value has already been calculated for this entity at this time, skip computation
@@ -303,8 +301,11 @@ public:
 
       const auto r_max = r_sequence_.back();
       for (const auto& r : r_sequence_) {
-        StateRangeType beta_in = beta_cache_ ? *(beta_cache_) : alpha_iso;
-        T_k = T_cache_ ? *(T_cache_) : T_minus_one_;
+        StateRangeType beta_in = (beta_cache_ && !boundary)
+                                     ? *beta_cache_
+                                     : ((beta_cache_boundary_ && boundary) ? *beta_cache_boundary_ : alpha_iso);
+        T_k =
+            (T_cache_ && !boundary) ? *T_cache_ : ((T_cache_boundary_ && boundary) ? *T_cache_boundary_ : T_minus_one_);
         // normalize u
         StateRangeType r_times_u_iso = u_iso;
         r_times_u_iso *= r;
@@ -382,9 +383,15 @@ public:
 
     outside_all_loops:
       // store values as initial conditions for next time step on this entity
-      alpha_cache_ = std::make_unique<std::pair<double, StateRangeType>>(std::make_pair(t, alpha));
-      beta_cache_ = std::make_unique<StateRangeType>(beta_out);
-      T_cache_ = std::make_unique<MatrixType>(T_k);
+      if (!boundary) {
+        alpha_cache_ = std::make_unique<std::pair<double, StateRangeType>>(std::make_pair(t, alpha));
+        beta_cache_ = std::make_unique<StateRangeType>(beta_out);
+        T_cache_ = std::make_unique<MatrixType>(T_k);
+      } else {
+        alpha_cache_boundary_ = std::make_unique<std::pair<double, StateRangeType>>(std::make_pair(t, alpha));
+        beta_cache_boundary_ = std::make_unique<StateRangeType>(beta_out);
+        T_cache_boundary_ = std::make_unique<MatrixType>(T_k);
+      }
       //    } // else ( value has not been calculated before )
 
       return alpha;
@@ -403,25 +410,14 @@ public:
       const auto alpha = get_alpha(x_local, u, param);
       // calculate ret[ii] = < omega[ii] m G_\alpha(u) >
       auto ret_converted = XT::Functions::RangeTypeConverter<dimRange, dimRangeCols>::convert(ret);
-      DomainType omega;
       for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
         const auto& position = quadrature_[ll].position();
         const auto& weight = quadrature_[ll].weight();
-        if (quadrature_is_cartesian) {
-          for (size_t dd = 0; dd < dimDomain; ++dd)
-            omega[dd] = position[dd];
-        } else {
-          const auto& mu = position[0];
-          const auto& phi = position[1];
-          omega[0] = std::sqrt(1. - mu * mu) * std::cos(phi);
-          omega[1] = std::sqrt(1. - mu * mu) * std::sin(phi);
-          omega[2] = mu;
-        }
         const auto factor = std::exp(alpha * M_[ll]) * weight;
         StateRangeType m;
         for (size_t dd = 0; dd < dimDomain; ++dd) {
           m = M_[ll];
-          m *= omega[dd] * factor;
+          m *= position[dd] * factor;
           for (size_t rr = 0; rr < dimRange; ++rr)
             ret_converted[rr][dd] += m[rr];
         }
@@ -556,7 +552,6 @@ public:
       return true;
     }
 
-    const typename GridViewType::IndexSet& index_set_;
     const QuadratureRuleType& quadrature_;
     const BasisValuesMatrixType& M_;
     const BasisfunctionType& basis_functions_;
@@ -574,6 +569,9 @@ public:
     std::unique_ptr<std::pair<double, StateRangeType>>& alpha_cache_;
     std::unique_ptr<StateRangeType>& beta_cache_;
     std::unique_ptr<MatrixType>& T_cache_;
+    std::unique_ptr<std::pair<double, StateRangeType>>& alpha_cache_boundary_;
+    std::unique_ptr<StateRangeType>& beta_cache_boundary_;
+    std::unique_ptr<MatrixType>& T_cache_boundary_;
   }; // class Localfunction>
 
   static std::string static_id()
@@ -585,7 +583,6 @@ public:
   {
     const auto& index = index_set_.index(entity);
     return std::make_unique<Localfunction>(entity,
-                                           index_set_,
                                            quadrature_,
                                            M_,
                                            basis_functions_,
@@ -600,7 +597,10 @@ public:
                                            T_minus_one_,
                                            alpha_cache_[index],
                                            beta_cache_[index],
-                                           T_cache_[index]);
+                                           T_cache_[index],
+                                           alpha_cache_[index_set_.size(0) + index],
+                                           beta_cache_[index_set_.size(0) + index],
+                                           T_cache_[index_set_.size(0) + index]);
   }
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
@@ -625,22 +625,11 @@ public:
     for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
       const auto& position = quadrature_[ll].position();
       const auto& weight = quadrature_[ll].weight();
-      Dune::FieldVector<double, dimDomain> omega;
-      if (quadrature_is_cartesian) {
-        for (size_t dd = 0; dd < dimDomain; ++dd)
-          omega[dd] = position[dd];
-      } else {
-        const auto& mu = position[0];
-        const auto& phi = position[1];
-        omega[0] = std::sqrt(1. - mu * mu) * std::cos(phi);
-        omega[1] = std::sqrt(1. - mu * mu) * std::sin(phi);
-        omega[2] = mu;
-      }
       const auto& m = M_[ll];
       const auto factor = position * n_ij > 0 ? std::exp(alpha_i * m) * weight : std::exp(alpha_j * m) * weight;
       for (size_t dd = 0; dd < dimDomain; ++dd) {
         auto contribution = m;
-        contribution *= omega[dd] * factor * n_ij[dd];
+        contribution *= position[dd] * factor * n_ij[dd];
         ret += contribution;
       }
     }

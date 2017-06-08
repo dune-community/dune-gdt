@@ -1,0 +1,245 @@
+// This file is part of the dune-gdt project:
+//   https://github.com/dune-community/dune-gdt
+// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
+// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+// Authors:
+//   Felix Schindler (2016)
+//   Tobias Leibner  (2016)
+
+#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_LINESOURCE_HH
+#define DUNE_GDT_HYPERBOLIC_PROBLEMS_LINESOURCE_HH
+
+#include <memory>
+#include <vector>
+#include <string>
+
+#include "kineticequation.hh"
+
+namespace Dune {
+namespace GDT {
+namespace Hyperbolic {
+namespace Problems {
+
+// knots are the 20 linearly spaced knots between -1 and 1
+// see https://de.wikipedia.org/wiki/Spline#B-Splines
+template <size_t degree, size_t i, class D, class R>
+struct BSpline
+{
+  static constexpr D h = 2. / 19.;
+
+  static constexpr D t(const size_t j)
+  {
+    return -1. + j * h;
+  }
+
+  static constexpr R evaluate(const D& x)
+  {
+    return BSpline<degree - 1, i, D, R>::evaluate(x) * (x - t(i)) / (t(i + degree) - t(i))
+           + BSpline<degree - 1, i + 1, D, R>::evaluate(x) * (t(i + degree + 1) - x) / (t(i + degree + 1) - t(i + 1));
+  }
+};
+
+template <size_t i, class D, class R>
+struct BSpline<0, i, D, R>
+{
+  static_assert(i < 19, "");
+
+  static constexpr D h = 2. / 19.;
+
+  static constexpr D t(const size_t j)
+  {
+    return -1. + j * h;
+  }
+
+  static constexpr R evaluate(const D& x)
+  {
+    if (XT::Common::FloatCmp::ge(x, t(i)) && XT::Common::FloatCmp::le(x, t(i + 1)))
+      return 1;
+    else
+      return 0;
+  }
+};
+
+template <class BasisfunctionImp,
+          class EntityImp,
+          class DomainFieldImp,
+          size_t dimDomain,
+          class U_,
+          class RangeFieldImp,
+          size_t dimRange>
+class ModifiedLineSourcePn : public KineticTransportEquation<BasisfunctionImp,
+                                                             EntityImp,
+                                                             DomainFieldImp,
+                                                             dimDomain,
+                                                             U_,
+                                                             RangeFieldImp,
+                                                             dimRange,
+                                                             dimDomain + 1>
+{
+  typedef KineticTransportEquation<BasisfunctionImp,
+                                   EntityImp,
+                                   DomainFieldImp,
+                                   dimDomain,
+                                   U_,
+                                   RangeFieldImp,
+                                   dimRange,
+                                   dimDomain + 1>
+      BaseType;
+
+public:
+  using typename BaseType::InitialValueType;
+  using typename BaseType::BoundaryValueType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
+  using typename BaseType::BasisfunctionType;
+  using typename BaseType::QuadratureType;
+
+  using BaseType::default_boundary_cfg;
+  using BaseType::default_quadrature;
+
+  ModifiedLineSourcePn(const BasisfunctionType& basis_functions,
+                       const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+                       const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
+                       const QuadratureType quadrature = QuadratureType())
+    : BaseType(basis_functions, grid_cfg, boundary_cfg, quadrature, 1.)
+  {
+  }
+
+  static std::string static_id()
+  {
+    return "modifiedlinesourcepn";
+  }
+
+  static XT::Common::Configuration default_grid_cfg()
+  {
+    XT::Common::Configuration grid_config;
+    grid_config["type"] = "provider.cube";
+    grid_config["lower_left"] = "[-1 -1]";
+    grid_config["upper_right"] = "[1 1]";
+    grid_config["num_elements"] = "[100 100]";
+    grid_config["overlap_size"] = "[1 1]";
+    grid_config["num_quad_cells"] = "[10]";
+    grid_config["quad_order"] = "50";
+    return grid_config;
+  }
+
+  // sigma_a = 0, sigma_s = 0, Q = 0
+  virtual XT::Common::Parameter parameters() const override
+  {
+    return XT::Common::Parameter({std::make_pair("sigma_a", std::vector<double>{0}),
+                                  std::make_pair("sigma_s", std::vector<double>{0}),
+                                  std::make_pair("Q", std::vector<double>{0}),
+                                  std::make_pair("CFL", std::vector<double>{0.4}),
+                                  std::make_pair("t_end", std::vector<double>{0.05}),
+                                  std::make_pair("num_segments", std::vector<double>{1., 1.})});
+  }
+
+  // Initial value of the kinetic equation is 1+p(||x||_2^2-0.1^2), where p is the spline of degree fourteen
+  // on the twenty linearly-spaced knots over [-1,1] with coefficients [0, 0, 2.8309, 0, 0]
+  // Thus the initial value for the moments is basis_integrated * (1+p(||x||_2^2-0.1^2))
+  virtual InitialValueType* create_initial_values() const
+  {
+    const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
+    const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
+    const FieldVector<size_t, dimDomain> num_segments = get_num_segments(parameters());
+    RangeType basis_integrated = basis_functions_.integrated();
+    std::vector<typename ActualInitialValueType::LocalizableFunctionType> initial_vals;
+    initial_vals.emplace_back(
+        [=](const DomainType& x) {
+          auto ret = basis_integrated;
+          ret *= 1 + 2.8309 * BSpline<14, 2, DomainFieldType, RangeFieldType>::evaluate(x.two_norm2() - 0.01);
+          return ret;
+        },
+        15);
+    return new ActualInitialValueType(lower_left, upper_right, num_segments, initial_vals, "initial_values");
+  } // ... create_initial_values()
+
+protected:
+  using BaseType::get_num_segments;
+
+  using BaseType::grid_cfg_;
+  using BaseType::basis_functions_;
+  using BaseType::psi_vac_;
+}; // class ModifiedLineSourcePn<...>
+
+template <class GridViewType,
+          class BasisfunctionType,
+          class EntityType,
+          class DomainFieldType,
+          size_t dimDomain,
+          class U_,
+          class RangeFieldType,
+          size_t dimRange>
+class ModifiedLineSourceMn : public ModifiedLineSourcePn<BasisfunctionType,
+                                                         EntityType,
+                                                         DomainFieldType,
+                                                         dimDomain,
+                                                         U_,
+                                                         RangeFieldType,
+                                                         dimRange>
+{
+  typedef ModifiedLineSourcePn<BasisfunctionType, EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange>
+      BaseType;
+  typedef ModifiedLineSourceMn ThisType;
+
+public:
+  using typename BaseType::FluxType;
+  using typename BaseType::RangeType;
+  typedef GDT::EntropyBasedLocalFlux<GridViewType,
+                                     BasisfunctionType,
+                                     EntityType,
+                                     DomainFieldType,
+                                     dimDomain,
+                                     U_,
+                                     RangeFieldType,
+                                     dimRange,
+                                     dimDomain + 1>
+      ActualFluxType;
+  using typename BaseType::QuadratureType;
+
+  using BaseType::default_grid_cfg;
+  using BaseType::default_boundary_cfg;
+
+  static QuadratureType default_quadrature(const XT::Common::Configuration& grid_cfg = default_grid_cfg())
+  {
+    size_t quad_order = grid_cfg.get("quad_order", 100);
+    return LebedevQuadrature<DomainFieldType, true>::get(quad_order);
+  }
+
+  ModifiedLineSourceMn(const BasisfunctionType& basis_functions,
+                       const GridViewType& grid_view,
+                       const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+                       const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
+                       const QuadratureType& quadrature = default_quadrature())
+    : BaseType(basis_functions, grid_cfg, boundary_cfg, quadrature)
+    , grid_view_(grid_view)
+  {
+  }
+
+  static std::string static_id()
+  {
+    return "modifiedlinesourcemn";
+  }
+
+  virtual FluxType* create_flux() const
+  {
+    return new ActualFluxType(grid_view_, quadrature_, basis_functions_);
+  }
+
+protected:
+  using BaseType::basis_functions_;
+  using BaseType::quadrature_;
+  const GridViewType& grid_view_;
+}; // class ModifiedLineSourceMn<...>
+
+
+} // namespace Problems
+} // namespace Hyperbolic
+} // namespace GDT
+} // namespace Dune
+
+#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_LINESOURCE_HH

@@ -32,9 +32,15 @@ public:
   typedef RangeFieldImp RangeFieldType;
   static const size_t dimRange = rangeDim;
 
-  typedef XT::Functions::
-      LocalizableFluxFunctionInterface<EntityType, DomainFieldType, dimDomain, U_, 0, RangeFieldType, dimRange, 1>
-          FluxType;
+  typedef XT::Functions::LocalizableFluxFunctionInterface<EntityType,
+                                                          DomainFieldType,
+                                                          dimDomain,
+                                                          U_,
+                                                          0,
+                                                          RangeFieldType,
+                                                          dimRange,
+                                                          dimDomain>
+      FluxType;
   typedef XT::Functions::
       LocalizableFluxFunctionInterface<EntityType, DomainFieldType, dimDomain, U_, 0, RangeFieldType, dimRange, 1>
           RhsType;

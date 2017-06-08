@@ -73,7 +73,7 @@ public:
   typedef std::tuple<double> LocalfunctionTupleType;
   static const size_t dimDomain = domainDim;
   static const size_t dimRange = AnalyticalFluxType::dimRange;
-  static_assert(AnalyticalFluxType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
+  //  static_assert(AnalyticalFluxType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
   typedef typename Dune::XT::LA::EigenDenseMatrix<RangeFieldType> EigenMatrixType;
 }; // class GodunovLocalNumericalCouplingFluxTraits
 

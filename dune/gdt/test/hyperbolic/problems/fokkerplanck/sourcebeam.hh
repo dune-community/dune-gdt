@@ -24,7 +24,7 @@
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/math.hh>
 
-#include "twobeams.hh"
+#include "kineticequation.hh"
 
 namespace Dune {
 namespace GDT {
@@ -99,7 +99,7 @@ public:
                                   std::make_pair("Q", std::vector<double>{0, 0, 1, 0, 0, 0}),
                                   std::make_pair("CFL", std::vector<double>{0.4}),
                                   std::make_pair("t_end", std::vector<double>{4.0}),
-                                  std::make_pair("num_elements", std::vector<double>{6.})});
+                                  std::make_pair("num_segments", std::vector<double>{6.})});
   }
 
   // Boundary value of kinetic equation is \frac{g}{<g>} at x = 0 and
@@ -351,7 +351,7 @@ public:
                                   std::make_pair("Q", std::vector<double>{0, 0, 1, 0, 0, 0}),
                                   std::make_pair("CFL", std::vector<double>{0.4}),
                                   std::make_pair("t_end", std::vector<double>{4.0}),
-                                  std::make_pair("num_elements", std::vector<double>{6.})});
+                                  std::make_pair("num_segments", std::vector<double>{6.})});
   }
 
   // Boundary value of kinetic equation is delta(v-1) at x = 0 and psi_vac at x = 3,
@@ -387,8 +387,7 @@ template <class G,
           class U,
           class R = double,
           size_t momentOrder = 5,
-          class B = Hyperbolic::Problems::
-              LegendrePolynomials<typename G::ctype, G::dimension, typename G::ctype, momentOrder>>
+          class B = Hyperbolic::Problems::LegendrePolynomials<typename G::ctype, typename G::ctype, momentOrder>>
 class SourceBeamTestCase
     : public Dune::GDT::Test::
           NonStationaryTestCase<G,
