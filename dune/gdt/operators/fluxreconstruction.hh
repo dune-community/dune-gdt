@@ -21,6 +21,7 @@
 
 #include <dune/geometry/quadraturerules.hh>
 
+#include <dune/xt/common/math.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/functions/constant.hh>
@@ -174,7 +175,10 @@ public:
             const size_t global_DoF_index = global_DoF_indices[local_DoF_index];
             // and make sure we are the first to do so
             assert(!(range_vector[global_DoF_index] < infinity));
-            range_vector[global_DoF_index] = rhs / lhs;
+            if (XT::Common::isnan(rhs) || XT::Common::isinf(rhs))
+              range_vector[global_DoF_index] = 0.;
+            else
+              range_vector[global_DoF_index] = rhs / lhs;
           }
         } else if (intersection.boundary() && !intersection.neighbor()) {
           const size_t local_intersection_index = intersection.indexInInside();
@@ -214,7 +218,10 @@ public:
           const size_t global_DoF_index = global_DoF_indices[local_DoF_index];
           // and make sure we are the first to do so
           assert(!(range_vector[global_DoF_index] < infinity));
-          range_vector[global_DoF_index] = rhs / lhs;
+          if (XT::Common::isnan(rhs) || XT::Common::isinf(rhs))
+            range_vector[global_DoF_index] = 0.;
+          else
+            range_vector[global_DoF_index] = rhs / lhs;
         } else
           DUNE_THROW(XT::Common::Exceptions::internal_error, "Unknown intersection type!");
       } // walk the intersections
