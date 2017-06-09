@@ -56,6 +56,7 @@ public:
           [](const ScalarFunctionType& diffusion_factor,
              const ScalarFunctionType& source,
              DiscreteFunction<S, V>& range) {
+            py::gil_scoped_release DUNE_UNUSED(release);
             GDT::DiffusiveFluxReconstructionOperator<GL, ScalarFunctionType, void>(range.space().grid_layer(),
                                                                                    diffusion_factor)
                 .apply(source, range);
@@ -68,6 +69,7 @@ public:
              const TensorFunctionType& diffusion_tensor,
              const ScalarFunctionType& source,
              DiscreteFunction<S, V>& range) {
+            py::gil_scoped_release DUNE_UNUSED(release);
             GDT::DiffusiveFluxReconstructionOperator<GL, ScalarFunctionType, TensorFunctionType>(
                 range.space().grid_layer(), diffusion_factor, diffusion_tensor)
                 .apply(source, range);

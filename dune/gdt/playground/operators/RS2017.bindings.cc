@@ -318,6 +318,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
            const ssize_t over_int) {
+          py::gil_scoped_release DUNE_UNUSED(release);
           const auto over_integrate = XT::Common::numeric_cast<size_t>(over_int);
           auto subdomain_layer =
               dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
@@ -358,6 +359,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
         [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
                dd_grid_provider,
            const ssize_t subdomain) {
+          py::gil_scoped_release DUNE_UNUSED(release);
           auto subdomain_layer =
               dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
                   XT::Common::numeric_cast<size_t>(subdomain));
@@ -384,6 +386,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& u,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& v,
            const ssize_t over_integrate) {
+          py::gil_scoped_release DUNE_UNUSED(release);
           return GDT::make_l2_operator(
                      dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
                          XT::Common::numeric_cast<size_t>(subdomain)),
@@ -406,6 +409,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& u,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& v,
            const ssize_t over_integrate) {
+          py::gil_scoped_release DUNE_UNUSED(release);
           auto subdomain_layer =
               dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
                   XT::Common::numeric_cast<size_t>(subdomain));
@@ -462,6 +466,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& u,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d>& reconstructed_v,
            const ssize_t over_integrate) {
+          py::gil_scoped_release DUNE_UNUSED(release);
           auto subdomain_layer =
               dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
                   XT::Common::numeric_cast<size_t>(subdomain));
@@ -512,6 +517,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d>& reconstructed_u,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d>& reconstructed_v,
            const ssize_t over_integrate) {
+          py::gil_scoped_release DUNE_UNUSED(release);
           auto subdomain_layer =
               dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
                   XT::Common::numeric_cast<size_t>(subdomain));

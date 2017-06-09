@@ -234,7 +234,12 @@ public:
           "grid_walker"_a,
           "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
           py::keep_alive<1, 2>());
-    c.def("assemble", [](type& self, const bool use_tbb) { self.assemble(use_tbb); }, "use_tbb"_a = false);
+    c.def("assemble",
+          [](type& self, const bool use_tbb) {
+            py::gil_scoped_release DUNE_UNUSED(release);
+            self.assemble(use_tbb);
+          },
+          "use_tbb"_a = false);
 
     bindings::DirichletConstraints<XT::Grid::extract_intersection_t<typename type::GridLayerType>,
                                    XT::Grid::extract_grid_t<typename type::GridLayerType>>::addbind(c);

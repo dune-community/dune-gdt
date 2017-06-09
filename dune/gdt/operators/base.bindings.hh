@@ -56,25 +56,38 @@ public:
     c.def("matrix", [](type& self) { return self.matrix(); });
     c.def("source_space", [](type& self) { return self.source_space(); });
     c.def("range_space", [](type& self) { return self.range_space(); });
-    c.def("apply", [](type& self, const V& source, V& range) { self.apply(source, range); }, "source"_a, "range"_a);
+    c.def("apply",
+          [](type& self, const V& source, V& range) {
+            py::gil_scoped_release DUNE_UNUSED(release);
+            self.apply(source, range);
+          },
+          "source"_a,
+          "range"_a);
     c.def("apply",
           [](type& self, const GDT::ConstDiscreteFunction<S, V>& source, GDT::DiscreteFunction<R, V>& range) {
+            py::gil_scoped_release DUNE_UNUSED(release);
             self.apply(source, range);
           },
           "source"_a,
           "range"_a);
     c.def("apply2",
-          [](type& self, const V& range, const V& source) { return self.apply2(range, source); },
+          [](type& self, const V& range, const V& source) {
+            py::gil_scoped_release DUNE_UNUSED(release);
+            return self.apply2(range, source);
+          },
           "range"_a,
           "source"_a);
-    c.def("apply2",
-          [](type& self,
-             const GDT::ConstDiscreteFunction<R, V>& range,
-             const GDT::ConstDiscreteFunction<S, V>& source) { return self.apply2(range, source); },
-          "range"_a,
-          "source"_a);
+    c.def(
+        "apply2",
+        [](type& self, const GDT::ConstDiscreteFunction<R, V>& range, const GDT::ConstDiscreteFunction<S, V>& source) {
+          py::gil_scoped_release DUNE_UNUSED(release);
+          return self.apply2(range, source);
+        },
+        "range"_a,
+        "source"_a);
     c.def("apply_inverse",
           [](type& self, const V& range, V& source, const XT::Common::Configuration& opts) {
+            py::gil_scoped_release DUNE_UNUSED(release);
             self.apply_inverse(range, source, opts);
           },
           "range"_a,
@@ -84,7 +97,10 @@ public:
           [](type& self,
              const GDT::ConstDiscreteFunction<R, V>& range,
              GDT::ConstDiscreteFunction<S, V>& source,
-             const XT::Common::Configuration& opts) { self.apply_inverse(range, source, opts); },
+             const XT::Common::Configuration& opts) {
+            py::gil_scoped_release DUNE_UNUSED(release);
+            self.apply_inverse(range, source, opts);
+          },
           "range"_a,
           "source"_a,
           "opts"_a);
@@ -92,33 +108,50 @@ public:
     c.def("invert_options", [](type& self, const std::string& type) { return self.invert_options(type); }, "type"_a);
 
     // from OperatorInterface
-    c.def(
-        "apply_inverse",
-        [](type& self, const V& range, V& source, const std::string& type) { self.apply_inverse(range, source, type); },
-        "range"_a,
-        "source"_a,
-        "type"_a);
     c.def("apply_inverse",
-          [](type& self,
-             const GDT::ConstDiscreteFunction<R, V>& range,
-             GDT::ConstDiscreteFunction<S, V>& source,
-             const std::string& type) { self.apply_inverse(range, source, type); },
+          [](type& self, const V& range, V& source, const std::string& type) {
+            py::gil_scoped_release DUNE_UNUSED(release);
+            self.apply_inverse(range, source, type);
+          },
           "range"_a,
           "source"_a,
           "type"_a);
     c.def("apply_inverse",
-          [](type& self, const V& range, V& source) { self.apply_inverse(range, source); },
+          [](type& self,
+             const GDT::ConstDiscreteFunction<R, V>& range,
+             GDT::ConstDiscreteFunction<S, V>& source,
+             const std::string& type) {
+            py::gil_scoped_release DUNE_UNUSED(release);
+            self.apply_inverse(range, source, type);
+          },
           "range"_a,
-          "source"_a);
+          "source"_a,
+          "type"_a);
     c.def("apply_inverse",
-          [](type& self, const GDT::ConstDiscreteFunction<R, V>& range, GDT::ConstDiscreteFunction<S, V>& source) {
+          [](type& self, const V& range, V& source) {
+            py::gil_scoped_release DUNE_UNUSED(release);
             self.apply_inverse(range, source);
           },
           "range"_a,
           "source"_a);
-    c.def("induced_norm", [](type& self, const V& range) { return self.induced_norm(range); }, "range"_a);
+    c.def("apply_inverse",
+          [](type& self, const GDT::ConstDiscreteFunction<R, V>& range, GDT::ConstDiscreteFunction<S, V>& source) {
+            py::gil_scoped_release DUNE_UNUSED(release);
+            self.apply_inverse(range, source);
+          },
+          "range"_a,
+          "source"_a);
     c.def("induced_norm",
-          [](type& self, const GDT::ConstDiscreteFunction<R, V>& range) { return self.induced_norm(range); },
+          [](type& self, const V& range) {
+            py::gil_scoped_release DUNE_UNUSED(release);
+            return self.induced_norm(range);
+          },
+          "range"_a);
+    c.def("induced_norm",
+          [](type& self, const GDT::ConstDiscreteFunction<R, V>& range) {
+            py::gil_scoped_release DUNE_UNUSED(release);
+            return self.induced_norm(range);
+          },
           "range"_a);
 
     return c;
