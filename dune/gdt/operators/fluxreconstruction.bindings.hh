@@ -52,25 +52,31 @@ public:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    m.def("apply_diffusive_flux_reconstruction_operator",
-          [](const ScalarFunctionType& diffusion_factor,
-             const ScalarFunctionType& source,
-             DiscreteFunction<S, V>& range) {
-            py::gil_scoped_release DUNE_UNUSED(release);
-            GDT::DiffusiveFluxReconstructionOperator<GL, ScalarFunctionType, void>(range.space().grid_layer(),
-                                                                                   diffusion_factor)
-                .apply(source, range);
-          },
-          "diffusion_tensor"_a,
-          "source"_a,
-          "range"_a);
+    //    m.def("apply_diffusive_flux_reconstruction_operator",
+    //          [](const ScalarFunctionType& diffusion_factor,
+    //             const ScalarFunctionType& source,
+    //             DiscreteFunction<S, V>& range) {
+    //            py::gil_scoped_release DUNE_UNUSED(release);
+    //            GDT::DiffusiveFluxReconstructionOperator<GL,
+    //                                                     ScalarFunctionType,
+    //                                                     void,
+    //                                                     LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>(
+    //                range.space().grid_layer(), diffusion_factor)
+    //                .apply(source, range);
+    //          },
+    //          "diffusion_tensor"_a,
+    //          "source"_a,
+    //          "range"_a);
     m.def("apply_diffusive_flux_reconstruction_operator",
           [](const ScalarFunctionType& diffusion_factor,
              const TensorFunctionType& diffusion_tensor,
              const ScalarFunctionType& source,
              DiscreteFunction<S, V>& range) {
             py::gil_scoped_release DUNE_UNUSED(release);
-            GDT::DiffusiveFluxReconstructionOperator<GL, ScalarFunctionType, TensorFunctionType>(
+            GDT::DiffusiveFluxReconstructionOperator<GL,
+                                                     ScalarFunctionType,
+                                                     TensorFunctionType,
+                                                     LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>(
                 range.space().grid_layer(), diffusion_factor, diffusion_tensor)
                 .apply(source, range);
           },
