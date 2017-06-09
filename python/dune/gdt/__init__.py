@@ -10,6 +10,8 @@
 
 from importlib import import_module
 
+import numpy as np
+
 from dune.xt.common import DEBUG # inits MPI via mpi4py
 
 _init_logger_methods = list()
@@ -93,6 +95,6 @@ def init_mpi(args=list()):
         init_mpi_method(args)
 
 
-HAVE_DUNE_FEM = 'Cg2dCubeYaspgridLeafTo1x1FemP1Space' in globals()
-HAVE_DUNE_PDELAB = 'Cg2dCubeYaspgridLeafTo1x1PdelabP1Space' in globals()
+HAVE_DUNE_FEM = np.any(['FemP1Space' in var for var in globals().keys()])
+HAVE_DUNE_PDELAB = np.any(['PdelabP1Space' in var for var in globals().keys()])
 
