@@ -214,6 +214,11 @@ public:
     alpha_iso[0] = std::log(u[0] / 2.);
     return std::make_pair(u_iso, alpha_iso);
   }
+
+  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  {
+    return 2 * std::max(u[0], u_bar[0]);
+  }
 }; // class LegendrePolynomials<DomainFieldType, 1, ...>
 
 template <class DomainFieldType, class RangeFieldType, size_t order, bool only_positive = false>
@@ -431,6 +436,11 @@ public:
     u_iso[0] = u[0];
     alpha_iso[0] = std::log(u[0] / std::sqrt(4. * M_PI)) * std::sqrt(4. * M_PI);
     return std::make_pair(u_iso, alpha_iso);
+  }
+
+  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  {
+    return 2 * std::max(u[0], u_bar[0]);
   }
 
 private:
@@ -683,6 +693,12 @@ public:
     return triangulation_;
   }
 
+  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  {
+    return 2 * std::max(std::accumulate(u.begin(), u.end(), RangeFieldType(0)),
+                        std::accumulate(u_bar.begin(), u_bar.end(), RangeFieldType(0)));
+  }
+
 private:
   const TriangulationType triangulation_;
 }; // class HatFunctions<DomainFieldType, 1, ...>
@@ -849,6 +865,12 @@ public:
     auto u_iso = integrated();
     u_iso *= psi_iso;
     return std::make_pair(u_iso, alpha_iso);
+  }
+
+  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  {
+    return 2 * std::max(std::accumulate(u.begin(), u.end(), RangeFieldType(0)),
+                        std::accumulate(u_bar.begin(), u_bar.end(), RangeFieldType(0)));
   }
 
   const QuadratureType& quadrature() const
@@ -1019,6 +1041,17 @@ public:
     return triangulation_;
   }
 
+  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  {
+    RangeFieldType u_sum;
+    auto u_bar_sum = u_sum;
+    for (size_t ii = 0; ii < u.size(); ii += 4) {
+      u_sum += u[ii];
+      u_bar_sum += u_bar[ii];
+    }
+    return 2 * std::max(u_sum, u_bar_sum);
+  }
+
 private:
   const TriangulationType triangulation_;
 }; // class PiecewiseMonomials<DomainFieldType, 1, ...>
@@ -1156,6 +1189,17 @@ public:
     auto u_iso = integrated();
     u_iso *= psi_iso;
     return std::make_pair(u_iso, alpha_iso);
+  }
+
+  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  {
+    RangeFieldType u_sum;
+    auto u_bar_sum = u_sum;
+    for (size_t ii = 0; ii < u.size(); ii += 4) {
+      u_sum += u[ii];
+      u_bar_sum += u_bar[ii];
+    }
+    return 2 * std::max(u_sum, u_bar_sum);
   }
 
   const TriangulationType& triangulation() const

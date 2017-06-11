@@ -381,16 +381,22 @@ private:
       ConstantFunction<typename SpaceType::EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
           ConstantFunctionType;
   typedef typename Dune::GDT::AdvectionRhsOperator<RhsType> RhsOperatorType;
+
   typedef
-      typename std::conditional<numerical_flux == NumericalFluxes::laxfriedrichs
-                                    || numerical_flux == NumericalFluxes::laxfriedrichs_with_reconstruction
-                                    || numerical_flux == NumericalFluxes::local_laxfriedrichs
-                                    || numerical_flux == NumericalFluxes::local_laxfriedrichs_with_reconstruction,
-                                typename Dune::GDT::AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
-                                                                                   BoundaryValueType,
-                                                                                   ConstantFunctionType>,
-                                typename Dune::GDT::AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType>>::
-          type AdvectionOperatorType;
+      //      typename std::conditional<numerical_flux == NumericalFluxes::laxfriedrichs
+      //                                    || numerical_flux == NumericalFluxes::laxfriedrichs_with_reconstruction
+      //                                    || numerical_flux == NumericalFluxes::local_laxfriedrichs
+      //                                    || numerical_flux ==
+      //                                    NumericalFluxes::local_laxfriedrichs_with_reconstruction,
+      //                                typename Dune::GDT::AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
+      //                                                                                   BoundaryValueType,
+      //                                                                                   ConstantFunctionType>,
+      //                                typename Dune::GDT::AdvectionGodunovOperator<AnalyticalFluxType,
+      //                                BoundaryValueType>>::
+      //          type AdvectionOperatorType;
+
+      typename Dune::GDT::AdvectionLaxFriedrichsOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType>
+          AdvectionOperatorType;
   typedef
       typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, RangeFieldType, time_stepper_method>::
           TimeStepperType OperatorTimeStepperType;

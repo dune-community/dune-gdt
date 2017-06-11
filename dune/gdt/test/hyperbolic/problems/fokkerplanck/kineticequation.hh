@@ -340,6 +340,11 @@ public:
     return "kinetictransportequation";
   }
 
+  const QuadratureType& quadrature() const
+  {
+    return quadrature_;
+  }
+
 protected:
   FieldVector<size_t, dimDomain> get_num_segments(const XT::Common::Parameter& param) const
   {

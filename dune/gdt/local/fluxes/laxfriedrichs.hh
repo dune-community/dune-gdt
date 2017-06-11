@@ -28,6 +28,8 @@
 #include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/functions/type_traits.hh>
 
+#include <dune/xt/la/container/eigen.hh>
+
 #include "interfaces.hh"
 #include "godunov.hh"
 
@@ -46,31 +48,6 @@ template <class AnalyticalFluxImp, class LocalizableFunctionImp, size_t domainDi
 class LaxFriedrichsLocalAbsorbingNumericalBoundaryFlux;
 
 #if HAVE_EIGEN
-
-template <class XtLaMatrixImp, size_t rows, size_t cols>
-struct FieldMatrixToLaDenseMatrixConverter
-{
-  typedef XtLaMatrixImp LaMatrixType;
-  typedef Dune::FieldMatrix<typename LaMatrixType::ScalarType, rows, cols> FieldMatrixType;
-
-  static LaMatrixType convert(const FieldMatrixType& in)
-  {
-    LaMatrixType out(rows, cols);
-    for (size_t ii = 0; ii < rows; ++ii)
-      for (size_t jj = 0; jj < cols; ++jj)
-        out.set_entry(ii, jj, in[ii][jj]);
-    return out;
-  }
-
-  static FieldMatrixType convert_back(const LaMatrixType& in)
-  {
-    FieldMatrixType out;
-    for (size_t ii = 0; ii < rows; ++ii)
-      for (size_t jj = 0; jj < cols; ++jj)
-        out[ii][jj] = in.get_entry(ii, jj);
-    return out;
-  }
-};
 
 
 namespace internal {
@@ -207,9 +184,11 @@ public:
         std::vector<EigenMatrixType> jacobian_u_j_eigen;
         for (size_t ii = 0; ii < dimDomain; ++ii) {
           jacobian_u_i_eigen.emplace_back(
-              FieldMatrixToLaDenseMatrixConverter<EigenMatrixType, dimRange, dimRange>::convert(jacobian_u_i[ii]));
+              XT::LA::internal::FieldMatrixToLaDenseMatrix<EigenMatrixType, dimRange, dimRange>::convert(
+                  jacobian_u_i[ii]));
           jacobian_u_j_eigen.emplace_back(
-              FieldMatrixToLaDenseMatrixConverter<EigenMatrixType, dimRange, dimRange>::convert(jacobian_u_j[ii]));
+              XT::LA::internal::FieldMatrixToLaDenseMatrix<EigenMatrixType, dimRange, dimRange>::convert(
+                  jacobian_u_j[ii]));
         }
         for (size_t ii = 0; ii < dimDomain; ++ii) {
           // create EigenSolver
@@ -350,8 +329,8 @@ public:
   static const size_t dimRange = Traits::dimRange;
 
   explicit LaxFriedrichsLocalNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
-                                                   const LocalizableFunctionType& dx,
                                                    const XT::Common::Parameter& param,
+                                                   const LocalizableFunctionType& dx,
                                                    const bool use_local = false,
                                                    const bool is_linear = false,
                                                    const DomainType lambda = DomainType(0))
@@ -435,8 +414,8 @@ public:
 
   explicit LaxFriedrichsLocalDirichletNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
                                                             const BoundaryValueFunctionType& boundary_values,
+                                                            const XT::Common::Parameter& param,
                                                             const LocalizableFunctionType& dx,
-                                                            const XT::Common::Parameter param,
                                                             const bool use_local = false,
                                                             const bool is_linear = false,
                                                             const DomainType lambda = DomainType(0))
