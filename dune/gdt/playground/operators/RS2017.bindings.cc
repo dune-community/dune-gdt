@@ -54,11 +54,11 @@ namespace py = pybind11;
 
 
 template <class G>
-class SwipdgPenaltyProduct
+class SwipdgPenaltySubdomainProduct
     : public GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
                                      typename GDT::SpaceProvider<G,
                                                                  XT::Grid::Layers::dd_subdomain,
-                                                                 GDT::SpaceType::block_dg,
+                                                                 GDT::SpaceType::dg,
                                                                  GDT::Backends::fem,
                                                                  1,
                                                                  double,
@@ -69,9 +69,8 @@ class SwipdgPenaltyProduct
                                                               XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
-  typedef GDT::
-      SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::block_dg, GDT::Backends::fem, 1, double, 1>
-          SP;
+  typedef GDT::SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::fem, 1, double, 1>
+      SP;
   typedef GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
                                   typename SP::type,
                                   typename XT::Grid::Layer<G,
@@ -79,7 +78,7 @@ class SwipdgPenaltyProduct
                                                            XT::Grid::Backends::part,
                                                            XT::Grid::DD::SubdomainGrid<G>>::type>
       BaseType;
-  typedef SwipdgPenaltyProduct<G> ThisType;
+  typedef SwipdgPenaltySubdomainProduct<G> ThisType;
 
 public:
   using typename BaseType::GridLayerType;
@@ -98,17 +97,18 @@ public:
   {
     using namespace pybind11::literals;
 
-    try { // we might not be the first to add this SystemAssembler
-      GDT::bindings::SystemAssembler<SP, XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>::bind(m);
-    } catch (std::runtime_error&) {
-    }
+    //    try { // we might not be the first to add this SystemAssembler
+    //      GDT::bindings::SystemAssembler<SP, XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>::bind(m);
+    //    } catch (std::runtime_error&) {
+    //    }
 
     GDT::bindings::MatrixOperatorBase<ThisType>::bind(
         m,
-        XT::Common::to_camel_case("RS2017_penalty_product_matrix_operator_" + XT::Grid::bindings::grid_name<G>::value())
+        XT::Common::to_camel_case("RS2017_penalty_product_matrix_operator_subdomain_"
+                                  + XT::Grid::bindings::grid_name<G>::value())
             .c_str());
 
-    m.def("RS2017_make_penalty_product_matrix_operator",
+    m.def("RS2017_make_penalty_product_matrix_operator_on_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
              const ssize_t subdomain,
              const XT::Grid::BoundaryInfo<I>& boundary_info,
@@ -118,7 +118,7 @@ public:
              const size_t over_integrate) {
             return new ThisType(
                 space,
-                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
                     XT::Common::numeric_cast<size_t>(subdomain)),
                 boundary_info,
                 lambda,
@@ -128,18 +128,18 @@ public:
           "dd_grid_provider"_a,
           "subdomain"_a,
           "boundary_info"_a,
-          "neighborhood_space"_a,
+          "space"_a,
           "lambda_bar"_a,
           "kappa"_a,
           "over_integrate"_a = 2);
   } // ... bind(...)
 
-  SwipdgPenaltyProduct(RangeSpaceType space,
-                       GridLayerType grd_lyr,
-                       const XT::Grid::BoundaryInfo<I>& boundary_info,
-                       const ScalarFunctionType& lambda,
-                       const TensorFunctionType& kappa,
-                       const size_t over_integrate = 2)
+  SwipdgPenaltySubdomainProduct(RangeSpaceType space,
+                                GridLayerType grd_lyr,
+                                const XT::Grid::BoundaryInfo<I>& boundary_info,
+                                const ScalarFunctionType& lambda,
+                                const TensorFunctionType& kappa,
+                                const size_t over_integrate = 2)
     : BaseType(space, grd_lyr)
     , lambda_(lambda)
     , kappa_(kappa)
@@ -279,8 +279,8 @@ public:
     this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
   }
 
-  SwipdgPenaltyProduct(const ThisType&) = delete;
-  SwipdgPenaltyProduct(ThisType&&) = delete;
+  SwipdgPenaltySubdomainProduct(const ThisType&) = delete;
+  SwipdgPenaltySubdomainProduct(ThisType&&) = delete;
 
 private:
   const ScalarFunctionType& lambda_;
@@ -290,7 +290,248 @@ private:
       local_coupling_operator_;
   const GDT::LocalBoundaryIntegralOperator<GDT::LocalLambdaBinaryFaceIntegrand<E, I>, BasisType, I>
       local_boundary_operator_;
-}; // class SwipdgPenaltyProduct
+}; // class SwipdgPenaltySubdomainProduct
+
+
+template <class G>
+class SwipdgPenaltyNeighborhoodProduct
+    : public GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                                     typename GDT::SpaceProvider<G,
+                                                                 XT::Grid::Layers::dd_subdomain,
+                                                                 GDT::SpaceType::block_dg,
+                                                                 GDT::Backends::fem,
+                                                                 1,
+                                                                 double,
+                                                                 1>::type,
+                                     typename XT::Grid::Layer<G,
+                                                              XT::Grid::Layers::dd_subdomain,
+                                                              XT::Grid::Backends::part,
+                                                              XT::Grid::DD::SubdomainGrid<G>>::type>
+{
+  static_assert(XT::Grid::is_grid<G>::value, "");
+  typedef GDT::
+      SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::block_dg, GDT::Backends::fem, 1, double, 1>
+          SP;
+  typedef GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                                  typename SP::type,
+                                  typename XT::Grid::Layer<G,
+                                                           XT::Grid::Layers::dd_subdomain,
+                                                           XT::Grid::Backends::part,
+                                                           XT::Grid::DD::SubdomainGrid<G>>::type>
+      BaseType;
+  typedef SwipdgPenaltyNeighborhoodProduct<G> ThisType;
+
+public:
+  using typename BaseType::GridLayerType;
+  using typename BaseType::RangeSpaceType;
+
+  typedef XT::Grid::extract_entity_t<GridLayerType> E;
+  typedef XT::Grid::extract_intersection_t<GridLayerType> I;
+  typedef typename G::ctype D;
+  static const constexpr size_t d = G::dimension;
+  typedef double R;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
+  typedef typename RangeSpaceType::BaseFunctionSetType BasisType;
+
+  static void bind(py::module& m)
+  {
+    using namespace pybind11::literals;
+
+    try { // we might not be the first to add this SystemAssembler
+      GDT::bindings::SystemAssembler<SP, XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>::bind(m);
+    } catch (std::runtime_error&) {
+    }
+
+    GDT::bindings::MatrixOperatorBase<ThisType>::bind(
+        m,
+        XT::Common::to_camel_case("RS2017_penalty_product_matrix_operator_oversampled_subdomain_"
+                                  + XT::Grid::bindings::grid_name<G>::value())
+            .c_str());
+
+    m.def("RS2017_make_penalty_product_matrix_operator_on_oversampled_subdomain",
+          [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+             const ssize_t subdomain,
+             const XT::Grid::BoundaryInfo<I>& boundary_info,
+             const RangeSpaceType& space,
+             const ScalarFunctionType& lambda,
+             const TensorFunctionType& kappa,
+             const size_t over_integrate) {
+            return new ThisType(
+                space,
+                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+                    XT::Common::numeric_cast<size_t>(subdomain)),
+                boundary_info,
+                lambda,
+                kappa,
+                over_integrate);
+          },
+          "dd_grid_provider"_a,
+          "subdomain"_a,
+          "boundary_info"_a,
+          "neighborhood_space"_a,
+          "lambda_bar"_a,
+          "kappa"_a,
+          "over_integrate"_a = 2);
+  } // ... bind(...)
+
+  SwipdgPenaltyNeighborhoodProduct(RangeSpaceType space,
+                                   GridLayerType grd_lyr,
+                                   const XT::Grid::BoundaryInfo<I>& boundary_info,
+                                   const ScalarFunctionType& lambda,
+                                   const TensorFunctionType& kappa,
+                                   const size_t over_integrate = 2)
+    : BaseType(space, grd_lyr)
+    , lambda_(lambda)
+    , kappa_(kappa)
+    , over_integrate_(over_integrate)
+    , local_coupling_operator_(
+          // the order lambda
+          [&](const auto& test_base_en,
+              const auto& ansatz_base_en,
+              const auto& test_base_ne,
+              const auto& ansatz_base_ne) {
+            const auto& entity = test_base_en.entity();
+            const auto& neighbor = test_base_ne.entity();
+            const auto local_lambda_en = lambda_.local_function(entity);
+            const auto local_lambda_ne = lambda_.local_function(neighbor);
+            const auto local_kappa_en = kappa_.local_function(entity);
+            const auto local_kappa_ne = kappa_.local_function(neighbor);
+            const auto integrand_order = std::max(local_lambda_en->order(), local_lambda_ne->order())
+                                         + std::max(local_kappa_en->order(), local_kappa_ne->order())
+                                         + std::max(test_base_en.order(), test_base_ne.order())
+                                         + std::max(ansatz_base_en.order(), ansatz_base_ne.order());
+            return integrand_order + over_integrate_;
+          },
+          // The evaluate lambda, this is the penalty part of LocalEllipticIpdgIntegrands::Inner from
+          // dune/gdt/local/integrands/elliptic-ipdg.hh, swipdg_affine_factor variant.
+          [&](const auto& test_base_en,
+              const auto& ansatz_base_en,
+              const auto& test_base_ne,
+              const auto& ansatz_base_ne,
+              const auto& intersection,
+              const auto& local_point,
+              auto& ret_en_en,
+              auto& ret_ne_ne,
+              auto& ret_en_ne,
+              auto& ret_ne_en) {
+            // clear ret
+            ret_en_en *= 0.0;
+            ret_ne_ne *= 0.0;
+            ret_en_ne *= 0.0;
+            ret_ne_en *= 0.0;
+            // convert local point (which is in intersection coordinates) to entity/neighbor coordinates
+            const auto local_point_en = intersection.geometryInInside().global(local_point);
+            const auto local_point_ne = intersection.geometryInOutside().global(local_point);
+            const auto normal = intersection.unitOuterNormal(local_point);
+            // evaluate local function
+            const auto& entity = test_base_en.entity();
+            const auto& neighbor = test_base_ne.entity();
+            const auto lambda_val_en = lambda_.local_function(entity)->evaluate(local_point_en);
+            const auto lambda_val_ne = lambda_.local_function(neighbor)->evaluate(local_point_ne);
+            const XT::Common::FieldMatrix<D, d, d> kappa_val_en =
+                kappa_.local_function(entity)->evaluate(local_point_en);
+            const XT::Common::FieldMatrix<D, d, d> kappa_val_ne =
+                kappa_.local_function(neighbor)->evaluate(local_point_ne);
+            // compute penalty
+            const size_t max_polorder =
+                std::max(test_base_en.order(),
+                         std::max(ansatz_base_en.order(), std::max(test_base_ne.order(), ansatz_base_ne.order())));
+            const R sigma = GDT::LocalEllipticIpdgIntegrands::internal::inner_sigma(max_polorder);
+            const R delta_plus = normal * (kappa_val_ne * normal);
+            const R delta_minus = normal * (kappa_val_en * normal);
+            const R gamma = (delta_plus * delta_minus) / (delta_plus + delta_minus);
+            const auto h = intersection.geometry().volume();
+            const auto beta = GDT::LocalEllipticIpdgIntegrands::internal::default_beta(d);
+            const R penalty = (0.5 * (lambda_val_en + lambda_val_ne) * sigma * gamma) / std::pow(h, beta);
+            // evaluate bases
+            const size_t rows_en = test_base_en.size();
+            const size_t cols_en = ansatz_base_en.size();
+            const size_t rows_ne = test_base_ne.size();
+            const size_t cols_ne = ansatz_base_ne.size();
+            const auto test_values_en = test_base_en.evaluate(local_point_en);
+            const auto ansatz_values_en = ansatz_base_en.evaluate(local_point_en);
+            const auto test_values_ne = test_base_ne.evaluate(local_point_ne);
+            const auto ansatz_values_ne = ansatz_base_ne.evaluate(local_point_ne);
+            // compute integrals, loop over all combinations of basis functions
+            assert(ret_en_en.rows() >= rows_en && ret_en_en.cols() >= cols_en);
+            assert(ret_en_ne.rows() >= rows_en && ret_en_ne.cols() >= cols_ne);
+            assert(ret_ne_en.rows() >= rows_ne && ret_ne_en.cols() >= cols_en);
+            assert(ret_ne_ne.rows() >= rows_ne && ret_ne_ne.cols() >= cols_ne);
+            for (size_t ii = 0; ii < rows_en; ++ii) {
+              for (size_t jj = 0; jj < cols_en; ++jj)
+                ret_en_en[ii][jj] += penalty * ansatz_values_en[jj] * test_values_en[ii];
+              for (size_t jj = 0; jj < cols_ne; ++jj)
+                ret_en_ne[ii][jj] += -1.0 * penalty * ansatz_values_ne[jj] * test_values_en[ii];
+            }
+            for (size_t ii = 0; ii < rows_ne; ++ii) {
+              for (size_t jj = 0; jj < cols_en; ++jj)
+                ret_ne_en[ii][jj] += -1.0 * penalty * ansatz_values_en[jj] * test_values_ne[ii];
+              for (size_t jj = 0; jj < cols_ne; ++jj)
+                ret_ne_ne[ii][jj] += penalty * ansatz_values_ne[jj] * test_values_ne[ii];
+            }
+          })
+    , local_boundary_operator_(
+          // the order lambda
+          [&](const auto& test_base, const auto& ansatz_base) {
+            const auto& entity = test_base.entity();
+            const auto local_lambda = lambda_.local_function(entity);
+            const auto local_kappa = kappa_.local_function(entity);
+            const auto integrand_order =
+                local_lambda->order() + local_kappa->order() + test_base.order() + ansatz_base.order();
+            return integrand_order + over_integrate_;
+          },
+          // The evaluate lambda, this is the penalty part of LocalEllipticIpdgIntegrands::BoundaryLHS from
+          // dune/gdt/local/integrands/elliptic-ipdg.hh, swipdg_affine_factor variant.
+          [&](const auto& test_base,
+              const auto& ansatz_base,
+              const auto& intersection,
+              const auto& local_point,
+              auto& ret) {
+            // clear ret
+            ret *= 0.0;
+            // get local point (which is in intersection coordinates) in entity coordinates
+            const auto local_point_entity = intersection.geometryInInside().global(local_point);
+            const auto normal = intersection.unitOuterNormal(local_point);
+            // evaluate local functions
+            const auto& entity = test_base.entity();
+            XT::Common::FieldMatrix<D, d, d> diffusion = kappa_.local_function(entity)->evaluate(local_point_entity);
+            diffusion *= lambda_.local_function(entity)->evaluate(local_point_entity);
+            // compute penalty
+            const size_t max_polorder = std::max(test_base.order(), ansatz_base.order());
+            const R sigma = GDT::LocalEllipticIpdgIntegrands::internal::boundary_sigma(max_polorder);
+            const R gamma = normal * (diffusion * normal);
+            const auto h = intersection.geometry().volume();
+            const auto beta = GDT::LocalEllipticIpdgIntegrands::internal::default_beta(d);
+            const R penalty = (sigma * gamma) / std::pow(h, beta);
+            // evaluate bases
+            const size_t rows = test_base.size();
+            const size_t cols = ansatz_base.size();
+            const auto test_values = test_base.evaluate(local_point_entity);
+            const auto ansatz_values = ansatz_base.evaluate(local_point_entity);
+            // compute integrals, loop over all combinations of basis functions
+            assert(ret.rows() >= rows && ret.cols() >= cols);
+            for (size_t ii = 0; ii < rows; ++ii)
+              for (size_t jj = 0; jj < cols; ++jj)
+                ret[ii][jj] += penalty * ansatz_values[jj] * test_values[ii];
+          })
+  {
+    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
+    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+  }
+
+  SwipdgPenaltyNeighborhoodProduct(const ThisType&) = delete;
+  SwipdgPenaltyNeighborhoodProduct(ThisType&&) = delete;
+
+private:
+  const ScalarFunctionType& lambda_;
+  const TensorFunctionType& kappa_;
+  const size_t over_integrate_;
+  const GDT::LocalCouplingIntegralOperator<GDT::LocalLambdaQuaternaryFaceIntegrand<E, I>, BasisType, I>
+      local_coupling_operator_;
+  const GDT::LocalBoundaryIntegralOperator<GDT::LocalLambdaBinaryFaceIntegrand<E, I>, BasisType, I>
+      local_boundary_operator_;
+}; // class SwipdgPenaltyNeighborhoodProduct
 
 
 template <class G>
@@ -358,7 +599,8 @@ PYBIND11_PLUGIN(__operators_RS2017)
   py::module::import("dune.xt.la");
 
 #if HAVE_DUNE_ALUGRID
-  SwipdgPenaltyProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
+  SwipdgPenaltySubdomainProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
+  SwipdgPenaltyNeighborhoodProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
 
   bind_neighborhood_reconstruction<ALU_2D_SIMPLEX_CONFORMING>(m);
 
