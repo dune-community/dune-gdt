@@ -41,6 +41,8 @@
 #include <dune/gdt/local/operators/integrals.hh>
 #include <dune/gdt/operators/base.bindings.hh>
 #include <dune/gdt/operators/base.hh>
+#include <dune/gdt/operators/elliptic-ipdg.hh>
+#include <dune/gdt/operators/fluxreconstruction.hh>
 #include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/playground/spaces/block.hh>
 #include <dune/gdt/spaces.hh>
@@ -291,6 +293,57 @@ private:
 }; // class SwipdgPenaltyProduct
 
 
+template <class G>
+void bind_neighborhood_reconstruction(py::module& m)
+{
+  using namespace pybind11::literals;
+
+  typedef typename G::template Codim<0>::Entity E;
+  typedef double D;
+  static const constexpr size_t d = 2;
+  typedef double R;
+  typedef typename XT::Grid::Layer<G,
+                                   XT::Grid::Layers::dd_subdomain_oversampled,
+                                   XT::Grid::Backends::part,
+                                   XT::Grid::DD::SubdomainGrid<G>>::type NeighborHoodGridLayer;
+  typedef typename XT::Grid::Layer<G, XT::Grid::Layers::leaf, XT::Grid::Backends::view>::type LeafViewType;
+  typedef XT::LA::IstlDenseVector<R> VectorType;
+  typedef GDT::
+      LocalizableDiffusiveFluxReconstructionOperator<NeighborHoodGridLayer,
+                                                     VectorType,
+                                                     GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor,
+                                                     LeafViewType>
+          LocalizableDiffusiveFluxReconstructionOperatorType;
+
+  m.def("RS2017_apply_diffusive_flux_reconstruction_in_neighborhood",
+        [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+           const ssize_t subdomain,
+           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
+           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
+           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& u,
+           typename LocalizableDiffusiveFluxReconstructionOperatorType::RangeType& reconstructed_u,
+           const ssize_t over_integrate) {
+          py::gil_scoped_release DUNE_UNUSED(release);
+          LocalizableDiffusiveFluxReconstructionOperatorType(
+              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+                  XT::Common::numeric_cast<size_t>(subdomain)),
+              lambda,
+              kappa,
+              u,
+              reconstructed_u,
+              over_integrate)
+              .apply();
+        },
+        "dd_grid_provider"_a,
+        "subdomain"_a,
+        "lambda_hat"_a,
+        "kappa"_a,
+        "u"_a,
+        "reconstructed_u"_a,
+        "over_integrate"_a = 2);
+} // ... bind_neighborhood_reconstruction(...)
+
+
 PYBIND11_PLUGIN(__operators_RS2017)
 {
   using namespace pybind11::literals;
@@ -307,10 +360,13 @@ PYBIND11_PLUGIN(__operators_RS2017)
 #if HAVE_DUNE_ALUGRID
   SwipdgPenaltyProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
 
+  bind_neighborhood_reconstruction<ALU_2D_SIMPLEX_CONFORMING>(m);
+
   typedef typename ALU_2D_SIMPLEX_CONFORMING::template Codim<0>::Entity E;
   typedef double D;
   static const constexpr size_t d = 2;
-  typedef D R;
+  typedef double R;
+
   m.def("RS2017_residual_indicator_min_diffusion_eigenvalue",
         [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
                dd_grid_provider,
