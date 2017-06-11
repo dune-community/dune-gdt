@@ -22,16 +22,222 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/xt/common/math.hh>
+#include <dune/xt/la/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/functions/constant.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
+#include <dune/gdt/local/operators/lambda.hh>
+#include <dune/gdt/operators/base.hh>
 #include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
 
 namespace Dune {
 namespace GDT {
+
+
+// ============================================== //
+// LocalizableDiffusiveFluxReconstructionOperator //
+// ============================================== //
+
+
+template <class GL,
+          class V,
+          LocalEllipticIpdgIntegrands::Method dg_method = LocalEllipticIpdgIntegrands::default_method,
+          class ReconstructionGridLayer = GL>
+class LocalizableDiffusiveFluxReconstructionOperator
+    : public LocalizableOperatorBase<GL,
+                                     XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GL>,
+                                                                                 double,
+                                                                                 GL::dimension,
+                                                                                 double,
+                                                                                 1>,
+                                     DiscreteFunction<DunePdelabRtSpaceWrapper<ReconstructionGridLayer,
+                                                                               0,
+                                                                               double,
+                                                                               GL::dimension>,
+                                                      V>>
+{
+  static_assert(XT::LA::is_vector<V>::value, "");
+
+  typedef XT::Grid::extract_entity_t<GL> E;
+  static const constexpr size_t d = GL::dimension;
+  typedef double D;
+  typedef double R;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
+  typedef DunePdelabRtSpaceWrapper<ReconstructionGridLayer, 0, double, GL::dimension> RtSpaceType;
+  typedef LocalizableOperatorBase<GL, ScalarFunctionType, DiscreteFunction<RtSpaceType, V>> BaseType;
+
+public:
+  using typename BaseType::GridLayerType;
+  using typename BaseType::SourceType;
+  using typename BaseType::RangeType;
+
+  LocalizableDiffusiveFluxReconstructionOperator(GridLayerType grd_layr,
+                                                 const ScalarFunctionType& diffusion_factor,
+                                                 const TensorFunctionType& diffusion_tensor,
+                                                 const SourceType& src,
+                                                 RangeType& rng,
+                                                 const size_t over_integrate = 0)
+    : BaseType(grd_layr, src, rng)
+    , diffusion_factor_(diffusion_factor)
+    , diffusion_tensor_(diffusion_tensor)
+    , one_(1.)
+    , inner_integrand_(diffusion_factor_, diffusion_tensor_)
+    , boundary_integrand_(diffusion_factor_, diffusion_tensor_)
+    , over_integrate_(over_integrate)
+    , tmp_matrix_(1, 1, 0.)
+    , tmp_matrix_en_en_(1, 1, 0.)
+    , tmp_matrix_en_ne_(1, 1, 0.)
+    , tmp_basis_values_(rng.space().mapper().maxNumDofs())
+    , local_operator_(
+          // The local lambda which does the actual work in the local operator:
+          // lmbd_source is src
+          // local_range is the local_discrete_function of rng on the current entity
+          [&](const auto& lmbd_source, auto& local_range) {
+            const auto& entity = local_range.entity();
+            const auto local_DoF_indices = local_range.space().local_DoF_indices(entity);
+            const auto local_diffusion_factor = diffusion_factor_.local_function(entity);
+            const auto local_diffusion_tensor = diffusion_tensor_.local_function(entity);
+            const auto local_source = lmbd_source.local_function(entity);
+            const auto local_basis = local_range.space().base_function_set(entity);
+            const auto local_constant_one = one_.local_function(entity);
+            // walk the intersections
+            const auto intersection_it_end = this->grid_layer().iend(entity);
+            for (auto intersection_it = this->grid_layer().ibegin(entity); intersection_it != intersection_it_end;
+                 ++intersection_it) {
+              const auto& intersection = *intersection_it;
+              if (intersection.neighbor() && !intersection.boundary()) {
+                const auto neighbor = intersection.outside();
+                if (this->grid_layer().indexSet().index(entity) < this->grid_layer().indexSet().index(neighbor)) {
+                  const auto local_diffusion_factor_neighbor = diffusion_factor_.local_function(neighbor);
+                  const auto local_diffusion_tensor_neighbor = diffusion_tensor_.local_function(neighbor);
+                  const auto local_source_neighbor = lmbd_source.local_function(neighbor);
+                  const auto local_constant_one_neighbor = one_.local_function(neighbor);
+                  const size_t local_intersection_index = intersection.indexInInside();
+                  const size_t local_DoF_index = local_DoF_indices[local_intersection_index];
+                  // do a face quadrature
+                  R lhs = 0;
+                  R rhs = 0;
+                  const size_t integrand_order = inner_integrand_.order(*local_diffusion_factor,
+                                                                        *local_diffusion_tensor,
+                                                                        *local_diffusion_factor_neighbor,
+                                                                        *local_diffusion_tensor_neighbor,
+                                                                        *local_constant_one,
+                                                                        *local_source,
+                                                                        *local_constant_one_neighbor,
+                                                                        *local_source_neighbor);
+                  for (const auto& quadrature_point : QuadratureRules<D, d - 1>::rule(
+                           intersection.type(), boost::numeric_cast<int>(integrand_order + over_integrate_))) {
+                    const auto& xx_intersection = quadrature_point.position();
+                    const auto xx_entity = intersection.geometryInInside().global(xx_intersection);
+                    const auto normal = intersection.unitOuterNormal(xx_intersection);
+                    const R integration_factor = intersection.geometry().integrationElement(xx_intersection);
+                    const R weigth = quadrature_point.weight();
+                    // evalaute
+                    local_basis.evaluate(xx_entity, tmp_basis_values_);
+                    const auto& basis_value = tmp_basis_values_[local_DoF_index];
+                    tmp_matrix_en_en_ *= 0.0;
+                    tmp_matrix_en_ne_ *= 0.0;
+                    inner_integrand_.evaluate(*local_diffusion_factor,
+                                              *local_diffusion_tensor,
+                                              *local_diffusion_factor_neighbor,
+                                              *local_diffusion_tensor_neighbor,
+                                              *local_constant_one,
+                                              *local_source,
+                                              *local_constant_one_neighbor,
+                                              *local_source_neighbor,
+                                              intersection,
+                                              xx_intersection,
+                                              tmp_matrix_en_en_, // <- we are interested in this one
+                                              tmp_matrix_,
+                                              tmp_matrix_en_ne_, // <- and this one
+                                              tmp_matrix_);
+                    // compute integrals
+                    assert(tmp_matrix_en_en_.rows() >= 1);
+                    assert(tmp_matrix_en_en_.cols() >= 1);
+                    assert(tmp_matrix_en_ne_.rows() >= 1);
+                    assert(tmp_matrix_en_ne_.cols() >= 1);
+                    lhs += integration_factor * weigth * (basis_value * normal);
+                    rhs += integration_factor * weigth * (tmp_matrix_en_en_[0][0] + tmp_matrix_en_ne_[0][0]);
+                  } // do a face quadrature
+                  // set DoF
+                  if (XT::Common::isnan(rhs) || XT::Common::isinf(rhs))
+                    local_range.vector().set(local_DoF_index, 0.);
+                  else
+                    local_range.vector().set(local_DoF_index, rhs / lhs);
+                }
+              } else if (intersection.boundary() && !intersection.neighbor()) {
+                const size_t local_intersection_index = intersection.indexInInside();
+                const size_t local_DoF_index = local_DoF_indices[local_intersection_index];
+                // do a face quadrature
+                R lhs = 0;
+                R rhs = 0;
+                const size_t integrand_order = boundary_integrand_.order(
+                    *local_diffusion_factor, *local_diffusion_tensor, *local_source, *local_constant_one);
+                for (const auto& quadrature_point : QuadratureRules<D, d - 1>::rule(
+                         intersection.type(), boost::numeric_cast<int>(integrand_order + over_integrate_))) {
+                  const auto xx_intersection = quadrature_point.position();
+                  const auto normal = intersection.unitOuterNormal(xx_intersection);
+                  const R integration_factor = intersection.geometry().integrationElement(xx_intersection);
+                  const R weigth = quadrature_point.weight();
+                  const auto xx_entity = intersection.geometryInInside().global(xx_intersection);
+                  // evalaute
+                  local_basis.evaluate(xx_entity, tmp_basis_values_);
+                  const auto& basis_value = tmp_basis_values_[local_DoF_index];
+                  tmp_matrix_ *= 0.0;
+                  boundary_integrand_.evaluate(*local_diffusion_factor,
+                                               *local_diffusion_tensor,
+                                               *local_constant_one,
+                                               *local_source,
+                                               intersection,
+                                               xx_intersection,
+                                               tmp_matrix_);
+                  // compute integrals
+                  assert(tmp_matrix_.rows() >= 1);
+                  assert(tmp_matrix_.cols() >= 1);
+                  lhs += integration_factor * weigth * (basis_value * normal);
+                  rhs += integration_factor * weigth * tmp_matrix_[0][0];
+                } // do a face quadrature
+                // set DoF
+                if (XT::Common::isnan(rhs) || XT::Common::isinf(rhs))
+                  local_range.vector().set(local_DoF_index, 0.);
+                else
+                  local_range.vector().set(local_DoF_index, rhs / lhs);
+              } else
+                DUNE_THROW(XT::Common::Exceptions::internal_error, "Unknown intersection type!");
+            } // walk the intersections
+          })
+  {
+    this->range_.vector() *= 0.;
+    this->append(local_operator_);
+  }
+
+  void prepare() override final
+  {
+    this->range_.vector() *= 0.;
+  }
+
+private:
+  const ScalarFunctionType& diffusion_factor_;
+  const TensorFunctionType& diffusion_tensor_;
+  const XT::Functions::ConstantFunction<E, D, d, R, 1> one_;
+  const LocalEllipticIpdgIntegrands::Inner<ScalarFunctionType, TensorFunctionType, dg_method> inner_integrand_;
+  const LocalEllipticIpdgIntegrands::BoundaryLHS<ScalarFunctionType, TensorFunctionType, dg_method> boundary_integrand_;
+  const size_t over_integrate_;
+  DynamicMatrix<R> tmp_matrix_;
+  DynamicMatrix<R> tmp_matrix_en_en_;
+  DynamicMatrix<R> tmp_matrix_en_ne_;
+  std::vector<FieldVector<R, d>> tmp_basis_values_;
+  const LocalLambdaOperator<ScalarFunctionType, RtSpaceType, V> local_operator_;
+}; // class LocalizableDiffusiveFluxReconstructionOperator
+
+
+// =================================== //
+// DiffusiveFluxReconstructionOperator //
+// =================================== //
 
 
 template <class GridLayerType,
