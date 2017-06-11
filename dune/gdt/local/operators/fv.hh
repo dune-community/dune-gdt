@@ -477,6 +477,7 @@ public:
     , quadrature_(quadrature)
     , reconstructed_values_(reconstructed_values)
   {
+    param_.set("boundary", {0.});
   }
 
 
@@ -502,9 +503,8 @@ public:
     const auto& u_entity = XT::LA::internal::FieldVectorToLaVector<EigenVectorType, dimRange>::convert_back(
         values[stencil[0] / 2][stencil[1] / 2][stencil[2] / 2]);
     const FieldVector<FieldMatrix<DomainFieldType, dimRange, dimRange>, dimDomain> jacobians =
-        analytical_flux_.local_function(entity)->jacobian_wrt_u(entity.geometry().local(entity.geometry().center()),
-                                                                u_entity,
-                                                                XT::Common::Parameter(param_, {{"boundary", {0.}}}));
+        analytical_flux_.local_function(entity)->jacobian_wrt_u(
+            entity.geometry().local(entity.geometry().center()), u_entity, param_);
 
     const auto& entity_index = grid_layer_.indexSet().index(entity);
     auto& reconstructed_values_map = reconstructed_values_[entity_index];
@@ -831,7 +831,7 @@ private:
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueType& boundary_values_;
   const GridLayerType& grid_layer_;
-  const XT::Common::Parameter param_;
+  XT::Common::Parameter param_;
   const QuadratureType quadrature_;
   std::vector<std::map<DomainType, RangeType, internal::FieldVectorLess>>& reconstructed_values_;
 }; // class LocalReconstructionFvOperator
