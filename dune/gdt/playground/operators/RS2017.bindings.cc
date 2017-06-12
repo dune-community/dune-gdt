@@ -39,6 +39,8 @@
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
 #include <dune/gdt/local/integrands/lambda.hh>
 #include <dune/gdt/local/operators/integrals.hh>
+#include <dune/gdt/functionals/elliptic-ipdg.hh>
+#include <dune/gdt/functionals/l2.hh>
 #include <dune/gdt/operators/base.bindings.hh>
 #include <dune/gdt/operators/base.hh>
 #include <dune/gdt/operators/elliptic-ipdg.hh>
@@ -585,6 +587,142 @@ void bind_neighborhood_reconstruction(py::module& m)
 } // ... bind_neighborhood_reconstruction(...)
 
 
+template <class G>
+void bind_neighborhood_discretization(py::module& m)
+{
+  using namespace pybind11::literals;
+
+  typedef typename G::template Codim<0>::Entity E;
+  typedef double D;
+  static const constexpr size_t d = 2;
+  typedef double R;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> DF;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> DT;
+
+  typedef typename XT::Grid::Layer<G,
+                                   XT::Grid::Layers::dd_subdomain_oversampled,
+                                   XT::Grid::Backends::part,
+                                   XT::Grid::DD::SubdomainGrid<G>>::type NGL;
+  typedef GDT::
+      SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::block_dg, GDT::Backends::fem, 1, double, 1>
+          SP;
+  typedef typename SP::type S;
+  typedef XT::LA::IstlDenseVector<R> V;
+  typedef XT::LA::IstlRowMajorSparseMatrix<R> M;
+
+  try { // we might not be the first to add this SystemAssembler
+    GDT::bindings::SystemAssembler<SP, XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>::bind(m);
+  } catch (std::runtime_error&) {
+  }
+
+  m.def("RS2017_make_neighborhood_system_assembler",
+        [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+           const ssize_t subdomain,
+           const S& neighborhood_space) {
+          return new GDT::SystemAssembler<S, NGL>(
+              neighborhood_space,
+              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+                  XT::Common::numeric_cast<size_t>(subdomain)));
+        });
+
+  typedef GDT::
+      EllipticIpdgMatrixOperator<DF, DT, S, GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor, M, NGL>
+          DgMatrixOperator;
+  py::class_<DgMatrixOperator, GDT::SystemAssembler<S, NGL>> dg_matrix_operator(
+      m, "EllipticIpdgMatrixOperatorNeighborhood");
+  dg_matrix_operator.def("matrix", [](DgMatrixOperator& self) { return self.matrix(); });
+
+  m.def("RS2017_make_elliptic_swipdg_matrix_operator_on_neighborhood",
+        [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+           const ssize_t subdomain,
+           XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<NGL>>& boundary_info,
+           const S& neighborhood_space,
+           const DF& lambda,
+           const DT& kappa,
+           const ssize_t over_integrate) {
+          return new DgMatrixOperator(
+              over_integrate,
+              boundary_info,
+              lambda,
+              kappa,
+              neighborhood_space,
+              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+                  XT::Common::numeric_cast<size_t>(subdomain)));
+        },
+        "dd_grid_provider"_a,
+        "subdomain"_a,
+        "boundary_info"_a,
+        "neighborhood_space"_a,
+        "lambda"_a,
+        "kappa"_a,
+        "over_integrate"_a = 2);
+
+  typedef GDT::EllipticIpdgDirichletVectorFunctional<DF,
+                                                     DF,
+                                                     DT,
+                                                     S,
+                                                     GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor,
+                                                     V,
+                                                     NGL>
+      DgVectorFunctional;
+  py::class_<DgVectorFunctional, GDT::SystemAssembler<S, NGL>> dg_vector_functional(
+      m, "EllipticSwipdgVectorFunctionalNeighborhood");
+  dg_vector_functional.def("vector", [](DgVectorFunctional& self) { return self.vector(); });
+
+  m.def("RS2017_make_elliptic_swipdg_vector_functional_on_neighborhood",
+        [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+           const ssize_t subdomain,
+           XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<NGL>>& boundary_info,
+           const S& neighborhood_space,
+           const DF& g_D,
+           const DF& lambda,
+           const DT& kappa,
+           const ssize_t over_integrate) {
+          return new DgVectorFunctional(
+              over_integrate,
+              boundary_info,
+              g_D,
+              lambda,
+              kappa,
+              neighborhood_space,
+              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+                  XT::Common::numeric_cast<size_t>(subdomain)));
+        },
+        "dd_grid_provider"_a,
+        "subdomain"_a,
+        "boundary_info"_a,
+        "neighborhood_space"_a,
+        "g_D"_a,
+        "lambda"_a,
+        "kappa"_a,
+        "over_integrate"_a = 2);
+
+  typedef GDT::L2VolumeVectorFunctional<DF, S, V, NGL> L2VolumeFunctional;
+  py::class_<L2VolumeFunctional, GDT::SystemAssembler<S, NGL>> l2_volume_vector_functional(
+      m, "L2VolumeVectorFunctionalNeighborhood");
+  l2_volume_vector_functional.def("vector", [](L2VolumeFunctional& self) { return self.vector(); });
+
+  m.def("RS2017_make_l2_vector_functional_on_neighborhood",
+        [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+           const ssize_t subdomain,
+           const S& neighborhood_space,
+           const DF& f,
+           const ssize_t over_integrate) {
+          return new L2VolumeFunctional(
+              over_integrate,
+              f,
+              neighborhood_space,
+              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+                  XT::Common::numeric_cast<size_t>(subdomain)));
+        },
+        "dd_grid_provider"_a,
+        "subdomain"_a,
+        "neighborhood_space"_a,
+        "f"_a,
+        "over_integrate"_a = 2);
+} // ... bind_neighborhood_discretization(...)
+
+
 PYBIND11_PLUGIN(__operators_RS2017)
 {
   using namespace pybind11::literals;
@@ -603,6 +741,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
   SwipdgPenaltyNeighborhoodProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
 
   bind_neighborhood_reconstruction<ALU_2D_SIMPLEX_CONFORMING>(m);
+  bind_neighborhood_discretization<ALU_2D_SIMPLEX_CONFORMING>(m);
 
   typedef typename ALU_2D_SIMPLEX_CONFORMING::template Codim<0>::Entity E;
   typedef double D;
