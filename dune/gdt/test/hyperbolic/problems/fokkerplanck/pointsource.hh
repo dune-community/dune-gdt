@@ -92,7 +92,7 @@ public:
     grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
     grid_config["lower_left"] = "[-0.5 -0.5 -0.5]";
     grid_config["upper_right"] = "[0.5 0.5 0.5]";
-    grid_config["num_elements"] = "[6 6 6]";
+    grid_config["num_elements"] = "[4 4 4]";
     grid_config["overlap_size"] = "[1 1 1]";
     return grid_config;
   }
@@ -252,7 +252,7 @@ public:
   using typename BaseType::GridType;
   using typename BaseType::SolutionType;
 
-  PointSourceTestCase(const size_t num_refs = 2, const double divide_t_end_by = 1.0)
+  PointSourceTestCase(const size_t num_refs = 1, const double divide_t_end_by = 1.0)
     : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
     , problem_(B())
   {
