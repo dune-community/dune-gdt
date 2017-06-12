@@ -108,7 +108,7 @@ public:
 
   bool has_non_zero_rhs() const
   {
-    return false;
+    return true;
   }
 
   static std::string static_id()
