@@ -358,17 +358,17 @@ public:
     size_t ll = -1;
     for (const auto& pair : local_reconstructed_values) {
       ++ll;
-      auto u_l = pair.second;
       // rescale u_l, u_bar
+      auto u_l = pair.second;
+      auto u_minus_u_bar_l = u_bar - u_l;
       const auto factor = basis_functions_.realizability_limiter_max(u_l, u_bar);
       u_l /= factor;
-      auto u_bar_l = u_bar;
-      u_bar_l /= factor;
+      u_minus_u_bar_l /= factor;
 
       for (const auto& coeffs : *plane_coefficients_) {
         const RangeType& a = coeffs.first;
         const RangeFieldType& b = coeffs.second;
-        RangeFieldType theta_li = (b - a * u_l) / (a * (u_bar_l - u_l));
+        RangeFieldType theta_li = (b - a * u_l) / (a * u_minus_u_bar_l);
         if (XT::Common::FloatCmp::ge(theta_li, -epsilon_) && XT::Common::FloatCmp::le(theta_li, 1.))
           thetas[ll] = std::max(thetas[ll], theta_li);
       } // coeffs
@@ -377,16 +377,15 @@ public:
       theta = std::min(epsilon_ + theta, 1.);
 
     auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
-    if (XT::Common::FloatCmp::ne(theta_entity, 0.))
-      std::cout << theta_entity << std::endl;
-
-    for (auto& pair : local_reconstructed_values) {
-      auto& u = pair.second;
-      auto u_scaled = u;
-      u_scaled *= (1 - theta_entity);
-      auto u_bar_scaled = u_bar;
-      u_bar_scaled *= theta_entity;
-      u = u_scaled + u_bar_scaled;
+    if (XT::Common::FloatCmp::ne(theta_entity, 0.)) {
+      for (auto& pair : local_reconstructed_values) {
+        auto& u = pair.second;
+        auto u_scaled = u;
+        u_scaled *= (1 - theta_entity);
+        auto u_bar_scaled = u_bar;
+        u_bar_scaled *= theta_entity;
+        u = u_scaled + u_bar_scaled;
+      }
     }
   } // void apply_local(...)
 
@@ -750,7 +749,7 @@ private:
               values[stencil_x / 2 + new_offsets[0]][stencil_y / 2 + new_offsets[1]][stencil_z / 2 + new_offsets[2]] =
                   XT::LA::internal::FieldVectorToLaVector<EigenVectorType, dimRange>::convert(boundary_value);
             }
-          } else if (direction_allowed(direction, intersection_index, offsets)) {
+          } else if (direction_allowed(direction, intersection_index)) {
             const auto& outside = intersection.outside();
             walk(intersection_index, new_offsets);
             StencilIterator::apply(
@@ -785,7 +784,7 @@ private:
     // index (i.e. iterators that walk in x direction will spawn iterators going in y and z direction,
     // iterators going in y direction will only spawn iterators in z-direction and z iterators only walk
     // without emitting new iterators).
-    static bool direction_allowed(const int dir, const int new_dir, const FieldVector<size_t, 3>& offsets)
+    static bool direction_allowed(const int dir, const int new_dir)
     {
       return dir == -1 || new_dir == dir || new_dir / 2 > dir / 2;
     }

@@ -106,6 +106,11 @@ public:
     return ImplementationType::default_grid_cfg();
   }
 
+  bool has_non_zero_rhs() const
+  {
+    return false;
+  }
+
   static std::string static_id()
   {
     return ImplementationType::static_id();

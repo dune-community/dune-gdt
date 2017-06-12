@@ -331,10 +331,10 @@ protected:
            reference_solution_it != reference_solution_it_end;
            ++reference_solution_it) {
         const double time = reference_solution_it->first;
-        const auto discrete_exact_solution_at_time = exact_solution->evaluate_at_time(time);
+        //        const auto discrete_exact_solution_at_time = exact_solution->evaluate_at_time(time);
         const auto inserted_it = discrete_exact_solution_->emplace_hint(
             discrete_exact_solution_->end(), time, reference_solution_it->second);
-        project(*discrete_exact_solution_at_time, inserted_it->second);
+        //        project_l2(*discrete_exact_solution_at_time, inserted_it->second);
       }
       if (!visualize_prefix_.empty()) {
         size_t counter = 0;

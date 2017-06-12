@@ -382,28 +382,47 @@ private:
           ConstantFunctionType;
   typedef typename Dune::GDT::AdvectionRhsOperator<RhsType> RhsOperatorType;
 
-  typedef
-      //      typename std::conditional<numerical_flux == NumericalFluxes::laxfriedrichs
-      //                                    || numerical_flux == NumericalFluxes::laxfriedrichs_with_reconstruction
-      //                                    || numerical_flux == NumericalFluxes::local_laxfriedrichs
-      //                                    || numerical_flux ==
-      //                                    NumericalFluxes::local_laxfriedrichs_with_reconstruction,
-      //                                typename Dune::GDT::AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
-      //                                                                                   BoundaryValueType,
-      //                                                                                   ConstantFunctionType>,
-      //                                typename Dune::GDT::AdvectionGodunovOperator<AnalyticalFluxType,
-      //                                BoundaryValueType>>::
-      //          type AdvectionOperatorType;
+  //  typedef
+  //      typename std::conditional<numerical_flux == NumericalFluxes::laxfriedrichs
+  //                                    || numerical_flux == NumericalFluxes::laxfriedrichs_with_reconstruction
+  //                                    || numerical_flux == NumericalFluxes::local_laxfriedrichs
+  //                                    || numerical_flux ==
+  //                                    NumericalFluxes::local_laxfriedrichs_with_reconstruction,
+  //                                typename Dune::GDT::AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
+  //                                                                                   BoundaryValueType,
+  //                                                                                   ConstantFunctionType>,
+  //                                typename Dune::GDT::AdvectionGodunovOperator<AnalyticalFluxType,
+  //                                BoundaryValueType>>::
+  //          type AdvectionOperatorType;
 
-      typename Dune::GDT::AdvectionLaxFriedrichsOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType>
-          AdvectionOperatorType;
+  static constexpr size_t refinements = 0;
+  typedef
+      typename Hyperbolic::Problems::HatFunctions<DomainFieldType,
+                                                  dimDomain,
+                                                  RangeFieldType,
+                                                  Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(),
+                                                  1,
+                                                  3>
+          BasisfunctionType;
+
+
+  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
+                                         BoundaryValueType,
+                                         ConstantFunctionType,
+                                         1,
+                                         SlopeLimiters::minmod,
+                                         false,
+                                         BasisfunctionType>
+      AdvectionOperatorType;
+
   typedef
       typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, RangeFieldType, time_stepper_method>::
           TimeStepperType OperatorTimeStepperType;
   typedef typename TimeStepperFactory<RhsOperatorType, DiscreteFunctionType, RangeFieldType, rhs_time_stepper_method>::
       TimeStepperType RhsOperatorTimeStepperType;
-  typedef typename Dune::GDT::FractionalTimeStepper<OperatorTimeStepperType, RhsOperatorTimeStepperType>
-      TimeStepperType;
+  //  typedef typename Dune::GDT::FractionalTimeStepper<OperatorTimeStepperType, RhsOperatorTimeStepperType>
+  //      TimeStepperType;
+  typedef StrangSplittingTimeStepper<RhsOperatorTimeStepperType, OperatorTimeStepperType> TimeStepperType;
 
 public:
   HyperbolicFVDefaultDiscretization(const TestCaseImp& tst_cs, const std::shared_ptr<const SpaceType> fv_space_ptr)
@@ -432,16 +451,17 @@ public:
 #if HAVE_EIGEN
     try {
       // get analytical flux, initial and boundary values
-      const std::shared_ptr<const AnalyticalFluxType> analytical_flux = problem().flux();
-      const std::shared_ptr<const InitialValueType> initial_values = problem().initial_values();
-      const std::shared_ptr<const BoundaryValueType> boundary_values = problem().boundary_values();
-      const std::shared_ptr<const RhsType> rhs = problem().rhs();
+      typedef typename ProblemType::FluxType AnalyticalFluxType;
+      const AnalyticalFluxType& analytical_flux = problem().flux();
+      const InitialValueType& initial_values = problem().initial_values();
+      const BoundaryValueType& boundary_values = problem().boundary_values();
+      const RhsType& rhs = problem().rhs();
 
       // create a discrete function for the solution
       DiscreteFunctionType u(*fv_space_, "solution");
 
       // project initial values
-      project(*initial_values, u);
+      project_l2(initial_values, u);
 
       RangeFieldType t_end = test_case_.t_end();
       const RangeFieldType CFL = problem().CFL();
@@ -451,25 +471,37 @@ public:
       RangeFieldType dx = dimensions.entity_width.max();
       if (dimDomain == 2)
         dx /= std::sqrt(2);
+      if (dimDomain == 3)
+        dx /= std::sqrt(3);
       RangeFieldType dt = CFL * dx;
 
       // create operators
       const ConstantFunctionType dx_function(dx);
-      AdvectionOperatorType advection_operator =
-          internal::AdvectionOperatorCreator<AdvectionOperatorType, numerical_flux>::create(
-              *analytical_flux, *boundary_values, dx_function, dt, linear);
-      RhsOperatorType rhs_operator(*rhs);
+      //      AdvectionOperatorType advection_operator =
+      //          internal::AdvectionOperatorCreator<AdvectionOperatorType, numerical_flux>::create(
+      //              *analytical_flux, *boundary_values, dx_function, dt, linear);
+
+      const RangeFieldType epsilon = 1e-14;
+      AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_function);
+      std::shared_ptr<const BasisfunctionType> basis_functions =
+          std::make_shared<const BasisfunctionType>(refinements, refinements + 4);
+      advection_operator.set_basisfunctions(basis_functions);
+      //  advection_operator.set_quadrature(problem_imp.quadrature());
+      advection_operator.set_quadrature(basis_functions->quadrature());
+      advection_operator.set_epsilon(epsilon);
+
+      RhsOperatorType rhs_operator(rhs);
 
       // create timestepper
       OperatorTimeStepperType timestepper_op(advection_operator, u, -1.0);
 
       // do the time steps
-      const size_t num_save_steps = 100;
+      const size_t num_save_steps = 45;
       solution.clear();
       if (problem().has_non_zero_rhs()) {
         // use fractional step method
         RhsOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
-        TimeStepperType timestepper(timestepper_op, timestepper_rhs);
+        TimeStepperType timestepper(timestepper_rhs, timestepper_op);
         timestepper.solve(t_end, dt, num_save_steps, solution);
       } else {
         timestepper_op.solve(t_end, dt, num_save_steps, solution);

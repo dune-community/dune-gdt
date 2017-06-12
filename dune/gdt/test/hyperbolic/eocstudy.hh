@@ -72,7 +72,8 @@ public:
                                      Discretizer::type,
                                      GridLayerType::dimension,
                                      Discretizer::numerical_flux_type,
-                                     Discretizer::time_stepper_type>::rate(type);
+                                     Discretizer::time_stepper_type,
+                                     Discretizer::rhs_time_stepper_type>::rate(type);
   } // ... expected_rate(...)
 
   virtual std::vector<double> expected_results(const std::string type) const override final
@@ -82,7 +83,8 @@ public:
                                      Discretizer::type,
                                      GridLayerType::dimension,
                                      Discretizer::numerical_flux_type,
-                                     Discretizer::time_stepper_type>::results(this->test_case_, type);
+                                     Discretizer::time_stepper_type,
+                                     Discretizer::rhs_time_stepper_type>::results(this->test_case_, type);
   }
 
   virtual std::vector<std::string> available_norms() const override final

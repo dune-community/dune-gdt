@@ -31,7 +31,8 @@ template <class TestCaseType,
           Hyperbolic::ChooseDiscretizer disc,
           size_t dimDomain,
           NumericalFluxes num_flux,
-          TimeStepperMethods time_stepper>
+          TimeStepperMethods time_stepper,
+          TimeStepperMethods rhs_time_stepper>
 class HyperbolicEocExpectations : public internal::HyperbolicEocExpectationsBase<dimDomain>
 {
 public:

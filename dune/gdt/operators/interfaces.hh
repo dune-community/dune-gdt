@@ -52,7 +52,7 @@ class OperatorInterface : public XT::CRTPInterface<OperatorInterface<Traits>, Tr
 public:
   typedef typename Traits::derived_type derived_type;
   typedef typename Traits::FieldType FieldType;
-  typedef typename Traits::JacobianType JacobianType;
+  //  typedef typename Traits::JacobianType JacobianType;
 
   /// \name Methods that have to be implemented by any derived class
   /// \{
@@ -71,18 +71,18 @@ public:
     return this->as_imp().apply2(range, source, param);
   }
 
-  template <class SourceType>
-  JacobianType jacobian(const SourceType& source, const Dune::XT::Common::Parameter& param = {}) const
-  {
-    CHECK_CRTP(this->as_imp().jacobian(source, param));
-    return this->as_imp().jacobian(source, param);
-  }
+  //  template <class SourceType>
+  //  JacobianType jacobian(const SourceType& source, const Dune::XT::Common::Parameter& param = {}) const
+  //  {
+  //    CHECK_CRTP(this->as_imp().jacobian(source, param));
+  //    return this->as_imp().jacobian(source, param);
+  //  }
 
-  template <class SourceType>
-  void jacobian(const SourceType& source, JacobianType& jac, const Dune::XT::Common::Parameter& param = {}) const
-  {
-    CHECK_CRTP(this->as_imp().jacobian(source, jac, param));
-  }
+  //  template <class SourceType>
+  //  void jacobian(const SourceType& source, JacobianType& jac, const Dune::XT::Common::Parameter& param = {}) const
+  //  {
+  //    CHECK_CRTP(this->as_imp().jacobian(source, jac, param));
+  //  }
 
   template <class RangeType, class SourceType>
   void apply_inverse(const RangeType& range,

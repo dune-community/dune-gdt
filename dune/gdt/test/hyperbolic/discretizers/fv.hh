@@ -33,20 +33,15 @@ template <class TestCaseType,
           size_t dimRange,
           size_t dimRangeCols = 1,
           NumericalFluxes numerical_flux = NumericalFluxes::godunov,
-          TimeStepperMethods time_stepper_method = TimeStepperMethods::explicit_euler>
+          TimeStepperMethods time_stepper_method = TimeStepperMethods::explicit_rungekutta_second_order_ssp,
+          TimeStepperMethods rhs_time_stepper_method = TimeStepperMethods::matrix_exponential>
 class FvDiscretizer
 {
 public:
-  typedef Hyperbolic::ProblemInterface<typename GridType::template Codim<0>::Entity,
-                                       typename GridType::ctype,
-                                       GridType::dimension,
-                                       RangeFieldType,
-                                       dimRange,
-                                       dimRangeCols>
-      ProblemType;
   static const constexpr ChooseDiscretizer type = ChooseDiscretizer::fv;
   static const constexpr NumericalFluxes numerical_flux_type = numerical_flux;
   static const constexpr TimeStepperMethods time_stepper_type = time_stepper_method;
+  static const constexpr TimeStepperMethods rhs_time_stepper_type = rhs_time_stepper_method;
 
   typedef typename XT::Grid::PeriodicGridView<typename XT::Grid::GridProvider<GridType>::LevelGridViewType>
       GridLayerImp;
@@ -59,8 +54,16 @@ public:
                                             FVSpaceType,
                                             numerical_flux,
                                             time_stepper_method,
-                                            time_stepper_method>
+                                            rhs_time_stepper_method>
       DiscretizationType;
+
+  typedef Hyperbolic::ProblemInterface<typename GridType::template Codim<0>::Entity,
+                                       typename GridType::ctype,
+                                       GridType::dimension,
+                                       typename DiscretizationType::DiscreteFunctionType,
+                                       RangeFieldType,
+                                       dimRange>
+      ProblemType;
 
   static std::string static_id()
   { // int() needed, otherwise we get a linker error

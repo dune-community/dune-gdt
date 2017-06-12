@@ -50,6 +50,7 @@ public:
   typedef XT::Functions::
       LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>
           BoundaryValueType;
+  typedef BoundaryValueType SolutionType;
 
   typedef typename InitialValueType::DomainType DomainType;
   typedef typename InitialValueType::RangeType RangeType;

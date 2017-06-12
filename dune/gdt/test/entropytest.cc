@@ -204,6 +204,7 @@ int main(int argc, char** argv)
   std::shared_ptr<const BasisfunctionType> basis_functions =
       std::make_shared<const BasisfunctionType>(refinements, refinements + 4);
   static const size_t dimRange = BasisfunctionType::dimRange;
+  const auto container_backend = Dune::XT::LA::default_sparse_backend;
   typedef FvProductSpace<GridViewType, double, dimRange, 1> SpaceType;
   typedef typename Dune::XT::LA::Container<double, container_backend>::VectorType VectorType;
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
@@ -393,12 +394,11 @@ int main(int argc, char** argv)
   //      internal::AdvectionOperatorCreator<AdvectionOperatorType, numerical_flux>::create(
   //          analytical_flux, boundary_values, dx_function, linear);
 
-  FieldVector<size_t, dimDomain> grid_sizes;
-  std::fill(grid_sizes.begin(), grid_sizes.end(), XT::Common::from_string<size_t>(grid_size));
   AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_function);
   advection_operator.set_basisfunctions(basis_functions);
   //  advection_operator.set_quadrature(problem_imp.quadrature());
   advection_operator.set_quadrature(basis_functions->quadrature());
+  advection_operator.set_epsilon(epsilon);
 
   //  AdvectionOperatorType advection_operator(*analytical_flux,
   //                                           *boundary_values,

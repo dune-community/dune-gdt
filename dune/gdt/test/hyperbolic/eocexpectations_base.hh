@@ -27,6 +27,7 @@ namespace Test {
 
 using Yasp1 = Yasp1Grid;
 using Yasp2 = Yasp2Grid;
+using Yasp3 = Yasp3Grid;
 
 namespace internal {
 
@@ -56,7 +57,8 @@ template <class TestCaseType,
           Hyperbolic::ChooseDiscretizer disc,
           size_t dimDomain,
           NumericalFluxes num_flux,
-          TimeStepperMethods time_stepper>
+          TimeStepperMethods time_stepper,
+          TimeStepperMethods rhs_time_stepper>
 class HyperbolicEocExpectations;
 
 

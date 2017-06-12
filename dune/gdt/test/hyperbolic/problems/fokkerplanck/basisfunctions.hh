@@ -806,16 +806,10 @@ public:
     return ret;
   } // ... evaluate(...)
 
+  // avoid recalculation of integral by using a static local variable that is initialized on first call
   virtual RangeType integrated() const override
   {
-    RangeType ret(0);
-    for (const auto& quad_point : quadrature_) {
-      const auto v = quad_point.position();
-      const auto basis_evaluated = evaluate(v);
-      const auto weight = quad_point.weight();
-      for (size_t nn = 0; nn < dimRange; ++nn)
-        ret[nn] += basis_evaluated[nn] * weight;
-    } // quadrature
+    static const RangeType ret = integrated_initializer();
     return ret;
   }
 
@@ -879,6 +873,19 @@ public:
   }
 
 protected:
+  RangeType integrated_initializer() const
+  {
+    RangeType ret(0);
+    for (const auto& quad_point : quadrature_) {
+      const auto v = quad_point.position();
+      const auto basis_evaluated = evaluate(v);
+      const auto weight = quad_point.weight();
+      for (size_t nn = 0; nn < dimRange; ++nn)
+        ret[nn] += basis_evaluated[nn] * weight;
+    } // quadrature
+    return ret;
+  }
+
   template <class VertexVectorType>
   bool calculate_barycentric_coordinates(const DomainType& v, const VertexVectorType& vertices, DomainType& ret) const
   {

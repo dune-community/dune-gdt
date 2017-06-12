@@ -13,6 +13,8 @@
 #include <vector>
 #include <string>
 
+#include <dune/gdt/test/instationary-eocstudy.hh>
+
 #include "kineticequation.hh"
 
 namespace Dune {
@@ -87,10 +89,10 @@ public:
   static XT::Common::Configuration default_grid_cfg()
   {
     XT::Common::Configuration grid_config;
-    grid_config["type"] = "provider.cube";
+    grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
     grid_config["lower_left"] = "[-0.5 -0.5 -0.5]";
     grid_config["upper_right"] = "[0.5 0.5 0.5]";
-    grid_config["num_elements"] = "[10 10 10]";
+    grid_config["num_elements"] = "[6 6 6]";
     grid_config["overlap_size"] = "[1 1 1]";
     return grid_config;
   }
@@ -196,6 +198,97 @@ protected:
 
 
 } // namespace Problems
+
+
+template <class G,
+          class R = double,
+          size_t rangeDim = 6,
+          class B = Hyperbolic::Problems::HatFunctions<typename G::ctype, 3, typename G::ctype, rangeDim, 1, 3>>
+class PointSourceTestCase
+    : public Dune::GDT::Test::
+          NonStationaryTestCase<G,
+                                typename Hyperbolic::Problems::KineticEquation<
+                                    typename Problems::
+                                        PointSourcePn<B,
+                                                      typename G::template Codim<0>::Entity,
+                                                      typename G::ctype,
+                                                      G::dimension,
+                                                      DiscreteFunction<FvProductSpace<typename G::LeafGridView,
+                                                                                      double,
+                                                                                      rangeDim,
+                                                                                      1>,
+                                                                       typename Dune::XT::LA::
+                                                                           Container<double,
+                                                                                     XT::LA::default_sparse_backend>::
+                                                                               VectorType>,
+                                                      R,
+                                                      rangeDim>>>
+{
+  typedef typename G::template Codim<0>::Entity E;
+  typedef typename G::ctype D;
+
+public:
+  static const size_t d = G::dimension;
+  static_assert(d == 3, "Only implemented for dimension 1.");
+  typedef typename Hyperbolic::Problems::KineticEquation<
+      typename Problems::
+          PointSourcePn<B,
+                        E,
+                        D,
+                        d,
+                        DiscreteFunction<FvProductSpace<typename G::LeafGridView, double, rangeDim, 1>,
+                                         typename Dune::XT::LA::Container<double,
+                                                                          XT::LA::default_sparse_backend>::VectorType>,
+                        R,
+                        rangeDim>>
+      ProblemType;
+  static const size_t dimRange = ProblemType::dimRange;
+  static const size_t dimRangeCols = 1;
+
+private:
+  typedef typename Dune::GDT::Test::NonStationaryTestCase<G, ProblemType> BaseType;
+
+public:
+  using typename BaseType::GridType;
+  using typename BaseType::SolutionType;
+
+  PointSourceTestCase(const size_t num_refs = 2, const double divide_t_end_by = 1.0)
+    : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
+    , problem_(B())
+  {
+  }
+
+  virtual const ProblemType& problem() const override final
+  {
+    return problem_;
+  }
+
+  virtual bool provides_exact_solution() const override final
+  {
+    return false;
+  }
+
+  virtual void print_header(std::ostream& out = std::cout) const override final
+  {
+    out << "+======================================================================================================+\n"
+        << "|+====================================================================================================+|\n"
+        << "||  Testcase: PointSource Pn                                                                ||\n"
+        << "|+----------------------------------------------------------------------------------------------------+|\n"
+        << "||  domain = [-0.5, 0.5]^3                                                                            ||\n"
+        << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end()) + "]                                ||\n"
+        << "||  flux = see http://dx.doi.org/10.1137/130934210 Section 6.5                                        ||\n"
+        << "||  rhs = http://dx.doi.org/10.1137/130934210 Section 6.5                                             ||\n"
+        << "||  reference solution: discrete solution on finest grid                                              ||\n"
+        << "|+====================================================================================================+|\n"
+        << "+======================================================================================================+"
+        << std::endl;
+  }
+
+private:
+  const ProblemType problem_;
+}; // class SourceBeamTestCase
+
+
 } // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
