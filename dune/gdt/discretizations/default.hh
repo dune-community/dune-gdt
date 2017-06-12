@@ -530,6 +530,16 @@ private:
   const std::shared_ptr<const SpaceType> fv_space_;
 }; // class HyperbolicFVDefaultDiscretization
 
+template <class ProblemImp,
+          class FVSpaceImp,
+          NumericalFluxes numerical_flux,
+          TimeStepperMethods time_stepper_method,
+          TimeStepperMethods rhs_time_stepper_method>
+constexpr size_t HyperbolicFVDefaultDiscretization<ProblemImp,
+                                                   FVSpaceImp,
+                                                   numerical_flux,
+                                                   time_stepper_method,
+                                                   rhs_time_stepper_method>::refinements;
 
 } // namespace GDT
 } // namespace Dune
