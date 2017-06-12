@@ -166,7 +166,6 @@ int main(int argc, char** argv)
   //  const auto rhs_time_stepper_method = TimeStepperMethods::implicit_euler;
   const auto rhs_time_stepper_method = TimeStepperMethods::matrix_exponential;
   //  const auto rhs_time_stepper_method = TimeStepperMethods::trapezoidal_rule;
-  const auto container_backend = Dune::XT::LA::default_sparse_backend;
 
   typedef typename Dune::YaspGrid<dimDomain, Dune::EquidistantOffsetCoordinates<double, dimDomain>> GridType;
   typedef typename GridType::LeafGridView GridViewType;
@@ -204,7 +203,7 @@ int main(int argc, char** argv)
   std::shared_ptr<const BasisfunctionType> basis_functions =
       std::make_shared<const BasisfunctionType>(refinements, refinements + 4);
   static const size_t dimRange = BasisfunctionType::dimRange;
-  const auto container_backend = Dune::XT::LA::default_sparse_backend;
+  static constexpr auto container_backend = Dune::XT::LA::default_sparse_backend;
   typedef FvProductSpace<GridViewType, double, dimRange, 1> SpaceType;
   typedef typename Dune::XT::LA::Container<double, container_backend>::VectorType VectorType;
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
