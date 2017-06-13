@@ -111,7 +111,7 @@ public:
     auto& local_range_vector = local_range.vector();
     assert(local_range_vector.size() == local_solution.size());
     for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
-      local_range_vector.set(ii, local_solution[ii]);
+      local_range_vector.set(ii, local_solution.get_entry(ii));
   } // ... apply(...)
 
   // TODO: do not use product evaluation to avoid a lot of multiplications with 0
@@ -134,7 +134,7 @@ public:
     local_vector /= entity.geometry().volume();
     auto& local_range_vector = local_range.vector();
     for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
-      local_range_vector.set(ii, local_vector[ii]);
+      local_range_vector.set(ii, local_vector.get_entry(ii));
   } // ... apply(...) for FV spaces
 
 private:

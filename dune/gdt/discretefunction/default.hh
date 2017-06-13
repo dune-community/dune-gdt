@@ -77,8 +77,8 @@ struct visualize_helper<ii, true>
     for (auto it = space.grid_layer().template begin<0>(); it != it_end; ++it) {
       const auto& entity = *it;
       for (size_t jj = 0; jj < factor_space.mapper().numDofs(entity); ++jj)
-        factor_vector[factor_space.mapper().mapToGlobal(entity, jj)] =
-            discrete_function.vector()[space.mapper().mapToGlobal(ii, entity, jj)];
+        factor_vector.set_entry(factor_space.mapper().mapToGlobal(entity, jj),
+                                discrete_function.vector().get_entry(space.mapper().mapToGlobal(ii, entity, jj)));
     }
     ConstDiscreteFunction<
         typename std::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,

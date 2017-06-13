@@ -75,8 +75,8 @@ auto function_factor(const DiscreteFunctionType& discrete_function) -> typename 
   for (auto it = space.grid_layer().template begin<0>(); it != it_end; ++it) {
     const auto& entity = *it;
     for (size_t jj = 0; jj < factor_space.mapper().numDofs(entity); ++jj)
-      factor_vector[factor_space.mapper().mapToGlobal(entity, jj)] =
-          discrete_function.vector()[space.mapper().mapToGlobal(ii, entity, jj)];
+      factor_vector.set_entry(factor_space.mapper().mapToGlobal(entity, jj),
+                              discrete_function.vector().get_entry(space.mapper().mapToGlobal(ii, entity, jj)));
   }
   FactorDiscreteFunctionType factor_discrete_function(factor_space);
   factor_discrete_function.vector() = factor_vector;

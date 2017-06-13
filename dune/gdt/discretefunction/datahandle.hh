@@ -10,7 +10,7 @@ namespace GDT {
 template <class DiscreteFunctionType>
 class DiscreteFunctionDataHandle
     : public Dune::CommDataHandleIF<DiscreteFunctionDataHandle<DiscreteFunctionType>,
-                                    typename DiscreteFunctionType::SpaceType::DomainFieldType>
+                                    typename DiscreteFunctionType::SpaceType::RangeFieldType>
 {
 public:
   DiscreteFunctionDataHandle(DiscreteFunctionType& discrete_function, bool fixed_size = true)
@@ -65,7 +65,7 @@ public:
     const auto& mapper = discrete_function_.space().mapper();
     const auto& vector = discrete_function_.vector();
     for (size_t ii = 0; ii < mapper.numDofs(entity); ++ii)
-      buff.write(vector[mapper.mapToGlobal(entity, ii)]);
+      buff.write(vector.get_entry(mapper.mapToGlobal(entity, ii)));
   }
 
   /*! unpack data from message buffer to user
@@ -83,8 +83,12 @@ public:
     const auto& mapper = discrete_function_.space().mapper();
     auto& vector = discrete_function_.vector();
     assert(mapper.numDofs(entity) == n);
-    for (size_t ii = 0; ii < n; ++ii)
-      buff.read(vector[mapper.mapToGlobal(entity, ii)]);
+    // we need this intermediate double because we cannot get a reference to an entry in vector
+    typename DiscreteFunctionType::SpaceType::RangeFieldType entry;
+    for (size_t ii = 0; ii < n; ++ii) {
+      buff.read(entry);
+      vector.set_entry(mapper.mapToGlobal(entity, ii), entry);
+    }
   }
 
 private:

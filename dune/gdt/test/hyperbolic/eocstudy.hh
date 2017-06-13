@@ -107,7 +107,7 @@ public:
           const auto& entity = *it;
           double value = 0;
           for (const auto& index : solution_it->second.space().mapper().globalIndices(entity))
-            value += std::abs(solution_it->second.vector()[index]);
+            value += std::abs(solution_it->second.vector().get_entry(index));
           spatial_integral += value * entity.geometry().volume();
         }
         auto solution_it_copy = solution_it;
