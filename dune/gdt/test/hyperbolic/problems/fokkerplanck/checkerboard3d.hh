@@ -55,6 +55,7 @@ public:
 
   static ConfigType default_grid_config()
   {
+
     ConfigType grid_config;
     grid_config["type"] = "provider.cube";
     grid_config["lower_left"] = "[0 0 0]";

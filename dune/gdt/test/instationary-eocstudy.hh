@@ -325,15 +325,15 @@ protected:
     if (!discrete_exact_solution_computed_) {
       discrete_exact_solution_ = Dune::XT::Common::make_unique<DiscreteSolutionType>();
       compute_reference_solution();
-      const auto exact_solution = test_case_.exact_solution();
+      //      const auto exact_solution = test_case_.exact_solution();
       const auto reference_solution_it_end = reference_solution_->end();
       for (auto reference_solution_it = reference_solution_->begin();
            reference_solution_it != reference_solution_it_end;
            ++reference_solution_it) {
         const double time = reference_solution_it->first;
         //        const auto discrete_exact_solution_at_time = exact_solution->evaluate_at_time(time);
-        const auto inserted_it = discrete_exact_solution_->emplace_hint(
-            discrete_exact_solution_->end(), time, reference_solution_it->second);
+        //        const auto inserted_it = discrete_exact_solution_->emplace_hint(
+        //            discrete_exact_solution_->end(), time, reference_solution_it->second);
         //        project_l2(*discrete_exact_solution_at_time, inserted_it->second);
       }
       if (!visualize_prefix_.empty()) {

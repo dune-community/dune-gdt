@@ -30,13 +30,13 @@ template <class BasisfunctionImp,
           class U_,
           class RangeFieldImp,
           size_t dimRange>
-class PointSourcePn : public KineticTransportEquation<BasisfunctionImp,
-                                                      EntityImp,
-                                                      DomainFieldImp,
-                                                      dimDomain,
-                                                      U_,
-                                                      RangeFieldImp,
-                                                      dimRange>
+class CheckerboardPn : public KineticTransportEquation<BasisfunctionImp,
+                                                       EntityImp,
+                                                       DomainFieldImp,
+                                                       dimDomain,
+                                                       U_,
+                                                       RangeFieldImp,
+                                                       dimRange>
 {
   typedef KineticTransportEquation<BasisfunctionImp, EntityImp, DomainFieldImp, dimDomain, U_, RangeFieldImp, dimRange>
       BaseType;
@@ -56,25 +56,25 @@ public:
   using BaseType::default_boundary_cfg;
   using BaseType::default_quadrature;
 
-  PointSourcePn(const BasisfunctionType& basis_functions,
-                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+  CheckerboardPn(const BasisfunctionType& basis_functions,
+                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_cfg, boundary_cfg)
   {
   }
 
   static std::string static_id()
   {
-    return "pointsourcepn";
+    return "checkerboardpn";
   }
 
   static XT::Common::Configuration default_grid_cfg()
   {
     XT::Common::Configuration grid_config;
     grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
-    grid_config["lower_left"] = "[-0.5 -0.5 -0.5]";
-    grid_config["upper_right"] = "[0.5 0.5 0.5]";
-    grid_config["num_elements"] = "[4 4 4]";
+    grid_config["lower_left"] = "[0 0 0]";
+    grid_config["upper_right"] = "[7 7 7]";
+    grid_config["num_elements"] = "[7 7 7]";
     grid_config["overlap_size"] = "[1 1 1]";
     return grid_config;
   }
@@ -86,30 +86,59 @@ public:
                                   std::make_pair("sigma_s", std::vector<double>{1}),
                                   std::make_pair("Q", std::vector<double>{0}),
                                   std::make_pair("CFL", std::vector<double>{0.4}),
-                                  std::make_pair("t_end", std::vector<double>{0.45}),
+                                  std::make_pair("t_end", std::vector<double>{3.2}),
                                   std::make_pair("num_segments", std::vector<double>{1., 1., 1.})});
   }
 
-  // Initial value of the kinetic equation is psi_vac + 1/(8 pi sigma^2) * exp(-|x|^2/(2*sigma^2)).
-  // Thus the initial value for the moments is basis_integrated * (psi_vac + 1/(8 pi sigma^2) *
-  // exp(-|x|^2/(2*sigma^2))).
-  virtual InitialValueType* create_initial_values() const
+  // sigma_a = 0, sigma_s = 1, Q = 0 in scattering regions
+  // sigma_a = 10, sigma_s = 0, Q = 0 in absorbing regions
+  // sigma_a = 0, sigma_s = 1, Q = 1 for center cube
+  static ConfigType create_rhs_config(const ConfigType grid_config,
+                                      const Dune::QuadratureRule<double, 3>& quadrature,
+                                      const SphericalTriangulation<double>& poly)
   {
-    const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
-    const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
-    const FieldVector<size_t, 3> num_segments = get_num_segments(parameters());
-    static const double sigma = 0.03;
-    RangeType basis_integrated = basis_functions_.integrated();
-    std::vector<typename ActualInitialValueType::LocalizableFunctionType> initial_vals;
-    initial_vals.emplace_back(
-        [=](const DomainType& x) {
-          auto ret = basis_integrated;
-          ret *= psi_vac_ + 1. / (8. * M_PI * sigma * sigma) * std::exp(-1. * x.two_norm() / (2. * sigma * sigma));
-          return ret;
-        },
-        50);
-    return new ActualInitialValueType(lower_left, upper_right, num_segments, initial_vals, "initial_values");
-  } // ... create_initial_values()
+    const auto basis_integrated = basisfunctions_integrated(quadrature, poly);
+    ConfigType rhs_config;
+    rhs_config["lower_left"] = grid_config["lower_left"];
+    rhs_config["upper_right"] = grid_config["upper_right"];
+    rhs_config["num_elements"] = "[7 7 7]";
+    rhs_config["name"] = DefaultRHSType::static_id();
+
+    RangeType Q;
+    RangeFieldType sigma_s, sigma_t;
+
+    for (size_t plane = 0; plane < 7; ++plane) {
+      for (size_t row = 0; row < 7; ++row) {
+        for (size_t col = 0; col < 7; ++col) {
+          if (plane == 3 && row == 3 && col == 3) { // center
+            Q = basis_integrated;
+            sigma_s = 1;
+            sigma_t = 1;
+          } else if (is_absorbing(plane, row, col)) { // absorbing regions
+            Q *= 0;
+            sigma_s = 0;
+            sigma_t = 10;
+          } else { // scattering regions (without center)
+            Q *= 0;
+            sigma_s = 1;
+            sigma_t = 1;
+          }
+
+          MatrixType A(1);
+          A *= sigma_s / (4 * M_PI);
+          for (size_t nn = 0; nn < dimRange; ++nn) {
+            A[nn] *= basis_integrated[nn];
+            A[nn][nn] -= sigma_t;
+          }
+          size_t number = 49 * plane + 7 * row + col;
+          rhs_config["A." + Dune::XT::Common::to_string(number)] = Dune::XT::Common::to_string(A, precision);
+          rhs_config["b." + Dune::XT::Common::to_string(number)] = Dune::XT::Common::to_string(Q, precision);
+        } // col
+      } // row
+    } // plane
+
+    return rhs_config;
+  } // ... create_rhs_config()
 
 protected:
   using BaseType::get_num_segments;
@@ -268,7 +297,7 @@ public:
 
 private:
   const ProblemType problem_;
-}; // class PointSourceTestCase
+}; // class SourceBeamTestCase
 
 
 } // namespace Hyperbolic

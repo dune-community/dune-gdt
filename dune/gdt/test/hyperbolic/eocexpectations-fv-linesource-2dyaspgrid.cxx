@@ -10,29 +10,30 @@
 //   Tobias Leibner  (2016)
 
 #include <config.h>
-#include "eocexpectations-fv-pointsource-3dyaspgrid.hh"
+#include "eocexpectations-fv-linesource-2dyaspgrid.hh"
+
 namespace Dune {
 namespace GDT {
 namespace Test {
 
 
-std::vector<double> HyperbolicEocExpectations<Hyperbolic::PointSourceTestCase<Yasp3, double>,
+std::vector<double> HyperbolicEocExpectations<Hyperbolic::LineSourceTestCase<Yasp2, double>,
                                               Hyperbolic::ChooseDiscretizer::fv,
-                                              3,
+                                              2,
                                               NumericalFluxes::laxfriedrichs,
                                               TimeStepperMethods::explicit_rungekutta_second_order_ssp,
                                               TimeStepperMethods::matrix_exponential>::
-    results(const HyperbolicEocExpectations<Hyperbolic::PointSourceTestCase<Yasp3, double>,
+    results(const HyperbolicEocExpectations<Hyperbolic::LineSourceTestCase<Yasp2, double>,
                                             Hyperbolic::ChooseDiscretizer::fv,
-                                            3,
+                                            2,
                                             NumericalFluxes::laxfriedrichs,
                                             TimeStepperMethods::explicit_rungekutta_second_order_ssp,
                                             TimeStepperMethods::matrix_exponential>::TestCaseType& test_case,
             const std::string type)
 {
   if (type == "L1") {
-    if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 0.45))
-      return {3.25e-01, 1.63e-01};
+    if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 0.05))
+      return {3.25e-01, 1.63e-01, 1.3e-01, 1.2e-01, 1.1e-01, 1.2e-01, 1.1e-01};
     else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 4.0 / 5.0))
       return {9.16e-02, 4.08e-02};
     else

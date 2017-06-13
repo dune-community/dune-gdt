@@ -396,14 +396,19 @@ private:
   //          type AdvectionOperatorType;
 
   static constexpr size_t refinements = 0;
-  typedef
-      typename Hyperbolic::Problems::HatFunctions<DomainFieldType,
-                                                  dimDomain,
-                                                  RangeFieldType,
-                                                  Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(),
-                                                  1,
-                                                  3>
-          BasisfunctionType;
+
+  //  typedef
+  //      typename Hyperbolic::Problems::HatFunctions<DomainFieldType,
+  //                                                  dimDomain,
+  //                                                  RangeFieldType,
+  //                                                  Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(),
+  //                                                  1,
+  //                                                  3>
+  //          BasisfunctionType;
+
+
+  typedef typename Hyperbolic::Problems::RealSphericalHarmonics<DomainFieldType, RangeFieldType, 6, 2, true>
+      BasisfunctionType;
 
 
   typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
@@ -483,11 +488,13 @@ public:
 
       const RangeFieldType epsilon = 1e-14;
       AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_function);
-      std::shared_ptr<const BasisfunctionType> basis_functions =
-          std::make_shared<const BasisfunctionType>(refinements, refinements + 4);
+      //      std::shared_ptr<const BasisfunctionType> basis_functions =
+      //          std::make_shared<const BasisfunctionType>(refinements, refinements + 4);
+      std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>();
       advection_operator.set_basisfunctions(basis_functions);
       //  advection_operator.set_quadrature(problem_imp.quadrature());
-      advection_operator.set_quadrature(basis_functions->quadrature());
+      //      advection_operator.set_quadrature(basis_functions->quadrature());
+      advection_operator.set_quadrature(Hyperbolic::Problems::LebedevQuadrature<RangeFieldType, true>::get(100));
       advection_operator.set_epsilon(epsilon);
 
       RhsOperatorType rhs_operator(rhs);

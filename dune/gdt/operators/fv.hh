@@ -530,8 +530,9 @@ struct AdvectionOperatorApplier
     if (realizability_limiting) {
       assert(basis_functions);
       // do limiting for realizability in M_N models
-      auto local_realizability_limiter = LocalRealizabilityLimiter<SourceType, BasisFunctionType, dimDomain, dimRange>(
-          source, reconstructed_values, *basis_functions, quadrature, epsilon);
+      auto local_realizability_limiter =
+          LocalRealizabilityLimiter<SourceType, BasisFunctionType, BasisFunctionType::dimDomain, dimRange>(
+              source, reconstructed_values, *basis_functions, quadrature, epsilon);
       walker.clear();
       walker.append(local_realizability_limiter);
       walker.walk(true);

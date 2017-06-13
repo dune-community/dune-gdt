@@ -611,7 +611,8 @@ private:
       // reconstruction in y' direction
       // first index: left/right interface
       // second index: quadrature_points in y' direction
-      FieldVector<std::vector<EigenVectorType>, 2> reconstructed_values(std::vector<EigenVectorType>(num_quad_points));
+      FieldVector<std::vector<EigenVectorType>, 2> reconstructed_values(
+          (std::vector<EigenVectorType>(num_quad_points)));
       for (size_t ii = 0; ii < 2; ++ii)
         slope_reconstruction(x_reconstructed_values[ii], reconstructed_values[ii], quadrature);
 
