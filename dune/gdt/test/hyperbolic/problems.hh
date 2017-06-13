@@ -28,7 +28,8 @@ using Yasp2 = Yasp2Grid;
 using Yasp3 = Yasp3Grid;
 
 typedef testing::Types< // Dune::GDT::Hyperbolic::PointSourceTestCase<Yasp3, double>,
-    Dune::GDT::Hyperbolic::LineSourceTestCase<Yasp2, double>
+    //    Dune::GDT::Hyperbolic::LineSourceTestCase<Yasp2, double>
+    Dune::GDT::Hyperbolic::LineSourceMnTestCase<Yasp2, double>
 
     //                       Dune::GDT::Hyperbolic::Boltzmann2DCheckerboardTestCase<Yasp2, double,
     //                       1>,
@@ -66,6 +67,14 @@ extern template class HyperbolicEocExpectations<Hyperbolic::PointSourceTestCase<
                                                 TimeStepperMethods::matrix_exponential>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::LineSourceTestCase<Yasp2, double>,
+                                                Hyperbolic::ChooseDiscretizer::fv,
+                                                2,
+                                                NumericalFluxes::laxfriedrichs,
+                                                TimeStepperMethods::explicit_rungekutta_second_order_ssp,
+                                                TimeStepperMethods::matrix_exponential>;
+
+
+extern template class HyperbolicEocExpectations<Hyperbolic::LineSourceMnTestCase<Yasp2, double>,
                                                 Hyperbolic::ChooseDiscretizer::fv,
                                                 2,
                                                 NumericalFluxes::laxfriedrichs,

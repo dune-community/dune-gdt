@@ -240,10 +240,10 @@ public:
   {
   }
 
-  virtual const ProblemType& problem() const override final
-  {
-    return problem_;
-  }
+  //  virtual const ProblemType& problem() const override final
+  //  {
+  //    return problem_;
+  //  }
 
   virtual bool provides_exact_solution() const override final
   {
@@ -254,10 +254,10 @@ public:
   {
     out << "+======================================================================================================+\n"
         << "|+====================================================================================================+|\n"
-        << "||  Testcase: PointSource Pn                                                                ||\n"
+        << "||  Testcase: PointSource Pn                                                                          ||\n"
         << "|+----------------------------------------------------------------------------------------------------+|\n"
         << "||  domain = [-0.5, 0.5]^3                                                                            ||\n"
-        << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end()) + "]                                ||\n"
+        << "||  time = [0, 0.45]                                                                                  ||\n"
         << "||  flux = see http://dx.doi.org/10.1137/130934210 Section 6.5                                        ||\n"
         << "||  rhs = http://dx.doi.org/10.1137/130934210 Section 6.5                                             ||\n"
         << "||  reference solution: discrete solution on finest grid                                              ||\n"

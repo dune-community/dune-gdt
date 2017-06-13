@@ -96,6 +96,12 @@ public:
   {
   }
 
+  template <class BasisfunctionType, class GridLayerType>
+  KineticEquation(const BasisfunctionType& basis_funcs, const GridLayerType grid_layer)
+    : KineticEquation(ImplementationType(basis_funcs, grid_layer))
+  {
+  }
+
   static XT::Common::Configuration default_grid_cfg()
   {
     return ImplementationType::default_grid_cfg();

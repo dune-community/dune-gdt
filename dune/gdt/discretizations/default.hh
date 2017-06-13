@@ -439,10 +439,10 @@ public:
   /// \name Required by FVDiscretizationInterface.
   /// \{
 
-  const ProblemType& problem() const
-  {
-    return test_case_.problem();
-  }
+  //  const ProblemType& problem() const
+  //  {
+  //    return test_case_.problem();
+  //  }
 
   const SpaceType& space() const
   {
@@ -455,12 +455,13 @@ public:
   {
 #if HAVE_EIGEN
     try {
+      ProblemType problem(BasisfunctionType(), fv_space_->grid_layer());
       // get analytical flux, initial and boundary values
       typedef typename ProblemType::FluxType AnalyticalFluxType;
-      const AnalyticalFluxType& analytical_flux = problem().flux();
-      const InitialValueType& initial_values = problem().initial_values();
-      const BoundaryValueType& boundary_values = problem().boundary_values();
-      const RhsType& rhs = problem().rhs();
+      const AnalyticalFluxType& analytical_flux = problem.flux();
+      const InitialValueType& initial_values = problem.initial_values();
+      const BoundaryValueType& boundary_values = problem.boundary_values();
+      const RhsType& rhs = problem.rhs();
 
       // create a discrete function for the solution
       DiscreteFunctionType u(*fv_space_, "solution");
@@ -468,8 +469,8 @@ public:
       // project initial values
       project_l2(initial_values, u);
 
-      RangeFieldType t_end = test_case_.t_end();
-      const RangeFieldType CFL = problem().CFL();
+      RangeFieldType t_end = problem.t_end();
+      const RangeFieldType CFL = problem.CFL();
 
       // calculate dx and choose initial dt
       Dune::XT::Grid::Dimensions<typename SpaceType::GridLayerType> dimensions(fv_space_->grid_layer());
@@ -505,7 +506,7 @@ public:
       // do the time steps
       const size_t num_save_steps = 45;
       solution.clear();
-      if (problem().has_non_zero_rhs()) {
+      if (problem.has_non_zero_rhs()) {
         // use fractional step method
         RhsOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
         TimeStepperType timestepper(timestepper_rhs, timestepper_op);

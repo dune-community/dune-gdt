@@ -13,6 +13,7 @@
 #include <vector>
 #include <string>
 
+#include <dune/xt/grid/view/periodic.hh>
 #include <dune/gdt/test/instationary-eocstudy.hh>
 
 #include "kineticequation.hh"
@@ -111,6 +112,16 @@ public:
   {
   }
 
+  template <class GridLayerType>
+  ModifiedLineSourcePn(const BasisfunctionType& basis_functions,
+                       const GridLayerType& /*grid_layer*/,
+                       const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+                       const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
+                       const QuadratureType quadrature = QuadratureType())
+    : ModifiedLineSourcePn(basis_functions, grid_cfg, boundary_cfg, quadrature, 1.)
+  {
+  }
+
   static std::string static_id()
   {
     return "modifiedlinesourcepn";
@@ -122,7 +133,7 @@ public:
     grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
     grid_config["lower_left"] = "[-1 -1]";
     grid_config["upper_right"] = "[1 1]";
-    grid_config["num_elements"] = "[10 10]";
+    grid_config["num_elements"] = "[5 5]";
     grid_config["overlap_size"] = "[1 1]";
     grid_config["num_quad_cells"] = "[10]";
     grid_config["quad_order"] = "50";
@@ -168,7 +179,7 @@ protected:
   using BaseType::psi_vac_;
 }; // class ModifiedLineSourcePn<...>
 
-template <class GridViewType,
+template <class GridLayerType,
           class BasisfunctionType,
           class EntityType,
           class DomainFieldType,
@@ -191,7 +202,7 @@ class ModifiedLineSourceMn : public ModifiedLineSourcePn<BasisfunctionType,
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
-  typedef GDT::EntropyBasedLocalFlux<GridViewType,
+  typedef GDT::EntropyBasedLocalFlux<GridLayerType,
                                      BasisfunctionType,
                                      EntityType,
                                      DomainFieldType,
@@ -213,12 +224,12 @@ public:
   }
 
   ModifiedLineSourceMn(const BasisfunctionType& basis_functions,
-                       const GridViewType& grid_view,
+                       const GridLayerType& grid_layer,
                        const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                        const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
                        const QuadratureType& quadrature = default_quadrature())
     : BaseType(basis_functions, grid_cfg, boundary_cfg, quadrature)
-    , grid_view_(grid_view)
+    , grid_layer_(grid_layer)
   {
   }
 
@@ -229,13 +240,13 @@ public:
 
   virtual FluxType* create_flux() const
   {
-    return new ActualFluxType(grid_view_, quadrature_, basis_functions_);
+    return new ActualFluxType(grid_layer_, quadrature_, basis_functions_);
   }
 
 protected:
   using BaseType::basis_functions_;
   using BaseType::quadrature_;
-  const GridViewType& grid_view_;
+  const GridLayerType& grid_layer_;
 }; // class ModifiedLineSourceMn<...>
 
 
@@ -255,7 +266,7 @@ class LineSourceTestCase
                                                              typename G::template Codim<0>::Entity,
                                                              typename G::ctype,
                                                              G::dimension,
-                                                             DiscreteFunction<FvProductSpace<typename G::LeafGridView,
+                                                             DiscreteFunction<FvProductSpace<typename G::LevelGridView,
                                                                                              double,
                                                                                              B::dimRange,
                                                                                              1>,
@@ -279,7 +290,7 @@ public:
                                E,
                                D,
                                d,
-                               DiscreteFunction<FvProductSpace<typename G::LeafGridView, double, B::dimRange, 1>,
+                               DiscreteFunction<FvProductSpace<typename G::LevelGridView, double, B::dimRange, 1>,
                                                 typename Dune::XT::LA::
                                                     Container<double, XT::LA::default_sparse_backend>::VectorType>,
                                R,
@@ -301,10 +312,10 @@ public:
   {
   }
 
-  virtual const ProblemType& problem() const override final
-  {
-    return problem_;
-  }
+  //  virtual const ProblemType& problem() const override final
+  //  {
+  //    return problem_;
+  //  }
 
   virtual bool provides_exact_solution() const override final
   {
@@ -317,8 +328,8 @@ public:
         << "|+====================================================================================================+|\n"
         << "||  Testcase: LineSource Pn                                                                           ||\n"
         << "|+----------------------------------------------------------------------------------------------------+|\n"
-        << "||  domain = [-1, 1]^2                                                                            ||\n"
-        << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end()) + "]                                ||\n"
+        << "||  domain = [-1, 1]^2                                                                                ||\n"
+        << "||  time = [0, 0.45]                                                                                  ||\n"
         << "||  flux = see http://dx.doi.org/10.1137/130934210 Section 6.5                                        ||\n"
         << "||  rhs = http://dx.doi.org/10.1137/130934210 Section 6.5                                             ||\n"
         << "||  reference solution: discrete solution on finest grid                                              ||\n"
@@ -329,6 +340,79 @@ public:
 
 private:
   const ProblemType problem_;
+}; // class LineSourceTestCase
+
+template <class G,
+          class R = double,
+          size_t order = 6,
+          class B = Hyperbolic::Problems::RealSphericalHarmonics<typename G::ctype, typename G::ctype, order, 2, true>>
+class LineSourceMnTestCase
+    : public Dune::GDT::Test::
+          NonStationaryTestCase<G,
+                                typename Hyperbolic::Problems::KineticEquation<typename Problems::ModifiedLineSourceMn<
+                                    typename XT::Grid::PeriodicGridView<typename G::LevelGridView>,
+                                    B,
+                                    typename G::template Codim<0>::Entity,
+                                    typename G::ctype,
+                                    G::dimension,
+                                    DiscreteFunction<FvProductSpace<typename G::LevelGridView, double, B::dimRange, 1>,
+                                                     typename Dune::XT::LA::
+                                                         Container<double, XT::LA::default_sparse_backend>::VectorType>,
+                                    R,
+                                    B::dimRange>>>
+{
+  typedef typename G::template Codim<0>::Entity E;
+  typedef typename G::ctype D;
+
+public:
+  static const size_t d = G::dimension;
+  static_assert(d == 2, "Only implemented for dimension 2.");
+  typedef typename Hyperbolic::Problems::KineticEquation<typename Problems::ModifiedLineSourceMn<
+      typename XT::Grid::PeriodicGridView<typename G::LevelGridView>,
+      B,
+      E,
+      D,
+      d,
+      DiscreteFunction<FvProductSpace<typename G::LevelGridView, double, B::dimRange, 1>,
+                       typename Dune::XT::LA::Container<double, XT::LA::default_sparse_backend>::VectorType>,
+      R,
+      B::dimRange>>
+      ProblemType;
+  static const size_t dimRange = ProblemType::dimRange;
+  static const size_t dimRangeCols = 1;
+
+private:
+  typedef typename Dune::GDT::Test::NonStationaryTestCase<G, ProblemType> BaseType;
+
+public:
+  using typename BaseType::GridType;
+  using typename BaseType::SolutionType;
+
+  LineSourceMnTestCase(const size_t num_refs = 3, const double divide_t_end_by = 1.0)
+    : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
+  {
+  }
+
+  virtual bool provides_exact_solution() const override final
+  {
+    return false;
+  }
+
+  virtual void print_header(std::ostream& out = std::cout) const override final
+  {
+    out << "+======================================================================================================+\n"
+        << "|+====================================================================================================+|\n"
+        << "||  Testcase: LineSource Mn                                                                           ||\n"
+        << "|+----------------------------------------------------------------------------------------------------+|\n"
+        << "||  domain = [-1, 1]^2                                                                                ||\n"
+        << "||  time = [0, 0.05]                                                                                  ||\n"
+        << "||  flux = see http://dx.doi.org/10.1137/130934210 Section 6.5                                        ||\n"
+        << "||  rhs = http://dx.doi.org/10.1137/130934210 Section 6.5                                             ||\n"
+        << "||  reference solution: discrete solution on finest grid                                              ||\n"
+        << "|+====================================================================================================+|\n"
+        << "+======================================================================================================+"
+        << std::endl;
+  }
 }; // class LineSourceTestCase
 
 

@@ -56,7 +56,7 @@ public:
 
   virtual ~NonStationaryTestCase() = default;
 
-  virtual const ProblemType& problem() const = 0;
+  //  virtual const ProblemType& problem() const = 0;
 
   virtual void print_header(std::ostream& out = std::cout) const
   {
@@ -78,10 +78,10 @@ public:
     return std::bitset<GridImp::dimension>();
   }
 
-  virtual double t_end() const
-  {
-    return problem().t_end() / divide_t_end_by_this_;
-  }
+  //  virtual double t_end() const
+  //  {
+  //    return problem().t_end() / divide_t_end_by_this_;
+  //  }
 
   virtual const std::shared_ptr<const SolutionType> exact_solution() const
   {

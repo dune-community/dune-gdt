@@ -44,11 +44,7 @@ public:
   static const constexpr TimeStepperMethods rhs_time_stepper_type = rhs_time_stepper_method;
 
   typedef typename XT::Grid::PeriodicGridView<typename XT::Grid::GridProvider<GridType>::LevelGridViewType>
-      GridLayerImp;
-  typedef Dune::
-      GridView<XT::Grid::internal::PeriodicGridViewTraits<typename XT::Grid::GridProvider<GridType>::LevelGridViewType,
-                                                          false>>
-          GridLayerType;
+      GridLayerType;
   typedef FvProductSpace<GridLayerType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;
   typedef HyperbolicFVDefaultDiscretization<TestCaseType,
                                             FVSpaceType,
@@ -78,8 +74,8 @@ public:
   {
     auto logger = XT::Common::TimedLogger().get(static_id());
     logger.info() << "Creating space... " << std::endl;
-    GridLayerImp imp(grid_provider.level_view(level), periodic_directions);
-    auto space = std::make_shared<const FVSpaceType>(GridLayerType(imp));
+    GridLayerType imp(grid_provider.level_view(level), periodic_directions);
+    auto space = std::make_shared<const FVSpaceType>(imp);
     logger.debug() << "grid has " << space->grid_layer().indexSet().size(0) << " elements" << std::endl;
     return DiscretizationType(test_case, space);
   } // ... discretize(...)

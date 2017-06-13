@@ -10,20 +10,20 @@
 //   Tobias Leibner  (2016)
 
 #include <config.h>
-#include "eocexpectations-fv-linesource-2dyaspgrid.hh"
+#include "eocexpectations-fv-linesourcemn-2dyaspgrid.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Test {
 
 
-std::vector<double> HyperbolicEocExpectations<Hyperbolic::LineSourceTestCase<Yasp2, double>,
+std::vector<double> HyperbolicEocExpectations<Hyperbolic::LineSourceMnTestCase<Yasp2, double>,
                                               Hyperbolic::ChooseDiscretizer::fv,
                                               2,
                                               NumericalFluxes::laxfriedrichs,
                                               TimeStepperMethods::explicit_rungekutta_second_order_ssp,
                                               TimeStepperMethods::matrix_exponential>::
-    results(const HyperbolicEocExpectations<Hyperbolic::LineSourceTestCase<Yasp2, double>,
+    results(const HyperbolicEocExpectations<Hyperbolic::LineSourceMnTestCase<Yasp2, double>,
                                             Hyperbolic::ChooseDiscretizer::fv,
                                             2,
                                             NumericalFluxes::laxfriedrichs,
