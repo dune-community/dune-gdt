@@ -388,7 +388,7 @@ public:
   using typename BaseType::GridType;
   using typename BaseType::SolutionType;
 
-  LineSourceMnTestCase(const size_t num_refs = 3, const double divide_t_end_by = 1.0)
+  LineSourceMnTestCase(const size_t num_refs = 1, const double divide_t_end_by = 1.0)
     : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
   {
   }

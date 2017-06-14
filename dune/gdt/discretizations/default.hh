@@ -414,7 +414,7 @@ private:
   typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
                                          BoundaryValueType,
                                          ConstantFunctionType,
-                                         1,
+                                         0,
                                          SlopeLimiters::minmod,
                                          false,
                                          BasisfunctionType>

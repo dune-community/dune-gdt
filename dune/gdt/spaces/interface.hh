@@ -50,10 +50,13 @@ enum class Backends
 };
 
 
+// disable GCC warning "type attributes ignored after type is already defined [-Wattributes]"
+#include <dune/xt/common/disable_warnings.hh>
 enum class DUNE_DEPRECATED_MSG("Use Backends instead (04.04.2017)!") ChooseSpaceBackend
 {
   None
 };
+#include <dune/xt/common/reenable_warnings.hh>
 
 
 enum class SpaceType

@@ -330,7 +330,7 @@ protected:
       for (auto reference_solution_it = reference_solution_->begin();
            reference_solution_it != reference_solution_it_end;
            ++reference_solution_it) {
-        const double time = reference_solution_it->first;
+        //        const double time = reference_solution_it->first;
         //        const auto discrete_exact_solution_at_time = exact_solution->evaluate_at_time(time);
         //        const auto inserted_it = discrete_exact_solution_->emplace_hint(
         //            discrete_exact_solution_->end(), time, reference_solution_it->second);
