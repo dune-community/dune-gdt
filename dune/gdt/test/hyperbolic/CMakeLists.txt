@@ -24,4 +24,4 @@ dune_add_library(expectations_hyperbolic_fv_discretizations_yaspgrid
 #            eocexpectations-fv-transport-2dyaspgrid.cxx
 #            eocexpectations-fv-shallowwater-1dyaspgrid.cxx
 #            eocexpectations-fv-shocktube-1dyaspgrid.cxx)
-target_link_libraries(expectations_hyperbolic_fv_discretizations_yaspgrid -L/home/tobias/Software/dune-gdt-super-2.5/local/lib qhull_r qhullcpp matrixexponential)
+target_link_libraries(expectations_hyperbolic_fv_discretizations_yaspgrid -L${CMAKE_SOURCE_DIR}/../local/lib qhull_r qhullcpp matrixexponential)
