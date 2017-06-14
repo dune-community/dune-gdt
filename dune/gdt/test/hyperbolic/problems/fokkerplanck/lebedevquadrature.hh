@@ -47,11 +47,10 @@ public:
 
     char orderstring[4];
     sprintf(orderstring, "%03lu", order);
-    std::string filename = std::string("/home/tobias/Software/dune-gdt-super-2.5/dune-gdt/dune/gdt/test/hyperbolic/"
-                                       "problems/fokkerplanck/lebedev/order_")
-                           + orderstring + ".txt";
+    std::string filename = std::string("/home/l_tobi01/Software/dune-gdt-super/dune-gdt/dune/gdt/test/hyperbolic/problems/fokkerplanck/lebedev/order_") + orderstring + ".txt";
     std::ifstream quadrature_file(filename);
-    assert(quadrature_file.is_open());
+    if (!quadrature_file.is_open())
+        DUNE_THROW(Dune::IOError, "Could not open file " + filename); 
     std::string current_line;
     Dune::QuadratureRule<FieldType, 3> quad_rule;
     while (getline(quadrature_file, current_line)) {
