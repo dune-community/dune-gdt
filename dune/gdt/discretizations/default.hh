@@ -504,7 +504,7 @@ public:
       OperatorTimeStepperType timestepper_op(advection_operator, u, -1.0);
 
       // do the time steps
-      const size_t num_save_steps = 45;
+      const size_t num_save_steps = 5;
       solution.clear();
       if (problem.has_non_zero_rhs()) {
         // use fractional step method
