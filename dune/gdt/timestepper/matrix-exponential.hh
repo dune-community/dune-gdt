@@ -163,7 +163,7 @@ public:
         u_n, t, actual_dt, op_.evaluation());
     SystemAssembler<typename DiscreteFunctionType::SpaceType> assembler(u_n.space());
     assembler.append(functor);
-    assembler.assemble(false);
+    assembler.assemble(true);
 
     // augment time
     t += actual_dt;

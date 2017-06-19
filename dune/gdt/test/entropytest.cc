@@ -152,7 +152,7 @@ int main(int argc, char** argv)
   // ********************* choose dimensions, fluxes and grid type ************************
   static const int dimDomain = 3;
   //  static const int dimDomain = 1;
-  static const int momentOrder = 6;
+  static const int momentOrder = 2;
   //  const auto numerical_flux = NumericalFluxes::kinetic;
   //  const auto numerical_flux = NumericalFluxes::godunov;
   const auto numerical_flux = NumericalFluxes::laxfriedrichs;
@@ -199,9 +199,9 @@ int main(int argc, char** argv)
   //                         double,
   //                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces()>
   //          BasisfunctionType;
-  //  BasisfunctionType basis_functions;
-  std::shared_ptr<const BasisfunctionType> basis_functions =
-      std::make_shared<const BasisfunctionType>(refinements, refinements + 4);
+  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>();
+  //  std::shared_ptr<const BasisfunctionType> basis_functions =
+  //      std::make_shared<const BasisfunctionType>(refinements, refinements + 4);
   static const size_t dimRange = BasisfunctionType::dimRange;
   static constexpr auto container_backend = Dune::XT::LA::default_sparse_backend;
   typedef FvProductSpace<GridViewType, double, dimRange, 1> SpaceType;
@@ -247,19 +247,19 @@ int main(int argc, char** argv)
   //                                                       dimRange>
   //      ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::
-  //      PointSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
-  //          ProblemImp;
+  typedef typename Hyperbolic::Problems::
+      PointSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
+          ProblemImp;
 
-  typedef typename Hyperbolic::Problems::PointSourceMn<GridViewType,
-                                                       BasisfunctionType,
-                                                       EntityType,
-                                                       double,
-                                                       dimDomain,
-                                                       DiscreteFunctionType,
-                                                       double,
-                                                       dimRange>
-      ProblemImp;
+  //  typedef typename Hyperbolic::Problems::PointSourceMn<GridViewType,
+  //                                                       BasisfunctionType,
+  //                                                       EntityType,
+  //                                                       double,
+  //                                                       dimDomain,
+  //                                                       DiscreteFunctionType,
+  //                                                       double,
+  //                                                       dimRange>
+  //      ProblemImp;
 
   //  typedef typename Hyperbolic::Problems::
   //      ModifiedLineSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
@@ -299,18 +299,18 @@ int main(int argc, char** argv)
   const SpaceType fv_space(grid_view);
 
   //******************* create ProblemType object ***************************************
-  //  const ProblemImp problem_imp(*basis_functions, grid_config);
+  const ProblemImp problem_imp(*basis_functions, grid_config);
   //  const ProblemImp problem_imp(basis_functions, grid_view, grid_config);
-  const ProblemImp problem_imp(*basis_functions, basis_functions->quadrature(), grid_view, grid_config);
+  //  const ProblemImp problem_imp(*basis_functions, basis_functions->quadrature(), grid_view, grid_config);
   //  const ProblemImp problem_imp(
   //      basis_functions, Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(1000), grid_view);
 
-  //  const ProblemImp problem_imp(basis_functions,
+  //  const ProblemImp problem_imp(*basis_functions,
   //                               grid_view,
   //                               ProblemImp::default_grid_cfg(),
   //                               ProblemImp::default_boundary_cfg(),
   //                               //                               basis_functions.quadrature());
-  //                               Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(100));
+  //                               Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40));
 
   const ProblemType problem(problem_imp);
   const InitialValueType& initial_values = problem.initial_values();
@@ -358,7 +358,7 @@ int main(int argc, char** argv)
                                          ConstantFunctionType,
                                          1,
                                          SlopeLimiters::minmod,
-                                         true,
+                                         false,
                                          BasisfunctionType>
       AdvectionOperatorType;
 
@@ -396,9 +396,8 @@ int main(int argc, char** argv)
   AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_function);
   advection_operator.set_basisfunctions(basis_functions);
   //  advection_operator.set_quadrature(problem_imp.quadrature());
-  advection_operator.set_quadrature(basis_functions->quadrature());
+  advection_operator.set_quadrature(Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40));
   advection_operator.set_epsilon(epsilon);
-
   //  AdvectionOperatorType advection_operator(*analytical_flux,
   //                                           *boundary_values,
   //                                           grid_view,
@@ -409,6 +408,17 @@ int main(int argc, char** argv)
   //                                           space_quadrature_rules);
 
   RhsOperatorType rhs_operator(rhs);
+
+  std::ofstream pointsfile("points.txt");
+  pointsfile << "std::vector<std::array<double, 6>> points = ";
+  for (const auto& point : Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40)) {
+    auto pos = basis_functions->evaluate(point.position());
+    pointsfile << "{";
+    for (size_t ii = 0; ii < pos.size() - 1; ++ii)
+      pointsfile << XT::Common::to_string(pos[ii], 20) << ", ";
+    pointsfile << XT::Common::to_string(pos[pos.size() - 1], 20) << "}, " << std::endl;
+  }
+  pointsfile.close();
 
 
   // ******************************** do the time steps ***********************************************************

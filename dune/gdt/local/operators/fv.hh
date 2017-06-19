@@ -23,14 +23,11 @@
 
 #include <libqhullcpp/Qhull.h>
 #include <libqhullcpp/QhullFacetList.h>
-//-#include <libqhullcpp/RboxPoints.h>
-//-#include <libqhullcpp/QhullError.h>
-//-#include <libqhullcpp/QhullQh.h>
-//-#include <libqhullcpp/QhullFacet.h>
-//-#include <libqhullcpp/QhullLinkedList.h>
-//-#include <libqhullcpp/QhullVertex.h>
-//-#include <libqhullcpp/Qhull.h>
+
+#include </home/tobias/Software/dune-gdt-super-2.5/local/include/lpsolve/lp_lib.h>
+
 #include "interfaces.hh"
+
 
 namespace Dune {
 namespace GDT {
@@ -360,15 +357,15 @@ public:
       ++ll;
       // rescale u_l, u_bar
       auto u_l = pair.second;
-      auto u_minus_u_bar_l = u_bar - u_l;
+      auto u_bar_minus_u_l = u_bar - u_l;
       const auto factor = basis_functions_.realizability_limiter_max(u_l, u_bar);
       u_l /= factor;
-      u_minus_u_bar_l /= factor;
+      u_bar_minus_u_l /= factor;
 
       for (const auto& coeffs : *plane_coefficients_) {
         const RangeType& a = coeffs.first;
         const RangeFieldType& b = coeffs.second;
-        RangeFieldType theta_li = (b - a * u_l) / (a * u_minus_u_bar_l);
+        RangeFieldType theta_li = (b - a * u_l) / (a * u_bar_minus_u_l);
         if (XT::Common::FloatCmp::ge(theta_li, -epsilon_) && XT::Common::FloatCmp::le(theta_li, 1.))
           thetas[ll] = std::max(thetas[ll], theta_li);
       } // coeffs
@@ -401,7 +398,8 @@ private:
     for (const auto& quad_point : quadrature_)
       points[ii++] = basis_functions_.evaluate(quad_point.position());
 
-    qhull.runQhull("Realizable set", int(dimRange), int(points.size()), &(points[0][0]), "Qt");
+    std::cout << XT::Common::to_string(points) << std::endl;
+    qhull.runQhull("Realizable set", int(dimRange), int(points.size()), &(points[0][0]), "Qt T1");
     //    qhull.outputQhull("n");
     const auto facet_end = qhull.endFacet();
     std::vector<std::pair<RangeType, RangeFieldType>> plane_coefficients(qhull.facetList().count());
@@ -431,6 +429,205 @@ template <class SourceType, class BasisFunctionType, size_t dimDomain, size_t di
 std::shared_ptr<const typename LocalRealizabilityLimiter<SourceType, BasisFunctionType, dimDomain, dimRange>::
                     PlaneCoefficientsType>
     LocalRealizabilityLimiter<SourceType, BasisFunctionType, dimDomain, dimRange>::plane_coefficients_;
+
+template <class SourceType, class BasisFunctionType, size_t dimDomain, size_t dimRange>
+class LocalRealizabilityLimiterLP : public XT::Grid::Functor::Codim0<typename SourceType::SpaceType::GridLayerType>
+{
+  typedef typename SourceType::SpaceType::GridLayerType GridLayerType;
+  typedef typename SourceType::EntityType EntityType;
+  typedef typename GridLayerType::template Codim<0>::Geometry::LocalCoordinate DomainType;
+  typedef typename SourceType::RangeType RangeType;
+  typedef typename GridLayerType::IndexSet IndexSetType;
+  typedef typename SourceType::RangeFieldType RangeFieldType;
+  typedef typename XT::LA::EigenDenseVector<RangeFieldType> EigenVectorType;
+  typedef typename Dune::QuadratureRule<RangeFieldType, dimDomain> QuadratureType;
+  using BasisValuesMatrixType = std::vector<RangeType>;
+
+
+public:
+  // cell averages includes left and right boundary values as the two last indices in each dimension
+  explicit LocalRealizabilityLimiterLP(
+      const SourceType& source,
+      std::vector<std::map<DomainType, RangeType, internal::FieldVectorLess>>& reconstructed_values,
+      const BasisFunctionType& basis_functions,
+      const QuadratureType& quadrature,
+      RangeFieldType epsilon = 1e-14)
+    : source_(source)
+    , index_set_(source_.space().grid_layer().indexSet())
+    , reconstructed_values_(reconstructed_values)
+    , basis_functions_(basis_functions)
+    , quadrature_(quadrature)
+    , num_quad_points_(quadrature_.size())
+    , epsilon_(epsilon)
+    , M_(quadrature_.size())
+  {
+    for (size_t ii = 0; ii < quadrature_.size(); ++ii)
+      M_[ii] = basis_functions_.evaluate(quadrature_[ii].position());
+  }
+
+  void apply_local(const EntityType& entity)
+  {
+    auto& local_reconstructed_values = reconstructed_values_[index_set_.index(entity)];
+
+    // get cell average
+    const RangeType& u_bar =
+        source_.local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center()));
+
+    // vector to store thetas for each local reconstructed value
+    std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), -epsilon_);
+
+    size_t ll = -1;
+    for (const auto& pair : local_reconstructed_values) {
+      ++ll;
+      // rescale u_l, u_bar
+      auto u_l = pair.second;
+      auto u_bar_minus_u_l = u_bar - u_l;
+      auto u_bar_l = u_bar;
+      const auto factor = basis_functions_.realizability_limiter_max(u_l, u_bar);
+      u_bar_l /= factor;
+      u_bar_minus_u_l /= factor;
+
+      const auto max_val = *std::max_element(u_bar_minus_u_l.begin(), u_bar_minus_u_l.end());
+      const auto min_val = *std::min_element(u_bar_minus_u_l.begin(), u_bar_minus_u_l.end());
+      const auto abs_max = std::max(std::abs(max_val), std::abs(min_val));
+      if (XT::Common::FloatCmp::le(abs_max, 1e-10)) {
+        thetas[ll] = 1.;
+      } else {
+        // solve LP:
+        // max \theta s.t.
+        // (\sum x_i v_i) + \theta (\bar{u} - u) = \bar{u}
+        // \sum x_i = 1
+        // 1 >= x_i, \theta >= 0
+        auto theta = solve_linear_program(u_bar_l, u_bar_minus_u_l);
+        assert(XT::Common::FloatCmp::ge(theta, epsilon_));
+        if (theta < 1 + epsilon_)
+          theta = theta - epsilon_;
+        else
+          theta = 1.;
+        thetas[ll] = theta;
+      }
+    } // ll
+
+    auto theta_entity = *std::min_element(thetas.begin(), thetas.end());
+    if (XT::Common::FloatCmp::ne(theta_entity, 1.)) {
+      for (auto& pair : local_reconstructed_values) {
+        auto& u = pair.second;
+        auto u_scaled = u;
+        u_scaled *= theta_entity;
+        auto u_bar_scaled = u_bar;
+        u_bar_scaled *= 1 - theta_entity;
+        u = u_scaled + u_bar_scaled;
+      }
+    }
+  } // void apply_local(...)
+
+private:
+  RangeFieldType solve_linear_program(RangeType u_bar, RangeType u_bar_minus_u_l)
+  {
+    std::cout << quadrature_.size() << std::endl;
+    lprec* lp;
+
+    // scale
+    const auto max_val = *std::max_element(u_bar_minus_u_l.begin(), u_bar_minus_u_l.end());
+    const auto min_val = *std::min_element(u_bar_minus_u_l.begin(), u_bar_minus_u_l.end());
+    const auto abs_max = std::max(std::abs(max_val), std::abs(min_val));
+    u_bar_minus_u_l /= abs_max;
+
+    // We start with creating a model with dimRange+1 rows and num_quad_points+1 columns */
+    constexpr int num_rows = int(dimRange + 1);
+    int num_cols = int(quadrature_.size() + 1); /* variables are x_1, ..., x_{num_quad_points}, \theta */
+    lp = make_lp(num_rows, num_cols);
+    if (!lp)
+      DUNE_THROW(Dune::MathError, "Couldn't construct linear program");
+
+    std::cout << u_bar << " " << u_bar_minus_u_l << std::endl;
+    /* let us name our variables. Not required, but can be useful for debugging */
+    std::vector<char> name;
+    for (size_t ii = 0; ii < num_cols; ++ii) {
+      auto name_string = "x" + XT::Common::to_string(ii + 1);
+      name.resize(name_string.size());
+      std::copy(name_string.begin(), name_string.end(), name.begin());
+      set_col_name(lp, ii + 1, name.data());
+    }
+    name.resize(5);
+    name = {'t', 'h', 'e', 't', 'a'};
+    set_col_name(lp, num_cols, name.data());
+
+    /* create space large enough for one row */
+    REAL* row = (REAL*)malloc(num_cols * sizeof(REAL));
+
+    //    set_add_rowmode(lp, TRUE);  /* makes building the model faster if it is done rows by row */
+
+    // In the call to set_column, the first entry (row 0) is the value of the objective function
+    // (c_i in the objective function c^T x), the other entries are the entries of the i-th column
+    // in the constraints matrix. The 0-th column is the rhs vector. The entry (0, 0) corresponds
+    // to the initial value of the objective function.
+    std::array<REAL, num_rows + 1> column;
+    // set rhs (column 0)
+    column[0] = 0.; // initial value for objective function, use 0 as it is guaranteed to be feasible
+    std::copy(u_bar.begin(), u_bar.end(), column.begin() + 1);
+    column[dimRange + 1] = 1.;
+    set_rh_vec(lp, column.data());
+    set_rh(lp, 0, column[0]);
+    // set columns for quadrature points
+    column[0] = 0.;
+    for (size_t ii = 0; ii < M_.size(); ++ii) {
+      const auto& v_i = M_[ii];
+      std::copy(v_i.begin(), v_i.end(), column.begin() + 1);
+      column[dimRange + 1] = 1.;
+      set_column(lp, ii + 1, column.data());
+    }
+    // set last column
+    column[0] = 1.;
+    std::copy(u_bar_minus_u_l.begin(), u_bar_minus_u_l.end(), column.begin() + 1);
+    column[dimRange + 1] = 0.;
+    std::cout << "theta col" << XT::Common::to_string(column, 1e-15) << std::endl;
+    set_column(lp, num_cols, column.data());
+    for (size_t ii = 1; ii <= num_rows; ++ii)
+      set_constr_type(lp, ii, EQ);
+
+    /* make LP maximize instead of minimize */
+    set_maxim(lp);
+
+    /* print LP */
+    /* this only works if this is a console application. If not, use write_lp and a filename */
+    write_LP(lp, stdout);
+
+    /* I only want to see important messages on screen while solving */
+    set_verbose(lp, FULL);
+
+    /* Now let lpsolve calculate a solution */
+    const auto solve_status = solve(lp);
+    if (solve_status != OPTIMAL) {
+      std::cout << solve_status << std::endl;
+      DUNE_THROW(Dune::MathError, "An unexpected error occured while solving the linear program");
+    }
+    RangeFieldType lambda = get_objective(lp) * abs_max;
+
+    /* variable values */
+    get_variables(lp, row);
+    for (size_t ii = 0; ii <= num_cols; ++ii)
+      std::cout << row[ii] << " ";
+    //    assert(XT::Common::FloatCmp::eq(lambda, row[num_cols - 1]));
+
+    /* free allocated memory */
+    if (row)
+      free(row);
+    if (lp)
+      delete_lp(lp);
+
+    return lambda;
+  }
+
+  const SourceType& source_;
+  const IndexSetType& index_set_;
+  std::vector<std::map<DomainType, RangeType, internal::FieldVectorLess>>& reconstructed_values_;
+  const BasisFunctionType& basis_functions_;
+  const QuadratureType& quadrature_;
+  const size_t num_quad_points_;
+  const RangeFieldType epsilon_;
+  BasisValuesMatrixType M_;
+}; // class LocalRealizabilityLimiterLP
 
 template <class GridLayerType,
           class AnalyticalFluxType,

@@ -226,9 +226,8 @@ public:
     , beta_cache_(2 * index_set_.size(0))
     , T_cache_(2 * index_set_.size(0))
   {
-    for (size_t ii = 0; ii < quadrature_.size(); ++ii) {
+    for (size_t ii = 0; ii < quadrature_.size(); ++ii)
       M_[ii] = basis_functions_.evaluate(quadrature_[ii].position());
-    }
   }
 
   class Localfunction : public LocalfunctionType
