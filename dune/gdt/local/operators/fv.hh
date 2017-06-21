@@ -27,6 +27,7 @@
 #include </home/tobias/Software/dune-gdt-super-2.5/local/include/lpsolve/lp_lib.h>
 
 #include "interfaces.hh"
+#include "eigensolver.hh"
 
 
 namespace Dune {
@@ -63,21 +64,6 @@ template <class NumericalFluxType>
 struct LocalBoundaryFvOperatorTraits
 {
   typedef LocalBoundaryFvOperator<NumericalFluxType> derived_type;
-};
-
-struct FieldVectorLess
-{
-  template <class FieldType, int dimDomain>
-  bool operator()(const FieldVector<FieldType, dimDomain>& a, const FieldVector<FieldType, dimDomain>& b) const
-  {
-    for (size_t dd = 0; dd < dimDomain; ++dd) {
-      if (XT::Common::FloatCmp::lt(a[dd], b[dd]))
-        return true;
-      else if (XT::Common::FloatCmp::gt(a[dd], b[dd]))
-        return false;
-    }
-    return false;
-  }
 };
 
 template <SlopeLimiters slope_limiter, class VectorType>
@@ -315,7 +301,7 @@ public:
   // cell averages includes left and right boundary values as the two last indices in each dimension
   explicit LocalRealizabilityLimiter(
       const SourceType& source,
-      std::vector<std::map<DomainType, RangeType, internal::FieldVectorLess>>& reconstructed_values,
+      std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values,
       const BasisFunctionType& basis_functions,
       const QuadratureType& quadrature,
       RangeFieldType epsilon = 1e-14)
@@ -414,7 +400,7 @@ private:
 
   const SourceType& source_;
   const IndexSetType& index_set_;
-  std::vector<std::map<DomainType, RangeType, internal::FieldVectorLess>>& reconstructed_values_;
+  std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values_;
   const BasisFunctionType& basis_functions_;
   const QuadratureType& quadrature_;
   const RangeFieldType epsilon_;
@@ -448,7 +434,7 @@ public:
   // cell averages includes left and right boundary values as the two last indices in each dimension
   explicit LocalRealizabilityLimiterLP(
       const SourceType& source,
-      std::vector<std::map<DomainType, RangeType, internal::FieldVectorLess>>& reconstructed_values,
+      std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values,
       const BasisFunctionType& basis_functions,
       const QuadratureType& quadrature,
       RangeFieldType epsilon = 1e-14)
@@ -479,33 +465,27 @@ public:
     size_t ll = -1;
     for (const auto& pair : local_reconstructed_values) {
       ++ll;
-      // rescale u_l, u_bar
       auto u_l = pair.second;
-      auto u_bar_minus_u_l = u_bar - u_l;
-      auto u_bar_l = u_bar;
-      const auto factor = basis_functions_.realizability_limiter_max(u_l, u_bar);
-      u_bar_l /= factor;
-      u_bar_minus_u_l /= factor;
+      auto u_l_minus_u_bar = u_l - u_bar;
 
-      const auto max_val = *std::max_element(u_bar_minus_u_l.begin(), u_bar_minus_u_l.end());
-      const auto min_val = *std::min_element(u_bar_minus_u_l.begin(), u_bar_minus_u_l.end());
-      const auto abs_max = std::max(std::abs(max_val), std::abs(min_val));
-      if (XT::Common::FloatCmp::le(abs_max, 1e-10)) {
-        thetas[ll] = 1.;
-      } else {
-        // solve LP:
-        // max \theta s.t.
-        // (\sum x_i v_i) + \theta (\bar{u} - u) = \bar{u}
-        // \sum x_i = 1
-        // 1 >= x_i, \theta >= 0
-        auto theta = solve_linear_program(u_bar_l, u_bar_minus_u_l);
-        assert(XT::Common::FloatCmp::ge(theta, epsilon_));
-        if (theta < 1 + epsilon_)
-          theta = theta - epsilon_;
-        else
-          theta = 1.;
-        thetas[ll] = theta;
-      }
+      //            const auto max_val = *std::max_element(u_l_minus_u_bar.begin(), u_l_minus_u_bar.end());
+      //            const auto min_val = *std::min_element(u_l_minus_u_bar.begin(), u_l_minus_u_bar.end());
+      //            const auto abs_max = std::max(std::abs(max_val), std::abs(min_val));
+      //      if (XT::Common::FloatCmp::le(abs_max, 1e-10)) {
+      //        thetas[ll] = 1.;
+      //      } else {
+      // solve LP:
+      // min \theta s.t.
+      // (\sum x_i v_i) + \theta (u - \bar{u}) = u
+      // x_i, \theta >= 0
+      auto theta = solve_linear_program(u_l, u_l_minus_u_bar);
+      assert(XT::Common::FloatCmp::ge(theta, epsilon_));
+      if (theta < 1 + epsilon_)
+        theta = theta - epsilon_;
+      else
+        theta = 1.;
+      thetas[ll] = theta;
+      //      }
     } // ll
 
     auto theta_entity = *std::min_element(thetas.begin(), thetas.end());
@@ -522,16 +502,15 @@ public:
   } // void apply_local(...)
 
 private:
-  RangeFieldType solve_linear_program(RangeType u_bar, RangeType u_bar_minus_u_l)
+  RangeFieldType solve_linear_program(RangeType u_l, RangeType u_l_minus_u_bar)
   {
-    std::cout << quadrature_.size() << std::endl;
     lprec* lp;
 
-    // scale
-    const auto max_val = *std::max_element(u_bar_minus_u_l.begin(), u_bar_minus_u_l.end());
-    const auto min_val = *std::min_element(u_bar_minus_u_l.begin(), u_bar_minus_u_l.end());
-    const auto abs_max = std::max(std::abs(max_val), std::abs(min_val));
-    u_bar_minus_u_l /= abs_max;
+    //     scale
+    //    const auto max_val = *std::max_element(u_l_minus_u_bar.begin(), u_l_minus_u_bar.end());
+    //    const auto min_val = *std::min_element(u_l_minus_u_bar.begin(), u_l_minus_u_bar.end());
+    //    const auto abs_max = std::max(std::abs(max_val), std::abs(min_val));
+    //    u_l_minus_u_bar /= abs_max;
 
     // We start with creating a model with dimRange+1 rows and num_quad_points+1 columns */
     constexpr int num_rows = int(dimRange + 1);
@@ -540,10 +519,9 @@ private:
     if (!lp)
       DUNE_THROW(Dune::MathError, "Couldn't construct linear program");
 
-    std::cout << u_bar << " " << u_bar_minus_u_l << std::endl;
     /* let us name our variables. Not required, but can be useful for debugging */
     std::vector<char> name;
-    for (size_t ii = 0; ii < num_cols; ++ii) {
+    for (size_t ii = 0; ii < size_t(num_cols); ++ii) {
       auto name_string = "x" + XT::Common::to_string(ii + 1);
       name.resize(name_string.size());
       std::copy(name_string.begin(), name_string.end(), name.begin());
@@ -553,19 +531,14 @@ private:
     name = {'t', 'h', 'e', 't', 'a'};
     set_col_name(lp, num_cols, name.data());
 
-    /* create space large enough for one row */
-    REAL* row = (REAL*)malloc(num_cols * sizeof(REAL));
-
-    //    set_add_rowmode(lp, TRUE);  /* makes building the model faster if it is done rows by row */
-
     // In the call to set_column, the first entry (row 0) is the value of the objective function
     // (c_i in the objective function c^T x), the other entries are the entries of the i-th column
     // in the constraints matrix. The 0-th column is the rhs vector. The entry (0, 0) corresponds
     // to the initial value of the objective function.
     std::array<REAL, num_rows + 1> column;
     // set rhs (column 0)
-    column[0] = 0.; // initial value for objective function, use 0 as it is guaranteed to be feasible
-    std::copy(u_bar.begin(), u_bar.end(), column.begin() + 1);
+    column[0] = 0.;
+    std::copy(u_l.begin(), u_l.end(), column.begin() + 1);
     column[dimRange + 1] = 1.;
     set_rh_vec(lp, column.data());
     set_rh(lp, 0, column[0]);
@@ -579,15 +552,29 @@ private:
     }
     // set last column
     column[0] = 1.;
-    std::copy(u_bar_minus_u_l.begin(), u_bar_minus_u_l.end(), column.begin() + 1);
+    std::copy(u_l_minus_u_bar.begin(), u_l_minus_u_bar.end(), column.begin() + 1);
     column[dimRange + 1] = 0.;
     std::cout << "theta col" << XT::Common::to_string(column, 1e-15) << std::endl;
     set_column(lp, num_cols, column.data());
     for (size_t ii = 1; ii <= num_rows; ++ii)
       set_constr_type(lp, ii, EQ);
 
+    // set bounds for all variables. This should not be necessary, as 0 <= x <= inf is
+    // the default for all variables.
+    for (size_t ii = 1; ii <= num_cols; ++ii)
+      set_bounds(lp, ii, 0., get_infinite(lp));
+
+    // set starting point for iteration. We can only set the variable to its lower or upper bound.
+    // The variable is set to its lower bound if the value in initial_basis is negative and to its upper_
+    // bound if the value is positive. We want to set all variables to its lower bound.
+    //    std::array<REAL, num_rows + 1> initial_basis;
+    //    const auto basisret = set_basis(lp, initial_basis, FALSE);
+    //    if (basisret == FALSE)
+    //      DUNE_THROW(Dune::MathError, "Failed to set initial basis!");
+
+
     /* make LP maximize instead of minimize */
-    set_maxim(lp);
+    //    set_maxim(lp);
 
     /* print LP */
     /* this only works if this is a console application. If not, use write_lp and a filename */
@@ -602,11 +589,13 @@ private:
       std::cout << solve_status << std::endl;
       DUNE_THROW(Dune::MathError, "An unexpected error occured while solving the linear program");
     }
-    RangeFieldType lambda = get_objective(lp) * abs_max;
+    RangeFieldType lambda = get_objective(lp); // * abs_max;
 
+    /* create space large enough for one row */
+    REAL* row = (REAL*)malloc(num_cols * sizeof(REAL));
     /* variable values */
     get_variables(lp, row);
-    for (size_t ii = 0; ii <= num_cols; ++ii)
+    for (size_t ii = 0; ii <= size_t(num_cols); ++ii)
       std::cout << row[ii] << " ";
     //    assert(XT::Common::FloatCmp::eq(lambda, row[num_cols - 1]));
 
@@ -621,7 +610,7 @@ private:
 
   const SourceType& source_;
   const IndexSetType& index_set_;
-  std::vector<std::map<DomainType, RangeType, internal::FieldVectorLess>>& reconstructed_values_;
+  std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values_;
   const BasisFunctionType& basis_functions_;
   const QuadratureType& quadrature_;
   const size_t num_quad_points_;
@@ -655,6 +644,7 @@ class LocalReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayer
   typedef FieldVector<typename GridLayerType::Intersection, 2 * dimDomain> IntersectionVectorType;
   typedef FieldVector<FieldVector<FieldVector<EigenVectorType, stencil[2]>, stencil[1]>, stencil[0]> ValuesType;
   typedef typename GridLayerType::Intersection::Geometry::LocalCoordinate IntersectionLocalCoordType;
+  typedef typename AnalyticalFluxType::LocalfunctionType AnalyticalFluxLocalfunctionType;
 
 public:
   explicit LocalReconstructionFvOperator(
@@ -664,7 +654,7 @@ public:
       const GridLayerType& grid_layer,
       const XT::Common::Parameter& param,
       const QuadratureType& quadrature,
-      std::vector<std::map<DomainType, RangeType, internal::FieldVectorLess>>& reconstructed_values)
+      std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values)
     : source_values_(source_values)
     , analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
@@ -694,31 +684,21 @@ public:
           intersections[2 * dd + 1] = intersection;
       }
     }
-
     // get jacobians
     const auto& u_entity = XT::LA::internal::FieldVectorToLaVector<EigenVectorType, dimRange>::convert_back(
         values[stencil[0] / 2][stencil[1] / 2][stencil[2] / 2]);
-    const FieldVector<FieldMatrix<DomainFieldType, dimRange, dimRange>, dimDomain> jacobians =
-        analytical_flux_.local_function(entity)->jacobian_wrt_u(
-            entity.geometry().local(entity.geometry().center()), u_entity, param_);
-
     const auto& entity_index = grid_layer_.indexSet().index(entity);
     auto& reconstructed_values_map = reconstructed_values_[entity_index];
-
-    for (size_t dd = 0; dd < dimDomain; ++dd) {
-      // get eigenvectors of jacobian
-      const auto jacobian =
-          XT::LA::internal::FieldMatrixToLaDenseMatrix<EigenMatrixType, dimRange, dimRange>::convert(jacobians[dd]);
-      ::Eigen::SelfAdjointEigenSolver<typename EigenMatrixType::BackendType> eigen_solver(jacobian.backend());
-      assert(eigen_solver.info() == ::Eigen::Success);
-      const auto eigenvectors_backend = eigen_solver.eigenvectors();
-      const auto eigenvectors = EigenMatrixType(eigenvectors_backend.real());
-      const auto eigenvectors_inverse = EigenMatrixType(eigenvectors_backend.inverse().real());
-
+    const auto eigen_solver = Dune::GDT::EigenSolver<AnalyticalFluxLocalfunctionType, false>(
+        *(analytical_flux_.local_function(entity)),
+        entity.geometry().local(entity.geometry().center()),
+        u_entity,
+        param_);
+    const auto& eigenvectors = eigen_solver.eigenvectors();
+    const auto& eigenvectors_inverse = eigen_solver.eigenvectors_inverse();
+    for (size_t dd = 0; dd < dimDomain; ++dd)
       helper<>::reconstruct(
-          dd, values, eigenvectors, eigenvectors_inverse, quadrature_, reconstructed_values_map, intersections);
-    } // dd
-
+          dd, values, eigenvectors[dd], eigenvectors_inverse[dd], quadrature_, reconstructed_values_map, intersections);
   } // void apply_local(...)
 
 private:
@@ -742,7 +722,7 @@ private:
                             const EigenMatrixType& eigenvectors,
                             const EigenMatrixType& eigenvectors_inverse,
                             const QuadratureType& /*quadrature*/,
-                            std::map<DomainType, RangeType, internal::FieldVectorLess>& reconstructed_values_map,
+                            std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
     {
       FieldVector<EigenVectorType, stencil_size> char_values;
@@ -776,7 +756,7 @@ private:
                             const EigenMatrixType& eigenvectors,
                             const EigenMatrixType& eigenvectors_inverse,
                             const QuadratureType& quadrature,
-                            std::map<DomainType, RangeType, internal::FieldVectorLess>& reconstructed_values_map,
+                            std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
     {
       // We always treat dd as the x-direction and set y-direction accordingly. For that purpose, define new
@@ -836,7 +816,7 @@ private:
                             const EigenMatrixType& eigenvectors,
                             const EigenMatrixType& eigenvectors_inverse,
                             const QuadratureType& quadrature,
-                            std::map<DomainType, RangeType, internal::FieldVectorLess>& reconstructed_values_map,
+                            std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
     {
       // We always treat dd as the x-direction and set y- and z-direction accordingly. For that purpose, define new
@@ -1030,7 +1010,7 @@ private:
   const GridLayerType& grid_layer_;
   XT::Common::Parameter param_;
   const QuadratureType quadrature_;
-  std::vector<std::map<DomainType, RangeType, internal::FieldVectorLess>>& reconstructed_values_;
+  std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values_;
 }; // class LocalReconstructionFvOperator
 
 template <class GridLayerType,

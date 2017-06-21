@@ -184,7 +184,7 @@ public:
   using typename BaseType::StateRangeType;
   using typename BaseType::RangeType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::JacobianWrtURangeType;
+  using typename BaseType::PartialURangeType;
   using typename BaseType::LocalfunctionType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
@@ -424,10 +424,10 @@ public:
       ret = XT::Functions::RangeTypeConverter<dimRange, dimRangeCols>::convert_back(ret_converted);
     } // void evaluate(...)
 
-    virtual void jacobian_wrt_u(const DomainType& x_local,
-                                const StateRangeType& u,
-                                JacobianWrtURangeType& ret,
-                                const XT::Common::Parameter& param) const override
+    virtual void partial_u(const DomainType& x_local,
+                           const StateRangeType& u,
+                           PartialURangeType& ret,
+                           const XT::Common::Parameter& param) const override
     {
       const auto alpha = get_alpha(x_local, u, param);
       MatrixType H;

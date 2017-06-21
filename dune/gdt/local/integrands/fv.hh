@@ -218,7 +218,7 @@ public:
       Dune::DynamicMatrix<R>& ret) const
   {
     const auto u = std::get<1>(local_functions_tuple)->evaluate(x_local);
-    ret = std::get<0>(local_functions_tuple)->jacobian_wrt_u(x_local, u);
+    ret = std::get<0>(local_functions_tuple)->partial_u(x_local, u);
     ret /= std::get<2>(local_functions_tuple);
   }
 
