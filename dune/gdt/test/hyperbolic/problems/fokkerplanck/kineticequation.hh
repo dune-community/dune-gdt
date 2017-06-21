@@ -136,9 +136,7 @@ class KineticTransportEquation
   typedef KineticTransportEquation ThisType;
   typedef XT::Functions::GlobalLambdaFunction<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
       GlobalLambdaFunctionType;
-  typedef XT::Functions::
-      GlobalLambdaFluxFunction<EntityImp, DomainFieldImp, domainDim, U_, 0, RangeFieldImp, rangeDim, 1>
-          GlobalLambdaFluxFunctionType;
+  typedef XT::Functions::GlobalLambdaFluxFunction<U_, 0, RangeFieldImp, rangeDim, 1> GlobalLambdaFluxFunctionType;
 
 public:
   typedef BasisfunctionImp BasisfunctionType;

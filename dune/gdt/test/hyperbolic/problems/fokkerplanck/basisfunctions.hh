@@ -128,6 +128,7 @@ template <class DomainFieldType,
           class RangeFieldType,
           size_t dimRange,
           size_t dimRangeCols = 1,
+          size_t dimFlux = dimDomain,
           size_t order = 1>
 class PiecewiseMonomials
 {
@@ -799,6 +800,10 @@ public:
         for (size_t ii = 0; ii < 3; ++ii) {
           ret[vertices[ii]->index()] = barycentric_coords[ii];
         }
+        std::cout << "vertices: " << XT::Common::to_string(face->vertices()[0]->position()) << ", "
+                  << XT::Common::to_string(face->vertices()[1]->position()) << ", "
+                  << XT::Common::to_string(face->vertices()[2]->position())
+                  << ", coords: " << XT::Common::to_string(ret) << ", v: " << XT::Common::to_string(v) << std::endl;
         break;
       }
     } // faces
@@ -815,7 +820,7 @@ public:
 
   virtual MatrixType mass_matrix() const override
   {
-    MatrixType A;
+    MatrixType A(0);
     for (const auto& quad_point : quadrature_) {
       const auto basis_evaluated = evaluate(quad_point.position());
       for (size_t nn = 0; nn < dimRange; ++nn) {
@@ -940,9 +945,9 @@ protected:
 }; // class HatFunctions<DomainFieldType, 3, ...>
 
 
-template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols>
-class PiecewiseMonomials<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, 1>
-    : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols>
+template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t dimFlux>
+class PiecewiseMonomials<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux, 1>
+    : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux>
 {
 public:
   static const size_t dimDomain = 1;
@@ -1064,9 +1069,9 @@ private:
 }; // class PiecewiseMonomials<DomainFieldType, 1, ...>
 
 
-template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols>
-class PiecewiseMonomials<DomainFieldType, 3, RangeFieldType, rangeDim, rangeDimCols>
-    : public BasisfunctionsInterface<DomainFieldType, 3, RangeFieldType, rangeDim, rangeDimCols>
+template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t dimFlux>
+class PiecewiseMonomials<DomainFieldType, 3, RangeFieldType, rangeDim, rangeDimCols, dimFlux, 1>
+    : public BasisfunctionsInterface<DomainFieldType, 3, RangeFieldType, rangeDim, rangeDimCols, dimFlux>
 {
 public:
   static const size_t dimDomain = 3;
