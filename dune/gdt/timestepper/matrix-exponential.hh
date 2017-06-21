@@ -60,7 +60,7 @@ public:
     auto zero = u0;
     zero *= 0.;
     const auto local_rhs = rhs_evaluation_.local_function(entity);
-    FieldMatrix<FieldType, dimRange, dimRange> A = local_rhs->jacobian_wrt_u(center, u0);
+    FieldMatrix<FieldType, dimRange, dimRange> A = local_rhs->partial_u(center, u0);
     const auto b = local_rhs->evaluate(center, u0);
 
     // calculate matrix exponential exp(A*dt)
