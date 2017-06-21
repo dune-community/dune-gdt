@@ -17,7 +17,7 @@
 
 #include <dune/xt/functions/interfaces.hh>
 
-#include <dune/gdt/local/operators/eigensolver.hh>
+#include <dune/gdt/operators/fv/eigensolver.hh>
 
 #include "interfaces.hh"
 

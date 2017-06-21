@@ -17,5 +17,8 @@
 #include "fv/godunov.hh"
 #include "fv/kinetic.hh"
 #include "fv/rhs.hh"
+#include "fv/reconstruction.hh"
+#include "fv/slopelimiters.hh"
+#include "fv/realizability.hh"
 
 #endif // DUNE_GDT_OPERATORS_FV_HH

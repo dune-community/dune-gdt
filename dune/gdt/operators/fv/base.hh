@@ -23,7 +23,10 @@
 #include <dune/gdt/local/operators/fv.hh>
 #include <dune/gdt/operators/base.hh>
 
-#include "reconstructed.hh"
+#include "reconstructed_function.hh"
+#include "reconstruction.hh"
+#include "slopelimiters.hh"
+#include "realizability.hh"
 
 namespace Dune {
 namespace GDT {
