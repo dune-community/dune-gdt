@@ -243,28 +243,28 @@ private:
     typedef typename XT::LA::Container<double, la>::VectorType V;
 
     c.def("project_onto_neighborhood",
-          [](const type& self, const std::vector<V>& local_vectors, const std::set<ssize_t>& neighborhood) {
+          [](const type& self, const std::vector<V>& local_vectors, const std::vector<ssize_t>& neighborhood) {
             if (local_vectors.size() != neighborhood.size())
               DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
                          "local_vectors.size(): " << local_vectors.size() << "\n   neighborhood.size(): "
                                                   << neighborhood.size());
+            std::vector<size_t> subdomains(neighborhood.size());
+            for (size_t ii = 0; ii < neighborhood.size(); ++ii)
+              subdomains[ii] = XT::Common::numeric_cast<size_t>(neighborhood[ii]);
             std::vector<std::shared_ptr<const S>> neighborhood_spaces(self.dd_grid().size(), nullptr);
-            for (const auto& subdomain : neighborhood) {
-              const auto ss = XT::Common::numeric_cast<size_t>(subdomain);
-              if (self.backend()[ss] == nullptr)
+            for (const auto& subdomain : subdomains) {
+              if (self.backend()[subdomain] == nullptr)
                 DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
                            "This BlockSpace (restricted to a neighborhood) does not have a local space for subdomain "
-                               << ss
+                               << subdomain
                                << "!");
-              neighborhood_spaces[subdomain] = self.backend()[ss];
+              neighborhood_spaces[subdomain] = self.backend()[subdomain];
             }
             const type neighborhood_space(self.dd_grid(), neighborhood_spaces);
-            std::vector<size_t> subdomains(neighborhood.size());
-            size_t counter = 0;
-            for (const auto& ss : neighborhood)
-              subdomains[counter++] = XT::Common::numeric_cast<size_t>(ss);
             return projector<>::project(neighborhood_space, local_vectors, subdomains);
-          });
+          },
+          "local_vectors"_a,
+          "neighborhood"_a);
   } // ... addbind_vector(...)
 
 public:
@@ -374,7 +374,7 @@ public:
           "subdomain"_a,
           "neighbor"_a);
     c.def("restricted_to_neighborhood",
-          [](const type& self, const std::set<ssize_t>& neighborhood) {
+          [](const type& self, const std::vector<ssize_t>& neighborhood) {
             std::vector<std::shared_ptr<const S>> neighborhood_spaces(self.dd_grid().size(), nullptr);
             for (const auto& subdomain : neighborhood)
               neighborhood_spaces[subdomain] = self.backend()[XT::Common::numeric_cast<size_t>(subdomain)];
