@@ -42,49 +42,24 @@ struct ChooseLimiter
 template <class VectorType>
 struct ChooseLimiter<SlopeLimiters::minmod, VectorType>
 {
-  static VectorType
-  limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& /*centered_slope*/)
-  {
-    VectorType ret;
-    for (size_t ii = 0; ii < slope_left.size(); ++ii) {
-      const auto slope_left_abs = std::abs(slope_left[ii]);
-      const auto slope_right_abs = std::abs(slope_right[ii]);
-      if (slope_left_abs < slope_right_abs && slope_left[ii] * slope_right[ii] > 0)
-        ret[ii] = slope_left[ii];
-      else if (Dune::XT::Common::FloatCmp::ge(slope_left_abs, slope_right_abs) && slope_left[ii] * slope_right[ii] > 0)
-        ret[ii] = slope_right[ii];
-      else
-        ret[ii] = 0.0;
-    }
-    return ret;
-  }
-};
-
-template <class FieldType>
-struct ChooseLimiter<SlopeLimiters::minmod, XT::LA::EigenDenseVector<FieldType>>
-{
-  typedef XT::LA::EigenDenseVector<FieldType> VectorType;
+  typedef typename XT::Common::VectorAbstraction<VectorType> Abstr;
   static VectorType limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& centered_slope)
   {
-    VectorType ret(slope_left.size(), 0);
+    VectorType ret = Abstr::create(slope_left.size(), 0.);
     for (size_t ii = 0; ii < slope_left.size(); ++ii) {
       // check for equal sign
-      if (slope_left.get_entry(ii) * slope_right.get_entry(ii) > 0
-          && centered_slope.get_entry(ii) * slope_right.get_entry(ii) > 0) {
-        const auto slope_left_abs = std::abs(slope_left.get_entry(ii));
-        const auto slope_right_abs = std::abs(slope_right.get_entry(ii));
-        const auto slope_centered_abs = std::abs(centered_slope.get_entry(ii));
+      if (Abstr::get_entry(slope_left, ii) * Abstr::get_entry(slope_right, ii) > 0
+          && Abstr::get_entry(centered_slope, ii) * Abstr::get_entry(slope_right, ii) > 0) {
+        const auto slope_left_abs = std::abs(Abstr::get_entry(slope_left, ii));
+        const auto slope_right_abs = std::abs(Abstr::get_entry(slope_right, ii));
+        const auto slope_centered_abs = std::abs(Abstr::get_entry(centered_slope, ii));
         if (XT::Common::FloatCmp::lt(slope_left_abs, slope_right_abs)) {
           if (XT::Common::FloatCmp::lt(slope_left_abs, slope_centered_abs))
-            ret.set_entry(ii, slope_left.get_entry(ii));
-          else
-            ret.set_entry(ii, centered_slope.get_entry(ii));
-        } else {
-          if (XT::Common::FloatCmp::lt(slope_right_abs, slope_centered_abs))
-            ret.set_entry(ii, slope_right.get_entry(ii));
-          else
-            ret.set_entry(ii, centered_slope.get_entry(ii));
-        }
+            Abstr::set_entry(ret, ii, Abstr::get_entry(slope_left, ii));
+        } else if (XT::Common::FloatCmp::lt(slope_right_abs, slope_centered_abs))
+          Abstr::set_entry(ret, ii, Abstr::get_entry(slope_right, ii));
+        else
+          Abstr::set_entry(ret, ii, Abstr::get_entry(centered_slope, ii));
       }
     }
     return ret;
@@ -132,21 +107,11 @@ struct ChooseLimiter<SlopeLimiters::mc, VectorType>
 template <class VectorType>
 struct ChooseLimiter<SlopeLimiters::no_slope, VectorType>
 {
-  static VectorType
-  limit(const VectorType& /*slope_left*/, const VectorType& /*slope_right*/, const VectorType& /*centered_slope*/)
-  {
-    return VectorType(0.);
-  }
-};
-
-template <class FieldType>
-struct ChooseLimiter<SlopeLimiters::no_slope, XT::LA::EigenDenseVector<FieldType>>
-{
-  typedef XT::LA::EigenDenseVector<FieldType> VectorType;
+  typedef typename XT::Common::VectorAbstraction<VectorType> Abstr;
   static VectorType
   limit(const VectorType& slope_left, const VectorType& /*slope_right*/, const VectorType& /*centered_slope*/)
   {
-    return VectorType(slope_left.size(), 0.);
+    return Abstr::create(slope_left.size(), 0.);
   }
 };
 
