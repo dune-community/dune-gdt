@@ -30,6 +30,7 @@ template <class AnalyticalFluxImp,
           SlopeLimiters slope_lim,
           bool realizability_lim,
           class BasisFunctionImp,
+          class EigenSolverImp,
           class Traits>
 class AdvectionLaxFriedrichsOperator;
 
@@ -43,13 +44,15 @@ template <class AnalyticalFluxImp,
           size_t reconstructionOrder,
           SlopeLimiters slope_lim,
           bool realizability_lim,
-          class BasisFunctionImp>
+          class BasisFunctionImp,
+          class EigenSolverImp>
 class AdvectionLaxFriedrichsOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp,
                                                                         BoundaryValueFunctionImp,
                                                                         reconstructionOrder,
                                                                         slope_lim,
                                                                         realizability_lim,
-                                                                        BasisFunctionImp>
+                                                                        BasisFunctionImp,
+                                                                        EigenSolverImp>
 {
   static_assert(XT::Functions::is_localizable_function<LocalizableFunctionImp>::value,
                 "LocalizableFunctionImp has to be derived from XT::Functions::LocalizableFunctionInterface!");
@@ -59,7 +62,8 @@ class AdvectionLaxFriedrichsOperatorTraits : public AdvectionTraitsBase<Analytic
                               reconstructionOrder,
                               slope_lim,
                               realizability_lim,
-                              BasisFunctionImp>
+                              BasisFunctionImp,
+                              EigenSolverImp>
       BaseType;
 
 public:
@@ -83,6 +87,7 @@ public:
                                          slope_limiter,
                                          realizability_limiting,
                                          BasisFunctionType,
+                                         EigenSolverImp,
                                          AdvectionLaxFriedrichsOperatorTraits>
       derived_type;
 }; // class AdvectionLaxFriedrichsOperatorTraits
@@ -102,13 +107,15 @@ template <class AnalyticalFluxImp,
                                                                       typename BoundaryValueFunctionImp::RangeFieldType,
                                                                       BoundaryValueFunctionImp::dimRange,
                                                                       BoundaryValueFunctionImp::dimRangeCols>,
+          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::LocalfunctionType>,
           class Traits = internal::AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp,
                                                                         BoundaryValueFunctionImp,
                                                                         LocalizableFunctionImp,
                                                                         polOrder,
                                                                         slope_lim,
                                                                         realizability_lim,
-                                                                        BasisFunctionImp>>
+                                                                        BasisFunctionImp,
+                                                                        EigenSolverImp>>
 class AdvectionLaxFriedrichsOperator : public Dune::GDT::OperatorInterface<Traits>, public AdvectionOperatorBase<Traits>
 {
   typedef AdvectionOperatorBase<Traits> BaseType;

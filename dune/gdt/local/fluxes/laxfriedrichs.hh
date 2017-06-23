@@ -28,25 +28,33 @@ namespace GDT {
 
 
 // forwards
-template <class AnalyticalFluxImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp,
+          class LocalizableFunctionImp,
+          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::LocalfunctionType>>
 class LaxFriedrichsLocalNumericalCouplingFlux;
 
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp,
+          class BoundaryValueFunctionImp,
+          class LocalizableFunctionImp,
+          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::LocalfunctionType>>
 class LaxFriedrichsLocalDirichletNumericalBoundaryFlux;
 
-template <class AnalyticalFluxImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp,
+          class LocalizableFunctionImp,
+          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::LocalfunctionType>>
 class LaxFriedrichsLocalAbsorbingNumericalBoundaryFlux;
 
 
 namespace internal {
 
 
-template <class AnalyticalFluxImp, class LocalizableFunctionImp>
-class LaxFriedrichsLocalNumericalCouplingFluxTraits : public GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp>
+template <class AnalyticalFluxImp, class LocalizableFunctionImp, class EigenSolverImp>
+class LaxFriedrichsLocalNumericalCouplingFluxTraits
+    : public GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, EigenSolverImp>
 {
   static_assert(Dune::XT::Functions::is_localizable_function<LocalizableFunctionImp>::value,
                 "LocalizableFunctionImp has to be derived from XT::Functions::is_localizable_function.");
-  typedef GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp> BaseType;
+  typedef GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, EigenSolverImp> BaseType;
 
 public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
@@ -55,14 +63,16 @@ public:
   typedef std::tuple<std::shared_ptr<AnalyticalFluxLocalfunctionType>, unsigned int, std::shared_ptr<LocalfunctionType>>
       LocalfunctionTupleType;
   static_assert(LocalizableFunctionType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
-  typedef LaxFriedrichsLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionType> derived_type;
+  typedef LaxFriedrichsLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionType, EigenSolverImp>
+      derived_type;
 }; // class LaxFriedrichsLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp, class EigenSolverImp>
 class LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits
-    : public LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp>
+    : public LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp>
 {
-  typedef LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp> BaseType;
+  typedef LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp>
+      BaseType;
 
 public:
   using typename BaseType::LocalfunctionType;
@@ -71,7 +81,8 @@ public:
   typedef typename BoundaryValueFunctionType::LocalfunctionType BoundaryValueLocalfunctionType;
   typedef LaxFriedrichsLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
                                                            BoundaryValueFunctionImp,
-                                                           LocalizableFunctionImp>
+                                                           LocalizableFunctionImp,
+                                                           EigenSolverImp>
       derived_type;
   typedef std::tuple<std::shared_ptr<AnalyticalFluxLocalfunctionType>,
                      unsigned int,
@@ -80,12 +91,13 @@ public:
       LocalfunctionTupleType;
 }; // class LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits
 
-template <class AnalyticalFluxImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class LocalizableFunctionImp, class EigenSolverImp>
 class LaxFriedrichsLocalAbsorbingNumericalBoundaryFluxTraits
-    : public LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp>
+    : public LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp>
 {
 public:
-  typedef LaxFriedrichsLocalAbsorbingNumericalBoundaryFlux<AnalyticalFluxImp, LocalizableFunctionImp> derived_type;
+  typedef LaxFriedrichsLocalAbsorbingNumericalBoundaryFlux<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp>
+      derived_type;
 }; // class LaxFriedrichsLocalAbsorbingNumericalBoundaryFluxTraits
 
 template <class Traits>
@@ -101,6 +113,7 @@ public:
   typedef typename Traits::RangeType RangeType;
   typedef typename Traits::DomainType DomainType;
   typedef typename Traits::AnalyticalFluxLocalfunctionType AnalyticalFluxLocalfunctionType;
+  typedef typename Traits::EigenSolverType EigenSolverType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
@@ -162,10 +175,9 @@ public:
     if (use_local_) {
       if (!is_linear_ || !max_derivative_calculated_) {
         DomainType max_derivative(0);
-        const auto eigen_solver_inside = Dune::GDT::EigenSolver<AnalyticalFluxLocalfunctionType, false>(
-            *local_flux_inside, x_in_inside_coords, u_i, param_inside_);
-        const auto eigen_solver_outside = Dune::GDT::EigenSolver<AnalyticalFluxLocalfunctionType, false>(
-            *local_flux_outside, x_in_outside_coords, u_j, param_outside_);
+        const auto eigen_solver_inside = EigenSolverType(*local_flux_inside, x_in_inside_coords, u_i, param_inside_);
+        const auto eigen_solver_outside =
+            EigenSolverType(*local_flux_outside, x_in_outside_coords, u_j, param_outside_);
         const auto& eigenvalues_inside = eigen_solver_inside.eigenvalues();
         const auto& eigenvalues_outside = eigen_solver_outside.eigenvalues();
         for (size_t ii = 0; ii < dimDomain; ++ii)
@@ -260,14 +272,18 @@ bool LaxFriedrichsFluxImplementation<Traits>::is_instantiated_(false);
  *  You can also provide a user-defined \param lambda that is used as \lambda_{ij} on all intersections. You need to set
  *  use_local to false, otherwise lambda will not be used.
  */
-template <class AnalyticalFluxImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class LocalizableFunctionImp, class EigenSolverImp>
 class LaxFriedrichsLocalNumericalCouplingFlux
     : public LocalNumericalCouplingFluxInterface<internal::
                                                      LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
-                                                                                                   LocalizableFunctionImp>>
+                                                                                                   LocalizableFunctionImp,
+                                                                                                   EigenSolverImp>>
 {
 public:
-  typedef internal::LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp> Traits;
+  typedef internal::LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
+                                                                  LocalizableFunctionImp,
+                                                                  EigenSolverImp>
+      Traits;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
@@ -330,17 +346,19 @@ private:
 *  \brief  Lax-Friedrichs flux evaluation for Dirichlet boundary intersections.
 *  \see    LaxFriedrichsLocalNumericalCouplingFlux
 */
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp, class EigenSolverImp>
 class LaxFriedrichsLocalDirichletNumericalBoundaryFlux
     : public LocalNumericalBoundaryFluxInterface<internal::
                                                      LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                                                             BoundaryValueFunctionImp,
-                                                                                                            LocalizableFunctionImp>>
+                                                                                                            LocalizableFunctionImp,
+                                                                                                            EigenSolverImp>>
 {
 public:
   typedef internal::LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                            BoundaryValueFunctionImp,
-                                                                           LocalizableFunctionImp>
+                                                                           LocalizableFunctionImp,
+                                                                           EigenSolverImp>
       Traits;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
@@ -408,14 +426,17 @@ private:
  *  \brief  Lax-Friedrichs flux evaluation for absorbing boundary conditions on boundary intersections.
  *  \see    LaxFriedrichsLocalNumericalCouplingFlux
  */
-template <class AnalyticalFluxImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class LocalizableFunctionImp, class EigenSolverImp>
 class LaxFriedrichsLocalAbsorbingNumericalBoundaryFlux
     : public LocalNumericalBoundaryFluxInterface<internal::
                                                      LaxFriedrichsLocalAbsorbingNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                                                            LocalizableFunctionImp>>
+                                                                                                            LocalizableFunctionImp,
+                                                                                                            EigenSolverImp>>
 {
 public:
-  typedef internal::LaxFriedrichsLocalAbsorbingNumericalBoundaryFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp>
+  typedef internal::LaxFriedrichsLocalAbsorbingNumericalBoundaryFluxTraits<AnalyticalFluxImp,
+                                                                           LocalizableFunctionImp,
+                                                                           EigenSolverImp>
       Traits;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;

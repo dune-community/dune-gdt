@@ -26,17 +26,20 @@ namespace GDT {
 
 
 // forwards
-template <class AnalyticalFluxImp>
+template <class AnalyticalFluxImp,
+          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::LocalfunctionType>>
 class GodunovLocalNumericalCouplingFlux;
 
-template <class AnalyticalFluxImp, class BoundaryValueFunctionType>
+template <class AnalyticalFluxImp,
+          class BoundaryValueFunctionType,
+          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::LocalfunctionType>>
 class GodunovLocalDirichletNumericalBoundaryFlux;
 
 
 namespace internal {
 
 
-template <class AnalyticalFluxImp>
+template <class AnalyticalFluxImp, class EigenSolverImp>
 class GodunovLocalNumericalCouplingFluxTraits
 {
   //  static_assert(is_analytical_flux<AnalyticalFluxImp>::value,
@@ -44,7 +47,8 @@ class GodunovLocalNumericalCouplingFluxTraits
 
 public:
   typedef AnalyticalFluxImp AnalyticalFluxType;
-  typedef GodunovLocalNumericalCouplingFlux<AnalyticalFluxType> derived_type;
+  typedef EigenSolverImp EigenSolverType;
+  typedef GodunovLocalNumericalCouplingFlux<AnalyticalFluxType, EigenSolverType> derived_type;
   typedef typename AnalyticalFluxType::EntityType EntityType;
   typedef typename AnalyticalFluxType::DomainFieldType DomainFieldType;
   typedef typename AnalyticalFluxType::DomainType DomainType;
@@ -56,17 +60,18 @@ public:
   static const size_t dimRange = AnalyticalFluxType::dimRange;
 }; // class GodunovLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp>
+template <class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp, class EigenSolverImp>
 class GodunovLocalDirichletNumericalBoundaryFluxTraits
-    : public GodunovLocalNumericalCouplingFluxTraits<AnalyticalBoundaryFluxImp>
+    : public GodunovLocalNumericalCouplingFluxTraits<AnalyticalBoundaryFluxImp, EigenSolverImp>
 {
-  typedef GodunovLocalNumericalCouplingFluxTraits<AnalyticalBoundaryFluxImp> BaseType;
+  typedef GodunovLocalNumericalCouplingFluxTraits<AnalyticalBoundaryFluxImp, EigenSolverImp> BaseType;
 
 public:
   typedef AnalyticalBoundaryFluxImp AnalyticalFluxType;
   typedef BoundaryValueFunctionImp BoundaryValueFunctionType;
   typedef typename BoundaryValueFunctionType::LocalfunctionType LocalfunctionType;
-  typedef GodunovLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueFunctionType> derived_type;
+  typedef GodunovLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueFunctionType, EigenSolverImp>
+      derived_type;
   using typename BaseType::AnalyticalFluxLocalfunctionType;
   typedef std::tuple<std::shared_ptr<AnalyticalFluxLocalfunctionType>, std::shared_ptr<LocalfunctionType>>
       LocalfunctionTupleType;
@@ -84,6 +89,7 @@ public:
   typedef typename Traits::DomainType DomainType;
   typedef typename Traits::RangeType RangeType;
   typedef typename Traits::AnalyticalFluxLocalfunctionType AnalyticalFluxLocalfunctionType;
+  typedef typename Traits::EigenSolverType EigenSolverType;
   static constexpr size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
   typedef FieldVector<XT::LA::CommonSparseMatrix<RangeFieldType>, dimDomain> JacobiansType;
@@ -154,8 +160,7 @@ private:
       RangeType u_mean = u_i + u_j;
       u_mean *= RangeFieldType(0.5);
       const auto& local_flux = std::get<0>(local_functions_tuple);
-      const auto eigen_solver =
-          Dune::GDT::EigenSolver<AnalyticalFluxLocalfunctionType, false>(*local_flux, x_local, u_mean, param_inside_);
+      const auto eigen_solver = EigenSolverType(*local_flux, x_local, u_mean, param_inside_);
       const auto& eigenvalues = eigen_solver.eigenvalues();
       const auto& eigenvectors = eigen_solver.eigenvectors();
       const auto& eigenvectors_inverse = eigen_solver.eigenvectors_inverse();
@@ -235,12 +240,13 @@ bool GodunovFluxImplementation<Traits>::is_instantiated_(false);
  *  You can also provide a user-defined \param lambda that is used as \lambda_{ij} on all intersections. You need to set
  *  use_local to false, otherwise lambda will not be used.
  */
-template <class AnalyticalFluxImp>
+template <class AnalyticalFluxImp, class EigenSolverImp>
 class GodunovLocalNumericalCouplingFlux
-    : public LocalNumericalCouplingFluxInterface<internal::GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp>>
+    : public LocalNumericalCouplingFluxInterface<internal::GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
+                                                                                                   EigenSolverImp>>
 {
 public:
-  typedef internal::GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp> Traits;
+  typedef internal::GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, EigenSolverImp> Traits;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
@@ -294,14 +300,17 @@ private:
 *  \brief  Godunov flux evaluation for Dirichlet boundary intersections.
 *  \see    GodunovLocalNumericalCouplingFlux
 */
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp>
+template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class EigenSolverImp>
 class GodunovLocalDirichletNumericalBoundaryFlux
     : public LocalNumericalBoundaryFluxInterface<internal::
                                                      GodunovLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                                                      BoundaryValueFunctionImp>>
+                                                                                                      BoundaryValueFunctionImp,
+                                                                                                      EigenSolverImp>>
 {
 public:
-  typedef internal::GodunovLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp, BoundaryValueFunctionImp>
+  typedef internal::GodunovLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
+                                                                     BoundaryValueFunctionImp,
+                                                                     EigenSolverImp>
       Traits;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;

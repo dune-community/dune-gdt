@@ -150,7 +150,7 @@ int main(int argc, char** argv)
 #endif
 
   // ********************* choose dimensions, fluxes and grid type ************************
-  static const int dimDomain = 3;
+  static const int dimDomain = 2;
   //  static const int dimDomain = 1;
   static const int momentOrder = 2;
   //  const auto numerical_flux = NumericalFluxes::kinetic;
@@ -186,23 +186,23 @@ int main(int argc, char** argv)
   //                                                  3>
   //          BasisfunctionType;
 
-  static const size_t refinements = 0;
-  typedef typename Hyperbolic::Problems::
-      PiecewiseMonomials<double,
-                         dimDomain,
-                         double,
-                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces(),
-                         1,
-                         3>
-          BasisfunctionType;
+  //  static const size_t refinements = 0;
+  //  typedef typename Hyperbolic::Problems::
+  //      PiecewiseMonomials<double,
+  //                         dimDomain,
+  //                         double,
+  //                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces(),
+  //                         1,
+  //                         3>
+  //          BasisfunctionType;
 
 
   //  typedef typename Hyperbolic::Problems::
   //      HatFunctions<double, 3, double, Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(), 1, 2>
   //          BasisfunctionType;
 
-  //  typedef typename Hyperbolic::Problems::RealSphericalHarmonics<double, double, momentOrder, dimDomain, true>
-  //      BasisfunctionType;
+  typedef typename Hyperbolic::Problems::RealSphericalHarmonics<double, double, momentOrder, dimDomain, true>
+      BasisfunctionType;
 
   //  typedef typename Hyperbolic::Problems::
   //      PiecewiseMonomials<double,
@@ -210,7 +210,8 @@ int main(int argc, char** argv)
   //                         double,
   //                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces()>
   //          BasisfunctionType;
-  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>(0, 4);
+  //  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>(0, 4);
+  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>();
   //  std::shared_ptr<const BasisfunctionType> basis_functions =
   //      std::make_shared<const BasisfunctionType>(refinements, refinements + 4);
   static const size_t dimRange = BasisfunctionType::dimRange;
@@ -258,9 +259,9 @@ int main(int argc, char** argv)
   //                                                       dimRange>
   //      ProblemImp;
 
-  typedef typename Hyperbolic::Problems::
-      PointSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
-          ProblemImp;
+  //  typedef typename Hyperbolic::Problems::
+  //      PointSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
+  //          ProblemImp;
 
   //  typedef typename Hyperbolic::Problems::PointSourceMn<GridViewType,
   //                                                       BasisfunctionType,
@@ -272,19 +273,19 @@ int main(int argc, char** argv)
   //                                                       dimRange>
   //      ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::
-  //      ModifiedLineSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
-  //          ProblemImp;
+  typedef typename Hyperbolic::Problems::
+      ModifiedLineSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
+          ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::ModifiedLineSourceMn<GridViewType,
-  //                                                              BasisfunctionType,
-  //                                                              EntityType,
-  //                                                              double,
-  //                                                              dimDomain,
-  //                                                              DiscreteFunctionType,
-  //                                                              double,
-  //                                                              dimRange>
-  //      ProblemImp;
+  //    typedef typename Hyperbolic::Problems::ModifiedLineSourceMn<GridViewType,
+  //                                                                BasisfunctionType,
+  //                                                                EntityType,
+  //                                                                double,
+  //                                                                dimDomain,
+  //                                                                DiscreteFunctionType,
+  //                                                                double,
+  //                                                                dimRange>
+  //        ProblemImp;
 
 
   //******************* get typedefs and constants from ProblemType **********************//
@@ -369,7 +370,7 @@ int main(int argc, char** argv)
                                          ConstantFunctionType,
                                          1,
                                          SlopeLimiters::minmod,
-                                         true,
+                                         false,
                                          BasisfunctionType>
       AdvectionOperatorType;
 
@@ -442,6 +443,6 @@ int main(int argc, char** argv)
                   ? "_implicit"
                   : (rhs_time_stepper_method == TimeStepperMethods::matrix_exponential ? "_matexp" : "_explicit");
 
-  timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 3);
+  timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 4);
   return 0;
 }

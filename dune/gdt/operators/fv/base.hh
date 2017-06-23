@@ -52,7 +52,8 @@ template <class AnalyticalFluxImp,
           size_t reconstructionOrder,
           SlopeLimiters slope_lim,
           bool realizability_lim,
-          class BasisFunctionImp>
+          class BasisFunctionImp,
+          class EigenSolverImp>
 class AdvectionTraitsBase
 {
 public:
@@ -62,6 +63,7 @@ public:
   typedef AnalyticalFluxImp AnalyticalFluxType;
   typedef BoundaryValueFunctionImp BoundaryValueType;
   typedef BasisFunctionImp BasisFunctionType;
+  typedef EigenSolverImp EigenSolverType;
   static const size_t dimDomain = AnalyticalFluxType::dimDomain;
   static const size_t dimRange = AnalyticalFluxType::dimRange;
   static const size_t dimRangeCols = 1;
@@ -144,7 +146,8 @@ template <class NumericalCouplingFluxType,
           class NumericalBoundaryFluxType,
           size_t polOrder,
           SlopeLimiters slope_limiter,
-          bool realizability_limiting>
+          bool realizability_limiting,
+          class EigenSolverType>
 struct AdvectionOperatorApplier
 {
   template <class AnalyticalFluxType,
@@ -169,19 +172,19 @@ struct AdvectionOperatorApplier
         LocalOperatorArgTypes&&... local_operator_args)
 
   {
-    typedef XT::LA::EigenDenseVector<RangeFieldType> EigenVectorType;
+    typedef typename EigenSolverType::VectorType VectorType;
     typedef typename SourceType::SpaceType::GridLayerType GridLayerType;
     typedef typename BoundaryValueType::DomainType DomainType;
     static const size_t dimDomain = BoundaryValueType::dimDomain;
     static const size_t dimRange = BoundaryValueType::dimRange;
     const GridLayerType& grid_layer = source.space().grid_layer();
 
-    // evaluate cell averages as EigenVectorType
-    std::vector<EigenVectorType> source_values(grid_layer.indexSet().size(0));
+    // evaluate cell averages as VectorType
+    std::vector<VectorType> source_values(grid_layer.indexSet().size(0));
     for (const auto& entity : Dune::elements(grid_layer)) {
       const auto& entity_index = grid_layer.indexSet().index(entity);
       const auto& local_source = source.local_function(entity);
-      source_values[entity_index] = XT::LA::internal::FieldVectorToLaVector<EigenVectorType, dimRange>::convert(
+      source_values[entity_index] = XT::LA::internal::FieldVectorToLaVector<VectorType, dimRange>::convert(
           local_source->evaluate(entity.geometry().local(entity.geometry().center())));
     }
 
@@ -189,15 +192,18 @@ struct AdvectionOperatorApplier
     std::vector<std::map<DomainType, typename BoundaryValueType::RangeType, XT::Common::FieldVectorLess>>
         reconstructed_values(grid_layer.size(0));
 
-    auto local_reconstruction_operator =
-        LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>(
-            source_values,
-            analytical_flux,
-            boundary_values,
-            grid_layer,
-            param,
-            intersection_quadrature_1d,
-            reconstructed_values);
+    auto local_reconstruction_operator = LocalReconstructionFvOperator<GridLayerType,
+                                                                       AnalyticalFluxType,
+                                                                       BoundaryValueType,
+                                                                       polOrder,
+                                                                       slope_limiter,
+                                                                       EigenSolverType>(source_values,
+                                                                                        analytical_flux,
+                                                                                        boundary_values,
+                                                                                        grid_layer,
+                                                                                        param,
+                                                                                        intersection_quadrature_1d,
+                                                                                        reconstructed_values);
     auto walker = XT::Grid::Walker<GridLayerType>(grid_layer);
     walker.append(local_reconstruction_operator);
     walker.walk(true);
@@ -240,12 +246,14 @@ struct AdvectionOperatorApplier
 template <class NumericalCouplingFluxType,
           class NumericalBoundaryFluxType,
           SlopeLimiters slope_limiter,
-          bool realizability_limiting>
+          bool realizability_limiting,
+          class EigenSolverType>
 struct AdvectionOperatorApplier<NumericalCouplingFluxType,
                                 NumericalBoundaryFluxType,
                                 0,
                                 slope_limiter,
-                                realizability_limiting>
+                                realizability_limiting,
+                                EigenSolverType>
 {
   template <class AnalyticalFluxType,
             class BoundaryValueType,
@@ -307,6 +315,7 @@ public:
   typedef typename Traits::BasisFunctionType BasisFunctionType;
   typedef typename Traits::NumericalCouplingFluxType NumericalCouplingFluxType;
   typedef typename Traits::NumericalBoundaryFluxType NumericalBoundaryFluxType;
+  typedef typename Traits::EigenSolverType EigenSolverType;
 
   typedef Dune::QuadratureRule<DomainFieldType, 1> Intersection1dQuadratureType;
   typedef Dune::QuadratureRule<DomainFieldType, dimDomain - 1> IntersectionQuadratureType;
@@ -329,17 +338,18 @@ public:
                                        NumericalBoundaryFluxType,
                                        polOrder,
                                        slope_limiter,
-                                       realizability_limiting>::apply(analytical_flux_,
-                                                                      boundary_values_,
-                                                                      source,
-                                                                      range,
-                                                                      param,
-                                                                      intersection_1d_quadrature_,
-                                                                      intersection_quadrature_,
-                                                                      quadrature_,
-                                                                      epsilon_,
-                                                                      basis_functions_,
-                                                                      std::forward<Args>(args)...);
+                                       realizability_limiting,
+                                       EigenSolverType>::apply(analytical_flux_,
+                                                               boundary_values_,
+                                                               source,
+                                                               range,
+                                                               param,
+                                                               intersection_1d_quadrature_,
+                                                               intersection_quadrature_,
+                                                               quadrature_,
+                                                               epsilon_,
+                                                               basis_functions_,
+                                                               std::forward<Args>(args)...);
   }
 
   void set_1d_quadrature(const Intersection1dQuadratureType& quadrature)
