@@ -43,8 +43,10 @@
 #include <dune/gdt/functionals/l2.hh>
 #include <dune/gdt/operators/base.bindings.hh>
 #include <dune/gdt/operators/base.hh>
+#include <dune/gdt/operators/elliptic.hh>
 #include <dune/gdt/operators/elliptic-ipdg.hh>
 #include <dune/gdt/operators/fluxreconstruction.hh>
+#include <dune/gdt/operators/oswaldinterpolation.hh>
 #include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/playground/spaces/block.hh>
 #include <dune/gdt/spaces.hh>
@@ -748,6 +750,9 @@ PYBIND11_PLUGIN(__operators_RS2017)
   static const constexpr size_t d = 2;
   typedef double R;
 
+  typedef XT::LA::IstlDenseVector<R> V;
+  typedef XT::LA::IstlRowMajorSparseMatrix<R> M;
+
   m.def("RS2017_residual_indicator_min_diffusion_eigenvalue",
         [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
                dd_grid_provider,
@@ -990,6 +995,52 @@ PYBIND11_PLUGIN(__operators_RS2017)
         "reconstructed_u"_a,
         "reconstructed_v"_a,
         "over_integrate"_a = 2);
+
+  typedef GDT::EllipticMatrixOperator<XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
+                                      XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>,
+                                      typename GDT::SpaceProvider<ALU_2D_SIMPLEX_CONFORMING,
+                                                                  XT::Grid::Layers::dd_subdomain,
+                                                                  GDT::SpaceType::dg,
+                                                                  GDT::Backends::fem,
+                                                                  1,
+                                                                  double,
+                                                                  1>::type,
+                                      XT::LA::IstlRowMajorSparseMatrix<double>,
+                                      typename XT::Grid::Layer<ALU_2D_SIMPLEX_CONFORMING,
+                                                               XT::Grid::Layers::dd_subdomain,
+                                                               XT::Grid::Backends::part>::type>
+      EllipticMatrixOperatorType;
+  try { // we might not be the first to add this
+    py::class_<EllipticMatrixOperatorType,
+               GDT::SystemAssembler<typename EllipticMatrixOperatorType::SourceSpaceType,
+                                    typename EllipticMatrixOperatorType::GridLayerType>>
+        elliptic_matrix_operator(m, "EllipticMatrixOperatorNeighborhood");
+    elliptic_matrix_operator.def("matrix", [](EllipticMatrixOperatorType& self) { return self.matrix(); });
+  } catch (std::runtime_error&) {
+  }
+  m.def("RS2017_make_elliptic_matrix_operator_on_subdomain",
+        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
+               dd_grid_provider,
+           const ssize_t subdomain,
+           const typename EllipticMatrixOperatorType::SourceSpaceType& space,
+           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
+           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
+           const ssize_t over_integrate) {
+          return new EllipticMatrixOperatorType(
+              XT::Common::numeric_cast<ssize_t>(over_integrate),
+              lambda,
+              kappa,
+              space,
+              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
+                  XT::Common::numeric_cast<int>(subdomain)));
+        },
+        "dd_grid_provider"_a,
+        "subdomain"_a,
+        "space"_a,
+        "lambda"_a,
+        "kappa"_a,
+        "over_integrate"_a = 2);
+
 #endif // HAVE_DUNE_ALUGRID
 
   m.def("_init_mpi",
