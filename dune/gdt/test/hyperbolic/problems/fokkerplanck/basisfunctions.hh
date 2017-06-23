@@ -290,29 +290,34 @@ public:
             if (l1 == l2 + 1 && m1 == m2 + 1) {
               Bx[pos(l1, m1)][pos(l2, m2)] =
                   -0.5 * std::sqrt((l2 + m2 + 1) * (l2 + m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
-              By[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::complex<RangeFieldType>(0, 1)
-                                             * std::sqrt((l2 + m2 + 1) * (l2 + m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
+              By[pos(l1, m1)][pos(l2, m2)] =
+                  0.5 * std::complex<RangeFieldType>(0, 1)
+                  * std::sqrt((l2 + m2 + 1.) * (l2 + m2 + 2.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
             }
             if (l1 == l2 - 1 && m1 == m2 + 1) {
-              Bx[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::sqrt((l2 - m2) * (l2 - m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
+              Bx[pos(l1, m1)][pos(l2, m2)] =
+                  0.5 * std::sqrt((l2 - m2) * (l2 - m2 - 1.) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
               By[pos(l1, m1)][pos(l2, m2)] = -0.5 * std::complex<RangeFieldType>(0, 1)
-                                             * std::sqrt((l2 - m2) * (l2 - m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
+                                             * std::sqrt((l2 - m2) * (l2 - m2 - 1.) / ((2 * l2 - 1.) * (2. * l2 + 1.)));
             }
             if (l1 == l2 + 1 && m1 == m2 - 1) {
               Bx[pos(l1, m1)][pos(l2, m2)] =
                   0.5 * std::sqrt((l2 - m2 + 1) * (l2 - m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
-              By[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::complex<RangeFieldType>(0, 1)
-                                             * std::sqrt((l2 - m2 + 1) * (l2 - m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
+              By[pos(l1, m1)][pos(l2, m2)] =
+                  0.5 * std::complex<RangeFieldType>(0, 1)
+                  * std::sqrt((l2 - m2 + 1.) * (l2 - m2 + 2.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
             }
             if (l1 == l2 - 1 && m1 == m2 - 1) {
-              Bx[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::sqrt((l2 + m2) * (l2 + m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
+              Bx[pos(l1, m1)][pos(l2, m2)] =
+                  -0.5 * std::sqrt((l2 + m2) * (l2 + m2 - 1.) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
               By[pos(l1, m1)][pos(l2, m2)] = -0.5 * std::complex<RangeFieldType>(0, 1)
-                                             * std::sqrt((l2 + m2) * (l2 + m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
+                                             * std::sqrt((l2 + m2) * (l2 + m2 - 1) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
             }
             if (m1 == m2 && l1 == l2 + 1)
-              Bz[pos(l1, m1)][pos(l2, m2)] = std::sqrt((l2 - m2 + 1) * (l2 + m2 + 1) / ((2 * l2 + 1) * (2 * l2 + 3)));
+              Bz[pos(l1, m1)][pos(l2, m2)] =
+                  std::sqrt((l2 - m2 + 1.) * (l2 + m2 + 1.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
             if (m1 == m2 && l1 == l2 - 1)
-              Bz[pos(l1, m1)][pos(l2, m2)] = std::sqrt((l2 - m2) * (l2 + m2) / ((2 * l2 - 1) * (2 * l2 + 1)));
+              Bz[pos(l1, m1)][pos(l2, m2)] = std::sqrt((l2 - m2) * (l2 + m2) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
           } // m2
         } // l2
       } // m1
@@ -456,16 +461,16 @@ private:
             if (!only_even || (!((m1 + l1) % 2) && !((m2 + l2) % 2))) {
               if (l1 == l2 + 1 && m1 == m2 + 1)
                 Bx[pos(l1, m1)][pos(l2, m2)] =
-                    -0.5 * std::sqrt((l2 + m2 + 1) * (l2 + m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
+                    -0.5 * std::sqrt((l2 + m2 + 1.) * (l2 + m2 + 2.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
               if (l1 == l2 - 1 && m1 == m2 + 1)
                 Bx[pos(l1, m1)][pos(l2, m2)] =
-                    0.5 * std::sqrt((l2 - m2) * (l2 - m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
+                    0.5 * std::sqrt((l2 - m2) * (l2 - m2 - 1.) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
               if (l1 == l2 + 1 && m1 == m2 - 1)
                 Bx[pos(l1, m1)][pos(l2, m2)] =
-                    0.5 * std::sqrt((l2 - m2 + 1) * (l2 - m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
+                    0.5 * std::sqrt((l2 - m2 + 1.) * (l2 - m2 + 2.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
               if (l1 == l2 - 1 && m1 == m2 - 1)
                 Bx[pos(l1, m1)][pos(l2, m2)] =
-                    0.5 * std::sqrt((l2 + m2) * (l2 + m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
+                    -0.5 * std::sqrt((l2 + m2) * (l2 + m2 - 1.) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
             }
           } // m2
         } // l2
@@ -485,16 +490,16 @@ private:
             if (!only_even || (!((m1 + l1) % 2) && !((m2 + l2) % 2))) {
               if (l1 == l2 + 1 && m1 == -m2 - 1)
                 By[pos(l1, m1)][pos(l2, m2)] =
-                    0.5 * sgn(m2) * std::sqrt((l2 + m2 + 1) * (l2 + m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
+                    0.5 * sgn(m2) * std::sqrt((l2 + m2 + 1.) * (l2 + m2 + 2.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
               if (l1 == l2 - 1 && m1 == -m2 - 1)
                 By[pos(l1, m1)][pos(l2, m2)] =
-                    -0.5 * sgn(m2) * std::sqrt((l2 - m2) * (l2 - m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
+                    -0.5 * sgn(m2) * std::sqrt((l2 - m2) * (l2 - m2 - 1.) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
               if (l1 == l2 + 1 && m1 == -m2 + 1)
                 By[pos(l1, m1)][pos(l2, m2)] =
-                    0.5 * sgn(m2) * std::sqrt((l2 - m2 + 1) * (l2 - m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
+                    0.5 * sgn(m2) * std::sqrt((l2 - m2 + 1.) * (l2 - m2 + 2.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
               if (l1 == l2 - 1 && m1 == -m2 + 1)
                 By[pos(l1, m1)][pos(l2, m2)] =
-                    -0.5 * sgn(m2) * std::sqrt((l2 + m2) * (l2 + m2 - 1) / ((2 * l2 - 1) * (2 * l2 + 1)));
+                    -0.5 * sgn(m2) * std::sqrt((l2 + m2) * (l2 + m2 - 1.) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
             }
           } // m2
         } // l2
@@ -513,9 +518,10 @@ private:
           for (int m2 = -l2; size_t(std::abs(m2)) <= l2; ++m2) {
             if (!only_even || (!((m1 + l1) % 2) && !((m2 + l2) % 2))) {
               if (m1 == m2 && l1 == l2 + 1)
-                Bz[pos(l1, m1)][pos(l2, m2)] = std::sqrt((l2 - m2 + 1) * (l2 + m2 + 1) / ((2 * l2 + 1) * (2 * l2 + 3)));
+                Bz[pos(l1, m1)][pos(l2, m2)] =
+                    std::sqrt((l2 - m2 + 1.) * (l2 + m2 + 1.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
               if (m1 == m2 && l1 == l2 - 1)
-                Bz[pos(l1, m1)][pos(l2, m2)] = std::sqrt((l2 - m2) * (l2 + m2) / ((2 * l2 - 1) * (2 * l2 + 1)));
+                Bz[pos(l1, m1)][pos(l2, m2)] = std::sqrt((l2 - m2) * (l2 + m2) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
             }
           } // m2
         } // l2
