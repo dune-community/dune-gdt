@@ -1085,7 +1085,7 @@ public:
   static const size_t dimRangeCols = rangeDimCols;
 
 private:
-  typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseType;
+  typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimFlux> BaseType;
 
 public:
   typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
@@ -1179,16 +1179,16 @@ public:
     return ret;
   }
 
-  virtual FieldVector<MatrixType, dimDomain> mass_matrix_with_v() const override
+  virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const override
   {
-    FieldVector<MatrixType, dimDomain> B(MatrixType(0));
+    FieldVector<MatrixType, dimFlux> B(MatrixType(0));
     for (const auto& quad_point : quadrature_) {
       const auto v = quad_point.position();
       const auto basis_evaluated = evaluate(v);
       const auto weight = quad_point.weight();
       for (size_t nn = 0; nn < dimRange; ++nn)
         for (size_t mm = 0; mm < dimRange; ++mm)
-          for (size_t dd = 0; dd < dimDomain; ++dd)
+          for (size_t dd = 0; dd < dimFlux; ++dd)
             B[dd][nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * v[dd] * weight;
     } // quadrature
     return B;
