@@ -196,12 +196,11 @@ int main(int argc, char** argv)
   //                         3>
   //          BasisfunctionType;
 
-
   //  typedef typename Hyperbolic::Problems::
   //      HatFunctions<double, 3, double, Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(), 1, 2>
   //          BasisfunctionType;
 
-  typedef typename Hyperbolic::Problems::RealSphericalHarmonics<double, double, momentOrder, dimDomain, true>
+  typedef typename Hyperbolic::Problems::RealSphericalHarmonics<double, double, momentOrder, dimDomain, false>
       BasisfunctionType;
 
   //  typedef typename Hyperbolic::Problems::
@@ -371,7 +370,7 @@ int main(int argc, char** argv)
                                          BoundaryValueType,
                                          ConstantFunctionType,
                                          0,
-                                         SlopeLimiters::minmod,
+                                         SlopeLimiters::no_slope,
                                          false,
                                          BasisfunctionType>
       AdvectionOperatorType;
@@ -445,6 +444,6 @@ int main(int argc, char** argv)
                   ? "_implicit"
                   : (rhs_time_stepper_method == TimeStepperMethods::matrix_exponential ? "_matexp" : "_explicit");
 
-  timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 3);
+  timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 4);
   return 0;
 }

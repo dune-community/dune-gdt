@@ -222,17 +222,19 @@ public:
   }
 }; // class LegendrePolynomials<DomainFieldType, 1, ...>
 
-template <class DomainFieldType, class RangeFieldType, size_t order, bool only_positive = false>
-class SphericalHarmonics3D
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_positive = false>
+class SphericalHarmonics
     : public BasisfunctionsInterface<DomainFieldType,
                                      3,
                                      RangeFieldType,
                                      only_positive ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1),
-                                     1>
+                                     1,
+                                     fluxDim>
 {
   static const size_t dimDomain = 3;
   static const size_t dimRange = only_positive ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1);
-  typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1> BaseType;
+  static const size_t dimFlux = fluxDim;
+  typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimFlux> BaseType;
 
 public:
   using typename BaseType::DomainType;
@@ -276,54 +278,15 @@ public:
     return mass_matrix();
   }
 
-  FieldVector<MatrixType, dimDomain> mass_matrix_with_v() const override
+  virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const override
   {
-    FieldVector<MatrixType, dimDomain> ret(MatrixType(0));
-    const auto& Bx = ret[0];
-    const auto& By = ret[1];
-    const auto& Bz = ret[2];
-    const auto& pos = helper<only_positive>::pos;
-    for (size_t l1 = 0; l1 <= order; ++l1) {
-      for (int m1 = only_positive ? 0 : -l1; std::abs(m1) <= l1; ++m1) {
-        for (size_t l2 = 0; l2 <= order; ++l2) {
-          for (int m2 = only_positive ? 0 : -l2; std::abs(m2) <= l2; ++m2) {
-            if (l1 == l2 + 1 && m1 == m2 + 1) {
-              Bx[pos(l1, m1)][pos(l2, m2)] =
-                  -0.5 * std::sqrt((l2 + m2 + 1) * (l2 + m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
-              By[pos(l1, m1)][pos(l2, m2)] =
-                  0.5 * std::complex<RangeFieldType>(0, 1)
-                  * std::sqrt((l2 + m2 + 1.) * (l2 + m2 + 2.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
-            }
-            if (l1 == l2 - 1 && m1 == m2 + 1) {
-              Bx[pos(l1, m1)][pos(l2, m2)] =
-                  0.5 * std::sqrt((l2 - m2) * (l2 - m2 - 1.) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
-              By[pos(l1, m1)][pos(l2, m2)] = -0.5 * std::complex<RangeFieldType>(0, 1)
-                                             * std::sqrt((l2 - m2) * (l2 - m2 - 1.) / ((2 * l2 - 1.) * (2. * l2 + 1.)));
-            }
-            if (l1 == l2 + 1 && m1 == m2 - 1) {
-              Bx[pos(l1, m1)][pos(l2, m2)] =
-                  0.5 * std::sqrt((l2 - m2 + 1) * (l2 - m2 + 2) / ((2 * l2 + 1) * (2 * l2 + 3)));
-              By[pos(l1, m1)][pos(l2, m2)] =
-                  0.5 * std::complex<RangeFieldType>(0, 1)
-                  * std::sqrt((l2 - m2 + 1.) * (l2 - m2 + 2.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
-            }
-            if (l1 == l2 - 1 && m1 == m2 - 1) {
-              Bx[pos(l1, m1)][pos(l2, m2)] =
-                  -0.5 * std::sqrt((l2 + m2) * (l2 + m2 - 1.) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
-              By[pos(l1, m1)][pos(l2, m2)] = -0.5 * std::complex<RangeFieldType>(0, 1)
-                                             * std::sqrt((l2 + m2) * (l2 + m2 - 1) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
-            }
-            if (m1 == m2 && l1 == l2 + 1)
-              Bz[pos(l1, m1)][pos(l2, m2)] =
-                  std::sqrt((l2 - m2 + 1.) * (l2 + m2 + 1.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
-            if (m1 == m2 && l1 == l2 - 1)
-              Bz[pos(l1, m1)][pos(l2, m2)] = std::sqrt((l2 - m2) * (l2 + m2) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
-          } // m2
-        } // l2
-      } // m1
-    } // l1
+    FieldVector<MatrixType, dimFlux> ret(MatrixType(0));
+    ret[0] = create_Bx();
+    ret[1] = create_By();
+    if (dimFlux == 3)
+      ret[2] = create_Bz();
     return ret;
-  }
+  } // ... mass_matrix_with_v()
 
   std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
   {
@@ -334,6 +297,81 @@ public:
   }
 
 private:
+  static RangeFieldType A_lm(const size_t l, const int m)
+  {
+    return std::sqrt((l + m) * (l - m) / ((2. * l + 1.) * (2. * l - 1.)));
+  }
+
+  static RangeFieldType B_lm(const size_t l, const int m)
+  {
+    return std::sqrt((l + m) * (l + m - 1.) / ((2. * l + 1.) * (2. * l - 1.)));
+  }
+
+  static MatrixType create_Bx()
+  {
+    MatrixType Bx(0);
+    const auto& pos = helper<only_positive>::pos;
+    for (size_t l1 = 0; l1 <= order; ++l1) {
+      for (int m1 = only_positive ? 0 : -l1; std::abs(m1) <= l1; ++m1) {
+        for (size_t l2 = 0; l2 <= order; ++l2) {
+          for (int m2 = only_positive ? 0 : -l2; std::abs(m2) <= l2; ++m2) {
+            if (l1 == l2 + 1 && m1 == m2 + 1)
+              Bx[pos(l1, m1)][pos(l2, m2)] = -0.5 * B_lm(l2 + 1, m2 + 1);
+            if (l1 == l2 - 1 && m1 == m2 + 1)
+              Bx[pos(l1, m1)][pos(l2, m2)] = 0.5 * B_lm(l2, -m2);
+            if (l1 == l2 + 1 && m1 == m2 - 1)
+              Bx[pos(l1, m1)][pos(l2, m2)] = 0.5 * B_lm(l2 + 1, -m2 - 1);
+            if (l1 == l2 - 1 && m1 == m2 - 1)
+              Bx[pos(l1, m1)][pos(l2, m2)] = -0.5 * B_lm(l2, m2);
+          } // m2
+        } // l2
+      } // m1
+    } // l1
+    return Bx;
+  } // ... create_Bx()
+
+  static MatrixType create_By()
+  {
+    MatrixType By(0);
+    const auto& pos = helper<only_positive>::pos;
+    for (size_t l1 = 0; l1 <= order; ++l1) {
+      for (int m1 = only_positive ? 0 : -l1; std::abs(m1) <= l1; ++m1) {
+        for (size_t l2 = 0; l2 <= order; ++l2) {
+          for (int m2 = only_positive ? 0 : -l2; std::abs(m2) <= l2; ++m2) {
+            if (l1 == l2 + 1 && m1 == m2 + 1)
+              By[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::complex<RangeFieldType>(0, 1) * B_lm(l2 + 1, m2 + 1);
+            if (l1 == l2 - 1 && m1 == m2 + 1)
+              By[pos(l1, m1)][pos(l2, m2)] = -0.5 * std::complex<RangeFieldType>(0, 1) * B_lm(l2, -m2);
+            if (l1 == l2 + 1 && m1 == m2 - 1)
+              By[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::complex<RangeFieldType>(0, 1) * B_lm(l2 + 1, -m2 - 1);
+            if (l1 == l2 - 1 && m1 == m2 - 1)
+              By[pos(l1, m1)][pos(l2, m2)] = -0.5 * std::complex<RangeFieldType>(0, 1) * B_lm(l2, m2);
+          } // m2
+        } // l2
+      } // m1
+    } // l1
+    return By;
+  } // ... create_By()
+
+  static MatrixType create_Bz()
+  {
+    MatrixType Bz(0);
+    const auto& pos = helper<only_positive>::pos;
+    for (size_t l1 = 0; l1 <= order; ++l1) {
+      for (int m1 = only_positive ? 0 : -l1; std::abs(m1) <= l1; ++m1) {
+        for (size_t l2 = 0; l2 <= order; ++l2) {
+          for (int m2 = only_positive ? 0 : -l2; std::abs(m2) <= l2; ++m2) {
+            if (m1 == m2 && l1 == l2 + 1)
+              Bz[pos(l1, m1)][pos(l2, m2)] = A_lm(l2 + 1, m2);
+            if (m1 == m2 && l1 == l2 - 1)
+              Bz[pos(l1, m1)][pos(l2, m2)] = A_lm(l2, m2);
+          } // m2
+        } // l2
+      } // m1
+    } // l1
+    return Bz;
+  }
+
   template <bool positive, class anything = void>
   struct helper
   {
@@ -450,6 +488,16 @@ public:
   }
 
 private:
+  static RangeFieldType A_lm(const size_t l, const int m)
+  {
+    return std::sqrt((l + m) * (l - m) / ((2. * l + 1.) * (2. * l - 1.)));
+  }
+
+  static RangeFieldType B_lm(const size_t l, const int m)
+  {
+    return std::sqrt((l + m) * (l + m - 1.) / ((2. * l + 1.) * (2. * l - 1.)));
+  }
+
   static MatrixType create_Bx()
   {
     MatrixType Bx(0);
@@ -459,18 +507,26 @@ private:
         for (size_t l2 = 0; l2 <= order; ++l2) {
           for (int m2 = -l2; size_t(std::abs(m2)) <= l2; ++m2) {
             if (!only_even || (!((m1 + l1) % 2) && !((m2 + l2) % 2))) {
-              if (l1 == l2 + 1 && m1 == m2 + 1)
-                Bx[pos(l1, m1)][pos(l2, m2)] =
-                    -0.5 * std::sqrt((l2 + m2 + 1.) * (l2 + m2 + 2.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
-              if (l1 == l2 - 1 && m1 == m2 + 1)
-                Bx[pos(l1, m1)][pos(l2, m2)] =
-                    0.5 * std::sqrt((l2 - m2) * (l2 - m2 - 1.) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
-              if (l1 == l2 + 1 && m1 == m2 - 1)
-                Bx[pos(l1, m1)][pos(l2, m2)] =
-                    0.5 * std::sqrt((l2 - m2 + 1.) * (l2 - m2 + 2.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
-              if (l1 == l2 - 1 && m1 == m2 - 1)
-                Bx[pos(l1, m1)][pos(l2, m2)] =
-                    -0.5 * std::sqrt((l2 + m2) * (l2 + m2 - 1.) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
+              if (l1 == l2 - 1 && m1 == m2 - 1 && m2 > 0)
+                Bx[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::sqrt(1. + (m2 == 1)) * B_lm(l2, m2);
+              if (l1 == l2 + 1 && m1 == m2 - 1 && m2 > 0)
+                Bx[pos(l1, m1)][pos(l2, m2)] = -0.5 * std::sqrt(1. + (m2 == 1)) * B_lm(l2 + 1, -m2 + 1);
+              if (l1 == l2 - 1 && m1 == m2 + 1 && m2 > 0)
+                Bx[pos(l1, m1)][pos(l2, m2)] = -0.5 * B_lm(l2, -m2);
+              if (l1 == l2 + 1 && m1 == m2 + 1 && m2 > 0)
+                Bx[pos(l1, m1)][pos(l2, m2)] = 0.5 * B_lm(l2 + 1, m2 + 1);
+              if (l1 == l2 - 1 && m1 == m2 + 1 && m2 < 0)
+                Bx[pos(l1, m1)][pos(l2, m2)] = 0.5 * (1. - (-m2 == 1)) * B_lm(l2, -m2);
+              if (l1 == l2 + 1 && m1 == m2 + 1 && m2 < 0)
+                Bx[pos(l1, m1)][pos(l2, m2)] = -0.5 * (1. - (-m2 == 1)) * B_lm(l2 + 1, m2 + 1);
+              if (l1 == l2 - 1 && m1 == m2 - 1 && m2 < 0)
+                Bx[pos(l1, m1)][pos(l2, m2)] = -0.5 * B_lm(l2, m2);
+              if (l1 == l2 + 1 && m1 == m2 - 1 && m2 < 0)
+                Bx[pos(l1, m1)][pos(l2, m2)] = 0.5 * B_lm(l2 + 1, -m2 + 1);
+              if (l1 == l2 - 1 && m1 == 1 && m2 == 0)
+                Bx[pos(l1, m1)][pos(l2, m2)] = -1. / std::sqrt(2.) * B_lm(l2, 0);
+              if (l1 == l2 + 1 && m1 == 1 && m2 == 0)
+                Bx[pos(l1, m1)][pos(l2, m2)] = 1. / std::sqrt(2.) * B_lm(l2 + 1, 1);
             }
           } // m2
         } // l2
@@ -488,25 +544,33 @@ private:
         for (size_t l2 = 0; l2 <= order; ++l2) {
           for (int m2 = -l2; size_t(std::abs(m2)) <= l2; ++m2) {
             if (!only_even || (!((m1 + l1) % 2) && !((m2 + l2) % 2))) {
-              if (l1 == l2 + 1 && m1 == -m2 - 1)
-                By[pos(l1, m1)][pos(l2, m2)] =
-                    0.5 * sgn(m2) * std::sqrt((l2 + m2 + 1.) * (l2 + m2 + 2.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
-              if (l1 == l2 - 1 && m1 == -m2 - 1)
-                By[pos(l1, m1)][pos(l2, m2)] =
-                    -0.5 * sgn(m2) * std::sqrt((l2 - m2) * (l2 - m2 - 1.) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
-              if (l1 == l2 + 1 && m1 == -m2 + 1)
-                By[pos(l1, m1)][pos(l2, m2)] =
-                    0.5 * sgn(m2) * std::sqrt((l2 - m2 + 1.) * (l2 - m2 + 2.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
-              if (l1 == l2 - 1 && m1 == -m2 + 1)
-                By[pos(l1, m1)][pos(l2, m2)] =
-                    -0.5 * sgn(m2) * std::sqrt((l2 + m2) * (l2 + m2 - 1.) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
+              if (l1 == l2 + 1 && m1 == -m2 + 1 && m2 > 0)
+                By[pos(l1, m1)][pos(l2, m2)] = 0.5 * (1. - (m2 == 1)) * B_lm(l2 + 2, -m2 + 1);
+              if (l1 == l2 - 1 && m1 == -m2 + 1 && m2 > 0)
+                By[pos(l1, m1)][pos(l2, m2)] = -0.5 * (1. - (m2 == 1)) * B_lm(l2, m2);
+              if (l1 == l2 - 1 && m1 == -m2 - 1 && m2 > 0)
+                By[pos(l1, m1)][pos(l2, m2)] = -0.5 * B_lm(l2, -m2);
+              if (l1 == l2 + 1 && m1 == -m2 - 1 && m2 > 0)
+                By[pos(l1, m1)][pos(l2, m2)] = 0.5 * B_lm(l2 + 1, m2 + 1);
+              if (l1 == l2 - 1 && m1 == -m2 - 1 && m2 < 0)
+                By[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::sqrt(1. + (-m2 == 1)) * B_lm(l2, -m2);
+              if (l1 == l2 + 1 && m1 == -m2 - 1 && m2 < 0)
+                By[pos(l1, m1)][pos(l2, m2)] = -0.5 * std::sqrt(1. + (-m2 == 1)) * B_lm(l2 + 1, m2 + 1);
+              if (l1 == l2 - 1 && m1 == -m2 + 1 && m2 < 0)
+                By[pos(l1, m1)][pos(l2, m2)] = 0.5 * B_lm(l2, m2);
+              if (l1 == l2 + 1 && m1 == -m2 + 1 && m2 < 0)
+                By[pos(l1, m1)][pos(l2, m2)] = -0.5 * B_lm(l2 + 1, -m2 + 1);
+              if (l1 == l2 - 1 && m1 == -1 && m2 == 0)
+                By[pos(l1, m1)][pos(l2, m2)] = -1. / std::sqrt(2.) * B_lm(l2, 0);
+              if (l1 == l2 + 1 && m1 == -1 && m2 == 0)
+                By[pos(l1, m1)][pos(l2, m2)] = 1. / std::sqrt(2.) * B_lm(l2 + 1, 1);
             }
           } // m2
         } // l2
       } // m1
     } // l1
     return By;
-  }
+  } // ... create_By()
 
   static MatrixType create_Bz()
   {
@@ -518,17 +582,16 @@ private:
           for (int m2 = -l2; size_t(std::abs(m2)) <= l2; ++m2) {
             if (!only_even || (!((m1 + l1) % 2) && !((m2 + l2) % 2))) {
               if (m1 == m2 && l1 == l2 + 1)
-                Bz[pos(l1, m1)][pos(l2, m2)] =
-                    std::sqrt((l2 - m2 + 1.) * (l2 + m2 + 1.) / ((2. * l2 + 1.) * (2. * l2 + 3.)));
+                Bz[pos(l1, m1)][pos(l2, m2)] = A_lm(l2 + 1, m2);
               if (m1 == m2 && l1 == l2 - 1)
-                Bz[pos(l1, m1)][pos(l2, m2)] = std::sqrt((l2 - m2) * (l2 + m2) / ((2. * l2 - 1.) * (2. * l2 + 1.)));
+                Bz[pos(l1, m1)][pos(l2, m2)] = A_lm(l2, m2);
             }
           } // m2
         } // l2
       } // m1
     } // l1
     return Bz;
-  }
+  } // ... create_Bz()
 
   template <bool even, class anything = void>
   struct helper
