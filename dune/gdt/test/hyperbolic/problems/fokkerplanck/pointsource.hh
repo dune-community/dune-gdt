@@ -72,8 +72,10 @@ public:
   {
     XT::Common::Configuration grid_config;
     grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
-    grid_config["lower_left"] = "[-0.5 -0.5 -0.5]";
-    grid_config["upper_right"] = "[0.5 0.5 0.5]";
+    //    grid_config["lower_left"] = "[-0.5 -0.5 -0.5]";
+    //    grid_config["upper_right"] = "[0.5 0.5 0.5]";
+    grid_config["lower_left"] = "[-1 -1 -1]";
+    grid_config["upper_right"] = "[1 1 1]";
     grid_config["num_elements"] = "[4 4 4]";
     grid_config["overlap_size"] = "[1 1 1]";
     return grid_config;
@@ -101,13 +103,25 @@ public:
     static const double sigma = 0.03;
     RangeType basis_integrated = basis_functions_.integrated();
     std::vector<typename ActualInitialValueType::LocalizableFunctionType> initial_vals;
+
+    //    initial_vals.emplace_back(
+    //        [=](const DomainType& x) {
+    //          auto ret = basis_integrated;
+    //          ret *= psi_vac_ + 1. / (8. * M_PI * sigma * sigma) * std::exp(-1. * x.two_norm() / (2. * sigma *
+    //          sigma));
+    //          return ret;
+    //        },
+    //        50);
+
     initial_vals.emplace_back(
         [=](const DomainType& x) {
           auto ret = basis_integrated;
-          ret *= psi_vac_ + 1. / (8. * M_PI * sigma * sigma) * std::exp(-1. * x.two_norm() / (2. * sigma * sigma));
+          ret *= std::max(1. / (8. * M_PI * sigma * sigma) * std::exp(-1. * x.two_norm2() / (2. * sigma * sigma)),
+                          1e-4 / (4. * M_PI));
           return ret;
         },
         50);
+
     return new ActualInitialValueType(lower_left, upper_right, num_segments, initial_vals, "initial_values");
   } // ... create_initial_values()
 

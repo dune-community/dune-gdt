@@ -18,190 +18,169 @@
 
 #include <dune/xt/common/string.hh>
 
-#include "twobeams.hh"
+#include "kineticequation.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
 
-/** \see class TwoBeams in twobeams.hh */
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t momentOrder>
-class TwoPulses : public TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder>
+
+template <class BasisfunctionImp,
+          class EntityImp,
+          class DomainFieldImp,
+          size_t dimDomain,
+          class U_,
+          class RangeFieldImp,
+          size_t dimRange>
+class TwoPulsesPn : public KineticFokkerPlanckEquation<BasisfunctionImp,
+                                                       EntityImp,
+                                                       DomainFieldImp,
+                                                       dimDomain,
+                                                       U_,
+                                                       RangeFieldImp,
+                                                       dimRange>
 {
-  typedef TwoPulses<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder> ThisType;
-  typedef TwoBeams<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, momentOrder> BaseType;
+  typedef KineticFokkerPlanckEquation<BasisfunctionImp,
+                                      EntityImp,
+                                      DomainFieldImp,
+                                      dimDomain,
+                                      U_,
+                                      RangeFieldImp,
+                                      dimRange>
+      BaseType;
 
 public:
-  using BaseType::dimDomain;
-  using BaseType::dimRange;
-  using typename BaseType::DefaultFluxType;
-  using typename BaseType::DefaultInitialValueType;
-  using typename BaseType::DefaultRHSType;
-  using typename BaseType::DefaultBoundaryValueType;
-
-  using typename BaseType::FluxType;
-  using typename BaseType::RHSType;
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
-  using typename BaseType::ConfigType;
-  using typename BaseType::MatrixType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
+  using typename BaseType::BasisfunctionType;
+
+  using BaseType::default_boundary_cfg;
+
+  TwoPulsesPn(const BasisfunctionType& basis_functions,
+              const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+              const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+  {
+  }
 
   static std::string static_id()
   {
-    return BaseType::static_id() + ".twopulses";
+    return "twopulsespn";
   }
 
-  std::string type() const override
+  static XT::Common::Configuration default_grid_cfg()
   {
-    return BaseType::type() + ".twopulses";
-  }
-
-protected:
-  class GetData : BaseType::GetData
-  {
-    typedef typename BaseType::GetData GetDataBaseType;
-
-  public:
-    using GetDataBaseType::exact_legendre;
-    using GetDataBaseType::basefunctions_values_at_minusone;
-    using GetDataBaseType::basefunctions_values_at_plusone;
-
-    // q - (sigma_a + T/2*S*M^(-1))*u = Q(x)*base_integrated() - (sigma_a(x)*I_{nxn} + T(x)/2*S*M_inverse)*u = q(x) -
-    // A(x)*u
-    // here, sigma_a = 0, T = 0 and Q = 0
-    // Thus A(x) = 0 and q(x) = 0
-    static void create_rhs_values(ConfigType& rhs_config)
-    {
-      rhs_config["A.0"] = Dune::XT::Common::to_string(MatrixType(0));
-      rhs_config["b.0"] = Dune::XT::Common::to_string(RangeType(0));
-    } // ... create_rhs_values()
-
-    // boundary value of kinetic equation is 100*delta(v-1)**exp(-(t-1)^2/2) at x = 0 and 100*delta(v+1)*exp(-(t-1)^2/2)
-    // at x = 7, so k-th component of boundary value has to be 50*\phi_k(1)*exp(-(t-1)^2/2) at x = 0 and
-    // 50*\phi_k(-1)*exp(-(t-1)^2/2) at x = 7.
-    // Simulate with function(x) = 50*((\phi_k(-1) - \phi_k(1))*x/7 + \phi_k(1))*exp(-(t-1)^2/2),
-    // For Legendre polynomials, this is [50 50 50 ...]*exp(-(t-1)^2/2) at x = 0 and
-    // [50 -50 50 -50 ... ]*exp(-(t-1)^2/2) at x = 7
-    // simulate with function(x) = 50*((-1)^n - 1)*x/7 + 1)*exp(-(t-1)^2/2)
-    static std::string create_boundary_values()
-    {
-      if (exact_legendre()) {
-        std::string str = "[";
-        for (size_t rr = 0; rr < dimRange; ++rr) {
-          if (rr > 0)
-            str += " ";
-          str +=
-              "50*(" + Dune::XT::Common::to_string(((1.0 - 2.0 * (rr % 2)) - 1.0)) + "*x[0]/7.0+1)*exp((-(t-1)^2)/2)";
-        }
-        str += "]";
-        return str;
-      } else {
-        std::string str = "[";
-        for (size_t rr = 0; rr < dimRange; ++rr) {
-          if (rr > 0)
-            str += " ";
-          str += "50*(" + Dune::XT::Common::to_string(basefunctions_values_at_minusone()[rr]
-                                                      - basefunctions_values_at_plusone()[rr])
-                 + "*x[0]/7.0+" + Dune::XT::Common::to_string(basefunctions_values_at_plusone()[rr])
-                 + ")*exp((-(t-1)^2)/2)";
-        }
-        str += "]";
-        return str;
-      }
-    } // ... create_boundary_values()
-  }; // class GetData
-
-public:
-  static ConfigType default_grid_config()
-  {
-    ConfigType grid_config;
-    grid_config["type"] = "provider.cube";
-    grid_config["lower_left"] = "[0.0]";
-    grid_config["upper_right"] = "[7.0]";
-    grid_config["num_elements"] = "[50]";
+    XT::Common::Configuration grid_config;
+    grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
+    grid_config["lower_left"] = "[0]";
+    grid_config["upper_right"] = "[7]";
+    grid_config["num_elements"] = "[100]";
+    grid_config["overlap_size"] = "[1]";
+    grid_config["num_quad_cells"] = "[20]";
+    grid_config["quad_order"] = "50";
     return grid_config;
   }
 
-  static ConfigType default_boundary_info_config()
+  // sigma_a = T = Q = 0
+  virtual XT::Common::Parameter parameters() const override
   {
-    ConfigType boundary_config;
-    boundary_config["type"] = "dirichlet";
-    return boundary_config;
+    return XT::Common::Parameter({std::make_pair("sigma_a", std::vector<double>{0}),
+                                  std::make_pair("T", std::vector<double>{0}),
+                                  std::make_pair("Q", std::vector<double>{0}),
+                                  std::make_pair("CFL", std::vector<double>{0.4}),
+                                  std::make_pair("t_end", std::vector<double>{7.0}),
+                                  std::make_pair("num_segments", std::vector<double>{1})});
   }
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
-                                          const std::string sub_name = static_id())
-  {
-    const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
-    const std::shared_ptr<const DefaultFluxType> flux(DefaultFluxType::create(config.sub("flux")));
-    const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
-    const std::shared_ptr<const DefaultInitialValueType> initial_values(
-        DefaultInitialValueType::create(config.sub("initial_values")));
-    const ConfigType grid_config = config.sub("grid");
-    const ConfigType boundary_info = config.sub("boundary_info");
-    const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
-        DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
-  } // ... create(...)
 
-  static std::unique_ptr<ThisType> create(const std::string basefunctions_file)
+  // Boundary value of kinetic equation is 100*delta(v-1)**exp(-(t-1)^2/2) at x = 0 and 100*delta(v+1)*exp(-(t-1)^2/2)
+  // at x = 7, so k-th component of boundary value has to be 50*\phi_k(1)*exp(-(t-1)^2/2) at x = 0 and
+  // 50*\phi_k(-1)*exp(-(t-1)^2/2) at x = 7.
+  // Model with linear interpolating function.
+  virtual BoundaryValueType* create_boundary_values() const override
   {
-    return create(default_config(basefunctions_file), static_id());
+    const auto basis_evaluated_at_one = basis_functions_.evaluate(DomainType(1));
+    const auto basis_evaluated_at_minus_one = basis_functions_.evaluate(DomainType(-1));
+    return new ActualBoundaryValueType(
+        [=](const DomainType& x, const XT::Common::Parameter& param) {
+          const RangeFieldType t = param.get("t")[0];
+          auto ret = basis_evaluated_at_one;
+          ret *= 50 * std::exp(-(t - 1) * (t - 1) / 2.) * (1. - x[0] / 7.);
+          auto right_boundary_value = basis_evaluated_at_minus_one;
+          right_boundary_value *= 50 * std::exp(-(t - 1) * (t - 1) / 2.) * (x[0] / 7.);
+          ret += right_boundary_value;
+          return ret;
+        },
+        1);
+  } // ... create_boundary_values()
+
+protected:
+  using BaseType::basis_functions_;
+  using BaseType::quadrature_;
+}; // class TwoPulsesPn<...>
+
+template <class GridViewType,
+          class BasisfunctionType,
+          class EntityType,
+          class DomainFieldType,
+          size_t dimDomain,
+          class U_,
+          class RangeFieldType,
+          size_t dimRange>
+class TwoPulsesMn
+    : public TwoPulsesPn<BasisfunctionType, EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange>
+{
+  typedef TwoPulsesPn<BasisfunctionType, EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange> BaseType;
+  typedef TwoPulsesMn ThisType;
+
+public:
+  using typename BaseType::FluxType;
+  using typename BaseType::RangeType;
+  using typename BaseType::QuadratureType;
+  typedef EntropyBasedLocalFlux<GridViewType,
+                                BasisfunctionType,
+                                EntityType,
+                                DomainFieldType,
+                                dimDomain,
+                                U_,
+                                RangeFieldType,
+                                dimRange>
+      ActualFluxType;
+
+
+  using BaseType::default_grid_cfg;
+  using BaseType::default_boundary_cfg;
+
+  TwoPulsesMn(const BasisfunctionType& basis_functions,
+              const GridViewType& grid_view,
+              const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+              const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+    , grid_view_(grid_view)
+  {
   }
 
-  static ConfigType default_config(const std::string basefunctions_file = "", const std::string sub_name = "")
+  static std::string static_id()
   {
-    ConfigType config = BaseType::default_config(basefunctions_file, sub_name);
-    config.add(default_grid_config(), "grid", true);
-    config.add(default_boundary_info_config(), "boundary_info", true);
-    ConfigType rhs_config;
-    rhs_config["lower_left"] = "[0.0]";
-    rhs_config["upper_right"] = "[7.0]";
-    rhs_config["num_elements"] = "[1]";
-    GetData::create_rhs_values(rhs_config);
-    config.add(rhs_config, "rhs", true);
-    ConfigType boundary_value_config;
-    boundary_value_config["type"] = DefaultBoundaryValueType::static_id();
-    boundary_value_config["variable"] = "x";
-    boundary_value_config["expression"] = GetData::create_boundary_values();
-    boundary_value_config["order"] = "10";
-    config.add(boundary_value_config, "boundary_values", true);
-    if (sub_name.empty())
-      return config;
-    else {
-      ConfigType tmp;
-      tmp.add(config, sub_name);
-      return tmp;
-    }
-  } // ... default_config(...)
-
-  TwoPulses(const std::shared_ptr<const FluxType> flux_in,
-            const std::shared_ptr<const RHSType> rhs_in,
-            const std::shared_ptr<const InitialValueType> initial_values_in,
-            const ConfigType& grid_config_in,
-            const ConfigType& boundary_info_in,
-            const std::shared_ptr<const BoundaryValueType> boundary_values_in)
-    : BaseType(flux_in, rhs_in, initial_values_in, grid_config_in, boundary_info_in, boundary_values_in)
-  {
+    return "twopulsesmn";
   }
 
-  virtual double CFL() const override
+  virtual FluxType* create_flux() const
   {
-    return 0.4;
+    return new ActualFluxType(grid_view_, quadrature_, basis_functions_);
   }
 
-  virtual double t_end() const override
-  {
-    return 7.0;
-  }
-
-  virtual bool has_non_zero_rhs() const override
-  {
-    return false;
-  }
-};
+protected:
+  using BaseType::basis_functions_;
+  const GridViewType& grid_view_;
+  using BaseType::quadrature_;
+}; // class TwoPulsesMn<...>
 
 } // namespace Problems
 } // namespace Hyperbolic

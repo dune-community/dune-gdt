@@ -76,9 +76,9 @@ public:
   static XT::Common::Configuration default_grid_cfg()
   {
     XT::Common::Configuration grid_config;
-    grid_config["type"] = "provider.cube";
-    grid_config["lower_left"] = "[0.0]";
-    grid_config["upper_right"] = "[1.0]";
+    grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
+    grid_config["lower_left"] = "[-0.5]";
+    grid_config["upper_right"] = "[0.5]";
     grid_config["num_elements"] = "[100]";
     grid_config["overlap_size"] = "[1]";
     grid_config["num_quad_cells"] = "[20]";
@@ -97,19 +97,19 @@ public:
   }
 
 
-  // boundary value of kinetic equation is 100*delta(v-1) at x = 0 and 100*delta(v+1) at x = 1,
-  // so k-th component of boundary value has to be 50*\phi_k(1) at x = 0 and 50*\phi_k(-1) at x = 1.
-  // Model with function(x) = 50*\phi_k(-1)*x + 50*\phi_k(1)*(1-x).
+  // boundary value of kinetic equation is 100*delta(v-1) at x = -0.5 and 100*delta(v+1) at x = 0.5,
+  // so k-th component of boundary value has to be 50*\phi_k(1) at x = -0.5 and 50*\phi_k(-1) at x = 0.5.
+  // Model with function(x) = 50*\phi_k(-1)*(x+0.5) + 50*\phi_k(1)*(0.5-x).
   virtual BoundaryValueType* create_boundary_values() const override
   {
     const auto basis_evaluated_at_one = basis_functions_.evaluate(DomainType(1));
     const auto basis_evaluated_at_minus_one = basis_functions_.evaluate(DomainType(-1));
     return new ActualBoundaryValueType(
-        [=](const DomainType& x) {
+        [=](const DomainType& x, const XT::Common::Parameter&) {
           RangeType ret = basis_evaluated_at_minus_one;
-          ret *= x[0] * 50;
+          ret *= (x[0] + 0.5) * 50;
           RangeType summand2 = basis_evaluated_at_one;
-          summand2 *= (1 - x[0]) * 50;
+          summand2 *= (0.5 - x[0]) * 50;
           ret += summand2;
           return ret;
         },
@@ -178,7 +178,6 @@ public:
     return "twobeamsmn";
   }
 
-  // flux matrix A = B M^{-1} with B_{ij} = <v h_i h_j>
   virtual FluxType* create_flux() const
   {
     return new ActualFluxType(grid_view_, quadrature_, basis_functions_);

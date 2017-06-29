@@ -71,7 +71,7 @@ public:
   static XT::Common::Configuration default_grid_cfg()
   {
     XT::Common::Configuration grid_config;
-    grid_config["type"] = "provider.cube";
+    grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
     grid_config["lower_left"] = "[-1.2]";
     grid_config["upper_right"] = "[1.2]";
     grid_config["num_elements"] = "[240]";

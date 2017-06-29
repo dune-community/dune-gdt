@@ -396,7 +396,7 @@ public:
       return alpha;
     }
 
-    virtual size_t order() const override
+    virtual size_t order(const XT::Common::Parameter& /*param*/) const override
     {
       return 1;
     }

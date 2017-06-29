@@ -79,7 +79,7 @@ public:
   static XT::Common::Configuration default_grid_cfg()
   {
     XT::Common::Configuration grid_config;
-    grid_config["type"] = "provider.cube";
+    grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
     grid_config["lower_left"] = "[0.0]";
     grid_config["upper_right"] = "[3.0]";
     grid_config["num_elements"] = "[300]";
@@ -113,7 +113,7 @@ public:
     const RangeType left_boundary_values =
         helper<BasisfunctionType>::get_left_boundary_values(quadrature_, basis_functions_);
     return new ActualBoundaryValueType(
-        [=](const DomainType& x) {
+        [=](const DomainType& x, const XT::Common::Parameter&) {
           RangeType ret = left_boundary_values;
           ret *= 1 - x[0] / 3.;
           RangeType summand2 = basis_integrated;

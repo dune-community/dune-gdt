@@ -49,7 +49,32 @@
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/linesource.hh>
 #include <dune/gdt/test/hyperbolic/problems/fokkerplanck/lebedevquadrature.hh>
 
-#include <Eigen/Core>
+//! struct to be used as comparison function e.g. in a std::map<FieldVector<...>, ..., FieldVectorLess>
+struct CmpStruct
+{
+  template <class FieldType, int dimDomain>
+  bool operator()(const std::pair<Dune::FieldVector<FieldType, dimDomain>, FieldType>& a,
+                  const std::pair<Dune::FieldVector<FieldType, dimDomain>, FieldType>& b) const
+  {
+    for (size_t dd = 0; dd < dimDomain; ++dd) {
+      if (Dune::XT::Common::FloatCmp::lt(a.first[dd], b.first[dd]))
+        return true;
+      else if (Dune::XT::Common::FloatCmp::gt(a.first[dd], b.first[dd]))
+        return false;
+    }
+    return false;
+  }
+};
+
+void trim(std::vector<std::string>& v)
+{
+  for (auto& s : v) {
+    auto wsfront = std::find_if_not(s.begin(), s.end(), [](int c) { return std::isspace(c); });
+    auto wsback = std::find_if_not(s.rbegin(), s.rend(), [](int c) { return std::isspace(c); }).base();
+    s = (wsback <= wsfront ? std::string() : std::string(wsfront, wsback));
+  }
+}
+
 
 int main(int argc, char** argv)
 {
@@ -150,9 +175,9 @@ int main(int argc, char** argv)
 #endif
 
   // ********************* choose dimensions, fluxes and grid type ************************
-  static const int dimDomain = 2;
+  static const int dimDomain = 3;
   //  static const int dimDomain = 1;
-  static const int momentOrder = 2;
+  static const int momentOrder = 6;
   //  const auto numerical_flux = NumericalFluxes::kinetic;
   //  const auto numerical_flux = NumericalFluxes::godunov;
   const auto numerical_flux = NumericalFluxes::laxfriedrichs;
@@ -260,9 +285,9 @@ int main(int argc, char** argv)
   //                                                       dimRange>
   //      ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::
-  //      PointSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
-  //          ProblemImp;
+  typedef typename Hyperbolic::Problems::
+      PointSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
+          ProblemImp;
 
   //  typedef typename Hyperbolic::Problems::PointSourceMn<GridViewType,
   //                                                       BasisfunctionType,
@@ -274,9 +299,9 @@ int main(int argc, char** argv)
   //                                                       dimRange>
   //      ProblemImp;
 
-  typedef typename Hyperbolic::Problems::
-      ModifiedLineSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
-          ProblemImp;
+  //  typedef typename Hyperbolic::Problems::
+  //      ModifiedLineSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
+  //          ProblemImp;
 
   //  typedef typename Hyperbolic::Problems::ModifiedLineSourceMn<GridViewType,
   //                                                              BasisfunctionType,
@@ -320,7 +345,7 @@ int main(int argc, char** argv)
 
   //  const ProblemImp problem_imp(*basis_functions,
   //                               grid_view,
-  //                               ProblemImp::default_grid_cfg(),
+  //                               grid_config,
   //                               ProblemImp::default_boundary_cfg(),
   //                               //                               basis_functions.quadrature());
   //                               Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40));
@@ -370,7 +395,7 @@ int main(int argc, char** argv)
                                          BoundaryValueType,
                                          ConstantFunctionType,
                                          0,
-                                         SlopeLimiters::no_slope,
+                                         SlopeLimiters::minmod,
                                          false,
                                          BasisfunctionType>
       AdvectionOperatorType;
@@ -444,6 +469,54 @@ int main(int argc, char** argv)
                   ? "_implicit"
                   : (rhs_time_stepper_method == TimeStepperMethods::matrix_exponential ? "_matexp" : "_explicit");
 
-  timestepper.solve(t_end, dt, num_save_steps, false, true, visualize, filename, 4);
+  timestepper.solve(
+      t_end, dt, num_save_steps, /*save_solution = */ false, /*output_progress = */ true, visualize, filename, 4);
+
+  const auto& sol = timestepper.current_solution();
+  std::vector<std::pair<DomainType, RangeFieldType>> values;
+
+  for (const auto& entity : Dune::elements(grid_view)) {
+    const auto& local_sol = sol.local_function(entity);
+    values.push_back(std::make_pair(entity.geometry().center(),
+                                    local_sol->evaluate(entity.geometry().local(entity.geometry().center()))[0]));
+  }
+  std::sort(values.begin(), values.end(), CmpStruct());
+  std::ofstream valuesfile(filename + ".txt");
+  for (const auto& pair : values)
+    valuesfile << XT::Common::to_string(pair.first, 15) << "\t" << XT::Common::to_string(pair.second, 15) << std::endl;
+  valuesfile.close();
+
+  std::ifstream matlabvaluesfile("values_matlab.txt");
+  std::string line;
+  std::vector<DomainType> x_matlab;
+  std::vector<RangeFieldType> values_matlab;
+  while (std::getline(matlabvaluesfile, line)) {
+    auto tokens = XT::Common::tokenize(line, "\t", boost::algorithm::token_compress_on);
+    trim(tokens);
+    assert(tokens.size() == 2);
+    auto x = XT::Common::from_string<DomainType>(tokens[0]);
+    x_matlab.push_back(x);
+    auto val_matlab = XT::Common::from_string<RangeFieldType>(tokens[1]);
+    values_matlab.push_back(val_matlab);
+  }
+
+  const size_t grid_size_ns = XT::Common::from_string<size_t>(grid_size);
+  Dune::XT::Grid::EntityInlevelSearch<GridViewType> entity_search(grid_view);
+  const auto entities = entity_search(x_matlab);
+  assert(entities.size() == grid_size_ns * grid_size_ns * grid_size_ns);
+  RangeFieldType error = 0;
+  auto vol_domain = std::pow(2., 3.);
+  for (size_t ii = 0; ii < entities.size(); ++ii) {
+    const auto& entity = entities[ii];
+    const auto& point = x_matlab[ii];
+    const auto local_sol = sol.local_function(*entity);
+    const auto val = local_sol->evaluate(entity->geometry().local(point))[0] * std::sqrt(4 * M_PI);
+    const auto& val_matlab = values_matlab[ii];
+    error += std::pow(val - val_matlab, 2) * entity->geometry().volume();
+  }
+  error = std::sqrt(error / vol_domain);
+  std::cout << XT::Common::to_string(error) << std::endl;
+
+
   return 0;
 }
