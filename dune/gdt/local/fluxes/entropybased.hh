@@ -162,8 +162,8 @@ void solve_lower_triangular_transposed(const MatrixType& A, VectorType& x, const
  * Alldredge, Hauck, O'Leary, Tits, "Adaptive change of basis in entropy-based moment closures for linear kinetic
  * equations"
  */
-template <class GridViewType,
-          class BasisfunctionType,
+template <class BasisfunctionType,
+          class GridLayerType,
           class E,
           class D,
           size_t d,
@@ -174,7 +174,7 @@ template <class GridViewType,
 class EntropyBasedLocalFlux : public XT::Functions::LocalizableFluxFunctionInterface<E, D, d, U, 0, R, rangeDim, d>
 {
   typedef XT::Functions::LocalizableFluxFunctionInterface<E, D, d, U, 0, R, rangeDim, d> BaseType;
-  typedef EntropyBasedLocalFlux<GridViewType, BasisfunctionType, E, D, d, U, R, rangeDim, quadratureDim> ThisType;
+  typedef EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, E, D, d, U, R, rangeDim, quadratureDim> ThisType;
 
 public:
   using typename BaseType::EntityType;
@@ -195,9 +195,9 @@ public:
   typedef Dune::QuadratureRule<DomainFieldType, dimQuadrature> QuadratureRuleType;
 
   explicit EntropyBasedLocalFlux(
-      const GridViewType& grid_view,
-      const QuadratureRuleType& quadrature,
       const BasisfunctionType& basis_functions,
+      const GridLayerType& grid_layer,
+      const QuadratureRuleType& quadrature,
       const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
@@ -208,10 +208,10 @@ public:
       const RangeFieldType epsilon = std::pow(2, -52),
       const MatrixType& T_minus_one = unit_matrix<dimRange>(),
       const std::string name = static_id())
-    : index_set_(grid_view.indexSet())
+    : index_set_(grid_layer.indexSet())
+    , basis_functions_(basis_functions)
     , quadrature_(quadrature)
     , M_(quadrature_.size())
-    , basis_functions_(basis_functions)
     , tau_(tau)
     , epsilon_gamma_(epsilon_gamma)
     , chi_(chi)
@@ -234,9 +234,9 @@ public:
   {
   public:
     Localfunction(const EntityType& e,
+                  const BasisfunctionType& basis_functions,
                   const QuadratureRuleType& quadrature,
                   const BasisValuesMatrixType& M,
-                  const BasisfunctionType& basis_functions,
                   const RangeFieldType tau,
                   const RangeFieldType epsilon_gamma,
                   const RangeFieldType chi,
@@ -253,9 +253,9 @@ public:
                   std::unique_ptr<StateRangeType>& beta_cache_boundary,
                   std::unique_ptr<MatrixType>& T_cache_boundary)
       : LocalfunctionType(e)
+      , basis_functions_(basis_functions)
       , quadrature_(quadrature)
       , M_(M)
-      , basis_functions_(basis_functions)
       , tau_(tau)
       , epsilon_gamma_(epsilon_gamma)
       , chi_(chi)
@@ -551,9 +551,9 @@ public:
       return true;
     }
 
+    const BasisfunctionType& basis_functions_;
     const QuadratureRuleType& quadrature_;
     const BasisValuesMatrixType& M_;
-    const BasisfunctionType& basis_functions_;
     const RangeFieldType tau_;
     const RangeFieldType epsilon_gamma_;
     const RangeFieldType chi_;
@@ -582,9 +582,9 @@ public:
   {
     const auto& index = index_set_.index(entity);
     return std::make_unique<Localfunction>(entity,
+                                           basis_functions_,
                                            quadrature_,
                                            M_,
-                                           basis_functions_,
                                            tau_,
                                            epsilon_gamma_,
                                            chi_,
@@ -635,10 +635,10 @@ public:
     return ret;
   } // StateRangeType evaluate_kinetic_integral(...)
 
-  const typename GridViewType::IndexSet& index_set_;
+  const typename GridLayerType::IndexSet& index_set_;
+  const BasisfunctionType& basis_functions_;
   const QuadratureRuleType quadrature_;
   BasisValuesMatrixType M_;
-  const BasisfunctionType& basis_functions_;
   const RangeFieldType tau_;
   const RangeFieldType epsilon_gamma_;
   const RangeFieldType chi_;
@@ -665,7 +665,7 @@ public:
  * domainDim, rangeDim, rangeDimCols are the respective dimensions of pde solution u, not the dimensions of
  \mathbf{f}.
  */
-template <class GridViewType,
+template <class GridLayerType,
           class BasisfunctionType,
           class E,
           class D,
@@ -677,7 +677,7 @@ template <class GridViewType,
 class AdaptiveEntropyBasedLocalFlux : public AnalyticalFluxInterface<E, D, d, R, rangeDim, rC>
 {
   typedef AnalyticalFluxInterface<E, D, d, R, rangeDim, rC> BaseType;
-  typedef AdaptiveEntropyBasedLocalFlux<GridViewType, E, D, d, R, rangeDim, rC, quadrature_is_cartesian> ThisType;
+  typedef AdaptiveEntropyBasedLocalFlux<GridLayerType, E, D, d, R, rangeDim, rC, quadrature_is_cartesian> ThisType;
 
 public:
   using typename BaseType::DomainType;
@@ -696,7 +696,7 @@ public:
       QuadratureRuleType;
 
   explicit AdaptiveEntropyBasedLocalFlux(
-      const GridViewType& grid_view,
+      const GridLayerType& grid_layer,
       const std::vector<QuadratureRuleType>& quadratures,
       const BasisValuesMatrixType& M,
       const BasisfunctionType& basis_functions,
@@ -710,7 +710,7 @@ public:
       const RangeFieldType epsilon = std::pow(2, -52),
       const MatrixType& T_minus_one = unit_matrix<dimRange>(),
       const std::string name = static_id())
-    : index_set_(grid_view.indexSet())
+    : index_set_(grid_layer.indexSet())
     , quadratures_(quadratures)
     , M_(M)
     , basis_functions_(basis_functions_)
@@ -1076,7 +1076,7 @@ private:
     return true;
   }
 
-  const typename GridViewType::IndexSet& index_set_;
+  const typename GridLayerType::IndexSet& index_set_;
   const std::vector<QuadratureRuleType>& quadratures_;
   const BasisValuesMatrixType& M_;
   const BasisfunctionType basis_functions_;
@@ -1110,11 +1110,11 @@ private:
  * domainDim, rangeDim, rangeDimCols are the respective dimensions of pde solution u, not the dimensions of
  \mathbf{f}.
  */
-template <class GridViewType, class E, class D, size_t d, class R, size_t rangeDim, size_t rC>
+template <class GridLayerType, class E, class D, size_t d, class R, size_t rangeDim, size_t rC>
 class AdaptiveEntropyBasedLocalFlux : public AnalyticalFluxInterface<E, D, d, R, rangeDim, rC>
 {
   typedef AnalyticalFluxInterface<E, D, d, R, rangeDim, rC> BaseType;
-  typedef AdaptiveEntropyBasedLocalFlux<GridViewType, E, D, d, R, rangeDim, rC> ThisType;
+  typedef AdaptiveEntropyBasedLocalFlux<GridLayerType, E, D, d, R, rangeDim, rC> ThisType;
 
 public:
   using typename BaseType::DomainType;
@@ -1131,10 +1131,10 @@ public:
 //  typedef typename GDT::Hyperbolic::Problems::AdaptiveQuadrature<DomainType, RangeType, RangeType>
 //      AdaptiveQuadratureType;
 //  typedef typename AdaptiveQuadratureType::QuadraturePointType QuadraturePointType;
-  typedef typename GridViewType::IndexSet IndexSetType;
+  typedef typename GridLayerType::IndexSet IndexSetType;
 
   explicit AdaptiveEntropyBasedLocalFlux(
-      const GridViewType& grid_view,
+      const GridLayerType& grid_layer,
       const IsotropicDistributionCalculatorType isotropic_dist_calculator,
       AdaptiveQuadratureType& adaptive_quadrature,
       const RangeFieldType tau = 1e-9,
@@ -1147,7 +1147,7 @@ public:
       const RangeFieldType epsilon = std::pow(2, -52),
       const MatrixType& T_minus_one = unit_matrix<dimRange>(),
       const std::string name = static_id())
-    : index_set_(grid_view.indexSet())
+    : index_set_(grid_layer.indexSet())
     , isotropic_dist_calculator_(isotropic_dist_calculator)
     , adaptive_quadrature_(adaptive_quadrature)
     , tau_(tau)
@@ -1508,11 +1508,11 @@ private:
  * equations"
  * domainDim, rangeDim, rangeDimCols are the respective dimensions of pde solution u, not the dimensions of \mathbf{f}.
  */
-template <class GridViewType, class E, class D, size_t d, class R, size_t rangeDim, size_t rC>
+template <class GridLayerType, class E, class D, size_t d, class R, size_t rangeDim, size_t rC>
 class EntropyBasedLocalFluxHatFunctions1D : public AnalyticalFluxInterface<E, D, d, R, rangeDim, rC>
 {
   typedef AnalyticalFluxInterface<E, D, d, R, rangeDim, rC> BaseType;
-  typedef EntropyBasedLocalFluxHatFunctions1D<GridViewType, E, D, d, R, rangeDim, rC> ThisType;
+  typedef EntropyBasedLocalFluxHatFunctions1D<GridLayerType, E, D, d, R, rangeDim, rC> ThisType;
 
 public:
   using typename BaseType::DomainType;
@@ -1527,7 +1527,7 @@ public:
   using typename BaseType::FluxJacobianRangeType;
 
   explicit EntropyBasedLocalFluxHatFunctions1D(
-      const GridViewType& grid_view,
+      const GridLayerType& grid_layer,
       const RangeType v_points,
       const RangeFieldType tau = 1e-7,
       const RangeFieldType epsilon_gamma = 0.01,
@@ -1540,7 +1540,7 @@ public:
       const RangeFieldType taylor_tol = 1e-4,
       const size_t taylor_order = 10,
       const std::string name = static_id())
-    : global_index_set_(grid_view, 0)
+    : global_index_set_(grid_layer, 0)
     , v_points_(v_points)
     , tau_(tau)
     , epsilon_gamma_(epsilon_gamma)
@@ -1900,7 +1900,7 @@ public:
   }
 
 private:
-  const Dune::GlobalIndexSet<GridViewType> global_index_set_;
+  const Dune::GlobalIndexSet<GridLayerType> global_index_set_;
   const RangeType v_points_;
   const RangeFieldType tau_;
   const RangeFieldType epsilon_gamma_;
@@ -1923,11 +1923,11 @@ private:
  * equations"
  * domainDim, rangeDim, rangeDimCols are the respective dimensions of pde solution u, not the dimensions of \mathbf{f}.
  */
-template <class GridViewType, class E, class D, size_t d, class R, size_t rangeDim, size_t rC>
+template <class GridLayerType, class E, class D, size_t d, class R, size_t rangeDim, size_t rC>
 class EntropyBasedLocalFluxHatFunctions3d : public AnalyticalFluxInterface<E, D, d, R, rangeDim, rC>
 {
   typedef AnalyticalFluxInterface<E, D, d, R, rangeDim, rC> BaseType;
-  typedef EntropyBasedLocalFluxHatFunctions3d<GridViewType, E, D, d, R, rangeDim, rC> ThisType;
+  typedef EntropyBasedLocalFluxHatFunctions3d<GridLayerType, E, D, d, R, rangeDim, rC> ThisType;
 
 public:
   using typename BaseType::DomainType;
@@ -1943,7 +1943,7 @@ public:
   typedef Dune::GDT::Hyperbolic::Problems::SphericalTriangulation<RangeFieldType> TriangulationType;
 
   explicit EntropyBasedLocalFluxHatFunctions3d(
-      const GridViewType& grid_view,
+      const GridLayerType& grid_layer,
       const TriangulationType triangulation,
       const RangeFieldType tau = 1e-7,
       const RangeFieldType epsilon_gamma = 0.01,
@@ -1955,7 +1955,7 @@ public:
       const RangeFieldType epsilon = std::pow(2, -52),
       const size_t taylor_order = 10,
       const std::string name = static_id())
-    : global_index_set_(grid_view, 0)
+    : global_index_set_(grid_layer, 0)
     , triangulation_(triangulation)
     , tau_(tau)
     , epsilon_gamma_(epsilon_gamma)
@@ -2317,7 +2317,7 @@ private:
     } // nn
   } // void calculate_hessian(...)
 
-  const Dune::GlobalIndexSet<GridViewType> global_index_set_;
+  const Dune::GlobalIndexSet<GridLayerType> global_index_set_;
   const RangeType v_points_;
   const RangeFieldType tau_;
   const RangeFieldType epsilon_gamma_;

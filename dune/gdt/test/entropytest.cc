@@ -41,13 +41,13 @@
 #include <dune/gdt/spaces/fv/product.hh>
 #include <dune/gdt/timestepper/factory.hh>
 //#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/checkerboard3d.hh>
-#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/basisfunctions.hh>
-#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/twobeams.hh>
-#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/sourcebeam.hh>
-#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/planesource.hh>
-#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/pointsource.hh>
-#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/linesource.hh>
-#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/lebedevquadrature.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
+//#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/twobeams.hh>
+//#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/sourcebeam.hh>
+//#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/planesource.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/pointsource.hh>
+//#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/linesource.hh>
+//#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/lebedevquadrature.hh>
 
 //! struct to be used as comparison function e.g. in a std::map<FieldVector<...>, ..., FieldVectorLess>
 struct CmpStruct
@@ -193,7 +193,7 @@ int main(int argc, char** argv)
   //  const auto rhs_time_stepper_method = TimeStepperMethods::trapezoidal_rule;
 
   typedef typename Dune::YaspGrid<dimDomain, Dune::EquidistantOffsetCoordinates<double, dimDomain>> GridType;
-  typedef typename GridType::LeafGridView GridViewType;
+  typedef typename GridType::LeafGridView GridLayerType;
   typedef typename GridType::Codim<0>::Entity EntityType;
 
   //******************** choose BasisfunctionType *****************************************
@@ -242,7 +242,7 @@ int main(int argc, char** argv)
   //      std::make_shared<const BasisfunctionType>(refinements, refinements + 4);
   static const size_t dimRange = BasisfunctionType::dimRange;
   static constexpr auto container_backend = Dune::XT::LA::default_sparse_backend;
-  typedef FvProductSpace<GridViewType, double, dimRange, 1> SpaceType;
+  typedef FvProductSpace<GridLayerType, double, dimRange, 1> SpaceType;
   typedef typename Dune::XT::LA::Container<double, container_backend>::VectorType VectorType;
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
 
@@ -253,7 +253,7 @@ int main(int argc, char** argv)
   //          ProblemImp;
 
   //    typedef typename Hyperbolic::Problems::
-  //      TwoBeamsMn<GridViewType, BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double,
+  //      TwoBeamsMn<GridLayerType, BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double,
   //      dimRange>
   //          ProblemImp;
 
@@ -261,7 +261,7 @@ int main(int argc, char** argv)
   //      SourceBeamPn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
   //          ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::SourceBeamMn<GridViewType,
+  //  typedef typename Hyperbolic::Problems::SourceBeamMn<GridLayerType,
   //                                                      BasisfunctionType,
   //                                                      EntityType,
   //                                                      double,
@@ -275,7 +275,7 @@ int main(int argc, char** argv)
   //      PlaneSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
   //          ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::PlaneSourceMn<GridViewType,
+  //  typedef typename Hyperbolic::Problems::PlaneSourceMn<GridLayerType,
   //                                                       BasisfunctionType,
   //                                                       EntityType,
   //                                                       double,
@@ -285,11 +285,17 @@ int main(int argc, char** argv)
   //                                                       dimRange>
   //      ProblemImp;
 
-  typedef typename Hyperbolic::Problems::
-      PointSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
-          ProblemImp;
+  typedef typename Hyperbolic::Problems::PointSourcePn<BasisfunctionType,
+                                                       GridLayerType,
+                                                       EntityType,
+                                                       double,
+                                                       dimDomain,
+                                                       DiscreteFunctionType,
+                                                       double,
+                                                       dimRange>
+      ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::PointSourceMn<GridViewType,
+  //  typedef typename Hyperbolic::Problems::PointSourceMn<GridLayerType,
   //                                                       BasisfunctionType,
   //                                                       EntityType,
   //                                                       double,
@@ -303,7 +309,7 @@ int main(int argc, char** argv)
   //      ModifiedLineSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
   //          ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::ModifiedLineSourceMn<GridViewType,
+  //  typedef typename Hyperbolic::Problems::ModifiedLineSourceMn<GridLayerType,
   //                                                              BasisfunctionType,
   //                                                              EntityType,
   //                                                              double,
@@ -333,22 +339,23 @@ int main(int argc, char** argv)
   const auto grid_ptr = Dune::XT::Grid::CubeGridProviderFactory<GridType>::create(grid_config).grid_ptr();
   const auto& grid = *grid_ptr;
   assert(grid.comm().size() == 1 || grid.overlapSize(0) > 0);
-  const GridViewType& grid_view = grid_ptr->leafGridView();
-  const SpaceType fv_space(grid_view);
+  const GridLayerType& grid_layer = grid_ptr->leafGridView();
+  const SpaceType fv_space(grid_layer);
+
+  const auto quadrature = Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40);
 
   //******************* create ProblemType object ***************************************
-  const ProblemImp problem_imp(*basis_functions, grid_config);
-  //  const ProblemImp problem_imp(basis_functions, grid_view, grid_config);
-  //  const ProblemImp problem_imp(*basis_functions, basis_functions->quadrature(), grid_view, grid_config);
+  const ProblemImp problem_imp(*basis_functions, grid_layer, quadrature, grid_config);
+  //  const ProblemImp problem_imp(basis_functions, grid_layer, grid_config);
+  //  const ProblemImp problem_imp(*basis_functions, basis_functions->quadrature(), grid_layer, grid_config);
   //  const ProblemImp problem_imp(
-  //      basis_functions, Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(1000), grid_view);
+  //      basis_functions, Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(1000), grid_layer);
 
   //  const ProblemImp problem_imp(*basis_functions,
-  //                               grid_view,
+  //                               grid_layer,
   //                               grid_config,
   //                               ProblemImp::default_boundary_cfg(),
   //                               //                               basis_functions.quadrature());
-  //                               Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40));
 
   const ProblemType problem(problem_imp);
   const InitialValueType& initial_values = problem.initial_values();
@@ -414,7 +421,7 @@ int main(int argc, char** argv)
 
   // *************** choose t_end and initial dt **************************************
   // calculate dx and choose initial dt
-  Dune::XT::Grid::Dimensions<typename SpaceType::GridViewType> dimensions(grid_view);
+  Dune::XT::Grid::Dimensions<typename SpaceType::GridLayerType> dimensions(grid_layer);
   RangeFieldType dx = dimensions.entity_width.max();
   if (dimDomain == 2)
     dx /= std::sqrt(2);
@@ -438,7 +445,7 @@ int main(int argc, char** argv)
   advection_operator.set_epsilon(epsilon);
   //  AdvectionOperatorType advection_operator(*analytical_flux,
   //                                           *boundary_values,
-  //                                           grid_view,
+  //                                           grid_layer,
   //                                           grid_sizes,
   //                                           plane_coefficients,
   //                                           linear,
@@ -475,7 +482,7 @@ int main(int argc, char** argv)
   const auto& sol = timestepper.current_solution();
   std::vector<std::pair<DomainType, RangeFieldType>> values;
 
-  for (const auto& entity : Dune::elements(grid_view)) {
+  for (const auto& entity : Dune::elements(grid_layer)) {
     const auto& local_sol = sol.local_function(entity);
     values.push_back(std::make_pair(entity.geometry().center(),
                                     local_sol->evaluate(entity.geometry().local(entity.geometry().center()))[0]));
@@ -501,7 +508,7 @@ int main(int argc, char** argv)
   }
 
   const size_t grid_size_ns = XT::Common::from_string<size_t>(grid_size);
-  Dune::XT::Grid::EntityInlevelSearch<GridViewType> entity_search(grid_view);
+  Dune::XT::Grid::EntityInlevelSearch<GridLayerType> entity_search(grid_layer);
   const auto entities = entity_search(x_matlab);
   assert(entities.size() == grid_size_ns * grid_size_ns * grid_size_ns);
   RangeFieldType error = 0;

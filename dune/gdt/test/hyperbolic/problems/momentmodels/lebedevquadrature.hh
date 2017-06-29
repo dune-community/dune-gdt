@@ -48,7 +48,7 @@ public:
     char orderstring[4];
     sprintf(orderstring, "%03lu", order);
     std::string filename = std::string("/home/tobias/Software/dune-gdt-super-2.5/dune-gdt/dune/gdt/test/hyperbolic/"
-                                       "problems/fokkerplanck/lebedev/order_")
+                                       "problems/momentmodels/lebedevquadrature/order_")
                            + orderstring + ".txt";
     std::ifstream quadrature_file(filename);
     if (!quadrature_file.is_open())

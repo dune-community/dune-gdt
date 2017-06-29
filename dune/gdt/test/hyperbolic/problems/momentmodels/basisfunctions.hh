@@ -27,8 +27,8 @@
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/la/container.hh>
 
-#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/triangulation.hh>
-#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/lebedevquadrature.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/triangulation.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/lebedevquadrature.hh>
 
 namespace Dune {
 namespace GDT {

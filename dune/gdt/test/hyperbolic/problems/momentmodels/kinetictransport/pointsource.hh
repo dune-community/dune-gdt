@@ -13,9 +13,11 @@
 #include <vector>
 #include <string>
 
+#include <dune/gdt/local/fluxes/entropybased.hh>
 #include <dune/gdt/test/instationary-eocstudy.hh>
 
-#include "kineticequation.hh"
+#include "kinetictransportequation.hh"
+
 
 namespace Dune {
 namespace GDT {
@@ -24,6 +26,7 @@ namespace Problems {
 
 
 template <class BasisfunctionImp,
+          class GridLayerImp,
           class EntityImp,
           class DomainFieldImp,
           size_t dimDomain,
@@ -31,6 +34,7 @@ template <class BasisfunctionImp,
           class RangeFieldImp,
           size_t dimRange>
 class PointSourcePn : public KineticTransportEquation<BasisfunctionImp,
+                                                      GridLayerImp,
                                                       EntityImp,
                                                       DomainFieldImp,
                                                       dimDomain,
@@ -38,7 +42,14 @@ class PointSourcePn : public KineticTransportEquation<BasisfunctionImp,
                                                       RangeFieldImp,
                                                       dimRange>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, EntityImp, DomainFieldImp, dimDomain, U_, RangeFieldImp, dimRange>
+  typedef KineticTransportEquation<BasisfunctionImp,
+                                   GridLayerImp,
+                                   EntityImp,
+                                   DomainFieldImp,
+                                   dimDomain,
+                                   U_,
+                                   RangeFieldImp,
+                                   dimRange>
       BaseType;
 
 public:
@@ -51,15 +62,18 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::QuadratureType;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_quadrature;
 
   PointSourcePn(const BasisfunctionType& basis_functions,
+                const GridLayerType& grid_layer,
+                const QuadratureType& quadrature = default_quadrature(),
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, quadrature, {1, 1, 1}, grid_cfg, boundary_cfg)
   {
   }
 
@@ -88,8 +102,7 @@ public:
                                   std::make_pair("sigma_s", std::vector<double>{1}),
                                   std::make_pair("Q", std::vector<double>{0}),
                                   std::make_pair("CFL", std::vector<double>{0.4}),
-                                  std::make_pair("t_end", std::vector<double>{0.45}),
-                                  std::make_pair("num_segments", std::vector<double>{1., 1., 1.})});
+                                  std::make_pair("t_end", std::vector<double>{0.45})});
   }
 
   // Initial value of the kinetic equation is psi_vac + 1/(8 pi sigma^2) * exp(-|x|^2/(2*sigma^2)).
@@ -99,7 +112,6 @@ public:
   {
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
-    const FieldVector<size_t, 3> num_segments = get_num_segments(parameters());
     static const double sigma = 0.03;
     RangeType basis_integrated = basis_functions_.integrated();
     std::vector<typename ActualInitialValueType::LocalizableFunctionType> initial_vals;
@@ -114,7 +126,7 @@ public:
     //        50);
 
     initial_vals.emplace_back(
-        [=](const DomainType& x) {
+        [=](const DomainType& x, const XT::Common::Parameter&) {
           auto ret = basis_integrated;
           ret *= std::max(1. / (8. * M_PI * sigma * sigma) * std::exp(-1. * x.two_norm2() / (2. * sigma * sigma)),
                           1e-4 / (4. * M_PI));
@@ -122,37 +134,49 @@ public:
         },
         50);
 
-    return new ActualInitialValueType(lower_left, upper_right, num_segments, initial_vals, "initial_values");
+    return new ActualInitialValueType(lower_left, upper_right, num_segments_, initial_vals, "initial_values");
   } // ... create_initial_values()
 
 protected:
-  using BaseType::get_num_segments;
-
   using BaseType::grid_cfg_;
   using BaseType::basis_functions_;
+  using BaseType::num_segments_;
   using BaseType::psi_vac_;
 }; // class PointSourcePn<...>
 
-template <class GridViewType,
-          class BasisfunctionType,
+template <class BasisfunctionType,
+          class GridLayerType,
           class EntityType,
           class DomainFieldType,
           size_t dimDomain,
           class U_,
           class RangeFieldType,
           size_t dimRange>
-class PointSourceMn
-    : public PointSourcePn<BasisfunctionType, EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange>
+class PointSourceMn : public PointSourcePn<BasisfunctionType,
+                                           GridLayerType,
+                                           EntityType,
+                                           DomainFieldType,
+                                           dimDomain,
+                                           U_,
+                                           RangeFieldType,
+                                           dimRange>
 {
-  typedef PointSourcePn<BasisfunctionType, EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange>
+  typedef PointSourcePn<BasisfunctionType,
+                        GridLayerType,
+                        EntityType,
+                        DomainFieldType,
+                        dimDomain,
+                        U_,
+                        RangeFieldType,
+                        dimRange>
       BaseType;
   typedef PointSourceMn ThisType;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
-  typedef GDT::EntropyBasedLocalFlux<GridViewType,
-                                     BasisfunctionType,
+  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType,
+                                     GridLayerType,
                                      EntityType,
                                      DomainFieldType,
                                      dimDomain,
@@ -166,13 +190,11 @@ public:
   using BaseType::default_boundary_cfg;
 
   PointSourceMn(const BasisfunctionType& basis_functions,
+                const GridLayerType& grid_layer,
                 const QuadratureType& quadrature,
-                const GridViewType& grid_view,
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
-    , grid_view_(grid_view)
-    , quadrature_(quadrature)
+    : BaseType(basis_functions, grid_layer, quadrature, grid_cfg, boundary_cfg)
   {
   }
 
@@ -183,13 +205,13 @@ public:
 
   virtual FluxType* create_flux() const
   {
-    return new ActualFluxType(grid_view_, quadrature_, basis_functions_);
+    return new ActualFluxType(basis_functions_, grid_layer_, quadrature_);
   }
 
 protected:
   using BaseType::basis_functions_;
-  const GridViewType& grid_view_;
-  const QuadratureType& quadrature_;
+  using BaseType::grid_layer_;
+  using BaseType::quadrature_;
 }; // class PointSourceMn<...>
 
 
@@ -206,6 +228,7 @@ class PointSourceTestCase
                                 typename Hyperbolic::Problems::KineticEquation<
                                     typename Problems::
                                         PointSourcePn<B,
+                                                      typename G::LeafGridLayer,
                                                       typename G::template Codim<0>::Entity,
                                                       typename G::ctype,
                                                       G::dimension,
@@ -229,10 +252,11 @@ public:
   typedef typename Hyperbolic::Problems::KineticEquation<
       typename Problems::
           PointSourcePn<B,
+                        typename G::LeafGridLayer,
                         E,
                         D,
                         d,
-                        DiscreteFunction<FvProductSpace<typename G::LeafGridView, double, rangeDim, 1>,
+                        DiscreteFunction<FvProductSpace<typename G::LeafGridLayer, double, rangeDim, 1>,
                                          typename Dune::XT::LA::Container<double,
                                                                           XT::LA::default_sparse_backend>::VectorType>,
                         R,

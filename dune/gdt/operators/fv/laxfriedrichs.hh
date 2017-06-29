@@ -15,7 +15,7 @@
 #include <dune/gdt/local/fluxes/laxfriedrichs.hh>
 #include <dune/gdt/operators/interfaces.hh>
 
-#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/basisfunctions.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
 
 #include "base.hh"
 
