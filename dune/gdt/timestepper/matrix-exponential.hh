@@ -9,6 +9,11 @@
 #ifndef DUNE_GDT_TIMESTEPPER_MATRIXEXPONENTIAL_HH
 #define DUNE_GDT_TIMESTEPPER_MATRIXEXPONENTIAL_HH
 
+#include <dune/xt/functions/affine.hh>
+#include <dune/xt/functions/checkerboard.hh>
+
+#include <dune/xt/la/container/common.hh>
+
 #include <dune/gdt/assembler/system.hh>
 
 #include "interface.hh"
@@ -30,15 +35,21 @@ class MatrixExponentialFunctor
 
 public:
   using typename BaseType::EntityType;
+  typedef FieldMatrix<FieldType, dimRange, dimRange> MatrixType;
 
   MatrixExponentialFunctor(DiscreteFunctionType& solution,
                            const double t,
                            const double dt,
-                           const RhsEvaluationType& rhs_evaluation)
+                           const RhsEvaluationType& rhs_evaluation,
+                           const std::vector<MatrixType>& matrix_exponentials,
+                           const std::vector<MatrixType>& matrix_exponential_integrals)
+
     : solution_(solution)
     , t_(t)
     , dt_(dt)
     , rhs_evaluation_(rhs_evaluation)
+    , matrix_exponentials_(matrix_exponentials)
+    , matrix_exponential_integrals_(matrix_exponential_integrals)
   {
   }
 
@@ -56,54 +67,10 @@ public:
     const auto center = entity.geometry().local(entity.geometry().center());
     const auto u0 = solution_local->evaluate(center);
 
-    // get A and b
-    auto zero = u0;
-    zero *= 0.;
-    const auto local_rhs = rhs_evaluation_.local_function(entity);
-    FieldMatrix<FieldType, dimRange, dimRange> A = local_rhs->partial_u(center, u0);
-    const auto b = local_rhs->evaluate(center, u0);
-
-    // calculate matrix exponential exp(A*dt)
-    auto Adt = A;
-    Adt *= dt_;
-    // get pointer to the underlying array of the FieldMatrix
-    double* Adt_array = &(Adt[0][0]);
-
-    const double* exp_Adt_array = r8mat_expm1(dimRange, Adt_array);
-
-    FieldMatrix<FieldType, dimRange, dimRange> exp_Adt;
-    std::copy_n(exp_Adt_array, dimRange * dimRange, &(exp_Adt[0][0]));
-    delete[] exp_Adt_array;
-
-    // calculate integral of exp(-At) int_exp_mAt
-    // see https://math.stackexchange.com/questions/658276/integral-of-matrix-exponential
-    // if A is invertible, the integral is -A^{-1}(exp(-Adt)-I)
-    // in general, it is the power series dt*(I + (-Adt)/(2!) + (-Adt)^2/(3!) + ... + (-Adt)^{n-1}/(n!) + ...)
-    FieldMatrix<FieldType, dimRange, dimRange> int_exp_mAdt;
-    try {
-      auto A_inverse = A;
-      A_inverse.invert();
-      A_inverse *= -1.;
-
-      // calculate matrix exponential exp(-A*dt)
-      auto mAdt = A;
-      mAdt *= -dt_;
-      // get pointer to the underlying array of the FieldMatrix
-      double* mAdt_array = &(mAdt[0][0]);
-      const double* exp_mAdt_array = r8mat_expm1(dimRange, mAdt_array);
-
-      std::copy_n(exp_mAdt_array, dimRange * dimRange, &(int_exp_mAdt[0][0]));
-      delete[] exp_mAdt_array;
-
-      for (size_t ii = 0; ii < dimRange; ++ii)
-        int_exp_mAdt[ii][ii] -= 1.;
-      int_exp_mAdt.leftmultiply(A_inverse);
-    } catch (Dune::FMatrixError&) {
-      auto minus_A = A;
-      minus_A *= -1.;
-      const double* int_exp_mAdt_array = r8mat_expm_integral(dimRange, &(minus_A[0][0]), dt_);
-      std::copy_n(int_exp_mAdt_array, dimRange * dimRange, &(int_exp_mAdt[0][0]));
-    }
+    const size_t subdomain = rhs_evaluation_.subdomain(entity);
+    const auto& b = rhs_evaluation_.values()[subdomain]->b();
+    const auto& exp_Adt = matrix_exponentials_[subdomain];
+    const auto& int_exp_mAdt = matrix_exponential_integrals_[subdomain];
 
     // calculate solution u = exp(A dt) (u0 + int_exp_mAdt b)
     FieldVector<FieldType, dimRange> u(0), ret;
@@ -122,6 +89,8 @@ private:
   const double t_;
   const double dt_;
   const RhsEvaluationType& rhs_evaluation_;
+  const std::vector<MatrixType>& matrix_exponentials_;
+  const std::vector<MatrixType>& matrix_exponential_integrals_;
 };
 
 
@@ -130,6 +99,7 @@ private:
 template <class OperatorImp, class DiscreteFunctionImp, class TimeFieldImp = double>
 class MatrixExponentialTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
 {
+  typedef MatrixExponentialTimeStepper ThisType;
   typedef TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp> BaseType;
 
 public:
@@ -141,6 +111,28 @@ public:
   using typename BaseType::DataHandleType;
 
   typedef OperatorImp OperatorType;
+  typedef typename OperatorType::RhsEvaluationType EvaluationType;
+  static const size_t dimDomain = DiscreteFunctionType::dimDomain;
+  static const size_t dimRange = DiscreteFunctionType::dimRange;
+  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+
+  typedef typename XT::Functions::AffineFluxFunction<typename DiscreteFunctionType::EntityType,
+                                                     DomainFieldType,
+                                                     dimDomain,
+                                                     DiscreteFunctionType,
+                                                     RangeFieldType,
+                                                     dimRange,
+                                                     1>
+      RhsAffineFunctionType;
+  typedef typename XT::Functions::CheckerboardFunction<typename DiscreteFunctionType::EntityType,
+                                                       DomainFieldType,
+                                                       dimDomain,
+                                                       RangeFieldType,
+                                                       dimRange,
+                                                       1,
+                                                       RhsAffineFunctionType>
+      AffineCheckerboardType;
+
 
   using BaseType::current_solution;
   using BaseType::current_time;
@@ -150,6 +142,11 @@ public:
                                const TimeFieldImp t_0 = 0.0)
     : BaseType(t_0, initial_values)
     , op_(op)
+    , evaluation_(static_cast<const AffineCheckerboardType&>(op_.evaluation()))
+    , num_subdomains_(evaluation_.subdomains())
+    , matrix_exponentials_(num_subdomains_)
+    , matrix_exponential_integrals_(num_subdomains_)
+    , last_dt_(0)
   {
   }
 
@@ -158,21 +155,98 @@ public:
     const TimeFieldType actual_dt = std::min(dt, max_dt);
     auto& t = current_time();
     auto& u_n = current_solution();
-
-    MatrixExponentialFunctor<DiscreteFunctionType, typename OperatorType::RhsEvaluationType> functor(
-        u_n, t, actual_dt, op_.evaluation());
+    calculate_matrix_exponentials(actual_dt);
+    MatrixExponentialFunctor<DiscreteFunctionType, AffineCheckerboardType> functor(
+        u_n, t, actual_dt, evaluation_, matrix_exponentials_, matrix_exponential_integrals_);
     SystemAssembler<typename DiscreteFunctionType::SpaceType> assembler(u_n.space());
     assembler.append(functor);
     assembler.assemble(true);
 
     // augment time
     t += actual_dt;
+    last_dt_ = actual_dt;
 
     return dt;
   } // ... step(...)
 
 private:
+  void calculate_matrix_exponentials(const TimeFieldType& actual_dt)
+  {
+    if (XT::Common::FloatCmp::ne(actual_dt, last_dt_)) {
+      size_t num_threads = std::min(XT::Common::threadManager().max_threads(), num_subdomains_);
+      std::vector<std::set<size_t>> decomposition(num_threads);
+      for (size_t ii = 0; ii < num_subdomains_; ++ii)
+        decomposition[ii % num_threads].insert(ii);
+
+      std::vector<std::thread> threads(num_threads);
+      // Launch a group of threads
+      for (size_t ii = 0; ii < num_threads; ++ii)
+        threads[ii] = std::thread(&ThisType::calculate_in_thread, this, actual_dt, decomposition[ii]);
+      // Join the threads with the main thread
+      for (size_t ii = 0; ii < num_threads; ++ii)
+        threads[ii].join();
+    }
+  }
+
+  void calculate_in_thread(const TimeFieldType& actual_dt, const std::set<size_t>& indices)
+  {
+    for (const auto& index : indices)
+      get_matrix_exponential(index, actual_dt);
+  }
+
+  void get_matrix_exponential(size_t index, const TimeFieldType& dt)
+  {
+    const auto& affine_function = *(evaluation_.values()[index]);
+    assert(affine_function.A().size() == 1 && "Not implemented for dimRangeCols > 1!");
+    const auto A = (affine_function.A()[0]).operator MatrixType();
+
+    // calculate matrix exponential exp(A*dt)
+    auto Adt = A;
+    Adt *= dt;
+    // get pointer to the underlying array of the FieldMatrix
+    RangeFieldType* Adt_array = &(Adt[0][0]);
+    const double* exp_Adt_array = r8mat_expm1(dimRange, Adt_array);
+    auto& exp_Adt = matrix_exponentials_[index];
+    std::copy_n(exp_Adt_array, dimRange * dimRange, &(exp_Adt[0][0]));
+    delete[] exp_Adt_array;
+
+    // calculate \int_0^{dt} exp(-At) dt
+    // see https://math.stackexchange.com/questions/658276/integral-of-matrix-exponential
+    // if A is invertible, the integral is -A^{-1}(exp(-Adt)-I)
+    // in general, it is the power series dt*(I + (-Adt)/(2!) + (-Adt)^2/(3!) + ... + (-Adt)^{n-1}/(n!) + ...)
+    auto& int_exp_mAdt = matrix_exponential_integrals_[index];
+    try {
+      auto A_inverse = A;
+      A_inverse.invert();
+      A_inverse *= -1.;
+
+      // calculate matrix exponential exp(-A*dt)
+      auto mAdt = A;
+      mAdt *= -dt;
+      // get pointer to the underlying array of the FieldMatrix
+      double* mAdt_array = &(mAdt[0][0]);
+      const double* exp_mAdt_array = r8mat_expm1(dimRange, mAdt_array);
+      std::copy_n(exp_mAdt_array, dimRange * dimRange, &(int_exp_mAdt[0][0]));
+      delete[] exp_mAdt_array;
+
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        int_exp_mAdt[ii][ii] -= 1.;
+      int_exp_mAdt.leftmultiply(A_inverse);
+    } catch (Dune::FMatrixError&) { // A not invertible
+      auto minus_A = A;
+      minus_A *= -1.;
+      const double* int_exp_mAdt_array = r8mat_expm_integral(dimRange, &(minus_A[0][0]), dt);
+      std::copy_n(int_exp_mAdt_array, dimRange * dimRange, &(int_exp_mAdt[0][0]));
+      delete[] int_exp_mAdt_array;
+    }
+  }
+
   const OperatorType& op_;
+  const AffineCheckerboardType& evaluation_;
+  size_t num_subdomains_;
+  std::vector<MatrixType> matrix_exponentials_;
+  std::vector<MatrixType> matrix_exponential_integrals_;
+  TimeFieldType last_dt_;
 };
 
 
