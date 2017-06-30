@@ -54,9 +54,6 @@ class KineticTransportEquation : public KineticEquationImplementation<Basisfunct
                                         RangeFieldImp,
                                         rangeDim>
       BaseType;
-  typedef XT::Functions::GlobalLambdaFunction<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
-      GlobalLambdaFunctionType;
-  typedef XT::Functions::GlobalLambdaFluxFunction<U_, 0, RangeFieldImp, rangeDim, 1> GlobalLambdaFluxFunctionType;
 
 public:
   using typename BaseType::BasisfunctionType;
@@ -65,6 +62,9 @@ public:
   using typename BaseType::DomainFieldType;
   using typename BaseType::StateType;
   using typename BaseType::RangeFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::MatrixType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
 
@@ -72,23 +72,12 @@ public:
   using typename BaseType::RhsType;
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::ActualFluxType;
+  using typename BaseType::ActualRhsType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::RhsAffineFunctionType;
 
-  typedef
-      typename XT::Functions::AffineFluxFunction<EntityImp, DomainFieldImp, dimDomain, U_, RangeFieldImp, dimRange, 1>
-          RhsAffineFunctionType;
-  typedef typename XT::Functions::
-      AffineFluxFunction<EntityImp, DomainFieldImp, dimDomain, U_, RangeFieldImp, dimRange, dimDomain>
-          ActualFluxType;
-  typedef XT::Functions::
-      CheckerboardFunction<EntityImp, DomainFieldImp, dimDomain, RangeFieldImp, dimRange, 1, RhsAffineFunctionType>
-          ActualRhsType;
-  typedef XT::Functions::
-      CheckerboardFunction<EntityImp, DomainFieldImp, dimDomain, RangeFieldImp, dimRange, 1, GlobalLambdaFunctionType>
-          ActualInitialValueType;
-  typedef GlobalLambdaFunctionType ActualBoundaryValueType;
-  typedef typename RhsAffineFunctionType::FieldMatrixType MatrixType;
-  typedef typename RhsAffineFunctionType::DomainType DomainType;
-  typedef typename RhsAffineFunctionType::RangeType RangeType;
   typedef Dune::QuadratureRule<DomainFieldType, quadratureDim> QuadratureType;
 
   using BaseType::default_grid_cfg;

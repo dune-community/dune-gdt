@@ -42,6 +42,7 @@ protected:
                       ImplementationType::dimRange>
       BaseType;
 
+
 public:
   using typename BaseType::RangeFieldType;
 
@@ -96,6 +97,10 @@ class KineticEquationImplementation
 {
   typedef KineticEquationImplementation ThisType;
 
+  typedef XT::Functions::GlobalLambdaFunction<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
+      GlobalLambdaFunctionType;
+  typedef XT::Functions::GlobalLambdaFluxFunction<U_, 0, RangeFieldImp, rangeDim, 1> GlobalLambdaFluxFunctionType;
+
 public:
   typedef BasisfunctionImp BasisfunctionType;
   typedef GridLayerImp GridLayerType;
@@ -110,6 +115,24 @@ public:
   typedef typename KineticEquation<ThisType>::RhsType RhsType;
   typedef typename KineticEquation<ThisType>::InitialValueType InitialValueType;
   typedef typename KineticEquation<ThisType>::BoundaryValueType BoundaryValueType;
+
+  typedef
+      typename XT::Functions::AffineFluxFunction<EntityImp, DomainFieldImp, dimDomain, U_, RangeFieldImp, dimRange, 1>
+          RhsAffineFunctionType;
+  typedef typename XT::Functions::
+      AffineFluxFunction<EntityImp, DomainFieldImp, dimDomain, U_, RangeFieldImp, dimRange, dimDomain>
+          ActualFluxType;
+  typedef XT::Functions::
+      CheckerboardFunction<EntityImp, DomainFieldImp, dimDomain, RangeFieldImp, dimRange, 1, RhsAffineFunctionType>
+          ActualRhsType;
+  typedef XT::Functions::
+      CheckerboardFunction<EntityImp, DomainFieldImp, dimDomain, RangeFieldImp, dimRange, 1, GlobalLambdaFunctionType>
+          ActualInitialValueType;
+  typedef GlobalLambdaFunctionType ActualBoundaryValueType;
+
+  typedef typename RhsAffineFunctionType::FieldMatrixType MatrixType;
+  typedef typename RhsAffineFunctionType::DomainType DomainType;
+  typedef typename RhsAffineFunctionType::RangeType RangeType;
 
   KineticEquationImplementation(const BasisfunctionType& basis_functions, const GridLayerType& grid_layer)
     : basis_functions_(basis_functions)

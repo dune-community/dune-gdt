@@ -16,12 +16,14 @@
 #include <dune/xt/grid/view/periodic.hh>
 #include <dune/gdt/test/instationary-eocstudy.hh>
 
-#include "kineticequation.hh"
+#include "kinetictransportequation.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
+namespace KineticTransport {
+
 
 // knots are the 20 linearly spaced knots between -1 and 1
 // see https://de.wikipedia.org/wiki/Spline#B-Splines
@@ -64,6 +66,7 @@ struct BSpline<0, i, D, R>
 };
 
 template <class BasisfunctionImp,
+          class GridLayerImp,
           class EntityImp,
           class DomainFieldImp,
           size_t dimDomain,
@@ -71,6 +74,7 @@ template <class BasisfunctionImp,
           class RangeFieldImp,
           size_t dimRange>
 class ModifiedLineSourcePn : public KineticTransportEquation<BasisfunctionImp,
+                                                             GridLayerImp,
                                                              EntityImp,
                                                              DomainFieldImp,
                                                              dimDomain,
@@ -80,6 +84,7 @@ class ModifiedLineSourcePn : public KineticTransportEquation<BasisfunctionImp,
                                                              dimDomain + 1>
 {
   typedef KineticTransportEquation<BasisfunctionImp,
+                                   GridLayerImp,
                                    EntityImp,
                                    DomainFieldImp,
                                    dimDomain,
@@ -99,26 +104,18 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::QuadratureType;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_quadrature;
 
   ModifiedLineSourcePn(const BasisfunctionType& basis_functions,
+                       const GridLayerType& grid_layer,
+                       const QuadratureType quadrature = QuadratureType(),
                        const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                       const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
-                       const QuadratureType quadrature = QuadratureType())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg, quadrature, 1.)
-  {
-  }
-
-  template <class GridLayerType>
-  ModifiedLineSourcePn(const BasisfunctionType& basis_functions,
-                       const GridLayerType& /*grid_layer*/,
-                       const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                       const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
-                       const QuadratureType quadrature = QuadratureType())
-    : ModifiedLineSourcePn(basis_functions, grid_cfg, boundary_cfg, quadrature, 1.)
+                       const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+    : BaseType(basis_functions, grid_layer, quadrature, {1, 1}, grid_cfg, boundary_cfg, 1.)
   {
   }
 
@@ -158,29 +155,27 @@ public:
   {
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
-    const FieldVector<size_t, dimDomain> num_segments = get_num_segments(parameters());
     RangeType basis_integrated = basis_functions_.integrated();
     std::vector<typename ActualInitialValueType::LocalizableFunctionType> initial_vals;
     initial_vals.emplace_back(
-        [=](const DomainType& x) {
+        [=](const DomainType& x, const XT::Common::Parameter&) {
           auto ret = basis_integrated;
           ret *= 1 + 2.8309 * BSpline<14, 2, DomainFieldType, RangeFieldType>::evaluate(x.two_norm2() - 0.01);
           return ret;
         },
         15);
-    return new ActualInitialValueType(lower_left, upper_right, num_segments, initial_vals, "initial_values");
+    return new ActualInitialValueType(lower_left, upper_right, num_segments_, initial_vals, "initial_values");
   } // ... create_initial_values()
 
 protected:
-  using BaseType::get_num_segments;
-
   using BaseType::grid_cfg_;
   using BaseType::basis_functions_;
+  using BaseType::num_segments_;
   using BaseType::psi_vac_;
 }; // class ModifiedLineSourcePn<...>
 
-template <class GridLayerType,
-          class BasisfunctionType,
+template <class BasisfunctionType,
+          class GridLayerType,
           class EntityType,
           class DomainFieldType,
           size_t dimDomain,
@@ -188,6 +183,7 @@ template <class GridLayerType,
           class RangeFieldType,
           size_t dimRange>
 class ModifiedLineSourceMn : public ModifiedLineSourcePn<BasisfunctionType,
+                                                         GridLayerType,
                                                          EntityType,
                                                          DomainFieldType,
                                                          dimDomain,
@@ -195,15 +191,22 @@ class ModifiedLineSourceMn : public ModifiedLineSourcePn<BasisfunctionType,
                                                          RangeFieldType,
                                                          dimRange>
 {
-  typedef ModifiedLineSourcePn<BasisfunctionType, EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange>
+  typedef ModifiedLineSourcePn<BasisfunctionType,
+                               GridLayerType,
+                               EntityType,
+                               DomainFieldType,
+                               dimDomain,
+                               U_,
+                               RangeFieldType,
+                               dimRange>
       BaseType;
   typedef ModifiedLineSourceMn ThisType;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
-  typedef GDT::EntropyBasedLocalFlux<GridLayerType,
-                                     BasisfunctionType,
+  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType,
+                                     GridLayerType,
                                      EntityType,
                                      DomainFieldType,
                                      dimDomain,
@@ -225,11 +228,10 @@ public:
 
   ModifiedLineSourceMn(const BasisfunctionType& basis_functions,
                        const GridLayerType& grid_layer,
+                       const QuadratureType& quadrature = default_quadrature(),
                        const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                       const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
-                       const QuadratureType& quadrature = default_quadrature())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg, quadrature)
-    , grid_layer_(grid_layer)
+                       const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+    : BaseType(basis_functions, grid_layer, quadrature, grid_cfg, boundary_cfg)
   {
   }
 
@@ -240,16 +242,17 @@ public:
 
   virtual FluxType* create_flux() const
   {
-    return new ActualFluxType(grid_layer_, quadrature_, basis_functions_);
+    return new ActualFluxType(basis_functions_, grid_layer_, quadrature_);
   }
 
 protected:
   using BaseType::basis_functions_;
   using BaseType::quadrature_;
-  const GridLayerType& grid_layer_;
+  using BaseType::grid_layer_;
 }; // class ModifiedLineSourceMn<...>
 
 
+} // namespace KineticTransport
 } // namespace Problems
 
 
@@ -261,8 +264,9 @@ class LineSourceTestCase
     : public Dune::GDT::Test::
           NonStationaryTestCase<G,
                                 typename Hyperbolic::Problems::KineticEquation<
-                                    typename Problems::
+                                    typename Problems::KineticTransport::
                                         ModifiedLineSourcePn<B,
+                                                             typename G::LevelGridView,
                                                              typename G::template Codim<0>::Entity,
                                                              typename G::ctype,
                                                              G::dimension,
@@ -285,8 +289,9 @@ public:
   static const size_t d = G::dimension;
   static_assert(d == 2, "Only implemented for dimension 2.");
   typedef typename Hyperbolic::Problems::KineticEquation<
-      typename Problems::
+      typename Problems::KineticTransport::
           ModifiedLineSourcePn<B,
+                               typename G::LevelGridView,
                                E,
                                D,
                                d,
@@ -349,17 +354,22 @@ template <class G,
 class LineSourceMnTestCase
     : public Dune::GDT::Test::
           NonStationaryTestCase<G,
-                                typename Hyperbolic::Problems::KineticEquation<typename Problems::ModifiedLineSourceMn<
-                                    typename XT::Grid::PeriodicGridView<typename G::LevelGridView>,
-                                    B,
-                                    typename G::template Codim<0>::Entity,
-                                    typename G::ctype,
-                                    G::dimension,
-                                    DiscreteFunction<FvProductSpace<typename G::LevelGridView, double, B::dimRange, 1>,
-                                                     typename Dune::XT::LA::
-                                                         Container<double, XT::LA::default_sparse_backend>::VectorType>,
-                                    R,
-                                    B::dimRange>>>
+                                typename Hyperbolic::Problems::KineticEquation<
+                                    typename Problems::KineticTransport::ModifiedLineSourceMn<
+                                        typename XT::Grid::PeriodicGridView<typename G::LevelGridView>,
+                                        B,
+                                        typename G::template Codim<0>::Entity,
+                                        typename G::ctype,
+                                        G::dimension,
+                                        DiscreteFunction<FvProductSpace<typename G::LevelGridView,
+                                                                        double,
+                                                                        B::dimRange,
+                                                                        1>,
+                                                         typename Dune::XT::LA::
+                                                             Container<double,
+                                                                       XT::LA::default_sparse_backend>::VectorType>,
+                                        R,
+                                        B::dimRange>>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -367,7 +377,7 @@ class LineSourceMnTestCase
 public:
   static const size_t d = G::dimension;
   static_assert(d == 2, "Only implemented for dimension 2.");
-  typedef typename Hyperbolic::Problems::KineticEquation<typename Problems::ModifiedLineSourceMn<
+  typedef typename Hyperbolic::Problems::KineticEquation<typename Problems::KineticTransport::ModifiedLineSourceMn<
       typename XT::Grid::PeriodicGridView<typename G::LevelGridView>,
       B,
       E,

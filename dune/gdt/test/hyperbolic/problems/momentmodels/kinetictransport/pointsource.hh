@@ -23,6 +23,7 @@ namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
+namespace KineticTransport {
 
 
 template <class BasisfunctionImp,
@@ -215,6 +216,7 @@ protected:
 }; // class PointSourceMn<...>
 
 
+} // namespace KineticTransport
 } // namespace Problems
 
 
@@ -226,7 +228,7 @@ class PointSourceTestCase
     : public Dune::GDT::Test::
           NonStationaryTestCase<G,
                                 typename Hyperbolic::Problems::KineticEquation<
-                                    typename Problems::
+                                    typename Problems::KineticTransport::
                                         PointSourcePn<B,
                                                       typename G::LeafGridLayer,
                                                       typename G::template Codim<0>::Entity,
@@ -250,7 +252,7 @@ public:
   static const size_t d = G::dimension;
   static_assert(d == 3, "Only implemented for dimension 1.");
   typedef typename Hyperbolic::Problems::KineticEquation<
-      typename Problems::
+      typename Problems::KineticTransport::
           PointSourcePn<B,
                         typename G::LeafGridLayer,
                         E,

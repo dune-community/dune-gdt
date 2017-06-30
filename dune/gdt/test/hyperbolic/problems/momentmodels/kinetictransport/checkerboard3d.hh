@@ -24,6 +24,197 @@ namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
+namespace KineticTransport {
+
+template <class BasisfunctionImp,
+          class GridLayerImp,
+          class EntityImp,
+          class DomainFieldImp,
+          size_t dimDomain,
+          class U_,
+          class RangeFieldImp,
+          size_t dimRange>
+class CheckerboardPn : public KineticTransportEquation<BasisfunctionImp,
+                                                       GridLayerImp,
+                                                       EntityImp,
+                                                       DomainFieldImp,
+                                                       dimDomain,
+                                                       U_,
+                                                       RangeFieldImp,
+                                                       dimRange>
+{
+  typedef KineticTransportEquation<BasisfunctionImp,
+                                   GridLayerImp,
+                                   EntityImp,
+                                   DomainFieldImp,
+                                   dimDomain,
+                                   U_,
+                                   RangeFieldImp,
+                                   dimRange>
+      BaseType;
+
+public:
+  using typename BaseType::InitialValueType;
+  using typename BaseType::BoundaryValueType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
+  using typename BaseType::BasisfunctionType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::QuadratureType;
+
+  using BaseType::default_boundary_cfg;
+  using BaseType::default_quadrature;
+
+  PointSourcePn(const BasisfunctionType& basis_functions,
+                const GridLayerType& grid_layer,
+                const QuadratureType& quadrature = default_quadrature(),
+                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+    : BaseType(basis_functions, grid_layer, quadrature, {1, 1, 1}, grid_cfg, boundary_cfg)
+  {
+  }
+
+  static std::string static_id()
+  {
+    return "pointsourcepn";
+  }
+
+  static XT::Common::Configuration default_grid_cfg()
+  {
+    XT::Common::Configuration grid_config;
+    grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
+    //    grid_config["lower_left"] = "[-0.5 -0.5 -0.5]";
+    //    grid_config["upper_right"] = "[0.5 0.5 0.5]";
+    grid_config["lower_left"] = "[-1 -1 -1]";
+    grid_config["upper_right"] = "[1 1 1]";
+    grid_config["num_elements"] = "[4 4 4]";
+    grid_config["overlap_size"] = "[1 1 1]";
+    return grid_config;
+  }
+
+  // sigma_a = 0, sigma_s = 1, Q = 0
+  virtual XT::Common::Parameter parameters() const override
+  {
+    return XT::Common::Parameter({std::make_pair("sigma_a", std::vector<double>{0}),
+                                  std::make_pair("sigma_s", std::vector<double>{1}),
+                                  std::make_pair("Q", std::vector<double>{0}),
+                                  std::make_pair("CFL", std::vector<double>{0.4}),
+                                  std::make_pair("t_end", std::vector<double>{0.45})});
+  }
+
+  // Initial value of the kinetic equation is psi_vac + 1/(8 pi sigma^2) * exp(-|x|^2/(2*sigma^2)).
+  // Thus the initial value for the moments is basis_integrated * (psi_vac + 1/(8 pi sigma^2) *
+  // exp(-|x|^2/(2*sigma^2))).
+  virtual InitialValueType* create_initial_values() const
+  {
+    const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
+    const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
+    static const double sigma = 0.03;
+    RangeType basis_integrated = basis_functions_.integrated();
+    std::vector<typename ActualInitialValueType::LocalizableFunctionType> initial_vals;
+
+    //    initial_vals.emplace_back(
+    //        [=](const DomainType& x) {
+    //          auto ret = basis_integrated;
+    //          ret *= psi_vac_ + 1. / (8. * M_PI * sigma * sigma) * std::exp(-1. * x.two_norm() / (2. * sigma *
+    //          sigma));
+    //          return ret;
+    //        },
+    //        50);
+
+    initial_vals.emplace_back(
+        [=](const DomainType& x, const XT::Common::Parameter&) {
+          auto ret = basis_integrated;
+          ret *= std::max(1. / (8. * M_PI * sigma * sigma) * std::exp(-1. * x.two_norm2() / (2. * sigma * sigma)),
+                          1e-4 / (4. * M_PI));
+          return ret;
+        },
+        50);
+
+    return new ActualInitialValueType(lower_left, upper_right, num_segments_, initial_vals, "initial_values");
+  } // ... create_initial_values()
+
+protected:
+  using BaseType::grid_cfg_;
+  using BaseType::basis_functions_;
+  using BaseType::num_segments_;
+  using BaseType::psi_vac_;
+}; // class PointSourcePn<...>
+
+template <class BasisfunctionType,
+          class GridLayerType,
+          class EntityType,
+          class DomainFieldType,
+          size_t dimDomain,
+          class U_,
+          class RangeFieldType,
+          size_t dimRange>
+class PointSourceMn : public PointSourcePn<BasisfunctionType,
+                                           GridLayerType,
+                                           EntityType,
+                                           DomainFieldType,
+                                           dimDomain,
+                                           U_,
+                                           RangeFieldType,
+                                           dimRange>
+{
+  typedef PointSourcePn<BasisfunctionType,
+                        GridLayerType,
+                        EntityType,
+                        DomainFieldType,
+                        dimDomain,
+                        U_,
+                        RangeFieldType,
+                        dimRange>
+      BaseType;
+  typedef PointSourceMn ThisType;
+
+public:
+  using typename BaseType::FluxType;
+  using typename BaseType::RangeType;
+  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType,
+                                     GridLayerType,
+                                     EntityType,
+                                     DomainFieldType,
+                                     dimDomain,
+                                     U_,
+                                     RangeFieldType,
+                                     dimRange>
+      ActualFluxType;
+  using typename BaseType::QuadratureType;
+
+  using BaseType::default_grid_cfg;
+  using BaseType::default_boundary_cfg;
+
+  PointSourceMn(const BasisfunctionType& basis_functions,
+                const GridLayerType& grid_layer,
+                const QuadratureType& quadrature,
+                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+    : BaseType(basis_functions, grid_layer, quadrature, grid_cfg, boundary_cfg)
+  {
+  }
+
+  static std::string static_id()
+  {
+    return "pointsourcemn";
+  }
+
+  virtual FluxType* create_flux() const
+  {
+    return new ActualFluxType(basis_functions_, grid_layer_, quadrature_);
+  }
+
+protected:
+  using BaseType::basis_functions_;
+  using BaseType::grid_layer_;
+  using BaseType::quadrature_;
+}; // class PointSourceMn<...>
+
 
 /** \see class TwoBeams in twobeams.hh */
 template <class CheckerboardImp,
@@ -503,247 +694,7 @@ public:
 }; // class CheckerboardPnHatFunctions
 
 
-/** \see class TwoBeams in twobeams.hh */
-template <class E, class D, size_t d, class R, size_t num_faces>
-class CheckerboardPnPartialMoments
-    : public CheckerboardBase<CheckerboardPnPartialMoments<E, D, d, R, num_faces>, E, D, d, R, 4 * num_faces, 1>
-{
-  typedef CheckerboardPnPartialMoments<E, D, d, R, num_faces> ThisType;
-  typedef CheckerboardBase<CheckerboardPnPartialMoments<E, D, d, R, num_faces>, E, D, d, R, 4 * num_faces, 1> BaseType;
-
-public:
-  using BaseType::dimDomain;
-  using BaseType::dimRange;
-  using BaseType::precision;
-  using typename BaseType::FluxRangeType;
-  using typename BaseType::RHSType;
-  using typename BaseType::FluxType;
-  using typename BaseType::InitialValueType;
-  using typename BaseType::BoundaryValueType;
-  using typename BaseType::DefaultFluxType;
-  using typename BaseType::DefaultRHSType;
-  typedef typename XT::Functions::GlobalLambdaFunction<E, D, d, R, dimRange> InitialValueFunctionType;
-  typedef typename XT::Functions::FunctionCheckerboardFunction<InitialValueFunctionType, E, D, d, R, dimRange>
-      DefaultInitialValueType;
-  using typename BaseType::DefaultBoundaryValueType;
-  using typename BaseType::ConfigType;
-  using typename BaseType::MatrixType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::RangeType;
-  using typename BaseType::DomainType;
-  typedef RangeType PointsVectorType;
-
-  static std::string static_id()
-  {
-    return "CheckerboardPnPartialBasis";
-  }
-
-  using BaseType::create_equidistant_points;
-  using BaseType::default_grid_config;
-  using BaseType::default_boundary_info_config;
-
-  static std::unique_ptr<ThisType> create(const Dune::QuadratureRule<double, 3>& quadrature,
-                                          const SphericalTriangulation<double>& poly,
-                                          const ConfigType config = default_config())
-  {
-    const std::shared_ptr<const FluxType> flux(DefaultFluxType::create(config.sub("flux")));
-    const std::shared_ptr<const RHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
-    const std::shared_ptr<const InitialValueType> initial_values(DefaultInitialValueType::create(
-        config.sub("initial_values"), "", create_initial_value_lambda(quadrature, poly)));
-    const ConfigType grid_config = config.sub("grid");
-    const ConfigType boundary_info = config.sub("boundary_info");
-    const std::shared_ptr<const BoundaryValueType> boundary_values(
-        DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
-  } // ... create(...)
-
-  static ConfigType default_config(const ConfigType grid_config,
-                                   const Dune::QuadratureRule<double, 3>& quadrature,
-                                   const SphericalTriangulation<double>& poly,
-                                   const RangeFieldType psi_vac = 5e-9)
-  {
-    ConfigType config;
-    config.add(grid_config, "grid");
-    config.add(default_boundary_info_config(), "boundary_info");
-    config.add(create_flux_config(quadrature, poly), "flux");
-    config.add(create_rhs_config(grid_config, quadrature, poly), "rhs");
-    config.add(create_initial_value_config(grid_config, quadrature, poly, psi_vac), "initial_values");
-    config.add(create_boundary_value_config(quadrature, poly, psi_vac), "boundary_values");
-    return config;
-  } // ... default_config(...)
-
-  template <class... Args>
-  CheckerboardPnPartialMoments(Args&&... args)
-    : BaseType(std::forward<Args>(args)...)
-  {
-  }
-
-  // flux matrix A_i,nm = <Omega_i h_n h_m>
-  static ConfigType create_flux_config(const Dune::QuadratureRule<double, 3>& quadrature,
-                                       const SphericalTriangulation<double>& poly)
-  {
-    ConfigType flux_config;
-    flux_config["type"] = DefaultFluxType::static_id();
-    MatrixType A_0(0), A_1(0), A_2(0);
-    for (const auto& quad_point : quadrature) {
-      const auto point = quad_point.position();
-      const auto basis_evaluated = evaluate_linear_partial_basis<RangeType, DomainType>(point, poly);
-      const auto weight = quad_point.weight();
-      for (size_t nn = 0; nn < dimRange; ++nn) {
-        for (size_t mm = 0; mm < dimRange; ++mm) {
-          A_0[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * point[0] * weight;
-          A_1[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * point[1] * weight;
-          A_2[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * point[2] * weight;
-        } // mm
-      } // nn
-    } // quadrature
-    flux_config["A.0"] = XT::Common::to_string(A_0, precision);
-    flux_config["A.1"] = XT::Common::to_string(A_1, precision);
-    flux_config["A.2"] = XT::Common::to_string(A_2, precision);
-    flux_config["b"] = Dune::XT::Common::to_string(FluxRangeType(0));
-    return flux_config;
-  } // ... create_flux_config(...)
-
-  // returns <b>, where b is the basis functions vector
-  static RangeType basisfunctions_integrated(const Dune::QuadratureRule<double, 3>& quadrature,
-                                             const SphericalTriangulation<double>& poly)
-  {
-    RangeType ret(0);
-    for (const auto& quad_point : quadrature) {
-      const auto& point = quad_point.position();
-      const auto basis_evaluated = evaluate_linear_partial_basis<RangeType, DomainType>(point, poly);
-      const auto& weight = quad_point.weight();
-      for (size_t nn = 0; nn < dimRange; ++nn)
-        ret[nn] += basis_evaluated[nn] * weight;
-    } // quadrature
-    return ret;
-  }
-
-  // n-th component of RHS is -sigma_t u_n + sigma_s/(4 pi) <psi><b_n> + Q<b_n>
-  // For this test case (sigma_t = sigma_s + sigma_a),
-  // sigma_a = 0, sigma_s = 1, Q = 0 in scattering regions
-  // sigma_a = 10, sigma_s = 0, Q = 0 in absorbing regions
-  // sigma_a = 0, sigma_s = 1, Q = 1 for center cube
-  // As <psi> = sum_{i % 4 == 0} u_i, the rhs becomes
-  // - sigma_t u_n + sigma_s/(4 pi) sum_{i % 4 == 0} u_i <b_n> + Q<b_n>
-  static ConfigType create_rhs_config(const ConfigType grid_config,
-                                      const Dune::QuadratureRule<double, 3>& quadrature,
-                                      const SphericalTriangulation<double>& poly)
-  {
-    const auto basis_integrated = basisfunctions_integrated(quadrature, poly);
-    ConfigType rhs_config;
-    rhs_config["lower_left"] = grid_config["lower_left"];
-    rhs_config["upper_right"] = grid_config["upper_right"];
-    rhs_config["num_elements"] = "[7 7 7]";
-    rhs_config["name"] = DefaultRHSType::static_id();
-
-    RangeType Q;
-    RangeFieldType sigma_s, sigma_t;
-
-    for (size_t plane = 0; plane < 7; ++plane) {
-      for (size_t row = 0; row < 7; ++row) {
-        for (size_t col = 0; col < 7; ++col) {
-          if (plane == 3 && row == 3 && col == 3) { // center
-            Q = basis_integrated;
-            sigma_s = 1;
-            sigma_t = 1;
-          } else if (is_absorbing(plane, row, col)) { // absorbing regions
-            Q *= 0;
-            sigma_s = 0;
-            sigma_t = 10;
-          } else { // scattering regions (without center)
-            Q *= 0;
-            sigma_s = 1;
-            sigma_t = 1;
-          }
-
-          MatrixType A(0);
-          for (size_t nn = 0; nn < dimRange; ++nn)
-            for (size_t mm = 0; mm < dimRange; mm += 4)
-              A[nn][mm] = 1.;
-          A *= sigma_s / (4 * M_PI);
-          for (size_t nn = 0; nn < dimRange; ++nn) {
-            A[nn] *= basis_integrated[nn];
-            A[nn][nn] -= sigma_t;
-          }
-          size_t number = 49 * plane + 7 * row + col;
-          rhs_config["A." + Dune::XT::Common::to_string(number)] = Dune::XT::Common::to_string(A, precision);
-          rhs_config["b." + Dune::XT::Common::to_string(number)] = Dune::XT::Common::to_string(Q, precision);
-        } // col
-      } // row
-    } // plane
-
-    return rhs_config;
-  } // ... create_rhs_config()
-
-  // Initial value of the kinetic equation is psi_vac
-  static ConfigType create_initial_value_config(const ConfigType& grid_config,
-                                                const Dune::QuadratureRule<double, 3>& quadrature,
-                                                const SphericalTriangulation<double>& poly,
-                                                const double psi_vac = 5e-9)
-  {
-    ConfigType initial_value_config;
-    initial_value_config["lower_left"] = grid_config["lower_left"];
-    initial_value_config["upper_right"] = grid_config["upper_right"];
-    initial_value_config["num_elements"] = "[1 1 1]";
-    initial_value_config["variable"] = "x";
-    initial_value_config["name"] = DefaultInitialValueType::static_id();
-    const auto basis_integrated = basisfunctions_integrated(quadrature, poly);
-    std::string str = "[";
-    for (size_t rr = 0; rr < dimRange; ++rr) {
-      if (rr > 0)
-        str += " ";
-      str += XT::Common::to_string(basis_integrated[rr] * psi_vac, precision);
-    } // rr
-    str += "]";
-    initial_value_config["values.0"] = str;
-    initial_value_config["order.0"] = "1";
-    return initial_value_config;
-  } // ... create_initial_value_config(...)
-
-  // Initial value of the kinetic equation is psi_vac
-  // Thus the initial value for the n-th moment is base_integrated_n * psi_vac
-  static std::vector<std::function<RangeType(DomainType)>>
-  create_initial_value_lambda(const Dune::QuadratureRule<double, 3>& quadrature,
-                              const SphericalTriangulation<double>& poly,
-                              const double psi_vac = 5e-9)
-  {
-    std::vector<std::function<RangeType(DomainType)>> ret;
-    const auto basis_integrated = basisfunctions_integrated(quadrature, poly);
-    ret.push_back([basis_integrated, psi_vac](const DomainType& /*x*/) {
-      RangeType result = basis_integrated;
-      result *= psi_vac;
-      return result;
-    });
-    return ret;
-  } // ... create_initial_value_lambda(...)
-
-  // Boundary value of kinetic equation is psi_vac at both boundaries
-  // so n-th component of boundary value has to be \psi_{vac}*base_integrated_n at both boundaries.
-  // Modell with constant function.
-  static ConfigType create_boundary_value_config(const Dune::QuadratureRule<double, 3>& quadrature,
-                                                 const SphericalTriangulation<double>& poly,
-                                                 const double psi_vac = 5e-9)
-  {
-    ConfigType boundary_value_config;
-    boundary_value_config["type"] = DefaultBoundaryValueType::static_id();
-    boundary_value_config["variable"] = "x";
-    boundary_value_config["order"] = "1";
-    const RangeType integrated_basis = basisfunctions_integrated(quadrature, poly);
-    std::string str = "[";
-    for (size_t rr = 0; rr < dimRange; ++rr) {
-      if (rr > 0)
-        str += " ";
-      str += XT::Common::to_string(integrated_basis[rr] * psi_vac, precision);
-    }
-    str += "]";
-    boundary_value_config["expression"] = str;
-    return boundary_value_config;
-  } // ... create_boundary_value_config(...)
-
-}; // class CheckerboardPnPartialMoments
-
-
+} // namespace KineticTransport
 } // namespace Problems
 } // namespace Hyperbolic
 } // namespace GDT

@@ -17,36 +17,40 @@
 #include <dune/xt/functions/lambda/global-function.hh>
 #include <dune/xt/functions/lambda/global-flux-function.hh>
 
-#include "kineticequation.hh"
+#include "fokkerplanckequation.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
+namespace FokkerPlanck {
 
 
 template <class BasisfunctionImp,
+          class GridLayerImp,
           class EntityImp,
           class DomainFieldImp,
           size_t dimDomain,
           class U_,
           class RangeFieldImp,
           size_t dimRange>
-class TwoBeamsFokkerPlanckPn : public KineticFokkerPlanckEquation<BasisfunctionImp,
-                                                                  EntityImp,
-                                                                  DomainFieldImp,
-                                                                  dimDomain,
-                                                                  U_,
-                                                                  RangeFieldImp,
-                                                                  dimRange>
+class TwoBeamsPn : public FokkerPlanckEquation<BasisfunctionImp,
+                                               GridLayerImp,
+                                               EntityImp,
+                                               DomainFieldImp,
+                                               dimDomain,
+                                               U_,
+                                               RangeFieldImp,
+                                               dimRange>
 {
-  typedef KineticFokkerPlanckEquation<BasisfunctionImp,
-                                      EntityImp,
-                                      DomainFieldImp,
-                                      dimDomain,
-                                      U_,
-                                      RangeFieldImp,
-                                      dimRange>
+  typedef FokkerPlanckEquation<BasisfunctionImp,
+                               GridLayerImp,
+                               EntityImp,
+                               DomainFieldImp,
+                               dimDomain,
+                               U_,
+                               RangeFieldImp,
+                               dimRange>
       BaseType;
 
 public:
@@ -58,13 +62,18 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::QuadratureType;
 
   using BaseType::default_boundary_cfg;
+  using BaseType::default_quadrature;
 
-  TwoBeamsFokkerPlanckPn(const BasisfunctionType& basis_functions,
-                         const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                         const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+  TwoBeamsPn(const BasisfunctionType& basis_functions,
+             const GridLayerType& grid_layer,
+             const QuadratureType& quadrature = default_quadrature(),
+             const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+             const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+    : BaseType(basis_functions, grid_layer, quadrature, 1, grid_cfg, boundary_cfg)
   {
   }
 
@@ -118,40 +127,42 @@ public:
 
 protected:
   using BaseType::basis_functions_;
-}; // class TwoBeamsFokkerPlanckPn<...>
+}; // class TwoBeamsPn<...>
 
-template <class GridViewType,
-          class BasisfunctionType,
+template <class BasisfunctionType,
+          class GridLayerType,
           class EntityType,
           class DomainFieldType,
           size_t dimDomain,
           class U_,
           class RangeFieldType,
           size_t dimRange>
-class TwoBeamsFokkerPlanckMn : public TwoBeamsFokkerPlanckPn<BasisfunctionType,
-                                                             EntityType,
-                                                             DomainFieldType,
-                                                             dimDomain,
-                                                             U_,
-                                                             RangeFieldType,
-                                                             dimRange>
+class TwoBeamsMn : public TwoBeamsPn<BasisfunctionType,
+                                     GridLayerType,
+                                     EntityType,
+                                     DomainFieldType,
+                                     dimDomain,
+                                     U_,
+                                     RangeFieldType,
+                                     dimRange>
 {
-  typedef TwoBeamsFokkerPlanckPn<BasisfunctionType,
-                                 EntityType,
-                                 DomainFieldType,
-                                 dimDomain,
-                                 U_,
-                                 RangeFieldType,
-                                 dimRange>
+  typedef TwoBeamsPn<BasisfunctionType,
+                     GridLayerType,
+                     EntityType,
+                     DomainFieldType,
+                     dimDomain,
+                     U_,
+                     RangeFieldType,
+                     dimRange>
       BaseType;
-  typedef TwoBeamsFokkerPlanckMn ThisType;
+  typedef TwoBeamsMn ThisType;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
   using typename BaseType::QuadratureType;
-  typedef EntropyBasedLocalFlux<GridViewType,
-                                BasisfunctionType,
+  typedef EntropyBasedLocalFlux<BasisfunctionType,
+                                GridLayerType,
                                 EntityType,
                                 DomainFieldType,
                                 dimDomain,
@@ -163,13 +174,14 @@ public:
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
+  using BaseType::default_quadrature;
 
-  TwoBeamsFokkerPlanckMn(const BasisfunctionType& basis_functions,
-                         const GridViewType& grid_view,
-                         const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                         const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
-    , grid_view_(grid_view)
+  TwoBeamsMn(const BasisfunctionType& basis_functions,
+             const GridLayerType& grid_layer,
+             const QuadratureType& quadrature = default_quadrature(),
+             const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+             const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+    : BaseType(basis_functions, grid_layer, quadrature, grid_cfg, boundary_cfg)
   {
   }
 
@@ -180,16 +192,17 @@ public:
 
   virtual FluxType* create_flux() const
   {
-    return new ActualFluxType(grid_view_, quadrature_, basis_functions_);
+    return new ActualFluxType(basis_functions_, grid_layer_, quadrature_);
   }
 
 protected:
   using BaseType::basis_functions_;
-  const GridViewType& grid_view_;
+  using BaseType::grid_layer_;
   using BaseType::quadrature_;
-}; // class TwoBeamsFokkerPlanckMn<...>
+}; // class TwoBeamsMn<...>
 
 
+} // namespace FokkerPlanck
 } // namespace Problems
 } // namespace Hyperbolic
 } // namespace GDT

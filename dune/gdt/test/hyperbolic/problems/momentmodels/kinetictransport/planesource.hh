@@ -15,15 +15,17 @@
 
 #include <dune/xt/common/string.hh>
 
-#include "kineticequation.hh"
+#include "kinetictransportequation.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
+namespace KineticTransport {
 
 
 template <class BasisfunctionImp,
+          class GridLayerImp,
           class EntityImp,
           class DomainFieldImp,
           size_t dimDomain,
@@ -31,6 +33,7 @@ template <class BasisfunctionImp,
           class RangeFieldImp,
           size_t dimRange>
 class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp,
+                                                      GridLayerImp,
                                                       EntityImp,
                                                       DomainFieldImp,
                                                       dimDomain,
@@ -38,7 +41,14 @@ class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp,
                                                       RangeFieldImp,
                                                       dimRange>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, EntityImp, DomainFieldImp, dimDomain, U_, RangeFieldImp, dimRange>
+  typedef KineticTransportEquation<BasisfunctionImp,
+                                   GridLayerImp,
+                                   EntityImp,
+                                   DomainFieldImp,
+                                   dimDomain,
+                                   U_,
+                                   RangeFieldImp,
+                                   dimRange>
       BaseType;
 
 public:
@@ -51,15 +61,18 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::QuadratureType;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_quadrature;
 
   PlaneSourcePn(const BasisfunctionType& basis_functions,
+                const GridLayerType& grid_layer,
+                const QuadratureType& quadrature = default_quadrature(),
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, quadrature, {1}, grid_cfg, boundary_cfg)
   {
   }
 
@@ -88,8 +101,7 @@ public:
                                   std::make_pair("sigma_s", std::vector<double>{1}),
                                   std::make_pair("Q", std::vector<double>{0}),
                                   std::make_pair("CFL", std::vector<double>{0.4}),
-                                  std::make_pair("t_end", std::vector<double>{1.0}),
-                                  std::make_pair("num_segments", std::vector<double>{1.})});
+                                  std::make_pair("t_end", std::vector<double>{1.0})});
   }
 
   // Initial value of the kinetic equation is psi_vac + delta(x).
@@ -98,18 +110,17 @@ public:
   {
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
-    const size_t num_elements = XT::Common::from_string<std::vector<size_t>>(grid_cfg_["num_elements"])[0];
+    const size_t num_elements = grid_layer_.size(0);
     if (num_elements % 2)
       DUNE_THROW(Dune::NotImplemented, "An even number of grid cells is needed for this test!");
     const RangeFieldType len_domain = upper_right[0] - lower_left[0];
     const RangeFieldType vol_entity = len_domain / num_elements;
     RangeType basis_integrated = basis_functions_.integrated();
-    const size_t num_segments = 1;
     const RangeFieldType domain_center = lower_left[0] + len_domain / 2;
     // approximate delta function by constant value of 1/(2*vol_entity) on cells on both side of 0.
     std::vector<typename ActualInitialValueType::LocalizableFunctionType> initial_vals;
     initial_vals.emplace_back(
-        [=](const DomainType& x) {
+        [=](const DomainType& x, const XT::Common::Parameter&) {
           auto ret = basis_integrated;
           if (XT::Common::FloatCmp::ge(x[0], domain_center - vol_entity)
               && XT::Common::FloatCmp::le(x[0], domain_center + vol_entity))
@@ -119,35 +130,50 @@ public:
           return ret;
         },
         0);
-    return new ActualInitialValueType(lower_left, upper_right, num_segments, initial_vals, "initial_values");
+    return new ActualInitialValueType(lower_left, upper_right, num_segments_, initial_vals, "initial_values");
   } // ... create_initial_values()
 
 protected:
   using BaseType::grid_cfg_;
+  using BaseType::grid_layer_;
   using BaseType::basis_functions_;
+  using BaseType::num_segments_;
   using BaseType::psi_vac_;
 }; // class PlaneSourcePn<...>
 
-template <class GridViewType,
-          class BasisfunctionType,
+template <class BasisfunctionType,
+          class GridLayerImp,
           class EntityType,
           class DomainFieldType,
           size_t dimDomain,
           class U_,
           class RangeFieldType,
           size_t dimRange>
-class PlaneSourceMn
-    : public PlaneSourcePn<BasisfunctionType, EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange>
+class PlaneSourceMn : public PlaneSourcePn<BasisfunctionType,
+                                           GridLayerImp,
+                                           EntityType,
+                                           DomainFieldType,
+                                           dimDomain,
+                                           U_,
+                                           RangeFieldType,
+                                           dimRange>
 {
-  typedef PlaneSourcePn<BasisfunctionType, EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange>
+  typedef PlaneSourcePn<BasisfunctionType,
+                        GridLayerImp,
+                        EntityType,
+                        DomainFieldType,
+                        dimDomain,
+                        U_,
+                        RangeFieldType,
+                        dimRange>
       BaseType;
   typedef PlaneSourceMn ThisType;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
-  typedef EntropyBasedLocalFlux<GridViewType,
-                                BasisfunctionType,
+  typedef EntropyBasedLocalFlux<BasisfunctionType,
+                                GridLayerImp,
                                 EntityType,
                                 DomainFieldType,
                                 dimDomain,
@@ -156,16 +182,18 @@ public:
                                 dimRange>
       ActualFluxType;
   using typename BaseType::QuadratureType;
+  using typename BaseType::GridLayerType;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
+  using BaseType::default_quadrature;
 
   PlaneSourceMn(const BasisfunctionType& basis_functions,
-                const GridViewType& grid_view,
+                const GridLayerType& grid_layer,
+                const QuadratureType& quadrature = default_quadrature(),
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
-    , grid_view_(grid_view)
+    : BaseType(basis_functions, grid_layer, quadrature, grid_cfg, boundary_cfg)
   {
   }
 
@@ -176,16 +204,17 @@ public:
 
   virtual FluxType* create_flux() const
   {
-    return new ActualFluxType(grid_view_, quadrature_, basis_functions_);
+    return new ActualFluxType(basis_functions_, grid_layer_, quadrature_);
   }
 
 protected:
   using BaseType::basis_functions_;
+  using BaseType::grid_layer_;
   using BaseType::quadrature_;
-  const GridViewType& grid_view_;
 }; // class PlaneSourceMn<...>
 
 
+} // namespace KineticTransport
 } // namespace Problems
 } // namespace Hyperbolic
 } // namespace GDT

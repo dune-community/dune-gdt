@@ -98,6 +98,7 @@ public:
   using typename BaseType::ActualRhsType;
   using typename BaseType::RhsAffineFunctionType;
   using typename BaseType::MatrixType;
+  using typename BaseType::QuadratureType;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
@@ -125,6 +126,7 @@ public:
   }
 
   using BaseType::parse_parameter;
+  using BaseType::parameters;
 
   // RHS is (-\sigma_a*I + 0.5*T*S M^{-1}) u + Q<b>
   virtual RhsType* create_rhs() const override
@@ -158,10 +160,11 @@ public:
       b *= Q[ii];
       affine_functions.emplace_back(A, b);
     } // ii
-    return new ActualRhsType(lower_left, upper_right, num_segments, affine_functions);
+    return new ActualRhsType(lower_left, upper_right, num_segments_, affine_functions);
   } // ... create_rhs(...)
 
 protected:
+  using BaseType::num_segments_;
   using BaseType::get_num_regions;
   using BaseType::basis_functions_;
   using BaseType::grid_cfg_;
