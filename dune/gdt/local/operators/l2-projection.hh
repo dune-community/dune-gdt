@@ -114,7 +114,6 @@ public:
       local_range_vector.set(ii, local_solution.get_entry(ii));
   } // ... apply(...)
 
-  // TODO: do not use product evaluation to avoid a lot of multiplications with 0
   template <class E, class D, size_t d, class R, size_t r, size_t rC, class RangeSpaceType, class VectorType>
   typename std::enable_if<StaticCheck<E, D, d, R, r, rC, RangeSpaceType, VectorType>::value
                               && is_fv_space<RangeSpaceType>::value,
@@ -124,7 +123,7 @@ public:
   {
     // create local L2 volume integral functional
     typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
-    const LocalVolumeIntegralFunctional<LocalProductIntegrand<SourceType>,
+    const LocalVolumeIntegralFunctional<LocalFVProductIntegrand<SourceType>,
                                         typename RangeSpaceType::BaseFunctionSetType,
                                         R>
         local_l2_functional(over_integrate_, source);

@@ -25,9 +25,12 @@ namespace Dune {
 namespace GDT {
 
 
-// forward
-template <class LocalizableFunctionImp>
+// forwards
+template <class LocalizableFunctionImp, class Traits>
 class LocalProductIntegrand;
+
+template <class LocalizableFunctionImp, class Traits>
+class LocalFVProductIntegrand;
 
 
 namespace internal {
@@ -44,13 +47,20 @@ class LocalProductIntegrandTraits
 
 public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
-  typedef LocalProductIntegrand<LocalizableFunctionType> derived_type;
+  typedef LocalProductIntegrand<LocalizableFunctionType, LocalProductIntegrandTraits> derived_type;
   typedef typename LocalizableFunctionType::EntityType EntityType;
   typedef typename LocalizableFunctionType::DomainFieldType DomainFieldType;
   typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
   typedef std::tuple<std::shared_ptr<LocalfunctionType>> LocalfunctionTupleType;
   static const size_t dimDomain = LocalizableFunctionType::dimDomain;
 }; // class LocalProductIntegrandTraits
+
+template <class LocalizableFunctionImp>
+class LocalFVProductIntegrandTraits : public LocalProductIntegrandTraits<LocalizableFunctionImp>
+{
+public:
+  typedef LocalFVProductIntegrand<LocalizableFunctionImp, LocalFVProductIntegrandTraits> derived_type;
+}; // class LocalFVProductIntegrandTraits
 
 
 } // namespace internal
@@ -59,15 +69,16 @@ public:
 /**
  *  \brief  Computes a product evaluation.
  */
-template <class LocalizableFunctionImp>
-class LocalProductIntegrand
-    : public LocalVolumeIntegrandInterface<internal::LocalProductIntegrandTraits<LocalizableFunctionImp>, 1>,
-      public LocalVolumeIntegrandInterface<internal::LocalProductIntegrandTraits<LocalizableFunctionImp>, 2>,
-      public LocalFaceIntegrandInterface<internal::LocalProductIntegrandTraits<LocalizableFunctionImp>, 1>,
-      public LocalFaceIntegrandInterface<internal::LocalProductIntegrandTraits<LocalizableFunctionImp>, 2>
+template <class LocalizableFunctionImp, class TraitsImp = internal::LocalProductIntegrandTraits<LocalizableFunctionImp>>
+class LocalProductIntegrand : public LocalVolumeIntegrandInterface<TraitsImp, 1>,
+                              public LocalVolumeIntegrandInterface<TraitsImp, 2>,
+                              public LocalFaceIntegrandInterface<TraitsImp, 1>,
+                              public LocalFaceIntegrandInterface<TraitsImp, 2>
 {
+  using LocalVolumeIntegrandInterface<TraitsImp, 1>::as_imp;
+
 public:
-  typedef internal::LocalProductIntegrandTraits<LocalizableFunctionImp> Traits;
+  typedef TraitsImp Traits;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
@@ -99,7 +110,7 @@ public:
                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>&
                    testBase) const
   {
-    return order(*std::get<0>(localFuncs), testBase);
+    return this->as_imp().order(*std::get<0>(localFuncs), testBase);
   }
 
   /**
@@ -112,7 +123,7 @@ public:
            const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint,
            Dune::DynamicVector<R>& ret) const
   {
-    evaluate(*std::get<0>(localFuncs), testBase, localPoint, ret);
+    this->as_imp().evaluate(*std::get<0>(localFuncs), testBase, localPoint, ret);
   }
 
   /// \}
@@ -130,7 +141,7 @@ public:
            const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
            Dune::DynamicVector<R>& ret) const
   {
-    evaluate(*std::get<0>(localFuncs), testBase, intersection, localPoint, ret);
+    this->as_imp().evaluate(*std::get<0>(localFuncs), testBase, intersection, localPoint, ret);
   }
 
   /// \}
@@ -148,7 +159,7 @@ public:
       const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint,
       Dune::DynamicMatrix<R>& ret) const
   {
-    evaluate(*std::get<0>(localFuncs), testBase, ansatzBase, localPoint, ret);
+    this->as_imp().evaluate(*std::get<0>(localFuncs), testBase, ansatzBase, localPoint, ret);
   }
 
   /// \}
@@ -167,7 +178,7 @@ public:
       const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
       Dune::DynamicMatrix<R>& ret) const
   {
-    evaluate(*std::get<0>(localFunctions_in), testBase, ansatzBase, intersection, localPoint, ret);
+    this->as_imp().evaluate(*std::get<0>(localFunctions_in), testBase, ansatzBase, intersection, localPoint, ret);
   }
 
   /// \}
@@ -184,7 +195,7 @@ public:
         const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& ansatzBase)
       const
   {
-    return order(*std::get<0>(localFuncs), testBase, ansatzBase);
+    return this->as_imp().order(*std::get<0>(localFuncs), testBase, ansatzBase);
   }
 
   /// \}
@@ -341,6 +352,135 @@ public:
 private:
   const LocalizableFunctionType& inducingFunction_;
 }; // class LocalProductIntegrand
+
+
+/**
+ *  \brief  Computes a product evaluation for a finite volume basis
+ */
+template <class LocalizableFunctionImp,
+          class TraitsImp = internal::LocalFVProductIntegrandTraits<LocalizableFunctionImp>>
+class LocalFVProductIntegrand : public LocalProductIntegrand<LocalizableFunctionImp, TraitsImp>
+{
+  typedef LocalProductIntegrand<LocalizableFunctionImp, TraitsImp> BaseType;
+
+public:
+  using typename BaseType::Traits;
+  using typename BaseType::LocalizableFunctionType;
+  using typename BaseType::LocalfunctionTupleType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainFieldType;
+  using BaseType::dimDomain;
+
+  LocalFVProductIntegrand(const LocalizableFunctionType& inducingFunction)
+    : BaseType(inducingFunction)
+  {
+  }
+
+  using BaseType::evaluate;
+  using BaseType::order;
+
+  /// \}
+  /// \name Actual implementations of evaluate
+  /// \{
+
+  /**
+   * \note for `LocalVolumeIntegrandInterface< ..., 1 >`
+   */
+  template <class R, size_t r>
+  void
+  evaluate(const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& localFunction,
+           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& testBase,
+           const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint,
+           Dune::DynamicVector<R>& ret) const
+  {
+    // evaluate local function
+    const auto functionValue = localFunction.evaluate(localPoint);
+    // evaluate test base
+    const size_t size = testBase.size();
+    // compute product
+    assert(ret.size() >= size);
+    for (size_t ii = 0; ii < size; ++ii) {
+      ret[ii] = functionValue[ii];
+    }
+  } // ... evaluate(...)
+
+  /**
+   * \brief Computes a product evaluation for a scalar local function and scalar or vector valued basefunctionsets.
+   * \note  for `LocalVolumeIntegrandInterface< ..., 2 >`
+   */
+  template <class R, size_t r>
+  void
+  evaluate(const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
+           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& testBase,
+           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& ansatzBase,
+           const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint,
+           Dune::DynamicMatrix<R>& ret) const
+  {
+    ret *= 0;
+    // evaluate local function
+    const auto functionValue = localFunction.evaluate(localPoint);
+    // evaluate bases
+    const auto rows = testBase.size();
+    const auto cols = ansatzBase.size();
+    // compute product
+    assert(ret.rows() >= rows);
+    assert(ret.cols() >= cols);
+    for (size_t ii = 0; ii < rows; ++ii)
+      ret[ii][ii] = functionValue;
+  } // ... evaluate(...)
+
+  /**
+   * \note for `LocalFaceIntegrandInterface< ..., 1 >`
+   */
+  template <class IntersectionType, class R, size_t r>
+  void
+  evaluate(const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& localFunction,
+           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& testBase,
+           const IntersectionType& intersection,
+           const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
+           Dune::DynamicVector<R>& ret) const
+  {
+    // evaluate local function
+    const auto localPointEntity = intersection.geometryInInside().global(localPoint);
+    const auto functionValue = localFunction.evaluate(localPointEntity);
+    // evaluate test base
+    const size_t size = testBase.size();
+    // compute product
+    assert(ret.size() >= size);
+    for (size_t ii = 0; ii < size; ++ii)
+      ret[ii] = functionValue[ii];
+  } // ... evaluate(...)
+
+  /**
+   * \brief Computes a product evaluation for a scalar local function and scalar or vector valued basefunctionsets.
+   * \note  for `LocalFaceIntegrandInterface< ..., 2 >`
+   */
+  template <class IntersectionType, class R, size_t r>
+  void
+  evaluate(const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
+           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& testBase,
+           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& ansatzBase,
+           const IntersectionType& intersection,
+           const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
+           Dune::DynamicMatrix<R>& ret) const
+  {
+    ret *= 0.0;
+    const auto localPointEntity = intersection.geometryInInside().global(localPoint);
+    // evaluate local function
+    const auto functionValue = localFunction.evaluate(localPointEntity);
+    // evaluate bases
+    const size_t rows = testBase.size();
+    const size_t cols = ansatzBase.size();
+    // compute product
+    assert(ret.rows() >= rows);
+    assert(ret.cols() >= cols);
+    for (size_t ii = 0; ii < rows; ++ii)
+      ret[ii][ii] = functionValue;
+  } // ... evaluate(...)
+
+  /// \}
+}; // class LocalFVProductIntegrand
+
 
 } // namespace GDT
 } // namespace Dune

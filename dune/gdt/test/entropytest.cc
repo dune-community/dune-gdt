@@ -40,14 +40,16 @@
 #include <dune/gdt/projections/l2.hh>
 #include <dune/gdt/spaces/fv/product.hh>
 #include <dune/gdt/timestepper/factory.hh>
-//#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/checkerboard3d.hh>
+//#include <dune/gdt/test/hyperbolic/problems/momentmodels/fokkerplanck/checkerboard3d.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
-//#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/twobeams.hh>
-//#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/sourcebeam.hh>
-//#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/planesource.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/fokkerplanck/twobeams.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/fokkerplanck/sourcebeam.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/twobeams.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/sourcebeam.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/planesource.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/pointsource.hh>
-//#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/linesource.hh>
-//#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/lebedevquadrature.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/linesource.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/lebedevquadrature.hh>
 
 //! struct to be used as comparison function e.g. in a std::map<FieldVector<...>, ..., FieldVectorLess>
 struct CmpStruct
@@ -225,17 +227,17 @@ int main(int argc, char** argv)
   //      HatFunctions<double, 3, double, Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(), 1, 2>
   //          BasisfunctionType;
 
-  typedef typename Hyperbolic::Problems::RealSphericalHarmonics<double, double, momentOrder, dimDomain, false>
-      BasisfunctionType;
+  //  typedef typename Hyperbolic::Problems::RealSphericalHarmonics<double, double, momentOrder, dimDomain, false>
+  //      BasisfunctionType;
 
-  //  typedef typename Hyperbolic::Problems::
-  //      PiecewiseMonomials<double,
-  //                         3,
-  //                         double,
-  //                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces(),
-  //                         1,
-  //                         2>
-  //          BasisfunctionType;
+  typedef typename Hyperbolic::Problems::
+      PiecewiseMonomials<double,
+                         3,
+                         double,
+                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces(),
+                         1,
+                         dimDomain>
+          BasisfunctionType;
 
   std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>();
   //  std::shared_ptr<const BasisfunctionType> basis_functions =
@@ -247,22 +249,25 @@ int main(int argc, char** argv)
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
 
   //******************** choose ProblemType ***********************************************
-  //  typedef typename Hyperbolic::Problems::
-  //      TwoBeamsFokkerPlanckPn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double,
+  //  typedef typename Hyperbolic::Problems::FokkerPlanck
+  //      TwoBeamsPn<BasisfunctionType, GridLayerType, EntityType, double, dimDomain, DiscreteFunctionType,
+  //      double,
   //      dimRange>
   //          ProblemImp;
 
-  //    typedef typename Hyperbolic::Problems::
-  //      TwoBeamsMn<GridLayerType, BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double,
+  //    typedef typename Hyperbolic::Problems::KineticTransport
+  //      TwoBeamsMn<BasisfunctionType, GridLayerType, EntityType, double, dimDomain, DiscreteFunctionType, double,
   //      dimRange>
   //          ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::
-  //      SourceBeamPn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
+  //  typedef typename Hyperbolic::Problems::KineticTransport
+  //      SourceBeamPn<BasisfunctionType, GridLayerType, EntityType, double, dimDomain, DiscreteFunctionType, double,
+  //      dimRange>
   //          ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::SourceBeamMn<GridLayerType,
+  //  typedef typename Hyperbolic::Problems::KineticTransport::SourceBeamMn<
   //                                                      BasisfunctionType,
+  //  GridLayerType,
   //                                                      EntityType,
   //                                                      double,
   //                                                      dimDomain,
@@ -271,12 +276,8 @@ int main(int argc, char** argv)
   //                                                      dimRange>
   //      ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::
-  //      PlaneSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
-  //          ProblemImp;
-
-  //  typedef typename Hyperbolic::Problems::PlaneSourceMn<GridLayerType,
-  //                                                       BasisfunctionType,
+  //   typedef typename Hyperbolic::Problems::KineticTransport::PlaneSourcePn<BasisfunctionType,
+  //                                                       GridLayerType,
   //                                                       EntityType,
   //                                                       double,
   //                                                       dimDomain,
@@ -285,18 +286,29 @@ int main(int argc, char** argv)
   //                                                       dimRange>
   //      ProblemImp;
 
-  typedef typename Hyperbolic::Problems::PointSourcePn<BasisfunctionType,
-                                                       GridLayerType,
-                                                       EntityType,
-                                                       double,
-                                                       dimDomain,
-                                                       DiscreteFunctionType,
-                                                       double,
-                                                       dimRange>
+  //  typedef typename Hyperbolic::Problems::KineticTransport::PlaneSourceMn<BasisfunctionType,
+  //                                                                         GridLayerType,
+  //                                                                         EntityType,
+  //                                                                         double,
+  //                                                                         dimDomain,
+  //                                                                         DiscreteFunctionType,
+  //                                                                         double,
+  //                                                                         dimRange>
+  //      ProblemImp;
+
+  typedef typename Hyperbolic::Problems::KineticTransport::PointSourcePn<BasisfunctionType,
+                                                                         GridLayerType,
+                                                                         EntityType,
+                                                                         double,
+                                                                         dimDomain,
+                                                                         DiscreteFunctionType,
+                                                                         double,
+                                                                         dimRange>
       ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::PointSourceMn<GridLayerType,
+  //  typedef typename Hyperbolic::Problems::KineticTransport::PointSourceMn<
   //                                                       BasisfunctionType,
+  //  GridLayerType,
   //                                                       EntityType,
   //                                                       double,
   //                                                       dimDomain,
@@ -305,12 +317,18 @@ int main(int argc, char** argv)
   //                                                       dimRange>
   //      ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::
-  //      ModifiedLineSourcePn<BasisfunctionType, EntityType, double, dimDomain, DiscreteFunctionType, double, dimRange>
-  //          ProblemImp;
+  //  typedef typename Hyperbolic::Problems::KineticTransport::ModifiedLineSourcePn<BasisfunctionType,
+  //                                                              GridLayerType,
+  //                                                              EntityType,
+  //                                                              double,
+  //                                                              dimDomain,
+  //                                                              DiscreteFunctionType,
+  //                                                              double,
+  //                                                              dimRange>
+  //      ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::ModifiedLineSourceMn<GridLayerType,
-  //                                                              BasisfunctionType,
+  //  typedef typename Hyperbolic::Problems::KineticTransport::ModifiedLineSourceMn<BasisfunctionType,
+  //                                                              GridLayerType,
   //                                                              EntityType,
   //                                                              double,
   //                                                              dimDomain,
@@ -343,6 +361,7 @@ int main(int argc, char** argv)
   const SpaceType fv_space(grid_layer);
 
   const auto quadrature = Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40);
+  //  const auto quadrature = ProblemImp::default_quadrature(grid_config);
 
   //******************* create ProblemType object ***************************************
   const ProblemImp problem_imp(*basis_functions, grid_layer, quadrature, grid_config);
@@ -477,7 +496,7 @@ int main(int argc, char** argv)
                   : (rhs_time_stepper_method == TimeStepperMethods::matrix_exponential ? "_matexp" : "_explicit");
 
   timestepper.solve(
-      t_end, dt, num_save_steps, /*save_solution = */ false, /*output_progress = */ true, visualize, filename, 4);
+      t_end, dt, num_save_steps, /*save_solution = */ false, /*output_progress = */ true, visualize, filename, 3);
 
   const auto& sol = timestepper.current_solution();
   std::vector<std::pair<DomainType, RangeFieldType>> values;
