@@ -90,9 +90,11 @@ public:
   typedef typename Traits::RangeType RangeType;
   typedef typename Traits::AnalyticalFluxLocalfunctionType AnalyticalFluxLocalfunctionType;
   typedef typename Traits::EigenSolverType EigenSolverType;
+  typedef typename XT::LA::CommonSparseMatrix<RangeFieldType> SparseMatrixType;
   static constexpr size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
-  typedef FieldVector<XT::LA::CommonSparseMatrix<RangeFieldType>, dimDomain> JacobiansType;
+
+  typedef FieldVector<SparseMatrixType, dimDomain> JacobiansType;
 
   explicit GodunovFluxImplementation(const AnalyticalFluxType& analytical_flux,
                                      XT::Common::Parameter param,
@@ -148,12 +150,17 @@ public:
     return ret;
   } // RangeType evaluate(...) const
 
+  const AnalyticalFluxType& analytical_flux() const
+  {
+    return analytical_flux_;
+  }
+
 private:
   // use simple linearized Riemann solver, LeVeque p.316
   void initialize_jacobians(const LocalfunctionTupleType& local_functions_tuple,
                             const DomainType& x_local,
                             const RangeType& u_i,
-                            const RangeType& u_j)
+                            const RangeType& u_j) const
   {
     if (!jacobians_initialized_ || !is_linear_) {
       // calculate jacobian as jacobian(0.5*(u_i+u_j)
@@ -171,12 +178,12 @@ private:
         for (size_t rr = 0; rr < dimRange; ++rr)
           for (size_t cc = 0; cc < dimRange; ++cc)
             for (size_t kk = 0; kk < dimRange; ++kk)
-              if (XT::Common::FloatCmp::lt(eigenvalues[kk], 0.))
-                jacobian_neg_dense[rr][cc] +=
-                    eigenvectors[ii].get_entry(rr, kk) * eigenvectors_inverse[ii].get_entry(kk, cc) * eigenvalues[kk];
+              if (XT::Common::FloatCmp::lt(eigenvalues[ii][kk], 0.))
+                jacobian_neg_dense[rr][cc] += eigenvectors[ii].get_entry(rr, kk)
+                                              * eigenvectors_inverse[ii].get_entry(kk, cc) * eigenvalues[ii][kk];
               else
-                jacobian_pos_dense[rr][cc] +=
-                    eigenvectors[ii].get_entry(rr, kk) * eigenvectors_inverse[ii].get_entry(kk, cc) * eigenvalues[kk];
+                jacobian_pos_dense[rr][cc] += eigenvectors[ii].get_entry(rr, kk)
+                                              * eigenvectors_inverse[ii].get_entry(kk, cc) * eigenvalues[ii][kk];
         jacobian_neg_[ii] = SparseMatrixType(jacobian_neg_dense, true);
         jacobian_pos_[ii] = SparseMatrixType(jacobian_pos_dense, true);
       } // ii

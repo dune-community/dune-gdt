@@ -348,7 +348,7 @@ int main(int argc, char** argv)
   typedef typename ProblemType::RhsType RhsType;
   typedef typename ProblemType::InitialValueType InitialValueType;
   typedef typename ProblemType::BoundaryValueType BoundaryValueType;
-  static const bool linear = false; // ProblemType::linear;
+  static const bool linear = true; // ProblemType::linear;
 
   //******************* create grid and FV space ***************************************
   auto grid_config = ProblemType::default_grid_cfg();
@@ -417,14 +417,22 @@ int main(int argc, char** argv)
   //                                                                  BasisfunctionType>,
   //                                   AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType>>::type>::type
   //          AdvectionOperatorType;
-  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
-                                         BoundaryValueType,
-                                         ConstantFunctionType,
-                                         0,
-                                         SlopeLimiters::minmod,
-                                         false,
-                                         BasisfunctionType>
+  //  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
+  //                                         BoundaryValueType,
+  //                                         ConstantFunctionType,
+  //                                         1,
+  //                                         SlopeLimiters::minmod,
+  //                                         false,
+  //                                         BasisfunctionType>
+  //      AdvectionOperatorType;
+  typedef AdvectionGodunovOperator<AnalyticalFluxType,
+                                   BoundaryValueType,
+                                   0,
+                                   SlopeLimiters::minmod,
+                                   false,
+                                   BasisfunctionType>
       AdvectionOperatorType;
+
 
   typedef
       typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, RangeFieldType, time_stepper_method>::
@@ -457,7 +465,8 @@ int main(int argc, char** argv)
   //      internal::AdvectionOperatorCreator<AdvectionOperatorType, numerical_flux>::create(
   //          analytical_flux, boundary_values, dx_function, linear);
 
-  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_function);
+  //  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_function);
+  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, linear);
   advection_operator.set_basisfunctions(basis_functions);
   //  advection_operator.set_quadrature(problem_imp.quadrature());
   advection_operator.set_quadrature(Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40));

@@ -951,11 +951,9 @@ protected:
   {
     RangeType ret(0);
     for (const auto& quad_point : quadrature_) {
-      const auto v = quad_point.position();
-      const auto basis_evaluated = evaluate(v);
-      const auto weight = quad_point.weight();
-      for (size_t nn = 0; nn < dimRange; ++nn)
-        ret[nn] += basis_evaluated[nn] * weight;
+      const auto basis_evaluated = evaluate(quad_point.position());
+      basis_evaluated *= quad_point.weight();
+      ret += basis_evaluated;
     } // quadrature
     return ret;
   }
@@ -1188,10 +1186,8 @@ public:
         vertices_matrix[ii] = vertices[ii]->position();
       bool v_in_this_facet = true;
       // the triple products that need to be positive are the determinants of the matrices (v1, v2, v), (v2, v3, v),
-      // (v3,
-      // v1, v), where vi is the ith
-      // vertex. Swapping two columns changes the sign of det, the matrices used below all have an even number of column
-      // swaps
+      // (v3, v1, v), where vi is the ith vertex. Swapping two columns changes the sign of det, the matrices used
+      // below all have an even number of column swaps
       for (size_t ii = 0; ii < 3; ++ii) {
         determinant_matrix = vertices_matrix;
         determinant_matrix[ii] = v;
@@ -1214,12 +1210,7 @@ public:
   // returns <b>, where b is the basis functions vector
   virtual RangeType integrated() const override
   {
-    RangeType ret(0);
-    for (const auto& quad_point : quadrature_) {
-      const auto basis_evaluated = evaluate(quad_point.position());
-      for (size_t nn = 0; nn < dimRange; ++nn)
-        ret[nn] += basis_evaluated[nn] * quad_point.weight();
-    } // quadrature
+    static const RangeType ret = integrated_initializer();
     return ret;
   }
 
@@ -1249,9 +1240,9 @@ public:
       const auto v = quad_point.position();
       const auto basis_evaluated = evaluate(v);
       const auto weight = quad_point.weight();
-      for (size_t nn = 0; nn < dimRange; ++nn)
-        for (size_t mm = 0; mm < dimRange; ++mm)
-          for (size_t dd = 0; dd < dimFlux; ++dd)
+      for (size_t dd = 0; dd < dimFlux; ++dd)
+        for (size_t nn = 0; nn < dimRange; ++nn)
+          for (size_t mm = 0; mm < dimRange; ++mm)
             B[dd][nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * v[dd] * weight;
     } // quadrature
     return B;
@@ -1294,6 +1285,17 @@ public:
   }
 
 private:
+  RangeType integrated_initializer() const
+  {
+    RangeType ret(0);
+    for (const auto& quad_point : quadrature_) {
+      auto basis_evaluated = evaluate(quad_point.position());
+      basis_evaluated *= quad_point.weight();
+      ret += basis_evaluated;
+    } // quadrature
+    return ret;
+  }
+
   const TriangulationType triangulation_;
   const QuadratureType quadrature_;
 }; // class PiecewiseMonomials<DomainFieldType, 3, ...>

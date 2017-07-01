@@ -282,11 +282,11 @@ protected:
   }
 
   using BaseType::basis_functions_;
+  const FieldVector<size_t, dimDomain> num_segments_;
   const XT::Common::Configuration grid_cfg_;
   const XT::Common::Configuration boundary_cfg_;
   const RangeFieldType psi_vac_;
   QuadratureType quadrature_;
-  const FieldVector<size_t, dimDomain> num_segments_;
   XT::Common::ParameterType parameter_type_;
 }; // class KineticTransportEquation<...>
 
