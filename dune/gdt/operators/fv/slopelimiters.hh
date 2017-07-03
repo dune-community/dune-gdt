@@ -32,51 +32,51 @@ enum class SlopeLimiters
 namespace internal {
 
 
-template <SlopeLimiters slope_limiter, class VectorType>
+template <SlopeLimiters slope_limiter>
 struct ChooseLimiter
 {
-  static VectorType limit(const VectorType& u_entity, const VectorType& u_left, const VectorType& u_right);
+  template <class VectorType>
+  static VectorType limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& slope_center);
 };
 
-template <class VectorType>
-struct ChooseLimiter<SlopeLimiters::minmod, VectorType>
+template <>
+struct ChooseLimiter<SlopeLimiters::minmod>
 {
-  typedef typename XT::Common::VectorAbstraction<VectorType> Abstr;
-  static VectorType limit(const VectorType& u_entity, const VectorType& u_left, const VectorType& u_right)
+  template <class VectorType>
+  static VectorType limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& slope_center)
   {
-    VectorType ret(u_entity.size(), 0., 0);
-    for (size_t ii = 0; ii < u_entity.size(); ++ii) {
-      const auto slope_left = Abstr::get_entry(u_entity, ii) - Abstr::get_entry(u_left, ii);
-      const auto slope_right = Abstr::get_entry(u_right, ii) - Abstr::get_entry(u_entity, ii);
-      const auto slope_center = 0.5 * (Abstr::get_entry(u_right, ii) - Abstr::get_entry(u_left, ii));
+    VectorType ret;
+    for (size_t ii = 0; ii < slope_left.size(); ++ii) {
       // check for equal sign
-      if (slope_left * slope_right > 0 && slope_center * slope_right > 0) {
-        const auto slope_left_abs = std::abs(slope_left);
-        const auto slope_right_abs = std::abs(slope_right);
-        const auto slope_center_abs = std::abs(slope_center);
+      if (slope_left[ii] * slope_right[ii] > 0 && slope_center[ii] * slope_right[ii] > 0) {
+        const auto slope_left_abs = std::abs(slope_left[ii]);
+        const auto slope_right_abs = std::abs(slope_right[ii]);
+        const auto slope_center_abs = std::abs(slope_center[ii]);
         if (XT::Common::FloatCmp::lt(slope_left_abs, slope_right_abs)) {
           if (XT::Common::FloatCmp::lt(slope_left_abs, slope_center_abs))
-            Abstr::set_entry(ret, ii, slope_left);
+            ret[ii] = slope_left[ii];
         } else if (XT::Common::FloatCmp::lt(slope_right_abs, slope_center_abs))
-          Abstr::set_entry(ret, ii, slope_right);
+          ret[ii] = slope_right[ii];
         else
-          Abstr::set_entry(ret, ii, slope_center);
+          ret[ii] = slope_center[ii];
       }
     }
     return ret;
   }
 };
 
-template <class VectorType>
-struct ChooseLimiter<SlopeLimiters::superbee, VectorType>
+template <>
+struct ChooseLimiter<SlopeLimiters::superbee>
 {
-  static VectorType limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& centered_slope)
+  template <class VectorType>
+  static VectorType limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& slope_center)
   {
-    typedef ChooseLimiter<SlopeLimiters::minmod, VectorType> MinmodType;
-    return maxmod(MinmodType::limit(slope_left, slope_right * 2.0, centered_slope),
-                  MinmodType::limit(slope_left * 2.0, slope_right, centered_slope));
+    typedef ChooseLimiter<SlopeLimiters::minmod> MinmodType;
+    return maxmod(MinmodType::limit(slope_left, slope_right * 2.0, slope_center),
+                  MinmodType::limit(slope_left * 2.0, slope_right, slope_center));
   }
 
+  template <class VectorType>
   static VectorType maxmod(const VectorType& slope_left, const VectorType& slope_right)
   {
     VectorType ret;
@@ -94,24 +94,26 @@ struct ChooseLimiter<SlopeLimiters::superbee, VectorType>
   }
 };
 
-template <class VectorType>
-struct ChooseLimiter<SlopeLimiters::mc, VectorType>
+template <>
+struct ChooseLimiter<SlopeLimiters::mc>
 {
-  static VectorType limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& centered_slope)
+  template <class VectorType>
+  static VectorType limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& slope_center)
   {
-    typedef ChooseLimiter<SlopeLimiters::minmod, VectorType> MinmodType;
+    typedef ChooseLimiter<SlopeLimiters::minmod> MinmodType;
     return MinmodType::limit(
-        MinmodType::limit(slope_left * 2.0, slope_right * 2.0, centered_slope), centered_slope, centered_slope);
+        MinmodType::limit(slope_left * 2.0, slope_right * 2.0, slope_center), slope_center, slope_center);
   }
 };
 
-template <class VectorType>
-struct ChooseLimiter<SlopeLimiters::no_slope, VectorType>
+template <>
+struct ChooseLimiter<SlopeLimiters::no_slope>
 {
-  typedef typename XT::Common::VectorAbstraction<VectorType> Abstr;
-  static VectorType limit(const VectorType& u_entity, const VectorType& /*u_left*/, const VectorType& /*u_right*/)
+  template <class VectorType>
+  static VectorType
+  limit(const VectorType& /*slope_left*/, const VectorType& /*slope_right*/, const VectorType& /*slope_center*/)
   {
-    return VectorType(u_entity.size(), 0., 0);
+    return VectorType(0.);
   }
 };
 

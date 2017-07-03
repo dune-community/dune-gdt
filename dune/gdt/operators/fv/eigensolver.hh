@@ -419,8 +419,8 @@ class EigenEigenSolver
 public:
   typedef typename XT::LA::EigenDenseVector<RangeFieldType> VectorType;
   typedef typename XT::LA::EigenDenseMatrix<RangeFieldType> MatrixType;
-  typedef FieldVector<VectorType, dimRangeCols> EigenValuesType;
-  typedef FieldVector<MatrixType, dimRangeCols> EigenVectorsType;
+  typedef FieldVector<FieldVector<RangeFieldType, dimRange>, dimRangeCols> EigenValuesType;
+  typedef FieldVector<FieldMatrix<RangeFieldType, dimRange, dimRange>, dimRangeCols> EigenVectorsType;
 
 private:
   typedef typename MatrixType::BackendType EigenMatrixBackendType;
@@ -446,9 +446,14 @@ public:
       assert(size_t(eigenvalues_eigen.size()) == dimRange);
       assert(XT::Common::FloatCmp::eq(VectorType(eigenvalues_eigen.imag()), VectorType(dimRange, 0.)));
       assert(XT::Common::FloatCmp::eq(MatrixType(eigenvectors_eigen.imag()), MatrixType(dimRange, dimRange, 0.)));
-      eigenvalues_[ii] = VectorType(eigenvalues_eigen.real());
-      eigenvectors_[ii] = MatrixType(eigenvectors_eigen.real());
-      eigenvectors_inverse_[ii] = MatrixType(eigenvectors_eigen.real().inverse());
+      eigenvalues_[ii] = XT::LA::internal::FieldVectorToLaVector<VectorType, dimRange>::convert_back(
+          VectorType(eigenvalues_eigen.real()));
+      eigenvectors_[ii] =
+          XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, stateDimRange>::convert_back(
+              MatrixType(eigenvectors_eigen.real()));
+      eigenvectors_inverse_[ii] =
+          XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, stateDimRange>::convert_back(
+              MatrixType(eigenvectors_eigen.real().inverse()));
     }
   }
 

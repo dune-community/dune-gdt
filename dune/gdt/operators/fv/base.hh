@@ -173,20 +173,18 @@ struct AdvectionOperatorApplier
         LocalOperatorArgTypes&&... local_operator_args)
 
   {
-    typedef typename EigenSolverType::VectorType VectorType;
     typedef typename SourceType::SpaceType::GridLayerType GridLayerType;
     typedef typename BoundaryValueType::DomainType DomainType;
     static const size_t dimDomain = BoundaryValueType::dimDomain;
     static const size_t dimRange = BoundaryValueType::dimRange;
     const GridLayerType& grid_layer = source.space().grid_layer();
 
-    // evaluate cell averages as VectorType
-    std::vector<VectorType> source_values(grid_layer.indexSet().size(0));
+    // evaluate cell averages
+    std::vector<typename BoundaryValueType::RangeType> source_values(grid_layer.indexSet().size(0));
     for (const auto& entity : Dune::elements(grid_layer)) {
       const auto& entity_index = grid_layer.indexSet().index(entity);
       const auto& local_source = source.local_function(entity);
-      source_values[entity_index] = XT::LA::internal::FieldVectorToLaVector<VectorType, dimRange>::convert(
-          local_source->evaluate(entity.geometry().local(entity.geometry().center())));
+      source_values[entity_index] = local_source->evaluate(entity.geometry().local(entity.geometry().center()));
     }
 
     // do reconstruction

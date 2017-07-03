@@ -179,11 +179,11 @@ private:
           for (size_t cc = 0; cc < dimRange; ++cc)
             for (size_t kk = 0; kk < dimRange; ++kk)
               if (XT::Common::FloatCmp::lt(eigenvalues[ii][kk], 0.))
-                jacobian_neg_dense[rr][cc] += eigenvectors[ii].get_entry(rr, kk)
-                                              * eigenvectors_inverse[ii].get_entry(kk, cc) * eigenvalues[ii][kk];
+                jacobian_neg_dense[rr][cc] +=
+                    eigenvectors[ii][rr][kk] * eigenvectors_inverse[ii][kk][cc] * eigenvalues[ii][kk];
               else
-                jacobian_pos_dense[rr][cc] += eigenvectors[ii].get_entry(rr, kk)
-                                              * eigenvectors_inverse[ii].get_entry(kk, cc) * eigenvalues[ii][kk];
+                jacobian_pos_dense[rr][cc] +=
+                    eigenvectors[ii][rr][kk] * eigenvectors_inverse[ii][kk][cc] * eigenvalues[ii][kk];
         jacobian_neg_[ii] = SparseMatrixType(jacobian_neg_dense, true);
         jacobian_pos_[ii] = SparseMatrixType(jacobian_pos_dense, true);
       } // ii
