@@ -164,6 +164,7 @@ struct AdvectionOperatorApplier
         const SourceType& source,
         RangeType& range,
         const XT::Common::Parameter& param,
+        bool is_linear,
         const Dune::QuadratureRule<DomainFieldType, 1> intersection_quadrature_1d,
         const Dune::QuadratureRule<DomainFieldType, BoundaryValueType::dimDomain - 1> intersection_quadrature,
         const Dune::QuadratureRule<DomainFieldType, BasisFunctionType::dimDomain>& quadrature,
@@ -202,6 +203,7 @@ struct AdvectionOperatorApplier
                                                                                         boundary_values,
                                                                                         grid_layer,
                                                                                         param,
+                                                                                        is_linear,
                                                                                         intersection_quadrature_1d,
                                                                                         reconstructed_values);
     auto walker = XT::Grid::Walker<GridLayerType>(grid_layer);
@@ -322,9 +324,12 @@ public:
   typedef Dune::QuadratureRule<DomainFieldType, BasisFunctionType::dimDomain> QuadratureType;
 
 public:
-  AdvectionOperatorBase(const AnalyticalFluxType& analytical_flux, const BoundaryValueType& boundary_values)
+  AdvectionOperatorBase(const AnalyticalFluxType& analytical_flux,
+                        const BoundaryValueType& boundary_values,
+                        const bool is_linear)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
+    , is_linear_(is_linear)
     , intersection_1d_quadrature_(helper<>::default_1d_quadrature())
     , intersection_quadrature_(helper2<>::get_quadrature(intersection_1d_quadrature_))
     , epsilon_(1e-14)
@@ -344,6 +349,7 @@ public:
                                                                source,
                                                                range,
                                                                param,
+                                                               is_linear_,
                                                                intersection_1d_quadrature_,
                                                                intersection_quadrature_,
                                                                quadrature_,
@@ -440,6 +446,7 @@ private:
 
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueType& boundary_values_;
+  const bool is_linear_;
   Intersection1dQuadratureType intersection_1d_quadrature_;
   IntersectionQuadratureType intersection_quadrature_;
   QuadratureType quadrature_;

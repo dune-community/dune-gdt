@@ -325,7 +325,7 @@ public:
   }
 
   DiscreteFunction(const SpaceType& sp, const std::string nm = "gdt.discretefunction")
-    : VectorProviderBaseType(new VectorType(sp.mapper().size()))
+    : VectorProviderBaseType(new VectorType(sp.mapper().size(), 0, 2 * XT::Common::threadManager().max_threads()))
     , BaseType(sp, VectorProviderBaseType::access(), nm)
   {
   }

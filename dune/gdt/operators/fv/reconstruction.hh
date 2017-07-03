@@ -65,6 +65,7 @@ public:
       const BoundaryValueType& boundary_values,
       const GridLayerType& grid_layer,
       const XT::Common::Parameter& param,
+      const bool is_linear,
       const QuadratureType& quadrature,
       std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values)
     : source_values_(source_values)
@@ -72,10 +73,22 @@ public:
     , boundary_values_(boundary_values)
     , grid_layer_(grid_layer)
     , param_(param)
+    , is_linear_(is_linear)
     , quadrature_(quadrature)
     , reconstructed_values_(reconstructed_values)
   {
+    if (is_instantiated_)
+      DUNE_THROW(InvalidStateException,
+                 "This class uses several static variables to save its state between time "
+                 "steps, so using several instances at the same time may result in undefined "
+                 "behavior!");
     param_.set("boundary", {0.});
+    is_instantiated_ = true;
+  }
+
+  ~LocalReconstructionFvOperator()
+  {
+    is_instantiated_ = false;
   }
 
   void apply_local(const EntityType& entity)
@@ -101,10 +114,11 @@ public:
     const auto& entity_index = grid_layer_.indexSet().index(entity);
     auto& reconstructed_values_map = reconstructed_values_[entity_index];
     const auto flux_local_func = analytical_flux_.local_function(entity);
-    const auto eigen_solver =
-        EigenSolverType(*flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, param_);
-    const auto& eigenvectors = eigen_solver.eigenvectors();
-    const auto& eigenvectors_inverse = eigen_solver.eigenvectors_inverse();
+    if (!is_linear_ || !eigensolver_)
+      eigensolver_ = XT::Common::make_unique<EigenSolverType>(
+          *flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, param_);
+    const auto& eigenvectors = eigensolver_->eigenvectors();
+    const auto& eigenvectors_inverse = eigensolver_->eigenvectors_inverse();
     for (size_t dd = 0; dd < dimDomain; ++dd)
       helper<>::reconstruct(
           dd, values, eigenvectors[dd], eigenvectors_inverse[dd], quadrature_, reconstructed_values_map, intersections);
@@ -393,11 +407,10 @@ private:
     const auto& u_left = cell_values[0];
     const auto& u_entity = cell_values[1];
     const auto& u_right = cell_values[2];
-    const auto slope_left = u_entity - u_left;
-    const auto slope_right = u_right - u_entity;
-    const auto slope_centered = (u_right - u_left) * 0.5;
-    const auto slope =
-        internal::ChooseLimiter<slope_limiter, VectorType>::limit(slope_left, slope_right, slope_centered);
+    //    const auto slope_left = u_entity - u_left;
+    //    const auto slope_right = u_right - u_entity;
+    //    const auto slope_centered = (u_right - u_left) * 0.5;
+    const auto slope = internal::ChooseLimiter<slope_limiter, VectorType>::limit(u_entity, u_left, u_right);
     for (size_t ii = 0; ii < points.size(); ++ii)
       result[ii] = u_entity + slope * (points[ii] - 0.5);
   }
@@ -418,6 +431,9 @@ private:
   XT::Common::Parameter param_;
   const QuadratureType quadrature_;
   std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values_;
+  static thread_local std::unique_ptr<EigenSolverType> eigensolver_;
+  const bool is_linear_;
+  static bool is_instantiated_;
 }; // class LocalReconstructionFvOperator
 
 template <class GridLayerType,
@@ -432,6 +448,32 @@ constexpr std::array<int, 3> LocalReconstructionFvOperator<GridLayerType,
                                                            polOrder,
                                                            slope_limiter,
                                                            EigenSolverType>::stencil;
+
+template <class GridLayerType,
+          class AnalyticalFluxType,
+          class BoundaryValueType,
+          size_t polOrder,
+          SlopeLimiters slope_limiter,
+          class EigenSolverType>
+thread_local std::unique_ptr<EigenSolverType> LocalReconstructionFvOperator<GridLayerType,
+                                                                            AnalyticalFluxType,
+                                                                            BoundaryValueType,
+                                                                            polOrder,
+                                                                            slope_limiter,
+                                                                            EigenSolverType>::eigensolver_;
+
+template <class GridLayerType,
+          class AnalyticalFluxType,
+          class BoundaryValueType,
+          size_t polOrder,
+          SlopeLimiters slope_limiter,
+          class EigenSolverType>
+bool LocalReconstructionFvOperator<GridLayerType,
+                                   AnalyticalFluxType,
+                                   BoundaryValueType,
+                                   polOrder,
+                                   slope_limiter,
+                                   EigenSolverType>::is_instantiated_(false);
 
 
 } // namespace GDT

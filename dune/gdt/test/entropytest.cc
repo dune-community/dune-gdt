@@ -427,7 +427,7 @@ int main(int argc, char** argv)
   //      AdvectionOperatorType;
   typedef AdvectionGodunovOperator<AnalyticalFluxType,
                                    BoundaryValueType,
-                                   0,
+                                   1,
                                    SlopeLimiters::minmod,
                                    false,
                                    BasisfunctionType>

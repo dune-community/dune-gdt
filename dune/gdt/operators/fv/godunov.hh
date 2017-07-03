@@ -114,7 +114,7 @@ public:
   AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux,
                            const BoundaryValueType& boundary_values,
                            const bool is_linear = false)
-    : BaseType(analytical_flux, boundary_values)
+    : BaseType(analytical_flux, boundary_values, is_linear)
     , is_linear_(is_linear)
   {
   }

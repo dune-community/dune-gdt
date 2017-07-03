@@ -132,7 +132,7 @@ public:
                                  const bool use_local_laxfriedrichs_flux = false,
                                  const bool is_linear = false,
                                  const DomainType lambda = DomainType(0))
-    : BaseType(analytical_flux, boundary_values)
+    : BaseType(analytical_flux, boundary_values, is_linear)
     , dx_(dx)
     , use_local_laxfriedrichs_flux_(use_local_laxfriedrichs_flux)
     , is_linear_(is_linear)
