@@ -869,10 +869,11 @@ public:
         for (size_t ii = 0; ii < 3; ++ii) {
           ret[vertices[ii]->index()] = barycentric_coords[ii];
         }
-        std::cout << "vertices: " << XT::Common::to_string(face->vertices()[0]->position()) << ", "
-                  << XT::Common::to_string(face->vertices()[1]->position()) << ", "
-                  << XT::Common::to_string(face->vertices()[2]->position())
-                  << ", coords: " << XT::Common::to_string(ret) << ", v: " << XT::Common::to_string(v) << std::endl;
+        //        std::cout << "vertices: " << XT::Common::to_string(face->vertices()[0]->position()) << ", "
+        //                  << XT::Common::to_string(face->vertices()[1]->position()) << ", "
+        //                  << XT::Common::to_string(face->vertices()[2]->position())
+        //                  << ", coords: " << XT::Common::to_string(ret) << ", v: " << XT::Common::to_string(v) <<
+        //                  std::endl;
         break;
       }
     } // faces
@@ -898,6 +899,7 @@ public:
         } // mm
       } // nn
     } // quadrature
+    std::cout << "mass_matrix : " << XT::Common::to_string(A, 15) << std::endl;
     return A;
   } // ... create_flux_config(...)
 
@@ -951,7 +953,7 @@ protected:
   {
     RangeType ret(0);
     for (const auto& quad_point : quadrature_) {
-      const auto basis_evaluated = evaluate(quad_point.position());
+      auto basis_evaluated = evaluate(quad_point.position());
       basis_evaluated *= quad_point.weight();
       ret += basis_evaluated;
     } // quadrature
@@ -1177,8 +1179,9 @@ public:
     RangeType ret(0);
     FieldMatrix<RangeFieldType, 3, 3> vertices_matrix;
     FieldMatrix<RangeFieldType, 3, 3> determinant_matrix;
+    bool success = false;
     for (const auto& face : triangulation_.faces()) {
-      // vertices are ordered counterclockwise, so if the points is inside the spherical triangle,
+      // vertices are ordered counterclockwise, so if the point is inside the spherical triangle,
       // the coordinate system formed by two adjacent vertices and v is always right-handed, i.e.
       // the triple product is positive
       const auto& vertices = face->vertices();
@@ -1199,11 +1202,15 @@ public:
       if (v_in_this_facet) {
         const auto face_index = face->index();
         ret[4 * face_index] = 1;
-        for (size_t ii = 1; ii < 4; ++ii)
+        for (size_t ii = 1; ii < 4; ++ii) {
+          assert(4 * face_index + ii < ret.size());
           ret[4 * face_index + ii] = v[ii - 1];
+        }
+        success = true;
         break;
       }
     } // faces
+    assert(success);
     return ret;
   } // ... evaluate(...)
 
@@ -1237,9 +1244,9 @@ public:
   {
     FieldVector<MatrixType, dimFlux> B(MatrixType(0));
     for (const auto& quad_point : quadrature_) {
-      const auto v = quad_point.position();
+      const auto& v = quad_point.position();
       const auto basis_evaluated = evaluate(v);
-      const auto weight = quad_point.weight();
+      const auto& weight = quad_point.weight();
       for (size_t dd = 0; dd < dimFlux; ++dd)
         for (size_t nn = 0; nn < dimRange; ++nn)
           for (size_t mm = 0; mm < dimRange; ++mm)

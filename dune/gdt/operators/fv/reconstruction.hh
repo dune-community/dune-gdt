@@ -41,8 +41,8 @@ class LocalReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayer
   static constexpr size_t dimDomain = BoundaryValueType::dimDomain;
   static constexpr size_t dimRange = BoundaryValueType::dimRange;
   static constexpr size_t stencil_size = 2 * polOrder + 1;
-  static constexpr std::array<int, 3> stencil = {
-      2 * polOrder + 1, dimDomain > 1 ? 2 * polOrder + 1 : 1, dimDomain > 2 ? 2 * polOrder + 1 : 1};
+  static constexpr std::array<size_t, 3> stencil = {
+      {2 * polOrder + 1, dimDomain > 1 ? 2 * polOrder + 1 : 1, dimDomain > 2 ? 2 * polOrder + 1 : 1}};
   typedef typename GridLayerType::template Codim<0>::Entity EntityType;
   typedef typename GridLayerType::IndexSet IndexSetType;
   typedef typename BoundaryValueType::DomainType DomainType;
@@ -389,7 +389,7 @@ private:
 
     static bool end_of_stencil(const int dir, const FieldVector<size_t, 3>& offsets)
     {
-      return !(std::abs(offsets[dir / 2]) < stencil[dir / 2] / 2);
+      return !(offsets[dir / 2] < stencil[dir / 2] / 2);
     }
   }; // class StencilIterator<...>
 
@@ -445,12 +445,12 @@ template <class GridLayerType,
           size_t polOrder,
           SlopeLimiters slope_limiter,
           class EigenSolverType>
-constexpr std::array<int, 3> LocalReconstructionFvOperator<GridLayerType,
-                                                           AnalyticalFluxType,
-                                                           BoundaryValueType,
-                                                           polOrder,
-                                                           slope_limiter,
-                                                           EigenSolverType>::stencil;
+constexpr std::array<size_t, 3> LocalReconstructionFvOperator<GridLayerType,
+                                                              AnalyticalFluxType,
+                                                              BoundaryValueType,
+                                                              polOrder,
+                                                              slope_limiter,
+                                                              EigenSolverType>::stencil;
 
 template <class GridLayerType,
           class AnalyticalFluxType,

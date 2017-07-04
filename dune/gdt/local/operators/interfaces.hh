@@ -181,8 +181,9 @@ public:
                       const IntersectionType& intersection,
                       Dune::DynamicMatrix<FieldType>& ret) const = 0;
 
-  DynamicMatrix<FieldType>
-  apply2(const TestBaseType& test_base, const AnsatzBaseType& ansatz_base, const IntersectionType& intersection) const
+  DynamicMatrix<FieldType> apply2(const TestBaseType& test_base,
+                                  const AnsatzBaseType& ansatz_base,
+                                  const IntersectionType& /*intersection*/) const
   {
     DynamicMatrix<FieldType> ret(test_base.size(), ansatz_base.size(), 0.);
     apply2(test_base, ansatz_base, ret);

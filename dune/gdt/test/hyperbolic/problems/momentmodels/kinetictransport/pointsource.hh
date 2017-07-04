@@ -109,7 +109,7 @@ public:
   // Initial value of the kinetic equation is psi_vac + 1/(8 pi sigma^2) * exp(-|x|^2/(2*sigma^2)).
   // Thus the initial value for the moments is basis_integrated * (psi_vac + 1/(8 pi sigma^2) *
   // exp(-|x|^2/(2*sigma^2))).
-  virtual InitialValueType* create_initial_values() const
+  virtual InitialValueType* create_initial_values() const override
   {
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);

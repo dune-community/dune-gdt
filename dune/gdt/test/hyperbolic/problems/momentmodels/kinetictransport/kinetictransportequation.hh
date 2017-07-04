@@ -86,7 +86,7 @@ public:
   static QuadratureType default_quadrature(const XT::Common::Configuration& grid_cfg = default_grid_cfg())
   {
     std::vector<int> num_quad_cells = grid_cfg.get("num_quad_cells", std::vector<int>{2, 2, 2});
-    size_t quad_order = grid_cfg.get("quad_order", 20);
+    int quad_order = grid_cfg.get("quad_order", 20);
     // quadrature that consists of a Gauss-Legendre quadrature on each cell of the velocity grid
     QuadratureType quadrature;
     Dune::FieldVector<double, quadratureDim> lower_left(-1);

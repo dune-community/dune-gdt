@@ -343,6 +343,7 @@ public:
 
   void refine(size_t times = 1)
   {
+    current_face_index_ = 0;
     faces_ = get_subtriangles(times);
     vertices_ = get_vertices(faces_);
   } // void refine(...)

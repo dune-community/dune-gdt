@@ -58,10 +58,7 @@ struct BSpline<0, i, D, R>
 
   static constexpr R evaluate(const D& x)
   {
-    if (XT::Common::FloatCmp::ge(x, t(i)) && XT::Common::FloatCmp::le(x, t(i + 1)))
-      return 1;
-    else
-      return 0;
+    return XT::Common::FloatCmp::ge(x, t(i)) && XT::Common::FloatCmp::le(x, t(i + 1)) ? 1 : 0;
   }
 };
 

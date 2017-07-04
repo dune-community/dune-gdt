@@ -56,7 +56,7 @@ public:
                            const StateRangeType& u,
                            const XT::Common::Parameter& param,
                            const bool calculate_eigenvectors = true)
-    : tmp_vec_(rows)
+    : tmp_vec_(u.size())
     , calculate_eigenvectors_(calculate_eigenvectors)
   {
     const auto partial_u = XT::Functions::JacobianRangeTypeConverter<stateDimRange, dimRange, dimRangeCols>::convert(
