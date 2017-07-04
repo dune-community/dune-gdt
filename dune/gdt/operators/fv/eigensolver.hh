@@ -47,8 +47,8 @@ class QrHouseholderEigenSolver
 public:
   typedef VectorImp VectorType;
   typedef MatrixImp MatrixType;
-  typedef FieldVector<VectorType, dimRangeCols> EigenValuesType;
-  typedef FieldVector<MatrixType, dimRangeCols> EigenVectorsType;
+  typedef FieldVector<FieldVector<RangeFieldType, dimRange>, dimRangeCols> EigenValuesType;
+  typedef FieldVector<FieldMatrix<RangeFieldType, dimRange, dimRange>, dimRangeCols> EigenVectorsType;
 
 public:
   QrHouseholderEigenSolver(const LocalFluxFunctionImp& local_flux_function,
@@ -56,10 +56,7 @@ public:
                            const StateRangeType& u,
                            const XT::Common::Parameter& param,
                            const bool calculate_eigenvectors = true)
-    : eigenvalues_(VectorType(rows))
-    , eigenvectors_(MatrixType(rows, cols))
-    , eigenvectors_inverse_(MatrixType(rows, cols))
-    , tmp_vec_(rows)
+    : tmp_vec_(rows)
     , calculate_eigenvectors_(calculate_eigenvectors)
   {
     const auto partial_u = XT::Functions::JacobianRangeTypeConverter<stateDimRange, dimRange, dimRangeCols>::convert(
@@ -133,7 +130,7 @@ public:
 
       // eigenvalues are the diagonal elements of A_{final}
       for (size_t rr = 0; rr < rows; ++rr)
-        eigenvalues_[ii].set_entry(rr, A.get_entry(rr, rr));
+        eigenvalues_[ii][rr] = A.get_entry(rr, rr);
 
       if (calculate_eigenvectors_) {
 
@@ -148,12 +145,12 @@ public:
         std::vector<std::vector<size_t>> eigenvalue_groups;
         std::set<RangeFieldType, Cmp> eigenvalues_done;
         for (size_t jj = 0; jj < rows; ++jj) {
-          const auto curr_eigenvalue = eigenvalues_[ii].get_entry(jj);
+          const auto curr_eigenvalue = eigenvalues_[ii][jj];
           if (!eigenvalues_done.count(curr_eigenvalue)) {
             std::vector<size_t> curr_group;
             curr_group.push_back(jj);
             for (size_t kk = jj + 1; kk < rows; ++kk) {
-              if (XT::Common::FloatCmp::eq(curr_eigenvalue, eigenvalues_[ii].get_entry(kk)))
+              if (XT::Common::FloatCmp::eq(curr_eigenvalue, eigenvalues_[ii][kk]))
                 curr_group.push_back(kk);
             } // kk
             eigenvalue_groups.push_back(curr_group);
@@ -163,7 +160,7 @@ public:
 
         // As A Q = Q A_{final} and A_{final} is upper triangular, the first column of Q is always an eigenvector of A
         for (size_t rr = 0; rr < rows; ++rr)
-          eigenvectors_[ii].set_entry(rr, 0, Q.get_entry(rr, 0));
+          eigenvectors_[ii][rr][0] = Q.get_entry(rr, 0);
 
         // To get remaining eigenvectors, calculate eigenvectors of A_{final} by solving (A_{final} - \lambda I) x = 0.
         // If x is an eigenvector of A_{final}, Qx is an eigenvector of A.
@@ -172,7 +169,7 @@ public:
           for (const auto& index : group) {
             auto matrix = A;
             for (size_t rr = 0; rr < rows; ++rr)
-              matrix.add_to_entry(rr, rr, -eigenvalues_[ii].get_entry(index));
+              matrix.add_to_entry(rr, rr, -eigenvalues_[ii][index]);
 
             VectorType x(rows, 0);
             VectorType& rhs = x; // use x to store rhs
@@ -191,7 +188,7 @@ public:
             tmp_vec_->scal(1. / tmp_vec_->l2_norm());
 
             for (size_t rr = 0; rr < rows; ++rr)
-              eigenvectors_[ii].set_entry(rr, index, tmp_vec_->get_entry(rr));
+              eigenvectors_[ii][rr][index] = tmp_vec_->get_entry(rr);
           } // index
 
           // orthonormalize eigenvectors in group
@@ -199,15 +196,20 @@ public:
         } // groups of eigenvalues
       } // if (calculate_eigenvectors_)
 
-      XT::LA::Solver<MatrixType> solver(eigenvectors_[ii]);
-      for (size_t cc = 0; cc < cols; ++cc) {
-        // as A A^{-1} = I, solve A a_inv_j = e_j where a_inv_j is the j-th column of A^{-1}
-        VectorType rhs(rows, 0);
-        rhs.set_entry(cc, 1.);
-        solver.apply(rhs, *tmp_vec_);
-        for (size_t rr = 0; rr < rows; ++rr)
-          eigenvectors_inverse_[ii].set_entry(rr, cc, tmp_vec_->get_entry(rr));
-      } // cc
+      //      XT::LA::Solver<MatrixType> solver(eigenvectors_[ii]);
+      //      for (size_t cc = 0; cc < cols; ++cc) {
+      //         as A A^{-1} = I, solve A a_inv_j = e_j where a_inv_j is the j-th column of A^{-1}
+      //        VectorType rhs(rows, 0);
+      //        rhs.set_entry(cc, 1.);
+      //        solver.apply(rhs, *tmp_vec_);
+      //        for (size_t rr = 0; rr < rows; ++rr)
+      //          eigenvectors_inverse_[ii].set_entry(rr, cc, tmp_vec_->get_entry(rr));
+      //      } // cc
+      eigenvectors_inverse_[ii] = eigenvectors_[ii];
+      eigenvectors_inverse_[ii].invert();
+      std::cout << "A: " << XT::Common::to_string(partial_u[ii], 20) << std::endl;
+      std::cout << "eigvals: " << XT::Common::to_string(eigenvalues_[ii], 20) << std::endl;
+      std::cout << "eigvecs: " << XT::Common::to_string(eigenvectors_[ii], 20) << std::endl;
     } // ii
   }
 
@@ -234,7 +236,7 @@ private:
       std::vector<VectorType> orthonormal_eigenvectors(indices.size(), VectorType(rows));
       for (size_t ii = 0; ii < indices.size(); ++ii)
         for (size_t rr = 0; rr < rows; ++rr)
-          orthonormal_eigenvectors[ii].set_entry(rr, eigenvectors_[direction].get_entry(rr, indices[ii]));
+          orthonormal_eigenvectors[ii].set_entry(rr, eigenvectors_[direction][rr][indices[ii]]);
       // orthonormalize
       for (size_t ii = 1; ii < indices.size(); ++ii) {
         auto& v_i = orthonormal_eigenvectors[ii];
@@ -250,7 +252,7 @@ private:
       // copy eigenvectors back to eigenvectors matrix
       for (size_t ii = 1; ii < indices.size(); ++ii)
         for (size_t rr = 0; rr < rows; ++rr)
-          eigenvectors_[direction].set_entry(rr, indices[ii], orthonormal_eigenvectors[ii].get_entry(rr));
+          eigenvectors_[direction][rr][indices[ii]] = orthonormal_eigenvectors[ii].get_entry(rr);
     } // if (indices.size() > 1)
   } // void gram_schmidt(...)
 

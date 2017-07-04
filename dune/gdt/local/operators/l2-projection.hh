@@ -127,13 +127,13 @@ public:
                                         typename RangeSpaceType::BaseFunctionSetType,
                                         R>
         local_l2_functional(over_integrate_, source);
-    XT::LA::CommonDenseVector<R> local_vector(local_range.basis().size());
+    Dune::DynamicVector<R> local_vector(local_range.basis().size());
     const auto& entity = local_range.entity();
-    local_l2_functional.apply(local_range.basis(), local_vector.backend());
+    local_l2_functional.apply(local_range.basis(), local_vector);
     local_vector /= entity.geometry().volume();
     auto& local_range_vector = local_range.vector();
     for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
-      local_range_vector.set(ii, local_vector.get_entry(ii));
+      local_range_vector.set(ii, local_vector[ii]);
   } // ... apply(...) for FV spaces
 
 private:

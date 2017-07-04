@@ -182,9 +182,8 @@ public:
         const auto& eigenvalues_outside = eigen_solver_outside.eigenvalues();
         for (size_t ii = 0; ii < dimDomain; ++ii)
           for (size_t jj = 0; jj < dimRange; ++jj)
-            max_derivative[ii] = std::max({std::abs(eigenvalues_inside[ii].get_entry(jj)),
-                                           std::abs(eigenvalues_outside[ii].get_entry(jj)),
-                                           max_derivative[ii]});
+            max_derivative[ii] = std::max(
+                {std::abs(eigenvalues_inside[ii][jj]), std::abs(eigenvalues_outside[ii][jj]), max_derivative[ii]});
         max_derivative_calculated_ = true;
         for (size_t ii = 0; ii < dimDomain; ++ii)
           lambda_ij_[ii] = 1. / max_derivative[ii];
