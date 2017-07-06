@@ -297,14 +297,14 @@ private:
     column[0] = 1.;
     std::copy(u_l_minus_u_bar.begin(), u_l_minus_u_bar.end(), column.begin() + 1);
     column[dimRange + 1] = 0.;
-    std::cout << "theta col" << XT::Common::to_string(column, 1e-15) << std::endl;
+    std::cout << "theta col" << XT::Common::to_string(column, 15) << std::endl;
     set_column(lp, num_cols, column.data());
     for (size_t ii = 1; ii <= num_rows; ++ii)
       set_constr_type(lp, ii, EQ);
 
     // set bounds for all variables. This should not be necessary, as 0 <= x <= inf is
     // the default for all variables.
-    for (size_t ii = 1; ii <= num_cols; ++ii)
+    for (int ii = 1; ii <= num_cols; ++ii)
       set_bounds(lp, ii, 0., get_infinite(lp));
 
     // set starting point for iteration. We can only set the variable to its lower or upper bound.

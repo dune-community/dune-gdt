@@ -24,9 +24,152 @@
 #include <dune/xt/la/container/eigen.hh>
 #include <dune/xt/la/container/common.hh>
 
+extern "C" void dggev_(const char* JOBVL,
+                       const char* JOBVR,
+                       const int* N,
+                       const double* A,
+                       const int* LDA,
+                       const double* B,
+                       const int* LDB,
+                       double* ALPHAR,
+                       double* ALPHAI,
+                       double* BETA,
+                       double* VL,
+                       const int* LDVL,
+                       double* VR,
+                       const int* LDVR,
+                       double* WORK,
+                       const int* LWORK,
+                       int* INFO);
+
+
 namespace Dune {
 namespace GDT {
 
+template <class LocalFluxFunctionImp>
+class LapackEigenSolver
+{
+  static const size_t stateDimRange = LocalFluxFunctionImp::StateType::dimRange;
+  static const size_t dimRange = LocalFluxFunctionImp::dimRange;
+  static const size_t dimRangeCols = LocalFluxFunctionImp::dimRangeCols;
+  static_assert(stateDimRange == dimRange,
+                "Jacobian has to be a square matrix, i.e. stateDimRange and dimRange have to be equal!");
+  typedef typename LocalFluxFunctionImp::RangeFieldType RangeFieldType;
+  typedef typename LocalFluxFunctionImp::DomainType DomainType;
+  typedef typename LocalFluxFunctionImp::StateRangeType StateRangeType;
+
+public:
+  typedef typename XT::LA::EigenDenseVector<RangeFieldType> VectorType;
+  typedef typename XT::LA::EigenDenseMatrix<RangeFieldType> MatrixType;
+  typedef FieldVector<FieldVector<RangeFieldType, dimRange>, dimRangeCols> EigenValuesType;
+  typedef FieldVector<FieldMatrix<RangeFieldType, dimRange, dimRange>, dimRangeCols> EigenVectorsType;
+
+private:
+  typedef typename MatrixType::BackendType EigenMatrixBackendType;
+
+public:
+  LapackEigenSolver(const LocalFluxFunctionImp& local_flux_function,
+                    const DomainType& x_local,
+                    const StateRangeType& u,
+                    const XT::Common::Parameter& param)
+  {
+    const auto partial_u = XT::Functions::JacobianRangeTypeConverter<stateDimRange, dimRange, dimRangeCols>::convert(
+        local_flux_function.partial_u(x_local, u, param));
+    for (size_t ii = 0; ii < dimRangeCols; ++ii) {
+
+      int N = int(dimRange);
+      double alpha_real[dimRange], alpha_imag[dimRange], beta[dimRange];
+      double workdummy;
+      int lwork = -1; // Request optimum work size.
+      int info = 0;
+
+      FieldMatrix<RangeFieldType, dimRange, dimRange> I(0.);
+      for (size_t rr = 0; rr < dimRange; ++rr)
+        I[rr][rr] = 1.;
+
+      // lapack uses column-major representation, so transpose first
+      auto A = partial_u[ii];
+      for (size_t rr = 0; rr < dimRange; ++rr)
+        for (size_t cc = 0; cc < dimRange; ++cc)
+          A[cc][rr] = partial_u[ii][rr][cc];
+
+      ::dggev_("N",
+               "V",
+               &N,
+               &(A[0][0]),
+               &N,
+               &(I[0][0]),
+               &N,
+               alpha_real,
+               alpha_imag,
+               beta,
+               nullptr,
+               &N,
+               &(eigenvectors_[ii][0][0]),
+               &N,
+               &workdummy,
+               &lwork,
+               &info);
+
+
+      lwork = int(workdummy + 0.5);
+      std::vector<double> work(lwork);
+
+      ::dggev_("N",
+               "V",
+               &N,
+               &(A[0][0]),
+               &N,
+               &(I[0][0]),
+               &N,
+               alpha_real,
+               alpha_imag,
+               beta,
+               nullptr,
+               &N,
+               &(eigenvectors_[ii][0][0]),
+               &N,
+               work.data(),
+               &lwork,
+               &info);
+
+      // transpose eigenvectors, as lapack uses column-major
+      auto vec_copy = eigenvectors_[ii];
+      for (size_t rr = 0; rr < dimRange; ++rr)
+        for (size_t cc = 0; cc < dimRange; ++cc)
+          eigenvectors_[ii][cc][rr] = vec_copy[rr][cc];
+
+      for (size_t rr = 0; rr < dimRange; ++rr) {
+        assert(XT::Common::FloatCmp::eq(alpha_imag[rr], 0.));
+        assert(XT::Common::FloatCmp::eq(beta[rr], 1.));
+        eigenvalues_[ii][rr] = alpha_real[rr];
+      }
+
+      eigenvectors_inverse_[ii] = eigenvectors_[ii];
+      eigenvectors_inverse_[ii].invert();
+    }
+  }
+
+  const EigenValuesType& eigenvalues() const
+  {
+    return eigenvalues_;
+  }
+
+  const EigenVectorsType& eigenvectors() const
+  {
+    return eigenvectors_;
+  }
+
+  const EigenVectorsType& eigenvectors_inverse() const
+  {
+    return eigenvectors_inverse_;
+  }
+
+private:
+  EigenValuesType eigenvalues_;
+  EigenVectorsType eigenvectors_;
+  EigenVectorsType eigenvectors_inverse_;
+}; // class LapackEigenSolver<...>
 
 template <class LocalFluxFunctionImp,
           class VectorImp = XT::LA::CommonDenseVector<typename LocalFluxFunctionImp::RangeFieldType>,
@@ -70,6 +213,8 @@ public:
         Q.unit_row(rr);
       A = XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, stateDimRange>::convert(partial_u[ii]);
       hessenberg_transformation(A, Q);
+      std::cout << "A: " << XT::Common::to_string(A, 20) << std::endl;
+      std::cout << "Q: " << XT::Common::to_string(Q, 20) << std::endl;
       for (size_t jj = rows - 1; jj > 0; --jj) {
         size_t num_rows = jj + 1;
         size_t num_cols = num_rows;
@@ -86,6 +231,10 @@ public:
           // so we are only calculating the QR decomposition Q1*R1 of A1.
           // Then Q = [Q1 0; 0 I], R = [R1 Q1^T*A2; 0 A3] is a QR decomp. of A.
           QR_decomp(A, Q_k, R_k, num_rows, num_cols);
+
+          std::cout << "A: " << XT::Common::to_string(A, 20) << std::endl;
+          std::cout << "Q_k: " << XT::Common::to_string(Q_k, 20) << std::endl;
+          std::cout << "R_k: " << XT::Common::to_string(R_k, 20) << std::endl;
 
           // calculate A_{k+1} = R_k Q_k + sigma I. We are only interested in the diagonal
           // elements of A, and we do not reuse the other parts of A, so we are only
@@ -167,25 +316,92 @@ public:
         for (const auto& group : eigenvalue_groups) {
           size_t value = 1;
           for (const auto& index : group) {
-            auto matrix = A;
+            auto matrix = A.copy();
             for (size_t rr = 0; rr < rows; ++rr)
               matrix.add_to_entry(rr, rr, -eigenvalues_[ii][index]);
 
-            VectorType x(rows, 0);
-            VectorType& rhs = x; // use x to store rhs
+            VectorType x(rows, 0.);
+            VectorType rhs = x;
             // backsolve
-            for (int rr = int(rows - 1); rr >= 0; rr--) {
-              for (size_t cc = rr + 1; cc < rows; cc++)
-                rhs.add_to_entry(rr, -matrix.get_entry(rr, cc) * x.get_entry(cc));
-              x.set_entry(rr,
-                          XT::Common::FloatCmp::eq(matrix.get_entry(rr, rr), 0.)
-                              ? RangeFieldType(value++)
-                              : (rhs.get_entry(rr) / matrix.get_entry(rr, rr)));
-            }
+            for (int rr = int(rows - 1); rr >= 0; --rr) {
+              if (XT::Common::FloatCmp::eq(matrix.get_entry(rr, rr), 0.)) {
 
+                // check if there is a non-zero entry to the right, if so, we can calculate it now
+                for (int cc = rr + 1; cc < int(cols); ++cc) {
+                  if (XT::Common::FloatCmp::ne(matrix.get_entry(rr, cc), 0.)) {
+                    if (std::abs(rhs.get_entry(rr) / matrix.get_entry(rr, cc) > 1000))
+                      std::cout << rhs.get_entry(rr) / matrix.get_entry(rr, cc) << " " << matrix.get_entry(rr, cc)
+                                << " " << rhs.get_entry(rr) << std::endl;
+                    x.set_entry(cc, rhs.get_entry(rr) / matrix.get_entry(rr, cc));
+                    break;
+                  }
+                }
+
+                // find first row with nonzero entry and add to all rows above to set entry of this variable to zero
+                bool all_rows_zero = true;
+                for (int kk = rr - 1; kk >= 0; --kk) {
+                  if (XT::Common::FloatCmp::ne(matrix.get_entry(kk, rr), 0.)) {
+                    all_rows_zero = false;
+
+                    // check if there is a non-zero entry to the right, if so, we can set it randomly now
+                    for (int cc = rr + 1; cc < int(cols); ++cc) {
+                      if (XT::Common::FloatCmp::ne(matrix.get_entry(kk, cc), 0.)) {
+                        x.set_entry(cc, RangeFieldType(value++));
+                        rhs.add_to_entry(kk, -x.get_entry(cc) * matrix.get_entry(kk, cc));
+                        matrix.set_entry(kk, cc, 0.);
+                        break;
+                      }
+                    }
+
+                    // add current row to rows above
+                    for (int ll = kk - 1; ll >= 0; --ll) {
+                      const auto factor = -matrix.get_entry(ll, rr) / matrix.get_entry(kk, rr);
+                      if (std::abs(factor) > 1000)
+                        std::cout << factor << " " << kk << " " << ll << " " << rr << " " << matrix.get_entry(ll, rr)
+                                  << " " << matrix.get_entry(kk, rr) << std::endl;
+                      matrix.set_entry(ll, rr, 0.);
+                      for (int cc = kk; cc < rr; ++cc)
+                        matrix.add_to_entry(ll, cc, matrix.get_entry(kk, cc) * factor);
+                      rhs.add_to_entry(ll, rhs.get_entry(kk) * factor);
+                    } // ll
+                    break;
+                  } // (if mat(kk,rr) != 0)
+                } // kk
+                if (all_rows_zero)
+                  x.set_entry(rr, RangeFieldType(value++));
+              } else { // if(mat(rr, rr) == 0)
+
+                // check if there is a non-zero entry to the right, if so, we can set it randomly now
+                for (int cc = rr + 1; cc < int(cols); ++cc) {
+                  if (XT::Common::FloatCmp::ne(matrix.get_entry(rr, cc), 0.)) {
+                    x.set_entry(cc, RangeFieldType(value++));
+                    rhs.add_to_entry(rr, -x.get_entry(cc) * matrix.get_entry(rr, cc));
+                    matrix.set_entry(rr, cc, 0.);
+                    break;
+                  }
+                }
+
+                x.set_entry(rr, rhs.get_entry(rr) / matrix.get_entry(rr, rr));
+
+                // set value of x in rows above
+                for (int kk = rr - 1; kk >= 0; --kk) {
+                  rhs.add_to_entry(kk, -x.get_entry(rr) * matrix.get_entry(kk, rr));
+                  matrix.set_entry(kk, rr, 0.);
+                } // kk
+              } // else(mat(rr, rr) == 0)
+            } // rr
+
+            std::cout << "A: " << XT::Common::to_string(A, 20) << std::endl;
+            std::cout << "Q: " << XT::Common::to_string(Q, 20) << std::endl;
+            //            std::cout << "matrix: " << XT::Common::to_string(matrix, 20) << std::endl;
+            std::cout << "eigvec: " << XT::Common::to_string(x, 20) << std::endl;
+            std::cout << "eigval: " << XT::Common::to_string(eigenvalues_[ii][index], 20) << std::endl;
             Q.mv(x, *tmp_vec_);
+            std::cout << "eigvec after: " << XT::Common::to_string(*tmp_vec_, 20) << std::endl;
 
+            std::cout << "l2_norm() " << tmp_vec_->l2_norm() << std::endl;
             tmp_vec_->scal(1. / tmp_vec_->l2_norm());
+            std::cout << "eigvec after scaling: " << XT::Common::to_string(*tmp_vec_, 20) << std::endl;
 
             for (size_t rr = 0; rr < rows; ++rr)
               eigenvectors_[ii][rr][index] = tmp_vec_->get_entry(rr);
@@ -205,11 +421,11 @@ public:
       //        for (size_t rr = 0; rr < rows; ++rr)
       //          eigenvectors_inverse_[ii].set_entry(rr, cc, tmp_vec_->get_entry(rr));
       //      } // cc
-      eigenvectors_inverse_[ii] = eigenvectors_[ii];
-      eigenvectors_inverse_[ii].invert();
       std::cout << "A: " << XT::Common::to_string(partial_u[ii], 20) << std::endl;
       std::cout << "eigvals: " << XT::Common::to_string(eigenvalues_[ii], 20) << std::endl;
       std::cout << "eigvecs: " << XT::Common::to_string(eigenvectors_[ii], 20) << std::endl;
+      eigenvectors_inverse_[ii] = eigenvectors_[ii];
+      eigenvectors_inverse_[ii].invert();
     } // ii
   }
 
@@ -332,6 +548,25 @@ private:
     for (size_t jj = 0; jj < std::min(num_rows - 1, num_cols); ++jj) {
       const auto norm_x = get_norm_x(R, jj, num_rows);
       if (XT::Common::FloatCmp::gt(norm_x, 0.)) {
+#if 0
+        // find entry with greatest absolute value
+        size_t index = jj;
+        RangeFieldType max = std::abs(R.get_entry(jj, jj));
+        for (size_t kk = jj + 1; kk < num_rows; ++kk) {
+          if (XT::Common::FloatCmp::gt(std::abs(R.get_entry(kk, jj)), max)) {
+            max = std::abs(R.get_entry(kk, jj));
+            index = kk;
+          }
+        }
+        if (index != jj) { // swap rows
+          // swapping of rows i,j can be done by Householder I - (e_i - e_j)(e_i-e_j)^T
+          VectorType e_diff(num_rows, 0.);
+          e_diff.set_entry(jj, 1.);
+          e_diff.set_entry(index, -1.);
+          multiply_householder_from_left(R, 1., e_diff, jj, num_rows);
+          multiply_householder_from_right(Q, 1., e_diff, jj, num_cols);
+        }
+#endif
         const auto s = -sign(R.get_entry(jj, jj));
         const RangeFieldType u1 = R.get_entry(jj, jj) - s * norm_x;
         w.set_entry(jj, 1.);
@@ -345,7 +580,7 @@ private:
       } // if (norm_x != 0)
     } // jj
 
-    // choose Q such that largest entry of each colum is positive
+    // choose Q such that largest entry of each column is positive
     size_t row_index = 0;
     for (size_t cc = 0; cc < num_cols; ++cc) {
       RangeFieldType max = std::numeric_limits<RangeFieldType>::lowest();
@@ -379,11 +614,13 @@ private:
       for (size_t rr = jj + 1; rr < rows; ++rr)
         gamma += std::pow(std::abs(A.get_entry(rr, jj)), 2);
       gamma = std::sqrt(gamma);
-      if (XT::Common::FloatCmp::ne(gamma, 0.)) {
+      RangeFieldType beta = gamma * (gamma + std::abs(A.get_entry(jj + 1, jj)));
+      if (XT::Common::FloatCmp::ne(gamma, 0.) && XT::Common::FloatCmp::ne(beta, 0.)) {
+        beta = 1. / beta;
         for (size_t rr = jj + 1; rr < rows; ++rr)
           u.set_entry(rr, A.get_entry(rr, jj));
         u.add_to_entry(jj + 1, xi(A.get_entry(jj + 1, jj)) * gamma);
-        RangeFieldType beta = 1. / (gamma * (gamma + std::abs(A.get_entry(jj + 1, jj))));
+        std::cout << "beta: " << beta << ", gamma: " << gamma << ", Aentry: " << A.get_entry(jj + 1, jj) << std::endl;
         // calculate P A P with P = diag(I_j, (I_{n-j} - beta u u*))
         // calculate P A = A - (beta u) (u^T A) first
         multiply_householder_from_left(A, beta, u, jj + 1, rows);
@@ -441,11 +678,17 @@ public:
     for (size_t ii = 0; ii < dimRangeCols; ++ii) {
       const auto partial_u_eigen =
           XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, stateDimRange>::convert(partial_u[ii]);
+      std::cout << "A1: " << XT::Common::to_string(partial_u[ii]) << std::endl;
+      std::cout << "A2: " << XT::Common::to_string(partial_u_eigen) << std::endl;
       EigenSolverType eigen_solver(partial_u_eigen.backend());
       assert(eigen_solver.info() == ::Eigen::Success);
       const auto& eigenvalues_eigen = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
       const auto& eigenvectors_eigen = eigen_solver.eigenvectors(); // <- this should be an Eigen vector of std::complex
       assert(size_t(eigenvalues_eigen.size()) == dimRange);
+      std::cout << "real: " << XT::Common::to_string(VectorType(eigenvalues_eigen.real())) << std::endl;
+      std::cout << "imag: " << XT::Common::to_string(VectorType(eigenvalues_eigen.imag())) << std::endl;
+      std::cout << "real vec: " << XT::Common::to_string(MatrixType(eigenvectors_eigen.real())) << std::endl;
+      std::cout << "imag vec: " << XT::Common::to_string(MatrixType(eigenvectors_eigen.imag())) << std::endl;
       assert(XT::Common::FloatCmp::eq(VectorType(eigenvalues_eigen.imag()), VectorType(dimRange, 0.)));
       assert(XT::Common::FloatCmp::eq(MatrixType(eigenvectors_eigen.imag()), MatrixType(dimRange, dimRange, 0.)));
       eigenvalues_[ii] = XT::LA::internal::FieldVectorToLaVector<VectorType, dimRange>::convert_back(
@@ -491,11 +734,12 @@ class EigenEigenSolver
 #endif // HAVE_EIGEN
 
 template <class LocalFluxFunctionImp>
-#if HAVE_EIGEN
-using DefaultEigenSolver = EigenEigenSolver<LocalFluxFunctionImp>;
-#else
-using DefaultEigenSolver = QrHouseholderEigenSolver<LocalFluxFunctionImp>;
-#endif
+//#if HAVE_EIGEN
+// using DefaultEigenSolver = EigenEigenSolver<LocalFluxFunctionImp>;
+//#else
+// using DefaultEigenSolver = QrHouseholderEigenSolver<LocalFluxFunctionImp>;
+//#endif
+using DefaultEigenSolver = LapackEigenSolver<LocalFluxFunctionImp>;
 
 } // namespace GDT
 } // namespace Dune

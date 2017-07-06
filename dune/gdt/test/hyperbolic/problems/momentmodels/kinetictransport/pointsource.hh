@@ -106,9 +106,9 @@ public:
                                   std::make_pair("t_end", std::vector<double>{0.45})});
   }
 
-  // Initial value of the kinetic equation is psi_vac + 1/(8 pi sigma^2) * exp(-|x|^2/(2*sigma^2)).
+  // Initial value of the kinetic equation is psi_vac + 1/(8 pi sigma^2) * exp(-||x||^2/(2*sigma^2)).
   // Thus the initial value for the moments is basis_integrated * (psi_vac + 1/(8 pi sigma^2) *
-  // exp(-|x|^2/(2*sigma^2))).
+  // exp(-||x||^2/(2*sigma^2))).
   virtual InitialValueType* create_initial_values() const override
   {
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
@@ -129,7 +129,10 @@ public:
     initial_vals.emplace_back(
         [=](const DomainType& x, const XT::Common::Parameter&) {
           auto ret = basis_integrated;
-          ret *= std::max(1. / (8. * M_PI * sigma * sigma) * std::exp(-1. * x.two_norm2() / (2. * sigma * sigma)),
+          //          ret *= std::max(1. / (8. * M_PI * sigma * sigma) * std::exp(-1. * x.two_norm2() / (2. * sigma *
+          //          sigma)),
+          //                          1e-4 / (4. * M_PI));
+          ret *= std::max(1. / std::pow(sigma, 3) * std::exp(-M_PI * x.two_norm2() / std::pow(sigma, 2)),
                           1e-4 / (4. * M_PI));
           return ret;
         },

@@ -179,10 +179,10 @@ int main(int argc, char** argv)
   // ********************* choose dimensions, fluxes and grid type ************************
   static const int dimDomain = 3;
   //  static const int dimDomain = 1;
-  static const int momentOrder = 6;
+  //  static const int momentOrder = 6;
   //  const auto numerical_flux = NumericalFluxes::kinetic;
   //  const auto numerical_flux = NumericalFluxes::godunov;
-  const auto numerical_flux = NumericalFluxes::laxfriedrichs;
+  //  const auto numerical_flux = NumericalFluxes::laxfriedrichs;
   //  const auto numerical_flux = NumericalFluxes::laxfriedrichs_with_reconstruction;
   //  const auto numerical_flux = NumericalFluxes::local_laxfriedrichs_with_reconstruction;
   //      const auto numerical_flux = NumericalFluxes::local_laxfriedrichs;
@@ -203,17 +203,17 @@ int main(int argc, char** argv)
   //  BasisfunctionType;
   //  typedef typename Hyperbolic::Problems::HatFunctions<double, dimDomain, double, momentOrder> BasisfunctionType;
 
-  //  static const size_t refinements = 0;
-  //  typedef
-  //      typename Hyperbolic::Problems::HatFunctions<double,
-  //                                                  dimDomain,
-  //                                                  double,
-  //                                                  Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(),
-  //                                                  1,
-  //                                                  3>
-  //          BasisfunctionType;
+  static const size_t refinements = 1;
+  typedef
+      typename Hyperbolic::Problems::HatFunctions<double,
+                                                  dimDomain,
+                                                  double,
+                                                  Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(),
+                                                  1,
+                                                  3>
+          BasisfunctionType;
 
-  static const size_t refinements = 0;
+  //  static const size_t refinements = 1;
   //  typedef typename Hyperbolic::Problems::
   //      PiecewiseMonomials<double,
   //                         dimDomain,
@@ -230,18 +230,18 @@ int main(int argc, char** argv)
   //  typedef typename Hyperbolic::Problems::RealSphericalHarmonics<double, double, momentOrder, dimDomain, false>
   //      BasisfunctionType;
 
-  typedef typename Hyperbolic::Problems::
-      PiecewiseMonomials<double,
-                         3,
-                         double,
-                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces(),
-                         1,
-                         dimDomain>
-          BasisfunctionType;
+  //  typedef typename Hyperbolic::Problems::
+  //      PiecewiseMonomials<double,
+  //                         3,
+  //                         double,
+  //                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces(),
+  //                         1,
+  //                         dimDomain>
+  //          BasisfunctionType;
 
-  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>();
-  //  std::shared_ptr<const BasisfunctionType> basis_functions =
-  //      std::make_shared<const BasisfunctionType>(refinements, refinements + 4);
+  //  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>();
+  std::shared_ptr<const BasisfunctionType> basis_functions =
+      std::make_shared<const BasisfunctionType>(refinements, refinements + 4);
   static const size_t dimRange = BasisfunctionType::dimRange;
   static constexpr auto container_backend = Dune::XT::LA::default_sparse_backend;
   typedef FvProductSpace<GridLayerType, double, dimRange, 1> SpaceType;
@@ -343,7 +343,7 @@ int main(int argc, char** argv)
   using DomainFieldType = typename ProblemType::DomainFieldType;
   using DomainType = typename ProblemType::DomainType;
   using RangeFieldType = typename ProblemType::RangeFieldType;
-  using RangeType = typename ProblemType::RangeType;
+  //  using RangeType = typename ProblemType::RangeType;
   //  static const size_t dimRange = ProblemType::dimRange;
   typedef typename ProblemType::RhsType RhsType;
   typedef typename ProblemType::InitialValueType InitialValueType;
@@ -417,21 +417,21 @@ int main(int argc, char** argv)
   //                                                                  BasisfunctionType>,
   //                                   AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType>>::type>::type
   //          AdvectionOperatorType;
-  //  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
-  //                                         BoundaryValueType,
-  //                                         ConstantFunctionType,
-  //                                         1,
-  //                                         SlopeLimiters::minmod,
-  //                                         false,
-  //                                         BasisfunctionType>
-  //      AdvectionOperatorType;
-  typedef AdvectionGodunovOperator<AnalyticalFluxType,
-                                   BoundaryValueType,
-                                   1,
-                                   SlopeLimiters::minmod,
-                                   false,
-                                   BasisfunctionType>
+  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
+                                         BoundaryValueType,
+                                         ConstantFunctionType,
+                                         0,
+                                         SlopeLimiters::minmod,
+                                         false,
+                                         BasisfunctionType>
       AdvectionOperatorType;
+  //  typedef AdvectionGodunovOperator<AnalyticalFluxType,
+  //                                   BoundaryValueType,
+  //                                   1,
+  //                                   SlopeLimiters::minmod,
+  //                                   false,
+  //                                   BasisfunctionType>
+  //      AdvectionOperatorType;
 
 
   typedef
@@ -465,8 +465,8 @@ int main(int argc, char** argv)
   //      internal::AdvectionOperatorCreator<AdvectionOperatorType, numerical_flux>::create(
   //          analytical_flux, boundary_values, dx_function, linear);
 
-  //  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_function);
-  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, linear);
+  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_function, false, linear);
+  //  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, linear);
   advection_operator.set_basisfunctions(basis_functions);
   //  advection_operator.set_quadrature(problem_imp.quadrature());
   advection_operator.set_quadrature(Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40));
@@ -505,7 +505,7 @@ int main(int argc, char** argv)
                   : (rhs_time_stepper_method == TimeStepperMethods::matrix_exponential ? "_matexp" : "_explicit");
 
   timestepper.solve(
-      t_end, dt, num_save_steps, /*save_solution = */ false, /*output_progress = */ true, visualize, filename, 3);
+      t_end, dt, num_save_steps, /*save_solution = */ false, /*output_progress = */ true, visualize, filename, 1);
 
   const auto& sol = timestepper.current_solution();
   std::vector<std::pair<DomainType, RangeFieldType>> values;
