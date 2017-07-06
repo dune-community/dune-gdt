@@ -790,7 +790,7 @@ struct OctaederStatistics
   static constexpr size_t num_intersections()
   {
     return 2 * OctaederStatistics<refinements - 1>::num_intersections()
-           + 2 * OctaederStatistics<refinements - 1>::num_faces();
+           + 3 * OctaederStatistics<refinements - 1>::num_faces();
   }
 
   static constexpr size_t num_vertices()
@@ -867,6 +867,7 @@ public:
       success = calculate_barycentric_coordinates(v, vertices, barycentric_coords);
       if (success) {
         for (size_t ii = 0; ii < 3; ++ii) {
+          //          std::cout << vertices[ii]->index() << std::endl;
           ret[vertices[ii]->index()] = barycentric_coords[ii];
         }
         //        std::cout << "vertices: " << XT::Common::to_string(face->vertices()[0]->position()) << ", "
