@@ -132,7 +132,7 @@ public:
           //          ret *= std::max(1. / (8. * M_PI * sigma * sigma) * std::exp(-1. * x.two_norm2() / (2. * sigma *
           //          sigma)),
           //                          1e-4 / (4. * M_PI));
-          ret *= std::max(1. / std::pow(sigma, 3) * std::exp(-M_PI * x.two_norm2() / std::pow(sigma, 2)),
+          ret *= std::max(1. / std::pow(M_PI * sigma, 3) * std::exp(-x.two_norm2() / (M_PI * std::pow(sigma, 2))),
                           1e-4 / (4. * M_PI));
           return ret;
         },
