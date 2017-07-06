@@ -21,7 +21,9 @@
 #include <libqhullcpp/Qhull.h>
 #include <libqhullcpp/QhullFacetList.h>
 
-#include </home/tobias/Software/dune-gdt-super-2.5/local/include/lpsolve/lp_lib.h>
+namespace lpsolve {
+#include </home/l_tobi01/Software/dune-gdt-super/local/include/lpsolve/lp_lib.h>
+}
 
 namespace Dune {
 namespace GDT {
@@ -247,7 +249,7 @@ public:
 private:
   RangeFieldType solve_linear_program(RangeType u_l, RangeType u_l_minus_u_bar)
   {
-    lprec* lp;
+    typename lpsolve::lprec* lp;
 
     //     scale
     //    const auto max_val = *std::max_element(u_l_minus_u_bar.begin(), u_l_minus_u_bar.end());
@@ -258,7 +260,7 @@ private:
     // We start with creating a model with dimRange+1 rows and num_quad_points+1 columns */
     constexpr int num_rows = int(dimRange + 1);
     int num_cols = int(quadrature_.size() + 1); /* variables are x_1, ..., x_{num_quad_points}, \theta */
-    lp = make_lp(num_rows, num_cols);
+    lp = lpsolve::make_lp(num_rows, num_cols);
     if (!lp)
       DUNE_THROW(Dune::MathError, "Couldn't construct linear program");
 
@@ -268,11 +270,11 @@ private:
       auto name_string = "x" + XT::Common::to_string(ii + 1);
       name.resize(name_string.size());
       std::copy(name_string.begin(), name_string.end(), name.begin());
-      set_col_name(lp, ii + 1, name.data());
+      lpsolve::set_col_name(lp, ii + 1, name.data());
     }
     name.resize(5);
     name = {'t', 'h', 'e', 't', 'a'};
-    set_col_name(lp, num_cols, name.data());
+    lpsolve::set_col_name(lp, num_cols, name.data());
 
     // In the call to set_column, the first entry (row 0) is the value of the objective function
     // (c_i in the objective function c^T x), the other entries are the entries of the i-th column
@@ -283,29 +285,29 @@ private:
     column[0] = 0.;
     std::copy(u_l.begin(), u_l.end(), column.begin() + 1);
     column[dimRange + 1] = 1.;
-    set_rh_vec(lp, column.data());
-    set_rh(lp, 0, column[0]);
+    lpsolve::set_rh_vec(lp, column.data());
+    lpsolve::set_rh(lp, 0, column[0]);
     // set columns for quadrature points
     column[0] = 0.;
     for (size_t ii = 0; ii < M_.size(); ++ii) {
       const auto& v_i = M_[ii];
       std::copy(v_i.begin(), v_i.end(), column.begin() + 1);
       column[dimRange + 1] = 1.;
-      set_column(lp, ii + 1, column.data());
+      lpsolve::set_column(lp, ii + 1, column.data());
     }
     // set last column
     column[0] = 1.;
     std::copy(u_l_minus_u_bar.begin(), u_l_minus_u_bar.end(), column.begin() + 1);
     column[dimRange + 1] = 0.;
     std::cout << "theta col" << XT::Common::to_string(column, 15) << std::endl;
-    set_column(lp, num_cols, column.data());
+    lpsolve::set_column(lp, num_cols, column.data());
     for (size_t ii = 1; ii <= num_rows; ++ii)
-      set_constr_type(lp, ii, EQ);
+      lpsolve::set_constr_type(lp, ii, EQ);
 
     // set bounds for all variables. This should not be necessary, as 0 <= x <= inf is
     // the default for all variables.
     for (int ii = 1; ii <= num_cols; ++ii)
-      set_bounds(lp, ii, 0., get_infinite(lp));
+      lpsolve::set_bounds(lp, ii, 0., lpsolve::get_infinite(lp));
 
     // set starting point for iteration. We can only set the variable to its lower or upper bound.
     // The variable is set to its lower bound if the value in initial_basis is negative and to its upper_
@@ -321,23 +323,23 @@ private:
 
     /* print LP */
     /* this only works if this is a console application. If not, use write_lp and a filename */
-    write_LP(lp, stdout);
+    lpsolve::write_LP(lp, stdout);
 
     /* I only want to see important messages on screen while solving */
-    set_verbose(lp, FULL);
+    lpsolve::set_verbose(lp, FULL);
 
     /* Now let lpsolve calculate a solution */
-    const auto solve_status = solve(lp);
+    const auto solve_status = lpsolve::solve(lp);
     if (solve_status != OPTIMAL) {
       std::cout << solve_status << std::endl;
       DUNE_THROW(Dune::MathError, "An unexpected error occured while solving the linear program");
     }
-    RangeFieldType lambda = get_objective(lp); // * abs_max;
+    RangeFieldType lambda = lpsolve::get_objective(lp); // * abs_max;
 
     /* create space large enough for one row */
     REAL* row = (REAL*)malloc(num_cols * sizeof(REAL));
     /* variable values */
-    get_variables(lp, row);
+    lpsolve::get_variables(lp, row);
     for (size_t ii = 0; ii <= size_t(num_cols); ++ii)
       std::cout << row[ii] << " ";
     //    assert(XT::Common::FloatCmp::eq(lambda, row[num_cols - 1]));
@@ -346,7 +348,7 @@ private:
     if (row)
       free(row);
     if (lp)
-      delete_lp(lp);
+      lpsolve::delete_lp(lp);
 
     return lambda;
   }
