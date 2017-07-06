@@ -16,12 +16,11 @@ Yr = reshape(Y, [num_points^3 1]);
 Zr = reshape(Z, [num_points^3 1]);
 yr = reshape(y, [num_points^3 1]);
 ycr = zeros(num_entities^3, 1);
+
 for ii = 1:num_entities^3
-    x_indices = find(abs(Xr-Xcr(ii)) < entity_width/2+1e-10);
-    y_indices = find(abs(Yr-Ycr(ii)) < entity_width/2+1e-10);
-    z_indices = find(abs(Zr-Zcr(ii)) < entity_width/2+1e-10);
-    indices = intersect(x_indices, y_indices);
-    indices = intersect(indices, z_indices);
+    indices = find(abs(Xr-Xcr(ii)) < entity_width/2+1e-10);
+    indices = find(abs(Yr(indices)-Ycr(ii)) < entity_width/2+1e-10);
+    indices = find(abs(Zr(indices)-Zcr(ii)) < entity_width/2+1e-10);
     [m,n] = size(indices);
     ycr(ii) = sum(yr(indices))/m;
     ii

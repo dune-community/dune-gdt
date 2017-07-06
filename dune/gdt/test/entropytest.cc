@@ -203,7 +203,7 @@ int main(int argc, char** argv)
   //  BasisfunctionType;
   //  typedef typename Hyperbolic::Problems::HatFunctions<double, dimDomain, double, momentOrder> BasisfunctionType;
 
-  static const size_t refinements = 1;
+  static const size_t refinements = 0;
   typedef
       typename Hyperbolic::Problems::HatFunctions<double,
                                                   dimDomain,
@@ -212,6 +212,8 @@ int main(int argc, char** argv)
                                                   1,
                                                   3>
           BasisfunctionType;
+
+  std::cout << Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices() << std::endl;
 
   //  static const size_t refinements = 1;
   //  typedef typename Hyperbolic::Problems::
@@ -547,9 +549,10 @@ int main(int argc, char** argv)
     const auto quad_rule = Dune::QuadratureRules<double, dimDomain>::rule(entity.geometry().type(), 50);
     const auto local_sol = sol.local_function(entity);
     for (const auto& quad_point : quad_rule) {
-      const auto val = local_sol->evaluate(entity.geometry().local(quad_point.position()));
+      const auto pos = quad_point.position();
+      const auto val = local_sol->evaluate(pos);
       for (const auto& entry : val) { // for hatfunctions
-        mass += entry * quad_point.weight();
+        mass += entry * quad_point.weight() * entity.geometry().integrationElement(pos);
       }
     }
   }

@@ -33,8 +33,9 @@ template <class GridLayerType,
           class BoundaryValueType,
           size_t polOrder,
           SlopeLimiters slope_limiter,
-          class EigenSolverType =
-              typename Dune::GDT::DefaultEigenSolver<typename AnalyticalFluxType::LocalfunctionType>>
+          class EigenSolverType = typename Dune::GDT::DefaultEigenSolver<typename AnalyticalFluxType::RangeFieldType,
+                                                                         AnalyticalFluxType::dimRange,
+                                                                         AnalyticalFluxType::dimRangeCols>>
 class LocalReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayerType>
 {
   // stencil is (i-r, i+r) in all dimensions, where r = polOrder + 1

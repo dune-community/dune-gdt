@@ -34,12 +34,16 @@ namespace GDT {
 
 // forwards
 template <class AnalyticalFluxImp,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::LocalfunctionType>>
+          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldImp,
+                                                    AnalyticalFluxImp::dimRange,
+                                                    AnalyticalFluxImp::dimRangeCols>>
 class KineticLocalNumericalCouplingFlux;
 
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionType,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::LocalfunctionType>>
+          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldImp,
+                                                    AnalyticalFluxImp::dimRange,
+                                                    AnalyticalFluxImp::dimRangeCols>>
 class KineticLocalNumericalBoundaryFlux;
 
 
