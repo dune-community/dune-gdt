@@ -541,17 +541,35 @@ int main(int argc, char** argv)
   assert(entities.size() == grid_size_ns * grid_size_ns * grid_size_ns);
   RangeFieldType error = 0;
   auto vol_domain = std::pow(2., 3.);
+  // normalize solution
+  RangeFieldType mass = 0.;
+  for (const auto& entity : elements(grid_layer)) {
+    const auto quad_rule = Dune::QuadratureRules<double, dimDomain>::rule(entity.geometry().type(), 50);
+    const auto local_sol = sol.local_function(entity);
+    for (const auto& quad_point : quad_rule) {
+      const auto val = local_sol->evaluate(entity.geometry().local(quad_point.position()));
+      for (const auto& entry : val) { // for hatfunctions
+        mass += entry * quad_point.weight();
+      }
+    }
+  }
+
+  std::cout << "mass: " << mass << std::endl;
+
   for (size_t ii = 0; ii < entities.size(); ++ii) {
     const auto& entity = entities[ii];
     const auto& point = x_matlab[ii];
     const auto local_sol = sol.local_function(*entity);
-    const auto val = local_sol->evaluate(entity->geometry().local(point))[0] * std::sqrt(4 * M_PI);
+    const auto val = local_sol->evaluate(entity->geometry().local(point));
+    RangeFieldType val_dune(0.);
+    for (const auto& entry : val) // for hatfunctions
+      val_dune += entry / mass;
     const auto& val_matlab = values_matlab[ii];
-    error += std::pow(val - val_matlab, 2) * entity->geometry().volume();
+    error += std::pow(val_dune - val_matlab, 2) * entity->geometry().volume();
   }
+
   error = std::sqrt(error / vol_domain);
   std::cout << XT::Common::to_string(error) << std::endl;
-
 
   return 0;
 }
