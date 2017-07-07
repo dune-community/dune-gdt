@@ -542,19 +542,13 @@ int main(int argc, char** argv)
   const auto entities = entity_search(x_matlab);
   assert(entities.size() == grid_size_ns * grid_size_ns * grid_size_ns);
   RangeFieldType error = 0;
-  auto vol_domain = std::pow(2., 3.);
   // normalize solution
   RangeFieldType mass = 0.;
   for (const auto& entity : elements(grid_layer)) {
-    const auto quad_rule = Dune::QuadratureRules<double, dimDomain>::rule(entity.geometry().type(), 50);
     const auto local_sol = sol.local_function(entity);
-    for (const auto& quad_point : quad_rule) {
-      const auto pos = quad_point.position();
-      const auto val = local_sol->evaluate(pos);
-      for (const auto& entry : val) { // for hatfunctions
-        mass += entry * quad_point.weight() * entity.geometry().integrationElement(pos);
-      }
-    }
+    const auto val = local_sol->evaluate(entity.geometry().local(entity.geometry().center()));
+    for (const auto& entry : val) // for hatfunctions
+      mass += entry * entity.geometry().volume();
   }
 
   std::cout << "mass: " << mass << std::endl;
@@ -571,7 +565,7 @@ int main(int argc, char** argv)
     error += std::pow(val_dune - val_matlab, 2) * entity->geometry().volume();
   }
 
-  error = std::sqrt(error / vol_domain);
+  error = std::sqrt(error);
   std::cout << XT::Common::to_string(error) << std::endl;
 
   return 0;

@@ -115,7 +115,7 @@ public:
     const auto flux_local_func = analytical_flux_.local_function(entity);
     if (!is_linear_ || !eigensolver_)
       eigensolver_ = XT::Common::make_unique<EigenSolverType>(
-          *flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, param_);
+          *flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, param_, true);
     const auto& eigenvectors = eigensolver_->eigenvectors();
     const auto& eigenvectors_inverse = eigensolver_->eigenvectors_inverse();
     for (size_t dd = 0; dd < dimDomain; ++dd)

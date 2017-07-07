@@ -89,73 +89,46 @@ auto function_factor(const DiscreteFunctionType& discrete_function) -> typename 
   return factor_discrete_function;
 }
 
-template <size_t current_factor_index, size_t last_factor_index>
+template <size_t index, size_t N>
 struct static_for_loop
 {
-  template <class DiscreteFunctionType, class FactorDiscreteFunctionType>
-  static void sum_vector(const DiscreteFunctionType& discrete_function,
-                         FactorDiscreteFunctionType& first_discrete_function)
+  template <class DiscreteFunctionType>
+  static typename DiscreteFunctionType::VectorType sum_vectors(const DiscreteFunctionType& discrete_function)
   {
-    first_discrete_function.vector() +=
-        function_factor<current_factor_index, DiscreteFunctionType>(discrete_function).vector();
-    static_for_loop<current_factor_index + 1, last_factor_index>::sum_vector(discrete_function,
-                                                                             first_discrete_function);
+    return static_for_loop<index, N / 2>::sum_vectors(discrete_function)
+           + static_for_loop<index + N / 2, N - N / 2>::sum_vectors(discrete_function);
   }
 
-  template <class DiscreteFunctionType, class FactorDiscreteFunctionType>
-  static void sum_even_vector(const DiscreteFunctionType& discrete_function,
-                              FactorDiscreteFunctionType& first_discrete_function)
+  template <class DiscreteFunctionType>
+  static typename DiscreteFunctionType::VectorType
+  sum_vectors_divisible_by(const DiscreteFunctionType& discrete_function, const size_t divisor)
   {
-    if (!(current_factor_index % 2))
-      first_discrete_function.vector() +=
-          function_factor<current_factor_index, DiscreteFunctionType>(discrete_function).vector();
-    static_for_loop<current_factor_index + 1, last_factor_index>::sum_even_vector(discrete_function,
-                                                                                  first_discrete_function);
-  }
-
-  template <class DiscreteFunctionType, class FactorDiscreteFunctionType>
-  static void sum_with_step_of_four(const DiscreteFunctionType& discrete_function,
-                                    FactorDiscreteFunctionType& first_discrete_function)
-  {
-    if (!(current_factor_index % 4))
-      first_discrete_function.vector() +=
-          function_factor<current_factor_index, DiscreteFunctionType>(discrete_function).vector();
-    static_for_loop<current_factor_index + 1, last_factor_index>::sum_with_step_of_four(discrete_function,
-                                                                                        first_discrete_function);
+    return static_for_loop<index, N / 2>::sum_vectors_divisible_by(discrete_function, divisor)
+           + static_for_loop<index + N / 2, N - N / 2>::sum_vectors_divisible_by(discrete_function, divisor);
   }
 };
 
 // specialization of static for loop to end the loop
-template <size_t last_factor_index>
-struct static_for_loop<last_factor_index, last_factor_index>
+template <size_t index>
+struct static_for_loop<index, 1>
 {
-  template <class DiscreteFunctionType, class FactorDiscreteFunctionType>
-  static void sum_vector(const DiscreteFunctionType& discrete_function,
-                         FactorDiscreteFunctionType& first_discrete_function)
+  template <class DiscreteFunctionType>
+  static typename DiscreteFunctionType::VectorType sum_vectors(const DiscreteFunctionType& discrete_function)
   {
-    first_discrete_function.vector() +=
-        function_factor<last_factor_index, DiscreteFunctionType>(discrete_function).vector();
+    return function_factor<index, DiscreteFunctionType>(discrete_function).vector();
   }
 
-  template <class DiscreteFunctionType, class FactorDiscreteFunctionType>
-  static void sum_even_vector(const DiscreteFunctionType& discrete_function,
-                              FactorDiscreteFunctionType& first_discrete_function)
+  template <class DiscreteFunctionType>
+  static typename DiscreteFunctionType::VectorType
+  sum_vectors_divisible_by(const DiscreteFunctionType& discrete_function, const size_t divisor)
   {
-    if (!(last_factor_index % 2))
-      first_discrete_function.vector() +=
-          function_factor<last_factor_index, DiscreteFunctionType>(discrete_function).vector();
-  }
-
-  template <class DiscreteFunctionType, class FactorDiscreteFunctionType>
-  static void sum_with_step_of_four(const DiscreteFunctionType& discrete_function,
-                                    FactorDiscreteFunctionType& first_discrete_function)
-  {
-    if (!(last_factor_index % 4))
-      first_discrete_function.vector() +=
-          function_factor<last_factor_index, DiscreteFunctionType>(discrete_function).vector();
+    if (!(index % divisor))
+      return function_factor<index, DiscreteFunctionType>(discrete_function).vector();
+    else
+      return typename DiscreteFunctionType::VectorType(
+          discrete_function.space().template factor<index>().mapper().size(), 0.);
   }
 };
-
 
 template <class DiscreteFunctionImp, class TimeFieldImp>
 class TimeStepperInterface
@@ -292,15 +265,15 @@ public:
         u_n.visualize(filename_prefix, Dune::XT::Common::to_string(0));
       } else if (visualize_tag == 1) {
         auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
-        static_for_loop<1, dimRange - 1>::sum_vector(u_n, sum_function);
+        sum_function.vector() = static_for_loop<0, dimRange>::sum_vectors(u_n);
         sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
       } else if (visualize_tag == 2) {
         auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
-        static_for_loop<1, dimRange - 1>::sum_even_vector(u_n, sum_function);
+        sum_function.vector() = static_for_loop<1, dimRange - 1>::sum_vectors_divisible_by(u_n, 2);
         sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
       } else if (visualize_tag == 3) {
         auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
-        static_for_loop<1, dimRange - 1>::sum_with_step_of_four(u_n, sum_function);
+        sum_function.vector() = static_for_loop<1, dimRange - 1>::sum_vectors_divisible_by(u_n, 4);
         sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
       } else if (visualize_tag == 4) {
         auto u_n_copy = u_n;
@@ -333,19 +306,19 @@ public:
           const auto dimRange = DiscreteFunctionType::dimRange;
           const auto& u_n = current_solution();
           if (visualize_tag == 0) {
-            u_n.visualize(filename_prefix, Dune::XT::Common::to_string(save_step_counter));
+            u_n.visualize(filename_prefix, Dune::XT::Common::to_string(0));
           } else if (visualize_tag == 1) {
             auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
-            static_for_loop<1, dimRange - 1>::sum_vector(u_n, sum_function);
-            sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(save_step_counter));
+            sum_function.vector() = static_for_loop<0, dimRange>::sum_vectors(u_n);
+            sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
           } else if (visualize_tag == 2) {
             auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
-            static_for_loop<1, dimRange - 1>::sum_even_vector(u_n, sum_function);
-            sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(save_step_counter));
+            sum_function.vector() = static_for_loop<1, dimRange - 1>::sum_vectors_divisible_by(u_n, 2);
+            sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
           } else if (visualize_tag == 3) {
             auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
-            static_for_loop<1, dimRange - 1>::sum_with_step_of_four(u_n, sum_function);
-            sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(save_step_counter));
+            sum_function.vector() = static_for_loop<1, dimRange - 1>::sum_vectors_divisible_by(u_n, 4);
+            sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
           } else if (visualize_tag == 4) {
             auto u_n_copy = u_n;
             u_n_copy.vector() *= std::sqrt(4 * M_PI);

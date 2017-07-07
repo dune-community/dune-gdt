@@ -181,9 +181,10 @@ public:
     if (use_local_) {
       if (!is_linear_ || !max_derivative_calculated_) {
         DomainType max_derivative(0);
-        const auto eigen_solver_inside = EigenSolverType(*local_flux_inside, x_in_inside_coords, u_i, param_inside_);
+        const auto eigen_solver_inside =
+            EigenSolverType(*local_flux_inside, x_in_inside_coords, u_i, param_inside_, true);
         const auto eigen_solver_outside =
-            EigenSolverType(*local_flux_outside, x_in_outside_coords, u_j, param_outside_);
+            EigenSolverType(*local_flux_outside, x_in_outside_coords, u_j, param_outside_, true);
         const auto& eigenvalues_inside = eigen_solver_inside.eigenvalues();
         const auto& eigenvalues_outside = eigen_solver_outside.eigenvalues();
         for (size_t ii = 0; ii < dimDomain; ++ii)

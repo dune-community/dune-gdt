@@ -83,7 +83,8 @@ public:
                            const XT::Common::Parameter& param,
                            const bool calculate_eigenvectors = false)
     : QrHouseholderEigenSolver(XT::Functions::JacobianRangeTypeConverter<dimRange, dimRange, dimRangeCols>::convert(
-          local_flux_function.partial_u(x_local, u, param)))
+                                   local_flux_function.partial_u(x_local, u, param)),
+                               calculate_eigenvectors)
   {
   }
 

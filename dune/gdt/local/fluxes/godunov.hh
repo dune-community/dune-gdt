@@ -171,7 +171,7 @@ private:
       RangeType u_mean = u_i + u_j;
       u_mean *= RangeFieldType(0.5);
       const auto& local_flux = std::get<0>(local_functions_tuple);
-      const auto eigen_solver = EigenSolverType(*local_flux, x_local, u_mean, param_inside_);
+      const auto eigen_solver = EigenSolverType(*local_flux, x_local, u_mean, param_inside_, true);
       const auto& eigenvalues = eigen_solver.eigenvalues();
       const auto& eigenvectors = eigen_solver.eigenvectors();
       const auto& eigenvectors_inverse = eigen_solver.eigenvectors_inverse();
