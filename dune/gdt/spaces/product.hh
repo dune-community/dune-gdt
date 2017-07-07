@@ -176,7 +176,13 @@ public:
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
-    return base_function_set_helper(entity, typename Dune::XT::Common::create_indices<sizeof...(SpaceImps)>::type());
+    return base_function_set_helper(entity,
+#if __cplusplus >= 201402L
+                                    std::make_index_sequence<sizeof...(SpaceImps)>
+#else
+                                    typename Dune::XT::Common::create_indices<sizeof...(SpaceImps)>::type()
+#endif
+                                    );
   }
 
   CommunicatorType& communicator() const
