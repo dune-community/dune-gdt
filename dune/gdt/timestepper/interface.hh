@@ -16,6 +16,8 @@
 
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/string.hh>
+#include <dune/xt/common/tuple.hh>
+
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/discretefunction/datahandle.hh>
@@ -60,11 +62,11 @@ struct FloatCmpLt
 
 template <size_t ii, class DiscreteFunctionType>
 auto function_factor(const DiscreteFunctionType& discrete_function) -> typename Dune::GDT::DiscreteFunction<
-    typename std::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
+    typename XT::Common::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
     typename DiscreteFunctionType::VectorType>
 {
   typedef typename Dune::GDT::DiscreteFunction<
-      typename std::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
+      typename XT::Common::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
       typename DiscreteFunctionType::VectorType>
       FactorDiscreteFunctionType;
   static_assert(ii < DiscreteFunctionType::SpaceType::num_factors, "This factor does not exist.");
