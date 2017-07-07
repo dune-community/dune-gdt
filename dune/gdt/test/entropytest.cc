@@ -203,27 +203,25 @@ int main(int argc, char** argv)
   //  BasisfunctionType;
   //  typedef typename Hyperbolic::Problems::HatFunctions<double, dimDomain, double, momentOrder> BasisfunctionType;
 
-  static const size_t refinements = 0;
-  typedef
-      typename Hyperbolic::Problems::HatFunctions<double,
-                                                  dimDomain,
-                                                  double,
-                                                  Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(),
-                                                  1,
-                                                  3>
-          BasisfunctionType;
-
-  std::cout << Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices() << std::endl;
-
-  //  static const size_t refinements = 1;
-  //  typedef typename Hyperbolic::Problems::
-  //      PiecewiseMonomials<double,
-  //                         dimDomain,
-  //                         double,
-  //                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces(),
-  //                         1,
-  //                         3>
+  //  static const size_t refinements = 0;
+  //  typedef
+  //      typename Hyperbolic::Problems::HatFunctions<double,
+  //                                                  dimDomain,
+  //                                                  double,
+  //                                                  Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(),
+  //                                                  1,
+  //                                                  3>
   //          BasisfunctionType;
+
+  static const size_t refinements = 0;
+  typedef typename Hyperbolic::Problems::
+      PiecewiseMonomials<double,
+                         dimDomain,
+                         double,
+                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces(),
+                         1,
+                         3>
+          BasisfunctionType;
 
   //  typedef typename Hyperbolic::Problems::
   //      HatFunctions<double, 3, double, Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(), 1, 2>

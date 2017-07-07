@@ -67,7 +67,7 @@ public:
   QrHouseholderEigenSolver(InputMatricesType& matrices_in, bool calculate_eigenvectors = false)
     : calculate_eigenvectors_(calculate_eigenvectors)
   {
-    initialize(matrices_in);
+    initialize(matrices_in, calculate_eigenvectors);
   }
 
   QrHouseholderEigenSolver(MatrixType& matrix_in)
@@ -105,7 +105,7 @@ public:
   }
 
 private:
-  void initialize(const EigenVectorsType& matrices_in)
+  void initialize(const InputMatricesType& matrices_in, const bool calculate_eigenvectors)
   {
     static constexpr size_t max_counts = 10000;
     const FieldType tol = 1e-15;
@@ -176,7 +176,7 @@ private:
       for (size_t rr = 0; rr < rows; ++rr)
         eigenvalues_[ii][rr] = A[rr][rr];
 
-      if (calculate_eigenvectors_) {
+      if (calculate_eigenvectors) {
 
         // form groups of equal eigenvalues
         struct Cmp
@@ -293,7 +293,7 @@ private:
           // orthonormalize eigenvectors in group
           gram_schmidt(ii, group);
         } // groups of eigenvalues
-      } // if (calculate_eigenvectors_)
+      } // if (calculate_eigenvectors)
 
       eigenvectors_inverse_[ii] = eigenvectors_[ii];
       eigenvectors_inverse_[ii].invert();
@@ -487,7 +487,7 @@ private:
   EigenValuesType eigenvalues_;
   EigenVectorsType eigenvectors_;
   EigenVectorsType eigenvectors_inverse_;
-  const bool calculate_eigenvectors_;
+  bool calculate_eigenvectors_;
 }; // class QrHouseholderEigenSolver<...>
 
 #if HAVE_LAPACK
@@ -507,9 +507,8 @@ public:
 
 public:
   LapackEigenSolver(const InputMatricesType& matrices_in, bool calculate_eigenvectors = false)
-    : calculate_eigenvectors_(calculate_eigenvectors)
   {
-    initialize(matrices_in);
+    initialize(matrices_in, calculate_eigenvectors);
   }
 
   LapackEigenSolver(const MatrixType& matrix_in, bool calculate_eigenvectors = false)
@@ -546,7 +545,7 @@ public:
   }
 
 private:
-  void initialize(const EigenVectorsType& matrices_in)
+  void initialize(const InputMatricesType& matrices_in, const bool calculate_eigenvectors)
   {
     for (size_t ii = 0; ii < dimRangeCols; ++ii) {
       int N = int(dimRange);
@@ -566,7 +565,7 @@ private:
           A[cc][rr] = matrices_in[ii][rr][cc];
 
       ::dggev_("N",
-               calculate_eigenvectors_ ? "V" : "N",
+               calculate_eigenvectors ? "V" : "N",
                &N,
                &(A[0][0]),
                &N,
@@ -588,7 +587,7 @@ private:
       std::vector<double> work(lwork);
 
       ::dggev_("N",
-               calculate_eigenvectors_ ? "V" : "N",
+               calculate_eigenvectors ? "V" : "N",
                &N,
                &(A[0][0]),
                &N,
@@ -611,7 +610,7 @@ private:
         eigenvalues_[ii][rr] = alpha_real[rr];
       }
 
-      if (calculate_eigenvectors_) {
+      if (calculate_eigenvectors) {
         // transpose eigenvectors, as lapack uses column-major
         auto vec_copy = eigenvectors_[ii];
         for (size_t rr = 0; rr < dimRange; ++rr)
@@ -627,60 +626,52 @@ private:
   EigenValuesType eigenvalues_;
   EigenVectorsType eigenvectors_;
   EigenVectorsType eigenvectors_inverse_;
-  bool calculate_eigenvectors_;
 }; // class LapackEigenSolver<...>
 
 #endif // HAVE_LAPACK
 
 #if HAVE_EIGEN
 
-template <class LocalFluxFunctionImp, bool selfadjoint = false>
+template <class FieldType, size_t dimRange, size_t dimRangeCols, bool self_adjoint = false>
 class EigenEigenSolver
 {
-  static const size_t dimRange = LocalFluxFunctionImp::dimRange;
-  static const size_t dimRangeCols = LocalFluxFunctionImp::dimRangeCols;
-  typedef typename LocalFluxFunctionImp::FieldType FieldType;
-  typedef typename LocalFluxFunctionImp::DomainType DomainType;
-  typedef typename LocalFluxFunctionImp::StateRangeType StateRangeType;
+
 
 public:
   typedef typename XT::LA::EigenDenseVector<FieldType> VectorType;
   typedef typename XT::LA::EigenDenseMatrix<FieldType> MatrixType;
   typedef FieldVector<FieldVector<FieldType, dimRange>, dimRangeCols> EigenValuesType;
   typedef FieldVector<FieldMatrix<FieldType, dimRange, dimRange>, dimRangeCols> EigenVectorsType;
+  typedef EigenVectorsType InputMatricesType;
 
 private:
   typedef typename MatrixType::BackendType EigenMatrixBackendType;
-  typedef typename std::conditional<selfadjoint,
+  typedef typename std::conditional<self_adjoint,
                                     ::Eigen::SelfAdjointEigenSolver<EigenMatrixBackendType>,
                                     ::Eigen::EigenSolver<EigenMatrixBackendType>>::type EigenSolverType;
 
 public:
-  EigenEigenSolver(const LocalFluxFunctionImp& local_flux_function,
-                   const DomainType& x_local,
-                   const StateRangeType& u,
-                   const XT::Common::Parameter& param)
+  EigenEigenSolver(const InputMatricesType& matrices_in, bool calculate_eigenvectors = false)
   {
-    const auto partial_u = XT::Functions::JacobianRangeTypeConverter<dimRange, dimRange, dimRangeCols>::convert(
-        local_flux_function.partial_u(x_local, u, param));
-    for (size_t ii = 0; ii < dimRangeCols; ++ii) {
-      const auto partial_u_eigen =
-          XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, dimRange>::convert(partial_u[ii]);
-      EigenSolverType eigen_solver(partial_u_eigen.backend());
-      assert(eigen_solver.info() == ::Eigen::Success);
-      const auto& eigenvalues_eigen = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
-      const auto& eigenvectors_eigen = eigen_solver.eigenvectors(); // <- this should be an Eigen vector of std::complex
-      assert(size_t(eigenvalues_eigen.size()) == dimRange);
-      assert(XT::Common::FloatCmp::eq(VectorType(eigenvalues_eigen.imag()), VectorType(dimRange, 0.)));
-      assert(XT::Common::FloatCmp::eq(MatrixType(eigenvectors_eigen.imag()), MatrixType(dimRange, dimRange, 0.)));
-      eigenvalues_[ii] = XT::LA::internal::FieldVectorToLaVector<VectorType, dimRange>::convert_back(
-          VectorType(eigenvalues_eigen.real()));
-      eigenvectors_[ii] = XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, dimRange>::convert_back(
-          MatrixType(eigenvectors_eigen.real()));
-      eigenvectors_inverse_[ii] =
-          XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, dimRange>::convert_back(
-              MatrixType(eigenvectors_eigen.real().inverse()));
-    }
+    initialize(matrices_in, calculate_eigenvectors);
+  }
+
+  EigenEigenSolver(const MatrixType& matrix_in, bool calculate_eigenvectors = false)
+    : EigenEigenSolver(FieldVector<MatrixType, 1>(matrix_in), calculate_eigenvectors)
+  {
+    assert(dimRangeCols == 1);
+  }
+
+  template <class LocalFluxFunctionType>
+  EigenEigenSolver(const LocalFluxFunctionType& local_flux_function,
+                   const typename LocalFluxFunctionType::DomainType& x_local,
+                   const typename LocalFluxFunctionType::StateRangeType& u,
+                   const XT::Common::Parameter& param,
+                   const bool calculate_eigenvectors = false)
+    : EigenEigenSolver(XT::Functions::JacobianRangeTypeConverter<dimRange, dimRange, dimRangeCols>::convert(
+                           local_flux_function.partial_u(x_local, u, param)),
+                       calculate_eigenvectors)
+  {
   }
 
   const EigenValuesType& eigenvalues() const
@@ -699,6 +690,32 @@ public:
   }
 
 private:
+  void initialize(const InputMatricesType& matrices_in, const bool calculate_eigenvectors)
+  {
+    for (size_t ii = 0; ii < dimRangeCols; ++ii) {
+      const auto matrix_ii_eigen =
+          XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, dimRange>::convert(matrices_in[ii]);
+      EigenSolverType eigen_solver(matrix_ii_eigen.backend());
+      assert(eigen_solver.info() == ::Eigen::Success);
+      const auto& eigenvalues_eigen = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
+      assert(size_t(eigenvalues_eigen.size()) == dimRange);
+      assert(XT::Common::FloatCmp::eq(VectorType(eigenvalues_eigen.imag()), VectorType(dimRange, 0.)));
+      eigenvalues_[ii] = XT::LA::internal::FieldVectorToLaVector<VectorType, dimRange>::convert_back(
+          VectorType(eigenvalues_eigen.real()));
+
+      if (calculate_eigenvectors) {
+        const auto& eigenvectors_eigen =
+            eigen_solver.eigenvectors(); // <- this should be an Eigen vector of std::complex
+        assert(XT::Common::FloatCmp::eq(MatrixType(eigenvectors_eigen.imag()), MatrixType(dimRange, dimRange, 0.)));
+        eigenvectors_[ii] = XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, dimRange>::convert_back(
+            MatrixType(eigenvectors_eigen.real()));
+        eigenvectors_inverse_[ii] =
+            XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, dimRange>::convert_back(
+                MatrixType(eigenvectors_eigen.real().inverse()));
+      }
+    }
+  } // void initialize(...)
+
   EigenValuesType eigenvalues_;
   EigenVectorsType eigenvectors_;
   EigenVectorsType eigenvectors_inverse_;
@@ -715,12 +732,14 @@ class EigenEigenSolver
 #endif // HAVE_EIGEN
 
 template <class FieldType, size_t dimRange, size_t dimRangeCols>
-//#if HAVE_EIGEN
-// using DefaultEigenSolver = EigenEigenSolver<LocalFluxFunctionImp>;
-//#else
-// using DefaultEigenSolver = QrHouseholderEigenSolver<LocalFluxFunctionImp>;
-//#endif
+
+#if HAVE_LAPACK
 using DefaultEigenSolver = LapackEigenSolver<FieldType, dimRange, dimRangeCols>;
+#elif HAVE_EIGEN
+using DefaultEigenSolver = EigenEigenSolver<FieldType, dimRange, dimRangeCols>;
+#else
+using DefaultEigenSolver = QrHouseholderEigenSolver<FieldType, dimRange, dimRangeCols>;
+#endif
 
 } // namespace GDT
 } // namespace Dune
