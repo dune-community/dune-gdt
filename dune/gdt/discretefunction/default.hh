@@ -24,7 +24,10 @@
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/ranges.hh>
+#include <dune/xt/common/tuple.hh>
+
 #include <dune/xt/la/container.hh>
+
 #include <dune/xt/functions/interfaces.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
@@ -81,7 +84,7 @@ struct visualize_helper<ii, true>
                                 discrete_function.vector().get_entry(space.mapper().mapToGlobal(ii, entity, jj)));
     }
     ConstDiscreteFunction<
-        typename std::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
+        typename XT::Common::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
         typename DiscreteFunctionType::VectorType>
         factor_discrete_function(factor_space, factor_vector);
     factor_discrete_function.visualize(filename_prefix + "_factor_" + Dune::XT::Common::to_string(ii) + "_"
