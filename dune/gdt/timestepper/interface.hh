@@ -269,11 +269,11 @@ public:
         sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
       } else if (visualize_tag == 2) {
         auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
-        sum_function.vector() = static_for_loop<1, dimRange - 1>::sum_vectors_divisible_by(u_n, 2);
+        sum_function.vector() = static_for_loop<0, dimRange>::sum_vectors_divisible_by(u_n, 2);
         sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
       } else if (visualize_tag == 3) {
         auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
-        sum_function.vector() = static_for_loop<1, dimRange - 1>::sum_vectors_divisible_by(u_n, 4);
+        sum_function.vector() = static_for_loop<0, dimRange>::sum_vectors_divisible_by(u_n, 4);
         sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
       } else if (visualize_tag == 4) {
         auto u_n_copy = u_n;
@@ -313,11 +313,11 @@ public:
             sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(save_step_counter));
           } else if (visualize_tag == 2) {
             auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
-            sum_function.vector() = static_for_loop<1, dimRange - 1>::sum_vectors_divisible_by(u_n, 2);
+            sum_function.vector() = static_for_loop<0, dimRange>::sum_vectors_divisible_by(u_n, 2);
             sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(save_step_counter));
           } else if (visualize_tag == 3) {
             auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
-            sum_function.vector() = static_for_loop<1, dimRange - 1>::sum_vectors_divisible_by(u_n, 4);
+            sum_function.vector() = static_for_loop<0, dimRange>::sum_vectors_divisible_by(u_n, 4);
             sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(save_step_counter));
           } else if (visualize_tag == 4) {
             auto u_n_copy = u_n;

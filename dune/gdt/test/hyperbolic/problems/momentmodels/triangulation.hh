@@ -343,7 +343,6 @@ public:
 
   void refine(size_t times = 1)
   {
-    current_face_index_ = 0;
     faces_ = get_subtriangles(times);
     vertices_ = get_vertices(faces_);
   } // void refine(...)
@@ -378,6 +377,7 @@ private:
   {
     TriangleVectorType subtriangles = faces_;
     while (refinements-- > 0) {
+      current_face_index_ = 0;
       const size_t old_size = subtriangles.size();
       subtriangles.resize(4. * old_size);
       for (size_t ii = 0; ii < old_size; ++ii) {
