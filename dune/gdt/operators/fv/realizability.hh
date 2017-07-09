@@ -266,7 +266,7 @@ private:
 
     /* let us name our variables. Not required, but can be useful for debugging */
     std::vector<char> name;
-    for (size_t ii = 0; ii < size_t(num_cols); ++ii) {
+    for (int ii = 0; ii < num_cols; ++ii) {
       auto name_string = "x" + XT::Common::to_string(ii + 1);
       name.resize(name_string.size());
       std::copy(name_string.begin(), name_string.end(), name.begin());
@@ -289,7 +289,7 @@ private:
     lpsolve::set_rh(lp, 0, column[0]);
     // set columns for quadrature points
     column[0] = 0.;
-    for (size_t ii = 0; ii < M_.size(); ++ii) {
+    for (int ii = 0; ii < int(M_.size()); ++ii) {
       const auto& v_i = M_[ii];
       std::copy(v_i.begin(), v_i.end(), column.begin() + 1);
       column[dimRange + 1] = 1.;
@@ -301,7 +301,7 @@ private:
     column[dimRange + 1] = 0.;
     std::cout << "theta col" << XT::Common::to_string(column, 15) << std::endl;
     lpsolve::set_column(lp, num_cols, column.data());
-    for (size_t ii = 1; ii <= num_rows; ++ii)
+    for (int ii = 1; ii <= num_rows; ++ii)
       lpsolve::set_constr_type(lp, ii, EQ);
 
     // set bounds for all variables. This should not be necessary, as 0 <= x <= inf is

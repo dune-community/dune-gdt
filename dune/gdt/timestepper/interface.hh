@@ -278,7 +278,7 @@ public:
       } else if (visualize_tag == 4) {
         auto u_n_copy = u_n;
         u_n_copy.vector() *= std::sqrt(4 * M_PI);
-        u_n_copy.template visualize_factor<0>(filename_prefix, Dune::XT::Common::to_string(save_step_counter));
+        u_n_copy.template visualize_factor<0>(filename_prefix, Dune::XT::Common::to_string(0));
       }
     }
 
@@ -306,19 +306,19 @@ public:
           const auto dimRange = DiscreteFunctionType::dimRange;
           const auto& u_n = current_solution();
           if (visualize_tag == 0) {
-            u_n.visualize(filename_prefix, Dune::XT::Common::to_string(0));
+            u_n.visualize(filename_prefix, Dune::XT::Common::to_string(save_step_counter));
           } else if (visualize_tag == 1) {
             auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
             sum_function.vector() = static_for_loop<0, dimRange>::sum_vectors(u_n);
-            sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
+            sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(save_step_counter));
           } else if (visualize_tag == 2) {
             auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
             sum_function.vector() = static_for_loop<1, dimRange - 1>::sum_vectors_divisible_by(u_n, 2);
-            sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
+            sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(save_step_counter));
           } else if (visualize_tag == 3) {
             auto sum_function = function_factor<0, DiscreteFunctionType>(u_n);
             sum_function.vector() = static_for_loop<1, dimRange - 1>::sum_vectors_divisible_by(u_n, 4);
-            sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(0));
+            sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(save_step_counter));
           } else if (visualize_tag == 4) {
             auto u_n_copy = u_n;
             u_n_copy.vector() *= std::sqrt(4 * M_PI);

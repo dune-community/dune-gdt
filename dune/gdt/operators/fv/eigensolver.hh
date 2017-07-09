@@ -64,13 +64,13 @@ public:
   typedef EigenVectorsType InputMatricesType;
 
 public:
-  QrHouseholderEigenSolver(InputMatricesType& matrices_in, bool calculate_eigenvectors = false)
+  QrHouseholderEigenSolver(const InputMatricesType& matrices_in, bool calculate_eigenvectors = false)
     : calculate_eigenvectors_(calculate_eigenvectors)
   {
     initialize(matrices_in, calculate_eigenvectors);
   }
 
-  QrHouseholderEigenSolver(MatrixType& matrix_in)
+  QrHouseholderEigenSolver(const MatrixType& matrix_in)
     : QrHouseholderEigenSolver(FieldVector<MatrixType, 1>(matrix_in))
   {
     assert(dimRangeCols == 1);
@@ -224,8 +224,7 @@ private:
                 // check if there is a non-zero entry to the right, if so, we can calculate it now
                 for (int cc = rr + 1; cc < int(cols); ++cc) {
                   if (XT::Common::FloatCmp::ne(matrix[rr][cc], 0.)) {
-                    if (std::abs(rhs[rr] / matrix[rr][cc] > 1000))
-                      x[cc] = rhs[rr] / matrix[rr][cc];
+                    x[cc] = rhs[rr] / matrix[rr][cc];
                     break;
                   }
                 }
@@ -459,7 +458,7 @@ private:
   void hessenberg_transformation(MatrixType& A, MatrixType& P) const
   {
     static_assert(rows == cols, "Hessenberg transformation needs a square matrix!");
-    assert(A.rows() == rows && A.cols() == cols && "A has wrong dimensions!");
+    assert(A.N() == rows && A.M() == cols && "A has wrong dimensions!");
     VectorType u(0.);
     for (size_t jj = 0; jj < rows - 2; ++jj) {
       FieldType gamma = 0;
@@ -733,13 +732,13 @@ class EigenEigenSolver
 
 template <class FieldType, size_t dimRange, size_t dimRangeCols>
 
-#if HAVE_LAPACK
-using DefaultEigenSolver = LapackEigenSolver<FieldType, dimRange, dimRangeCols>;
-#elif HAVE_EIGEN
+//#if HAVE_LAPACK
+// using DefaultEigenSolver = LapackEigenSolver<FieldType, dimRange, dimRangeCols>;
+//#elif HAVE_EIGEN
 using DefaultEigenSolver = EigenEigenSolver<FieldType, dimRange, dimRangeCols>;
-#else
-using DefaultEigenSolver = QrHouseholderEigenSolver<FieldType, dimRange, dimRangeCols>;
-#endif
+//#else
+// using DefaultEigenSolver = QrHouseholderEigenSolver<FieldType, dimRange, dimRangeCols>;
+//#endif
 
 } // namespace GDT
 } // namespace Dune

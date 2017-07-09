@@ -505,7 +505,7 @@ int main(int argc, char** argv)
                   : (rhs_time_stepper_method == TimeStepperMethods::matrix_exponential ? "_matexp" : "_explicit");
 
   timestepper.solve(
-      t_end, dt, num_save_steps, /*save_solution = */ false, /*output_progress = */ true, visualize, filename, 1);
+      t_end, dt, num_save_steps, /*save_solution = */ false, /*output_progress = */ true, visualize, filename, 3);
 
   const auto& sol = timestepper.current_solution();
   std::vector<std::pair<DomainType, RangeFieldType>> values;
@@ -559,7 +559,7 @@ int main(int argc, char** argv)
     const auto local_sol = sol.local_function(*entity);
     const auto val = local_sol->evaluate(entity->geometry().local(point));
     RangeFieldType val_dune(0.);
-    //for (const auto& entry : val) // for hatfunctions
+    // for (const auto& entry : val) // for hatfunctions
     //  val_dune += entry / mass;
     for (size_t kk = 0; kk < dimRange; kk += 4) // for piecewise monomials
       val_dune += val[kk] / mass;
