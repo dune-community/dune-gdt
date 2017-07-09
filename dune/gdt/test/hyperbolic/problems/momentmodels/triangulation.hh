@@ -343,7 +343,7 @@ public:
 
   void refine(size_t times = 1)
   {
-    faces_ = get_subtriangles(times);
+    set_faces_to_subtriangles(times);
     vertices_ = get_vertices(faces_);
   } // void refine(...)
 
@@ -376,18 +376,29 @@ private:
   TriangleVectorType get_subtriangles(size_t refinements = 1) const
   {
     TriangleVectorType subtriangles = faces_;
-    while (refinements-- > 0) {
-      current_face_index_ = 0;
-      const size_t old_size = subtriangles.size();
-      subtriangles.resize(4. * old_size);
-      for (size_t ii = 0; ii < old_size; ++ii) {
-        const auto& local_subtriangles = subtriangles[ii]->subtriangles();
-        for (size_t jj = 0; jj < 4; ++jj)
-          subtriangles[(3 - jj) * old_size + ii] = local_subtriangles[jj];
-      } // faces
-    } // refinements
+    while (refinements-- > 0)
+      get_subtriangles(subtriangles);
     return subtriangles;
   } // ... get_subtriangles(...)
+
+  void get_subtriangles(TriangleVectorType& subtriangles) const
+  {
+    const size_t old_size = subtriangles.size();
+    subtriangles.resize(4. * old_size);
+    for (size_t ii = 0; ii < old_size; ++ii) {
+      const auto& local_subtriangles = subtriangles[ii]->subtriangles();
+      for (size_t jj = 0; jj < 4; ++jj)
+        subtriangles[(3 - jj) * old_size + ii] = local_subtriangles[jj];
+    } // faces
+  }
+
+  void set_faces_to_subtriangles(size_t refinements = 1)
+  {
+    while (refinements-- > 0) {
+      current_face_index_ = 0;
+      get_subtriangles(faces_);
+    }
+  }
 
   void calculate_faces(const std::vector<DomainType>& points0)
   {
@@ -442,7 +453,7 @@ private:
   VertexVectorType vertices_;
   VertexVectorType all_vertices_;
   mutable std::mutex all_vertices_mutex_;
-  mutable std::atomic<size_t> current_face_index_;
+  std::atomic<size_t> current_face_index_;
   std::atomic<size_t> current_vertex_index_;
 }; // class SphericalTriangulation<...>
 

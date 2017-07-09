@@ -482,6 +482,7 @@ int main(int argc, char** argv)
 
   RhsOperatorType rhs_operator(rhs);
 
+#if 0
   std::ofstream pointsfile("points.txt");
   pointsfile << "std::vector<std::array<double, 6>> points = ";
   for (const auto& point : Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40)) {
@@ -492,6 +493,7 @@ int main(int argc, char** argv)
     pointsfile << XT::Common::to_string(pos[pos.size() - 1], 20) << "}, " << std::endl;
   }
   pointsfile.close();
+#endif
 
 
   // ******************************** do the time steps ***********************************************************
