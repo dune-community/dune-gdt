@@ -420,7 +420,7 @@ int main(int argc, char** argv)
   typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
                                          BoundaryValueType,
                                          ConstantFunctionType,
-                                         0,
+                                         1,
                                          SlopeLimiters::minmod,
                                          false,
                                          BasisfunctionType>
@@ -545,8 +545,10 @@ int main(int argc, char** argv)
   for (const auto& entity : elements(grid_layer)) {
     const auto local_sol = sol.local_function(entity);
     const auto val = local_sol->evaluate(entity.geometry().local(entity.geometry().center()));
-    for (const auto& entry : val) // for hatfunctions
-      mass += entry * entity.geometry().volume();
+    // for (const auto& entry : val) // for hatfunctions
+    //  mass += entry * entity.geometry().volume();
+    for (size_t kk = 0; kk < dimRange; kk += 4) // for piecewise monomials
+      mass += val[kk] * entity.geometry().volume();
   }
 
   std::cout << "mass: " << mass << std::endl;
@@ -557,8 +559,10 @@ int main(int argc, char** argv)
     const auto local_sol = sol.local_function(*entity);
     const auto val = local_sol->evaluate(entity->geometry().local(point));
     RangeFieldType val_dune(0.);
-    for (const auto& entry : val) // for hatfunctions
-      val_dune += entry / mass;
+    //for (const auto& entry : val) // for hatfunctions
+    //  val_dune += entry / mass;
+    for (size_t kk = 0; kk < dimRange; kk += 4) // for piecewise monomials
+      val_dune += val[kk] / mass;
     const auto& val_matlab = values_matlab[ii];
     error += std::pow(val_dune - val_matlab, 2) * entity->geometry().volume();
   }
