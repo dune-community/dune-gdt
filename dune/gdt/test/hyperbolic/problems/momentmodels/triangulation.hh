@@ -442,7 +442,7 @@ private:
   VertexVectorType vertices_;
   VertexVectorType all_vertices_;
   mutable std::mutex all_vertices_mutex_;
-  std::atomic<size_t> current_face_index_;
+  mutable std::atomic<size_t> current_face_index_;
   std::atomic<size_t> current_vertex_index_;
 }; // class SphericalTriangulation<...>
 
