@@ -181,7 +181,7 @@ public:
     for (size_t ii = 0; ii < num_regions; ++ii)
       sigma_t[ii] += sigma_s[ii];
     const RangeType basis_integrated = basis_functions_.integrated();
-    const MatrixType M_inv = basis_functions_.mass_matrix_inverse();
+    const auto M_inv = basis_functions_.mass_matrix_inverse();
     RangeType c(0);
     M_inv.mtv(basis_integrated, c);
     MatrixType I(dimRange, dimRange, 0);

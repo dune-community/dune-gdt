@@ -130,7 +130,7 @@ public:
           ActualInitialValueType;
   typedef GlobalLambdaFunctionType ActualBoundaryValueType;
 
-  typedef typename RhsAffineFunctionType::DynamicMatrixType MatrixType;
+  typedef typename Dune::DynamicMatrix<RangeFieldType> MatrixType;
   typedef typename RhsAffineFunctionType::DomainType DomainType;
   typedef typename RhsAffineFunctionType::RangeType RangeType;
 

@@ -639,7 +639,7 @@ public:
   typedef typename XT::LA::EigenDenseVector<FieldType> VectorType;
   typedef typename XT::LA::EigenDenseMatrix<FieldType> MatrixType;
   typedef FieldVector<FieldVector<FieldType, dimRange>, dimRangeCols> EigenValuesType;
-  typedef FieldVector<FieldMatrix<FieldType, dimRange, dimRange>, dimRangeCols> EigenVectorsType;
+  typedef FieldVector<DynamicMatrix<FieldType, dimRange, dimRange>, dimRangeCols> EigenVectorsType;
   typedef EigenVectorsType InputMatricesType;
 
 private:
