@@ -35,7 +35,7 @@ class MatrixExponentialFunctor
 
 public:
   using typename BaseType::EntityType;
-  typedef FieldMatrix<FieldType, dimRange, dimRange> MatrixType;
+  typedef DynamicMatrix<FieldType> MatrixType;
 
   MatrixExponentialFunctor(DiscreteFunctionType& solution,
                            const double t,
@@ -114,7 +114,7 @@ public:
   typedef typename OperatorType::RhsEvaluationType EvaluationType;
   static const size_t dimDomain = DiscreteFunctionType::dimDomain;
   static const size_t dimRange = DiscreteFunctionType::dimRange;
-  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+  typedef DynamicMatrix<RangeFieldType> MatrixType;
 
   typedef typename XT::Functions::AffineFluxFunction<typename DiscreteFunctionType::EntityType,
                                                      DomainFieldType,

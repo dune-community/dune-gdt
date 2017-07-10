@@ -499,7 +499,7 @@ class LapackEigenSolver
   static const size_t cols = dimRange;
 
 public:
-  typedef FieldMatrix<FieldType, dimRange, dimRange> MatrixType;
+  typedef DynamicMatrix<FieldType> MatrixType;
   typedef FieldVector<FieldType, dimRange> VectorType;
   typedef FieldVector<VectorType, dimRangeCols> EigenValuesType;
   typedef FieldVector<MatrixType, dimRangeCols> EigenVectorsType;
@@ -554,12 +554,12 @@ private:
       int lwork = -1; // Request optimum work size.
       int info = 0;
 
-      FieldMatrix<FieldType, dimRange, dimRange> I(0.);
+      DynamicMatrix<FieldType> I(dimRange, dimRange, 0.);
       for (size_t rr = 0; rr < dimRange; ++rr)
         I[rr][rr] = 1.;
 
       // lapack uses column-major representation, so transpose first
-      MatrixType A;
+      MatrixType A(dimRange, dimRange);
       for (size_t rr = 0; rr < dimRange; ++rr)
         for (size_t cc = 0; cc < dimRange; ++cc)
           A[cc][rr] = matrices_in[ii][rr][cc];

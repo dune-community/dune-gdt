@@ -230,7 +230,7 @@ public:
   }
 
   size_t mapToLocal(const size_t factor_index,
-                    const EntityType& entity,
+                    const EntityType& DXTC_DEBUG_ONLY(entity),
                     const size_t& DXTC_DEBUG_ONLY(local_index_in_factor)) const
   {
     assert(local_index_in_factor == 0);

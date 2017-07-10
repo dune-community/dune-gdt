@@ -184,10 +184,10 @@ public:
     const MatrixType M_inv = basis_functions_.mass_matrix_inverse();
     RangeType c(0);
     M_inv.mtv(basis_integrated, c);
-    MatrixType I(0);
+    MatrixType I(dimRange, dimRange, 0);
     for (size_t rr = 0; rr < dimRange; ++rr)
       I[rr][rr] = 1;
-    MatrixType G(0);
+    MatrixType G(dimRange, dimRange, 0);
     for (size_t rr = 0; rr < dimRange; ++rr)
       for (size_t cc = 0; cc < dimRange; ++cc)
         G[rr][cc] = basis_integrated[rr] * c[cc];
