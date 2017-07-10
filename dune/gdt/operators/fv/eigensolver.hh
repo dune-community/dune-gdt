@@ -148,7 +148,7 @@ private:
             for (size_t cc = num_cols; cc < cols; ++cc) {
               A[rr][cc] = 0.;
               for (size_t ll = 0; ll < num_rows; ++ll)
-                A[rr][cc] = Q_k[ll][rr] * A_copy[ll][cc];
+                A[rr][cc] += Q_k[ll][rr] * A_copy[ll][cc];
             } // cc
           } // rr
 
@@ -161,7 +161,7 @@ private:
             for (size_t cc = 0; cc < num_cols; ++cc) {
               Q[rr][cc] = 0.;
               for (size_t ll = 0; ll < num_rows; ++ll)
-                Q[rr][cc] = Q_copy[rr][ll] * Q_k[ll][cc];
+                Q[rr][cc] += Q_copy[rr][ll] * Q_k[ll][cc];
             } // cc
           } // rr
           ++kk;
@@ -293,6 +293,7 @@ private:
           gram_schmidt(ii, group);
         } // groups of eigenvalues
       } // if (calculate_eigenvectors)
+
 
       eigenvectors_inverse_[ii] = eigenvectors_[ii];
       eigenvectors_inverse_[ii].invert();
@@ -634,8 +635,6 @@ private:
 template <class FieldType, size_t dimRange, size_t dimRangeCols, bool self_adjoint = false>
 class EigenEigenSolver
 {
-
-
 public:
   typedef typename XT::LA::EigenDenseVector<FieldType> VectorType;
   typedef typename XT::LA::EigenDenseMatrix<FieldType> MatrixType;
@@ -731,14 +730,13 @@ class EigenEigenSolver
 #endif // HAVE_EIGEN
 
 template <class FieldType, size_t dimRange, size_t dimRangeCols>
-
-//#if HAVE_LAPACK
-// using DefaultEigenSolver = LapackEigenSolver<FieldType, dimRange, dimRangeCols>;
-//#elif HAVE_EIGEN
+#if HAVE_LAPACK
+using DefaultEigenSolver = LapackEigenSolver<FieldType, dimRange, dimRangeCols>;
+#elif HAVE_EIGEN
 using DefaultEigenSolver = EigenEigenSolver<FieldType, dimRange, dimRangeCols>;
-//#else
-// using DefaultEigenSolver = QrHouseholderEigenSolver<FieldType, dimRange, dimRangeCols>;
-//#endif
+#else
+using DefaultEigenSolver = QrHouseholderEigenSolver<FieldType, dimRange, dimRangeCols>;
+#endif
 
 } // namespace GDT
 } // namespace Dune

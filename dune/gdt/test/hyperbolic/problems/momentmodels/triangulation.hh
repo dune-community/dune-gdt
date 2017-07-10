@@ -141,9 +141,25 @@ public:
     return index_;
   }
 
+  void set_child_with(const std::shared_ptr<Vertex>& parent, std::shared_ptr<Vertex>& child)
+  {
+    children_.insert({parent->index(), child});
+  }
+
+  bool has_child_with(const std::shared_ptr<Vertex>& parent)
+  {
+    return children_.count(parent->index());
+  }
+
+  const std::shared_ptr<Vertex>& child(const std::shared_ptr<Vertex>& parent)
+  {
+    return children_[parent->index()];
+  }
+
 private:
   DomainType position_;
   size_t index_;
+  std::map<size_t, std::shared_ptr<Vertex>> children_;
 }; // class Vertex
 
 template <class RangeFieldImp = double>
@@ -173,7 +189,7 @@ public:
     , current_face_index_(current_face_index)
     , current_vertex_index_(current_vertex_index)
     , triangulation_vertices_mutex_(triangulation_vertices_mutex)
-    , index_(current_face_index_++)
+    , index_((*current_face_index_)++)
     , subtriangle_once_flag_(new std::once_flag)
   {
     calculate_barycentre_rule();
@@ -230,22 +246,20 @@ private:
     std::lock_guard<std::mutex> vertices_lock(*triangulation_vertices_mutex_);
     VertexVectorType midpoints;
     for (size_t ii = 0; ii < 3; ++ii) {
-      auto midpoint_position = vertices_[ii]->position() + vertices_[(1 + ii) % 3]->position();
+      auto& vertex1 = vertices_[ii];
+      auto& vertex2 = vertices_[(1 + ii) % 3];
+      auto midpoint_position = vertex1->position() + vertex2->position();
       midpoint_position /= midpoint_position.two_norm();
-      const auto midpoint_iterator =
-          std::find_if(triangulation_vertices_.begin(),
-                       triangulation_vertices_.end(),
-                       [&](const std::shared_ptr<VertexType>& vertex) {
-                         return XT::Common::FloatCmp::eq(vertex->position(), midpoint_position);
-                       });
-      if (midpoint_iterator != triangulation_vertices_.end()) {
-        midpoints[ii] = *midpoint_iterator;
+      if (vertex1->has_child_with(vertex2)) {
+        midpoints[ii] = vertex1->child(vertex2);
       } else {
         triangulation_vertices_.emplace_back(
             std::make_shared<VertexType>(midpoint_position, (*current_vertex_index_)++));
+        vertex1->set_child_with(vertex2, triangulation_vertices_.back());
+        vertex2->set_child_with(vertex1, triangulation_vertices_.back());
         midpoints[ii] = triangulation_vertices_.back();
       }
-    }
+    } // ii
     subtriangles_[0] = std::make_shared<ThisType>(triangulation_vertices_,
                                                   vertices_[0],
                                                   midpoints[0],
@@ -341,12 +355,6 @@ public:
     return vertices_;
   }
 
-  void refine(size_t times = 1)
-  {
-    set_faces_to_subtriangles(times);
-    vertices_ = get_vertices(faces_);
-  } // void refine(...)
-
   // 3D quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
   Dune::QuadratureRule<RangeFieldImp, 3> quadrature_rule(size_t refinements = 0) const
   {
@@ -358,20 +366,11 @@ public:
   }
 
 private:
-  static VertexVectorType get_vertices(const TriangleVectorType& faces)
+  void refine(size_t times = 1)
   {
-    VertexVectorType vertices;
-    for (const auto& face : faces) {
-      for (const auto& face_vertex : face->vertices()) {
-        const auto it = std::find_if(vertices.begin(), vertices.end(), [&](const std::shared_ptr<VertexType>& vertex) {
-          return XT::Common::FloatCmp::eq(vertex->position(), face_vertex->position());
-        });
-        if (it == vertices.end())
-          vertices.emplace_back(face_vertex);
-      }
-    }
-    return vertices;
-  }
+    set_faces_to_subtriangles(times);
+    vertices_ = all_vertices_;
+  } // void refine(...)
 
   TriangleVectorType get_subtriangles(size_t refinements = 1) const
   {
@@ -389,7 +388,7 @@ private:
       const auto& local_subtriangles = subtriangles[ii]->subtriangles();
       for (size_t jj = 0; jj < 4; ++jj)
         subtriangles[(3 - jj) * old_size + ii] = local_subtriangles[jj];
-    } // faces
+    }
   }
 
   void set_faces_to_subtriangles(size_t refinements = 1)

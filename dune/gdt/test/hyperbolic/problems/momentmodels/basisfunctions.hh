@@ -95,7 +95,7 @@ class BasisfunctionsInterface
 {
 public:
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
-  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+  typedef DynamicMatrix<RangeFieldType> MatrixType;
   typedef typename XT::Functions::RangeTypeSelector<RangeFieldType, dimRange, dimRangeCols>::type RangeType;
 
   virtual ~BasisfunctionsInterface(){};
@@ -1224,7 +1224,7 @@ public:
 
   virtual MatrixType mass_matrix() const override
   {
-    MatrixType M(0);
+    MatrixType M(dimRange, dimRange, 0.);
     for (const auto& quad_point : quadrature_) {
       const auto basis_evaluated = evaluate(quad_point.position());
       for (size_t nn = 0; nn < dimRange; ++nn)
@@ -1243,7 +1243,7 @@ public:
 
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const override
   {
-    FieldVector<MatrixType, dimFlux> B(MatrixType(0));
+    FieldVector<MatrixType, dimFlux> B(MatrixType(dimRange, dimRange, 0));
     for (const auto& quad_point : quadrature_) {
       const auto& v = quad_point.position();
       const auto basis_evaluated = evaluate(v);

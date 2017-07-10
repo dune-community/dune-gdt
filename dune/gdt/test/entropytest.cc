@@ -213,7 +213,7 @@ int main(int argc, char** argv)
   //                                                  3>
   //          BasisfunctionType;
 
-  static const size_t refinements = 0;
+  static const size_t refinements = 2;
   typedef typename Hyperbolic::Problems::
       PiecewiseMonomials<double,
                          dimDomain,
@@ -240,8 +240,7 @@ int main(int argc, char** argv)
   //          BasisfunctionType;
 
   //  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>();
-  std::shared_ptr<const BasisfunctionType> basis_functions =
-      std::make_shared<const BasisfunctionType>(refinements, refinements + 4);
+  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>(refinements, 4);
   static const size_t dimRange = BasisfunctionType::dimRange;
   static constexpr auto container_backend = Dune::XT::LA::default_sparse_backend;
   typedef FvProductSpace<GridLayerType, double, dimRange, 1> SpaceType;
@@ -357,16 +356,16 @@ int main(int argc, char** argv)
   const auto grid_ptr = Dune::XT::Grid::CubeGridProviderFactory<GridType>::create(grid_config).grid_ptr();
   const auto& grid = *grid_ptr;
   assert(grid.comm().size() == 1 || grid.overlapSize(0) > 0);
-  const GridLayerType& grid_layer = grid_ptr->leafGridView();
+  const GridLayerType grid_layer = grid_ptr->leafGridView();
   const SpaceType fv_space(grid_layer);
 
   const auto quadrature = Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40);
   //  const auto quadrature = ProblemImp::default_quadrature(grid_config);
 
   //******************* create ProblemType object ***************************************
-  const ProblemImp problem_imp(*basis_functions, grid_layer, quadrature, grid_config);
+  //  const ProblemImp problem_imp(*basis_functions, grid_layer, quadrature, grid_config);
   //  const ProblemImp problem_imp(basis_functions, grid_layer, grid_config);
-  //  const ProblemImp problem_imp(*basis_functions, basis_functions->quadrature(), grid_layer, grid_config);
+  const ProblemImp problem_imp(*basis_functions, grid_layer, basis_functions->quadrature(), grid_config);
   //  const ProblemImp problem_imp(
   //      basis_functions, Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(1000), grid_layer);
 
