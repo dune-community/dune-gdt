@@ -96,7 +96,7 @@ struct visualize_helper<ii, true>
 
 // discrete_exact_solution_ time for loop to visualize all factors of a product space, see
 // http://stackoverflow.com/a/11081785
-template <size_t current_factor_index, size_t last_factor_index>
+template <size_t index, size_t N>
 struct static_for_loop
 {
   template <class DiscreteFunctionType>
@@ -106,19 +106,34 @@ struct static_for_loop
                         const VTK::OutputType vtk_output_type,
                         const DiscreteFunctionType& discrete_function)
   {
-    visualize_helper<current_factor_index, true>::visualize_factor(
+    static_for_loop<index, N / 2>::visualize(
         filename_prefix, filename_suffix, subsampling, vtk_output_type, discrete_function);
-    static_for_loop<current_factor_index + 1, last_factor_index>::visualize(
+    static_for_loop<index + N / 2, N - N / 2>::visualize(
         filename_prefix, filename_suffix, subsampling, vtk_output_type, discrete_function);
   }
 };
 
 // specialization of static for loop to end the loop
-template <size_t last_factor_index>
-struct static_for_loop<last_factor_index, last_factor_index>
+template <size_t index>
+struct static_for_loop<index, 1>
 {
   template <class DiscreteFunctionType>
-  static void visualize(const std::string /*filename*/,
+  static void visualize(const std::string filename_prefix,
+                        const std::string filename_suffix,
+                        const bool subsampling,
+                        const VTK::OutputType vtk_output_type,
+                        const DiscreteFunctionType& discrete_function)
+  {
+    visualize_helper<index, true>::visualize_factor(
+        filename_prefix, filename_suffix, subsampling, vtk_output_type, discrete_function);
+  }
+};
+
+template <size_t index>
+struct static_for_loop<index, 0>
+{
+  template <class DiscreteFunctionType>
+  static void visualize(const std::string /*filename_prefix*/,
                         const std::string /*filename_suffix*/,
                         const bool /*subsampling*/,
                         const VTK::OutputType /*vtk_output_type*/,
