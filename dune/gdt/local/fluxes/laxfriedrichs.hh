@@ -152,11 +152,11 @@ public:
                  "This class uses several static variables to save its state between time "
                  "steps, so using several instances at the same time may result in undefined "
                  "behavior!");
-    is_instantiated_ = true;
     if ((!is_linear_ && !jacobian_inside_) || (is_linear_ && !max_derivative_calculated_)) {
       jacobian_inside_ = XT::Common::make_unique<JacobianRangeType>();
       jacobian_outside_ = XT::Common::make_unique<JacobianRangeType>();
     }
+    is_instantiated_ = true;
   }
 
   ~LaxFriedrichsFluxImplementation()

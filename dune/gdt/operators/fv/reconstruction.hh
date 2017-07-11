@@ -85,6 +85,8 @@ public:
                  "steps, so using several instances at the same time may result in undefined "
                  "behavior!");
     param_.set("boundary", {0.});
+    if ((!is_linear_ && !jacobian_) || (is_linear_ && !eigensolver_))
+      jacobian_ = XT::Common::make_unique<JacobianRangeType>();
     is_instantiated_ = true;
   }
 
@@ -117,8 +119,10 @@ public:
     const auto flux_local_func = analytical_flux_.local_function(entity);
     if (!is_linear_ || !eigensolver_) {
       helper<dimDomain>::get_jacobian(
-          flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, jacobian_, param_);
-      eigensolver_ = XT::Common::make_unique<EigenSolverType>(jacobian_, true);
+          flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, *jacobian_, param_);
+      eigensolver_ = XT::Common::make_unique<EigenSolverType>(*jacobian_, true);
+      if (is_linear_)
+        jacobian_ = nullptr;
     }
     const auto& eigenvectors = eigensolver_->eigenvectors();
     const auto& eigenvectors_inverse = eigensolver_->eigenvectors_inverse();
@@ -474,7 +478,7 @@ private:
   const QuadratureType quadrature_;
   std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values_;
   static thread_local std::unique_ptr<EigenSolverType> eigensolver_;
-  static thread_local JacobianRangeType jacobian_;
+  static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
   static bool is_instantiated_;
 }; // class LocalReconstructionFvOperator
 
@@ -510,13 +514,18 @@ template <class GridLayerType,
           size_t polOrder,
           SlopeLimiters slope_limiter,
           class EigenSolverType>
-bool LocalReconstructionFvOperator<GridLayerType,
-                                   AnalyticalFluxType,
-                                   BoundaryValueType,
-                                   polOrder,
-                                   slope_limiter,
-                                   EigenSolverType>::is_instantiated_(false);
-
+thread_local std::unique_ptr<typename LocalReconstructionFvOperator<GridLayerType,
+                                                                    AnalyticalFluxType,
+                                                                    BoundaryValueType,
+                                                                    polOrder,
+                                                                    slope_limiter,
+                                                                    EigenSolverType>::JacobianRangeType>
+    LocalReconstructionFvOperator<GridLayerType,
+                                  AnalyticalFluxType,
+                                  BoundaryValueType,
+                                  polOrder,
+                                  slope_limiter,
+                                  EigenSolverType>::jacobian_;
 
 template <class GridLayerType,
           class AnalyticalFluxType,
@@ -524,18 +533,12 @@ template <class GridLayerType,
           size_t polOrder,
           SlopeLimiters slope_limiter,
           class EigenSolverType>
-thread_local typename LocalReconstructionFvOperator<GridLayerType,
-                                                    AnalyticalFluxType,
-                                                    BoundaryValueType,
-                                                    polOrder,
-                                                    slope_limiter,
-                                                    EigenSolverType>::JacobianRangeType
-    LocalReconstructionFvOperator<GridLayerType,
-                                  AnalyticalFluxType,
-                                  BoundaryValueType,
-                                  polOrder,
-                                  slope_limiter,
-                                  EigenSolverType>::jacobian_;
+bool LocalReconstructionFvOperator<GridLayerType,
+                                   AnalyticalFluxType,
+                                   BoundaryValueType,
+                                   polOrder,
+                                   slope_limiter,
+                                   EigenSolverType>::is_instantiated_(false);
 
 
 } // namespace GDT
