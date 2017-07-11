@@ -38,9 +38,9 @@ namespace Problems {
 
 // see https://en.wikipedia.org/wiki/Tridiagonal_matrix#Inversion
 template <class FieldType, int rows>
-Dune::FieldMatrix<FieldType, rows, rows> tridiagonal_matrix_inverse(const FieldMatrix<FieldType, rows, rows>& matrix)
+Dune::DynamicMatrix<FieldType> tridiagonal_matrix_inverse(const DynamicMatrix<FieldType>& matrix)
 {
-  typedef Dune::FieldMatrix<FieldType, rows, rows> MatrixType;
+  typedef Dune::DynamicMatrix<FieldType> MatrixType;
   size_t cols = rows;
 #ifndef NDEBUG
   for (size_t rr = 0; rr < rows; ++rr)
@@ -48,7 +48,7 @@ Dune::FieldMatrix<FieldType, rows, rows> tridiagonal_matrix_inverse(const FieldM
       if ((cc > rr + 1 || cc + 1 < rr) && XT::Common::FloatCmp::ne(matrix[rr][cc], 0.))
         DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong, "Matrix has to be tridiagonal!");
 #endif // NDEBUG
-  MatrixType ret(0);
+  MatrixType ret(rows, rows, 0);
   Dune::FieldVector<FieldType, rows + 1> a(0), b(0), c(0), theta(0);
   Dune::FieldVector<FieldType, rows + 2> phi(0);
   for (size_t ii = 1; ii < rows + 1; ++ii) {
@@ -312,9 +312,9 @@ private:
     MatrixType Bx(0);
     const auto& pos = helper<only_positive>::pos;
     for (size_t l1 = 0; l1 <= order; ++l1) {
-      for (int m1 = only_positive ? 0 : -l1; std::abs(m1) <= l1; ++m1) {
+      for (int m1 = only_positive ? 0 : -l1; size_t(std::abs(m1)) <= l1; ++m1) {
         for (size_t l2 = 0; l2 <= order; ++l2) {
-          for (int m2 = only_positive ? 0 : -l2; std::abs(m2) <= l2; ++m2) {
+          for (int m2 = only_positive ? 0 : -l2; size_t(std::abs(m2)) <= l2; ++m2) {
             if (l1 == l2 + 1 && m1 == m2 + 1)
               Bx[pos(l1, m1)][pos(l2, m2)] = -0.5 * B_lm(l2 + 1, m2 + 1);
             if (l1 == l2 - 1 && m1 == m2 + 1)
@@ -335,9 +335,9 @@ private:
     MatrixType By(0);
     const auto& pos = helper<only_positive>::pos;
     for (size_t l1 = 0; l1 <= order; ++l1) {
-      for (int m1 = only_positive ? 0 : -l1; std::abs(m1) <= l1; ++m1) {
+      for (int m1 = only_positive ? 0 : -l1; size_t(std::abs(m1)) <= l1; ++m1) {
         for (size_t l2 = 0; l2 <= order; ++l2) {
-          for (int m2 = only_positive ? 0 : -l2; std::abs(m2) <= l2; ++m2) {
+          for (int m2 = only_positive ? 0 : -l2; size_t(std::abs(m2)) <= l2; ++m2) {
             if (l1 == l2 + 1 && m1 == m2 + 1)
               By[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::complex<RangeFieldType>(0, 1) * B_lm(l2 + 1, m2 + 1);
             if (l1 == l2 - 1 && m1 == m2 + 1)
@@ -358,9 +358,9 @@ private:
     MatrixType Bz(0);
     const auto& pos = helper<only_positive>::pos;
     for (size_t l1 = 0; l1 <= order; ++l1) {
-      for (int m1 = only_positive ? 0 : -l1; std::abs(m1) <= l1; ++m1) {
+      for (int m1 = only_positive ? 0 : -l1; size_t(std::abs(m1)) <= l1; ++m1) {
         for (size_t l2 = 0; l2 <= order; ++l2) {
-          for (int m2 = only_positive ? 0 : -l2; std::abs(m2) <= l2; ++m2) {
+          for (int m2 = only_positive ? 0 : -l2; size_t(std::abs(m2)) <= l2; ++m2) {
             if (m1 == m2 && l1 == l2 + 1)
               Bz[pos(l1, m1)][pos(l2, m2)] = A_lm(l2 + 1, m2);
             if (m1 == m2 && l1 == l2 - 1)
@@ -503,9 +503,9 @@ private:
     MatrixType Bx(0);
     const auto& pos = helper<only_even>::pos;
     for (size_t l1 = 0; l1 <= order; ++l1) {
-      for (int m1 = -l1; size_t(std::abs(m1)) <= l1; ++m1) {
+      for (int m1 = -int(l1); size_t(std::abs(m1)) <= l1; ++m1) {
         for (size_t l2 = 0; l2 <= order; ++l2) {
-          for (int m2 = -l2; size_t(std::abs(m2)) <= l2; ++m2) {
+          for (int m2 = -int(l2); size_t(std::abs(m2)) <= l2; ++m2) {
             if (!only_even || (!((m1 + l1) % 2) && !((m2 + l2) % 2))) {
               if (l1 == l2 - 1 && m1 == m2 - 1 && m2 > 0)
                 Bx[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::sqrt(1. + (m2 == 1)) * B_lm(l2, m2);
@@ -540,9 +540,9 @@ private:
     MatrixType By(0);
     const auto& pos = helper<only_even>::pos;
     for (size_t l1 = 0; l1 <= order; ++l1) {
-      for (int m1 = -l1; size_t(std::abs(m1)) <= l1; ++m1) {
+      for (int m1 = -int(l1); size_t(std::abs(m1)) <= l1; ++m1) {
         for (size_t l2 = 0; l2 <= order; ++l2) {
-          for (int m2 = -l2; size_t(std::abs(m2)) <= l2; ++m2) {
+          for (int m2 = -int(l2); size_t(std::abs(m2)) <= l2; ++m2) {
             if (!only_even || (!((m1 + l1) % 2) && !((m2 + l2) % 2))) {
               if (l1 == l2 + 1 && m1 == -m2 + 1 && m2 > 0)
                 By[pos(l1, m1)][pos(l2, m2)] = 0.5 * (1. - (m2 == 1)) * B_lm(l2 + 2, -m2 + 1);
@@ -577,9 +577,9 @@ private:
     MatrixType Bz(0);
     const auto& pos = helper<only_even>::pos;
     for (size_t l1 = 0; l1 <= order; ++l1) {
-      for (int m1 = -l1; size_t(std::abs(m1)) <= l1; ++m1) {
+      for (int m1 = -int(l1); size_t(std::abs(m1)) <= l1; ++m1) {
         for (size_t l2 = 0; l2 <= order; ++l2) {
-          for (int m2 = -l2; size_t(std::abs(m2)) <= l2; ++m2) {
+          for (int m2 = -int(l2); size_t(std::abs(m2)) <= l2; ++m2) {
             if (!only_even || (!((m1 + l1) % 2) && !((m2 + l2) % 2))) {
               if (m1 == m2 && l1 == l2 + 1)
                 Bz[pos(l1, m1)][pos(l2, m2)] = A_lm(l2 + 1, m2);
@@ -716,7 +716,7 @@ public:
 
   virtual MatrixType mass_matrix_inverse() const override
   {
-    return tridiagonal_matrix_inverse(mass_matrix());
+    return tridiagonal_matrix_inverse<RangeFieldType, dimRange>(mass_matrix());
   }
 
   // returns matrix with entries <v h_i h_j>
@@ -1087,7 +1087,7 @@ public:
 
   virtual MatrixType mass_matrix_inverse() const override
   {
-    return tridiagonal_matrix_inverse(mass_matrix());
+    return tridiagonal_matrix_inverse<RangeFieldType, dimRange>(mass_matrix());
   }
 
   // returns matrix with entries <v h_i h_j>

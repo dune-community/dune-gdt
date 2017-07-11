@@ -470,10 +470,10 @@ public:
     const auto functionValue = localFunction.evaluate(localPointEntity);
     // evaluate bases
     const size_t rows = testBase.size();
-    const size_t cols = ansatzBase.size();
     // compute product
+    assert(testBase.size() == ansatzBase.size() && "Only implemented for the same testBase and ansatzBase!");
     assert(ret.rows() >= rows);
-    assert(ret.cols() >= cols);
+    assert(ret.cols() >= rows);
     for (size_t ii = 0; ii < rows; ++ii)
       ret[ii][ii] = functionValue;
   } // ... evaluate(...)

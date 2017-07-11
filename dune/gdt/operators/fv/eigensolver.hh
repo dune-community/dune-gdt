@@ -60,34 +60,15 @@ public:
   typedef FieldMatrix<FieldType, dimRange, dimRange> MatrixType;
   typedef FieldVector<FieldType, dimRange> VectorType;
   typedef FieldVector<VectorType, dimRangeCols> EigenValuesType;
-  typedef FieldVector<MatrixType, dimRangeCols> EigenVectorsType;
-  typedef EigenVectorsType InputMatricesType;
+  typedef FieldVector<std::shared_ptr<MatrixType>, dimRangeCols> EigenVectorsType;
+  typedef FieldVector<MatrixType, dimRangeCols> InputMatricesType;
 
 public:
-  QrHouseholderEigenSolver(const InputMatricesType& matrices_in, bool calculate_eigenvectors = false)
+  QrHouseholderEigenSolver(InputMatricesType& matrices_in, bool calculate_eigenvectors = false)
     : calculate_eigenvectors_(calculate_eigenvectors)
   {
     initialize(matrices_in, calculate_eigenvectors);
   }
-
-  QrHouseholderEigenSolver(const MatrixType& matrix_in)
-    : QrHouseholderEigenSolver(FieldVector<MatrixType, 1>(matrix_in))
-  {
-    assert(dimRangeCols == 1);
-  }
-
-  template <class LocalFluxFunctionType>
-  QrHouseholderEigenSolver(const LocalFluxFunctionType& local_flux_function,
-                           const typename LocalFluxFunctionType::DomainType& x_local,
-                           const typename LocalFluxFunctionType::StateRangeType& u,
-                           const XT::Common::Parameter& param,
-                           const bool calculate_eigenvectors = false)
-    : QrHouseholderEigenSolver(XT::Functions::JacobianRangeTypeConverter<dimRange, dimRange, dimRangeCols>::convert(
-                                   local_flux_function.partial_u(x_local, u, param)),
-                               calculate_eigenvectors)
-  {
-  }
-
 
   const EigenValuesType& eigenvalues() const
   {
@@ -105,16 +86,18 @@ public:
   }
 
 private:
-  void initialize(const InputMatricesType& matrices_in, const bool calculate_eigenvectors)
+  void initialize(InputMatricesType& matrices_in, const bool calculate_eigenvectors)
   {
     static constexpr size_t max_counts = 10000;
     const FieldType tol = 1e-15;
+    auto R_k = XT::Common::make_unique<MatrixType>(0.);
+    auto Q_k = XT::Common::make_unique<MatrixType>(0.);
+    auto Q = XT::Common::make_unique<MatrixType>(0.);
     for (size_t ii = 0; ii < dimRangeCols; ++ii) {
-      MatrixType R_k(0), Q_k(0), Q(0), Q_copy(0);
-      for (size_t rr = 0; rr < rows; ++rr)
-        Q[rr][rr] = 1.;
-      auto A = matrices_in[ii];
-      hessenberg_transformation(A, Q);
+      eigenvectors_[ii] = std::move(XT::Common::make_unique<MatrixType>());
+      eigenvectors_inverse_[ii] = std::move(XT::Common::make_unique<MatrixType>());
+      auto& A = matrices_in[ii];
+      hessenberg_transformation(A, *Q);
       for (size_t jj = rows - 1; jj > 0; --jj) {
         size_t num_rows = jj + 1;
         size_t num_cols = num_rows;
@@ -129,7 +112,7 @@ private:
           // calculate QR decomp. If jj < rows-1, A has the form [A1 A2; 0 A3],
           // so we are only calculating the QR decomposition Q1*R1 of A1.
           // Then Q = [Q1 0; 0 I], R = [R1 Q1^T*A2; 0 A3] is a QR decomp. of A.
-          QR_decomp(A, Q_k, R_k, num_rows, num_cols);
+          QR_decomp(A, *Q_k, *R_k, num_rows, num_cols);
 
           // calculate A_{k+1} = R_k Q_k + sigma I. We are only interested in the diagonal
           // elements of A, and we do not reuse the other parts of A, so we are only
@@ -142,13 +125,15 @@ private:
             } // cc
           } // rr
 
-          auto A_copy = A;
+          // we do not need R_k anymore in this step, so use it as temporary storage
+          auto& A_copy = *R_k;
+          A_copy = A;
           // update upper right part
           for (size_t rr = 0; rr < num_rows; ++rr) {
             for (size_t cc = num_cols; cc < cols; ++cc) {
               A[rr][cc] = 0.;
               for (size_t ll = 0; ll < num_rows; ++ll)
-                A[rr][cc] += Q_k[ll][rr] * A_copy[ll][cc];
+                A[rr][cc] += (*Q_k)[ll][rr] * A_copy[ll][cc];
             } // cc
           } // rr
 
@@ -156,12 +141,13 @@ private:
             A[rr][rr] += sigma;
           // calculate Q = Q * Q_k. As Q_k = (Q_k' 0; 0 I) (see above), if Q = (Q1 Q2; Q3 Q4)
           // we need to calculate Q = (Q1*Q_k Q2; Q3*Q_k Q_4)
-          Q_copy = Q;
+          auto& Q_copy = *R_k;
+          Q_copy = *Q;
           for (size_t rr = 0; rr < rows; ++rr) {
             for (size_t cc = 0; cc < num_cols; ++cc) {
-              Q[rr][cc] = 0.;
+              (*Q)[rr][cc] = 0.;
               for (size_t ll = 0; ll < num_rows; ++ll)
-                Q[rr][cc] += Q_copy[rr][ll] * Q_k[ll][cc];
+                (*Q)[rr][cc] += Q_copy[rr][ll] * (*Q_k)[ll][cc];
             } // cc
           } // rr
           ++kk;
@@ -202,16 +188,18 @@ private:
           }
         } // jj
 
-        // As A Q = Q A_{final} and A_{final} is upper triangular, the first column of Q is always an eigenvector of A
-        for (size_t rr = 0; rr < rows; ++rr)
-          eigenvectors_[ii][rr][0] = Q[rr][0];
+        //         As A Q = Q A_{final} and A_{final} is upper triangular, the first column of Q is always an
+        //         eigenvector of A
+        //        for (size_t rr = 0; rr < rows; ++rr)
+        //          eigenvectors_[ii][rr][0] = (*Q)[rr][0];
 
         // To get remaining eigenvectors, calculate eigenvectors of A_{final} by solving (A_{final} - \lambda I) x = 0.
         // If x is an eigenvector of A_{final}, Qx is an eigenvector of A.
         for (const auto& group : eigenvalue_groups) {
           size_t value = 1;
           for (const auto& index : group) {
-            auto matrix = A;
+            auto& matrix = *R_k;
+            matrix = A;
             for (size_t rr = 0; rr < rows; ++rr)
               matrix[rr][rr] -= eigenvalues_[ii][index];
 
@@ -281,12 +269,12 @@ private:
             } // rr
 
             VectorType Qx(0);
-            Q.mv(x, Qx);
+            Q->mv(x, Qx);
 
             Qx *= 1. / Qx.two_norm();
 
             for (size_t rr = 0; rr < rows; ++rr)
-              eigenvectors_[ii][rr][index] = Qx[rr];
+              *eigenvectors_[ii][rr][index] = Qx[rr];
           } // index
 
           // orthonormalize eigenvectors in group
@@ -295,8 +283,8 @@ private:
       } // if (calculate_eigenvectors)
 
 
-      eigenvectors_inverse_[ii] = eigenvectors_[ii];
-      eigenvectors_inverse_[ii].invert();
+      *(eigenvectors_inverse_[ii]) = *(eigenvectors_[ii]);
+      eigenvectors_inverse_[ii]->invert();
     } // ii
   }
 
@@ -307,7 +295,7 @@ private:
       std::vector<VectorType> orthonormal_eigenvectors(indices.size());
       for (size_t ii = 0; ii < indices.size(); ++ii)
         for (size_t rr = 0; rr < rows; ++rr)
-          orthonormal_eigenvectors[ii][rr] = eigenvectors_[direction][rr][indices[ii]];
+          orthonormal_eigenvectors[ii][rr] = (*(eigenvectors_[direction]))[rr][indices[ii]];
       // orthonormalize
       for (size_t ii = 1; ii < indices.size(); ++ii) {
         auto& v_i = orthonormal_eigenvectors[ii];
@@ -323,7 +311,7 @@ private:
       // copy eigenvectors back to eigenvectors matrix
       for (size_t ii = 1; ii < indices.size(); ++ii)
         for (size_t rr = 0; rr < rows; ++rr)
-          eigenvectors_[direction][rr][indices[ii]] = orthonormal_eigenvectors[ii][rr];
+          (*(eigenvectors_[direction]))[rr][indices[ii]] = orthonormal_eigenvectors[ii][rr];
     } // if (indices.size() > 1)
   } // void gram_schmidt(...)
 
@@ -458,6 +446,11 @@ private:
   //! \see https://lp.uni-goettingen.de/get/text/2137
   void hessenberg_transformation(MatrixType& A, MatrixType& P) const
   {
+    // make P the unit matrix
+    for (size_t rr = 0; rr < rows; ++rr) {
+      P[rr] *= 0.;
+      P[rr][rr] = 1.;
+    }
     static_assert(rows == cols, "Hessenberg transformation needs a square matrix!");
     assert(A.N() == rows && A.M() == cols && "A has wrong dimensions!");
     VectorType u(0.);
@@ -492,6 +485,28 @@ private:
 
 #if HAVE_LAPACK
 
+template <class FieldType, size_t dimRange>
+class UnitMatrix
+{
+public:
+  typedef FieldMatrix<FieldType, dimRange, dimRange> MatrixType;
+
+  UnitMatrix()
+    : unit_matrix_(0.)
+  {
+    for (size_t rr = 0; rr < dimRange; ++rr)
+      unit_matrix_[rr][rr] = 1.;
+  }
+
+  const MatrixType& get() const
+  {
+    return unit_matrix_;
+  }
+
+private:
+  MatrixType unit_matrix_;
+}; // class UnitMatrix;
+
 template <class FieldType, size_t dimRange, size_t dimRangeCols>
 class LapackEigenSolver
 {
@@ -499,34 +514,16 @@ class LapackEigenSolver
   static const size_t cols = dimRange;
 
 public:
-  typedef DynamicMatrix<FieldType> MatrixType;
-  typedef FieldVector<FieldType, dimRange> VectorType;
+  typedef FieldMatrix<FieldType, rows, rows> MatrixType;
+  typedef FieldVector<FieldType, rows> VectorType;
   typedef FieldVector<VectorType, dimRangeCols> EigenValuesType;
-  typedef FieldVector<MatrixType, dimRangeCols> EigenVectorsType;
-  typedef EigenVectorsType InputMatricesType;
+  typedef FieldVector<std::shared_ptr<MatrixType>, dimRangeCols> EigenVectorsType;
+  typedef FieldVector<MatrixType, dimRangeCols> InputMatricesType;
 
 public:
-  LapackEigenSolver(const InputMatricesType& matrices_in, bool calculate_eigenvectors = false)
+  LapackEigenSolver(InputMatricesType& matrices_in, bool calculate_eigenvectors = false)
   {
     initialize(matrices_in, calculate_eigenvectors);
-  }
-
-  LapackEigenSolver(const MatrixType& matrix_in, bool calculate_eigenvectors = false)
-    : LapackEigenSolver(FieldVector<MatrixType, 1>(matrix_in), calculate_eigenvectors)
-  {
-    assert(dimRangeCols == 1);
-  }
-
-  template <class LocalFluxFunctionType>
-  LapackEigenSolver(const LocalFluxFunctionType& local_flux_function,
-                    const typename LocalFluxFunctionType::DomainType& x_local,
-                    const typename LocalFluxFunctionType::StateRangeType& u,
-                    const XT::Common::Parameter& param,
-                    const bool calculate_eigenvectors = false)
-    : LapackEigenSolver(XT::Functions::JacobianRangeTypeConverter<dimRange, dimRange, dimRangeCols>::convert(
-                            local_flux_function.partial_u(x_local, u, param)),
-                        calculate_eigenvectors)
-  {
   }
 
   const EigenValuesType& eigenvalues() const
@@ -545,44 +542,51 @@ public:
   }
 
 private:
-  void initialize(const InputMatricesType& matrices_in, const bool calculate_eigenvectors)
+  void initialize(InputMatricesType& matrices_in, const bool calculate_eigenvectors)
   {
     for (size_t ii = 0; ii < dimRangeCols; ++ii) {
+
+      eigenvectors_[ii] = std::move(XT::Common::make_unique<MatrixType>());
+      eigenvectors_inverse_[ii] = std::move(XT::Common::make_unique<MatrixType>());
+
+      // lapack uses column-major representation, so transpose in place first
+      auto& A = matrices_in[ii];
+      FieldType tmp;
+      for (size_t rr = 0; rr < dimRange; ++rr) {
+        for (size_t cc = rr + 1; cc < dimRange; ++cc) {
+          tmp = A[rr][cc];
+          A[rr][cc] = A[cc][rr];
+          A[cc][rr] = tmp;
+        }
+      }
+
+      // first call to dggev to get optimal work size
       int N = int(dimRange);
       double alpha_real[dimRange], alpha_imag[dimRange], beta[dimRange];
       double workdummy;
       int lwork = -1; // Request optimum work size.
       int info = 0;
 
-      DynamicMatrix<FieldType> I(dimRange, dimRange, 0.);
-      for (size_t rr = 0; rr < dimRange; ++rr)
-        I[rr][rr] = 1.;
-
-      // lapack uses column-major representation, so transpose first
-      MatrixType A(dimRange, dimRange);
-      for (size_t rr = 0; rr < dimRange; ++rr)
-        for (size_t cc = 0; cc < dimRange; ++cc)
-          A[cc][rr] = matrices_in[ii][rr][cc];
-
       ::dggev_("N",
                calculate_eigenvectors ? "V" : "N",
                &N,
                &(A[0][0]),
                &N,
-               &(I[0][0]),
+               &(unit_matrix_.get()[0][0]),
                &N,
                alpha_real,
                alpha_imag,
                beta,
                nullptr,
                &N,
-               &(eigenvectors_[ii][0][0]),
+               &((*(eigenvectors_[ii]))[0][0]),
                &N,
                &workdummy,
                &lwork,
                &info);
 
 
+      // second call to dggev to get eigendecomposition
       lwork = int(workdummy + 0.5);
       std::vector<double> work(lwork);
 
@@ -591,14 +595,14 @@ private:
                &N,
                &(A[0][0]),
                &N,
-               &(I[0][0]),
+               &(unit_matrix_.get()[0][0]),
                &N,
                alpha_real,
                alpha_imag,
                beta,
                nullptr,
                &N,
-               &(eigenvectors_[ii][0][0]),
+               &((*(eigenvectors_[ii]))[0][0]),
                &N,
                work.data(),
                &lwork,
@@ -612,22 +616,28 @@ private:
 
       if (calculate_eigenvectors) {
         // transpose eigenvectors, as lapack uses column-major
-        auto vec_copy = eigenvectors_[ii];
-        for (size_t rr = 0; rr < dimRange; ++rr)
-          for (size_t cc = 0; cc < dimRange; ++cc)
-            eigenvectors_[ii][cc][rr] = vec_copy[rr][cc];
+        for (size_t rr = 0; rr < dimRange; ++rr) {
+          for (size_t cc = rr + 1; cc < dimRange; ++cc) {
+            tmp = (*(eigenvectors_[ii]))[rr][cc];
+            (*(eigenvectors_[ii]))[rr][cc] = (*(eigenvectors_[ii]))[cc][rr];
+            (*(eigenvectors_[ii]))[cc][rr] = tmp;
+          }
+        }
 
-        eigenvectors_inverse_[ii] = eigenvectors_[ii];
-        eigenvectors_inverse_[ii].invert();
-      }
+        *(eigenvectors_inverse_[ii]) = *(eigenvectors_[ii]);
+        eigenvectors_inverse_[ii]->invert();
+      } // if(calculate_eigenvectors)
     } // ii
   } // void initialize(...)
 
   EigenValuesType eigenvalues_;
   EigenVectorsType eigenvectors_;
   EigenVectorsType eigenvectors_inverse_;
+  static const UnitMatrix<FieldType, dimRange> unit_matrix_;
 }; // class LapackEigenSolver<...>
 
+template <class FieldType, size_t dimRange, size_t dimRangeCols>
+const UnitMatrix<FieldType, dimRange> LapackEigenSolver<FieldType, dimRange, dimRangeCols>::unit_matrix_;
 #endif // HAVE_LAPACK
 
 #if HAVE_EIGEN
@@ -639,7 +649,7 @@ public:
   typedef typename XT::LA::EigenDenseVector<FieldType> VectorType;
   typedef typename XT::LA::EigenDenseMatrix<FieldType> MatrixType;
   typedef FieldVector<FieldVector<FieldType, dimRange>, dimRangeCols> EigenValuesType;
-  typedef FieldVector<DynamicMatrix<FieldType, dimRange, dimRange>, dimRangeCols> EigenVectorsType;
+  typedef FieldVector<std::shared_ptr<FieldMatrix<FieldType, dimRange, dimRange>>, dimRangeCols> EigenVectorsType;
   typedef EigenVectorsType InputMatricesType;
 
 private:
@@ -649,27 +659,9 @@ private:
                                     ::Eigen::EigenSolver<EigenMatrixBackendType>>::type EigenSolverType;
 
 public:
-  EigenEigenSolver(const InputMatricesType& matrices_in, bool calculate_eigenvectors = false)
+  EigenEigenSolver(InputMatricesType& matrices_in, bool calculate_eigenvectors = false)
   {
     initialize(matrices_in, calculate_eigenvectors);
-  }
-
-  EigenEigenSolver(const MatrixType& matrix_in, bool calculate_eigenvectors = false)
-    : EigenEigenSolver(FieldVector<MatrixType, 1>(matrix_in), calculate_eigenvectors)
-  {
-    assert(dimRangeCols == 1);
-  }
-
-  template <class LocalFluxFunctionType>
-  EigenEigenSolver(const LocalFluxFunctionType& local_flux_function,
-                   const typename LocalFluxFunctionType::DomainType& x_local,
-                   const typename LocalFluxFunctionType::StateRangeType& u,
-                   const XT::Common::Parameter& param,
-                   const bool calculate_eigenvectors = false)
-    : EigenEigenSolver(XT::Functions::JacobianRangeTypeConverter<dimRange, dimRange, dimRangeCols>::convert(
-                           local_flux_function.partial_u(x_local, u, param)),
-                       calculate_eigenvectors)
-  {
   }
 
   const EigenValuesType& eigenvalues() const
@@ -688,7 +680,7 @@ public:
   }
 
 private:
-  void initialize(const InputMatricesType& matrices_in, const bool calculate_eigenvectors)
+  void initialize(InputMatricesType& matrices_in, const bool calculate_eigenvectors)
   {
     for (size_t ii = 0; ii < dimRangeCols; ++ii) {
       const auto matrix_ii_eigen =
@@ -696,22 +688,24 @@ private:
       EigenSolverType eigen_solver(matrix_ii_eigen.backend());
       assert(eigen_solver.info() == ::Eigen::Success);
       const auto& eigenvalues_eigen = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
-      assert(size_t(eigenvalues_eigen.size()) == dimRange);
-      assert(XT::Common::FloatCmp::eq(VectorType(eigenvalues_eigen.imag()), VectorType(dimRange, 0.)));
+      if (XT::Common::FloatCmp::ne(VectorType(eigenvalues_eigen.imag()), VectorType(dimRange, 0.)))
+        DUNE_THROW(Dune::MathError, "Eigen returned imaginary eigenvalues!");
       eigenvalues_[ii] = XT::LA::internal::FieldVectorToLaVector<VectorType, dimRange>::convert_back(
           VectorType(eigenvalues_eigen.real()));
 
       if (calculate_eigenvectors) {
         const auto& eigenvectors_eigen =
             eigen_solver.eigenvectors(); // <- this should be an Eigen vector of std::complex
-        assert(XT::Common::FloatCmp::eq(MatrixType(eigenvectors_eigen.imag()), MatrixType(dimRange, dimRange, 0.)));
+        if (XT::Common::FloatCmp::ne(MatrixType(eigenvectors_eigen.imag()), MatrixType(dimRange, dimRange, 0.)))
+          DUNE_THROW(Dune::MathError, "Eigen returned imaginary eigenvectors!");
+
         eigenvectors_[ii] = XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, dimRange>::convert_back(
             MatrixType(eigenvectors_eigen.real()));
         eigenvectors_inverse_[ii] =
             XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, dimRange>::convert_back(
                 MatrixType(eigenvectors_eigen.real().inverse()));
-      }
-    }
+      } // if (calculate_eigenvectors)
+    } // ii
   } // void initialize(...)
 
   EigenValuesType eigenvalues_;

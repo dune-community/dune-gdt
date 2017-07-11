@@ -359,13 +359,14 @@ int main(int argc, char** argv)
   const GridLayerType grid_layer = grid_ptr->leafGridView();
   const SpaceType fv_space(grid_layer);
 
-  const auto quadrature = Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40);
+  //  const auto quadrature = Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40);
   //  const auto quadrature = ProblemImp::default_quadrature(grid_config);
 
   //******************* create ProblemType object ***************************************
   //  const ProblemImp problem_imp(*basis_functions, grid_layer, quadrature, grid_config);
   //  const ProblemImp problem_imp(basis_functions, grid_layer, grid_config);
-  const ProblemImp problem_imp(*basis_functions, grid_layer, basis_functions->quadrature(), grid_config);
+  const std::unique_ptr<ProblemImp> problem_imp =
+      XT::Common::make_unique<ProblemImp>(*basis_functions, grid_layer, basis_functions->quadrature(), grid_config);
   //  const ProblemImp problem_imp(
   //      basis_functions, Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(1000), grid_layer);
 
@@ -375,7 +376,7 @@ int main(int argc, char** argv)
   //                               ProblemImp::default_boundary_cfg(),
   //                               //                               basis_functions.quadrature());
 
-  const ProblemType problem(problem_imp);
+  const ProblemType problem(*problem_imp);
   const InitialValueType& initial_values = problem.initial_values();
   const BoundaryValueType& boundary_values = problem.boundary_values();
   const RhsType& rhs = problem.rhs();

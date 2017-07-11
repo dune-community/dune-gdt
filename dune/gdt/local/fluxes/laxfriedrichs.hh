@@ -120,8 +120,10 @@ public:
   typedef typename Traits::DomainType DomainType;
   typedef typename Traits::AnalyticalFluxLocalfunctionType AnalyticalFluxLocalfunctionType;
   typedef typename Traits::EigenSolverType EigenSolverType;
+  typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
+  typedef typename Dune::FieldVector<Dune::FieldMatrix<double, dimRange, dimRange>, dimDomain> JacobianRangeType;
 
   explicit LaxFriedrichsFluxImplementation(const AnalyticalFluxType& analytical_flux,
                                            XT::Common::Parameter param,
@@ -151,6 +153,10 @@ public:
                  "steps, so using several instances at the same time may result in undefined "
                  "behavior!");
     is_instantiated_ = true;
+    if ((!is_linear_ && !jacobian_inside_) || (is_linear_ && !max_derivative_calculated_)) {
+      jacobian_inside_ = XT::Common::make_unique<JacobianRangeType>();
+      jacobian_outside_ = XT::Common::make_unique<JacobianRangeType>();
+    }
   }
 
   ~LaxFriedrichsFluxImplementation()
@@ -181,10 +187,11 @@ public:
     if (use_local_) {
       if (!is_linear_ || !max_derivative_calculated_) {
         DomainType max_derivative(0);
-        const auto eigen_solver_inside =
-            EigenSolverType(*local_flux_inside, x_in_inside_coords, u_i, param_inside_, true);
-        const auto eigen_solver_outside =
-            EigenSolverType(*local_flux_outside, x_in_outside_coords, u_j, param_outside_, true);
+        helper<dimDomain>::get_jacobian(local_flux_inside, x_in_inside_coords, u_i, *jacobian_inside_, param_inside_);
+        helper<dimDomain>::get_jacobian(
+            local_flux_outside, x_in_outside_coords, u_j, *jacobian_outside_, param_outside_);
+        const auto eigen_solver_inside = EigenSolverType(*jacobian_inside_, true);
+        const auto eigen_solver_outside = EigenSolverType(*jacobian_outside_, true);
         const auto& eigenvalues_inside = eigen_solver_inside.eigenvalues();
         const auto& eigenvalues_outside = eigen_solver_outside.eigenvalues();
         for (size_t ii = 0; ii < dimDomain; ++ii)
@@ -194,6 +201,10 @@ public:
         max_derivative_calculated_ = true;
         for (size_t ii = 0; ii < dimDomain; ++ii)
           lambda_ij_[ii] = 1. / max_derivative[ii];
+        if (is_linear_) {
+          jacobian_inside_ = nullptr;
+          jacobian_outside_ = nullptr;
+        }
       }
     } else if (lambda_provided_) {
       lambda_ij_[direction] = lambda_[direction];
@@ -221,6 +232,32 @@ public:
   }
 
 private:
+  template <size_t domainDim, class anything = void>
+  struct helper
+  {
+    static void get_jacobian(const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
+                             const DomainType& x_in_inside_coords,
+                             const StateRangeType& u,
+                             JacobianRangeType& ret,
+                             const XT::Common::Parameter& param)
+    {
+      local_func->partial_u(x_in_inside_coords, u, ret, param);
+    }
+  };
+
+  template <class anything>
+  struct helper<1, anything>
+  {
+    static void get_jacobian(const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
+                             const DomainType& x_in_inside_coords,
+                             const StateRangeType& u,
+                             JacobianRangeType& ret,
+                             const XT::Common::Parameter& param)
+    {
+      local_func->partial_u(x_in_inside_coords, u, ret[0], param);
+    }
+  };
+
   const AnalyticalFluxType& analytical_flux_;
   XT::Common::Parameter param_inside_;
   XT::Common::Parameter param_outside_;
@@ -231,6 +268,8 @@ private:
   const bool lambda_provided_;
   static thread_local DomainType lambda_ij_;
   static thread_local bool max_derivative_calculated_;
+  static thread_local std::unique_ptr<JacobianRangeType> jacobian_inside_;
+  static thread_local std::unique_ptr<JacobianRangeType> jacobian_outside_;
   static bool is_instantiated_;
 }; // class LaxFriedrichsFluxImplementation<...>
 
@@ -240,6 +279,16 @@ thread_local
 
 template <class Traits>
 thread_local bool LaxFriedrichsFluxImplementation<Traits>::max_derivative_calculated_(false);
+
+template <class Traits>
+thread_local std::unique_ptr<typename LaxFriedrichsFluxImplementation<Traits>::JacobianRangeType>
+    LaxFriedrichsFluxImplementation<Traits>::jacobian_inside_(
+        XT::Common::make_unique<typename LaxFriedrichsFluxImplementation<Traits>::JacobianRangeType>());
+
+template <class Traits>
+thread_local std::unique_ptr<typename LaxFriedrichsFluxImplementation<Traits>::JacobianRangeType>
+    LaxFriedrichsFluxImplementation<Traits>::jacobian_outside_(
+        XT::Common::make_unique<typename LaxFriedrichsFluxImplementation<Traits>::JacobianRangeType>());
 
 template <class Traits>
 bool LaxFriedrichsFluxImplementation<Traits>::is_instantiated_(false);

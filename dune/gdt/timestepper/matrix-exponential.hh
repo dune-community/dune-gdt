@@ -198,10 +198,10 @@ private:
   {
     const auto& affine_function = *(evaluation_.values()[index]);
     assert(affine_function.A().size() == 1 && "Not implemented for dimRangeCols > 1!");
-    auto* A = new MatrixType(affine_function.A()[0].operator DynamicMatrix<RangeFieldType>());
+    auto A = affine_function.A()[0].operator std::unique_ptr<MatrixType>();
 
     // calculate matrix exponential exp(A*dt)
-    auto* Adt = new MatrixType(*A);
+    auto Adt = XT::Common::make_unique<MatrixType>(*A);
     *Adt *= dt;
     // get pointer to the underlying array of the FieldMatrix
     RangeFieldType* Adt_array = &((*Adt)[0][0]);
@@ -215,13 +215,13 @@ private:
     // if A is invertible, the integral is -A^{-1}(exp(-Adt)-I)
     // in general, it is the power series dt*(I + (-Adt)/(2!) + (-Adt)^2/(3!) + ... + (-Adt)^{n-1}/(n!) + ...)
     auto& int_exp_mAdt = matrix_exponential_integrals_[index];
-    auto* A_inverse = new MatrixType(*A);
+    auto A_inverse = XT::Common::make_unique<MatrixType>(*A);
     try {
       A_inverse->invert();
       *A_inverse *= -1.;
 
       // calculate matrix exponential exp(-A*dt)
-      auto* mAdt = A;
+      auto* mAdt = A.get();
       *mAdt *= -dt;
       // get pointer to the underlying array of the FieldMatrix
       double* mAdt_array = &((*mAdt)[0][0]);
@@ -233,15 +233,12 @@ private:
         int_exp_mAdt[ii][ii] -= 1.;
       int_exp_mAdt.leftmultiply(*A_inverse);
     } catch (Dune::FMatrixError&) { // A not invertible
-      auto* minus_A = A;
+      auto* minus_A = A.get();
       *minus_A *= -1.;
       const double* int_exp_mAdt_array = r8mat_expm_integral(dimRange, &((*minus_A)[0][0]), dt);
       std::copy_n(int_exp_mAdt_array, dimRange * dimRange, &(int_exp_mAdt[0][0]));
       delete[] int_exp_mAdt_array;
     } // catch(...)
-    delete A;
-    delete Adt;
-    delete A_inverse;
   } // void get_matrix_exponential(...)
 
   const OperatorType& op_;

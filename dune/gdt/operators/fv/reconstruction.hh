@@ -57,6 +57,8 @@ class LocalReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayer
   typedef FieldVector<FieldVector<FieldVector<RangeType, stencil[2]>, stencil[1]>, stencil[0]> ValuesType;
   typedef typename GridLayerType::Intersection::Geometry::LocalCoordinate IntersectionLocalCoordType;
   typedef typename AnalyticalFluxType::LocalfunctionType AnalyticalFluxLocalfunctionType;
+  typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
+  typedef typename AnalyticalFluxLocalfunctionType::PartialURangeType JacobianRangeType;
 
 public:
   explicit LocalReconstructionFvOperator(
@@ -113,14 +115,21 @@ public:
     const auto& entity_index = grid_layer_.indexSet().index(entity);
     auto& reconstructed_values_map = reconstructed_values_[entity_index];
     const auto flux_local_func = analytical_flux_.local_function(entity);
-    if (!is_linear_ || !eigensolver_)
-      eigensolver_ = XT::Common::make_unique<EigenSolverType>(
-          *flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, param_, true);
+    if (!is_linear_ || !eigensolver_) {
+      helper<dimDomain>::get_jacobian(
+          flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, jacobian_, param_);
+      eigensolver_ = XT::Common::make_unique<EigenSolverType>(jacobian_, true);
+    }
     const auto& eigenvectors = eigensolver_->eigenvectors();
     const auto& eigenvectors_inverse = eigensolver_->eigenvectors_inverse();
     for (size_t dd = 0; dd < dimDomain; ++dd)
-      helper<>::reconstruct(
-          dd, values, eigenvectors[dd], eigenvectors_inverse[dd], quadrature_, reconstructed_values_map, intersections);
+      helper<>::reconstruct(dd,
+                            values,
+                            *(eigenvectors[dd]),
+                            *(eigenvectors_inverse[dd]),
+                            quadrature_,
+                            reconstructed_values_map,
+                            intersections);
   } // void apply_local(...)
 
 private:
@@ -167,6 +176,15 @@ private:
             std::make_pair(intersections[ii].geometryInInside().global(quadrature_point), value));
       } // ii
     } // static void reconstruct()
+
+    static void get_jacobian(const std::unique_ptr<AnalyticalFluxLocalfunctionType>& local_func,
+                             const DomainType& x_in_inside_coords,
+                             const StateRangeType& u,
+                             JacobianRangeType& ret,
+                             const XT::Common::Parameter& param)
+    {
+      local_func->partial_u(x_in_inside_coords, u, ret[0], param);
+    }
   }; // struct helper<1,...>
 
   template <class anything>
@@ -226,6 +244,15 @@ private:
         } // jj
       } // ii
     } // static void reconstruct()
+
+    static void get_jacobian(const std::unique_ptr<AnalyticalFluxLocalfunctionType>& local_func,
+                             const DomainType& x_in_inside_coords,
+                             const StateRangeType& u,
+                             JacobianRangeType& ret,
+                             const XT::Common::Parameter& param)
+    {
+      helper<3, anything>::get_jacobian(local_func, x_in_inside_coords, u, ret, param);
+    }
   }; // helper<2,...>
 
   template <class anything>
@@ -312,6 +339,16 @@ private:
         } // jj
       } // ii
     } // static void reconstruct(...)
+
+    static void get_jacobian(const std::unique_ptr<AnalyticalFluxLocalfunctionType>& local_func,
+                             const DomainType& x_in_inside_coords,
+                             const StateRangeType& u,
+                             JacobianRangeType& ret,
+                             const XT::Common::Parameter& param)
+    {
+      local_func->partial_u(x_in_inside_coords, u, ret, param);
+    }
+
   }; // struct helper<3, ...>
 
 
@@ -437,6 +474,7 @@ private:
   const QuadratureType quadrature_;
   std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values_;
   static thread_local std::unique_ptr<EigenSolverType> eigensolver_;
+  static thread_local JacobianRangeType jacobian_;
   static bool is_instantiated_;
 }; // class LocalReconstructionFvOperator
 
@@ -478,6 +516,26 @@ bool LocalReconstructionFvOperator<GridLayerType,
                                    polOrder,
                                    slope_limiter,
                                    EigenSolverType>::is_instantiated_(false);
+
+
+template <class GridLayerType,
+          class AnalyticalFluxType,
+          class BoundaryValueType,
+          size_t polOrder,
+          SlopeLimiters slope_limiter,
+          class EigenSolverType>
+thread_local typename LocalReconstructionFvOperator<GridLayerType,
+                                                    AnalyticalFluxType,
+                                                    BoundaryValueType,
+                                                    polOrder,
+                                                    slope_limiter,
+                                                    EigenSolverType>::JacobianRangeType
+    LocalReconstructionFvOperator<GridLayerType,
+                                  AnalyticalFluxType,
+                                  BoundaryValueType,
+                                  polOrder,
+                                  slope_limiter,
+                                  EigenSolverType>::jacobian_;
 
 
 } // namespace GDT
