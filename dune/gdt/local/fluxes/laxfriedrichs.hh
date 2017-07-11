@@ -152,10 +152,6 @@ public:
                  "This class uses several static variables to save its state between time "
                  "steps, so using several instances at the same time may result in undefined "
                  "behavior!");
-    if ((!is_linear_ && !jacobian_inside_) || (is_linear_ && !max_derivative_calculated_)) {
-      jacobian_inside_ = XT::Common::make_unique<JacobianRangeType>();
-      jacobian_outside_ = XT::Common::make_unique<JacobianRangeType>();
-    }
     is_instantiated_ = true;
   }
 
@@ -186,6 +182,10 @@ public:
 
     if (use_local_) {
       if (!is_linear_ || !max_derivative_calculated_) {
+        if (!jacobian_inside_) {
+          jacobian_inside_ = XT::Common::make_unique<JacobianRangeType>();
+          jacobian_outside_ = XT::Common::make_unique<JacobianRangeType>();
+        }
         DomainType max_derivative(0);
         helper<dimDomain>::get_jacobian(local_flux_inside, x_in_inside_coords, u_i, *jacobian_inside_, param_inside_);
         helper<dimDomain>::get_jacobian(
@@ -198,13 +198,13 @@ public:
           for (size_t jj = 0; jj < dimRange; ++jj)
             max_derivative[ii] = std::max(
                 {std::abs(eigenvalues_inside[ii][jj]), std::abs(eigenvalues_outside[ii][jj]), max_derivative[ii]});
-        max_derivative_calculated_ = true;
         for (size_t ii = 0; ii < dimDomain; ++ii)
           lambda_ij_[ii] = 1. / max_derivative[ii];
         if (is_linear_) {
           jacobian_inside_ = nullptr;
           jacobian_outside_ = nullptr;
         }
+        max_derivative_calculated_ = true;
       }
     } else if (lambda_provided_) {
       lambda_ij_[direction] = lambda_[direction];
@@ -282,13 +282,11 @@ thread_local bool LaxFriedrichsFluxImplementation<Traits>::max_derivative_calcul
 
 template <class Traits>
 thread_local std::unique_ptr<typename LaxFriedrichsFluxImplementation<Traits>::JacobianRangeType>
-    LaxFriedrichsFluxImplementation<Traits>::jacobian_inside_(
-        XT::Common::make_unique<typename LaxFriedrichsFluxImplementation<Traits>::JacobianRangeType>());
+    LaxFriedrichsFluxImplementation<Traits>::jacobian_inside_;
 
 template <class Traits>
 thread_local std::unique_ptr<typename LaxFriedrichsFluxImplementation<Traits>::JacobianRangeType>
-    LaxFriedrichsFluxImplementation<Traits>::jacobian_outside_(
-        XT::Common::make_unique<typename LaxFriedrichsFluxImplementation<Traits>::JacobianRangeType>());
+    LaxFriedrichsFluxImplementation<Traits>::jacobian_outside_;
 
 template <class Traits>
 bool LaxFriedrichsFluxImplementation<Traits>::is_instantiated_(false);

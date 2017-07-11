@@ -85,8 +85,6 @@ public:
                  "steps, so using several instances at the same time may result in undefined "
                  "behavior!");
     param_.set("boundary", {0.});
-    if ((!is_linear_ && !jacobian_) || (is_linear_ && !eigensolver_))
-      jacobian_ = XT::Common::make_unique<JacobianRangeType>();
     is_instantiated_ = true;
   }
 
@@ -118,6 +116,8 @@ public:
     auto& reconstructed_values_map = reconstructed_values_[entity_index];
     const auto flux_local_func = analytical_flux_.local_function(entity);
     if (!is_linear_ || !eigensolver_) {
+      if (!jacobian)
+        jacobian_ = XT::Common::make_unique<JacobianRangeType>();
       helper<dimDomain>::get_jacobian(
           flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, *jacobian_, param_);
       eigensolver_ = XT::Common::make_unique<EigenSolverType>(*jacobian_, true);
