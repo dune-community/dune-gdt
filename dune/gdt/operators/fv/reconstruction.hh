@@ -116,7 +116,7 @@ public:
     auto& reconstructed_values_map = reconstructed_values_[entity_index];
     const auto flux_local_func = analytical_flux_.local_function(entity);
     if (!is_linear_ || !eigensolver_) {
-      if (!jacobian)
+      if (!jacobian_)
         jacobian_ = XT::Common::make_unique<JacobianRangeType>();
       helper<dimDomain>::get_jacobian(
           flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, *jacobian_, param_);

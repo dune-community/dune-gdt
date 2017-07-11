@@ -24,28 +24,6 @@
 #include <dune/xt/la/container/eigen.hh>
 #include <dune/xt/la/container/common.hh>
 
-#if HAVE_LAPACK
-// LAPACK function to solve general eigenvalue problems
-extern "C" void dggev_(const char* JOBVL,
-                       const char* JOBVR,
-                       const int* N,
-                       const double* A,
-                       const int* LDA,
-                       const double* B,
-                       const int* LDB,
-                       double* ALPHAR,
-                       double* ALPHAI,
-                       double* BETA,
-                       double* VL,
-                       const int* LDVL,
-                       double* VR,
-                       const int* LDVR,
-                       double* WORK,
-                       const int* LWORK,
-                       int* INFO);
-#endif // HAVE_LAPACK
-
-
 namespace Dune {
 namespace GDT {
 
@@ -94,8 +72,8 @@ private:
     auto Q_k = XT::Common::make_unique<MatrixType>(0.);
     auto Q = XT::Common::make_unique<MatrixType>(0.);
     for (size_t ii = 0; ii < dimRangeCols; ++ii) {
-      eigenvectors_[ii] = std::move(XT::Common::make_unique<MatrixType>());
-      eigenvectors_inverse_[ii] = std::move(XT::Common::make_unique<MatrixType>());
+      eigenvectors_[ii] = std::make_shared<MatrixType>();
+      eigenvectors_inverse_[ii] = std::make_shared<MatrixType>();
       auto& A = matrices_in[ii];
       hessenberg_transformation(A, *Q);
       for (size_t jj = rows - 1; jj > 0; --jj) {
@@ -498,14 +476,32 @@ public:
       unit_matrix_[rr][rr] = 1.;
   }
 
-  const MatrixType& get() const
+  FieldType* get()
   {
-    return unit_matrix_;
+    return &(unit_matrix_[0][0]);
   }
 
 private:
   MatrixType unit_matrix_;
 }; // class UnitMatrix;
+
+struct LapackWrapper
+{
+  static int dggev(char jobvl,
+                   char jobvr,
+                   int n,
+                   double* a,
+                   int lda,
+                   double* b,
+                   int ldb,
+                   double* alphar,
+                   double* alphai,
+                   double* beta,
+                   double* vl,
+                   int ldvl,
+                   double* vr,
+                   int ldvr);
+};
 
 template <class FieldType, size_t dimRange, size_t dimRangeCols>
 class LapackEigenSolver
@@ -545,68 +541,29 @@ private:
   void initialize(InputMatricesType& matrices_in, const bool calculate_eigenvectors)
   {
     for (size_t ii = 0; ii < dimRangeCols; ++ii) {
+      eigenvectors_[ii] = std::make_shared<MatrixType>();
+      eigenvectors_inverse_[ii] = std::make_shared<MatrixType>();
 
-      eigenvectors_[ii] = std::move(XT::Common::make_unique<MatrixType>());
-      eigenvectors_inverse_[ii] = std::move(XT::Common::make_unique<MatrixType>());
-
-      // lapack uses column-major representation, so transpose in place first
-      auto& A = matrices_in[ii];
-      FieldType tmp;
-      for (size_t rr = 0; rr < dimRange; ++rr) {
-        for (size_t cc = rr + 1; cc < dimRange; ++cc) {
-          tmp = A[rr][cc];
-          A[rr][cc] = A[cc][rr];
-          A[cc][rr] = tmp;
-        }
-      }
-
-      // first call to dggev to get optimal work size
       int N = int(dimRange);
-      double alpha_real[dimRange], alpha_imag[dimRange], beta[dimRange];
-      double workdummy;
-      int lwork = -1; // Request optimum work size.
-      int info = 0;
+      std::array<double, dimRange> alpha_real, alpha_imag, beta;
 
-      ::dggev_("N",
-               calculate_eigenvectors ? "V" : "N",
-               &N,
-               &(A[0][0]),
-               &N,
-               &(unit_matrix_.get()[0][0]),
-               &N,
-               alpha_real,
-               alpha_imag,
-               beta,
-               nullptr,
-               &N,
-               &((*(eigenvectors_[ii]))[0][0]),
-               &N,
-               &workdummy,
-               &lwork,
-               &info);
+      int info = LapackWrapper::dggev('N',
+                                      calculate_eigenvectors ? 'V' : 'N',
+                                      N,
+                                      &(matrices_in[ii][0][0]),
+                                      N,
+                                      unit_matrix_.get(),
+                                      N,
+                                      alpha_real.data(),
+                                      alpha_imag.data(),
+                                      beta.data(),
+                                      (double*)nullptr,
+                                      N,
+                                      &((*(eigenvectors_[ii]))[0][0]),
+                                      N);
 
-
-      // second call to dggev to get eigendecomposition
-      lwork = int(workdummy + 0.5);
-      std::vector<double> work(lwork);
-
-      ::dggev_("N",
-               calculate_eigenvectors ? "V" : "N",
-               &N,
-               &(A[0][0]),
-               &N,
-               &(unit_matrix_.get()[0][0]),
-               &N,
-               alpha_real,
-               alpha_imag,
-               beta,
-               nullptr,
-               &N,
-               &((*(eigenvectors_[ii]))[0][0]),
-               &N,
-               work.data(),
-               &lwork,
-               &info);
+      if (info != 0)
+        DUNE_THROW(Dune::MathError, "Lapack returned error " + XT::Common::to_string(info) + "!");
 
       for (size_t rr = 0; rr < dimRange; ++rr) {
         assert(XT::Common::FloatCmp::eq(alpha_imag[rr], 0.));
@@ -615,15 +572,6 @@ private:
       }
 
       if (calculate_eigenvectors) {
-        // transpose eigenvectors, as lapack uses column-major
-        for (size_t rr = 0; rr < dimRange; ++rr) {
-          for (size_t cc = rr + 1; cc < dimRange; ++cc) {
-            tmp = (*(eigenvectors_[ii]))[rr][cc];
-            (*(eigenvectors_[ii]))[rr][cc] = (*(eigenvectors_[ii]))[cc][rr];
-            (*(eigenvectors_[ii]))[cc][rr] = tmp;
-          }
-        }
-
         *(eigenvectors_inverse_[ii]) = *(eigenvectors_[ii]);
         eigenvectors_inverse_[ii]->invert();
       } // if(calculate_eigenvectors)
@@ -633,11 +581,11 @@ private:
   EigenValuesType eigenvalues_;
   EigenVectorsType eigenvectors_;
   EigenVectorsType eigenvectors_inverse_;
-  static const UnitMatrix<FieldType, dimRange> unit_matrix_;
+  static UnitMatrix<FieldType, dimRange> unit_matrix_;
 }; // class LapackEigenSolver<...>
 
 template <class FieldType, size_t dimRange, size_t dimRangeCols>
-const UnitMatrix<FieldType, dimRange> LapackEigenSolver<FieldType, dimRange, dimRangeCols>::unit_matrix_;
+UnitMatrix<FieldType, dimRange> LapackEigenSolver<FieldType, dimRange, dimRangeCols>::unit_matrix_;
 #endif // HAVE_LAPACK
 
 #if HAVE_EIGEN
