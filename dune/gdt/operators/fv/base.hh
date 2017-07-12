@@ -398,6 +398,7 @@ private:
       Intersection1dQuadratureType quadrature;
       quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5 * (1. - 1. / std::sqrt(3)), 0.5));
       quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5 * (1. + 1. / std::sqrt(3)), 0.5));
+      //      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5, 1.));
       return quadrature;
     }
   };

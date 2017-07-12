@@ -179,7 +179,7 @@ int main(int argc, char** argv)
   // ********************* choose dimensions, fluxes and grid type ************************
   static const int dimDomain = 3;
   //  static const int dimDomain = 1;
-  //  static const int momentOrder = 6;
+  static const int momentOrder = 6;
   //  const auto numerical_flux = NumericalFluxes::kinetic;
   //  const auto numerical_flux = NumericalFluxes::godunov;
   //  const auto numerical_flux = NumericalFluxes::laxfriedrichs;
@@ -190,9 +190,9 @@ int main(int argc, char** argv)
   const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_second_order_ssp;
   //  const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_third_order_ssp;
   //  const auto rhs_time_stepper_method = TimeStepperMethods::explicit_euler;
-  //  const auto rhs_time_stepper_method = TimeStepperMethods::implicit_euler;
-  const auto rhs_time_stepper_method = TimeStepperMethods::matrix_exponential;
-  //  const auto rhs_time_stepper_method = TimeStepperMethods::trapezoidal_rule;
+  //      const auto rhs_time_stepper_method = TimeStepperMethods::implicit_euler;
+  //  const auto rhs_time_stepper_method = TimeStepperMethods::matrix_exponential;
+  const auto rhs_time_stepper_method = TimeStepperMethods::trapezoidal_rule;
 
   typedef typename Dune::YaspGrid<dimDomain, Dune::EquidistantOffsetCoordinates<double, dimDomain>> GridType;
   typedef typename GridType::LeafGridView GridLayerType;
@@ -203,25 +203,25 @@ int main(int argc, char** argv)
   //  BasisfunctionType;
   //  typedef typename Hyperbolic::Problems::HatFunctions<double, dimDomain, double, momentOrder> BasisfunctionType;
 
-  //  static const size_t refinements = 0;
-  //  typedef
-  //      typename Hyperbolic::Problems::HatFunctions<double,
-  //                                                  dimDomain,
-  //                                                  double,
-  //                                                  Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(),
-  //                                                  1,
-  //                                                  3>
-  //          BasisfunctionType;
-
-  static const size_t refinements = 2;
-  typedef typename Hyperbolic::Problems::
-      PiecewiseMonomials<double,
-                         dimDomain,
-                         double,
-                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces(),
-                         1,
-                         3>
+  static const size_t refinements = 0;
+  typedef
+      typename Hyperbolic::Problems::HatFunctions<double,
+                                                  dimDomain,
+                                                  double,
+                                                  Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(),
+                                                  1,
+                                                  3>
           BasisfunctionType;
+
+  //  static const size_t refinements = 2;
+  //  typedef typename Hyperbolic::Problems::
+  //      PiecewiseMonomials<double,
+  //                         dimDomain,
+  //                         double,
+  //                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces(),
+  //                         1,
+  //                         3>
+  //          BasisfunctionType;
 
   //  typedef typename Hyperbolic::Problems::
   //      HatFunctions<double, 3, double, Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(), 1, 2>
@@ -360,13 +360,15 @@ int main(int argc, char** argv)
   const SpaceType fv_space(grid_layer);
 
   //  const auto quadrature = Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40);
+  const auto& quadrature = basis_functions->quadrature();
   //  const auto quadrature = ProblemImp::default_quadrature(grid_config);
 
   //******************* create ProblemType object ***************************************
-  //  const ProblemImp problem_imp(*basis_functions, grid_layer, quadrature, grid_config);
-  //  const ProblemImp problem_imp(basis_functions, grid_layer, grid_config);
   const std::unique_ptr<ProblemImp> problem_imp =
-      XT::Common::make_unique<ProblemImp>(*basis_functions, grid_layer, basis_functions->quadrature(), grid_config);
+      XT::Common::make_unique<ProblemImp>(*basis_functions, grid_layer, quadrature, grid_config);
+  //  const ProblemImp problem_imp(basis_functions, grid_layer, grid_config);
+  //  const std::unique_ptr<ProblemImp> problem_imp =
+  //      XT::Common::make_unique<ProblemImp>(*basis_functions, grid_layer, basis_functions->quadrature(), grid_config);
   //  const ProblemImp problem_imp(
   //      basis_functions, Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(1000), grid_layer);
 
@@ -380,7 +382,7 @@ int main(int argc, char** argv)
   const InitialValueType& initial_values = problem.initial_values();
   const BoundaryValueType& boundary_values = problem.boundary_values();
   const RhsType& rhs = problem.rhs();
-  const RangeFieldType CFL = problem.CFL();
+  const RangeFieldType CFL = problem.CFL() * 0.05;
 
   // ***************** project initial values to discrete function *********************
   // create a discrete function for the solution
@@ -444,6 +446,7 @@ int main(int argc, char** argv)
                                       Dune::XT::LA::default_sparse_backend>::TimeStepperType RhsOperatorTimeStepperType;
   //    typedef FractionalTimeStepper<OperatorTimeStepperType, RhsOperatorTimeStepperType> TimeStepperType;
   typedef StrangSplittingTimeStepper<RhsOperatorTimeStepperType, OperatorTimeStepperType> TimeStepperType;
+  //  typedef StrangSplittingTimeStepper<OperatorTimeStepperType, RhsOperatorTimeStepperType> TimeStepperType;
 
 
   // *************** choose t_end and initial dt **************************************
@@ -469,7 +472,7 @@ int main(int argc, char** argv)
   //  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, linear);
   advection_operator.set_basisfunctions(basis_functions);
   //  advection_operator.set_quadrature(problem_imp.quadrature());
-  advection_operator.set_quadrature(Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40));
+  advection_operator.set_quadrature(quadrature);
   advection_operator.set_epsilon(epsilon);
   //  AdvectionOperatorType advection_operator(*analytical_flux,
   //                                           *boundary_values,
@@ -500,6 +503,7 @@ int main(int argc, char** argv)
   OperatorTimeStepperType timestepper_op(advection_operator, u, -1.0);
   RhsOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
   TimeStepperType timestepper(timestepper_rhs, timestepper_op);
+  //  TimeStepperType timestepper(timestepper_op, timestepper_rhs);
   filename += "_" + ProblemType::static_id();
   filename += Dune::XT::Common::to_string(dimRange);
   filename += rhs_time_stepper_method == TimeStepperMethods::implicit_euler
@@ -507,7 +511,7 @@ int main(int argc, char** argv)
                   : (rhs_time_stepper_method == TimeStepperMethods::matrix_exponential ? "_matexp" : "_explicit");
 
   timestepper.solve(
-      t_end, dt, num_save_steps, /*save_solution = */ false, /*output_progress = */ true, visualize, filename, 3);
+      t_end, dt, num_save_steps, /*save_solution = */ false, /*output_progress = */ true, visualize, filename, 1);
 
   const auto& sol = timestepper.current_solution();
   std::vector<std::pair<DomainType, RangeFieldType>> values;

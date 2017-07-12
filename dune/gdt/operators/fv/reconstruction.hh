@@ -96,8 +96,9 @@ public:
   void apply_local(const EntityType& entity)
   {
     // get cell averages on stencil
-    FieldVector<size_t, 3> offsets(0);
-    ValuesType values;
+    FieldVector<int, 3> offsets(0);
+    ValuesType values(FieldVector<FieldVector<RangeType, stencil[2]>, stencil[1]>(
+        FieldVector<RangeType, stencil[2]>(RangeType(std::numeric_limits<double>::quiet_NaN()))));
     StencilIterator::apply(source_values_, boundary_values_, values, entity, grid_layer_, -1, offsets);
     // get intersections
     FieldVector<typename GridLayerType::Intersection, 2 * dimDomain> intersections;
@@ -381,9 +382,8 @@ private:
           auto new_offsets = offsets;
           if (intersection.boundary() && !intersection.neighbor()) {
             boundary_dirs.push_back(intersection_index);
-            const auto& boundary_value =
-                boundary_values.local_function(entity)->evaluate(intersection.geometryInInside().global(
-                    intersection.geometry().local(intersection.geometry().center())));
+            const auto& boundary_value = boundary_values.local_function(entity)->evaluate(
+                entity.geometry().local(intersection.geometry().center()));
             while (!end_of_stencil(intersection_index, new_offsets)) {
               walk(intersection_index, new_offsets);
               values[stencil_x / 2 + new_offsets[0]][stencil_y / 2 + new_offsets[1]][stencil_z / 2 + new_offsets[2]] =
@@ -395,11 +395,11 @@ private:
             StencilIterator::apply(
                 source_values, boundary_values, values, outside, grid_layer, intersection_index, new_offsets);
           }
-        }
+        } // if (!end_of_stencil(...))
       } // intersections
 
       // TODO: improve multiple boundary handling, currently everything is filled with the boundary value in the first
-      // direction
+      // direction, do not use NaNs
       assert(boundary_dirs.size() <= 3);
       if (boundary_dirs.size() > 1) {
         walk(boundary_dirs[0], offsets);
@@ -408,7 +408,7 @@ private:
         for (auto& values_yz : values)
           for (auto& values_z : values_yz)
             for (auto& value : values_z)
-              if (value.size() == 0)
+              if (std::isnan(value[0]))
                 value = boundary_value;
       }
     } // void apply(...)
@@ -426,12 +426,12 @@ private:
     // without emitting new iterators).
     static bool direction_allowed(const int dir, const int new_dir)
     {
-      return dir == -1 || new_dir == dir || new_dir / 2 > dir / 2;
+      return (polOrder > 0 && dir == -1) || new_dir == dir || new_dir / 2 > dir / 2;
     }
 
-    static bool end_of_stencil(const int dir, const FieldVector<size_t, 3>& offsets)
+    static bool end_of_stencil(const int dir, const FieldVector<int, 3>& offsets)
     {
-      return !(offsets[dir / 2] < stencil[dir / 2] / 2);
+      return (polOrder == 0 || (dir != -1 && size_t(std::abs(offsets[dir / 2])) >= stencil[dir / 2] / 2));
     }
   }; // class StencilIterator<...>
 

@@ -143,7 +143,7 @@ public:
         const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& /*test_base*/)
       const
   {
-    return std::get<0>(local_functions_tuple)->order();
+    return std::get<0>(local_functions_tuple)->order(XT::Common::Parameter());
   }
 
   template <class R, size_t r, size_t rC>
@@ -205,7 +205,7 @@ public:
       const XT::Functions::
           LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& /*ansatzBase*/) const
   {
-    return std::get<0>(local_functions_tuple)->order();
+    return std::get<0>(local_functions_tuple)->order(XT::Common::Parameter());
   }
 
   template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>

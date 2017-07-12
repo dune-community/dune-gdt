@@ -127,7 +127,7 @@ public:
                                         typename RangeSpaceType::BaseFunctionSetType,
                                         R>
         local_l2_functional(over_integrate_, source);
-    Dune::DynamicVector<R> local_vector(local_range.basis().size());
+    Dune::DynamicVector<R> local_vector(local_range.basis().size(), 0.);
     const auto& entity = local_range.entity();
     local_l2_functional.apply(local_range.basis(), local_vector);
     local_vector /= entity.geometry().volume();

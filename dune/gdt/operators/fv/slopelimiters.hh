@@ -45,7 +45,7 @@ struct ChooseLimiter<SlopeLimiters::minmod>
   template <class VectorType>
   static VectorType limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& slope_center)
   {
-    VectorType ret;
+    VectorType ret(0.);
     for (size_t ii = 0; ii < slope_left.size(); ++ii) {
       // check for equal sign
       if (slope_left[ii] * slope_right[ii] > 0 && slope_center[ii] * slope_right[ii] > 0) {
@@ -55,12 +55,13 @@ struct ChooseLimiter<SlopeLimiters::minmod>
         if (XT::Common::FloatCmp::lt(slope_left_abs, slope_right_abs)) {
           if (XT::Common::FloatCmp::lt(slope_left_abs, slope_center_abs))
             ret[ii] = slope_left[ii];
-        } else if (XT::Common::FloatCmp::lt(slope_right_abs, slope_center_abs))
+        } else if (XT::Common::FloatCmp::lt(slope_right_abs, slope_center_abs)) {
           ret[ii] = slope_right[ii];
-        else
+        } else {
           ret[ii] = slope_center[ii];
-      }
-    }
+        }
+      } // if (all signs equal)
+    } // ii
     return ret;
   }
 };
@@ -71,15 +72,19 @@ struct ChooseLimiter<SlopeLimiters::superbee>
   template <class VectorType>
   static VectorType limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& slope_center)
   {
+    auto slope_left_twice = slope_left;
+    slope_left_twice *= 2.0;
+    auto slope_right_twice = slope_right;
+    slope_right_twice *= 2.0;
     typedef ChooseLimiter<SlopeLimiters::minmod> MinmodType;
-    return maxmod(MinmodType::limit(slope_left, slope_right * 2.0, slope_center),
-                  MinmodType::limit(slope_left * 2.0, slope_right, slope_center));
+    return maxmod(MinmodType::limit(slope_left, slope_right_twice, slope_center),
+                  MinmodType::limit(slope_left_twice, slope_right, slope_center));
   }
 
   template <class VectorType>
   static VectorType maxmod(const VectorType& slope_left, const VectorType& slope_right)
   {
-    VectorType ret;
+    VectorType ret(0.);
     for (size_t ii = 0; ii < slope_left.size(); ++ii) {
       const auto slope_left_abs = std::abs(slope_left[ii]);
       const auto slope_right_abs = std::abs(slope_right[ii]);
@@ -98,11 +103,12 @@ template <>
 struct ChooseLimiter<SlopeLimiters::mc>
 {
   template <class VectorType>
-  static VectorType limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& slope_center)
+  static VectorType limit(VectorType slope_left, VectorType slope_right, const VectorType& slope_center)
   {
     typedef ChooseLimiter<SlopeLimiters::minmod> MinmodType;
-    return MinmodType::limit(
-        MinmodType::limit(slope_left * 2.0, slope_right * 2.0, slope_center), slope_center, slope_center);
+    slope_left *= 2.0;
+    slope_right *= 2.0;
+    return MinmodType::limit(MinmodType::limit(slope_left, slope_right, slope_center), slope_center, slope_center);
   }
 };
 

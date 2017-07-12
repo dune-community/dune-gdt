@@ -440,7 +440,7 @@ public:
     for (size_t ll = 0; ll <= order; ++ll)
       for (int mm = -int(ll); mm <= int(ll); ++mm)
         if (!only_even || !((mm + ll) % 2))
-          ret[helper<only_even>::pos(ll, mm)] = evaluate_lm(theta, phi, ll, mm);
+          ret[helper<only_even>::pos(ll, mm)] = evaluate_lm(theta, phi, int(ll), mm);
     return ret;
   } // ... evaluate(...)
 
@@ -453,7 +453,7 @@ public:
 
   virtual MatrixType mass_matrix() const override
   {
-    MatrixType M(0);
+    MatrixType M(dimRange, dimRange, 0);
     for (size_t rr = 0; rr < dimRange; ++rr)
       M[rr][rr] = 1;
     return M;
@@ -466,7 +466,7 @@ public:
 
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const override
   {
-    FieldVector<MatrixType, dimFlux> ret(MatrixType(0));
+    FieldVector<MatrixType, dimFlux> ret(MatrixType(dimRange, dimRange, 0));
     ret[0] = create_Bx();
     ret[1] = create_By();
     if (dimFlux == 3)
@@ -500,7 +500,7 @@ private:
 
   static MatrixType create_Bx()
   {
-    MatrixType Bx(0);
+    MatrixType Bx(dimRange, dimRange, 0.);
     const auto& pos = helper<only_even>::pos;
     for (size_t l1 = 0; l1 <= order; ++l1) {
       for (int m1 = -int(l1); size_t(std::abs(m1)) <= l1; ++m1) {
@@ -537,7 +537,7 @@ private:
 
   static MatrixType create_By()
   {
-    MatrixType By(0);
+    MatrixType By(dimRange, dimRange, 0.);
     const auto& pos = helper<only_even>::pos;
     for (size_t l1 = 0; l1 <= order; ++l1) {
       for (int m1 = -int(l1); size_t(std::abs(m1)) <= l1; ++m1) {
@@ -545,7 +545,7 @@ private:
           for (int m2 = -int(l2); size_t(std::abs(m2)) <= l2; ++m2) {
             if (!only_even || (!((m1 + l1) % 2) && !((m2 + l2) % 2))) {
               if (l1 == l2 + 1 && m1 == -m2 + 1 && m2 > 0)
-                By[pos(l1, m1)][pos(l2, m2)] = 0.5 * (1. - (m2 == 1)) * B_lm(l2 + 2, -m2 + 1);
+                By[pos(l1, m1)][pos(l2, m2)] = 0.5 * (1. - (m2 == 1)) * B_lm(l2 + 1, -m2 + 1);
               if (l1 == l2 - 1 && m1 == -m2 + 1 && m2 > 0)
                 By[pos(l1, m1)][pos(l2, m2)] = -0.5 * (1. - (m2 == 1)) * B_lm(l2, m2);
               if (l1 == l2 - 1 && m1 == -m2 - 1 && m2 > 0)
@@ -574,7 +574,7 @@ private:
 
   static MatrixType create_Bz()
   {
-    MatrixType Bz(0);
+    MatrixType Bz(dimRange, dimRange, 0);
     const auto& pos = helper<only_even>::pos;
     for (size_t l1 = 0; l1 <= order; ++l1) {
       for (int m1 = -int(l1); size_t(std::abs(m1)) <= l1; ++m1) {
@@ -891,7 +891,7 @@ public:
 
   virtual MatrixType mass_matrix() const override
   {
-    MatrixType A(0);
+    MatrixType A(dimRange, dimRange, 0);
     for (const auto& quad_point : quadrature_) {
       const auto basis_evaluated = evaluate(quad_point.position());
       for (size_t nn = 0; nn < dimRange; ++nn) {
@@ -913,7 +913,7 @@ public:
 
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const override
   {
-    FieldVector<MatrixType, dimFlux> B(MatrixType(0));
+    FieldVector<MatrixType, dimFlux> B(MatrixType(dimRange, dimRange, 0.));
     for (const auto& quad_point : quadrature_) {
       const auto& v = quad_point.position();
       const auto basis_evaluated = evaluate(v);

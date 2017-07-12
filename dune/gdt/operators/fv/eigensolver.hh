@@ -598,7 +598,7 @@ public:
   typedef typename XT::LA::EigenDenseMatrix<FieldType> MatrixType;
   typedef FieldVector<FieldVector<FieldType, dimRange>, dimRangeCols> EigenValuesType;
   typedef FieldVector<std::shared_ptr<FieldMatrix<FieldType, dimRange, dimRange>>, dimRangeCols> EigenVectorsType;
-  typedef EigenVectorsType InputMatricesType;
+  typedef FieldVector<FieldMatrix<FieldType, dimRange, dimRange>, dimRangeCols> InputMatricesType;
 
 private:
   typedef typename MatrixType::BackendType EigenMatrixBackendType;
