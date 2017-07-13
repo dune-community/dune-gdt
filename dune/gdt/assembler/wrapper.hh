@@ -481,7 +481,8 @@ public:
 // given a local assembler
 
 template <class AssemblerType, class VectorType>
-class LocalVolumeFunctionalVectorAssemblerWrapper
+class DUNE_DEPRECATED_MSG("Use LocalFunctionalAssemblerFunctor instead or directly append the LocalFunctional to "
+                          "the SystemAssembler (08.06.2017)!") LocalVolumeFunctionalVectorAssemblerWrapper
     : public XT::Grid::internal::Codim0Object<typename AssemblerType::GridLayerType>
 {
   typedef XT::Grid::internal::Codim0Object<typename AssemblerType::GridLayerType> BaseType;
@@ -524,7 +525,8 @@ private:
 // without a given local assembler
 
 template <class AssemblerType, class VectorType>
-class LocalVolumeFunctionalWrapper
+class DUNE_DEPRECATED_MSG("Use LocalFunctionalAssemblerFunctor instead or directly append the LocalFunctional to "
+                          "the SystemAssembler (08.06.2017)!") LocalVolumeFunctionalWrapper
     : private XT::Common::ConstStorageProvider<LocalVolumeFunctionalAssembler<typename AssemblerType::TestSpaceType,
                                                                               VectorType>>,
       public LocalVolumeFunctionalVectorAssemblerWrapper<AssemblerType, VectorType>

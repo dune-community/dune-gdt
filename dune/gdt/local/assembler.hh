@@ -542,8 +542,12 @@ private:
 }; // class LocalBoundaryOperatorApplicator
 
 
+/**
+ * \todo \attention Rename LocalVolumeFunctionalAssemblerFunctor -> LocalVolumeFunctionalAssembler after removing this
+ * class!
+ */
 template <class TestSpace, class Vector>
-class LocalVolumeFunctionalAssembler
+class DUNE_DEPRECATED_MSG("Use LocalFunctionalAssemblerFunctor instead (08.06.2017)!") LocalVolumeFunctionalAssembler
 {
   static_assert(is_space<TestSpace>::value, "");
   static_assert(XT::LA::is_vector<Vector>::value, "");
