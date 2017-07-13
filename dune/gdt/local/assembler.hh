@@ -586,9 +586,12 @@ private:
   const LocalVolumeFunctionalType& local_volume_functional_;
 }; // class LocalVolumeFunctionalAssembler
 
-
+/**
+ * \todo \attention Rename LocalFaceFunctionalAssemblerFunctor -> LocalFaceFunctionalAssembler after removing this
+ * class!
+ */
 template <class TestSpace, class Intersection, class Vector>
-class LocalFaceFunctionalAssembler
+class DUNE_DEPRECATED_MSG("Use LocalFaceFunctionalAssemblerFunctor instead (26.06.2017)!") LocalFaceFunctionalAssembler
 {
   static_assert(is_space<TestSpace>::value, "");
   static_assert(XT::Grid::is_intersection<Intersection>::value, "");

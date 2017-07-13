@@ -560,7 +560,9 @@ public:
 // given a local assembler
 
 template <class AssemblerType, class VectorType>
-class LocalFaceFunctionalVectorAssemblerWrapper
+class DUNE_DEPRECATED_MSG(
+    "Use LocalFaceFunctionalAssemblerFunctor instead or directly append the LocalFaceFunctional to "
+    "the SystemAssembler (26.06.2017)!") LocalFaceFunctionalVectorAssemblerWrapper
     : public XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType>
 {
   typedef XT::Grid::internal::Codim1Object<typename AssemblerType::GridLayerType> BaseType;
@@ -606,7 +608,9 @@ private:
 // wihtout a given local assembler
 
 template <class AssemblerType, class VectorType>
-class LocalFaceFunctionalWrapper
+class DUNE_DEPRECATED_MSG(
+    "Use LocalFaceFunctionalAssemblerFunctor instead or directly append the LocalFaceFunctional to "
+    "the SystemAssembler (26.06.2017)!") LocalFaceFunctionalWrapper
     : private XT::Common::ConstStorageProvider<LocalFaceFunctionalAssembler<typename AssemblerType::TestSpaceType,
                                                                             typename AssemblerType::IntersectionType,
                                                                             VectorType>>,

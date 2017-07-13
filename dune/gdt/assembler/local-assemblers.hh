@@ -571,7 +571,6 @@ public:
   {
   }
 
-
   bool apply_on(const GridLayerType& gv, const EntityType& entity) const override final
   {
     return where_->apply_on(gv, entity);
@@ -631,7 +630,6 @@ public:
       global_vector.add_to_entry(global_indices[jj], local_vector[jj]);
   } // ... assemble(...)
 
-
   LocalFaceFunctionalAssemblerFunctor(const XT::Common::PerThreadValue<const TestSpaceType>& space,
                                       const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                                       const LocalFaceFunctionalType& local_face_functional,
@@ -642,7 +640,6 @@ public:
     , vector_(vector)
   {
   }
-
 
   bool apply_on(const GridLayerType& gv, const IntersectionType& intersection) const override final
   {
@@ -662,6 +659,7 @@ private:
   const LocalFaceFunctionalType& local_face_functional_;
   VectorType& vector_;
 }; // class LocalFaceFunctionalAssemblerFunctor
+
 
 } // namespace GDT
 } // namespace Dune
