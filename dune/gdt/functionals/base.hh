@@ -73,12 +73,9 @@ public:
   typedef typename SpaceType::BaseFunctionSetType TestBaseType;
   using typename BaseAssemblerType::GridLayerType;
   typedef VectorImp VectorType;
+  using typename BaseAssemblerType::IntersectionType;
   using typename BaseFunctionalType::FieldType;
   using typename BaseFunctionalType::derived_type;
-  typedef LocalFaceFunctionalInterface<typename SpaceType::BaseFunctionSetType,
-                                       XT::Grid::extract_intersection_t<GridLayerType>,
-                                       FieldType>
-      LocalFaceFunctionalType;
 
   template <class... Args>
   explicit VectorFunctionalBase(VectorType& vec, Args&&... args)
@@ -133,13 +130,11 @@ public:
     return *this;
   }
 
-  ThisType& append(const LocalFaceFunctionalType& local_face_functional,
+  ThisType& append(const LocalFaceFunctionalInterface<TestBaseType, IntersectionType, FieldType>& local_face_functional,
                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where =
                        new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
-    typedef internal::LocalFaceFunctionalWrapper<ThisType, VectorType> WrapperType;
-    this->codim1_functors_.emplace_back(
-        new WrapperType(this->test_space_, where, local_face_functional, vector_.access()));
+    this->append(local_face_functional, vector_.access(), where);
     return *this;
   }
 
