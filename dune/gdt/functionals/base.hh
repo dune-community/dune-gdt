@@ -70,15 +70,12 @@ class VectorFunctionalBase
 public:
   typedef internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridLayerImp, FieldImp> Traits;
   typedef typename BaseAssemblerType::AnsatzSpaceType SpaceType;
+  typedef typename SpaceType::BaseFunctionSetType TestBaseType;
   using typename BaseAssemblerType::GridLayerType;
   typedef VectorImp VectorType;
+  using typename BaseAssemblerType::IntersectionType;
   using typename BaseFunctionalType::FieldType;
   using typename BaseFunctionalType::derived_type;
-  typedef LocalVolumeFunctionalInterface<typename SpaceType::BaseFunctionSetType, FieldType> LocalVolumeFunctionalType;
-  typedef LocalFaceFunctionalInterface<typename SpaceType::BaseFunctionSetType,
-                                       XT::Grid::extract_intersection_t<GridLayerType>,
-                                       FieldType>
-      LocalFaceFunctionalType;
 
   template <class... Args>
   explicit VectorFunctionalBase(VectorType& vec, Args&&... args)
@@ -126,22 +123,18 @@ public:
   using BaseAssemblerType::append;
 
   ThisType& append(
-      const LocalVolumeFunctionalType& local_volume_functional,
+      const LocalVolumeFunctionalInterface<TestBaseType, FieldType>& local_volume_functional,
       const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
-    typedef internal::LocalVolumeFunctionalWrapper<ThisType, VectorType> WrapperType;
-    this->codim0_functors_.emplace_back(
-        new WrapperType(this->test_space_, where, local_volume_functional, vector_.access()));
+    this->append(local_volume_functional, vector_.access(), where);
     return *this;
   }
 
-  ThisType& append(const LocalFaceFunctionalType& local_face_functional,
+  ThisType& append(const LocalFaceFunctionalInterface<TestBaseType, IntersectionType, FieldType>& local_face_functional,
                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where =
                        new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
-    typedef internal::LocalFaceFunctionalWrapper<ThisType, VectorType> WrapperType;
-    this->codim1_functors_.emplace_back(
-        new WrapperType(this->test_space_, where, local_face_functional, vector_.access()));
+    this->append(local_face_functional, vector_.access(), where);
     return *this;
   }
 
