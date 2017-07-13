@@ -372,6 +372,17 @@ public:
   } // ... append(...)
 
   template <class V, class R>
+  ThisType& append(const LocalVolumeFunctionalInterface<TestBaseType, R>& local_volume_functional,
+                   XT::LA::VectorInterface<V, R>& vector,
+                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
+  {
+    this->codim0_functors_.emplace_back(
+        new LocalVolumeFunctionalAssemblerFunctor<TestSpaceType, typename V::derived_type, GridLayerType>(
+            test_space_, where, local_volume_functional, vector.as_imp()));
+    return *this;
+  } // ... append(...)
+
+  template <class V, class R>
   ThisType&
   append(const LocalFaceFunctionalAssembler<TestSpaceType, IntersectionType, typename V::derived_type>& local_assembler,
          XT::LA::VectorInterface<V, R>& vector,
