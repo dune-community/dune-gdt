@@ -16,6 +16,7 @@
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/local/operators/interfaces.hh>
+#include <dune/gdt/local/functionals/interfaces.hh>
 #include <dune/gdt/type_traits.hh>
 
 namespace Dune {
@@ -514,6 +515,150 @@ private:
   const LocalBoundaryTwoFormType& local_boundary_two_form_;
   MatrixType& matrix_;
 }; // class LocalBoundaryTwoFormAssemblerFunctor
+
+
+/**
+ * \todo \attention Rename LocalVolumenFunctionalAssemblerFunctor -> LocalFunctionalAssembler after removing the
+ *                  latter!
+ */
+template <class TestSpaceType, class VectorType, class GridLayerType = typename TestSpaceType::GridLayerType>
+class LocalVolumeFunctionalAssemblerFunctor : public XT::Grid::internal::Codim0Object<GridLayerType>
+{
+  static_assert(is_space<TestSpaceType>::value, "");
+  static_assert(XT::LA::is_vector<VectorType>::value, "");
+  static_assert(XT::Grid::is_layer<GridLayerType>::value, "");
+  typedef XT::Grid::internal::Codim0Object<GridLayerType> BaseType;
+
+public:
+  using typename BaseType::EntityType;
+  typedef typename VectorType::ScalarType FieldType;
+  typedef LocalVolumeFunctionalInterface<typename TestSpaceType::BaseFunctionSetType, FieldType>
+      LocalVolumeFunctionalType;
+
+  static void assemble(const TestSpaceType& test_space,
+                       const LocalVolumeFunctionalType& local_volume_functional,
+                       const EntityType& entity,
+                       VectorType& global_vector)
+  {
+    if (global_vector.size() != test_space.mapper().size())
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
+                 "global_vector.size() = " << global_vector.size() << "\n  "
+                                           << "test_space.mapper().size()"
+                                           << test_space.mapper().size());
+    // prepare
+    const size_t size = test_space.mapper().numDofs(entity);
+    Dune::DynamicVector<FieldType> local_vector(size, 0.); // \todo: make mutable member, after SMP refactor
+    // apply local functional
+    const auto test_basis = test_space.base_function_set(entity);
+    assert(test_basis.size() == size);
+    local_volume_functional.apply(test_basis, local_vector);
+    // write local vector to global
+    const auto global_indices =
+        test_space.mapper().globalIndices(entity); // \todo: make mutable member, after SMP refactor
+    assert(global_indices.size() == size);
+    for (size_t jj = 0; jj < size; ++jj)
+      global_vector.add_to_entry(global_indices[jj], local_vector[jj]);
+  } // ... assemble(...)
+
+  LocalVolumeFunctionalAssemblerFunctor(const XT::Common::PerThreadValue<const TestSpaceType>& space,
+                                        const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where,
+                                        const LocalVolumeFunctionalType& local_volume_functional,
+                                        VectorType& vector)
+    : space_(space)
+    , where_(where)
+    , local_volume_functional_(local_volume_functional)
+    , vector_(vector)
+  {
+  }
+
+  bool apply_on(const GridLayerType& gv, const EntityType& entity) const override final
+  {
+    return where_->apply_on(gv, entity);
+  }
+
+  void apply_local(const EntityType& entity) override final
+  {
+    assemble(*space_, local_volume_functional_, entity, vector_);
+  }
+
+private:
+  const XT::Common::PerThreadValue<const TestSpaceType>& space_;
+  const std::unique_ptr<const XT::Grid::ApplyOn::WhichEntity<GridLayerType>> where_;
+  const LocalVolumeFunctionalType& local_volume_functional_;
+  VectorType& vector_;
+}; // class LocalVolumeFunctionalAssemblerFunctor
+
+
+/**
+ * \todo \attention Rename LocalFaceFunctionalAssemblerFunctor -> LocalFaceFunctionalAssembler after removing the
+ *                  latter!
+ */
+template <class TestSpaceType, class VectorType, class GridLayerType = typename TestSpaceType::GridLayerType>
+class LocalFaceFunctionalAssemblerFunctor : public XT::Grid::internal::Codim1Object<GridLayerType>
+{
+  static_assert(is_space<TestSpaceType>::value, "");
+  static_assert(XT::LA::is_vector<VectorType>::value, "");
+  static_assert(XT::Grid::is_layer<GridLayerType>::value, "");
+  typedef XT::Grid::internal::Codim1Object<GridLayerType> BaseType;
+
+public:
+  using typename BaseType::EntityType;
+  using typename BaseType::IntersectionType;
+  typedef typename VectorType::ScalarType FieldType;
+  typedef LocalFaceFunctionalInterface<typename TestSpaceType::BaseFunctionSetType, IntersectionType, FieldType>
+      LocalFaceFunctionalType;
+
+  static void assemble(const TestSpaceType& test_space,
+                       const IntersectionType& intersection,
+                       const LocalFaceFunctionalType& local_face_functional,
+                       VectorType& global_vector)
+  {
+    // \todo: if statement for global indices?
+    // prepare
+    const auto entity = intersection.inside();
+    const size_t size = test_space.mapper().numDofs(entity);
+    Dune::DynamicVector<FieldType> local_vector(size, 0.); // \todo: make mutable member, after SMP refactor
+    // apply local functional
+    const auto test_basis = test_space.base_function_set(entity);
+    assert(test_basis.size() == size);
+    local_face_functional.apply(test_basis, intersection, local_vector);
+    // write local vector to global
+    // \todo: make mutable member, after SMP refactor
+    const auto global_indices = test_space.mapper().globalIndices(entity);
+    assert(global_indices.size() == size);
+    for (size_t jj = 0; jj < size; ++jj)
+      global_vector.add_to_entry(global_indices[jj], local_vector[jj]);
+  } // ... assemble(...)
+
+  LocalFaceFunctionalAssemblerFunctor(const XT::Common::PerThreadValue<const TestSpaceType>& space,
+                                      const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
+                                      const LocalFaceFunctionalType& local_face_functional,
+                                      VectorType& vector)
+    : space_(space)
+    , where_(where)
+    , local_face_functional_(local_face_functional)
+    , vector_(vector)
+  {
+  }
+
+  bool apply_on(const GridLayerType& gv, const IntersectionType& intersection) const override final
+  {
+    return where_->apply_on(gv, intersection);
+  }
+
+  void apply_local(const IntersectionType& intersection,
+                   const EntityType& /*inside_entity*/,
+                   const EntityType& /*outside_entity*/) override final
+  {
+    assemble(*space_, intersection, local_face_functional_, vector_);
+  }
+
+private:
+  const XT::Common::PerThreadValue<const TestSpaceType>& space_;
+  const std::unique_ptr<const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>> where_;
+  const LocalFaceFunctionalType& local_face_functional_;
+  VectorType& vector_;
+}; // class LocalFaceFunctionalAssemblerFunctor
 
 
 } // namespace GDT
