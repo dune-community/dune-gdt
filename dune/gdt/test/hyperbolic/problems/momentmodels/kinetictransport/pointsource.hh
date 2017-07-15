@@ -102,7 +102,7 @@ public:
     return XT::Common::Parameter({std::make_pair("sigma_a", std::vector<double>{0}),
                                   std::make_pair("sigma_s", std::vector<double>{1}),
                                   std::make_pair("Q", std::vector<double>{0}),
-                                  std::make_pair("CFL", std::vector<double>{0.4}),
+                                  std::make_pair("CFL", std::vector<double>{0.5}),
                                   std::make_pair("t_end", std::vector<double>{0.45})});
   }
 
@@ -132,7 +132,8 @@ public:
           //          ret *= std::max(1. / (8. * M_PI * sigma * sigma) * std::exp(-1. * x.two_norm2() / (2. * sigma *
           //          sigma)),
           //                          1e-4 / (4. * M_PI));
-          ret *= std::max(1. / std::pow(M_PI * sigma, 3) * std::exp(-x.two_norm2() / (M_PI * std::pow(sigma, 2))),
+          ret *= std::max(1. / (4 * M_PI * std::pow(M_PI * sigma, 3))
+                              * std::exp(-x.two_norm2() / (M_PI * std::pow(sigma, 2))),
                           1e-4 / (4. * M_PI));
           return ret;
         },

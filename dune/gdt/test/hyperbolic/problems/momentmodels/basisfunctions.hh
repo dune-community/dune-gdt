@@ -639,9 +639,9 @@ private:
   }
 }; // class RealSphericalHarmonics<DomainFieldType, 3, ...>
 
-template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols>
-class HatFunctions<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols>
-    : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols>
+template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t fluxDim>
+class HatFunctions<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
+    : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
 {
 public:
   static const size_t dimDomain = 1;
@@ -649,7 +649,7 @@ public:
   static const size_t dimRangeCols = rangeDimCols;
 
 private:
-  typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseType;
+  typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, fluxDim> BaseType;
 
 public:
   typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
@@ -773,6 +773,98 @@ private:
   const TriangulationType triangulation_;
 }; // class HatFunctions<DomainFieldType, 1, ...>
 
+template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t fluxDim>
+class HatFunctions<DomainFieldType, 2, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
+    : public BasisfunctionsInterface<DomainFieldType, 2, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
+{
+public:
+  static const size_t dimDomain = 2;
+  static const size_t dimRange = rangeDim;
+  static const size_t dimRangeCols = rangeDimCols;
+
+private:
+  typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, rangeDimCols, fluxDim> BaseType;
+
+public:
+  typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::MatrixType;
+  typedef RangeType TriangulationType;
+
+  HatFunctions(const TriangulationType triangulation = create_triangulation(),
+               const QuadratureType& /*quadrature*/ = QuadratureType())
+    : triangulation_(triangulation)
+  {
+  }
+
+  static TriangulationType create_triangulation()
+  {
+    RangeType ret;
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      ret[ii] = -1. + 2. * ii / (dimRange - 1.);
+    return ret;
+  }
+
+  virtual RangeType evaluate(const DomainType& v) const override
+  {
+    RangeType ret(0);
+    return ret;
+  } // ... evaluate(...)
+
+  virtual RangeType integrated() const override
+  {
+    RangeType ret(0);
+    return ret;
+  }
+
+  // returns matrix with entries <h_i h_j>
+  virtual MatrixType mass_matrix() const override
+  {
+    MatrixType ret(dimRange, dimRange, 0);
+    return ret;
+  }
+
+  virtual MatrixType mass_matrix_inverse() const override
+  {
+    MatrixType ret(dimRange, dimRange, 0);
+    return ret;
+  }
+
+  // returns matrix with entries <v h_i h_j>
+  virtual FieldVector<MatrixType, fluxDim> mass_matrix_with_v() const override
+  {
+    MatrixType ret(dimRange, dimRange, 0);
+    return ret;
+  }
+
+  std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
+  {
+    RangeFieldType psi_iso(0);
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      psi_iso += u[ii];
+    psi_iso /= 2.;
+    RangeType alpha_iso(std::log(psi_iso)), u_iso;
+    u_iso = integrated();
+    u_iso *= psi_iso / 2.;
+    return std::make_pair(u_iso, alpha_iso);
+  }
+
+  const TriangulationType& triangulation() const
+  {
+    return triangulation_;
+  }
+
+  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  {
+    return 2 * std::max(std::accumulate(u.begin(), u.end(), RangeFieldType(0)),
+                        std::accumulate(u_bar.begin(), u_bar.end(), RangeFieldType(0)));
+  }
+
+private:
+  const TriangulationType triangulation_;
+}; // class HatFunctions<DomainFieldType, 2, ...>
+
 
 // After each refinement step:
 // num_vertices_new = num_vertices_old + num_intersections_old
@@ -866,15 +958,8 @@ public:
       DomainType barycentric_coords(0);
       success = calculate_barycentric_coordinates(v, vertices, barycentric_coords);
       if (success) {
-        for (size_t ii = 0; ii < 3; ++ii) {
-          //          std::cout << vertices[ii]->index() << std::endl;
+        for (size_t ii = 0; ii < 3; ++ii)
           ret[vertices[ii]->index()] = barycentric_coords[ii];
-        }
-        //        std::cout << "vertices: " << XT::Common::to_string(face->vertices()[0]->position()) << ", "
-        //                  << XT::Common::to_string(face->vertices()[1]->position()) << ", "
-        //                  << XT::Common::to_string(face->vertices()[2]->position())
-        //                  << ", coords: " << XT::Common::to_string(ret) << ", v: " << XT::Common::to_string(v) <<
-        //                  std::endl;
         break;
       }
     } // faces
@@ -900,9 +985,8 @@ public:
         } // mm
       } // nn
     } // quadrature
-    std::cout << "mass_matrix : " << XT::Common::to_string(A, 15) << std::endl;
     return A;
-  } // ... create_flux_config(...)
+  } // ... mass_matrix()
 
   virtual MatrixType mass_matrix_inverse() const override
   {

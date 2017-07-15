@@ -16,17 +16,21 @@
 #include <vector>
 #include <string>
 
-#include <dune/xt/functions/composition.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
+
+#include <dune/xt/functions/composition.hh>
+#include <dune/xt/functions/lambda/global-function.hh>
+#include <dune/xt/functions/lambda/global-flux-function.hh>
 
 #include <dune/gdt/test/instationary-eocstudy.hh>
 
-#include "default.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 
+#if 0
 template <class EntityImp, class DomainFieldImp, size_t domainDim>
 class PeriodicTransportFunction
     : public XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1>
@@ -232,151 +236,148 @@ private:
   const DomainType lower_left_;
   const DomainType upper_right_;
 };
+#endif
 
 
 namespace Problems {
 
 
-template <class E, class D, size_t d, class R, size_t r, size_t rC = 1>
-class Transport : public Default<E, D, d, R, r, rC>
+template <class E, class D, size_t d, class U, class R, size_t r>
+class Transport : public ProblemBase<E, D, d, U, R, r>
 {
-  typedef Transport<E, D, d, R, r, rC> ThisType;
-  typedef Default<E, D, d, R, r, rC> BaseType;
+  typedef Transport<E, D, d, U, R, r> ThisType;
+  typedef ProblemBase<E, D, d, U, R, r> BaseType;
 
 public:
   static const bool linear = true;
+  using typename BaseType::DomainType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
-  using typename BaseType::DummyEntityType;
-  typedef typename Dune::XT::Functions::AffineFunction<DummyEntityType, R, dimRange, R, dimRange, dimDomain>
-      FluxAffineFunctionType;
-  typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType, E, D, d, R, r, rC>
-      DefaultFluxType;
-  using typename BaseType::DefaultInitialValueType;
-  using typename BaseType::DefaultRHSType;
-  using typename BaseType::DefaultBoundaryValueType;
+
+  typedef typename XT::Functions::AffineFluxFunction<E, D, d, U, R, r, d> ActualFluxType;
+  typedef typename XT::Functions::AffineFluxFunction<E, D, d, U, R, r, 1> ActualRhsType;
+  typedef XT::Functions::GlobalLambdaFunction<E, D, d, R, r, 1> ActualBoundaryValueType;
+  typedef XT::Functions::CheckerboardFunction<E, D, d, R, r, 1, ActualBoundaryValueType> ActualInitialValueType;
+
+  typedef DynamicMatrix<RangeFieldType> MatrixType;
 
   using typename BaseType::FluxType;
-  using typename BaseType::RHSType;
+  using typename BaseType::RhsType;
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
-  using typename BaseType::ConfigType;
+
+  Transport(const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+            const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+    : BaseType(create_flux(),
+               create_rhs(),
+               create_initial_values(grid_cfg),
+               create_boundary_values(),
+               grid_cfg,
+               boundary_cfg,
+               dimDomain == 1 ? 0.5 : (dimDomain == 2 ? 0.3 : 0.15),
+               1)
+  {
+  }
 
   static std::string static_id()
-  {
-    return BaseType::static_id() + ".transport";
-  }
-
-  virtual std::string type() const override
-  {
-    return BaseType::type() + ".transport";
-  }
-
-  static std::string short_id()
   {
     return "Transport";
   }
 
-  static ConfigType default_grid_config()
+  static XT::Common::Configuration default_grid_cfg()
   {
-    ConfigType grid_config;
-    grid_config["type"] = "provider.cube";
+    XT::Common::Configuration grid_config;
+    grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
     grid_config["lower_left"] = "[0.0 0.0 0.0]";
     grid_config["upper_right"] = "[1.0 1.0 1.0]";
     grid_config["num_elements"] = "[8 8 8]";
+    grid_config["overlap_size"] = "[1 1 1]";
     return grid_config;
   }
 
-  static ConfigType default_boundary_info_config()
+  static XT::Common::Configuration default_boundary_cfg()
   {
-    ConfigType boundary_config;
+    XT::Common::Configuration boundary_config;
     boundary_config["type"] = "periodic";
     return boundary_config;
   }
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
-                                          const std::string sub_name = static_id())
+  static FluxType* create_flux()
   {
-    const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
-    const std::shared_ptr<const DefaultFluxType> flux(DefaultFluxType::create(config.sub("flux")));
-    const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
-    const std::shared_ptr<const DefaultInitialValueType> initial_values(
-        DefaultInitialValueType::create(config.sub("initial_values")));
-    const ConfigType grid_config = config.sub("grid");
-    const ConfigType boundary_info = config.sub("boundary_info");
-    const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
-        DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
-  } // ... create(...)
-
-  static ConfigType default_config(const std::string sub_name = "")
-  {
-    ConfigType config = BaseType::default_config();
-    config.add(default_grid_config(), "grid", true);
-    config.add(default_boundary_info_config(), "boundary_info", true);
-    ConfigType flux_config;
-    flux_config["A.0"] = "[1]";
-    flux_config["A.1"] = "[2]";
-    flux_config["b"] = "[0 0; 0 0]";
-    config.add(flux_config, "flux", true);
-    ConfigType initial_value_config;
-    initial_value_config["lower_left"] = "[0.0 0.0 0.0]";
-    initial_value_config["upper_right"] = "[1.0 1.0 1.0]";
-    if (dimDomain == 1)
-      initial_value_config["num_elements"] = "[5]";
-    else
-      initial_value_config["num_elements"] = "[5 5 1]";
-    initial_value_config["variable"] = "x";
-    if (dimDomain == 1)
-      initial_value_config["values"] = "[0.0 "
-                                       "10000*((x[0]-0.2)^2)*((x[0]-0.4)^2)*exp(0.02-((x[0]-0.2)^2)-((x[0]-0.4)^2)) "
-                                       "0.0 1.0 0.0]"; //"[0 sin(pi/2+5*pi*(x[0]-0.3))*exp(-(200*(x[0]-0.3)*(x[0]-0.3)))
-    // 0 1.0 0.0]";
-    else
-      initial_value_config["values"] =
-          std::string("[0 0 0 0 0 ")
-          + std::string("0 "
-                        "10000*((x[0]-0.2)^2)*((x[0]-0.4)^2)*exp(0.02-((x[0]-0.2)^2)-((x[0]-0.4)^2))*10000*((x[1]-0.2)^"
-                        "2)*((x[1]-0.4)^2)*exp(0.02-((x[1]-0.2)^2)-((x[1]-0.4)^2)) 0 0 0 ")
-          + std::string("0 0 0 0 0 ") + std::string("0 0 0 1 0 ") + std::string("0 0 0 0 0]");
-    initial_value_config["order"] = "10";
-    initial_value_config["name"] = static_id();
-    config.add(initial_value_config, "initial_values", true);
-    if (sub_name.empty())
-      return config;
-    else {
-      ConfigType tmp;
-      tmp.add(config, sub_name);
-      return tmp;
+    FieldVector<MatrixType, dimDomain> A(MatrixType(dimRange, dimRange, 0.));
+    for (size_t ii = 0; ii < dimRange; ++ii) {
+      A[0][ii][ii] = 1.;
+      if (dimDomain > 1)
+        A[1][ii][ii] = 2.;
+      if (dimDomain > 2)
+        A[2][ii][ii] = 3.;
     }
-  } // ... default_config(...)
-
-  Transport(const std::shared_ptr<const FluxType> flux_in,
-            const std::shared_ptr<const RHSType> rhs_in,
-            const std::shared_ptr<const InitialValueType> initial_values_in,
-            const ConfigType& grid_config_in,
-            const ConfigType& boundary_info_in,
-            const std::shared_ptr<const BoundaryValueType> boundary_values_in)
-    : BaseType(flux_in, rhs_in, initial_values_in, grid_config_in, boundary_info_in, boundary_values_in)
-  {
+    return new ActualFluxType(A, typename ActualFluxType::RangeType(0));
   }
 
-  virtual double CFL() const override
+  static RhsType* create_rhs()
   {
+    return new ActualRhsType(FieldVector<MatrixType, 1>(MatrixType(dimRange, dimRange, 0.)));
+  } // ... create_rhs(...)
+
+  static InitialValueType* create_initial_values(const XT::Common::Configuration& grid_cfg)
+  {
+    typedef typename ActualInitialValueType::LocalizableFunctionType LambdaFunctionType;
+    const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg["lower_left"]);
+    const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg["upper_right"]);
+    const size_t num_regions = size_t(std::pow(5, dimDomain) + 0.5);
+    FieldVector<size_t, dimDomain> num_segments(1);
+    num_segments *= 5;
+
+    std::vector<LambdaFunctionType> initial_vals(
+        num_regions,
+        LambdaFunctionType([](const DomainType&, const XT::Common::Parameter&) { return RangeType(0); }, 0));
+
+    auto pow1 = [](const DomainType& x, const size_t ii) { return std::pow(x[ii] - 0.2, 2); };
+    auto pow2 = [](const DomainType& x, const size_t ii) { return std::pow(x[ii] - 0.4, 2); };
+    auto exp1 = [&](const DomainType& x, const size_t ii) { return std::exp(0.02 - pow1(x, ii) - pow2(x, ii)); };
+
     if (dimDomain == 1)
-      return 0.5;
+      initial_vals[1] = LambdaFunctionType(
+          [=](const DomainType& x, const XT::Common::Parameter&) {
+            return RangeType(10000 * pow1(x, 0) * pow2(x, 0) * exp1(x, 0));
+          },
+          50);
+    else if (dimDomain == 2)
+      initial_vals[6] = LambdaFunctionType(
+          [=](const DomainType& x, const XT::Common::Parameter&) {
+            return RangeType(10000 * pow1(x, 0) * pow2(x, 0) * exp1(x, 0) * 10000 * pow1(x, 1) * pow2(x, 1)
+                             * exp1(x, 1));
+          },
+          50);
     else
-      return 0.3;
-  }
+      initial_vals[31] = LambdaFunctionType(
+          [=](const DomainType& x, const XT::Common::Parameter&) {
+            return RangeType(10000 * pow1(x, 0) * pow2(x, 0) * exp1(x, 0) * 10000 * pow1(x, 1) * pow2(x, 1) * exp1(x, 1)
+                             * 10000
+                             * pow1(x, 2)
+                             * pow2(x, 2)
+                             * exp1(x, 2));
+          },
+          50);
+    initial_vals[dimDomain == 1 ? 3 : (dimDomain == 2 ? 18 : 93)] =
+        LambdaFunctionType([](const DomainType&, const XT::Common::Parameter&) { return RangeType(1); }, 0);
+    return new ActualInitialValueType(lower_left, upper_right, num_segments, initial_vals, "initial_values");
+  } // ... create_initial_values()
 
-  virtual double t_end() const override
+  // Use a constant vacuum concentration basis_integrated * psi_vac as boundary value
+  virtual BoundaryValueType* create_boundary_values()
   {
-    return 1.0;
-  }
+    return new ActualBoundaryValueType([=](const DomainType&, const XT::Common::Parameter&) { return 0; }, 0);
+  } // ... create_boundary_values()
 };
 
 } // namespace Problems
 
+#if 0
 template <class G, class R = double, size_t r = 1, size_t rC = 1>
 class TransportTestCase
     : public Dune::GDT::Test::NonStationaryTestCase<G,
@@ -470,6 +471,7 @@ private:
   const ProblemType problem_;
   std::shared_ptr<const SolutionType> exact_solution_;
 }; // class TransportTestCase
+#endif
 
 } // namespace Hyperbolic
 } // namespace GDT

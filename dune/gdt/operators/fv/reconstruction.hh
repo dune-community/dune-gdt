@@ -58,7 +58,7 @@ class LocalReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayer
   typedef typename GridLayerType::Intersection::Geometry::LocalCoordinate IntersectionLocalCoordType;
   typedef typename AnalyticalFluxType::LocalfunctionType AnalyticalFluxLocalfunctionType;
   typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
-  typedef typename AnalyticalFluxLocalfunctionType::PartialURangeType JacobianRangeType;
+  typedef typename Dune::FieldVector<Dune::FieldMatrix<double, dimRange, dimRange>, dimDomain> JacobianRangeType;
 
 public:
   explicit LocalReconstructionFvOperator(

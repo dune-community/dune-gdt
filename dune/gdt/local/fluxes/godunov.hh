@@ -27,14 +27,14 @@ namespace GDT {
 
 // forwards
 template <class AnalyticalFluxImp,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldImp,
+          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
                                                     AnalyticalFluxImp::dimRange,
                                                     AnalyticalFluxImp::dimRangeCols>>
 class GodunovLocalNumericalCouplingFlux;
 
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionType,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldImp,
+          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
                                                     AnalyticalFluxImp::dimRange,
                                                     AnalyticalFluxImp::dimRangeCols>>
 class GodunovLocalDirichletNumericalBoundaryFlux;
@@ -95,8 +95,10 @@ public:
   typedef typename Traits::AnalyticalFluxLocalfunctionType AnalyticalFluxLocalfunctionType;
   typedef typename Traits::EigenSolverType EigenSolverType;
   typedef typename XT::LA::CommonSparseMatrix<RangeFieldType> SparseMatrixType;
+  typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
   static constexpr size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
+  typedef typename Dune::FieldVector<Dune::FieldMatrix<double, dimRange, dimRange>, dimDomain> JacobianRangeType;
 
   typedef FieldVector<SparseMatrixType, dimDomain> JacobiansType;
 
@@ -171,10 +173,15 @@ private:
       RangeType u_mean = u_i + u_j;
       u_mean *= RangeFieldType(0.5);
       const auto& local_flux = std::get<0>(local_functions_tuple);
-      const auto eigen_solver = EigenSolverType(*local_flux, x_local, u_mean, param_inside_, true);
+      if (!jacobian_)
+        jacobian_ = XT::Common::make_unique<JacobianRangeType>();
+      helper<dimDomain>::get_jacobian(local_flux, x_local, u_mean, *jacobian_, param_inside_);
+      const auto eigen_solver = EigenSolverType(*jacobian_, true);
       const auto& eigenvalues = eigen_solver.eigenvalues();
       const auto& eigenvectors = eigen_solver.eigenvectors();
       const auto& eigenvectors_inverse = eigen_solver.eigenvectors_inverse();
+      if (is_linear_)
+        jacobian_ = nullptr;
 
       for (size_t ii = 0; ii < dimDomain; ++ii) {
         FieldMatrix<RangeFieldType, dimRange, dimRange> jacobian_neg_dense(0);
@@ -184,10 +191,10 @@ private:
             for (size_t kk = 0; kk < dimRange; ++kk)
               if (XT::Common::FloatCmp::lt(eigenvalues[ii][kk], 0.))
                 jacobian_neg_dense[rr][cc] +=
-                    eigenvectors[ii][rr][kk] * eigenvectors_inverse[ii][kk][cc] * eigenvalues[ii][kk];
+                    (*(eigenvectors[ii]))[rr][kk] * (*(eigenvectors_inverse[ii]))[kk][cc] * eigenvalues[ii][kk];
               else
                 jacobian_pos_dense[rr][cc] +=
-                    eigenvectors[ii][rr][kk] * eigenvectors_inverse[ii][kk][cc] * eigenvalues[ii][kk];
+                    (*(eigenvectors[ii]))[rr][kk] * (*(eigenvectors_inverse[ii]))[kk][cc] * eigenvalues[ii][kk];
         jacobian_neg_[ii] = SparseMatrixType(jacobian_neg_dense, true);
         jacobian_pos_[ii] = SparseMatrixType(jacobian_pos_dense, true);
       } // ii
@@ -195,12 +202,39 @@ private:
     } // (!jacobians_initialized || !linear)
   } // void calculate_jacobians(...)
 
+  template <size_t domainDim = dimDomain, class anything = void>
+  struct helper
+  {
+    static void get_jacobian(const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
+                             const DomainType& x_in_inside_coords,
+                             const StateRangeType& u,
+                             JacobianRangeType& ret,
+                             const XT::Common::Parameter& param)
+    {
+      local_func->partial_u(x_in_inside_coords, u, ret, param);
+    }
+  };
+
+  template <class anything>
+  struct helper<1, anything>
+  {
+    static void get_jacobian(const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
+                             const DomainType& x_in_inside_coords,
+                             const StateRangeType& u,
+                             JacobianRangeType& ret,
+                             const XT::Common::Parameter& param)
+    {
+      local_func->partial_u(x_in_inside_coords, u, ret[0], param);
+    }
+  };
+
   const AnalyticalFluxType& analytical_flux_;
   XT::Common::Parameter param_inside_;
   XT::Common::Parameter param_outside_;
   static thread_local JacobiansType jacobian_neg_;
   static thread_local JacobiansType jacobian_pos_;
   static thread_local bool jacobians_initialized_;
+  static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
   const bool is_linear_;
   static bool is_instantiated_;
 }; // class GodunovFluxImplementation
@@ -213,6 +247,10 @@ thread_local typename GodunovFluxImplementation<Traits>::JacobiansType GodunovFl
 
 template <class Traits>
 thread_local bool GodunovFluxImplementation<Traits>::jacobians_initialized_ = false;
+
+template <class Traits>
+thread_local std::unique_ptr<typename GodunovFluxImplementation<Traits>::JacobianRangeType>
+    GodunovFluxImplementation<Traits>::jacobian_;
 
 template <class Traits>
 bool GodunovFluxImplementation<Traits>::is_instantiated_(false);
