@@ -262,7 +262,7 @@ public:
   typedef XT::Functions::GlobalLambdaFunction<E, D, d, R, r, 1> ActualBoundaryValueType;
   typedef XT::Functions::CheckerboardFunction<E, D, d, R, r, 1, ActualBoundaryValueType> ActualInitialValueType;
 
-  typedef DynamicMatrix<RangeFieldType> MatrixType;
+  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
 
   using typename BaseType::FluxType;
   using typename BaseType::RhsType;
@@ -307,7 +307,7 @@ public:
 
   static FluxType* create_flux()
   {
-    FieldVector<MatrixType, dimDomain> A(MatrixType(dimRange, dimRange, 0.));
+    FieldVector<MatrixType, dimDomain> A(MatrixType(0.));
     for (size_t ii = 0; ii < dimRange; ++ii) {
       A[0][ii][ii] = 1.;
       if (dimDomain > 1)
@@ -320,7 +320,7 @@ public:
 
   static RhsType* create_rhs()
   {
-    return new ActualRhsType(FieldVector<MatrixType, 1>(MatrixType(dimRange, dimRange, 0.)));
+    return new ActualRhsType(FieldVector<MatrixType, 1>(MatrixType(0.)));
   } // ... create_rhs(...)
 
   static InitialValueType* create_initial_values(const XT::Common::Configuration& grid_cfg)
