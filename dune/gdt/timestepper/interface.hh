@@ -282,7 +282,6 @@ public:
       }
     }
 
-
     while (Dune::XT::Common::FloatCmp::lt(t, t_end)) {
       TimeFieldType max_dt = dt;
       // match saving times and t_end exactly

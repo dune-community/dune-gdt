@@ -102,7 +102,7 @@ public:
     return XT::Common::Parameter({std::make_pair("sigma_a", std::vector<double>{0}),
                                   std::make_pair("sigma_s", std::vector<double>{1}),
                                   std::make_pair("Q", std::vector<double>{0}),
-                                  std::make_pair("CFL", std::vector<double>{0.5}),
+                                  std::make_pair("CFL", std::vector<double>{0.3}),
                                   std::make_pair("t_end", std::vector<double>{0.45})});
   }
 

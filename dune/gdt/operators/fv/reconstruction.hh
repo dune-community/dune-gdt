@@ -59,6 +59,7 @@ class LocalReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayer
   typedef typename AnalyticalFluxType::LocalfunctionType AnalyticalFluxLocalfunctionType;
   typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
   typedef typename Dune::FieldVector<Dune::FieldMatrix<double, dimRange, dimRange>, dimDomain> JacobianRangeType;
+  typedef typename EigenSolverType::EigenVectorsType EigenVectorsType;
 
 public:
   explicit LocalReconstructionFvOperator(
@@ -128,13 +129,8 @@ public:
     const auto& eigenvectors = eigensolver_->eigenvectors();
     const auto& eigenvectors_inverse = eigensolver_->eigenvectors_inverse();
     for (size_t dd = 0; dd < dimDomain; ++dd)
-      helper<>::reconstruct(dd,
-                            values,
-                            *(eigenvectors[dd]),
-                            *(eigenvectors_inverse[dd]),
-                            quadrature_,
-                            reconstructed_values_map,
-                            intersections);
+      helper<>::reconstruct(
+          dd, values, eigenvectors, eigenvectors_inverse, quadrature_, reconstructed_values_map, intersections);
   } // void apply_local(...)
 
 private:
@@ -155,15 +151,15 @@ private:
   {
     static void reconstruct(size_t /*dd*/,
                             const ValuesType& values,
-                            const MatrixType& eigenvectors,
-                            const MatrixType& eigenvectors_inverse,
+                            const EigenVectorsType& eigenvectors,
+                            const EigenVectorsType& eigenvectors_inverse,
                             const QuadratureType& /*quadrature*/,
                             std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
     {
       FieldVector<RangeType, stencil_size> char_values;
       for (size_t ii = 0; ii < stencil_size; ++ii)
-        eigenvectors_inverse.mv(values[ii][0][0], char_values[ii]);
+        eigenvectors_inverse[0].mv(values[ii][0][0], char_values[ii]);
 
       // reconstruction in x direction
       FieldVector<RangeType, 2> reconstructed_values;
@@ -175,7 +171,7 @@ private:
       RangeType value;
       for (size_t ii = 0; ii < 2; ++ii) {
         // convert back to non-characteristic variables
-        eigenvectors.mv(reconstructed_values[ii], value);
+        eigenvectors[0].mv(reconstructed_values[ii], value);
         auto quadrature_point = FieldVector<DomainFieldType, dimDomain - 1>();
         reconstructed_values_map.insert(
             std::make_pair(intersections[ii].geometryInInside().global(quadrature_point), value));
@@ -198,22 +194,22 @@ private:
 
     static void reconstruct(size_t dd,
                             const ValuesType& values,
-                            const MatrixType& eigenvectors,
-                            const MatrixType& eigenvectors_inverse,
+                            const EigenVectorsType& eigenvectors,
+                            const EigenVectorsType& eigenvectors_inverse,
                             const QuadratureType& quadrature,
                             std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
     {
       // We always treat dd as the x-direction and set y-direction accordingly. For that purpose, define new
-      // coordinates x', y'. First convert to characteristic variables and reorder x, y to x', y'.
+      // coordinates x', y'. First reorder x, y to x', y' and convert to x'-characteristic variables.
       // Reordering is done such that the indices in char_values are in the order y', x'.
       FieldVector<FieldVector<RangeType, stencil_size>, stencil_size> char_values;
       for (size_t ii = 0; ii < stencil_size; ++ii) {
         for (size_t jj = 0; jj < stencil_size; ++jj) {
           if (dd == 0)
-            eigenvectors_inverse.mv(values[ii][jj][0], char_values[jj][ii]);
+            eigenvectors_inverse[0]->mv(values[ii][jj][0], char_values[jj][ii]);
           else if (dd == 1)
-            eigenvectors_inverse.mv(values[ii][jj][0], char_values[ii][jj]);
+            eigenvectors_inverse[1]->mv(values[ii][jj][0], char_values[ii][jj]);
         }
       }
 
@@ -229,6 +225,17 @@ private:
         x_reconstructed_values[1][jj] = result[1];
       }
 
+      // convert from x'-characteristic variables to y'-characteristic variables
+      RangeType tmp_vec;
+      for (size_t ii = 0; ii < 2; ++ii) {
+        for (size_t jj = 0; jj < stencil_size; ++jj) {
+          tmp_vec = x_reconstructed_values[ii][jj];
+          eigenvectors[dd]->mv(tmp_vec, x_reconstructed_values[ii][jj]);
+          tmp_vec = x_reconstructed_values[ii][jj];
+          eigenvectors_inverse[(dd + 1) % 2]->mv(tmp_vec, x_reconstructed_values[ii][jj]);
+        }
+      }
+
       const auto& num_quad_points = quadrature.size();
       // reconstruction in y' direction
       // first index: left/right interface
@@ -238,14 +245,13 @@ private:
         slope_reconstruction(x_reconstructed_values[ii], reconstructed_values[ii], quadrature);
 
       // convert coordinates on face to local entity coordinates and store
-      RangeType value;
       for (size_t ii = 0; ii < 2; ++ii) {
         for (size_t jj = 0; jj < num_quad_points; ++jj) {
-          // convert back to non-characteristic variables and to FieldVector instead of EigenVector
-          eigenvectors.mv(reconstructed_values[ii][jj], value);
+          // convert back to non-characteristic variables
+          eigenvectors[(dd + 1) % 2]->mv(reconstructed_values[ii][jj], tmp_vec);
           auto quadrature_point = quadrature[jj].position();
           reconstructed_values_map.insert(
-              std::make_pair(intersections[2 * dd + ii].geometryInInside().global(quadrature_point), value));
+              std::make_pair(intersections[2 * dd + ii].geometryInInside().global(quadrature_point), tmp_vec));
         } // jj
       } // ii
     } // static void reconstruct()
@@ -266,25 +272,25 @@ private:
 
     static void reconstruct(size_t dd,
                             const ValuesType& values,
-                            const MatrixType& eigenvectors,
-                            const MatrixType& eigenvectors_inverse,
+                            const EigenVectorsType& eigenvectors,
+                            const EigenVectorsType& eigenvectors_inverse,
                             const QuadratureType& quadrature,
                             std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
     {
       // We always treat dd as the x-direction and set y- and z-direction accordingly. For that purpose, define new
-      // coordinates x', y', z'. First convert to characteristic variables and reorder x, y, z to x', y', z'.
+      // coordinates x', y', z'. First reorder x, y, z to x', y', z' and convert to x'-characteristic variables.
       // Reordering is done such that the indices in char_values are in the order z', y', x'
       FieldVector<FieldVector<FieldVector<RangeType, stencil_size>, stencil_size>, stencil_size> char_values;
       for (size_t ii = 0; ii < stencil_size; ++ii) {
         for (size_t jj = 0; jj < stencil_size; ++jj) {
           for (size_t kk = 0; kk < stencil_size; ++kk) {
             if (dd == 0)
-              eigenvectors_inverse.mv(values[ii][jj][kk], char_values[kk][jj][ii]);
+              eigenvectors_inverse[dd]->mv(values[ii][jj][kk], char_values[kk][jj][ii]);
             else if (dd == 1)
-              eigenvectors_inverse.mv(values[ii][jj][kk], char_values[ii][kk][jj]);
+              eigenvectors_inverse[dd]->mv(values[ii][jj][kk], char_values[ii][kk][jj]);
             else if (dd == 2)
-              eigenvectors_inverse.mv(values[ii][jj][kk], char_values[jj][ii][kk]);
+              eigenvectors_inverse[dd]->mv(values[ii][jj][kk], char_values[jj][ii][kk]);
           }
         }
       }
@@ -304,6 +310,19 @@ private:
         }
       }
 
+      // convert from x'-characteristic variables to y'-characteristic variables
+      RangeType tmp_vec;
+      for (size_t kk = 0; kk < stencil_size; ++kk) {
+        for (size_t ii = 0; ii < 2; ++ii) {
+          for (size_t jj = 0; jj < stencil_size; ++jj) {
+            tmp_vec = x_reconstructed_values[kk][ii][jj];
+            eigenvectors[dd]->mv(tmp_vec, x_reconstructed_values[kk][ii][jj]);
+            tmp_vec = x_reconstructed_values[kk][ii][jj];
+            eigenvectors_inverse[(dd + 1) % 3]->mv(tmp_vec, x_reconstructed_values[kk][ii][jj]);
+          }
+        }
+      }
+
       // reconstruction in y' direction
       // first index: left/right interface
       // second index: quadrature_points in y' direction
@@ -320,6 +339,18 @@ private:
         } // ii
       } // kk
 
+      // convert from y'-characteristic variables to z'-characteristic variables
+      for (size_t ii = 0; ii < 2; ++ii) {
+        for (size_t jj = 0; jj < num_quad_points; ++jj) {
+          for (size_t kk = 0; kk < stencil_size; ++kk) {
+            tmp_vec = y_reconstructed_values[ii][jj][kk];
+            eigenvectors[(dd + 1) % 3]->mv(tmp_vec, y_reconstructed_values[ii][jj][kk]);
+            tmp_vec = y_reconstructed_values[ii][jj][kk];
+            eigenvectors_inverse[(dd + 2) % 3]->mv(tmp_vec, y_reconstructed_values[ii][jj][kk]);
+          }
+        }
+      }
+
       // reconstruction in z' direction
       // first index: left/right interface
       // second index: quadrature_points in y' direction
@@ -331,15 +362,14 @@ private:
           slope_reconstruction(y_reconstructed_values[ii][jj], reconstructed_values[ii][jj], quadrature);
 
       // convert coordinates on face to local entity coordinates and store
-      RangeType value;
       for (size_t ii = 0; ii < 2; ++ii) {
         for (size_t jj = 0; jj < num_quad_points; ++jj) {
           for (size_t kk = 0; kk < num_quad_points; ++kk) {
-            // convert back to non-characteristic variables and to FieldVector instead of EigenVector
-            eigenvectors.mv(reconstructed_values[ii][jj][kk], value);
+            // convert back to non-characteristic variables
+            eigenvectors[(dd + 2) % 3]->mv(reconstructed_values[ii][jj][kk], tmp_vec);
             IntersectionLocalCoordType quadrature_point = {quadrature[jj].position(), quadrature[kk].position()};
             reconstructed_values_map.insert(
-                std::make_pair(intersections[2 * dd + ii].geometryInInside().global(quadrature_point), value));
+                std::make_pair(intersections[2 * dd + ii].geometryInInside().global(quadrature_point), tmp_vec));
           } // kk
         } // jj
       } // ii
