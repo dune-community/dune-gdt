@@ -157,7 +157,6 @@ public:
   virtual FluxType* create_flux() const override
   {
     auto A = basis_functions_.mass_matrix_with_v();
-    std::cout << XT::Common::to_string(A) << std::endl;
     auto M_inv = basis_functions_.mass_matrix_inverse();
     for (size_t dd = 0; dd < dimDomain; ++dd)
       A[dd].rightmultiply(M_inv);

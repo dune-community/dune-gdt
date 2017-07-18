@@ -24,6 +24,8 @@
 #include <dune/gdt/timestepper/fractional-step.hh>
 #include <dune/gdt/test/hyperbolic/discretizers/base.hh>
 
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/lebedevquadrature.hh>
+
 #include "interfaces.hh"
 
 namespace Dune {

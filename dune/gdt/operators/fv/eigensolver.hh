@@ -469,15 +469,12 @@ class UnitMatrix
 public:
   typedef FieldMatrix<FieldType, dimRange, dimRange> MatrixType;
 
-  UnitMatrix()
-    : unit_matrix_(0.)
-  {
-    for (size_t rr = 0; rr < dimRange; ++rr)
-      unit_matrix_[rr][rr] = 1.;
-  }
-
+  // need to reset unit_matrix every time because Lapack changes it
   FieldType* get()
   {
+    unit_matrix_ = MatrixType(0);
+    for (size_t rr = 0; rr < dimRange; ++rr)
+      unit_matrix_[rr][rr] = 1.;
     return &(unit_matrix_[0][0]);
   }
 
@@ -575,6 +572,8 @@ private:
         *(eigenvectors_inverse_[ii]) = *(eigenvectors_[ii]);
         eigenvectors_inverse_[ii]->invert();
       } // if(calculate_eigenvectors)
+      //      std::cout << "EigenVectors: " << XT::Common::to_string(*(eigenvectors_[ii])) << std::endl;
+      //      std::cout << "EigenValues: " << XT::Common::to_string(*(eigenvectors_inverse_[ii])) << std::endl;
     } // ii
   } // void initialize(...)
 
@@ -675,7 +674,7 @@ template <class FieldType, size_t dimRange, size_t dimRangeCols>
 #if HAVE_LAPACK
 using DefaultEigenSolver = LapackEigenSolver<FieldType, dimRange, dimRangeCols>;
 #elif HAVE_EIGEN
-using DefaultEigenSolver = EigenEigenSolver<FieldType, dimRange, dimRangeCols>;
+using DefaultEigenSolver = EigenEigenSolver<FieldType, dimRange, dimRangeCols, true>;
 #else
 using DefaultEigenSolver = QrHouseholderEigenSolver<FieldType, dimRange, dimRangeCols>;
 #endif

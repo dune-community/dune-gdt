@@ -432,13 +432,29 @@ int main(int argc, char** argv)
   //  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
   //                                         BoundaryValueType,
   //                                         ConstantFunctionType,
-  //                                         0,
+  //                                         1,
   //                                         SlopeLimiters::minmod,
   //                                         false>
   //      AdvectionOperatorType;
 
-  typedef AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType, 1, SlopeLimiters::minmod, false>
+  typedef AdvectionForceOperator<AnalyticalFluxType,
+                                 BoundaryValueType,
+                                 ConstantFunctionType,
+                                 1,
+                                 SlopeLimiters::minmod,
+                                 false>
       AdvectionOperatorType;
+
+  //  typedef AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType, 1, SlopeLimiters::minmod, false>
+  //      AdvectionOperatorType;
+
+  //  typedef AdvectionLaxWendroffOperator<AnalyticalFluxType,
+  //                                       BoundaryValueType,
+  //                                       ConstantFunctionType,
+  //                                       0,
+  //                                       SlopeLimiters::minmod,
+  //                                       false>
+  //      AdvectionOperatorType;
 
 
   typedef
@@ -474,7 +490,8 @@ int main(int argc, char** argv)
   //          analytical_flux, boundary_values, dx_function, linear);
 
   //  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_function, false, linear);
-  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, linear);
+  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_function, linear);
+  //    AdvectionOperatorType advection_operator(analytical_flux, boundary_values, linear);
   //  advection_operator.set_basisfunctions(basis_functions);
   //  advection_operator.set_quadrature(problem_imp.quadrature());
   //  advection_operator.set_quadrature(quadrature);
@@ -515,8 +532,14 @@ int main(int argc, char** argv)
                   ? "_implicit"
                   : (rhs_time_stepper_method == TimeStepperMethods::matrix_exponential ? "_matexp" : "_explicit");
 
-  timestepper.solve(
-      t_end, dt, num_save_steps, /*save_solution = */ false, /*output_progress = */ true, visualize, filename, 4);
+  timestepper.solve(t_end,
+                    dt,
+                    num_save_steps,
+                    /*save_solution = */ false,
+                    /*output_progress = */ true,
+                    visualize,
+                    filename,
+                    basis_functions->visualizer<DiscreteFunctionType>());
 
   const auto& sol = timestepper.current_solution();
   std::vector<std::pair<DomainType, RangeFieldType>> values;

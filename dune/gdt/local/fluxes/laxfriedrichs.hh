@@ -66,7 +66,7 @@ public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
   typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
   using typename BaseType::AnalyticalFluxLocalfunctionType;
-  typedef std::tuple<std::shared_ptr<AnalyticalFluxLocalfunctionType>, unsigned int, std::shared_ptr<LocalfunctionType>>
+  typedef std::tuple<std::shared_ptr<AnalyticalFluxLocalfunctionType>, std::shared_ptr<LocalfunctionType>>
       LocalfunctionTupleType;
   static_assert(LocalizableFunctionType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
   typedef LaxFriedrichsLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionType, EigenSolverImp>
@@ -91,7 +91,6 @@ public:
                                                            EigenSolverImp>
       derived_type;
   typedef std::tuple<std::shared_ptr<AnalyticalFluxLocalfunctionType>,
-                     unsigned int,
                      std::shared_ptr<LocalfunctionType>,
                      std::shared_ptr<BoundaryValueLocalfunctionType>>
       LocalfunctionTupleType;
@@ -209,22 +208,21 @@ public:
     } else if (lambda_provided_) {
       lambda_ij_[direction] = lambda_[direction];
     } else {
-      const RangeFieldType dx = std::get<2>(local_functions_tuple_entity)->evaluate(x_in_inside_coords)[0];
+      const RangeFieldType dx = std::get<1>(local_functions_tuple_entity)->evaluate(x_in_inside_coords)[0];
       lambda_ij_[direction] = dt_ / dx;
     } // if (use_local)
 
     // calculate flux evaluation as
-    // ret[kk] = (f_u_i[kk] + f_u_j[kk])*n_ij*0.5 - (u_j - u_i)[kk]*1.0/(num_neighbors_*lambda_ij)
+    // ret[kk] = (f_u_i[kk] + f_u_j[kk])*n_ij*0.5 - (u_j - u_i)[kk]*1.0/(num_neighbors*lambda_ij)
     RangeType ret;
-    const size_t num_neighbors = std::get<1>(local_functions_tuple_entity);
     auto second_part = u_j;
     second_part -= u_i;
-    second_part /= lambda_ij_[direction] * num_neighbors;
+    second_part /= lambda_ij_[direction] * 2 * dimDomain;
     n_ij[direction] *= 0.5;
     for (size_t kk = 0; kk < dimRange; ++kk)
       ret[kk] = f_u_i_plus_f_u_j[kk][direction] * n_ij[direction] - second_part[kk];
     return ret;
-  }
+  } // ... evaluate(...)
 
   const AnalyticalFluxType& analytical_flux() const
   {
@@ -361,8 +359,7 @@ public:
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
-    return std::make_tuple(
-        implementation_.analytical_flux().local_function(entity), entity.subEntities(1), dx_.local_function(entity));
+    return std::make_tuple(implementation_.analytical_flux().local_function(entity), dx_.local_function(entity));
   }
 
   template <class IntersectionType>
@@ -441,7 +438,6 @@ public:
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
     return std::make_tuple(implementation_.analytical_flux().local_function(entity),
-                           entity.subEntities(1),
                            dx_.local_function(entity),
                            boundary_values_.local_function(entity));
   }
@@ -456,15 +452,14 @@ public:
 
   {
     const auto x_in_inside_coords = intersection.geometryInInside().global(x_in_intersection_coords);
-    const auto x_in_outside_coords = DomainType(200);
     const RangeType u_i = local_source_entity.evaluate(x_in_inside_coords);
-    const RangeType u_j = std::get<3>(local_functions_tuple)->evaluate(x_in_inside_coords);
+    const RangeType u_j = std::get<2>(local_functions_tuple)->evaluate(x_in_inside_coords);
     return implementation_.evaluate(local_functions_tuple,
                                     local_functions_tuple,
                                     intersection,
                                     x_in_intersection_coords,
                                     x_in_inside_coords,
-                                    x_in_outside_coords,
+                                    x_in_inside_coords,
                                     u_i,
                                     u_j);
   } // RangeType evaluate(...) const
@@ -503,8 +498,8 @@ public:
   static const size_t dimRange = Traits::dimRange;
 
   explicit LaxFriedrichsLocalAbsorbingNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
-                                                            const LocalizableFunctionType& dx,
                                                             const XT::Common::Parameter param,
+                                                            const LocalizableFunctionType& dx,
                                                             const bool use_local = false,
                                                             const bool is_linear = false,
                                                             const DomainType lambda = DomainType(0))

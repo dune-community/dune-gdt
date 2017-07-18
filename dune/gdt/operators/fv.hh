@@ -13,12 +13,14 @@
 #define DUNE_GDT_OPERATORS_FV_HH
 
 #include "fv/base.hh"
-#include "fv/laxfriedrichs.hh"
+#include "fv/force.hh"
 #include "fv/godunov.hh"
 #include "fv/kinetic.hh"
-#include "fv/rhs.hh"
-#include "fv/reconstruction.hh"
+#include "fv/laxfriedrichs.hh"
+#include "fv/laxwendroff.hh"
 #include "fv/slopelimiters.hh"
 #include "fv/realizability.hh"
+#include "fv/reconstruction.hh"
+#include "fv/rhs.hh"
 
 #endif // DUNE_GDT_OPERATORS_FV_HH

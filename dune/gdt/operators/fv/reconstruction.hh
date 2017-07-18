@@ -103,23 +103,16 @@ public:
     StencilIterator::apply(source_values_, boundary_values_, values, entity, grid_layer_, -1, offsets);
     // get intersections
     FieldVector<typename GridLayerType::Intersection, 2 * dimDomain> intersections;
-    for (const auto& intersection : Dune::intersections(grid_layer_, entity)) {
-      const auto& n = intersection.unitOuterNormal(intersection.geometry().local(intersection.geometry().center()));
-      for (size_t dd = 0; dd < dimDomain; ++dd) {
-        if (XT::Common::FloatCmp::eq(n[dd], -1.))
-          intersections[2 * dd] = intersection;
-        else if (XT::Common::FloatCmp::eq(n[dd], 1.))
-          intersections[2 * dd + 1] = intersection;
-      }
-    }
+    for (const auto& intersection : Dune::intersections(grid_layer_, entity))
+      intersections[intersection.indexInInside()] = intersection;
     // get jacobians
-    const auto& u_entity = values[stencil[0] / 2][stencil[1] / 2][stencil[2] / 2];
     const auto& entity_index = grid_layer_.indexSet().index(entity);
     auto& reconstructed_values_map = reconstructed_values_[entity_index];
-    const auto flux_local_func = analytical_flux_.local_function(entity);
     if (!is_linear_ || !eigensolver_) {
       if (!jacobian_)
         jacobian_ = XT::Common::make_unique<JacobianRangeType>();
+      const auto& u_entity = values[stencil[0] / 2][stencil[1] / 2][stencil[2] / 2];
+      const auto flux_local_func = analytical_flux_.local_function(entity);
       helper<dimDomain>::get_jacobian(
           flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, *jacobian_, param_);
       eigensolver_ = XT::Common::make_unique<EigenSolverType>(*jacobian_, true);
@@ -488,15 +481,6 @@ private:
       slope_scaled *= points[ii] - 0.5;
       result[ii] += slope_scaled;
     }
-  }
-
-  static void slope_reconstruction(const FieldVector<RangeType, stencil_size>& cell_values,
-                                   FieldVector<RangeType, 2>& result,
-                                   const QuadratureType& quadrature)
-  {
-    std::vector<RangeType> result_vec(2);
-    slope_reconstruction(cell_values, result_vec, quadrature);
-    std::copy(result_vec.begin(), result_vec.end(), result.begin());
   }
 
   const std::vector<RangeType> source_values_;
