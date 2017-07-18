@@ -580,11 +580,11 @@ private:
   EigenValuesType eigenvalues_;
   EigenVectorsType eigenvectors_;
   EigenVectorsType eigenvectors_inverse_;
-  static UnitMatrix<FieldType, dimRange> unit_matrix_;
+  static thread_local UnitMatrix<FieldType, dimRange> unit_matrix_;
 }; // class LapackEigenSolver<...>
 
 template <class FieldType, size_t dimRange, size_t dimRangeCols>
-UnitMatrix<FieldType, dimRange> LapackEigenSolver<FieldType, dimRange, dimRangeCols>::unit_matrix_;
+thread_local UnitMatrix<FieldType, dimRange> LapackEigenSolver<FieldType, dimRange, dimRangeCols>::unit_matrix_;
 #endif // HAVE_LAPACK
 
 #if HAVE_EIGEN
