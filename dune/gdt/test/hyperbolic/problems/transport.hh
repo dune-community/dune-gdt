@@ -16,6 +16,8 @@
 #include <vector>
 #include <string>
 
+#include <dune/xt/common/parameter.hh>
+
 #include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/xt/functions/composition.hh>
@@ -75,7 +77,7 @@ public:
     return BaseType::static_id() + ".periodictransport";
   }
 
-  virtual size_t order() const override final
+  virtual size_t order(const Common::Parameter& /*mu*/ = Common::Parameter()) const override final
   {
     return 1;
   }
@@ -130,7 +132,7 @@ public:
   {
   }
 
-  virtual size_t order() const override
+  virtual size_t order(const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override
   {
     return 2;
   }

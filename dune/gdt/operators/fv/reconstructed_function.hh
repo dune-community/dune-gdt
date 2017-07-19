@@ -78,7 +78,7 @@ private:
     {
     }
 
-    virtual size_t order() const
+    virtual size_t order(const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const
     {
       DUNE_THROW(Dune::InvalidStateException, "This function can't be integrated!");
       return 2;
