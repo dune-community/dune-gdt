@@ -9,8 +9,8 @@
 //   Rene Milk       (2016 - 2017)
 //   Tobias Leibner  (2016)
 
-#ifndef DUNE_GDT_LOCAL_FLUXES_LAXWENDROFF_HH
-#define DUNE_GDT_LOCAL_FLUXES_LAXWENDROFF_HH
+#ifndef DUNE_GDT_LOCAL_FLUXES_MUSTA_HH
+#define DUNE_GDT_LOCAL_FLUXES_MUSTA_HH
 
 #include <tuple>
 
@@ -27,7 +27,7 @@ template <class AnalyticalFluxImp,
           class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
                                                     AnalyticalFluxImp::dimRange,
                                                     AnalyticalFluxImp::dimRangeCols>>
-class LaxWendroffLocalNumericalCouplingFlux;
+class MustaLocalNumericalCouplingFlux;
 
 template <class AnalyticalFluxImp,
           class BoundaryValueFunctionImp,
@@ -35,37 +35,37 @@ template <class AnalyticalFluxImp,
           class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
                                                     AnalyticalFluxImp::dimRange,
                                                     AnalyticalFluxImp::dimRangeCols>>
-class LaxWendroffLocalDirichletNumericalBoundaryFlux;
+class MustaLocalDirichletNumericalBoundaryFlux;
 
 
 namespace internal {
 
 
 template <class AnalyticalFluxImp, class LocalizableFunctionImp, class EigenSolverImp>
-class LaxWendroffLocalNumericalCouplingFluxTraits
+class MustaLocalNumericalCouplingFluxTraits
     : public LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp>
 {
 public:
-  typedef LaxWendroffLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp> derived_type;
-}; // class LaxWendroffLocalNumericalCouplingFluxTraits
+  typedef MustaLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp> derived_type;
+}; // class MustaLocalNumericalCouplingFluxTraits
 
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp, class EigenSolverImp>
-class LaxWendroffLocalDirichletNumericalBoundaryFluxTraits
+class MustaLocalDirichletNumericalBoundaryFluxTraits
     : public LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                     BoundaryValueFunctionImp,
                                                                     LocalizableFunctionImp,
                                                                     EigenSolverImp>
 {
 public:
-  typedef LaxWendroffLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
-                                                         BoundaryValueFunctionImp,
-                                                         LocalizableFunctionImp,
-                                                         EigenSolverImp>
+  typedef MustaLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
+                                                   BoundaryValueFunctionImp,
+                                                   LocalizableFunctionImp,
+                                                   EigenSolverImp>
       derived_type;
-}; // class LaxWendroffLocalDirichletNumericalBoundaryFluxTraits
+}; // class MustaLocalDirichletNumericalBoundaryFluxTraits
 
 template <class Traits>
-class LaxWendroffFluxImplementation
+class MustaFluxImplementation
 {
 public:
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
@@ -83,17 +83,15 @@ public:
   static const size_t dimRange = Traits::dimRange;
   typedef typename Dune::FieldVector<Dune::FieldMatrix<double, dimRange, dimRange>, dimDomain> JacobianRangeType;
 
-  explicit LaxWendroffFluxImplementation(const AnalyticalFluxType& analytical_flux,
-                                         XT::Common::Parameter param,
-                                         const bool is_linear = false,
-                                         const RangeFieldType alpha = dimDomain,
-                                         const bool boundary = false)
+  explicit MustaFluxImplementation(const AnalyticalFluxType& analytical_flux,
+                                   XT::Common::Parameter param,
+                                   const size_t num_stages,
+                                   const bool boundary)
     : analytical_flux_(analytical_flux)
     , param_inside_(param)
     , param_outside_(param)
     , dt_(param.get("dt")[0])
-    , is_linear_(is_linear)
-    , alpha_(alpha)
+    , num_stages_(num_stages)
   {
     param_inside_.set("boundary", {0.}, true);
     param_outside_.set("boundary", {double(boundary)}, true);
@@ -112,24 +110,44 @@ public:
     // find direction of unit outer normal
     auto n_ij = intersection.unitOuterNormal(x_in_intersection_coords);
     size_t direction = intersection.indexInInside() / 2;
+    bool positive_dir = intersection.indexInInside() % 2;
 
-    const auto& local_flux_inside = std::get<0>(local_functions_tuple_entity);
-    const auto& local_flux_outside = std::get<0>(local_functions_tuple_neighbor);
+    // get data on left and right entity
+    const RangeType& u_R = positive_dir ? u_j : u_i;
+    const RangeType& u_L = positive_dir ? u_i : u_j;
+    const DomainType& x_in_R_coords = positive_dir ? x_in_outside_coords : x_in_inside_coords;
+    const DomainType& x_in_L_coords = positive_dir ? x_in_inside_coords : x_in_outside_coords;
+    const auto& local_flux_R =
+        std::get<0>(positive_dir ? local_functions_tuple_neighbor : local_functions_tuple_entity);
+    const auto& local_flux_L =
+        std::get<0>(positive_dir ? local_functions_tuple_entity : local_functions_tuple_neighbor);
+    const auto& local_flux_inside = positive_dir ? local_flux_L : local_flux_R;
+    const auto& param_L = positive_dir ? param_outside_ : param_inside_;
+    const auto& param_R = positive_dir ? param_inside_ : param_outside_;
 
-    // calculate flux evaluation as
-    // ret = f((u_i + u_j)*0.5 - (f_u_j - f_u_i)*0.5*dt/dx*dimDomain)*n_ij[direction]
     const RangeFieldType dx = std::get<1>(local_functions_tuple_entity)->evaluate(x_in_inside_coords)[0];
-    RangeType ret = u_i;
-    ret += u_j;
-    ret *= 0.5;
-    RangeType second_part = local_flux_outside->evaluate_col(direction, x_in_outside_coords, u_j, param_outside_);
-    second_part -= local_flux_inside->evaluate_col(direction, x_in_inside_coords, u_i, param_inside_);
-    second_part *= n_ij[direction] * 0.5 * dt_ / dx * alpha_;
-    ret -= second_part;
-    ret = local_flux_inside->evaluate_col(direction, x_in_inside_coords, ret, param_inside_);
+
+    RangeType u_L_l = u_L;
+    RangeType u_R_l = u_R;
+    RangeType ret;
+    for (size_t ll = 0; ll <= num_stages_; ++ll)
+      calculate_stage(ret,
+                      u_L_l,
+                      u_R_l,
+                      *local_flux_L,
+                      *local_flux_R,
+                      *local_flux_inside,
+                      x_in_L_coords,
+                      x_in_R_coords,
+                      x_in_inside_coords,
+                      param_L,
+                      param_R,
+                      dx,
+                      direction,
+                      ll != num_stages_);
     ret *= n_ij[direction];
     return ret;
-  } // ... evaluate(...)
+  }
 
   const AnalyticalFluxType& analytical_flux() const
   {
@@ -137,13 +155,72 @@ public:
   }
 
 private:
+  void calculate_stage(RangeType& ret,
+                       RangeType& u_L,
+                       RangeType& u_R,
+                       const AnalyticalFluxLocalfunctionType& local_flux_L,
+                       const AnalyticalFluxLocalfunctionType& local_flux_R,
+                       const AnalyticalFluxLocalfunctionType& local_flux_inside,
+                       const DomainType& x_in_L_coords,
+                       const DomainType& x_in_R_coords,
+                       const DomainType& x_in_inside_coords,
+                       const XT::Common::Parameter& param_L,
+                       const XT::Common::Parameter& param_R,
+                       const RangeFieldType& dx,
+                       const size_t direction,
+                       const bool update) const
+  {
+    // get data of current_stage
+    const RangeType f_L = local_flux_L.evaluate_col(direction, x_in_L_coords, u_L, param_L);
+    const RangeType f_R = local_flux_R.evaluate_col(direction, x_in_R_coords, u_R, param_R);
+
+    // calculate u^{1/2}
+    RangeType u_half = u_L;
+    u_half += u_R;
+    RangeType f_diff = f_R;
+    f_diff -= f_L;
+    f_diff *= dx / dt_;
+    u_half -= f_diff;
+    u_half *= 0.5;
+
+    // calculate f_M
+    const RangeType f_M = local_flux_inside.evaluate_col(direction, x_in_inside_coords, u_half, param_inside_);
+
+    // calculate force flux
+    auto& f_force = f_diff;
+    f_force = f_M;
+    f_force *= 2.;
+    f_force += f_L;
+    f_force += f_R;
+    auto& u_diff = u_half;
+    u_diff = u_R;
+    u_diff -= u_L;
+    u_diff *= dx / dt_;
+    f_force -= u_diff;
+    f_force *= 0.25;
+
+    // update data
+    if (update) {
+      auto update_L = f_force;
+      update_L -= f_L;
+      update_L *= dt_ / dx;
+      u_L -= update_L;
+      auto& update_R = update_L;
+      update_R = f_R;
+      update_R -= f_force;
+      update_R *= dt_ / dx;
+      u_R -= update_R;
+    } else {
+      ret = f_force;
+    }
+  }
+
   const AnalyticalFluxType& analytical_flux_;
   XT::Common::Parameter param_inside_;
   XT::Common::Parameter param_outside_;
   const double dt_;
-  const bool is_linear_;
-  const RangeFieldType alpha_;
-}; // class LaxWendroffFluxImplementation<...>
+  const size_t num_stages_;
+}; // class MustaFluxImplementation<...>
 
 
 } // namespace internal
@@ -180,16 +257,13 @@ private:
  *  use_local to false, otherwise lambda will not be used.
  */
 template <class AnalyticalFluxImp, class LocalizableFunctionImp, class EigenSolverImp>
-class LaxWendroffLocalNumericalCouplingFlux
-    : public LocalNumericalCouplingFluxInterface<internal::
-                                                     LaxWendroffLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
+class MustaLocalNumericalCouplingFlux
+    : public LocalNumericalCouplingFluxInterface<internal::MustaLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
                                                                                                  LocalizableFunctionImp,
                                                                                                  EigenSolverImp>>
 {
 public:
-  typedef internal::LaxWendroffLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
-                                                                LocalizableFunctionImp,
-                                                                EigenSolverImp>
+  typedef internal::MustaLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp>
       Traits;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
@@ -202,13 +276,12 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
-  explicit LaxWendroffLocalNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
-                                                 const XT::Common::Parameter& param,
-                                                 const LocalizableFunctionType& dx,
-                                                 const bool is_linear = false,
-                                                 const RangeFieldType alpha = dimDomain)
+  explicit MustaLocalNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
+                                           const XT::Common::Parameter& param,
+                                           const LocalizableFunctionType& dx,
+                                           const size_t num_stages = 2)
     : dx_(dx)
-    , implementation_(analytical_flux, param, is_linear, alpha, false)
+    , implementation_(analytical_flux, param, num_stages, false)
   {
   }
 
@@ -244,26 +317,26 @@ public:
 
 private:
   const LocalizableFunctionType& dx_;
-  const internal::LaxWendroffFluxImplementation<Traits> implementation_;
-}; // class LaxWendroffLocalNumericalCouplingFlux
+  const internal::MustaFluxImplementation<Traits> implementation_;
+}; // class MustaLocalNumericalCouplingFlux
 
 /**
-*  \brief  Lax-Wendroff flux evaluation for Dirichlet boundary intersections.
-*  \see    LaxWendroffLocalNumericalCouplingFlux
+*  \brief  MUSTA flux evaluation for Dirichlet boundary intersections.
+*  \see    MustaLocalNumericalCouplingFlux
 */
 template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp, class EigenSolverImp>
-class LaxWendroffLocalDirichletNumericalBoundaryFlux
+class MustaLocalDirichletNumericalBoundaryFlux
     : public LocalNumericalBoundaryFluxInterface<internal::
-                                                     LaxWendroffLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                                                          BoundaryValueFunctionImp,
-                                                                                                          LocalizableFunctionImp,
-                                                                                                          EigenSolverImp>>
+                                                     MustaLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
+                                                                                                    BoundaryValueFunctionImp,
+                                                                                                    LocalizableFunctionImp,
+                                                                                                    EigenSolverImp>>
 {
 public:
-  typedef internal::LaxWendroffLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                         BoundaryValueFunctionImp,
-                                                                         LocalizableFunctionImp,
-                                                                         EigenSolverImp>
+  typedef internal::MustaLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
+                                                                   BoundaryValueFunctionImp,
+                                                                   LocalizableFunctionImp,
+                                                                   EigenSolverImp>
       Traits;
   typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
@@ -277,15 +350,14 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
-  explicit LaxWendroffLocalDirichletNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
-                                                          const BoundaryValueFunctionType& boundary_values,
-                                                          const XT::Common::Parameter& param,
-                                                          const LocalizableFunctionType& dx,
-                                                          const bool is_linear = false,
-                                                          const RangeFieldType alpha = dimDomain)
+  explicit MustaLocalDirichletNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
+                                                    const BoundaryValueFunctionType& boundary_values,
+                                                    const XT::Common::Parameter& param,
+                                                    const LocalizableFunctionType& dx,
+                                                    const size_t num_stages = 2)
     : boundary_values_(boundary_values)
     , dx_(dx)
-    , implementation_(analytical_flux, param, is_linear, alpha, true)
+    , implementation_(analytical_flux, param, num_stages, true)
   {
   }
 
@@ -321,11 +393,11 @@ public:
 private:
   const BoundaryValueFunctionType& boundary_values_;
   const LocalizableFunctionType& dx_;
-  const internal::LaxWendroffFluxImplementation<Traits> implementation_;
-}; // class LaxWendroffLocalDirichletNumericalBoundaryFlux
+  const internal::MustaFluxImplementation<Traits> implementation_;
+}; // class MustaLocalDirichletNumericalBoundaryFlux
 
 
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCAL_FLUXES_LAXWENDROFF_HH
+#endif // DUNE_GDT_LOCAL_FLUXES_MUSTA_HH

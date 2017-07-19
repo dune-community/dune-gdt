@@ -135,24 +135,24 @@ public:
                      const RangeType& u_i,
                      const RangeType& u_j) const
   {
-    initialize_jacobians(local_functions_tuple, x_in_inside_coords, u_i, u_j);
+    size_t direction = intersection.indexInInside() / 2;
+    // get unit outer normal
+    const auto n_ij = intersection.unitOuterNormal(x_in_intersection_coords);
+    assert(XT::Common::FloatCmp::eq(std::abs(n_ij[direction]), 1.));
 
-    const auto& local_flux = std::get<0>(local_functions_tuple);
-    const auto f_u_i = XT::Functions::RangeTypeConverter<dimRange, dimDomain>::convert(
-        local_flux->evaluate(x_in_inside_coords, u_i, param_inside_));
+    // intialize jacobians
+    initialize_jacobians(local_functions_tuple, x_in_inside_coords, u_i, u_j);
 
     // get jump at the intersection
     const RangeType delta_u = u_i - u_j;
-    // get unit outer normal
-    const auto n_ij = intersection.unitOuterNormal(x_in_intersection_coords);
-    // find direction of unit outer normal
-    size_t direction = intersection.indexInInside() / 2;
-    assert(XT::Common::FloatCmp::eq(std::abs(n_ij[direction]), 1.));
-    // calculate return vector
-    RangeType ret(0);
-    n_ij[direction] > 0 ? jacobian_neg_[direction].mv(delta_u, ret) : jacobian_pos_[direction].mv(delta_u, ret);
-    for (size_t kk = 0; kk < dimRange; ++kk)
-      ret[kk] = (f_u_i[kk][direction] - ret[kk]) * n_ij[direction];
+    // calculate waves
+    RangeType waves(0);
+    n_ij[direction] > 0 ? jacobian_neg_[direction].mv(delta_u, waves) : jacobian_pos_[direction].mv(delta_u, waves);
+    // calculate flux
+    const auto& local_flux = std::get<0>(local_functions_tuple);
+    RangeType ret = local_flux->evaluate_col(direction, x_in_inside_coords, u_i, param_inside_);
+    ret -= waves;
+    ret *= n_ij[direction];
     return ret;
   } // RangeType evaluate(...) const
 

@@ -126,16 +126,18 @@ public:
 
   explicit LaxFriedrichsFluxImplementation(const AnalyticalFluxType& analytical_flux,
                                            XT::Common::Parameter param,
-                                           const bool use_local = false,
-                                           const bool is_linear = false,
-                                           const DomainType lambda = DomainType(0),
-                                           const bool boundary = false)
+                                           const bool use_local,
+                                           const bool is_linear,
+                                           const RangeFieldType& alpha,
+                                           const DomainType lambda,
+                                           const bool boundary)
     : analytical_flux_(analytical_flux)
     , param_inside_(param)
     , param_outside_(param)
     , dt_(param.get("dt")[0])
     , use_local_(use_local)
     , is_linear_(is_linear)
+    , alpha_(alpha)
     , lambda_(lambda)
     , lambda_provided_(XT::Common::FloatCmp::ne(lambda_, DomainType(0)))
   {
@@ -169,15 +171,12 @@ public:
                      const RangeType& u_i,
                      const RangeType& u_j) const
   {
-    const auto& local_flux_inside = std::get<0>(local_functions_tuple_entity);
-    const auto& local_flux_outside = std::get<0>(local_functions_tuple_neighbor);
-    auto f_u_i_plus_f_u_j = XT::Functions::RangeTypeConverter<dimRange, dimDomain>::convert(
-        local_flux_inside->evaluate(x_in_inside_coords, u_i, param_inside_));
-    f_u_i_plus_f_u_j += XT::Functions::RangeTypeConverter<dimRange, dimDomain>::convert(
-        local_flux_outside->evaluate(x_in_outside_coords, u_j, param_outside_));
-    auto n_ij = intersection.unitOuterNormal(x_in_intersection_coords);
     // find direction of unit outer normal
     size_t direction = intersection.indexInInside() / 2;
+
+    const auto& local_flux_inside = std::get<0>(local_functions_tuple_entity);
+    const auto& local_flux_outside = std::get<0>(local_functions_tuple_neighbor);
+    auto n_ij = intersection.unitOuterNormal(x_in_intersection_coords);
 
     if (use_local_) {
       if (!is_linear_ || !max_derivative_calculated_) {
@@ -214,13 +213,13 @@ public:
 
     // calculate flux evaluation as
     // ret[kk] = (f_u_i[kk] + f_u_j[kk])*n_ij*0.5 - (u_j - u_i)[kk]*1.0/(num_neighbors*lambda_ij)
-    RangeType ret;
     auto second_part = u_j;
     second_part -= u_i;
-    second_part /= lambda_ij_[direction] * 2 * dimDomain;
-    n_ij[direction] *= 0.5;
-    for (size_t kk = 0; kk < dimRange; ++kk)
-      ret[kk] = f_u_i_plus_f_u_j[kk][direction] * n_ij[direction] - second_part[kk];
+    second_part /= lambda_ij_[direction] * 2 * alpha_;
+    auto ret = local_flux_inside->evaluate_col(direction, x_in_inside_coords, u_i, param_inside_);
+    ret += local_flux_outside->evaluate_col(direction, x_in_outside_coords, u_j, param_outside_);
+    ret *= n_ij[direction] * 0.5;
+    ret -= second_part;
     return ret;
   } // ... evaluate(...)
 
@@ -262,6 +261,7 @@ private:
   const double dt_;
   const bool use_local_;
   const bool is_linear_;
+  const RangeFieldType alpha_;
   const DomainType lambda_;
   const bool lambda_provided_;
   static thread_local DomainType lambda_ij_;
@@ -351,9 +351,10 @@ public:
                                                    const LocalizableFunctionType& dx,
                                                    const bool use_local = false,
                                                    const bool is_linear = false,
+                                                   const RangeFieldType alpha = dimDomain,
                                                    const DomainType lambda = DomainType(0))
     : dx_(dx)
-    , implementation_(analytical_flux, param, use_local, is_linear, lambda, false)
+    , implementation_(analytical_flux, param, use_local, is_linear, alpha, lambda, false)
   {
   }
 
@@ -428,10 +429,11 @@ public:
                                                             const LocalizableFunctionType& dx,
                                                             const bool use_local = false,
                                                             const bool is_linear = false,
+                                                            const RangeFieldType alpha = dimDomain,
                                                             const DomainType lambda = DomainType(0))
     : boundary_values_(boundary_values)
     , dx_(dx)
-    , implementation_(analytical_flux, param, use_local, is_linear, lambda, true)
+    , implementation_(analytical_flux, param, use_local, is_linear, alpha, lambda, true)
   {
   }
 
@@ -502,9 +504,10 @@ public:
                                                             const LocalizableFunctionType& dx,
                                                             const bool use_local = false,
                                                             const bool is_linear = false,
+                                                            const RangeFieldType alpha = dimDomain,
                                                             const DomainType lambda = DomainType(0))
     : dx_(dx)
-    , implementation_(analytical_flux, param, use_local, is_linear, lambda, false)
+    , implementation_(analytical_flux, param, use_local, is_linear, alpha, lambda, false)
   {
   }
 

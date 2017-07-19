@@ -12,13 +12,7 @@
 #ifndef DUNE_GDT_LOCAL_FLUXES_FORCE_HH
 #define DUNE_GDT_LOCAL_FLUXES_FORCE_HH
 
-#include <tuple>
-#include <memory>
-
 #include <dune/xt/functions/interfaces.hh>
-#include <dune/xt/functions/type_traits.hh>
-
-#include <dune/gdt/operators/fv/eigensolver.hh>
 
 #include "interfaces.hh"
 #include "laxfriedrichs.hh"
@@ -133,9 +127,10 @@ public:
   explicit ForceLocalNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
                                            const XT::Common::Parameter& param,
                                            const LocalizableFunctionType& dx,
-                                           const bool is_linear = false)
-    : lax_friedrichs_flux_(analytical_flux, param, dx, false, is_linear)
-    , lax_wendroff_flux_(analytical_flux, param, dx, is_linear)
+                                           const bool is_linear = false,
+                                           const RangeFieldType alpha = dimDomain)
+    : lax_friedrichs_flux_(analytical_flux, param, dx, false, is_linear, alpha)
+    , lax_wendroff_flux_(analytical_flux, param, dx, is_linear, alpha)
   {
   }
 
@@ -221,9 +216,10 @@ public:
                                                     const BoundaryValueFunctionType& boundary_values,
                                                     const XT::Common::Parameter& param,
                                                     const LocalizableFunctionType& dx,
-                                                    const bool is_linear = false)
-    : lax_friedrichs_flux_(analytical_flux, boundary_values, param, dx, false, is_linear)
-    , lax_wendroff_flux_(analytical_flux, boundary_values, param, dx, is_linear)
+                                                    const bool is_linear = false,
+                                                    const RangeFieldType alpha = dimDomain)
+    : lax_friedrichs_flux_(analytical_flux, boundary_values, param, dx, false, is_linear, alpha)
+    , lax_wendroff_flux_(analytical_flux, boundary_values, param, dx, is_linear, alpha)
   {
   }
 
