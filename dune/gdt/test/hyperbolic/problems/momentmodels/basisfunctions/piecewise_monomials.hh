@@ -7,8 +7,8 @@
 // Authors:
 //   Tobias Leibner  (2017)
 
-#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_BASISFUNCTIONS_HH
-#define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_BASISFUNCTIONS_HH
+#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PIECEWISEMONOMIALS_HH
+#define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PIECEWISEMONOMIALS_HH
 
 #include "base.hh"
 
@@ -49,7 +49,6 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
-  template <class DiscreteFunctionType>
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
 
@@ -349,4 +348,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_BASISFUNCTIONS_HH
+#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PIECEWISEMONOMIALS_HH

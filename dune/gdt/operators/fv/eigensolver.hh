@@ -498,6 +498,30 @@ struct LapackWrapper
                    int ldvl,
                    double* vr,
                    int ldvr);
+  static int dggevx(char balanc,
+                    char jobvl,
+                    char jobvr,
+                    char sense,
+                    int n,
+                    double* a,
+                    int lda,
+                    double* b,
+                    int ldb,
+                    double* alphar,
+                    double* alphai,
+                    double* beta,
+                    double* vl,
+                    int ldvl,
+                    double* vr,
+                    int ldvr,
+                    int* ilo,
+                    int* ihi,
+                    double* lscale,
+                    double* rscale,
+                    double* abnrm,
+                    double* bbnrm,
+                    double* rconde,
+                    double* rcondv);
 };
 
 template <class FieldType, size_t dimRange, size_t dimRangeCols>
@@ -559,21 +583,48 @@ private:
                                       &((*(eigenvectors_[ii]))[0][0]),
                                       N);
 
+      //      int ilo, ihi;
+      //      std::array<double, dimRange> lscale, rscale, rconde, rcondv;
+      //      double abnrm, bbnrm;
+
+      //      int info = LapackWrapper::dggevx('B',
+      //                                       'N',
+      //                                       calculate_eigenvectors ? 'V' : 'N',
+      //                                       'N',
+      //                                       N,
+      //                                       &(matrices_in[ii][0][0]),
+      //                                       N,
+      //                                       unit_matrix_.get(),
+      //                                       N,
+      //                                       alpha_real.data(),
+      //                                       alpha_imag.data(),
+      //                                       beta.data(),
+      //                                       (double*)nullptr,
+      //                                       N,
+      //                                       &((*(eigenvectors_[ii]))[0][0]),
+      //                                       N,
+      //                                       &ilo,
+      //                                       &ihi,
+      //                                       lscale.data(),
+      //                                       rscale.data(),
+      //                                       &abnrm,
+      //                                       &bbnrm,
+      //                                       rconde.data(),
+      //                                       rcondv.data());
+
       if (info != 0)
         DUNE_THROW(Dune::MathError, "Lapack returned error " + XT::Common::to_string(info) + "!");
 
       for (size_t rr = 0; rr < dimRange; ++rr) {
         assert(XT::Common::FloatCmp::eq(alpha_imag[rr], 0.));
-        assert(XT::Common::FloatCmp::eq(beta[rr], 1.));
-        eigenvalues_[ii][rr] = alpha_real[rr];
+        assert(XT::Common::FloatCmp::ne(beta[rr], 0., 1e-6));
+        eigenvalues_[ii][rr] = alpha_real[rr] / beta[rr];
       }
 
       if (calculate_eigenvectors) {
         *(eigenvectors_inverse_[ii]) = *(eigenvectors_[ii]);
         eigenvectors_inverse_[ii]->invert();
       } // if(calculate_eigenvectors)
-      //      std::cout << "EigenVectors: " << XT::Common::to_string(*(eigenvectors_[ii])) << std::endl;
-      //      std::cout << "EigenValues: " << XT::Common::to_string(*(eigenvectors_inverse_[ii])) << std::endl;
     } // ii
   } // void initialize(...)
 

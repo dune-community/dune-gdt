@@ -24,7 +24,7 @@ namespace GDT {
 
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueFunctionImp,
+          class BoundaryValueImp,
           size_t polOrder,
           SlopeLimiters slope_lim,
           bool realizability_lim,
@@ -38,7 +38,7 @@ namespace internal {
 
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueFunctionImp,
+          class BoundaryValueImp,
           size_t reconstructionOrder,
           SlopeLimiters slope_lim,
           bool realizability_lim,
@@ -47,7 +47,7 @@ template <class AnalyticalFluxImp,
                                                     AnalyticalFluxImp::dimRange,
                                                     AnalyticalFluxImp::dimRangeCols>>
 class AdvectionKineticOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp,
-                                                                  BoundaryValueFunctionImp,
+                                                                  BoundaryValueImp,
                                                                   reconstructionOrder,
                                                                   slope_lim,
                                                                   realizability_lim,
@@ -55,7 +55,7 @@ class AdvectionKineticOperatorTraits : public AdvectionTraitsBase<AnalyticalFlux
                                                                   EigenSolverImp>
 {
   typedef AdvectionTraitsBase<AnalyticalFluxImp,
-                              BoundaryValueFunctionImp,
+                              BoundaryValueImp,
                               reconstructionOrder,
                               slope_lim,
                               realizability_lim,
@@ -73,7 +73,7 @@ public:
   typedef typename Dune::GDT::KineticLocalNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueType>
       NumericalBoundaryFluxType;
   typedef AdvectionKineticOperator<AnalyticalFluxImp,
-                                   BoundaryValueFunctionImp,
+                                   BoundaryValueImp,
                                    polOrder,
                                    slope_limiter,
                                    realizability_limiting,
@@ -88,20 +88,20 @@ public:
 
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueFunctionImp,
+          class BoundaryValueImp,
           size_t polOrder = 0,
           SlopeLimiters slope_lim = SlopeLimiters::minmod,
           bool realizability_lim = false,
-          class BasisFunctionImp = Hyperbolic::Problems::HatFunctions<typename BoundaryValueFunctionImp::DomainFieldImp,
-                                                                      BoundaryValueFunctionImp::dimDomain,
-                                                                      typename BoundaryValueFunctionImp::RangeFieldType,
-                                                                      BoundaryValueFunctionImp::dimRange,
-                                                                      BoundaryValueFunctionImp::dimRangeCols>,
+          class BasisFunctionImp = Hyperbolic::Problems::HatFunctions<typename BoundaryValueImp::DomainFieldImp,
+                                                                      BoundaryValueImp::dimDomain,
+                                                                      typename BoundaryValueImp::RangeFieldType,
+                                                                      BoundaryValueImp::dimRange,
+                                                                      BoundaryValueImp::dimRangeCols>,
           class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldImp,
                                                     AnalyticalFluxImp::dimRange,
                                                     AnalyticalFluxImp::dimRangeCols>,
           class Traits = internal::AdvectionKineticOperatorTraits<AnalyticalFluxImp,
-                                                                  BoundaryValueFunctionImp,
+                                                                  BoundaryValueImp,
                                                                   polOrder,
                                                                   slope_lim,
                                                                   realizability_lim,

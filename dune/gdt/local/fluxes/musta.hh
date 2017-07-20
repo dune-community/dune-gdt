@@ -30,7 +30,7 @@ template <class AnalyticalFluxImp,
 class MustaLocalNumericalCouplingFlux;
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueFunctionImp,
+          class BoundaryValueImp,
           class LocalizableFunctionImp,
           class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
                                                     AnalyticalFluxImp::dimRange,
@@ -49,16 +49,16 @@ public:
   typedef MustaLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp> derived_type;
 }; // class MustaLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp, class EigenSolverImp>
 class MustaLocalDirichletNumericalBoundaryFluxTraits
     : public LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                    BoundaryValueFunctionImp,
+                                                                    BoundaryValueImp,
                                                                     LocalizableFunctionImp,
                                                                     EigenSolverImp>
 {
 public:
   typedef MustaLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
-                                                   BoundaryValueFunctionImp,
+                                                   BoundaryValueImp,
                                                    LocalizableFunctionImp,
                                                    EigenSolverImp>
       derived_type;
@@ -324,21 +324,21 @@ private:
 *  \brief  MUSTA flux evaluation for Dirichlet boundary intersections.
 *  \see    MustaLocalNumericalCouplingFlux
 */
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp, class EigenSolverImp>
 class MustaLocalDirichletNumericalBoundaryFlux
     : public LocalNumericalBoundaryFluxInterface<internal::
                                                      MustaLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                                                    BoundaryValueFunctionImp,
+                                                                                                    BoundaryValueImp,
                                                                                                     LocalizableFunctionImp,
                                                                                                     EigenSolverImp>>
 {
 public:
   typedef internal::MustaLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                   BoundaryValueFunctionImp,
+                                                                   BoundaryValueImp,
                                                                    LocalizableFunctionImp,
                                                                    EigenSolverImp>
       Traits;
-  typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
+  typedef typename Traits::BoundaryValueType BoundaryValueType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
@@ -351,7 +351,7 @@ public:
   static const size_t dimRange = Traits::dimRange;
 
   explicit MustaLocalDirichletNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
-                                                    const BoundaryValueFunctionType& boundary_values,
+                                                    const BoundaryValueType& boundary_values,
                                                     const XT::Common::Parameter& param,
                                                     const LocalizableFunctionType& dx,
                                                     const size_t num_stages = 2)
@@ -391,7 +391,7 @@ public:
   } // RangeType evaluate(...) const
 
 private:
-  const BoundaryValueFunctionType& boundary_values_;
+  const BoundaryValueType& boundary_values_;
   const LocalizableFunctionType& dx_;
   const internal::MustaFluxImplementation<Traits> implementation_;
 }; // class MustaLocalDirichletNumericalBoundaryFlux

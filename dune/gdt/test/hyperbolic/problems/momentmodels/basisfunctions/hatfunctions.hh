@@ -97,7 +97,7 @@ public:
   // returns matrix with entries <h_i h_j>
   virtual MatrixType mass_matrix() const override
   {
-    MatrixType ret(0);
+    MatrixType ret(dimRange, dimRange, 0);
     ret[0][0] = (triangulation_[1] - triangulation_[0]) / 3.;
     for (size_t rr = 0; rr < dimRange; ++rr) {
       if (rr > 0 && rr < dimRange - 1)
@@ -119,7 +119,7 @@ public:
   // returns matrix with entries <v h_i h_j>
   virtual FieldVector<MatrixType, 1> mass_matrix_with_v() const override
   {
-    MatrixType ret(0);
+    MatrixType ret(dimRange, dimRange, 0.);
     ret[0][0] = (triangulation_[1] * triangulation_[1] + 2 * triangulation_[1] * triangulation_[0]
                  - 3 * triangulation_[0] * triangulation_[0])
                 / 12.;

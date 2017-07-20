@@ -40,7 +40,7 @@ template <class AnalyticalFluxImp,
 class KineticLocalNumericalCouplingFlux;
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueFunctionType,
+          class BoundaryValueType,
           class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldImp,
                                                     AnalyticalFluxImp::dimRange,
                                                     AnalyticalFluxImp::dimRangeCols>>
@@ -59,16 +59,16 @@ public:
   typedef KineticLocalNumericalCouplingFlux<AnalyticalFluxImp, EigenSolverImp> derived_type;
 }; // class KineticLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class EigenSolverImp>
 class KineticLocalNumericalBoundaryFluxTraits
     : public KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, EigenSolverImp>
 {
   typedef KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, EigenSolverImp> BaseType;
 
 public:
-  typedef BoundaryValueFunctionImp BoundaryValueFunctionType;
-  typedef typename BoundaryValueFunctionType::LocalfunctionType BoundaryValueLocalfunctionType;
-  typedef KineticLocalNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueFunctionImp> derived_type;
+  typedef BoundaryValueImp BoundaryValueType;
+  typedef typename BoundaryValueType::LocalfunctionType BoundaryValueLocalfunctionType;
+  typedef KineticLocalNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp> derived_type;
   typedef std::tuple<std::shared_ptr<BoundaryValueLocalfunctionType>> LocalfunctionTupleType;
 }; // class KineticLocalNumericalBoundaryFluxTraits
 
@@ -146,17 +146,15 @@ private:
 /**
 *  \brief  Kinetic flux evaluation for Dirichlet boundary intersections.
 */
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class EigenSolverImp>
 class KineticLocalNumericalBoundaryFlux
-    : public LocalNumericalBoundaryFluxInterface<internal::
-                                                     KineticLocalNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                                             BoundaryValueFunctionImp,
-                                                                                             EigenSolverImp>>
+    : public LocalNumericalBoundaryFluxInterface<internal::KineticLocalNumericalBoundaryFluxTraits<AnalyticalFluxImp,
+                                                                                                   BoundaryValueImp,
+                                                                                                   EigenSolverImp>>
 {
 public:
-  typedef internal::KineticLocalNumericalBoundaryFluxTraits<AnalyticalFluxImp, BoundaryValueFunctionImp, EigenSolverImp>
-      Traits;
-  typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
+  typedef internal::KineticLocalNumericalBoundaryFluxTraits<AnalyticalFluxImp, BoundaryValueImp, EigenSolverImp> Traits;
+  typedef typename Traits::BoundaryValueType BoundaryValueType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
@@ -170,7 +168,7 @@ public:
   static const size_t dimRange = Traits::dimRange;
 
   explicit KineticLocalNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
-                                             const std::shared_ptr<BoundaryValueFunctionType>& boundary_values,
+                                             const std::shared_ptr<BoundaryValueType>& boundary_values,
                                              const XT::Common::Parameter param)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
@@ -211,7 +209,7 @@ public:
 
 private:
   const AnalyticalFluxType& analytical_flux_;
-  const std::shared_ptr<BoundaryValueFunctionType>& boundary_values_;
+  const std::shared_ptr<BoundaryValueType>& boundary_values_;
   const XT::Common::Parameter param_;
 }; // class KineticLocalNumericalBoundaryFlux
 

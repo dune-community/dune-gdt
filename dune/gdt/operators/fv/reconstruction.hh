@@ -152,7 +152,7 @@ private:
     {
       FieldVector<RangeType, stencil_size> char_values;
       for (size_t ii = 0; ii < stencil_size; ++ii)
-        eigenvectors_inverse[0].mv(values[ii][0][0], char_values[ii]);
+        eigenvectors_inverse[0]->mv(values[ii][0][0], char_values[ii]);
 
       // reconstruction in x direction
       FieldVector<RangeType, 2> reconstructed_values;
@@ -164,7 +164,7 @@ private:
       RangeType value;
       for (size_t ii = 0; ii < 2; ++ii) {
         // convert back to non-characteristic variables
-        eigenvectors[0].mv(reconstructed_values[ii], value);
+        eigenvectors[0]->mv(reconstructed_values[ii], value);
         auto quadrature_point = FieldVector<DomainFieldType, dimDomain - 1>();
         reconstructed_values_map.insert(
             std::make_pair(intersections[ii].geometryInInside().global(quadrature_point), value));
@@ -200,9 +200,9 @@ private:
       for (size_t ii = 0; ii < stencil_size; ++ii) {
         for (size_t jj = 0; jj < stencil_size; ++jj) {
           if (dd == 0)
-            eigenvectors_inverse[0]->mv(values[ii][jj][0], char_values[jj][ii]);
+            eigenvectors_inverse[dd]->mv(values[ii][jj][0], char_values[jj][ii]);
           else if (dd == 1)
-            eigenvectors_inverse[1]->mv(values[ii][jj][0], char_values[ii][jj]);
+            eigenvectors_inverse[dd]->mv(values[ii][jj][0], char_values[ii][jj]);
         }
       }
 
@@ -481,6 +481,15 @@ private:
       slope_scaled *= points[ii] - 0.5;
       result[ii] += slope_scaled;
     }
+  }
+
+  static void slope_reconstruction(const FieldVector<RangeType, stencil_size>& cell_values,
+                                   FieldVector<RangeType, 2>& result,
+                                   const QuadratureType& quadrature)
+  {
+    std::vector<RangeType> result_vec(2);
+    slope_reconstruction(cell_values, result_vec, quadrature);
+    std::copy(result_vec.begin(), result_vec.end(), result.begin());
   }
 
   const std::vector<RangeType> source_values_;

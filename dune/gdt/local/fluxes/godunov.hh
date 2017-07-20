@@ -33,7 +33,7 @@ template <class AnalyticalFluxImp,
 class GodunovLocalNumericalCouplingFlux;
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueFunctionType,
+          class BoundaryValueType,
           class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
                                                     AnalyticalFluxImp::dimRange,
                                                     AnalyticalFluxImp::dimRangeCols>>
@@ -64,7 +64,7 @@ public:
   static const size_t dimRange = AnalyticalFluxType::dimRange;
 }; // class GodunovLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalBoundaryFluxImp, class BoundaryValueFunctionImp, class EigenSolverImp>
+template <class AnalyticalBoundaryFluxImp, class BoundaryValueImp, class EigenSolverImp>
 class GodunovLocalDirichletNumericalBoundaryFluxTraits
     : public GodunovLocalNumericalCouplingFluxTraits<AnalyticalBoundaryFluxImp, EigenSolverImp>
 {
@@ -72,9 +72,9 @@ class GodunovLocalDirichletNumericalBoundaryFluxTraits
 
 public:
   typedef AnalyticalBoundaryFluxImp AnalyticalFluxType;
-  typedef BoundaryValueFunctionImp BoundaryValueFunctionType;
-  typedef typename BoundaryValueFunctionType::LocalfunctionType LocalfunctionType;
-  typedef GodunovLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueFunctionType, EigenSolverImp>
+  typedef BoundaryValueImp BoundaryValueType;
+  typedef typename BoundaryValueType::LocalfunctionType LocalfunctionType;
+  typedef GodunovLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueType, EigenSolverImp>
       derived_type;
   using typename BaseType::AnalyticalFluxLocalfunctionType;
   typedef std::tuple<std::shared_ptr<AnalyticalFluxLocalfunctionType>, std::shared_ptr<LocalfunctionType>>
@@ -349,19 +349,19 @@ private:
 *  \brief  Godunov flux evaluation for Dirichlet boundary intersections.
 *  \see    GodunovLocalNumericalCouplingFlux
 */
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class EigenSolverImp>
 class GodunovLocalDirichletNumericalBoundaryFlux
     : public LocalNumericalBoundaryFluxInterface<internal::
                                                      GodunovLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                                                      BoundaryValueFunctionImp,
+                                                                                                      BoundaryValueImp,
                                                                                                       EigenSolverImp>>
 {
 public:
   typedef internal::GodunovLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                     BoundaryValueFunctionImp,
+                                                                     BoundaryValueImp,
                                                                      EigenSolverImp>
       Traits;
-  typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
+  typedef typename Traits::BoundaryValueType BoundaryValueType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
@@ -373,7 +373,7 @@ public:
   static const size_t dimRange = Traits::dimRange;
 
   explicit GodunovLocalDirichletNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
-                                                      const BoundaryValueFunctionType& boundary_values,
+                                                      const BoundaryValueType& boundary_values,
                                                       const XT::Common::Parameter& param,
                                                       const bool is_linear = false)
     : boundary_values_(boundary_values)
@@ -409,7 +409,7 @@ public:
   } // RangeType evaluate(...) const
 
 private:
-  const BoundaryValueFunctionType& boundary_values_;
+  const BoundaryValueType& boundary_values_;
   const internal::GodunovFluxImplementation<Traits> implementation_;
 }; // class GodunovLocalDirichletNumericalBoundaryFlux
 

@@ -15,7 +15,7 @@
 #include "fv/base.hh"
 #include "fv/force.hh"
 #include "fv/godunov.hh"
-#include "fv/kinetic.hh"
+//#include "fv/kinetic.hh"
 #include "fv/laxfriedrichs.hh"
 #include "fv/laxwendroff.hh"
 #include "fv/musta.hh"

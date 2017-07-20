@@ -22,15 +22,13 @@
 namespace Dune {
 namespace GDT {
 
-
 template <class AnalyticalFluxImp,
-          class BoundaryValueFunctionImp,
+          class BoundaryValueImp,
           class LocalizableFunctionImp,
           size_t polOrder,
           SlopeLimiters slope_lim,
-          bool realizability_lim,
-          class BasisFunctionImp,
           class EigenSolverImp,
+          class RealizabilityLimiterImp,
           class Traits>
 class AdvectionMustaOperator;
 
@@ -39,41 +37,34 @@ namespace internal {
 
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueFunctionImp,
+          class BoundaryValueImp,
           class LocalizableFunctionImp,
-          size_t reconstructionOrder,
+          size_t reconstruction_order,
           SlopeLimiters slope_lim,
-          bool realizability_lim,
-          class BasisFunctionImp,
-          class EigenSolverImp>
+          class EigenSolverImp,
+          class RealizabilityLimiterImp>
 class AdvectionMustaOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp,
-                                                                BoundaryValueFunctionImp,
-                                                                reconstructionOrder,
+                                                                BoundaryValueImp,
+                                                                reconstruction_order,
                                                                 slope_lim,
-                                                                realizability_lim,
-                                                                BasisFunctionImp,
-                                                                EigenSolverImp>
+                                                                EigenSolverImp,
+                                                                RealizabilityLimiterImp>
 {
   static_assert(XT::Functions::is_localizable_function<LocalizableFunctionImp>::value,
                 "LocalizableFunctionImp has to be derived from XT::Functions::LocalizableFunctionInterface!");
 
   typedef AdvectionTraitsBase<AnalyticalFluxImp,
-                              BoundaryValueFunctionImp,
-                              reconstructionOrder,
+                              BoundaryValueImp,
+                              reconstruction_order,
                               slope_lim,
-                              realizability_lim,
-                              BasisFunctionImp,
-                              EigenSolverImp>
+                              EigenSolverImp,
+                              RealizabilityLimiterImp>
       BaseType;
 
 public:
-  using BaseType::polOrder;
-  using BaseType::slope_limiter;
-  using BaseType::realizability_limiting;
   typedef LocalizableFunctionImp LocalizableFunctionType;
   using typename BaseType::AnalyticalFluxType;
   using typename BaseType::BoundaryValueType;
-  using typename BaseType::BasisFunctionType;
   typedef typename Dune::GDT::MustaLocalNumericalCouplingFlux<AnalyticalFluxType, LocalizableFunctionType>
       NumericalCouplingFluxType;
   typedef typename Dune::GDT::MustaLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType,
@@ -81,13 +72,12 @@ public:
                                                                        LocalizableFunctionType>
       NumericalBoundaryFluxType;
   typedef AdvectionMustaOperator<AnalyticalFluxImp,
-                                 BoundaryValueFunctionImp,
+                                 BoundaryValueImp,
                                  LocalizableFunctionImp,
-                                 polOrder,
-                                 slope_limiter,
-                                 realizability_limiting,
-                                 BasisFunctionType,
+                                 reconstruction_order,
+                                 slope_lim,
                                  EigenSolverImp,
+                                 RealizabilityLimiterImp,
                                  AdvectionMustaOperatorTraits>
       derived_type;
 }; // class AdvectionMustaOperatorTraits
@@ -97,28 +87,21 @@ public:
 
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueFunctionImp,
+          class BoundaryValueImp,
           class LocalizableFunctionImp,
           size_t polOrder = 0,
           SlopeLimiters slope_lim = SlopeLimiters::minmod,
-          bool realizability_lim = false,
-          class BasisFunctionImp =
-              Hyperbolic::Problems::HatFunctions<typename BoundaryValueFunctionImp::DomainFieldType,
-                                                 BoundaryValueFunctionImp::dimDomain,
-                                                 typename BoundaryValueFunctionImp::RangeFieldType,
-                                                 BoundaryValueFunctionImp::dimRange,
-                                                 BoundaryValueFunctionImp::dimRangeCols>,
           class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
                                                     AnalyticalFluxImp::dimRange,
                                                     AnalyticalFluxImp::dimRangeCols>,
+          class RealizabilityLimiterImp = NonLimitingRealizabilityLimiter<typename AnalyticalFluxImp::EntityType>,
           class Traits = internal::AdvectionMustaOperatorTraits<AnalyticalFluxImp,
-                                                                BoundaryValueFunctionImp,
+                                                                BoundaryValueImp,
                                                                 LocalizableFunctionImp,
                                                                 polOrder,
                                                                 slope_lim,
-                                                                realizability_lim,
-                                                                BasisFunctionImp,
-                                                                EigenSolverImp>>
+                                                                EigenSolverImp,
+                                                                RealizabilityLimiterImp>>
 class AdvectionMustaOperator : public Dune::GDT::OperatorInterface<Traits>, public AdvectionOperatorBase<Traits>
 {
   typedef AdvectionOperatorBase<Traits> BaseType;
@@ -127,6 +110,7 @@ public:
   using typename BaseType::AnalyticalFluxType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::DomainType;
+  using typename BaseType::Quadrature1dType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
 
   AdvectionMustaOperator(const AnalyticalFluxType& analytical_flux,
@@ -135,6 +119,20 @@ public:
                          const bool is_linear = false,
                          const size_t num_stages = 2)
     : BaseType(analytical_flux, boundary_values, is_linear)
+    , dx_(dx)
+    , is_linear_(is_linear)
+    , num_stages_(num_stages)
+  {
+  }
+
+  AdvectionMustaOperator(const AnalyticalFluxType& analytical_flux,
+                         const BoundaryValueType& boundary_values,
+                         const LocalizableFunctionType& dx,
+                         const Quadrature1dType& quadrature_1d,
+                         const std::shared_ptr<RealizabilityLimiterImp>& realizability_limiter = nullptr,
+                         const bool is_linear = false,
+                         const size_t num_stages = 2)
+    : BaseType(analytical_flux, boundary_values, is_linear, quadrature_1d, realizability_limiter)
     , dx_(dx)
     , is_linear_(is_linear)
     , num_stages_(num_stages)

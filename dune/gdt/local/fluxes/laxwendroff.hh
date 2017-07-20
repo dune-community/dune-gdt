@@ -30,7 +30,7 @@ template <class AnalyticalFluxImp,
 class LaxWendroffLocalNumericalCouplingFlux;
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueFunctionImp,
+          class BoundaryValueImp,
           class LocalizableFunctionImp,
           class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
                                                     AnalyticalFluxImp::dimRange,
@@ -49,16 +49,16 @@ public:
   typedef LaxWendroffLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp> derived_type;
 }; // class LaxWendroffLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp, class EigenSolverImp>
 class LaxWendroffLocalDirichletNumericalBoundaryFluxTraits
     : public LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                    BoundaryValueFunctionImp,
+                                                                    BoundaryValueImp,
                                                                     LocalizableFunctionImp,
                                                                     EigenSolverImp>
 {
 public:
   typedef LaxWendroffLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
-                                                         BoundaryValueFunctionImp,
+                                                         BoundaryValueImp,
                                                          LocalizableFunctionImp,
                                                          EigenSolverImp>
       derived_type;
@@ -251,21 +251,21 @@ private:
 *  \brief  Lax-Wendroff flux evaluation for Dirichlet boundary intersections.
 *  \see    LaxWendroffLocalNumericalCouplingFlux
 */
-template <class AnalyticalFluxImp, class BoundaryValueFunctionImp, class LocalizableFunctionImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp, class EigenSolverImp>
 class LaxWendroffLocalDirichletNumericalBoundaryFlux
     : public LocalNumericalBoundaryFluxInterface<internal::
                                                      LaxWendroffLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                                                          BoundaryValueFunctionImp,
+                                                                                                          BoundaryValueImp,
                                                                                                           LocalizableFunctionImp,
                                                                                                           EigenSolverImp>>
 {
 public:
   typedef internal::LaxWendroffLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                         BoundaryValueFunctionImp,
+                                                                         BoundaryValueImp,
                                                                          LocalizableFunctionImp,
                                                                          EigenSolverImp>
       Traits;
-  typedef typename Traits::BoundaryValueFunctionType BoundaryValueFunctionType;
+  typedef typename Traits::BoundaryValueType BoundaryValueType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
@@ -278,7 +278,7 @@ public:
   static const size_t dimRange = Traits::dimRange;
 
   explicit LaxWendroffLocalDirichletNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
-                                                          const BoundaryValueFunctionType& boundary_values,
+                                                          const BoundaryValueType& boundary_values,
                                                           const XT::Common::Parameter& param,
                                                           const LocalizableFunctionType& dx,
                                                           const bool is_linear = false,
@@ -319,7 +319,7 @@ public:
   } // RangeType evaluate(...) const
 
 private:
-  const BoundaryValueFunctionType& boundary_values_;
+  const BoundaryValueType& boundary_values_;
   const LocalizableFunctionType& dx_;
   const internal::LaxWendroffFluxImplementation<Traits> implementation_;
 }; // class LaxWendroffLocalDirichletNumericalBoundaryFlux

@@ -24,12 +24,11 @@ namespace GDT {
 
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueFunctionImp,
+          class BoundaryValueImp,
           size_t polOrder,
           SlopeLimiters slope_lim,
-          bool realizability_lim,
-          class BasisFunctionImp,
           class EigenSolverImp,
+          class RealizabilityLimiterImp,
           class Traits>
 class AdvectionGodunovOperator;
 
@@ -38,45 +37,36 @@ namespace internal {
 
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueFunctionImp,
-          size_t reconstructionOrder,
+          class BoundaryValueImp,
+          size_t reconstruction_order,
           SlopeLimiters slope_lim,
-          bool realizability_lim,
-          class BasisFunctionImp,
-          class EigenSolverImp>
+          class EigenSolverImp,
+          class RealizabilityLimiterImp>
 class AdvectionGodunovOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp,
-                                                                  BoundaryValueFunctionImp,
-                                                                  reconstructionOrder,
+                                                                  BoundaryValueImp,
+                                                                  reconstruction_order,
                                                                   slope_lim,
-                                                                  realizability_lim,
-                                                                  BasisFunctionImp,
-                                                                  EigenSolverImp>
+                                                                  EigenSolverImp,
+                                                                  RealizabilityLimiterImp>
 {
   typedef AdvectionTraitsBase<AnalyticalFluxImp,
-                              BoundaryValueFunctionImp,
-                              reconstructionOrder,
+                              BoundaryValueImp,
+                              reconstruction_order,
                               slope_lim,
-                              realizability_lim,
-                              BasisFunctionImp,
-                              EigenSolverImp>
+                              EigenSolverImp,
+                              RealizabilityLimiterImp>
       BaseType;
 
 public:
-  using BaseType::polOrder;
-  using BaseType::slope_limiter;
-  using BaseType::realizability_limiting;
-  using typename BaseType::AnalyticalFluxType;
-  using typename BaseType::BoundaryValueType;
-  typedef typename Dune::GDT::GodunovLocalNumericalCouplingFlux<AnalyticalFluxType> NumericalCouplingFluxType;
-  typedef typename Dune::GDT::GodunovLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueType>
+  typedef typename Dune::GDT::GodunovLocalNumericalCouplingFlux<AnalyticalFluxImp> NumericalCouplingFluxType;
+  typedef typename Dune::GDT::GodunovLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp>
       NumericalBoundaryFluxType;
   typedef AdvectionGodunovOperator<AnalyticalFluxImp,
-                                   BoundaryValueFunctionImp,
-                                   polOrder,
-                                   slope_limiter,
-                                   realizability_limiting,
-                                   BasisFunctionImp,
+                                   BoundaryValueImp,
+                                   reconstruction_order,
+                                   slope_lim,
                                    EigenSolverImp,
+                                   RealizabilityLimiterImp,
                                    AdvectionGodunovOperatorTraits>
       derived_type;
 }; // class AdvectionGodunovOperatorTraits
@@ -86,26 +76,19 @@ public:
 
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueFunctionImp,
+          class BoundaryValueImp,
           size_t polOrder = 0,
           SlopeLimiters slope_lim = SlopeLimiters::minmod,
-          bool realizability_lim = false,
-          class BasisFunctionImp =
-              Hyperbolic::Problems::HatFunctions<typename BoundaryValueFunctionImp::DomainFieldType,
-                                                 BoundaryValueFunctionImp::dimDomain,
-                                                 typename BoundaryValueFunctionImp::RangeFieldType,
-                                                 BoundaryValueFunctionImp::dimRange,
-                                                 BoundaryValueFunctionImp::dimRangeCols>,
           class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
                                                     AnalyticalFluxImp::dimRange,
                                                     AnalyticalFluxImp::dimRangeCols>,
+          class RealizabilityLimiterImp = NonLimitingRealizabilityLimiter<typename AnalyticalFluxImp::EntityType>,
           class Traits = internal::AdvectionGodunovOperatorTraits<AnalyticalFluxImp,
-                                                                  BoundaryValueFunctionImp,
+                                                                  BoundaryValueImp,
                                                                   polOrder,
                                                                   slope_lim,
-                                                                  realizability_lim,
-                                                                  BasisFunctionImp,
-                                                                  EigenSolverImp>>
+                                                                  EigenSolverImp,
+                                                                  RealizabilityLimiterImp>>
 class AdvectionGodunovOperator : public Dune::GDT::OperatorInterface<Traits>, public AdvectionOperatorBase<Traits>
 {
   typedef AdvectionOperatorBase<Traits> BaseType;
@@ -113,11 +96,23 @@ class AdvectionGodunovOperator : public Dune::GDT::OperatorInterface<Traits>, pu
 public:
   using typename BaseType::AnalyticalFluxType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::Quadrature1dType;
+  using typename BaseType::RangeFieldType;
 
   AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux,
                            const BoundaryValueType& boundary_values,
                            const bool is_linear = false)
     : BaseType(analytical_flux, boundary_values, is_linear)
+    , is_linear_(is_linear)
+  {
+  }
+
+  AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux,
+                           const BoundaryValueType& boundary_values,
+                           const Quadrature1dType& quadrature_1d,
+                           const std::shared_ptr<RealizabilityLimiterImp>& realizability_limiter = nullptr,
+                           const bool is_linear = false)
+    : BaseType(analytical_flux, boundary_values, is_linear, quadrature_1d, realizability_limiter)
     , is_linear_(is_linear)
   {
   }

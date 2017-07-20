@@ -412,14 +412,11 @@ private:
   typedef typename Hyperbolic::Problems::RealSphericalHarmonics<DomainFieldType, RangeFieldType, 6, 2, true>
       BasisfunctionType;
 
-
   typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
                                          BoundaryValueType,
                                          ConstantFunctionType,
                                          0,
-                                         SlopeLimiters::minmod,
-                                         false,
-                                         BasisfunctionType>
+                                         SlopeLimiters::minmod>
       AdvectionOperatorType;
 
   typedef
@@ -494,11 +491,8 @@ public:
       //      std::shared_ptr<const BasisfunctionType> basis_functions =
       //          std::make_shared<const BasisfunctionType>(refinements, refinements + 4);
       std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>();
-      advection_operator.set_basisfunctions(basis_functions);
       //  advection_operator.set_quadrature(problem_imp.quadrature());
       //      advection_operator.set_quadrature(basis_functions->quadrature());
-      advection_operator.set_quadrature(Hyperbolic::Problems::LebedevQuadrature<RangeFieldType, true>::get(100));
-      advection_operator.set_epsilon(epsilon);
 
       RhsOperatorType rhs_operator(rhs);
 

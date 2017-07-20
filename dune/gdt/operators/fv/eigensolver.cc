@@ -37,6 +37,58 @@ int LapackWrapper::dggev(char jobvl,
   return LAPACKE_dggev(LAPACK_ROW_MAJOR, jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta, vl, ldvl, vr, ldvr);
 }
 
+int LapackWrapper::dggevx(char balanc,
+                          char jobvl,
+                          char jobvr,
+                          char sense,
+                          int n,
+                          double* a,
+                          int lda,
+                          double* b,
+                          int ldb,
+                          double* alphar,
+                          double* alphai,
+                          double* beta,
+                          double* vl,
+                          int ldvl,
+                          double* vr,
+                          int ldvr,
+                          int* ilo,
+                          int* ihi,
+                          double* lscale,
+                          double* rscale,
+                          double* abnrm,
+                          double* bbnrm,
+                          double* rconde,
+                          double* rcondv)
+{
+  return LAPACKE_dggevx(LAPACK_ROW_MAJOR,
+                        balanc,
+                        jobvl,
+                        jobvr,
+                        sense,
+                        n,
+                        a,
+                        lda,
+                        b,
+                        ldb,
+                        alphar,
+                        alphai,
+                        beta,
+                        vl,
+                        ldvl,
+                        vr,
+                        ldvr,
+                        ilo,
+                        ihi,
+                        lscale,
+                        rscale,
+                        abnrm,
+                        bbnrm,
+                        rconde,
+                        rcondv);
+}
+
 
 } // namespace GDT
 } // namespace Dune

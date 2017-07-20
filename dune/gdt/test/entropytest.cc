@@ -179,7 +179,7 @@ int main(int argc, char** argv)
 #endif
 
   // ********************* choose dimensions, fluxes and grid type ************************
-  static const int dimDomain = 3;
+  static const int dimDomain = 2;
   //  static const int dimDomain = 1;
   static const int momentOrder = 6;
   //  const auto numerical_flux = NumericalFluxes::kinetic;
@@ -204,47 +204,32 @@ int main(int argc, char** argv)
   //******************** choose BasisfunctionType *****************************************
   //  typedef typename Hyperbolic::Problems::LegendrePolynomials<double, dimDomain, double, momentOrder>
   //  BasisfunctionType;
-  //  typedef typename Hyperbolic::Problems::HatFunctions<double, dimDomain, double, momentOrder> BasisfunctionType;
 
   //  static const size_t refinements = 0;
   //  typedef
   //      typename Hyperbolic::Problems::HatFunctions<double,
-  //                                                  dimDomain,
+  //                                                  3,
   //                                                  double,
   //                                                  Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(),
   //                                                  1,
-  //                                                  3>
+  //                                                  dimDomain>
   //          BasisfunctionType;
 
-  //  static const size_t refinements = 0;
-  //  typedef typename Hyperbolic::Problems::
-  //      PiecewiseMonomials<double,
-  //                         dimDomain,
-  //                         double,
-  //                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces(),
-  //                         1,
-  //                         3>
-  //          BasisfunctionType;
+  static const size_t refinements = 2;
+  typedef typename Hyperbolic::Problems::
+      PiecewiseMonomials<double,
+                         3,
+                         double,
+                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces(),
+                         1,
+                         dimDomain>
+          BasisfunctionType;
 
-  //  typedef typename Hyperbolic::Problems::
-  //      HatFunctions<double, 3, double, Hyperbolic::Problems::OctaederStatistics<refinements>::num_vertices(), 1, 2>
-  //          BasisfunctionType;
+  //  typedef typename Hyperbolic::Problems::RealSphericalHarmonics<double, double, momentOrder, dimDomain, false>
+  //      BasisfunctionType;
 
-  typedef typename Hyperbolic::Problems::RealSphericalHarmonics<double, double, momentOrder, dimDomain, false>
-      BasisfunctionType;
-
-  //  typedef typename Hyperbolic::Problems::
-  //      PiecewiseMonomials<double,
-  //                         3,
-  //                         double,
-  //                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces(),
-  //                         1,
-  //                         dimDomain>
-  //          BasisfunctionType;
-
-  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>();
-  //  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>(refinements,
-  //  4);
+  //  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>();
+  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>(refinements, 4);
   static const size_t dimRange = BasisfunctionType::dimRange;
   //  static const size_t dimRange = 1.;
   static constexpr auto container_backend = Dune::XT::LA::default_sparse_backend;
@@ -280,14 +265,14 @@ int main(int argc, char** argv)
   //                                                      dimRange>
   //      ProblemImp;
 
-  //   typedef typename Hyperbolic::Problems::KineticTransport::PlaneSourcePn<BasisfunctionType,
-  //                                                       GridLayerType,
-  //                                                       EntityType,
-  //                                                       double,
-  //                                                       dimDomain,
-  //                                                       DiscreteFunctionType,
-  //                                                       double,
-  //                                                       dimRange>
+  //  typedef typename Hyperbolic::Problems::KineticTransport::PlaneSourcePn<BasisfunctionType,
+  //                                                                         GridLayerType,
+  //                                                                         EntityType,
+  //                                                                         double,
+  //                                                                         dimDomain,
+  //                                                                         DiscreteFunctionType,
+  //                                                                         double,
+  //                                                                         dimRange>
   //      ProblemImp;
 
   //  typedef typename Hyperbolic::Problems::KineticTransport::PlaneSourceMn<BasisfunctionType,
@@ -300,15 +285,15 @@ int main(int argc, char** argv)
   //                                                                         dimRange>
   //      ProblemImp;
 
-  typedef typename Hyperbolic::Problems::KineticTransport::PointSourcePn<BasisfunctionType,
-                                                                         GridLayerType,
-                                                                         EntityType,
-                                                                         double,
-                                                                         dimDomain,
-                                                                         DiscreteFunctionType,
-                                                                         double,
-                                                                         dimRange>
-      ProblemImp;
+  //  typedef typename Hyperbolic::Problems::KineticTransport::PointSourcePn<BasisfunctionType,
+  //                                                                         GridLayerType,
+  //                                                                         EntityType,
+  //                                                                         double,
+  //                                                                         dimDomain,
+  //                                                                         DiscreteFunctionType,
+  //                                                                         double,
+  //                                                                         dimRange>
+  //      ProblemImp;
 
   //  typedef typename Hyperbolic::Problems::KineticTransport::PointSourceMn<
   //                                                       BasisfunctionType,
@@ -321,15 +306,15 @@ int main(int argc, char** argv)
   //                                                       dimRange>
   //      ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::KineticTransport::ModifiedLineSourcePn<BasisfunctionType,
-  //                                                                                GridLayerType,
-  //                                                                                EntityType,
-  //                                                                                double,
-  //                                                                                dimDomain,
-  //                                                                                DiscreteFunctionType,
-  //                                                                                double,
-  //                                                                                dimRange>
-  //      ProblemImp;
+  typedef typename Hyperbolic::Problems::KineticTransport::ModifiedLineSourcePn<BasisfunctionType,
+                                                                                GridLayerType,
+                                                                                EntityType,
+                                                                                double,
+                                                                                dimDomain,
+                                                                                DiscreteFunctionType,
+                                                                                double,
+                                                                                dimRange>
+      ProblemImp;
 
   //  typedef typename Hyperbolic::Problems::KineticTransport::ModifiedLineSourceMn<BasisfunctionType,
   //                                                              GridLayerType,
@@ -369,13 +354,13 @@ int main(int argc, char** argv)
   const SpaceType fv_space(grid_layer);
 
   const auto quadrature = Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(80);
-  //  const auto& quadrature = basis_functions->quadrature();
+  //    const auto& quadrature = basis_functions->quadrature();
   //  const auto quadrature = ProblemImp::default_quadrature(grid_config);
 
   //******************* create ProblemType object ***************************************
   const std::unique_ptr<ProblemImp> problem_imp =
       XT::Common::make_unique<ProblemImp>(*basis_functions, grid_layer, quadrature, grid_config);
-  //  const ProblemImp problem_imp(basis_functions, grid_layer, grid_config);
+  //    const ProblemImp problem_imp(basis_functions, grid_layer, grid_config);
   //  const std::unique_ptr<ProblemImp> problem_imp =
   //      XT::Common::make_unique<ProblemImp>(*basis_functions, grid_layer, basis_functions->quadrature(), grid_config);
   //  const ProblemImp problem_imp(
@@ -404,6 +389,14 @@ int main(int argc, char** argv)
   typedef typename ProblemType::FluxType AnalyticalFluxType;
   const AnalyticalFluxType& analytical_flux = problem.flux();
 
+  // ******************** choose Realizability limiter and eigensolver ******************************************
+
+  //  typedef ConvexHullLocalRealizabilityLimiter<DiscreteFunctionType, BasisfunctionType, dimDomain, dimRange>
+  //      RealizabilityLimiterType;
+  typedef NonLimitingRealizabilityLimiter<EntityType> RealizabilityLimiterType;
+  typedef DefaultEigenSolver<RangeFieldType, dimRange, dimDomain> EigenSolverType;
+  //  auto realizability_limiter = std::make_shared<RealizabilityLimiterType>(*basis_functions, quadrature);
+  auto realizability_limiter = std::make_shared<RealizabilityLimiterType>();
 
   // ******************** choose flux and rhs operator and timestepper ******************************************
 
@@ -429,31 +422,49 @@ int main(int argc, char** argv)
   //                                   AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType>>::type>::type
   //          AdvectionOperatorType;
 
-  //  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
-  //                                         BoundaryValueType,
-  //                                         ConstantFunctionType,
-  //                                         1,
-  //                                         SlopeLimiters::minmod,
-  //                                         false>
-  //      AdvectionOperatorType;
-
-  typedef AdvectionForceOperator<AnalyticalFluxType,
-                                 BoundaryValueType,
-                                 ConstantFunctionType,
-                                 1,
-                                 SlopeLimiters::minmod,
-                                 false>
+  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
+                                         BoundaryValueType,
+                                         ConstantFunctionType,
+                                         1,
+                                         SlopeLimiters::minmod,
+                                         EigenSolverType,
+                                         RealizabilityLimiterType>
       AdvectionOperatorType;
 
-  //  typedef AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType, 1, SlopeLimiters::minmod, false>
+  //  typedef AdvectionForceOperator<AnalyticalFluxType,
+  //                                 BoundaryValueType,
+  //                                 ConstantFunctionType,
+  //                                 1,
+  //                                 SlopeLimiters::minmod,
+  //                                 EigenSolverType,
+  //                                 RealizabilityLimiterType>
   //      AdvectionOperatorType;
+
+  //  typedef AdvectionMustaOperator<AnalyticalFluxType,
+  //                                 BoundaryValueType,
+  //                                 ConstantFunctionType,
+  //                                 1,
+  //                                 SlopeLimiters::minmod,
+  //                                 EigenSolverType,
+  //                                 RealizabilityLimiterType>
+  //      AdvectionOperatorType;
+
+  //  typedef AdvectionGodunovOperator<AnalyticalFluxType,
+  //                                   BoundaryValueType,
+  //                                   1,
+  //                                   SlopeLimiters::minmod,
+  //                                   EigenSolverType,
+  //                                   RealizabilityLimiterType>
+  //      AdvectionOperatorType;
+
 
   //  typedef AdvectionLaxWendroffOperator<AnalyticalFluxType,
   //                                       BoundaryValueType,
   //                                       ConstantFunctionType,
   //                                       0,
   //                                       SlopeLimiters::minmod,
-  //                                       false>
+  //                                         EigenSolverType,
+  //                                         RealizabilityLimiterType>
   //      AdvectionOperatorType;
 
 
@@ -490,8 +501,36 @@ int main(int argc, char** argv)
   //          analytical_flux, boundary_values, dx_function, linear);
 
   //  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_function, false, linear);
-  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_function, linear);
-  //    AdvectionOperatorType advection_operator(analytical_flux, boundary_values, linear);
+
+  AdvectionOperatorType advection_operator(analytical_flux,
+                                           boundary_values,
+                                           dx_function,
+                                           AdvectionOperatorType::default_quadrature(),
+                                           realizability_limiter,
+                                           false,
+                                           linear);
+
+  //  AdvectionOperatorType advection_operator(analytical_flux,
+  //                                           boundary_values,
+  //                                           dx_function,
+  //                                           AdvectionOperatorType::default_quadrature(),
+  //                                           realizability_limiter,
+  //                                           linear);
+
+  //  AdvectionOperatorType advection_operator(analytical_flux,
+  //                                           boundary_values,
+  //                                           dx_function,
+  //                                           AdvectionOperatorType::default_quadrature(),
+  //                                           realizability_limiter,
+  //                                           linear,
+  //                                           10);
+
+  //  AdvectionOperatorType advection_operator(
+  //      analytical_flux, boundary_values, AdvectionOperatorType::default_quadrature(), realizability_limiter, linear);
+
+  //  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_function, linear);
+  //  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, linear);
+  //  advection_operator.set_realizability_limiter(realizability_limiter);
   //  advection_operator.set_basisfunctions(basis_functions);
   //  advection_operator.set_quadrature(problem_imp.quadrature());
   //  advection_operator.set_quadrature(quadrature);

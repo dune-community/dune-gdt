@@ -48,29 +48,27 @@ namespace internal {
 
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueFunctionImp,
-          size_t reconstructionOrder,
+          class BoundaryValueImp,
+          size_t reconstruction_order,
           SlopeLimiters slope_lim,
-          bool realizability_lim,
-          class BasisFunctionImp,
-          class EigenSolverImp>
+          class EigenSolverImp,
+          class RealizabilityLimiterImp>
 class AdvectionTraitsBase
 {
 public:
-  static const size_t polOrder = reconstructionOrder;
+  static const size_t polOrder = reconstruction_order;
   static const SlopeLimiters slope_limiter = slope_lim;
-  static const bool realizability_limiting = realizability_lim;
   typedef AnalyticalFluxImp AnalyticalFluxType;
-  typedef BoundaryValueFunctionImp BoundaryValueType;
-  typedef BasisFunctionImp BasisFunctionType;
+  typedef BoundaryValueImp BoundaryValueType;
   typedef EigenSolverImp EigenSolverType;
+  typedef RealizabilityLimiterImp RealizabilityLimiterType;
   static const size_t dimDomain = AnalyticalFluxType::dimDomain;
   static const size_t dimRange = AnalyticalFluxType::dimRange;
   static const size_t dimRangeCols = 1;
-  typedef typename BoundaryValueFunctionImp::DomainFieldType DomainFieldType;
-  typedef typename BoundaryValueFunctionImp::RangeFieldType RangeFieldType;
+  typedef typename BoundaryValueImp::DomainFieldType DomainFieldType;
+  typedef typename BoundaryValueImp::RangeFieldType RangeFieldType;
   typedef RangeFieldType FieldType;
-  typedef typename BoundaryValueFunctionImp::DomainType DomainType;
+  typedef typename BoundaryValueImp::DomainType DomainType;
   typedef typename AnalyticalFluxType::PartialURangeType JacobianType;
 }; // class AdvectionTraitsBase
 
@@ -81,7 +79,7 @@ public:
 template <class AnalyticalFluxImp,
           class NumericalCouplingFluxImp,
           class NumericalBoundaryFluxImp,
-          class BoundaryValueFunctionImp,
+          class BoundaryValueImp,
           class SourceImp,
           class RangeImp>
 class AdvectionLocalizableDefault
@@ -93,8 +91,8 @@ class AdvectionLocalizableDefault
                 "NumericalCouplingFluxImp has to be derived from LocalNumericalCouplingFluxInterface!");
   static_assert(is_local_numerical_boundary_flux<NumericalBoundaryFluxImp>::value,
                 "NumericalBoundaryFluxImp has to be derived from LocalNumericalBoundaryFluxInterface!");
-  //  static_assert(std::is_base_of< ???, BoundaryValueFunctionImp >::value,
-  //                "BoundaryValueFunctionImp has to be derived from ???!");
+  //  static_assert(std::is_base_of< ???, BoundaryValueImp >::value,
+  //                "BoundaryValueImp has to be derived from ???!");
   //  static_assert(is_discrete_function<SourceImp>::value, "SourceImp has to be derived from DiscreteFunction!");
   static_assert(is_discrete_function<RangeImp>::value, "RangeImp has to be derived from DiscreteFunction!");
 
@@ -102,7 +100,7 @@ public:
   typedef AnalyticalFluxImp AnalyticalFluxType;
   typedef NumericalCouplingFluxImp NumericalCouplingFluxType;
   typedef NumericalBoundaryFluxImp NumericalBoundaryFluxType;
-  typedef BoundaryValueFunctionImp BoundaryValueType;
+  typedef BoundaryValueImp BoundaryValueType;
   typedef SourceImp SourceType;
   typedef RangeImp RangeType;
   typedef typename SourceType::RangeFieldType RangeFieldType;
@@ -146,17 +144,15 @@ template <class NumericalCouplingFluxType,
           class NumericalBoundaryFluxType,
           size_t polOrder,
           SlopeLimiters slope_limiter,
-          bool realizability_limiting,
-          class EigenSolverType>
+          class EigenSolverType,
+          class RealizabilityLimiterType>
 struct AdvectionOperatorApplier
 {
   template <class AnalyticalFluxType,
             class BoundaryValueType,
             class SourceType,
             class RangeType,
-            class RangeFieldType,
             class DomainFieldType,
-            class BasisFunctionType,
             class... LocalOperatorArgTypes>
   static void
   apply(const AnalyticalFluxType& analytical_flux,
@@ -165,18 +161,13 @@ struct AdvectionOperatorApplier
         RangeType& range,
         const XT::Common::Parameter& param,
         bool is_linear,
-        const Dune::QuadratureRule<DomainFieldType, 1> intersection_quadrature_1d,
+        const Dune::QuadratureRule<DomainFieldType, 1> quadrature1d,
         const Dune::QuadratureRule<DomainFieldType, BoundaryValueType::dimDomain - 1> intersection_quadrature,
-        const Dune::QuadratureRule<DomainFieldType, BasisFunctionType::dimDomain>& quadrature,
-        const RangeFieldType epsilon,
-        const std::shared_ptr<const BasisFunctionType> basis_functions,
+        const std::shared_ptr<RealizabilityLimiterType>& realizability_limiter,
         LocalOperatorArgTypes&&... local_operator_args)
-
   {
     typedef typename SourceType::SpaceType::GridLayerType GridLayerType;
     typedef typename BoundaryValueType::DomainType DomainType;
-    static const size_t dimDomain = BoundaryValueType::dimDomain;
-    static const size_t dimRange = BoundaryValueType::dimRange;
     const GridLayerType& grid_layer = source.space().grid_layer();
 
     // evaluate cell averages
@@ -202,27 +193,25 @@ struct AdvectionOperatorApplier
                                                                                         grid_layer,
                                                                                         param,
                                                                                         is_linear,
-                                                                                        intersection_quadrature_1d,
+                                                                                        quadrature1d,
                                                                                         reconstructed_values);
     auto walker = XT::Grid::Walker<GridLayerType>(grid_layer);
     walker.append(local_reconstruction_operator);
     walker.walk(true);
 
-    if (realizability_limiting) {
-      assert(basis_functions);
-      // do limiting for realizability in M_N models
-      //      auto local_realizability_limiter =
-      //          LocalRealizabilityLimiter<SourceType, BasisFunctionType, BasisFunctionType::dimDomain, dimRange>(
-      //              source, reconstructed_values, *basis_functions, quadrature, epsilon);
-      auto local_realizability_limiter =
-          LocalRealizabilityLimiterLP<SourceType, BasisFunctionType, BasisFunctionType::dimDomain, dimRange>(
-              source, reconstructed_values, *basis_functions, quadrature, epsilon);
+    if (realizability_limiter) {
+      realizability_limiter->set_source(&source);
+      realizability_limiter->set_reconstructed_values(&reconstructed_values);
       walker.clear();
-      walker.append(local_realizability_limiter);
+      walker.append(*realizability_limiter);
       walker.walk(true);
     }
 
-    typedef ReconstructedLocalizableFunction<GridLayerType, RangeFieldType, dimDomain, RangeFieldType, dimRange>
+    typedef ReconstructedLocalizableFunction<GridLayerType,
+                                             DomainFieldType,
+                                             BoundaryValueType::dimDomain,
+                                             typename AnalyticalFluxType::RangeFieldType,
+                                             BoundaryValueType::dimRange>
         ReconstructedLocalizableFunctionType;
     const ReconstructedLocalizableFunctionType reconstructed_function(grid_layer, reconstructed_values);
 
@@ -246,22 +235,20 @@ struct AdvectionOperatorApplier
 template <class NumericalCouplingFluxType,
           class NumericalBoundaryFluxType,
           SlopeLimiters slope_limiter,
-          bool realizability_limiting,
-          class EigenSolverType>
+          class EigenSolverType,
+          class RealizabilityLimiterType>
 struct AdvectionOperatorApplier<NumericalCouplingFluxType,
                                 NumericalBoundaryFluxType,
                                 0,
                                 slope_limiter,
-                                realizability_limiting,
-                                EigenSolverType>
+                                EigenSolverType,
+                                RealizabilityLimiterType>
 {
   template <class AnalyticalFluxType,
             class BoundaryValueType,
             class SourceType,
             class RangeType,
-            class RangeFieldType,
             class DomainFieldType,
-            class BasisFunctionType,
             class... LocalOperatorArgTypes>
   static void
   apply(const AnalyticalFluxType& analytical_flux,
@@ -270,11 +257,9 @@ struct AdvectionOperatorApplier<NumericalCouplingFluxType,
         RangeType& range,
         const XT::Common::Parameter& param,
         const bool /*is_linear*/,
-        const Dune::QuadratureRule<DomainFieldType, 1> /*intersection_quadrature_1d*/,
+        const Dune::QuadratureRule<DomainFieldType, 1> /*quadrature_1d*/,
         const Dune::QuadratureRule<DomainFieldType, BoundaryValueType::dimDomain - 1> intersection_quadrature,
-        const Dune::QuadratureRule<DomainFieldType, BasisFunctionType::dimDomain> /*quadrature*/,
-        const RangeFieldType /*epsilon*/,
-        const std::shared_ptr<const BasisFunctionType> /*basis_functions*/,
+        const std::shared_ptr<RealizabilityLimiterType> /*realizability_limiter*/,
         LocalOperatorArgTypes&&... local_operator_args)
   {
     AdvectionLocalizableDefault<AnalyticalFluxType,
@@ -312,15 +297,13 @@ public:
   static const size_t dimRangeCols = Traits::dimRangeCols;
   static const size_t polOrder = Traits::polOrder;
   static const SlopeLimiters slope_limiter = Traits::slope_limiter;
-  static const bool realizability_limiting = Traits::realizability_limiting;
-  typedef typename Traits::BasisFunctionType BasisFunctionType;
   typedef typename Traits::NumericalCouplingFluxType NumericalCouplingFluxType;
   typedef typename Traits::NumericalBoundaryFluxType NumericalBoundaryFluxType;
   typedef typename Traits::EigenSolverType EigenSolverType;
+  typedef typename Traits::RealizabilityLimiterType RealizabilityLimiterType;
 
-  typedef Dune::QuadratureRule<DomainFieldType, 1> Intersection1dQuadratureType;
+  typedef Dune::QuadratureRule<DomainFieldType, 1> Quadrature1dType;
   typedef Dune::QuadratureRule<DomainFieldType, dimDomain - 1> IntersectionQuadratureType;
-  typedef Dune::QuadratureRule<DomainFieldType, BasisFunctionType::dimDomain> QuadratureType;
 
 public:
   AdvectionOperatorBase(const AnalyticalFluxType& analytical_flux,
@@ -329,9 +312,22 @@ public:
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , is_linear_(is_linear)
-    , intersection_1d_quadrature_(helper<>::default_1d_quadrature())
-    , intersection_quadrature_(helper2<>::get_quadrature(intersection_1d_quadrature_))
-    , epsilon_(1e-14)
+    , quadrature_1d_(default_quadrature_helper<>::get())
+    , intersection_quadrature_(quadrature_helper<>::get(quadrature_1d_))
+  {
+  }
+
+  AdvectionOperatorBase(const AnalyticalFluxType& analytical_flux,
+                        const BoundaryValueType& boundary_values,
+                        const bool is_linear,
+                        const Quadrature1dType& quadrature_1d,
+                        const std::shared_ptr<RealizabilityLimiterType>& realizability_limiter = nullptr)
+    : analytical_flux_(analytical_flux)
+    , boundary_values_(boundary_values)
+    , is_linear_(is_linear)
+    , quadrature_1d_(quadrature_1d)
+    , intersection_quadrature_(quadrature_helper<>::get(quadrature_1d_))
+    , realizability_limiter_(realizability_limiter)
   {
   }
 
@@ -342,47 +338,40 @@ public:
                                        NumericalBoundaryFluxType,
                                        polOrder,
                                        slope_limiter,
-                                       realizability_limiting,
-                                       EigenSolverType>::apply(analytical_flux_,
-                                                               boundary_values_,
-                                                               source,
-                                                               range,
-                                                               param,
-                                                               is_linear_,
-                                                               intersection_1d_quadrature_,
-                                                               intersection_quadrature_,
-                                                               quadrature_,
-                                                               epsilon_,
-                                                               basis_functions_,
-                                                               std::forward<Args>(args)...);
+                                       EigenSolverType,
+                                       RealizabilityLimiterType>::apply(analytical_flux_,
+                                                                        boundary_values_,
+                                                                        source,
+                                                                        range,
+                                                                        param,
+                                                                        is_linear_,
+                                                                        quadrature_1d_,
+                                                                        intersection_quadrature_,
+                                                                        realizability_limiter_,
+                                                                        std::forward<Args>(args)...);
   }
 
-  void set_1d_quadrature(const Intersection1dQuadratureType& quadrature)
+  void set_1d_quadrature(const Quadrature1dType& quadrature)
   {
-    intersection_1d_quadrature_ = quadrature;
-    intersection_quadrature_ = helper2<>::get_quadrature(quadrature);
+    quadrature_1d_ = quadrature;
+    intersection_quadrature_ = quadrature_helper<>::get(quadrature);
   }
 
-  void set_quadrature(const QuadratureType& quadrature)
+  void set_realizability_limiter(const std::shared_ptr<RealizabilityLimiterType>& realizability_limiter)
   {
-    quadrature_ = quadrature;
+    realizability_limiter_ = realizability_limiter;
   }
 
-  void set_epsilon(const RangeFieldType& epsilon)
+  static Quadrature1dType default_quadrature()
   {
-    epsilon_ = epsilon;
-  }
-
-  void set_basisfunctions(const std::shared_ptr<const BasisFunctionType> basis_functions)
-  {
-    basis_functions_ = basis_functions;
+    return default_quadrature_helper<>::get();
   }
 
 private:
   template <size_t reconstructionOrder = polOrder, class anything = void>
-  struct helper
+  struct default_quadrature_helper
   {
-    static Intersection1dQuadratureType default_1d_quadrature()
+    static Quadrature1dType get()
     {
       return Dune::QuadratureRules<DomainFieldType, 1>::rule(Dune::GeometryType(Dune::GeometryType::BasicType::cube, 1),
                                                              2 * polOrder);
@@ -390,27 +379,25 @@ private:
   };
 
   template <class anything>
-  struct helper<1, anything>
+  struct default_quadrature_helper<1, anything>
   {
-    static Intersection1dQuadratureType default_1d_quadrature()
+    static Quadrature1dType get()
     {
-      // get 1D quadrature rules
-      Intersection1dQuadratureType quadrature;
-      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5 * (1. - 1. / std::sqrt(3)), 0.5));
-      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5 * (1. + 1. / std::sqrt(3)), 0.5));
-      //      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5, 1.));
+      Quadrature1dType quadrature;
+      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5, 1.));
+      //      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5 * (1. - 1. / std::sqrt(3)), 0.5));
+      //      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5 * (1. + 1. / std::sqrt(3)), 0.5));
       return quadrature;
     }
   };
 
   template <size_t domainDim = dimDomain, class anything = void>
-  struct helper2;
+  struct quadrature_helper;
 
   template <class anything>
-  struct helper2<1, anything>
+  struct quadrature_helper<1, anything>
   {
-    static Dune::QuadratureRule<DomainFieldType, dimDomain - 1>
-    get_quadrature(const Intersection1dQuadratureType& /*quadrature_1d*/)
+    static Dune::QuadratureRule<DomainFieldType, dimDomain - 1> get(const Quadrature1dType& /*quadrature_1d*/)
     {
       Dune::QuadratureRule<DomainFieldType, dimDomain - 1> ret;
       ret.push_back(Dune::QuadraturePoint<DomainFieldType, 0>(FieldVector<DomainFieldType, 0>(0), 1));
@@ -419,20 +406,18 @@ private:
   };
 
   template <class anything>
-  struct helper2<2, anything>
+  struct quadrature_helper<2, anything>
   {
-    static Dune::QuadratureRule<DomainFieldType, dimDomain - 1>
-    get_quadrature(const Intersection1dQuadratureType& quadrature_1d)
+    static Dune::QuadratureRule<DomainFieldType, dimDomain - 1> get(const Quadrature1dType& quadrature_1d)
     {
       return quadrature_1d;
     }
   };
 
   template <class anything>
-  struct helper2<3, anything>
+  struct quadrature_helper<3, anything>
   {
-    static Dune::QuadratureRule<DomainFieldType, dimDomain - 1>
-    get_quadrature(const Intersection1dQuadratureType& quadrature_1d)
+    static Dune::QuadratureRule<DomainFieldType, dimDomain - 1> get(const Quadrature1dType& quadrature_1d)
     {
       Dune::QuadratureRule<DomainFieldType, dimDomain - 1> ret;
       for (size_t ii = 0; ii < quadrature_1d.size(); ++ii)
@@ -447,11 +432,9 @@ private:
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueType& boundary_values_;
   const bool is_linear_;
-  Intersection1dQuadratureType intersection_1d_quadrature_;
+  Quadrature1dType quadrature_1d_;
   IntersectionQuadratureType intersection_quadrature_;
-  QuadratureType quadrature_;
-  std::shared_ptr<const BasisFunctionType> basis_functions_;
-  RangeFieldType epsilon_;
+  std::shared_ptr<RealizabilityLimiterType> realizability_limiter_;
 }; // class AdvectionOperatorBase<...>
 
 
