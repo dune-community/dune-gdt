@@ -215,7 +215,7 @@ int main(int argc, char** argv)
   //                                                  dimDomain>
   //          BasisfunctionType;
 
-  static const size_t refinements = 2;
+  static const size_t refinements = 0;
   typedef typename Hyperbolic::Problems::
       PiecewiseMonomials<double,
                          3,
@@ -231,6 +231,7 @@ int main(int argc, char** argv)
   //  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>();
   std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>(refinements, 4);
   static const size_t dimRange = BasisfunctionType::dimRange;
+  static const size_t dimFlux = BasisfunctionType::dimFlux;
   //  static const size_t dimRange = 1.;
   static constexpr auto container_backend = Dune::XT::LA::default_sparse_backend;
   typedef FvProductSpace<GridLayerType, double, dimRange, 1> SpaceType;
@@ -331,7 +332,6 @@ int main(int argc, char** argv)
   //      dimRange>
   //          ProblemType;
 
-
   //******************* get typedefs and constants from ProblemType **********************//
   typedef typename Hyperbolic::Problems::KineticEquation<ProblemImp> ProblemType;
   using DomainFieldType = typename ProblemType::DomainFieldType;
@@ -391,12 +391,14 @@ int main(int argc, char** argv)
 
   // ******************** choose Realizability limiter and eigensolver ******************************************
 
-  //  typedef ConvexHullLocalRealizabilityLimiter<DiscreteFunctionType, BasisfunctionType, dimDomain, dimRange>
+  //  typedef ConvexHullLocalRealizabilityLimiter<DiscreteFunctionType, BasisfunctionType, 3, dimRange>
   //      RealizabilityLimiterType;
+  //  typedef LPLocalRealizabilityLimiter<DiscreteFunctionType, BasisfunctionType, 3, dimRange>
+  //  RealizabilityLimiterType;
   typedef NonLimitingRealizabilityLimiter<EntityType> RealizabilityLimiterType;
   typedef DefaultEigenSolver<RangeFieldType, dimRange, dimDomain> EigenSolverType;
-  //  auto realizability_limiter = std::make_shared<RealizabilityLimiterType>(*basis_functions, quadrature);
-  auto realizability_limiter = std::make_shared<RealizabilityLimiterType>();
+  auto realizability_limiter = std::make_shared<RealizabilityLimiterType>(*basis_functions, quadrature);
+  //  auto realizability_limiter = std::make_shared<RealizabilityLimiterType>();
 
   // ******************** choose flux and rhs operator and timestepper ******************************************
 

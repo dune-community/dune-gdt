@@ -22,6 +22,16 @@ namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
+namespace internal {
+
+
+struct LebedevHelper
+{
+  static void get(std::vector<Dune::QuadraturePoint<double, 3>>& quad_vec, const size_t order);
+};
+
+
+} // namespace internal
 
 
 // The tabulated values are in cartesian coordinates (x, y, z). If cartesian is false, the
@@ -45,23 +55,13 @@ public:
                 << " is not available, using highest available order " << allowed_orders_.back() << "." << std::endl;
     size_t order = (index == size_t(-1)) ? allowed_orders_.back() : allowed_orders_[index];
 
-    char orderstring[4];
-    sprintf(orderstring, "%03lu", order);
-    std::string filename = std::string("/home/tobias/Software/dune-gdt-super-2.5/dune-gdt/dune/gdt/test/hyperbolic/"
-                                       "problems/momentmodels/lebedevquadrature/order_")
-                           + orderstring + ".txt";
-    std::ifstream quadrature_file(filename);
-    if (!quadrature_file.is_open())
-      DUNE_THROW(Dune::IOError, "Could not open file " + filename);
-    std::string current_line;
+    std::vector<Dune::QuadraturePoint<double, 3>> quad_vector;
+    internal::LebedevHelper::get(quad_vector, order);
+
     Dune::QuadratureRule<FieldType, 3> quad_rule;
-    while (getline(quadrature_file, current_line)) {
-      const auto quad_data =
-          XT::Common::tokenize(current_line, "\t", boost::algorithm::token_compress_mode_type::token_compress_on);
-      assert(quad_data.size() == 2);
-      quad_rule.emplace_back(XT::Common::from_string<FieldVector<FieldType, 3>>(quad_data[0]),
-                             XT::Common::from_string<FieldType>(quad_data[1]));
-    }
+    for (const auto& quad_point : quad_vector)
+      quad_rule.emplace_back(quad_point);
+
     return helper<>::create(quad_rule);
   }
 

@@ -14,10 +14,6 @@
 
 #include <dune/xt/grid/walker/functors.hh>
 
-// TODO: define HAVE_QHULL and HAVE_LPSOLVE properly
-#define HAVE_QHULL 1
-#define HAVE_LPSOLVE 1
-
 #if HAVE_QHULL
 #include <libqhullcpp/Qhull.h>
 #include <libqhullcpp/QhullFacetList.h>
@@ -25,7 +21,7 @@
 
 #if HAVE_LPSOLVE
 namespace lpsolve {
-#include </home/tobias/Software/dune-gdt-super-2.5/local/include/lpsolve/lp_lib.h>
+#include <lpsolve/lp_lib.h>
 }
 #endif // HAVE_LPSOLVE
 
@@ -41,6 +37,13 @@ class NonLimitingRealizabilityLimiter : public std::function<void(const EntityTy
 public:
   NonLimitingRealizabilityLimiter()
     : BaseType([](const EntityType&) {})
+  {
+  }
+
+  template <class BasisFunctionType, class QuadratureType, class RangeFieldType = double>
+  NonLimitingRealizabilityLimiter(const BasisFunctionType& /*basis_functions*/,
+                                  const QuadratureType& /*quadrature*/,
+                                  const RangeFieldType /*epsilon*/ = 1e-14)
   {
   }
 
@@ -199,6 +202,14 @@ std::shared_ptr<const typename ConvexHullLocalRealizabilityLimiter<DiscreteFunct
     ConvexHullLocalRealizabilityLimiter<DiscreteFunctionType, BasisFunctionType, dimDomain, dimRange>::
         plane_coefficients_;
 
+#else // HAVE_QHULL
+
+template <class DiscreteFunctionType, class BasisFunctionType, size_t dimDomain, size_t dimRange>
+class ConvexHullLocalRealizabilityLimiter
+{
+  static_assert(Dune::AlwaysFalse<DiscreteFunctionType>::value, "You are missing Qhull!");
+};
+
 #endif // HAVE_QHULL
 
 #if HAVE_LPSOLVE
@@ -216,7 +227,6 @@ class LPLocalRealizabilityLimiter
   typedef typename Dune::QuadratureRule<RangeFieldType, dimDomain> QuadratureType;
   using BasisValuesMatrixType = std::vector<RangeType>;
 
-
 public:
   // cell averages includes left and right boundary values as the two last indices in each dimension
   explicit LPLocalRealizabilityLimiter(const BasisFunctionType& basis_functions,
@@ -230,6 +240,18 @@ public:
   {
     for (size_t ii = 0; ii < quadrature_.size(); ++ii)
       M_[ii] = basis_functions_.evaluate(quadrature_[ii].position());
+  }
+
+  void set_source(const DiscreteFunctionType* source)
+  {
+    source_ = source;
+    index_set_ = &(source_->space().grid_layer().indexSet());
+  }
+
+  void set_reconstructed_values(
+      std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>* reconstructed_values)
+  {
+    reconstructed_values_ = reconstructed_values;
   }
 
   void apply_local(const EntityType& entity)
@@ -398,6 +420,14 @@ private:
   const RangeFieldType epsilon_;
   BasisValuesMatrixType M_;
 }; // class LPLocalRealizabilityLimiter
+
+#else // HAVE_LPSOLVE
+
+template <class DiscreteFunctionType, class BasisFunctionType, size_t dimDomain, size_t dimRange>
+class LPLocalRealizabilityLimiter
+{
+  static_assert(Dune::AlwaysFalse<DiscreteFunctionType>::value, "You are missing LPSolve!");
+};
 
 #endif // HAVE_LPSOLVE
 

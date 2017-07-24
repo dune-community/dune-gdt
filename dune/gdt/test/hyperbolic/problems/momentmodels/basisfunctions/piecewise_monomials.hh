@@ -307,7 +307,7 @@ public:
 
   RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
   {
-    RangeFieldType u_sum;
+    RangeFieldType u_sum(0);
     auto u_bar_sum = u_sum;
     for (size_t ii = 0; ii < u.size(); ii += 4) {
       u_sum += u[ii];
