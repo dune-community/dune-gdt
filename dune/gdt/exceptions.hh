@@ -29,6 +29,14 @@ class projection_error : public operator_error
 {
 };
 
+class space_error : public Dune::Exception
+{
+};
+
+class restricted_space_error : public space_error
+{
+};
+
 
 } // namespace GDT
 } // namespace Dune
