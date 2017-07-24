@@ -15,8 +15,6 @@
 #include <dune/gdt/local/fluxes/musta.hh>
 #include <dune/gdt/operators/interfaces.hh>
 
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
-
 #include "base.hh"
 
 namespace Dune {

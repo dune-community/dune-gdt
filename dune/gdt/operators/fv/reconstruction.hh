@@ -19,8 +19,6 @@
 
 #include <dune/xt/grid/walker/functors.hh>
 
-#include <dune/xt/la/container/eigen.hh>
-
 #include "eigensolver.hh"
 #include "slopelimiters.hh"
 
@@ -412,7 +410,7 @@ private:
               values[stencil_x / 2 + new_offsets[0]][stencil_y / 2 + new_offsets[1]][stencil_z / 2 + new_offsets[2]] =
                   boundary_value;
             }
-          } else if (direction_allowed(direction, intersection_index)) {
+          } else if (intersection.neighbor() && direction_allowed(direction, intersection_index)) {
             const auto& outside = intersection.outside();
             walk(intersection_index, new_offsets);
             StencilIterator::apply(

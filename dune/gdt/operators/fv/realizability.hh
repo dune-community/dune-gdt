@@ -44,6 +44,7 @@ public:
   NonLimitingRealizabilityLimiter(const BasisFunctionType& /*basis_functions*/,
                                   const QuadratureType& /*quadrature*/,
                                   const RangeFieldType /*epsilon*/ = 1e-14)
+    : BaseType([](const EntityType&) {})
   {
   }
 

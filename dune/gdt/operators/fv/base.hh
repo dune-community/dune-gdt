@@ -23,10 +23,11 @@
 #include <dune/gdt/local/operators/fv.hh>
 #include <dune/gdt/operators/base.hh>
 
+#include "datahandle.hh"
+#include "realizability.hh"
 #include "reconstructed_function.hh"
 #include "reconstruction.hh"
 #include "slopelimiters.hh"
-#include "realizability.hh"
 
 namespace Dune {
 namespace GDT {
@@ -179,8 +180,9 @@ struct AdvectionOperatorApplier
     }
 
     // do reconstruction
-    std::vector<std::map<DomainType, typename BoundaryValueType::RangeType, XT::Common::FieldVectorLess>>
-        reconstructed_values(grid_layer.size(0));
+    typedef std::vector<std::map<DomainType, typename BoundaryValueType::RangeType, XT::Common::FieldVectorLess>>
+        ReconstructedValuesType;
+    ReconstructedValuesType reconstructed_values(grid_layer.size(0));
 
     auto local_reconstruction_operator = LocalReconstructionFvOperator<GridLayerType,
                                                                        AnalyticalFluxType,
@@ -199,6 +201,13 @@ struct AdvectionOperatorApplier
     walker.append(local_reconstruction_operator);
     walker.walk(true);
 
+    // communicate reconstructed values
+    typedef ReconstructionDataHandle<ReconstructedValuesType, GridLayerType> DataHandleType;
+    DataHandleType reconstruction_data_handle(reconstructed_values, grid_layer);
+    grid_layer.template communicate<DataHandleType>(
+        reconstruction_data_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
+
+    // realizability limiting
     if (realizability_limiter) {
       realizability_limiter->set_source(&source);
       realizability_limiter->set_reconstructed_values(&reconstructed_values);

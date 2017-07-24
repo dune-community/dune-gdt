@@ -14,8 +14,6 @@
 
 #include <dune/xt/common/float_cmp.hh>
 
-#include <dune/xt/la/container/eigen.hh>
-
 namespace Dune {
 namespace GDT {
 

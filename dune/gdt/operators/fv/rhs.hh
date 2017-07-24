@@ -20,6 +20,7 @@
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/integrands/fv.hh>
 #include <dune/gdt/operators/base.hh>
+#include <dune/gdt/local/operators/integrals.hh>
 
 namespace Dune {
 namespace GDT {
