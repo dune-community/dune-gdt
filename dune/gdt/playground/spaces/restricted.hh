@@ -89,6 +89,8 @@ class RestrictedSpace : public SpaceInterface<internal::RestrictedSpaceTraits<Un
 
 public:
   typedef internal::RestrictedSpaceTraits<UnrestrictedSpace, RestrictionGridLayer> Traits;
+  typedef UnrestrictedSpace UnrestrictedSpaceType; //       These are mainly here to detect this space type from the
+  typedef RestrictionGridLayer RestrictionGridLayerType; // outside (see also type_traits.hh).
   using typename BaseType::MapperType;
   using typename BaseType::GridLayerType;
   using typename BaseType::BackendType;
@@ -96,6 +98,7 @@ public:
   using typename BaseType::BaseFunctionSetType;
   using typename BaseType::CommunicatorType;
   using typename BaseType::PatternType;
+  using typename BaseType::DomainType;
 
   RestrictedSpace(const UnrestrictedSpace& unrestricted_space, RestrictionGridLayer restriction_grid_layer)
     : unrestricted_space_(unrestricted_space)
@@ -154,6 +157,25 @@ public:
   compute_pattern(const GL& /*grd_layr*/, const SpaceInterface<S, d, r, rC>& /*ansatz_space*/) const
   {
     DUNE_THROW(NotImplemented, "Yet");
+  }
+
+  // if we are CG
+  template <class E>
+  std::vector<DomainType> lagrange_points(const E& entity) const
+  {
+    const auto error_message = check_entity(entity);
+    if (error_message.size() > 0)
+      DUNE_THROW(restricted_space_error, error_message);
+    return unrestricted_space_.lagrange_points(entity);
+  }
+
+  template <class E, class I>
+  std::set<size_t> local_dirichlet_DoFs(const E& entity, const XT::Grid::BoundaryInfo<I>& boundaryInfo) const
+  {
+    const auto error_message = check_entity(entity);
+    if (error_message.size() > 0)
+      DUNE_THROW(restricted_space_error, error_message);
+    return unrestricted_space_.local_dirichlet_DoFs(entity, boundaryInfo);
   }
 
 private:

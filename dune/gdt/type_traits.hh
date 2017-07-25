@@ -31,6 +31,10 @@ class SpaceInterface;
 template <class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols>
 class ProductSpaceInterface;
 
+// from #include <dune/gdt/playground/spaces/restricted.hh>
+template <class UnrestrictedSpace, class RestrictionGridLayer>
+class RestrictedSpace;
+
 // from #include <dune/gdt/spaces/cg/interface.hh>
 template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols>
 class CgSpaceInterface;
@@ -74,6 +78,18 @@ struct is_space_helper
                                    && DXTC_has_static_member(dimRange)<S>::value
                                    && DXTC_has_static_member(dimRangeCols)<S>::value;
 }; // class is_space_helper
+
+
+// from #include <dune/gdt/playground/spaces/restricted.hh>
+template <class S>
+struct is_restricted_space_helper
+{
+  DXTC_has_typedef_initialize_once(UnrestrictedSpaceType);
+  DXTC_has_typedef_initialize_once(RestrictionGridLayerType);
+
+  static const bool is_candidate =
+      DXTC_has_typedef(UnrestrictedSpaceType)<S>::value && DXTC_has_typedef(RestrictionGridLayerType)<S>::value;
+}; // class is_restricted_space_helper
 
 
 // from #include <dune/gdt/local/integrands/interfaces.hh>
@@ -186,15 +202,36 @@ struct is_product_space<S, false> : public std::false_type
 };
 
 
+// from #include <dune/gdt/playground/spaces/restricted.hh>
+template <class S, bool candidate = internal::is_restricted_space_helper<S>::is_candidate>
+struct is_restricted_space
+    : public std::is_base_of<RestrictedSpace<typename S::UnrestrictedSpaceType, typename S::RestrictionGridLayerType>,
+                             S>
+{
+};
+
+template <class S>
+struct is_restricted_space<S, false> : public std::false_type
+{
+};
+
+
 // from #include <dune/gdt/spaces/cg/interface.hh>
-template <class S, bool candidate = internal::is_space_helper<S>::is_candidate>
-struct is_cg_space
+template <class S,
+          bool space_candidate = internal::is_space_helper<S>::is_candidate,
+          bool restricted = is_restricted_space<S>::value>
+struct is_cg_space : public std::false_type
+{
+};
+
+template <class S>
+struct is_cg_space<S, true, false>
     : public std::is_base_of<CgSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
 {
 };
 
 template <class S>
-struct is_cg_space<S, false> : public std::false_type
+struct is_cg_space<S, true, true> : public is_cg_space<typename S::UnrestrictedSpaceType>
 {
 };
 
