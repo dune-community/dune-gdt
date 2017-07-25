@@ -1,4 +1,4 @@
-// This file is part of the dune-gdt project:
+﻿// This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
 // Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
@@ -356,6 +356,60 @@ struct space_name<SpaceProvider<G, l, tp, b, p, R, r, rC, g>>
 };
 
 
+template <class S>
+class SpaceInterfaceWoFactory
+{
+  static_assert(is_space<S>::value, "");
+
+public:
+  typedef S type;
+  typedef pybind11::class_<type> bound_type;
+
+  static bound_type bind(pybind11::module& m, const std::string& space_name)
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+
+    const auto ClassName = XT::Common::to_camel_case(space_name /*space_name<SP>::value()*/);
+
+    bound_type c(m, ClassName.c_str(), ClassName.c_str(), py::metaclass());
+
+    c.def_property_readonly("dimDomain", [](const type& /*self*/) { return S::dimDomain; });
+    c.def_property_readonly("dimRange", [](const type& /*self*/) { return S::dimRange; });
+    c.def_property_readonly("dimRangeCols", [](const type& /*self*/) { return S::dimRangeCols; });
+    c.def_property_readonly("polOrder", [](const type& /*self*/) { return S::polOrder; });
+    c.def_property_readonly_static("dimDomain", [](const type& /*self*/) { return S::dimDomain; });
+    c.def_property_readonly_static("dimRange", [](const type& /*self*/) { return S::dimRange; });
+    c.def_property_readonly_static("dimRangeCols", [](const type& /*self*/) { return S::dimRangeCols; });
+    c.def_property_readonly_static("polOrder", [](const type& /*self*/) { return S::polOrder; });
+
+    c.def("size", [](const type& self) { return self.mapper().size(); });
+    c.def("visualize",
+          [](const type& self, const std::string& filename) { self.visualize(filename); },
+          "filename"_a = "");
+    c.def("compute_pattern",
+          [](const type& self, const std::string tp) {
+            if (tp == "default")
+              return self.compute_pattern();
+            else if (tp == "volume")
+              return self.compute_volume_pattern();
+            else if (tp == "face")
+              return self.compute_face_pattern();
+            else if (tp == "face_and_volume")
+              return self.compute_face_and_volume_pattern();
+            else
+              DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
+                         "  type has to be one of ('default', volume', 'face', 'face_and_volume'), is '" << tp << "'!");
+            // we will never get here
+            return XT::LA::SparsityPatternDefault();
+          },
+          "type"_a = "default");
+
+    return c;
+  } // ... bind(...)
+}; // class SpaceInterface
+
+
 template <class SP>
 class SpaceInterface
 {
@@ -412,48 +466,10 @@ public:
 
   static bound_type bind(pybind11::module& m)
   {
-    namespace py = pybind11;
-    using namespace pybind11::literals;
-
-    const auto ClassName = XT::Common::to_camel_case(space_name<SP>::value());
-
-    bound_type c(m, ClassName.c_str(), ClassName.c_str(), py::metaclass());
-
-    c.def_property_readonly("dimDomain", [](const type& /*self*/) { return S::dimDomain; });
-    c.def_property_readonly("dimRange", [](const type& /*self*/) { return S::dimRange; });
-    c.def_property_readonly("dimRangeCols", [](const type& /*self*/) { return S::dimRangeCols; });
-    c.def_property_readonly("polOrder", [](const type& /*self*/) { return S::polOrder; });
-    c.def_property_readonly_static("dimDomain", [](const type& /*self*/) { return S::dimDomain; });
-    c.def_property_readonly_static("dimRange", [](const type& /*self*/) { return S::dimRange; });
-    c.def_property_readonly_static("dimRangeCols", [](const type& /*self*/) { return S::dimRangeCols; });
-    c.def_property_readonly_static("polOrder", [](const type& /*self*/) { return S::polOrder; });
-
-    c.def("size", [](const type& self) { return self.mapper().size(); });
-    c.def("visualize",
-          [](const type& self, const std::string& filename) { self.visualize(filename); },
-          "filename"_a = "");
-    c.def("compute_pattern",
-          [](const type& self, const std::string tp) {
-            if (tp == "default")
-              return self.compute_pattern();
-            else if (tp == "volume")
-              return self.compute_volume_pattern();
-            else if (tp == "face")
-              return self.compute_face_pattern();
-            else if (tp == "face_and_volume")
-              return self.compute_face_and_volume_pattern();
-            else
-              DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
-                         "  type has to be one of ('default', volume', 'face', 'face_and_volume'), is '" << tp << "'!");
-            // we will never get here
-            return XT::LA::SparsityPatternDefault();
-          },
-          "type"_a = "default");
-
+    auto c = SpaceInterfaceWoFactory<S>::bind(m, space_name<SP>::value());
     factory_methods<>::addbind(m);
-
     return c;
-  } // ... bind(...)
+  }
 }; // class SpaceInterface
 
 
