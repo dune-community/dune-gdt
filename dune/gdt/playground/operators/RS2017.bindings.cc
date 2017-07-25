@@ -58,6 +58,116 @@ namespace py = pybind11;
 
 
 template <class G>
+class HdivSemiProduct : public GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                                                       typename GDT::SpaceProvider<G,
+                                                                                   XT::Grid::Layers::dd_subdomain,
+                                                                                   GDT::SpaceType::rt,
+                                                                                   GDT::Backends::pdelab,
+                                                                                   0,
+                                                                                   double,
+                                                                                   G::dimension>::type,
+                                                       typename XT::Grid::Layer<G,
+                                                                                XT::Grid::Layers::dd_subdomain,
+                                                                                XT::Grid::Backends::part,
+                                                                                XT::Grid::DD::SubdomainGrid<G>>::type>
+{
+  static_assert(XT::Grid::is_grid<G>::value, "");
+  typedef typename GDT::SpaceProvider<G,
+                                      XT::Grid::Layers::dd_subdomain,
+                                      GDT::SpaceType::rt,
+                                      GDT::Backends::pdelab,
+                                      0,
+                                      double,
+                                      G::dimension>
+      SP;
+  typedef GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                                  typename SP::type,
+                                  typename XT::Grid::Layer<G,
+                                                           XT::Grid::Layers::dd_subdomain,
+                                                           XT::Grid::Backends::part,
+                                                           XT::Grid::DD::SubdomainGrid<G>>::type>
+      BaseType;
+  typedef HdivSemiProduct<G> ThisType;
+
+public:
+  using typename BaseType::GridLayerType;
+  using typename BaseType::RangeSpaceType;
+
+  typedef XT::Grid::extract_entity_t<GridLayerType> E;
+  typedef XT::Grid::extract_intersection_t<GridLayerType> I;
+  typedef typename G::ctype D;
+  static const constexpr size_t d = G::dimension;
+  typedef double R;
+  typedef typename RangeSpaceType::BaseFunctionSetType BasisType;
+
+  static void bind(py::module& m)
+  {
+    using namespace pybind11::literals;
+
+    //    try { // we might not be the first to add this SystemAssembler
+    //      GDT::bindings::SystemAssembler<SP, XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>::bind(m);
+    //    } catch (std::runtime_error&) {
+    //    }
+
+    GDT::bindings::MatrixOperatorBase<ThisType>::bind(
+        m,
+        XT::Common::to_camel_case("RS2017_Hdiv_semi_product_matrix_operator_subdomain_"
+                                  + XT::Grid::bindings::grid_name<G>::value())
+            .c_str());
+
+    m.def("RS2017_make_Hdiv_semi_product_matrix_operator_on_subdomain",
+          [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+             const ssize_t subdomain,
+             const RangeSpaceType& space,
+             const size_t over_integrate) {
+            return new ThisType(
+                space,
+                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
+                    XT::Common::numeric_cast<size_t>(subdomain)),
+                over_integrate);
+          },
+          "dd_grid_provider"_a,
+          "subdomain"_a,
+          "space"_a,
+          "over_integrate"_a = 2);
+  } // ... bind(...)
+
+  HdivSemiProduct(RangeSpaceType space, GridLayerType grd_lyr, const size_t over_integrate = 2)
+    : BaseType(space, grd_lyr)
+    , over_integrate_(over_integrate)
+    , local_operator_(
+          [&](const auto& test_base, const auto& ansatz_base) {
+            const auto integrand_order = std::max(ssize_t(test_base.order()) - 1, ssize_t(0))
+                                         + std::max(ssize_t(ansatz_base.order()) - 1, ssize_t(0));
+            return size_t(integrand_order) + over_integrate_;
+          },
+          [&](const auto& test_base, const auto& ansatz_base, const auto& local_point, auto& ret) {
+            const auto test_gradient = test_base.jacobian(local_point);
+            const auto ansatz_gradient = ansatz_base.jacobian(local_point);
+            for (size_t ii = 0; ii < test_base.size(); ++ii)
+              for (size_t jj = 0; jj < ansatz_base.size(); ++jj) {
+                R test_divergence = 0.;
+                R ansatz_divergence = 0.;
+                for (size_t dd = 0; dd < d; ++dd) {
+                  test_divergence += test_gradient[ii][dd][dd];
+                  ansatz_divergence += ansatz_gradient[jj][dd][dd];
+                }
+                ret[ii][jj] = test_divergence * ansatz_divergence;
+              }
+          })
+  {
+  }
+
+  HdivSemiProduct(const ThisType&) = delete;
+  HdivSemiProduct(ThisType&&) = delete;
+
+private:
+  const size_t over_integrate_;
+  const GDT::LocalVolumeIntegralOperator<GDT::LocalLambdaBinaryVolumeIntegrand<E, R, d>, BasisType> local_operator_;
+}; // class HdivSemiProduct
+
+
+template <class G>
 class SwipdgPenaltySubdomainProduct
     : public GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
                                      typename GDT::SpaceProvider<G,
@@ -741,6 +851,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
 #if HAVE_DUNE_ALUGRID
   SwipdgPenaltySubdomainProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
   SwipdgPenaltyNeighborhoodProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
+  HdivSemiProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
 
   bind_neighborhood_reconstruction<ALU_2D_SIMPLEX_CONFORMING>(m);
   bind_neighborhood_discretization<ALU_2D_SIMPLEX_CONFORMING>(m);
