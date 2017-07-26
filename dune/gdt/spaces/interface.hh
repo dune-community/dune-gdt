@@ -69,6 +69,7 @@ enum class SpaceType
   dg,
   block_dg,
   fv,
+  product_fv,
   block_fv,
   rt,
   block_rt
