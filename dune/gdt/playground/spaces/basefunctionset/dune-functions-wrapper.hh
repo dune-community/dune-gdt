@@ -117,7 +117,7 @@ public:
 
   void evaluate(const DomainType& xx,
                 std::vector<RangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(this->is_a_valid_point(xx));
     assert(ret.size() >= size());
@@ -129,7 +129,7 @@ public:
 
   void jacobian(const DomainType& xx,
                 std::vector<JacobianRangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(this->is_a_valid_point(xx));
     assert(ret.size() >= size());

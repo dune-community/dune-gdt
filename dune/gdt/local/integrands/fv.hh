@@ -143,7 +143,7 @@ public:
         const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, rC>& /*test_base*/)
       const
   {
-    return std::get<0>(local_functions_tuple)->order(XT::Common::Parameter());
+    return std::get<0>(local_functions_tuple)->order({});
   }
 
   template <class R, size_t r, size_t rC>
@@ -154,7 +154,7 @@ public:
       Dune::DynamicVector<R>& ret) const
   {
     const auto u = std::get<1>(local_functions_tuple)->evaluate(x_local);
-    ret = std::get<0>(local_functions_tuple)->evaluate(x_local, u);
+    ret = DynamicVector<R>(std::get<0>(local_functions_tuple)->evaluate(x_local, u));
     ret /= std::get<2>(local_functions_tuple);
   }
 
@@ -205,7 +205,7 @@ public:
       const XT::Functions::
           LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>& /*ansatzBase*/) const
   {
-    return std::get<0>(local_functions_tuple)->order(XT::Common::Parameter());
+    return std::get<0>(local_functions_tuple)->order({});
   }
 
   template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>

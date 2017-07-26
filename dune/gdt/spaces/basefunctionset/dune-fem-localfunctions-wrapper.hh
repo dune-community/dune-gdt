@@ -132,7 +132,7 @@ public:
 
   void evaluate(const DomainType& x,
                 std::vector<RangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(ret.size() >= size());
     backend_->evaluateAll(x, ret);
@@ -142,7 +142,7 @@ public:
 
   void jacobian(const DomainType& x,
                 std::vector<JacobianRangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(ret.size() >= size());
     backend_->jacobianAll(x, this->entity().geometry().jacobianInverseTransposed(x), ret);

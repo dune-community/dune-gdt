@@ -56,10 +56,13 @@ public:
   using typename BaseType::SourceType;
   using typename BaseType::RangeType;
 
-  template <class... Args>
-  explicit L2LocalProjectionLocalizableOperator(const size_t over_integrate, Args&&... args)
-    : BaseType(std::forward<Args>(args)...)
-    , local_operator_(over_integrate)
+  explicit L2LocalProjectionLocalizableOperator(const size_t over_integrate,
+                                                GridLayerType grd_layr,
+                                                const SourceType& src,
+                                                RangeType& rng,
+                                                const XT::Common::Parameter& param = {})
+    : BaseType(grd_layr, src, rng)
+    , local_operator_(over_integrate, param)
   {
     this->append(local_operator_);
     issue_warning(this->range().space());
@@ -121,12 +124,13 @@ typename std::
     make_local_l2_projection_localizable_operator(const GridLayerType& grid_layer,
                                                   const SourceType& source,
                                                   DiscreteFunction<SpaceType, VectorType>& range,
-                                                  const size_t over_integrate = 0)
+                                                  const size_t over_integrate = 0,
+                                                  const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::make_unique<L2LocalProjectionLocalizableOperator<GridLayerType,
                                                                             SourceType,
                                                                             DiscreteFunction<SpaceType, VectorType>>>(
-      over_integrate, grid_layer, source, range);
+      over_integrate, grid_layer, source, range, param);
 } // ... make_local_l2_projection_localizable_operator(...)
 
 template <class SourceType, class SpaceType, class VectorType>
@@ -138,12 +142,13 @@ typename std::
                                                                    DiscreteFunction<SpaceType, VectorType>>>>::type
     make_local_l2_projection_localizable_operator(const SourceType& source,
                                                   DiscreteFunction<SpaceType, VectorType>& range,
-                                                  const size_t over_integrate = 0)
+                                                  const size_t over_integrate = 0,
+                                                  const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::make_unique<L2LocalProjectionLocalizableOperator<typename SpaceType::GridLayerType,
                                                                             SourceType,
                                                                             DiscreteFunction<SpaceType, VectorType>>>(
-      over_integrate, range.space().grid_layer(), source, range);
+      over_integrate, range.space().grid_layer(), source, range, param);
 } // ... make_local_l2_projection_localizable_operator(...)
 
 
@@ -178,11 +183,12 @@ public:
 
   template <class R, size_t r, size_t rC, class S, class V>
   void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
-             DiscreteFunction<S, V>& range) const
+             DiscreteFunction<S, V>& range,
+             const XT::Common::Parameter& param = {}) const
   {
     typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
     L2LocalProjectionLocalizableOperator<GridLayerType, SourceType, DiscreteFunction<S, V>> op(
-        over_integrate_, grid_layer_, source, range);
+        over_integrate_, grid_layer_, source, range, param);
     op.apply();
   }
 

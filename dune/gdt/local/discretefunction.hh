@@ -109,14 +109,12 @@ public:
     return *localVector_;
   }
 
-  virtual size_t order(const XT::Common::Parameter& mu = XT::Common::Parameter()) const override final
+  virtual size_t order(const XT::Common::Parameter& mu = {}) const override final
   {
     return base_->order(mu);
   }
 
-  void evaluate(const DomainType& xx,
-                RangeType& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+  void evaluate(const DomainType& xx, RangeType& ret, const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(this->is_a_valid_point(xx));
     if (!GDT::is_fv_space<SpaceType>::value) {
@@ -133,9 +131,8 @@ public:
     }
   } // ... evaluate(...)
 
-  void jacobian(const DomainType& xx,
-                JacobianRangeType& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+  void
+  jacobian(const DomainType& xx, JacobianRangeType& ret, const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(this->is_a_valid_point(xx));
     if (!GDT::is_fv_space<SpaceType>::value) {

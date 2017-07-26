@@ -231,7 +231,7 @@ public:
 
   void evaluate(const DomainType& xx,
                 std::vector<RangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     internal::DynamicTupleGetter<0>::evaluate(basefunctionsets_, xx, ret);
   } // ... evaluate(...)
@@ -240,7 +240,7 @@ public:
 
   void jacobian(const DomainType& xx,
                 std::vector<JacobianRangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     internal::DynamicTupleGetter<0>::jacobian(basefunctionsets_, xx, ret);
   } // ... jacobian(...)

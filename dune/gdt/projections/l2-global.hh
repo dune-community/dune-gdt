@@ -75,8 +75,9 @@ public:
   L2GlobalProjectionLocalizableOperator(const size_t over_integrate,
                                         GridLayerType grd_vw,
                                         const SourceType& src,
-                                        RangeType& rng)
-    : BaseType(grd_vw, src, rng)
+                                        RangeType& rng,
+                                        const XT::Common::Parameter& param = {})
+    : BaseType(grd_vw, src, rng, param)
     , lhs_operator_(over_integrate, range_.space(), BaseType::grid_layer())
     , rhs_functional_(over_integrate, source_, range_.space(), BaseType::grid_layer())
     , solved_(false)

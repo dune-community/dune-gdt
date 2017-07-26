@@ -85,8 +85,9 @@ public:
   typedef typename Traits::DomainFieldType DomainFieldType;
   static const size_t dimDomain = Traits::dimDomain;
 
-  LocalProductIntegrand(const LocalizableFunctionType& inducingFunction)
+  LocalProductIntegrand(const LocalizableFunctionType& inducingFunction, const XT::Common::Parameter& param = {})
     : inducingFunction_(inducingFunction)
+    , param_(param)
   {
   }
 
@@ -247,7 +248,7 @@ public:
   {
     ret *= 0.0;
     // evaluate local function
-    const auto functionValue = localFunction.evaluate(localPoint);
+    const auto functionValue = localFunction.evaluate(localPoint, param_);
     // evaluate test base
     const size_t size = testBase.size();
     const auto testValues = testBase.evaluate(localPoint);
@@ -272,7 +273,7 @@ public:
   {
     ret *= 0.0;
     // evaluate local function
-    const auto functionValue = localFunction.evaluate(localPoint);
+    const auto functionValue = localFunction.evaluate(localPoint, param_);
     // evaluate bases
     const auto rows = testBase.size();
     const auto cols = ansatzBase.size();
@@ -303,7 +304,7 @@ public:
     ret *= 0.0;
     // evaluate local function
     const auto localPointEntity = intersection.geometryInInside().global(localPoint);
-    const auto functionValue = localFunction.evaluate(localPointEntity);
+    const auto functionValue = localFunction.evaluate(localPointEntity, param_);
     // evaluate test base
     const size_t size = testBase.size();
     const auto testValues = testBase.evaluate(localPointEntity);
@@ -330,7 +331,7 @@ public:
     ret *= 0.0;
     const auto localPointEntity = intersection.geometryInInside().global(localPoint);
     // evaluate local function
-    const auto functionValue = localFunction.evaluate(localPointEntity);
+    const auto functionValue = localFunction.evaluate(localPointEntity, param_);
     // evaluate bases
     const size_t rows = testBase.size();
     const size_t cols = ansatzBase.size();
@@ -349,8 +350,9 @@ public:
 
   /// \}
 
-private:
+protected:
   const LocalizableFunctionType& inducingFunction_;
+  const XT::Common::Parameter param_;
 }; // class LocalProductIntegrand
 
 
@@ -371,8 +373,8 @@ public:
   using typename BaseType::DomainFieldType;
   using BaseType::dimDomain;
 
-  LocalFVProductIntegrand(const LocalizableFunctionType& inducingFunction)
-    : BaseType(inducingFunction)
+  LocalFVProductIntegrand(const LocalizableFunctionType& inducingFunction, const XT::Common::Parameter& param = {})
+    : BaseType(inducingFunction, param)
   {
   }
 
@@ -394,7 +396,7 @@ public:
            Dune::DynamicVector<R>& ret) const
   {
     // evaluate local function
-    const auto functionValue = localFunction.evaluate(localPoint);
+    const auto functionValue = localFunction.evaluate(localPoint, param_);
     // evaluate test base
     const size_t size = testBase.size();
     // compute product
@@ -418,7 +420,7 @@ public:
   {
     ret *= 0;
     // evaluate local function
-    const auto functionValue = localFunction.evaluate(localPoint);
+    const auto functionValue = localFunction.evaluate(localPoint, param_);
     // evaluate bases
     const auto rows = testBase.size();
     const auto cols = ansatzBase.size();
@@ -442,7 +444,7 @@ public:
   {
     // evaluate local function
     const auto localPointEntity = intersection.geometryInInside().global(localPoint);
-    const auto functionValue = localFunction.evaluate(localPointEntity);
+    const auto functionValue = localFunction.evaluate(localPointEntity, param_);
     // evaluate test base
     const size_t size = testBase.size();
     // compute product
@@ -467,7 +469,7 @@ public:
     ret *= 0.0;
     const auto localPointEntity = intersection.geometryInInside().global(localPoint);
     // evaluate local function
-    const auto functionValue = localFunction.evaluate(localPointEntity);
+    const auto functionValue = localFunction.evaluate(localPointEntity, param_);
     // evaluate bases
     const size_t rows = testBase.size();
     // compute product
@@ -479,6 +481,9 @@ public:
   } // ... evaluate(...)
 
   /// \}
+
+private:
+  using BaseType::param_;
 }; // class LocalFVProductIntegrand
 
 

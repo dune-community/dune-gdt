@@ -63,8 +63,9 @@ class LocalL2ProjectionOperator : public LocalOperatorInterface<internal::LocalL
 public:
   typedef internal::LocalL2ProjectionOperatorTraits Traits;
 
-  LocalL2ProjectionOperator(const size_t over_integrate = 0)
+  LocalL2ProjectionOperator(const size_t over_integrate = 0, const XT::Common::Parameter& param = {})
     : over_integrate_(over_integrate)
+    , param_(param)
   {
   }
 
@@ -82,13 +83,13 @@ public:
                                       typename RangeSpaceType::BaseFunctionSetType,
                                       typename RangeSpaceType::BaseFunctionSetType,
                                       R>
-        local_l2_operator(over_integrate_, one);
+        local_l2_operator(over_integrate_, one, param_);
     // and functional
     typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
     const LocalVolumeIntegralFunctional<LocalProductIntegrand<SourceType>,
                                         typename RangeSpaceType::BaseFunctionSetType,
                                         R>
-        local_l2_functional(over_integrate_, source);
+        local_l2_functional(over_integrate_, source, param_);
     // create local lhs and rhs
     const auto& local_basis = local_range.basis();
     const size_t size = local_basis.size();
@@ -126,7 +127,7 @@ public:
     const LocalVolumeIntegralFunctional<LocalFVProductIntegrand<SourceType>,
                                         typename RangeSpaceType::BaseFunctionSetType,
                                         R>
-        local_l2_functional(over_integrate_, source);
+        local_l2_functional(over_integrate_, source, param_);
     Dune::DynamicVector<R> local_vector(local_range.basis().size(), 0.);
     const auto& entity = local_range.entity();
     local_l2_functional.apply(local_range.basis(), local_vector);
@@ -138,6 +139,7 @@ public:
 
 private:
   const size_t over_integrate_;
+  const XT::Common::Parameter param_;
 }; // class LocalL2ProjectionOperator
 
 
