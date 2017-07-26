@@ -33,6 +33,7 @@
 #include <dune/gdt/local/discretefunction.hh>
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/fv/default.hh>
+#include <dune/gdt/spaces.hh>
 
 namespace Dune {
 namespace GDT {
@@ -402,6 +403,34 @@ make_discrete_function(const SpaceType& space, VectorType&& vector, const std::s
 {
   return DiscreteFunction<SpaceType, VectorType>(space, std::move(vector), nm);
 }
+
+template <class GridType,
+          GDT::SpaceType space_type,
+          int polOrder = (space_type == GDT::SpaceType::fv) ? 0 : 1,
+          class RangeFieldType = double,
+          size_t dimRange = 1,
+          size_t dimRangeCols = 1,
+          GDT::Backends space_backend = GDT::default_space_backend,
+          XT::LA::Backends container_backend = XT::LA::default_backend,
+          XT::Grid::Layers layer_type = XT::Grid::Layers::leaf>
+class DiscreteFunctionProvider
+{
+  typedef typename GDT::
+      SpaceProvider<GridType, layer_type, space_type, space_backend, polOrder, RangeFieldType, dimRange, dimRangeCols>
+          SpaceProviderType;
+
+public:
+  typedef typename SpaceProviderType::type SpaceImp;
+  typedef typename SpaceProviderType::GridLayerType GridLayerType;
+  typedef typename XT::LA::Container<RangeFieldType, container_backend>::VectorType VectorType;
+  typedef DiscreteFunction<SpaceImp, VectorType> type;
+
+  static type create(GridLayerType grd_layer)
+  {
+    auto space = SpaceProviderType::create(grd_layer);
+    return type(space);
+  }
+}; // class DiscreteFunctionProvider<...>
 
 
 /**
