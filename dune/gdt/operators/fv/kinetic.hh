@@ -15,8 +15,6 @@
 #include <dune/gdt/local/fluxes/kinetic.hh>
 #include <dune/gdt/operators/interfaces.hh>
 
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
-
 #include "base.hh"
 
 namespace Dune {
@@ -27,9 +25,8 @@ template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           size_t polOrder,
           SlopeLimiters slope_lim,
-          bool realizability_lim,
-          class BasisFunctionImp,
           class EigenSolverImp,
+          class RealizabilityLimiterImp,
           class Traits>
 class AdvectionKineticOperator;
 
@@ -39,46 +36,35 @@ namespace internal {
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
-          size_t reconstructionOrder,
+          size_t reconstruction_order,
           SlopeLimiters slope_lim,
-          bool realizability_lim,
-          class BasisFunctionImp,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldImp,
-                                                    AnalyticalFluxImp::dimRange,
-                                                    AnalyticalFluxImp::dimRangeCols>>
+          class EigenSolverImp,
+          class RealizabilityLimiterImp>
 class AdvectionKineticOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp,
                                                                   BoundaryValueImp,
-                                                                  reconstructionOrder,
+                                                                  reconstruction_order,
                                                                   slope_lim,
-                                                                  realizability_lim,
-                                                                  BasisFunctionImp,
-                                                                  EigenSolverImp>
+                                                                  EigenSolverImp,
+                                                                  RealizabilityLimiterImp>
 {
   typedef AdvectionTraitsBase<AnalyticalFluxImp,
                               BoundaryValueImp,
-                              reconstructionOrder,
+                              reconstruction_order,
                               slope_lim,
-                              realizability_lim,
-                              BasisFunctionImp,
-                              EigenSolverImp>
+                              EigenSolverImp,
+                              RealizabilityLimiterImp>
       BaseType;
 
 public:
-  using BaseType::polOrder;
-  using BaseType::slope_limiter;
-  using BaseType::realizability_limiting;
-  using typename BaseType::AnalyticalFluxType;
-  using typename BaseType::BoundaryValueType;
-  typedef typename Dune::GDT::KineticLocalNumericalCouplingFlux<AnalyticalFluxType> NumericalCouplingFluxType;
-  typedef typename Dune::GDT::KineticLocalNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueType>
+  typedef typename Dune::GDT::KineticLocalNumericalCouplingFlux<AnalyticalFluxImp> NumericalCouplingFluxType;
+  typedef typename Dune::GDT::KineticLocalNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp>
       NumericalBoundaryFluxType;
   typedef AdvectionKineticOperator<AnalyticalFluxImp,
                                    BoundaryValueImp,
-                                   polOrder,
-                                   slope_limiter,
-                                   realizability_limiting,
-                                   BasisFunctionImp,
+                                   reconstruction_order,
+                                   slope_lim,
                                    EigenSolverImp,
+                                   RealizabilityLimiterImp,
                                    AdvectionKineticOperatorTraits>
       derived_type;
 }; // class AdvectionKineticOperatorTraits
@@ -91,22 +77,16 @@ template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           size_t polOrder = 0,
           SlopeLimiters slope_lim = SlopeLimiters::minmod,
-          bool realizability_lim = false,
-          class BasisFunctionImp = Hyperbolic::Problems::HatFunctions<typename BoundaryValueImp::DomainFieldImp,
-                                                                      BoundaryValueImp::dimDomain,
-                                                                      typename BoundaryValueImp::RangeFieldType,
-                                                                      BoundaryValueImp::dimRange,
-                                                                      BoundaryValueImp::dimRangeCols>,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldImp,
+          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
                                                     AnalyticalFluxImp::dimRange,
                                                     AnalyticalFluxImp::dimRangeCols>,
+          class RealizabilityLimiterImp = NonLimitingRealizabilityLimiter<typename AnalyticalFluxImp::EntityType>,
           class Traits = internal::AdvectionKineticOperatorTraits<AnalyticalFluxImp,
                                                                   BoundaryValueImp,
                                                                   polOrder,
                                                                   slope_lim,
-                                                                  realizability_lim,
-                                                                  BasisFunctionImp,
-                                                                  EigenSolverImp>>
+                                                                  EigenSolverImp,
+                                                                  RealizabilityLimiterImp>>
 class AdvectionKineticOperator : public Dune::GDT::OperatorInterface<Traits>, public AdvectionOperatorBase<Traits>
 {
   typedef AdvectionOperatorBase<Traits> BaseType;
@@ -114,9 +94,21 @@ class AdvectionKineticOperator : public Dune::GDT::OperatorInterface<Traits>, pu
 public:
   using typename BaseType::AnalyticalFluxType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::OnedQuadratureType;
 
-  AdvectionKineticOperator(const AnalyticalFluxType& analytical_flux, const BoundaryValueType& boundary_values)
-    : BaseType(analytical_flux, boundary_values)
+  AdvectionKineticOperator(const AnalyticalFluxType& analytical_flux,
+                           const BoundaryValueType& boundary_values,
+                           const bool is_linear = false)
+    : BaseType(analytical_flux, boundary_values, is_linear)
+  {
+  }
+
+  AdvectionKineticOperator(const AnalyticalFluxType& analytical_flux,
+                           const BoundaryValueType& boundary_values,
+                           const OnedQuadratureType& quadrature_1d,
+                           const std::shared_ptr<RealizabilityLimiterImp>& realizability_limiter = nullptr,
+                           const bool is_linear = false)
+    : BaseType(analytical_flux, boundary_values, is_linear, quadrature_1d, realizability_limiter)
   {
   }
 

@@ -34,14 +34,14 @@ namespace GDT {
 
 // forwards
 template <class AnalyticalFluxImp,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldImp,
+          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
                                                     AnalyticalFluxImp::dimRange,
                                                     AnalyticalFluxImp::dimRangeCols>>
 class KineticLocalNumericalCouplingFlux;
 
 template <class AnalyticalFluxImp,
           class BoundaryValueType,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldImp,
+          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
                                                     AnalyticalFluxImp::dimRange,
                                                     AnalyticalFluxImp::dimRangeCols>>
 class KineticLocalNumericalBoundaryFlux;
@@ -92,8 +92,6 @@ public:
   typedef typename Traits::DomainType DomainType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   typedef typename Traits::AnalyticalFluxType AnalyticalFluxType;
-  typedef typename Traits::FluxRangeType FluxRangeType;
-  typedef typename Traits::FluxJacobianRangeType FluxJacobianRangeType;
   typedef typename Traits::RangeType RangeType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
@@ -161,14 +159,12 @@ public:
   typedef typename Traits::DomainType DomainType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   typedef typename Traits::AnalyticalFluxType AnalyticalFluxType;
-  typedef typename Traits::FluxRangeType FluxRangeType;
-  typedef typename Traits::FluxJacobianRangeType FluxJacobianRangeType;
   typedef typename Traits::RangeType RangeType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
   explicit KineticLocalNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
-                                             const std::shared_ptr<BoundaryValueType>& boundary_values,
+                                             const BoundaryValueType& boundary_values,
                                              const XT::Common::Parameter param)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
@@ -178,7 +174,7 @@ public:
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
-    return std::make_tuple(boundary_values_->local_function(entity));
+    return std::make_tuple(boundary_values_.local_function(entity));
   }
 
   template <class IntersectionType>
@@ -209,7 +205,7 @@ public:
 
 private:
   const AnalyticalFluxType& analytical_flux_;
-  const std::shared_ptr<BoundaryValueType>& boundary_values_;
+  const BoundaryValueType& boundary_values_;
   const XT::Common::Parameter param_;
 }; // class KineticLocalNumericalBoundaryFlux
 

@@ -94,8 +94,7 @@ class AdvectionGodunovOperator : public Dune::GDT::OperatorInterface<Traits>, pu
 public:
   using typename BaseType::AnalyticalFluxType;
   using typename BaseType::BoundaryValueType;
-  using typename BaseType::Quadrature1dType;
-  using typename BaseType::RangeFieldType;
+  using typename BaseType::OnedQuadratureType;
 
   AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux,
                            const BoundaryValueType& boundary_values,
@@ -107,7 +106,7 @@ public:
 
   AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux,
                            const BoundaryValueType& boundary_values,
-                           const Quadrature1dType& quadrature_1d,
+                           const OnedQuadratureType& quadrature_1d,
                            const std::shared_ptr<RealizabilityLimiterImp>& realizability_limiter = nullptr,
                            const bool is_linear = false)
     : BaseType(analytical_flux, boundary_values, is_linear, quadrature_1d, realizability_limiter)

@@ -141,7 +141,7 @@ public:
     assert(XT::Common::FloatCmp::eq(std::abs(n_ij[direction]), 1.));
 
     // intialize jacobians
-    initialize_jacobians(local_functions_tuple, x_in_inside_coords, u_i, u_j);
+    initialize_jacobians(direction, local_functions_tuple, x_in_inside_coords, u_i, u_j);
 
     // get jump at the intersection
     const RangeType delta_u = u_i - u_j;
@@ -163,7 +163,8 @@ public:
 
 private:
   // use simple linearized Riemann solver, LeVeque p.316
-  void initialize_jacobians(const LocalfunctionTupleType& local_functions_tuple,
+  void initialize_jacobians(const size_t direction,
+                            const LocalfunctionTupleType& local_functions_tuple,
                             const DomainType& x_local,
                             const RangeType& u_i,
                             const RangeType& u_j) const
@@ -175,29 +176,25 @@ private:
       const auto& local_flux = std::get<0>(local_functions_tuple);
       if (!jacobian_)
         jacobian_ = XT::Common::make_unique<JacobianRangeType>();
-      helper<dimDomain>::get_jacobian(local_flux, x_local, u_mean, *jacobian_, param_inside_);
-      const auto eigen_solver = EigenSolverType(*jacobian_, true);
+      helper<dimDomain>::get_jacobian(direction, local_flux, x_local, u_mean, *jacobian_, param_inside_);
+      const auto eigen_solver = EigenSolverType((*jacobian_)[direction], true);
       const auto& eigenvalues = eigen_solver.eigenvalues();
       const auto& eigenvectors = eigen_solver.eigenvectors();
       const auto& eigenvectors_inverse = eigen_solver.eigenvectors_inverse();
       if (is_linear_)
         jacobian_ = nullptr;
 
-      for (size_t ii = 0; ii < dimDomain; ++ii) {
-        FieldMatrix<RangeFieldType, dimRange, dimRange> jacobian_neg_dense(0);
-        FieldMatrix<RangeFieldType, dimRange, dimRange> jacobian_pos_dense(0);
-        for (size_t rr = 0; rr < dimRange; ++rr)
-          for (size_t cc = 0; cc < dimRange; ++cc)
-            for (size_t kk = 0; kk < dimRange; ++kk)
-              if (XT::Common::FloatCmp::lt(eigenvalues[ii][kk], 0.))
-                jacobian_neg_dense[rr][cc] +=
-                    (*(eigenvectors[ii]))[rr][kk] * (*(eigenvectors_inverse[ii]))[kk][cc] * eigenvalues[ii][kk];
-              else
-                jacobian_pos_dense[rr][cc] +=
-                    (*(eigenvectors[ii]))[rr][kk] * (*(eigenvectors_inverse[ii]))[kk][cc] * eigenvalues[ii][kk];
-        jacobian_neg_[ii] = SparseMatrixType(jacobian_neg_dense, true);
-        jacobian_pos_[ii] = SparseMatrixType(jacobian_pos_dense, true);
-      } // ii
+      FieldMatrix<RangeFieldType, dimRange, dimRange> jacobian_neg_dense(0);
+      FieldMatrix<RangeFieldType, dimRange, dimRange> jacobian_pos_dense(0);
+      for (size_t rr = 0; rr < dimRange; ++rr)
+        for (size_t cc = 0; cc < dimRange; ++cc)
+          for (size_t kk = 0; kk < dimRange; ++kk)
+            if (XT::Common::FloatCmp::lt(eigenvalues[kk], 0.))
+              jacobian_neg_dense[rr][cc] += (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk];
+            else
+              jacobian_pos_dense[rr][cc] += (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk];
+      jacobian_neg_[direction] = SparseMatrixType(jacobian_neg_dense, true);
+      jacobian_pos_[direction] = SparseMatrixType(jacobian_pos_dense, true);
       jacobians_initialized_ = true;
     } // (!jacobians_initialized || !linear)
   } // void calculate_jacobians(...)
@@ -205,25 +202,28 @@ private:
   template <size_t domainDim = dimDomain, class anything = void>
   struct helper
   {
-    static void get_jacobian(const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
+    static void get_jacobian(const size_t direction,
+                             const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
                              const DomainType& x_in_inside_coords,
                              const StateRangeType& u,
                              JacobianRangeType& ret,
                              const XT::Common::Parameter& param)
     {
-      local_func->partial_u(x_in_inside_coords, u, ret, param);
+      local_func->partial_u_col(direction, x_in_inside_coords, u, ret[direction], param);
     }
   };
 
   template <class anything>
   struct helper<1, anything>
   {
-    static void get_jacobian(const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
+    static void get_jacobian(const size_t direction,
+                             const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
                              const DomainType& x_in_inside_coords,
                              const StateRangeType& u,
                              JacobianRangeType& ret,
                              const XT::Common::Parameter& param)
     {
+      assert(direction == 0);
       local_func->partial_u(x_in_inside_coords, u, ret[0], param);
     }
   };

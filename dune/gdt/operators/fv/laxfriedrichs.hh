@@ -107,7 +107,7 @@ public:
   using typename BaseType::AnalyticalFluxType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::DomainType;
-  using typename BaseType::Quadrature1dType;
+  using typename BaseType::OnedQuadratureType;
   using typename BaseType::RangeFieldType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
 
@@ -130,7 +130,7 @@ public:
   AdvectionLaxFriedrichsOperator(const AnalyticalFluxType& analytical_flux,
                                  const BoundaryValueType& boundary_values,
                                  const LocalizableFunctionType& dx,
-                                 const Quadrature1dType& quadrature_1d,
+                                 const OnedQuadratureType& quadrature_1d,
                                  const std::shared_ptr<RealizabilityLimiterImp>& realizability_limiter = nullptr,
                                  const bool use_local_laxfriedrichs_flux = false,
                                  const bool is_linear = false,

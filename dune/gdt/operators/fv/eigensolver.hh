@@ -37,15 +37,14 @@ class QrHouseholderEigenSolver
 public:
   typedef FieldMatrix<FieldType, dimRange, dimRange> MatrixType;
   typedef FieldVector<FieldType, dimRange> VectorType;
-  typedef FieldVector<VectorType, dimRangeCols> EigenValuesType;
-  typedef FieldVector<std::shared_ptr<MatrixType>, dimRangeCols> EigenVectorsType;
-  typedef FieldVector<MatrixType, dimRangeCols> InputMatricesType;
+  typedef VectorType EigenValuesType;
+  typedef std::shared_ptr<MatrixType> EigenVectorsType;
 
 public:
-  QrHouseholderEigenSolver(InputMatricesType& matrices_in, bool calculate_eigenvectors = false)
+  QrHouseholderEigenSolver(MatrixType& A, bool calculate_eigenvectors = false)
     : calculate_eigenvectors_(calculate_eigenvectors)
   {
-    initialize(matrices_in, calculate_eigenvectors);
+    initialize(A, calculate_eigenvectors);
   }
 
   const EigenValuesType& eigenvalues() const
@@ -64,216 +63,213 @@ public:
   }
 
 private:
-  void initialize(InputMatricesType& matrices_in, const bool calculate_eigenvectors)
+  void initialize(MatrixType& A, const bool calculate_eigenvectors)
   {
     static constexpr size_t max_counts = 10000;
     const FieldType tol = 1e-15;
     auto R_k = XT::Common::make_unique<MatrixType>(0.);
     auto Q_k = XT::Common::make_unique<MatrixType>(0.);
     auto Q = XT::Common::make_unique<MatrixType>(0.);
-    for (size_t ii = 0; ii < dimRangeCols; ++ii) {
-      eigenvectors_[ii] = std::make_shared<MatrixType>();
-      eigenvectors_inverse_[ii] = std::make_shared<MatrixType>();
-      auto& A = matrices_in[ii];
-      hessenberg_transformation(A, *Q);
-      for (size_t jj = rows - 1; jj > 0; --jj) {
-        size_t num_rows = jj + 1;
-        size_t num_cols = num_rows;
-        FieldType residual = std::abs(A[jj][jj - 1]);
-        size_t kk = 0;
-        while (XT::Common::FloatCmp::gt(residual, tol * (std::abs(A[jj][jj]) + std::abs(A[jj - 1][jj - 1])))
-               && kk < max_counts) {
-          auto sigma = A[jj][jj];
-          for (size_t rr = 0; rr < num_rows; ++rr)
-            A[rr][rr] -= sigma;
+    eigenvectors_ = std::make_shared<MatrixType>();
+    eigenvectors_inverse_ = std::make_shared<MatrixType>();
+    hessenberg_transformation(A, *Q);
+    for (size_t jj = rows - 1; jj > 0; --jj) {
+      size_t num_rows = jj + 1;
+      size_t num_cols = num_rows;
+      FieldType residual = std::abs(A[jj][jj - 1]);
+      size_t kk = 0;
+      while (XT::Common::FloatCmp::gt(residual, tol * (std::abs(A[jj][jj]) + std::abs(A[jj - 1][jj - 1])))
+             && kk < max_counts) {
+        auto sigma = A[jj][jj];
+        for (size_t rr = 0; rr < num_rows; ++rr)
+          A[rr][rr] -= sigma;
 
-          // calculate QR decomp. If jj < rows-1, A has the form [A1 A2; 0 A3],
-          // so we are only calculating the QR decomposition Q1*R1 of A1.
-          // Then Q = [Q1 0; 0 I], R = [R1 Q1^T*A2; 0 A3] is a QR decomp. of A.
-          QR_decomp(A, *Q_k, *R_k, num_rows, num_cols);
+        // calculate QR decomp. If jj < rows-1, A has the form [A1 A2; 0 A3],
+        // so we are only calculating the QR decomposition Q1*R1 of A1.
+        // Then Q = [Q1 0; 0 I], R = [R1 Q1^T*A2; 0 A3] is a QR decomp. of A.
+        QR_decomp(A, *Q_k, *R_k, num_rows, num_cols);
 
-          // calculate A_{k+1} = R_k Q_k + sigma I. We are only interested in the diagonal
-          // elements of A, and we do not reuse the other parts of A, so we are only
-          // updating the upper left part.
-          for (size_t rr = 0; rr < num_rows; ++rr) {
-            for (size_t cc = 0; cc < num_cols; ++cc) {
-              A[rr][cc] = 0.;
-              for (size_t ll = 0; ll < num_rows; ++ll)
-                A[rr][cc] += R_k[rr][ll] * Q_k[ll][cc];
-            } // cc
-          } // rr
+        // calculate A_{k+1} = R_k Q_k + sigma I. We are only interested in the diagonal
+        // elements of A, and we do not reuse the other parts of A, so we are only
+        // updating the upper left part.
+        for (size_t rr = 0; rr < num_rows; ++rr) {
+          for (size_t cc = 0; cc < num_cols; ++cc) {
+            A[rr][cc] = 0.;
+            for (size_t ll = 0; ll < num_rows; ++ll)
+              A[rr][cc] += R_k[rr][ll] * Q_k[ll][cc];
+          } // cc
+        } // rr
 
-          // we do not need R_k anymore in this step, so use it as temporary storage
-          auto& A_copy = *R_k;
-          A_copy = A;
-          // update upper right part
-          for (size_t rr = 0; rr < num_rows; ++rr) {
-            for (size_t cc = num_cols; cc < cols; ++cc) {
-              A[rr][cc] = 0.;
-              for (size_t ll = 0; ll < num_rows; ++ll)
-                A[rr][cc] += (*Q_k)[ll][rr] * A_copy[ll][cc];
-            } // cc
-          } // rr
+        // we do not need R_k anymore in this step, so use it as temporary storage
+        auto& A_copy = *R_k;
+        A_copy = A;
+        // update upper right part
+        for (size_t rr = 0; rr < num_rows; ++rr) {
+          for (size_t cc = num_cols; cc < cols; ++cc) {
+            A[rr][cc] = 0.;
+            for (size_t ll = 0; ll < num_rows; ++ll)
+              A[rr][cc] += (*Q_k)[ll][rr] * A_copy[ll][cc];
+          } // cc
+        } // rr
 
-          for (size_t rr = 0; rr < num_rows; ++rr)
-            A[rr][rr] += sigma;
-          // calculate Q = Q * Q_k. As Q_k = (Q_k' 0; 0 I) (see above), if Q = (Q1 Q2; Q3 Q4)
-          // we need to calculate Q = (Q1*Q_k Q2; Q3*Q_k Q_4)
-          auto& Q_copy = *R_k;
-          Q_copy = *Q;
-          for (size_t rr = 0; rr < rows; ++rr) {
-            for (size_t cc = 0; cc < num_cols; ++cc) {
-              (*Q)[rr][cc] = 0.;
-              for (size_t ll = 0; ll < num_rows; ++ll)
-                (*Q)[rr][cc] += Q_copy[rr][ll] * (*Q_k)[ll][cc];
-            } // cc
-          } // rr
-          ++kk;
-          residual = std::abs(A[jj][jj - 1]);
-        } // while(residual != 0)
-        if (kk >= max_counts)
-          std::cerr << "Warning: Eigen solver did not converge (stopped after 10000 iterations), result may be wrong!"
-                    << std::endl;
+        for (size_t rr = 0; rr < num_rows; ++rr)
+          A[rr][rr] += sigma;
+        // calculate Q = Q * Q_k. As Q_k = (Q_k' 0; 0 I) (see above), if Q = (Q1 Q2; Q3 Q4)
+        // we need to calculate Q = (Q1*Q_k Q2; Q3*Q_k Q_4)
+        auto& Q_copy = *R_k;
+        Q_copy = *Q;
+        for (size_t rr = 0; rr < rows; ++rr) {
+          for (size_t cc = 0; cc < num_cols; ++cc) {
+            (*Q)[rr][cc] = 0.;
+            for (size_t ll = 0; ll < num_rows; ++ll)
+              (*Q)[rr][cc] += Q_copy[rr][ll] * (*Q_k)[ll][cc];
+          } // cc
+        } // rr
+        ++kk;
+        residual = std::abs(A[jj][jj - 1]);
+      } // while(residual != 0)
+      if (kk >= max_counts)
+        std::cerr << "Warning: Eigen solver did not converge (stopped after 10000 iterations), result may be wrong!"
+                  << std::endl;
+    } // jj
+
+    // eigenvalues are the diagonal elements of A_{final}
+    for (size_t rr = 0; rr < rows; ++rr)
+      eigenvalues_[rr] = A[rr][rr];
+
+    if (calculate_eigenvectors) {
+
+      // form groups of equal eigenvalues
+      struct Cmp
+      {
+        bool operator()(const FieldType& a, const FieldType& b) const
+        {
+          return XT::Common::FloatCmp::lt(a, b);
+        }
+      };
+      std::vector<std::vector<size_t>> eigenvalue_groups;
+      std::set<FieldType, Cmp> eigenvalues_done;
+      for (size_t jj = 0; jj < rows; ++jj) {
+        const auto curr_eigenvalue = eigenvalues_[jj];
+        if (!eigenvalues_done.count(curr_eigenvalue)) {
+          std::vector<size_t> curr_group;
+          curr_group.push_back(jj);
+          for (size_t kk = jj + 1; kk < rows; ++kk) {
+            if (XT::Common::FloatCmp::eq(curr_eigenvalue, eigenvalues_[kk]))
+              curr_group.push_back(kk);
+          } // kk
+          eigenvalue_groups.push_back(curr_group);
+          eigenvalues_done.insert(curr_eigenvalue);
+        }
       } // jj
 
-      // eigenvalues are the diagonal elements of A_{final}
-      for (size_t rr = 0; rr < rows; ++rr)
-        eigenvalues_[ii][rr] = A[rr][rr];
+      //         As A Q = Q A_{final} and A_{final} is upper triangular, the first column of Q is always an
+      //         eigenvector of A
+      //        for (size_t rr = 0; rr < rows; ++rr)
+      //          eigenvectors_[ii][rr][0] = (*Q)[rr][0];
 
-      if (calculate_eigenvectors) {
+      // To get remaining eigenvectors, calculate eigenvectors of A_{final} by solving (A_{final} - \lambda I) x = 0.
+      // If x is an eigenvector of A_{final}, Qx is an eigenvector of A.
+      for (const auto& group : eigenvalue_groups) {
+        size_t value = 1;
+        for (const auto& index : group) {
+          auto& matrix = *R_k;
+          matrix = A;
+          for (size_t rr = 0; rr < rows; ++rr)
+            matrix[rr][rr] -= eigenvalues_[index];
 
-        // form groups of equal eigenvalues
-        struct Cmp
-        {
-          bool operator()(const FieldType& a, const FieldType& b) const
-          {
-            return XT::Common::FloatCmp::lt(a, b);
-          }
-        };
-        std::vector<std::vector<size_t>> eigenvalue_groups;
-        std::set<FieldType, Cmp> eigenvalues_done;
-        for (size_t jj = 0; jj < rows; ++jj) {
-          const auto curr_eigenvalue = eigenvalues_[ii][jj];
-          if (!eigenvalues_done.count(curr_eigenvalue)) {
-            std::vector<size_t> curr_group;
-            curr_group.push_back(jj);
-            for (size_t kk = jj + 1; kk < rows; ++kk) {
-              if (XT::Common::FloatCmp::eq(curr_eigenvalue, eigenvalues_[ii][kk]))
-                curr_group.push_back(kk);
-            } // kk
-            eigenvalue_groups.push_back(curr_group);
-            eigenvalues_done.insert(curr_eigenvalue);
-          }
-        } // jj
+          VectorType x(0.);
+          VectorType rhs = x;
+          // backsolve
+          for (int rr = int(rows - 1); rr >= 0; --rr) {
+            if (XT::Common::FloatCmp::eq(matrix[rr][rr], 0.)) {
 
-        //         As A Q = Q A_{final} and A_{final} is upper triangular, the first column of Q is always an
-        //         eigenvector of A
-        //        for (size_t rr = 0; rr < rows; ++rr)
-        //          eigenvectors_[ii][rr][0] = (*Q)[rr][0];
-
-        // To get remaining eigenvectors, calculate eigenvectors of A_{final} by solving (A_{final} - \lambda I) x = 0.
-        // If x is an eigenvector of A_{final}, Qx is an eigenvector of A.
-        for (const auto& group : eigenvalue_groups) {
-          size_t value = 1;
-          for (const auto& index : group) {
-            auto& matrix = *R_k;
-            matrix = A;
-            for (size_t rr = 0; rr < rows; ++rr)
-              matrix[rr][rr] -= eigenvalues_[ii][index];
-
-            VectorType x(0.);
-            VectorType rhs = x;
-            // backsolve
-            for (int rr = int(rows - 1); rr >= 0; --rr) {
-              if (XT::Common::FloatCmp::eq(matrix[rr][rr], 0.)) {
-
-                // check if there is a non-zero entry to the right, if so, we can calculate it now
-                for (int cc = rr + 1; cc < int(cols); ++cc) {
-                  if (XT::Common::FloatCmp::ne(matrix[rr][cc], 0.)) {
-                    x[cc] = rhs[rr] / matrix[rr][cc];
-                    break;
-                  }
+              // check if there is a non-zero entry to the right, if so, we can calculate it now
+              for (int cc = rr + 1; cc < int(cols); ++cc) {
+                if (XT::Common::FloatCmp::ne(matrix[rr][cc], 0.)) {
+                  x[cc] = rhs[rr] / matrix[rr][cc];
+                  break;
                 }
+              }
 
-                // find first row with nonzero entry and add to all rows above to set entry of this variable to zero
-                bool all_rows_zero = true;
-                for (int kk = rr - 1; kk >= 0; --kk) {
-                  if (XT::Common::FloatCmp::ne(matrix[kk][rr], 0.)) {
-                    all_rows_zero = false;
+              // find first row with nonzero entry and add to all rows above to set entry of this variable to zero
+              bool all_rows_zero = true;
+              for (int kk = rr - 1; kk >= 0; --kk) {
+                if (XT::Common::FloatCmp::ne(matrix[kk][rr], 0.)) {
+                  all_rows_zero = false;
 
-                    // check if there is a non-zero entry to the right, if so, we can set it randomly now
-                    for (int cc = rr + 1; cc < int(cols); ++cc) {
-                      if (XT::Common::FloatCmp::ne(matrix[kk][cc], 0.)) {
-                        x[cc] = FieldType(value++);
-                        rhs[kk] -= x[cc] * matrix[kk][cc];
-                        matrix[kk][cc] = 0.;
-                        break;
-                      }
+                  // check if there is a non-zero entry to the right, if so, we can set it randomly now
+                  for (int cc = rr + 1; cc < int(cols); ++cc) {
+                    if (XT::Common::FloatCmp::ne(matrix[kk][cc], 0.)) {
+                      x[cc] = FieldType(value++);
+                      rhs[kk] -= x[cc] * matrix[kk][cc];
+                      matrix[kk][cc] = 0.;
+                      break;
                     }
-
-                    // add current row to rows above
-                    for (int ll = kk - 1; ll >= 0; --ll) {
-                      const auto factor = -matrix[ll][rr] / matrix[kk][rr];
-                      matrix[ll][rr] = 0.;
-                      for (int cc = kk; cc < rr; ++cc)
-                        matrix[ll][cc] += matrix[kk][cc] * factor;
-                      rhs[ll] += rhs[kk] * factor;
-                    } // ll
-                    break;
-                  } // (if mat(kk,rr) != 0)
-                } // kk
-                if (all_rows_zero)
-                  x[rr] = FieldType(value++);
-              } else { // if(mat(rr, rr) == 0)
-
-                // check if there is a non-zero entry to the right, if so, we can set it randomly now
-                for (int cc = rr + 1; cc < int(cols); ++cc) {
-                  if (XT::Common::FloatCmp::ne(matrix[rr][cc], 0.)) {
-                    x[cc] = FieldType(value++);
-                    rhs[rr] -= x[cc] * matrix[rr][cc];
-                    matrix[rr][cc] = 0.;
-                    break;
                   }
+
+                  // add current row to rows above
+                  for (int ll = kk - 1; ll >= 0; --ll) {
+                    const auto factor = -matrix[ll][rr] / matrix[kk][rr];
+                    matrix[ll][rr] = 0.;
+                    for (int cc = kk; cc < rr; ++cc)
+                      matrix[ll][cc] += matrix[kk][cc] * factor;
+                    rhs[ll] += rhs[kk] * factor;
+                  } // ll
+                  break;
+                } // (if mat(kk,rr) != 0)
+              } // kk
+              if (all_rows_zero)
+                x[rr] = FieldType(value++);
+            } else { // if(mat(rr, rr) == 0)
+
+              // check if there is a non-zero entry to the right, if so, we can set it randomly now
+              for (int cc = rr + 1; cc < int(cols); ++cc) {
+                if (XT::Common::FloatCmp::ne(matrix[rr][cc], 0.)) {
+                  x[cc] = FieldType(value++);
+                  rhs[rr] -= x[cc] * matrix[rr][cc];
+                  matrix[rr][cc] = 0.;
+                  break;
                 }
+              }
 
-                x[rr] = rhs[rr] / matrix[rr][rr];
+              x[rr] = rhs[rr] / matrix[rr][rr];
 
-                // set value of x in rows above
-                for (int kk = rr - 1; kk >= 0; --kk) {
-                  rhs[kk] -= x[rr] * matrix[kk][rr];
-                  matrix[kk][rr] = 0.;
-                } // kk
-              } // else(mat(rr, rr) == 0)
-            } // rr
+              // set value of x in rows above
+              for (int kk = rr - 1; kk >= 0; --kk) {
+                rhs[kk] -= x[rr] * matrix[kk][rr];
+                matrix[kk][rr] = 0.;
+              } // kk
+            } // else(mat(rr, rr) == 0)
+          } // rr
 
-            VectorType Qx(0);
-            Q->mv(x, Qx);
+          VectorType Qx(0);
+          Q->mv(x, Qx);
 
-            Qx *= 1. / Qx.two_norm();
+          Qx *= 1. / Qx.two_norm();
 
-            for (size_t rr = 0; rr < rows; ++rr)
-              *eigenvectors_[ii][rr][index] = Qx[rr];
-          } // index
+          for (size_t rr = 0; rr < rows; ++rr)
+            *eigenvectors_[rr][index] = Qx[rr];
+        } // index
 
-          // orthonormalize eigenvectors in group
-          gram_schmidt(ii, group);
-        } // groups of eigenvalues
-      } // if (calculate_eigenvectors)
+        // orthonormalize eigenvectors in group
+        gram_schmidt(group);
+      } // groups of eigenvalues
+    } // if (calculate_eigenvectors)
 
 
-      *(eigenvectors_inverse_[ii]) = *(eigenvectors_[ii]);
-      eigenvectors_inverse_[ii]->invert();
-    } // ii
+    *eigenvectors_inverse_ = *eigenvectors_;
+    eigenvectors_inverse_->invert();
   }
 
-  void gram_schmidt(const size_t direction, const std::vector<size_t>& indices)
+  void gram_schmidt(const std::vector<size_t>& indices)
   {
     if (indices.size() > 1) {
       // copy eigenvectors from the matrix eigenvectors_[direction] to a vector of vectors
       std::vector<VectorType> orthonormal_eigenvectors(indices.size());
       for (size_t ii = 0; ii < indices.size(); ++ii)
         for (size_t rr = 0; rr < rows; ++rr)
-          orthonormal_eigenvectors[ii][rr] = (*(eigenvectors_[direction]))[rr][indices[ii]];
+          orthonormal_eigenvectors[ii][rr] = (*eigenvectors_)[rr][indices[ii]];
       // orthonormalize
       for (size_t ii = 1; ii < indices.size(); ++ii) {
         auto& v_i = orthonormal_eigenvectors[ii];
@@ -289,7 +285,7 @@ private:
       // copy eigenvectors back to eigenvectors matrix
       for (size_t ii = 1; ii < indices.size(); ++ii)
         for (size_t rr = 0; rr < rows; ++rr)
-          (*(eigenvectors_[direction]))[rr][indices[ii]] = orthonormal_eigenvectors[ii][rr];
+          (*eigenvectors_)[rr][indices[ii]] = orthonormal_eigenvectors[ii][rr];
     } // if (indices.size() > 1)
   } // void gram_schmidt(...)
 
@@ -533,14 +529,20 @@ class LapackEigenSolver
 public:
   typedef FieldMatrix<FieldType, rows, rows> MatrixType;
   typedef FieldVector<FieldType, rows> VectorType;
-  typedef FieldVector<VectorType, dimRangeCols> EigenValuesType;
-  typedef FieldVector<std::shared_ptr<MatrixType>, dimRangeCols> EigenVectorsType;
-  typedef FieldVector<MatrixType, dimRangeCols> InputMatricesType;
+  typedef VectorType EigenValuesType;
+  typedef std::shared_ptr<MatrixType> EigenVectorsType;
 
 public:
-  LapackEigenSolver(InputMatricesType& matrices_in, bool calculate_eigenvectors = false)
+  LapackEigenSolver(MatrixType& A, bool calculate_eigenvectors = false)
+    : A_(A)
+    , calculate_eigenvectors_(calculate_eigenvectors)
   {
-    initialize(matrices_in, calculate_eigenvectors);
+    initialize();
+  }
+
+  void solve()
+  {
+    initialize();
   }
 
   const EigenValuesType& eigenvalues() const
@@ -559,75 +561,77 @@ public:
   }
 
 private:
-  void initialize(InputMatricesType& matrices_in, const bool calculate_eigenvectors)
+  void initialize()
   {
-    for (size_t ii = 0; ii < dimRangeCols; ++ii) {
-      eigenvectors_[ii] = std::make_shared<MatrixType>();
-      eigenvectors_inverse_[ii] = std::make_shared<MatrixType>();
+    if (!eigenvectors_) {
+      eigenvectors_ = std::make_shared<MatrixType>();
+      eigenvectors_inverse_ = std::make_shared<MatrixType>();
+    }
 
-      int N = int(dimRange);
-      std::array<double, dimRange> alpha_real, alpha_imag, beta;
+    int N = int(dimRange);
+    std::array<double, dimRange> alpha_real, alpha_imag, beta;
 
-      int info = LapackWrapper::dggev('N',
-                                      calculate_eigenvectors ? 'V' : 'N',
-                                      N,
-                                      &(matrices_in[ii][0][0]),
-                                      N,
-                                      unit_matrix_.get(),
-                                      N,
-                                      alpha_real.data(),
-                                      alpha_imag.data(),
-                                      beta.data(),
-                                      (double*)nullptr,
-                                      N,
-                                      &((*(eigenvectors_[ii]))[0][0]),
-                                      N);
+    int info = LapackWrapper::dggev('N',
+                                    calculate_eigenvectors_ ? 'V' : 'N',
+                                    N,
+                                    &(A_[0][0]),
+                                    N,
+                                    unit_matrix_.get(),
+                                    N,
+                                    alpha_real.data(),
+                                    alpha_imag.data(),
+                                    beta.data(),
+                                    (double*)nullptr,
+                                    N,
+                                    &((*eigenvectors_)[0][0]),
+                                    N);
 
-      //      int ilo, ihi;
-      //      std::array<double, dimRange> lscale, rscale, rconde, rcondv;
-      //      double abnrm, bbnrm;
+    //      int ilo, ihi;
+    //      std::array<double, dimRange> lscale, rscale, rconde, rcondv;
+    //      double abnrm, bbnrm;
 
-      //      int info = LapackWrapper::dggevx('B',
-      //                                       'N',
-      //                                       calculate_eigenvectors ? 'V' : 'N',
-      //                                       'N',
-      //                                       N,
-      //                                       &(matrices_in[ii][0][0]),
-      //                                       N,
-      //                                       unit_matrix_.get(),
-      //                                       N,
-      //                                       alpha_real.data(),
-      //                                       alpha_imag.data(),
-      //                                       beta.data(),
-      //                                       (double*)nullptr,
-      //                                       N,
-      //                                       &((*(eigenvectors_[ii]))[0][0]),
-      //                                       N,
-      //                                       &ilo,
-      //                                       &ihi,
-      //                                       lscale.data(),
-      //                                       rscale.data(),
-      //                                       &abnrm,
-      //                                       &bbnrm,
-      //                                       rconde.data(),
-      //                                       rcondv.data());
+    //      int info = LapackWrapper::dggevx('B',
+    //                                       'N',
+    //                                       calculate_eigenvectors ? 'V' : 'N',
+    //                                       'N',
+    //                                       N,
+    //                                       &(matrices_in[ii][0][0]),
+    //                                       N,
+    //                                       unit_matrix_.get(),
+    //                                       N,
+    //                                       alpha_real.data(),
+    //                                       alpha_imag.data(),
+    //                                       beta.data(),
+    //                                       (double*)nullptr,
+    //                                       N,
+    //                                       &((*(eigenvectors_[ii]))[0][0]),
+    //                                       N,
+    //                                       &ilo,
+    //                                       &ihi,
+    //                                       lscale.data(),
+    //                                       rscale.data(),
+    //                                       &abnrm,
+    //                                       &bbnrm,
+    //                                       rconde.data(),
+    //                                       rcondv.data());
 
-      if (info != 0)
-        DUNE_THROW(Dune::MathError, "Lapack returned error " + XT::Common::to_string(info) + "!");
+    if (info != 0)
+      DUNE_THROW(Dune::MathError, "Lapack returned error " + XT::Common::to_string(info) + "!");
 
-      for (size_t rr = 0; rr < dimRange; ++rr) {
-        assert(XT::Common::FloatCmp::eq(alpha_imag[rr], 0.));
-        assert(XT::Common::FloatCmp::ne(beta[rr], 0., 1e-6));
-        eigenvalues_[ii][rr] = alpha_real[rr] / beta[rr];
-      }
+    for (size_t rr = 0; rr < dimRange; ++rr) {
+      assert(XT::Common::FloatCmp::eq(alpha_imag[rr], 0.));
+      assert(XT::Common::FloatCmp::ne(beta[rr], 0., 1e-6));
+      eigenvalues_[rr] = alpha_real[rr] / beta[rr];
+    }
 
-      if (calculate_eigenvectors) {
-        *(eigenvectors_inverse_[ii]) = *(eigenvectors_[ii]);
-        eigenvectors_inverse_[ii]->invert();
-      } // if(calculate_eigenvectors)
-    } // ii
+    if (calculate_eigenvectors_) {
+      *eigenvectors_inverse_ = *eigenvectors_;
+      eigenvectors_inverse_->invert();
+    } // if(calculate_eigenvectors)
   } // void initialize(...)
 
+  MatrixType& A_;
+  const bool calculate_eigenvectors_;
   EigenValuesType eigenvalues_;
   EigenVectorsType eigenvectors_;
   EigenVectorsType eigenvectors_inverse_;

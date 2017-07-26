@@ -24,6 +24,7 @@
 #include <dune/gdt/operators/base.hh>
 
 #include "datahandle.hh"
+#include "enums.hh"
 #include "realizability.hh"
 #include "reconstructed_function.hh"
 #include "reconstruction.hh"
@@ -31,20 +32,6 @@
 
 namespace Dune {
 namespace GDT {
-
-
-enum class NumericalFluxes
-{
-  godunov,
-  godunov_with_reconstruction,
-  laxfriedrichs,
-  laxfriedrichs_with_reconstruction,
-  local_laxfriedrichs,
-  local_laxfriedrichs_with_reconstruction,
-  kinetic
-};
-
-
 namespace internal {
 
 
@@ -311,7 +298,7 @@ public:
   typedef typename Traits::EigenSolverType EigenSolverType;
   typedef typename Traits::RealizabilityLimiterType RealizabilityLimiterType;
 
-  typedef Dune::QuadratureRule<DomainFieldType, 1> Quadrature1dType;
+  typedef Dune::QuadratureRule<DomainFieldType, 1> OnedQuadratureType;
   typedef Dune::QuadratureRule<DomainFieldType, dimDomain - 1> IntersectionQuadratureType;
 
 public:
@@ -329,7 +316,7 @@ public:
   AdvectionOperatorBase(const AnalyticalFluxType& analytical_flux,
                         const BoundaryValueType& boundary_values,
                         const bool is_linear,
-                        const Quadrature1dType& quadrature_1d,
+                        const OnedQuadratureType& quadrature_1d,
                         const std::shared_ptr<RealizabilityLimiterType>& realizability_limiter = nullptr)
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
@@ -360,7 +347,7 @@ public:
                                                                         std::forward<Args>(args)...);
   }
 
-  void set_1d_quadrature(const Quadrature1dType& quadrature)
+  void set_1d_quadrature(const OnedQuadratureType& quadrature)
   {
     quadrature_1d_ = quadrature;
     intersection_quadrature_ = quadrature_helper<>::get(quadrature);
@@ -371,7 +358,7 @@ public:
     realizability_limiter_ = realizability_limiter;
   }
 
-  static Quadrature1dType default_quadrature()
+  static OnedQuadratureType default_1d_quadrature()
   {
     return default_quadrature_helper<>::get();
   }
@@ -380,7 +367,7 @@ private:
   template <size_t reconstructionOrder = polOrder, class anything = void>
   struct default_quadrature_helper
   {
-    static Quadrature1dType get()
+    static OnedQuadratureType get()
     {
       return Dune::QuadratureRules<DomainFieldType, 1>::rule(Dune::GeometryType(Dune::GeometryType::BasicType::cube, 1),
                                                              2 * polOrder);
@@ -390,9 +377,9 @@ private:
   template <class anything>
   struct default_quadrature_helper<1, anything>
   {
-    static Quadrature1dType get()
+    static OnedQuadratureType get()
     {
-      Quadrature1dType quadrature;
+      OnedQuadratureType quadrature;
       quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5, 1.));
       //      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5 * (1. - 1. / std::sqrt(3)), 0.5));
       //      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5 * (1. + 1. / std::sqrt(3)), 0.5));
@@ -406,7 +393,7 @@ private:
   template <class anything>
   struct quadrature_helper<1, anything>
   {
-    static Dune::QuadratureRule<DomainFieldType, dimDomain - 1> get(const Quadrature1dType& /*quadrature_1d*/)
+    static Dune::QuadratureRule<DomainFieldType, dimDomain - 1> get(const OnedQuadratureType& /*quadrature_1d*/)
     {
       Dune::QuadratureRule<DomainFieldType, dimDomain - 1> ret;
       ret.push_back(Dune::QuadraturePoint<DomainFieldType, 0>(FieldVector<DomainFieldType, 0>(0), 1));
@@ -417,7 +404,7 @@ private:
   template <class anything>
   struct quadrature_helper<2, anything>
   {
-    static Dune::QuadratureRule<DomainFieldType, dimDomain - 1> get(const Quadrature1dType& quadrature_1d)
+    static Dune::QuadratureRule<DomainFieldType, dimDomain - 1> get(const OnedQuadratureType& quadrature_1d)
     {
       return quadrature_1d;
     }
@@ -426,7 +413,7 @@ private:
   template <class anything>
   struct quadrature_helper<3, anything>
   {
-    static Dune::QuadratureRule<DomainFieldType, dimDomain - 1> get(const Quadrature1dType& quadrature_1d)
+    static Dune::QuadratureRule<DomainFieldType, dimDomain - 1> get(const OnedQuadratureType& quadrature_1d)
     {
       Dune::QuadratureRule<DomainFieldType, dimDomain - 1> ret;
       for (size_t ii = 0; ii < quadrature_1d.size(); ++ii)
@@ -441,7 +428,7 @@ private:
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueType& boundary_values_;
   const bool is_linear_;
-  Quadrature1dType quadrature_1d_;
+  OnedQuadratureType quadrature_1d_;
   IntersectionQuadratureType intersection_quadrature_;
   std::shared_ptr<RealizabilityLimiterType> realizability_limiter_;
 }; // class AdvectionOperatorBase<...>
