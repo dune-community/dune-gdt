@@ -18,7 +18,7 @@
 
 #include <dune/gdt/test/hyperbolic/discretizers/fv.hh>
 
-#include "problems/fokkerplanck/pointsource.hh"
+#include "problems/momentmodels/kinetictransport/pointsource.hh"
 #include "eocexpectations.hh"
 
 

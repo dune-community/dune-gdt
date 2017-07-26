@@ -20,7 +20,7 @@
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/assembler/system.hh>
-#include <dune/gdt/discretizations/default.hh>
+#include <dune/gdt/discretizations/default/stationary-containerbased.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/functionals/l2.hh>
 #include <dune/gdt/projections.hh>

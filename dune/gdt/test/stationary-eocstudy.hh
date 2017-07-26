@@ -14,13 +14,8 @@
 
 #include <dune/xt/common/convergence-study.hh>
 #include <dune/xt/common/exceptions.hh>
-#include <dune/xt/grid/type_traits.hh>
 
-#include <dune/gdt/discretizations/default.hh>
-#include <dune/gdt/discretizations/interfaces.hh>
 #include <dune/gdt/prolongations.hh>
-
-#include "stationary-testcase.hh"
 
 namespace Dune {
 namespace GDT {

@@ -14,14 +14,9 @@
 
 #include <dune/xt/common/convergence-study.hh>
 #include <dune/xt/common/exceptions.hh>
-#include <dune/xt/functions/constant.hh>
-#include <dune/xt/functions/interfaces.hh>
-#include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/grid/information.hh>
-#include <dune/xt/grid/gridprovider/eoc.hh>
 
-#include <dune/gdt/discretizations/default.hh>
-#include <dune/gdt/discretizations/interfaces.hh>
+#include <dune/xt/grid/information.hh>
+
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/prolongations.hh>
 
@@ -30,78 +25,8 @@ namespace GDT {
 namespace Test {
 
 
-/**
- * \tparam ProblemType has to provide a type SolutionType which
- *         defines the type of the solution of the problem.
- * TODO: choose suitable SolutionType for Problems (provide Interface?)
- */
-template <class GridImp, class ProblemImp>
-class NonStationaryTestCase : public XT::Grid::EOCGridProvider<GridImp>
-{
-  typedef XT::Grid::EOCGridProvider<GridImp> EocBaseType;
-
-public:
-  typedef ProblemImp ProblemType;
-  typedef typename ProblemType::InitialValueType InitialValueType;
-  typedef typename ProblemType::SolutionType SolutionType;
-
-public:
-  template <class... Args>
-  NonStationaryTestCase(const double divide_t_end_by_this, Args&&... args)
-    : EocBaseType(std::forward<Args>(args)...)
-    , divide_t_end_by_this_(divide_t_end_by_this)
-    , zero_()
-  {
-  }
-
-  virtual ~NonStationaryTestCase() = default;
-
-  //  virtual const ProblemType& problem() const = 0;
-
-  virtual void print_header(std::ostream& out = std::cout) const
-  {
-    out << "+===============================================================+\n"
-        << "|+=============================================================+|\n"
-        << "||  This is a GDT::Tests:NonStationaryTestCase, please provide ||\n"
-        << "||  a meaningful message by implementing `print_header()`      ||\n"
-        << "|+=============================================================+|\n"
-        << "+===============================================================+" << std::endl;
-  }
-
-  virtual bool provides_exact_solution() const
-  {
-    return false;
-  }
-
-  virtual std::bitset<GridImp::dimension> periodic_directions() const
-  {
-    return std::bitset<GridImp::dimension>();
-  }
-
-  //  virtual double t_end() const
-  //  {
-  //    return problem().t_end() / divide_t_end_by_this_;
-  //  }
-
-  virtual const std::shared_ptr<const SolutionType> exact_solution() const
-  {
-    if (provides_exact_solution())
-      DUNE_THROW(XT::Common::Exceptions::you_have_to_implement_this,
-                 "If provides_exact_solution() is true, exact_solution() has to be implemented!");
-    else
-      DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
-                 "Do not call exact_solution() if provides_exact_solution() is false!");
-    return zero_;
-  }
-
-private:
-  const double divide_t_end_by_this_;
-  const std::shared_ptr<const SolutionType> zero_;
-}; // class NonStationaryTestCase
-
-
 template <class TestCaseImp, class DiscretizerImp>
-class NonStationaryEocStudy : public XT::Common::ConvergenceStudy
+class InstationaryEocStudy : public XT::Common::ConvergenceStudy
 {
   typedef XT::Common::ConvergenceStudy BaseType;
 
@@ -119,9 +44,9 @@ protected:
   typedef typename TestCaseType::LevelGridViewType GridLayerType;
 
 public:
-  NonStationaryEocStudy(TestCaseType& test_case,
-                        const std::vector<std::string> only_these_norms = {},
-                        const std::string visualize_prefix = "")
+  InstationaryEocStudy(TestCaseType& test_case,
+                       const std::vector<std::string> only_these_norms = {},
+                       const std::string visualize_prefix = "transport_test")
     : BaseType(only_these_norms)
     , test_case_(test_case)
     , current_refinement_(0)
@@ -140,7 +65,7 @@ public:
   {
   }
 
-  virtual ~NonStationaryEocStudy() = default;
+  virtual ~InstationaryEocStudy() = default;
 
   virtual size_t num_refinements() const override final
   {
@@ -325,16 +250,15 @@ protected:
     if (!discrete_exact_solution_computed_) {
       discrete_exact_solution_ = Dune::XT::Common::make_unique<DiscreteSolutionType>();
       compute_reference_solution();
-      //      const auto exact_solution = test_case_.exact_solution();
+      const auto exact_solution = test_case_.exact_solution();
       const auto reference_solution_it_end = reference_solution_->end();
       for (auto reference_solution_it = reference_solution_->begin();
            reference_solution_it != reference_solution_it_end;
            ++reference_solution_it) {
-        //        const double time = reference_solution_it->first;
-        //        const auto discrete_exact_solution_at_time = exact_solution->evaluate_at_time(time);
-        //        const auto inserted_it = discrete_exact_solution_->emplace_hint(
-        //            discrete_exact_solution_->end(), time, reference_solution_it->second);
-        //        project_l2(*discrete_exact_solution_at_time, inserted_it->second);
+        const double time = reference_solution_it->first;
+        const auto inserted_it = discrete_exact_solution_->emplace_hint(
+            discrete_exact_solution_->end(), time, reference_solution_it->second);
+        project_l2(*exact_solution, inserted_it->second, 0, {"t", time});
       }
       if (!visualize_prefix_.empty()) {
         size_t counter = 0;
@@ -378,7 +302,7 @@ protected:
   std::unique_ptr<DiscreteSolutionType> current_solution_;
   std::unique_ptr<DiscreteSolutionType> discrete_exact_solution_;
   const std::string visualize_prefix_;
-}; // class NonStationaryEocStudy
+}; // class InstationaryEocStudy
 
 
 } // namespace Tests

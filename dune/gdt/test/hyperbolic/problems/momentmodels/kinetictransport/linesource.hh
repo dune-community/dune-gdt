@@ -14,7 +14,11 @@
 #include <string>
 
 #include <dune/xt/grid/view/periodic.hh>
-#include <dune/gdt/test/instationary-eocstudy.hh>
+
+#include <dune/gdt/local/fluxes/entropybased.hh>
+#include <dune/gdt/test/instationary-testcase.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/lebedevquadrature.hh>
 
 #include "kinetictransportequation.hh"
 
@@ -70,15 +74,15 @@ template <class BasisfunctionImp,
           class U_,
           class RangeFieldImp,
           size_t dimRange>
-class ModifiedLineSourcePn : public KineticTransportEquation<BasisfunctionImp,
-                                                             GridLayerImp,
-                                                             EntityImp,
-                                                             DomainFieldImp,
-                                                             dimDomain,
-                                                             U_,
-                                                             RangeFieldImp,
-                                                             dimRange,
-                                                             dimDomain + 1>
+class LineSourcePn : public KineticTransportEquation<BasisfunctionImp,
+                                                     GridLayerImp,
+                                                     EntityImp,
+                                                     DomainFieldImp,
+                                                     dimDomain,
+                                                     U_,
+                                                     RangeFieldImp,
+                                                     dimRange,
+                                                     dimDomain + 1>
 {
   typedef KineticTransportEquation<BasisfunctionImp,
                                    GridLayerImp,
@@ -107,11 +111,11 @@ public:
   using BaseType::default_boundary_cfg;
   using BaseType::default_quadrature;
 
-  ModifiedLineSourcePn(const BasisfunctionType& basis_functions,
-                       const GridLayerType& grid_layer,
-                       const QuadratureType quadrature = QuadratureType(),
-                       const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                       const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+  LineSourcePn(const BasisfunctionType& basis_functions,
+               const GridLayerType& grid_layer,
+               const QuadratureType quadrature = QuadratureType(),
+               const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+               const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, quadrature, {1, 1}, grid_cfg, boundary_cfg, 1.)
   {
   }
@@ -169,7 +173,7 @@ protected:
   using BaseType::basis_functions_;
   using BaseType::num_segments_;
   using BaseType::psi_vac_;
-}; // class ModifiedLineSourcePn<...>
+}; // class LineSourcePn<...>
 
 template <class BasisfunctionType,
           class GridLayerType,
@@ -179,25 +183,25 @@ template <class BasisfunctionType,
           class U_,
           class RangeFieldType,
           size_t dimRange>
-class ModifiedLineSourceMn : public ModifiedLineSourcePn<BasisfunctionType,
-                                                         GridLayerType,
-                                                         EntityType,
-                                                         DomainFieldType,
-                                                         dimDomain,
-                                                         U_,
-                                                         RangeFieldType,
-                                                         dimRange>
+class LineSourceMn : public LineSourcePn<BasisfunctionType,
+                                         GridLayerType,
+                                         EntityType,
+                                         DomainFieldType,
+                                         dimDomain,
+                                         U_,
+                                         RangeFieldType,
+                                         dimRange>
 {
-  typedef ModifiedLineSourcePn<BasisfunctionType,
-                               GridLayerType,
-                               EntityType,
-                               DomainFieldType,
-                               dimDomain,
-                               U_,
-                               RangeFieldType,
-                               dimRange>
+  typedef LineSourcePn<BasisfunctionType,
+                       GridLayerType,
+                       EntityType,
+                       DomainFieldType,
+                       dimDomain,
+                       U_,
+                       RangeFieldType,
+                       dimRange>
       BaseType;
-  typedef ModifiedLineSourceMn ThisType;
+  typedef LineSourceMn ThisType;
 
 public:
   using typename BaseType::FluxType;
@@ -223,11 +227,11 @@ public:
     return LebedevQuadrature<DomainFieldType, true>::get(quad_order);
   }
 
-  ModifiedLineSourceMn(const BasisfunctionType& basis_functions,
-                       const GridLayerType& grid_layer,
-                       const QuadratureType& quadrature = default_quadrature(),
-                       const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                       const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+  LineSourceMn(const BasisfunctionType& basis_functions,
+               const GridLayerType& grid_layer,
+               const QuadratureType& quadrature = default_quadrature(),
+               const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+               const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, quadrature, grid_cfg, boundary_cfg)
   {
   }
@@ -246,7 +250,7 @@ protected:
   using BaseType::basis_functions_;
   using BaseType::quadrature_;
   using BaseType::grid_layer_;
-}; // class ModifiedLineSourceMn<...>
+}; // class LineSourceMn<...>
 
 
 } // namespace KineticTransport
@@ -259,25 +263,24 @@ template <class G,
           class B = Hyperbolic::Problems::RealSphericalHarmonics<typename G::ctype, typename G::ctype, order, 2, true>>
 class LineSourceTestCase
     : public Dune::GDT::Test::
-          NonStationaryTestCase<G,
-                                typename Hyperbolic::Problems::KineticEquation<
-                                    typename Problems::KineticTransport::
-                                        ModifiedLineSourcePn<B,
-                                                             typename G::LevelGridView,
-                                                             typename G::template Codim<0>::Entity,
-                                                             typename G::ctype,
-                                                             G::dimension,
-                                                             DiscreteFunction<FvProductSpace<typename G::LevelGridView,
-                                                                                             double,
-                                                                                             B::dimRange,
-                                                                                             1>,
-                                                                              typename Dune::XT::LA::
-                                                                                  Container<double,
-                                                                                            XT::LA::
-                                                                                                default_sparse_backend>::
-                                                                                      VectorType>,
-                                                             R,
-                                                             B::dimRange>>>
+          InstationaryTestCase<G,
+                               typename Hyperbolic::Problems::KineticEquation<
+                                   typename Problems::KineticTransport::
+                                       LineSourcePn<B,
+                                                    typename G::LevelGridView,
+                                                    typename G::template Codim<0>::Entity,
+                                                    typename G::ctype,
+                                                    G::dimension,
+                                                    DiscreteFunction<FvProductSpace<typename G::LevelGridView,
+                                                                                    double,
+                                                                                    B::dimRange,
+                                                                                    1>,
+                                                                     typename Dune::XT::LA::
+                                                                         Container<double,
+                                                                                   XT::LA::default_sparse_backend>::
+                                                                             VectorType>,
+                                                    R,
+                                                    B::dimRange>>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -287,22 +290,22 @@ public:
   static_assert(d == 2, "Only implemented for dimension 2.");
   typedef typename Hyperbolic::Problems::KineticEquation<
       typename Problems::KineticTransport::
-          ModifiedLineSourcePn<B,
-                               typename G::LevelGridView,
-                               E,
-                               D,
-                               d,
-                               DiscreteFunction<FvProductSpace<typename G::LevelGridView, double, B::dimRange, 1>,
-                                                typename Dune::XT::LA::
-                                                    Container<double, XT::LA::default_sparse_backend>::VectorType>,
-                               R,
-                               B::dimRange>>
+          LineSourcePn<B,
+                       typename G::LevelGridView,
+                       E,
+                       D,
+                       d,
+                       DiscreteFunction<FvProductSpace<typename G::LevelGridView, double, B::dimRange, 1>,
+                                        typename Dune::XT::LA::Container<double,
+                                                                         XT::LA::default_sparse_backend>::VectorType>,
+                       R,
+                       B::dimRange>>
       ProblemType;
   static const size_t dimRange = ProblemType::dimRange;
   static const size_t dimRangeCols = 1;
 
 private:
-  typedef typename Dune::GDT::Test::NonStationaryTestCase<G, ProblemType> BaseType;
+  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;
@@ -350,23 +353,23 @@ template <class G,
           class B = Hyperbolic::Problems::RealSphericalHarmonics<typename G::ctype, typename G::ctype, order, 2, true>>
 class LineSourceMnTestCase
     : public Dune::GDT::Test::
-          NonStationaryTestCase<G,
-                                typename Hyperbolic::Problems::KineticEquation<
-                                    typename Problems::KineticTransport::ModifiedLineSourceMn<
-                                        typename XT::Grid::PeriodicGridView<typename G::LevelGridView>,
-                                        B,
-                                        typename G::template Codim<0>::Entity,
-                                        typename G::ctype,
-                                        G::dimension,
-                                        DiscreteFunction<FvProductSpace<typename G::LevelGridView,
-                                                                        double,
-                                                                        B::dimRange,
-                                                                        1>,
-                                                         typename Dune::XT::LA::
-                                                             Container<double,
-                                                                       XT::LA::default_sparse_backend>::VectorType>,
-                                        R,
-                                        B::dimRange>>>
+          InstationaryTestCase<G,
+                               typename Hyperbolic::Problems::KineticEquation<
+                                   typename Problems::KineticTransport::LineSourceMn<
+                                       typename XT::Grid::PeriodicGridView<typename G::LevelGridView>,
+                                       B,
+                                       typename G::template Codim<0>::Entity,
+                                       typename G::ctype,
+                                       G::dimension,
+                                       DiscreteFunction<FvProductSpace<typename G::LevelGridView,
+                                                                       double,
+                                                                       B::dimRange,
+                                                                       1>,
+                                                        typename Dune::XT::LA::
+                                                            Container<double,
+                                                                      XT::LA::default_sparse_backend>::VectorType>,
+                                       R,
+                                       B::dimRange>>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -374,7 +377,7 @@ class LineSourceMnTestCase
 public:
   static const size_t d = G::dimension;
   static_assert(d == 2, "Only implemented for dimension 2.");
-  typedef typename Hyperbolic::Problems::KineticEquation<typename Problems::KineticTransport::ModifiedLineSourceMn<
+  typedef typename Hyperbolic::Problems::KineticEquation<typename Problems::KineticTransport::LineSourceMn<
       typename XT::Grid::PeriodicGridView<typename G::LevelGridView>,
       B,
       E,
@@ -389,7 +392,7 @@ public:
   static const size_t dimRangeCols = 1;
 
 private:
-  typedef typename Dune::GDT::Test::NonStationaryTestCase<G, ProblemType> BaseType;
+  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;

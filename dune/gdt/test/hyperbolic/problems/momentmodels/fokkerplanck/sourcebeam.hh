@@ -149,7 +149,7 @@ protected:
 //          class B = Hyperbolic::Problems::LegendrePolynomials<typename G::ctype, typename G::ctype, momentOrder>>
 // class SourceBeamTestCase
 //    : public Dune::GDT::Test::
-//          NonStationaryTestCase<G,
+//          InstationaryTestCase<G,
 //                                Problems::Fokkerplanck::SourceBeamPn<B,
 //    typename G::LevelGridView,
 //                                                                   typename G::template Codim<0>::Entity,
@@ -171,7 +171,7 @@ protected:
 //  static const size_t dimRangeCols = 1;
 
 // private:
-//  typedef typename Dune::GDT::Test::NonStationaryTestCase<G, ProblemType> BaseType;
+//  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
 
 // public:
 //  using typename BaseType::GridType;

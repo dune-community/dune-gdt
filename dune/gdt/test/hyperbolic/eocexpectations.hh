@@ -12,13 +12,7 @@
 #ifndef DUNE_GDT_TESTS_HYPERBOLIC_EOCEXPECTATIONS_HH
 #define DUNE_GDT_TESTS_HYPERBOLIC_EOCEXPECTATIONS_HH
 
-#include <dune/xt/common/float_cmp.hh>
-#include <dune/xt/common/type_traits.hh>
-#include <dune/xt/common/test/gtest/gtest.h>
-
-#include "discretizers/base.hh"
-#include <dune/gdt/discretizations/default.hh>
-#include <dune/gdt/test/grids.hh>
+#include <vector>
 
 #include "eocexpectations_base.hh"
 

@@ -34,7 +34,6 @@
 #endif
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/discretizations/default.hh>
 #include <dune/gdt/local/fluxes/interfaces.hh>
 #include <dune/gdt/local/fluxes/entropybased.hh>
 #include <dune/gdt/operators/fv.hh>
@@ -195,6 +194,7 @@ int main(int argc, char** argv)
   //      const auto rhs_time_stepper_method = TimeStepperMethods::implicit_euler;
   const auto rhs_time_stepper_method = TimeStepperMethods::matrix_exponential;
   //  const auto rhs_time_stepper_method = TimeStepperMethods::trapezoidal_rule;
+  const auto time_stepper_splitting_method = TimeStepperSplittingMethods::fractional_step;
 
   typedef typename Dune::YaspGrid<dimDomain, Dune::EquidistantOffsetCoordinates<double, dimDomain>> GridType;
   //  typedef typename XT::Grid::PeriodicGridView<GridType::LeafGridView, true> GridLayerType;
@@ -307,25 +307,25 @@ int main(int argc, char** argv)
   //                                                       dimRange>
   //      ProblemImp;
 
-  typedef typename Hyperbolic::Problems::KineticTransport::ModifiedLineSourcePn<BasisfunctionType,
-                                                                                GridLayerType,
-                                                                                EntityType,
-                                                                                double,
-                                                                                dimDomain,
-                                                                                DiscreteFunctionType,
-                                                                                double,
-                                                                                dimRange>
-      ProblemImp;
-
-  //  typedef typename Hyperbolic::Problems::KineticTransport::ModifiedLineSourceMn<BasisfunctionType,
-  //                                                              GridLayerType,
-  //                                                              EntityType,
-  //                                                              double,
-  //                                                              dimDomain,
-  //                                                              DiscreteFunctionType,
-  //                                                              double,
-  //                                                              dimRange>
+  //  typedef typename Hyperbolic::Problems::KineticTransport::LineSourcePn<BasisfunctionType,
+  //                                                                                GridLayerType,
+  //                                                                                EntityType,
+  //                                                                                double,
+  //                                                                                dimDomain,
+  //                                                                                DiscreteFunctionType,
+  //                                                                                double,
+  //                                                                                dimRange>
   //      ProblemImp;
+
+  typedef typename Hyperbolic::Problems::KineticTransport::LineSourceMn<BasisfunctionType,
+                                                                        GridLayerType,
+                                                                        EntityType,
+                                                                        double,
+                                                                        dimDomain,
+                                                                        DiscreteFunctionType,
+                                                                        double,
+                                                                        dimRange>
+      ProblemImp;
 
   //  typedef
   //      typename Hyperbolic::Problems::Transport<EntityType, double, dimDomain, DiscreteFunctionType, double,
@@ -341,7 +341,7 @@ int main(int argc, char** argv)
   typedef typename ProblemType::RhsType RhsType;
   typedef typename ProblemType::InitialValueType InitialValueType;
   typedef typename ProblemType::BoundaryValueType BoundaryValueType;
-  static const bool linear = true; // ProblemType::linear;
+  static const bool linear = false; // ProblemType::linear;
 
   //******************* create grid and FV space ***************************************
   auto grid_config = ProblemType::default_grid_cfg();
@@ -424,14 +424,14 @@ int main(int argc, char** argv)
   //                                   AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType>>::type>::type
   //          AdvectionOperatorType;
 
-  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
-                                         BoundaryValueType,
-                                         ConstantFunctionType,
-                                         1,
-                                         SlopeLimiters::minmod,
-                                         EigenSolverType,
-                                         RealizabilityLimiterType>
-      AdvectionOperatorType;
+  //  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
+  //                                         BoundaryValueType,
+  //                                         ConstantFunctionType,
+  //                                         1,
+  //                                         SlopeLimiters::minmod,
+  //                                         EigenSolverType,
+  //                                         RealizabilityLimiterType>
+  //      AdvectionOperatorType;
 
   //  typedef AdvectionForceOperator<AnalyticalFluxType,
   //                                 BoundaryValueType,
@@ -451,14 +451,21 @@ int main(int argc, char** argv)
   //                                 RealizabilityLimiterType>
   //      AdvectionOperatorType;
 
-  //  typedef AdvectionGodunovOperator<AnalyticalFluxType,
+  typedef AdvectionGodunovOperator<AnalyticalFluxType,
+                                   BoundaryValueType,
+                                   0,
+                                   SlopeLimiters::minmod,
+                                   EigenSolverType,
+                                   RealizabilityLimiterType>
+      AdvectionOperatorType;
+
+  //  typedef AdvectionKineticOperator<AnalyticalFluxType,
   //                                   BoundaryValueType,
-  //                                   1,
+  //                                   0,
   //                                   SlopeLimiters::minmod,
   //                                   EigenSolverType,
   //                                   RealizabilityLimiterType>
   //      AdvectionOperatorType;
-
 
   //  typedef AdvectionLaxWendroffOperator<AnalyticalFluxType,
   //                                       BoundaryValueType,
@@ -470,17 +477,14 @@ int main(int argc, char** argv)
   //      AdvectionOperatorType;
 
 
+  typedef typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, time_stepper_method>::TimeStepperType
+      OperatorTimeStepperType;
+  typedef typename TimeStepperFactory<RhsOperatorType, DiscreteFunctionType, rhs_time_stepper_method>::TimeStepperType
+      RhsOperatorTimeStepperType;
   typedef
-      typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, RangeFieldType, time_stepper_method>::
-          TimeStepperType OperatorTimeStepperType;
-  typedef typename TimeStepperFactory<RhsOperatorType,
-                                      DiscreteFunctionType,
-                                      RangeFieldType,
-                                      rhs_time_stepper_method,
-                                      Dune::XT::LA::default_sparse_backend>::TimeStepperType RhsOperatorTimeStepperType;
-  //      typedef FractionalTimeStepper<OperatorTimeStepperType, RhsOperatorTimeStepperType> TimeStepperType;
-  typedef StrangSplittingTimeStepper<RhsOperatorTimeStepperType, OperatorTimeStepperType> TimeStepperType;
-  //  typedef StrangSplittingTimeStepper<OperatorTimeStepperType, RhsOperatorTimeStepperType> TimeStepperType;
+      typename Dune::GDT::TimeStepperSplittingFactory<RhsOperatorTimeStepperType,
+                                                      OperatorTimeStepperType,
+                                                      time_stepper_splitting_method>::TimeStepperType TimeStepperType;
 
 
   // *************** choose t_end and initial dt **************************************
@@ -504,13 +508,13 @@ int main(int argc, char** argv)
 
   //  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_function, false, linear);
 
-  AdvectionOperatorType advection_operator(analytical_flux,
-                                           boundary_values,
-                                           dx_function,
-                                           AdvectionOperatorType::default_quadrature(),
-                                           realizability_limiter,
-                                           false,
-                                           linear);
+  //  AdvectionOperatorType advection_operator(analytical_flux,
+  //                                           boundary_values,
+  //                                           dx_function,
+  //                                           AdvectionOperatorType::default_quadrature(),
+  //                                           realizability_limiter,
+  //                                           false,
+  //                                           linear);
 
   //  AdvectionOperatorType advection_operator(analytical_flux,
   //                                           boundary_values,
@@ -527,8 +531,8 @@ int main(int argc, char** argv)
   //                                           linear,
   //                                           10);
 
-  //  AdvectionOperatorType advection_operator(
-  //      analytical_flux, boundary_values, AdvectionOperatorType::default_quadrature(), realizability_limiter, linear);
+  AdvectionOperatorType advection_operator(
+      analytical_flux, boundary_values, AdvectionOperatorType::default_1d_quadrature(), realizability_limiter, linear);
 
   //  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_function, linear);
   //  AdvectionOperatorType advection_operator(analytical_flux, boundary_values, linear);
@@ -547,19 +551,6 @@ int main(int argc, char** argv)
   //                                           space_quadrature_rules);
 
   RhsOperatorType rhs_operator(rhs);
-
-#if 0
-  std::ofstream pointsfile("points.txt");
-  pointsfile << "std::vector<std::array<double, 6>> points = ";
-  for (const auto& point : Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(40)) {
-    auto pos = basis_functions->evaluate(point.position());
-    pointsfile << "{";
-    for (size_t ii = 0; ii < pos.size() - 1; ++ii)
-      pointsfile << XT::Common::to_string(pos[ii], 20) << ", ";
-    pointsfile << XT::Common::to_string(pos[pos.size() - 1], 20) << "}, " << std::endl;
-  }
-  pointsfile.close();
-#endif
 
 
   // ******************************** do the time steps ***********************************************************
@@ -606,18 +597,24 @@ int main(int argc, char** argv)
     RangeFieldType psi(0);
     //    for (const auto& entry : val) // for hatfunctions
     //      psi += entry;
-    //    for (size_t ii = 0; ii < dimRange; ii += 4) // for piecewise
-    //      psi += val[ii];
-    psi = val[0] * std::sqrt(4 * M_PI); // for real spherical harmonics
+    for (size_t rr = 0; rr < dimRange; rr += 4) // for piecewise
+      psi += val[rr];
+    //    psi = val[0] * std::sqrt(4 * M_PI); // for real spherical harmonics
 
     l1norm += std::abs(psi) * entity.geometry().volume();
     l2norm += std::pow(psi, 2) * entity.geometry().volume();
     linfnorm = std::max(std::abs(psi), linfnorm);
   }
 
-  std::cout << "l1norm: " << l1norm << std::endl;
-  std::cout << "l2norm: " << l2norm << std::endl;
-  std::cout << "linfnorm: " << linfnorm << std::endl;
+  l1norm = grid_layer.comm().sum(l1norm);
+  l2norm = grid_layer.comm().sum(l2norm);
+  linfnorm = grid_layer.comm().max(linfnorm);
+  l2norm = std::sqrt(l2norm);
+  if (grid_layer.comm().rank() == 0) {
+    std::cout << "l1norm: " << l1norm << std::endl;
+    std::cout << "l2norm: " << l2norm << std::endl;
+    std::cout << "linfnorm: " << linfnorm << std::endl;
+  }
 
   std::ifstream matlabvaluesfile("values_matlab.txt");
   std::string line;
@@ -644,27 +641,34 @@ int main(int argc, char** argv)
   for (size_t ii = 0; ii < entities.size(); ++ii) {
     const auto& entity = entities[ii];
     const auto& point = x_matlab[ii];
-    const auto local_sol = sol.local_function(*entity);
-    const auto val = local_sol->evaluate(entity->geometry().local(point));
-    RangeFieldType psi(0);
-    //    for (const auto& entry : val) // for hatfunctions
-    //      psi += entry;
-    //    for (size_t ii = 0; ii < dimRange; ii += 4) // for piecewise
-    //      psi += val[ii];
-    psi = val[0] * std::sqrt(4 * M_PI); // for real spherical harmonics
+    if (entity) {
+      const auto local_sol = sol.local_function(*entity);
+      const auto val = local_sol->evaluate(entity->geometry().local(point));
+      RangeFieldType psi(0);
+      //    for (const auto& entry : val) // for hatfunctions
+      //      psi += entry;
+      for (size_t rr = 0; rr < dimRange; rr += 4) // for piecewise
+        psi += val[rr];
+      //      psi = val[0] * std::sqrt(4 * M_PI); // for real spherical harmonics
 
-    psi /= l1norm; // normalize
+      psi /= l1norm; // normalize
 
-    const auto& val_matlab = values_matlab[ii];
-    l2error += std::pow(psi - val_matlab, 2) * entity->geometry().volume();
-    l1error += std::abs(psi - val_matlab) * entity->geometry().volume();
-    linferror = std::max(std::abs(psi - val_matlab), linferror);
+      const auto& val_matlab = values_matlab[ii];
+      l2error += std::pow(psi - val_matlab, 2) * entity->geometry().volume();
+      l1error += std::abs(psi - val_matlab) * entity->geometry().volume();
+      linferror = std::max(std::abs(psi - val_matlab), linferror);
+    }
   }
 
+  l1error = grid_layer.comm().sum(l1error);
+  l2error = grid_layer.comm().sum(l2error);
+  linferror = grid_layer.comm().max(linferror);
   l2error = std::sqrt(l2error);
-  std::cout << "l2error: " << XT::Common::to_string(l2error) << std::endl;
-  std::cout << "l1error: " << XT::Common::to_string(l1error) << std::endl;
-  std::cout << "linferror: " << XT::Common::to_string(linferror) << std::endl;
+  if (grid_layer.comm().rank() == 0) {
+    std::cout << "l2error: " << XT::Common::to_string(l2error) << std::endl;
+    std::cout << "l1error: " << XT::Common::to_string(l1error) << std::endl;
+    std::cout << "linferror: " << XT::Common::to_string(linferror) << std::endl;
+  }
 
   return 0;
 }

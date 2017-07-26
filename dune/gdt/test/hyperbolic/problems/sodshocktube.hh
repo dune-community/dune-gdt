@@ -351,12 +351,12 @@ public:
 
 template <class G, class R = double>
 class ShockTubeTestCase
-    : public Dune::GDT::Test::NonStationaryTestCase<G,
-                                                    Problems::ShockTube<typename G::template Codim<0>::Entity,
-                                                                        typename G::ctype,
-                                                                        G::dimension,
-                                                                        R,
-                                                                        3>>
+    : public Dune::GDT::Test::InstationaryTestCase<G,
+                                                   Problems::ShockTube<typename G::template Codim<0>::Entity,
+                                                                       typename G::ctype,
+                                                                       G::dimension,
+                                                                       R,
+                                                                       3>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -368,7 +368,7 @@ public:
   typedef typename Problems::ShockTube<E, D, d, R, dimRange> ProblemType;
 
 private:
-  typedef typename Dune::GDT::Test::NonStationaryTestCase<G, ProblemType> BaseType;
+  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;

@@ -21,18 +21,8 @@
 using namespace Dune;
 using namespace Dune::GDT;
 
-#if HAVE_EIGEN
-
 TYPED_TEST_CASE(hyperbolic_FV_discretization_laxfriedrichs_euler, YaspGridTestCasesPartial);
 TYPED_TEST(hyperbolic_FV_discretization_laxfriedrichs_euler, eoc_study_using_yaspgrid)
 {
   this->eoc_study();
 }
-
-#else
-
-GTEST_TEST(DISABLED_hyperbolic_FV_discretization_laxfriedrichs_euler, eoc_study_using_yaspgrid)
-{
-}
-
-#endif

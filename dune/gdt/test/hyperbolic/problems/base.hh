@@ -39,7 +39,8 @@ public:
               XT::Common::Configuration _grid_cfg,
               XT::Common::Configuration _boundary_cfg,
               const RangeFieldType _CFL,
-              const RangeFieldType _t_end)
+              const RangeFieldType _t_end,
+              const bool _has_non_zero_rhs = true)
     : flux_(_flux)
     , rhs_(_rhs)
     , initial_values_(_initial_values)
@@ -48,11 +49,12 @@ public:
     , boundary_cfg_(_boundary_cfg)
     , CFL_(_CFL)
     , t_end_(_t_end)
+    , has_non_zero_rhs_(_has_non_zero_rhs)
   {
   }
 
   /**
-   * \note Do not manually delete these pointers, they are managed automaticall from here on!
+   * \note Do not manually delete these pointers, they are managed automatically from here on!
    */
   ProblemBase(const FluxType*&& _flux,
               const RhsType*&& _rhs,
@@ -61,7 +63,8 @@ public:
               XT::Common::Configuration _grid_cfg,
               XT::Common::Configuration _boundary_cfg,
               const RangeFieldType _CFL,
-              const RangeFieldType _t_end)
+              const RangeFieldType _t_end,
+              const bool _has_non_zero_rhs = false)
     : flux_(std::move(_flux))
     , rhs_(std::move(_rhs))
     , initial_values_(std::move(_initial_values))
@@ -70,6 +73,7 @@ public:
     , boundary_cfg_(_boundary_cfg)
     , CFL_(_CFL)
     , t_end_(_t_end)
+    , has_non_zero_rhs_(_has_non_zero_rhs)
   {
   }
 
@@ -113,6 +117,11 @@ public:
     return t_end_;
   }
 
+  virtual bool has_non_zero_rhs() const override
+  {
+    return has_non_zero_rhs_;
+  }
+
 protected:
   const XT::Common::ConstStorageProvider<FluxType> flux_;
   const XT::Common::ConstStorageProvider<RhsType> rhs_;
@@ -122,6 +131,7 @@ protected:
   const XT::Common::Configuration boundary_cfg_;
   const RangeFieldType CFL_;
   const RangeFieldType t_end_;
+  const bool has_non_zero_rhs_;
 }; // class ProblemBase
 
 

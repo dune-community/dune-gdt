@@ -76,6 +76,11 @@ public:
   virtual RangeFieldType CFL() const = 0;
 
   virtual RangeFieldType t_end() const = 0;
+
+  virtual bool has_non_zero_rhs() const
+  {
+    return false;
+  }
 }; // ProblemInterface
 
 

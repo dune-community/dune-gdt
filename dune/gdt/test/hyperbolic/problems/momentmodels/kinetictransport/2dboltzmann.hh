@@ -528,12 +528,12 @@ public:
 template <class G, class R = double, size_t momentOrder = 1>
 class Boltzmann2DCheckerboardTestCase
     : public Dune::GDT::Test::
-          NonStationaryTestCase<G,
-                                Problems::Boltzmann2DCheckerboard<typename G::template Codim<0>::Entity,
-                                                                  typename G::ctype,
-                                                                  G::dimension,
-                                                                  R,
-                                                                  momentOrder>>
+          InstationaryTestCase<G,
+                               Problems::Boltzmann2DCheckerboard<typename G::template Codim<0>::Entity,
+                                                                 typename G::ctype,
+                                                                 G::dimension,
+                                                                 R,
+                                                                 momentOrder>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -546,7 +546,7 @@ public:
   static const size_t dimRangeCols = 1;
 
 private:
-  typedef typename Dune::GDT::Test::NonStationaryTestCase<G, ProblemType> BaseType;
+  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;

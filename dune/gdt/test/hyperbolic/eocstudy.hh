@@ -14,6 +14,7 @@
 
 #include <dune/grid/common/gridview.hh>
 
+#include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
 
 #include "../instationary-eocstudy.hh"
@@ -26,9 +27,9 @@ namespace Test {
 
 
 template <class TestCaseImp, class DiscretizerImp>
-class HyperbolicEocStudy : public NonStationaryEocStudy<TestCaseImp, DiscretizerImp>
+class HyperbolicEocStudy : public InstationaryEocStudy<TestCaseImp, DiscretizerImp>
 {
-  typedef NonStationaryEocStudy<TestCaseImp, DiscretizerImp> BaseType;
+  typedef InstationaryEocStudy<TestCaseImp, DiscretizerImp> BaseType;
 
 public:
   using typename BaseType::TestCaseType;
@@ -40,7 +41,7 @@ public:
   // a perfect forwarding ctor did not do the job here, since it was not able to match the std::initializer_list: {"L2"}
   HyperbolicEocStudy(TestCaseType& test_case,
                      const std::vector<std::string> only_these_norms = {},
-                     const std::string visualize_prefix = "")
+                     const std::string visualize_prefix = "transport_test")
     : BaseType(test_case, only_these_norms, visualize_prefix)
   {
   }

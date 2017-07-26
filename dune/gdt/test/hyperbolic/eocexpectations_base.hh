@@ -14,11 +14,14 @@
 
 #include <dune/xt/common/test/gtest/gtest.h>
 
-#include "discretizers/base.hh"
+#include <dune/xt/grid/gridprovider.hh>
+#include <dune/xt/grid/view/periodic.hh>
 
-#include <dune/gdt/operators/fv.hh>
+#include <dune/gdt/operators/fv/enums.hh>
 #include <dune/gdt/test/grids.hh>
-#include <dune/gdt/timestepper/interface.hh>
+#include <dune/gdt/timestepper/enums.hh>
+
+#include "discretizers/base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -28,6 +31,7 @@ namespace Test {
 using Yasp1 = Yasp1Grid;
 using Yasp2 = Yasp2Grid;
 using Yasp3 = Yasp3Grid;
+
 
 namespace internal {
 
@@ -52,6 +56,7 @@ public:
 
 
 } // namespace internal
+
 
 template <class TestCaseType,
           Hyperbolic::ChooseDiscretizer disc,

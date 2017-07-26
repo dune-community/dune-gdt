@@ -14,10 +14,10 @@
 #include <string>
 
 #include <dune/gdt/local/fluxes/entropybased.hh>
-#include <dune/gdt/test/instationary-eocstudy.hh>
+#include <dune/gdt/test/instationary-testcase.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
 
 #include "kinetictransportequation.hh"
-
 
 namespace Dune {
 namespace GDT {
@@ -230,24 +230,24 @@ template <class G,
           class B = Hyperbolic::Problems::HatFunctions<typename G::ctype, 3, typename G::ctype, rangeDim, 1, 3>>
 class PointSourceTestCase
     : public Dune::GDT::Test::
-          NonStationaryTestCase<G,
-                                typename Hyperbolic::Problems::KineticEquation<
-                                    typename Problems::KineticTransport::
-                                        PointSourcePn<B,
-                                                      typename G::LeafGridLayer,
-                                                      typename G::template Codim<0>::Entity,
-                                                      typename G::ctype,
-                                                      G::dimension,
-                                                      DiscreteFunction<FvProductSpace<typename G::LeafGridView,
-                                                                                      double,
-                                                                                      rangeDim,
-                                                                                      1>,
-                                                                       typename Dune::XT::LA::
-                                                                           Container<double,
-                                                                                     XT::LA::default_sparse_backend>::
-                                                                               VectorType>,
-                                                      R,
-                                                      rangeDim>>>
+          InstationaryTestCase<G,
+                               typename Hyperbolic::Problems::KineticEquation<
+                                   typename Problems::KineticTransport::
+                                       PointSourcePn<B,
+                                                     typename G::LeafGridLayer,
+                                                     typename G::template Codim<0>::Entity,
+                                                     typename G::ctype,
+                                                     G::dimension,
+                                                     DiscreteFunction<FvProductSpace<typename G::LeafGridView,
+                                                                                     double,
+                                                                                     rangeDim,
+                                                                                     1>,
+                                                                      typename Dune::XT::LA::
+                                                                          Container<double,
+                                                                                    XT::LA::default_sparse_backend>::
+                                                                              VectorType>,
+                                                     R,
+                                                     rangeDim>>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -272,7 +272,7 @@ public:
   static const size_t dimRangeCols = 1;
 
 private:
-  typedef typename Dune::GDT::Test::NonStationaryTestCase<G, ProblemType> BaseType;
+  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;
