@@ -17,52 +17,62 @@
 #include <dune/gdt/timestepper/explicit-rungekutta.hh>
 #include <dune/gdt/timestepper/implicit-rungekutta.hh>
 #include <dune/gdt/timestepper/matrix-exponential.hh>
+#include <dune/gdt/timestepper/fractional-step.hh>
 
 
 namespace Dune {
 namespace GDT {
 
 
-template <class OperatorImp,
-          class DiscreteFunctionImp,
-          class TimeFieldImp,
-          TimeStepperMethods method,
-          XT::LA::Backends container_backend = XT::LA::default_sparse_backend>
+template <class OperatorImp, class DiscreteFunctionImp, TimeStepperMethods method>
 struct TimeStepperFactory
 {
+  typedef typename DiscreteFunctionImp::RangeFieldType RangeFieldType;
 
   typedef typename std::
       conditional<method == TimeStepperMethods::bogacki_shampine || method == TimeStepperMethods::dormand_prince
                       || method == TimeStepperMethods::adaptive_rungekutta_other,
-                  typename Dune::GDT::
-                      AdaptiveRungeKuttaTimeStepper<OperatorImp, DiscreteFunctionImp, TimeFieldImp, method>,
+                  typename Dune::GDT::AdaptiveRungeKuttaTimeStepper<OperatorImp, DiscreteFunctionImp, method>,
                   typename std::
                       conditional<method == TimeStepperMethods::implicit_euler
                                       || method == TimeStepperMethods::implicit_midpoint
                                       || method == TimeStepperMethods::trapezoidal_rule,
-                                  typename Dune::GDT::DiagonallyImplicitRungeKuttaTimeStepper<OperatorImp,
-                                                                                              DiscreteFunctionImp,
-                                                                                              TimeFieldImp,
-                                                                                              method>,
+                                  typename Dune::GDT::
+                                      DiagonallyImplicitRungeKuttaTimeStepper<OperatorImp, DiscreteFunctionImp, method>,
                                   typename std::
                                       conditional<method == TimeStepperMethods::matrix_exponential,
                                                   typename Dune::GDT::MatrixExponentialTimeStepper<OperatorImp,
-                                                                                                   DiscreteFunctionImp,
-                                                                                                   TimeFieldImp>,
+                                                                                                   DiscreteFunctionImp>,
                                                   typename Dune::GDT::ExplicitRungeKuttaTimeStepper<OperatorImp,
                                                                                                     DiscreteFunctionImp,
-                                                                                                    TimeFieldImp,
                                                                                                     method>>::type>::
                           type>::type TimeStepperType;
 
 
-  static TimeStepperType create(const OperatorImp& op,
-                                const DiscreteFunctionImp& initial_values,
-                                const typename DiscreteFunctionImp::RangeFieldType r = 1.0,
-                                const TimeFieldImp t_0 = 0.0,
-                                const typename DiscreteFunctionImp::RangeFieldType tol = 1e-4)
+  static std::unique_ptr<TimeStepperType> create(const OperatorImp& op,
+                                                 const DiscreteFunctionImp& initial_values,
+                                                 const RangeFieldType r = 1.0,
+                                                 const RangeFieldType t_0 = 0.0,
+                                                 const RangeFieldType tol = 1e-4)
   {
-    return TimeStepperType(op, initial_values, r, t_0, tol);
+    return XT::Common::make_unique<TimeStepperType>(op, initial_values, r, t_0, tol);
+  }
+}; // class TimeStepperFactory
+
+
+template <class FirstTimeStepperType, class SecondTimeStepperType, TimeStepperSplittingMethods method>
+struct TimeStepperSplittingFactory
+{
+  typedef typename std::conditional<method == TimeStepperSplittingMethods::fractional_step,
+                                    FractionalTimeStepper<FirstTimeStepperType, SecondTimeStepperType>,
+                                    StrangSplittingTimeStepper<FirstTimeStepperType, SecondTimeStepperType>>::type
+      TimeStepperType;
+
+
+  static std::unique_ptr<TimeStepperType> create(const FirstTimeStepperType& first_stepper,
+                                                 const SecondTimeStepperType& second_stepper)
+  {
+    return XT::Common::make_unique<TimeStepperType>(first_stepper, second_stepper);
   }
 }; // class TimeStepperFactory
 

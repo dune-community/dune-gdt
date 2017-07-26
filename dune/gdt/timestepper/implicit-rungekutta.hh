@@ -34,8 +34,8 @@ namespace internal {
 
 
 // backward Euler
-template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::implicit_euler>
+template <class RangeFieldType>
+struct ButcherArrayProvider<RangeFieldType, TimeStepperMethods::implicit_euler>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -47,15 +47,15 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::i
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[1]");
   }
 
-  static Dune::DynamicVector<TimeFieldType> c()
+  static Dune::DynamicVector<RangeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[1]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[1]");
   }
 };
 
 // implicit midpoint
-template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::implicit_midpoint>
+template <class RangeFieldType>
+struct ButcherArrayProvider<RangeFieldType, TimeStepperMethods::implicit_midpoint>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -67,15 +67,15 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::i
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[1]");
   }
 
-  static Dune::DynamicVector<TimeFieldType> c()
+  static Dune::DynamicVector<RangeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0.5]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0.5]");
   }
 };
 
 // Trapezoidal rule
-template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::trapezoidal_rule>
+template <class RangeFieldType>
+struct ButcherArrayProvider<RangeFieldType, TimeStepperMethods::trapezoidal_rule>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -92,9 +92,9 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::t
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[1 0]");
   }
 
-  static Dune::DynamicVector<TimeFieldType> c()
+  static Dune::DynamicVector<RangeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0 1]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0 1]");
   }
 };
 
@@ -137,18 +137,15 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::t
  */
 template <class OperatorImp,
           class DiscreteFunctionImp,
-          class TimeFieldImp = double,
           TimeStepperMethods method = TimeStepperMethods::implicit_euler,
           XT::LA::Backends container_backend = XT::LA::default_sparse_backend>
-class DiagonallyImplicitRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
+class DiagonallyImplicitRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
 {
-  typedef TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp> BaseType;
-  typedef typename internal::ButcherArrayProvider<typename BaseType::RangeFieldType, TimeFieldImp, method>
-      ButcherArrayProviderType;
+  typedef TimeStepperInterface<DiscreteFunctionImp> BaseType;
+  typedef typename internal::ButcherArrayProvider<typename BaseType::RangeFieldType, method> ButcherArrayProviderType;
 
 public:
   using typename BaseType::DiscreteFunctionType;
-  using typename BaseType::TimeFieldType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::SolutionType;
@@ -161,7 +158,6 @@ public:
   typedef typename XT::LA::Container<RangeFieldType, container_backend>::VectorType SolverVectorType;
   typedef typename DiscreteFunctionType::SpaceType::CommunicatorType CommunicatorType;
   typedef typename XT::LA::Solver<SolverMatrixType, CommunicatorType> SolverType;
-  typedef typename Dune::DynamicVector<TimeFieldType> TimeVectorType;
   typedef typename Dune::GDT::MatrixDataHandle<SolverMatrixType, typename DiscreteFunctionType::SpaceType>
       SolverMatrixDataHandleType;
 
@@ -183,12 +179,12 @@ public:
   DiagonallyImplicitRungeKuttaTimeStepper(const OperatorType& op,
                                           const DiscreteFunctionType& initial_values,
                                           const RangeFieldType r = 1.0,
-                                          const TimeFieldImp t_0 = 0.0,
-                                          const TimeFieldType beta = 1e-4,
+                                          const RangeFieldType t_0 = 0.0,
+                                          const RangeFieldType beta = 1e-4,
                                           const std::string solver_type = "",
                                           const MatrixType& A = ButcherArrayProviderType::A(),
                                           const VectorType& b = ButcherArrayProviderType::b(),
-                                          const TimeVectorType& c = ButcherArrayProviderType::c())
+                                          const VectorType& c = ButcherArrayProviderType::c())
     : BaseType(t_0, initial_values)
     , op_(op)
     , r_(r)
@@ -245,9 +241,9 @@ public:
     return norm;
   }
 
-  virtual TimeFieldType step(const TimeFieldType dt, const TimeFieldType max_dt) override final
+  virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
   {
-    const TimeFieldType actual_dt = std::min(dt, max_dt);
+    const RangeFieldType actual_dt = std::min(dt, max_dt);
     auto& t = current_time();
     auto& u_n = current_solution();
     // calculate stages
@@ -355,7 +351,7 @@ private:
   DiscreteFunctionType new_res_;
   DiscreteFunctionType u_i_plus_alpha_d_;
   const std::string solver_type_;
-  const TimeFieldType beta_;
+  const RangeFieldType beta_;
   SolverMatrixType newton_matrix_;
   SolverType solver_;
   const MatrixType A_;

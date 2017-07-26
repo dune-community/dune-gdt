@@ -24,7 +24,6 @@ namespace Dune {
 namespace GDT {
 
 
-// TODO: make thread-safe
 template <class DiscreteFunctionType, class RhsEvaluationType>
 class MatrixExponentialFunctor
     : public XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType>
@@ -96,15 +95,14 @@ private:
 
 /** \brief Time stepper solving linear equation d_t u = Au + b by matrix exponential
  */
-template <class OperatorImp, class DiscreteFunctionImp, class TimeFieldImp = double>
-class MatrixExponentialTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
+template <class OperatorImp, class DiscreteFunctionImp>
+class MatrixExponentialTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
 {
   typedef MatrixExponentialTimeStepper ThisType;
-  typedef TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp> BaseType;
+  typedef TimeStepperInterface<DiscreteFunctionImp> BaseType;
 
 public:
   using typename BaseType::DiscreteFunctionType;
-  using typename BaseType::TimeFieldType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::SolutionType;
@@ -139,7 +137,7 @@ public:
 
   MatrixExponentialTimeStepper(const OperatorType& op,
                                const DiscreteFunctionType& initial_values,
-                               const TimeFieldImp t_0 = 0.0)
+                               const RangeFieldType t_0 = 0.0)
     : BaseType(t_0, initial_values)
     , op_(op)
     , evaluation_(static_cast<const AffineCheckerboardType&>(op_.evaluation()))
@@ -150,9 +148,9 @@ public:
   {
   }
 
-  virtual TimeFieldType step(const TimeFieldType dt, const TimeFieldType max_dt) override final
+  virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
   {
-    const TimeFieldType actual_dt = std::min(dt, max_dt);
+    const RangeFieldType actual_dt = std::min(dt, max_dt);
     auto& t = current_time();
     auto& u_n = current_solution();
     calculate_matrix_exponentials(actual_dt);
@@ -170,7 +168,7 @@ public:
   } // ... step(...)
 
 private:
-  void calculate_matrix_exponentials(const TimeFieldType& actual_dt)
+  void calculate_matrix_exponentials(const RangeFieldType& actual_dt)
   {
     if (XT::Common::FloatCmp::ne(actual_dt, last_dt_)) {
       size_t num_threads = std::min(XT::Common::threadManager().max_threads(), num_subdomains_);
@@ -188,13 +186,13 @@ private:
     }
   }
 
-  void calculate_in_thread(const TimeFieldType& actual_dt, const std::set<size_t>& indices)
+  void calculate_in_thread(const RangeFieldType& actual_dt, const std::set<size_t>& indices)
   {
     for (const auto& index : indices)
       get_matrix_exponential(index, actual_dt);
   }
 
-  void get_matrix_exponential(size_t index, const TimeFieldType& dt)
+  void get_matrix_exponential(size_t index, const RangeFieldType& dt)
   {
     const auto& affine_function = *(evaluation_.values()[index]);
     assert(affine_function.A().size() == 1 && "Not implemented for dimRangeCols > 1!");
@@ -246,7 +244,7 @@ private:
   size_t num_subdomains_;
   std::vector<MatrixType> matrix_exponentials_;
   std::vector<MatrixType> matrix_exponential_integrals_;
-  TimeFieldType last_dt_;
+  RangeFieldType last_dt_;
 };
 
 
