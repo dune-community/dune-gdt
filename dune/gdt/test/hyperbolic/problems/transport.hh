@@ -16,6 +16,8 @@
 #include <vector>
 #include <string>
 
+#include <dune/xt/common/parameter.hh>
+
 #include <dune/xt/functions/composition.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
@@ -76,7 +78,7 @@ public:
     return 1;
   }
 
-  virtual void evaluate(const DomainType& x, RangeType& ret) const override final
+  virtual void evaluate(const DomainType& x, RangeType& ret, const XT::Common::Parameter& = {}) const override final
   {
     for (size_t ii = 0; ii < dimRange; ++ii) {
       ret[ii] = x[ii] - velocity_[ii] * t_;
@@ -85,7 +87,8 @@ public:
     }
   }
 
-  virtual void jacobian(const DomainType& /*x*/, JacobianRangeType& ret) const override final
+  virtual void
+  jacobian(const DomainType& /*x*/, JacobianRangeType& ret, const XT::Common::Parameter& = {}) const override final
   {
     ret = JacobianRangeType(1);
   }
@@ -131,36 +134,45 @@ public:
     return 2;
   }
 
-  virtual void evaluate(const DomainType& xx, RangeType& ret) const override
+  virtual void evaluate(const DomainType& xx, RangeType& ret, const XT::Common::Parameter& = {}) const override
   {
-    evaluate_helper(xx, ret, XT::Functions::internal::ChooseVariant<dimDomain>());
+    helper<dimDomain>::evaluate(xx, ret);
   }
 
 private:
-  void evaluate_helper(const DomainType& xx, RangeType& ret, const XT::Functions::internal::ChooseVariant<1>) const
+  template <size_t d, class anything = void>
+  struct helper
   {
-    if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4)
-      ret[0] = 10000 * std::pow(xx[0] - 0.2, 2) * std::pow(xx[0] - 0.4, 2)
-               * std::exp(0.02 - std::pow(xx[0] - 0.2, 2) - std::pow(xx[0] - 0.4, 2));
-    else if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8)
-      ret[0] = 1;
-    else
-      ret[0] = 0;
-  }
+    static void evaluate(const DomainType& xx, RangeType& ret)
+    {
+      if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4)
+        ret[0] = 10000 * std::pow(xx[0] - 0.2, 2) * std::pow(xx[0] - 0.4, 2)
+                 * std::exp(0.02 - std::pow(xx[0] - 0.2, 2) - std::pow(xx[0] - 0.4, 2));
+      else if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8)
+        ret[0] = 1;
+      else
+        ret[0] = 0;
+    }
+  };
 
-  void evaluate_helper(const DomainType& xx, RangeType& ret, const XT::Functions::internal::ChooseVariant<2>) const
+  template <class anything>
+  struct helper<2, anything>
   {
-    if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4 && Dune::XT::Common::FloatCmp::ge(xx[1], 0.2)
-        && xx[1] < 0.4)
-      ret[0] = 10000 * std::pow(xx[0] - 0.2, 2) * std::pow(xx[0] - 0.4, 2)
-               * std::exp(0.02 - std::pow(xx[0] - 0.2, 2) - std::pow(xx[0] - 0.4, 2)) * 10000 * std::pow(xx[1] - 0.2, 2)
-               * std::pow(xx[1] - 0.4, 2) * std::exp(0.02 - std::pow(xx[1] - 0.2, 2) - std::pow(xx[1] - 0.4, 2));
-    else if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8 && Dune::XT::Common::FloatCmp::ge(xx[1], 0.6)
-             && xx[1] < 0.8)
-      ret[0] = 1;
-    else
-      ret[0] = 0;
-  }
+    static void evaluate(const DomainType& xx, RangeType& ret)
+    {
+      if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4 && Dune::XT::Common::FloatCmp::ge(xx[1], 0.2)
+          && xx[1] < 0.4)
+        ret[0] = 10000 * std::pow(xx[0] - 0.2, 2) * std::pow(xx[0] - 0.4, 2)
+                 * std::exp(0.02 - std::pow(xx[0] - 0.2, 2) - std::pow(xx[0] - 0.4, 2)) * 10000
+                 * std::pow(xx[1] - 0.2, 2) * std::pow(xx[1] - 0.4, 2)
+                 * std::exp(0.02 - std::pow(xx[1] - 0.2, 2) - std::pow(xx[1] - 0.4, 2));
+      else if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8 && Dune::XT::Common::FloatCmp::ge(xx[1], 0.6)
+               && xx[1] < 0.8)
+        ret[0] = 1;
+      else
+        ret[0] = 0;
+    }
+  };
 };
 
 
@@ -279,12 +291,11 @@ public:
 
   static ConfigType default_grid_config()
   {
-    ConfigType grid_config;
-    grid_config["type"] = "provider.cube";
-    grid_config["lower_left"] = "[0.0 0.0 0.0]";
-    grid_config["upper_right"] = "[1.0 1.0 1.0]";
-    grid_config["num_elements"] = "[8 8 8]";
-    return grid_config;
+    XT::Common::Configuration cfg = XT::Grid::cube_gridprovider_default_config();
+    cfg["lower_left"] = "[0.0 0.0 0.0]";
+    cfg["upper_right"] = "[1.0 1.0 1.0]";
+    cfg["num_elements"] = "[8 8 8]";
+    return cfg;
   }
 
   static ConfigType default_boundary_info_config()
@@ -405,10 +416,9 @@ public:
   using typename BaseType::LevelGridViewType;
 
   TransportTestCase(const size_t num_refs = (d == 1 ? 4 : 2), const double divide_t_end_by = 1.0)
-    : BaseType(
-          divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(), num_refs)
+    : BaseType(divide_t_end_by, ProblemType::default_grid_config(), num_refs)
     , reference_grid_view_(BaseType::reference_grid_view())
-    , problem_(*(ProblemType::create(ProblemType::default_config())))
+    , problem_(*ProblemType::create(ProblemType::default_config()))
   {
     typedef InitialValues<E, D, d, R, r, 1> LocalizableInitialValueType;
     const LocalizableInitialValueType initial_values;

@@ -24,20 +24,22 @@
 using Yasp1 = Dune::YaspGrid<1, Dune::EquidistantOffsetCoordinates<double, 1>>;
 using Yasp2 = Yasp2Grid;
 
-typedef testing::Types<Dune::GDT::Hyperbolic::Boltzmann2DCheckerboardTestCase<Yasp2, double, 1>,
-                       Dune::GDT::Hyperbolic::BurgersTestCase<Yasp1>,
-                       Dune::GDT::Hyperbolic::BurgersTestCase<Yasp2>,
-                       Dune::GDT::Hyperbolic::ShallowWaterTestCase<Yasp1>,
-                       Dune::GDT::Hyperbolic::ShockTubeTestCase<Yasp1>,
-                       Dune::GDT::Hyperbolic::SourceBeamTestCase<Yasp1, double, 5>,
-                       Dune::GDT::Hyperbolic::TransportTestCase<Yasp1, double, 1, 1>,
-                       Dune::GDT::Hyperbolic::TransportTestCase<Yasp2, double, 1, 1>>
+typedef testing::Types<
+    //  Dune::GDT::Hyperbolic::Boltzmann2DCheckerboardTestCase<Yasp2, double, 1>,
+    //                       Dune::GDT::Hyperbolic::BurgersTestCase<Yasp1>,
+    //                       Dune::GDT::Hyperbolic::BurgersTestCase<Yasp2>,
+    //                       Dune::GDT::Hyperbolic::ShallowWaterTestCase<Yasp1>,
+    //                       Dune::GDT::Hyperbolic::ShockTubeTestCase<Yasp1>,
+    //                       Dune::GDT::Hyperbolic::SourceBeamTestCase<Yasp1, double, 5>,
+    Dune::GDT::Hyperbolic::TransportTestCase<Yasp1, double, 1, 1>,
+    Dune::GDT::Hyperbolic::TransportTestCase<Yasp2, double, 1, 1>>
     YaspGridTestCasesAll;
 
-typedef testing::Types<Dune::GDT::Hyperbolic::BurgersTestCase<Yasp1>,
-                       Dune::GDT::Hyperbolic::ShockTubeTestCase<Yasp1>,
-                       Dune::GDT::Hyperbolic::TransportTestCase<Yasp1, double, 1, 1>,
-                       Dune::GDT::Hyperbolic::TransportTestCase<Yasp2, double, 1, 1>>
+typedef testing::Types<
+    // Dune::GDT::Hyperbolic::BurgersTestCase<Yasp1>,
+    //                       Dune::GDT::Hyperbolic::ShockTubeTestCase<Yasp1>,
+    Dune::GDT::Hyperbolic::TransportTestCase<Yasp1, double, 1, 1>,
+    Dune::GDT::Hyperbolic::TransportTestCase<Yasp2, double, 1, 1>>
     YaspGridTestCasesPartial;
 
 typedef testing::Types<Dune::GDT::Hyperbolic::SourceBeamTestCase<Yasp1, double, 5>,

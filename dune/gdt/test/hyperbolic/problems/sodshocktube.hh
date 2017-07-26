@@ -83,7 +83,7 @@ public:
     return 1;
   }
 
-  virtual void evaluate(const DomainType& x, RangeType& ret) const override final
+  virtual void evaluate(const DomainType& x, RangeType& ret, const XT::Common::Parameter& = {}) const override final
   {
     if (Dune::XT::Common::FloatCmp::eq(t_, 0.0)) {
       if (x < 0.5)
@@ -105,7 +105,8 @@ public:
     }
   }
 
-  virtual void jacobian(const DomainType& /*x*/, JacobianRangeType& ret) const override final
+  virtual void
+  jacobian(const DomainType& /*x*/, JacobianRangeType& ret, const XT::Common::Parameter& = {}) const override final
   {
     ret = JacobianRangeType(1);
   }
@@ -375,8 +376,7 @@ public:
   using typename BaseType::SolutionType;
 
   ShockTubeTestCase(const size_t num_refs = 3, const double divide_t_end_by = 1.0)
-    : BaseType(
-          divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(), num_refs)
+    : BaseType(divide_t_end_by, ProblemType::default_grid_config(), num_refs)
     , problem_(*(ProblemType::create(ProblemType::default_config())))
     , exact_solution_(std::make_shared<ShocktubeSolution<E, D, R>>(typename Dune::XT::Common::FieldVector<D, d>(0),
                                                                    typename Dune::XT::Common::FieldVector<D, d>(1)))
