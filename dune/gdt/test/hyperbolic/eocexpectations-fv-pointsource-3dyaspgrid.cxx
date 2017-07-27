@@ -27,16 +27,11 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::PointSourceTestCase<Ya
                                             3,
                                             NumericalFluxes::laxfriedrichs,
                                             TimeStepperMethods::explicit_rungekutta_second_order_ssp,
-                                            TimeStepperMethods::matrix_exponential>::TestCaseType& test_case,
+                                            TimeStepperMethods::matrix_exponential>::TestCaseType& /*test_case*/,
             const std::string type)
 {
   if (type == "L1") {
-    //    if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 0.45))
     return {3.25e-01, 1.63e-01};
-    //    else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 4.0 / 5.0))
-    //      return {9.16e-02, 4.08e-02};
-    //    else
-    //      EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};

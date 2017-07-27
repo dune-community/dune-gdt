@@ -128,7 +128,7 @@ public:
                                            XT::Common::Parameter param,
                                            const bool use_local,
                                            const bool is_linear,
-                                           const RangeFieldType& alpha,
+                                           const RangeFieldType alpha,
                                            const DomainType lambda,
                                            const bool boundary)
     : analytical_flux_(analytical_flux)
