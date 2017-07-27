@@ -178,7 +178,7 @@ int main(int argc, char** argv)
 #endif
 
   // ********************* choose dimensions, fluxes and grid type ************************
-  static const int dimDomain = 2;
+  static const int dimDomain = 3;
   //  static const int dimDomain = 1;
   static const int momentOrder = 6;
   //  const auto numerical_flux = NumericalFluxes::kinetic;
@@ -286,15 +286,15 @@ int main(int argc, char** argv)
   //                                                                         dimRange>
   //      ProblemImp;
 
-  //  typedef typename Hyperbolic::Problems::KineticTransport::PointSourcePn<BasisfunctionType,
-  //                                                                         GridLayerType,
-  //                                                                         EntityType,
-  //                                                                         double,
-  //                                                                         dimDomain,
-  //                                                                         DiscreteFunctionType,
-  //                                                                         double,
-  //                                                                         dimRange>
-  //      ProblemImp;
+  typedef typename Hyperbolic::Problems::KineticTransport::PointSourcePn<BasisfunctionType,
+                                                                         GridLayerType,
+                                                                         EntityType,
+                                                                         double,
+                                                                         dimDomain,
+                                                                         DiscreteFunctionType,
+                                                                         double,
+                                                                         dimRange>
+      ProblemImp;
 
   //  typedef typename Hyperbolic::Problems::KineticTransport::PointSourceMn<
   //                                                       BasisfunctionType,
@@ -317,15 +317,15 @@ int main(int argc, char** argv)
   //                                                                                dimRange>
   //      ProblemImp;
 
-  typedef typename Hyperbolic::Problems::KineticTransport::LineSourceMn<BasisfunctionType,
-                                                                        GridLayerType,
-                                                                        EntityType,
-                                                                        double,
-                                                                        dimDomain,
-                                                                        DiscreteFunctionType,
-                                                                        double,
-                                                                        dimRange>
-      ProblemImp;
+  //  typedef typename Hyperbolic::Problems::KineticTransport::LineSourceMn<BasisfunctionType,
+  //                                                                        GridLayerType,
+  //                                                                        EntityType,
+  //                                                                        double,
+  //                                                                        dimDomain,
+  //                                                                        DiscreteFunctionType,
+  //                                                                        double,
+  //                                                                        dimRange>
+  //      ProblemImp;
 
   //  typedef
   //      typename Hyperbolic::Problems::Transport<EntityType, double, dimDomain, DiscreteFunctionType, double,
@@ -651,7 +651,7 @@ int main(int argc, char** argv)
         psi += val[rr];
       //      psi = val[0] * std::sqrt(4 * M_PI); // for real spherical harmonics
 
-      psi /= l1norm; // normalize
+      //      psi /= l1norm; // normalize
 
       const auto& val_matlab = values_matlab[ii];
       l2error += std::pow(psi - val_matlab, 2) * entity->geometry().volume();
