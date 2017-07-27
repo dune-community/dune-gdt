@@ -465,17 +465,22 @@ class UnitMatrix
 public:
   typedef FieldMatrix<FieldType, dimRange, dimRange> MatrixType;
 
+  UnitMatrix()
+    : unit_matrix_(new MatrixType(0))
+  {
+  }
+
   // need to reset unit_matrix every time because Lapack changes it
   FieldType* get()
   {
-    unit_matrix_ = MatrixType(0);
+    std::fill(unit_matrix_->begin(), unit_matrix_->end(), 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
-      unit_matrix_[rr][rr] = 1.;
-    return &(unit_matrix_[0][0]);
+      (*unit_matrix_)[rr][rr] = 1.;
+    return &((*unit_matrix_)[0][0]);
   }
 
 private:
-  MatrixType unit_matrix_;
+  std::unique_ptr<MatrixType> unit_matrix_;
 }; // class UnitMatrix;
 
 struct LapackWrapper
