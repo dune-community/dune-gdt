@@ -17,8 +17,8 @@
 //#include <dune/gdt/test/hyperbolic/problems/shallowwater.hh>
 //#include <dune/gdt/test/hyperbolic/problems/sodshocktube.hh>
 //#include <dune/gdt/test/hyperbolic/problems/fokkerplanck/sourcebeam.hh>
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/linesource.hh>
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/pointsource.hh>
+//#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/linesource.hh>
+//#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/pointsource.hh>
 
 using Yasp1 = Yasp1Grid;
 using Yasp2 = Yasp2Grid;
@@ -26,7 +26,7 @@ using Yasp3 = Yasp3Grid;
 
 typedef testing::Types< // Dune::GDT::Hyperbolic::PointSourceTestCase<Yasp3, double>,
     //    Dune::GDT::Hyperbolic::LineSourceTestCase<Yasp2, double>
-    Dune::GDT::Hyperbolic::LineSourceMnTestCase<Yasp2, double>,
+    //    Dune::GDT::Hyperbolic::LineSourceMnTestCase<Yasp2, double>,
 
     //                       Dune::GDT::Hyperbolic::Boltzmann2DCheckerboardTestCase<Yasp2, double,
     //                       1>,
@@ -57,27 +57,27 @@ namespace GDT {
 namespace Test {
 
 
-extern template class HyperbolicEocExpectations<Hyperbolic::PointSourceTestCase<Yasp3, double>,
-                                                Hyperbolic::ChooseDiscretizer::fv,
-                                                3,
-                                                NumericalFluxes::laxfriedrichs,
-                                                TimeStepperMethods::explicit_rungekutta_second_order_ssp,
-                                                TimeStepperMethods::matrix_exponential>;
+// extern template class HyperbolicEocExpectations<Hyperbolic::PointSourceTestCase<Yasp3, double>,
+//                                                Hyperbolic::ChooseDiscretizer::fv,
+//                                                3,
+//                                                NumericalFluxes::laxfriedrichs,
+//                                                TimeStepperMethods::explicit_rungekutta_second_order_ssp,
+//                                                TimeStepperMethods::matrix_exponential>;
 
-extern template class HyperbolicEocExpectations<Hyperbolic::LineSourceTestCase<Yasp2, double>,
-                                                Hyperbolic::ChooseDiscretizer::fv,
-                                                2,
-                                                NumericalFluxes::laxfriedrichs,
-                                                TimeStepperMethods::explicit_rungekutta_second_order_ssp,
-                                                TimeStepperMethods::matrix_exponential>;
+// extern template class HyperbolicEocExpectations<Hyperbolic::LineSourceTestCase<Yasp2, double>,
+//                                                Hyperbolic::ChooseDiscretizer::fv,
+//                                                2,
+//                                                NumericalFluxes::laxfriedrichs,
+//                                                TimeStepperMethods::explicit_rungekutta_second_order_ssp,
+//                                                TimeStepperMethods::matrix_exponential>;
 
 
-extern template class HyperbolicEocExpectations<Hyperbolic::LineSourceMnTestCase<Yasp2, double>,
-                                                Hyperbolic::ChooseDiscretizer::fv,
-                                                2,
-                                                NumericalFluxes::laxfriedrichs,
-                                                TimeStepperMethods::explicit_rungekutta_second_order_ssp,
-                                                TimeStepperMethods::matrix_exponential>;
+// extern template class HyperbolicEocExpectations<Hyperbolic::LineSourceMnTestCase<Yasp2, double>,
+//                                                Hyperbolic::ChooseDiscretizer::fv,
+//                                                2,
+//                                                NumericalFluxes::laxfriedrichs,
+//                                                TimeStepperMethods::explicit_rungekutta_second_order_ssp,
+//                                                TimeStepperMethods::matrix_exponential>;
 
 
 // extern template class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1, double, 1>,

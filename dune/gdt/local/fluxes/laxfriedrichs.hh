@@ -147,7 +147,6 @@ public:
       std::cerr << "WARNING: Parameter lambda in Lax-Friedrichs flux set but will have no effect because local "
                    "Lax-Friedrichs flux is requested."
                 << std::endl;
-
     if (is_instantiated_)
       DUNE_THROW(InvalidStateException,
                  "This class uses several static variables to save its state between time "

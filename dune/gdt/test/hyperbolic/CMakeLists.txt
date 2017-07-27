@@ -13,9 +13,9 @@
 dune_add_library(expectations_hyperbolic_fv_discretizations_yaspgrid
 	          NO_EXPORT
             SOURCES
-            eocexpectations-fv-linesource-2dyaspgrid.cxx
-            eocexpectations-fv-linesourcemn-2dyaspgrid.cxx
-            eocexpectations-fv-pointsource-3dyaspgrid.cxx
+#            eocexpectations-fv-linesource-2dyaspgrid.cxx
+#            eocexpectations-fv-linesourcemn-2dyaspgrid.cxx
+#            eocexpectations-fv-pointsource-3dyaspgrid.cxx
 #            eocexpectations-fv-sourcebeam-1dyaspgrid.cxx
 #            eocexpectations-fv-boltzmanncheckerboard-2dyaspgrid.cxx
 #            eocexpectations-fv-burgers-1dyaspgrid.cxx

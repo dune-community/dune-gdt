@@ -68,13 +68,28 @@ struct hyperbolic_FV_discretization_entropy
 {
 }; // hyperbolic_FV_discretization_entropy
 
-// template <class TestCaseType>
-// struct hyperbolic_FV_discretization_godunovwithreconstruction_euler
-//    : public hyperbolic_FV_discretization_base<TestCaseType,
-//                                               Dune::GDT::NumericalFluxes::godunov_with_reconstruction,
-//                                               Dune::GDT::TimeStepperMethods::explicit_euler>
-//{
-//}; // hyperbolic_FV_discretization_godunovwithreconstruction_euler
+template <class TestCaseType>
+struct hyperbolic_FV_discretization_godunov_order0_euler
+    : public hyperbolic_FV_discretization_base<TestCaseType,
+                                               Dune::GDT::NumericalFluxes::godunov,
+                                               0,
+                                               Dune::GDT::TimeStepperMethods::explicit_euler,
+                                               Dune::GDT::TimeStepperMethods::explicit_euler,
+                                               Dune::GDT::TimeStepperSplittingMethods::fractional_step>
+{
+}; // hyperbolic_FV_discretization_godunov_order0_euler
+
+template <class TestCaseType>
+struct hyperbolic_FV_discretization_godunov_order1_euler
+    : public hyperbolic_FV_discretization_base<TestCaseType,
+                                               Dune::GDT::NumericalFluxes::godunov,
+                                               0,
+                                               Dune::GDT::TimeStepperMethods::explicit_euler,
+                                               Dune::GDT::TimeStepperMethods::explicit_euler,
+                                               Dune::GDT::TimeStepperSplittingMethods::fractional_step>
+{
+}; // hyperbolic_FV_discretization_godunov_order1_euler
+
 
 template <class TestCaseType>
 struct hyperbolic_FV_discretization_laxfriedrichs_euler

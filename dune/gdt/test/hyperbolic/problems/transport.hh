@@ -281,7 +281,7 @@ public:
                create_boundary_values(),
                grid_cfg,
                boundary_cfg,
-               dimDomain == 1 ? 0.5 : (dimDomain == 2 ? 1. / 3. : 1. / 6.),
+               dimDomain == 1 ? 0.5 : (dimDomain == 2 ? 0.3 : 0.15),
                1,
                false)
   {

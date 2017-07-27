@@ -341,7 +341,7 @@ int main(int argc, char** argv)
   typedef typename ProblemType::RhsType RhsType;
   typedef typename ProblemType::InitialValueType InitialValueType;
   typedef typename ProblemType::BoundaryValueType BoundaryValueType;
-  static const bool linear = false; // ProblemType::linear;
+  static const bool linear = true; // ProblemType::linear;
 
   //******************* create grid and FV space ***************************************
   auto grid_config = ProblemType::default_grid_cfg();
