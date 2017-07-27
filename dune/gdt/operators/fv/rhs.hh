@@ -178,12 +178,12 @@ public:
                          const SourceType& source,
                          const XT::Common::Parameter& /*param*/ = {}) const
   {
-    typedef typename SourceType::SpaceType SpaceType;
-    typedef typename SpaceType::BaseFunctionSetType BasisType;
+    typedef typename SourceType::SpaceType SpaceImp;
+    typedef typename SpaceImp::BaseFunctionSetType BasisType;
     typedef LocalVolumeIntegralOperator<LocalFvRhsJacobianIntegrand<RhsEvaluationType, SourceType>, BasisType>
         LocalOperatorType;
     LocalOperatorType local_operator(rhs_evaluation_, source);
-    SystemAssembler<SpaceType> assembler(source.space());
+    SystemAssembler<SpaceImp> assembler(source.space());
     assembler.append(local_operator, jac);
     assembler.assemble(true);
   }
