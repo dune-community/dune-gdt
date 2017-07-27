@@ -154,7 +154,6 @@ class DUNE_DEPRECATED_MSG("User LocalVolumeTwoFormAccumulatorFunctor instead (29
   static_assert(XT::Functions::is_localizable_function<AnsatzFunctionType>::value,
                 "AnsatzFunctionType has to be derived from XT::Functions::LocalizableFunctionInterface!");
 
-  typedef LocalVolumeTwoFormAccumulator<GridLayerImp, TestFunctionType, AnsatzFunctionType, FieldType> ThisType;
   typedef XT::Grid::internal::Codim0ReturnObject<GridLayerImp, FieldType> BaseType;
 
 public:
@@ -180,7 +179,11 @@ public:
   {
   }
 
-  LocalVolumeTwoFormAccumulator(const ThisType& other) = default;
+// disable deprecation warning that occurs even if this class is not used
+#include <dune/xt/common/disable_warnings.hh>
+  LocalVolumeTwoFormAccumulator(const LocalVolumeTwoFormAccumulator& other) = default;
+#include <dune/xt/common/reenable_warnings.hh>
+
   virtual ~LocalVolumeTwoFormAccumulator() = default;
 
   virtual bool apply_on(const GridLayerType& grid_layer, const EntityType& entity) const override final

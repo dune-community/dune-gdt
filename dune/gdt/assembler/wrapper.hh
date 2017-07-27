@@ -115,7 +115,12 @@ public:
   typedef typename AssemblerType::AnsatzSpaceType AnsatzSpaceType;
   typedef typename AssemblerType::GridLayerType GridLayerType;
   using typename BaseType::EntityType;
+
+// disable deprecation warning that occurs even if this class is not used
+#include <dune/xt/common/disable_warnings.hh>
   typedef LocalVolumeTwoFormAssembler<TestSpaceType, MatrixType, AnsatzSpaceType> LocalVolumeTwoFormAssemblerType;
+#include <dune/xt/common/reenable_warnings.hh>
+
 
   LocalVolumeTwoFormMatrixAssemblerWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
                                            const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
@@ -149,21 +154,32 @@ private:
 }; // class LocalVolumeTwoFormMatrixAssemblerWrapper
 
 
+// TODO: remove once the class below is removed!
+// helper class to disable the deprecation warnings coming from the class below once this header is included
+// (even if LocalVolumeTwoFormWrapper is not used)
+template <class AssemblerType, class MatrixType>
+struct deprecation_disabler_lvtfw
+{
+#include <dune/xt/common/disable_warnings.hh>
+  typedef XT::Common::ConstStorageProvider<LocalVolumeTwoFormAssembler<typename AssemblerType::TestSpaceType,
+                                                                       MatrixType,
+                                                                       typename AssemblerType::AnsatzSpaceType>>
+      LocalAssemblerProviderType;
+  typedef LocalVolumeTwoFormMatrixAssemblerWrapper<AssemblerType, MatrixType> BaseType;
+#include <dune/xt/common/reenable_warnings.hh>
+};
+
 // without a given local assembler
 
 template <class AssemblerType, class MatrixType>
 class DUNE_DEPRECATED_MSG("Use LocalVolumeTwoFormAssemblerFunctor instead or directly append the LocalVolumeTwoForm to "
                           "the SystemAssembler (13.05.2017)!") LocalVolumeTwoFormWrapper
-    : private XT::Common::ConstStorageProvider<LocalVolumeTwoFormAssembler<typename AssemblerType::TestSpaceType,
-                                                                           MatrixType,
-                                                                           typename AssemblerType::AnsatzSpaceType>>,
-      public LocalVolumeTwoFormMatrixAssemblerWrapper<AssemblerType, MatrixType>
+    : private deprecation_disabler_lvtfw<AssemblerType, MatrixType>::LocalAssemblerProviderType,
+      public deprecation_disabler_lvtfw<AssemblerType, MatrixType>::BaseType
 {
-  typedef XT::Common::ConstStorageProvider<LocalVolumeTwoFormAssembler<typename AssemblerType::TestSpaceType,
-                                                                       MatrixType,
-                                                                       typename AssemblerType::AnsatzSpaceType>>
-      LocalAssemblerProvider;
-  typedef LocalVolumeTwoFormMatrixAssemblerWrapper<AssemblerType, MatrixType> BaseType;
+  typedef
+      typename deprecation_disabler_lvtfw<AssemblerType, MatrixType>::LocalAssemblerProviderType LocalAssemblerProvider;
+  typedef typename deprecation_disabler_lvtfw<AssemblerType, MatrixType>::BaseType BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
@@ -210,6 +226,8 @@ public:
   typedef typename AssemblerType::GridLayerType GridLayerType;
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
+
+#include <dune/xt/common/disable_warnings.hh>
   typedef LocalCouplingTwoFormAssembler<TestSpaceType,
                                         IntersectionType,
                                         MatrixType,
@@ -217,6 +235,7 @@ public:
                                         OuterTestSpaceType,
                                         OuterAnsatzSpaceType>
       LocalCouplingTwoFormAssemblerType;
+#include <dune/xt/common/reenable_warnings.hh>
 
   template <typename TestSpace,
             typename AnsatzSpace,
@@ -299,20 +318,14 @@ private:
   MatrixType& out_in_matrix_;
 }; // class LocalCouplingTwoFormMatrixAssemblerWrapper
 
-// without a given local assembler
 
+// TODO: remove once the class below is removed!
+// helper class to disable the deprecation warnings coming from the class below once this header is included
+// (even if LocalCouplingTwoFormWrapper is not used)
 template <class AssemblerType, class MatrixType>
-class DUNE_DEPRECATED_MSG("Use LocalCouplingTwoFormAssemblerFunctor instead or directly append the "
-                          "LocalCouplingTwoForm to the SystemAssembler (13.05.2017)!") LocalCouplingTwoFormWrapper
-    : private XT::Common::
-          ConstStorageProvider<LocalCouplingTwoFormAssembler<typename AssemblerType::TestSpaceType,
-                                                             typename AssemblerType::IntersectionType,
-                                                             MatrixType,
-                                                             typename AssemblerType::AnsatzSpaceType,
-                                                             typename AssemblerType::OuterTestSpaceType,
-                                                             typename AssemblerType::OuterAnsatzSpaceType>>,
-      public LocalCouplingTwoFormMatrixAssemblerWrapper<AssemblerType, MatrixType>
+struct deprecation_disabler_lctfw
 {
+#include <dune/xt/common/disable_warnings.hh>
   typedef XT::Common::ConstStorageProvider<LocalCouplingTwoFormAssembler<typename AssemblerType::TestSpaceType,
                                                                          typename AssemblerType::IntersectionType,
                                                                          MatrixType,
@@ -321,6 +334,19 @@ class DUNE_DEPRECATED_MSG("Use LocalCouplingTwoFormAssemblerFunctor instead or d
                                                                          typename AssemblerType::OuterAnsatzSpaceType>>
       LocalAssemblerProvider;
   typedef LocalCouplingTwoFormMatrixAssemblerWrapper<AssemblerType, MatrixType> BaseType;
+#include <dune/xt/common/reenable_warnings.hh>
+};
+
+// without a given local assembler
+
+template <class AssemblerType, class MatrixType>
+class DUNE_DEPRECATED_MSG("Use LocalCouplingTwoFormAssemblerFunctor instead or directly append the "
+                          "LocalCouplingTwoForm to the SystemAssembler (13.05.2017)!") LocalCouplingTwoFormWrapper
+    : private deprecation_disabler_lctfw<AssemblerType, MatrixType>::LocalAssemblerProvider,
+      public deprecation_disabler_lctfw<AssemblerType, MatrixType>::BaseType
+{
+  typedef typename deprecation_disabler_lctfw<AssemblerType, MatrixType>::LocalAssemblerProvider LocalAssemblerProvider;
+  typedef typename deprecation_disabler_lctfw<AssemblerType, MatrixType>::BaseType BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
@@ -398,8 +424,10 @@ public:
   typedef typename AssemblerType::GridLayerType GridLayerType;
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
+#include <dune/xt/common/disable_warnings.hh>
   typedef LocalBoundaryTwoFormAssembler<TestSpaceType, IntersectionType, MatrixType, AnsatzSpaceType>
       LocalBoundaryTwoFormAssemblerType;
+#include <dune/xt/common/reenable_warnings.hh>
 
   LocalBoundaryTwoFormMatrixAssemblerWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
                                              const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
@@ -434,23 +462,33 @@ private:
   MatrixType& matrix_;
 }; // class LocalBoundaryTwoFormMatrixAssemblerWrapper
 
-// without a given local assembler
 
+// TODO: remove once the class below is removed!
+// helper class to disable the deprecation warnings coming from the class below once this header is included
+// (even if LocalCouplingTwoFormWrapper is not used)
 template <class AssemblerType, class MatrixType>
-class DUNE_DEPRECATED_MSG("Use LocalBoundaryTwoFormAssemblerFunctor instead or directly append the "
-                          "LocalBoundaryTwoForm to the SystemAssembler (13.05.2017)!") LocalBoundaryTwoFormWrapper
-    : private XT::Common::ConstStorageProvider<LocalBoundaryTwoFormAssembler<typename AssemblerType::TestSpaceType,
-                                                                             typename AssemblerType::IntersectionType,
-                                                                             MatrixType,
-                                                                             typename AssemblerType::AnsatzSpaceType>>,
-      public LocalBoundaryTwoFormMatrixAssemblerWrapper<AssemblerType, MatrixType>
+struct deprecation_disabler_lbtfw
 {
+#include <dune/xt/common/disable_warnings.hh>
   typedef XT::Common::ConstStorageProvider<LocalBoundaryTwoFormAssembler<typename AssemblerType::TestSpaceType,
                                                                          typename AssemblerType::IntersectionType,
                                                                          MatrixType,
                                                                          typename AssemblerType::AnsatzSpaceType>>
       LocalAssemblerProvider;
   typedef LocalBoundaryTwoFormMatrixAssemblerWrapper<AssemblerType, MatrixType> BaseType;
+#include <dune/xt/common/reenable_warnings.hh>
+};
+
+// without a given local assembler
+
+template <class AssemblerType, class MatrixType>
+class DUNE_DEPRECATED_MSG("Use LocalBoundaryTwoFormAssemblerFunctor instead or directly append the "
+                          "LocalBoundaryTwoForm to the SystemAssembler (13.05.2017)!") LocalBoundaryTwoFormWrapper
+    : private deprecation_disabler_lbtfw<AssemblerType, MatrixType>::LocalAssemblerProvider,
+      public deprecation_disabler_lbtfw<AssemblerType, MatrixType>::BaseType
+{
+  typedef typename deprecation_disabler_lbtfw<AssemblerType, MatrixType>::LocalAssemblerProvider LocalAssemblerProvider;
+  typedef typename deprecation_disabler_lbtfw<AssemblerType, MatrixType>::BaseType BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
@@ -491,7 +529,9 @@ public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
   typedef typename AssemblerType::GridLayerType GridLayerType;
   using typename BaseType::EntityType;
+#include <dune/xt/common/disable_warnings.hh>
   typedef LocalVolumeFunctionalAssembler<TestSpaceType, VectorType> LocalVolumeFunctionalAssemblerType;
+#include <dune/xt/common/reenable_warnings.hh>
 
   LocalVolumeFunctionalVectorAssemblerWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& space,
                                               const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where,
@@ -522,19 +562,32 @@ private:
 }; // class LocalVolumeVectorAssemblerWrapper
 
 
+// TODO: remove once the class below is removed!
+// helper class to disable the deprecation warnings coming from the class below once this header is included
+// (even if LocalCouplingTwoFormWrapper is not used)
+template <class AssemblerType, class VectorType>
+struct deprecation_disabler_lvfw
+{
+#include <dune/xt/common/disable_warnings.hh>
+  typedef XT::Common::ConstStorageProvider<LocalVolumeFunctionalAssembler<typename AssemblerType::TestSpaceType,
+                                                                          VectorType>>
+      LocalAssemblerProvider;
+  typedef LocalVolumeFunctionalVectorAssemblerWrapper<AssemblerType, VectorType> BaseType;
+#include <dune/xt/common/reenable_warnings.hh>
+};
+
+
 // without a given local assembler
 
 template <class AssemblerType, class VectorType>
 class DUNE_DEPRECATED_MSG("Use LocalFunctionalAssemblerFunctor instead or directly append the LocalFunctional to "
                           "the SystemAssembler (08.06.2017)!") LocalVolumeFunctionalWrapper
-    : private XT::Common::ConstStorageProvider<LocalVolumeFunctionalAssembler<typename AssemblerType::TestSpaceType,
-                                                                              VectorType>>,
-      public LocalVolumeFunctionalVectorAssemblerWrapper<AssemblerType, VectorType>
+
+    : private deprecation_disabler_lvfw<AssemblerType, VectorType>::LocalAssemblerProvider,
+      public deprecation_disabler_lvfw<AssemblerType, VectorType>::BaseType
 {
-  typedef XT::Common::ConstStorageProvider<LocalVolumeFunctionalAssembler<typename AssemblerType::TestSpaceType,
-                                                                          VectorType>>
-      LocalAssemblerProvider;
-  typedef LocalVolumeFunctionalVectorAssemblerWrapper<AssemblerType, VectorType> BaseType;
+  typedef typename deprecation_disabler_lvfw<AssemblerType, VectorType>::LocalAssemblerProvider LocalAssemblerProvider;
+  typedef typename deprecation_disabler_lvfw<AssemblerType, VectorType>::BaseType BaseType;
 
 public:
   typedef typename AssemblerType::TestSpaceType TestSpaceType;
@@ -572,7 +625,10 @@ public:
   typedef typename AssemblerType::GridLayerType GridLayerType;
   using typename BaseType::EntityType;
   using typename BaseType::IntersectionType;
+
+#include <dune/xt/common/disable_warnings.hh>
   typedef LocalFaceFunctionalAssembler<TestSpaceType, IntersectionType, VectorType> LocalFaceFunctionalAssemblerType;
+#include <dune/xt/common/reenable_warnings.hh>
 
   LocalFaceFunctionalVectorAssemblerWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& space,
                                             const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
@@ -605,22 +661,34 @@ private:
 }; // class LocalFaceFunctionalVectorAssemblerWrapper
 
 
+// TODO: remove once the class below is removed!
+// helper class to disable the deprecation warnings coming from the class below once this header is included
+// (even if LocalCouplingTwoFormWrapper is not used)
+template <class AssemblerType, class VectorType>
+struct deprecation_disabler_lffw
+{
+#include <dune/xt/common/disable_warnings.hh>
+  typedef XT::Common::ConstStorageProvider<LocalFaceFunctionalAssembler<typename AssemblerType::TestSpaceType,
+                                                                        typename AssemblerType::IntersectionType,
+                                                                        VectorType>>
+      LocalAssemblerProvider;
+  typedef LocalFaceFunctionalVectorAssemblerWrapper<AssemblerType, VectorType> BaseType;
+#include <dune/xt/common/reenable_warnings.hh>
+};
+
+
 // wihtout a given local assembler
 
 template <class AssemblerType, class VectorType>
 class DUNE_DEPRECATED_MSG(
     "Use LocalFaceFunctionalAssemblerFunctor instead or directly append the LocalFaceFunctional to "
     "the SystemAssembler (26.06.2017)!") LocalFaceFunctionalWrapper
-    : private XT::Common::ConstStorageProvider<LocalFaceFunctionalAssembler<typename AssemblerType::TestSpaceType,
-                                                                            typename AssemblerType::IntersectionType,
-                                                                            VectorType>>,
-      public LocalFaceFunctionalVectorAssemblerWrapper<AssemblerType, VectorType>
+    : private deprecation_disabler_lffw<AssemblerType, VectorType>::LocalAssemblerProviderType,
+      public deprecation_disabler_lffw<AssemblerType, VectorType>::BaseType
 {
-  typedef XT::Common::ConstStorageProvider<LocalFaceFunctionalAssembler<typename AssemblerType::TestSpaceType,
-                                                                        typename AssemblerType::IntersectionType,
-                                                                        VectorType>>
-      LocalAssemblerProvider;
-  typedef LocalFaceFunctionalVectorAssemblerWrapper<AssemblerType, VectorType> BaseType;
+  typedef
+      typename deprecation_disabler_lffw<AssemblerType, VectorType>::LocalAssemblerProviderType LocalAssemblerProvider;
+  typedef typename deprecation_disabler_lffw<AssemblerType, VectorType>::BaseType BaseType;
 
 public:
   using typename BaseType::TestSpaceType;
