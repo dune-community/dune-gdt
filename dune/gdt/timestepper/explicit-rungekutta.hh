@@ -252,10 +252,9 @@ public:
     // calculate stages
     for (size_t ii = 0; ii < num_stages_; ++ii) {
       stages_k_[ii].vector() *= RangeFieldType(0);
-      if (ii == 0)
-        u_i_.vector() = u_n.vector();
-      else
-        u_i_.vector() += stages_k_[ii - 1].vector() * (actual_dt * r_ * (A_[ii][ii - 1]));
+      u_i_.vector() = u_n.vector();
+      for (size_t jj = 0; jj < ii; ++jj)
+        u_i_.vector() += stages_k_[jj].vector() * (actual_dt * r_ * (A_[ii][jj]));
       op_.apply(u_i_, stages_k_[ii], XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}}, {"dt", {actual_dt}}}));
       DataHandleType stages_k_ii_handle(stages_k_[ii]);
       stages_k_[ii].space().grid_layer().template communicate<DataHandleType>(
