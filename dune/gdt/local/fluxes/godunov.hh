@@ -169,7 +169,7 @@ private:
                             const RangeType& u_i,
                             const RangeType& u_j) const
   {
-    if (!jacobians_initialized_ || !is_linear_) {
+    if (!jacobians_initialized_[direction] || !is_linear_) {
       // calculate jacobian as jacobian(0.5*(u_i+u_j)
       RangeType u_mean = u_i + u_j;
       u_mean *= RangeFieldType(0.5);
@@ -195,7 +195,7 @@ private:
               jacobian_pos_dense[rr][cc] += (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk];
       jacobian_neg_[direction] = SparseMatrixType(jacobian_neg_dense, true);
       jacobian_pos_[direction] = SparseMatrixType(jacobian_pos_dense, true);
-      jacobians_initialized_ = true;
+      jacobians_initialized_[direction] = true;
     } // (!jacobians_initialized || !linear)
   } // void calculate_jacobians(...)
 
@@ -233,7 +233,7 @@ private:
   XT::Common::Parameter param_outside_;
   static thread_local JacobiansType jacobian_neg_;
   static thread_local JacobiansType jacobian_pos_;
-  static thread_local bool jacobians_initialized_;
+  static thread_local FieldVector<bool, dimDomain> jacobians_initialized_;
   static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
   const bool is_linear_;
   static bool is_instantiated_;
@@ -246,7 +246,8 @@ template <class Traits>
 thread_local typename GodunovFluxImplementation<Traits>::JacobiansType GodunovFluxImplementation<Traits>::jacobian_pos_;
 
 template <class Traits>
-thread_local bool GodunovFluxImplementation<Traits>::jacobians_initialized_ = false;
+thread_local FieldVector<bool, GodunovFluxImplementation<Traits>::dimDomain>
+    GodunovFluxImplementation<Traits>::jacobians_initialized_(false);
 
 template <class Traits>
 thread_local std::unique_ptr<typename GodunovFluxImplementation<Traits>::JacobianRangeType>
