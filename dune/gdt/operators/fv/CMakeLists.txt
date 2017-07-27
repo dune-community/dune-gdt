@@ -9,7 +9,7 @@
 
 dune_add_library(eigensolver
                  NO_EXPORT
-                 ADD_LIBS lapacke lapack
+                 ADD_LIBS ${LAPACKE_LIBRARIES}
                  COMPILE_FLAGS "-Os -w -DDNDEBUG -DNDEBUG"
                  SOURCES
                  eigensolver.cc)
