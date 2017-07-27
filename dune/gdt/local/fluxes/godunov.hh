@@ -184,17 +184,19 @@ private:
       if (is_linear_)
         jacobian_ = nullptr;
 
-      FieldMatrix<RangeFieldType, dimRange, dimRange> jacobian_neg_dense(0);
-      FieldMatrix<RangeFieldType, dimRange, dimRange> jacobian_pos_dense(0);
+      auto jacobian_neg_dense = XT::Common::make_unique<FieldMatrix<RangeFieldType, dimRange, dimRange>>(0);
+      auto jacobian_pos_dense = XT::Common::make_unique<FieldMatrix<RangeFieldType, dimRange, dimRange>>(0);
       for (size_t rr = 0; rr < dimRange; ++rr)
         for (size_t cc = 0; cc < dimRange; ++cc)
           for (size_t kk = 0; kk < dimRange; ++kk)
             if (XT::Common::FloatCmp::lt(eigenvalues[kk], 0.))
-              jacobian_neg_dense[rr][cc] += (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk];
+              (*jacobian_neg_dense)[rr][cc] +=
+                  (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk];
             else
-              jacobian_pos_dense[rr][cc] += (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk];
-      jacobian_neg_[direction] = SparseMatrixType(jacobian_neg_dense, true);
-      jacobian_pos_[direction] = SparseMatrixType(jacobian_pos_dense, true);
+              (*jacobian_pos_dense)[rr][cc] +=
+                  (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk];
+      jacobian_neg_[direction] = SparseMatrixType(*jacobian_neg_dense, true);
+      jacobian_pos_[direction] = SparseMatrixType(*jacobian_pos_dense, true);
       jacobians_initialized_[direction] = true;
     } // (!jacobians_initialized || !linear)
   } // void calculate_jacobians(...)
