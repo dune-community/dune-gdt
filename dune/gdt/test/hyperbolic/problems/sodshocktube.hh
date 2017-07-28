@@ -78,7 +78,7 @@ public:
     return BaseType::static_id() + ".shocktubesolutionatspecifictime";
   }
 
-  virtual size_t order() const override final
+  virtual virtual size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     return 1;
   }

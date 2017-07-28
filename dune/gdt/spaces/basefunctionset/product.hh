@@ -217,12 +217,12 @@ public:
     return 0;
   }
 
-  size_t size() const override final
+  virtual size_t size() const override final
   {
     return internal::DynamicTupleGetter<0>::sumSize(basefunctionsets_);
   }
 
-  size_t order() const override final
+  virtual size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     size_t ret = 0;
     internal::DynamicTupleGetter<0>::order(basefunctionsets_, ret);
