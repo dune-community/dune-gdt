@@ -216,7 +216,7 @@ public:
 
   void evaluate(const DomainType& xx,
                 std::vector<RangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(ret.size() >= backend_->size());
     backend_->evaluateFunction(xx, ret);
@@ -226,7 +226,7 @@ public:
 
   void jacobian(const DomainType& xx,
                 std::vector<JacobianRangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(ret.size() >= backend_->size());
     backend_->evaluateJacobian(xx, ret);
@@ -331,7 +331,7 @@ public:
 
   void evaluate(const DomainType& xx,
                 std::vector<RangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(ret.size() >= size());
     const size_t size_of_factor_basefunctionset = backend_->size();
@@ -350,7 +350,7 @@ public:
 
   void jacobian(const DomainType& xx,
                 std::vector<JacobianRangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(ret.size() >= backend_->size());
     const size_t size_of_factor_basefunctionset = backend_->size();
@@ -483,7 +483,7 @@ public:
 
   void evaluate(const DomainType& xx,
                 std::vector<RangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(lfs_);
     assert(backend_);
@@ -503,7 +503,7 @@ public:
 
   void jacobian(const DomainType& xx,
                 std::vector<JacobianRangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(lfs_);
     assert(backend_);

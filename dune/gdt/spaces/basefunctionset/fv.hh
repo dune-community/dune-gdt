@@ -104,14 +104,14 @@ public:
     return 1;
   }
 
-  virtual size_t order(const XT::Common::Parameter&) const override final
+  virtual size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     return 0;
   }
 
   void evaluate(const DomainType& /*xx*/,
                 std::vector<RangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(ret.size() >= 0);
     ret[0] = 1.0;
@@ -121,7 +121,7 @@ public:
 
   void jacobian(const DomainType& /*xx*/,
                 std::vector<JacobianRangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(ret.size() >= 0);
     ret[0] *= 0.0;
@@ -201,7 +201,7 @@ public:
 
   void evaluate(const DomainType& /*xx*/,
                 std::vector<RangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(ret.size() >= dimRange);
     for (size_t ii = 0; ii < dimRange; ++ii) {
@@ -214,7 +214,7 @@ public:
 
   void jacobian(const DomainType& /*xx*/,
                 std::vector<JacobianRangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = XT::Common::Parameter()) const override final
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(ret.size() >= dimRange);
     for (size_t ii = 0; ii < dimRange; ++ii)
