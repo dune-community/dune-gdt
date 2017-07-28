@@ -109,9 +109,9 @@ public:
     return *localVector_;
   }
 
-  size_t order() const override
+  virtual size_t order(const XT::Common::Parameter& mu = {}) const override
   {
-    return base_->order();
+    return base_->order(mu);
   }
 
   void evaluate(const DomainType& xx,
