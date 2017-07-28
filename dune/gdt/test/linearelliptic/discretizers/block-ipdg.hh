@@ -101,9 +101,9 @@ public:
           LocalDiscretizer::discretize(grid_provider, local_problem, XT::Common::numeric_cast<int>(ss)));
 
     logger.info() << "Creating space... " << std::endl;
-    std::vector<std::shared_ptr<LocalSpaceType>> local_spaces(dd_grid.size());
+    std::vector<std::shared_ptr<const LocalSpaceType>> local_spaces(dd_grid.size());
     for (size_t ss = 0; ss < dd_grid.size(); ++ss)
-      local_spaces[ss] = std::make_shared<LocalSpaceType>(local_discretizations[ss].test_space());
+      local_spaces[ss] = std::make_shared<const LocalSpaceType>(local_discretizations[ss].test_space());
     SpaceType space(dd_grid, local_spaces);
 
     logger.info() << "Preparing container..." << std::endl;
