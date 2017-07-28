@@ -132,6 +132,7 @@ private:
       OperatorTimeStepperType;
   typedef typename TimeStepperFactory<RhsOperatorType, DiscreteFunctionType, rhs_time_stepper_method>::TimeStepperType
       RhsOperatorTimeStepperType;
+
   //  typedef
   //      typename Dune::GDT::TimeStepperSplittingFactory<RhsOperatorTimeStepperType,
   //                                                      OperatorTimeStepperType,
@@ -153,10 +154,10 @@ public:
   /// \name Required by FvDiscretizationInterface.
   /// \{
 
-  //  const ProblemType& problem() const
-  //  {
-  //    return test_case_.problem();
-  //  }
+  const ProblemType& problem() const
+  {
+    return test_case_.problem();
+  }
 
   const SpaceType& space() const
   {

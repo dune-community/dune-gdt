@@ -13,14 +13,22 @@
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_SHALLOWWATER_HH
 
 #include <memory>
+#include <vector>
+#include <string>
 
-#include <dune/xt/functions/expression.hh>
-#include <dune/xt/functions/checkerboard.hh>
+#include <dune/xt/common/parameter.hh>
+
 #include <dune/xt/grid/gridprovider/cube.hh>
 
-#include <dune/gdt/test/instationary-eocstudy.hh>
+#include <dune/xt/functions/affine.hh>
+#include <dune/xt/functions/checkerboard.hh>
+#include <dune/xt/functions/lambda/global-flux-function.hh>
+#include <dune/xt/functions/lambda/global-function.hh>
 
-#include "default.hh"
+#include <dune/gdt/test/instationary-testcase.hh>
+#include <dune/gdt/discretefunction/default.hh>
+
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -28,174 +36,167 @@ namespace Hyperbolic {
 namespace Problems {
 
 
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-class ShallowWater : public Default<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>
+template <class E, class D, class U>
+class ShallowWater : public ProblemBase<E, D, 1, U, typename U::RangeFieldType, 2>
 {
-  typedef Default<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim> BaseType;
-  typedef ShallowWater<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim> ThisType;
+  typedef ShallowWater<E, D, U> ThisType;
+  typedef ProblemBase<E, D, 1, U, typename U::RangeFieldType, 2> BaseType;
 
 public:
+  static const bool linear = false;
+  using typename BaseType::DomainType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
+  using typename BaseType::StateRangeType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
-  using typename BaseType::DefaultFluxType;
-  using typename BaseType::DefaultInitialValueType;
-  using typename BaseType::DefaultBoundaryValueType;
-  using typename BaseType::DefaultRHSType;
+
+  typedef typename XT::Functions::GlobalLambdaFluxFunction<U, 0, RangeFieldType, dimRange, dimDomain> ActualFluxType;
+  typedef typename XT::Functions::AffineFluxFunction<E, D, dimDomain, U, RangeFieldType, dimRange, 1> ActualRhsType;
+  typedef XT::Functions::GlobalLambdaFunction<E, D, dimDomain, RangeFieldType, dimRange, 1> ActualBoundaryValueType;
+  typedef XT::Functions::CheckerboardFunction<E, D, dimDomain, RangeFieldType, dimRange, 1, ActualBoundaryValueType>
+      ActualInitialValueType;
+
+  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
 
   using typename BaseType::FluxType;
-  using typename BaseType::RHSType;
+  using typename BaseType::RhsType;
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
-  using typename BaseType::ConfigType;
-  using typename BaseType::RangeFieldType;
 
-  static std::string static_id()
+  static XT::Common::Configuration default_grid_cfg()
   {
-    return BaseType::static_id() + ".shallowwater";
-  }
-
-  std::string type() const override
-  {
-    return BaseType::type() + ".shallowwater";
-  }
-
-  static std::string short_id()
-  {
-    return "Shallowwater";
-  }
-
-  static ConfigType default_grid_config()
-  {
-    ConfigType grid_config;
-    grid_config["type"] = "provider.cube";
+    XT::Common::Configuration grid_config;
+    grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
     grid_config["lower_left"] = "[0.0]";
     grid_config["upper_right"] = "[10.0]";
     grid_config["num_elements"] = "[10]";
+    grid_config["overlap_size"] = "[1]";
     return grid_config;
   }
 
-  static ConfigType default_boundary_info_config()
-  {
-    ConfigType boundary_config;
-    boundary_config["type"] = "periodic";
-    return boundary_config;
-  }
+  using BaseType::default_boundary_cfg;
 
-  static ConfigType default_config(const std::string sub_name = "")
-  {
-    ConfigType config;
-    config.add(default_grid_config(), "grid");
-    config.add(default_boundary_info_config(), "boundary_info");
-    ConfigType flux_config;
-    flux_config["variable"] = "u";
-    flux_config["expression"] = "[u[1] u[1]*u[1]/u[0]+0.5*u[0]*u[0]]";
-    flux_config["order"] = "2";
-    flux_config["gradient.0"] = "[0 1; -1.0*u[1]*u[1]/(u[0]*u[0])+u[0] 2*u[1]/u[0]]";
-    config.add(flux_config, "flux");
-    ConfigType rhs_config;
-    rhs_config["lower_left"] = "[0.0]";
-    rhs_config["upper_right"] = "[10.0]";
-    rhs_config["num_elements"] = "[1]";
-    rhs_config["variable"] = "u";
-    rhs_config["values.0"] = "[0 0]";
-    rhs_config["name"] = static_id();
-    config.add(rhs_config, "rhs");
-    ConfigType initial_value_config;
-    initial_value_config["lower_left"] = "[0.0]";
-    initial_value_config["upper_right"] = "[10.0]";
-    initial_value_config["num_elements"] = "[5]";
-    initial_value_config["variable"] = "x";
-    initial_value_config["values.0"] = "[1 0]";
-    initial_value_config["values.1"] = "[1 0]";
-    initial_value_config["values.2"] = "[1+((x[0]-4)^2)*((x[0]-6)^2)*exp(2-((x[0]-4)^2)-((x[0]-6)^2)) 0]";
-    initial_value_config["values.3"] = "[1 0]";
-    initial_value_config["values.4"] = "[1 0]";
-    initial_value_config["order"] = "10";
-    config.add(initial_value_config, "initial_values");
-    ConfigType boundary_value_config = DefaultBoundaryValueType::default_config();
-    boundary_value_config["type"] = DefaultBoundaryValueType::static_id();
-    boundary_value_config["variable"] = "x";
-    boundary_value_config["expression"] = "[0 0 0]";
-    boundary_value_config["order"] = "0";
-    config.add(boundary_value_config, "boundary_values");
-    if (sub_name.empty())
-      return config;
-    else {
-      ConfigType tmp;
-      tmp.add(config, sub_name);
-      return tmp;
-    }
-  } // ... default_config(...)
-
-  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
-                                          const std::string sub_name = static_id())
-  {
-    const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
-    const std::shared_ptr<const DefaultFluxType> flux(DefaultFluxType::create(config.sub("flux")));
-    const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
-    const std::shared_ptr<const DefaultInitialValueType> initial_values(
-        DefaultInitialValueType::create(config.sub("initial_values")));
-    const ConfigType grid_config = config.sub("grid");
-    const ConfigType boundary_info = config.sub("boundary_info");
-    const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
-        DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
-  } // ... create(...)
-
-  ShallowWater(const std::shared_ptr<const FluxType> flux_in,
-               const std::shared_ptr<const RHSType> rhs_in,
-               const std::shared_ptr<const InitialValueType> initial_values_in,
-               const ConfigType& grid_config_in,
-               const ConfigType& boundary_info_in,
-               const std::shared_ptr<const DefaultBoundaryValueType> boundary_values_in)
-    : BaseType(flux_in, rhs_in, initial_values_in, grid_config_in, boundary_info_in, boundary_values_in)
+  ShallowWater(const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+               const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+    : BaseType(create_flux(),
+               create_rhs(),
+               create_initial_values(grid_cfg),
+               create_boundary_values(),
+               grid_cfg,
+               boundary_cfg,
+               0.4,
+               3.,
+               false)
   {
   }
 
-  virtual double CFL() const override
+  static std::string static_id()
   {
-    return 0.4;
+    return "ShallowWater";
   }
 
-  virtual double t_end() const override
+  static FluxType* create_flux()
   {
-    return 3;
+    return new ActualFluxType(
+        [](const DomainType&, const StateRangeType& u, const XT::Common::Parameter&) {
+          typename FluxType::RangeType ret;
+          ret[0] = u[1];
+          ret[1] = std::pow(u[1], 2) / u[0] + 0.5 * std::pow(u[0], 2);
+          return ret;
+        },
+        {},
+        "shallow water flux",
+        [](const XT::Common::Parameter&) { return 10; },
+        [](const DomainType&, const StateRangeType&, const XT::Common::Parameter&) {
+          return typename ActualFluxType::PartialXRangeType(0);
+        },
+        [](const DomainType&, const StateRangeType& u, const XT::Common::Parameter&) {
+          typename ActualFluxType::PartialURangeType ret;
+          ret[0][0] = 0;
+          ret[0][1] = 1;
+          ret[1][0] = -std::pow(u[1] / u[0], 2) + u[0];
+          ret[1][1] = 2. * u[1] / u[0];
+          return ret;
+        });
   }
-};
+
+  static RhsType* create_rhs()
+  {
+    return new ActualRhsType(FieldVector<MatrixType, 1>(MatrixType(0.)));
+  } // ... create_rhs(...)
+
+  static InitialValueType* create_initial_values(const XT::Common::Configuration& grid_cfg)
+  {
+    typedef typename ActualInitialValueType::LocalizableFunctionType LambdaFunctionType;
+    const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg["lower_left"]);
+    const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg["upper_right"]);
+    const size_t num_regions = 5;
+    FieldVector<size_t, dimDomain> num_segments(5);
+
+    std::vector<LambdaFunctionType> initial_vals(num_regions,
+                                                 LambdaFunctionType(
+                                                     [](const DomainType& x, const XT::Common::Parameter&) {
+                                                       return RangeType{1., 0.};
+                                                     },
+                                                     0));
+
+    initial_vals[2] = LambdaFunctionType(
+        [=](const DomainType& x, const XT::Common::Parameter&) {
+          return RangeType{1
+                               + std::pow(x[0] - 4, 2) * std::pow(x[0] - 6, 2)
+                                     * std::exp(2 - std::pow(x[0] - 4, 2) + std::pow(x[0] - 6, 2)),
+                           0.};
+        },
+        10);
+    return new ActualInitialValueType(lower_left, upper_right, num_segments, initial_vals, "initial_values");
+  } // ... create_initial_values()
+
+  virtual BoundaryValueType* create_boundary_values()
+  {
+    return new ActualBoundaryValueType([=](const DomainType&, const XT::Common::Parameter&) { return RangeType(0); },
+                                       0);
+  } // ... create_boundary_values()
+}; // class ShallowWater<...>
 
 
 } // namespace Problems
 
+
 // Test case for shallow water equations, see LeVeque, Finite Volume Methods for Hyperbolic Problems, 2002, Example 13.1
 template <class G, class R = double>
 class ShallowWaterTestCase
-    : public Dune::GDT::Test::InstationaryTestCase<G,
-                                                   Problems::ShallowWater<typename G::template Codim<0>::Entity,
-                                                                          typename G::ctype,
-                                                                          G::dimension,
-                                                                          R,
-                                                                          2>>
+    : public Dune::GDT::Test::
+          InstationaryTestCase<G,
+                               Problems::ShallowWater<typename G::template Codim<0>::Entity,
+                                                      typename G::ctype,
+                                                      typename GDT::DiscreteFunctionProvider<G,
+                                                                                             GDT::SpaceType::product_fv,
+                                                                                             0,
+                                                                                             R,
+                                                                                             2,
+                                                                                             1,
+                                                                                             GDT::Backends::gdt>::type>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
+  static const size_t d = G::dimension;
 
 public:
-  static const size_t d = G::dimension;
   static const size_t dimRange = 2;
   static const size_t dimRangeCols = 1;
-  typedef typename Problems::ShallowWater<E, D, d, R, 2> ProblemType;
+  typedef typename GDT::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, 2, 1, GDT::Backends::gdt>::type U;
+  typedef typename Problems::ShallowWater<E, D, U> ProblemType;
 
 private:
   typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;
-  using typename BaseType::SolutionType;
 
-  ShallowWaterTestCase(const size_t num_refs = 2, const double divide_t_end_by = 1.0)
-    : BaseType(
-          divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(), num_refs)
-    , problem_(*(ProblemType::create(ProblemType::default_config())))
+  ShallowWaterTestCase(const size_t num_refs = (d == 1 ? 4 : 1), const double divide_t_end_by = 1.0)
+    : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
   {
   }
 

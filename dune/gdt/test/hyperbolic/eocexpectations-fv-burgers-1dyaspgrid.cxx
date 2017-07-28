@@ -9,21 +9,25 @@
 //   Rene Milk       (2016 - 2017)
 //   Tobias Leibner  (2016)
 
-#include <config.h>
+#include "config.h"
 #include "eocexpectations-fv-burgers-1dyaspgrid.hh"
+
 namespace Dune {
 namespace GDT {
 namespace Test {
+
 
 std::vector<double> HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1, double, 1>,
                                               Hyperbolic::ChooseDiscretizer::fv,
                                               1,
                                               NumericalFluxes::godunov,
+                                              TimeStepperMethods::explicit_euler,
                                               TimeStepperMethods::explicit_euler>::
     results(const HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1, double, 1>,
                                             Hyperbolic::ChooseDiscretizer::fv,
                                             1,
                                             NumericalFluxes::godunov,
+                                            TimeStepperMethods::explicit_euler,
                                             TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
             const std::string type)
 {
@@ -47,11 +51,13 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1,
                                               Hyperbolic::ChooseDiscretizer::fv,
                                               1,
                                               NumericalFluxes::godunov,
+                                              TimeStepperMethods::dormand_prince,
                                               TimeStepperMethods::dormand_prince>::
     results(const HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1, double, 1>,
                                             Hyperbolic::ChooseDiscretizer::fv,
                                             1,
                                             NumericalFluxes::godunov,
+                                            TimeStepperMethods::dormand_prince,
                                             TimeStepperMethods::dormand_prince>::TestCaseType& test_case,
             const std::string type)
 {
@@ -75,11 +81,13 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1,
                                               Hyperbolic::ChooseDiscretizer::fv,
                                               1,
                                               NumericalFluxes::laxfriedrichs,
+                                              TimeStepperMethods::explicit_euler,
                                               TimeStepperMethods::explicit_euler>::
     results(const HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1, double, 1>,
                                             Hyperbolic::ChooseDiscretizer::fv,
                                             1,
                                             NumericalFluxes::laxfriedrichs,
+                                            TimeStepperMethods::explicit_euler,
                                             TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
             const std::string type)
 {

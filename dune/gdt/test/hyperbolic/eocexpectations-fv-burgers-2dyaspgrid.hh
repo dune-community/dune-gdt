@@ -12,15 +12,8 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_FV_BURGERS_2DYASPGRID_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_FV_BURGERS_2DYASPGRID_HH
 
-#include "config.h"
-
-#include <dune/grid/yaspgrid.hh>
-
-#include <dune/gdt/test/hyperbolic/discretizers/fv.hh>
-
 #include "problems/burgers.hh"
 #include "eocexpectations.hh"
-
 
 namespace Dune {
 namespace GDT {
@@ -32,6 +25,7 @@ class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp2, double, 1>,
                                 Hyperbolic::ChooseDiscretizer::fv,
                                 2,
                                 NumericalFluxes::godunov,
+                                TimeStepperMethods::explicit_euler,
                                 TimeStepperMethods::explicit_euler> : public internal::HyperbolicEocExpectationsBase<2>
 {
   typedef Hyperbolic::BurgersTestCase<Yasp2, double, 1> TestCaseType;

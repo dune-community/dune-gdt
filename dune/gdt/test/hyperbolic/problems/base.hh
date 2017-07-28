@@ -77,6 +77,24 @@ public:
   {
   }
 
+  static XT::Common::Configuration default_grid_cfg()
+  {
+    XT::Common::Configuration grid_config;
+    grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
+    grid_config["lower_left"] = "[0.0 0.0 0.0]";
+    grid_config["upper_right"] = "[1.0 1.0 1.0]";
+    grid_config["num_elements"] = "[8 8 8]";
+    grid_config["overlap_size"] = "[1 1 1]";
+    return grid_config;
+  }
+
+  static XT::Common::Configuration default_boundary_cfg()
+  {
+    XT::Common::Configuration boundary_config;
+    boundary_config["type"] = "periodic";
+    return boundary_config;
+  }
+
   virtual const FluxType& flux() const override
   {
     return flux_.access();

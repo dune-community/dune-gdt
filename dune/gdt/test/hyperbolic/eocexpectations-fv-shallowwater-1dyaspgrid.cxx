@@ -9,8 +9,9 @@
 //   Rene Milk       (2016 - 2017)
 //   Tobias Leibner  (2016)
 
-#include <config.h>
+#include "config.h"
 #include "eocexpectations-fv-shallowwater-1dyaspgrid.hh"
+
 namespace Dune {
 namespace GDT {
 namespace Test {
@@ -20,11 +21,13 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::ShallowWaterTestCase<Y
                                               Hyperbolic::ChooseDiscretizer::fv,
                                               1,
                                               NumericalFluxes::godunov,
+                                              TimeStepperMethods::explicit_euler,
                                               TimeStepperMethods::explicit_euler>::
     results(const HyperbolicEocExpectations<Hyperbolic::ShallowWaterTestCase<Yasp1, double>,
                                             Hyperbolic::ChooseDiscretizer::fv,
                                             1,
                                             NumericalFluxes::godunov,
+                                            TimeStepperMethods::explicit_euler,
                                             TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
             const std::string type)
 {
@@ -43,6 +46,7 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::ShallowWaterTestCase<Y
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
 }
+
 
 } // namespace Test
 } // namespace GDT

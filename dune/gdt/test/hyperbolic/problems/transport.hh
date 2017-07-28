@@ -21,7 +21,6 @@
 #include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/xt/functions/affine.hh>
-#include <dune/xt/functions/checkerboard.hh>
 #include <dune/xt/functions/composition.hh>
 #include <dune/xt/functions/lambda/global-function.hh>
 #include <dune/xt/functions/lambda/global-flux-function.hh>
@@ -264,7 +263,7 @@ public:
   typedef typename XT::Functions::AffineFluxFunction<E, D, d, U, R, r, d> ActualFluxType;
   typedef typename XT::Functions::AffineFluxFunction<E, D, d, U, R, r, 1> ActualRhsType;
   typedef XT::Functions::GlobalLambdaFunction<E, D, d, R, r, 1> ActualBoundaryValueType;
-  typedef XT::Functions::CheckerboardFunction<E, D, d, R, r, 1, ActualBoundaryValueType> ActualInitialValueType;
+  typedef ActualBoundaryValueType ActualInitialValueType;
 
   typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
 
@@ -273,8 +272,8 @@ public:
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
 
-  Transport(const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-            const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+  Transport(const XT::Common::Configuration& grid_cfg = BaseType::default_grid_cfg(),
+            const XT::Common::Configuration& boundary_cfg = BaseType::default_boundary_cfg())
     : BaseType(create_flux(),
                create_rhs(),
                create_initial_values(grid_cfg),
@@ -282,7 +281,7 @@ public:
                grid_cfg,
                boundary_cfg,
                dimDomain == 1 ? 0.5 : (dimDomain == 2 ? 0.3 : 0.15),
-               1,
+               1.,
                false)
   {
   }
@@ -290,24 +289,6 @@ public:
   static std::string static_id()
   {
     return "Transport";
-  }
-
-  static XT::Common::Configuration default_grid_cfg()
-  {
-    XT::Common::Configuration grid_config;
-    grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
-    grid_config["lower_left"] = "[0.0 0.0 0.0]";
-    grid_config["upper_right"] = "[1.0 1.0 1.0]";
-    grid_config["num_elements"] = "[8 8 8]";
-    grid_config["overlap_size"] = "[1 1 1]";
-    return grid_config;
-  }
-
-  static XT::Common::Configuration default_boundary_cfg()
-  {
-    XT::Common::Configuration boundary_config;
-    boundary_config["type"] = "periodic";
-    return boundary_config;
   }
 
   static FluxType* create_flux()
@@ -328,27 +309,22 @@ public:
     return new ActualRhsType(FieldVector<MatrixType, 1>(MatrixType(0.)));
   } // ... create_rhs(...)
 
-  static InitialValueType* create_initial_values(const XT::Common::Configuration& grid_cfg)
+  static InitialValueType* create_initial_values(const XT::Common::Configuration& /*grid_cfg*/)
   {
-    typedef typename ActualInitialValueType::LocalizableFunctionType LambdaFunctionType;
-    const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg["lower_left"]);
-    const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg["upper_right"]);
-    FieldVector<size_t, dimDomain> num_segments(1);
-    std::vector<LambdaFunctionType> initial_vals(1,
-                                                 {[&](const DomainType& x, const XT::Common::Parameter&) {
-                                                    RangeType ret;
-                                                    initial_vals_helper<dimDomain>::evaluate(x, ret);
-                                                    return ret;
-                                                  },
-                                                  50});
-    return new ActualInitialValueType(lower_left, upper_right, num_segments, initial_vals, "initial_values");
+    return new ActualInitialValueType(
+        [=](const DomainType& x, const XT::Common::Parameter&) {
+          RangeType ret;
+          initial_vals_helper<dimDomain>::evaluate(x, ret);
+          return ret;
+        },
+        50);
   } // ... create_initial_values()
 
   virtual BoundaryValueType* create_boundary_values()
   {
     return new ActualBoundaryValueType([=](const DomainType&, const XT::Common::Parameter&) { return 0; }, 0);
   } // ... create_boundary_values()
-};
+}; // class Transport<...>
 
 
 } // namespace Problems
@@ -391,7 +367,6 @@ public:
 
   TransportTestCase(const size_t num_refs = (d == 1 ? 4 : 2), const double divide_t_end_by = 1.0)
     : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
-    , reference_grid_view_(BaseType::reference_grid_view())
   {
     typedef TransportInitialValues<E, D, d, R, r, 1> LocalizableInitialValueType;
     const LocalizableInitialValueType initial_values;
@@ -434,7 +409,7 @@ public:
         << "|+--------------------------------------------------------------------+|\n"
         << domainstring
         << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end())
-               + "]                                                   ||\n"
+               + "]                                                     ||\n"
         << "||  flux = u[0]                                                       ||\n"
         << "||  rhs = 0                                                           ||\n"
         << "||  reference solution: exact solution                                ||\n"
@@ -443,7 +418,6 @@ public:
   }
 
 private:
-  const LevelGridViewType reference_grid_view_;
   const ProblemType problem_;
   std::shared_ptr<const SolutionType> exact_solution_;
 }; // class TransportTestCase

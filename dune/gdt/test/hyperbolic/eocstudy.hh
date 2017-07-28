@@ -41,7 +41,7 @@ public:
   // a perfect forwarding ctor did not do the job here, since it was not able to match the std::initializer_list: {"L2"}
   HyperbolicEocStudy(TestCaseType& test_case,
                      const std::vector<std::string> only_these_norms = {},
-                     const std::string visualize_prefix = "transport_test")
+                     const std::string visualize_prefix = TestCaseType::ProblemType::static_id())
     : BaseType(test_case, only_these_norms, visualize_prefix)
   {
   }

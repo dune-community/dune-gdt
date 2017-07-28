@@ -15,6 +15,8 @@
 #include <tuple>
 #include <memory>
 
+#include <dune/xt/common/memory.hh>
+
 #include <dune/xt/functions/interfaces.hh>
 
 #include <dune/gdt/operators/fv/eigensolver.hh>
