@@ -49,7 +49,7 @@
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/planesource.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/pointsource.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/linesource.hh>
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/lebedevquadrature.hh>
+#include <dune/gdt/lebedevquadrature.hh>
 #include <dune/gdt/test/hyperbolic/problems/transport.hh>
 
 //! struct to be used as comparison function e.g. in a std::map<FieldVector<...>, ..., FieldVectorLess>
