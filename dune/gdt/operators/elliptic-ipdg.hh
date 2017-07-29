@@ -75,12 +75,11 @@ public:
             class... Args>
   explicit EllipticIpdgMatrixOperator(const XT::Grid::BoundaryInfo<IntersectionType>& boundary_info,
                                       const DiffusionImp& diffusion,
-                                      const XT::Common::Parameter& param,
                                       Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , local_volume_operator_(diffusion, param)
-    , local_coupling_operator_(diffusion, param)
-    , local_boundary_operator_(diffusion, param)
+    , local_volume_operator_(diffusion)
+    , local_coupling_operator_(diffusion)
+    , local_boundary_operator_(diffusion)
   {
     this->append(local_volume_operator_);
     this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
@@ -95,12 +94,11 @@ public:
   explicit EllipticIpdgMatrixOperator(const size_t over_integrate,
                                       const XT::Grid::BoundaryInfo<IntersectionType>& boundary_info,
                                       const DiffusionImp& diffusion,
-                                      const XT::Common::Parameter& param,
                                       Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , local_volume_operator_(over_integrate, diffusion, param)
-    , local_coupling_operator_(over_integrate, diffusion, param)
-    , local_boundary_operator_(over_integrate, diffusion, param)
+    , local_volume_operator_(over_integrate, diffusion)
+    , local_coupling_operator_(over_integrate, diffusion)
+    , local_boundary_operator_(over_integrate, diffusion)
   {
     this->append(local_volume_operator_);
     this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
@@ -120,12 +118,11 @@ public:
   explicit EllipticIpdgMatrixOperator(const XT::Grid::BoundaryInfo<IntersectionType>& boundary_info,
                                       const DiffusionFactorImp& diffusion_factor,
                                       const DiffusionTensorImp& diffusion_tensor,
-                                      const XT::Common::Parameter& param,
                                       Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , local_volume_operator_(diffusion_factor, diffusion_tensor, param)
-    , local_coupling_operator_(diffusion_factor, diffusion_tensor, param)
-    , local_boundary_operator_(diffusion_factor, diffusion_tensor, param)
+    , local_volume_operator_(diffusion_factor, diffusion_tensor)
+    , local_coupling_operator_(diffusion_factor, diffusion_tensor)
+    , local_boundary_operator_(diffusion_factor, diffusion_tensor)
   {
     this->append(local_volume_operator_);
     this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
@@ -142,12 +139,11 @@ public:
                                       const XT::Grid::BoundaryInfo<IntersectionType>& boundary_info,
                                       const DiffusionFactorImp& diffusion_factor,
                                       const DiffusionTensorImp& diffusion_tensor,
-                                      const XT::Common::Parameter& param = {},
                                       Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , local_volume_operator_(over_integrate, diffusion_factor, diffusion_tensor, param)
-    , local_coupling_operator_(over_integrate, diffusion_factor, diffusion_tensor, param)
-    , local_boundary_operator_(over_integrate, diffusion_factor, diffusion_tensor, param)
+    , local_volume_operator_(over_integrate, diffusion_factor, diffusion_tensor)
+    , local_coupling_operator_(over_integrate, diffusion_factor, diffusion_tensor)
+    , local_boundary_operator_(over_integrate, diffusion_factor, diffusion_tensor)
   {
     this->append(local_volume_operator_);
     this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
