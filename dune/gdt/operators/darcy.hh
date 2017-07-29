@@ -74,7 +74,7 @@ public:
 template <class GridLayerImp, class FunctionImp>
 class DarcyOperator : public OperatorInterface<internal::DarcyOperatorTraits<GridLayerImp, FunctionImp>>
 {
-  typedef OperatorInterface<internal::DarcyOperatorTraits<GridViewImp, FunctionImp>> BaseType;
+  typedef OperatorInterface<internal::DarcyOperatorTraits<GridLayerImp, FunctionImp>> BaseType;
 
 public:
   typedef internal::DarcyOperatorTraits<GridLayerImp, FunctionImp> Traits;

@@ -52,7 +52,7 @@ class OperatorInterface : public XT::CRTPInterface<OperatorInterface<Traits>, Tr
 public:
   typedef typename Traits::derived_type derived_type;
   typedef typename Traits::FieldType FieldType;
-  //  typedef typename Traits::JacobianType JacobianType;
+  typedef typename Traits::JacobianType JacobianType;
 
   /// \name Methods that have to be implemented by any derived class
   /// \{
