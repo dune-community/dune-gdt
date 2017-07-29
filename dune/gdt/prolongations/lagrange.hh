@@ -37,6 +37,7 @@ class LagrangeProlongationOperatorTraits
 {
 public:
   typedef LagrangeProlongationOperator<GridLayerImp, FieldImp> derived_type;
+  typedef NoJacobian JacobianType;
   typedef FieldImp FieldType;
 };
 

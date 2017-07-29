@@ -98,6 +98,7 @@ class LagrangeProjectionOperatorTraits
 {
 public:
   typedef LagrangeProjectionOperator<GridLayerImp, FieldImp> derived_type;
+  typedef NoJacobian JacobianType;
   typedef FieldImp FieldType;
 };
 

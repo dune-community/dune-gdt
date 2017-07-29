@@ -52,6 +52,7 @@ class OswaldInterpolationOperatorTraits
 public:
   typedef OswaldInterpolationOperator<GridLayerImp, FieldImp> derived_type;
   typedef GridLayerImp GridLayerType;
+  typedef NoJacobian JacobianType;
   typedef FieldImp FieldType;
 };
 

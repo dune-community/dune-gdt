@@ -306,6 +306,7 @@ class WeightedL2OperatorTraits
 {
 public:
   typedef WeightedL2Operator<WeightFunctionType, GridLayerType, Field> derived_type;
+  typedef NoJacobian JacobianType;
   typedef Field FieldType;
 };
 

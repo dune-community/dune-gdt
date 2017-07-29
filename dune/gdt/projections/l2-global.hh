@@ -42,6 +42,7 @@ class L2GlobalProjectionOperatorTraits
 {
 public:
   typedef L2GlobalProjectionOperator<GridLayerImp, FieldImp> derived_type;
+  typedef NoJacobian JacobianType;
   typedef FieldImp FieldType;
 };
 
