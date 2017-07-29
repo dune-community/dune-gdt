@@ -68,7 +68,9 @@ public:
   {
   }
 
-  L2GlobalProlongationLocalizableOperator(GridLayerType grd_vw, const SourceType& src, RangeType& rng,
+  L2GlobalProlongationLocalizableOperator(GridLayerType grd_vw,
+                                          const SourceType& src,
+                                          RangeType& rng,
                                           const XT::Common::Parameter& param = {})
     : L2GlobalProlongationLocalizableOperator(0, grd_vw, src, rng, param)
   {
@@ -110,7 +112,7 @@ typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value && is_space<Sou
         const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
         DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
         const size_t over_integrate = 0,
-    const XT::Common::Parameter& param = {})
+        const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::
       make_unique<L2GlobalProlongationLocalizableOperator<GridLayerType,
@@ -135,7 +137,8 @@ make_global_l2_prolongation_localizable_operator(const ConstDiscreteFunction<Sou
   return Dune::XT::Common::make_unique<L2GlobalProlongationLocalizableOperator<
       typename RangeSpaceType::GridLayerType,
       ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
-      DiscreteFunction<RangeSpaceType, RangeVectorType>>>(over_integrate, range.space().grid_layer(), source, range, param);
+      DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
+      over_integrate, range.space().grid_layer(), source, range, param);
 } // ... make_global_l2_prolongation_localizable_operator(...)
 
 
@@ -169,7 +172,9 @@ public:
   }
 
   template <class SS, class SV, class RS, class RV>
-  void apply(const ConstDiscreteFunction<SS, SV>& source, DiscreteFunction<RS, RV>& range, const XT::Common::Parameter& param = {}) const
+  void apply(const ConstDiscreteFunction<SS, SV>& source,
+             DiscreteFunction<RS, RV>& range,
+             const XT::Common::Parameter& param = {}) const
   {
     L2GlobalProlongationLocalizableOperator<GridLayerType, ConstDiscreteFunction<SS, SV>, DiscreteFunction<RS, RV>> op(
         over_integrate_, grid_layer_, source, range, param);
@@ -177,7 +182,8 @@ public:
   }
 
   template <class RangeType, class SourceType>
-  FieldType apply2(const RangeType& /*range*/, const SourceType& /*source*/, const XT::Common::Parameter& /*param*/ = {}) const
+  FieldType
+  apply2(const RangeType& /*range*/, const SourceType& /*source*/, const XT::Common::Parameter& /*param*/ = {}) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }

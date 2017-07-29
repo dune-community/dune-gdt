@@ -143,13 +143,16 @@ public:
   }
 
   template <class SS, class SV, class RS, class RV>
-  void apply(const ConstDiscreteFunction<SS, SV>& source, DiscreteFunction<RS, RV>& range, const XT::Common::Parameter& param = {}) const
+  void apply(const ConstDiscreteFunction<SS, SV>& source,
+             DiscreteFunction<RS, RV>& range,
+             const XT::Common::Parameter& param = {}) const
   {
     redirect<RS::continuous>::apply(grid_layer_, source, range, over_integrate_, param);
   }
 
   template <class RangeType, class SourceType>
-  FieldType apply2(const RangeType& /*range*/, const SourceType& /*source*/, const XT::Common::Parameter& /*param*/ = {}) const
+  FieldType
+  apply2(const RangeType& /*range*/, const SourceType& /*source*/, const XT::Common::Parameter& /*param*/ = {}) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
@@ -176,9 +179,14 @@ private:
   struct redirect
   {
     template <class SourceType, class RangeType>
-    static void apply(const GridLayerType& grd_vw, const SourceType& src, RangeType& rng, const size_t over_integrate, const XT::Common::Parameter& param)
+    static void apply(const GridLayerType& grd_vw,
+                      const SourceType& src,
+                      RangeType& rng,
+                      const size_t over_integrate,
+                      const XT::Common::Parameter& param)
     {
-      L2GlobalProlongationLocalizableOperator<GridLayerType, SourceType, RangeType>(over_integrate, grd_vw, src, rng, param)
+      L2GlobalProlongationLocalizableOperator<GridLayerType, SourceType, RangeType>(
+          over_integrate, grd_vw, src, rng, param)
           .apply();
     }
   };
@@ -187,9 +195,14 @@ private:
   struct redirect<false, anything>
   {
     template <class SourceType, class RangeType>
-    static void apply(const GridLayerType& grd_vw, const SourceType& src, RangeType& rng, const size_t over_integrate, const XT::Common::Parameter& param)
+    static void apply(const GridLayerType& grd_vw,
+                      const SourceType& src,
+                      RangeType& rng,
+                      const size_t over_integrate,
+                      const XT::Common::Parameter& param)
     {
-      L2LocalProlongationLocalizableOperator<GridLayerType, SourceType, RangeType>(over_integrate, grd_vw, src, rng, param)
+      L2LocalProlongationLocalizableOperator<GridLayerType, SourceType, RangeType>(
+          over_integrate, grd_vw, src, rng, param)
           .apply();
     }
   };

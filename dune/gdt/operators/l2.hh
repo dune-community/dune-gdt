@@ -396,7 +396,7 @@ public:
   template <class SourceSpaceType, class VectorType, class RangeSpaceType>
   void apply(const DiscreteFunction<SourceSpaceType, VectorType>& source,
              DiscreteFunction<RangeSpaceType, VectorType>& range,
-             const XT::Common::Parameter& param ={}) const
+             const XT::Common::Parameter& param = {}) const
   {
     typedef typename XT::LA::Container<typename VectorType::ScalarType,
                                        VectorType::Traits::sparse_matrix_type>::MatrixType MatrixType;

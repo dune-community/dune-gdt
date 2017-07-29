@@ -36,9 +36,11 @@ class LagrangeProjectionLocalizableOperator : public LocalizableOperatorBase<Gri
   typedef LocalizableOperatorBase<GridLayerImp, SourceImp, RangeImp> BaseType;
 
 public:
-  template <class... Args>
-  explicit LagrangeProjectionLocalizableOperator(const XT::Common::Parameter& param = {}, Args&&... args)
-    : BaseType(std::forward<Args>(args)...)
+  LagrangeProjectionLocalizableOperator(GridLayerImp grd_vw,
+                                        const SourceImp& src,
+                                        RangeImp& rng,
+                                        const XT::Common::Parameter& param = {})
+    : BaseType(grd_vw, src, rng)
     , local_operator_(param)
   {
     this->append(local_operator_);
@@ -64,7 +66,8 @@ typename std::
 {
   return Dune::XT::Common::make_unique<LagrangeProjectionLocalizableOperator<GridLayerType,
                                                                              SourceType,
-                                                                             DiscreteFunction<SpaceType, VectorType>>>(param, grid_layer, source, range);
+                                                                             DiscreteFunction<SpaceType, VectorType>>>(
+      grid_layer, source, range, param);
 }
 
 
@@ -81,8 +84,8 @@ typename std::
 {
   return Dune::XT::Common::make_unique<LagrangeProjectionLocalizableOperator<typename SpaceType::GridLayerType,
                                                                              SourceType,
-                                                                             DiscreteFunction<SpaceType, VectorType>>>(param,
-      range.space().grid_layer(), source, range);
+                                                                             DiscreteFunction<SpaceType, VectorType>>>(
+      range.space().grid_layer(), source, range, param);
 }
 
 
@@ -138,7 +141,8 @@ public:
   }
 
   template <class RangeType, class SourceType>
-  FieldType apply2(const RangeType& /*range*/, const SourceType& /*source*/, const XT::Common::Parameter& param = {}) const
+  FieldType
+  apply2(const RangeType& /*range*/, const SourceType& /*source*/, const XT::Common::Parameter& param = {}) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
@@ -182,9 +186,10 @@ typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value
                         void>::type
 project_lagrange(const GridLayerType& grid_layer,
                  const SourceType& source,
-                 DiscreteFunction<SpaceType, VectorType>& range)
+                 DiscreteFunction<SpaceType, VectorType>& range,
+                 const XT::Common::Parameter& param = {})
 {
-  make_lagrange_projection_operator(grid_layer)->apply(source, range);
+  make_lagrange_projection_operator(grid_layer)->apply(source, range, param);
 }
 
 
@@ -192,9 +197,11 @@ template <class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
                             && XT::LA::is_vector<VectorType>::value,
                         void>::type
-project_lagrange(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range)
+project_lagrange(const SourceType& source,
+                 DiscreteFunction<SpaceType, VectorType>& range,
+                 const XT::Common::Parameter& param = {})
 {
-  make_lagrange_projection_operator(range.space().grid_layer())->apply(source, range);
+  make_lagrange_projection_operator(range.space().grid_layer())->apply(source, range, param);
 }
 
 

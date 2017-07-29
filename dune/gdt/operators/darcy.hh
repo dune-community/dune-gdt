@@ -309,7 +309,7 @@ private:
     } // walk the grid
   } // ... redirect_apply(...)
 
-  template <class R, int d, param>
+  template <class R, int d>
   R compute_value(const FieldVector<R, 1>& function_value,
                   const FieldVector<R, d>& source_gradient,
                   const FieldVector<R, d>& normal) const

@@ -88,8 +88,11 @@ public:
     issue_warning(this->range().space());
   }
 
-  L2GlobalProjectionLocalizableOperator(GridLayerType grd_vw, const SourceType& src, RangeType& rng)
-    : L2GlobalProjectionLocalizableOperator(0, grd_vw, src, rng)
+  L2GlobalProjectionLocalizableOperator(GridLayerType grd_vw,
+                                        const SourceType& src,
+                                        RangeType& rng,
+                                        const XT::Common::Parameter& param = {})
+    : L2GlobalProjectionLocalizableOperator(0, grd_vw, src, rng, param)
   {
   }
 
@@ -227,7 +230,8 @@ public:
   }
 
   template <class RangeType, class SourceType>
-  FieldType apply2(const RangeType& /*range*/, const SourceType& /*source*/, const XT::Common::Parameter& /*param*/ = {}) const
+  FieldType
+  apply2(const RangeType& /*range*/, const SourceType& /*source*/, const XT::Common::Parameter& /*param*/ = {}) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
