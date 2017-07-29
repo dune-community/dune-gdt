@@ -189,7 +189,7 @@ public:
     return backend_;
   }
 
-  size_t size() const override final
+  virtual size_t size() const override final
   {
     return dimRange;
   }

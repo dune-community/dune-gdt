@@ -204,12 +204,12 @@ public:
     return *backend_;
   }
 
-  size_t size() const override final
+  virtual size_t size() const override final
   {
     return backend_->size();
   }
 
-  size_t order() const override final
+  virtual size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     return backend_->order();
   }
@@ -319,12 +319,12 @@ public:
     return *backend_;
   }
 
-  size_t size() const override final
+  virtual size_t size() const override final
   {
     return backend_->size() * dimRange;
   }
 
-  size_t order() const override final
+  virtual size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     return backend_->order();
   }
@@ -471,12 +471,12 @@ public:
     return *backend_;
   }
 
-  size_t size() const override final
+  virtual size_t size() const override final
   {
     return backend_->size();
   }
 
-  size_t order() const override final
+  virtual size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     return backend_->order();
   }
