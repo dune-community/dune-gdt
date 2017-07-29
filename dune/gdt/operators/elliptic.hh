@@ -142,11 +142,12 @@ typename std::
                                           const GridLayerType& grid_layer,
                                           const RangeType& range,
                                           const SourceType& source,
-                                          const size_t over_integrate = 0)
+                                          const size_t over_integrate = 0,
+                                          const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::
       make_unique<EllipticLocalizableProduct<DiffusionType, void, GridLayerType, RangeType, SourceType>>(
-          over_integrate, diffusion, grid_layer, range, source);
+          over_integrate, diffusion, param, grid_layer, range, source);
 }
 
 /**
@@ -168,14 +169,15 @@ make_elliptic_localizable_product(const DiffusionFactorType& diffusion_factor,
                                   const GridLayerType& grid_layer,
                                   const RangeType& range,
                                   const SourceType& source,
-                                  const size_t over_integrate = 0)
+                                  const size_t over_integrate = 0,
+                                  const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::make_unique<EllipticLocalizableProduct<DiffusionFactorType,
                                                                   DiffusionTensorType,
                                                                   GridLayerType,
                                                                   RangeType,
                                                                   SourceType>>(
-      over_integrate, diffusion_factor, diffusion_tensor, grid_layer, range, source);
+      over_integrate, diffusion_factor, diffusion_tensor, param, grid_layer, range, source);
 }
 
 
