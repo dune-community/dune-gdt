@@ -55,6 +55,9 @@ class LocalLagrangeProjectionOperator : public LocalOperatorInterface<internal::
 public:
   typedef internal::LocalLagrangeProjectionOperatorTraits Traits;
 
+  LocalLagrangeProjectionOperator(const XT::Common::Parameter& param = {})
+  {}
+
   /**
    * \brief Applies the Lagrange projection locally.
    */
@@ -70,7 +73,7 @@ public:
     const auto lagrange_points = local_range.space().lagrange_points(entity);
     assert(lagrange_points.size() == size);
     for (size_t ii = 0; ii < size; ++ii)
-      local_DoF_vector.set(ii, local_source->evaluate(lagrange_points[ii]));
+      local_DoF_vector.set(ii, local_source->evaluate(lagrange_points[ii], param_));
   } // ... apply(...)
 
   /**
@@ -95,7 +98,7 @@ public:
       if (std::isinf(local_DoF_vector.get(kk))) { // Assumes that the global DoF vector was set to infinity beforehand,
         // evaluate source function               // which is not the case anymore.
         const auto& lagrange_point = lagrange_points[ii];
-        const auto source_value = local_source->evaluate(lagrange_point);
+        const auto source_value = local_source->evaluate(lagrange_point, param_);
         // set DoFs
         for (size_t jj = 0; jj < r; ++jj, ++kk)
           local_DoF_vector.set(kk, source_value[jj]);
@@ -103,6 +106,9 @@ public:
         kk += r;
     }
   } // ... apply(...)
+
+private:
+  const XT::Common::Parameter param_;
 }; // class LocalLagrangeProjectionOperator
 
 

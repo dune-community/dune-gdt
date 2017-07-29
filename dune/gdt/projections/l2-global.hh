@@ -217,16 +217,17 @@ public:
 
   template <class R, size_t r, size_t rC, class S, class V>
   void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
-             DiscreteFunction<S, V>& range) const
+             DiscreteFunction<S, V>& range,
+             const XT::Common::Parameter& param = {}) const
   {
     typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
     L2GlobalProjectionLocalizableOperator<GridLayerType, SourceType, DiscreteFunction<S, V>> op(
-        over_integrate_, grid_layer_, source, range);
+        over_integrate_, grid_layer_, source, range, param);
     op.apply();
   }
 
   template <class RangeType, class SourceType>
-  FieldType apply2(const RangeType& /*range*/, const SourceType& /*source*/) const
+  FieldType apply2(const RangeType& /*range*/, const SourceType& /*source*/, const XT::Common::Parameter& /*param*/ = {}) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }

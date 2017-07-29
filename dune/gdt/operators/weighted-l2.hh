@@ -332,20 +332,22 @@ public:
 
   template <class SourceSpaceType, class VectorType, class RangeSpaceType>
   void apply(const DiscreteFunction<SourceSpaceType, VectorType>& source,
-             DiscreteFunction<RangeSpaceType, VectorType>& range) const
+             DiscreteFunction<RangeSpaceType, VectorType>& range,
+             const XT::Common::Parameter& param = {}) const
   {
     typedef typename XT::LA::Container<typename VectorType::ScalarType,
                                        VectorType::Traits::sparse_matrix_type>::MatrixType MatrixType;
     auto op = make_weighted_l2_matrix_operator<MatrixType>(
-        weight_, source.space(), range.space(), grid_layer_, over_integrate_);
+        weight_, source.space(), range.space(), grid_layer_, over_integrate_, param);
     op->apply(source, range);
   }
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
   FieldType apply2(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& range,
-                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source) const
+                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+                   const XT::Common::Parameter& param = {}) const
   {
-    auto product = make_weighted_l2_localizable_product(weight_, grid_layer_, range, source, over_integrate_);
+    auto product = make_weighted_l2_localizable_product(weight_, grid_layer_, range, source, over_integrate_, param);
     return product->apply2();
   }
 

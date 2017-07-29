@@ -69,14 +69,15 @@ public:
   L2LocalProlongationLocalizableOperator(const size_t over_integrate,
                                          GridLayerType grd_vw,
                                          const SourceType& src,
-                                         RangeType& rng)
+                                         RangeType& rng,
+                                         const XT::Common::Parameter& param = {})
     : SourceStorage(new ReinterpretDiscreteFunction<SourceImp>(src))
-    , BaseOperatorType(over_integrate, grd_vw, SourceStorage::access(), rng)
+    , BaseOperatorType(over_integrate, grd_vw, SourceStorage::access(), rng, param)
   {
   }
 
-  L2LocalProlongationLocalizableOperator(GridLayerType grd_vw, const SourceType& src, RangeType& rng)
-    : L2LocalProlongationLocalizableOperator(0, grd_vw, src, rng)
+  L2LocalProlongationLocalizableOperator(GridLayerType grd_vw, const SourceType& src, RangeType& rng, const XT::Common::Parameter& param = {})
+    : L2LocalProlongationLocalizableOperator(0, grd_vw, src, rng, param)
   {
   }
 
@@ -115,13 +116,14 @@ typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value && is_space<Sou
         const GridLayerType& grid_layer,
         const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
         DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
-        const size_t over_integrate = 0)
+        const size_t over_integrate = 0,
+    const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::
       make_unique<L2LocalProlongationLocalizableOperator<GridLayerType,
                                                          ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
                                                          DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
-          over_integrate, grid_layer, source, range);
+          over_integrate, grid_layer, source, range, param);
 } // ... make_local_l2_prolongation_localizable_operator(...)
 
 template <class SourceSpaceType, class SourceVectorType, class RangeSpaceType, class RangeVectorType>
@@ -134,12 +136,13 @@ typename std::enable_if<is_space<SourceSpaceType>::value && XT::LA::is_vector<So
                             DiscreteFunction<RangeSpaceType, RangeVectorType>>>>::type
 make_local_l2_prolongation_localizable_operator(const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
                                                 DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
-                                                const size_t over_integrate = 0)
+                                                const size_t over_integrate = 0,
+                                                const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::make_unique<L2LocalProlongationLocalizableOperator<
       typename RangeSpaceType::GridLayerType,
       ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
-      DiscreteFunction<RangeSpaceType, RangeVectorType>>>(over_integrate, range.space().grid_layer(), source, range);
+      DiscreteFunction<RangeSpaceType, RangeVectorType>>>(over_integrate, range.space().grid_layer(), source, range, param);
 } // ... make_local_l2_prolongation_localizable_operator(...)
 
 
@@ -173,15 +176,15 @@ public:
   }
 
   template <class SS, class SV, class RS, class RV>
-  void apply(const ConstDiscreteFunction<SS, SV>& source, DiscreteFunction<RS, RV>& range) const
+  void apply(const ConstDiscreteFunction<SS, SV>& source, DiscreteFunction<RS, RV>& range, const XT::Common::Parameter& param = {}) const
   {
     L2LocalProlongationLocalizableOperator<GridLayerType, ConstDiscreteFunction<SS, SV>, DiscreteFunction<RS, RV>> op(
-        over_integrate_, grid_layer_, source, range);
+        over_integrate_, grid_layer_, source, range, param);
     op.apply();
   }
 
   template <class RangeType, class SourceType>
-  FieldType apply2(const RangeType& /*range*/, const SourceType& /*source*/) const
+  FieldType apply2(const RangeType& /*range*/, const SourceType& /*source*/, const XT::Common::Parameter& /*param*/ = {}) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }

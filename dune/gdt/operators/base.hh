@@ -491,9 +491,9 @@ public:
   template <class S, class R>
   void apply(const ConstDiscreteFunction<SourceSpaceType, S>& source,
              DiscreteFunction<RangeSpaceType, R>& range,
-             const Dune::XT::Common::Parameter& /*param*/ = {}) const
+             const Dune::XT::Common::Parameter& param = {}) const
   {
-    apply(source.vector(), range.vector());
+    apply(source.vector(), range.vector(), param);
   }
 
   template <class R, class S>
@@ -510,9 +510,9 @@ public:
   template <class R, class S>
   FieldType apply2(const ConstDiscreteFunction<RangeSpaceType, R>& range,
                    const ConstDiscreteFunction<SourceSpaceType, S>& source,
-                   const Dune::XT::Common::Parameter& /*param*/ = {}) const
+                   const Dune::XT::Common::Parameter& param = {}) const
   {
-    return apply2(range.vector(), source.vector());
+    return apply2(range.vector(), source.vector(), param);
   }
 
   template <class SourceType>

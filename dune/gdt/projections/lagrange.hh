@@ -37,9 +37,9 @@ class LagrangeProjectionLocalizableOperator : public LocalizableOperatorBase<Gri
 
 public:
   template <class... Args>
-  explicit LagrangeProjectionLocalizableOperator(Args&&... args)
+  explicit LagrangeProjectionLocalizableOperator(const XT::Common::Parameter& param = {}, Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , local_operator_()
+    , local_operator_(param)
   {
     this->append(local_operator_);
   }
@@ -59,12 +59,12 @@ typename std::
                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
     make_lagrange_projection_localizable_operator(const GridLayerType& grid_layer,
                                                   const SourceType& source,
-                                                  DiscreteFunction<SpaceType, VectorType>& range)
+                                                  DiscreteFunction<SpaceType, VectorType>& range,
+                                                  const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::make_unique<LagrangeProjectionLocalizableOperator<GridLayerType,
                                                                              SourceType,
-                                                                             DiscreteFunction<SpaceType, VectorType>>>(
-      grid_layer, source, range);
+                                                                             DiscreteFunction<SpaceType, VectorType>>>(param, grid_layer, source, range);
 }
 
 
@@ -76,11 +76,12 @@ typename std::
                                                                     SourceType,
                                                                     DiscreteFunction<SpaceType, VectorType>>>>::type
     make_lagrange_projection_localizable_operator(const SourceType& source,
-                                                  DiscreteFunction<SpaceType, VectorType>& range)
+                                                  DiscreteFunction<SpaceType, VectorType>& range,
+                                                  const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::make_unique<LagrangeProjectionLocalizableOperator<typename SpaceType::GridLayerType,
                                                                              SourceType,
-                                                                             DiscreteFunction<SpaceType, VectorType>>>(
+                                                                             DiscreteFunction<SpaceType, VectorType>>>(param,
       range.space().grid_layer(), source, range);
 }
 
@@ -130,13 +131,14 @@ public:
 
   template <class R, size_t r, size_t rC, class S, class V>
   void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
-             DiscreteFunction<S, V>& range) const
+             DiscreteFunction<S, V>& range,
+             const XT::Common::Parameter& param = {}) const
   {
-    make_lagrange_projection_localizable_operator(grid_layer_, source, range)->apply();
+    make_lagrange_projection_localizable_operator(grid_layer_, source, range, param)->apply();
   }
 
   template <class RangeType, class SourceType>
-  FieldType apply2(const RangeType& /*range*/, const SourceType& /*source*/) const
+  FieldType apply2(const RangeType& /*range*/, const SourceType& /*source*/, const XT::Common::Parameter& param = {}) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }

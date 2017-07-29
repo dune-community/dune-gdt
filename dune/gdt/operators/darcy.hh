@@ -101,9 +101,9 @@ public:
   apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, r, rC>&
             source,
         DiscreteFunction<S, V>& range,
-        const Dune::XT::Common::Parameter& /*param*/ = {}) const
+        const Dune::XT::Common::Parameter& param = {}) const
   {
-    redirect_apply(range.space(), source, range);
+    redirect_apply(range.space(), source, range, param);
   }
 
   template <class SourceType>
@@ -150,7 +150,8 @@ private:
       const CgSpaceInterface<T, dimDomain, dimDomain, 1>& /*space*/,
       const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1, 1>&
           source,
-      DiscreteFunction<S, V>& range) const
+      DiscreteFunction<S, V>& range,
+      const XT::Common::Parameter param) const
   {
     typedef typename XT::LA::Container<FieldType, V::sparse_matrix_type>::MatrixType MatrixType;
     MatrixType lhs(
@@ -174,9 +175,9 @@ private:
         const auto xx = quadrature_it->position();
         const auto quadrature_weight = quadrature_it->weight();
         const auto integration_element = entity.geometry().integrationElement(xx);
-        const ValueType function_value = local_function->evaluate(xx);
-        const auto source_gradient = local_source->jacobian(xx);
-        const auto basis_value = basis.evaluate(xx);
+        const ValueType function_value = local_function->evaluate(xx, param);
+        const auto source_gradient = local_source->jacobian(xx, param);
+        const auto basis_value = basis.evaluate(xx, param);
         for (size_t ii = 0; ii < basis.size(); ++ii) {
           const size_t global_ii = range.space().mapper().mapToGlobal(entity, ii);
           rhs.add_to_entry(global_ii,
@@ -206,7 +207,8 @@ private:
   void redirect_apply(
       const RtSpaceInterface<T, dimDomain, dimDomain, 1>& /*space*/,
       const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
-      DiscreteFunction<S, V>& range) const
+      DiscreteFunction<S, V>& range,
+      const XT::Common::Parameter param) const
   {
     static_assert(RtSpaceInterface<T, dimDomain, 1>::polOrder == 0, "Untested!");
     const auto& rtn0_space = range.space();
@@ -251,17 +253,17 @@ private:
               const auto xx_entity = intersection.geometryInInside().global(xx_intersection);
               const auto xx_neighbor = intersection.geometryInOutside().global(xx_intersection);
               // evaluate
-              ValueType function_value = local_function->evaluate(xx_entity);
+              ValueType function_value = local_function->evaluate(xx_entity, param);
               function_value *= 0.5;
-              ValueType function_value_neighbor = local_function_neighbor->evaluate(xx_neighbor);
+              ValueType function_value_neighbor = local_function_neighbor->evaluate(xx_neighbor, param);
               function_value_neighbor *= 0.5;
               function_value += function_value_neighbor;
-              auto source_gradient = local_source->jacobian(xx_entity)[0];
+              auto source_gradient = local_source->jacobian(xx_entity, param)[0];
               source_gradient *= 0.5;
-              auto source_gradient_neighbor = local_source_neighbor->jacobian(xx_neighbor)[0];
+              auto source_gradient_neighbor = local_source_neighbor->jacobian(xx_neighbor, param)[0];
               source_gradient_neighbor *= 0.5;
               source_gradient += source_gradient_neighbor;
-              const auto basis_values = local_basis.evaluate(xx_entity);
+              const auto basis_values = local_basis.evaluate(xx_entity, param);
               const auto basis_value = basis_values[local_DoF_index];
               // compute integrals
               lhs += integration_factor * weight * (basis_value * normal);
@@ -289,9 +291,9 @@ private:
             const auto weight = quadrature_it->weight();
             const auto xx_entity = intersection.geometryInInside().global(xx_intersection);
             // evalaute
-            const ValueType function_value = local_function->evaluate(xx_entity);
-            const auto source_gradient = local_source->jacobian(xx_entity)[0];
-            const auto basis_values = local_basis.evaluate(xx_entity);
+            const ValueType function_value = local_function->evaluate(xx_entity, param);
+            const auto source_gradient = local_source->jacobian(xx_entity, param)[0];
+            const auto basis_values = local_basis.evaluate(xx_entity, param);
             const auto basis_value = basis_values[local_DoF_index];
             // compute integrals
             lhs += integration_factor * weight * (basis_value * normal);
@@ -307,7 +309,7 @@ private:
     } // walk the grid
   } // ... redirect_apply(...)
 
-  template <class R, int d>
+  template <class R, int d, param>
   R compute_value(const FieldVector<R, 1>& function_value,
                   const FieldVector<R, d>& source_gradient,
                   const FieldVector<R, d>& normal) const

@@ -395,12 +395,13 @@ public:
 
   template <class SourceSpaceType, class VectorType, class RangeSpaceType>
   void apply(const DiscreteFunction<SourceSpaceType, VectorType>& source,
-             DiscreteFunction<RangeSpaceType, VectorType>& range) const
+             DiscreteFunction<RangeSpaceType, VectorType>& range,
+             const XT::Common::Parameter& param ={}) const
   {
     typedef typename XT::LA::Container<typename VectorType::ScalarType,
                                        VectorType::Traits::sparse_matrix_type>::MatrixType MatrixType;
     auto op = make_l2_matrix_operator<MatrixType>(source.space(), range.space(), grid_layer_, over_integrate_);
-    op->apply(source, range);
+    op->apply(source, range, param);
   }
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
