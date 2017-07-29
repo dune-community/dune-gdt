@@ -91,11 +91,12 @@ typename std::
                                              const GridLayerType& grid_layer,
                                              const RangeType& range,
                                              const SourceType& source,
-                                             const size_t over_integrate = 0)
+                                             const size_t over_integrate = 0,
+                                             const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::
       make_unique<WeightedL2LocalizableProduct<WeightFunctionType, GridLayerType, RangeType, SourceType>>(
-          over_integrate, weight, grid_layer, range, source);
+          over_integrate, weight, grid_layer, range, source, param);
 }
 
 
