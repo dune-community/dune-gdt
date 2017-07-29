@@ -18,10 +18,10 @@ dune_add_library(expectations_hyperbolic_fv_discretizations_yaspgrid
 #            eocexpectations-fv-pointsource-3dyaspgrid.cxx
 #            eocexpectations-fv-sourcebeam-1dyaspgrid.cxx
 #            eocexpectations-fv-boltzmanncheckerboard-2dyaspgrid.cxx
-#           eocexpectations-fv-burgers-1dyaspgrid.cxx
-	    #           eocexpectations-fv-burgers-2dyaspgrid.cxx
-	    #           eocexpectations-fv-transport-1dyaspgrid.cxx
-	   # eocexpectations-fv-transport-2dyaspgrid.cxx)
-            eocexpectations-fv-shallowwater-1dyaspgrid.cxx
+           eocexpectations-fv-burgers-1dyaspgrid.cxx
+	   eocexpectations-fv-burgers-2dyaspgrid.cxx
+	   eocexpectations-fv-transport-1dyaspgrid.cxx
+	   eocexpectations-fv-transport-2dyaspgrid.cxx)
+           eocexpectations-fv-shallowwater-1dyaspgrid.cxx
 	    #            eocexpectations-fv-shocktube-1dyaspgrid.cxx
 )
