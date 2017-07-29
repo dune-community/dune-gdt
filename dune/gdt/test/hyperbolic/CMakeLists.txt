@@ -25,5 +25,3 @@ dune_add_library(expectations_hyperbolic_fv_discretizations_yaspgrid
             eocexpectations-fv-shallowwater-1dyaspgrid.cxx
 	    #            eocexpectations-fv-shocktube-1dyaspgrid.cxx
 )
-
-add_subdirectory(problems/momentmodels)
