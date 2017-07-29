@@ -59,9 +59,9 @@ public:
                                                && (std::is_same<DiffusionImp, DiffusionFactorType>::value)
                                                && sizeof(DiffusionImp)>::type,
             class... Args>
-  explicit EllipticLocalizableProduct(const DiffusionImp& diffusion, Args&&... args)
+  explicit EllipticLocalizableProduct(const DiffusionImp& diffusion, const XT::Common::Parameter& param, Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , local_elliptic_operator_(diffusion)
+    , local_elliptic_operator_(diffusion, param)
   {
     this->append(local_elliptic_operator_);
   }
@@ -72,9 +72,12 @@ public:
                                                && (std::is_same<DiffusionImp, DiffusionFactorType>::value)
                                                && sizeof(DiffusionImp)>::type,
             class... Args>
-  explicit EllipticLocalizableProduct(const size_t over_integrate, const DiffusionImp& diffusion, Args&&... args)
+  explicit EllipticLocalizableProduct(const size_t over_integrate,
+                                      const DiffusionImp& diffusion,
+                                      const XT::Common::Parameter& param,
+                                      Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , local_elliptic_operator_(over_integrate, diffusion)
+    , local_elliptic_operator_(over_integrate, diffusion, param)
   {
     this->append(local_elliptic_operator_);
   }
@@ -87,9 +90,10 @@ public:
             class... Args>
   explicit EllipticLocalizableProduct(const DiffusionFactorImp& diffusion_factor,
                                       const DiffusionTensorImp& diffusion_tensor,
+                                      const XT::Common::Parameter& param,
                                       Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , local_elliptic_operator_(diffusion_factor, diffusion_tensor)
+    , local_elliptic_operator_(diffusion_factor, diffusion_tensor, param)
   {
     this->append(local_elliptic_operator_);
   }
@@ -103,9 +107,10 @@ public:
   explicit EllipticLocalizableProduct(const size_t over_integrate,
                                       const DiffusionFactorImp& diffusion_factor,
                                       const DiffusionTensorImp& diffusion_tensor,
+                                      const XT::Common::Parameter& param,
                                       Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , local_elliptic_operator_(over_integrate, diffusion_factor, diffusion_tensor)
+    , local_elliptic_operator_(over_integrate, diffusion_factor, diffusion_tensor, param)
   {
     this->append(local_elliptic_operator_);
   }

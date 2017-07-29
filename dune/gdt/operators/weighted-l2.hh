@@ -41,17 +41,20 @@ class WeightedL2LocalizableProduct : public LocalizableProductBase<GridLayer, Ra
 
 public:
   template <class... Args>
-  WeightedL2LocalizableProduct(const WeightFunctionType& weight, Args&&... args)
+  WeightedL2LocalizableProduct(const WeightFunctionType& weight, const XT::Common::Parameter& param, Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , local_weighted_l2_operator_(weight)
+    , local_weighted_l2_operator_(weight, param)
   {
     this->append(local_weighted_l2_operator_);
   }
 
   template <class... Args>
-  WeightedL2LocalizableProduct(const size_t over_integrate, const WeightFunctionType& weight, Args&&... args)
+  WeightedL2LocalizableProduct(const size_t over_integrate,
+                               const WeightFunctionType& weight,
+                               const XT::Common::Parameter& param,
+                               Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , local_weighted_l2_operator_(over_integrate, weight)
+    , local_weighted_l2_operator_(over_integrate, weight, param)
   {
     this->append(local_weighted_l2_operator_);
   }

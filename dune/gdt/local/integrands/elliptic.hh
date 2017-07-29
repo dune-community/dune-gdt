@@ -157,16 +157,20 @@ private:
   using BaseType::d;
 
 public:
-  LocalEllipticIntegrand(const DiffusionFactorType& diff_factor, const DiffusionTensorType& diff_tensor)
+  LocalEllipticIntegrand(const DiffusionFactorType& diff_factor,
+                         const DiffusionTensorType& diff_tensor,
+                         const XT::Common::Parameter& param = {})
     : diffusion_factor_(diff_factor)
     , diffusion_tensor_(diff_tensor)
+    , param_(param)
   {
   }
 
-  LocalEllipticIntegrand(const DiffusionFactorType& diff_factor)
+  LocalEllipticIntegrand(const DiffusionFactorType& diff_factor, const XT::Common::Parameter& param = {})
     : diffusion_factor_(diff_factor)
     , diffusion_tensor_(new DiffusionTensorType(
           XT::Functions::internal::UnitMatrix<typename DiffusionTensorType::RangeFieldType, dimDomain>::value()))
+    , param_(param)
   {
   }
 
@@ -175,9 +179,10 @@ public:
       typename DiffusionType, //                                                            ctors ambiguous.
       typename = typename std::enable_if<(std::is_same<DiffusionType, DiffusionTensorType>::value) && (dimDomain > 1)
                                          && sizeof(DiffusionType)>::type>
-  LocalEllipticIntegrand(const DiffusionType& diffusion)
+  LocalEllipticIntegrand(const DiffusionType& diffusion, const XT::Common::Parameter& param = {})
     : diffusion_factor_(new DiffusionFactorType(1.))
     , diffusion_tensor_(diffusion)
+    , param_(param)
   {
   }
 
@@ -188,6 +193,7 @@ public:
   LocalEllipticIntegrand(const ThisType& other)
     : diffusion_factor_(other.diffusion_factor())
     , diffusion_tensor_(other.diffusion_tensor())
+    , param_(other.param_)
   {
   }
 
@@ -260,12 +266,12 @@ public:
     typedef XT::Common::FieldMatrix<R, d, d> TensorType;
     ret *= 0.0;
     // evaluate local functions
-    const auto diffusion_factor_value = local_diffusion_factor.evaluate(localPoint);
-    const TensorType diffusion_tensor_value = local_diffusion_tensor.evaluate(localPoint);
+    const auto diffusion_factor_value = local_diffusion_factor.evaluate(localPoint, param_);
+    const TensorType diffusion_tensor_value = local_diffusion_tensor.evaluate(localPoint, param_);
     const auto diffusion_value = diffusion_tensor_value * diffusion_factor_value;
     // evaluate bases
-    const auto testGradients = test_base.jacobian(localPoint);
-    const auto ansatzGradients = ansatz_base.jacobian(localPoint);
+    const auto testGradients = test_base.jacobian(localPoint, param_);
+    const auto ansatzGradients = ansatz_base.jacobian(localPoint, param_);
     // compute elliptic evaluation
     const size_t rows = test_base.size();
     const size_t cols = ansatz_base.size();
@@ -300,6 +306,7 @@ public:
 private:
   const DiffusionFactorProvider diffusion_factor_;
   const DiffusionTensorProvider diffusion_tensor_;
+  const XT::Common::Parameter param_;
 }; // class LocalEllipticIntegrand
 
 

@@ -80,6 +80,7 @@ public:
   typedef internal::DarcyOperatorTraits<GridLayerImp, FunctionImp> Traits;
   typedef typename Traits::GridLayerType GridLayerType;
   typedef typename Traits::FieldType FieldType;
+  typedef typename Traits::JacobianType JacobianType;
   using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
   typedef typename GridLayerType::ctype DomainFieldType;
   static const size_t dimDomain = GridLayerType::dimension;
