@@ -36,6 +36,7 @@ class L2LocalProlongationOperatorTraits
 {
 public:
   typedef L2LocalProlongationOperator<GridLayerImp, FieldImp> derived_type;
+  typedef NoJacobian JacobianType;
   typedef FieldImp FieldType;
 };
 

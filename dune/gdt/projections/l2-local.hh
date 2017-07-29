@@ -38,6 +38,7 @@ class L2LocalProjectionOperatorTraits
 {
 public:
   typedef L2LocalProjectionOperator<GridLayerImp, FieldImp> derived_type;
+  typedef NoJacobian JacobianType;
   typedef FieldImp FieldType;
 };
 
