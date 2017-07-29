@@ -78,7 +78,7 @@ public:
                                         const SourceType& src,
                                         RangeType& rng,
                                         const XT::Common::Parameter& param = {})
-    : BaseType(grd_vw, src, rng, param)
+    : BaseType(grd_vw, src, rng)
     , lhs_operator_(over_integrate, range_.space(), BaseType::grid_layer())
     , rhs_functional_(over_integrate, source_, range_.space(), BaseType::grid_layer())
     , solved_(false)

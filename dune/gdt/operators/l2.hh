@@ -141,7 +141,7 @@ make_l2_localizable_product(const GridLayerType& grid_layer,
                             const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::make_unique<L2LocalizableProduct<GridLayerType, RangeType, SourceType>>(
-      over_integrate, param, grid_layer, range, source);
+      over_integrate, grid_layer, range, source, param);
 }
 
 

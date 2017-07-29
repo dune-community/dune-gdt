@@ -40,20 +40,24 @@ class WeightedL2LocalizableProduct : public LocalizableProductBase<GridLayer, Ra
   typedef LocalizableProductBase<GridLayer, Range, Source, Field> BaseType;
 
 public:
-  template <class... Args>
-  WeightedL2LocalizableProduct(const WeightFunctionType& weight, const XT::Common::Parameter& param, Args&&... args)
-    : BaseType(std::forward<Args>(args)...)
+  WeightedL2LocalizableProduct(const WeightFunctionType& weight,
+                               GridLayer grd_layr,
+                               const Range& rng,
+                               const Source& src,
+                               const XT::Common::Parameter& param)
+    : BaseType(grd_layr, rng, src)
     , local_weighted_l2_operator_(weight, param)
   {
     this->append(local_weighted_l2_operator_);
   }
 
-  template <class... Args>
   WeightedL2LocalizableProduct(const size_t over_integrate,
                                const WeightFunctionType& weight,
-                               const XT::Common::Parameter& param,
-                               Args&&... args)
-    : BaseType(std::forward<Args>(args)...)
+                               GridLayer grd_layr,
+                               const Range& rng,
+                               const Source& src,
+                               const XT::Common::Parameter& param)
+    : BaseType(grd_layr, rng, src)
     , local_weighted_l2_operator_(over_integrate, weight, param)
   {
     this->append(local_weighted_l2_operator_);
@@ -338,8 +342,8 @@ public:
     typedef typename XT::LA::Container<typename VectorType::ScalarType,
                                        VectorType::Traits::sparse_matrix_type>::MatrixType MatrixType;
     auto op = make_weighted_l2_matrix_operator<MatrixType>(
-        weight_, source.space(), range.space(), grid_layer_, over_integrate_, param);
-    op->apply(source, range);
+        weight_, source.space(), range.space(), grid_layer_, over_integrate_);
+    op->apply(source, range, param);
   }
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
