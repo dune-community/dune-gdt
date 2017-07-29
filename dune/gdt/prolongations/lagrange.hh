@@ -12,6 +12,7 @@
 #define DUNE_GDT_PROLONGATIONS_LAGRANGE_HH
 
 #include <dune/xt/common/memory.hh>
+#include <dune/xt/common/parameter.hh>
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
@@ -121,10 +122,9 @@ template <class SourceSpaceType, class SourceVectorType, class RangeSpaceType, c
 std::unique_ptr<LagrangeProlongationLocalizableOperator<typename RangeSpaceType::GridLayerType,
                                                         ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
                                                         DiscreteFunction<RangeSpaceType, RangeVectorType>>>
-make_lagrange_prolongation_localizable_operator(
-    const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
-    DiscreteFunction<RangeSpaceType, RangeVectorType>& rangeDiscreteFunction<RangeSpaceType, RangeVectorType>& range,
-    const XT::Common::Parameter& param = {})
+make_lagrange_prolongation_localizable_operator(const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
+                                                DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
+                                                const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::make_unique<LagrangeProlongationLocalizableOperator<
       typename RangeSpaceType::GridLayerType,
