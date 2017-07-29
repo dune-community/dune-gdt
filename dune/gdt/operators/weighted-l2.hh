@@ -44,7 +44,7 @@ public:
                                GridLayer grd_layr,
                                const Range& rng,
                                const Source& src,
-                               const XT::Common::Parameter& param)
+                               const XT::Common::Parameter& param = {})
     : BaseType(grd_layr, rng, src)
     , local_weighted_l2_operator_(weight, param)
   {
@@ -56,7 +56,7 @@ public:
                                GridLayer grd_layr,
                                const Range& rng,
                                const Source& src,
-                               const XT::Common::Parameter& param)
+                               const XT::Common::Parameter& param = {})
     : BaseType(grd_layr, rng, src)
     , local_weighted_l2_operator_(over_integrate, weight, param)
   {
