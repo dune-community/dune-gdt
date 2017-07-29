@@ -656,6 +656,7 @@ class EllipticOperatorTraits
 {
 public:
   typedef EllipticOperator<DiffusionFactorType, DiffusionTensorType, GridLayerType, Field> derived_type;
+  typedef NoJacobian JacobianType;
   typedef Field FieldType;
 };
 
