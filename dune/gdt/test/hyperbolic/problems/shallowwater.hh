@@ -137,7 +137,7 @@ public:
 
     std::vector<LambdaFunctionType> initial_vals(num_regions,
                                                  LambdaFunctionType(
-                                                     [](const DomainType& x, const XT::Common::Parameter&) {
+                                                     [](const DomainType&, const XT::Common::Parameter&) {
                                                        return RangeType{1., 0.};
                                                      },
                                                      0));

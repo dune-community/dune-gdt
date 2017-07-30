@@ -123,21 +123,26 @@ private:
   static_assert(RangeType::dimDomain == GridLayerType::dimension, "");
 
 public:
-  LocalizableProductBase(GridLayerType grd_layr, const RangeType& rng, const SourceType& src)
+  LocalizableProductBase(GridLayerType grd_layr,
+                         const RangeType& rng,
+                         const SourceType& src,
+                         const XT::Common::Parameter& param = {})
     : BaseType(grd_layr)
     , range_(rng)
     , source_(src)
     , result_(0.)
     , walked_(false)
+    , param_(param)
   {
   }
 
-  LocalizableProductBase(GridLayerType grd_layr, const RangeType& rng)
+  LocalizableProductBase(GridLayerType grd_layr, const RangeType& rng, const XT::Common::Parameter& param = {})
     : BaseType(grd_layr)
     , range_(rng)
     , source_(rng)
     , result_(0.)
     , walked_(false)
+    , param_(param)
   {
   }
 
@@ -182,12 +187,18 @@ public:
     return result_;
   }
 
+  const XT::Common::Parameter& parameter() const
+  {
+    return param_;
+  }
+
 protected:
   const RangeType& range_;
   const SourceType& source_;
   FieldType result_;
   std::vector<std::unique_ptr<XT::Grid::internal::Codim0ReturnObject<GridLayerType, FieldType>>> local_volume_twoforms_;
   bool walked_;
+  const XT::Common::Parameter param_;
 }; // class LocalizableProductBase
 
 
