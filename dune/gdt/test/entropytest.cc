@@ -87,7 +87,7 @@ int main(int argc, char** argv)
 
   // ***************** parse arguments and set up MPI and TBB
   size_t num_threads = 1;
-  size_t num_save_steps = -1;
+  size_t num_save_steps = 5;
   std::string grid_size("100"), overlap_size("1");
   double t_end = 0;
   double epsilon = 1e-10;
@@ -334,8 +334,8 @@ int main(int argc, char** argv)
 
   //******************* get typedefs and constants from ProblemType **********************//
   typedef typename Hyperbolic::Problems::KineticEquation<ProblemImp> ProblemType;
-  using DomainFieldType = typename ProblemType::DomainFieldType;
-  using DomainType = typename ProblemType::DomainType;
+//  using DomainFieldType = typename ProblemType::DomainFieldType;
+//  using DomainType = typename ProblemType::DomainType;
   using RangeFieldType = typename ProblemType::RangeFieldType;
 //  using RangeType = typename ProblemType::RangeType;
   typedef typename ProblemType::RhsType RhsType;
@@ -573,102 +573,102 @@ int main(int argc, char** argv)
                     filename,
                     basis_functions->visualizer<DiscreteFunctionType>());
 
-  const auto& sol = timestepper.current_solution();
-  std::vector<std::pair<DomainType, RangeFieldType>> values;
+//  const auto& sol = timestepper.current_solution();
+//  std::vector<std::pair<DomainType, RangeFieldType>> values;
 
-  for (const auto& entity : Dune::elements(grid_layer)) {
-    const auto& local_sol = sol.local_function(entity);
-    values.push_back(std::make_pair(entity.geometry().center(),
-                                    local_sol->evaluate(entity.geometry().local(entity.geometry().center()))[0]));
-  }
-  std::sort(values.begin(), values.end(), CmpStruct());
-  std::ofstream valuesfile(filename + ".txt");
-  for (const auto& pair : values)
-    valuesfile << XT::Common::to_string(pair.first, 15) << "\t" << XT::Common::to_string(pair.second, 15) << std::endl;
-  valuesfile.close();
+//  for (const auto& entity : Dune::elements(grid_layer)) {
+//    const auto& local_sol = sol.local_function(entity);
+//    values.push_back(std::make_pair(entity.geometry().center(),
+//                                    local_sol->evaluate(entity.geometry().local(entity.geometry().center()))[0]));
+//  }
+//  std::sort(values.begin(), values.end(), CmpStruct());
+//  std::ofstream valuesfile(filename + ".txt");
+//  for (const auto& pair : values)
+//    valuesfile << XT::Common::to_string(pair.first, 15) << "\t" << XT::Common::to_string(pair.second, 15) << std::endl;
+//  valuesfile.close();
 
-  // normalize solution
-  RangeFieldType l1norm = 0;
-  RangeFieldType l2norm = 0;
-  RangeFieldType linfnorm = 0;
-  for (const auto& entity : elements(grid_layer)) {
-    const auto local_sol = sol.local_function(entity);
-    const auto val = local_sol->evaluate(entity.geometry().local(entity.geometry().center()));
-    RangeFieldType psi(0);
-    //    for (const auto& entry : val) // for hatfunctions
-    //      psi += entry;
-    for (size_t rr = 0; rr < dimRange; rr += 4) // for piecewise
-      psi += val[rr];
-    //    psi = val[0] * std::sqrt(4 * M_PI); // for real spherical harmonics
+//  // normalize solution
+//  RangeFieldType l1norm = 0;
+//  RangeFieldType l2norm = 0;
+//  RangeFieldType linfnorm = 0;
+//  for (const auto& entity : elements(grid_layer)) {
+//    const auto local_sol = sol.local_function(entity);
+//    const auto val = local_sol->evaluate(entity.geometry().local(entity.geometry().center()));
+//    RangeFieldType psi(0);
+//    //    for (const auto& entry : val) // for hatfunctions
+//    //      psi += entry;
+//    for (size_t rr = 0; rr < dimRange; rr += 4) // for piecewise
+//      psi += val[rr];
+//    //    psi = val[0] * std::sqrt(4 * M_PI); // for real spherical harmonics
 
-    l1norm += std::abs(psi) * entity.geometry().volume();
-    l2norm += std::pow(psi, 2) * entity.geometry().volume();
-    linfnorm = std::max(std::abs(psi), linfnorm);
-  }
+//    l1norm += std::abs(psi) * entity.geometry().volume();
+//    l2norm += std::pow(psi, 2) * entity.geometry().volume();
+//    linfnorm = std::max(std::abs(psi), linfnorm);
+//  }
 
-  l1norm = grid_layer.comm().sum(l1norm);
-  l2norm = grid_layer.comm().sum(l2norm);
-  linfnorm = grid_layer.comm().max(linfnorm);
-  l2norm = std::sqrt(l2norm);
-  if (grid_layer.comm().rank() == 0) {
-    std::cout << "l1norm: " << l1norm << std::endl;
-    std::cout << "l2norm: " << l2norm << std::endl;
-    std::cout << "linfnorm: " << linfnorm << std::endl;
-  }
+//  l1norm = grid_layer.comm().sum(l1norm);
+//  l2norm = grid_layer.comm().sum(l2norm);
+//  linfnorm = grid_layer.comm().max(linfnorm);
+//  l2norm = std::sqrt(l2norm);
+//  if (grid_layer.comm().rank() == 0) {
+//    std::cout << "l1norm: " << l1norm << std::endl;
+//    std::cout << "l2norm: " << l2norm << std::endl;
+//    std::cout << "linfnorm: " << linfnorm << std::endl;
+//  }
 
-  std::ifstream matlabvaluesfile("values_matlab.txt");
-  std::string line;
-  std::vector<DomainType> x_matlab;
-  std::vector<RangeFieldType> values_matlab;
-  while (std::getline(matlabvaluesfile, line)) {
-    auto tokens = XT::Common::tokenize(line, "\t", boost::algorithm::token_compress_on);
-    trim(tokens);
-    assert(tokens.size() == 2);
-    auto x = XT::Common::from_string<DomainType>(tokens[0]);
-    x_matlab.push_back(x);
-    auto val_matlab = XT::Common::from_string<RangeFieldType>(tokens[1]);
-    values_matlab.push_back(val_matlab);
-  }
+//  std::ifstream matlabvaluesfile("values_matlab.txt");
+//  std::string line;
+//  std::vector<DomainType> x_matlab;
+//  std::vector<RangeFieldType> values_matlab;
+//  while (std::getline(matlabvaluesfile, line)) {
+//    auto tokens = XT::Common::tokenize(line, "\t", boost::algorithm::token_compress_on);
+//    trim(tokens);
+//    assert(tokens.size() == 2);
+//    auto x = XT::Common::from_string<DomainType>(tokens[0]);
+//    x_matlab.push_back(x);
+//    auto val_matlab = XT::Common::from_string<RangeFieldType>(tokens[1]);
+//    values_matlab.push_back(val_matlab);
+//  }
 
-  const size_t grid_size_ns = XT::Common::from_string<size_t>(grid_size);
-  Dune::XT::Grid::EntityInlevelSearch<GridLayerType> entity_search(grid_layer);
-  const auto entities = entity_search(x_matlab);
-  assert(entities.size() == grid_size_ns * grid_size_ns * grid_size_ns);
-  RangeFieldType l2error = 0;
-  RangeFieldType l1error = 0;
-  RangeFieldType linferror = 0;
+//  const size_t grid_size_ns = XT::Common::from_string<size_t>(grid_size);
+//  Dune::XT::Grid::EntityInlevelSearch<GridLayerType> entity_search(grid_layer);
+//  const auto entities = entity_search(x_matlab);
+//  assert(entities.size() == grid_size_ns * grid_size_ns * grid_size_ns);
+//  RangeFieldType l2error = 0;
+//  RangeFieldType l1error = 0;
+//  RangeFieldType linferror = 0;
 
-  for (size_t ii = 0; ii < entities.size(); ++ii) {
-    const auto& entity = entities[ii];
-    const auto& point = x_matlab[ii];
-    if (entity) {
-      const auto local_sol = sol.local_function(*entity);
-      const auto val = local_sol->evaluate(entity->geometry().local(point));
-      RangeFieldType psi(0);
-      //    for (const auto& entry : val) // for hatfunctions
-      //      psi += entry;
-      for (size_t rr = 0; rr < dimRange; rr += 4) // for piecewise
-        psi += val[rr];
-      //      psi = val[0] * std::sqrt(4 * M_PI); // for real spherical harmonics
+//  for (size_t ii = 0; ii < entities.size(); ++ii) {
+//    const auto& entity = entities[ii];
+//    const auto& point = x_matlab[ii];
+//    if (entity) {
+//      const auto local_sol = sol.local_function(*entity);
+//      const auto val = local_sol->evaluate(entity->geometry().local(point));
+//      RangeFieldType psi(0);
+//      //    for (const auto& entry : val) // for hatfunctions
+//      //      psi += entry;
+//      for (size_t rr = 0; rr < dimRange; rr += 4) // for piecewise
+//        psi += val[rr];
+//      //      psi = val[0] * std::sqrt(4 * M_PI); // for real spherical harmonics
 
-      //      psi /= l1norm; // normalize
+//      //      psi /= l1norm; // normalize
 
-      const auto& val_matlab = values_matlab[ii];
-      l2error += std::pow(psi - val_matlab, 2) * entity->geometry().volume();
-      l1error += std::abs(psi - val_matlab) * entity->geometry().volume();
-      linferror = std::max(std::abs(psi - val_matlab), linferror);
-    }
-  }
+//      const auto& val_matlab = values_matlab[ii];
+//      l2error += std::pow(psi - val_matlab, 2) * entity->geometry().volume();
+//      l1error += std::abs(psi - val_matlab) * entity->geometry().volume();
+//      linferror = std::max(std::abs(psi - val_matlab), linferror);
+//    }
+//  }
 
-  l1error = grid_layer.comm().sum(l1error);
-  l2error = grid_layer.comm().sum(l2error);
-  linferror = grid_layer.comm().max(linferror);
-  l2error = std::sqrt(l2error);
-  if (grid_layer.comm().rank() == 0) {
-    std::cout << "l2error: " << XT::Common::to_string(l2error) << std::endl;
-    std::cout << "l1error: " << XT::Common::to_string(l1error) << std::endl;
-    std::cout << "linferror: " << XT::Common::to_string(linferror) << std::endl;
-  }
+//  l1error = grid_layer.comm().sum(l1error);
+//  l2error = grid_layer.comm().sum(l2error);
+//  linferror = grid_layer.comm().max(linferror);
+//  l2error = std::sqrt(l2error);
+//  if (grid_layer.comm().rank() == 0) {
+//    std::cout << "l2error: " << XT::Common::to_string(l2error) << std::endl;
+//    std::cout << "l1error: " << XT::Common::to_string(l1error) << std::endl;
+//    std::cout << "linferror: " << XT::Common::to_string(linferror) << std::endl;
+//  }
 
   return 0;
 }
