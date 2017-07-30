@@ -166,6 +166,7 @@ int main(int argc, char** argv)
       return 1;
     }
   }
+  (void)epsilon;
 
   DXTC_CONFIG.set("threading.partition_factor", 1u, true);
   Dune::XT::Common::threadManager().set_max_threads(num_threads);
@@ -178,7 +179,7 @@ int main(int argc, char** argv)
 #endif
 
   // ********************* choose dimensions, fluxes and grid type ************************
-  static const int dimDomain = 3;
+  static const int dimDomain = 1;
   //  static const int dimDomain = 1;
   static const int momentOrder = 6;
   //  const auto numerical_flux = NumericalFluxes::kinetic;
@@ -202,8 +203,8 @@ int main(int argc, char** argv)
   typedef typename GridType::Codim<0>::Entity EntityType;
 
   //******************** choose BasisfunctionType *****************************************
-  //  typedef typename Hyperbolic::Problems::LegendrePolynomials<double, dimDomain, double, momentOrder>
-  //  BasisfunctionType;
+    typedef typename Hyperbolic::Problems::LegendrePolynomials<double, double, momentOrder>
+    BasisfunctionType;
 
   //  static const size_t refinements = 0;
   //  typedef
@@ -215,23 +216,23 @@ int main(int argc, char** argv)
   //                                                  dimDomain>
   //          BasisfunctionType;
 
-  static const size_t refinements = 0;
-  typedef typename Hyperbolic::Problems::
-      PiecewiseMonomials<double,
-                         3,
-                         double,
-                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces(),
-                         1,
-                         dimDomain>
-          BasisfunctionType;
+//  static const size_t refinements = 0;
+//  typedef typename Hyperbolic::Problems::
+//      PiecewiseMonomials<double,
+//                         3,
+//                         double,
+//                         4 * Hyperbolic::Problems::OctaederStatistics<refinements>::num_faces(),
+//                         1,
+//                         dimDomain>
+//          BasisfunctionType;
 
   //  typedef typename Hyperbolic::Problems::RealSphericalHarmonics<double, double, momentOrder, dimDomain, false>
   //      BasisfunctionType;
 
-  //  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>();
-  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>(refinements, 4);
+    std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>();
+//  std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>(refinements, 4);
   static const size_t dimRange = BasisfunctionType::dimRange;
-  static const size_t dimFlux = BasisfunctionType::dimFlux;
+//  static const size_t dimFlux = BasisfunctionType::dimFlux;
   //  static const size_t dimRange = 1.;
   static constexpr auto container_backend = Dune::XT::LA::default_sparse_backend;
   typedef FvProductSpace<GridLayerType, double, dimRange, 1> SpaceType;
@@ -239,11 +240,10 @@ int main(int argc, char** argv)
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
 
   //******************** choose ProblemType ***********************************************
-  //  typedef typename Hyperbolic::Problems::FokkerPlanck
-  //      TwoBeamsPn<BasisfunctionType, GridLayerType, EntityType, double, dimDomain, DiscreteFunctionType,
-  //      double,
-  //      dimRange>
-  //          ProblemImp;
+    typedef typename Hyperbolic::Problems::FokkerPlanck::TwoBeamsPn<BasisfunctionType, GridLayerType, EntityType, double, dimDomain, DiscreteFunctionType,
+        double,
+        dimRange>
+            ProblemImp;
 
   //    typedef typename Hyperbolic::Problems::KineticTransport
   //      TwoBeamsMn<BasisfunctionType, GridLayerType, EntityType, double, dimDomain, DiscreteFunctionType, double,
@@ -286,15 +286,15 @@ int main(int argc, char** argv)
   //                                                                         dimRange>
   //      ProblemImp;
 
-  typedef typename Hyperbolic::Problems::KineticTransport::PointSourcePn<BasisfunctionType,
-                                                                         GridLayerType,
-                                                                         EntityType,
-                                                                         double,
-                                                                         dimDomain,
-                                                                         DiscreteFunctionType,
-                                                                         double,
-                                                                         dimRange>
-      ProblemImp;
+//  typedef typename Hyperbolic::Problems::KineticTransport::PointSourcePn<BasisfunctionType,
+//                                                                         GridLayerType,
+//                                                                         EntityType,
+//                                                                         double,
+//                                                                         dimDomain,
+//                                                                         DiscreteFunctionType,
+//                                                                         double,
+//                                                                         dimRange>
+//      ProblemImp;
 
   //  typedef typename Hyperbolic::Problems::KineticTransport::PointSourceMn<
   //                                                       BasisfunctionType,
@@ -337,11 +337,11 @@ int main(int argc, char** argv)
   using DomainFieldType = typename ProblemType::DomainFieldType;
   using DomainType = typename ProblemType::DomainType;
   using RangeFieldType = typename ProblemType::RangeFieldType;
-  using RangeType = typename ProblemType::RangeType;
+//  using RangeType = typename ProblemType::RangeType;
   typedef typename ProblemType::RhsType RhsType;
   typedef typename ProblemType::InitialValueType InitialValueType;
   typedef typename ProblemType::BoundaryValueType BoundaryValueType;
-  static const bool linear = true; // ProblemType::linear;
+  static const bool linear = ProblemType::linear;
 
   //******************* create grid and FV space ***************************************
   auto grid_config = ProblemType::default_grid_cfg();
@@ -353,14 +353,14 @@ int main(int argc, char** argv)
   const GridLayerType grid_layer(grid_ptr->leafGridView());
   const SpaceType fv_space(grid_layer);
 
-  const auto quadrature = Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(80);
+//  const auto quadrature = Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(80);
   //    const auto& quadrature = basis_functions->quadrature();
-  //  const auto quadrature = ProblemImp::default_quadrature(grid_config);
+    const auto quadrature = ProblemImp::default_quadrature(grid_config);
 
   //******************* create ProblemType object ***************************************
   const std::unique_ptr<ProblemImp> problem_imp =
       XT::Common::make_unique<ProblemImp>(*basis_functions, grid_layer, quadrature, grid_config);
-  //    const ProblemImp problem_imp(basis_functions, grid_layer, grid_config);
+//      const ProblemImp problem_imp(basis_functions, grid_layer, grid_config);
   //  const std::unique_ptr<ProblemImp> problem_imp =
   //      XT::Common::make_unique<ProblemImp>(*basis_functions, grid_layer, basis_functions->quadrature(), grid_config);
   //  const ProblemImp problem_imp(
@@ -402,8 +402,8 @@ int main(int argc, char** argv)
 
   // ******************** choose flux and rhs operator and timestepper ******************************************
 
-  typedef typename Dune::XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
-      ConstantFunctionType;
+//  typedef typename Dune::XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
+//      ConstantFunctionType;
   typedef AdvectionRhsOperator<RhsType> RhsOperatorType;
 
   //  typedef typename std::
@@ -500,7 +500,7 @@ int main(int argc, char** argv)
 
 
   // *********************** create operators and timesteppers ************************************
-  const ConstantFunctionType dx_function(dx);
+//  const ConstantFunctionType dx_function(dx);
 
   //  AdvectionOperatorType advection_operator =
   //      internal::AdvectionOperatorCreator<AdvectionOperatorType, numerical_flux>::create(

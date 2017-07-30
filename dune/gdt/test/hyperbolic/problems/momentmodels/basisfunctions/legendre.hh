@@ -57,7 +57,7 @@ public:
 
   virtual MatrixType mass_matrix() const override
   {
-    MatrixType M(0);
+    MatrixType M(dimRange, dimRange, 0);
     for (size_t rr = 0; rr < dimRange; ++rr)
       M[rr][rr] = 2. / (2. * rr + 1.);
     return M;
@@ -65,7 +65,7 @@ public:
 
   virtual MatrixType mass_matrix_inverse() const override
   {
-    MatrixType Minv(0);
+    MatrixType Minv(dimRange, dimRange, 0);
     for (size_t rr = 0; rr < dimRange; ++rr)
       Minv[rr][rr] = (2. * rr + 1.) / 2.;
     return Minv;
@@ -73,7 +73,7 @@ public:
 
   virtual FieldVector<MatrixType, dimDomain> mass_matrix_with_v() const override
   {
-    MatrixType B(0);
+    MatrixType B(dimRange, dimRange, 0);
     for (size_t rr = 0; rr < dimRange; ++rr) {
       for (size_t cc = 0; cc < dimRange; ++cc) {
         if (cc == rr - 1)
@@ -87,7 +87,7 @@ public:
 
   MatrixType S() const
   {
-    MatrixType S(0);
+    MatrixType S(dimRange, dimRange, 0);
     for (size_t rr = 0; rr < dimRange; ++rr)
       S[rr][rr] = -2. * rr * (rr + 1.) / (2 * rr + 1);
     return S;

@@ -64,6 +64,7 @@ public:
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
   using typename BaseType::QuadratureType;
+  static const bool linear = true;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_quadrature;

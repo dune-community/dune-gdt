@@ -117,11 +117,11 @@ public:
                grid_cfg,
                boundary_cfg,
                psi_vac,
-               {std::make_pair("sigma_a", get_num_regions({num_segments})),
+               XT::Common::ParameterType({std::make_pair("sigma_a", get_num_regions({num_segments})),
                 std::make_pair("T", get_num_regions({num_segments})),
                 std::make_pair("Q", get_num_regions({num_segments})),
                 std::make_pair("CFL", 1),
-                std::make_pair("t_end", 1)})
+                std::make_pair("t_end", 1)}))
   {
   }
 
@@ -142,7 +142,7 @@ public:
     const RangeType basis_integrated = basis_functions_.integrated();
     const MatrixType M_inv = basis_functions_.mass_matrix_inverse();
     const MatrixType S = basis_functions_.S();
-    MatrixType I(0);
+    MatrixType I(dimRange, dimRange, 0);
     for (size_t rr = 0; rr < dimRange; ++rr)
       I[rr][rr] = 1;
     MatrixType K = S;

@@ -45,6 +45,7 @@ protected:
 
 public:
   using typename BaseType::RangeFieldType;
+  static const bool linear = ImplementationType::linear;
 
   KineticEquation(const ImplementationType& implementation)
     : BaseType(implementation.create_flux(),
