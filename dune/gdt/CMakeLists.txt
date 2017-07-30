@@ -104,12 +104,6 @@ if(dune-pybindxi_FOUND)
   endif()
 endif()
 
-dune_add_library(lebedevquadrature
-                 NO_EXPORT
-                 COMPILE_FLAGS "-O0"
-                 SOURCES
-                 lebedevquadrature.cc)
-
 add_subdirectory(timestepper/matrixexponential)
 add_subdirectory(operators/fv)
 add_subdirectory(test EXCLUDE_FROM_ALL)
