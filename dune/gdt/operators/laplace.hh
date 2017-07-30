@@ -133,7 +133,7 @@ make_laplace_localizable_product(const GridLayerType& grid_layer,
                                  const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::make_unique<LaplaceLocalizableProduct<GridLayerType, RangeType, SourceType>>(
-      over_integrate, param, grid_layer, range, source);
+      over_integrate, grid_layer, range, source, param);
 }
 
 
