@@ -162,8 +162,8 @@ int main(int argc, char** argv)
     } else if (std::string(argv[i]) == "--no_visualization") {
       visualize = false;
     } else {
-      std::cerr << "Unknown option " << std::string(argv[i]) << std::endl;
-      return 1;
+//      std::cerr << "Unknown option " << std::string(argv[i]) << std::endl;
+//      return 1;
     }
   }
   (void)epsilon;
