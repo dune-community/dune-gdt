@@ -9,7 +9,6 @@
 
 dune_add_library(matrixexponential
                  NO_EXPORT
-                 COMPILE_FLAGS "-Os -w -DDNDEBUG -DNDEBUG"
                  SOURCES
                  r8lib.cpp
                  c8lib.cpp
