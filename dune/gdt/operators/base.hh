@@ -682,7 +682,7 @@ public:
     return *this;
   } // ... append(...)
 
-  void apply(const bool use_tbb = true)
+  void apply(const bool use_tbb = false)
   {
     if (!walked_) {
       this->walk(use_tbb);
