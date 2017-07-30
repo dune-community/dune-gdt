@@ -60,12 +60,12 @@ TEST_F(L2ProjectionOperatorTest_{{Name}}, free_function_callable)
 TEST_F(L2ProjectionOperatorTest_{{Name}}, produces_correct_results)
 {
   // RT : 0.0925927
-  using Grid = Dune::XT::Grid::extract_grid_t<typename L2ProjectionOperatorTest_{{Name}}::GridLayerType>;
   {% if 'FvSpace' in SpaceType %}
     const double tolerance = 0.096226;
   {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
     const double tolerance = 0.0925927;
   {% else %}
+    using Grid = Dune::XT::Grid::extract_grid_t<typename L2ProjectionOperatorTest_{{Name}}::GridLayerType>;
     const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
   {% endif %}
   this->produces_correct_results(tolerance);
