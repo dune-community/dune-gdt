@@ -1,12 +1,17 @@
-num_points = 501;
-num_entities = 30;
-t_end = 0.5
+num_points = 201;
+num_entities = 20;
+t_end = 0.5;
 entity_width = 2/num_entities;
 [X,Y,Z] = meshgrid(linspace(-1,1,num_points)); % mesh for calculation of exact solution
 [Xc,Yc,Zc] = meshgrid(linspace(-1.+entity_width/2,1-entity_width/2,num_entities)); % mesh consisting of entity centers for projection
-%psi0fun = @(X,Y,Z) max(1/(8*pi*0.03^2)*exp(-(X.^2+Y.^2+Z.^2)./2/0.03^2),1e-4/4/pi);
-psi0fun = @(X,Y,Z) max(1/(4*0.03^3*pi^4)*exp(-1*(X.^2+Y.^2+Z.^2)./(pi*0.03^2)),1e-4/4/pi);
-y = Pointsource(psi0fun,X,Y,Z, t_end);
+psi0fun = @(X,Y,Z) max(4*pi/(4*0.03^3*pi^4)*exp(-1*(X.^2+Y.^2+Z.^2)./(pi*0.03^2)),1e-4/4/pi);
+
+[rhoD,fD] = point_source_solution(t_end); %1D solution
+%ind1 = find(rhoD < 0.499);
+%ind2 = find(rhoD > 0.501);
+%plot(rhoD(ind1), fD(ind1), rhoD(ind2), fD(ind2))
+y = Pointsource(psi0fun,X,Y,Z,t_end,rhoD,fD);
+
 radius = entity_width/2+1e-10;
 [Xcsorted, I] = sort(Xc(:));
 Ycsorted = Yc(I);
@@ -46,4 +51,4 @@ indices = intersect(yindices, zindices);
 cindices = intersect(ycindices, zcindices);
 plot(X(indices), y(indices), Xcsorted(cindices), ycsorted(cindices))
 print('pointsourceplot500','-dpng')
-contourslice(X,Y,Z,y,-1:0.25:1,-1:0.25:1,-1:0.25:1)
+%contourslice(X,Y,Z,y,-1:0.25:1,-1:0.25:1,-1:0.25:1)

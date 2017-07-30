@@ -87,8 +87,6 @@ public:
   {
     XT::Common::Configuration grid_config;
     grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
-    //    grid_config["lower_left"] = "[-0.5 -0.5 -0.5]";
-    //    grid_config["upper_right"] = "[0.5 0.5 0.5]";
     grid_config["lower_left"] = "[-1 -1 -1]";
     grid_config["upper_right"] = "[1 1 1]";
     grid_config["num_elements"] = "[4 4 4]";
