@@ -1,5 +1,5 @@
 function [outVol] = convolution3D_FFTdomain(inVol,inKer)
-%% convolution3D_FFTdomain - Performs a fast 3D convolution between a volume and a kernel using mutliplication in the Fourrier space. 
+%% convolution3D_FFTdomain - Performs a fast 3D convolution between a volume and a kernel using multiplication in the Fourrier space. 
 %
 % Syntax:  [outVol] = convolutionInFFTdomain(inVol,inKer,inMsg)
 % Inputs:
