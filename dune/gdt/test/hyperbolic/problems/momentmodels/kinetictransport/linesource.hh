@@ -18,8 +18,8 @@
 #include <dune/gdt/local/fluxes/entropybased.hh>
 #include <dune/gdt/test/instationary-testcase.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
-#include <dune/gdt/lebedevquadrature.hh>
 
+#include "../lebedevquadrature.hh"
 #include "kinetictransportequation.hh"
 
 namespace Dune {

@@ -11,5 +11,5 @@ dune_add_library(lebedevquadrature
                  NO_EXPORT
                  COMPILE_FLAGS "-O0"
                  SOURCES
-                 lebedevquadrature.cc)
+                 lebedevquadrature.cxx)
 
