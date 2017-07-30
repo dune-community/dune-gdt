@@ -110,8 +110,8 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
                                        ScalarFunctionType,
                                        double>
         OnlyFactorType;
-    DUNE_UNUSED OnlyFactorType factor_only(diffusion_factor, {}, grid_layer, range, source);
-    DUNE_UNUSED OnlyFactorType factor_only_with_over_integrate(1, diffusion_factor, {}, grid_layer, range, source);
+    DUNE_UNUSED OnlyFactorType factor_only(diffusion_factor, grid_layer, range, source);
+    DUNE_UNUSED OnlyFactorType factor_only_with_over_integrate(1, diffusion_factor, grid_layer, range, source);
 
     typedef EllipticLocalizableProduct<TensorFunctionType,
                                        void,
@@ -120,8 +120,8 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
                                        ExpressionFunctionType,
                                        double>
         OnlyTensorType;
-    DUNE_UNUSED OnlyTensorType tensor_only(diffusion_tensor, {}, grid_layer, range, source);
-    DUNE_UNUSED OnlyTensorType tensor_only_with_over_integrate(1, diffusion_tensor, {}, grid_layer, range, source);
+    DUNE_UNUSED OnlyTensorType tensor_only(diffusion_tensor, grid_layer, range, source);
+    DUNE_UNUSED OnlyTensorType tensor_only_with_over_integrate(1, diffusion_tensor, grid_layer, range, source);
 
     typedef EllipticLocalizableProduct<ExpressionFunctionType,
                                        TensorFunctionType,
@@ -130,8 +130,8 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
                                        ExpressionFunctionType,
                                        double>
         BothType;
-    DUNE_UNUSED BothType both(diffusion_factor, diffusion_tensor, {}, grid_layer, range, source);
-    DUNE_UNUSED BothType both_with_over_integrate(1, diffusion_factor, diffusion_tensor, {}, grid_layer, range, source);
+    DUNE_UNUSED BothType both(diffusion_factor, diffusion_tensor, grid_layer, range, source);
+    DUNE_UNUSED BothType both_with_over_integrate(1, diffusion_factor, diffusion_tensor, grid_layer, range, source);
   } // ... constructible_by_ctor(...)
 
   void constructible_by_factory()
