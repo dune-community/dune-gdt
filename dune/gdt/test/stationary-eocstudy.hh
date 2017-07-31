@@ -14,6 +14,7 @@
 
 #include <dune/xt/common/convergence-study.hh>
 #include <dune/xt/common/exceptions.hh>
+#include <dune/xt/grid/information.hh>
 
 #include <dune/gdt/prolongations.hh>
 
