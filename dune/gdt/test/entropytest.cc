@@ -49,7 +49,7 @@
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/planesource.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/pointsource.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/linesource.hh>
-#include <dune/gdt/lebedevquadrature.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/lebedevquadrature.hh>
 #include <dune/gdt/test/hyperbolic/problems/transport.hh>
 
 //! struct to be used as comparison function e.g. in a std::map<FieldVector<...>, ..., FieldVectorLess>
@@ -353,7 +353,7 @@ int main(int argc, char** argv)
   const GridLayerType grid_layer(grid_ptr->leafGridView());
   const SpaceType fv_space(grid_layer);
 
-//  const auto quadrature = Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(80);
+  const auto quadrature = Hyperbolic::Problems::LebedevQuadrature<DomainFieldType, true>::get(80);
   //    const auto& quadrature = basis_functions->quadrature();
     const auto quadrature = ProblemImp::default_quadrature(grid_config);
 

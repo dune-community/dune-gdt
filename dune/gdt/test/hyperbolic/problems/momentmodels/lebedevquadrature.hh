@@ -25,9 +25,10 @@ namespace Problems {
 namespace internal {
 
 
+template<size_t order>
 struct LebedevHelper
 {
-  static void get(std::vector<Dune::QuadraturePoint<double, 3>>& quad_vec, const size_t order);
+  static void get(std::vector<Dune::QuadraturePoint<double, 3>>& quad_vec);
 };
 
 
@@ -56,7 +57,41 @@ public:
     size_t order = (index == size_t(-1)) ? allowed_orders_.back() : allowed_orders_[index];
 
     std::vector<Dune::QuadraturePoint<double, 3>> quad_vector;
-    internal::LebedevHelper::get(quad_vector, order);
+    switch (order) {
+      case 3: internal::LebedevHelper<3>::get(quad_vector);
+      case 5: internal::LebedevHelper<5>::get(quad_vector);
+      case 7: internal::LebedevHelper<7>::get(quad_vector);
+      case 9: internal::LebedevHelper<9>::get(quad_vector);
+      case 11: internal::LebedevHelper<11>::get(quad_vector);
+      case 13: internal::LebedevHelper<13>::get(quad_vector);
+      case 15: internal::LebedevHelper<15>::get(quad_vector);
+      case 17: internal::LebedevHelper<17>::get(quad_vector);
+      case 19: internal::LebedevHelper<19>::get(quad_vector);
+      case 21: internal::LebedevHelper<21>::get(quad_vector);
+      case 23: internal::LebedevHelper<23>::get(quad_vector);
+      case 25: internal::LebedevHelper<25>::get(quad_vector);
+      case 27: internal::LebedevHelper<27>::get(quad_vector);
+      case 29: internal::LebedevHelper<29>::get(quad_vector);
+      case 31: internal::LebedevHelper<31>::get(quad_vector);
+      case 35: internal::LebedevHelper<35>::get(quad_vector);
+      case 41: internal::LebedevHelper<41>::get(quad_vector);
+      case 47: internal::LebedevHelper<47>::get(quad_vector);
+      case 53: internal::LebedevHelper<53>::get(quad_vector);
+      case 59: internal::LebedevHelper<59>::get(quad_vector);
+      case 65: internal::LebedevHelper<65>::get(quad_vector);
+      case 71: internal::LebedevHelper<71>::get(quad_vector);
+      case 77: internal::LebedevHelper<77>::get(quad_vector);
+      case 83: internal::LebedevHelper<83>::get(quad_vector);
+      case 89: internal::LebedevHelper<89>::get(quad_vector);
+      case 95: internal::LebedevHelper<95>::get(quad_vector);
+      case 101: internal::LebedevHelper<101>::get(quad_vector);
+      case 107: internal::LebedevHelper<107>::get(quad_vector);
+      case 113: internal::LebedevHelper<113>::get(quad_vector);
+      case 119: internal::LebedevHelper<119>::get(quad_vector);
+      case 125: internal::LebedevHelper<125>::get(quad_vector);
+      case 131: internal::LebedevHelper<131>::get(quad_vector);
+    default: DUNE_THROW(NotImplemented, "Requested order is not available!");
+    }
 
     Dune::QuadratureRule<FieldType, 3> quad_rule;
     for (const auto& quad_point : quad_vector)
