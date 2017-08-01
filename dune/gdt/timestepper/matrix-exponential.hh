@@ -18,11 +18,16 @@
 
 #include "interface.hh"
 
-#include "matrixexponential/matrix_exponential.hpp"
+#if HAVE_MATEXP
+#include "matrix_exponential/matrix_exponential_extension.hpp"
+#include "matrix_exponential/matrix_exponential.hpp"
+#endif //HAVE_MATEXP
 
 namespace Dune {
 namespace GDT {
 
+
+#if HAVE_MATEXP
 
 template <class DiscreteFunctionType, class RhsEvaluationType>
 class MatrixExponentialFunctor
@@ -246,6 +251,16 @@ private:
   std::vector<MatrixType> matrix_exponential_integrals_;
   RangeFieldType last_dt_;
 };
+
+#else // HAVE_MATEXP
+
+template <class OperatorImp, class DiscreteFunctionImp>
+class MatrixExponentialTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
+{
+  static_assert(AlwaysFalse<OperatorImp>::value, "You are missing the matrix_exponential library!");
+}
+
+#endif // HAVE_MATEXP
 
 
 } // namespace GDT
