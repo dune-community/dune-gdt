@@ -655,9 +655,9 @@ class EigenEigenSolver
 public:
   typedef typename XT::LA::EigenDenseVector<FieldType> VectorType;
   typedef typename XT::LA::EigenDenseMatrix<FieldType> MatrixType;
-  typedef FieldVector<FieldVector<FieldType, dimRange>, dimRangeCols> EigenValuesType;
-  typedef FieldVector<std::shared_ptr<FieldMatrix<FieldType, dimRange, dimRange>>, dimRangeCols> EigenVectorsType;
-  typedef FieldVector<FieldMatrix<FieldType, dimRange, dimRange>, dimRangeCols> InputMatricesType;
+  typedef FieldMatrix<FieldType, dimRange, dimRange> InputMatrixType;
+  typedef FieldVector<FieldType, dimRange> EigenValuesType;
+  typedef std::shared_ptr<InputMatrixType> EigenVectorsType;
 
 private:
   typedef typename MatrixType::BackendType EigenMatrixBackendType;
@@ -666,9 +666,16 @@ private:
                                     ::Eigen::EigenSolver<EigenMatrixBackendType>>::type EigenSolverType;
 
 public:
-  EigenEigenSolver(InputMatricesType& matrices_in, bool calculate_eigenvectors = false)
+  EigenEigenSolver(InputMatrixType& A, bool calculate_eigenvectors = false)
+    : A_(A)
+    , calculate_eigenvectors_(calculate_eigenvectors)
   {
-    initialize(matrices_in, calculate_eigenvectors);
+    initialize();
+  }
+
+  void solve()
+  {
+    initialize();
   }
 
   const EigenValuesType& eigenvalues() const
@@ -687,34 +694,38 @@ public:
   }
 
 private:
-  void initialize(InputMatricesType& matrices_in, const bool calculate_eigenvectors)
+  void initialize()
   {
-    for (size_t ii = 0; ii < dimRangeCols; ++ii) {
-      const auto matrix_ii_eigen =
-          XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, dimRange>::convert(matrices_in[ii]);
-      EigenSolverType eigen_solver(matrix_ii_eigen.backend());
+    if (!eigenvectors_) {
+      eigenvectors_ = std::make_shared<InputMatrixType>();
+      eigenvectors_inverse_ = std::make_shared<InputMatrixType>();
+    }
+      const auto matrix_eigen =
+          XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, dimRange>::convert(A_);
+      EigenSolverType eigen_solver(matrix_eigen.backend());
       assert(eigen_solver.info() == ::Eigen::Success);
       const auto& eigenvalues_eigen = eigen_solver.eigenvalues(); // <- this should be an Eigen vector of std::complex
       if (XT::Common::FloatCmp::ne(VectorType(eigenvalues_eigen.imag()), VectorType(dimRange, 0.)))
         DUNE_THROW(Dune::MathError, "Eigen returned imaginary eigenvalues!");
-      eigenvalues_[ii] = XT::LA::internal::FieldVectorToLaVector<VectorType, dimRange>::convert_back(
+      eigenvalues_ = XT::LA::internal::FieldVectorToLaVector<VectorType, dimRange>::convert_back(
           VectorType(eigenvalues_eigen.real()));
 
-      if (calculate_eigenvectors) {
+      if (calculate_eigenvectors_) {
         const auto& eigenvectors_eigen =
             eigen_solver.eigenvectors(); // <- this should be an Eigen vector of std::complex
         if (XT::Common::FloatCmp::ne(MatrixType(eigenvectors_eigen.imag()), MatrixType(dimRange, dimRange, 0.)))
           DUNE_THROW(Dune::MathError, "Eigen returned imaginary eigenvectors!");
 
-        eigenvectors_[ii] = XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, dimRange>::convert_back(
+        *eigenvectors_ = *XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, dimRange>::convert_back(
             MatrixType(eigenvectors_eigen.real()));
-        eigenvectors_inverse_[ii] =
-            XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, dimRange>::convert_back(
+        *eigenvectors_inverse_ =
+            *XT::LA::internal::FieldMatrixToLaDenseMatrix<MatrixType, dimRange, dimRange>::convert_back(
                 MatrixType(eigenvectors_eigen.real().inverse()));
       } // if (calculate_eigenvectors)
-    } // ii
   } // void initialize(...)
 
+  InputMatrixType& A_;
+  bool calculate_eigenvectors_;
   EigenValuesType eigenvalues_;
   EigenVectorsType eigenvectors_;
   EigenVectorsType eigenvectors_inverse_;
@@ -722,22 +733,22 @@ private:
 
 #else // HAVE_EIGEN
 
-template <class LocalFluxFunctionImp, bool selfadjoint = false>
+template <class FieldType, size_t dimRange, size_t dimRangeCols, bool self_adjoint = false>
 class EigenEigenSolver
 {
-  static_assert(AlwaysFalse<LocalFluxFunctionImp>::value, "You are missing eigen!");
+  static_assert(AlwaysFalse<FieldType>::value, "You are missing eigen!");
 };
 
 #endif // HAVE_EIGEN
 
 template <class FieldType, size_t dimRange, size_t dimRangeCols>
-#if HAVE_LAPACK
-using DefaultEigenSolver = LapackEigenSolver<FieldType, dimRange, dimRangeCols>;
-#elif HAVE_EIGEN
-using DefaultEigenSolver = EigenEigenSolver<FieldType, dimRange, dimRangeCols, true>;
-#else
-using DefaultEigenSolver = QrHouseholderEigenSolver<FieldType, dimRange, dimRangeCols>;
-#endif
+//#if HAVE_LAPACK
+//using DefaultEigenSolver = LapackEigenSolver<FieldType, dimRange, dimRangeCols>;
+//#elif HAVE_EIGEN
+using DefaultEigenSolver = EigenEigenSolver<FieldType, dimRange, dimRangeCols, false>;
+//#else
+//using DefaultEigenSolver = QrHouseholderEigenSolver<FieldType, dimRange, dimRangeCols>;
+//#endif
 
 } // namespace GDT
 } // namespace Dune
