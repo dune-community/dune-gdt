@@ -18,22 +18,17 @@
 
 #include <dune/xt/common/math.hh>
 
+#if HAVE_LEBEDEV_DATA
+#include "lebedev_data.hh"
+#endif
+
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
-namespace internal {
 
 
-template<size_t order>
-struct LebedevHelper
-{
-  static void get(std::vector<Dune::QuadraturePoint<double, 3>>& quad_vec);
-};
-
-
-} // namespace internal
-
+#if HAVE_LEBEDEV_DATA
 
 // The tabulated values are in cartesian coordinates (x, y, z). If cartesian is false, the
 // quadrature points are converted to spherical coordinates (\theta, \varphi), with
@@ -56,46 +51,48 @@ public:
                 << " is not available, using highest available order " << allowed_orders_.back() << "." << std::endl;
     size_t order = (index == size_t(-1)) ? allowed_orders_.back() : allowed_orders_[index];
 
-    std::vector<Dune::QuadraturePoint<double, 3>> quad_vector;
+    std::vector<std::pair<std::array<double, 3>, double>> quad_vector;
     switch (order) {
-      case 3: internal::LebedevHelper<3>::get(quad_vector); break;
-      case 5: internal::LebedevHelper<5>::get(quad_vector); break;
-      case 7: internal::LebedevHelper<7>::get(quad_vector); break;
-      case 9: internal::LebedevHelper<9>::get(quad_vector); break;
-      case 11: internal::LebedevHelper<11>::get(quad_vector); break;
-      case 13: internal::LebedevHelper<13>::get(quad_vector); break;
-      case 15: internal::LebedevHelper<15>::get(quad_vector); break;
-      case 17: internal::LebedevHelper<17>::get(quad_vector); break;
-      case 19: internal::LebedevHelper<19>::get(quad_vector); break;
-      case 21: internal::LebedevHelper<21>::get(quad_vector); break;
-      case 23: internal::LebedevHelper<23>::get(quad_vector); break;
-      case 25: internal::LebedevHelper<25>::get(quad_vector); break;
-      case 27: internal::LebedevHelper<27>::get(quad_vector); break;
-      case 29: internal::LebedevHelper<29>::get(quad_vector); break;
-      case 31: internal::LebedevHelper<31>::get(quad_vector); break;
-      case 35: internal::LebedevHelper<35>::get(quad_vector); break;
-      case 41: internal::LebedevHelper<41>::get(quad_vector); break;
-      case 47: internal::LebedevHelper<47>::get(quad_vector); break;
-      case 53: internal::LebedevHelper<53>::get(quad_vector); break;
-      case 59: internal::LebedevHelper<59>::get(quad_vector); break;
-      case 65: internal::LebedevHelper<65>::get(quad_vector); break;
-      case 71: internal::LebedevHelper<71>::get(quad_vector); break;
-      case 77: internal::LebedevHelper<77>::get(quad_vector); break;
-      case 83: internal::LebedevHelper<83>::get(quad_vector); break;
-      case 89: internal::LebedevHelper<89>::get(quad_vector); break;
-      case 95: internal::LebedevHelper<95>::get(quad_vector); break;
-      case 101: internal::LebedevHelper<101>::get(quad_vector); break;
-      case 107: internal::LebedevHelper<107>::get(quad_vector); break;
-      case 113: internal::LebedevHelper<113>::get(quad_vector); break;
-      case 119: internal::LebedevHelper<119>::get(quad_vector); break;
-      case 125: internal::LebedevHelper<125>::get(quad_vector); break;
-      case 131: internal::LebedevHelper<131>::get(quad_vector); break;
+      case 3: internal::LebedevData<3>::get(quad_vector); break;
+      case 5: internal::LebedevData<5>::get(quad_vector); break;
+      case 7: internal::LebedevData<7>::get(quad_vector); break;
+      case 9: internal::LebedevData<9>::get(quad_vector); break;
+      case 11: internal::LebedevData<11>::get(quad_vector); break;
+      case 13: internal::LebedevData<13>::get(quad_vector); break;
+      case 15: internal::LebedevData<15>::get(quad_vector); break;
+      case 17: internal::LebedevData<17>::get(quad_vector); break;
+      case 19: internal::LebedevData<19>::get(quad_vector); break;
+      case 21: internal::LebedevData<21>::get(quad_vector); break;
+      case 23: internal::LebedevData<23>::get(quad_vector); break;
+      case 25: internal::LebedevData<25>::get(quad_vector); break;
+      case 27: internal::LebedevData<27>::get(quad_vector); break;
+      case 29: internal::LebedevData<29>::get(quad_vector); break;
+      case 31: internal::LebedevData<31>::get(quad_vector); break;
+      case 35: internal::LebedevData<35>::get(quad_vector); break;
+      case 41: internal::LebedevData<41>::get(quad_vector); break;
+      case 47: internal::LebedevData<47>::get(quad_vector); break;
+      case 53: internal::LebedevData<53>::get(quad_vector); break;
+      case 59: internal::LebedevData<59>::get(quad_vector); break;
+      case 65: internal::LebedevData<65>::get(quad_vector); break;
+      case 71: internal::LebedevData<71>::get(quad_vector); break;
+      case 77: internal::LebedevData<77>::get(quad_vector); break;
+      case 83: internal::LebedevData<83>::get(quad_vector); break;
+      case 89: internal::LebedevData<89>::get(quad_vector); break;
+      case 95: internal::LebedevData<95>::get(quad_vector); break;
+      case 101: internal::LebedevData<101>::get(quad_vector); break;
+      case 107: internal::LebedevData<107>::get(quad_vector); break;
+      case 113: internal::LebedevData<113>::get(quad_vector); break;
+      case 119: internal::LebedevData<119>::get(quad_vector); break;
+      case 125: internal::LebedevData<125>::get(quad_vector); break;
+      case 131: internal::LebedevData<131>::get(quad_vector); break;
     default: DUNE_THROW(NotImplemented, "Requested order is not available!");
     }
 
     Dune::QuadratureRule<FieldType, 3> quad_rule;
-    for (const auto& quad_point : quad_vector)
-      quad_rule.emplace_back(quad_point);
+    for (const auto& quad_point : quad_vector) {
+      const auto& pos = quad_point.first;
+      quad_rule.emplace_back(FieldVector<FieldType, 3>{{pos[0], pos[1], pos[2]}}, quad_point.second);
+    }
 
     return helper<>::create(quad_rule);
   }
@@ -131,6 +128,16 @@ template <class FieldType, bool cartesian>
 const std::vector<size_t> LebedevQuadrature<FieldType, cartesian>::allowed_orders_ = {
     3,  5,  7,  9,  11, 13, 15, 17, 19, 21, 23,  25,  27,  29,  31,  35,
     41, 47, 53, 59, 65, 71, 77, 83, 89, 95, 101, 107, 113, 119, 125, 131};
+
+#else // HAVE_LEBEDEV_DATA
+
+template <class FieldType, bool cartesian = true>
+class LebedevQuadrature
+{
+  static_assert(AlwaysFalse<FieldType>::value, "You are missing the lebedev quadrature data library!");
+};
+
+#endif // HAVE_LEBEDEV_DATA
 
 
 } // namespace Problems
