@@ -178,8 +178,8 @@ public:
     return backend_.size();
   }
 
-  template <size_t codim>
-  size_t numDofs(const XT::Grid::extract_entity_t<typename Traits::GridViewType, codim>& entity) const
+  template <int cd, class GridImp, template <int, int, class> class EntityImp>
+  size_t numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity) const
   {
     return backend_.numDofs(entity);
   }

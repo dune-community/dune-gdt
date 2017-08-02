@@ -89,7 +89,7 @@ private:
                   "This space is only implemented for either fully simplicial or fully cubic grids!");
     using Type = PDELab::QkDGLocalFiniteElementMap<DomainFieldType, RangeFieldType, polOrder, dimDomain>;
   };
-
+  using GridType = XT::Grid::extract_grid_t<GridLayerType>;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
   static const bool simplicial_ =
       (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId == Impl::SimplexTopology<dimDomain>::type::id);

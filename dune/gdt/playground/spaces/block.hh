@@ -85,7 +85,7 @@ public:
   typedef typename BaseType::PatternType PatternType;
   typedef typename BaseType::GridLayerType GridLayerType;
   typedef typename BaseType::EntityType EntityType;
-  typedef CommunicationChooser<GridViewType, true> CommunicationChooserType;
+  typedef CommunicationChooser<GridLayerType, true> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 
   typedef XT::Grid::DD::SubdomainGrid<typename XT::Grid::extract_grid<GridLayerType>::type> DdSubdomainsGridType;
@@ -160,8 +160,8 @@ public:
 
   typename Traits::CommunicatorType& communicator() const
   {
-    if (!communicator__prepared_)
-      communicator__prepared_ = CommunicationChooserType::prepare(*this, *communicator_);
+    if (!communicator_prepared_)
+      communicator_prepared_ = CommunicationChooserType::prepare(*this, *communicator_);
     return *communicator_;
     return *communicator_;
   }
