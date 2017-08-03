@@ -32,6 +32,9 @@ class LocalLambdaBinaryFaceIntegrand;
 template <class E, class I, class R = double, size_t rT = 1, size_t rCT = 1, size_t rA = rT, size_t rCA = rCT>
 class LocalLambdaQuaternaryFaceIntegrand;
 
+template <class E, class R = double, size_t r = 1, size_t rC = 1>
+class LocalLambdaUnaryVolumeIntegrand;
+
 
 namespace internal {
 
@@ -73,6 +76,20 @@ class LocalLambdaQuaternaryFaceIntegrandTraits
 
 public:
   typedef LocalLambdaQuaternaryFaceIntegrand<E, I, R, rT, rCT, rA, rCA> derived_type;
+  typedef E EntityType;
+  typedef int LocalfunctionTupleType;
+  typedef typename EntityType::Geometry::ctype DomainFieldType;
+  static const constexpr size_t dimDomain = EntityType::dimension;
+};
+
+
+template <class E, class R, size_t r, size_t rC>
+class LocalLambdaUnaryVolumeIntegrandTraits
+{
+  static_assert(XT::Grid::is_entity<E>::value, "");
+
+public:
+  typedef LocalLambdaUnaryVolumeIntegrand<E, R, r, rC> derived_type;
   typedef E EntityType;
   typedef int LocalfunctionTupleType;
   typedef typename EntityType::Geometry::ctype DomainFieldType;
@@ -377,6 +394,69 @@ private:
   const OrderLambdaType order_lambda_;
   const EvaluateLambdaType evaluate_lambda_;
 }; // class LocalLambdaQuaternaryFaceIntegrand
+
+
+template <class E, class R, size_t r, size_t rC>
+class LocalLambdaUnaryVolumeIntegrand
+    : public LocalVolumeIntegrandInterface<internal::LocalLambdaUnaryVolumeIntegrandTraits<E, R, r, rC>, 1>
+{
+  typedef LocalVolumeIntegrandInterface<internal::LocalLambdaUnaryVolumeIntegrandTraits<E, R, r, rC>, 1> BaseType;
+  typedef LocalLambdaUnaryVolumeIntegrand<E, R, r, rC> ThisType;
+
+public:
+  typedef internal::LocalLambdaUnaryVolumeIntegrandTraits<E, R, r, rC> Traits;
+  using typename BaseType::LocalfunctionTupleType;
+  using typename BaseType::EntityType;
+  using typename BaseType::D;
+  using BaseType::d;
+
+  typedef XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC> TestBaseType;
+  typedef FieldVector<D, d> PointType;
+  typedef DynamicVector<R> LocalVectorType;
+
+  typedef std::function<size_t(const TestBaseType&)> OrderLambdaType;
+  typedef std::function<void(const TestBaseType&, const PointType&, LocalVectorType&)> EvaluateLambdaType;
+
+  LocalLambdaUnaryVolumeIntegrand(OrderLambdaType order_lambda, EvaluateLambdaType evaluate_lambda)
+    : order_lambda_(order_lambda)
+    , evaluate_lambda_(evaluate_lambda)
+  {
+  }
+
+  LocalLambdaUnaryVolumeIntegrand(const ThisType&) = default;
+  LocalLambdaUnaryVolumeIntegrand(ThisType&&) = default;
+
+  LocalfunctionTupleType localFunctions(const EntityType& /*entity*/) const
+  {
+    return 0; // just a dummy
+  }
+
+  size_t order(const LocalfunctionTupleType& /*local_functions_tuple*/, const TestBaseType& test_base) const
+  {
+    return order_lambda_(test_base);
+  }
+
+  void evaluate(const LocalfunctionTupleType& /*local_functions_tuple*/,
+                const TestBaseType& test_base,
+                const PointType& local_point,
+                LocalVectorType& ret) const
+  {
+    evaluate_lambda_(test_base, local_point, ret);
+    if (ret.size() < test_base.size())
+      DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong,
+                 "Your evalaute_lambda destroyed ret!\n   "
+                     << "ret is expected to be at least of size test_base.size(),\n   "
+                     << "do not call ret.resize(...)!\n   "
+                     << "test_base.size(): "
+                     << test_base.size()
+                     << "\n   ret.size(): "
+                     << ret.size());
+  } // ... evaluate(...)
+
+private:
+  const OrderLambdaType order_lambda_;
+  const EvaluateLambdaType evaluate_lambda_;
+}; // class LocalLambdaUnaryVolumeIntegrand
 
 
 } // namespace GDT
