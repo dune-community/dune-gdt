@@ -314,17 +314,29 @@ public:
     return Compute<pt>::pattern(rng_spc, src_spc, grd_layr);
   }
 
-  static PatternType pattern(const RangeSpaceType& rng_spc)
+  template <class R>
+  static typename std::enable_if<std::is_same<R, RangeSpaceType>::value && std::is_same<R, SourceSpaceType>::value
+                                     && std::is_same<typename R::GridLayerType, GridLayerType>::value,
+                                 PatternType>::type
+  pattern(const R& rng_spc)
   {
     return pattern(rng_spc, rng_spc);
   }
 
-  static PatternType pattern(const RangeSpaceType& rng_spc, const SourceSpaceType& src_spc)
+  template <class R, class S>
+  static typename std::enable_if<std::is_same<R, RangeSpaceType>::value && std::is_same<S, SourceSpaceType>::value
+                                     && std::is_same<typename R::GridLayerType, GridLayerType>::value,
+                                 PatternType>::type
+  pattern(const R& rng_spc, const S& src_spc)
   {
     return pattern(rng_spc, src_spc, rng_spc.grid_layer());
   }
 
-  static PatternType pattern(const RangeSpaceType& rng_spc, const GridLayerType& grd_layr)
+  template <class R, class G>
+  static typename std::enable_if<std::is_same<R, RangeSpaceType>::value && std::is_same<R, SourceSpaceType>::value
+                                     && std::is_same<G, GridLayerType>::value,
+                                 PatternType>::type
+  pattern(const R& rng_spc, const G& grd_layr)
   {
     return pattern(rng_spc, rng_spc, grd_layr);
   }
