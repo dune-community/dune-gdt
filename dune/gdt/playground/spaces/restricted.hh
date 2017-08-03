@@ -141,6 +141,8 @@ public:
     return unrestricted_space_.communicator();
   }
 
+  using BaseType::local_constraints;
+
   template <class S, size_t d, size_t r, size_t rC, class C>
   void local_constraints(const SpaceInterface<S, d, r, rC>& ansatz_space,
                          const EntityType& entity,
@@ -151,6 +153,8 @@ public:
       DUNE_THROW(restricted_space_error, error_message);
     return unrestricted_space_.local_constraints(ansatz_space, entity, ret);
   }
+
+  using BaseType::compute_pattern;
 
   template <class GL, class S, size_t d, size_t r, size_t rC>
   typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
@@ -176,6 +180,16 @@ public:
     if (error_message.size() > 0)
       DUNE_THROW(restricted_space_error, error_message);
     return unrestricted_space_.local_dirichlet_DoFs(entity, boundaryInfo);
+  }
+
+  // if we are RT
+  template <class E>
+  std::vector<size_t> local_DoF_indices(const E& entity) const
+  {
+    const auto error_message = check_entity(entity);
+    if (error_message.size() > 0)
+      DUNE_THROW(restricted_space_error, error_message);
+    return unrestricted_space_.local_DoF_indices(entity);
   }
 
 private:
