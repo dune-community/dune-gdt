@@ -74,6 +74,9 @@ if(dune-pybindxi_FOUND)
   # * oswald interpolation
   dune_pybindxi_add_module(__operators_oswaldinterpolation operators/oswaldinterpolation.bindings.cc)
   list(APPEND pybindxi_modules __operators_oswaldinterpolation)
+  # * L2 operator
+  dune_pybindxi_add_module(__operators_l2 operators/l2.bindings.cc)
+  list(APPEND pybindxi_modules __operators_l2)
   # * weighted L2 operator
   dune_pybindxi_add_module(__operators_weighted_l2 operators/weighted-l2.bindings.cc)
   list(APPEND pybindxi_modules __operators_weighted_l2)

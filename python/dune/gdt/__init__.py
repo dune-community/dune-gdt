@@ -35,6 +35,7 @@ _gdt_modules = ['spaces',
                 'operators_ESV2007',
                 'operators_OS2015',
                 'operators_RS2017',
+                'operators_l2',
                 'operators_weighted_l2']
 
 for module_name in _gdt_modules:

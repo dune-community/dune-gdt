@@ -190,6 +190,7 @@ class L2MatrixOperator
                                    SourceSpace,
                                    Field>
       BaseType;
+  typedef L2MatrixOperator<RangeSpace, Matrix, GridLayer, SourceSpace, Field> ThisType;
 
   // We suffer from the same problem as in L2LocalizableProduct, see above for an explanation.
   template <bool anything>
@@ -240,6 +241,9 @@ L2LocalizableProduct(...args);
                        std::forward<Args>(args)...)
   {
   }
+
+  L2MatrixOperator(const ThisType& other) = delete; //  These need to be here for pybind11, as long as the assembler is
+  L2MatrixOperator(ThisType&& source) = delete; //      not copyable or movable.
 }; // class L2MatrixOperator
 
 
