@@ -39,6 +39,10 @@ class RestrictedSpace;
 template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols>
 class CgSpaceInterface;
 
+// from #include <dune/gdt/spaces/rt/interface.hh>
+template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols>
+class RtSpaceInterface;
+
 // from #include <dune/gdt/local/integrands/interfaces.hh>
 template <class Traits, size_t numArguments>
 class LocalVolumeIntegrandInterface;
@@ -232,6 +236,26 @@ struct is_cg_space<S, true, false>
 
 template <class S>
 struct is_cg_space<S, true, true> : public is_cg_space<typename S::UnrestrictedSpaceType>
+{
+};
+
+
+// from #include <dune/gdt/spaces/rt/interface.hh>
+template <class S,
+          bool space_candidate = internal::is_space_helper<S>::is_candidate,
+          bool restricted = is_restricted_space<S>::value>
+struct is_rt_space : public std::false_type
+{
+};
+
+template <class S>
+struct is_rt_space<S, true, false>
+    : public std::is_base_of<RtSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
+{
+};
+
+template <class S>
+struct is_rt_space<S, true, true> : public is_rt_space<typename S::UnrestrictedSpaceType>
 {
 };
 
