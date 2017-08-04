@@ -41,25 +41,12 @@ template <>
 struct ChooseLimiter<SlopeLimiters::minmod>
 {
   template <class VectorType>
-  static VectorType limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& slope_center)
+  static VectorType limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& /*slope_center*/)
   {
     VectorType ret(0.);
-    for (size_t ii = 0; ii < slope_left.size(); ++ii) {
-      // check for equal sign
-      if (slope_left[ii] * slope_right[ii] > 0 && slope_center[ii] * slope_right[ii] > 0) {
-        const auto slope_left_abs = std::abs(slope_left[ii]);
-        const auto slope_right_abs = std::abs(slope_right[ii]);
-        const auto slope_center_abs = std::abs(slope_center[ii]);
-        if (XT::Common::FloatCmp::lt(slope_left_abs, slope_right_abs)) {
-          if (XT::Common::FloatCmp::lt(slope_left_abs, slope_center_abs))
-            ret[ii] = slope_left[ii];
-        } else if (XT::Common::FloatCmp::lt(slope_right_abs, slope_center_abs)) {
-          ret[ii] = slope_right[ii];
-        } else {
-          ret[ii] = slope_center[ii];
-        }
-      } // if (all signs equal)
-    } // ii
+    for (size_t ii = 0; ii < slope_left.size(); ++ii)
+      if (slope_left[ii] * slope_right[ii] > 0) // check for equal sign
+        ret[ii] = XT::Common::FloatCmp::lt(std::abs(slope_left[ii]), std::abs(slope_right[ii])) ? slope_left[ii] : slope_right[ii];
     return ret;
   }
 };
