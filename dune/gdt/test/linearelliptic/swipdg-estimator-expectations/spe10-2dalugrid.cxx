@@ -39,13 +39,13 @@ public:
   {
     if (type == "energy") {
 #if DXT_DISABLE_LARGE_TESTS
-      return {1.07e+01, 1.04e+03};
+      return {3.88e+01, 4.98e+01};
 #else
       return {8.38e-01, 4.02e-01};
 #endif
     } else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_nonconformity_ESV2007_id()) {
 #if DXT_DISABLE_LARGE_TESTS
-      return {0.00e+00, 1.85e+02};
+      return {3.20e+01, 5.47e+01};
 #else
       return {2.74e+00, 1.84e+00};
 #endif
@@ -53,7 +53,7 @@ public:
       return {0.0, 0.0};
     } else if (type == LinearElliptic::SwipdgFluxreconstrutionEstimators::local_diffusive_flux_ESV2007_id()) {
 #if DXT_DISABLE_LARGE_TESTS
-      return {0.00e+00, 6.31e+01};
+      return {9.93e+00, 9.07e+00};
 #else
       return {1.22e+00, 7.62e-01};
 #endif
@@ -65,7 +65,7 @@ public:
 #endif
     } else if (type == "efficiency_" + LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_id()) {
 #if DXT_DISABLE_LARGE_TESTS
-      return {0.00e+00, 1.88e-01};
+      return {8.65e-01, 1.11e+00};
 #else
       return {3.59e+00, 4.95e+00};
 #endif
@@ -79,7 +79,7 @@ public:
                == "efficiency_"
                       + LinearElliptic::SwipdgFluxreconstrutionEstimators::ESV2007_alternative_summation_id()) {
 #if DXT_DISABLE_LARGE_TESTS
-      return {0.00e+00, 1.51e-02};
+      return {1.67e-01, 1.60e-01};
 #else
       return {2.38e+00, 4.01e+00};
 #endif
