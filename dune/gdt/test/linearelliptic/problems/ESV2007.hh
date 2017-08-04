@@ -114,6 +114,7 @@ private:
     static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       cfg["num_elements"] = "[4 4]";
+      cfg["num_refinements"] = "0";
       return cfg;
     }
   };
@@ -136,6 +137,7 @@ private:
     static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       cfg["num_elements"] = "[8 8]";
+      cfg["num_refinements"] = "0";
       return cfg;
     }
   };
@@ -170,6 +172,7 @@ private:
     static XT::Common::Configuration value(XT::Common::Configuration cfg)
     {
       cfg["num_elements"] = "[8 8]";
+      cfg["num_refinements"] = "0";
       return cfg;
     }
   };
