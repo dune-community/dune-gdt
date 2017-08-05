@@ -42,33 +42,23 @@ namespace GDT {
 // ============================================== //
 
 
-template <class GL,
-          class V,
-          LocalEllipticIpdgIntegrands::Method dg_method = LocalEllipticIpdgIntegrands::default_method,
-          class ReconstructionGridLayer = GL>
-class LocalizableDiffusiveFluxReconstructionOperator
-    : public LocalizableOperatorBase<GL,
-                                     XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GL>,
-                                                                                 double,
-                                                                                 GL::dimension,
-                                                                                 double,
-                                                                                 1>,
-                                     DiscreteFunction<DunePdelabRtSpaceWrapper<ReconstructionGridLayer,
-                                                                               0,
-                                                                               double,
-                                                                               GL::dimension>,
-                                                      V>>
+template <class GridLayer,
+          class Source,
+          class Range,
+          LocalEllipticIpdgIntegrands::Method dg_method = LocalEllipticIpdgIntegrands::default_method>
+class LocalizableDiffusiveFluxReconstructionOperator : public LocalizableOperatorBase<GridLayer, Source, Range>
 {
-  static_assert(XT::LA::is_vector<V>::value, "");
+  static_assert(XT::Functions::is_localizable_function<Source>::value, "");
+  static_assert(is_discrete_function<Range>::value, "");
+  static_assert(is_rt_space<typename Range::SpaceType>::value, "");
 
-  typedef XT::Grid::extract_entity_t<GL> E;
-  static const constexpr size_t d = GL::dimension;
+  typedef XT::Grid::extract_entity_t<GridLayer> E;
+  static const constexpr size_t d = GridLayer::dimension;
   typedef double D;
   typedef double R;
   typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
   typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
-  typedef DunePdelabRtSpaceWrapper<ReconstructionGridLayer, 0, double, GL::dimension> RtSpaceType;
-  typedef LocalizableOperatorBase<GL, ScalarFunctionType, DiscreteFunction<RtSpaceType, V>> BaseType;
+  typedef LocalizableOperatorBase<GridLayer, Source, Range> BaseType;
 
 public:
   using typename BaseType::GridLayerType;
@@ -231,7 +221,7 @@ private:
   DynamicMatrix<R> tmp_matrix_en_en_;
   DynamicMatrix<R> tmp_matrix_en_ne_;
   std::vector<FieldVector<R, d>> tmp_basis_values_;
-  const LocalLambdaOperator<ScalarFunctionType, RtSpaceType, V> local_operator_;
+  const LocalLambdaOperator<ScalarFunctionType, typename Range::SpaceType, typename Range::VectorType> local_operator_;
 }; // class LocalizableDiffusiveFluxReconstructionOperator
 
 
