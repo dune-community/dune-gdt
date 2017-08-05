@@ -164,6 +164,8 @@ public:
     return backend().numDofs(entity);
   }
 
+  using BaseType::globalIndices;
+
   void globalIndices(const EntityType& entity, DynamicVector<size_t>& ret) const
   {
     const auto error_message = check_entity(entity);
