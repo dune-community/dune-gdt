@@ -25,6 +25,7 @@
 #include <dune/pybindxi/stl.h>
 
 #include <dune/xt/common/bindings.hh>
+#include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/la/container/istl.hh>
 #include <dune/xt/la/eigen-solver/eigen.hh>
@@ -34,11 +35,13 @@
 #include <dune/xt/grid/gridprovider/provider.hh>
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/functions/derived.hh>
 
 #include <dune/gdt/assembler/system.bindings.hh>
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
 #include <dune/gdt/local/integrands/lambda.hh>
 #include <dune/gdt/local/operators/integrals.hh>
+#include <dune/gdt/functionals/base.bindings.hh>
 #include <dune/gdt/functionals/elliptic-ipdg.hh>
 #include <dune/gdt/functionals/l2.hh>
 #include <dune/gdt/operators/base.bindings.hh>
@@ -49,6 +52,7 @@
 #include <dune/gdt/operators/oswaldinterpolation.hh>
 #include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/playground/spaces/block.hh>
+#include <dune/gdt/playground/spaces/restricted.hh>
 #include <dune/gdt/spaces.hh>
 
 using namespace Dune;
@@ -58,35 +62,515 @@ namespace py = pybind11;
 
 
 template <class G>
-class HdivSemiProduct : public GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                                                       typename GDT::SpaceProvider<G,
-                                                                                   XT::Grid::Layers::dd_subdomain,
-                                                                                   GDT::SpaceType::rt,
-                                                                                   GDT::Backends::pdelab,
-                                                                                   0,
-                                                                                   double,
-                                                                                   G::dimension>::type,
-                                                       typename XT::Grid::Layer<G,
-                                                                                XT::Grid::Layers::dd_subdomain,
-                                                                                XT::Grid::Backends::part,
-                                                                                XT::Grid::DD::SubdomainGrid<G>>::type>
+class DiffusiveFluxAaProduct
+    : public GDT::
+          MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                             typename GDT::SpaceProvider<G,
+                                                         Layers::dd_subdomain,
+                                                         GDT::SpaceType::dg,
+                                                         GDT::Backends::fem,
+                                                         1,
+                                                         double,
+                                                         1>::type,
+                             typename XT::Grid::
+                                 Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
-  typedef typename GDT::SpaceProvider<G,
-                                      XT::Grid::Layers::dd_subdomain,
-                                      GDT::SpaceType::rt,
-                                      GDT::Backends::pdelab,
-                                      0,
-                                      double,
-                                      G::dimension>
-      SP;
-  typedef GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                                  typename SP::type,
-                                  typename XT::Grid::Layer<G,
-                                                           XT::Grid::Layers::dd_subdomain,
-                                                           XT::Grid::Backends::part,
-                                                           XT::Grid::DD::SubdomainGrid<G>>::type>
-      BaseType;
+  typedef typename GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::fem, 1, double, 1> SP;
+  typedef GDT::
+      MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                         typename SP::type,
+                         typename XT::Grid::
+                             Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>
+          BaseType;
+  typedef DiffusiveFluxAaProduct<G> ThisType;
+
+public:
+  using typename BaseType::GridLayerType;
+  using typename BaseType::RangeSpaceType;
+
+  typedef XT::Grid::extract_entity_t<GridLayerType> E;
+  typedef XT::Grid::extract_intersection_t<GridLayerType> I;
+  typedef typename G::ctype D;
+  static const constexpr size_t d = G::dimension;
+  typedef double R;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
+  typedef typename RangeSpaceType::BaseFunctionSetType BasisType;
+
+  static void bind(py::module& m)
+  {
+    using namespace pybind11::literals;
+
+    GDT::bindings::MatrixOperatorBase<ThisType>::bind(
+        m,
+        XT::Common::to_camel_case("RS2017_diffusive_flux_aa_product_matrix_operator_subdomain_"
+                                  + XT::Grid::bindings::grid_name<G>::value())
+            .c_str());
+
+    m.def("RS2017_make_diffusive_flux_aa_product_matrix_operator_on_subdomain",
+          [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+             const ssize_t subdomain,
+             const RangeSpaceType& space,
+             const ScalarFunctionType& lambda_hat,
+             const ScalarFunctionType& lambda_u,
+             const ScalarFunctionType& lambda_v,
+             const TensorFunctionType& kappa,
+             const size_t over_integrate) {
+            return new ThisType(space,
+                                dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+                                    XT::Common::numeric_cast<size_t>(subdomain)),
+                                lambda_hat,
+                                lambda_u,
+                                lambda_v,
+                                kappa,
+                                over_integrate);
+          },
+          "dd_grid_provider"_a,
+          "subdomain"_a,
+          "space"_a,
+          "lambda_hat"_a,
+          "lambda_u"_a,
+          "lambda_v"_a,
+          "kappa"_a,
+          "over_integrate"_a = 2);
+  } // ... bind(...)
+
+  DiffusiveFluxAaProduct(RangeSpaceType space,
+                         GridLayerType grd_lyr,
+                         const ScalarFunctionType& lambda_hat,
+                         const ScalarFunctionType& lambda_u,
+                         const ScalarFunctionType& lambda_v,
+                         const TensorFunctionType& kappa,
+                         const size_t over_integrate = 2)
+    : BaseType(space, grd_lyr)
+    , unit_matrix_(XT::Common::from_string<XT::Common::FieldMatrix<D, d, d>>("[1 0 0; 0 1 0; 0 0 1]"))
+    , over_integrate_(over_integrate)
+    , local_operator_(
+          [&](const auto& test_base, const auto& ansatz_base) {
+            const auto& entity = test_base.entity();
+            const auto local_lambda_hat = lambda_hat.local_function(entity);
+            const auto local_lambda_u = lambda_u.local_function(entity);
+            const auto local_lambda_v = lambda_v.local_function(entity);
+            const auto local_kappa = kappa.local_function(entity);
+            const auto integrand_order = local_lambda_hat->order() + local_lambda_u->order() + local_lambda_v->order()
+                                         + 3 * local_kappa->order()
+                                         + size_t(std::max(ssize_t(test_base.order()) - 1, ssize_t(0)))
+                                         + size_t(std::max(ssize_t(ansatz_base.order()) - 1, ssize_t(0)));
+            return integrand_order + over_integrate_;
+          },
+          [&](const auto& test_base, const auto& ansatz_base, const auto& local_point, auto& ret) {
+            const auto& entity = test_base.entity();
+            const auto local_lambda_hat = lambda_hat.local_function(entity);
+            const auto local_lambda_u = lambda_u.local_function(entity);
+            const auto local_lambda_v = lambda_v.local_function(entity);
+            const auto local_kappa = kappa.local_function(entity);
+            XT::Common::FieldMatrix<D, d, d> diffusion_hat_inverse = local_kappa->evaluate(local_point);
+            XT::Common::FieldMatrix<D, d, d> diffusion_u = diffusion_hat_inverse;
+            XT::Common::FieldMatrix<D, d, d> diffusion_v = diffusion_hat_inverse;
+            diffusion_hat_inverse *= local_lambda_hat->evaluate(local_point);
+#ifndef NDEBUG
+            const auto diffusion_hat = diffusion_hat_inverse;
+#endif
+            diffusion_hat_inverse.invert();
+#ifndef NDEBUG
+            // there is no documented way to tell if the inversion was successfull
+            if (XT::Common::FloatCmp::ne(diffusion_hat_inverse * diffusion_hat, unit_matrix_))
+              DUNE_THROW(XT::Common::Exceptions::internal_error,
+                         "Local inversion of lambda_hat*kappa failed!\n\nx = "
+                             << local_point
+                             << "\nlocal_lambda_hat(x) = "
+                             << local_lambda_hat->evaluate(local_point)
+                             << "\nlocal_kappa(x) = "
+                             << local_kappa->evaluate(local_point)
+                             << "\ninverse = "
+                             << diffusion_hat_inverse
+                             << "\ninverse * (local_lambda_hat(x)*local_kappa(x))) = "
+                             << diffusion_hat_inverse * diffusion_hat);
+#endif
+            diffusion_u *= local_lambda_u->evaluate(local_point);
+            diffusion_v *= local_lambda_v->evaluate(local_point);
+            const auto test_grads = test_base.jacobian(local_point);
+            const auto ansatz_grads = ansatz_base.jacobian(local_point);
+            ret *= 0.;
+            for (size_t ii = 0; ii < test_base.size(); ++ii)
+              for (size_t jj = 0; jj < ansatz_base.size(); ++jj)
+                ret[ii][jj] =
+                    ((diffusion_hat_inverse * (diffusion_u * ansatz_grads[jj][0])) * (diffusion_v * test_grads[ii][0]));
+          })
+  {
+    this->append(local_operator_);
+  }
+
+  DiffusiveFluxAaProduct(const ThisType&) = delete;
+  DiffusiveFluxAaProduct(ThisType&&) = delete;
+
+private:
+  const XT::Common::FieldMatrix<D, d, d> unit_matrix_;
+  const size_t over_integrate_;
+  const GDT::LocalVolumeIntegralOperator<GDT::LocalLambdaBinaryVolumeIntegrand<E, R, 1>, BasisType> local_operator_;
+}; // class DiffusiveFluxAaProduct
+
+
+template <class G>
+class DiffusiveFluxAbProduct
+    : public GDT::
+          MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                             typename GDT::SpaceProvider<G,
+                                                         Layers::dd_subdomain,
+                                                         GDT::SpaceType::dg,
+                                                         GDT::Backends::fem,
+                                                         1,
+                                                         double,
+                                                         1>::type,
+                             typename XT::Grid::
+                                 Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type,
+                             GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
+                                                                              Layers::leaf,
+                                                                              GDT::SpaceType::rt,
+                                                                              GDT::Backends::pdelab,
+                                                                              0,
+                                                                              double,
+                                                                              G::dimension>::type,
+                                                  typename XT::Grid::Layer<G,
+                                                                           Layers::dd_subdomain,
+                                                                           Backends::part,
+                                                                           XT::Grid::DD::SubdomainGrid<G>>::type>>
+{
+  static_assert(XT::Grid::is_grid<G>::value, "");
+  typedef GDT::
+      MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                         typename GDT::SpaceProvider<G,
+                                                     Layers::dd_subdomain,
+                                                     GDT::SpaceType::dg,
+                                                     GDT::Backends::fem,
+                                                     1,
+                                                     double,
+                                                     1>::type,
+                         typename XT::Grid::
+                             Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type,
+                         GDT::RestrictedSpace<
+                             typename GDT::SpaceProvider<G,
+                                                         Layers::leaf,
+                                                         GDT::SpaceType::rt,
+                                                         GDT::Backends::pdelab,
+                                                         0,
+                                                         double,
+                                                         G::dimension>::type,
+                             typename XT::Grid::
+                                 Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>>
+          BaseType;
+  typedef DiffusiveFluxAbProduct<G> ThisType;
+
+public:
+  using typename BaseType::GridLayerType;
+  using typename BaseType::RangeSpaceType;
+  using typename BaseType::RangeBaseType;
+  using typename BaseType::SourceSpaceType;
+  using typename BaseType::SourceBaseType;
+
+  typedef XT::Grid::extract_entity_t<GridLayerType> E;
+  typedef XT::Grid::extract_intersection_t<GridLayerType> I;
+  typedef typename G::ctype D;
+  static const constexpr size_t d = G::dimension;
+  typedef double R;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
+
+  static void bind(py::module& m)
+  {
+    using namespace pybind11::literals;
+
+    py::class_<ThisType, XT::Grid::Walker<GridLayerType>> c(
+        m,
+        XT::Common::to_camel_case("RS2017_diffusive_flux_ab_product_matrix_operator_subdomain_"
+                                  + XT::Grid::bindings::grid_name<G>::value())
+            .c_str());
+    c.def("assemble", [](ThisType& self) { self.assemble(); });
+    c.def("matrix", [](ThisType& self) { return self.matrix(); });
+
+    m.def("RS2017_make_diffusive_flux_ab_product_matrix_operator_on_subdomain",
+          [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+             const ssize_t subdomain,
+             const RangeSpaceType& range_space,
+             const SourceSpaceType& source_space,
+             const ScalarFunctionType& lambda_hat,
+             const ScalarFunctionType& lambda_range,
+             const TensorFunctionType& kappa,
+             const size_t over_integrate) {
+            return new ThisType(range_space,
+                                source_space,
+                                dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+                                    XT::Common::numeric_cast<size_t>(subdomain)),
+                                lambda_hat,
+                                lambda_range,
+                                kappa,
+                                over_integrate);
+          },
+          "dd_grid_provider"_a,
+          "subdomain"_a,
+          "range_space"_a,
+          "source_space"_a,
+          "lambda_hat"_a,
+          "lambda_range"_a,
+          "kappa"_a,
+          "over_integrate"_a = 2);
+  } // ... bind(...)
+
+  DiffusiveFluxAbProduct(RangeSpaceType range_space,
+                         SourceSpaceType source_space,
+                         GridLayerType grd_lyr,
+                         const ScalarFunctionType& lambda_hat,
+                         const ScalarFunctionType& lambda_range,
+                         const TensorFunctionType& kappa,
+                         const size_t over_integrate = 2)
+    : BaseType(range_space, source_space, grd_lyr)
+    , unit_matrix_(XT::Common::from_string<XT::Common::FieldMatrix<D, d, d>>("[1 0 0; 0 1 0; 0 0 1]"))
+    , over_integrate_(over_integrate)
+    , local_operator_(
+          [&](const auto& test_base, const auto& ansatz_base) {
+            const auto& entity = test_base.entity();
+            const auto local_lambda_hat = lambda_hat.local_function(entity);
+            const auto local_lambda_range = lambda_range.local_function(entity);
+            const auto local_kappa = kappa.local_function(entity);
+            const auto integrand_order =
+                local_lambda_hat->order() + local_lambda_range->order() + 2 * local_kappa->order()
+                + size_t(std::max(ssize_t(test_base.order()) - 1, ssize_t(0))) + ansatz_base.order();
+            return integrand_order + over_integrate_;
+          },
+          [&](const auto& test_base, const auto& ansatz_base, const auto& local_point, auto& ret) {
+            const auto& entity = test_base.entity();
+            const auto local_lambda_hat = lambda_hat.local_function(entity);
+            const auto local_lambda_range = lambda_range.local_function(entity);
+            const auto local_kappa = kappa.local_function(entity);
+            XT::Common::FieldMatrix<D, d, d> diffusion_hat_inverse = local_kappa->evaluate(local_point);
+            XT::Common::FieldMatrix<D, d, d> diffusion_range = diffusion_hat_inverse;
+            diffusion_hat_inverse *= local_lambda_hat->evaluate(local_point);
+#ifndef NDEBUG
+            const auto diffusion_hat = diffusion_hat_inverse;
+#endif
+            diffusion_hat_inverse.invert();
+#ifndef NDEBUG
+            // there is no documented way to tell if the inversion was successfull
+            if (XT::Common::FloatCmp::ne(diffusion_hat_inverse * diffusion_hat, unit_matrix_))
+              DUNE_THROW(XT::Common::Exceptions::internal_error,
+                         "Local inversion of lambda_hat*kappa failed!\n\nx = "
+                             << local_point
+                             << "\nlocal_lambda_hat(x) = "
+                             << local_lambda_hat->evaluate(local_point)
+                             << "\nlocal_kappa(x) = "
+                             << local_kappa->evaluate(local_point)
+                             << "\ninverse = "
+                             << diffusion_hat_inverse
+                             << "\ninverse * (local_lambda_hat(x)*local_kappa(x))) = "
+                             << diffusion_hat_inverse * diffusion_hat);
+#endif
+            diffusion_range *= local_lambda_range->evaluate(local_point);
+            const auto test_grads = test_base.jacobian(local_point);
+            const auto ansatz_values = ansatz_base.evaluate(local_point);
+            ret *= 0.;
+            for (size_t ii = 0; ii < test_base.size(); ++ii)
+              for (size_t jj = 0; jj < ansatz_base.size(); ++jj)
+                ret[ii][jj] = ((diffusion_hat_inverse * (diffusion_range * test_grads[ii][0])) * (ansatz_values[jj]));
+          })
+  {
+    this->append(local_operator_);
+  }
+
+  DiffusiveFluxAbProduct(const ThisType&) = delete;
+  DiffusiveFluxAbProduct(ThisType&&) = delete;
+
+private:
+  const XT::Common::FieldMatrix<D, d, d> unit_matrix_;
+  const size_t over_integrate_;
+  const GDT::LocalVolumeIntegralOperator<GDT::LocalLambdaBinaryVolumeIntegrand<E, R, 1, 1, d, 1>,
+                                         RangeBaseType,
+                                         SourceBaseType>
+      local_operator_;
+}; // class DiffusiveFluxAbProduct
+
+
+template <class G>
+class DiffusiveFluxBbProduct
+    : public GDT::
+          MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                             GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
+                                                                              Layers::leaf,
+                                                                              GDT::SpaceType::rt,
+                                                                              GDT::Backends::pdelab,
+                                                                              0,
+                                                                              double,
+                                                                              G::dimension>::type,
+                                                  typename XT::Grid::Layer<G,
+                                                                           Layers::dd_subdomain,
+                                                                           Backends::part,
+                                                                           XT::Grid::DD::SubdomainGrid<G>>::type>,
+                             typename XT::Grid::
+                                 Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>
+{
+  static_assert(XT::Grid::is_grid<G>::value, "");
+  typedef GDT::
+      MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                         GDT::RestrictedSpace<
+                             typename GDT::SpaceProvider<G,
+                                                         Layers::leaf,
+                                                         GDT::SpaceType::rt,
+                                                         GDT::Backends::pdelab,
+                                                         0,
+                                                         double,
+                                                         G::dimension>::type,
+                             typename XT::Grid::
+                                 Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>,
+                         typename XT::Grid::
+                             Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>
+          BaseType;
+  typedef DiffusiveFluxBbProduct<G> ThisType;
+
+public:
+  using typename BaseType::GridLayerType;
+  using typename BaseType::RangeSpaceType;
+  using typename BaseType::RangeBaseType;
+
+  typedef XT::Grid::extract_entity_t<GridLayerType> E;
+  typedef XT::Grid::extract_intersection_t<GridLayerType> I;
+  typedef typename G::ctype D;
+  static const constexpr size_t d = G::dimension;
+  typedef double R;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
+
+  static void bind(py::module& m)
+  {
+    using namespace pybind11::literals;
+
+    py::class_<ThisType, XT::Grid::Walker<GridLayerType>> c(
+        m,
+        XT::Common::to_camel_case("RS2017_diffusive_flux_bb_product_matrix_operator_subdomain_"
+                                  + XT::Grid::bindings::grid_name<G>::value())
+            .c_str());
+    c.def("assemble", [](ThisType& self) { self.assemble(); });
+    c.def("matrix", [](ThisType& self) { return self.matrix(); });
+
+    m.def("RS2017_make_diffusive_flux_bb_product_matrix_operator_on_subdomain",
+          [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+             const ssize_t subdomain,
+             const RangeSpaceType& space,
+             const ScalarFunctionType& lambda_hat,
+             const TensorFunctionType& kappa,
+             const size_t over_integrate) {
+            return new ThisType(space,
+                                dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+                                    XT::Common::numeric_cast<size_t>(subdomain)),
+                                lambda_hat,
+                                kappa,
+                                over_integrate);
+          },
+          "dd_grid_provider"_a,
+          "subdomain"_a,
+          "space"_a,
+          "lambda_hat"_a,
+          "kappa"_a,
+          "over_integrate"_a = 2);
+  } // ... bind(...)
+
+  DiffusiveFluxBbProduct(RangeSpaceType space,
+                         GridLayerType grd_lyr,
+                         const ScalarFunctionType& lambda_hat,
+                         const TensorFunctionType& kappa,
+                         const size_t over_integrate = 2)
+    : BaseType(space, grd_lyr)
+    , unit_matrix_(XT::Common::from_string<XT::Common::FieldMatrix<D, d, d>>("[1 0 0; 0 1 0; 0 0 1]"))
+    , over_integrate_(over_integrate)
+    , local_operator_(
+          [&](const auto& test_base, const auto& ansatz_base) {
+            const auto& entity = test_base.entity();
+            const auto local_lambda_hat = lambda_hat.local_function(entity);
+            const auto local_kappa = kappa.local_function(entity);
+            const auto integrand_order =
+                local_lambda_hat->order() + local_kappa->order() + test_base.order() + ansatz_base.order();
+            return integrand_order + over_integrate_;
+          },
+          [&](const auto& test_base, const auto& ansatz_base, const auto& local_point, auto& ret) {
+            const auto& entity = test_base.entity();
+            const auto local_lambda_hat = lambda_hat.local_function(entity);
+            const auto local_kappa = kappa.local_function(entity);
+            XT::Common::FieldMatrix<D, d, d> diffusion_hat_inverse = local_kappa->evaluate(local_point);
+            diffusion_hat_inverse *= local_lambda_hat->evaluate(local_point);
+#ifndef NDEBUG
+            const auto diffusion_hat = diffusion_hat_inverse;
+#endif
+            diffusion_hat_inverse.invert();
+#ifndef NDEBUG
+            // there is no documented way to tell if the inversion was successfull
+            if (XT::Common::FloatCmp::ne(diffusion_hat_inverse * diffusion_hat, unit_matrix_))
+              DUNE_THROW(XT::Common::Exceptions::internal_error,
+                         "Local inversion of lambda_hat*kappa failed!\n\nx = "
+                             << local_point
+                             << "\nlocal_lambda_hat(x) = "
+                             << local_lambda_hat->evaluate(local_point)
+                             << "\nlocal_kappa(x) = "
+                             << local_kappa->evaluate(local_point)
+                             << "\ninverse = "
+                             << diffusion_hat_inverse
+                             << "\ninverse * (local_lambda_hat(x)*local_kappa(x))) = "
+                             << diffusion_hat_inverse * diffusion_hat);
+#endif
+            const auto test_values = test_base.evaluate(local_point);
+            const auto ansatz_values = ansatz_base.evaluate(local_point);
+            ret *= 0.;
+            for (size_t ii = 0; ii < test_base.size(); ++ii)
+              for (size_t jj = 0; jj < ansatz_base.size(); ++jj)
+                ret[ii][jj] = ((diffusion_hat_inverse * test_values[ii]) * ansatz_values[jj]);
+          })
+  {
+    this->append(local_operator_);
+  }
+
+  DiffusiveFluxBbProduct(const ThisType&) = delete;
+  DiffusiveFluxBbProduct(ThisType&&) = delete;
+
+private:
+  const XT::Common::FieldMatrix<D, d, d> unit_matrix_;
+  const size_t over_integrate_;
+  const GDT::LocalVolumeIntegralOperator<GDT::LocalLambdaBinaryVolumeIntegrand<E, R, d, 1>, RangeBaseType>
+      local_operator_;
+}; // class DiffusiveFluxBbProduct
+
+
+template <class G>
+class HdivSemiProduct
+    : public GDT::
+          MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                             GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
+                                                                              Layers::leaf,
+                                                                              GDT::SpaceType::rt,
+                                                                              GDT::Backends::pdelab,
+                                                                              0,
+                                                                              double,
+                                                                              G::dimension>::type,
+                                                  typename XT::Grid::Layer<G,
+                                                                           Layers::dd_subdomain,
+                                                                           Backends::part,
+                                                                           XT::Grid::DD::SubdomainGrid<G>>::type>,
+                             typename XT::Grid::
+                                 Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>
+{
+  static_assert(XT::Grid::is_grid<G>::value, "");
+  typedef GDT::
+      MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                         GDT::RestrictedSpace<
+                             typename GDT::SpaceProvider<G,
+                                                         Layers::leaf,
+                                                         GDT::SpaceType::rt,
+                                                         GDT::Backends::pdelab,
+                                                         0,
+                                                         double,
+                                                         G::dimension>::type,
+                             typename XT::Grid::
+                                 Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>,
+                         typename XT::Grid::
+                             Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>
+          BaseType;
   typedef HdivSemiProduct<G> ThisType;
 
 public:
@@ -104,27 +588,23 @@ public:
   {
     using namespace pybind11::literals;
 
-    //    try { // we might not be the first to add this SystemAssembler
-    //      GDT::bindings::SystemAssembler<SP, XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>::bind(m);
-    //    } catch (std::runtime_error&) {
-    //    }
-
-    GDT::bindings::MatrixOperatorBase<ThisType>::bind(
+    py::class_<ThisType, XT::Grid::Walker<GridLayerType>> c(
         m,
         XT::Common::to_camel_case("RS2017_Hdiv_semi_product_matrix_operator_subdomain_"
                                   + XT::Grid::bindings::grid_name<G>::value())
             .c_str());
+    c.def("assemble", [](ThisType& self) { self.assemble(); });
+    c.def("matrix", [](ThisType& self) { return self.matrix(); });
 
     m.def("RS2017_make_Hdiv_semi_product_matrix_operator_on_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
              const ssize_t subdomain,
              const RangeSpaceType& space,
              const size_t over_integrate) {
-            return new ThisType(
-                space,
-                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
-                    XT::Common::numeric_cast<size_t>(subdomain)),
-                over_integrate);
+            return new ThisType(space,
+                                dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+                                    XT::Common::numeric_cast<size_t>(subdomain)),
+                                over_integrate);
           },
           "dd_grid_provider"_a,
           "subdomain"_a,
@@ -156,6 +636,7 @@ public:
               }
           })
   {
+    this->append(local_operator_);
   }
 
   HdivSemiProduct(const ThisType&) = delete;
@@ -168,30 +649,140 @@ private:
 
 
 template <class G>
-class SwipdgPenaltySubdomainProduct
-    : public GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                                     typename GDT::SpaceProvider<G,
-                                                                 XT::Grid::Layers::dd_subdomain,
-                                                                 GDT::SpaceType::dg,
-                                                                 GDT::Backends::fem,
-                                                                 1,
-                                                                 double,
-                                                                 1>::type,
-                                     typename XT::Grid::Layer<G,
-                                                              XT::Grid::Layers::dd_subdomain,
-                                                              XT::Grid::Backends::part,
-                                                              XT::Grid::DD::SubdomainGrid<G>>::type>
+class ResidualPartFunctional
+    : public GDT::
+          VectorFunctionalBase<XT::LA::IstlDenseVector<double>,
+                               GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
+                                                                                Layers::leaf,
+                                                                                GDT::SpaceType::rt,
+                                                                                GDT::Backends::pdelab,
+                                                                                0,
+                                                                                double,
+                                                                                G::dimension>::type,
+                                                    typename XT::Grid::Layer<G,
+                                                                             Layers::dd_subdomain,
+                                                                             Backends::part,
+                                                                             XT::Grid::DD::SubdomainGrid<G>>::type>,
+                               typename XT::Grid::
+                                   Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
-  typedef GDT::SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::fem, 1, double, 1>
-      SP;
-  typedef GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                                  typename SP::type,
-                                  typename XT::Grid::Layer<G,
-                                                           XT::Grid::Layers::dd_subdomain,
-                                                           XT::Grid::Backends::part,
-                                                           XT::Grid::DD::SubdomainGrid<G>>::type>
-      BaseType;
+  typedef GDT::RestrictedSpace<
+      typename GDT::SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::pdelab, 0, double, G::dimension>::
+          type,
+      typename XT::Grid::Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>
+      RtSpaceType;
+  typedef GDT::
+      VectorFunctionalBase<XT::LA::IstlDenseVector<double>,
+                           RtSpaceType,
+                           typename XT::Grid::
+                               Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>
+          BaseType;
+  typedef ResidualPartFunctional<G> ThisType;
+
+public:
+  using typename BaseType::GridLayerType;
+  using typename BaseType::SpaceType;
+
+  typedef XT::Grid::extract_entity_t<GridLayerType> E;
+  typedef XT::Grid::extract_intersection_t<GridLayerType> I;
+  typedef typename G::ctype D;
+  static const constexpr size_t d = G::dimension;
+  typedef double R;
+  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef typename SpaceType::BaseFunctionSetType BasisType;
+
+  static void bind(py::module& m)
+  {
+    using namespace pybind11::literals;
+
+    py::class_<ThisType, XT::Grid::Walker<GridLayerType>> c(
+        m,
+        XT::Common::to_camel_case("RS2017_residual_part_vector_functional_subdomain_"
+                                  + XT::Grid::bindings::grid_name<G>::value())
+            .c_str());
+    c.def("assemble", [](ThisType& self) { self.assemble(); });
+    c.def("vector", [](ThisType& self) { return self.vector(); });
+
+    m.def("RS2017_make_residual_part_vector_functional_on_subdomain",
+          [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+             const ssize_t subdomain,
+             const SpaceType& space,
+             const ScalarFunctionType& f,
+             const size_t over_integrate) {
+            return new ThisType(space,
+                                dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+                                    XT::Common::numeric_cast<size_t>(subdomain)),
+                                f,
+                                over_integrate);
+          },
+          "dd_grid_provider"_a,
+          "subdomain"_a,
+          "space"_a,
+          "f"_a,
+          "over_integrate"_a = 2);
+  } // ... bind(...)
+
+  ResidualPartFunctional(SpaceType space,
+                         GridLayerType grd_lyr,
+                         const ScalarFunctionType& f,
+                         const size_t over_integrate = 0)
+    : BaseType(space, grd_lyr)
+    , f_(f)
+    , over_integrate_(over_integrate)
+    , local_functional_(
+          [&](const auto& test_base) {
+            const auto integrand_order = ssize_t(f_.local_function(test_base.entity())->order())
+                                         + std::max(ssize_t(test_base.order()) - 1, ssize_t(0));
+            return size_t(integrand_order) + over_integrate_;
+          },
+          [&](const auto& test_base, const auto& local_point, auto& ret) {
+            const auto local_f = f_.local_function(test_base.entity());
+            ret *= 0.;
+            // f \times \divergence test
+            const auto test_jacobians = test_base.jacobian(local_point);
+            for (size_t ii = 0; ii < test_base.size(); ++ii)
+              for (size_t dd = 0; dd < d; ++dd)
+                ret[ii] += test_jacobians[ii][dd][dd];
+            ret *= local_f->evaluate(local_point);
+          })
+  {
+    this->append(local_functional_);
+  }
+
+  ResidualPartFunctional(const ThisType&) = delete;
+  ResidualPartFunctional(ThisType&&) = delete;
+
+private:
+  const ScalarFunctionType& f_;
+  const size_t over_integrate_;
+  const GDT::LocalVolumeIntegralFunctional<GDT::LocalLambdaUnaryVolumeIntegrand<E, R, d, 1>, BasisType>
+      local_functional_;
+}; // class ResidualPartFunctional
+
+
+template <class G>
+class SwipdgPenaltySubdomainProduct
+    : public GDT::
+          MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                             typename GDT::SpaceProvider<G,
+                                                         Layers::dd_subdomain,
+                                                         GDT::SpaceType::dg,
+                                                         GDT::Backends::fem,
+                                                         1,
+                                                         double,
+                                                         1>::type,
+                             typename XT::Grid::
+                                 Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>
+{
+  static_assert(XT::Grid::is_grid<G>::value, "");
+  typedef GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::fem, 1, double, 1> SP;
+  typedef GDT::
+      MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                         typename SP::type,
+                         typename XT::Grid::
+                             Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>
+          BaseType;
   typedef SwipdgPenaltySubdomainProduct<G> ThisType;
 
 public:
@@ -212,7 +803,7 @@ public:
     using namespace pybind11::literals;
 
     //    try { // we might not be the first to add this SystemAssembler
-    //      GDT::bindings::SystemAssembler<SP, XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>::bind(m);
+    //      GDT::bindings::SystemAssembler<SP, Layers::dd_subdomain, Backends::part>::bind(m);
     //    } catch (std::runtime_error&) {
     //    }
 
@@ -230,14 +821,13 @@ public:
              const ScalarFunctionType& lambda,
              const TensorFunctionType& kappa,
              const size_t over_integrate) {
-            return new ThisType(
-                space,
-                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
-                    XT::Common::numeric_cast<size_t>(subdomain)),
-                boundary_info,
-                lambda,
-                kappa,
-                over_integrate);
+            return new ThisType(space,
+                                dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+                                    XT::Common::numeric_cast<size_t>(subdomain)),
+                                boundary_info,
+                                lambda,
+                                kappa,
+                                over_integrate);
           },
           "dd_grid_provider"_a,
           "subdomain"_a,
@@ -409,30 +999,26 @@ private:
 
 template <class G>
 class SwipdgPenaltyNeighborhoodProduct
-    : public GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                                     typename GDT::SpaceProvider<G,
-                                                                 XT::Grid::Layers::dd_subdomain,
-                                                                 GDT::SpaceType::block_dg,
-                                                                 GDT::Backends::fem,
-                                                                 1,
-                                                                 double,
-                                                                 1>::type,
-                                     typename XT::Grid::Layer<G,
-                                                              XT::Grid::Layers::dd_subdomain,
-                                                              XT::Grid::Backends::part,
-                                                              XT::Grid::DD::SubdomainGrid<G>>::type>
+    : public GDT::
+          MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                             typename GDT::SpaceProvider<G,
+                                                         Layers::dd_subdomain,
+                                                         GDT::SpaceType::block_dg,
+                                                         GDT::Backends::fem,
+                                                         1,
+                                                         double,
+                                                         1>::type,
+                             typename XT::Grid::
+                                 Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
+  typedef GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::block_dg, GDT::Backends::fem, 1, double, 1> SP;
   typedef GDT::
-      SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::block_dg, GDT::Backends::fem, 1, double, 1>
-          SP;
-  typedef GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
-                                  typename SP::type,
-                                  typename XT::Grid::Layer<G,
-                                                           XT::Grid::Layers::dd_subdomain,
-                                                           XT::Grid::Backends::part,
-                                                           XT::Grid::DD::SubdomainGrid<G>>::type>
-      BaseType;
+      MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                         typename SP::type,
+                         typename XT::Grid::
+                             Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>
+          BaseType;
   typedef SwipdgPenaltyNeighborhoodProduct<G> ThisType;
 
 public:
@@ -453,7 +1039,7 @@ public:
     using namespace pybind11::literals;
 
     try { // we might not be the first to add this SystemAssembler
-      GDT::bindings::SystemAssembler<SP, XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>::bind(m);
+      GDT::bindings::SystemAssembler<SP, Layers::dd_subdomain, Backends::part>::bind(m);
     } catch (std::runtime_error&) {
     }
 
@@ -471,14 +1057,13 @@ public:
              const ScalarFunctionType& lambda,
              const TensorFunctionType& kappa,
              const size_t over_integrate) {
-            return new ThisType(
-                space,
-                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
-                    XT::Common::numeric_cast<size_t>(subdomain)),
-                boundary_info,
-                lambda,
-                kappa,
-                over_integrate);
+            return new ThisType(space,
+                                dd_grid_provider.template layer<Layers::dd_subdomain_oversampled, Backends::part>(
+                                    XT::Common::numeric_cast<size_t>(subdomain)),
+                                boundary_info,
+                                lambda,
+                                kappa,
+                                over_integrate);
           },
           "dd_grid_provider"_a,
           "subdomain"_a,
@@ -657,17 +1242,18 @@ void bind_neighborhood_reconstruction(py::module& m)
   typedef double D;
   static const constexpr size_t d = 2;
   typedef double R;
-  typedef typename XT::Grid::Layer<G,
-                                   XT::Grid::Layers::dd_subdomain_oversampled,
-                                   XT::Grid::Backends::part,
-                                   XT::Grid::DD::SubdomainGrid<G>>::type NeighborHoodGridLayer;
-  typedef typename XT::Grid::Layer<G, XT::Grid::Layers::leaf, XT::Grid::Backends::view>::type LeafViewType;
+  typedef typename XT::Grid::Layer<G, Layers::leaf, Backends::view>::type LeafViewType;
+  typedef GDT::DunePdelabRtSpaceWrapper<LeafViewType, 0, double, d> RtSpaceType;
+  typedef
+      typename XT::Grid::Layer<G, Layers::dd_subdomain_oversampled, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::
+          type NeighborHoodGridLayer;
+  typedef GDT::RestrictedSpace<RtSpaceType, NeighborHoodGridLayer> NeighborhoodRtSpaceType;
   typedef XT::LA::IstlDenseVector<R> VectorType;
   typedef GDT::
       LocalizableDiffusiveFluxReconstructionOperator<NeighborHoodGridLayer,
-                                                     VectorType,
-                                                     GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor,
-                                                     LeafViewType>
+                                                     XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
+                                                     GDT::DiscreteFunction<NeighborhoodRtSpaceType, VectorType>,
+                                                     GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>
           LocalizableDiffusiveFluxReconstructionOperatorType;
 
   m.def("RS2017_apply_diffusive_flux_reconstruction_in_neighborhood",
@@ -680,7 +1266,7 @@ void bind_neighborhood_reconstruction(py::module& m)
            const ssize_t over_integrate) {
           py::gil_scoped_release DUNE_UNUSED(release);
           LocalizableDiffusiveFluxReconstructionOperatorType(
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+              dd_grid_provider.template layer<Layers::dd_subdomain_oversampled, Backends::part>(
                   XT::Common::numeric_cast<size_t>(subdomain)),
               lambda,
               kappa,
@@ -711,19 +1297,15 @@ void bind_neighborhood_discretization(py::module& m)
   typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> DF;
   typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> DT;
 
-  typedef typename XT::Grid::Layer<G,
-                                   XT::Grid::Layers::dd_subdomain_oversampled,
-                                   XT::Grid::Backends::part,
-                                   XT::Grid::DD::SubdomainGrid<G>>::type NGL;
-  typedef GDT::
-      SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::block_dg, GDT::Backends::fem, 1, double, 1>
-          SP;
+  typedef typename XT::Grid::
+      Layer<G, Layers::dd_subdomain_oversampled, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type NGL;
+  typedef GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::block_dg, GDT::Backends::fem, 1, double, 1> SP;
   typedef typename SP::type S;
   typedef XT::LA::IstlDenseVector<R> V;
   typedef XT::LA::IstlRowMajorSparseMatrix<R> M;
 
   try { // we might not be the first to add this SystemAssembler
-    GDT::bindings::SystemAssembler<SP, XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>::bind(m);
+    GDT::bindings::SystemAssembler<SP, Layers::dd_subdomain_oversampled, Backends::part>::bind(m);
   } catch (std::runtime_error&) {
   }
 
@@ -733,7 +1315,7 @@ void bind_neighborhood_discretization(py::module& m)
            const S& neighborhood_space) {
           return new GDT::SystemAssembler<S, NGL>(
               neighborhood_space,
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+              dd_grid_provider.template layer<Layers::dd_subdomain_oversampled, Backends::part>(
                   XT::Common::numeric_cast<size_t>(subdomain)));
         });
 
@@ -752,14 +1334,13 @@ void bind_neighborhood_discretization(py::module& m)
            const DF& lambda,
            const DT& kappa,
            const ssize_t over_integrate) {
-          return new DgMatrixOperator(
-              over_integrate,
-              boundary_info,
-              lambda,
-              kappa,
-              neighborhood_space,
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
-                  XT::Common::numeric_cast<size_t>(subdomain)));
+          return new DgMatrixOperator(over_integrate,
+                                      boundary_info,
+                                      lambda,
+                                      kappa,
+                                      neighborhood_space,
+                                      dd_grid_provider.template layer<Layers::dd_subdomain_oversampled, Backends::part>(
+                                          XT::Common::numeric_cast<size_t>(subdomain)));
         },
         "dd_grid_provider"_a,
         "subdomain"_a,
@@ -797,7 +1378,7 @@ void bind_neighborhood_discretization(py::module& m)
               lambda,
               kappa,
               neighborhood_space,
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+              dd_grid_provider.template layer<Layers::dd_subdomain_oversampled, Backends::part>(
                   XT::Common::numeric_cast<size_t>(subdomain)));
         },
         "dd_grid_provider"_a,
@@ -824,7 +1405,7 @@ void bind_neighborhood_discretization(py::module& m)
               over_integrate,
               f,
               neighborhood_space,
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+              dd_grid_provider.template layer<Layers::dd_subdomain_oversampled, Backends::part>(
                   XT::Common::numeric_cast<size_t>(subdomain)));
         },
         "dd_grid_provider"_a,
@@ -852,6 +1433,10 @@ PYBIND11_PLUGIN(__operators_RS2017)
   SwipdgPenaltySubdomainProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
   SwipdgPenaltyNeighborhoodProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
   HdivSemiProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
+  DiffusiveFluxAaProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
+  DiffusiveFluxAbProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
+  DiffusiveFluxBbProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
+  ResidualPartFunctional<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
 
   bind_neighborhood_reconstruction<ALU_2D_SIMPLEX_CONFORMING>(m);
   bind_neighborhood_discretization<ALU_2D_SIMPLEX_CONFORMING>(m);
@@ -873,9 +1458,8 @@ PYBIND11_PLUGIN(__operators_RS2017)
            const ssize_t over_int) {
           py::gil_scoped_release DUNE_UNUSED(release);
           const auto over_integrate = XT::Common::numeric_cast<size_t>(over_int);
-          auto subdomain_layer =
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
-                  XT::Common::numeric_cast<size_t>(subdomain));
+          auto subdomain_layer = dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+              XT::Common::numeric_cast<size_t>(subdomain));
           typedef decltype(subdomain_layer) GL;
           XT::Grid::Walker<GL> walker(subdomain_layer);
           double min_ev = std::numeric_limits<double>::max();
@@ -913,9 +1497,8 @@ PYBIND11_PLUGIN(__operators_RS2017)
                dd_grid_provider,
            const ssize_t subdomain) {
           py::gil_scoped_release DUNE_UNUSED(release);
-          auto subdomain_layer =
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
-                  XT::Common::numeric_cast<size_t>(subdomain));
+          auto subdomain_layer = dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+              XT::Common::numeric_cast<size_t>(subdomain));
           typedef decltype(subdomain_layer) GL;
           XT::Grid::Walker<GL> walker(subdomain_layer);
           std::vector<FieldVector<D, d>> subdomain_vertices;
@@ -940,10 +1523,9 @@ PYBIND11_PLUGIN(__operators_RS2017)
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& v,
            const ssize_t over_integrate) {
           py::gil_scoped_release DUNE_UNUSED(release);
-          return GDT::make_l2_operator(
-                     dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
-                         XT::Common::numeric_cast<size_t>(subdomain)),
-                     XT::Common::numeric_cast<size_t>(over_integrate))
+          return GDT::make_l2_operator(dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+                                           XT::Common::numeric_cast<size_t>(subdomain)),
+                                       XT::Common::numeric_cast<size_t>(over_integrate))
               ->apply2(u, v);
         },
         "dd_grid_provider"_a,
@@ -963,9 +1545,8 @@ PYBIND11_PLUGIN(__operators_RS2017)
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& v,
            const ssize_t over_integrate) {
           py::gil_scoped_release DUNE_UNUSED(release);
-          auto subdomain_layer =
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
-                  XT::Common::numeric_cast<size_t>(subdomain));
+          auto subdomain_layer = dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+              XT::Common::numeric_cast<size_t>(subdomain));
           XT::Grid::Walker<decltype(subdomain_layer)> walker(subdomain_layer);
           R result = 0.;
           walker.append([&](const E& entity) {
@@ -1020,9 +1601,8 @@ PYBIND11_PLUGIN(__operators_RS2017)
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d>& reconstructed_v,
            const ssize_t over_integrate) {
           py::gil_scoped_release DUNE_UNUSED(release);
-          auto subdomain_layer =
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
-                  XT::Common::numeric_cast<size_t>(subdomain));
+          auto subdomain_layer = dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+              XT::Common::numeric_cast<size_t>(subdomain));
           XT::Grid::Walker<decltype(subdomain_layer)> walker(subdomain_layer);
           R result = 0.;
           walker.append([&](const E& entity) {
@@ -1071,9 +1651,8 @@ PYBIND11_PLUGIN(__operators_RS2017)
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d>& reconstructed_v,
            const ssize_t over_integrate) {
           py::gil_scoped_release DUNE_UNUSED(release);
-          auto subdomain_layer =
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
-                  XT::Common::numeric_cast<size_t>(subdomain));
+          auto subdomain_layer = dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+              XT::Common::numeric_cast<size_t>(subdomain));
           XT::Grid::Walker<decltype(subdomain_layer)> walker(subdomain_layer);
           R result = 0.;
           walker.append([&](const E& entity) {
@@ -1110,16 +1689,15 @@ PYBIND11_PLUGIN(__operators_RS2017)
   typedef GDT::EllipticMatrixOperator<XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
                                       XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>,
                                       typename GDT::SpaceProvider<ALU_2D_SIMPLEX_CONFORMING,
-                                                                  XT::Grid::Layers::dd_subdomain,
+                                                                  Layers::dd_subdomain,
                                                                   GDT::SpaceType::dg,
                                                                   GDT::Backends::fem,
                                                                   1,
                                                                   double,
                                                                   1>::type,
                                       XT::LA::IstlRowMajorSparseMatrix<double>,
-                                      typename XT::Grid::Layer<ALU_2D_SIMPLEX_CONFORMING,
-                                                               XT::Grid::Layers::dd_subdomain,
-                                                               XT::Grid::Backends::part>::type>
+                                      typename XT::Grid::
+                                          Layer<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::part>::type>
       EllipticMatrixOperatorType;
   try { // we might not be the first to add this
     py::class_<EllipticMatrixOperatorType,
@@ -1137,13 +1715,12 @@ PYBIND11_PLUGIN(__operators_RS2017)
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
            const ssize_t over_integrate) {
-          return new EllipticMatrixOperatorType(
-              XT::Common::numeric_cast<ssize_t>(over_integrate),
-              lambda,
-              kappa,
-              space,
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
-                  XT::Common::numeric_cast<int>(subdomain)));
+          return new EllipticMatrixOperatorType(XT::Common::numeric_cast<ssize_t>(over_integrate),
+                                                lambda,
+                                                kappa,
+                                                space,
+                                                dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+                                                    XT::Common::numeric_cast<int>(subdomain)));
         },
         "dd_grid_provider"_a,
         "subdomain"_a,
