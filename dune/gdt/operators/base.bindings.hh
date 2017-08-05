@@ -37,14 +37,49 @@ public:
       BaseType;
   typedef pybind11::class_<type, BaseType> bound_type;
 
+private:
+  typedef typename type::RangeSpaceType R;
+  typedef typename type::SourceSpaceType S;
+  typedef typename XT::LA::Container<typename type::FieldType, type::MatrixType::vector_type>::VectorType V;
+
+public:
+  template <bool same_spaces =
+                std::is_same<typename OperatorType::RangeSpaceType, typename OperatorType::SourceSpaceType>::value,
+            bool anything = true>
+  struct induced_norm
+  {
+    static void addbind(bound_type& c)
+    {
+      namespace py = pybind11;
+      using namespace pybind11::literals;
+
+      c.def("induced_norm",
+            [](type& self, const V& range) {
+              py::gil_scoped_release DUNE_UNUSED(release);
+              return self.induced_norm(range);
+            },
+            "range"_a);
+      c.def("induced_norm",
+            [](type& self, const GDT::ConstDiscreteFunction<R, V>& range) {
+              py::gil_scoped_release DUNE_UNUSED(release);
+              return self.induced_norm(range);
+            },
+            "range"_a);
+    }
+  }; // struct induced_norm
+
+  template <bool anything>
+  struct induced_norm<false, anything>
+  {
+    static void addbind(bound_type& /*c*/)
+    {
+    }
+  };
+
   static bound_type bind(pybind11::module& m, const std::string& class_id)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
-
-    typedef typename type::RangeSpaceType R;
-    typedef typename type::SourceSpaceType S;
-    typedef typename XT::LA::Container<typename type::FieldType, type::MatrixType::vector_type>::VectorType V;
 
     bound_type c(m, std::string(class_id).c_str(), std::string(class_id).c_str());
 
@@ -52,7 +87,8 @@ public:
     // c.def_static("pattern", [](const R& space) { return type::pattern(space); });
 
     // from MatrixOperatorBase
-    c.def("pattern", [](type& self) { return self.pattern(self.range_space(), self.grid_layer()); });
+    c.def("pattern",
+          [](type& self) { return self.pattern(self.range_space(), self.source_space(), self.grid_layer()); });
     c.def("matrix", [](type& self) { return self.matrix(); });
     c.def("source_space", [](type& self) { return self.source_space(); });
     c.def("range_space", [](type& self) { return self.range_space(); });
@@ -141,18 +177,8 @@ public:
           },
           "range"_a,
           "source"_a);
-    c.def("induced_norm",
-          [](type& self, const V& range) {
-            py::gil_scoped_release DUNE_UNUSED(release);
-            return self.induced_norm(range);
-          },
-          "range"_a);
-    c.def("induced_norm",
-          [](type& self, const GDT::ConstDiscreteFunction<R, V>& range) {
-            py::gil_scoped_release DUNE_UNUSED(release);
-            return self.induced_norm(range);
-          },
-          "range"_a);
+
+    induced_norm<>::addbind(c);
 
     return c;
   } // ... bind(...)
