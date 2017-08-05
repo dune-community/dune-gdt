@@ -85,7 +85,7 @@ public:
     const auto& entity = ansatz_base.entity();
     const auto local_functions = integrand_.localFunctions(entity);
     // create quadrature
-    const size_t integrand_order = integrand_.order(local_functions, ansatz_base, test_base) + over_integrate_;
+    const size_t integrand_order = integrand_.order(local_functions, test_base, ansatz_base) + over_integrate_;
     const auto& quadrature = QuadratureRules<D, d>::rule(entity.type(), boost::numeric_cast<int>(integrand_order));
     // prepare storage
     const size_t rows = test_base.size();
