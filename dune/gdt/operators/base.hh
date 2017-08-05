@@ -188,6 +188,11 @@ public:
     return result_;
   }
 
+  FieldType result()
+  {
+    return result_;
+  }
+
   const XT::Common::Parameter& parameter() const
   {
     return param_;
