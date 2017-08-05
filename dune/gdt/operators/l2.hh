@@ -63,6 +63,7 @@ class L2LocalizableProduct
                                        Source,
                                        Field>
       BaseType;
+  typedef L2LocalizableProduct<GridLayer, Range, Source, Field> ThisType;
 
   // The following tag and the two ctors are unfortunately necessary. There should have been two ctors,
   //     L2LocalizableProduct(Args&& ...args)
@@ -121,6 +122,9 @@ L2LocalizableProduct(...args);
                            std::forward<Args>(args)...)
   {
   }
+
+  L2LocalizableProduct(const ThisType& other) = delete; // These need to be here for pybind11, as long as the walker is
+  L2LocalizableProduct(ThisType&& source) = delete; //     not copyable or movable.
 }; // class L2LocalizableProduct
 
 

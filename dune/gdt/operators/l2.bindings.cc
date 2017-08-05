@@ -25,18 +25,35 @@
 #include <dune/xt/grid/layers.hh>
 
 #include <dune/gdt/operators/l2.bindings.hh>
+#include <dune/gdt/playground/spaces/restricted.hh>
+
+using namespace Dune;
+namespace py = pybind11;
+using namespace pybind11::literals;
+using Dune::XT::Grid::Layers;
+using namespace Dune::XT;
+using Dune::GDT::SpaceType;
+
+
+template <class G,
+          XT::Grid::Layers layer_type,
+          XT::Grid::Backends layer_backend,
+          size_t range_r = 1,
+          size_t range_rC = 1,
+          size_t source_r = range_r,
+          size_t source_rC = range_rC>
+void bind_l2_localizable_product(py::module& m)
+{
+  try {
+    GDT::bindings::L2LocalizableProduct<G, layer_type, layer_backend, range_r, range_rC, source_r, source_rC>::bind(m);
+  } catch (std::runtime_error&) {
+  }
+}
 
 
 PYBIND11_PLUGIN(__operators_l2)
 {
-  using namespace Dune;
-  namespace py = pybind11;
-  using namespace pybind11::literals;
-  using Dune::XT::Grid::Layers;
-  using namespace Dune::XT;
-  using Dune::GDT::SpaceType;
-
-  py::module m("__operators_l2", "dune-gdt: L2MatrixOperator");
+  py::module m("__operators_l2", "dune-gdt: L2LocalizableProduct, L2MatrixOperator");
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
@@ -47,7 +64,9 @@ PYBIND11_PLUGIN(__operators_l2)
   py::module::import("dune.gdt.__spaces");
   py::module::import("dune.gdt.__discretefunction");
 
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM
+#if HAVE_DUNE_ALUGRID
+  bind_l2_localizable_product<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, XT::Grid::Backends::part>(m);
+#if HAVE_DUNE_FEM
   Dune::GDT::bindings::L2MatrixOperator<ALU_2D_SIMPLEX_CONFORMING,
                                         Layers::dd_subdomain,
                                         SpaceType::dg,
@@ -69,7 +88,23 @@ PYBIND11_PLUGIN(__operators_l2)
                                         1,
                                         1,
                                         LA::Backends::istl_sparse>::bind(m);
-#endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM
+  Dune::GDT::bindings::internal::
+      L2MatrixOperator<GDT::RestrictedSpace<
+                           typename GDT::SpaceProvider<ALU_2D_SIMPLEX_CONFORMING,
+                                                       Layers::leaf,
+                                                       GDT::SpaceType::rt,
+                                                       GDT::Backends::pdelab,
+                                                       0,
+                                                       double,
+                                                       2>::type,
+                           typename XT::Grid::Layer<ALU_2D_SIMPLEX_CONFORMING,
+                                                    Layers::dd_subdomain,
+                                                    XT::Grid::Backends::part,
+                                                    XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>::type>,
+                       XT::LA::IstlRowMajorSparseMatrix<double>>::
+          bind(m, "RtPdelabAlu2dSimplexLeafRestrictedSubdomainPartSpace", "istl_row_major_sparse_matrix_double");
+#endif // HAVE_DUNE_FEM
+#endif // HAVE_DUNE_ALUGRID
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {
