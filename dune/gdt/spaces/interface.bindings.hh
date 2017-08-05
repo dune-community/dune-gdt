@@ -17,8 +17,10 @@
 #include <dune/xt/grid/grids.bindings.hh>
 #include <dune/xt/grid/layers.bindings.hh>
 #include <dune/xt/grid/dd/subdomains/grid.hh>
+#include <dune/xt/grid/gridprovider/provider.hh>
 #include <dune/xt/grid/type_traits.hh>
 
+#include <dune/gdt/playground/spaces/restricted.hh>
 #include <dune/gdt/spaces.hh>
 #include <dune/gdt/type_traits.hh>
 
@@ -407,7 +409,7 @@ public:
 
     return c;
   } // ... bind(...)
-}; // class SpaceInterface
+}; // class SpaceInterfaceWoFactory
 
 
 template <class SP>
@@ -464,12 +466,106 @@ public:
   typedef S type;
   typedef pybind11::class_<type> bound_type;
 
+private:
+  template <XT::Grid::Backends backend,
+            XT::Grid::Layers layer,
+            bool is_dd = (layer == XT::Grid::Layers::dd_subdomain || layer == XT::Grid::Layers::dd_subdomain_boundary
+                          || layer == XT::Grid::Layers::dd_subdomain_coupling
+                          || layer == XT::Grid::Layers::dd_subdomain_oversampled)>
+  struct restriction_methods // true
+  {
+    static void addbind(bound_type& c)
+    {
+      namespace py = pybind11;
+      using namespace pybind11::literals;
+
+      typedef GDT::RestrictedSpace<S, typename XT::Grid::Layer<G, layer, backend>::type> RestrictedSpaceType;
+
+      c.def(std::string("restrict_to_" + XT::Grid::bindings::layer_name<layer>::value() + "_"
+                        + XT::Grid::bindings::backend_name<backend>::value())
+                .c_str(),
+            [](type& self,
+               XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& grid_provider,
+               const int level_or_subdomain = -1) {
+              return RestrictedSpaceType(self, grid_provider.template layer<layer, backend>(level_or_subdomain));
+            },
+            "grid_provider"_a,
+            "level_or_subdomain"_a,
+            py::keep_alive<1, 0>());
+    }
+  }; // struct restriction_methods
+
+  template <XT::Grid::Backends backend, XT::Grid::Layers layer>
+  struct restriction_methods<backend, layer, false>
+  {
+    static void addbind(bound_type& c)
+    {
+      namespace py = pybind11;
+      using namespace pybind11::literals;
+
+      typedef GDT::RestrictedSpace<S, typename XT::Grid::Layer<G, layer, backend>::type> RestrictedSpaceType;
+
+      c.def(std::string("restrict_to_" + XT::Grid::bindings::layer_name<layer>::value() + "_"
+                        + XT::Grid::bindings::backend_name<backend>::value())
+                .c_str(),
+            [](type& self, XT::Grid::GridProvider<G>& grid_provider, const int level = -1) {
+              return RestrictedSpaceType(self, grid_provider.template layer<layer, backend>(level));
+            },
+            "grid_provider"_a,
+            "level"_a,
+            py::keep_alive<1, 0>());
+      restriction_methods<backend, layer, true>::addbind(c);
+    }
+  }; // struct restriction_methods<..., false>
+
+  template <XT::Grid::Backends backend, XT::Grid::Layers layer>
+  static void addbind_restricted(pybind11::module& m, bound_type& c, const std::string sp_name)
+  {
+    using namespace pybind11::literals;
+
+    typedef GDT::RestrictedSpace<S, typename XT::Grid::Layer<G, layer, backend>::type> RestrictedSpaceType;
+
+    try { // we might not be the first to add this RestrictedSpace
+      const auto restricted_space_name = sp_name + "_restricted_to_" + XT::Grid::bindings::layer_name<layer>::value()
+                                         + "_" + XT::Grid::bindings::backend_name<backend>::value();
+      auto restricted_space = SpaceInterfaceWoFactory<RestrictedSpaceType>::bind(m, restricted_space_name);
+      restricted_space.def("restrict",
+                           [](RestrictedSpaceType& self, const XT::LA::IstlDenseVector<double>& unrestricted_vector) {
+                             return self.mapper().restrict(unrestricted_vector);
+                           },
+                           "unrestricted_vector"_a);
+      restricted_space.def("extend",
+                           [](RestrictedSpaceType& self, const XT::LA::IstlDenseVector<double>& restricted_vector) {
+                             return self.mapper().extend(restricted_vector);
+                           },
+                           "restricted_vector"_a);
+    } catch (std::runtime_error&) {
+    }
+
+    restriction_methods<backend, layer>::addbind(c);
+  } // ... addbind_restricted(...)
+
+public:
   static bound_type bind(pybind11::module& m)
   {
-    auto c = SpaceInterfaceWoFactory<S>::bind(m, space_name<SP>::value());
+    const auto sp_name = space_name<SP>::value();
+    auto c = SpaceInterfaceWoFactory<S>::bind(m, sp_name);
+
+    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::adaptive_leaf>(m, c, sp_name);
+    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain>(m, c, sp_name);
+    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain_boundary>(m, c, sp_name);
+    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain_coupling>(m, c, sp_name);
+    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain_oversampled>(m, c, sp_name);
+    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::leaf>(m, c, sp_name);
+    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::level>(m, c, sp_name);
+    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain>(m, c, sp_name);
+    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain_oversampled>(m, c, sp_name);
+    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::leaf>(m, c, sp_name);
+    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::level>(m, c, sp_name);
+
     factory_methods<>::addbind(m);
     return c;
-  }
+  } // ... bind(...)
 }; // class SpaceInterface
 
 
