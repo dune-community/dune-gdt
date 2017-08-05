@@ -17,6 +17,7 @@
 #include <dune/xt/la/container.hh>
 #include <dune/xt/grid/grids.bindings.hh>
 #include <dune/xt/grid/layers.bindings.hh>
+#include <dune/xt/grid/walker.hh>
 
 #include <dune/gdt/spaces.bindings.hh>
 #include <dune/gdt/spaces/constraints.bindings.hh>
@@ -71,7 +72,7 @@ class SystemAssembler
 
 public:
   typedef GDT::SystemAssembler<T, GL> type;
-  typedef pybind11::class_<type> bound_type;
+  typedef pybind11::class_<type, XT::Grid::Walker<GL>> bound_type;
 
 private:
   typedef typename type::TestSpaceType TestSpaceType;
