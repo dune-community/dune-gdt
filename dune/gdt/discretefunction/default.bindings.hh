@@ -22,7 +22,7 @@
 
 #include <dune/gdt/spaces.bindings.hh>
 #include <dune/gdt/playground/spaces/block.hh>
-#include <dune/gdt/type_traits.hh>
+#include <dune/gdt/playground/spaces/restricted.hh>
 #include <dune/gdt/type_traits.hh>
 
 #include "default.hh"
@@ -30,12 +30,12 @@
 namespace Dune {
 namespace GDT {
 namespace bindings {
+namespace internal {
 
 
-template <class SP, class V>
+template <class S, class V>
 class ConstDiscreteFunction
 {
-  typedef typename SP::type S;
   static_assert(is_space<S>::value, "");
   static_assert(XT::LA::is_vector<V>::value, "");
   typedef XT::Grid::extract_grid_t<typename S::GridLayerType> G;
@@ -55,12 +55,12 @@ private:
 public:
   typedef pybind11::class_<type, BaseType> bound_type;
 
-  static bound_type bind(pybind11::module& m)
+  static bound_type bind(pybind11::module& m, const std::string& space_name)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    const auto ClassName = XT::Common::to_camel_case("const_discrete_function_" + space_name<SP>::value() + "_"
+    const auto ClassName = XT::Common::to_camel_case("const_discrete_function_" + space_name + "_"
                                                      + XT::LA::bindings::container_name<V>::value());
 
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
@@ -147,10 +147,9 @@ public:
 }; // class ConstDiscreteFunction
 
 
-template <class SP, class V>
+template <class S, class V>
 class DiscreteFunction
 {
-  typedef typename SP::type S;
   static_assert(is_space<S>::value, "");
   static_assert(XT::LA::is_vector<V>::value, "");
 
@@ -160,14 +159,14 @@ public:
   typedef GDT::DiscreteFunction<S, V> type;
   typedef pybind11::class_<type, BaseType> bound_type;
 
-  static bound_type bind(pybind11::module& m)
+  static bound_type bind(pybind11::module& m, const std::string& space_name)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    bindings::ConstDiscreteFunction<SP, V>::bind(m);
+    bindings::internal::ConstDiscreteFunction<S, V>::bind(m, space_name);
 
-    const auto ClassName = XT::Common::to_camel_case("discrete_function_" + space_name<SP>::value() + "_"
+    const auto ClassName = XT::Common::to_camel_case("discrete_function_" + space_name + "_"
                                                      + XT::LA::bindings::container_name<V>::value());
 
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
@@ -197,6 +196,60 @@ public:
     return c;
   } // ... bind(...)
 
+}; // class DiscreteFunction
+
+
+} // namespace internal
+
+
+template <class SP, class V>
+class DiscreteFunction
+{
+  typedef typename SP::type S;
+  static_assert(is_space<S>::value, "");
+  static_assert(XT::LA::is_vector<V>::value, "");
+  typedef GDT::ConstDiscreteFunction<S, V> BaseType;
+
+public:
+  typedef GDT::DiscreteFunction<S, V> type;
+  typedef pybind11::class_<type, BaseType> bound_type;
+
+  template <XT::Grid::Backends backend, XT::Grid::Layers layer>
+  static void addbind_restricted(pybind11::module& m, const std::string sp_name)
+  {
+    try { // we might not be the first to add this
+      internal::DiscreteFunction<GDT::RestrictedSpace<S,
+                                                      typename XT::Grid::
+                                                          Layer<XT::Grid::extract_grid_t<typename S::GridLayerType>,
+                                                                layer,
+                                                                backend>::type>,
+                                 V>::bind(m,
+                                          sp_name + "_restricted_to_" + XT::Grid::bindings::layer_name<layer>::value()
+                                              + "_"
+                                              + XT::Grid::bindings::backend_name<backend>::value());
+    } catch (std::runtime_error&) {
+    }
+  } // ... addbind_restricted(...)
+
+  static bound_type bind(pybind11::module& m)
+  {
+    const auto sp_name = space_name<SP>::value();
+    auto c = internal::DiscreteFunction<S, V>::bind(m, sp_name);
+
+    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::adaptive_leaf>(m, sp_name);
+    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain>(m, sp_name);
+    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain_boundary>(m, sp_name);
+    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain_coupling>(m, sp_name);
+    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain_oversampled>(m, sp_name);
+    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::leaf>(m, sp_name);
+    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::level>(m, sp_name);
+    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain>(m, sp_name);
+    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain_oversampled>(m, sp_name);
+    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::leaf>(m, sp_name);
+    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::level>(m, sp_name);
+
+    return c;
+  }
 }; // class DiscreteFunction
 
 
