@@ -111,7 +111,7 @@ private:
   struct addbind_assembler
   {
     template <class GL, class A>
-    void operator()(pybind11::class_<GDT::SystemAssembler<T, GL, A>>& bound_system_assembler)
+    void operator()(pybind11::class_<GDT::SystemAssembler<T, GL, A>, XT::Grid::Walker<GL>>& bound_system_assembler)
     {
       using namespace pybind11::literals;
 
@@ -128,14 +128,14 @@ private:
   struct addbind_assembler<T, false>
   {
     template <class GL, class A>
-    void operator()(pybind11::class_<GDT::SystemAssembler<T, GL, A>>& /*bound_system_assembler*/)
+    void operator()(pybind11::class_<GDT::SystemAssembler<T, GL, A>, XT::Grid::Walker<GL>>& /*bound_system_assembler*/)
     {
     }
   };
 
 public:
   template <class T, class GL, class A>
-  static void addbind(pybind11::class_<GDT::SystemAssembler<T, GL, A>>& bound_system_assembler)
+  static void addbind(pybind11::class_<GDT::SystemAssembler<T, GL, A>, XT::Grid::Walker<GL>>& bound_system_assembler)
   {
     addbind_assembler<T>()(bound_system_assembler);
   }
