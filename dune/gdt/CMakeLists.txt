@@ -104,6 +104,5 @@ if(dune-pybindxi_FOUND)
   endif()
 endif()
 
-add_subdirectory(operators/fv)
 add_subdirectory(test EXCLUDE_FROM_ALL)
 

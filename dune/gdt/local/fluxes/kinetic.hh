@@ -33,37 +33,31 @@ namespace GDT {
 
 
 // forwards
-template <class AnalyticalFluxImp,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
-                                                    AnalyticalFluxImp::dimRange,
-                                                    AnalyticalFluxImp::dimRangeCols>>
+template <class AnalyticalFluxImp>
 class KineticLocalNumericalCouplingFlux;
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueType,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
-                                                    AnalyticalFluxImp::dimRange,
-                                                    AnalyticalFluxImp::dimRangeCols>>
+          class BoundaryValueType>
 class KineticLocalNumericalBoundaryFlux;
 
 
 namespace internal {
 
 
-template <class AnalyticalFluxImp, class EigenSolverImp>
+template <class AnalyticalFluxImp>
 class KineticLocalNumericalCouplingFluxTraits
-    : public GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, EigenSolverImp>
+    : public GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp>
 {
 public:
   typedef std::tuple<> LocalfunctionTupleType;
-  typedef KineticLocalNumericalCouplingFlux<AnalyticalFluxImp, EigenSolverImp> derived_type;
+  typedef KineticLocalNumericalCouplingFlux<AnalyticalFluxImp> derived_type;
 }; // class KineticLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalFluxImp, class BoundaryValueImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp>
 class KineticLocalNumericalBoundaryFluxTraits
-    : public KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, EigenSolverImp>
+    : public KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp>
 {
-  typedef KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, EigenSolverImp> BaseType;
+  typedef KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp> BaseType;
 
 public:
   typedef BoundaryValueImp BoundaryValueType;
@@ -79,13 +73,12 @@ public:
 /**
  *  \brief  Kinetic flux evaluation for inner intersections and periodic boundary intersections.
  */
-template <class AnalyticalFluxImp, class EigenSolverImp>
+template <class AnalyticalFluxImp>
 class KineticLocalNumericalCouplingFlux
-    : public LocalNumericalCouplingFluxInterface<internal::KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
-                                                                                                   EigenSolverImp>>
+    : public LocalNumericalCouplingFluxInterface<internal::KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp>>
 {
 public:
-  typedef internal::KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, EigenSolverImp> Traits;
+  typedef internal::KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp> Traits;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
@@ -144,14 +137,13 @@ private:
 /**
 *  \brief  Kinetic flux evaluation for Dirichlet boundary intersections.
 */
-template <class AnalyticalFluxImp, class BoundaryValueImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp>
 class KineticLocalNumericalBoundaryFlux
     : public LocalNumericalBoundaryFluxInterface<internal::KineticLocalNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                                                   BoundaryValueImp,
-                                                                                                   EigenSolverImp>>
+                                                                                                   BoundaryValueImp>>
 {
 public:
-  typedef internal::KineticLocalNumericalBoundaryFluxTraits<AnalyticalFluxImp, BoundaryValueImp, EigenSolverImp> Traits;
+  typedef internal::KineticLocalNumericalBoundaryFluxTraits<AnalyticalFluxImp, BoundaryValueImp> Traits;
   typedef typename Traits::BoundaryValueType BoundaryValueType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;

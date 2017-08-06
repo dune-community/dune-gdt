@@ -25,7 +25,6 @@ template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           size_t polOrder,
           SlopeLimiters slope_lim,
-          class EigenSolverImp,
           class RealizabilityLimiterImp,
           class Traits>
 class AdvectionKineticOperator;
@@ -38,20 +37,17 @@ template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           size_t reconstruction_order,
           SlopeLimiters slope_lim,
-          class EigenSolverImp,
           class RealizabilityLimiterImp>
 class AdvectionKineticOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp,
                                                                   BoundaryValueImp,
                                                                   reconstruction_order,
                                                                   slope_lim,
-                                                                  EigenSolverImp,
                                                                   RealizabilityLimiterImp>
 {
   typedef AdvectionTraitsBase<AnalyticalFluxImp,
                               BoundaryValueImp,
                               reconstruction_order,
                               slope_lim,
-                              EigenSolverImp,
                               RealizabilityLimiterImp>
       BaseType;
 
@@ -63,7 +59,6 @@ public:
                                    BoundaryValueImp,
                                    reconstruction_order,
                                    slope_lim,
-                                   EigenSolverImp,
                                    RealizabilityLimiterImp,
                                    AdvectionKineticOperatorTraits>
       derived_type;
@@ -77,15 +72,11 @@ template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           size_t polOrder = 0,
           SlopeLimiters slope_lim = SlopeLimiters::minmod,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
-                                                    AnalyticalFluxImp::dimRange,
-                                                    AnalyticalFluxImp::dimRangeCols>,
           class RealizabilityLimiterImp = NonLimitingRealizabilityLimiter<typename AnalyticalFluxImp::EntityType>,
           class Traits = internal::AdvectionKineticOperatorTraits<AnalyticalFluxImp,
                                                                   BoundaryValueImp,
                                                                   polOrder,
                                                                   slope_lim,
-                                                                  EigenSolverImp,
                                                                   RealizabilityLimiterImp>>
 class AdvectionKineticOperator : public Dune::GDT::OperatorInterface<Traits>, public AdvectionOperatorBase<Traits>
 {

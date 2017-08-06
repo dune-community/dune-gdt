@@ -27,9 +27,6 @@ template <class AnalyticalFluxType,
           NumericalFluxes numerical_flux,
           size_t reconstruction_order,
           SlopeLimiters slope_limiter = SlopeLimiters::minmod,
-          class EigenSolverType = DefaultEigenSolver<typename AnalyticalFluxType::RangeFieldType,
-                                                     AnalyticalFluxType::dimRange,
-                                                     AnalyticalFluxType::dimRangeCols>,
           class RealizabilityLimiterType = NonLimitingRealizabilityLimiter<typename AnalyticalFluxType::EntityType>>
 struct AdvectionOperatorCreator
 {
@@ -37,7 +34,6 @@ struct AdvectionOperatorCreator
                                    BoundaryValueType,
                                    reconstruction_order,
                                    slope_limiter,
-                                   EigenSolverType,
                                    RealizabilityLimiterType>
       type;
   typedef typename type::OnedQuadratureType OnedQuadratureType;
@@ -59,7 +55,6 @@ template <class AnalyticalFluxType,
           class ConstantFunctionType,
           size_t reconstruction_order,
           SlopeLimiters slope_limiter,
-          class EigenSolverType,
           class RealizabilityLimiterType>
 struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 BoundaryValueType,
@@ -67,7 +62,6 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 NumericalFluxes::laxfriedrichs,
                                 reconstruction_order,
                                 slope_limiter,
-                                EigenSolverType,
                                 RealizabilityLimiterType>
 {
   typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
@@ -75,7 +69,6 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
                                          ConstantFunctionType,
                                          reconstruction_order,
                                          slope_limiter,
-                                         EigenSolverType,
                                          RealizabilityLimiterType>
       type;
   typedef typename type::OnedQuadratureType OnedQuadratureType;
@@ -97,7 +90,6 @@ template <class AnalyticalFluxType,
           class ConstantFunctionType,
           size_t reconstruction_order,
           SlopeLimiters slope_limiter,
-          class EigenSolverType,
           class RealizabilityLimiterType>
 struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 BoundaryValueType,
@@ -105,7 +97,6 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 NumericalFluxes::local_laxfriedrichs,
                                 reconstruction_order,
                                 slope_limiter,
-                                EigenSolverType,
                                 RealizabilityLimiterType>
 {
   typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
@@ -113,7 +104,6 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
                                          ConstantFunctionType,
                                          reconstruction_order,
                                          slope_limiter,
-                                         EigenSolverType,
                                          RealizabilityLimiterType>
       type;
   typedef typename type::OnedQuadratureType OnedQuadratureType;
@@ -135,7 +125,6 @@ template <class AnalyticalFluxType,
           class ConstantFunctionType,
           size_t reconstruction_order,
           SlopeLimiters slope_limiter,
-          class EigenSolverType,
           class RealizabilityLimiterType>
 struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 BoundaryValueType,
@@ -143,7 +132,6 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 NumericalFluxes::force,
                                 reconstruction_order,
                                 slope_limiter,
-                                EigenSolverType,
                                 RealizabilityLimiterType>
 {
   typedef AdvectionForceOperator<AnalyticalFluxType,
@@ -151,7 +139,6 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
                                  ConstantFunctionType,
                                  reconstruction_order,
                                  slope_limiter,
-                                 EigenSolverType,
                                  RealizabilityLimiterType>
       type;
   typedef typename type::OnedQuadratureType OnedQuadratureType;
@@ -174,7 +161,6 @@ template <class AnalyticalFluxType,
           class ConstantFunctionType,
           size_t reconstruction_order,
           SlopeLimiters slope_limiter,
-          class EigenSolverType,
           class RealizabilityLimiterType>
 struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 BoundaryValueType,
@@ -182,7 +168,6 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 NumericalFluxes::musta,
                                 reconstruction_order,
                                 slope_limiter,
-                                EigenSolverType,
                                 RealizabilityLimiterType>
 {
   typedef AdvectionMustaOperator<AnalyticalFluxType,
@@ -190,7 +175,6 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
                                  ConstantFunctionType,
                                  reconstruction_order,
                                  slope_limiter,
-                                 EigenSolverType,
                                  RealizabilityLimiterType>
       type;
   typedef typename type::OnedQuadratureType OnedQuadratureType;
@@ -213,7 +197,6 @@ template <class AnalyticalFluxType,
           class ConstantFunctionType,
           size_t reconstruction_order,
           SlopeLimiters slope_limiter,
-          class EigenSolverType,
           class RealizabilityLimiterType>
 struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 BoundaryValueType,
@@ -221,7 +204,6 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 NumericalFluxes::laxwendroff,
                                 reconstruction_order,
                                 slope_limiter,
-                                EigenSolverType,
                                 RealizabilityLimiterType>
 {
   typedef AdvectionLaxWendroffOperator<AnalyticalFluxType,
@@ -229,7 +211,6 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
                                        ConstantFunctionType,
                                        reconstruction_order,
                                        slope_limiter,
-                                       EigenSolverType,
                                        RealizabilityLimiterType>
       type;
   typedef typename type::OnedQuadratureType OnedQuadratureType;
@@ -251,7 +232,6 @@ template <class AnalyticalFluxType,
           class ConstantFunctionType,
           size_t reconstruction_order,
           SlopeLimiters slope_limiter,
-          class EigenSolverType,
           class RealizabilityLimiterType>
 struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 BoundaryValueType,
@@ -259,14 +239,12 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 NumericalFluxes::kinetic,
                                 reconstruction_order,
                                 slope_limiter,
-                                EigenSolverType,
                                 RealizabilityLimiterType>
 {
   typedef AdvectionKineticOperator<AnalyticalFluxType,
                                    BoundaryValueType,
                                    reconstruction_order,
                                    slope_limiter,
-                                   EigenSolverType,
                                    RealizabilityLimiterType>
       type;
   typedef typename type::OnedQuadratureType OnedQuadratureType;

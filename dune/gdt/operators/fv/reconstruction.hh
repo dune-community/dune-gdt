@@ -19,7 +19,8 @@
 
 #include <dune/xt/grid/walker/functors.hh>
 
-#include "eigensolver.hh"
+#include <dune/xt/la/eigen-solver.hh>
+
 #include "slopelimiters.hh"
 
 namespace Dune {
@@ -30,10 +31,7 @@ template <class GridLayerType,
           class AnalyticalFluxType,
           class BoundaryValueType,
           size_t polOrder,
-          SlopeLimiters slope_limiter,
-          class EigenSolverType = typename Dune::GDT::DefaultEigenSolver<typename AnalyticalFluxType::RangeFieldType,
-                                                                         AnalyticalFluxType::dimRange,
-                                                                         AnalyticalFluxType::dimRangeCols>>
+          SlopeLimiters slope_limiter>
 class LocalReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayerType>
 {
   // stencil is (i-r, i+r) in all dimensions, where r = polOrder + 1
@@ -48,8 +46,9 @@ class LocalReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayer
   typedef typename BoundaryValueType::DomainFieldType DomainFieldType;
   typedef typename BoundaryValueType::RangeType RangeType;
   typedef typename BoundaryValueType::RangeFieldType RangeFieldType;
-  typedef typename EigenSolverType::VectorType VectorType;
   typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+  typedef typename XT::LA::CommonSparseMatrix<RangeFieldType> SparseMatrixType;
+  typedef typename XT::LA::EigenSolver<MatrixType> EigenSolverType;
   typedef Dune::QuadratureRule<DomainFieldType, 1> QuadratureType;
   typedef FieldVector<typename GridLayerType::Intersection, 2 * dimDomain> IntersectionVectorType;
   typedef FieldVector<FieldVector<FieldVector<RangeType, stencil[2]>, stencil[1]>, stencil[0]> ValuesType;
@@ -57,7 +56,6 @@ class LocalReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayer
   typedef typename AnalyticalFluxType::LocalfunctionType AnalyticalFluxLocalfunctionType;
   typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
   typedef typename Dune::FieldVector<Dune::FieldMatrix<double, dimRange, dimRange>, dimDomain> JacobianRangeType;
-  typedef typename EigenSolverType::EigenVectorsType EigenVectorsType;
 
 public:
   explicit LocalReconstructionFvOperator(
@@ -106,19 +104,23 @@ public:
     // get jacobians
     const auto& entity_index = grid_layer_.indexSet().index(entity);
     auto& reconstructed_values_map = reconstructed_values_[entity_index];
-    if (!is_linear_ || !(eigensolvers_[0])) {
+    if (!is_linear_ || !eigenvectors_) {
       if (!jacobian_)
         jacobian_ = XT::Common::make_unique<JacobianRangeType>();
+      if (!eigenvectors_) {
+        eigenvectors_ = XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>(SparseMatrixType(dimRange, dimRange));
+        eigenvectors_inverse_ = XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>(SparseMatrixType(dimRange, dimRange));
+      }
       const auto& u_entity = values[stencil[0] / 2][stencil[1] / 2][stencil[2] / 2];
       const auto flux_local_func = analytical_flux_.local_function(entity);
       helper<dimDomain>::get_jacobian(
           flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, *jacobian_, param_);
-      helper<dimDomain>::get_eigensolvers(*jacobian_, eigensolvers_);
+      helper<dimDomain>::get_eigenvectors(*jacobian_, *eigenvectors_, *eigenvectors_inverse_);
       if (is_linear_)
         jacobian_ = nullptr;
     }
     for (size_t dd = 0; dd < dimDomain; ++dd)
-      helper<>::reconstruct(dd, values, eigensolvers_, quadrature_, reconstructed_values_map, intersections);
+      helper<dimDomain>::reconstruct(dd, values, *eigenvectors_, *eigenvectors_inverse_, quadrature_, reconstructed_values_map, intersections);
   } // void apply_local(...)
 
 private:
@@ -139,14 +141,15 @@ private:
   {
     static void reconstruct(size_t /*dd*/,
                             const ValuesType& values,
-                            const FieldVector<std::unique_ptr<EigenSolverType>, dimDomain>& eigensolvers,
+                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
+                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse,
                             const QuadratureType& /*quadrature*/,
                             std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
     {
       FieldVector<RangeType, stencil_size> char_values;
       for (size_t ii = 0; ii < stencil_size; ++ii)
-        eigensolvers[0]->eigenvectors_inverse()->mv(values[ii][0][0], char_values[ii]);
+        eigenvectors_inverse[0].mv(values[ii][0][0], char_values[ii]);
 
       // reconstruction in x direction
       FieldVector<RangeType, 2> reconstructed_values;
@@ -158,7 +161,7 @@ private:
       RangeType value;
       for (size_t ii = 0; ii < 2; ++ii) {
         // convert back to non-characteristic variables
-        eigensolvers[0]->eigenvectors()->mv(reconstructed_values[ii], value);
+        eigenvectors[0].mv(reconstructed_values[ii], value);
         auto quadrature_point = FieldVector<DomainFieldType, dimDomain - 1>();
         reconstructed_values_map.insert(
             std::make_pair(intersections[ii].geometryInInside().global(quadrature_point), value));
@@ -174,16 +177,16 @@ private:
       local_func->partial_u(x_in_inside_coords, u, ret[0], param);
     }
 
-    static void get_eigensolvers(JacobianRangeType& jacobian,
-                                 FieldVector<std::unique_ptr<EigenSolverType>, dimDomain>& eigensolvers)
+    static void get_eigenvectors(const JacobianRangeType& jacobian,
+                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors)
     {
-      if (!(eigensolvers[0]))
-        eigensolvers[0] = XT::Common::make_unique<EigenSolverType>(jacobian, true);
-      else
-        eigensolvers[0]->solve();
+      XT::Common::Configuration eigensolver_options(
+        {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
+        {EigenSolverType::types()[0], "1", "1", "0", "1"});
+      const auto eigensolver = EigenSolverType(jacobian);
+      eigenvectors[0] = SparseMatrixType(*(eigensolver.real_eigenvectors_as_matrix(eigensolver_options)));
     }
-
-  }; // struct helper<1,...>
+  }; // struct helper<1,...
 
   template <class anything>
   struct helper<2, anything>
@@ -191,7 +194,8 @@ private:
 
     static void reconstruct(size_t dd,
                             const ValuesType& values,
-                            const FieldVector<std::unique_ptr<EigenSolverType>, dimDomain>& eigensolvers,
+                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
+                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse,
                             const QuadratureType& quadrature,
                             std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
@@ -203,9 +207,9 @@ private:
       for (size_t ii = 0; ii < stencil_size; ++ii) {
         for (size_t jj = 0; jj < stencil_size; ++jj) {
           if (dd == 0)
-            eigensolvers[dd]->eigenvectors_inverse()->mv(values[ii][jj][0], char_values[jj][ii]);
+            eigenvectors_inverse[dd].mv(values[ii][jj][0], char_values[jj][ii]);
           else if (dd == 1)
-            eigensolvers[dd]->eigenvectors_inverse()->mv(values[ii][jj][0], char_values[ii][jj]);
+            eigenvectors_inverse[dd].mv(values[ii][jj][0], char_values[ii][jj]);
         }
       }
 
@@ -226,9 +230,9 @@ private:
       for (size_t ii = 0; ii < 2; ++ii) {
         for (size_t jj = 0; jj < stencil_size; ++jj) {
           tmp_vec = x_reconstructed_values[ii][jj];
-          eigensolvers[dd]->eigenvectors()->mv(tmp_vec, x_reconstructed_values[ii][jj]);
+          eigenvectors[dd].mv(tmp_vec, x_reconstructed_values[ii][jj]);
           tmp_vec = x_reconstructed_values[ii][jj];
-          eigensolvers[(dd + 1) % 2]->eigenvectors_inverse()->mv(tmp_vec, x_reconstructed_values[ii][jj]);
+          eigenvectors_inverse[(dd + 1) % 2].mv(tmp_vec, x_reconstructed_values[ii][jj]);
         }
       }
 
@@ -244,7 +248,7 @@ private:
       for (size_t ii = 0; ii < 2; ++ii) {
         for (size_t jj = 0; jj < num_quad_points; ++jj) {
           // convert back to non-characteristic variables
-          eigensolvers[(dd + 1) % 2]->eigenvectors()->mv(reconstructed_values[ii][jj], tmp_vec);
+          eigenvectors[(dd + 1) % 2].mv(reconstructed_values[ii][jj], tmp_vec);
           auto quadrature_point = quadrature[jj].position();
           reconstructed_values_map.insert(
               std::make_pair(intersections[2 * dd + ii].geometryInInside().global(quadrature_point), tmp_vec));
@@ -261,12 +265,13 @@ private:
       helper<3, anything>::get_jacobian(local_func, x_in_inside_coords, u, ret, param);
     }
 
-    static void get_eigensolvers(JacobianRangeType& jacobian,
-                                 FieldVector<std::unique_ptr<EigenSolverType>, dimDomain>& eigensolvers)
+    static void get_eigenvectors(const JacobianRangeType& jacobian,
+                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
+                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse)
     {
-      helper<3, anything>::get_eigensolvers(jacobian, eigensolvers);
+      helper<3, anything>::get_eigenvectors(jacobian, eigenvectors, eigenvectors_inverse);
     }
-  }; // helper<2,...>
+  }; // helper<2,...
 
   template <class anything>
   struct helper<3, anything>
@@ -274,7 +279,8 @@ private:
 
     static void reconstruct(size_t dd,
                             const ValuesType& values,
-                            const FieldVector<std::unique_ptr<EigenSolverType>, dimDomain>& eigensolvers,
+                            FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
+                            FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse,
                             const QuadratureType& quadrature,
                             std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
@@ -287,11 +293,11 @@ private:
         for (size_t jj = 0; jj < stencil_size; ++jj) {
           for (size_t kk = 0; kk < stencil_size; ++kk) {
             if (dd == 0)
-              eigensolvers[dd]->eigenvectors_inverse()->mv(values[ii][jj][kk], char_values[kk][jj][ii]);
+              eigenvectors_inverse[dd].mv(values[ii][jj][kk], char_values[kk][jj][ii]);
             else if (dd == 1)
-              eigensolvers[dd]->eigenvectors_inverse()->mv(values[ii][jj][kk], char_values[ii][kk][jj]);
+              eigenvectors_inverse[dd].mv(values[ii][jj][kk], char_values[ii][kk][jj]);
             else if (dd == 2)
-              eigensolvers[dd]->eigenvectors_inverse()->mv(values[ii][jj][kk], char_values[jj][ii][kk]);
+              eigenvectors_inverse[dd].mv(values[ii][jj][kk], char_values[jj][ii][kk]);
           }
         }
       }
@@ -317,9 +323,9 @@ private:
         for (size_t ii = 0; ii < 2; ++ii) {
           for (size_t jj = 0; jj < stencil_size; ++jj) {
             tmp_vec = x_reconstructed_values[kk][ii][jj];
-            eigensolvers[dd]->eigenvectors()->mv(tmp_vec, x_reconstructed_values[kk][ii][jj]);
+            eigenvectors[dd].mv(tmp_vec, x_reconstructed_values[kk][ii][jj]);
             tmp_vec = x_reconstructed_values[kk][ii][jj];
-            eigensolvers[(dd + 1) % 3]->eigenvectors_inverse()->mv(tmp_vec, x_reconstructed_values[kk][ii][jj]);
+            eigenvectors_inverse[(dd + 1) % 3].mv(tmp_vec, x_reconstructed_values[kk][ii][jj]);
           }
         }
       }
@@ -345,9 +351,9 @@ private:
         for (size_t jj = 0; jj < num_quad_points; ++jj) {
           for (size_t kk = 0; kk < stencil_size; ++kk) {
             tmp_vec = y_reconstructed_values[ii][jj][kk];
-            eigensolvers[(dd + 1) % 3]->eigenvectors()->mv(tmp_vec, y_reconstructed_values[ii][jj][kk]);
+            eigenvectors[(dd + 1) % 3].mv(tmp_vec, y_reconstructed_values[ii][jj][kk]);
             tmp_vec = y_reconstructed_values[ii][jj][kk];
-            eigensolvers[(dd + 2) % 3]->eigenvectors_inverse()->mv(tmp_vec, y_reconstructed_values[ii][jj][kk]);
+            eigenvectors_inverse[(dd + 2) % 3].mv(tmp_vec, y_reconstructed_values[ii][jj][kk]);
           }
         }
       }
@@ -367,7 +373,7 @@ private:
         for (size_t jj = 0; jj < num_quad_points; ++jj) {
           for (size_t kk = 0; kk < num_quad_points; ++kk) {
             // convert back to non-characteristic variables
-            eigensolvers[(dd + 2) % 3]->eigenvectors()->mv(reconstructed_values[ii][jj][kk], tmp_vec);
+            eigenvectors[(dd + 2) % 3].mv(reconstructed_values[ii][jj][kk], tmp_vec);
             IntersectionLocalCoordType quadrature_point = {quadrature[jj].position(), quadrature[kk].position()};
             reconstructed_values_map.insert(
                 std::make_pair(intersections[2 * dd + ii].geometryInInside().global(quadrature_point), tmp_vec));
@@ -385,17 +391,22 @@ private:
       local_func->partial_u(x_in_inside_coords, u, ret, param);
     }
 
-    static void get_eigensolvers(JacobianRangeType& jacobian,
-                                 FieldVector<std::unique_ptr<EigenSolverType>, dimDomain>& eigensolvers)
+    static void get_eigenvectors(const JacobianRangeType& jacobian,
+                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
+                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse)
     {
-      for (size_t dd = 0; dd < dimDomain; ++dd) {
-        if (!(eigensolvers[dd]))
-          eigensolvers[dd] = XT::Common::make_unique<EigenSolverType>(jacobian[dd], true);
-        else
-          eigensolvers[dd]->solve();
-      } // dd
+      XT::Common::Configuration eigensolver_options(
+        {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
+        {EigenSolverType::types()[0], "1", "1", "0", "1"});
+      for (size_t ii = 0; ii < dimDomain; ++ii) {
+        const auto eigensolver = EigenSolverType(jacobian[ii]);
+        auto eigenvectors_dense = eigensolver.real_eigenvectors_as_matrix(eigensolver_options);
+        eigenvectors[ii] = SparseMatrixType(*eigenvectors_dense);
+        eigenvectors_dense->invert();
+        eigenvectors_inverse[ii] = SparseMatrixType(*eigenvectors_dense);
+      }
     }
-  }; // struct helper<3, ...>
+  }; // struct helper<3, ...
 
 
   class StencilIterator
@@ -474,7 +485,7 @@ private:
     {
       return (polOrder == 0 || (dir != -1 && size_t(std::abs(offsets[dir / 2])) >= stencil[dir / 2] / 2));
     }
-  }; // class StencilIterator<...>
+  }; // class StencilIterator<...
 
   static void slope_reconstruction(const FieldVector<RangeType, stencil_size>& cell_values,
                                    std::vector<RangeType>& result,
@@ -518,8 +529,9 @@ private:
   const bool is_linear_;
   const QuadratureType quadrature_;
   std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values_;
-  static thread_local FieldVector<std::unique_ptr<EigenSolverType>, dimDomain> eigensolvers_;
   static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
+  static thread_local std::unique_ptr<FieldVector<SparseMatrixType, dimDomain>> eigenvectors_;
+  static thread_local std::unique_ptr<FieldVector<SparseMatrixType, dimDomain>> eigenvectors_inverse_;
   static bool is_instantiated_;
 }; // class LocalReconstructionFvOperator
 
@@ -527,66 +539,82 @@ template <class GridLayerType,
           class AnalyticalFluxType,
           class BoundaryValueType,
           size_t polOrder,
-          SlopeLimiters slope_limiter,
-          class EigenSolverType>
+          SlopeLimiters slope_limiter>
 constexpr std::array<size_t, 3> LocalReconstructionFvOperator<GridLayerType,
                                                               AnalyticalFluxType,
                                                               BoundaryValueType,
                                                               polOrder,
-                                                              slope_limiter,
-                                                              EigenSolverType>::stencil;
+                                                              slope_limiter>::stencil;
 
 template <class GridLayerType,
           class AnalyticalFluxType,
           class BoundaryValueType,
           size_t polOrder,
-          SlopeLimiters slope_limiter,
-          class EigenSolverType>
-thread_local FieldVector<std::unique_ptr<EigenSolverType>,
+          SlopeLimiters slope_limiter>
+thread_local std::unique_ptr<FieldVector<typename LocalReconstructionFvOperator<GridLayerType,
+                                                       AnalyticalFluxType,
+                                                       BoundaryValueType,
+                                                       polOrder,
+                                                       slope_limiter>::SparseMatrixType,
                          LocalReconstructionFvOperator<GridLayerType,
                                                        AnalyticalFluxType,
                                                        BoundaryValueType,
                                                        polOrder,
-                                                       slope_limiter,
-                                                       EigenSolverType>::dimDomain>
+                                                       slope_limiter>::dimDomain>>
     LocalReconstructionFvOperator<GridLayerType,
                                   AnalyticalFluxType,
                                   BoundaryValueType,
                                   polOrder,
-                                  slope_limiter,
-                                  EigenSolverType>::eigensolvers_;
+                                  slope_limiter>::eigenvectors_;
 
 template <class GridLayerType,
           class AnalyticalFluxType,
           class BoundaryValueType,
           size_t polOrder,
-          SlopeLimiters slope_limiter,
-          class EigenSolverType>
+          SlopeLimiters slope_limiter>
+thread_local std::unique_ptr<FieldVector<typename LocalReconstructionFvOperator<GridLayerType,
+                                                       AnalyticalFluxType,
+                                                       BoundaryValueType,
+                                                       polOrder,
+                                                       slope_limiter>::SparseMatrixType,
+                         LocalReconstructionFvOperator<GridLayerType,
+                                                       AnalyticalFluxType,
+                                                       BoundaryValueType,
+                                                       polOrder,
+                                                       slope_limiter>::dimDomain>>
+    LocalReconstructionFvOperator<GridLayerType,
+                                  AnalyticalFluxType,
+                                  BoundaryValueType,
+                                  polOrder,
+                                  slope_limiter>::eigenvectors_inverse_;
+
+
+template <class GridLayerType,
+          class AnalyticalFluxType,
+          class BoundaryValueType,
+          size_t polOrder,
+          SlopeLimiters slope_limiter>
 thread_local std::unique_ptr<typename LocalReconstructionFvOperator<GridLayerType,
                                                                     AnalyticalFluxType,
                                                                     BoundaryValueType,
                                                                     polOrder,
-                                                                    slope_limiter,
-                                                                    EigenSolverType>::JacobianRangeType>
+                                                                    slope_limiter>::JacobianRangeType>
     LocalReconstructionFvOperator<GridLayerType,
                                   AnalyticalFluxType,
                                   BoundaryValueType,
                                   polOrder,
-                                  slope_limiter,
-                                  EigenSolverType>::jacobian_;
+                                  slope_limiter>::jacobian_;
 
 template <class GridLayerType,
           class AnalyticalFluxType,
           class BoundaryValueType,
           size_t polOrder,
-          SlopeLimiters slope_limiter,
-          class EigenSolverType>
+          SlopeLimiters slope_limiter>
 bool LocalReconstructionFvOperator<GridLayerType,
                                    AnalyticalFluxType,
                                    BoundaryValueType,
                                    polOrder,
-                                   slope_limiter,
-                                   EigenSolverType>::is_instantiated_(false);
+                                   slope_limiter>::is_instantiated_(false);
 
 
 } // namespace GDT

@@ -39,7 +39,6 @@ template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           size_t reconstruction_order,
           SlopeLimiters slope_lim,
-          class EigenSolverImp,
           class RealizabilityLimiterImp>
 class AdvectionTraitsBase
 {
@@ -48,7 +47,6 @@ public:
   static const SlopeLimiters slope_limiter = slope_lim;
   typedef AnalyticalFluxImp AnalyticalFluxType;
   typedef BoundaryValueImp BoundaryValueType;
-  typedef EigenSolverImp EigenSolverType;
   typedef RealizabilityLimiterImp RealizabilityLimiterType;
   static const size_t dimDomain = AnalyticalFluxType::dimDomain;
   static const size_t dimRange = AnalyticalFluxType::dimRange;
@@ -132,7 +130,6 @@ template <class NumericalCouplingFluxType,
           class NumericalBoundaryFluxType,
           size_t polOrder,
           SlopeLimiters slope_limiter,
-          class EigenSolverType,
           class RealizabilityLimiterType>
 struct AdvectionOperatorApplier
 {
@@ -175,8 +172,7 @@ struct AdvectionOperatorApplier
                                                                        AnalyticalFluxType,
                                                                        BoundaryValueType,
                                                                        polOrder,
-                                                                       slope_limiter,
-                                                                       EigenSolverType>(source_values,
+                                                                       slope_limiter>(source_values,
                                                                                         analytical_flux,
                                                                                         boundary_values,
                                                                                         grid_layer,
@@ -231,13 +227,11 @@ struct AdvectionOperatorApplier
 template <class NumericalCouplingFluxType,
           class NumericalBoundaryFluxType,
           SlopeLimiters slope_limiter,
-          class EigenSolverType,
           class RealizabilityLimiterType>
 struct AdvectionOperatorApplier<NumericalCouplingFluxType,
                                 NumericalBoundaryFluxType,
                                 0,
                                 slope_limiter,
-                                EigenSolverType,
                                 RealizabilityLimiterType>
 {
   template <class AnalyticalFluxType,
@@ -295,7 +289,6 @@ public:
   static const SlopeLimiters slope_limiter = Traits::slope_limiter;
   typedef typename Traits::NumericalCouplingFluxType NumericalCouplingFluxType;
   typedef typename Traits::NumericalBoundaryFluxType NumericalBoundaryFluxType;
-  typedef typename Traits::EigenSolverType EigenSolverType;
   typedef typename Traits::RealizabilityLimiterType RealizabilityLimiterType;
 
   typedef Dune::QuadratureRule<DomainFieldType, 1> OnedQuadratureType;
@@ -334,7 +327,6 @@ public:
                                        NumericalBoundaryFluxType,
                                        polOrder,
                                        slope_limiter,
-                                       EigenSolverType,
                                        RealizabilityLimiterType>::apply(analytical_flux_,
                                                                         boundary_values_,
                                                                         source,

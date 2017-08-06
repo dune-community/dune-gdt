@@ -26,7 +26,6 @@ template <class AnalyticalFluxImp,
           class LocalizableFunctionImp,
           size_t polOrder,
           SlopeLimiters slope_lim,
-          class EigenSolverImp,
           class RealizabilityLimiterImp,
           class Traits>
 class AdvectionLaxWendroffOperator;
@@ -40,13 +39,11 @@ template <class AnalyticalFluxImp,
           class LocalizableFunctionImp,
           size_t reconstruction_order,
           SlopeLimiters slope_lim,
-          class EigenSolverImp,
           class RealizabilityLimiterImp>
 class AdvectionLaxWendroffOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp,
                                                                       BoundaryValueImp,
                                                                       reconstruction_order,
                                                                       slope_lim,
-                                                                      EigenSolverImp,
                                                                       RealizabilityLimiterImp>
 {
   static_assert(XT::Functions::is_localizable_function<LocalizableFunctionImp>::value,
@@ -56,7 +53,6 @@ class AdvectionLaxWendroffOperatorTraits : public AdvectionTraitsBase<Analytical
                               BoundaryValueImp,
                               reconstruction_order,
                               slope_lim,
-                              EigenSolverImp,
                               RealizabilityLimiterImp>
       BaseType;
 
@@ -73,7 +69,6 @@ public:
                                        LocalizableFunctionImp,
                                        reconstruction_order,
                                        slope_lim,
-                                       EigenSolverImp,
                                        RealizabilityLimiterImp,
                                        AdvectionLaxWendroffOperatorTraits>
       derived_type;
@@ -88,16 +83,12 @@ template <class AnalyticalFluxImp,
           class LocalizableFunctionImp,
           size_t polOrder = 0,
           SlopeLimiters slope_lim = SlopeLimiters::minmod,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
-                                                    AnalyticalFluxImp::dimRange,
-                                                    AnalyticalFluxImp::dimRangeCols>,
           class RealizabilityLimiterImp = NonLimitingRealizabilityLimiter<typename AnalyticalFluxImp::EntityType>,
           class Traits = internal::AdvectionLaxWendroffOperatorTraits<AnalyticalFluxImp,
                                                                       BoundaryValueImp,
                                                                       LocalizableFunctionImp,
                                                                       polOrder,
                                                                       slope_lim,
-                                                                      EigenSolverImp,
                                                                       RealizabilityLimiterImp>>
 class AdvectionLaxWendroffOperator : public Dune::GDT::OperatorInterface<Traits>, public AdvectionOperatorBase<Traits>
 {

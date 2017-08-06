@@ -24,44 +24,36 @@ namespace GDT {
 
 // forwards
 template <class AnalyticalFluxImp,
-          class LocalizableFunctionImp,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
-                                                    AnalyticalFluxImp::dimRange,
-                                                    AnalyticalFluxImp::dimRangeCols>>
+          class LocalizableFunctionImp>
 class ForceLocalNumericalCouplingFlux;
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
-          class LocalizableFunctionImp,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
-                                                    AnalyticalFluxImp::dimRange,
-                                                    AnalyticalFluxImp::dimRangeCols>>
+          class LocalizableFunctionImp>
 class ForceLocalDirichletNumericalBoundaryFlux;
 
 
 namespace internal {
 
 
-template <class AnalyticalFluxImp, class LocalizableFunctionImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class LocalizableFunctionImp>
 class ForceLocalNumericalCouplingFluxTraits
-    : public LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp>
+    : public LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp>
 {
 public:
-  typedef ForceLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp> derived_type;
+  typedef ForceLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp> derived_type;
 }; // class ForceLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
 class ForceLocalDirichletNumericalBoundaryFluxTraits
     : public LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                     BoundaryValueImp,
-                                                                    LocalizableFunctionImp,
-                                                                    EigenSolverImp>
+                                                                    LocalizableFunctionImp>
 {
 public:
   typedef ForceLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
                                                    BoundaryValueImp,
-                                                   LocalizableFunctionImp,
-                                                   EigenSolverImp>
+                                                   LocalizableFunctionImp>
       derived_type;
 }; // class ForceLocalDirichletNumericalBoundaryFluxTraits
 
@@ -99,19 +91,18 @@ public:
  *  You can also provide a user-defined \param lambda that is used as \lambda_{ij} on all intersections. You need to set
  *  use_local to false, otherwise lambda will not be used.
  */
-template <class AnalyticalFluxImp, class LocalizableFunctionImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class LocalizableFunctionImp>
 class ForceLocalNumericalCouplingFlux
     : public LocalNumericalCouplingFluxInterface<internal::ForceLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
-                                                                                                 LocalizableFunctionImp,
-                                                                                                 EigenSolverImp>>
+                                                                                                 LocalizableFunctionImp>>
 {
-  typedef LaxFriedrichsLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp>
+  typedef LaxFriedrichsLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp>
       LaxFriedrichsLocalFluxType;
-  typedef LaxWendroffLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp>
+  typedef LaxWendroffLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp>
       LaxWendroffLocalFluxType;
 
 public:
-  typedef internal::ForceLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp>
+  typedef internal::ForceLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp>
       Traits;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
@@ -175,30 +166,26 @@ private:
 *  \brief  Lax-Friedrichs flux evaluation for Dirichlet boundary intersections.
 *  \see    LaxFriedrichsLocalNumericalCouplingFlux
 */
-template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
 class ForceLocalDirichletNumericalBoundaryFlux
     : public LocalNumericalBoundaryFluxInterface<internal::
                                                      ForceLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                                                     BoundaryValueImp,
-                                                                                                    LocalizableFunctionImp,
-                                                                                                    EigenSolverImp>>
+                                                                                                    LocalizableFunctionImp>>
 {
   typedef LaxFriedrichsLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
                                                            BoundaryValueImp,
-                                                           LocalizableFunctionImp,
-                                                           EigenSolverImp>
+                                                           LocalizableFunctionImp>
       LaxFriedrichsLocalFluxType;
   typedef LaxWendroffLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
                                                          BoundaryValueImp,
-                                                         LocalizableFunctionImp,
-                                                         EigenSolverImp>
+                                                         LocalizableFunctionImp>
       LaxWendroffLocalFluxType;
 
 public:
   typedef internal::ForceLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                    BoundaryValueImp,
-                                                                   LocalizableFunctionImp,
-                                                                   EigenSolverImp>
+                                                                   LocalizableFunctionImp>
       Traits;
   typedef typename Traits::BoundaryValueType BoundaryValueType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;

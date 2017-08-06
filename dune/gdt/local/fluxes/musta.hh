@@ -23,44 +23,36 @@ namespace GDT {
 
 // forwards
 template <class AnalyticalFluxImp,
-          class LocalizableFunctionImp,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
-                                                    AnalyticalFluxImp::dimRange,
-                                                    AnalyticalFluxImp::dimRangeCols>>
+          class LocalizableFunctionImp>
 class MustaLocalNumericalCouplingFlux;
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
-          class LocalizableFunctionImp,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
-                                                    AnalyticalFluxImp::dimRange,
-                                                    AnalyticalFluxImp::dimRangeCols>>
+          class LocalizableFunctionImp>
 class MustaLocalDirichletNumericalBoundaryFlux;
 
 
 namespace internal {
 
 
-template <class AnalyticalFluxImp, class LocalizableFunctionImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class LocalizableFunctionImp>
 class MustaLocalNumericalCouplingFluxTraits
-    : public LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp>
+    : public LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp>
 {
 public:
-  typedef MustaLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp> derived_type;
+  typedef MustaLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp> derived_type;
 }; // class MustaLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
 class MustaLocalDirichletNumericalBoundaryFluxTraits
     : public LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                     BoundaryValueImp,
-                                                                    LocalizableFunctionImp,
-                                                                    EigenSolverImp>
+                                                                    LocalizableFunctionImp>
 {
 public:
   typedef MustaLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
                                                    BoundaryValueImp,
-                                                   LocalizableFunctionImp,
-                                                   EigenSolverImp>
+                                                   LocalizableFunctionImp>
       derived_type;
 }; // class MustaLocalDirichletNumericalBoundaryFluxTraits
 
@@ -77,7 +69,6 @@ public:
   typedef typename Traits::RangeType RangeType;
   typedef typename Traits::DomainType DomainType;
   typedef typename Traits::AnalyticalFluxLocalfunctionType AnalyticalFluxLocalfunctionType;
-  typedef typename Traits::EigenSolverType EigenSolverType;
   typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
@@ -256,14 +247,13 @@ private:
  *  You can also provide a user-defined \param lambda that is used as \lambda_{ij} on all intersections. You need to set
  *  use_local to false, otherwise lambda will not be used.
  */
-template <class AnalyticalFluxImp, class LocalizableFunctionImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class LocalizableFunctionImp>
 class MustaLocalNumericalCouplingFlux
     : public LocalNumericalCouplingFluxInterface<internal::MustaLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
-                                                                                                 LocalizableFunctionImp,
-                                                                                                 EigenSolverImp>>
+                                                                                                 LocalizableFunctionImp>>
 {
 public:
-  typedef internal::MustaLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp, EigenSolverImp>
+  typedef internal::MustaLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp>
       Traits;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
@@ -324,19 +314,17 @@ private:
 *  \brief  MUSTA flux evaluation for Dirichlet boundary intersections.
 *  \see    MustaLocalNumericalCouplingFlux
 */
-template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
 class MustaLocalDirichletNumericalBoundaryFlux
     : public LocalNumericalBoundaryFluxInterface<internal::
                                                      MustaLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                                                     BoundaryValueImp,
-                                                                                                    LocalizableFunctionImp,
-                                                                                                    EigenSolverImp>>
+                                                                                                    LocalizableFunctionImp>>
 {
 public:
   typedef internal::MustaLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                    BoundaryValueImp,
-                                                                   LocalizableFunctionImp,
-                                                                   EigenSolverImp>
+                                                                   LocalizableFunctionImp>
       Traits;
   typedef typename Traits::BoundaryValueType BoundaryValueType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;

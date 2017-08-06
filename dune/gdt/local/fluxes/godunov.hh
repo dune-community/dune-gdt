@@ -19,7 +19,7 @@
 
 #include <dune/xt/functions/interfaces.hh>
 
-#include <dune/gdt/operators/fv/eigensolver.hh>
+#include <dune/xt/la/eigen-solver.hh>
 
 #include "interfaces.hh"
 
@@ -28,24 +28,18 @@ namespace GDT {
 
 
 // forwards
-template <class AnalyticalFluxImp,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
-                                                    AnalyticalFluxImp::dimRange,
-                                                    AnalyticalFluxImp::dimRangeCols>>
+template <class AnalyticalFluxImp>
 class GodunovLocalNumericalCouplingFlux;
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueType,
-          class EigenSolverImp = DefaultEigenSolver<typename AnalyticalFluxImp::RangeFieldType,
-                                                    AnalyticalFluxImp::dimRange,
-                                                    AnalyticalFluxImp::dimRangeCols>>
+          class BoundaryValueType>
 class GodunovLocalDirichletNumericalBoundaryFlux;
 
 
 namespace internal {
 
 
-template <class AnalyticalFluxImp, class EigenSolverImp>
+template <class AnalyticalFluxImp>
 class GodunovLocalNumericalCouplingFluxTraits
 {
   //  static_assert(is_analytical_flux<AnalyticalFluxImp>::value,
@@ -53,8 +47,7 @@ class GodunovLocalNumericalCouplingFluxTraits
 
 public:
   typedef AnalyticalFluxImp AnalyticalFluxType;
-  typedef EigenSolverImp EigenSolverType;
-  typedef GodunovLocalNumericalCouplingFlux<AnalyticalFluxType, EigenSolverType> derived_type;
+  typedef GodunovLocalNumericalCouplingFlux<AnalyticalFluxType> derived_type;
   typedef typename AnalyticalFluxType::EntityType EntityType;
   typedef typename AnalyticalFluxType::DomainFieldType DomainFieldType;
   typedef typename AnalyticalFluxType::DomainType DomainType;
@@ -66,17 +59,17 @@ public:
   static const size_t dimRange = AnalyticalFluxType::dimRange;
 }; // class GodunovLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalBoundaryFluxImp, class BoundaryValueImp, class EigenSolverImp>
+template <class AnalyticalBoundaryFluxImp, class BoundaryValueImp>
 class GodunovLocalDirichletNumericalBoundaryFluxTraits
-    : public GodunovLocalNumericalCouplingFluxTraits<AnalyticalBoundaryFluxImp, EigenSolverImp>
+    : public GodunovLocalNumericalCouplingFluxTraits<AnalyticalBoundaryFluxImp>
 {
-  typedef GodunovLocalNumericalCouplingFluxTraits<AnalyticalBoundaryFluxImp, EigenSolverImp> BaseType;
+  typedef GodunovLocalNumericalCouplingFluxTraits<AnalyticalBoundaryFluxImp> BaseType;
 
 public:
   typedef AnalyticalBoundaryFluxImp AnalyticalFluxType;
   typedef BoundaryValueImp BoundaryValueType;
   typedef typename BoundaryValueType::LocalfunctionType LocalfunctionType;
-  typedef GodunovLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueType, EigenSolverImp>
+  typedef GodunovLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueType>
       derived_type;
   using typename BaseType::AnalyticalFluxLocalfunctionType;
   typedef std::tuple<std::shared_ptr<AnalyticalFluxLocalfunctionType>, std::shared_ptr<LocalfunctionType>>
@@ -95,12 +88,13 @@ public:
   typedef typename Traits::DomainType DomainType;
   typedef typename Traits::RangeType RangeType;
   typedef typename Traits::AnalyticalFluxLocalfunctionType AnalyticalFluxLocalfunctionType;
-  typedef typename Traits::EigenSolverType EigenSolverType;
-  typedef typename XT::LA::CommonSparseMatrix<RangeFieldType> SparseMatrixType;
-  typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
   static constexpr size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
-  typedef typename Dune::FieldVector<Dune::FieldMatrix<double, dimRange, dimRange>, dimDomain> JacobianRangeType;
+  typedef typename Dune::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+  typedef typename XT::LA::CommonSparseMatrix<RangeFieldType> SparseMatrixType;
+  typedef typename XT::LA::EigenSolver<MatrixType> EigenSolverType;
+  typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
+  typedef typename Dune::FieldVector<MatrixType, dimDomain> JacobianRangeType;
 
   typedef FieldVector<SparseMatrixType, dimDomain> JacobiansType;
 
@@ -179,24 +173,28 @@ private:
       if (!jacobian_)
         jacobian_ = XT::Common::make_unique<JacobianRangeType>();
       helper<dimDomain>::get_jacobian(direction, local_flux, x_local, u_mean, *jacobian_, param_inside_);
-      const auto eigen_solver = EigenSolverType((*jacobian_)[direction], true);
-      const auto& eigenvalues = eigen_solver.eigenvalues();
-      const auto& eigenvectors = eigen_solver.eigenvectors();
-      const auto& eigenvectors_inverse = eigen_solver.eigenvectors_inverse();
+      XT::Common::Configuration eigensolver_options(
+        {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
+        {EigenSolverType::types()[0], "1", "1", "0", "1"});
+      const auto eigen_solver = EigenSolverType((*jacobian_)[direction]);
+      const auto eigenvalues = eigen_solver.eigenvalues(eigensolver_options);
+      const auto eigenvectors = eigen_solver.real_eigenvectors_as_matrix(eigensolver_options);
+      auto eigenvectors_inverse = std::make_shared<MatrixType>(*eigenvectors);
+      eigenvectors_inverse->invert();
       if (is_linear_)
         jacobian_ = nullptr;
 
-      auto jacobian_neg_dense = XT::Common::make_unique<FieldMatrix<RangeFieldType, dimRange, dimRange>>(0);
-      auto jacobian_pos_dense = XT::Common::make_unique<FieldMatrix<RangeFieldType, dimRange, dimRange>>(0);
+      auto jacobian_neg_dense = XT::Common::make_unique<MatrixType>(0);
+      auto jacobian_pos_dense = XT::Common::make_unique<MatrixType>(0);
       for (size_t rr = 0; rr < dimRange; ++rr)
         for (size_t cc = 0; cc < dimRange; ++cc)
           for (size_t kk = 0; kk < dimRange; ++kk)
-            if (XT::Common::FloatCmp::lt(eigenvalues[kk], 0.))
+            if (XT::Common::FloatCmp::lt(eigenvalues[kk].real(), 0.))
               (*jacobian_neg_dense)[rr][cc] +=
-                  (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk];
+                  (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk].real();
             else
               (*jacobian_pos_dense)[rr][cc] +=
-                  (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk];
+                  (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk].real();
       jacobian_neg_[direction] = SparseMatrixType(*jacobian_neg_dense, true);
       jacobian_pos_[direction] = SparseMatrixType(*jacobian_pos_dense, true);
       jacobians_initialized_[direction] = true;
@@ -294,13 +292,12 @@ bool GodunovFluxImplementation<Traits>::is_instantiated_(false);
  *  You can also provide a user-defined \param lambda that is used as \lambda_{ij} on all intersections. You need to set
  *  use_local to false, otherwise lambda will not be used.
  */
-template <class AnalyticalFluxImp, class EigenSolverImp>
+template <class AnalyticalFluxImp>
 class GodunovLocalNumericalCouplingFlux
-    : public LocalNumericalCouplingFluxInterface<internal::GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
-                                                                                                   EigenSolverImp>>
+    : public LocalNumericalCouplingFluxInterface<internal::GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp>>
 {
 public:
-  typedef internal::GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, EigenSolverImp> Traits;
+  typedef internal::GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp> Traits;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
@@ -354,17 +351,15 @@ private:
 *  \brief  Godunov flux evaluation for Dirichlet boundary intersections.
 *  \see    GodunovLocalNumericalCouplingFlux
 */
-template <class AnalyticalFluxImp, class BoundaryValueImp, class EigenSolverImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp>
 class GodunovLocalDirichletNumericalBoundaryFlux
     : public LocalNumericalBoundaryFluxInterface<internal::
                                                      GodunovLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                                                      BoundaryValueImp,
-                                                                                                      EigenSolverImp>>
+                                                                                                      BoundaryValueImp>>
 {
 public:
   typedef internal::GodunovLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                     BoundaryValueImp,
-                                                                     EigenSolverImp>
+                                                                     BoundaryValueImp>
       Traits;
   typedef typename Traits::BoundaryValueType BoundaryValueType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
