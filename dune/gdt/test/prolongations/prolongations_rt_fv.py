@@ -13,6 +13,10 @@ from grids import LevelGrids
 
 fv = sp.FV(cache, base=LevelGrids, rdim=[1])
 rt = sp.RT(cache, base=LevelGrids)
-spaces = fv.spaces + rt.spaces
-names = fv.names + rt.names
+spaces = []
+names = []
+for sp, nm in zip(fv.spaces + rt.spaces, fv.names + rt.names):
+    if not ('AluConform2dLevelGrid' in sp):
+        spaces.append(sp)
+        names.append(nm)
 spaces_with_names = zip(spaces, names)

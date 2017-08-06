@@ -12,6 +12,10 @@ import spaces as sp
 from grids import LevelGrids
 
 cg = sp.CG(cache, base=LevelGrids)
-spaces = cg.spaces
-names = cg.names
+spaces = []
+names = []
+for sp, nm in zip(cg.spaces, cg.names):
+    if not ('AluConform2dLevelGrid' in sp):
+        spaces.append(sp)
+        names.append(nm)
 spaces_with_names = zip(spaces, names)

@@ -14,6 +14,10 @@ from grids import LevelGrids
 dg = sp.DG(cache, base=LevelGrids)
 fv = sp.FV(cache, base=LevelGrids, rdim=[1])
 rt = sp.RT(cache, base=LevelGrids)
-spaces = dg.spaces + fv.spaces + rt.spaces
-names = dg.names + fv.names + rt.names
+spaces = dg.spaces + fv.spaces
+names = dg.names + fv.names
+for sp, nm in zip(rt.spaces, rt.names):
+    if not ('Pdelab' in sp and 'Alu' in sp and 'LevelGridView' in sp):
+        spaces += sp
+        names += nm
 spaces_with_names = zip(spaces, names)

@@ -134,6 +134,9 @@ private:
 } // namespace internal
 
 
+/**
+ * \attention When using alugrid, this space only works on the leaf view, not on level or dd_subdomain* views!
+ */
 template <class GridViewImp, class RangeFieldImp, size_t rangeDim>
 class DunePdelabRtSpaceWrapper<GridViewImp, 0, RangeFieldImp, rangeDim, 1>
     : public RtSpaceInterface<internal::DunePdelabRtSpaceWrapperTraits<GridViewImp, 0, RangeFieldImp, rangeDim, 1>,
