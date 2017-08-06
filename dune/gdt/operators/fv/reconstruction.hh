@@ -184,7 +184,7 @@ private:
         {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
         {EigenSolverType::types()[0], "1", "1", "0", "1"});
       const auto eigensolver = EigenSolverType(jacobian);
-      eigenvectors[0] = SparseMatrixType(*(eigensolver.real_eigenvectors_as_matrix(eigensolver_options)));
+      eigenvectors[0] = SparseMatrixType(*(eigensolver.real_eigenvectors_as_matrix(eigensolver_options)), true);
     }
   }; // struct helper<1,...
 
@@ -401,9 +401,9 @@ private:
       for (size_t ii = 0; ii < dimDomain; ++ii) {
         const auto eigensolver = EigenSolverType(jacobian[ii]);
         auto eigenvectors_dense = eigensolver.real_eigenvectors_as_matrix(eigensolver_options);
-        eigenvectors[ii] = SparseMatrixType(*eigenvectors_dense);
+        eigenvectors[ii] = SparseMatrixType(*eigenvectors_dense, true);
         eigenvectors_dense->invert();
-        eigenvectors_inverse[ii] = SparseMatrixType(*eigenvectors_dense);
+        eigenvectors_inverse[ii] = SparseMatrixType(*eigenvectors_dense, true);
       }
     }
   }; // struct helper<3, ...
