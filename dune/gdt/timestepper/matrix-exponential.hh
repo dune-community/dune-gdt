@@ -21,7 +21,7 @@
 #if HAVE_MATEXP
 #include "matrix_exponential/matrix_exponential_extension.hpp"
 #include "matrix_exponential/matrix_exponential.hpp"
-#endif //HAVE_MATEXP
+#endif // HAVE_MATEXP
 
 namespace Dune {
 namespace GDT {
@@ -258,7 +258,7 @@ template <class OperatorImp, class DiscreteFunctionImp>
 class MatrixExponentialTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
 {
   static_assert(AlwaysFalse<OperatorImp>::value, "You are missing the matrix_exponential library!");
-}
+};
 
 #endif // HAVE_MATEXP
 
