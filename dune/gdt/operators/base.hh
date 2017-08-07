@@ -58,9 +58,11 @@ template <class MatrixImp,
           class OuterSourceSpaceImp>
 class MatrixOperatorBaseTraits
 {
-  static_assert(XT::LA::is_matrix<MatrixImp>::value, "MatrixType has to be derived from XT::LA::MatrixInterface!");
-  static_assert(is_space<RangeSpaceImp>::value, "RangeSpaceType has to be derived from SpaceInterface!");
-  static_assert(is_space<SourceSpaceImp>::value, "SourceSpaceType has to be derived from SpaceInterface!");
+  static_assert(XT::LA::is_matrix<MatrixImp>::value, "");
+  static_assert(is_space<RangeSpaceImp>::value, "");
+  static_assert(is_space<SourceSpaceImp>::value, "");
+  static_assert(is_space<OuterRangeSpaceImp>::value, "");
+  static_assert(is_space<OuterSourceSpaceImp>::value, "");
   static_assert(std::is_same<XT::Grid::extract_entity_t<typename RangeSpaceImp::GridLayerType>,
                              XT::Grid::extract_entity_t<GridLayerImp>>::value,
                 "RangeSpaceType and GridLayerType have to match!");
@@ -69,10 +71,10 @@ class MatrixOperatorBaseTraits
                 "SourceSpaceType and GridLayerType have to match!");
   static_assert(std::is_same<XT::Grid::extract_entity_t<typename OuterRangeSpaceImp::GridLayerType>,
                              XT::Grid::extract_entity_t<GridLayerImp>>::value,
-                "SourceSpaceType and GridLayerType have to match!");
+                "OuterRangeSpaceImp and GridLayerType have to match!");
   static_assert(std::is_same<XT::Grid::extract_entity_t<typename OuterSourceSpaceImp::GridLayerType>,
                              XT::Grid::extract_entity_t<GridLayerImp>>::value,
-                "SourceSpaceType and GridLayerType have to match!");
+                "OuterSourceSpaceImp and GridLayerType have to match!");
 
 public:
   typedef MatrixOperatorBase<MatrixImp,
