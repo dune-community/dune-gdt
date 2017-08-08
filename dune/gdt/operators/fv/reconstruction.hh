@@ -14,6 +14,8 @@
 
 #include <dune/common/fvector.hh>
 
+#include <dune/geometry/quadraturerules.hh>
+
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/parameter.hh>
 
