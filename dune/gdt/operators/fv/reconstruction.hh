@@ -108,8 +108,10 @@ public:
       if (!jacobian_)
         jacobian_ = XT::Common::make_unique<JacobianRangeType>();
       if (!eigenvectors_) {
-        eigenvectors_ = XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>(SparseMatrixType(dimRange, dimRange));
-        eigenvectors_inverse_ = XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>(SparseMatrixType(dimRange, dimRange));
+        eigenvectors_ =
+            XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>(SparseMatrixType(dimRange, dimRange));
+        eigenvectors_inverse_ =
+            XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>(SparseMatrixType(dimRange, dimRange));
       }
       const auto& u_entity = values[stencil[0] / 2][stencil[1] / 2][stencil[2] / 2];
       const auto flux_local_func = analytical_flux_.local_function(entity);
@@ -120,7 +122,8 @@ public:
         jacobian_ = nullptr;
     }
     for (size_t dd = 0; dd < dimDomain; ++dd)
-      helper<dimDomain>::reconstruct(dd, values, *eigenvectors_, *eigenvectors_inverse_, quadrature_, reconstructed_values_map, intersections);
+      helper<dimDomain>::reconstruct(
+          dd, values, *eigenvectors_, *eigenvectors_inverse_, quadrature_, reconstructed_values_map, intersections);
   } // void apply_local(...)
 
 private:
@@ -141,8 +144,8 @@ private:
   {
     static void reconstruct(size_t /*dd*/,
                             const ValuesType& values,
-                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
-                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse,
+                            FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
+                            FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse,
                             const QuadratureType& /*quadrature*/,
                             std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
@@ -166,7 +169,7 @@ private:
         reconstructed_values_map.insert(
             std::make_pair(intersections[ii].geometryInInside().global(quadrature_point), value));
       } // ii
-    } // static void reconstruct()
+    } // static void reconstruct(...)
 
     static void get_jacobian(const std::unique_ptr<AnalyticalFluxLocalfunctionType>& local_func,
                              const DomainType& x_in_inside_coords,
@@ -178,14 +181,18 @@ private:
     }
 
     static void get_eigenvectors(const JacobianRangeType& jacobian,
-                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors)
+                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
+                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse)
     {
       XT::Common::Configuration eigensolver_options(
-        {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
-        {EigenSolverType::types()[0], "1", "1", "0", "1"});
+          {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
+          {EigenSolverType::types()[1], "1", "1", "0", "1"});
       const auto eigensolver = EigenSolverType(jacobian);
-      eigenvectors[0] = SparseMatrixType(*(eigensolver.real_eigenvectors_as_matrix(eigensolver_options)), true);
-    }
+      auto eigenvectors_dense = eigensolver.real_eigenvectors_as_matrix(eigensolver_options);
+      eigenvectors[0] = SparseMatrixType(*eigenvectors_dense, true);
+      eigenvectors_dense->invert();
+      eigenvectors_inverse[0] = SparseMatrixType(*eigenvectors_dense, true);
+    } // ... get_eigenvectors(...)
   }; // struct helper<1,...
 
   template <class anything>
@@ -194,8 +201,8 @@ private:
 
     static void reconstruct(size_t dd,
                             const ValuesType& values,
-                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
-                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse,
+                            FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
+                            FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse,
                             const QuadratureType& quadrature,
                             std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
@@ -254,7 +261,7 @@ private:
               std::make_pair(intersections[2 * dd + ii].geometryInInside().global(quadrature_point), tmp_vec));
         } // jj
       } // ii
-    } // static void reconstruct()
+    } // static void reconstruct(...)
 
     static void get_jacobian(const std::unique_ptr<AnalyticalFluxLocalfunctionType>& local_func,
                              const DomainType& x_in_inside_coords,
@@ -396,16 +403,16 @@ private:
                                  FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse)
     {
       XT::Common::Configuration eigensolver_options(
-        {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
-        {EigenSolverType::types()[0], "1", "1", "0", "1"});
+          {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
+          {EigenSolverType::types()[1], "1", "1", "0", "1"});
       for (size_t ii = 0; ii < dimDomain; ++ii) {
         const auto eigensolver = EigenSolverType(jacobian[ii]);
         auto eigenvectors_dense = eigensolver.real_eigenvectors_as_matrix(eigensolver_options);
         eigenvectors[ii] = SparseMatrixType(*eigenvectors_dense, true);
         eigenvectors_dense->invert();
         eigenvectors_inverse[ii] = SparseMatrixType(*eigenvectors_dense, true);
-      }
-    }
+      } // ii
+    } // ... get_eigenvectors(...)
   }; // struct helper<3, ...
 
 
@@ -540,53 +547,41 @@ template <class GridLayerType,
           class BoundaryValueType,
           size_t polOrder,
           SlopeLimiters slope_limiter>
-constexpr std::array<size_t, 3> LocalReconstructionFvOperator<GridLayerType,
-                                                              AnalyticalFluxType,
-                                                              BoundaryValueType,
-                                                              polOrder,
-                                                              slope_limiter>::stencil;
+constexpr std::array<size_t, 3>
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
+        stencil;
 
 template <class GridLayerType,
           class AnalyticalFluxType,
           class BoundaryValueType,
           size_t polOrder,
           SlopeLimiters slope_limiter>
-thread_local std::unique_ptr<FieldVector<typename LocalReconstructionFvOperator<GridLayerType,
-                                                       AnalyticalFluxType,
-                                                       BoundaryValueType,
-                                                       polOrder,
-                                                       slope_limiter>::SparseMatrixType,
-                         LocalReconstructionFvOperator<GridLayerType,
-                                                       AnalyticalFluxType,
-                                                       BoundaryValueType,
-                                                       polOrder,
-                                                       slope_limiter>::dimDomain>>
-    LocalReconstructionFvOperator<GridLayerType,
-                                  AnalyticalFluxType,
-                                  BoundaryValueType,
-                                  polOrder,
-                                  slope_limiter>::eigenvectors_;
+thread_local std::unique_ptr<FieldVector<
+    typename LocalReconstructionFvOperator<GridLayerType,
+                                           AnalyticalFluxType,
+                                           BoundaryValueType,
+                                           polOrder,
+                                           slope_limiter>::SparseMatrixType,
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
+        dimDomain>>
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
+        eigenvectors_;
 
 template <class GridLayerType,
           class AnalyticalFluxType,
           class BoundaryValueType,
           size_t polOrder,
           SlopeLimiters slope_limiter>
-thread_local std::unique_ptr<FieldVector<typename LocalReconstructionFvOperator<GridLayerType,
-                                                       AnalyticalFluxType,
-                                                       BoundaryValueType,
-                                                       polOrder,
-                                                       slope_limiter>::SparseMatrixType,
-                         LocalReconstructionFvOperator<GridLayerType,
-                                                       AnalyticalFluxType,
-                                                       BoundaryValueType,
-                                                       polOrder,
-                                                       slope_limiter>::dimDomain>>
-    LocalReconstructionFvOperator<GridLayerType,
-                                  AnalyticalFluxType,
-                                  BoundaryValueType,
-                                  polOrder,
-                                  slope_limiter>::eigenvectors_inverse_;
+thread_local std::unique_ptr<FieldVector<
+    typename LocalReconstructionFvOperator<GridLayerType,
+                                           AnalyticalFluxType,
+                                           BoundaryValueType,
+                                           polOrder,
+                                           slope_limiter>::SparseMatrixType,
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
+        dimDomain>>
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
+        eigenvectors_inverse_;
 
 
 template <class GridLayerType,
@@ -599,22 +594,16 @@ thread_local std::unique_ptr<typename LocalReconstructionFvOperator<GridLayerTyp
                                                                     BoundaryValueType,
                                                                     polOrder,
                                                                     slope_limiter>::JacobianRangeType>
-    LocalReconstructionFvOperator<GridLayerType,
-                                  AnalyticalFluxType,
-                                  BoundaryValueType,
-                                  polOrder,
-                                  slope_limiter>::jacobian_;
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
+        jacobian_;
 
 template <class GridLayerType,
           class AnalyticalFluxType,
           class BoundaryValueType,
           size_t polOrder,
           SlopeLimiters slope_limiter>
-bool LocalReconstructionFvOperator<GridLayerType,
-                                   AnalyticalFluxType,
-                                   BoundaryValueType,
-                                   polOrder,
-                                   slope_limiter>::is_instantiated_(false);
+bool LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
+    is_instantiated_(false);
 
 
 } // namespace GDT
