@@ -101,7 +101,9 @@ public:
   typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
-  typedef typename Dune::FieldVector<Dune::FieldMatrix<double, dimRange, dimRange>, dimDomain> JacobianRangeType;
+  typedef typename Dune::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+  typedef typename XT::LA::EigenSolver<MatrixType> EigenSolverType;
+  typedef typename Dune::FieldVector<MatrixType, dimDomain> JacobianRangeType;
 
   explicit LaxFriedrichsFluxImplementation(const AnalyticalFluxType& analytical_flux,
                                            XT::Common::Parameter param,
@@ -157,42 +159,48 @@ public:
     auto n_ij = intersection.unitOuterNormal(x_in_intersection_coords);
 
     if (use_local_) {
-      if (!is_linear_ || !(max_derivative_calculated_[direction])) {
-        if (!jacobian_inside_) {
-          jacobian_inside_ = XT::Common::make_unique<JacobianRangeType>();
-          jacobian_outside_ = XT::Common::make_unique<JacobianRangeType>();
+      if (!is_linear_ || !(max_derivative_calculated()[direction])) {
+        if (!jacobian_inside()) {
+          jacobian_inside() = XT::Common::make_unique<JacobianRangeType>();
+          jacobian_outside() = XT::Common::make_unique<JacobianRangeType>();
         }
         DomainFieldType max_derivative(0);
         helper<dimDomain>::get_jacobian(
-            direction, local_flux_inside, x_in_inside_coords, u_i, *jacobian_inside_, param_inside_);
+            direction, local_flux_inside, x_in_inside_coords, u_i, *jacobian_inside(), param_inside_);
         helper<dimDomain>::get_jacobian(
-            direction, local_flux_outside, x_in_outside_coords, u_j, *jacobian_outside_, param_outside_);
-        const auto eigen_solver_inside = EigenSolverType((*jacobian_inside_)[direction], false);
-        const auto eigen_solver_outside = EigenSolverType((*jacobian_outside_)[direction], false);
-        const auto& eigenvalues_inside = eigen_solver_inside.eigenvalues();
-        const auto& eigenvalues_outside = eigen_solver_outside.eigenvalues();
+            direction, local_flux_outside, x_in_outside_coords, u_j, *jacobian_outside(), param_outside_);
+        XT::Common::Configuration eigensolver_options({"type",
+                                                       "check_for_inf_nan",
+                                                       "check_evs_are_real",
+                                                       "check_evs_are_positive",
+                                                       "check_eigenvectors_are_real"},
+                                                      {EigenSolverType::types()[0], "1", "1", "0", "1"});
+        const auto eigen_solver_inside = EigenSolverType((*jacobian_inside())[direction]);
+        const auto eigen_solver_outside = EigenSolverType((*jacobian_outside())[direction]);
+        const auto& eigenvalues_inside = eigen_solver_inside.eigenvalues(eigensolver_options);
+        const auto& eigenvalues_outside = eigen_solver_outside.eigenvalues(eigensolver_options);
         for (size_t jj = 0; jj < dimRange; ++jj)
-          max_derivative =
-              std::max({std::abs(eigenvalues_inside[jj]), std::abs(eigenvalues_outside[jj]), max_derivative});
-        lambda_ij_[direction] = 1. / max_derivative;
+          max_derivative = std::max(
+              {std::abs(eigenvalues_inside[jj].real()), std::abs(eigenvalues_outside[jj].real()), max_derivative});
+        lambda_ij()[direction] = 1. / max_derivative;
         if (is_linear_) {
-          jacobian_inside_ = nullptr;
-          jacobian_outside_ = nullptr;
+          jacobian_inside() = nullptr;
+          jacobian_outside() = nullptr;
         }
-        max_derivative_calculated_[direction] = true;
+        max_derivative_calculated()[direction] = true;
       }
     } else if (lambda_provided_) {
-      lambda_ij_[direction] = lambda_[direction];
+      lambda_ij()[direction] = lambda_[direction];
     } else {
       const RangeFieldType dx = std::get<1>(local_functions_tuple_entity)->evaluate(x_in_inside_coords)[0];
-      lambda_ij_[direction] = dt_ / dx;
+      lambda_ij()[direction] = dt_ / dx;
     } // if (use_local)
 
     // calculate flux evaluation as
     // ret[kk] = (f_u_i[kk] + f_u_j[kk])*n_ij*0.5 - (u_j - u_i)[kk]*1.0/(num_neighbors*lambda_ij)
     auto second_part = u_j;
     second_part -= u_i;
-    second_part /= lambda_ij_[direction] * 2 * alpha_;
+    second_part /= lambda_ij()[direction] * 2 * alpha_;
     auto ret = local_flux_inside->evaluate_col(direction, x_in_inside_coords, u_i, param_inside_);
     ret += local_flux_outside->evaluate_col(direction, x_in_outside_coords, u_j, param_outside_);
     ret *= n_ij[direction] * 0.5;
@@ -203,6 +211,11 @@ public:
   const AnalyticalFluxType& analytical_flux() const
   {
     return analytical_flux_;
+  }
+
+  static void reset()
+  {
+    max_derivative_calculated() = false;
   }
 
 private:
@@ -244,28 +257,49 @@ private:
   const RangeFieldType alpha_;
   const DomainType lambda_;
   const bool lambda_provided_;
-  static thread_local DomainType lambda_ij_;
-  static thread_local FieldVector<bool, dimDomain> max_derivative_calculated_;
-  static thread_local std::unique_ptr<JacobianRangeType> jacobian_inside_;
-  static thread_local std::unique_ptr<JacobianRangeType> jacobian_outside_;
+  // work around gcc bug 66944
+  static DomainType& lambda_ij()
+  {
+    static thread_local DomainType lambda_ij_;
+    return lambda_ij_;
+  }
+  static FieldVector<bool, dimDomain>& max_derivative_calculated()
+  {
+    static thread_local FieldVector<bool, dimDomain> max_derivative_calculated_;
+    return max_derivative_calculated_;
+  }
+  static std::unique_ptr<JacobianRangeType>& jacobian_inside()
+  {
+    static thread_local std::unique_ptr<JacobianRangeType> jacobian_inside_;
+    return jacobian_inside_;
+  }
+  static std::unique_ptr<JacobianRangeType>& jacobian_outside()
+  {
+    static thread_local std::unique_ptr<JacobianRangeType> jacobian_outside_;
+    return jacobian_outside_;
+  }
+  //  static thread_local DomainType lambda_ij_;
+  //  static thread_local FieldVector<bool, dimDomain> max_derivative_calculated_;
+  //  static thread_local std::unique_ptr<JacobianRangeType> jacobian_inside_;
+  //  static thread_local std::unique_ptr<JacobianRangeType> jacobian_outside_;
   static bool is_instantiated_;
 }; // class LaxFriedrichsFluxImplementation<...>
 
-template <class Traits>
-thread_local
-    typename LaxFriedrichsFluxImplementation<Traits>::DomainType LaxFriedrichsFluxImplementation<Traits>::lambda_ij_;
+// template <class Traits>
+// thread_local
+//    typename LaxFriedrichsFluxImplementation<Traits>::DomainType LaxFriedrichsFluxImplementation<Traits>::lambda_ij_;
 
-template <class Traits>
-thread_local FieldVector<bool, LaxFriedrichsFluxImplementation<Traits>::dimDomain>
-    LaxFriedrichsFluxImplementation<Traits>::max_derivative_calculated_(false);
+// template <class Traits>
+// thread_local FieldVector<bool, LaxFriedrichsFluxImplementation<Traits>::dimDomain>
+//    LaxFriedrichsFluxImplementation<Traits>::max_derivative_calculated_(false);
 
-template <class Traits>
-thread_local std::unique_ptr<typename LaxFriedrichsFluxImplementation<Traits>::JacobianRangeType>
-    LaxFriedrichsFluxImplementation<Traits>::jacobian_inside_;
+// template <class Traits>
+// thread_local std::unique_ptr<typename LaxFriedrichsFluxImplementation<Traits>::JacobianRangeType>
+//    LaxFriedrichsFluxImplementation<Traits>::jacobian_inside_;
 
-template <class Traits>
-thread_local std::unique_ptr<typename LaxFriedrichsFluxImplementation<Traits>::JacobianRangeType>
-    LaxFriedrichsFluxImplementation<Traits>::jacobian_outside_;
+// template <class Traits>
+// thread_local std::unique_ptr<typename LaxFriedrichsFluxImplementation<Traits>::JacobianRangeType>
+//    LaxFriedrichsFluxImplementation<Traits>::jacobian_outside_;
 
 template <class Traits>
 bool LaxFriedrichsFluxImplementation<Traits>::is_instantiated_(false);
@@ -365,6 +399,11 @@ public:
                                     u_j);
   } // RangeType evaluate(...) const
 
+  static void reset()
+  {
+    internal::LaxFriedrichsFluxImplementation<Traits>::reset();
+  }
+
 private:
   const LocalizableFunctionType& dx_;
   const internal::LaxFriedrichsFluxImplementation<Traits> implementation_;
@@ -441,6 +480,11 @@ public:
                                     u_j);
   } // RangeType evaluate(...) const
 
+  static void reset()
+  {
+    internal::LaxFriedrichsFluxImplementation<Traits>::reset();
+  }
+
 private:
   const BoundaryValueType& boundary_values_;
   const LocalizableFunctionType& dx_;
@@ -508,6 +552,11 @@ public:
                                     u_i,
                                     u_i);
   } // void evaluate(...) const
+
+  static void reset()
+  {
+    internal::LaxFriedrichsFluxImplementation<Traits>::reset();
+  }
 
 private:
   const LocalizableFunctionType& dx_;
