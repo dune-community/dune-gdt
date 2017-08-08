@@ -127,6 +127,8 @@ private:
                                              slope_limiter>
       AdvectionOperatorCreatorType;
   typedef typename AdvectionOperatorCreatorType::type AdvectionOperatorType;
+  typedef typename AdvectionOperatorType::NumericalCouplingFluxType NumericalCouplingFluxType;
+  typedef typename AdvectionOperatorType::NumericalBoundaryFluxType NumericalBoundaryFluxType;
 
   typedef typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, time_stepper_method>::TimeStepperType
       OperatorTimeStepperType;
@@ -169,6 +171,8 @@ public:
   void solve(DiscreteSolutionType& solution) const
   {
     try {
+      reset_numerical_fluxes();
+
       const auto& problem = test_case_.problem();
       // get analytical flux, initial and boundary values
       const AnalyticalFluxType& analytical_flux = problem.flux();
@@ -205,7 +209,7 @@ public:
       OperatorTimeStepperType timestepper_op(*advection_operator, u, -1.0);
 
       // do the time steps
-      const size_t num_save_steps = 5;
+      const size_t num_save_steps = 100;
       solution.clear();
       if (problem.has_non_zero_rhs()) {
         // use fractional step method
@@ -232,6 +236,17 @@ public:
   }
 
 private:
+  // walk over grid to clear static variables of advection operator in all threads
+  void reset_numerical_fluxes() const
+  {
+    XT::Grid::Walker<typename SpaceType::GridLayerType> walker(fv_space_->grid_layer());
+    walker.append([](const typename SpaceType::EntityType&) {
+      NumericalCouplingFluxType::reset();
+      NumericalBoundaryFluxType::reset();
+    });
+    walker.walk(true);
+  }
+
   const TestCaseType& test_case_;
   const std::shared_ptr<const SpaceType> fv_space_;
 }; // class HyperbolicFvDefaultDiscretization

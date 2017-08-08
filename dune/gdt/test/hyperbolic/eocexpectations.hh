@@ -26,7 +26,8 @@ template <class TestCaseType,
           size_t dimDomain,
           NumericalFluxes num_flux,
           TimeStepperMethods time_stepper,
-          TimeStepperMethods rhs_time_stepper>
+          TimeStepperMethods rhs_time_stepper,
+          size_t reconstruction_order>
 class HyperbolicEocExpectations : public internal::HyperbolicEocExpectationsBase<dimDomain>
 {
 public:

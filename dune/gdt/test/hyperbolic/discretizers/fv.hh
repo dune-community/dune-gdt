@@ -46,6 +46,7 @@ public:
   static const constexpr NumericalFluxes numerical_flux_type = numerical_flux;
   static const constexpr TimeStepperMethods time_stepper_type = time_stepper_method;
   static const constexpr TimeStepperMethods rhs_time_stepper_type = rhs_time_stepper_method;
+  static const constexpr size_t pol_order = reconstruction_order;
 
   typedef typename XT::Grid::PeriodicGridView<typename XT::Grid::GridProvider<GridType>::LevelGridViewType>
       GridLayerType;

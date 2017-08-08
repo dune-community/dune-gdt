@@ -63,7 +63,8 @@ template <class TestCaseType,
           size_t dimDomain,
           NumericalFluxes num_flux,
           TimeStepperMethods time_stepper,
-          TimeStepperMethods rhs_time_stepper>
+          TimeStepperMethods rhs_time_stepper,
+          size_t reconstruction_order = 0>
 class HyperbolicEocExpectations;
 
 

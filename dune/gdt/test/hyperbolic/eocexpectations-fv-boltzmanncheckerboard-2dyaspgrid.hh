@@ -32,7 +32,9 @@ class HyperbolicEocExpectations<Hyperbolic::Boltzmann2DCheckerboardTestCase<Yasp
                                 Hyperbolic::ChooseDiscretizer::fv,
                                 2,
                                 NumericalFluxes::godunov,
-                                TimeStepperMethods::explicit_euler> : public internal::HyperbolicEocExpectationsBase<2>
+                                TimeStepperMethods::explicit_euler,
+                                TimeStepperMethods::explicit_euler,
+                                0> : public internal::HyperbolicEocExpectationsBase<2>
 {
   typedef Hyperbolic::Boltzmann2DCheckerboardTestCase<Yasp2, double> TestCaseType;
 

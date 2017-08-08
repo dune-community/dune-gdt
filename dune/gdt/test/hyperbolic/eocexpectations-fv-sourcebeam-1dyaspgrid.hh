@@ -12,15 +12,8 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_FV_SOURCEBEAM_1DYASPGRID_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_FV_SOURCEBEAM_1DYASPGRID_HH
 
-#include "config.h"
-
-#include <dune/grid/yaspgrid.hh>
-
-#include <dune/gdt/test/hyperbolic/discretizers/fv.hh>
-
-#include "problems/fokkerplanck/sourcebeam.hh"
+#include "problems/momentmodels/fokkerplanck/sourcebeam.hh"
 #include "eocexpectations.hh"
-
 
 namespace Dune {
 namespace GDT {
@@ -32,6 +25,7 @@ class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
                                 Hyperbolic::ChooseDiscretizer::fv,
                                 1,
                                 NumericalFluxes::godunov,
+                                TimeStepperMethods::explicit_euler,
                                 TimeStepperMethods::explicit_euler> : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::SourceBeamTestCase<Yasp1, double> TestCaseType;
@@ -44,8 +38,10 @@ template <>
 class HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
                                 Hyperbolic::ChooseDiscretizer::fv,
                                 1,
-                                NumericalFluxes::godunov_with_reconstruction,
-                                TimeStepperMethods::explicit_euler> : public internal::HyperbolicEocExpectationsBase<1>
+                                NumericalFluxes::godunov,
+                                TimeStepperMethods::explicit_euler,
+                                TimeStepperMethods::explicit_euler,
+                                1> : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::SourceBeamTestCase<Yasp1, double> TestCaseType;
 

@@ -83,7 +83,7 @@ template <class TestCaseType>
 struct hyperbolic_FV_discretization_godunov_order1_euler
     : public hyperbolic_FV_discretization_base<TestCaseType,
                                                Dune::GDT::NumericalFluxes::godunov,
-                                               0,
+                                               1,
                                                Dune::GDT::TimeStepperMethods::explicit_euler,
                                                Dune::GDT::TimeStepperMethods::explicit_euler,
                                                Dune::GDT::TimeStepperSplittingMethods::fractional_step>

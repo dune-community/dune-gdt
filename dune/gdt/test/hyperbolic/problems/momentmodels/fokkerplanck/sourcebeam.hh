@@ -12,17 +12,13 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_SOURCEBEAM_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_SOURCEBEAM_HH
 
-#include <cmath>
-#include <memory>
 #include <vector>
 #include <string>
 
-#include <dune/pdelab/common/crossproduct.hh>
-
-#include <dune/gdt/test/instationary-eocstudy.hh>
-
 #include <dune/xt/common/string.hh>
-#include <dune/xt/common/math.hh>
+
+#include <dune/gdt/test/instationary-testcase.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/legendre.hh>
 
 #include "fokkerplanckequation.hh"
 
@@ -92,10 +88,10 @@ public:
   static XT::Common::Configuration default_grid_cfg()
   {
     XT::Common::Configuration grid_config;
-    grid_config["type"] = "provider.cube";
+    grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
     grid_config["lower_left"] = "[0.0]";
     grid_config["upper_right"] = "[3.0]";
-    grid_config["num_elements"] = "[300]";
+    grid_config["num_elements"] = "[100]";
     grid_config["overlap_size"] = "[1]";
     return grid_config;
   }
@@ -106,7 +102,7 @@ public:
   virtual XT::Common::Parameter parameters() const override
   {
     return XT::Common::Parameter({std::make_pair("sigma_a", std::vector<double>{1, 1, 1, 1, 0, 0}),
-                                  std::make_pair("sigma_s", std::vector<double>{0, 0, 2, 2, 10, 10}),
+                                  std::make_pair("T", std::vector<double>{0, 0, 2, 2, 10, 10}),
                                   std::make_pair("Q", std::vector<double>{0, 0, 1, 0, 0, 0}),
                                   std::make_pair("CFL", std::vector<double>{0.4}),
                                   std::make_pair("t_end", std::vector<double>{4.0})});
@@ -142,82 +138,100 @@ protected:
 } // namespace Problems
 
 
-// template <class G,
-//          class U,
-//          class R = double,
-//          size_t momentOrder = 5,
-//          class B = Hyperbolic::Problems::LegendrePolynomials<typename G::ctype, typename G::ctype, momentOrder>>
-// class SourceBeamTestCase
-//    : public Dune::GDT::Test::
-//          InstationaryTestCase<G,
-//                                Problems::Fokkerplanck::SourceBeamPn<B,
-//    typename G::LevelGridView,
-//                                                                   typename G::template Codim<0>::Entity,
-//                                                                   typename G::ctype,
-//                                                                   G::dimension,
-//                                                                   U,
-//                                                                   R,
-//                                                                   momentOrder + 1>>
-//{
-//  typedef typename G::LevelGridView GV;
-//  typedef typename G::template Codim<0>::Entity E;
-//  typedef typename G::ctype D;
+template <class G, class R = double>
+class SourceBeamTestCase
+    : public Dune::GDT::Test::
+          InstationaryTestCase<G,
+                               Problems::KineticEquation<Problems::Fokkerplanck::
+                                                             SourceBeamPn<Hyperbolic::Problems::
+                                                                              LegendrePolynomials<double, double, 5>,
+                                                                          typename G::LevelGridView,
+                                                                          typename G::template Codim<0>::Entity,
+                                                                          typename G::ctype,
+                                                                          G::dimension,
+                                                                          typename GDT::
+                                                                              DiscreteFunctionProvider<G,
+                                                                                                       GDT::SpaceType::
+                                                                                                           product_fv,
+                                                                                                       0,
+                                                                                                       R,
+                                                                                                       6,
+                                                                                                       1,
+                                                                                                       GDT::Backends::
+                                                                                                           gdt>::type,
+                                                                          R,
+                                                                          6>>>
+{
+  typedef typename G::template Codim<0>::Entity E;
+  typedef typename G::ctype D;
+  static const size_t d = G::dimension;
 
-// public:
-//  static const size_t d = G::dimension;
-//  static_assert(d == 1, "Only implemented for dimension 1.");
-//  typedef typename Problems::Fokkerplanck::SourceBeamPn<B, GV, E, D, d, U, R, momentOrder + 1> ProblemType;
-//  static const size_t dimRange = ProblemType::dimRange;
-//  static const size_t dimRangeCols = 1;
+public:
+  typedef typename Hyperbolic::Problems::LegendrePolynomials<double, double, 5> BasisfunctionType;
+  static const size_t dimRange = 6;
+  static const size_t dimRangeCols = 1;
+  typedef typename GDT::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, 6, 1, GDT::Backends::gdt>::type U;
+  typedef typename Problems::
+      KineticEquation<Problems::Fokkerplanck::
+                          SourceBeamPn<BasisfunctionType,
+                                       typename G::LevelGridView,
+                                       typename G::template Codim<0>::Entity,
+                                       typename G::ctype,
+                                       G::dimension,
+                                       typename GDT::DiscreteFunctionProvider<G,
+                                                                              GDT::SpaceType::product_fv,
+                                                                              0,
+                                                                              R,
+                                                                              6,
+                                                                              1,
+                                                                              GDT::Backends::gdt>::type,
+                                       R,
+                                       6>>
+          ProblemType;
 
-// private:
-//  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
+private:
+  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
 
-// public:
-//  using typename BaseType::GridType;
-//  using typename BaseType::SolutionType;
+public:
+  SourceBeamTestCase(const size_t num_refs = 1, const double divide_t_end_by = 1.0)
+    : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
+    , problem_(BasisfunctionType(), BaseType::level_view(0))
+  {
+  }
 
-//  SourceBeamTestCase(const size_t num_refs = 1, const double divide_t_end_by = 1.0)
-//    : BaseType(
-//          divide_t_end_by, XT::Grid::make_cube_grid<GridType>(ProblemType::default_grid_config()).grid_ptr(),
-//          num_refs)
-//    , problem_(B())
-//  {
-//  }
+  virtual const ProblemType& problem() const override final
+  {
+    return problem_;
+  }
 
-//  virtual const ProblemType& problem() const override final
-//  {
-//    return problem_;
-//  }
+  virtual bool provides_exact_solution() const override final
+  {
+    return false;
+  }
 
-//  virtual bool provides_exact_solution() const override final
-//  {
-//    return false;
-//  }
+  virtual void print_header(std::ostream& out = std::cout) const override final
+  {
+    out << "+======================================================================================================+"
+           "\n"
+        << "|+====================================================================================================+|"
+           "\n"
+        << "||  Testcase: Fokker-Planck SourceBeam ||\n"
+        << "|+----------------------------------------------------------------------------------------------------+|"
+           "\n"
+        << "||  domain = [0, 3] ||\n"
+        << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end()) + "] ||\n"
+        << "||  flux = see http://dx.doi.org/10.1137/130934210 Section 6.5 ||\n"
+        << "||  rhs = http://dx.doi.org/10.1137/130934210 Section 6.5 ||\n"
+        << "||  reference solution: discrete solution on finest grid ||\n"
+        << "|+====================================================================================================+|"
+           "\n"
+        << "+======================================================================================================+"
+        << std::endl;
+  }
 
-//  virtual void print_header(std::ostream& out = std::cout) const override final
-//  {
-//    out <<
-//    "+======================================================================================================+\n"
-//        <<
-//        "|+====================================================================================================+|\n"
-//        << "||  Testcase: Fokker-Planck SourceBeam ||\n"
-//        <<
-//        "|+----------------------------------------------------------------------------------------------------+|\n"
-//        << "||  domain = [0, 3] ||\n"
-//        << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end()) + "] ||\n"
-//        << "||  flux = see http://dx.doi.org/10.1137/130934210 Section 6.5 ||\n"
-//        << "||  rhs = http://dx.doi.org/10.1137/130934210 Section 6.5 ||\n"
-//        << "||  reference solution: discrete solution on finest grid ||\n"
-//        <<
-//        "|+====================================================================================================+|\n"
-//        << "+======================================================================================================+"
-//        << std::endl;
-//  }
-
-// private:
-//  const ProblemType problem_;
-//}; // class SourceBeamTestCase
+private:
+  const ProblemType problem_;
+}; // class SourceBeamTestCase
 
 
 } // namespace Hyperbolic

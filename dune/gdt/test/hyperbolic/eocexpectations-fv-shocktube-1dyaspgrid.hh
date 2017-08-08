@@ -12,8 +12,6 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_FV_SHOCKTUBE_1DYASPGRID_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_FV_SHOCKTUBE_1DYASPGRID_HH
 
-#include "config.h"
-
 #include "problems/sodshocktube.hh"
 #include "eocexpectations.hh"
 

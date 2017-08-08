@@ -62,19 +62,20 @@ public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type);
 }; // HyperbolicEocExpectations
 
-// template <>
-// class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp1, double, 1>,
-//                                Hyperbolic::ChooseDiscretizer::fv,
-//                                1,
-//                                NumericalFluxes::godunov_with_reconstruction,
-//                                TimeStepperMethods::explicit_euler> : public
-//                                internal::HyperbolicEocExpectationsBase<1>
-//{
-//  typedef Hyperbolic::TransportTestCase<Yasp1, double, 1> TestCaseType;
+template <>
+class HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp1, double, 1>,
+                                Hyperbolic::ChooseDiscretizer::fv,
+                                1,
+                                NumericalFluxes::godunov,
+                                TimeStepperMethods::explicit_euler,
+                                TimeStepperMethods::explicit_euler,
+                                1> : public internal::HyperbolicEocExpectationsBase<1>
+{
+  typedef Hyperbolic::TransportTestCase<Yasp1, double, 1> TestCaseType;
 
-// public:
-//  static std::vector<double> results(const TestCaseType& test_case, const std::string type);
-//}; // HyperbolicEocExpectations
+public:
+  static std::vector<double> results(const TestCaseType& test_case, const std::string type);
+}; // HyperbolicEocExpectations
 
 
 } // namespace Tests

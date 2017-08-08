@@ -21,7 +21,7 @@
 using namespace Dune;
 using namespace Dune::GDT;
 
-#if HAVE_EIGEN
+#if HAVE_EIGEN || HAVE_LAPACKE
 
 TYPED_TEST_CASE(hyperbolic_FV_discretization_godunov_adaptiveRK, YaspGridTestCasesPartial);
 TYPED_TEST(hyperbolic_FV_discretization_godunov_adaptiveRK, eoc_study_using_yaspgrid)

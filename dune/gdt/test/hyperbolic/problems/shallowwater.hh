@@ -146,7 +146,7 @@ public:
         [=](const DomainType& x, const XT::Common::Parameter&) {
           return RangeType{1
                                + std::pow(x[0] - 4, 2) * std::pow(x[0] - 6, 2)
-                                     * std::exp(2 - std::pow(x[0] - 4, 2) + std::pow(x[0] - 6, 2)),
+                                     * std::exp(2 - std::pow(x[0] - 4, 2) - std::pow(x[0] - 6, 2)),
                            0.};
         },
         10);
@@ -195,7 +195,7 @@ private:
 public:
   using typename BaseType::GridType;
 
-  ShallowWaterTestCase(const size_t num_refs = (d == 1 ? 4 : 1), const double divide_t_end_by = 1.0)
+  ShallowWaterTestCase(const size_t num_refs = 2, const double divide_t_end_by = 1.0)
     : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
   {
   }
