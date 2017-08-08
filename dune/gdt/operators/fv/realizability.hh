@@ -10,6 +10,8 @@
 #ifndef DUNE_GDT_OPERATORS_FV_REALIZABILITY_HH
 #define DUNE_GDT_OPERATORS_FV_REALIZABILITY_HH
 
+#include <dune/geometry/quadraturerules.hh>
+
 #include <dune/xt/common/fvector.hh>
 
 #include <dune/xt/grid/walker/functors.hh>
