@@ -31,8 +31,7 @@ namespace GDT {
 template <class AnalyticalFluxImp>
 class GodunovLocalNumericalCouplingFlux;
 
-template <class AnalyticalFluxImp,
-          class BoundaryValueType>
+template <class AnalyticalFluxImp, class BoundaryValueType>
 class GodunovLocalDirichletNumericalBoundaryFlux;
 
 
@@ -69,8 +68,7 @@ public:
   typedef AnalyticalBoundaryFluxImp AnalyticalFluxType;
   typedef BoundaryValueImp BoundaryValueType;
   typedef typename BoundaryValueType::LocalfunctionType LocalfunctionType;
-  typedef GodunovLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueType>
-      derived_type;
+  typedef GodunovLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueType> derived_type;
   using typename BaseType::AnalyticalFluxLocalfunctionType;
   typedef std::tuple<std::shared_ptr<AnalyticalFluxLocalfunctionType>, std::shared_ptr<LocalfunctionType>>
       LocalfunctionTupleType;
@@ -143,7 +141,7 @@ public:
     const RangeType delta_u = u_i - u_j;
     // calculate waves
     RangeType waves(0);
-    n_ij[direction] > 0 ? jacobian_neg_[direction].mv(delta_u, waves) : jacobian_pos_[direction].mv(delta_u, waves);
+    n_ij[direction] > 0 ? jacobian_neg()[direction].mv(delta_u, waves) : jacobian_pos()[direction].mv(delta_u, waves);
     // calculate flux
     const auto& local_flux = std::get<0>(local_functions_tuple);
     RangeType ret = local_flux->evaluate_col(direction, x_in_inside_coords, u_i, param_inside_);
@@ -157,6 +155,12 @@ public:
     return analytical_flux_;
   }
 
+  static void reset()
+  {
+    jacobians_initialized() = false;
+    jacobian() = nullptr;
+  }
+
 private:
   // use simple linearized Riemann solver, LeVeque p.316
   void initialize_jacobians(const size_t direction,
@@ -165,24 +169,24 @@ private:
                             const RangeType& u_i,
                             const RangeType& u_j) const
   {
-    if (!jacobians_initialized_[direction] || !is_linear_) {
+    if (!jacobians_initialized()[direction] || !is_linear_) {
       // calculate jacobian as jacobian(0.5*(u_i+u_j)
       RangeType u_mean = u_i + u_j;
       u_mean *= RangeFieldType(0.5);
       const auto& local_flux = std::get<0>(local_functions_tuple);
-      if (!jacobian_)
-        jacobian_ = XT::Common::make_unique<JacobianRangeType>();
-      helper<dimDomain>::get_jacobian(direction, local_flux, x_local, u_mean, *jacobian_, param_inside_);
+      if (!jacobian())
+        jacobian() = XT::Common::make_unique<JacobianRangeType>();
+      helper<dimDomain>::get_jacobian(direction, local_flux, x_local, u_mean, *(jacobian()), param_inside_);
       XT::Common::Configuration eigensolver_options(
-        {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
-        {EigenSolverType::types()[0], "1", "1", "0", "1"});
-      const auto eigen_solver = EigenSolverType((*jacobian_)[direction]);
+          {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
+          {EigenSolverType::types()[1], "1", "1", "0", "1"});
+      const auto eigen_solver = EigenSolverType((*(jacobian()))[direction]);
       const auto eigenvalues = eigen_solver.eigenvalues(eigensolver_options);
       const auto eigenvectors = eigen_solver.real_eigenvectors_as_matrix(eigensolver_options);
       auto eigenvectors_inverse = std::make_shared<MatrixType>(*eigenvectors);
       eigenvectors_inverse->invert();
       if (is_linear_)
-        jacobian_ = nullptr;
+        jacobian() = nullptr;
 
       auto jacobian_neg_dense = XT::Common::make_unique<MatrixType>(0);
       auto jacobian_pos_dense = XT::Common::make_unique<MatrixType>(0);
@@ -195,9 +199,9 @@ private:
             else
               (*jacobian_pos_dense)[rr][cc] +=
                   (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk].real();
-      jacobian_neg_[direction] = SparseMatrixType(*jacobian_neg_dense, true);
-      jacobian_pos_[direction] = SparseMatrixType(*jacobian_pos_dense, true);
-      jacobians_initialized_[direction] = true;
+      jacobian_neg()[direction] = SparseMatrixType(*jacobian_neg_dense, true);
+      jacobian_pos()[direction] = SparseMatrixType(*jacobian_pos_dense, true);
+      jacobians_initialized()[direction] = true;
     } // (!jacobians_initialized || !linear)
   } // void calculate_jacobians(...)
 
@@ -233,27 +237,55 @@ private:
   const AnalyticalFluxType& analytical_flux_;
   XT::Common::Parameter param_inside_;
   XT::Common::Parameter param_outside_;
-  static thread_local JacobiansType jacobian_neg_;
-  static thread_local JacobiansType jacobian_pos_;
-  static thread_local FieldVector<bool, dimDomain> jacobians_initialized_;
-  static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
+
+  // work around gcc bug 66944
+  static JacobiansType& jacobian_neg()
+  {
+    static thread_local JacobiansType jacobian_neg_;
+    return jacobian_neg_;
+  }
+
+  static JacobiansType& jacobian_pos()
+  {
+    static thread_local JacobiansType jacobian_pos_;
+    return jacobian_pos_;
+  }
+
+  static std::unique_ptr<JacobianRangeType>& jacobian()
+  {
+    static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
+    return jacobian_;
+  }
+
+  static FieldVector<bool, dimDomain>& jacobians_initialized()
+  {
+    static thread_local FieldVector<bool, dimDomain> jacobians_initialized_(false);
+    return jacobians_initialized_;
+  }
+  //  static thread_local JacobiansType jacobian_neg_;
+  //  static thread_local JacobiansType jacobian_pos_;
+  //  static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
+  //  static thread_local FieldVector<bool, dimDomain> jacobians_initialized_;
+
   const bool is_linear_;
   static bool is_instantiated_;
 }; // class GodunovFluxImplementation
 
-template <class Traits>
-thread_local typename GodunovFluxImplementation<Traits>::JacobiansType GodunovFluxImplementation<Traits>::jacobian_neg_;
+// template <class Traits>
+// thread_local
+//    typename GodunovFluxImplementation<Traits>::JacobiansType GodunovFluxImplementation<Traits>::jacobian_neg_;
 
-template <class Traits>
-thread_local typename GodunovFluxImplementation<Traits>::JacobiansType GodunovFluxImplementation<Traits>::jacobian_pos_;
+// template <class Traits>
+// thread_local
+//    typename GodunovFluxImplementation<Traits>::JacobiansType GodunovFluxImplementation<Traits>::jacobian_pos_;
 
-template <class Traits>
-thread_local FieldVector<bool, GodunovFluxImplementation<Traits>::dimDomain>
-    GodunovFluxImplementation<Traits>::jacobians_initialized_(false);
+// template <class Traits>
+// thread_local FieldVector<bool, GodunovFluxImplementation<Traits>::dimDomain>
+//    GodunovFluxImplementation<Traits>::jacobians_initialized_(false);
 
-template <class Traits>
-thread_local std::unique_ptr<typename GodunovFluxImplementation<Traits>::JacobianRangeType>
-    GodunovFluxImplementation<Traits>::jacobian_;
+// template <class Traits>
+// thread_local std::unique_ptr<typename GodunovFluxImplementation<Traits>::JacobianRangeType>
+//    GodunovFluxImplementation<Traits>::jacobian_;
 
 template <class Traits>
 bool GodunovFluxImplementation<Traits>::is_instantiated_(false);
@@ -343,6 +375,12 @@ public:
                                     u_j);
   } // RangeType evaluate(...) const
 
+  // clear static variables
+  static void reset()
+  {
+    internal::GodunovFluxImplementation<Traits>::reset();
+  }
+
 private:
   const internal::GodunovFluxImplementation<Traits> implementation_;
 }; // class GodunovLocalNumericalCouplingFlux
@@ -358,9 +396,7 @@ class GodunovLocalDirichletNumericalBoundaryFlux
                                                                                                       BoundaryValueImp>>
 {
 public:
-  typedef internal::GodunovLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                     BoundaryValueImp>
-      Traits;
+  typedef internal::GodunovLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp, BoundaryValueImp> Traits;
   typedef typename Traits::BoundaryValueType BoundaryValueType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
@@ -407,6 +443,12 @@ public:
                                     u_i,
                                     u_j);
   } // RangeType evaluate(...) const
+
+  // clear static variables
+  static void reset()
+  {
+    internal::GodunovFluxImplementation<Traits>::reset();
+  }
 
 private:
   const BoundaryValueType& boundary_values_;
