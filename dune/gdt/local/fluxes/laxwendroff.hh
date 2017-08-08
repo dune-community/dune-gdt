@@ -22,13 +22,10 @@ namespace GDT {
 
 
 // forwards
-template <class AnalyticalFluxImp,
-          class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class LocalizableFunctionImp>
 class LaxWendroffLocalNumericalCouplingFlux;
 
-template <class AnalyticalFluxImp,
-          class BoundaryValueImp,
-          class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
 class LaxWendroffLocalDirichletNumericalBoundaryFlux;
 
 
@@ -50,9 +47,7 @@ class LaxWendroffLocalDirichletNumericalBoundaryFluxTraits
                                                                     LocalizableFunctionImp>
 {
 public:
-  typedef LaxWendroffLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
-                                                         BoundaryValueImp,
-                                                         LocalizableFunctionImp>
+  typedef LaxWendroffLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>
       derived_type;
 }; // class LaxWendroffLocalDirichletNumericalBoundaryFluxTraits
 
@@ -177,9 +172,7 @@ class LaxWendroffLocalNumericalCouplingFlux
                                                                                                  LocalizableFunctionImp>>
 {
 public:
-  typedef internal::LaxWendroffLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
-                                                                LocalizableFunctionImp>
-      Traits;
+  typedef internal::LaxWendroffLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp> Traits;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;

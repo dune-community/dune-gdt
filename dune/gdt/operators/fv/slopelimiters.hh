@@ -41,12 +41,14 @@ template <>
 struct ChooseLimiter<SlopeLimiters::minmod>
 {
   template <class VectorType>
-  static VectorType limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& /*slope_center*/)
+  static VectorType
+  limit(const VectorType& slope_left, const VectorType& slope_right, const VectorType& /*slope_center*/)
   {
     VectorType ret(0.);
     for (size_t ii = 0; ii < slope_left.size(); ++ii)
       if (slope_left[ii] * slope_right[ii] > 0) // check for equal sign
-        ret[ii] = XT::Common::FloatCmp::lt(std::abs(slope_left[ii]), std::abs(slope_right[ii])) ? slope_left[ii] : slope_right[ii];
+        ret[ii] = XT::Common::FloatCmp::lt(std::abs(slope_left[ii]), std::abs(slope_right[ii])) ? slope_left[ii]
+                                                                                                : slope_right[ii];
     return ret;
   }
 };

@@ -168,18 +168,16 @@ struct AdvectionOperatorApplier
         ReconstructedValuesType;
     ReconstructedValuesType reconstructed_values(grid_layer.size(0));
 
-    auto local_reconstruction_operator = LocalReconstructionFvOperator<GridLayerType,
-                                                                       AnalyticalFluxType,
-                                                                       BoundaryValueType,
-                                                                       polOrder,
-                                                                       slope_limiter>(source_values,
-                                                                                        analytical_flux,
-                                                                                        boundary_values,
-                                                                                        grid_layer,
-                                                                                        param,
-                                                                                        is_linear,
-                                                                                        quadrature1d,
-                                                                                        reconstructed_values);
+    auto local_reconstruction_operator =
+        LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>(
+            source_values,
+            analytical_flux,
+            boundary_values,
+            grid_layer,
+            param,
+            is_linear,
+            quadrature1d,
+            reconstructed_values);
     auto walker = XT::Grid::Walker<GridLayerType>(grid_layer);
     walker.append(local_reconstruction_operator);
     walker.walk(true);

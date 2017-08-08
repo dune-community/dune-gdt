@@ -22,13 +22,10 @@ namespace GDT {
 
 
 // forwards
-template <class AnalyticalFluxImp,
-          class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class LocalizableFunctionImp>
 class MustaLocalNumericalCouplingFlux;
 
-template <class AnalyticalFluxImp,
-          class BoundaryValueImp,
-          class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
 class MustaLocalDirichletNumericalBoundaryFlux;
 
 
@@ -50,9 +47,7 @@ class MustaLocalDirichletNumericalBoundaryFluxTraits
                                                                     LocalizableFunctionImp>
 {
 public:
-  typedef MustaLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
-                                                   BoundaryValueImp,
-                                                   LocalizableFunctionImp>
+  typedef MustaLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>
       derived_type;
 }; // class MustaLocalDirichletNumericalBoundaryFluxTraits
 
@@ -249,12 +244,12 @@ private:
  */
 template <class AnalyticalFluxImp, class LocalizableFunctionImp>
 class MustaLocalNumericalCouplingFlux
-    : public LocalNumericalCouplingFluxInterface<internal::MustaLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
-                                                                                                 LocalizableFunctionImp>>
+    : public LocalNumericalCouplingFluxInterface<internal::
+                                                     MustaLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
+                                                                                           LocalizableFunctionImp>>
 {
 public:
-  typedef internal::MustaLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp>
-      Traits;
+  typedef internal::MustaLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp> Traits;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;

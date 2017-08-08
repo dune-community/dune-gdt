@@ -36,8 +36,7 @@ namespace GDT {
 template <class AnalyticalFluxImp>
 class KineticLocalNumericalCouplingFlux;
 
-template <class AnalyticalFluxImp,
-          class BoundaryValueType>
+template <class AnalyticalFluxImp, class BoundaryValueType>
 class KineticLocalNumericalBoundaryFlux;
 
 
@@ -45,8 +44,7 @@ namespace internal {
 
 
 template <class AnalyticalFluxImp>
-class KineticLocalNumericalCouplingFluxTraits
-    : public GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp>
+class KineticLocalNumericalCouplingFluxTraits : public GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp>
 {
 public:
   typedef std::tuple<> LocalfunctionTupleType;
@@ -54,8 +52,7 @@ public:
 }; // class KineticLocalNumericalCouplingFluxTraits
 
 template <class AnalyticalFluxImp, class BoundaryValueImp>
-class KineticLocalNumericalBoundaryFluxTraits
-    : public KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp>
+class KineticLocalNumericalBoundaryFluxTraits : public KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp>
 {
   typedef KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp> BaseType;
 
