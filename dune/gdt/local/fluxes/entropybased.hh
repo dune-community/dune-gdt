@@ -76,19 +76,27 @@ void solve_lower_triangular_transposed(const MatrixType& A, VectorType& x, const
  * Alldredge, Hauck, O'Leary, Tits, "Adaptive change of basis in entropy-based moment closures for linear kinetic
  * equations"
  */
-template <class BasisfunctionType,
-          class GridLayerType,
-          class E,
-          class D,
-          size_t d,
-          class U,
-          class R,
-          size_t rangeDim,
-          size_t quadratureDim = d>
-class EntropyBasedLocalFlux : public XT::Functions::LocalizableFluxFunctionInterface<E, D, d, U, 0, R, rangeDim, d>
+template <class BasisfunctionType, class GridLayerType, class U, size_t quadratureDim = BasisfunctionType::dimDomain>
+class EntropyBasedLocalFlux
+    : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerType::template Codim<0>::Entity,
+                                                             typename BasisfunctionType::DomainFieldType,
+                                                             BasisfunctionType::dimFlux,
+                                                             U,
+                                                             0,
+                                                             typename BasisfunctionType::RangeFieldType,
+                                                             BasisfunctionType::dimRange,
+                                                             BasisfunctionType::dimFlux>
 {
-  typedef XT::Functions::LocalizableFluxFunctionInterface<E, D, d, U, 0, R, rangeDim, d> BaseType;
-  typedef EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, E, D, d, U, R, rangeDim, quadratureDim> ThisType;
+  typedef typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerType::template Codim<0>::Entity,
+                                                                   typename BasisfunctionType::DomainFieldType,
+                                                                   BasisfunctionType::dimFlux,
+                                                                   U,
+                                                                   0,
+                                                                   typename BasisfunctionType::RangeFieldType,
+                                                                   BasisfunctionType::dimRange,
+                                                                   BasisfunctionType::dimFlux>
+      BaseType;
+  typedef EntropyBasedLocalFlux ThisType;
 
 public:
   using typename BaseType::EntityType;
