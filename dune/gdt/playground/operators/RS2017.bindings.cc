@@ -1254,7 +1254,7 @@ void bind_neighborhood_reconstruction(py::module& m)
                                                      XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
                                                      GDT::DiscreteFunction<NeighborhoodRtSpaceType, VectorType>,
                                                      GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>
-          LocalizableDiffusiveFluxReconstructionOperatorType;
+          LocalizableDiffusiveFluxReconstructionOperatorForRestrictedSpaceType;
 
   m.def("RS2017_apply_diffusive_flux_reconstruction_in_neighborhood",
         [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
@@ -1262,10 +1262,44 @@ void bind_neighborhood_reconstruction(py::module& m)
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& u,
-           typename LocalizableDiffusiveFluxReconstructionOperatorType::RangeType& reconstructed_u,
+           typename LocalizableDiffusiveFluxReconstructionOperatorForRestrictedSpaceType::RangeType& reconstructed_u,
            const ssize_t over_integrate) {
           py::gil_scoped_release DUNE_UNUSED(release);
-          LocalizableDiffusiveFluxReconstructionOperatorType(
+          LocalizableDiffusiveFluxReconstructionOperatorForRestrictedSpaceType(
+              dd_grid_provider.template layer<Layers::dd_subdomain_oversampled, Backends::part>(
+                  XT::Common::numeric_cast<size_t>(subdomain)),
+              lambda,
+              kappa,
+              u,
+              reconstructed_u,
+              over_integrate)
+              .apply();
+        },
+        "dd_grid_provider"_a,
+        "subdomain"_a,
+        "lambda_hat"_a,
+        "kappa"_a,
+        "u"_a,
+        "reconstructed_u"_a,
+        "over_integrate"_a = 2);
+
+  typedef GDT::
+      LocalizableDiffusiveFluxReconstructionOperator<NeighborHoodGridLayer,
+                                                     XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
+                                                     GDT::DiscreteFunction<RtSpaceType, VectorType>,
+                                                     GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>
+          LocalizableDiffusiveFluxReconstructionOperatorForLeafSpaceType;
+
+  m.def("RS2017_apply_diffusive_flux_reconstruction_in_neighborhood",
+        [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+           const ssize_t subdomain,
+           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
+           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
+           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& u,
+           typename LocalizableDiffusiveFluxReconstructionOperatorForLeafSpaceType::RangeType& reconstructed_u,
+           const ssize_t over_integrate) {
+          py::gil_scoped_release DUNE_UNUSED(release);
+          LocalizableDiffusiveFluxReconstructionOperatorForLeafSpaceType(
               dd_grid_provider.template layer<Layers::dd_subdomain_oversampled, Backends::part>(
                   XT::Common::numeric_cast<size_t>(subdomain)),
               lambda,
