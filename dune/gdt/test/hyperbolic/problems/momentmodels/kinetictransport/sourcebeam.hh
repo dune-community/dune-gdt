@@ -33,32 +33,10 @@ namespace Problems {
 namespace KineticTransport {
 
 
-template <class BasisfunctionImp,
-          class GridLayerImp,
-          class EntityImp,
-          class DomainFieldImp,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldImp,
-          size_t dimRange>
-class SourceBeamPn : public KineticTransportEquation<BasisfunctionImp,
-                                                     GridLayerImp,
-                                                     EntityImp,
-                                                     DomainFieldImp,
-                                                     dimDomain,
-                                                     U_,
-                                                     RangeFieldImp,
-                                                     dimRange>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
+class SourceBeamPn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp,
-                                   GridLayerImp,
-                                   EntityImp,
-                                   DomainFieldImp,
-                                   dimDomain,
-                                   U_,
-                                   RangeFieldImp,
-                                   dimRange>
-      BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -238,46 +216,16 @@ protected:
   using BaseType::psi_vac_;
 }; // class SourceBeamPn<...>
 
-template <class BasisfunctionType,
-          class GridLayerType,
-          class EntityType,
-          class DomainFieldType,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldType,
-          size_t dimRange>
-class SourceBeamMn : public SourceBeamPn<BasisfunctionType,
-                                         GridLayerType,
-                                         EntityType,
-                                         DomainFieldType,
-                                         dimDomain,
-                                         U_,
-                                         RangeFieldType,
-                                         dimRange>
+template <class BasisfunctionType, class GridLayerType, class U_>
+class SourceBeamMn : public SourceBeamPn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef SourceBeamPn<BasisfunctionType,
-                       GridLayerType,
-                       EntityType,
-                       DomainFieldType,
-                       dimDomain,
-                       U_,
-                       RangeFieldType,
-                       dimRange>
-      BaseType;
+  typedef SourceBeamPn<BasisfunctionType, GridLayerType, U_> BaseType;
   typedef SourceBeamMn ThisType;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
-  typedef EntropyBasedLocalFlux<BasisfunctionType,
-                                GridLayerType,
-                                EntityType,
-                                DomainFieldType,
-                                dimDomain,
-                                U_,
-                                RangeFieldType,
-                                dimRange>
-      ActualFluxType;
+  typedef EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
   using typename BaseType::QuadratureType;
 
   using BaseType::default_grid_cfg;

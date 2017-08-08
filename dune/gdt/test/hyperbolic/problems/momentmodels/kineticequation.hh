@@ -86,49 +86,47 @@ public:
   }
 }; // class KineticEquation<...>
 
-template <class BasisfunctionImp,
-          class GridLayerImp,
-          class EntityImp,
-          class DomainFieldImp,
-          size_t domainDim,
-          class U_,
-          class RangeFieldImp,
-          size_t rangeDim>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
 class KineticEquationImplementation
 {
   typedef KineticEquationImplementation ThisType;
 
-  typedef XT::Functions::GlobalLambdaFunction<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
-      GlobalLambdaFunctionType;
-  typedef XT::Functions::GlobalLambdaFluxFunction<U_, 0, RangeFieldImp, rangeDim, 1> GlobalLambdaFluxFunctionType;
-
 public:
   typedef BasisfunctionImp BasisfunctionType;
   typedef GridLayerImp GridLayerType;
-  typedef EntityImp EntityType;
-  typedef DomainFieldImp DomainFieldType;
+  typedef typename GridLayerType::template Codim<0>::Entity EntityType;
+  typedef typename BasisfunctionType::DomainFieldType DomainFieldType;
   typedef U_ StateType;
-  typedef RangeFieldImp RangeFieldType;
-  static const size_t dimDomain = domainDim;
-  static const size_t dimRange = rangeDim;
+  typedef typename BasisfunctionType::RangeFieldType RangeFieldType;
+  static const size_t dimDomain = BasisfunctionType::dimFlux;
+  static const size_t dimRange = BasisfunctionType::dimRange;
+
+  typedef XT::Functions::GlobalLambdaFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>
+      GlobalLambdaFunctionType;
+  typedef XT::Functions::GlobalLambdaFluxFunction<U_, 0, RangeFieldType, dimRange, 1> GlobalLambdaFluxFunctionType;
 
   typedef typename KineticEquation<ThisType>::FluxType FluxType;
   typedef typename KineticEquation<ThisType>::RhsType RhsType;
   typedef typename KineticEquation<ThisType>::InitialValueType InitialValueType;
   typedef typename KineticEquation<ThisType>::BoundaryValueType BoundaryValueType;
 
-  typedef
-      typename XT::Functions::AffineFluxFunction<EntityImp, DomainFieldImp, dimDomain, U_, RangeFieldImp, dimRange, 1>
+  typedef typename XT::Functions::
+      AffineFluxFunction<EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange, 1>
           RhsAffineFunctionType;
   typedef typename XT::Functions::
-      AffineFluxFunction<EntityImp, DomainFieldImp, dimDomain, U_, RangeFieldImp, dimRange, dimDomain>
+      AffineFluxFunction<EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange, dimDomain>
           ActualFluxType;
   typedef XT::Functions::
-      CheckerboardFunction<EntityImp, DomainFieldImp, dimDomain, RangeFieldImp, dimRange, 1, RhsAffineFunctionType>
+      CheckerboardFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, RhsAffineFunctionType>
           ActualRhsType;
-  typedef XT::Functions::
-      CheckerboardFunction<EntityImp, DomainFieldImp, dimDomain, RangeFieldImp, dimRange, 1, GlobalLambdaFunctionType>
-          ActualInitialValueType;
+  typedef XT::Functions::CheckerboardFunction<EntityType,
+                                              DomainFieldType,
+                                              dimDomain,
+                                              RangeFieldType,
+                                              dimRange,
+                                              1,
+                                              GlobalLambdaFunctionType>
+      ActualInitialValueType;
   typedef GlobalLambdaFunctionType ActualBoundaryValueType;
 
   typedef typename Dune::DynamicMatrix<RangeFieldType> MatrixType;

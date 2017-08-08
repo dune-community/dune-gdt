@@ -6,8 +6,8 @@
 //   Felix Schindler (2016)
 //   Tobias Leibner  (2016)
 
-#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_PLANESOURCE_HH
-#define DUNE_GDT_HYPERBOLIC_PROBLEMS_PLANESOURCE_HH
+#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_PLANESOURCE_HH
+#define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_PLANESOURCE_HH
 
 #include <memory>
 #include <vector>
@@ -15,31 +15,19 @@
 
 #include <dune/xt/common/string.hh>
 
-#include "kineticequation.hh"
+#include "fokkerplanckequation.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
+namespace FokkerPlanck {
 
 
-template <class BasisfunctionImp,
-          class EntityImp,
-          class DomainFieldImp,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldImp,
-          size_t dimRange>
-class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp,
-                                                      EntityImp,
-                                                      DomainFieldImp,
-                                                      dimDomain,
-                                                      U_,
-                                                      RangeFieldImp,
-                                                      dimRange>
+template <class BasisfunctionImp, class GridLayerType, class U_>
+class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerType, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, EntityImp, DomainFieldImp, dimDomain, U_, RangeFieldImp, dimRange>
-      BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerType, U_> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -52,16 +40,20 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
   using typename BaseType::QuadratureType;
+  using typename BaseType::GridLayerType;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_quadrature;
 
   PlaneSourcePn(const BasisfunctionType& basis_functions,
+                const GridLayerType& grid_layer,
+                const QuadratureType& quadrature = default_quadrature(),
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, quadrature, 1, grid_cfg, boundary_cfg)
   {
   }
+
 
   static std::string static_id()
   {
@@ -88,8 +80,7 @@ public:
                                   std::make_pair("sigma_s", std::vector<double>{1}),
                                   std::make_pair("Q", std::vector<double>{0}),
                                   std::make_pair("CFL", std::vector<double>{0.4}),
-                                  std::make_pair("t_end", std::vector<double>{1.0}),
-                                  std::make_pair("num_segments", std::vector<double>{1.})});
+                                  std::make_pair("t_end", std::vector<double>{1.0})});
   }
 
   // Initial value of the kinetic equation is psi_vac + delta(x).
@@ -128,67 +119,11 @@ protected:
   using BaseType::psi_vac_;
 }; // class PlaneSourcePn<...>
 
-template <class GridViewType,
-          class BasisfunctionType,
-          class EntityType,
-          class DomainFieldType,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldType,
-          size_t dimRange>
-class PlaneSourceMn
-    : public PlaneSourcePn<BasisfunctionType, EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange>
-{
-  typedef PlaneSourcePn<BasisfunctionType, EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange>
-      BaseType;
-  typedef PlaneSourceMn ThisType;
 
-public:
-  using typename BaseType::FluxType;
-  using typename BaseType::RangeType;
-  typedef EntropyBasedLocalFlux<GridViewType,
-                                BasisfunctionType,
-                                EntityType,
-                                DomainFieldType,
-                                dimDomain,
-                                U_,
-                                RangeFieldType,
-                                dimRange>
-      ActualFluxType;
-  using typename BaseType::QuadratureType;
-
-  using BaseType::default_grid_cfg;
-  using BaseType::default_boundary_cfg;
-
-  PlaneSourceMn(const BasisfunctionType& basis_functions,
-                const GridViewType& grid_view,
-                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
-    , grid_view_(grid_view)
-  {
-  }
-
-  static std::string static_id()
-  {
-    return "planesourcemn";
-  }
-
-  virtual FluxType* create_flux() const
-  {
-    return new ActualFluxType(grid_view_, quadrature_, basis_functions_);
-  }
-
-protected:
-  using BaseType::basis_functions_;
-  using BaseType::quadrature_;
-  const GridViewType& grid_view_;
-}; // class PlaneSourceMn<...>
-
-
+} // namespace FokkerPlanck
 } // namespace Problems
 } // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_PLANESOURCE_HH
+#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_PLANESOURCE_HH

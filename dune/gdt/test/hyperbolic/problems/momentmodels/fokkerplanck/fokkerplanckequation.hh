@@ -58,32 +58,10 @@ namespace Problems {
  * SourceBeam) see Schneider, Alldredge, Frank, Klar, "Higher Order Mixed-Moment Approximations for the
  * Fokker-Planck Equation in One Space Dimension", SIAM J. Appl. Math., 74(4), 1087–1114
  */
-template <class BasisfunctionImp,
-          class GridLayerImp,
-          class EntityImp,
-          class DomainFieldImp,
-          size_t domainDim,
-          class U_,
-          class RangeFieldImp,
-          size_t rangeDim>
-class FokkerPlanckEquation : public KineticTransportEquation<BasisfunctionImp,
-                                                             GridLayerImp,
-                                                             EntityImp,
-                                                             DomainFieldImp,
-                                                             domainDim,
-                                                             U_,
-                                                             RangeFieldImp,
-                                                             rangeDim>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
+class FokkerPlanckEquation : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp,
-                                   GridLayerImp,
-                                   EntityImp,
-                                   DomainFieldImp,
-                                   domainDim,
-                                   U_,
-                                   RangeFieldImp,
-                                   rangeDim>
-      BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
   using typename BaseType::BasisfunctionType;

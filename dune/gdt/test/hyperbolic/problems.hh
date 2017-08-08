@@ -15,7 +15,7 @@
 #include <dune/gdt/test/hyperbolic/problems/transport.hh>
 #include <dune/gdt/test/hyperbolic/problems/shallowwater.hh>
 #include <dune/gdt/test/hyperbolic/problems/sodshocktube.hh>
-//#include <dune/gdt/test/hyperbolic/problems/2dboltzmann.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/2dboltzmann.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/fokkerplanck/sourcebeam.hh>
 //#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/linesource.hh>
 //#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/pointsource.hh>
@@ -28,8 +28,7 @@ typedef testing::Types< // Dune::GDT::Hyperbolic::PointSourceTestCase<Yasp3, dou
     //    Dune::GDT::Hyperbolic::LineSourceTestCase<Yasp2, double>
     //    Dune::GDT::Hyperbolic::LineSourceMnTestCase<Yasp2, double>,
 
-    //                       Dune::GDT::Hyperbolic::Boltzmann2DCheckerboardTestCase<Yasp2, double,
-    //                       1>,
+    Dune::GDT::Hyperbolic::CheckerboardTestCase<Yasp2, double, 1>,
     Dune::GDT::Hyperbolic::BurgersTestCase<Yasp1>,
     Dune::GDT::Hyperbolic::BurgersTestCase<Yasp2>,
     Dune::GDT::Hyperbolic::ShallowWaterTestCase<Yasp1>,
@@ -77,6 +76,12 @@ namespace Test {
 //                                                TimeStepperMethods::explicit_rungekutta_second_order_ssp,
 //                                                TimeStepperMethods::matrix_exponential>;
 
+extern template class HyperbolicEocExpectations<Hyperbolic::CheckerboardTestCase<Yasp2, double, 1>,
+                                                Hyperbolic::ChooseDiscretizer::fv,
+                                                2,
+                                                NumericalFluxes::godunov,
+                                                TimeStepperMethods::explicit_euler,
+                                                TimeStepperMethods::explicit_euler>;
 
 extern template class HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1, double, 1>,
                                                 Hyperbolic::ChooseDiscretizer::fv,

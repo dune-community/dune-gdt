@@ -9,8 +9,8 @@
 //   Rene Milk       (2016 - 2017)
 //   Tobias Leibner  (2016)
 
-#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_RECTANGULARIC_HH
-#define DUNE_GDT_HYPERBOLIC_PROBLEMS_RECTANGULARIC_HH
+#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_RECTANGULARIC_HH
+#define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_RECTANGULARIC_HH
 
 #include <memory>
 #include <vector>
@@ -18,31 +18,19 @@
 
 #include <dune/xt/common/string.hh>
 
-#include "kineticequation.hh"
+#include "fokkerplanckequation.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
+namespace FokkerPlanck {
 
 
-template <class BasisfunctionImp,
-          class EntityImp,
-          class DomainFieldImp,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldImp,
-          size_t dimRange>
-class RectangularICPn : public KineticFokkerPlanckEquation<BasisfunctionImp,
-                                                           EntityImp,
-                                                           DomainFieldImp,
-                                                           dimDomain,
-                                                           U_,
-                                                           RangeFieldImp,
-                                                           dimRange>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
+class RectangularIcPn : public FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, EntityImp, DomainFieldImp, dimDomain, U_, RangeFieldImp, dimRange>
-      BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -54,15 +42,18 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
+  using typename BaseType::GridLayerType;
   using typename BaseType::QuadratureType;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_quadrature;
 
-  RectangularICPn(const BasisfunctionType& basis_functions,
+  RectangularIcPn(const BasisfunctionType& basis_functions,
+                  const GridLayerType& grid_layer,
+                  const QuadratureType& quadrature = default_quadrature(),
                   const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                   const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, quadrature, 1, grid_cfg, boundary_cfg)
   {
   }
 
@@ -89,8 +80,7 @@ public:
                                   std::make_pair("T", std::vector<double>{0.01}),
                                   std::make_pair("Q", std::vector<double>{0}),
                                   std::make_pair("CFL", std::vector<double>{0.4}),
-                                  std::make_pair("t_end", std::vector<double>{1}),
-                                  std::make_pair("num_segments", std::vector<double>{1.})});
+                                  std::make_pair("t_end", std::vector<double>{1})});
   }
 
   // Initial value of the kinetic equation is 10 if 3 <= x <= 4 and psi_vac else, thus initial value of the
@@ -120,67 +110,10 @@ protected:
   using BaseType::psi_vac_;
 }; // class RectangularICPn<...>
 
-template <class GridViewType,
-          class BasisfunctionType,
-          class EntityType,
-          class DomainFieldType,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldType,
-          size_t dimRange>
-class RectangularICMn
-    : public RectangularICPn<BasisfunctionType, EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange>
-{
-  typedef RectangularICPn<BasisfunctionType, EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange>
-      BaseType;
-  typedef RectangularICMn ThisType;
-
-public:
-  using typename BaseType::FluxType;
-  using typename BaseType::RangeType;
-  typedef GDT::EntropyBasedLocalFlux<GridViewType,
-                                     BasisfunctionType,
-                                     EntityType,
-                                     DomainFieldType,
-                                     dimDomain,
-                                     U_,
-                                     RangeFieldType,
-                                     dimRange>
-      ActualFluxType;
-  using typename BaseType::QuadratureType;
-
-  using BaseType::default_grid_cfg;
-  using BaseType::default_boundary_cfg;
-
-  RectangularICMn(const BasisfunctionType& basis_functions,
-                  const GridViewType& grid_view,
-                  const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                  const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
-    , grid_view_(grid_view)
-  {
-  }
-
-  static std::string static_id()
-  {
-    return "rectangularicmn";
-  }
-
-  virtual FluxType* create_flux() const
-  {
-    return new ActualFluxType(grid_view_, quadrature_, basis_functions_);
-  }
-
-protected:
-  using BaseType::basis_functions_;
-  const GridViewType& grid_view_;
-  using BaseType::quadrature_;
-}; // class RectangularICMn<...>
-
 
 } // namespace Problems
 } // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_RECTANGULARIC_HH
+#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_RECTANGULARIC_HH

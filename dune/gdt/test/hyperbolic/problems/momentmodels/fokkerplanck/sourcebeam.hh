@@ -9,8 +9,8 @@
 //   Rene Milk       (2016 - 2017)
 //   Tobias Leibner  (2016)
 
-#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_SOURCEBEAM_HH
-#define DUNE_GDT_HYPERBOLIC_PROBLEMS_SOURCEBEAM_HH
+#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_SOURCEBEAM_HH
+#define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_SOURCEBEAM_HH
 
 #include <vector>
 #include <string>
@@ -26,35 +26,13 @@ namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
-namespace Fokkerplanck {
+namespace FokkerPlanck {
 
 
-template <class BasisfunctionImp,
-          class GridLayerImp,
-          class EntityImp,
-          class DomainFieldImp,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldImp,
-          size_t dimRange>
-class SourceBeamPn : public FokkerPlanckEquation<BasisfunctionImp,
-                                                 GridLayerImp,
-                                                 EntityImp,
-                                                 DomainFieldImp,
-                                                 dimDomain,
-                                                 U_,
-                                                 RangeFieldImp,
-                                                 dimRange>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
+class SourceBeamPn : public FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef FokkerPlanckEquation<BasisfunctionImp,
-                               GridLayerImp,
-                               EntityImp,
-                               DomainFieldImp,
-                               dimDomain,
-                               U_,
-                               RangeFieldImp,
-                               dimRange>
-      BaseType;
+  typedef FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -142,13 +120,10 @@ template <class G, class R = double>
 class SourceBeamTestCase
     : public Dune::GDT::Test::
           InstationaryTestCase<G,
-                               Problems::KineticEquation<Problems::Fokkerplanck::
+                               Problems::KineticEquation<Problems::FokkerPlanck::
                                                              SourceBeamPn<Hyperbolic::Problems::
                                                                               LegendrePolynomials<double, double, 5>,
                                                                           typename G::LevelGridView,
-                                                                          typename G::template Codim<0>::Entity,
-                                                                          typename G::ctype,
-                                                                          G::dimension,
                                                                           typename GDT::
                                                                               DiscreteFunctionProvider<G,
                                                                                                        GDT::SpaceType::
@@ -158,11 +133,8 @@ class SourceBeamTestCase
                                                                                                        6,
                                                                                                        1,
                                                                                                        GDT::Backends::
-                                                                                                           gdt>::type,
-                                                                          R,
-                                                                          6>>>
+                                                                                                           gdt>::type>>>
 {
-  typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
   static const size_t d = G::dimension;
 
@@ -172,21 +144,7 @@ public:
   static const size_t dimRangeCols = 1;
   typedef typename GDT::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, 6, 1, GDT::Backends::gdt>::type U;
   typedef typename Problems::
-      KineticEquation<Problems::Fokkerplanck::
-                          SourceBeamPn<BasisfunctionType,
-                                       typename G::LevelGridView,
-                                       typename G::template Codim<0>::Entity,
-                                       typename G::ctype,
-                                       G::dimension,
-                                       typename GDT::DiscreteFunctionProvider<G,
-                                                                              GDT::SpaceType::product_fv,
-                                                                              0,
-                                                                              R,
-                                                                              6,
-                                                                              1,
-                                                                              GDT::Backends::gdt>::type,
-                                       R,
-                                       6>>
+      KineticEquation<Problems::FokkerPlanck::SourceBeamPn<BasisfunctionType, typename G::LevelGridView, U>>
           ProblemType;
 
 private:
@@ -238,4 +196,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_SOURCEBEAM_HH
+#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_SOURCEBEAM_HH

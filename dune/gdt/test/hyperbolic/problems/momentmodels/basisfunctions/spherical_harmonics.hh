@@ -21,6 +21,7 @@ namespace Hyperbolic {
 namespace Problems {
 
 
+// TODO: use complex arithmetic, currently only usable for Pn Models in 2D
 template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_positive = false>
 class SphericalHarmonics
     : public BasisfunctionsInterface<DomainFieldType,
@@ -30,9 +31,12 @@ class SphericalHarmonics
                                      1,
                                      fluxDim>
 {
+public:
   static const size_t dimDomain = 3;
   static const size_t dimRange = only_positive ? ((order + 1) * (order + 2)) / 2 : (order + 1) * (order + 1);
   static const size_t dimFlux = fluxDim;
+
+private:
   typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimFlux> BaseType;
 
 public:
@@ -53,9 +57,10 @@ public:
     const DomainFieldType theta = coords[0];
     const DomainFieldType phi = coords[1];
     RangeType ret(0);
-    for (int ll = 0; ll <= order; ++ll)
-      for (int mm = only_positive ? 0 : -ll; mm <= ll; ++mm)
-        ret[helper<only_positive>::pos(ll, mm)] = boost::math::spherical_harmonic(ll, mm, theta, phi);
+    // TODO: use complex arithmetic, remove real() call
+    for (size_t ll = 0; ll <= order; ++ll)
+      for (int mm = only_positive ? 0 : -int(ll); mm <= int(ll); ++mm)
+        ret[helper<only_positive>::pos(ll, mm)] = boost::math::spherical_harmonic(ll, mm, theta, phi).real();
     return ret;
   } // ... evaluate(...)
 
@@ -68,7 +73,7 @@ public:
 
   virtual MatrixType mass_matrix() const override
   {
-    MatrixType M(0);
+    MatrixType M(dimRange, dimRange, 0);
     for (size_t rr = 0; rr < dimRange; ++rr)
       M[rr][rr] = 1;
     return M;
@@ -81,11 +86,11 @@ public:
 
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const override
   {
-    FieldVector<MatrixType, dimFlux> ret(MatrixType(0));
+    FieldVector<MatrixType, dimFlux> ret(MatrixType(dimRange, dimRange, 0));
     ret[0] = create_Bx();
-    ret[1] = create_By();
-    if (dimFlux == 3)
-      ret[2] = create_Bz();
+    ret[1] = create_Bz();
+    //    if (dimFlux == 3)
+    //      ret[2] = create_By();
     return ret;
   } // ... mass_matrix_with_v()
 
@@ -118,7 +123,7 @@ private:
 
   static MatrixType create_Bx()
   {
-    MatrixType Bx(0);
+    MatrixType Bx(dimRange, dimRange, 0);
     const auto& pos = helper<only_positive>::pos;
     for (size_t l1 = 0; l1 <= order; ++l1) {
       for (int m1 = only_positive ? 0 : -l1; size_t(std::abs(m1)) <= l1; ++m1) {
@@ -139,32 +144,32 @@ private:
     return Bx;
   } // ... create_Bx()
 
-  static MatrixType create_By()
-  {
-    MatrixType By(0);
-    const auto& pos = helper<only_positive>::pos;
-    for (size_t l1 = 0; l1 <= order; ++l1) {
-      for (int m1 = only_positive ? 0 : -l1; size_t(std::abs(m1)) <= l1; ++m1) {
-        for (size_t l2 = 0; l2 <= order; ++l2) {
-          for (int m2 = only_positive ? 0 : -l2; size_t(std::abs(m2)) <= l2; ++m2) {
-            if (l1 == l2 + 1 && m1 == m2 + 1)
-              By[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::complex<RangeFieldType>(0, 1) * B_lm(l2 + 1, m2 + 1);
-            if (l1 == l2 - 1 && m1 == m2 + 1)
-              By[pos(l1, m1)][pos(l2, m2)] = -0.5 * std::complex<RangeFieldType>(0, 1) * B_lm(l2, -m2);
-            if (l1 == l2 + 1 && m1 == m2 - 1)
-              By[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::complex<RangeFieldType>(0, 1) * B_lm(l2 + 1, -m2 - 1);
-            if (l1 == l2 - 1 && m1 == m2 - 1)
-              By[pos(l1, m1)][pos(l2, m2)] = -0.5 * std::complex<RangeFieldType>(0, 1) * B_lm(l2, m2);
-          } // m2
-        } // l2
-      } // m1
-    } // l1
-    return By;
-  } // ... create_By()
+  //  static MatrixType create_By()
+  //  {
+  //    MatrixType By(dimRange, dimRange, 0);
+  //    const auto& pos = helper<only_positive>::pos;
+  //    for (size_t l1 = 0; l1 <= order; ++l1) {
+  //      for (int m1 = only_positive ? 0 : -l1; size_t(std::abs(m1)) <= l1; ++m1) {
+  //        for (size_t l2 = 0; l2 <= order; ++l2) {
+  //          for (int m2 = only_positive ? 0 : -l2; size_t(std::abs(m2)) <= l2; ++m2) {
+  //            if (l1 == l2 + 1 && m1 == m2 + 1)
+  //              By[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::complex<RangeFieldType>(0, 1) * B_lm(l2 + 1, m2 + 1);
+  //            if (l1 == l2 - 1 && m1 == m2 + 1)
+  //              By[pos(l1, m1)][pos(l2, m2)] = -0.5 * std::complex<RangeFieldType>(0, 1) * B_lm(l2, -m2);
+  //            if (l1 == l2 + 1 && m1 == m2 - 1)
+  //              By[pos(l1, m1)][pos(l2, m2)] = 0.5 * std::complex<RangeFieldType>(0, 1) * B_lm(l2 + 1, -m2 - 1);
+  //            if (l1 == l2 - 1 && m1 == m2 - 1)
+  //              By[pos(l1, m1)][pos(l2, m2)] = -0.5 * std::complex<RangeFieldType>(0, 1) * B_lm(l2, m2);
+  //          } // m2
+  //        } // l2
+  //      } // m1
+  //    } // l1
+  //    return By;
+  //  } // ... create_By()
 
   static MatrixType create_Bz()
   {
-    MatrixType Bz(0);
+    MatrixType Bz(dimRange, dimRange, 0);
     const auto& pos = helper<only_positive>::pos;
     for (size_t l1 = 0; l1 <= order; ++l1) {
       for (int m1 = only_positive ? 0 : -l1; size_t(std::abs(m1)) <= l1; ++m1) {
@@ -187,7 +192,7 @@ private:
     // Converts a pair (l, m) to a vector index. The vector is ordered by l first, then by m.
     // Each l has 2l+1 values of m, so (l, m) has position
     // (\sum_{k=0}^{l-1} (2k+1)) + (m+l) = l^2 + m + l
-    static size_t pos(const int l, const int m)
+    static size_t pos(const size_t l, const int m)
     {
       return size_t(l * l + m + l);
     }
@@ -206,11 +211,6 @@ private:
   };
 }; // class SphericalHarmonics<DomainFieldType, 3, ...>
 
-template <typename T>
-int sgn(T val)
-{
-  return (T(0) < val) - (val < T(0));
-}
 
 template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_even = false>
 class RealSphericalHarmonics

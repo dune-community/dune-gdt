@@ -239,9 +239,9 @@ struct OctaederStatistics<0>
 };
 
 
-template <class DomainFieldType,
+template <class DomainFieldImp,
           size_t domainDim,
-          class RangeFieldType,
+          class RangeFieldImp,
           size_t rangeDim,
           size_t rangeDimCols = 1,
           size_t fluxDim = domainDim>
@@ -252,7 +252,9 @@ public:
   static const size_t dimRange = rangeDim;
   static const size_t dimRangeCols = rangeDimCols;
   static const size_t dimFlux = fluxDim;
+  typedef DomainFieldImp DomainFieldType;
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
+  typedef RangeFieldImp RangeFieldType;
   typedef DynamicMatrix<RangeFieldType> MatrixType;
   typedef typename XT::Functions::RangeTypeSelector<RangeFieldType, dimRange, dimRangeCols>::type RangeType;
   template <class DiscreteFunctionType>

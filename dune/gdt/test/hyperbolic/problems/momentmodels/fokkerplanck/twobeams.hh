@@ -9,8 +9,8 @@
 //   Rene Milk       (2016 - 2017)
 //   Tobias Leibner  (2016)
 
-#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_TWOBEAMS_HH
-#define DUNE_GDT_HYPERBOLIC_PROBLEMS_TWOBEAMS_HH
+#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_TWOBEAMS_HH
+#define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_TWOBEAMS_HH
 
 #include <dune/xt/functions/affine.hh>
 #include <dune/xt/functions/checkerboard.hh>
@@ -26,32 +26,10 @@ namespace Problems {
 namespace FokkerPlanck {
 
 
-template <class BasisfunctionImp,
-          class GridLayerImp,
-          class EntityImp,
-          class DomainFieldImp,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldImp,
-          size_t dimRange>
-class TwoBeamsPn : public FokkerPlanckEquation<BasisfunctionImp,
-                                               GridLayerImp,
-                                               EntityImp,
-                                               DomainFieldImp,
-                                               dimDomain,
-                                               U_,
-                                               RangeFieldImp,
-                                               dimRange>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
+class TwoBeamsPn : public FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef FokkerPlanckEquation<BasisfunctionImp,
-                               GridLayerImp,
-                               EntityImp,
-                               DomainFieldImp,
-                               dimDomain,
-                               U_,
-                               RangeFieldImp,
-                               dimRange>
-      BaseType;
+  typedef FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -130,47 +108,17 @@ protected:
   using BaseType::basis_functions_;
 }; // class TwoBeamsPn<...>
 
-template <class BasisfunctionType,
-          class GridLayerType,
-          class EntityType,
-          class DomainFieldType,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldType,
-          size_t dimRange>
-class TwoBeamsMn : public TwoBeamsPn<BasisfunctionType,
-                                     GridLayerType,
-                                     EntityType,
-                                     DomainFieldType,
-                                     dimDomain,
-                                     U_,
-                                     RangeFieldType,
-                                     dimRange>
+template <class BasisfunctionType, class GridLayerType, class U_>
+class TwoBeamsMn : public TwoBeamsPn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef TwoBeamsPn<BasisfunctionType,
-                     GridLayerType,
-                     EntityType,
-                     DomainFieldType,
-                     dimDomain,
-                     U_,
-                     RangeFieldType,
-                     dimRange>
-      BaseType;
+  typedef TwoBeamsPn<BasisfunctionType, GridLayerType, U_> BaseType;
   typedef TwoBeamsMn ThisType;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
   using typename BaseType::QuadratureType;
-  typedef EntropyBasedLocalFlux<BasisfunctionType,
-                                GridLayerType,
-                                EntityType,
-                                DomainFieldType,
-                                dimDomain,
-                                U_,
-                                RangeFieldType,
-                                dimRange>
-      ActualFluxType;
+  typedef EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
 
 
   using BaseType::default_grid_cfg;
@@ -209,4 +157,4 @@ protected:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_TWOBEAMS_HH
+#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_TWOBEAMS_HH

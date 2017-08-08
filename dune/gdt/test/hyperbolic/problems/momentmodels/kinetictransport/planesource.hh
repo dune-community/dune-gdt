@@ -24,32 +24,10 @@ namespace Problems {
 namespace KineticTransport {
 
 
-template <class BasisfunctionImp,
-          class GridLayerImp,
-          class EntityImp,
-          class DomainFieldImp,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldImp,
-          size_t dimRange>
-class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp,
-                                                      GridLayerImp,
-                                                      EntityImp,
-                                                      DomainFieldImp,
-                                                      dimDomain,
-                                                      U_,
-                                                      RangeFieldImp,
-                                                      dimRange>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
+class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp,
-                                   GridLayerImp,
-                                   EntityImp,
-                                   DomainFieldImp,
-                                   dimDomain,
-                                   U_,
-                                   RangeFieldImp,
-                                   dimRange>
-      BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -141,46 +119,16 @@ protected:
   using BaseType::psi_vac_;
 }; // class PlaneSourcePn<...>
 
-template <class BasisfunctionType,
-          class GridLayerImp,
-          class EntityType,
-          class DomainFieldType,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldType,
-          size_t dimRange>
-class PlaneSourceMn : public PlaneSourcePn<BasisfunctionType,
-                                           GridLayerImp,
-                                           EntityType,
-                                           DomainFieldType,
-                                           dimDomain,
-                                           U_,
-                                           RangeFieldType,
-                                           dimRange>
+template <class BasisfunctionType, class GridLayerImp, class U_>
+class PlaneSourceMn : public PlaneSourcePn<BasisfunctionType, GridLayerImp, U_>
 {
-  typedef PlaneSourcePn<BasisfunctionType,
-                        GridLayerImp,
-                        EntityType,
-                        DomainFieldType,
-                        dimDomain,
-                        U_,
-                        RangeFieldType,
-                        dimRange>
-      BaseType;
+  typedef PlaneSourcePn<BasisfunctionType, GridLayerImp, U_> BaseType;
   typedef PlaneSourceMn ThisType;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
-  typedef EntropyBasedLocalFlux<BasisfunctionType,
-                                GridLayerImp,
-                                EntityType,
-                                DomainFieldType,
-                                dimDomain,
-                                U_,
-                                RangeFieldType,
-                                dimRange>
-      ActualFluxType;
+  typedef EntropyBasedLocalFlux<BasisfunctionType, GridLayerImp, U_> ActualFluxType;
   using typename BaseType::QuadratureType;
   using typename BaseType::GridLayerType;
 

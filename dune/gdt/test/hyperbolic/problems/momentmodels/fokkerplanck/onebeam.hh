@@ -9,8 +9,8 @@
 //   Rene Milk       (2016 - 2017)
 //   Tobias Leibner  (2016)
 
-#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_ONEBEAM_HH
-#define DUNE_GDT_HYPERBOLIC_PROBLEMS_ONEBEAM_HH
+#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_ONEBEAM_HH
+#define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_ONEBEAM_HH
 
 #include <cmath>
 #include <memory>
@@ -19,37 +19,19 @@
 
 #include <dune/xt/common/string.hh>
 
-#include "kineticequation.hh"
+#include "fokkerplanckequation.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
+namespace FokkerPlanck {
 
 
-template <class BasisfunctionImp,
-          class EntityImp,
-          class DomainFieldImp,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldImp,
-          size_t dimRange>
-class OneBeamPn : public KineticFokkerPlanckEquation<BasisfunctionImp,
-                                                     EntityImp,
-                                                     DomainFieldImp,
-                                                     dimDomain,
-                                                     U_,
-                                                     RangeFieldImp,
-                                                     dimRange>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
+class OneBeamPn : public FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticFokkerPlanckEquation<BasisfunctionImp,
-                                      EntityImp,
-                                      DomainFieldImp,
-                                      dimDomain,
-                                      U_,
-                                      RangeFieldImp,
-                                      dimRange>
-      BaseType;
+  typedef FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -60,13 +42,17 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::QuadratureType;
 
   using BaseType::default_boundary_cfg;
 
   OneBeamPn(const BasisfunctionType& basis_functions,
+            const GridLayerType& grid_layer,
+            const QuadratureType& quadrature = default_quadrature(),
             const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
             const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, quadrature, 10, grid_cfg, boundary_cfg)
   {
   }
 
@@ -95,8 +81,7 @@ public:
                                   std::make_pair("T", std::vector<double>(10, 0)),
                                   std::make_pair("Q", std::vector<double>(10, 0)),
                                   std::make_pair("CFL", std::vector<double>{0.5}),
-                                  std::make_pair("t_end", std::vector<double>{4.0}),
-                                  std::make_pair("num_segments", std::vector<double>{10})});
+                                  std::make_pair("t_end", std::vector<double>{4.0})});
   }
 
 
@@ -130,67 +115,11 @@ protected:
   using BaseType::quadrature_;
 }; // class OneBeamPn<...>
 
-template <class GridViewType,
-          class BasisfunctionType,
-          class EntityType,
-          class DomainFieldType,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldType,
-          size_t dimRange>
-class OneBeamMn
-    : public OneBeamPn<BasisfunctionType, EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange>
-{
-  typedef OneBeamPn<BasisfunctionType, EntityType, DomainFieldType, dimDomain, U_, RangeFieldType, dimRange> BaseType;
-  typedef OneBeamMn ThisType;
 
-public:
-  using typename BaseType::FluxType;
-  using typename BaseType::RangeType;
-  using typename BaseType::QuadratureType;
-  typedef EntropyBasedLocalFlux<GridViewType,
-                                BasisfunctionType,
-                                EntityType,
-                                DomainFieldType,
-                                dimDomain,
-                                U_,
-                                RangeFieldType,
-                                dimRange>
-      ActualFluxType;
-
-
-  using BaseType::default_grid_cfg;
-  using BaseType::default_boundary_cfg;
-
-  OneBeamMn(const BasisfunctionType& basis_functions,
-            const GridViewType& grid_view,
-            const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-            const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_cfg, boundary_cfg)
-    , grid_view_(grid_view)
-  {
-  }
-
-  static std::string static_id()
-  {
-    return "onebeammn";
-  }
-
-  virtual FluxType* create_flux() const
-  {
-    return new ActualFluxType(grid_view_, quadrature_, basis_functions_);
-  }
-
-protected:
-  using BaseType::basis_functions_;
-  const GridViewType& grid_view_;
-  using BaseType::quadrature_;
-}; // class OneBeamMn<...>
-
-
+} // namespace FokkerPlanck
 } // namespace Problems
 } // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_ONEBEAM_HH
+#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_ONEBEAM_HH

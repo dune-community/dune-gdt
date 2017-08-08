@@ -66,34 +66,10 @@ struct BSpline<0, i, D, R>
   }
 };
 
-template <class BasisfunctionImp,
-          class GridLayerImp,
-          class EntityImp,
-          class DomainFieldImp,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldImp,
-          size_t dimRange>
-class LineSourcePn : public KineticTransportEquation<BasisfunctionImp,
-                                                     GridLayerImp,
-                                                     EntityImp,
-                                                     DomainFieldImp,
-                                                     dimDomain,
-                                                     U_,
-                                                     RangeFieldImp,
-                                                     dimRange,
-                                                     dimDomain + 1>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
+class LineSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, dimDomain + 1>
 {
-  typedef KineticTransportEquation<BasisfunctionImp,
-                                   GridLayerImp,
-                                   EntityImp,
-                                   DomainFieldImp,
-                                   dimDomain,
-                                   U_,
-                                   RangeFieldImp,
-                                   dimRange,
-                                   dimDomain + 1>
-      BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, dimDomain + 1> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -175,47 +151,20 @@ protected:
   using BaseType::psi_vac_;
 }; // class LineSourcePn<...>
 
-template <class BasisfunctionType,
-          class GridLayerType,
-          class EntityType,
-          class DomainFieldType,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldType,
-          size_t dimRange>
-class LineSourceMn : public LineSourcePn<BasisfunctionType,
-                                         GridLayerType,
-                                         EntityType,
-                                         DomainFieldType,
-                                         dimDomain,
-                                         U_,
-                                         RangeFieldType,
-                                         dimRange>
+template <class BasisfunctionType, class GridLayerType, class U_>
+class LineSourceMn : public LineSourcePn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef LineSourcePn<BasisfunctionType,
-                       GridLayerType,
-                       EntityType,
-                       DomainFieldType,
-                       dimDomain,
-                       U_,
-                       RangeFieldType,
-                       dimRange>
-      BaseType;
+  typedef LineSourcePn<BasisfunctionType, GridLayerType, U_> BaseType;
   typedef LineSourceMn ThisType;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
-  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType,
-                                     GridLayerType,
-                                     EntityType,
-                                     DomainFieldType,
-                                     dimDomain,
-                                     U_,
-                                     RangeFieldType,
-                                     dimRange,
-                                     dimDomain + 1>
-      ActualFluxType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::DomainFieldType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_, dimDomain + 1> ActualFluxType;
   using typename BaseType::QuadratureType;
 
   using BaseType::default_grid_cfg;
@@ -238,7 +187,7 @@ public:
 
   static std::string static_id()
   {
-    return "modifiedlinesourcemn";
+    return "linesourcemn";
   }
 
   virtual FluxType* create_flux() const
@@ -268,7 +217,6 @@ class LineSourceTestCase
                                    typename Problems::KineticTransport::
                                        LineSourcePn<B,
                                                     typename G::LevelGridView,
-                                                    typename G::template Codim<0>::Entity,
                                                     typename G::ctype,
                                                     G::dimension,
                                                     DiscreteFunction<FvProductSpace<typename G::LevelGridView,
@@ -282,7 +230,6 @@ class LineSourceTestCase
                                                     R,
                                                     B::dimRange>>>
 {
-  typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
 
 public:
@@ -292,7 +239,6 @@ public:
       typename Problems::KineticTransport::
           LineSourcePn<B,
                        typename G::LevelGridView,
-                       E,
                        D,
                        d,
                        DiscreteFunction<FvProductSpace<typename G::LevelGridView, double, B::dimRange, 1>,
@@ -358,20 +304,14 @@ class LineSourceMnTestCase
                                    typename Problems::KineticTransport::LineSourceMn<
                                        typename XT::Grid::PeriodicGridView<typename G::LevelGridView>,
                                        B,
-                                       typename G::template Codim<0>::Entity,
-                                       typename G::ctype,
-                                       G::dimension,
                                        DiscreteFunction<FvProductSpace<typename G::LevelGridView,
                                                                        double,
                                                                        B::dimRange,
                                                                        1>,
                                                         typename Dune::XT::LA::
                                                             Container<double,
-                                                                      XT::LA::default_sparse_backend>::VectorType>,
-                                       R,
-                                       B::dimRange>>>
+                                                                      XT::LA::default_sparse_backend>::VectorType>>>>
 {
-  typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
 
 public:
@@ -380,7 +320,6 @@ public:
   typedef typename Hyperbolic::Problems::KineticEquation<typename Problems::KineticTransport::LineSourceMn<
       typename XT::Grid::PeriodicGridView<typename G::LevelGridView>,
       B,
-      E,
       D,
       d,
       DiscreteFunction<FvProductSpace<typename G::LevelGridView, double, B::dimRange, 1>,

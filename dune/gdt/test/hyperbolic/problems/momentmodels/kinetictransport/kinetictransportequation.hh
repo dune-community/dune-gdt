@@ -25,40 +25,17 @@ namespace Hyperbolic {
 namespace Problems {
 
 
-template <class BasisfunctionImp,
-          class GridLayerImp,
-          class EntityImp,
-          class DomainFieldImp,
-          size_t domainDim,
-          class U_,
-          class RangeFieldImp,
-          size_t rangeDim,
-          size_t quadratureDim = domainDim>
-class KineticTransportEquation : public KineticEquationImplementation<BasisfunctionImp,
-                                                                      GridLayerImp,
-                                                                      EntityImp,
-                                                                      DomainFieldImp,
-                                                                      domainDim,
-                                                                      U_,
-                                                                      RangeFieldImp,
-                                                                      rangeDim>,
+template <class BasisfunctionImp, class GridLayerImp, class U_, size_t quadratureDim = BasisfunctionImp::dimDomain>
+class KineticTransportEquation : public KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_>,
                                  public XT::Common::ParametricInterface
 {
   typedef KineticTransportEquation ThisType;
-  typedef KineticEquationImplementation<BasisfunctionImp,
-                                        GridLayerImp,
-                                        EntityImp,
-                                        DomainFieldImp,
-                                        domainDim,
-                                        U_,
-                                        RangeFieldImp,
-                                        rangeDim>
-      BaseType;
+  typedef KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
+  static const bool linear = true;
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
-  using typename BaseType::EntityType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::StateType;
   using typename BaseType::RangeFieldType;
@@ -112,7 +89,7 @@ public:
   KineticTransportEquation(const BasisfunctionType& basis_functions,
                            const GridLayerType& grid_layer,
                            const QuadratureType quadrature = QuadratureType(),
-                           const FieldVector<size_t, dimDomain> num_segments = {1, 1, 1},
+                           const DynamicVector<size_t> num_segments = {1, 1, 1},
                            const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                            const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
                            const RangeFieldType psi_vac = 5e-9,
@@ -263,9 +240,10 @@ public:
   }
 
 protected:
-  static size_t get_num_regions(const FieldVector<size_t, dimDomain>& num_segments)
+  static size_t get_num_regions(const DynamicVector<size_t>& num_segments)
   {
-    return std::accumulate(num_segments.begin(), num_segments.end(), 1, [](auto a, auto b) { return a * b; });
+    return std::accumulate(
+        num_segments.begin(), num_segments.begin() + dimDomain, 1, [](auto a, auto b) { return a * b; });
   }
 
   static RangeFieldType unit_ball_volume()
@@ -283,7 +261,7 @@ protected:
   }
 
   using BaseType::basis_functions_;
-  const FieldVector<size_t, dimDomain> num_segments_;
+  const DynamicVector<size_t> num_segments_;
   const XT::Common::Configuration grid_cfg_;
   const XT::Common::Configuration boundary_cfg_;
   const RangeFieldType psi_vac_;

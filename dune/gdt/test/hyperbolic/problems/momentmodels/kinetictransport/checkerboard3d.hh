@@ -26,32 +26,10 @@ namespace Hyperbolic {
 namespace Problems {
 namespace KineticTransport {
 
-template <class BasisfunctionImp,
-          class GridLayerImp,
-          class EntityImp,
-          class DomainFieldImp,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldImp,
-          size_t dimRange>
-class CheckerboardPn : public KineticTransportEquation<BasisfunctionImp,
-                                                       GridLayerImp,
-                                                       EntityImp,
-                                                       DomainFieldImp,
-                                                       dimDomain,
-                                                       U_,
-                                                       RangeFieldImp,
-                                                       dimRange>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
+class CheckerboardPn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp,
-                                   GridLayerImp,
-                                   EntityImp,
-                                   DomainFieldImp,
-                                   dimDomain,
-                                   U_,
-                                   RangeFieldImp,
-                                   dimRange>
-      BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -145,46 +123,16 @@ protected:
   using BaseType::psi_vac_;
 }; // class PointSourcePn<...>
 
-template <class BasisfunctionType,
-          class GridLayerType,
-          class EntityType,
-          class DomainFieldType,
-          size_t dimDomain,
-          class U_,
-          class RangeFieldType,
-          size_t dimRange>
-class PointSourceMn : public PointSourcePn<BasisfunctionType,
-                                           GridLayerType,
-                                           EntityType,
-                                           DomainFieldType,
-                                           dimDomain,
-                                           U_,
-                                           RangeFieldType,
-                                           dimRange>
+template <class BasisfunctionType, class GridLayerType, class U_>
+class PointSourceMn : public PointSourcePn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef PointSourcePn<BasisfunctionType,
-                        GridLayerType,
-                        EntityType,
-                        DomainFieldType,
-                        dimDomain,
-                        U_,
-                        RangeFieldType,
-                        dimRange>
-      BaseType;
+  typedef PointSourcePn<BasisfunctionType, GridLayerType, U_> BaseType;
   typedef PointSourceMn ThisType;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
-  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType,
-                                     GridLayerType,
-                                     EntityType,
-                                     DomainFieldType,
-                                     dimDomain,
-                                     U_,
-                                     RangeFieldType,
-                                     dimRange>
-      ActualFluxType;
+  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
   using typename BaseType::QuadratureType;
 
   using BaseType::default_grid_cfg;
