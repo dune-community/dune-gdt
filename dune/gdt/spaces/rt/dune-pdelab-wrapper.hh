@@ -124,7 +124,7 @@ public:
       BaseFunctionSetType;
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static const bool needs_grid_view = true;
-  typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
+  typedef CommunicationChooser<GridLayerType, false> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
 
 private:
@@ -176,7 +176,7 @@ public:
     , fe_map_(grid_view_)
     , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
-    , communicator_(CommunicationChooser<GridLayerType>::create(grid_view_))
+    , communicator_(Traits::CommunicationChooserType::create(grid_view_))
     , communicator_prepared_(false)
   {
   }
@@ -191,7 +191,7 @@ public:
     , fe_map_(grid_view_)
     , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
-    , communicator_(CommunicationChooser<GridLayerType>::create(grid_view_))
+    , communicator_(Traits::CommunicationChooserType::create(grid_view_))
     , communicator_prepared_(false)
   {
     // make sure our new communicator is prepared if other's was
@@ -247,7 +247,7 @@ public:
   {
     DUNE_UNUSED std::lock_guard<std::mutex> gg(communicator_mutex_);
     if (!communicator_prepared_)
-      communicator_prepared_ = CommunicationChooser<GridLayerType>::prepare(*this, *communicator_);
+      communicator_prepared_ = Traits::CommunicationChooserType::prepare(*this, *communicator_);
     return *communicator_;
   } // ... communicator(...)
 

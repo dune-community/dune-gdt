@@ -180,7 +180,7 @@ public:
     DUNE_THROW(NotImplemented, "RT spaces do not implement constraints!");
   }
 
-  static constexpr bool associates_data_with(int codim) const
+  static constexpr bool associates_data_with(int codim)
   {
     return codim < dimDomain;
   }
