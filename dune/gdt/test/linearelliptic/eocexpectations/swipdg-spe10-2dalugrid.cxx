@@ -32,19 +32,19 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::Spe10Model1Tes
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.00e+00, 5.46e+00};
+    return {1.03e+00, 1.58e+00};
 #else
     return {9.48e-03, 2.64e-03};
 #endif
   } else if (type == "H1_semi") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.00e+00, 6.24e+00};
+    return {1.20e+00, 1.65e+00};
 #else
     return {1.09e-01, 5.36e-02};
 #endif
   } else if (type == "energy") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.00e+00, 9.69e+01};
+    return {6.88e+00, 8.85e+00};
 #else
     return {1.37e-01, 6.60e-02};
 #endif
@@ -65,19 +65,19 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::Spe10Model1Tes
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.00e+00, 3.59e+00};
+    return {9.42e-01, 1.44e+00};
 #else
-    return {2.74e-03, 8.75e-04};
+    return {1.05e+00, 1.05e+00};
 #endif
   } else if (type == "H1_semi") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.00e+00, 3.70e+00};
+    return {1.26e+00, 1.83e+00};
 #else
     return {4.91e-02, 2.26e-02};
 #endif
   } else if (type == "energy") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.00e+00, 3.69e+01};
+    return {7.11e+00, 1.07e+01};
 #else
     return {5.60e-02, 2.58e-02};
 #endif
@@ -98,19 +98,19 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::Spe10Model1Tes
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.00e+00, 1.66e+00};
+    return {1.05e+00, 1.04e+00};
 #else
     return {9.43e-03, 2.55e-03};
 #endif
   } else if (type == "H1_semi") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.00e+00, 1.55e+00};
+    return {1.34e+00, 1.15e+00};
 #else
     return {1.43e-01, 7.04e-02};
 #endif
   } else if (type == "energy") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.00e+00, 1.73e+01};
+    return {6.94e+00, 4.95e+00};
 #else
     return {1.74e-01, 8.53e-02};
 #endif
@@ -131,19 +131,19 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::Spe10Model1Tes
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.00e+00, 1.15e+00};
+    return {9.99e-01, 9.74e-01};
 #else
     return {2.13e-03, 6.56e-04};
 #endif
   } else if (type == "H1_semi") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.00e+00, 1.49e+00};
+    return {1.27e+00, 1.53e+00};
 #else
     return {6.41e-02, 3.24e-02};
 #endif
   } else if (type == "energy") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.00e+00, 8.28e+00};
+    return {7.03e+00, 8.36e+00};
 #else
     return {7.56e-02, 3.81e-02};
 #endif

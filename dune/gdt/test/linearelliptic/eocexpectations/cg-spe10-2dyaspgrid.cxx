@@ -27,19 +27,19 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::Spe10Model1Tes
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.41e+00, 1.00e+00};
+    return {1.04e+00, 7.25e-01};
 #else
     return {1.86e-02, 1.51e-02};
 #endif
   } else if (type == "H1_semi") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.10e+00, 1.00e+00};
+    return {1.02e+00, 1.01e+00};
 #else
     return {3.31e-01, 4.32e-01};
 #endif
   } else if (type == "energy") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.28e+00, 1.00e+00};
+    return {1.43e+00, 3.24e+00};
 #else
     return {9.58e-01, 1.37e+00};
 #endif
