@@ -119,9 +119,8 @@ public:
           if (dimDomain == 1)
             return RangeType(std::sin(M_PI * x[0]));
           else
-            return RangeType(1.0 / 40.0 * std::exp(1 - (2 * M_PI * x[0] - M_PI) * (2 * M_PI * x[0] - M_PI)
-                                                   - (2 * M_PI * x[1] - M_PI)
-                                                         * (2 * M_PI * x[1] - M_PI))); // bump, only in 2D or higher
+            return RangeType(1.0 / 40.0 * std::exp(1 - std::pow(M_PI * (2 * x[0] - 1), 2)
+                                                   - std::pow(M_PI * (2 * x[1] - 1), 2))); // bump, only in 2D or higher
         },
         10);
   } // ... create_initial_values()

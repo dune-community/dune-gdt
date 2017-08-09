@@ -33,7 +33,7 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp2,
 {
   if (type == "L1") {
     if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0))
-      return {1.79e-03, 8.44e-04};
+      return {1.83e-03, 8.49e-04};
     else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
       return {3.60e-04, 1.70e-04};
     else

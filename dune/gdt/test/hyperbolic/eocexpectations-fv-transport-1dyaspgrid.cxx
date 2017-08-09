@@ -44,7 +44,7 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     else
-      return {3.44e-01, 3.10e-01, 2.40e-01, 1.64e-01, 1.09e-01};
+      return {3.58e-01, 3.14e-01, 2.40e-01, 1.64e-01, 1.10e-01};
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
