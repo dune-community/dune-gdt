@@ -26,6 +26,7 @@ namespace Hyperbolic {
 namespace Problems {
 namespace KineticTransport {
 
+#if 0
 template <class BasisfunctionImp, class GridLayerImp, class U_>
 class CheckerboardPn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
@@ -641,6 +642,7 @@ public:
 
 }; // class CheckerboardPnHatFunctions
 
+#endif
 
 } // namespace KineticTransport
 } // namespace Problems

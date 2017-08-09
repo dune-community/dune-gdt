@@ -17,6 +17,8 @@
 #include <dune/xt/functions/lambda/global-function.hh>
 #include <dune/xt/functions/lambda/global-flux-function.hh>
 
+#include <dune/gdt/local/fluxes/entropybased.hh>
+
 #include "kinetictransportequation.hh"
 
 namespace Dune {
@@ -123,11 +125,11 @@ public:
   using BaseType::default_boundary_cfg;
   using BaseType::default_quadrature;
 
-  TwoBeamsFokkerPlanckMn(const BasisfunctionType& basis_functions,
-                         const GridLayerType& grid_layer,
-                         const QuadratureType& quadrature,
-                         const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-                         const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+  TwoBeamsMn(const BasisfunctionType& basis_functions,
+             const GridLayerType& grid_layer,
+             const QuadratureType& quadrature,
+             const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+             const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, quadrature, grid_cfg, boundary_cfg)
   {
   }

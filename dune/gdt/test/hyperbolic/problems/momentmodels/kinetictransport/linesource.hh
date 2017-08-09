@@ -67,9 +67,9 @@ struct BSpline<0, i, D, R>
 };
 
 template <class BasisfunctionImp, class GridLayerImp, class U_>
-class LineSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, dimDomain + 1>
+class LineSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, dimDomain + 1> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
   using typename BaseType::InitialValueType;

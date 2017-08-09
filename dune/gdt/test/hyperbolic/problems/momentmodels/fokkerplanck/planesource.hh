@@ -24,10 +24,10 @@ namespace Problems {
 namespace FokkerPlanck {
 
 
-template <class BasisfunctionImp, class GridLayerType, class U_>
-class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerType, U_>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
+class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerType, U_> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
   using typename BaseType::InitialValueType;

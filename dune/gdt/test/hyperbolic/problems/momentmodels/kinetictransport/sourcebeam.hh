@@ -17,12 +17,11 @@
 #include <vector>
 #include <string>
 
-#include <dune/pdelab/common/crossproduct.hh>
-
-#include <dune/gdt/test/instationary-eocstudy.hh>
-
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/math.hh>
+
+#include <dune/gdt/local/fluxes/entropybased.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
 
 #include "kinetictransportequation.hh"
 
@@ -50,16 +49,18 @@ public:
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
   using typename BaseType::QuadratureType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_quadrature;
 
   SourceBeamPn(const BasisfunctionType& basis_functions,
                const GridLayerType& grid_layer,
-               const QuadratureType& quadrature = default_quadrature();
+               const QuadratureType& quadrature = default_quadrature(),
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer_, quadrature_, 6, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, quadrature, 6, grid_cfg, boundary_cfg)
   {
   }
 
@@ -234,7 +235,7 @@ public:
 
   SourceBeamMn(const BasisfunctionType& basis_functions,
                const GridLayerType& grid_layer,
-               const QuadratureType& quadrature = default_quadrature();
+               const QuadratureType& quadrature = default_quadrature(),
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
     : BaseType(basis_functions, grid_layer, quadrature, grid_cfg, boundary_cfg)
@@ -253,6 +254,7 @@ public:
 
 protected:
   using BaseType::basis_functions_;
+  using BaseType::grid_layer_;
   using BaseType::quadrature_;
 }; // class SourceBeamMn<...>
 

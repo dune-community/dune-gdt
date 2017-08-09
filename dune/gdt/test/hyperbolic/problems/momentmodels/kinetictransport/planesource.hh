@@ -15,6 +15,8 @@
 
 #include <dune/xt/common/string.hh>
 
+#include <dune/gdt/local/fluxes/entropybased.hh>
+
 #include "kinetictransportequation.hh"
 
 namespace Dune {

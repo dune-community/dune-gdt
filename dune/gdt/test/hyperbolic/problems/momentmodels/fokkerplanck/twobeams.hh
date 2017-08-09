@@ -17,6 +17,8 @@
 #include <dune/xt/functions/lambda/global-function.hh>
 #include <dune/xt/functions/lambda/global-flux-function.hh>
 
+#include <dune/gdt/local/fluxes/entropybased.hh>
+
 #include "fokkerplanckequation.hh"
 
 namespace Dune {
