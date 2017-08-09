@@ -153,7 +153,9 @@ private:
 public:
   SourceBeamTestCase(const size_t num_refs = 1, const double divide_t_end_by = 1.0)
     : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
-    , problem_(BasisfunctionType(), BaseType::level_view(0))
+    , basis_functions_()
+    , level_grid_view_(BaseType::level_view(0))
+    , problem_(basis_functions_, level_grid_view_)
   {
   }
 
@@ -188,6 +190,8 @@ public:
   }
 
 private:
+  const BasisfunctionType basis_functions_;
+  const typename G::LevelGridView level_grid_view_;
   const ProblemType problem_;
 }; // class SourceBeamTestCase
 

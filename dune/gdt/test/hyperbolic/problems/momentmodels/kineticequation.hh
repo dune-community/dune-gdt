@@ -60,7 +60,7 @@ public:
   }
 
   template <class BasisfunctionType, class GridLayerType>
-  KineticEquation(const BasisfunctionType& basis_funcs, const GridLayerType grid_layer)
+  KineticEquation(const BasisfunctionType& basis_funcs, const GridLayerType& grid_layer)
     : KineticEquation(ImplementationType(basis_funcs, grid_layer))
   {
   }
