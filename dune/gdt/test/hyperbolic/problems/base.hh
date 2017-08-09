@@ -13,6 +13,8 @@
 
 #include <dune/xt/common/memory.hh>
 
+#include <dune/xt/grid/gridprovider/cube.hh>
+
 #include "interface.hh"
 
 namespace Dune {
