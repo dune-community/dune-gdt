@@ -193,7 +193,7 @@ class PointSourceTestCase
 
 public:
   static const size_t d = G::dimension;
-  static_assert(d == 3, "Only implemented for dimension 1.");
+  static_assert(d == 3, "Only implemented for dimension 3.");
   typedef typename Hyperbolic::Problems::KineticEquation<
       typename Problems::KineticTransport::
           PointSourcePn<B,
