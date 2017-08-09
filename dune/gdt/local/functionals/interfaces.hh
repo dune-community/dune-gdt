@@ -17,7 +17,10 @@
 #include <dune/common/dynvector.hh>
 
 #include <dune/xt/common/crtp.hh>
+
 #include <dune/xt/functions/type_traits.hh>
+
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/spaces/basefunctionset/interface.hh>
 
