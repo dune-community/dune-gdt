@@ -1,10 +1,13 @@
 #ifndef DUNE_GDT_ASSEMBLER_CODIM0MATRIXDATAHANDLE_HH
 #define DUNE_GDT_ASSEMBLER_CODIM0MATRIXDATAHANDLE_HH
 
+#include <cmath>
+
 #include <dune/grid/common/datahandleif.hh>
 
 namespace Dune {
 namespace GDT {
+
 
 // datahandle for a Dune::XT::LA::MatrixInterface matrix that can be assembled from local matrices on each entity
 template <class MatrixType, class SpaceType>

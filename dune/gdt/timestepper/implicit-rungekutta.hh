@@ -11,7 +11,6 @@
 
 #include <utility>
 
-
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/string.hh>
