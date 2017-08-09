@@ -105,9 +105,7 @@ public:
         double spatial_integral = 0;
         // walk over all entities, solution is constant on each entity
         const auto& grid_layer = solution_it->second.space().grid_layer();
-        const auto it_end = grid_layer.template end<0>();
-        for (auto it = grid_layer.template begin<0>(); it != it_end; ++it) {
-          const auto& entity = *it;
+        for (const auto& entity : Dune::elements(grid_layer)) {
           double value = 0;
           for (const auto& index : solution_it->second.space().mapper().globalIndices(entity))
             value += std::abs(solution_it->second.vector().get_entry(index));

@@ -89,7 +89,7 @@ public:
   KineticTransportEquation(const BasisfunctionType& basis_functions,
                            const GridLayerType& grid_layer,
                            const QuadratureType quadrature = QuadratureType(),
-                           const DynamicVector<size_t> num_segments = {1, 1, 1},
+                           DynamicVector<size_t> num_segments = {1, 1, 1},
                            const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                            const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
                            const RangeFieldType psi_vac = 5e-9,
@@ -102,6 +102,7 @@ public:
     , quadrature_(quadrature)
     , parameter_type_(parameter_type)
   {
+    num_segments_.resize(dimDomain);
     if (quadrature_.empty())
       quadrature_ = default_quadrature(grid_cfg);
     if (parameter_type_.empty())
@@ -242,17 +243,16 @@ public:
 protected:
   static size_t get_num_regions(const DynamicVector<size_t>& num_segments)
   {
-    return std::accumulate(
-        num_segments.begin(), num_segments.begin() + dimDomain, 1, [](auto a, auto b) { return a * b; });
+    return std::accumulate(num_segments.begin(), num_segments.end(), 1, [](auto a, auto b) { return a * b; });
   }
 
   static RangeFieldType unit_ball_volume()
   {
-    if (dimDomain == 1)
+    if (BasisfunctionType::dimDomain == 1)
       return 2;
-    else if (dimDomain == 2)
+    else if (BasisfunctionType::dimDomain == 2)
       return 2 * M_PI;
-    else if (dimDomain == 3)
+    else if (BasisfunctionType::dimDomain == 3)
       return 4 * M_PI;
     else {
       DUNE_THROW(NotImplemented, "");
@@ -261,7 +261,7 @@ protected:
   }
 
   using BaseType::basis_functions_;
-  const DynamicVector<size_t> num_segments_;
+  DynamicVector<size_t> num_segments_;
   const XT::Common::Configuration grid_cfg_;
   const XT::Common::Configuration boundary_cfg_;
   const RangeFieldType psi_vac_;

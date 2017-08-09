@@ -44,6 +44,10 @@ public:
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
   using typename BaseType::QuadratureType;
+  using typename BaseType::BoundaryValueType;
+  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
   using BaseType::dimDomain;
 
   static XT::Common::Configuration default_boundary_cfg()
@@ -93,6 +97,14 @@ public:
                                   std::make_pair("t_end", std::vector<double>{3.2})});
   }
 
+  // boundary value is 0
+  virtual BoundaryValueType* create_boundary_values() const override
+  {
+    return new ActualBoundaryValueType([=](const DomainType&, const XT::Common::Parameter&) { return RangeType(0); },
+                                       0);
+  } // ... create_boundary_values()
+
+
 protected:
   static std::vector<double> create_sigma_a()
   {
@@ -115,7 +127,7 @@ protected:
   static std::vector<double> create_Q()
   {
     std::vector<double> Q(std::pow(7, dimDomain));
-    Q[7 * 3 + 3] = 1.;
+    Q[7 * 3 + 3] = 1. / std::sqrt(4. * M_PI);
     return Q;
   }
 
