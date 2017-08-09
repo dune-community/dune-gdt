@@ -17,6 +17,8 @@
 #include <dune/xt/common/debug.hh>
 #include <dune/xt/common/type_traits.hh>
 
+#include <dune/xt/grid/type_traits.hh>
+
 #include <dune/gdt/spaces/basefunctionset/product.hh>
 
 #include "interfaces.hh"

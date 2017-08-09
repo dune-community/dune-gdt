@@ -16,6 +16,8 @@
 
 #include <dune/xt/common/tuple.hh>
 
+#include <dune/xt/grid/type_traits.hh>
+
 #include <dune/gdt/spaces/basefunctionset/product.hh>
 #include <dune/gdt/spaces/mapper/product.hh>
 #include <dune/gdt/spaces/cg.hh>
