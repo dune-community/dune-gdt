@@ -182,7 +182,7 @@ public:
       A -= I_scaled;
       RangeType b = basis_integrated;
       b *= Q[ii];
-      affine_functions.emplace_back(A, b, "rhs");
+      affine_functions.emplace_back(A, b, true, "rhs");
     } // ii
     return new ActualRhsType(lower_left, upper_right, num_segments_, affine_functions);
   } // ... create_rhs(...)
