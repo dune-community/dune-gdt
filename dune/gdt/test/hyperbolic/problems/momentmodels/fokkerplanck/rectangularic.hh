@@ -111,6 +111,7 @@ protected:
 }; // class RectangularICPn<...>
 
 
+} // namespace FokkerPlanck
 } // namespace Problems
 } // namespace Hyperbolic
 } // namespace GDT

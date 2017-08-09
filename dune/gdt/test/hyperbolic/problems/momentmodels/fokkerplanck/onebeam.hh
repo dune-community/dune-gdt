@@ -46,6 +46,7 @@ public:
   using typename BaseType::QuadratureType;
 
   using BaseType::default_boundary_cfg;
+  using BaseType::default_quadrature;
 
   OneBeamPn(const BasisfunctionType& basis_functions,
             const GridLayerType& grid_layer,

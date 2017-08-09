@@ -45,6 +45,7 @@ public:
   using typename BaseType::QuadratureType;
 
   using BaseType::default_boundary_cfg;
+  using BaseType::default_quadrature;
 
   static std::string static_id()
   {
@@ -111,6 +112,7 @@ protected:
 }; // class TwoPulsesPn<...>
 
 
+} // namespace FokkerPlanck
 } // namespace Problems
 } // namespace Hyperbolic
 } // namespace GDT
