@@ -95,7 +95,7 @@ public:
     RangeType basis_integrated = basis_functions_.integrated();
     RangeType left_boundary_value(0);
     for (const auto& quadpoint : quadrature_) {
-      const auto& v = quad_point.position();
+      const auto& v = quadpoint.position();
       left_boundary_value +=
           basis_functions_.evaluate(v) * 3. * std::exp(3. * v[0] + 3.) / (std::exp(6) - 1) * quadpoint.weight();
     }
@@ -104,7 +104,7 @@ public:
           auto ret = left_boundary_value;
           ret *= 0.5 - x[0];
           auto right_boundary_value = basis_integrated;
-          right_boundary_value *= psi_vac * (0.5 + x[0]);
+          right_boundary_value *= psi_vac_ * (0.5 + x[0]);
           ret += right_boundary_value;
           return ret;
         },
@@ -114,6 +114,7 @@ public:
 protected:
   using BaseType::basis_functions_;
   using BaseType::quadrature_;
+  using BaseType::psi_vac_;
 }; // class OneBeamPn<...>
 
 
