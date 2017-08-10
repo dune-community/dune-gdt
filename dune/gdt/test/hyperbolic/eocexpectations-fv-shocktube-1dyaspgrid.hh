@@ -12,15 +12,8 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_FV_SHOCKTUBE_1DYASPGRID_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_FV_SHOCKTUBE_1DYASPGRID_HH
 
-#include "config.h"
-
-#include <dune/grid/yaspgrid.hh>
-
-#include <dune/gdt/test/hyperbolic/discretizers/fv.hh>
-
 #include "problems/sodshocktube.hh"
 #include "eocexpectations.hh"
-
 
 namespace Dune {
 namespace GDT {
@@ -32,6 +25,7 @@ class HyperbolicEocExpectations<Hyperbolic::ShockTubeTestCase<Yasp1, double>,
                                 Hyperbolic::ChooseDiscretizer::fv,
                                 1,
                                 NumericalFluxes::godunov,
+                                TimeStepperMethods::explicit_euler,
                                 TimeStepperMethods::explicit_euler> : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::ShockTubeTestCase<Yasp1, double> TestCaseType;
@@ -45,6 +39,7 @@ class HyperbolicEocExpectations<Hyperbolic::ShockTubeTestCase<Yasp1, double>,
                                 Hyperbolic::ChooseDiscretizer::fv,
                                 1,
                                 NumericalFluxes::godunov,
+                                TimeStepperMethods::dormand_prince,
                                 TimeStepperMethods::dormand_prince> : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::ShockTubeTestCase<Yasp1, double> TestCaseType;
@@ -58,6 +53,7 @@ class HyperbolicEocExpectations<Hyperbolic::ShockTubeTestCase<Yasp1, double>,
                                 Hyperbolic::ChooseDiscretizer::fv,
                                 1,
                                 NumericalFluxes::laxfriedrichs,
+                                TimeStepperMethods::explicit_euler,
                                 TimeStepperMethods::explicit_euler> : public internal::HyperbolicEocExpectationsBase<1>
 {
   typedef Hyperbolic::ShockTubeTestCase<Yasp1, double> TestCaseType;

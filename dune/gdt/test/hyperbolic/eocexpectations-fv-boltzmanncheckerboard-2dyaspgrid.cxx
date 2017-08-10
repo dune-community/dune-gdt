@@ -9,22 +9,25 @@
 //   Rene Milk       (2016 - 2017)
 //   Tobias Leibner  (2016)
 
-#include <config.h>
+#include "config.h"
 #include "eocexpectations-fv-boltzmanncheckerboard-2dyaspgrid.hh"
+
 namespace Dune {
 namespace GDT {
 namespace Test {
 
 
-std::vector<double> HyperbolicEocExpectations<Hyperbolic::Boltzmann2DCheckerboardTestCase<Yasp2, double, 1>,
+std::vector<double> HyperbolicEocExpectations<Hyperbolic::CheckerboardTestCase<Yasp2, double, 1>,
                                               Hyperbolic::ChooseDiscretizer::fv,
                                               2,
                                               NumericalFluxes::godunov,
+                                              TimeStepperMethods::explicit_euler,
                                               TimeStepperMethods::explicit_euler>::
-    results(const HyperbolicEocExpectations<Hyperbolic::Boltzmann2DCheckerboardTestCase<Yasp2, double, 1>,
+    results(const HyperbolicEocExpectations<Hyperbolic::CheckerboardTestCase<Yasp2, double, 1>,
                                             Hyperbolic::ChooseDiscretizer::fv,
                                             2,
                                             NumericalFluxes::godunov,
+                                            TimeStepperMethods::explicit_euler,
                                             TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
             const std::string type)
 {
@@ -39,6 +42,7 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::Boltzmann2DCheckerboar
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
 }
+
 
 } // namespace Test
 } // namespace GDT

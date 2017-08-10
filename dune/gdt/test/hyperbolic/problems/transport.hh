@@ -18,17 +18,93 @@
 
 #include <dune/xt/common/parameter.hh>
 
-#include <dune/xt/functions/composition.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
-#include <dune/gdt/test/instationary-eocstudy.hh>
+#include <dune/xt/functions/affine.hh>
+#include <dune/xt/functions/composition.hh>
+#include <dune/xt/functions/lambda/global-function.hh>
+#include <dune/xt/functions/lambda/global-flux-function.hh>
 
-#include "default.hh"
+#include <dune/gdt/test/instationary-testcase.hh>
+#include <dune/gdt/discretefunction/default.hh>
+
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
+namespace {
 
+
+template <class DomainType>
+double pow1(const DomainType& x, const size_t ii)
+{
+  return std::pow(x[ii] - 0.2, 2);
+}
+template <class DomainType>
+double pow2(const DomainType& x, const size_t ii)
+{
+  return std::pow(x[ii] - 0.4, 2);
+}
+template <class DomainType>
+double exp1(const DomainType& x, const size_t ii)
+{
+  return std::exp(0.02 - pow1(x, ii) - pow2(x, ii));
+}
+
+template <size_t dim>
+struct initial_vals_helper
+{
+  template <class DomainType, class RangeType>
+  static void evaluate(const DomainType& x, RangeType& ret)
+  {
+    if (Dune::XT::Common::FloatCmp::ge(x, DomainType(0.2)) && XT::Common::FloatCmp::lt(x, DomainType(0.4)))
+      ret[0] = 10000 * pow1(x, 0) * pow2(x, 0) * exp1(x, 0);
+    else if (Dune::XT::Common::FloatCmp::ge(x, DomainType(0.6)) && XT::Common::FloatCmp::lt(x, DomainType(0.8)))
+      ret[0] = 1;
+    else
+      ret[0] = 0;
+  }
+}; // struct initial_vals_helper<1>
+
+template <>
+struct initial_vals_helper<2>
+{
+  template <class DomainType, class RangeType>
+  static void evaluate(const DomainType& x, RangeType& ret)
+  {
+    if (Dune::XT::Common::FloatCmp::ge(x, DomainType(0.2)) && XT::Common::FloatCmp::lt(x, DomainType(0.4)))
+      ret[0] = 10000 * pow1(x, 0) * pow2(x, 0) * exp1(x, 0) * 10000 * pow1(x, 1) * pow2(x, 1) * exp1(x, 1);
+    else if (Dune::XT::Common::FloatCmp::ge(x, DomainType(0.6)) && XT::Common::FloatCmp::lt(x, DomainType(0.8)))
+      ret[0] = 1;
+    else
+      ret[0] = 0;
+  }
+}; // struct initial_vals_helper<2>
+
+template <>
+struct initial_vals_helper<3>
+{
+  template <class DomainType, class RangeType>
+  static void evaluate(const DomainType& x, RangeType& ret)
+  {
+    if (Dune::XT::Common::FloatCmp::ge(x, DomainType(0.2)) && XT::Common::FloatCmp::lt(x, DomainType(0.4)))
+      ret[0] = 10000 * pow1(x, 0) * pow2(x, 0) * exp1(x, 0) * 10000 * pow1(x, 1) * pow2(x, 1) * exp1(x, 1) * 10000
+               * pow1(x, 2) * pow2(x, 2) * exp1(x, 2);
+    else if (Dune::XT::Common::FloatCmp::ge(x, DomainType(0.6)) && XT::Common::FloatCmp::lt(x, DomainType(0.8)))
+      ret[0] = 1;
+    else
+      ret[0] = 0;
+  }
+}; // struct initial_vals_helper<3>
+
+
+} // anonymous namespace
+
+
+// A simple function x -> x - v t, where v is a velocity and t the current time.
+// The range is restricted to a (multidimensional) interval [lower_left, upper_right] by applying periodic boundary
+// conditions.
 template <class EntityImp, class DomainFieldImp, size_t domainDim>
 class PeriodicTransportFunction
     : public XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1>
@@ -40,6 +116,7 @@ class PeriodicTransportFunction
 public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
+  using typename BaseType::RangeFieldType;
   using typename BaseType::JacobianRangeType;
 
   using typename BaseType::LocalfunctionType;
@@ -54,12 +131,10 @@ public:
   }
 
   explicit PeriodicTransportFunction(const DomainType velocity,
-                                     const double t,
                                      const DomainType lower_left,
                                      const DomainType upper_right,
                                      const std::string nm = static_id())
     : velocity_(velocity)
-    , t_(t)
     , lower_left_(lower_left)
     , upper_right_(upper_right)
     , name_(nm)
@@ -73,24 +148,31 @@ public:
     return BaseType::static_id() + ".periodictransport";
   }
 
-  virtual virtual size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override final
+  virtual size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     return 1;
   }
 
-  virtual void evaluate(const DomainType& x, RangeType& ret, const XT::Common::Parameter& = {}) const override final
+  virtual void evaluate(const DomainType& x, RangeType& ret, const XT::Common::Parameter& mu = {}) const override final
   {
+
+    const RangeFieldType t = mu.get("t")[0];
     for (size_t ii = 0; ii < dimRange; ++ii) {
-      ret[ii] = x[ii] - velocity_[ii] * t_;
-      if (ret[ii] < lower_left_[ii] || ret[ii] > upper_right_[ii])
-        ret[ii] = ret[ii] - std::floor(ret[ii]);
+      ret[ii] = x[ii] - velocity_[ii] * t;
+      while (ret[ii] < lower_left_[ii])
+        ret[ii] += upper_right_[ii] - lower_left_[ii];
+      while (ret[ii] > upper_right_[ii])
+        ret[ii] -= upper_right_[ii] - lower_left_[ii];
     }
   }
 
-  virtual void
-  jacobian(const DomainType& /*x*/, JacobianRangeType& ret, const XT::Common::Parameter& = {}) const override final
+  virtual void jacobian(const DomainType& /*x*/,
+                        JacobianRangeType& ret,
+                        const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
-    ret = JacobianRangeType(1);
+    ret = JacobianRangeType(0);
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      ret[ii][ii] = 1.;
   }
 
   virtual std::string name() const override final
@@ -100,7 +182,6 @@ public:
 
 private:
   const DomainType velocity_;
-  const double t_;
   const DomainType lower_left_;
   const DomainType upper_right_;
   const std::string name_;
@@ -112,7 +193,7 @@ template <class EntityImp,
           class RangeFieldImp,
           size_t rangeDim,
           size_t rangeDimCols>
-class InitialValues
+class TransportInitialValues
     : public XT::Functions::
           GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
 {
@@ -125,278 +206,146 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
 
-  InitialValues()
+  virtual size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override
   {
+    return 50;
   }
 
-  virtual size_t order() const override
+  virtual void evaluate(const DomainType& x, RangeType& ret, const XT::Common::Parameter& /*mu*/ = {}) const override
   {
-    return 2;
+    initial_vals_helper<dimDomain>::evaluate(x, ret);
   }
-
-  virtual void evaluate(const DomainType& xx, RangeType& ret, const XT::Common::Parameter& = {}) const override
-  {
-    helper<dimDomain>::evaluate(xx, ret);
-  }
-
-private:
-  template <size_t d, class anything = void>
-  struct helper
-  {
-    static void evaluate(const DomainType& xx, RangeType& ret)
-    {
-      if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4)
-        ret[0] = 10000 * std::pow(xx[0] - 0.2, 2) * std::pow(xx[0] - 0.4, 2)
-                 * std::exp(0.02 - std::pow(xx[0] - 0.2, 2) - std::pow(xx[0] - 0.4, 2));
-      else if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8)
-        ret[0] = 1;
-      else
-        ret[0] = 0;
-    }
-  };
-
-  template <class anything>
-  struct helper<2, anything>
-  {
-    static void evaluate(const DomainType& xx, RangeType& ret)
-    {
-      if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.2) && xx[0] < 0.4 && Dune::XT::Common::FloatCmp::ge(xx[1], 0.2)
-          && xx[1] < 0.4)
-        ret[0] = 10000 * std::pow(xx[0] - 0.2, 2) * std::pow(xx[0] - 0.4, 2)
-                 * std::exp(0.02 - std::pow(xx[0] - 0.2, 2) - std::pow(xx[0] - 0.4, 2)) * 10000
-                 * std::pow(xx[1] - 0.2, 2) * std::pow(xx[1] - 0.4, 2)
-                 * std::exp(0.02 - std::pow(xx[1] - 0.2, 2) - std::pow(xx[1] - 0.4, 2));
-      else if (Dune::XT::Common::FloatCmp::ge(xx[0], 0.6) && xx[0] < 0.8 && Dune::XT::Common::FloatCmp::ge(xx[1], 0.6)
-               && xx[1] < 0.8)
-        ret[0] = 1;
-      else
-        ret[0] = 0;
-    }
-  };
-};
-
+}; // class TransportInitialValues
 
 template <class LocalizableFunctionType, class GridLayerType>
 class TransportSolution
-    : public XT::Functions::TimeDependentFunctionInterface<
-          typename XT::Functions::LocalizableFunctionInterface<typename LocalizableFunctionType::EntityType,
-                                                               typename LocalizableFunctionType::DomainFieldType,
-                                                               LocalizableFunctionType::dimDomain,
-                                                               typename LocalizableFunctionType::RangeFieldType,
-                                                               LocalizableFunctionType::dimRange,
-                                                               LocalizableFunctionType::dimRangeCols>,
-          double>
+    : public XT::Functions::
+          CompositionFunction<PeriodicTransportFunction<typename LocalizableFunctionType::EntityType,
+                                                        typename LocalizableFunctionType::DomainFieldType,
+                                                        LocalizableFunctionType::dimDomain>,
+                              LocalizableFunctionType,
+                              GridLayerType>
 {
-  typedef typename XT::Functions::TimeDependentFunctionInterface<
-      typename XT::Functions::LocalizableFunctionInterface<typename LocalizableFunctionType::EntityType,
-                                                           typename LocalizableFunctionType::DomainFieldType,
-                                                           LocalizableFunctionType::dimDomain,
-                                                           typename LocalizableFunctionType::RangeFieldType,
-                                                           LocalizableFunctionType::dimRange,
-                                                           LocalizableFunctionType::dimRangeCols>,
-      double>
-      BaseType;
-  using typename BaseType::TimeIndependentFunctionType;
   typedef PeriodicTransportFunction<typename LocalizableFunctionType::EntityType,
                                     typename LocalizableFunctionType::DomainFieldType,
                                     LocalizableFunctionType::dimDomain>
-      DomainTransportFunctionType;
-
-  typedef typename DomainTransportFunctionType::DomainType DomainType;
+      PeriodicTransportFunctionType;
+  typedef typename PeriodicTransportFunctionType::DomainType DomainType;
+  typedef XT::Functions::CompositionFunction<PeriodicTransportFunctionType, LocalizableFunctionType, GridLayerType>
+      BaseType;
 
 public:
-  TransportSolution(const LocalizableFunctionType localizable_func,
-                    const GridLayerType& grid_layer,
-                    const DomainType velocity,
-                    const DomainType lower_left,
-                    const DomainType upper_right)
-    : localizable_func_(localizable_func)
-    , grid_layer_(grid_layer)
-    , velocity_(velocity)
-    , lower_left_(lower_left)
-    , upper_right_(upper_right)
+  TransportSolution(const LocalizableFunctionType initial_values, const DomainType velocity)
+    : BaseType(PeriodicTransportFunctionType(velocity, DomainType(0), DomainType(1)), initial_values)
   {
   }
-
-  virtual std::unique_ptr<TimeIndependentFunctionType> evaluate_at_time(const double t) const
-  {
-    DomainTransportFunctionType x_minus_t(velocity_, t, lower_left_, upper_right_);
-    typedef
-        typename XT::Functions::CompositionFunction<DomainTransportFunctionType, LocalizableFunctionType, GridLayerType>
-            CompositionType;
-    return Dune::XT::Common::make_unique<CompositionType>(x_minus_t, localizable_func_, grid_layer_);
-  }
-
-  virtual std::string type() const
-  {
-    return "gdt.transportsolution";
-  }
-
-  virtual std::string name() const
-  {
-    return "gdt.transportsolution";
-  }
-
-private:
-  LocalizableFunctionType localizable_func_;
-  const GridLayerType& grid_layer_;
-  const DomainType velocity_;
-  const DomainType lower_left_;
-  const DomainType upper_right_;
-};
+}; // class TransportSolution<...>
 
 
 namespace Problems {
 
 
-template <class E, class D, size_t d, class R, size_t r, size_t rC = 1>
-class Transport : public Default<E, D, d, R, r, rC>
+template <class E, class D, size_t d, class U, class R, size_t r>
+class Transport : public ProblemBase<E, D, d, U, R, r>
 {
-  typedef Transport<E, D, d, R, r, rC> ThisType;
-  typedef Default<E, D, d, R, r, rC> BaseType;
+  typedef Transport<E, D, d, U, R, r> ThisType;
+  typedef ProblemBase<E, D, d, U, R, r> BaseType;
 
 public:
   static const bool linear = true;
+  using typename BaseType::DomainType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
-  using typename BaseType::DummyEntityType;
-  typedef typename Dune::XT::Functions::AffineFunction<DummyEntityType, R, dimRange, R, dimRange, dimDomain>
-      FluxAffineFunctionType;
-  typedef typename Dune::GDT::GlobalFunctionBasedAnalyticalFlux<FluxAffineFunctionType, E, D, d, R, r, rC>
-      DefaultFluxType;
-  using typename BaseType::DefaultInitialValueType;
-  using typename BaseType::DefaultRHSType;
-  using typename BaseType::DefaultBoundaryValueType;
+
+  typedef typename XT::Functions::AffineFluxFunction<E, D, d, U, R, r, d> ActualFluxType;
+  typedef typename XT::Functions::AffineFluxFunction<E, D, d, U, R, r, 1> ActualRhsType;
+  typedef XT::Functions::GlobalLambdaFunction<E, D, d, R, r, 1> ActualBoundaryValueType;
+  typedef ActualBoundaryValueType ActualInitialValueType;
+
+  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
 
   using typename BaseType::FluxType;
-  using typename BaseType::RHSType;
+  using typename BaseType::RhsType;
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
-  using typename BaseType::ConfigType;
+
+  Transport(const XT::Common::Configuration& grid_cfg = BaseType::default_grid_cfg(),
+            const XT::Common::Configuration& boundary_cfg = BaseType::default_boundary_cfg())
+    : BaseType(create_flux(),
+               create_rhs(),
+               create_initial_values(grid_cfg),
+               create_boundary_values(),
+               grid_cfg,
+               boundary_cfg,
+               dimDomain == 1 ? 0.5 : (dimDomain == 2 ? 0.3 : 0.15),
+               1.,
+               false)
+  {
+  }
 
   static std::string static_id()
-  {
-    return BaseType::static_id() + ".transport";
-  }
-
-  virtual std::string type() const override
-  {
-    return BaseType::type() + ".transport";
-  }
-
-  static std::string short_id()
   {
     return "Transport";
   }
 
-  static ConfigType default_grid_config()
+  static FluxType* create_flux()
   {
-    XT::Common::Configuration cfg = XT::Grid::cube_gridprovider_default_config();
-    cfg["lower_left"] = "[0.0 0.0 0.0]";
-    cfg["upper_right"] = "[1.0 1.0 1.0]";
-    cfg["num_elements"] = "[8 8 8]";
-    return cfg;
-  }
-
-  static ConfigType default_boundary_info_config()
-  {
-    ConfigType boundary_config;
-    boundary_config["type"] = "periodic";
-    return boundary_config;
-  }
-
-  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
-                                          const std::string sub_name = static_id())
-  {
-    const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
-    const std::shared_ptr<const DefaultFluxType> flux(DefaultFluxType::create(config.sub("flux")));
-    const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
-    const std::shared_ptr<const DefaultInitialValueType> initial_values(
-        DefaultInitialValueType::create(config.sub("initial_values")));
-    const ConfigType grid_config = config.sub("grid");
-    const ConfigType boundary_info = config.sub("boundary_info");
-    const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
-        DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
-  } // ... create(...)
-
-  static ConfigType default_config(const std::string sub_name = "")
-  {
-    ConfigType config = BaseType::default_config();
-    config.add(default_grid_config(), "grid", true);
-    config.add(default_boundary_info_config(), "boundary_info", true);
-    ConfigType flux_config;
-    flux_config["A.0"] = "[1]";
-    flux_config["A.1"] = "[2]";
-    flux_config["b"] = "[0 0; 0 0]";
-    config.add(flux_config, "flux", true);
-    ConfigType initial_value_config;
-    initial_value_config["lower_left"] = "[0.0 0.0 0.0]";
-    initial_value_config["upper_right"] = "[1.0 1.0 1.0]";
-    if (dimDomain == 1)
-      initial_value_config["num_elements"] = "[5]";
-    else
-      initial_value_config["num_elements"] = "[5 5 1]";
-    initial_value_config["variable"] = "x";
-    if (dimDomain == 1)
-      initial_value_config["values"] = "[0.0 "
-                                       "10000*((x[0]-0.2)^2)*((x[0]-0.4)^2)*exp(0.02-((x[0]-0.2)^2)-((x[0]-0.4)^2)) "
-                                       "0.0 1.0 0.0]"; //"[0 sin(pi/2+5*pi*(x[0]-0.3))*exp(-(200*(x[0]-0.3)*(x[0]-0.3)))
-    // 0 1.0 0.0]";
-    else
-      initial_value_config["values"] =
-          std::string("[0 0 0 0 0 ")
-          + std::string("0 "
-                        "10000*((x[0]-0.2)^2)*((x[0]-0.4)^2)*exp(0.02-((x[0]-0.2)^2)-((x[0]-0.4)^2))*10000*((x[1]-0.2)^"
-                        "2)*((x[1]-0.4)^2)*exp(0.02-((x[1]-0.2)^2)-((x[1]-0.4)^2)) 0 0 0 ")
-          + std::string("0 0 0 0 0 ") + std::string("0 0 0 1 0 ") + std::string("0 0 0 0 0]");
-    initial_value_config["order"] = "10";
-    initial_value_config["name"] = static_id();
-    config.add(initial_value_config, "initial_values", true);
-    if (sub_name.empty())
-      return config;
-    else {
-      ConfigType tmp;
-      tmp.add(config, sub_name);
-      return tmp;
+    FieldVector<MatrixType, dimDomain> A(MatrixType(0.));
+    for (size_t ii = 0; ii < dimRange; ++ii) {
+      A[0][ii][ii] = 1.;
+      if (dimDomain > 1)
+        A[1][ii][ii] = 2.;
+      if (dimDomain > 2)
+        A[2][ii][ii] = 3.;
     }
-  } // ... default_config(...)
-
-  Transport(const std::shared_ptr<const FluxType> flux_in,
-            const std::shared_ptr<const RHSType> rhs_in,
-            const std::shared_ptr<const InitialValueType> initial_values_in,
-            const ConfigType& grid_config_in,
-            const ConfigType& boundary_info_in,
-            const std::shared_ptr<const BoundaryValueType> boundary_values_in)
-    : BaseType(flux_in, rhs_in, initial_values_in, grid_config_in, boundary_info_in, boundary_values_in)
-  {
+    return new ActualFluxType(A, typename ActualFluxType::RangeType(0));
   }
 
-  virtual double CFL() const override
+  static RhsType* create_rhs()
   {
-    if (dimDomain == 1)
-      return 0.5;
-    else
-      return 0.3;
-  }
+    return new ActualRhsType(FieldVector<MatrixType, 1>(MatrixType(0.)));
+  } // ... create_rhs(...)
 
-  virtual double t_end() const override
+  static InitialValueType* create_initial_values(const XT::Common::Configuration& /*grid_cfg*/)
   {
-    return 1.0;
-  }
-};
+    return new ActualInitialValueType(
+        [=](const DomainType& x, const XT::Common::Parameter&) {
+          RangeType ret;
+          initial_vals_helper<dimDomain>::evaluate(x, ret);
+          return ret;
+        },
+        50);
+  } // ... create_initial_values()
+
+  virtual BoundaryValueType* create_boundary_values()
+  {
+    return new ActualBoundaryValueType([=](const DomainType&, const XT::Common::Parameter&) { return 0; }, 0);
+  } // ... create_boundary_values()
+}; // class Transport<...>
+
 
 } // namespace Problems
 
-template <class G, class R = double, size_t r = 1, size_t rC = 1>
+
+template <class G, class R = double, size_t r = 1>
 class TransportTestCase
-    : public Dune::GDT::Test::NonStationaryTestCase<G,
-                                                    Problems::Transport<typename G::template Codim<0>::Entity,
-                                                                        typename G::ctype,
-                                                                        G::dimension,
-                                                                        R,
-                                                                        r,
-                                                                        rC>>
+    : public Dune::GDT::Test::
+          InstationaryTestCase<G,
+                               Problems::Transport<typename G::template Codim<0>::Entity,
+                                                   typename G::ctype,
+                                                   G::dimension,
+                                                   typename GDT::DiscreteFunctionProvider<G,
+                                                                                          GDT::SpaceType::product_fv,
+                                                                                          0,
+                                                                                          R,
+                                                                                          r,
+                                                                                          1,
+                                                                                          GDT::Backends::gdt>::type,
+                                                   R,
+                                                   r>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -404,11 +353,12 @@ class TransportTestCase
 
 public:
   static const size_t dimRange = r;
-  static const size_t dimRangeCols = rC;
-  typedef typename Problems::Transport<E, D, d, R, r, rC> ProblemType;
+  static const size_t dimRangeCols = 1;
+  typedef typename GDT::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, r, 1, GDT::Backends::gdt>::type U;
+  typedef typename Problems::Transport<E, D, d, U, R, r> ProblemType;
 
 private:
-  typedef typename Dune::GDT::Test::NonStationaryTestCase<G, ProblemType> BaseType;
+  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;
@@ -416,20 +366,12 @@ public:
   using typename BaseType::LevelGridViewType;
 
   TransportTestCase(const size_t num_refs = (d == 1 ? 4 : 2), const double divide_t_end_by = 1.0)
-    : BaseType(divide_t_end_by, ProblemType::default_grid_config(), num_refs)
-    , reference_grid_view_(BaseType::reference_grid_view())
-    , problem_(*ProblemType::create(ProblemType::default_config()))
+    : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
   {
-    typedef InitialValues<E, D, d, R, r, 1> LocalizableInitialValueType;
+    typedef TransportInitialValues<E, D, d, R, r, 1> LocalizableInitialValueType;
     const LocalizableInitialValueType initial_values;
     exact_solution_ = std::make_shared<const TransportSolution<LocalizableInitialValueType, LevelGridViewType>>(
-        initial_values,
-        reference_grid_view_,
-        Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>("[1.0 2.0]"),
-        Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>(
-            problem_.grid_config()["lower_left"]),
-        Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>(
-            problem_.grid_config()["upper_right"]));
+        initial_values, Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>("[1.0 2.0 3.0]"));
   }
 
   virtual const ProblemType& problem() const override final
@@ -467,7 +409,7 @@ public:
         << "|+--------------------------------------------------------------------+|\n"
         << domainstring
         << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end())
-               + "]                                                   ||\n"
+               + "]                                                     ||\n"
         << "||  flux = u[0]                                                       ||\n"
         << "||  rhs = 0                                                           ||\n"
         << "||  reference solution: exact solution                                ||\n"
@@ -476,10 +418,10 @@ public:
   }
 
 private:
-  const LevelGridViewType reference_grid_view_;
   const ProblemType problem_;
   std::shared_ptr<const SolutionType> exact_solution_;
 }; // class TransportTestCase
+
 
 } // namespace Hyperbolic
 } // namespace GDT

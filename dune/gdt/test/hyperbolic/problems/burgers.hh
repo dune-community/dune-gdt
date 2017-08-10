@@ -16,11 +16,18 @@
 #include <vector>
 #include <string>
 
+#include <dune/xt/common/parameter.hh>
+
 #include <dune/xt/grid/gridprovider/cube.hh>
 
-#include <dune/gdt/test/instationary-eocstudy.hh>
+#include <dune/xt/functions/affine.hh>
+#include <dune/xt/functions/lambda/global-flux-function.hh>
+#include <dune/xt/functions/lambda/global-function.hh>
 
-#include "default.hh"
+#include <dune/gdt/test/instationary-testcase.hh>
+#include <dune/gdt/discretefunction/default.hh>
+
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -28,150 +35,122 @@ namespace Hyperbolic {
 namespace Problems {
 
 
-template <class EntityImp,
-          class DomainFieldImp,
-          size_t domainDim,
-          class RangeFieldImp,
-          size_t rangeDim,
-          size_t rangeDimCols = 1>
-class Burgers : public Default<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
+template <class E, class D, size_t d, class U, class R, size_t r>
+class Burgers : public ProblemBase<E, D, d, U, R, r>
 {
-  typedef Burgers<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols> ThisType;
-  typedef Default<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols> BaseType;
+  typedef Burgers<E, D, d, U, R, r> ThisType;
+  typedef ProblemBase<E, D, d, U, R, r> BaseType;
 
 public:
-  using typename BaseType::DefaultFluxType;
-  using typename BaseType::DefaultInitialValueType;
-  using typename BaseType::DefaultRHSType;
-  using typename BaseType::DefaultBoundaryValueType;
-
-  using typename BaseType::FluxType;
-  using typename BaseType::RHSType;
-  using typename BaseType::InitialValueType;
-  using typename BaseType::BoundaryValueType;
-  using typename BaseType::ConfigType;
-
+  static const bool linear = false;
+  using typename BaseType::DomainType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::RangeType;
+  using typename BaseType::StateRangeType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
 
+  typedef typename XT::Functions::GlobalLambdaFluxFunction<U, 0, R, r, d> ActualFluxType;
+  typedef typename XT::Functions::AffineFluxFunction<E, D, d, U, R, r, 1> ActualRhsType;
+  typedef XT::Functions::GlobalLambdaFunction<E, D, d, R, r, 1> ActualBoundaryValueType;
+  typedef ActualBoundaryValueType ActualInitialValueType;
+
+  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+
+  using typename BaseType::FluxType;
+  using typename BaseType::RhsType;
+  using typename BaseType::InitialValueType;
+  using typename BaseType::BoundaryValueType;
+
+  using BaseType::default_grid_cfg;
+  using BaseType::default_boundary_cfg;
+
+  Burgers(const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+          const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
+    : BaseType(create_flux(),
+               create_rhs(),
+               create_initial_values(grid_cfg),
+               create_boundary_values(),
+               grid_cfg,
+               boundary_cfg,
+               dimDomain == 1 ? 0.5 : (dimDomain == 2 ? 0.1 : 0.05),
+               1.,
+               false)
+  {
+  }
+
   static std::string static_id()
   {
-    return BaseType::static_id() + ".burgers";
+    return "Burgers";
   }
 
-  std::string type() const override
+  static FluxType* create_flux()
   {
-    return BaseType::type() + ".burgers";
+    return new ActualFluxType(
+        [](const DomainType&, const StateRangeType& u, const XT::Common::Parameter&) {
+          return typename FluxType::RangeType(0.5 * u[0] * u[0]);
+        },
+        {},
+        "burgers_flux",
+        [](const XT::Common::Parameter&) { return 2; },
+        FieldVector<typename ActualFluxType::ColPartialXLambdaType, dimDomain>(
+            [](const DomainType&, const StateRangeType&, const XT::Common::Parameter&) {
+              return typename ActualFluxType::ColPartialXRangeType(0);
+            }),
+        FieldVector<typename ActualFluxType::ColPartialULambdaType, dimDomain>(
+            [](const DomainType&, const StateRangeType& u, const XT::Common::Parameter&) {
+              typename ActualFluxType::ColPartialURangeType ret(0);
+              for (size_t rr = 0; rr < dimRange; ++rr)
+                ret[rr][0] = u[0];
+              return ret;
+            }));
   }
 
-  static ConfigType default_grid_config()
+  static RhsType* create_rhs()
   {
-    ConfigType grid_config;
-    grid_config["type"] = "provider.cube";
-    grid_config["lower_left"] = "[0.0 0.0 0.0]";
-    grid_config["upper_right"] = "[1.0 1.0 1.0]";
-    grid_config["num_elements"] = "[8 8 8]";
-    return grid_config;
-  }
+    return new ActualRhsType(FieldVector<MatrixType, 1>(MatrixType(0.)));
+  } // ... create_rhs(...)
 
-  static ConfigType default_boundary_info_config()
+  static InitialValueType* create_initial_values(const XT::Common::Configuration& /*grid_cfg*/)
   {
-    ConfigType boundary_config;
-    boundary_config["type"] = "periodic";
-    return boundary_config;
-  }
+    return new ActualInitialValueType(
+        [=](const DomainType& x, const XT::Common::Parameter&) {
+          if (dimDomain == 1)
+            return RangeType(std::sin(M_PI * x[0]));
+          else
+            return RangeType(1.0 / 40.0 * std::exp(1 - std::pow(M_PI * (2 * x[0] - 1), 2)
+                                                   - std::pow(M_PI * (2 * x[1] - 1), 2))); // bump, only in 2D or higher
+        },
+        10);
+  } // ... create_initial_values()
 
-  static std::unique_ptr<ThisType> create(const ConfigType cfg = default_config(),
-                                          const std::string sub_name = static_id())
+  virtual BoundaryValueType* create_boundary_values()
   {
-    const ConfigType config = cfg.has_sub(sub_name) ? cfg.sub(sub_name) : cfg;
-    const std::shared_ptr<const DefaultFluxType> flux(DefaultFluxType::create(config.sub("flux")));
-    const std::shared_ptr<const DefaultRHSType> rhs(DefaultRHSType::create(config.sub("rhs")));
-    const std::shared_ptr<const DefaultInitialValueType> initial_values(
-        DefaultInitialValueType::create(config.sub("initial_values")));
-    const ConfigType grid_config = config.sub("grid");
-    const ConfigType boundary_info = config.sub("boundary_info");
-    const std::shared_ptr<const DefaultBoundaryValueType> boundary_values(
-        DefaultBoundaryValueType::create(config.sub("boundary_values")));
-    return XT::Common::make_unique<ThisType>(flux, rhs, initial_values, grid_config, boundary_info, boundary_values);
-  } // ... create(...)
-
-  static ConfigType default_config(const std::string sub_name = "")
-  {
-    ConfigType config = BaseType::default_config();
-    config.add(default_grid_config(), "grid", true);
-    config.add(default_boundary_info_config(), "boundary_info", true);
-    ConfigType flux_config;
-    flux_config["variable"] = "u";
-    flux_config["expression"] = "[0.5*u[0]*u[0] 0.5*u[0]*u[0] 0.5*u[0]*u[0]]";
-    flux_config["order"] = "2";
-    if (dimDomain == 1)
-      flux_config["gradient"] = "[u[0] 0 0]";
-    else {
-      flux_config["gradient.0"] = "[u[0] 0 0]";
-      flux_config["gradient.1"] = "[u[0] 0 0]";
-      flux_config["gradient.2"] = "[u[0] 0 0]";
-    }
-    config.add(flux_config, "flux", true);
-    ConfigType initial_value_config;
-    initial_value_config["lower_left"] = "[0.0 0.0 0.0]";
-    initial_value_config["upper_right"] = "[1.0 1.0 1.0]";
-    initial_value_config["num_elements"] = "[1 1 1]";
-    initial_value_config["variable"] = "x";
-    if (dimDomain == 1)
-      initial_value_config["values"] = "sin(pi*x[0])";
-    else
-      initial_value_config["values.0"] =
-          "1.0/40.0*exp(1-(2*pi*x[0]-pi)*(2*pi*x[0]-pi)-(2*pi*x[1]-pi)*(2*pi*x[1]-pi))"; // bump, only in 2D or higher
-    initial_value_config["name"] = static_id();
-    initial_value_config["order"] = "10";
-    config.add(initial_value_config, "initial_values", true);
-    if (sub_name.empty())
-      return config;
-    else {
-      ConfigType tmp;
-      tmp.add(config, sub_name);
-      return tmp;
-    }
-  } // ... default_config(...)
-
-  Burgers(const std::shared_ptr<const FluxType> flx,
-          const std::shared_ptr<const RHSType> rh,
-          const std::shared_ptr<const InitialValueType> init_vals,
-          const ConfigType& grd_cfg,
-          const ConfigType& bnd_info,
-          const std::shared_ptr<const BoundaryValueType> bnd_vals)
-    : BaseType(flx, rh, init_vals, grd_cfg, bnd_info, bnd_vals)
-  {
-  }
-
-  virtual double CFL() const override
-  {
-    if (dimDomain == 1)
-      return 0.5;
-    else
-      return 0.1;
-  }
-
-  virtual double t_end() const override
-  {
-    return 1.0;
-  }
-};
+    return new ActualBoundaryValueType([=](const DomainType&, const XT::Common::Parameter&) { return 0; }, 0);
+  } // ... create_boundary_values()
+}; // class Burgers<...>
 
 
 } // namespace Problems
 
 
-template <class G, class R = double, size_t r = 1, size_t rC = 1>
+template <class G, class R = double, size_t r = 1>
 class BurgersTestCase
-    : public Dune::GDT::Test::NonStationaryTestCase<G,
-                                                    Problems::Burgers<typename G::template Codim<0>::Entity,
-                                                                      typename G::ctype,
-                                                                      G::dimension,
-                                                                      R,
-                                                                      r,
-                                                                      rC>>
+    : public Dune::GDT::Test::
+          InstationaryTestCase<G,
+                               Problems::Burgers<typename G::template Codim<0>::Entity,
+                                                 typename G::ctype,
+                                                 G::dimension,
+                                                 typename GDT::DiscreteFunctionProvider<G,
+                                                                                        GDT::SpaceType::product_fv,
+                                                                                        0,
+                                                                                        R,
+                                                                                        r,
+                                                                                        1,
+                                                                                        GDT::Backends::gdt>::type,
+                                                 R,
+                                                 r>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -179,18 +158,20 @@ class BurgersTestCase
 
 public:
   static const size_t dimRange = r;
-  static const size_t dimRangeCols = rC;
-  typedef Problems::Burgers<E, D, d, R, r> ProblemType;
+  static const size_t dimRangeCols = 1;
+  typedef typename GDT::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, r, 1, GDT::Backends::gdt>::type U;
+  typedef typename Problems::Burgers<E, D, d, U, R, r> ProblemType;
 
 private:
-  typedef Test::NonStationaryTestCase<G, ProblemType> BaseType;
+  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
 
 public:
   using typename BaseType::GridType;
+  using typename BaseType::SolutionType;
+  using typename BaseType::LevelGridViewType;
 
   BurgersTestCase(const size_t num_refs = (d == 1 ? 4 : 1), const double divide_t_end_by = 1.0)
-    : BaseType(divide_t_end_by, ProblemType::default_grid_config(), num_refs)
-    , problem_(*(ProblemType::create(ProblemType::default_config())))
+    : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
   {
   }
 
@@ -222,7 +203,7 @@ public:
         << "|+--------------------------------------------------------------------+|\n"
         << domainstring
         << "||  time = [0, " + Dune::XT::Common::to_string(BaseType::t_end())
-               + "]                                                   ||\n"
+               + "]                                                     ||\n"
         << "||  flux = 0.5*u[0]^2                                                 ||\n"
         << "||  rhs = 0                                                           ||\n"
         << "||  reference solution: discrete solution on finest grid              ||\n"

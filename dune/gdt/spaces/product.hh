@@ -16,6 +16,8 @@
 
 #include <dune/xt/common/tuple.hh>
 
+#include <dune/xt/grid/type_traits.hh>
+
 #include <dune/gdt/spaces/basefunctionset/product.hh>
 #include <dune/gdt/spaces/mapper/product.hh>
 #include <dune/gdt/spaces/cg.hh>
@@ -70,12 +72,12 @@ class DefaultProductSpaceTraits
 {
 public:
   typedef DefaultProductSpace<SpaceImps...> derived_type;
-  typedef typename std::tuple_element<0, std::tuple<SpaceImps...>>::type::GridLayerType GridLayerType;
+  typedef typename XT::Common::tuple_element<0, std::tuple<SpaceImps...>>::type::GridLayerType GridLayerType;
   static const size_t dimDomain = GridLayerType::dimension;
   static const size_t dimRange = GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange;
   static const size_t dimRangeCols = 1;
   typedef typename GridLayerType::IndexSet BackendType;
-  typedef typename std::tuple_element<0, std::tuple<SpaceImps...>>::type::RangeFieldType RangeFieldType;
+  typedef typename XT::Common::tuple_element<0, std::tuple<SpaceImps...>>::type::RangeFieldType RangeFieldType;
   typedef typename std::tuple<SpaceImps...> SpaceTupleType;
   typedef typename Dune::GDT::DefaultProductMapper<GridLayerType, typename SpaceImps::MapperType...> MapperType;
   typedef typename Dune::GDT::BaseFunctionSet::ProductDefault<typename SpaceImps::BaseFunctionSetType...>
@@ -96,17 +98,17 @@ public:
 template <class... SpaceImps>
 class DefaultProductSpace
     : public Dune::GDT::SpaceInterface<internal::DefaultProductSpaceTraits<SpaceImps...>,
-                                       std::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
+                                       XT::Common::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
                                        GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange,
                                        1>,
       public Dune::GDT::ProductSpaceInterface<internal::DefaultProductSpaceTraits<SpaceImps...>,
-                                              std::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
+                                              XT::Common::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
                                               GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange,
                                               1>
 {
   typedef DefaultProductSpace<SpaceImps...> ThisType;
   typedef Dune::GDT::SpaceInterface<internal::DefaultProductSpaceTraits<SpaceImps...>,
-                                    std::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
+                                    XT::Common::tuple_element<0, std::tuple<SpaceImps...>>::type::dimDomain,
                                     GDT::BaseFunctionSet::internal::SumDimRange<SpaceImps...>::dimRange,
                                     1>
       BaseType;
@@ -148,7 +150,7 @@ public:
 
   // These methods are required by ProductSpaceInterface
   template <size_t ii>
-  const typename std::tuple_element<ii, SpaceTupleType>::type& factor() const
+  const typename XT::Common::tuple_element<ii, SpaceTupleType>::type& factor() const
   {
     return std::get<ii>(spaces_);
   }
@@ -176,7 +178,8 @@ public:
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
-    return base_function_set_helper(entity, typename Dune::XT::Common::create_indices<sizeof...(SpaceImps)>::type());
+    return base_function_set_helper(entity,
+                                    typename Dune::XT::Common::make_index_sequence<sizeof...(SpaceImps)>::type());
   }
 
   CommunicatorType& communicator() const
@@ -186,7 +189,7 @@ public:
 
 private:
   template <size_t... S>
-  BaseFunctionSetType base_function_set_helper(const EntityType& entity, Dune::XT::Common::indices<S...>) const
+  BaseFunctionSetType base_function_set_helper(const EntityType& entity, Dune::XT::Common::index_sequence<S...>) const
   {
     return BaseFunctionSetType(entity, std::get<S>(spaces_).base_function_set(entity)...);
   }

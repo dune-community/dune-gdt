@@ -13,13 +13,14 @@
 #define DUNE_GDT_TESTS_HYPERBOLIC_DISCRETIZERS_FV_HH
 
 #include <dune/xt/common/timedlogging.hh>
+
 #include <dune/xt/grid/gridprovider/provider.hh>
 #include <dune/xt/grid/view/periodic.hh>
 
-#include <dune/gdt/discretizations/default.hh>
+#include <dune/gdt/discretizations/default/fv.hh>
 #include <dune/gdt/spaces/fv/product.hh>
-
 #include <dune/gdt/test/hyperbolic/problems/interface.hh>
+
 #include "base.hh"
 
 namespace Dune {
@@ -33,34 +34,40 @@ template <class TestCaseType,
           size_t dimRange,
           size_t dimRangeCols = 1,
           NumericalFluxes numerical_flux = NumericalFluxes::godunov,
-          TimeStepperMethods time_stepper_method = TimeStepperMethods::explicit_euler>
+          size_t reconstruction_order = 0,
+          TimeStepperMethods time_stepper_method = TimeStepperMethods::explicit_rungekutta_second_order_ssp,
+          TimeStepperMethods rhs_time_stepper_method = TimeStepperMethods::matrix_exponential,
+          TimeStepperSplittingMethods time_stepper_splitting_method = TimeStepperSplittingMethods::fractional_step,
+          SlopeLimiters slope_limiter = SlopeLimiters::minmod>
 class FvDiscretizer
 {
 public:
-  typedef Hyperbolic::ProblemInterface<typename GridType::template Codim<0>::Entity,
-                                       typename GridType::ctype,
-                                       GridType::dimension,
-                                       RangeFieldType,
-                                       dimRange,
-                                       dimRangeCols>
-      ProblemType;
   static const constexpr ChooseDiscretizer type = ChooseDiscretizer::fv;
   static const constexpr NumericalFluxes numerical_flux_type = numerical_flux;
   static const constexpr TimeStepperMethods time_stepper_type = time_stepper_method;
+  static const constexpr TimeStepperMethods rhs_time_stepper_type = rhs_time_stepper_method;
+  static const constexpr size_t pol_order = reconstruction_order;
 
   typedef typename XT::Grid::PeriodicGridView<typename XT::Grid::GridProvider<GridType>::LevelGridViewType>
-      GridLayerImp;
-  typedef Dune::
-      GridView<XT::Grid::internal::PeriodicGridViewTraits<typename XT::Grid::GridProvider<GridType>::LevelGridViewType,
-                                                          false>>
-          GridLayerType;
-  typedef FvProductSpace<GridLayerType, RangeFieldType, dimRange, dimRangeCols> FVSpaceType;
-  typedef HyperbolicFVDefaultDiscretization<TestCaseType,
-                                            FVSpaceType,
+      GridLayerType;
+  typedef FvProductSpace<GridLayerType, RangeFieldType, dimRange, dimRangeCols> FvSpaceType;
+  typedef HyperbolicFvDefaultDiscretization<TestCaseType,
+                                            FvSpaceType,
                                             numerical_flux,
+                                            reconstruction_order,
                                             time_stepper_method,
-                                            time_stepper_method>
+                                            rhs_time_stepper_method,
+                                            time_stepper_splitting_method,
+                                            slope_limiter>
       DiscretizationType;
+
+  typedef Hyperbolic::ProblemInterface<typename GridType::template Codim<0>::Entity,
+                                       typename GridType::ctype,
+                                       GridType::dimension,
+                                       typename DiscretizationType::DiscreteFunctionType,
+                                       RangeFieldType,
+                                       dimRange>
+      ProblemType;
 
   static std::string static_id()
   { // int() needed, otherwise we get a linker error
@@ -75,8 +82,8 @@ public:
   {
     auto logger = XT::Common::TimedLogger().get(static_id());
     logger.info() << "Creating space... " << std::endl;
-    GridLayerImp imp(grid_provider.level_view(level), periodic_directions);
-    auto space = std::make_shared<const FVSpaceType>(GridLayerType(imp));
+    GridLayerType imp(grid_provider.level_view(level), periodic_directions);
+    auto space = std::make_shared<const FvSpaceType>(imp);
     logger.debug() << "grid has " << space->grid_layer().indexSet().size(0) << " elements" << std::endl;
     return DiscretizationType(test_case, space);
   } // ... discretize(...)

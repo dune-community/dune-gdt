@@ -12,15 +12,8 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_FV_BOLTZMANNCHECKERBOARD_2DYASPGRID_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_FV_BOLTZMANNCHECKERBOARD_2DYASPGRID_HH
 
-#include "config.h"
-
-#include <dune/grid/yaspgrid.hh>
-
-#include <dune/gdt/test/hyperbolic/discretizers/fv.hh>
-
-#include "problems/2dboltzmann.hh"
+#include "problems/momentmodels/kinetictransport/2dboltzmann.hh"
 #include "eocexpectations.hh"
-
 
 namespace Dune {
 namespace GDT {
@@ -28,13 +21,14 @@ namespace Test {
 
 
 template <>
-class HyperbolicEocExpectations<Hyperbolic::Boltzmann2DCheckerboardTestCase<Yasp2, double, 1>,
+class HyperbolicEocExpectations<Hyperbolic::CheckerboardTestCase<Yasp2, double, 1>,
                                 Hyperbolic::ChooseDiscretizer::fv,
                                 2,
                                 NumericalFluxes::godunov,
+                                TimeStepperMethods::explicit_euler,
                                 TimeStepperMethods::explicit_euler> : public internal::HyperbolicEocExpectationsBase<2>
 {
-  typedef Hyperbolic::Boltzmann2DCheckerboardTestCase<Yasp2, double> TestCaseType;
+  typedef Hyperbolic::CheckerboardTestCase<Yasp2, double> TestCaseType;
 
 public:
   static std::vector<double> results(const TestCaseType& test_case, const std::string type); // ... results(...)

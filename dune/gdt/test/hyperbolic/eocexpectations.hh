@@ -12,13 +12,7 @@
 #ifndef DUNE_GDT_TESTS_HYPERBOLIC_EOCEXPECTATIONS_HH
 #define DUNE_GDT_TESTS_HYPERBOLIC_EOCEXPECTATIONS_HH
 
-#include <dune/xt/common/float_cmp.hh>
-#include <dune/xt/common/type_traits.hh>
-#include <dune/xt/common/test/gtest/gtest.h>
-
-#include "discretizers/base.hh"
-#include <dune/gdt/discretizations/default.hh>
-#include <dune/gdt/test/grids.hh>
+#include <vector>
 
 #include "eocexpectations_base.hh"
 
@@ -31,7 +25,9 @@ template <class TestCaseType,
           Hyperbolic::ChooseDiscretizer disc,
           size_t dimDomain,
           NumericalFluxes num_flux,
-          TimeStepperMethods time_stepper>
+          TimeStepperMethods time_stepper,
+          TimeStepperMethods rhs_time_stepper,
+          size_t reconstruction_order>
 class HyperbolicEocExpectations : public internal::HyperbolicEocExpectationsBase<dimDomain>
 {
 public:

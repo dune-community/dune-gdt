@@ -5,107 +5,77 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2016 - 2017)
+//   Felix Schindler (2015 - 2017)
 //   Rene Milk       (2016 - 2017)
 //   Tobias Leibner  (2016)
 
-#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_INTERFACES_HH
-#define DUNE_GDT_HYPERBOLIC_PROBLEMS_INTERFACES_HH
-
-#include <ostream>
-
-#include <dune/grid/yaspgrid.hh>
+#ifndef DUNE_GDT_TESTS_HYPERBOLIC_PROBLEMS_INTERFACE_HH
+#define DUNE_GDT_TESTS_HYPERBOLIC_PROBLEMS_INTERFACE_HH
 
 #include <dune/xt/common/configuration.hh>
-#include <dune/xt/common/exceptions.hh>
-#include <dune/xt/functions/default.hh>
-#include <dune/xt/functions/expression.hh>
-#include <dune/xt/functions/checkerboard.hh>
-
-#include <dune/gdt/local/fluxes/interfaces.hh>
+#include <dune/xt/functions/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 
 
-/** Interface for problem of the form delta_t u + div f(u,x,t) = q(u,x,t) where u: R^d \to R^{r x rC}.
- *  TODO: implement for non-autonomous fluxes.
- *  TODO: implement for rangeDimCols > 1.
- *  TODO: replace TimeDependentExpression by a parametric function interface in dune-xt, once it is available.
- *  TODO: think about SolutionType (remove? use another type?)
- * */
-template <class E, class D, size_t d, class R, size_t r, size_t rC = 1>
+template <class EntityImp, class DomainFieldImp, size_t domainDim, class U_, class RangeFieldImp, size_t rangeDim>
 class ProblemInterface
 {
-  typedef ProblemInterface<E, D, d, R, r, rC> ThisType;
+  typedef ProblemInterface<EntityImp, DomainFieldImp, domainDim, U_, RangeFieldImp, rangeDim> ThisType;
 
 public:
-  typedef E EntityType;
-  typedef D DomainFieldType;
-  static const size_t dimDomain = d;
-  typedef R RangeFieldType;
-  static const size_t dimRange = r;
-  static const size_t dimRangeCols = rC;
+  typedef EntityImp EntityType;
+  typedef DomainFieldImp DomainFieldType;
+  static const size_t dimDomain = domainDim;
+  typedef RangeFieldImp RangeFieldType;
+  static const size_t dimRange = rangeDim;
 
-  typedef Dune::GDT::
-      AutonomousAnalyticalFluxInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
-          FluxType;
-  typedef Dune::GDT::
-      RhsEvaluationFluxInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
-          RHSType;
-  typedef Dune::XT::Functions::
-      LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
+  typedef XT::Functions::LocalizableFluxFunctionInterface<EntityType,
+                                                          DomainFieldType,
+                                                          dimDomain,
+                                                          U_,
+                                                          0,
+                                                          RangeFieldType,
+                                                          dimRange,
+                                                          dimDomain>
+      FluxType;
+  typedef XT::Functions::
+      LocalizableFluxFunctionInterface<EntityType, DomainFieldType, dimDomain, U_, 0, RangeFieldType, dimRange, 1>
+          RhsType;
+  typedef XT::Functions::
+      LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>
           InitialValueType;
-  typedef typename Dune::XT::Functions::TimeDependentExpressionFunction<EntityType,
-                                                                        DomainFieldType,
-                                                                        dimDomain,
-                                                                        RangeFieldType,
-                                                                        dimRange,
-                                                                        dimRangeCols,
-                                                                        double>
-      BoundaryValueType;
-  typedef Dune::XT::Common::Configuration ConfigType;
-  typedef Dune::XT::Functions::TimeDependentFunctionInterface<
-      typename Dune::XT::Functions::
-          LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>>
-      SolutionType;
+  typedef XT::Functions::
+      LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>
+          BoundaryValueType;
+  typedef BoundaryValueType SolutionType;
+
+  typedef typename InitialValueType::DomainType DomainType;
+  typedef typename InitialValueType::RangeType RangeType;
+  typedef U_ StateType;
+  typedef typename StateType::RangeType StateRangeType;
 
   virtual ~ProblemInterface()
   {
   }
 
-  static std::string static_id()
-  {
-    return "gdt.hyperbolic.problem";
-  }
+  virtual const FluxType& flux() const = 0;
 
-  virtual std::string type() const
-  {
-    return "gdt.hyperbolic.problem";
-  }
+  virtual const RhsType& rhs() const = 0;
 
-  virtual const std::shared_ptr<const FluxType>& flux() const = 0;
+  virtual const InitialValueType& initial_values() const = 0;
 
-  virtual const std::shared_ptr<const RHSType>& rhs() const = 0;
+  virtual const BoundaryValueType& boundary_values() const = 0;
 
-  virtual const std::shared_ptr<const InitialValueType>& initial_values() const = 0;
+  virtual const XT::Common::Configuration& grid_cfg() const = 0;
 
-  virtual const ConfigType grid_config() const = 0;
+  virtual const XT::Common::Configuration& boundary_cfg() const = 0;
 
-  virtual const ConfigType boundary_info() const = 0;
+  virtual RangeFieldType CFL() const = 0;
 
-  virtual const std::shared_ptr<const BoundaryValueType>& boundary_values() const = 0;
-
-  virtual double CFL() const
-  {
-    return 0.5;
-  }
-
-  virtual double t_end() const
-  {
-    return 1.0;
-  }
+  virtual RangeFieldType t_end() const = 0;
 
   virtual bool has_non_zero_rhs() const
   {
@@ -118,4 +88,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_INTERFACES_HH
+#endif // DUNE_GDT_TESTS_HYPERBOLIC_PROBLEMS_INTERFACE_HH

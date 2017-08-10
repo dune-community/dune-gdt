@@ -9,22 +9,29 @@
 //   Rene Milk       (2016 - 2017)
 //   Tobias Leibner  (2016)
 
-#include <config.h>
+#include "config.h"
+
+#include <dune/xt/common/float_cmp.hh>
+
 #include "eocexpectations-fv-transport-1dyaspgrid.hh"
+
 namespace Dune {
 namespace GDT {
 namespace Test {
+
 
 std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp1, double, 1>,
                                                                Hyperbolic::ChooseDiscretizer::fv,
                                                                1,
                                                                NumericalFluxes::godunov,
+                                                               TimeStepperMethods::explicit_euler,
                                                                TimeStepperMethods::explicit_euler>::
     results(
         const Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp1, double, 1>,
                                                          Hyperbolic::ChooseDiscretizer::fv,
                                                          1,
                                                          NumericalFluxes::godunov,
+                                                         TimeStepperMethods::explicit_euler,
                                                          TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
         const std::string type)
 {
@@ -37,7 +44,7 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     else
-      return {3.44e-01, 3.10e-01, 2.40e-01, 1.64e-01, 1.09e-01};
+      return {3.58e-01, 3.14e-01, 2.40e-01, 1.64e-01, 1.10e-01};
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
@@ -47,12 +54,14 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
                                                                Hyperbolic::ChooseDiscretizer::fv,
                                                                1,
                                                                NumericalFluxes::godunov,
+                                                               TimeStepperMethods::dormand_prince,
                                                                TimeStepperMethods::dormand_prince>::
     results(
         const Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp1, double, 1>,
                                                          Hyperbolic::ChooseDiscretizer::fv,
                                                          1,
                                                          NumericalFluxes::godunov,
+                                                         TimeStepperMethods::dormand_prince,
                                                          TimeStepperMethods::dormand_prince>::TestCaseType& test_case,
         const std::string type)
 {
@@ -65,7 +74,7 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     else
-      return {3.46e-01, 3.19e-01, 2.72e-01, 2.10e-01, 1.51e-01};
+      return {3.60e-01, 3.23e-01, 2.72e-01, 2.10e-01, 1.51e-01};
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
@@ -75,12 +84,14 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
                                                                Hyperbolic::ChooseDiscretizer::fv,
                                                                1,
                                                                NumericalFluxes::laxfriedrichs,
+                                                               TimeStepperMethods::explicit_euler,
                                                                TimeStepperMethods::explicit_euler>::
     results(
         const Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp1, double, 1>,
                                                          Hyperbolic::ChooseDiscretizer::fv,
                                                          1,
                                                          NumericalFluxes::laxfriedrichs,
+                                                         TimeStepperMethods::explicit_euler,
                                                          TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
         const std::string type)
 {
@@ -93,7 +104,7 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     } else {
-      return {3.57e-01, 3.48e-01, 3.12e-01, 2.50e-01, 1.87e-01};
+      return {3.74e-01, 3.50e-01, 3.10e-01, 2.50e-01, 1.87e-01};
     }
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
@@ -103,15 +114,18 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
 std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp1, double, 1>,
                                                                Hyperbolic::ChooseDiscretizer::fv,
                                                                1,
-                                                               NumericalFluxes::godunov_with_reconstruction,
-                                                               TimeStepperMethods::explicit_euler>::
-    results(
-        const Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp1, double, 1>,
-                                                         Hyperbolic::ChooseDiscretizer::fv,
-                                                         1,
-                                                         NumericalFluxes::godunov_with_reconstruction,
-                                                         TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
-        const std::string type)
+                                                               NumericalFluxes::godunov,
+                                                               TimeStepperMethods::explicit_euler,
+                                                               TimeStepperMethods::explicit_euler,
+                                                               1>::
+    results(const Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp1, double, 1>,
+                                                             Hyperbolic::ChooseDiscretizer::fv,
+                                                             1,
+                                                             NumericalFluxes::godunov,
+                                                             TimeStepperMethods::explicit_euler,
+                                                             TimeStepperMethods::explicit_euler,
+                                                             1>::TestCaseType& test_case,
+            const std::string type)
 {
   if (type == "L1") {
     if (test_case.num_refinements() == 1) {
@@ -122,12 +136,13 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
       else
         EXPECT_TRUE(false) << "test results missing for type: " << type;
     } else {
-      return {3.29e-01, 2.47e-01, 1.06e-01, 3.83e-02, 3.33e-02};
+      return {3.40e-01, 2.49e-01, 1.05e-01, 3.65e-02, 3.20e-02};
     }
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
 }
+
 
 } // namespace Test
 } // namespace GDT

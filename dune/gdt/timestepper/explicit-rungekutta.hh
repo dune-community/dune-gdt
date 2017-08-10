@@ -14,12 +14,6 @@
 
 #include <utility>
 
-#include <dune/gdt/operators/interfaces.hh>
-
-#include <dune/xt/common/memory.hh>
-#include <dune/xt/common/string.hh>
-#include <dune/xt/la/container.hh>
-
 #include "interface.hh"
 
 
@@ -31,7 +25,7 @@ namespace internal {
 
 
 // unspecialized
-template <class RangeFieldType, class TimeFieldType, TimeStepperMethods method>
+template <class RangeFieldType, TimeStepperMethods method>
 struct ButcherArrayProvider
 {
   static_assert(AlwaysFalse<RangeFieldType>::value,
@@ -39,8 +33,8 @@ struct ButcherArrayProvider
 };
 
 // user-provided Butcher array
-template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::explicit_rungekutta_other>
+template <class RangeFieldType>
+struct ButcherArrayProvider<RangeFieldType, TimeStepperMethods::explicit_rungekutta_other>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -56,17 +50,17 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::e
     return Dune::DynamicVector<RangeFieldType>();
   }
 
-  static Dune::DynamicVector<TimeFieldType> c()
+  static Dune::DynamicVector<RangeFieldType> c()
   {
     DUNE_THROW(Dune::NotImplemented,
                "You have to provide a Butcher array in ExplicitRungeKuttaTimeStepper's constructor for this method!");
-    return Dune::DynamicVector<TimeFieldType>();
+    return Dune::DynamicVector<RangeFieldType>();
   }
 };
 
 // Euler
-template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::explicit_euler>
+template <class RangeFieldType>
+struct ButcherArrayProvider<RangeFieldType, TimeStepperMethods::explicit_euler>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -78,15 +72,15 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::e
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[1]");
   }
 
-  static Dune::DynamicVector<TimeFieldType> c()
+  static Dune::DynamicVector<RangeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0]");
   }
 };
 
 // Second order SSP
-template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::explicit_rungekutta_second_order_ssp>
+template <class RangeFieldType>
+struct ButcherArrayProvider<RangeFieldType, TimeStepperMethods::explicit_rungekutta_second_order_ssp>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -98,15 +92,15 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::e
     return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0.5 0.5]");
   }
 
-  static Dune::DynamicVector<TimeFieldType> c()
+  static Dune::DynamicVector<RangeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0 1]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0 1]");
   }
 };
 
 // Third order SSP
-template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::explicit_rungekutta_third_order_ssp>
+template <class RangeFieldType>
+struct ButcherArrayProvider<RangeFieldType, TimeStepperMethods::explicit_rungekutta_third_order_ssp>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -121,15 +115,15 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::e
         + "]");
   }
 
-  static Dune::DynamicVector<TimeFieldType> c()
+  static Dune::DynamicVector<RangeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0 1 0.5]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0 1 0.5]");
   }
 };
 
 // Classic fourth order RK
-template <class RangeFieldType, class TimeFieldType>
-struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::explicit_rungekutta_classic_fourth_order>
+template <class RangeFieldType>
+struct ButcherArrayProvider<RangeFieldType, TimeStepperMethods::explicit_rungekutta_classic_fourth_order>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -147,9 +141,9 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::e
         + "]");
   }
 
-  static Dune::DynamicVector<TimeFieldType> c()
+  static Dune::DynamicVector<RangeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0 0.5 0.5 1]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0 0.5 0.5 1]");
   }
 };
 
@@ -167,30 +161,30 @@ struct ButcherArrayProvider<RangeFieldType, TimeFieldType, TimeStepperMethods::e
  * b and c form the butcher tableau (see https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods, A is
  * composed of the coefficients a_{ij}, b of b_j and c of c_j). The default is a forward euler method.
  *
+ * Notation: For an s-stage method,
+ * \mathbf{u}^{n+1} = \mathbf{u}^n + dt \sum_{i=0}^{s-1} b_i \mathbf{k}_i
+ * \mathbf{k}_i = L(\mathbf{u}_i, t^n + dt c_i)
+ * \mathbf{u}_i = \mathbf{u}^n + dt \sum_{j=0}^{i-1} a_{ij} \mathbf{k}_j,
+ *
  * \tparam OperatorImp Type of operator L
  * \tparam DiscreteFunctionImp Type of initial values
  */
-template <class OperatorImp,
-          class DiscreteFunctionImp,
-          class TimeFieldImp = double,
-          TimeStepperMethods method = TimeStepperMethods::explicit_euler>
-class ExplicitRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
+template <class OperatorImp, class DiscreteFunctionImp, TimeStepperMethods method = TimeStepperMethods::explicit_euler>
+class ExplicitRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
 {
-  typedef TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp> BaseType;
-  typedef typename internal::ButcherArrayProvider<typename BaseType::RangeFieldType, TimeFieldImp, method>
-      ButcherArrayProviderType;
+  typedef TimeStepperInterface<DiscreteFunctionImp> BaseType;
+  typedef typename internal::ButcherArrayProvider<typename BaseType::RangeFieldType, method> ButcherArrayProviderType;
 
 public:
   using typename BaseType::DiscreteFunctionType;
-  using typename BaseType::TimeFieldType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::SolutionType;
+  using typename BaseType::DataHandleType;
 
   typedef OperatorImp OperatorType;
   typedef typename Dune::DynamicMatrix<RangeFieldType> MatrixType;
   typedef typename Dune::DynamicVector<RangeFieldType> VectorType;
-  typedef typename Dune::DynamicVector<TimeFieldType> TimeVectorType;
 
   using BaseType::current_solution;
   using BaseType::current_time;
@@ -211,11 +205,11 @@ public:
                                 const double t_0 = 0.0,
                                 const MatrixType& A = ButcherArrayProviderType::A(),
                                 const VectorType& b = ButcherArrayProviderType::b(),
-                                const TimeVectorType& c = ButcherArrayProviderType::c())
+                                const VectorType& c = ButcherArrayProviderType::c())
     : BaseType(t_0, initial_values)
     , op_(op)
     , r_(r)
-    , u_tmp_(BaseType::current_solution())
+    , u_i_(BaseType::current_solution())
     , A_(A)
     , b_(b)
     , c_(c)
@@ -232,9 +226,9 @@ public:
       }
     }
 #endif // NDEBUG
-    // store as many discrete functions as needed for intermediate stages
+    // store as many discrete functions as needed for the stages k
     for (size_t ii = 0; ii < num_stages_; ++ii) {
-      u_intermediate_stages_.emplace_back(current_solution());
+      stages_k_.emplace_back(current_solution());
     }
   } // constructor
 
@@ -250,23 +244,28 @@ public:
   {
   }
 
-  virtual TimeFieldType step(const TimeFieldType dt, const TimeFieldType max_dt) override final
+  virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
   {
-    const TimeFieldType actual_dt = std::min(dt, max_dt);
+    const RangeFieldType actual_dt = std::min(dt, max_dt);
     auto& t = current_time();
     auto& u_n = current_solution();
     // calculate stages
     for (size_t ii = 0; ii < num_stages_; ++ii) {
-      u_intermediate_stages_[ii].vector() *= RangeFieldType(0);
-      u_tmp_.vector() = u_n.vector();
+      stages_k_[ii].vector() *= RangeFieldType(0);
+      u_i_.vector() = u_n.vector();
       for (size_t jj = 0; jj < ii; ++jj)
-        u_tmp_.vector() += u_intermediate_stages_[jj].vector() * (actual_dt * r_ * (A_[ii][jj]));
-      op_.apply(u_tmp_, u_intermediate_stages_[ii], t + actual_dt * c_[ii]);
+        u_i_.vector() += stages_k_[jj].vector() * (actual_dt * r_ * (A_[ii][jj]));
+      // TODO: provide actual_dt to op_. This leads to spurious oscillations in the Lax-Friedrichs flux
+      // because actual_dt/dx may become very small.
+      op_.apply(u_i_, stages_k_[ii], XT::Common::Parameter({{"t", {t + actual_dt * c_[ii]}}, {"dt", {dt}}}));
+      DataHandleType stages_k_ii_handle(stages_k_[ii]);
+      stages_k_[ii].space().grid_layer().template communicate<DataHandleType>(
+          stages_k_ii_handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
     }
 
     // calculate value of u at next time step
     for (size_t ii = 0; ii < num_stages_; ++ii)
-      u_n.vector() += u_intermediate_stages_[ii].vector() * (r_ * actual_dt * b_[ii]);
+      u_n.vector() += stages_k_[ii].vector() * (r_ * actual_dt * b_[ii]);
 
     // augment time
     t += actual_dt;
@@ -274,9 +273,9 @@ public:
     return dt;
   } // ... step(...)
 
-  const std::pair<bool, TimeFieldType>
-  find_suitable_dt(const TimeFieldType initial_dt,
-                   const TimeFieldType dt_refinement_factor = 2,
+  const std::pair<bool, RangeFieldType>
+  find_suitable_dt(const RangeFieldType initial_dt,
+                   const RangeFieldType dt_refinement_factor = 2,
                    const RangeFieldType treshold = 0.9 * std::numeric_limits<RangeFieldType>::max(),
                    const size_t max_steps_per_dt = 20,
                    const size_t max_refinements = 20)
@@ -286,9 +285,9 @@ public:
     assert(treshold > 0);
     // save current state
     DiscreteFunctionType initial_u_n = u_n;
-    TimeFieldType initial_t = t;
+    RangeFieldType initial_t = t;
     // start with initial dt
-    TimeFieldType current_dt = initial_dt;
+    RangeFieldType current_dt = initial_dt;
     size_t num_refinements = 0;
     while (num_refinements < max_refinements) {
       std::cout << "Trying time step length dt = " << current_dt << "... " << std::flush;
@@ -326,11 +325,11 @@ public:
 private:
   const OperatorType& op_;
   const RangeFieldType r_;
-  DiscreteFunctionType u_tmp_;
+  DiscreteFunctionType u_i_;
   const MatrixType A_;
   const VectorType b_;
   const VectorType c_;
-  std::vector<DiscreteFunctionType> u_intermediate_stages_;
+  std::vector<DiscreteFunctionType> stages_k_;
   const size_t num_stages_;
 };
 

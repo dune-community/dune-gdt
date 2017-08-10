@@ -17,6 +17,7 @@
 #include <boost/numeric/conversion/cast.hpp>
 
 #include <dune/xt/grid/gridprovider/cube.hh>
+#include <dune/xt/grid/layers.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/gdt/spaces/interface.hh>
@@ -53,7 +54,7 @@ class DerivedHolder : public BaseHolder<Space>
 
 public:
   DerivedHolder(Provider& p)
-    : BaseType(Space(p.template leaf<Space::layer_backend>()))
+    : BaseType(Space(p.template layer<Dune::XT::Grid::Layers::leaf, Space::layer_backend>()))
   {
   }
 };
@@ -71,7 +72,7 @@ class SpaceBase : public ::testing::Test
 public:
   SpaceBase()
     : grid_provider_(Dune::XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 3u))
-    , space_(grid_provider_.template leaf<SpaceType::layer_backend>())
+    , space_(grid_provider_.template layer<Dune::XT::Grid::Layers::leaf, SpaceType::layer_backend>())
   {
   }
 

@@ -21,6 +21,7 @@
 #include <dune/xt/la/container/interfaces.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/local/discretefunction.hh>
 #include <dune/gdt/local/operators/interfaces.hh>
 #include <dune/gdt/local/functionals/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -89,6 +90,49 @@ public:
     } // write local matrix to global
   } // ... assemble(...)
 
+  /**
+ *  \tparam T           Traits of the SpaceInterface implementation, representing the type of test_space
+ *  \tparam A           Traits of the SpaceInterface implementation, representing the type of ansatz_space
+ *  \tparam *d          dimDomain of test_space (* == T) or ansatz_space (* == A)
+ *  \tparam *r          dimRange of test_space (* == T) or ansatz_space (* == A)
+ *  \tparam *rC         dimRangeCols of test_space (* == T) or ansatz_space (* == A)
+ *  \tparam EntityType  A model of Dune::Entity< 0 >
+ *  \tparam M           Traits of the Dune::XT::LA::Container::MatrixInterface implementation, representing the
+ * type of global_matrix
+ *  \tparam R           RangeFieldType, i.e. double
+ */
+  template <class T,
+            size_t Td,
+            size_t Tr,
+            size_t TrC,
+            class A,
+            size_t Ad,
+            size_t Ar,
+            size_t ArC,
+            class EntityType,
+            class R>
+  void assemble_entitywise(const SpaceInterface<T, Td, Tr, TrC>& test_space,
+                           const SpaceInterface<A, Ad, Ar, ArC>& ansatz_space,
+                           const EntityType& entity,
+                           std::vector<Dune::DynamicMatrix<R>>& global_matrix) const
+  {
+// prepare
+#ifndef NDEBUG
+    const size_t rows = test_space.mapper().numDofs(entity);
+    const size_t cols = ansatz_space.mapper().numDofs(entity);
+#endif
+    auto& local_matrix = global_matrix[test_space.grid_view().indexSet().index(entity)];
+    assert(local_matrix.N() == rows && local_matrix.M() == cols);
+    local_matrix *= 0.;
+
+    // apply local two-form
+    const auto test_base = test_space.base_function_set(entity);
+    const auto ansatz_base = ansatz_space.base_function_set(entity);
+    assert(test_base.size() == rows);
+    assert(ansatz_base.size() == cols);
+    local_volume_twoform_.apply2(test_base, ansatz_base, local_matrix);
+  } // ... assemble_entitywise(...)
+
 private:
   const LocalVolumeTwoFormType& local_volume_twoform_;
 }; // class LocalVolumeTwoFormAssembler
@@ -110,7 +154,6 @@ class DUNE_DEPRECATED_MSG("User LocalVolumeTwoFormAccumulatorFunctor instead (29
   static_assert(XT::Functions::is_localizable_function<AnsatzFunctionType>::value,
                 "AnsatzFunctionType has to be derived from XT::Functions::LocalizableFunctionInterface!");
 
-  typedef LocalVolumeTwoFormAccumulator<GridLayerImp, TestFunctionType, AnsatzFunctionType, FieldType> ThisType;
   typedef XT::Grid::internal::Codim0ReturnObject<GridLayerImp, FieldType> BaseType;
 
 public:
@@ -136,7 +179,11 @@ public:
   {
   }
 
-  LocalVolumeTwoFormAccumulator(const ThisType& other) = default;
+// disable deprecation warning that occurs even if this class is not used
+#include <dune/xt/common/disable_warnings.hh>
+  LocalVolumeTwoFormAccumulator(const LocalVolumeTwoFormAccumulator& other) = default;
+#include <dune/xt/common/reenable_warnings.hh>
+
   virtual ~LocalVolumeTwoFormAccumulator() = default;
 
   virtual bool apply_on(const GridLayerType& grid_layer, const EntityType& entity) const override final
@@ -228,6 +275,54 @@ private:
   RangeType& range_;
   const XT::Grid::ApplyOn::WhichEntity<GridLayerType>& where_;
 }; // class LocalOperatorApplicator
+
+
+template <class GridViewType, class LocalOperatorType, class SourceType, class RangeType>
+class LocalOperatorJacobianAssembler : public XT::Grid::internal::Codim0Object<GridViewType>
+{
+  static_assert(is_local_operator<LocalOperatorType>::value,
+                "LocalOperatorType has to be derived from LocalOperatorInterface!");
+  static_assert(XT::Functions::is_localizable_function<SourceType>::value,
+                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
+  static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
+  typedef XT::Grid::internal::Codim0Object<GridViewType> BaseType;
+
+public:
+  using typename BaseType::EntityType;
+
+  LocalOperatorJacobianAssembler(const GridViewType& grid_view,
+                                 const LocalOperatorType& local_operator,
+                                 const SourceType& x,
+                                 const SourceType& source,
+                                 RangeType& range,
+                                 const XT::Grid::ApplyOn::WhichEntity<GridViewType>& where)
+    : grid_view_(grid_view)
+    , local_operator_(local_operator)
+    , x_(x)
+    , source_(source)
+    , range_(range)
+    , where_(where)
+  {
+  }
+
+  virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const
+  {
+    return where_.apply_on(grid_view, entity);
+  }
+
+  virtual void apply_local(const EntityType& entity)
+  {
+    local_operator_.assemble_jacobian(x_, source_, *range_.local_discrete_function(entity));
+  }
+
+private:
+  const GridViewType& grid_view_;
+  const LocalOperatorType& local_operator_;
+  const SourceType& x_;
+  const SourceType& source_;
+  RangeType& range_;
+  const XT::Grid::ApplyOn::WhichEntity<GridViewType>& where_;
+}; // class LocalOperatorJacobianAssembler
 
 
 /**

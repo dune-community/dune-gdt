@@ -61,7 +61,7 @@ public:
             class... Args>
   explicit EllipticLocalizableProduct(const DiffusionImp& diffusion, Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , local_elliptic_operator_(diffusion)
+    , local_elliptic_operator_(diffusion, BaseType::parameter())
   {
     this->append(local_elliptic_operator_);
   }
@@ -74,7 +74,7 @@ public:
             class... Args>
   explicit EllipticLocalizableProduct(const size_t over_integrate, const DiffusionImp& diffusion, Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , local_elliptic_operator_(over_integrate, diffusion)
+    , local_elliptic_operator_(over_integrate, diffusion, BaseType::parameter())
   {
     this->append(local_elliptic_operator_);
   }
@@ -89,7 +89,7 @@ public:
                                       const DiffusionTensorImp& diffusion_tensor,
                                       Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , local_elliptic_operator_(diffusion_factor, diffusion_tensor)
+    , local_elliptic_operator_(diffusion_factor, diffusion_tensor, BaseType::parameter())
   {
     this->append(local_elliptic_operator_);
   }
@@ -105,7 +105,7 @@ public:
                                       const DiffusionTensorImp& diffusion_tensor,
                                       Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , local_elliptic_operator_(over_integrate, diffusion_factor, diffusion_tensor)
+    , local_elliptic_operator_(over_integrate, diffusion_factor, diffusion_tensor, BaseType::parameter())
   {
     this->append(local_elliptic_operator_);
   }
@@ -137,11 +137,12 @@ typename std::
                                           const GridLayerType& grid_layer,
                                           const RangeType& range,
                                           const SourceType& source,
-                                          const size_t over_integrate = 0)
+                                          const size_t over_integrate = 0,
+                                          const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::
       make_unique<EllipticLocalizableProduct<DiffusionType, void, GridLayerType, RangeType, SourceType>>(
-          over_integrate, diffusion, grid_layer, range, source);
+          over_integrate, diffusion, grid_layer, range, source, param);
 }
 
 /**
@@ -163,14 +164,15 @@ make_elliptic_localizable_product(const DiffusionFactorType& diffusion_factor,
                                   const GridLayerType& grid_layer,
                                   const RangeType& range,
                                   const SourceType& source,
-                                  const size_t over_integrate = 0)
+                                  const size_t over_integrate = 0,
+                                  const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::make_unique<EllipticLocalizableProduct<DiffusionFactorType,
                                                                   DiffusionTensorType,
                                                                   GridLayerType,
                                                                   RangeType,
                                                                   SourceType>>(
-      over_integrate, diffusion_factor, diffusion_tensor, grid_layer, range, source);
+      over_integrate, diffusion_factor, diffusion_tensor, grid_layer, range, source, param);
 }
 
 
@@ -649,6 +651,7 @@ class EllipticOperatorTraits
 {
 public:
   typedef EllipticOperator<DiffusionFactorType, DiffusionTensorType, GridLayerType, Field> derived_type;
+  typedef NoJacobian JacobianType;
   typedef Field FieldType;
 };
 
@@ -691,7 +694,8 @@ public:
 
   template <class SourceSpaceType, class VectorType, class RangeSpaceType>
   void apply(const DiscreteFunction<SourceSpaceType, VectorType>& source,
-             DiscreteFunction<RangeSpaceType, VectorType>& range) const
+             DiscreteFunction<RangeSpaceType, VectorType>& range,
+             const XT::Common::Parameter& param = {}) const
   {
     typedef typename XT::LA::Container<typename VectorType::ScalarType,
                                        VectorType::Traits::sparse_matrix_type>::MatrixType MatrixType;
@@ -701,19 +705,21 @@ public:
                                                         range.space(),
                                                         grid_layer_,
                                                         over_integrate_);
-    op->apply(source, range);
+    op->apply(source, range, param);
   }
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
   FieldType apply2(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& range,
-                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source) const
+                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+                   const XT::Common::Parameter& param = {}) const
   {
     auto product = make_elliptic_localizable_product(data_functions_.diffusion_factor(),
                                                      data_functions_.diffusion_tensor(),
                                                      grid_layer_,
                                                      range,
                                                      source,
-                                                     over_integrate_);
+                                                     over_integrate_,
+                                                     param);
     return product->apply2();
   }
 

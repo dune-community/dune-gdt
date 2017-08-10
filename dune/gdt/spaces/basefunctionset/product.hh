@@ -12,7 +12,7 @@
 #ifndef DUNE_GDT_SPACES_BASEFUNCTIONSET_PRODUCT_HH
 #define DUNE_GDT_SPACES_BASEFUNCTIONSET_PRODUCT_HH
 
-#include <tuple>
+#include <dune/xt/common/tuple.hh>
 
 #include "interface.hh"
 
@@ -157,7 +157,7 @@ class ProductDefaultTraits
 public:
   typedef ProductDefault<BaseFunctionSetImps...> derived_type;
   typedef double BackendType;
-  typedef typename std::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::EntityType EntityType;
+  typedef typename XT::Common::tuple_element<0, std::tuple<BaseFunctionSetImps...>>::type::EntityType EntityType;
 };
 
 

@@ -21,17 +21,17 @@
 using namespace Dune;
 using namespace Dune::GDT;
 
-#if HAVE_EIGEN
+#if HAVE_EIGEN || HAVE_LAPACKE
 
-TYPED_TEST_CASE(hyperbolic_FV_discretization_godunov_adaptiveRK, YaspGridTestCasesPartial);
-TYPED_TEST(hyperbolic_FV_discretization_godunov_adaptiveRK, eoc_study_using_yaspgrid)
+TYPED_TEST_CASE(hyperbolic_FV_discretization_godunov_order1_euler, YaspGridTestCasesLinear1D);
+TYPED_TEST(hyperbolic_FV_discretization_godunov_order1_euler, eoc_study_using_yaspgrid)
 {
   this->eoc_study();
 }
 
 #else
 
-GTEST_TEST(DISABLED_hyperbolic_FV_discretization_godunov_adaptiveRK, eoc_study_using_yaspgrid)
+GTEST_TEST(DISABLED_hyperbolic_FV_discretization_godunov_order1_euler, eoc_study_using_yaspgrid)
 {
 }
 

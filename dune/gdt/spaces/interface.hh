@@ -26,9 +26,12 @@
 #include <dune/xt/common/crtp.hh>
 #include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
-#include <dune/xt/common/type_traits.hh>
 #include <dune/xt/common/ranges.hh>
+#include <dune/xt/common/tuple.hh>
+#include <dune/xt/common/type_traits.hh>
+
 #include <dune/xt/la/container/pattern.hh>
+
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/layers.hh>
 #include <dune/xt/grid/view/from-part.hh>
@@ -50,10 +53,13 @@ enum class Backends
 };
 
 
+// disable GCC warning "type attributes ignored after type is already defined [-Wattributes]"
+#include <dune/xt/common/disable_warnings.hh>
 enum class DUNE_DEPRECATED_MSG("Use Backends instead (04.04.2017)!") ChooseSpaceBackend
 {
   None
 };
+#include <dune/xt/common/reenable_warnings.hh>
 
 
 enum class SpaceType
@@ -63,6 +69,7 @@ enum class SpaceType
   dg,
   block_dg,
   fv,
+  product_fv,
   block_fv,
   rt,
   block_rt
@@ -552,7 +559,7 @@ public:
    * @{
    **/
   template <size_t ii>
-  const typename std::tuple_element<ii, SpaceTupleType>::type& factor() const
+  const typename XT::Common::tuple_element<ii, SpaceTupleType>::type& factor() const
   {
     static_assert(ii < num_factors, "This factor does not exist!");
     CHECK_CRTP(this->as_imp().template factor<ii>());

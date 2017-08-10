@@ -24,12 +24,16 @@
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/ranges.hh>
+#include <dune/xt/common/tuple.hh>
+
 #include <dune/xt/la/container.hh>
+
 #include <dune/xt/functions/interfaces.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/fv/default.hh>
+#include <dune/gdt/spaces.hh>
 
 namespace Dune {
 namespace GDT {
@@ -77,11 +81,11 @@ struct visualize_helper<ii, true>
     for (auto it = space.grid_layer().template begin<0>(); it != it_end; ++it) {
       const auto& entity = *it;
       for (size_t jj = 0; jj < factor_space.mapper().numDofs(entity); ++jj)
-        factor_vector[factor_space.mapper().mapToGlobal(entity, jj)] =
-            discrete_function.vector()[space.mapper().mapToGlobal(ii, entity, jj)];
+        factor_vector.set_entry(factor_space.mapper().mapToGlobal(entity, jj),
+                                discrete_function.vector().get_entry(space.mapper().mapToGlobal(ii, entity, jj)));
     }
     ConstDiscreteFunction<
-        typename std::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
+        typename XT::Common::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
         typename DiscreteFunctionType::VectorType>
         factor_discrete_function(factor_space, factor_vector);
     factor_discrete_function.visualize(filename_prefix + "_factor_" + Dune::XT::Common::to_string(ii) + "_"
@@ -93,7 +97,7 @@ struct visualize_helper<ii, true>
 
 // discrete_exact_solution_ time for loop to visualize all factors of a product space, see
 // http://stackoverflow.com/a/11081785
-template <size_t current_factor_index, size_t last_factor_index>
+template <size_t index, size_t N>
 struct static_for_loop
 {
   template <class DiscreteFunctionType>
@@ -103,19 +107,34 @@ struct static_for_loop
                         const VTK::OutputType vtk_output_type,
                         const DiscreteFunctionType& discrete_function)
   {
-    visualize_helper<current_factor_index, true>::visualize_factor(
+    static_for_loop<index, N / 2>::visualize(
         filename_prefix, filename_suffix, subsampling, vtk_output_type, discrete_function);
-    static_for_loop<current_factor_index + 1, last_factor_index>::visualize(
+    static_for_loop<index + N / 2, N - N / 2>::visualize(
         filename_prefix, filename_suffix, subsampling, vtk_output_type, discrete_function);
   }
 };
 
 // specialization of static for loop to end the loop
-template <size_t last_factor_index>
-struct static_for_loop<last_factor_index, last_factor_index>
+template <size_t index>
+struct static_for_loop<index, 1>
 {
   template <class DiscreteFunctionType>
-  static void visualize(const std::string /*filename*/,
+  static void visualize(const std::string filename_prefix,
+                        const std::string filename_suffix,
+                        const bool subsampling,
+                        const VTK::OutputType vtk_output_type,
+                        const DiscreteFunctionType& discrete_function)
+  {
+    visualize_helper<index, true>::visualize_factor(
+        filename_prefix, filename_suffix, subsampling, vtk_output_type, discrete_function);
+  }
+};
+
+template <size_t index>
+struct static_for_loop<index, 0>
+{
+  template <class DiscreteFunctionType>
+  static void visualize(const std::string /*filename_prefix*/,
                         const std::string /*filename_suffix*/,
                         const bool /*subsampling*/,
                         const VTK::OutputType /*vtk_output_type*/,
@@ -325,7 +344,7 @@ public:
   }
 
   DiscreteFunction(const SpaceType& sp, const std::string nm = "gdt.discretefunction")
-    : VectorProviderBaseType(new VectorType(sp.mapper().size()))
+    : VectorProviderBaseType(new VectorType(sp.mapper().size(), 0, 2 * XT::Common::threadManager().max_threads()))
     , BaseType(sp, VectorProviderBaseType::access(), nm)
   {
   }
@@ -384,6 +403,34 @@ make_discrete_function(const SpaceType& space, VectorType&& vector, const std::s
 {
   return DiscreteFunction<SpaceType, VectorType>(space, std::move(vector), nm);
 }
+
+template <class GridType,
+          GDT::SpaceType space_type,
+          int polOrder = (space_type == GDT::SpaceType::fv) ? 0 : 1,
+          class RangeFieldType = double,
+          size_t dimRange = 1,
+          size_t dimRangeCols = 1,
+          GDT::Backends space_backend = GDT::default_space_backend,
+          XT::LA::Backends container_backend = XT::LA::default_backend,
+          XT::Grid::Layers layer_type = XT::Grid::Layers::leaf>
+class DiscreteFunctionProvider
+{
+  typedef typename GDT::
+      SpaceProvider<GridType, layer_type, space_type, space_backend, polOrder, RangeFieldType, dimRange, dimRangeCols>
+          SpaceProviderType;
+
+public:
+  typedef typename SpaceProviderType::type SpaceImp;
+  typedef typename SpaceProviderType::GridLayerType GridLayerType;
+  typedef typename XT::LA::Container<RangeFieldType, container_backend>::VectorType VectorType;
+  typedef DiscreteFunction<SpaceImp, VectorType> type;
+
+  static type create(GridLayerType grd_layer)
+  {
+    auto space = SpaceProviderType::create(grd_layer);
+    return type(space);
+  }
+}; // class DiscreteFunctionProvider<...>
 
 
 /**

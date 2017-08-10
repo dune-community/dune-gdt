@@ -84,6 +84,7 @@ public:
                              OuterSourceSpaceImp>
       derived_type;
   typedef FieldImp FieldType;
+  typedef std::unique_ptr<derived_type> JacobianType;
 };
 
 
@@ -122,21 +123,26 @@ private:
   static_assert(RangeType::dimDomain == GridLayerType::dimension, "");
 
 public:
-  LocalizableProductBase(GridLayerType grd_layr, const RangeType& rng, const SourceType& src)
+  LocalizableProductBase(GridLayerType grd_layr,
+                         const RangeType& rng,
+                         const SourceType& src,
+                         const XT::Common::Parameter& param = {})
     : BaseType(grd_layr)
     , range_(rng)
     , source_(src)
     , result_(0.)
     , walked_(false)
+    , param_(param)
   {
   }
 
-  LocalizableProductBase(GridLayerType grd_layr, const RangeType& rng)
+  LocalizableProductBase(GridLayerType grd_layr, const RangeType& rng, const XT::Common::Parameter& param = {})
     : BaseType(grd_layr)
     , range_(rng)
     , source_(rng)
     , result_(0.)
     , walked_(false)
+    , param_(param)
   {
   }
 
@@ -181,12 +187,18 @@ public:
     return result_;
   }
 
+  const XT::Common::Parameter& parameter() const
+  {
+    return param_;
+  }
+
 protected:
   const RangeType& range_;
   const SourceType& source_;
   FieldType result_;
   std::vector<std::unique_ptr<XT::Grid::internal::Codim0ReturnObject<GridLayerType, FieldType>>> local_volume_twoforms_;
   bool walked_;
+  const XT::Common::Parameter param_;
 }; // class LocalizableProductBase
 
 
@@ -255,6 +267,7 @@ public:
   typedef XT::LA::SparsityPatternDefault PatternType;
   typedef MatrixImp MatrixType;
   using typename BaseOperatorType::FieldType;
+  using typename BaseOperatorType::JacobianType;
   using typename BaseOperatorType::derived_type;
   using typename BaseAssemblerType::GridLayerType;
   using typename BaseAssemblerType::IntersectionType;
@@ -478,20 +491,26 @@ public:
   }
 
   template <class S, class R>
-  void apply(const XT::LA::VectorInterface<S>& source, XT::LA::VectorInterface<R>& range) const
+  void apply(const XT::LA::VectorInterface<S>& source,
+             XT::LA::VectorInterface<R>& range,
+             const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     const_cast<ThisType&>(*this).assemble();
     matrix().mv(source.as_imp(), range.as_imp());
   }
 
   template <class S, class R>
-  void apply(const ConstDiscreteFunction<SourceSpaceType, S>& source, DiscreteFunction<RangeSpaceType, R>& range) const
+  void apply(const ConstDiscreteFunction<SourceSpaceType, S>& source,
+             DiscreteFunction<RangeSpaceType, R>& range,
+             const Dune::XT::Common::Parameter& param = {}) const
   {
-    apply(source.vector(), range.vector());
+    apply(source.vector(), range.vector(), param);
   }
 
   template <class R, class S>
-  FieldType apply2(const XT::LA::VectorInterface<R>& range, const XT::LA::VectorInterface<S>& source) const
+  FieldType apply2(const XT::LA::VectorInterface<R>& range,
+                   const XT::LA::VectorInterface<S>& source,
+                   const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     const_cast<ThisType&>(*this).assemble();
     auto tmp = range.copy();
@@ -501,25 +520,32 @@ public:
 
   template <class R, class S>
   FieldType apply2(const ConstDiscreteFunction<RangeSpaceType, R>& range,
-                   const ConstDiscreteFunction<SourceSpaceType, S>& source) const
+                   const ConstDiscreteFunction<SourceSpaceType, S>& source,
+                   const Dune::XT::Common::Parameter& param = {}) const
   {
-    return apply2(range.vector(), source.vector());
+    return apply2(range.vector(), source.vector(), param);
   }
 
-  //! \todo Implement a base for matrix operators that only gets a matrix and handles the apply, apply2, apply_inverse,
-  //! etc.
-  //  template< class SourceType >
-  //  JacobianType jacobian(const SourceType& /*source*/) const
-  //  {
-  //    return JacobianType(matrix());
-  //  }
+  template <class SourceType>
+  JacobianType jacobian(const SourceType& /*source*/, const Dune::XT::Common::Parameter& /*param*/ = {}) const
+  {
+    return JacobianType(matrix(), range_space(), source_space());
+  }
+
+  template <class SourceType>
+  void
+  jacobian(const SourceType& /*source*/, JacobianType& jac, const Dune::XT::Common::Parameter& /*param*/ = {}) const
+  {
+    jac->matrix() = matrix();
+  }
 
   using BaseOperatorType::apply_inverse;
 
   template <class R, class S>
   void apply_inverse(const XT::LA::VectorInterface<R>& range,
                      XT::LA::VectorInterface<S>& source,
-                     const XT::Common::Configuration& opts) const
+                     const XT::Common::Configuration& opts,
+                     const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     this->assemble();
     LinearSolverType(matrix(), source_space().communicator()).apply(range.as_imp(), source.as_imp(), opts);
@@ -528,7 +554,8 @@ public:
   template <class R, class S>
   void apply_inverse(const ConstDiscreteFunction<RangeSpaceType, R>& range,
                      ConstDiscreteFunction<SourceSpaceType, S>& source,
-                     const XT::Common::Configuration& opts) const
+                     const XT::Common::Configuration& opts,
+                     const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     apply_inverse(range.vector(), source.vector(), opts);
   }
@@ -655,10 +682,10 @@ public:
     return *this;
   } // ... append(...)
 
-  void apply()
+  void apply(const bool use_tbb = false)
   {
     if (!walked_) {
-      this->walk();
+      this->walk(use_tbb);
       walked_ = true;
     }
   } // ... apply(...)

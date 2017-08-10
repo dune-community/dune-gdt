@@ -35,7 +35,7 @@ public:
   typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
   compute_pattern(const GL& grd_layr, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
-    return BaseType::compute_face_and_volume_pattern(grd_layr, ansatz_space);
+    return BaseType::compute_volume_pattern(grd_layr, ansatz_space);
   }
 
   using BaseType::local_constraints;

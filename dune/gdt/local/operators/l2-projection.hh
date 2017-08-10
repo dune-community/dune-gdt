@@ -63,8 +63,9 @@ class LocalL2ProjectionOperator : public LocalOperatorInterface<internal::LocalL
 public:
   typedef internal::LocalL2ProjectionOperatorTraits Traits;
 
-  LocalL2ProjectionOperator(const size_t over_integrate = 0)
+  LocalL2ProjectionOperator(const size_t over_integrate = 0, const XT::Common::Parameter& param = {})
     : over_integrate_(over_integrate)
+    , param_(param)
   {
   }
 
@@ -82,13 +83,13 @@ public:
                                       typename RangeSpaceType::BaseFunctionSetType,
                                       typename RangeSpaceType::BaseFunctionSetType,
                                       R>
-        local_l2_operator(over_integrate_, one);
+        local_l2_operator(over_integrate_, one, param_);
     // and functional
     typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
     const LocalVolumeIntegralFunctional<LocalProductIntegrand<SourceType>,
                                         typename RangeSpaceType::BaseFunctionSetType,
                                         R>
-        local_l2_functional(over_integrate_, source);
+        local_l2_functional(over_integrate_, source, param_);
     // create local lhs and rhs
     const auto& local_basis = local_range.basis();
     const size_t size = local_basis.size();
@@ -111,10 +112,9 @@ public:
     auto& local_range_vector = local_range.vector();
     assert(local_range_vector.size() == local_solution.size());
     for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
-      local_range_vector.set(ii, local_solution[ii]);
+      local_range_vector.set(ii, local_solution.get_entry(ii));
   } // ... apply(...)
 
-  // TODO: do not use product evaluation to avoid a lot of multiplications with 0
   template <class E, class D, size_t d, class R, size_t r, size_t rC, class RangeSpaceType, class VectorType>
   typename std::enable_if<StaticCheck<E, D, d, R, r, rC, RangeSpaceType, VectorType>::value
                               && is_fv_space<RangeSpaceType>::value,
@@ -124,13 +124,13 @@ public:
   {
     // create local L2 volume integral functional
     typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
-    const LocalVolumeIntegralFunctional<LocalProductIntegrand<SourceType>,
+    const LocalVolumeIntegralFunctional<LocalFVProductIntegrand<SourceType>,
                                         typename RangeSpaceType::BaseFunctionSetType,
                                         R>
-        local_l2_functional(over_integrate_, source);
-    XT::LA::CommonDenseVector<R> local_vector(local_range.basis().size());
+        local_l2_functional(over_integrate_, source, param_);
+    Dune::DynamicVector<R> local_vector(local_range.basis().size(), 0.);
     const auto& entity = local_range.entity();
-    local_l2_functional.apply(local_range.basis(), local_vector.backend());
+    local_l2_functional.apply(local_range.basis(), local_vector);
     local_vector /= entity.geometry().volume();
     auto& local_range_vector = local_range.vector();
     for (size_t ii = 0; ii < local_range_vector.size(); ++ii)
@@ -139,6 +139,7 @@ public:
 
 private:
   const size_t over_integrate_;
+  const XT::Common::Parameter param_;
 }; // class LocalL2ProjectionOperator
 
 

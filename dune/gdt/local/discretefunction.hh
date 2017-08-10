@@ -109,7 +109,7 @@ public:
     return *localVector_;
   }
 
-  virtual size_t order(const XT::Common::Parameter& mu = {}) const override
+  virtual size_t order(const XT::Common::Parameter& mu = {}) const override final
   {
     return base_->order(mu);
   }

@@ -40,18 +40,25 @@ class WeightedL2LocalizableProduct : public LocalizableProductBase<GridLayer, Ra
   typedef LocalizableProductBase<GridLayer, Range, Source, Field> BaseType;
 
 public:
-  template <class... Args>
-  WeightedL2LocalizableProduct(const WeightFunctionType& weight, Args&&... args)
-    : BaseType(std::forward<Args>(args)...)
-    , local_weighted_l2_operator_(weight)
+  WeightedL2LocalizableProduct(const WeightFunctionType& weight,
+                               GridLayer grd_layr,
+                               const Range& rng,
+                               const Source& src,
+                               const XT::Common::Parameter& param = {})
+    : BaseType(grd_layr, rng, src)
+    , local_weighted_l2_operator_(weight, param)
   {
     this->append(local_weighted_l2_operator_);
   }
 
-  template <class... Args>
-  WeightedL2LocalizableProduct(const size_t over_integrate, const WeightFunctionType& weight, Args&&... args)
-    : BaseType(std::forward<Args>(args)...)
-    , local_weighted_l2_operator_(over_integrate, weight)
+  WeightedL2LocalizableProduct(const size_t over_integrate,
+                               const WeightFunctionType& weight,
+                               GridLayer grd_layr,
+                               const Range& rng,
+                               const Source& src,
+                               const XT::Common::Parameter& param = {})
+    : BaseType(grd_layr, rng, src)
+    , local_weighted_l2_operator_(over_integrate, weight, param)
   {
     this->append(local_weighted_l2_operator_);
   }
@@ -84,11 +91,12 @@ typename std::
                                              const GridLayerType& grid_layer,
                                              const RangeType& range,
                                              const SourceType& source,
-                                             const size_t over_integrate = 0)
+                                             const size_t over_integrate = 0,
+                                             const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::
       make_unique<WeightedL2LocalizableProduct<WeightFunctionType, GridLayerType, RangeType, SourceType>>(
-          over_integrate, weight, grid_layer, range, source);
+          over_integrate, weight, grid_layer, range, source, param);
 }
 
 
@@ -303,6 +311,7 @@ class WeightedL2OperatorTraits
 {
 public:
   typedef WeightedL2Operator<WeightFunctionType, GridLayerType, Field> derived_type;
+  typedef NoJacobian JacobianType;
   typedef Field FieldType;
 };
 
@@ -328,20 +337,22 @@ public:
 
   template <class SourceSpaceType, class VectorType, class RangeSpaceType>
   void apply(const DiscreteFunction<SourceSpaceType, VectorType>& source,
-             DiscreteFunction<RangeSpaceType, VectorType>& range) const
+             DiscreteFunction<RangeSpaceType, VectorType>& range,
+             const XT::Common::Parameter& param = {}) const
   {
     typedef typename XT::LA::Container<typename VectorType::ScalarType,
                                        VectorType::Traits::sparse_matrix_type>::MatrixType MatrixType;
     auto op = make_weighted_l2_matrix_operator<MatrixType>(
         weight_, source.space(), range.space(), grid_layer_, over_integrate_);
-    op->apply(source, range);
+    op->apply(source, range, param);
   }
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
   FieldType apply2(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& range,
-                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source) const
+                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+                   const XT::Common::Parameter& param = {}) const
   {
-    auto product = make_weighted_l2_localizable_product(weight_, grid_layer_, range, source, over_integrate_);
+    auto product = make_weighted_l2_localizable_product(weight_, grid_layer_, range, source, over_integrate_, param);
     return product->apply2();
   }
 

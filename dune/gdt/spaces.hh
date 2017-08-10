@@ -65,6 +65,13 @@ class SpaceProvider<G, layer, SpaceType::fv, backend, p, R, r, rC, g>
 };
 
 template <class G, XT::Grid::Layers layer, Backends backend, int p, class R, size_t r, size_t rC, XT::Grid::Backends g>
+class SpaceProvider<G, layer, SpaceType::product_fv, backend, p, R, r, rC, g>
+    : public FvProductSpaceProvider<G, layer, backend, R, r, rC, g>
+{
+  static_assert(p == 0, "There is no FV space with nonzero polOrder!");
+};
+
+template <class G, XT::Grid::Layers layer, Backends backend, int p, class R, size_t r, size_t rC, XT::Grid::Backends g>
 class SpaceProvider<G, layer, SpaceType::block_fv, backend, p, R, r, rC, g>
     : public BlockFvSpaceProvider<G, layer, backend, R, r, rC, g>
 {

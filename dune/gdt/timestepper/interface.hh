@@ -14,30 +14,19 @@
 
 #include <utility>
 
-#include <dune/gdt/operators/interfaces.hh>
-
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/string.hh>
+#include <dune/xt/common/tuple.hh>
+
 #include <dune/xt/la/container.hh>
 
+#include <dune/gdt/discretefunction/datahandle.hh>
+#include <dune/gdt/operators/interfaces.hh>
+
+#include "enums.hh"
 
 namespace Dune {
 namespace GDT {
-
-
-enum class TimeStepperMethods
-{
-  bogacki_shampine,
-  dormand_prince,
-  adaptive_rungekutta_other,
-  explicit_euler,
-  explicit_rungekutta_second_order_ssp,
-  explicit_rungekutta_third_order_ssp,
-  explicit_rungekutta_classic_fourth_order,
-  explicit_rungekutta_other
-};
-
-
 namespace internal {
 
 
@@ -54,28 +43,30 @@ struct FloatCmpLt
 } // namespace internal
 
 
-template <class DiscreteFunctionImp, class TimeFieldImp>
-class TimeStepperInterface
-    : Dune::XT::Common::StorageProvider<DiscreteFunctionImp>,
-      Dune::XT::Common::StorageProvider<std::map<TimeFieldImp, DiscreteFunctionImp, typename internal::FloatCmpLt>>
+template <class DiscreteFunctionImp>
+class TimeStepperInterface : Dune::XT::Common::StorageProvider<DiscreteFunctionImp>,
+                             Dune::XT::Common::StorageProvider<std::map<typename DiscreteFunctionImp::RangeFieldType,
+                                                                        DiscreteFunctionImp,
+                                                                        typename internal::FloatCmpLt>>
 {
 public:
   typedef DiscreteFunctionImp DiscreteFunctionType;
-  typedef TimeFieldImp TimeFieldType;
 
   typedef typename DiscreteFunctionType::DomainFieldType DomainFieldType;
   typedef typename DiscreteFunctionType::RangeFieldType RangeFieldType;
-  typedef typename std::map<TimeFieldType, DiscreteFunctionType, typename internal::FloatCmpLt> SolutionType;
+  typedef typename std::map<RangeFieldType, DiscreteFunctionType, typename internal::FloatCmpLt> SolutionType;
   typedef typename SolutionType::value_type TimeAndDiscreteFunctionPairType;
+  typedef DiscreteFunctionDataHandle<DiscreteFunctionType> DataHandleType;
+  typedef std::function<void(const DiscreteFunctionType&, const std::string&, const size_t)> VisualizerType;
 
 private:
   typedef typename Dune::XT::Common::StorageProvider<DiscreteFunctionImp> CurrentSolutionStorageProviderType;
   typedef typename Dune::XT::Common::
-      StorageProvider<std::map<TimeFieldImp, DiscreteFunctionImp, typename internal::FloatCmpLt>>
+      StorageProvider<std::map<RangeFieldType, DiscreteFunctionImp, typename internal::FloatCmpLt>>
           SolutionStorageProviderType;
 
 protected:
-  TimeStepperInterface(const TimeFieldType t_0, const DiscreteFunctionType& initial_values)
+  TimeStepperInterface(const RangeFieldType t_0, const DiscreteFunctionType& initial_values)
     : CurrentSolutionStorageProviderType(initial_values)
     , SolutionStorageProviderType(new SolutionType())
     , t_(t_0)
@@ -99,14 +90,14 @@ public:
    * solve will never finish execution (if current_time is not increased) or give wrong results (if current time is
    * increased by a wrong dt).
    */
-  virtual TimeFieldType step(const TimeFieldType dt, const TimeFieldType max_dt) = 0;
+  virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) = 0;
 
-  const TimeFieldType& current_time() const
+  const RangeFieldType& current_time() const
   {
     return t_;
   }
 
-  TimeFieldType& current_time()
+  RangeFieldType& current_time()
   {
     return t_;
   }
@@ -159,32 +150,33 @@ public:
    * exactly num_save_steps + 1 equidistant time points (including the initial time and t_end), even if the time step
    * length has to be reduced to hit these time points.
    */
-  virtual TimeFieldType solve(const TimeFieldType t_end,
-                              const TimeFieldType initial_dt,
-                              const size_t num_save_steps,
-                              const bool save_solution,
-                              const bool output_progress,
-                              const bool visualize,
-                              const std::string filename_prefix,
-                              SolutionType& sol)
+  virtual RangeFieldType solve(const RangeFieldType t_end,
+                               const RangeFieldType initial_dt,
+                               const size_t num_save_steps,
+                               const bool save_solution,
+                               const bool output_progress,
+                               const bool visualize,
+                               const std::string filename_prefix,
+                               SolutionType& sol,
+                               const VisualizerType& visualizer)
   {
-    TimeFieldType dt = initial_dt;
-    TimeFieldType t = current_time();
-    assert(Dune::XT::Common::FloatCmp::ge(t_end - t, 0.0));
+    RangeFieldType dt = initial_dt;
+    RangeFieldType t = current_time();
+    assert(Dune::XT::Common::FloatCmp::ge(t_end, t));
     size_t time_step_counter = 0;
 
-    const TimeFieldType save_interval = (t_end - t) / num_save_steps;
-    TimeFieldType next_save_time = t + save_interval > t_end ? t_end : t + save_interval;
+    const RangeFieldType save_interval = (t_end - t) / num_save_steps;
+    RangeFieldType next_save_time = t + save_interval > t_end ? t_end : t + save_interval;
     size_t save_step_counter = 1;
 
     // save/visualize initial solution
     if (save_solution)
       sol.insert(std::make_pair(t, current_solution()));
     if (visualize)
-      current_solution().visualize(filename_prefix, Dune::XT::Common::to_string(0));
+      visualizer(current_solution(), filename_prefix, 0);
 
     while (Dune::XT::Common::FloatCmp::lt(t, t_end)) {
-      TimeFieldType max_dt = dt;
+      RangeFieldType max_dt = dt;
       // match saving times and t_end exactly
       if (Dune::XT::Common::FloatCmp::gt(t + dt, t_end))
         max_dt = t_end - t;
@@ -203,7 +195,7 @@ public:
         if (save_solution)
           sol.insert(sol.end(), std::make_pair(t, current_solution()));
         if (visualize)
-          current_solution().visualize(filename_prefix, Dune::XT::Common::to_string(save_step_counter));
+          visualizer(current_solution(), filename_prefix, save_step_counter);
         if (output_progress)
           std::cout << "time step " << time_step_counter << " done, time =" << t << ", current dt= " << dt << std::endl;
         next_save_time += save_interval;
@@ -214,34 +206,43 @@ public:
     return dt;
   } // ... solve(...)
 
-  virtual TimeFieldType solve(const TimeFieldType t_end,
-                              const TimeFieldType initial_dt = 1e-4,
-                              const size_t num_save_steps = -1,
-                              const bool save_solution = true,
-                              const bool output_progress = false,
-                              const bool visualize = false,
-                              const std::string filename_prefix = "solution")
+  virtual RangeFieldType solve(const RangeFieldType t_end,
+                               const RangeFieldType initial_dt = 1e-4,
+                               const size_t num_save_steps = -1,
+                               const bool save_solution = true,
+                               const bool output_progress = false,
+                               const bool visualize = false,
+                               const std::string filename_prefix = "solution",
+                               const VisualizerType& visualizer = all_components_visualizer())
   {
-    return solve(
-        t_end, initial_dt, num_save_steps, save_solution, output_progress, visualize, filename_prefix, *solution_);
+    return solve(t_end,
+                 initial_dt,
+                 num_save_steps,
+                 save_solution,
+                 output_progress,
+                 visualize,
+                 filename_prefix,
+                 *solution_,
+                 visualizer);
   }
 
-  virtual TimeFieldType
-  solve(const TimeFieldType t_end, const TimeFieldType initial_dt, const size_t num_save_steps, SolutionType& sol)
+  virtual RangeFieldType
+  solve(const RangeFieldType t_end, const RangeFieldType initial_dt, const size_t num_save_steps, SolutionType& sol)
   {
-    return solve(t_end, initial_dt, num_save_steps, true, false, false, "", sol);
+    return solve(t_end, initial_dt, num_save_steps, true, false, false, "", sol, 0);
   }
 
   /**
    * \brief Find discrete solution for time point that is closest to t.
    *
-   * The timestepper only stores the solution at discrete time points. This function returns the discrete solution for
+   * The timestepper only stores the solution at discrete time points. This function returns the discrete solution
+   * for
    * the stored time point that is closest to the query time t.
    *
    * \param t Time
    * \return std::pair with pair.second the discrete solution at time pair.first
    */
-  virtual const TimeAndDiscreteFunctionPairType& solution_closest_to_time(const TimeFieldType t) const
+  virtual const TimeAndDiscreteFunctionPairType& solution_closest_to_time(const RangeFieldType t) const
   {
     if (solution().empty())
       DUNE_THROW(Dune::InvalidStateException, "Solution is empty!");
@@ -249,7 +250,7 @@ public:
                                                                                        : *solution().upper_bound(t);
   }
 
-  virtual const DiscreteFunctionType& solution_at_time(const TimeFieldType t) const
+  virtual const DiscreteFunctionType& solution_at_time(const RangeFieldType t) const
   {
     const auto it = solution().find(t);
     if (it == solution().end())
@@ -278,8 +279,15 @@ public:
     }
   }
 
+  static VisualizerType all_components_visualizer()
+  {
+    return [](const DiscreteFunctionType& u_n, const std::string& filename_prefix, const size_t step) {
+      u_n.visualize(filename_prefix, Dune::XT::Common::to_string(step));
+    };
+  }
+
 private:
-  TimeFieldType t_;
+  RangeFieldType t_;
   DiscreteFunctionType* u_n_;
   SolutionType* solution_;
 }; // class TimeStepperInterface

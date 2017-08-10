@@ -9,8 +9,9 @@
 //   Rene Milk       (2016 - 2017)
 //   Tobias Leibner  (2016)
 
-#include <config.h>
+#include "config.h"
 #include "eocexpectations-fv-sourcebeam-1dyaspgrid.hh"
+
 namespace Dune {
 namespace GDT {
 namespace Test {
@@ -20,11 +21,13 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yas
                                               Hyperbolic::ChooseDiscretizer::fv,
                                               1,
                                               NumericalFluxes::godunov,
+                                              TimeStepperMethods::explicit_euler,
                                               TimeStepperMethods::explicit_euler>::
     results(const HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
                                             Hyperbolic::ChooseDiscretizer::fv,
                                             1,
                                             NumericalFluxes::godunov,
+                                            TimeStepperMethods::explicit_euler,
                                             TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
             const std::string type)
 {
@@ -40,17 +43,21 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yas
   return {};
 }
 
-std::vector<double> HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
-                                              Hyperbolic::ChooseDiscretizer::fv,
-                                              1,
-                                              NumericalFluxes::godunov_with_reconstruction,
-                                              TimeStepperMethods::explicit_euler>::
-    results(const HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
-                                            Hyperbolic::ChooseDiscretizer::fv,
-                                            1,
-                                            NumericalFluxes::godunov_with_reconstruction,
-                                            TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
-            const std::string type)
+std::vector<double>
+HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
+                          Hyperbolic::ChooseDiscretizer::fv,
+                          1,
+                          NumericalFluxes::godunov,
+                          TimeStepperMethods::explicit_euler,
+                          TimeStepperMethods::explicit_euler,
+                          1>::results(const HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yasp1, double>,
+                                                                      Hyperbolic::ChooseDiscretizer::fv,
+                                                                      1,
+                                                                      NumericalFluxes::godunov,
+                                                                      TimeStepperMethods::explicit_euler,
+                                                                      TimeStepperMethods::explicit_euler,
+                                                                      1>::TestCaseType& test_case,
+                                      const std::string type)
 {
   if (type == "L1") {
     if (test_case.num_refinements() == 1) {
@@ -65,6 +72,7 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::SourceBeamTestCase<Yas
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
 }
+
 
 } // namespace Test
 } // namespace GDT

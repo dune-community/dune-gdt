@@ -42,6 +42,7 @@ class L2GlobalProjectionOperatorTraits
 {
 public:
   typedef L2GlobalProjectionOperator<GridLayerImp, FieldImp> derived_type;
+  typedef NoJacobian JacobianType;
   typedef FieldImp FieldType;
 };
 
@@ -75,7 +76,8 @@ public:
   L2GlobalProjectionLocalizableOperator(const size_t over_integrate,
                                         GridLayerType grd_vw,
                                         const SourceType& src,
-                                        RangeType& rng)
+                                        RangeType& rng,
+                                        const XT::Common::Parameter& /*param*/ = {})
     : BaseType(grd_vw, src, rng)
     , lhs_operator_(over_integrate, range_.space(), BaseType::grid_layer())
     , rhs_functional_(over_integrate, source_, range_.space(), BaseType::grid_layer())
@@ -86,8 +88,11 @@ public:
     issue_warning(this->range().space());
   }
 
-  L2GlobalProjectionLocalizableOperator(GridLayerType grd_vw, const SourceType& src, RangeType& rng)
-    : L2GlobalProjectionLocalizableOperator(0, grd_vw, src, rng)
+  L2GlobalProjectionLocalizableOperator(GridLayerType grd_vw,
+                                        const SourceType& src,
+                                        RangeType& rng,
+                                        const XT::Common::Parameter& param = {})
+    : L2GlobalProjectionLocalizableOperator(0, grd_vw, src, rng, param)
   {
   }
 
@@ -215,16 +220,18 @@ public:
 
   template <class R, size_t r, size_t rC, class S, class V>
   void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
-             DiscreteFunction<S, V>& range) const
+             DiscreteFunction<S, V>& range,
+             const XT::Common::Parameter& param = {}) const
   {
     typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
     L2GlobalProjectionLocalizableOperator<GridLayerType, SourceType, DiscreteFunction<S, V>> op(
-        over_integrate_, grid_layer_, source, range);
+        over_integrate_, grid_layer_, source, range, param);
     op.apply();
   }
 
   template <class RangeType, class SourceType>
-  FieldType apply2(const RangeType& /*range*/, const SourceType& /*source*/) const
+  FieldType
+  apply2(const RangeType& /*range*/, const SourceType& /*source*/, const XT::Common::Parameter& /*param*/ = {}) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }

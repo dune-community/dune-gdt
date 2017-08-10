@@ -137,10 +137,11 @@ typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value
 make_l2_localizable_product(const GridLayerType& grid_layer,
                             const RangeType& range,
                             const SourceType& source,
-                            const size_t over_integrate = 0)
+                            const size_t over_integrate = 0,
+                            const XT::Common::Parameter& param = {})
 {
   return Dune::XT::Common::make_unique<L2LocalizableProduct<GridLayerType, RangeType, SourceType>>(
-      over_integrate, grid_layer, range, source);
+      over_integrate, grid_layer, range, source, param);
 }
 
 
@@ -369,6 +370,7 @@ class L2OperatorTraits
 {
 public:
   typedef L2Operator<GridLayerType, Field> derived_type;
+  typedef NoJacobian JacobianType;
   typedef Field FieldType;
 };
 
@@ -393,19 +395,21 @@ public:
 
   template <class SourceSpaceType, class VectorType, class RangeSpaceType>
   void apply(const DiscreteFunction<SourceSpaceType, VectorType>& source,
-             DiscreteFunction<RangeSpaceType, VectorType>& range) const
+             DiscreteFunction<RangeSpaceType, VectorType>& range,
+             const XT::Common::Parameter& param = {}) const
   {
     typedef typename XT::LA::Container<typename VectorType::ScalarType,
                                        VectorType::Traits::sparse_matrix_type>::MatrixType MatrixType;
     auto op = make_l2_matrix_operator<MatrixType>(source.space(), range.space(), grid_layer_, over_integrate_);
-    op->apply(source, range);
+    op->apply(source, range, param);
   }
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
   FieldType apply2(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& range,
-                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source) const
+                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+                   const XT::Common::Parameter& param = {}) const
   {
-    auto product = make_l2_localizable_product(grid_layer_, range, source, over_integrate_);
+    auto product = make_l2_localizable_product(grid_layer_, range, source, over_integrate_, param);
     return product->apply2();
   }
 

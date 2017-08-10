@@ -218,9 +218,9 @@ public:
 
 
 template <class Traits>
-class FVDiscretizationInterface : public XT::CRTPInterface<FVDiscretizationInterface<Traits>, Traits>
+class FvDiscretizationInterface : public XT::CRTPInterface<FvDiscretizationInterface<Traits>, Traits>
 {
-  typedef XT::CRTPInterface<FVDiscretizationInterface<Traits>, Traits> BaseType;
+  typedef XT::CRTPInterface<FvDiscretizationInterface<Traits>, Traits> BaseType;
 
 public:
   using typename BaseType::derived_type;
@@ -266,7 +266,7 @@ public:
   }
 
   /// \}
-}; // class FVDiscretizationInterface
+}; // class FvDiscretizationInterface
 
 
 namespace internal {

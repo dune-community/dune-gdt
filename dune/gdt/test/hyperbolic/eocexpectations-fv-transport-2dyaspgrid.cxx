@@ -9,21 +9,25 @@
 //   Rene Milk       (2016 - 2017)
 //   Tobias Leibner  (2016)
 
-#include <config.h>
+#include "config.h"
 #include "eocexpectations-fv-transport-2dyaspgrid.hh"
+
 namespace Dune {
 namespace GDT {
 namespace Test {
+
 
 std::vector<double> HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp2, double, 1>,
                                               Hyperbolic::ChooseDiscretizer::fv,
                                               2,
                                               NumericalFluxes::godunov,
+                                              TimeStepperMethods::explicit_euler,
                                               TimeStepperMethods::explicit_euler>::
     results(const HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp2, double, 1>,
                                             Hyperbolic::ChooseDiscretizer::fv,
                                             2,
                                             NumericalFluxes::godunov,
+                                            TimeStepperMethods::explicit_euler,
                                             TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
             const std::string type)
 {
@@ -36,7 +40,7 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     } else {
-      return {7.34e-02, 7.64e-02, 6.26e-02};
+      return {8.92e-02, 7.89e-02, 5.93e-02};
     }
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
@@ -47,11 +51,13 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp
                                               Hyperbolic::ChooseDiscretizer::fv,
                                               2,
                                               NumericalFluxes::godunov,
+                                              TimeStepperMethods::dormand_prince,
                                               TimeStepperMethods::dormand_prince>::
     results(const HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp2, double, 1>,
                                             Hyperbolic::ChooseDiscretizer::fv,
                                             2,
                                             NumericalFluxes::godunov,
+                                            TimeStepperMethods::dormand_prince,
                                             TimeStepperMethods::dormand_prince>::TestCaseType& test_case,
             const std::string type)
 {
@@ -64,7 +70,7 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     } else {
-      return {7.39e-02, 7.96e-02, 7.76e-02};
+      return {8.98e-02, 8.25e-02, 7.30e-02};
     }
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
@@ -75,11 +81,13 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp
                                               Hyperbolic::ChooseDiscretizer::fv,
                                               2,
                                               NumericalFluxes::laxfriedrichs,
+                                              TimeStepperMethods::explicit_euler,
                                               TimeStepperMethods::explicit_euler>::
     results(const HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp2, double, 1>,
                                             Hyperbolic::ChooseDiscretizer::fv,
                                             2,
                                             NumericalFluxes::laxfriedrichs,
+                                            TimeStepperMethods::explicit_euler,
                                             TimeStepperMethods::explicit_euler>::TestCaseType& test_case,
             const std::string type)
 {
@@ -92,12 +100,13 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     } else {
-      return {7.41e-02, 7.85e-02, 6.67e-02};
+      return {9.00e-02, 8.09e-02, 6.30e-02};
     }
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
 }
+
 
 } // namespace Test
 } // namespace GDT

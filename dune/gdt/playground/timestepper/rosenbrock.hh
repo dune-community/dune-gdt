@@ -38,9 +38,7 @@ namespace internal {
 
 
 // unspecialized
-template <class RangeFieldType,
-          class TimeFieldType,
-          RosenbrockTimeStepperMethods method = RosenbrockTimeStepperMethods::other>
+template <class RangeFieldType, RosenbrockTimeStepperMethods method = RosenbrockTimeStepperMethods::other>
 struct RosenbrockButcherArrayProvider
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
@@ -64,25 +62,25 @@ struct RosenbrockButcherArrayProvider
     return Dune::DynamicVector<RangeFieldType>();
   }
 
-  static Dune::DynamicVector<TimeFieldType> c()
+  static Dune::DynamicVector<RangeFieldType> c()
   {
     DUNE_THROW(Dune::NotImplemented,
                "You have to provide a Butcher array in RosenbrockTimeStepper's constructor for this method!");
-    return Dune::DynamicVector<TimeFieldType>();
+    return Dune::DynamicVector<RangeFieldType>();
   }
 
   static Dune::DynamicMatrix<RangeFieldType> Gamma()
   {
     DUNE_THROW(Dune::NotImplemented,
                "You have to provide a Butcher array in RosenbrockTimeStepper's constructor for this method!");
-    return Dune::DynamicVector<TimeFieldType>();
+    return Dune::DynamicVector<RangeFieldType>();
   }
 };
 
 // GRK4A, see Kaps, Rentrop (1979), "Generalized Runge-Kutta methods of order four with stepsize control for stiff
 // ordinary differential equations"
-template <class RangeFieldType, class TimeFieldType>
-struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockTimeStepperMethods::GRK4A>
+template <class RangeFieldType>
+struct RosenbrockButcherArrayProvider<RangeFieldType, RosenbrockTimeStepperMethods::GRK4A>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -103,9 +101,9 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockT
         "[0.346325833758  0.285693175712 0.367980990530 0]");
   }
 
-  static Dune::DynamicVector<TimeFieldType> c()
+  static Dune::DynamicVector<RangeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0 0.438 0.87 0.87]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0 0.438 0.87 0.87]");
   }
 
   static Dune::DynamicMatrix<RangeFieldType> Gamma()
@@ -117,8 +115,8 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockT
 };
 
 // GRK4T
-template <class RangeFieldType, class TimeFieldType>
-struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockTimeStepperMethods::GRK4T>
+template <class RangeFieldType>
+struct RosenbrockButcherArrayProvider<RangeFieldType, RosenbrockTimeStepperMethods::GRK4T>
 {
   static Dune::DynamicMatrix<RangeFieldType> A()
   {
@@ -139,9 +137,9 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockT
         "[-0.717088504499 1.77617912176 -0.0590906172617 0]");
   }
 
-  static Dune::DynamicVector<TimeFieldType> c()
+  static Dune::DynamicVector<RangeFieldType> c()
   {
-    return Dune::XT::Common::from_string<Dune::DynamicVector<TimeFieldType>>("[0 0.462 0.88020833333 0.88020833333]");
+    return Dune::XT::Common::from_string<Dune::DynamicVector<RangeFieldType>>("[0 0.462 0.88020833333 0.88020833333]");
   }
 
   static Dune::DynamicMatrix<RangeFieldType> Gamma()
@@ -164,14 +162,13 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockT
  * method is not contained in Dune::GDT::TimeStepper::RosenbrockTimeStepperMethods, choose
  * RosenbrockTimeStepperMethods::other and
  * supply matrices A, Gamma (DynamicMatrix< RangeFieldType >) and vectors b_1, b_2 (DynamicVector< RangeFieldType >) and
- * c (DynamicVector< TimeFieldType >) in the constructor. Here, A, Gamma, b_1, b_2 and c form the extended butcher
+ * c (DynamicVector< RangeFieldType >) in the constructor. Here, A, Gamma, b_1, b_2 and c form the extended butcher
  * tableau (see https://de.wikipedia.org/wiki/Rosenbrock-Wanner-Verfahren, b_1 and b_2 are the same as for adaptive
  * Runge-Kutta schemes). The default is the GRK4T method.
  *
  * \tparam OperatorImp Type of operator L
  * \tparam DiscreteFunctionImp Type of initial values and solution at a fixed time
  * \tparam SolverImp Type of solver used for inversion of matrix in each time step.
- * \tparam TimeFieldImp Type used for representation of time (default is double)
  * \tparam method Rosenbrock-type method that is used (default is RosenbrockTimeStepperMethods::GRK4T)
  *
  * \todo Implement concept of jacobian/time derivative of operator and finish implementation of this method.
@@ -179,17 +176,15 @@ struct RosenbrockButcherArrayProvider<RangeFieldType, TimeFieldType, RosenbrockT
 template <class OperatorImp,
           class DiscreteFunctionImp,
           class SolverImp,
-          class TimeFieldImp = double,
           RosenbrockTimeStepperMethods method = RosenbrockTimeStepperMethods::GRK4T>
-class RosenbrockTimeStepper : public TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp>
+class RosenbrockTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
 {
-  typedef TimeStepperInterface<DiscreteFunctionImp, TimeFieldImp> BaseType;
-  typedef typename internal::RosenbrockButcherArrayProvider<typename BaseType::RangeFieldType, TimeFieldImp, method>
+  typedef TimeStepperInterface<DiscreteFunctionImp> BaseType;
+  typedef typename internal::RosenbrockButcherArrayProvider<typename BaseType::RangeFieldType, method>
       ButcherArrayProviderType;
 
 public:
   using typename BaseType::DiscreteFunctionType;
-  using typename BaseType::TimeFieldType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::SolutionType;
@@ -198,7 +193,6 @@ public:
   typedef SolverImp SolverType;
   typedef typename Dune::DynamicMatrix<RangeFieldType> MatrixType;
   typedef typename Dune::DynamicVector<RangeFieldType> VectorType;
-  typedef typename Dune::DynamicVector<TimeFieldType> TimeVectorType;
 
   using BaseType::current_solution;
   using BaseType::current_time;
@@ -223,12 +217,12 @@ public:
                         const RangeFieldType r = 1.0,
                         const double t_0 = 0.0,
                         const RangeFieldType tol = 1e-4,
-                        const TimeFieldType scale_factor_min = 0.2,
-                        const TimeFieldType scale_factor_max = 5,
+                        const RangeFieldType scale_factor_min = 0.2,
+                        const RangeFieldType scale_factor_max = 5,
                         const MatrixType& A = ButcherArrayProviderType::A(),
                         const VectorType& b_1 = ButcherArrayProviderType::b_1(),
                         const VectorType& b_2 = ButcherArrayProviderType::b_2(),
-                        const TimeVectorType& c = ButcherArrayProviderType::c(),
+                        const VectorType& c = ButcherArrayProviderType::c(),
                         const MatrixType& Gamma = ButcherArrayProviderType::Gamma())
     : BaseType(t_0, initial_values)
     , op_(op)
@@ -258,7 +252,7 @@ public:
     assert(c_.size() == A_.rows());
 #ifndef NDEBUG
     for (size_t ii = 0; ii < A_.rows(); ++ii) {
-      TimeFieldType c_calculated = 0;
+      RangeFieldType c_calculated = 0;
       for (size_t jj = 0; jj < ii; ++jj)
         c_calculated += A_[ii][jj];
       assert(Dune::XT::Common::FloatCmp::eq(c_calculated, c_[ii]));
@@ -301,11 +295,11 @@ public:
     }
   } // constructor RosenbrockTimeStepper
 
-  TimeFieldType step(const TimeFieldType dt, const TimeFieldType max_dt)
+  RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt)
   {
-    TimeFieldType actual_dt = std::min(dt, max_dt);
+    RangeFieldType actual_dt = std::min(dt, max_dt);
     RangeFieldType mixed_error = std::numeric_limits<RangeFieldType>::max();
-    TimeFieldType time_step_scale_factor = 1.0;
+    RangeFieldType time_step_scale_factor = 1.0;
 
     auto& t = current_time();
     auto& u_n = current_solution();
@@ -381,8 +375,8 @@ private:
   const OperatorType& op_;
   const RangeFieldType r_;
   const RangeFieldType tol_;
-  const TimeFieldType scale_factor_min_;
-  const TimeFieldType scale_factor_max_;
+  const RangeFieldType scale_factor_min_;
+  const RangeFieldType scale_factor_max_;
   DiscreteFunctionType u_tmp_;
   const MatrixType A_;
   const VectorType m_1_;

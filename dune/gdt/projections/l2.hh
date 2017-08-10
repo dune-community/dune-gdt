@@ -57,6 +57,7 @@ class L2ProjectionOperatorTraits
 public:
   typedef L2ProjectionOperator<GridLayerType, FieldImp> derived_type;
   typedef FieldImp FieldType;
+  typedef NoJacobian JacobianType;
 };
 
 
@@ -144,9 +145,10 @@ public:
 
   template <class R, size_t r, size_t rC, class S, class V>
   void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
-             DiscreteFunction<S, V>& range) const
+             DiscreteFunction<S, V>& range,
+             const XT::Common::Parameter& param = {}) const
   {
-    redirect<S::continuous>::apply(grid_layer_, source, range, over_integrate_);
+    redirect<S::continuous>::apply(grid_layer_, source, range, over_integrate_, param);
   }
 
   template <class RangeType, class SourceType>
@@ -177,9 +179,14 @@ private:
   struct redirect
   {
     template <class SourceType, class RangeType>
-    static void apply(const GridLayerType& grd_vw, const SourceType& src, RangeType& rng, const size_t over_integrate)
+    static void apply(const GridLayerType& grd_vw,
+                      const SourceType& src,
+                      RangeType& rng,
+                      const size_t over_integrate,
+                      const XT::Common::Parameter& param = {})
     {
-      L2GlobalProjectionLocalizableOperator<GridLayerType, SourceType, RangeType>(over_integrate, grd_vw, src, rng)
+      L2GlobalProjectionLocalizableOperator<GridLayerType, SourceType, RangeType>(
+          over_integrate, grd_vw, src, rng, param)
           .apply();
     }
   };
@@ -188,9 +195,14 @@ private:
   struct redirect<false, anything>
   {
     template <class SourceType, class RangeType>
-    static void apply(const GridLayerType& grd_vw, const SourceType& src, RangeType& rng, const size_t over_integrate)
+    static void apply(const GridLayerType& grd_vw,
+                      const SourceType& src,
+                      RangeType& rng,
+                      const size_t over_integrate,
+                      const XT::Common::Parameter& param = {})
     {
-      L2LocalProjectionLocalizableOperator<GridLayerType, SourceType, RangeType>(over_integrate, grd_vw, src, rng)
+      L2LocalProjectionLocalizableOperator<GridLayerType, SourceType, RangeType>(
+          over_integrate, grd_vw, src, rng, param)
           .apply();
     }
   };
@@ -218,9 +230,10 @@ typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value
 project_l2(const GridLayerType& grid_layer,
            const SourceType& source,
            DiscreteFunction<SpaceType, VectorType>& range,
-           const size_t over_integrate = 0)
+           const size_t over_integrate = 0,
+           const XT::Common::Parameter& param = {})
 {
-  make_l2_projection_operator(grid_layer, over_integrate)->apply(source, range);
+  make_l2_projection_operator(grid_layer, over_integrate)->apply(source, range, param);
 }
 
 
@@ -228,9 +241,12 @@ template <class SourceType, class SpaceType, class VectorType>
 typename std::enable_if<XT::Functions::is_localizable_function<SourceType>::value && is_space<SpaceType>::value
                             && XT::LA::is_vector<VectorType>::value,
                         void>::type
-project_l2(const SourceType& source, DiscreteFunction<SpaceType, VectorType>& range, const size_t over_integrate = 0)
+project_l2(const SourceType& source,
+           DiscreteFunction<SpaceType, VectorType>& range,
+           const size_t over_integrate = 0,
+           const XT::Common::Parameter& param = {})
 {
-  make_l2_projection_operator(range.space().grid_layer(), over_integrate)->apply(source, range);
+  make_l2_projection_operator(range.space().grid_layer(), over_integrate)->apply(source, range, param);
 }
 
 
