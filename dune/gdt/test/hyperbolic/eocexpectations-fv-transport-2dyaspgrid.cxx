@@ -70,7 +70,7 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     } else {
-      return {7.39e-02, 7.96e-02, 7.76e-02};
+      return {8.98e-02, 8.25e-02, 7.30e-02};
     }
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
@@ -100,7 +100,7 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::TransportTestCase<Yasp
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     } else {
-      return {7.41e-02, 7.85e-02, 6.67e-02};
+      return {9.00e-02, 8.09e-02, 6.30e-02};
     }
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;

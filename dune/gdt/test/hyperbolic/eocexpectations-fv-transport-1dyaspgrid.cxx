@@ -74,7 +74,7 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     else
-      return {3.46e-01, 3.19e-01, 2.72e-01, 2.10e-01, 1.51e-01};
+      return {3.60e-01, 3.23e-01, 2.72e-01, 2.10e-01, 1.51e-01};
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
   return {};
@@ -104,7 +104,7 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     } else {
-      return {3.57e-01, 3.48e-01, 3.12e-01, 2.50e-01, 1.87e-01};
+      return {3.74e-01, 3.50e-01, 3.10e-01, 2.50e-01, 1.87e-01};
     }
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
@@ -136,7 +136,7 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
       else
         EXPECT_TRUE(false) << "test results missing for type: " << type;
     } else {
-      return {3.29e-01, 2.47e-01, 1.06e-01, 3.83e-02, 3.33e-02};
+      return {3.40e-01, 2.49e-01, 1.05e-01, 3.65e-02, 3.20e-02};
     }
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
