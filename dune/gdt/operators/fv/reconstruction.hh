@@ -106,7 +106,7 @@ public:
     // get jacobians
     const auto& entity_index = grid_layer_.indexSet().index(entity);
     auto& reconstructed_values_map = reconstructed_values_[entity_index];
-    if (!is_linear_ || !eigenvectors_) {
+    if (local_initialization_count_ != initialization_count_) {
       if (!jacobian_)
         jacobian_ = XT::Common::make_unique<JacobianRangeType>();
       if (!eigenvectors_) {
@@ -120,13 +120,20 @@ public:
       helper<dimDomain>::get_jacobian(
           flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, *jacobian_, param_);
       helper<dimDomain>::get_eigenvectors(*jacobian_, *eigenvectors_, *eigenvectors_inverse_);
-      if (is_linear_)
+      if (is_linear_) {
         jacobian_ = nullptr;
+        ++local_initialization_count_;
+      }
     }
     for (size_t dd = 0; dd < dimDomain; ++dd)
       helper<dimDomain>::reconstruct(
           dd, values, *eigenvectors_, *eigenvectors_inverse_, quadrature_, reconstructed_values_map, intersections);
   } // void apply_local(...)
+
+  static void reset()
+  {
+    ++initialization_count_;
+  }
 
 private:
   // quadrature rule containing left and right interface points
@@ -541,6 +548,8 @@ private:
   static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
   static thread_local std::unique_ptr<FieldVector<SparseMatrixType, dimDomain>> eigenvectors_;
   static thread_local std::unique_ptr<FieldVector<SparseMatrixType, dimDomain>> eigenvectors_inverse_;
+  static std::atomic<size_t> initialization_count_;
+  static thread_local size_t local_initialization_count_;
   static bool is_instantiated_;
 }; // class LocalReconstructionFvOperator
 
@@ -585,7 +594,6 @@ thread_local std::unique_ptr<FieldVector<
     LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
         eigenvectors_inverse_;
 
-
 template <class GridLayerType,
           class AnalyticalFluxType,
           class BoundaryValueType,
@@ -598,6 +606,24 @@ thread_local std::unique_ptr<typename LocalReconstructionFvOperator<GridLayerTyp
                                                                     slope_limiter>::JacobianRangeType>
     LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
         jacobian_;
+
+template <class GridLayerType,
+          class AnalyticalFluxType,
+          class BoundaryValueType,
+          size_t polOrder,
+          SlopeLimiters slope_limiter>
+std::atomic<size_t>
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
+        initialization_count_(1);
+
+template <class GridLayerType,
+          class AnalyticalFluxType,
+          class BoundaryValueType,
+          size_t polOrder,
+          SlopeLimiters slope_limiter>
+thread_local size_t
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
+        local_initialization_count_(0);
 
 template <class GridLayerType,
           class AnalyticalFluxType,

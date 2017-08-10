@@ -129,6 +129,12 @@ private:
   typedef typename AdvectionOperatorCreatorType::type AdvectionOperatorType;
   typedef typename AdvectionOperatorType::NumericalCouplingFluxType NumericalCouplingFluxType;
   typedef typename AdvectionOperatorType::NumericalBoundaryFluxType NumericalBoundaryFluxType;
+  typedef LocalReconstructionFvOperator<typename SpaceType::GridLayerType,
+                                        AnalyticalFluxType,
+                                        BoundaryValueType,
+                                        reconstruction_order,
+                                        slope_limiter>
+      ReconstructionOperatorType;
 
   typedef typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, time_stepper_method>::TimeStepperType
       OperatorTimeStepperType;
@@ -171,7 +177,7 @@ public:
   void solve(DiscreteSolutionType& solution) const
   {
     try {
-      reset_numerical_fluxes();
+      reset_static_variables();
 
       const auto& problem = test_case_.problem();
       // get analytical flux, initial and boundary values
@@ -237,10 +243,11 @@ public:
 
 private:
   // demand reinitialization of static variables like jacobians in the numerical fluxes
-  void reset_numerical_fluxes() const
+  void reset_static_variables() const
   {
     NumericalCouplingFluxType::reset();
     NumericalBoundaryFluxType::reset();
+    ReconstructionOperatorType::reset();
   }
 
   const TestCaseType& test_case_;
