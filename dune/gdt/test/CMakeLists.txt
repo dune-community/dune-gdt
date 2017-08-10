@@ -11,6 +11,7 @@
 
 enable_testing()
 
+set(DXT_TEST_TIMEOUT 1000)
 if(DUNE_XT_WITH_PYTHON_BINDINGS)
   BEGIN_TESTCASES(dunegdt)
 else()
