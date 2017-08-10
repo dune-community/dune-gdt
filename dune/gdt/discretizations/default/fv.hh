@@ -236,15 +236,11 @@ public:
   }
 
 private:
-  // walk over grid to clear static variables of advection operator in all threads
+  // demand reinitialization of static variables like jacobians in the numerical fluxes
   void reset_numerical_fluxes() const
   {
-    XT::Grid::Walker<typename SpaceType::GridLayerType> walker(fv_space_->grid_layer());
-    walker.append([](const typename SpaceType::EntityType&) {
-      NumericalCouplingFluxType::reset();
-      NumericalBoundaryFluxType::reset();
-    });
-    walker.walk(true);
+    NumericalCouplingFluxType::reset();
+    NumericalBoundaryFluxType::reset();
   }
 
   const TestCaseType& test_case_;

@@ -157,8 +157,7 @@ public:
 
   static void reset()
   {
-    jacobians_initialized() = false;
-    jacobian() = nullptr;
+    ++initialization_count_;
   }
 
 private:
@@ -169,7 +168,7 @@ private:
                             const RangeType& u_i,
                             const RangeType& u_j) const
   {
-    if (!jacobians_initialized()[direction] || !is_linear_) {
+    if (local_initialization_counts_[direction] != initialization_count_) {
       // calculate jacobian as jacobian(0.5*(u_i+u_j)
       RangeType u_mean = u_i + u_j;
       u_mean *= RangeFieldType(0.5);
@@ -201,8 +200,9 @@ private:
                   (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk].real();
       jacobian_neg()[direction] = SparseMatrixType(*jacobian_neg_dense, true);
       jacobian_pos()[direction] = SparseMatrixType(*jacobian_pos_dense, true);
-      jacobians_initialized()[direction] = true;
-    } // (!jacobians_initialized || !linear)
+      if (is_linear_)
+        ++local_initialization_counts_[direction];
+    } // if (local_initialization_counts_[direction] != initialization_count_)
   } // void calculate_jacobians(...)
 
   template <size_t domainDim = dimDomain, class anything = void>
@@ -257,18 +257,14 @@ private:
     return jacobian_;
   }
 
-  static FieldVector<bool, dimDomain>& jacobians_initialized()
-  {
-    static thread_local FieldVector<bool, dimDomain> jacobians_initialized_(false);
-    return jacobians_initialized_;
-  }
   //  static thread_local JacobiansType jacobian_neg_;
   //  static thread_local JacobiansType jacobian_pos_;
   //  static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
-  //  static thread_local FieldVector<bool, dimDomain> jacobians_initialized_;
 
   const bool is_linear_;
   static bool is_instantiated_;
+  static std::atomic<size_t> initialization_count_;
+  static thread_local FieldVector<size_t, dimDomain> local_initialization_counts_;
 }; // class GodunovFluxImplementation
 
 // template <class Traits>
@@ -280,15 +276,18 @@ private:
 //    typename GodunovFluxImplementation<Traits>::JacobiansType GodunovFluxImplementation<Traits>::jacobian_pos_;
 
 // template <class Traits>
-// thread_local FieldVector<bool, GodunovFluxImplementation<Traits>::dimDomain>
-//    GodunovFluxImplementation<Traits>::jacobians_initialized_(false);
-
-// template <class Traits>
 // thread_local std::unique_ptr<typename GodunovFluxImplementation<Traits>::JacobianRangeType>
 //    GodunovFluxImplementation<Traits>::jacobian_;
 
 template <class Traits>
 bool GodunovFluxImplementation<Traits>::is_instantiated_(false);
+
+template <class Traits>
+std::atomic<size_t> GodunovFluxImplementation<Traits>::initialization_count_(1);
+
+template <class Traits>
+thread_local FieldVector<size_t, GodunovFluxImplementation<Traits>::dimDomain>
+    GodunovFluxImplementation<Traits>::local_initialization_counts_(0);
 
 
 } // namespace internal
