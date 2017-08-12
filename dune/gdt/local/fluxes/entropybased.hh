@@ -25,14 +25,18 @@ namespace GDT {
 namespace internal {
 
 
-template <size_t dimRange>
-Dune::FieldMatrix<double, dimRange, dimRange> unit_matrix()
+template <class FieldType, size_t dimRange>
+std::unique_ptr<Dune::FieldMatrix<FieldType, dimRange, dimRange>> unit_matrix()
 {
-  Dune::FieldMatrix<double, dimRange, dimRange> ret(0);
+  auto ret = XT::Common::make_unique<Dune::FieldMatrix<FieldType, dimRange, dimRange>>(0);
   for (size_t ii = 0; ii < dimRange; ++ii)
-    ret[ii][ii] = 1.;
+    (*ret)[ii][ii] = 1.;
   return ret;
 }
+
+template <class FieldType, size_t dimRange>
+static std::unique_ptr<Dune::FieldMatrix<FieldType, dimRange, dimRange>>
+    field_unit_matrix = unit_matrix<FieldType, dimRange>();
 
 template <class MatrixType, class VectorType>
 void solve_lower_triangular(const MatrixType& A, VectorType& x, const VectorType& b)
@@ -128,7 +132,7 @@ public:
       const size_t k_0 = 50,
       const size_t k_max = 200,
       const RangeFieldType epsilon = std::pow(2, -52),
-      const MatrixType& T_minus_one = internal::unit_matrix<dimRange>(),
+      const MatrixType& T_minus_one = *(internal::field_unit_matrix<RangeFieldType, dimRange>),
       const std::string name = static_id())
     : index_set_(grid_layer.indexSet())
     , basis_functions_(basis_functions)
@@ -658,7 +662,7 @@ public:
   const size_t k_0_;
   const size_t k_max_;
   const RangeFieldType epsilon_;
-  const MatrixType T_minus_one_;
+  const MatrixType& T_minus_one_;
   const std::string name_;
   // Use unique_ptr in the vectors to avoid the memory cost for storing twice as much matrices or vectors as needed (see
   // constructor)
