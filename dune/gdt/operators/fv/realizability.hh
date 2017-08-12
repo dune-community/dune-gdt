@@ -272,69 +272,65 @@ public:
     for (const auto& pair : local_reconstructed_values) {
       ++ll;
       auto u_l = pair.second;
-      auto u_l_minus_u_bar = u_l - u_bar;
+      if (XT::Common::FloatCmp::eq(u_bar, u_l)) {
+        thetas[ll] = 0.;
+        continue;
+      }
 
-      //            const auto max_val = *std::max_element(u_l_minus_u_bar.begin(), u_l_minus_u_bar.end());
-      //            const auto min_val = *std::min_element(u_l_minus_u_bar.begin(), u_l_minus_u_bar.end());
-      //            const auto abs_max = std::max(std::abs(max_val), std::abs(min_val));
-      //      if (XT::Common::FloatCmp::le(abs_max, 1e-10)) {
-      //        thetas[ll] = 1.;
-      //      } else {
       // solve LP:
       // min \theta s.t.
       // (\sum x_i v_i) + \theta (u - \bar{u}) = u
       // x_i, \theta >= 0
-      auto theta = solve_linear_program(u_l, u_l_minus_u_bar);
-      assert(XT::Common::FloatCmp::ge(theta, epsilon_));
-      if (theta < 1 + epsilon_)
-        theta = theta - epsilon_;
-      else
+      auto theta = solve_linear_program(u_bar, u_l);
+      if (theta > -epsilon_)
+        theta = theta + epsilon_;
+      if (theta > 1.)
         theta = 1.;
+      else if (theta < 0)
+        theta = 0.;
       thetas[ll] = theta;
-      //      }
     } // ll
 
-    auto theta_entity = *std::min_element(thetas.begin(), thetas.end());
-    if (XT::Common::FloatCmp::ne(theta_entity, 1.)) {
+    auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
+    if (XT::Common::FloatCmp::ne(theta_entity, 0.)) {
       for (auto& pair : local_reconstructed_values) {
         auto& u = pair.second;
         auto u_scaled = u;
-        u_scaled *= theta_entity;
+        u_scaled *= 1 - theta_entity;
         auto u_bar_scaled = u_bar;
-        u_bar_scaled *= 1 - theta_entity;
+        u_bar_scaled *= theta_entity;
         u = u_scaled + u_bar_scaled;
       }
     }
   } // void apply_local(...)
 
 private:
-  RangeFieldType solve_linear_program(RangeType u_l, RangeType u_l_minus_u_bar)
+  RangeFieldType solve_linear_program(const RangeType& u_bar, const RangeType& u_l)
   {
     typename lpsolve::lprec* lp;
 
-    //     scale
-    //    const auto max_val = *std::max_element(u_l_minus_u_bar.begin(), u_l_minus_u_bar.end());
-    //    const auto min_val = *std::min_element(u_l_minus_u_bar.begin(), u_l_minus_u_bar.end());
-    //    const auto abs_max = std::max(std::abs(max_val), std::abs(min_val));
-    //    u_l_minus_u_bar /= abs_max;
+    auto u_l_minus_u_bar = u_l - u_bar;
 
     // We start with creating a model with dimRange+1 rows and num_quad_points+1 columns */
-    constexpr int num_rows = int(dimRange + 1);
-    int num_cols = int(quadrature_.size() + 1); /* variables are x_1, ..., x_{num_quad_points}, \theta */
+    constexpr int num_rows = int(dimRange);
+    int num_cols = int(quadrature_.size() + 1); /* variables are x_1, ..., x_{num_quad_points}, theta */
     lp = lpsolve::make_lp(num_rows, num_cols);
     if (!lp)
       DUNE_THROW(Dune::MathError, "Couldn't construct linear program");
 
     /* let us name our variables. Not required, but can be useful for debugging */
-    std::vector<char> name;
-    for (int ii = 0; ii < num_cols; ++ii) {
-      auto name_string = "x" + XT::Common::to_string(ii + 1);
-      name.resize(name_string.size());
+    std::vector<char> name(5);
+    for (int ii = 1; ii <= num_cols - 1; ++ii) {
+      std::string ii_string = XT::Common::to_string(ii);
+      std::string name_string = "x";
+      for (size_t jj = 5 - ii_string.size(); jj > 0; --jj)
+        name_string += "0";
+      name_string += ii_string;
       std::copy(name_string.begin(), name_string.end(), name.begin());
-      lpsolve::set_col_name(lp, ii + 1, name.data());
+      lpsolve::set_col_name(lp, ii, name.data());
     }
-    name.resize(5);
-    name = {'t', 'h', 'e', 't', 'a'};
+
+    name = {'t', 'h', 'e', 't', 'a', ' '};
     lpsolve::set_col_name(lp, num_cols, name.data());
 
     // In the call to set_column, the first entry (row 0) is the value of the objective function
@@ -342,76 +338,59 @@ private:
     // in the constraints matrix. The 0-th column is the rhs vector. The entry (0, 0) corresponds
     // to the initial value of the objective function.
     std::array<REAL, num_rows + 1> column;
+
     // set rhs (column 0)
     column[0] = 0.;
     std::copy(u_l.begin(), u_l.end(), column.begin() + 1);
-    column[dimRange + 1] = 1.;
     lpsolve::set_rh_vec(lp, column.data());
     lpsolve::set_rh(lp, 0, column[0]);
+
     // set columns for quadrature points
     column[0] = 0.;
     for (int ii = 0; ii < int(M_.size()); ++ii) {
       const auto& v_i = M_[ii];
       std::copy(v_i.begin(), v_i.end(), column.begin() + 1);
-      column[dimRange + 1] = 1.;
       lpsolve::set_column(lp, ii + 1, column.data());
     }
-    // set last column
+
+    // set theta column
     column[0] = 1.;
     std::copy(u_l_minus_u_bar.begin(), u_l_minus_u_bar.end(), column.begin() + 1);
-    column[dimRange + 1] = 0.;
-    std::cout << "theta col" << XT::Common::to_string(column, 15) << std::endl;
     lpsolve::set_column(lp, num_cols, column.data());
+
+    // set all contraints to equality constraints
     for (int ii = 1; ii <= num_rows; ++ii)
       lpsolve::set_constr_type(lp, ii, EQ);
 
-    // set bounds for all variables. This should not be necessary, as 0 <= x <= inf is
-    // the default for all variables.
-    for (int ii = 1; ii <= num_cols; ++ii)
-      lpsolve::set_bounds(lp, ii, 0., lpsolve::get_infinite(lp));
+    // Set bounds for variables. 0 <= x <= inf is the default for all variables.
+    // The bounds for theta should be [0,1], but we allow allow theta to be -0.1
+    // so we can check if u_l is on the boundary and if so, move it a little away
+    // from the boundary
+    lpsolve::set_bounds(lp, num_cols, -0.1, 1.);
 
-    // set starting point for iteration. We can only set the variable to its lower or upper bound.
-    // The variable is set to its lower bound if the value in initial_basis is negative and to its upper_
-    // bound if the value is positive. We want to set all variables to its lower bound.
-    //    std::array<REAL, num_rows + 1> initial_basis;
-    //    const auto basisret = set_basis(lp, initial_basis, FALSE);
-    //    if (basisret == FALSE)
-    //      DUNE_THROW(Dune::MathError, "Failed to set initial basis!");
-
-
-    /* make LP maximize instead of minimize */
-    //    set_maxim(lp);
-
-    /* print LP */
-    /* this only works if this is a console application. If not, use write_lp and a filename */
-    lpsolve::write_LP(lp, stdout);
+    default_basis(lp);
 
     /* I only want to see important messages on screen while solving */
-    lpsolve::set_verbose(lp, FULL);
+    lpsolve::set_verbose(lp, IMPORTANT);
 
     /* Now let lpsolve calculate a solution */
     const auto solve_status = lpsolve::solve(lp);
+    RangeFieldType theta = lpsolve::get_objective(lp);
+    if (theta > -0.09) {
+      lpsolve::write_LP(lp, stdout);
+      static size_t counter = 0;
+      std::cout << counter++ << ": theta: " << XT::Common::to_string(theta, 15) << std::endl;
+    }
     if (solve_status != OPTIMAL) {
       std::cout << solve_status << std::endl;
       DUNE_THROW(Dune::MathError, "An unexpected error occured while solving the linear program");
     }
-    RangeFieldType lambda = lpsolve::get_objective(lp); // * abs_max;
-
-    /* create space large enough for one row */
-    REAL* row = (REAL*)malloc(num_cols * sizeof(REAL));
-    /* variable values */
-    lpsolve::get_variables(lp, row);
-    for (size_t ii = 0; ii <= size_t(num_cols); ++ii)
-      std::cout << row[ii] << " ";
-    //    assert(XT::Common::FloatCmp::eq(lambda, row[num_cols - 1]));
 
     /* free allocated memory */
-    if (row)
-      free(row);
     if (lp)
       lpsolve::delete_lp(lp);
 
-    return lambda;
+    return theta;
   }
 
   const DiscreteFunctionType* source_;
