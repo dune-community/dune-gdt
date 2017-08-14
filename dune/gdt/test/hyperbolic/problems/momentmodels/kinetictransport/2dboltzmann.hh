@@ -156,7 +156,7 @@ class CheckerboardTestCase
                                                                                            G::dimension,
                                                                                            true>,
                                                                     typename G::LevelGridView,
-                                                                    typename GDT::
+                                                                    typename internal::
                                                                         DiscreteFunctionProvider<G,
                                                                                                  GDT::SpaceType::
                                                                                                      product_fv,
@@ -182,18 +182,19 @@ public:
       KineticEquation<Problems::KineticTransport::
                           Checkerboard<BasisfunctionType,
                                        typename G::LevelGridView,
-                                       typename GDT::DiscreteFunctionProvider<G,
-                                                                              GDT::SpaceType::product_fv,
-                                                                              0,
-                                                                              R,
-                                                                              Hyperbolic::Problems::
-                                                                                  SphericalHarmonics<double,
-                                                                                                     double,
-                                                                                                     momentOrder,
-                                                                                                     G::dimension,
-                                                                                                     true>::dimRange,
-                                                                              1,
-                                                                              GDT::Backends::gdt>::type>>
+                                       typename internal::
+                                           DiscreteFunctionProvider<G,
+                                                                    GDT::SpaceType::product_fv,
+                                                                    0,
+                                                                    R,
+                                                                    Hyperbolic::Problems::
+                                                                        SphericalHarmonics<double,
+                                                                                           double,
+                                                                                           momentOrder,
+                                                                                           G::dimension,
+                                                                                           true>::dimRange,
+                                                                    1,
+                                                                    GDT::Backends::gdt>::type>>
           ProblemType;
   static const size_t dimRange = ProblemType::dimRange;
   static const size_t dimRangeCols = 1;

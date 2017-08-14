@@ -312,22 +312,25 @@ template <class G, class R = double>
 class ShockTubeTestCase
     : public Dune::GDT::Test::
           InstationaryTestCase<G,
-                               Problems::ShockTube<typename G::template Codim<0>::Entity,
-                                                   typename G::ctype,
-                                                   typename GDT::DiscreteFunctionProvider<G,
-                                                                                          GDT::SpaceType::product_fv,
-                                                                                          0,
-                                                                                          R,
-                                                                                          3,
-                                                                                          1,
-                                                                                          GDT::Backends::gdt>::type>>
+                               Problems::ShockTube<
+                                   typename G::template Codim<0>::Entity,
+                                   typename G::ctype,
+                                   typename internal::DiscreteFunctionProvider<G,
+                                                                               GDT::SpaceType::product_fv,
+                                                                               0,
+                                                                               R,
+                                                                               3,
+                                                                               1,
+                                                                               GDT::Backends::gdt>::type>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
   static const size_t d = G::dimension;
 
 public:
-  typedef typename GDT::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, 3, 1, GDT::Backends::gdt>::type U;
+  typedef
+      typename internal::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, 3, 1, GDT::Backends::gdt>::type
+          U;
   typedef typename Problems::ShockTube<E, D, U> ProblemType;
 
 private:

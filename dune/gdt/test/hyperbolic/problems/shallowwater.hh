@@ -169,15 +169,16 @@ template <class G, class R = double>
 class ShallowWaterTestCase
     : public Dune::GDT::Test::
           InstationaryTestCase<G,
-                               Problems::ShallowWater<typename G::template Codim<0>::Entity,
-                                                      typename G::ctype,
-                                                      typename GDT::DiscreteFunctionProvider<G,
-                                                                                             GDT::SpaceType::product_fv,
-                                                                                             0,
-                                                                                             R,
-                                                                                             2,
-                                                                                             1,
-                                                                                             GDT::Backends::gdt>::type>>
+                               Problems::ShallowWater<
+                                   typename G::template Codim<0>::Entity,
+                                   typename G::ctype,
+                                   typename internal::DiscreteFunctionProvider<G,
+                                                                               GDT::SpaceType::product_fv,
+                                                                               0,
+                                                                               R,
+                                                                               2,
+                                                                               1,
+                                                                               GDT::Backends::gdt>::type>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -186,7 +187,9 @@ class ShallowWaterTestCase
 public:
   static const size_t dimRange = 2;
   static const size_t dimRangeCols = 1;
-  typedef typename GDT::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, 2, 1, GDT::Backends::gdt>::type U;
+  typedef
+      typename internal::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, 2, 1, GDT::Backends::gdt>::type
+          U;
   typedef typename Problems::ShallowWater<E, D, U> ProblemType;
 
 private:

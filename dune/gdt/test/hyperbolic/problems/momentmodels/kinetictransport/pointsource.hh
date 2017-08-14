@@ -181,13 +181,14 @@ class PointSourceTestCase
                                    typename Problems::KineticTransport::
                                        PointSourcePn<B,
                                                      typename G::LeafGridLayer,
-                                                     typename GDT::DiscreteFunctionProvider<G,
-                                                                                            GDT::SpaceType::product_fv,
-                                                                                            0,
-                                                                                            R,
-                                                                                            6,
-                                                                                            1,
-                                                                                            GDT::Backends::gdt>::type>>>
+                                                     typename internal::
+                                                         DiscreteFunctionProvider<G,
+                                                                                  GDT::SpaceType::product_fv,
+                                                                                  0,
+                                                                                  R,
+                                                                                  6,
+                                                                                  1,
+                                                                                  GDT::Backends::gdt>::type>>>
 {
   typedef typename G::ctype D;
 

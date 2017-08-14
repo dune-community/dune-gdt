@@ -124,7 +124,7 @@ class SourceBeamTestCase
                                                              SourceBeamPn<Hyperbolic::Problems::
                                                                               LegendrePolynomials<double, double, 5>,
                                                                           typename G::LevelGridView,
-                                                                          typename GDT::
+                                                                          typename internal::
                                                                               DiscreteFunctionProvider<G,
                                                                                                        GDT::SpaceType::
                                                                                                            product_fv,
@@ -142,7 +142,9 @@ public:
   typedef typename Hyperbolic::Problems::LegendrePolynomials<double, double, 5> BasisfunctionType;
   static const size_t dimRange = 6;
   static const size_t dimRangeCols = 1;
-  typedef typename GDT::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, 6, 1, GDT::Backends::gdt>::type U;
+  typedef
+      typename internal::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, 6, 1, GDT::Backends::gdt>::type
+          U;
   typedef typename Problems::
       KineticEquation<Problems::FokkerPlanck::SourceBeamPn<BasisfunctionType, typename G::LevelGridView, U>>
           ProblemType;

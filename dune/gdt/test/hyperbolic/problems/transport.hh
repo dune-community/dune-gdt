@@ -334,18 +334,19 @@ template <class G, class R = double, size_t r = 1>
 class TransportTestCase
     : public Dune::GDT::Test::
           InstationaryTestCase<G,
-                               Problems::Transport<typename G::template Codim<0>::Entity,
-                                                   typename G::ctype,
-                                                   G::dimension,
-                                                   typename GDT::DiscreteFunctionProvider<G,
-                                                                                          GDT::SpaceType::product_fv,
-                                                                                          0,
-                                                                                          R,
-                                                                                          r,
-                                                                                          1,
-                                                                                          GDT::Backends::gdt>::type,
-                                                   R,
-                                                   r>>
+                               Problems::Transport<
+                                   typename G::template Codim<0>::Entity,
+                                   typename G::ctype,
+                                   G::dimension,
+                                   typename internal::DiscreteFunctionProvider<G,
+                                                                               GDT::SpaceType::product_fv,
+                                                                               0,
+                                                                               R,
+                                                                               r,
+                                                                               1,
+                                                                               GDT::Backends::gdt>::type,
+                                   R,
+                                   r>>
 {
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
@@ -354,7 +355,9 @@ class TransportTestCase
 public:
   static const size_t dimRange = r;
   static const size_t dimRangeCols = 1;
-  typedef typename GDT::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, r, 1, GDT::Backends::gdt>::type U;
+  typedef
+      typename internal::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, r, 1, GDT::Backends::gdt>::type
+          U;
   typedef typename Problems::Transport<E, D, d, U, R, r> ProblemType;
 
 private:

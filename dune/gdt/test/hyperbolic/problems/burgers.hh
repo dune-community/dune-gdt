@@ -142,13 +142,13 @@ class BurgersTestCase
                                Problems::Burgers<typename G::template Codim<0>::Entity,
                                                  typename G::ctype,
                                                  G::dimension,
-                                                 typename GDT::DiscreteFunctionProvider<G,
-                                                                                        GDT::SpaceType::product_fv,
-                                                                                        0,
-                                                                                        R,
-                                                                                        r,
-                                                                                        1,
-                                                                                        GDT::Backends::gdt>::type,
+                                                 typename internal::DiscreteFunctionProvider<G,
+                                                                                             GDT::SpaceType::product_fv,
+                                                                                             0,
+                                                                                             R,
+                                                                                             r,
+                                                                                             1,
+                                                                                             GDT::Backends::gdt>::type,
                                                  R,
                                                  r>>
 {
@@ -159,7 +159,9 @@ class BurgersTestCase
 public:
   static const size_t dimRange = r;
   static const size_t dimRangeCols = 1;
-  typedef typename GDT::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, r, 1, GDT::Backends::gdt>::type U;
+  typedef
+      typename internal::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, r, 1, GDT::Backends::gdt>::type
+          U;
   typedef typename Problems::Burgers<E, D, d, U, R, r> ProblemType;
 
 private:
