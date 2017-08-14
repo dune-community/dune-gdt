@@ -205,6 +205,8 @@ public:
     return Compute<LocalSpaceType, EntityType>::numDofs(*this, entity);
   }
 
+  using BaseType::globalIndices;
+
   void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
     Compute<LocalSpaceType, EntityType>::globalIndices(*this, entity, ret);
