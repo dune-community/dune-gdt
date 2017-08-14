@@ -199,7 +199,7 @@ public:
     return problem_;
   }
 
-  virtual void print_header(std::ostream& out = std::cout) const override final
+  virtual void print_header(std::ostream& out = DXTC_LOG_INFO_0) const override final
   {
     out << "+==========================================================+\n"
         << "|+========================================================+|\n"

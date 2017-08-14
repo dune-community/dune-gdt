@@ -218,7 +218,7 @@ public:
     return problem_;
   }
 
-  void print_header(std::ostream& out = std::cout) const override final
+  void print_header(std::ostream& out = DXTC_LOG_INFO_0) const override final
   {
     out << "+==================================================================+\n"
         << "|+================================================================+|\n"
@@ -301,7 +301,7 @@ public:
     return problem_;
   }
 
-  void print_header(std::ostream& out = std::cout) const override final
+  void print_header(std::ostream& out = DXTC_LOG_INFO_0) const override final
   {
     out << "+==================================================================+\n"
         << "|+================================================================+|\n"

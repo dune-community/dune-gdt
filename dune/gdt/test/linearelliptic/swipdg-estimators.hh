@@ -162,7 +162,7 @@ struct linearelliptic_SWIPDG_estimators : public ::testing::Test
     using namespace Dune;
     using namespace Dune::GDT;
     TestCaseType test_case;
-    test_case.print_header(DXTC_LOG_INFO);
+    test_case.print_header(DXTC_LOG_INFO_0);
     DXTC_LOG_INFO << std::endl;
     typedef LinearElliptic::IpdgDiscretizer<typename TestCaseType::GridType,
                                             TestCaseType::layer_type,

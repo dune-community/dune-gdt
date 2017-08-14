@@ -58,7 +58,7 @@ public:
 
   virtual const ProblemType& problem() const = 0;
 
-  virtual void print_header(std::ostream& out = std::cout) const
+  virtual void print_header(std::ostream& out = DXTC_LOG_INFO_0) const
   {
     out << "+==============================================================+\n"
         << "|+============================================================+|\n"
