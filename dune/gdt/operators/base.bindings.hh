@@ -48,10 +48,11 @@ public:
 
     bound_type c(m, std::string(class_id).c_str(), std::string(class_id).c_str());
 
-    // from MatrixOperatorBase
-    c.def_static("pattern", [](const R& space) { return type::pattern(space); });
+    // Does not work if the grid layer of the operator is not the same as the one from the space:
+    // c.def_static("pattern", [](const R& space) { return type::pattern(space); });
 
-    c.def("pattern", [](type& self) { return self.pattern(self.range_space()); });
+    // from MatrixOperatorBase
+    c.def("pattern", [](type& self) { return self.pattern(self.range_space(), self.grid_layer()); });
     c.def("matrix", [](type& self) { return self.matrix(); });
     c.def("source_space", [](type& self) { return self.source_space(); });
     c.def("range_space", [](type& self) { return self.range_space(); });
