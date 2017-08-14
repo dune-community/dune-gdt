@@ -33,7 +33,7 @@
 #include <dune/gdt/local/discretefunction.hh>
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/fv/default.hh>
-#include <dune/gdt/spaces.hh>
+#include <dune/gdt/type_traits.hh>
 
 namespace Dune {
 namespace GDT {

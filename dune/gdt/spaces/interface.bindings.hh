@@ -20,6 +20,7 @@
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/spaces.hh>
+#include <dune/gdt/type_traits.hh>
 
 #include "interface.hh"
 #include "cg.hh"

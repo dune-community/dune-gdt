@@ -18,6 +18,8 @@
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/grid/type_traits.hh>
 
+#include <dune/gdt/type_traits.hh>
+
 #include "elliptic.hh"
 
 namespace Dune {

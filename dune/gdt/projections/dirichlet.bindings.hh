@@ -17,6 +17,7 @@
 #include <dune/xt/la/container.bindings.hh>
 
 #include <dune/gdt/spaces.bindings.hh>
+#include <dune/gdt/type_traits.hh>
 
 #include "dirichlet.hh"
 

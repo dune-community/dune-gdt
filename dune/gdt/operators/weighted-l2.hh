@@ -21,6 +21,7 @@
 #include <dune/gdt/local/operators/integrals.hh>
 #include <dune/gdt/operators/base.hh>
 #include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/type_traits.hh>
 
 namespace Dune {
 namespace GDT {

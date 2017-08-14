@@ -20,6 +20,7 @@
 
 #include <dune/gdt/spaces.bindings.hh>
 #include <dune/gdt/spaces/constraints.bindings.hh>
+#include <dune/gdt/type_traits.hh>
 
 #include "system.hh"
 

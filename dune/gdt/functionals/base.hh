@@ -21,6 +21,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/functionals/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/type_traits.hh>
 
 #include "interfaces.hh"
 

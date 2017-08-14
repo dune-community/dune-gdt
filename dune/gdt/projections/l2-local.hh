@@ -20,6 +20,7 @@
 #include <dune/gdt/operators/base.hh>
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/spaces/dg/interface.hh>
+#include <dune/gdt/type_traits.hh>
 
 namespace Dune {
 namespace GDT {

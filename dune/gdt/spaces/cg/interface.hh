@@ -316,39 +316,6 @@ private:
 }; // class CgSpaceInterface
 
 
-namespace internal {
-
-
-template <class S>
-struct is_cg_space_helper
-{
-  DXTC_has_typedef_initialize_once(Traits);
-  DXTC_has_static_member_initialize_once(dimDomain);
-  DXTC_has_static_member_initialize_once(dimRange);
-  DXTC_has_static_member_initialize_once(dimRangeCols);
-
-  static const bool is_candidate = DXTC_has_typedef(Traits)<S>::value && DXTC_has_static_member(dimDomain)<S>::value
-                                   && DXTC_has_static_member(dimRange)<S>::value
-                                   && DXTC_has_static_member(dimRangeCols)<S>::value;
-}; // class is_cg_space_helper
-
-
-} // namespace internal
-
-
-template <class S, bool candidate = internal::is_cg_space_helper<S>::is_candidate>
-struct is_cg_space
-    : public std::is_base_of<CgSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
-{
-};
-
-
-template <class S>
-struct is_cg_space<S, false> : public std::false_type
-{
-};
-
-
 } // namespace GDT
 } // namespace Dune
 

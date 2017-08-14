@@ -20,6 +20,7 @@
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/type_traits.hh>
 
 namespace Dune {
 namespace GDT {

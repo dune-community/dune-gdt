@@ -26,6 +26,7 @@
 #include <dune/gdt/local/assembler.hh>
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/constraints.hh>
+#include <dune/gdt/type_traits.hh>
 
 namespace Dune {
 namespace GDT {

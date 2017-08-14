@@ -23,6 +23,7 @@
 #include <dune/gdt/spaces.bindings.hh>
 #include <dune/gdt/playground/spaces/block.hh>
 #include <dune/gdt/type_traits.hh>
+#include <dune/gdt/type_traits.hh>
 
 #include "default.hh"
 

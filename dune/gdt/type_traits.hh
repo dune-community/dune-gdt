@@ -28,6 +28,13 @@ enum class ChoosePattern;
 template <class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols>
 class SpaceInterface;
 
+template <class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols>
+class ProductSpaceInterface;
+
+// from #include <dune/gdt/spaces/cg/interface.hh>
+template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols>
+class CgSpaceInterface;
+
 // from #include <dune/gdt/local/integrands/interfaces.hh>
 template <class Traits, size_t numArguments>
 class LocalVolumeIntegrandInterface;
@@ -54,6 +61,21 @@ namespace internal {
 
 
 // helper structs
+// from #include <dune/gdt/spaces/interface.hh>
+template <class S>
+struct is_space_helper
+{
+  DXTC_has_typedef_initialize_once(Traits);
+  DXTC_has_static_member_initialize_once(dimDomain);
+  DXTC_has_static_member_initialize_once(dimRange);
+  DXTC_has_static_member_initialize_once(dimRangeCols);
+
+  static const bool is_candidate = DXTC_has_typedef(Traits)<S>::value && DXTC_has_static_member(dimDomain)<S>::value
+                                   && DXTC_has_static_member(dimRange)<S>::value
+                                   && DXTC_has_static_member(dimRangeCols)<S>::value;
+}; // class is_space_helper
+
+
 // from #include <dune/gdt/local/integrands/interfaces.hh>
 template <class Tt>
 struct is_unary_volume_integrand_helper
@@ -140,6 +162,43 @@ struct is_matrix_operator_helper
 
 
 // actual structs
+// from #include <dune/gdt/spaces/interface.hh>
+template <class S, bool candidate = internal::is_space_helper<S>::is_candidate>
+struct is_space
+    : public std::is_base_of<SpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
+{
+};
+
+template <class S>
+struct is_space<S, false> : public std::false_type
+{
+};
+
+template <class S, bool candidate = internal::is_space_helper<S>::is_candidate>
+struct is_product_space
+    : public std::is_base_of<ProductSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
+{
+};
+
+template <class S>
+struct is_product_space<S, false> : public std::false_type
+{
+};
+
+
+// from #include <dune/gdt/spaces/cg/interface.hh>
+template <class S, bool candidate = internal::is_space_helper<S>::is_candidate>
+struct is_cg_space
+    : public std::is_base_of<CgSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
+{
+};
+
+template <class S>
+struct is_cg_space<S, false> : public std::false_type
+{
+};
+
+
 // from #include <dune/gdt/local/integrands/interfaces.hh>
 template <class T, bool candidate = internal::is_unary_volume_integrand_helper<T>::is_candidate>
 struct is_unary_volume_integrand : public std::is_base_of<LocalVolumeIntegrandInterface<typename T::Traits, 1>, T>

@@ -16,6 +16,7 @@
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/dd/subdomains/grid.hh>
+#include <dune/gdt/type_traits.hh>
 
 #include "mapper/block.hh"
 

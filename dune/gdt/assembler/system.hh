@@ -24,6 +24,7 @@
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/constraints.hh>
+#include <dune/gdt/type_traits.hh>
 
 #include "local-accumulators.hh"
 #include "local-assemblers.hh"

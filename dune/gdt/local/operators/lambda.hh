@@ -17,6 +17,7 @@
 #include <dune/xt/functions/type_traits.hh>
 
 #include <dune/gdt/type_traits.hh>
+#include <dune/gdt/type_traits.hh>
 
 #include "interfaces.hh"
 

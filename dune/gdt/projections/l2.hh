@@ -14,6 +14,7 @@
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/type_traits.hh>
 
 #include "l2-local.hh"
 #include "l2-global.hh"

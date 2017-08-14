@@ -18,6 +18,7 @@
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/operators/base.hh>
 #include <dune/gdt/projections/l2-local.hh>
+#include <dune/gdt/type_traits.hh>
 
 namespace Dune {
 namespace GDT {

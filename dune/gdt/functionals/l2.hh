@@ -25,6 +25,7 @@
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/assembler/system.hh>
+#include <dune/gdt/type_traits.hh>
 
 #include "base.hh"
 

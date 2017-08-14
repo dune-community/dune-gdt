@@ -586,49 +586,6 @@ end(const Dune::GDT::SpaceInterface<Traits, d, r, rC>& space)
 }
 
 
-namespace internal {
-
-
-template <class S>
-struct is_space_helper
-{
-  DXTC_has_typedef_initialize_once(Traits);
-  DXTC_has_static_member_initialize_once(dimDomain);
-  DXTC_has_static_member_initialize_once(dimRange);
-  DXTC_has_static_member_initialize_once(dimRangeCols);
-
-  static const bool is_candidate = DXTC_has_typedef(Traits)<S>::value && DXTC_has_static_member(dimDomain)<S>::value
-                                   && DXTC_has_static_member(dimRange)<S>::value
-                                   && DXTC_has_static_member(dimRangeCols)<S>::value;
-}; // class is_space_helper
-
-
-} // namespace internal
-
-
-template <class S, bool candidate = internal::is_space_helper<S>::is_candidate>
-struct is_space
-    : public std::is_base_of<SpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
-{
-};
-
-template <class S>
-struct is_space<S, false> : public std::false_type
-{
-};
-
-template <class S, bool candidate = internal::is_space_helper<S>::is_candidate>
-struct is_product_space
-    : public std::is_base_of<ProductSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
-{
-};
-
-template <class S>
-struct is_product_space<S, false> : public std::false_type
-{
-};
-
-
 } // namespace GDT
 } // namespace Dune
 
