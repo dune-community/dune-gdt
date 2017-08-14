@@ -1507,7 +1507,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
               const auto xx = quadrature_point.position();
               XT::LA::EigenDenseMatrix<R> diffusion = local_kappa->evaluate(xx);
               diffusion *= local_lambda->evaluate(xx);
-              min_ev = std::min(min_ev, XT::LA::make_eigen_solver(diffusion).min_eigenvalue());
+              min_ev = std::min(min_ev, XT::LA::make_eigen_solver(diffusion).min_eigenvalues(1).at(0));
             }
             // * and in the corners of the gigen entity.
             const auto& reference_element = ReferenceElements<D, d>::general(entity.type());
@@ -1515,7 +1515,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
               const auto xx = reference_element.position(ii, d);
               XT::LA::EigenDenseMatrix<R> diffusion = local_kappa->evaluate(xx);
               diffusion *= local_lambda->evaluate(xx);
-              min_ev = std::min(min_ev, XT::LA::make_eigen_solver(diffusion).min_eigenvalue());
+              min_ev = std::min(min_ev, XT::LA::make_eigen_solver(diffusion).min_eigenvalues(1).at(0));
             }
           });
           walker.walk();
