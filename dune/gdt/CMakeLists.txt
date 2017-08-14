@@ -84,6 +84,9 @@ if(dune-pybindxi_FOUND)
   dune_pybindxi_add_module(__operators_OS2015 playground/operators/OS2015.bindings.cc)
   list(APPEND pybindxi_modules __operators_OS2015)
   # the functionals
+  # * the operators from RS2017
+  dune_pybindxi_add_module(__operators_RS2017 playground/operators/RS2017.bindings.cc)
+  list(APPEND pybindxi_modules __operators_RS2017)
   dune_pybindxi_add_helper_lib(__functionals_elliptic_ipdg_helper
                                functionals/elliptic-ipdg.bindings/alu_fem_istl.cc
                                functionals/elliptic-ipdg.bindings/yasp_fem_istl.cc)
