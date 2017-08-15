@@ -132,6 +132,7 @@ class PointSourceMn : public PointSourcePn<BasisfunctionType, GridLayerType, U_>
   typedef PointSourceMn ThisType;
 
 public:
+  static const bool linear = false;
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
   typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
