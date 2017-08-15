@@ -61,7 +61,7 @@ class LocalReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayer
 
 public:
   explicit LocalReconstructionFvOperator(
-      const std::vector<RangeType> source_values,
+      const std::vector<RangeType>& source_values,
       const AnalyticalFluxType& analytical_flux,
       const BoundaryValueType& boundary_values,
       const GridLayerType& grid_layer,
@@ -110,10 +110,8 @@ public:
       if (!jacobian_)
         jacobian_ = XT::Common::make_unique<JacobianRangeType>();
       if (!eigenvectors_) {
-        eigenvectors_ =
-            XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>(SparseMatrixType(dimRange, dimRange));
-        eigenvectors_inverse_ =
-            XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>(SparseMatrixType(dimRange, dimRange));
+        eigenvectors_ = XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>();
+        eigenvectors_inverse_ = XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>();
       }
       const auto& u_entity = values[stencil[0] / 2][stencil[1] / 2][stencil[2] / 2];
       const auto flux_local_func = analytical_flux_.local_function(entity);
@@ -195,7 +193,7 @@ private:
     {
       XT::Common::Configuration eigensolver_options(
           {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
-          {EigenSolverType::types()[0], "1", "1", "0", "1"});
+          {EigenSolverType::types()[1], "1", "1", "0", "1"});
       const auto eigensolver = EigenSolverType(jacobian);
       auto eigenvectors_dense = eigensolver.real_eigenvectors_as_matrix(eigensolver_options);
       eigenvectors[0] = SparseMatrixType(*eigenvectors_dense, true);
@@ -413,7 +411,7 @@ private:
     {
       XT::Common::Configuration eigensolver_options(
           {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
-          {EigenSolverType::types()[0], "1", "1", "0", "1"});
+          {EigenSolverType::types()[1], "1", "1", "0", "1"});
       for (size_t ii = 0; ii < dimDomain; ++ii) {
         const auto eigensolver = EigenSolverType(jacobian[ii]);
         auto eigenvectors_dense = eigensolver.real_eigenvectors_as_matrix(eigensolver_options);
@@ -537,7 +535,7 @@ private:
     std::copy(result_vec.begin(), result_vec.end(), result.begin());
   }
 
-  const std::vector<RangeType> source_values_;
+  const std::vector<RangeType>& source_values_;
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueType& boundary_values_;
   const GridLayerType& grid_layer_;

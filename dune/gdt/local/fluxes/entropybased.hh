@@ -18,6 +18,8 @@
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/math.hh>
 
+#include <dune/xt/la/container/common.hh>
+
 #include <dune/gdt/local/fluxes/interfaces.hh>
 
 namespace Dune {
@@ -26,7 +28,7 @@ namespace internal {
 
 
 template <class FieldType, size_t dimRange>
-std::unique_ptr<Dune::FieldMatrix<FieldType, dimRange, dimRange>> unit_matrix()
+std::unique_ptr<Dune::FieldMatrix<FieldType, dimRange, dimRange>> get_dense_unit_matrix()
 {
   auto ret = XT::Common::make_unique<Dune::FieldMatrix<FieldType, dimRange, dimRange>>(0);
   for (size_t ii = 0; ii < dimRange; ++ii)
@@ -34,9 +36,24 @@ std::unique_ptr<Dune::FieldMatrix<FieldType, dimRange, dimRange>> unit_matrix()
   return ret;
 }
 
+template <class FieldType>
+XT::LA::CommonSparseMatrix<FieldType> get_sparse_unit_matrix(const size_t dimRange)
+{
+  XT::LA::SparsityPatternDefault pattern(dimRange);
+  for (size_t ii = 0; ii < dimRange; ++ii)
+    pattern.insert(ii, ii);
+  XT::LA::CommonSparseMatrix<FieldType> ret(dimRange, dimRange, pattern, 0);
+  for (size_t ii = 0; ii < dimRange; ++ii)
+    ret.set_entry(ii, ii, 1.);
+  return ret;
+}
+
 template <class FieldType, size_t dimRange>
-static std::unique_ptr<Dune::FieldMatrix<FieldType, dimRange, dimRange>>
-    field_unit_matrix = unit_matrix<FieldType, dimRange>();
+static const std::unique_ptr<Dune::FieldMatrix<FieldType, dimRange, dimRange>>
+    dense_unit_matrix = get_dense_unit_matrix<FieldType, dimRange>();
+
+template <class FieldType, size_t dimRange>
+static const XT::LA::CommonSparseMatrix<FieldType> sparse_unit_matrix = get_sparse_unit_matrix<FieldType>(dimRange);
 
 template <class MatrixType, class VectorType>
 void solve_lower_triangular(const MatrixType& A, VectorType& x, const VectorType& b)
@@ -59,13 +76,52 @@ void solve_lower_triangular_transposed(const MatrixType& A, VectorType& x, const
   // backsolve
   double min_eigval(std::abs(A[0][0]));
   double max_eigval = min_eigval;
-  for (int ii = int(A.N() - 1); ii >= 0; ii--) {
+  for (int ii = int(A.N()) - 1; ii >= 0; ii--) {
     auto abs = std::abs(A[ii][ii]);
     min_eigval = std::min(abs, min_eigval);
     max_eigval = std::max(abs, max_eigval);
     for (size_t jj = ii + 1; jj < A.N(); jj++)
       rhs[ii] -= A[jj][ii] * x[jj];
     x[ii] = rhs[ii] / A[ii][ii];
+  }
+  if (XT::Common::FloatCmp::eq(min_eigval, 0.) || max_eigval / min_eigval > 1e10)
+    DUNE_THROW(Dune::FMatrixError, "A is singular!");
+}
+
+template <class MatrixType, class VectorType>
+void solve_lower_triangular_sparse(const MatrixType& A, VectorType& x, const VectorType& b)
+{
+  VectorType& rhs = x; // use x to store rhs
+  rhs = b; // copy data
+  const auto& entries = A.entries();
+  const auto& row_pointers = A.row_pointers();
+  const auto& column_indices = A.column_indices();
+  // forward solve
+  for (size_t ii = 0; ii < A.rows(); ++ii) {
+    // row_pointers[ii+1]-1 is the diagonal entry as we assume a lower triangular matrix with non-zero entries on the
+    // diagonal
+    size_t kk = row_pointers[ii];
+    for (; kk < row_pointers[ii + 1] - 1; ++kk)
+      rhs[ii] -= entries[kk] * x[column_indices[kk]];
+    x[ii] = rhs[ii] / entries[kk];
+  }
+}
+
+template <class MatrixType, class VectorType>
+void solve_lower_triangular_transposed_sparse(const MatrixType& A, VectorType& x, const VectorType& b)
+{
+  VectorType& rhs = x; // use x to store rhs
+  rhs = b; // copy data
+  // backsolve
+  double min_eigval(std::abs(A.get_entry(0, 0)));
+  double max_eigval = min_eigval;
+  for (int ii = int(A.rows()) - 1; ii >= 0; ii--) {
+    auto abs = std::abs(A.get_entry(ii, ii));
+    min_eigval = std::min(abs, min_eigval);
+    max_eigval = std::max(abs, max_eigval);
+    for (size_t jj = ii + 1; jj < A.rows(); jj++)
+      rhs[ii] -= A.get_entry(jj, ii) * x[jj];
+    x[ii] = rhs[ii] / A.get_entry(ii, ii);
   }
   if (XT::Common::FloatCmp::eq(min_eigval, 0.) || max_eigval / min_eigval > 1e10)
     DUNE_THROW(Dune::FMatrixError, "A is singular!");
@@ -116,8 +172,12 @@ public:
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
   static const size_t dimQuadrature = quadratureDim;
-  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
-  using BasisValuesMatrixType = std::vector<StateRangeType>;
+  using FieldMatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
+  //  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
+  using MatrixType = XT::LA::CommonSparseMatrix<RangeFieldType>;
+  //  using SparseMatrixType = XT::LA::CommonSparseMatrix<RangeFieldType>;
+  typedef typename XT::LA::Common::SparseVector<RangeFieldType> VectorType;
+  using BasisValuesMatrixType = std::vector<VectorType>;
   typedef Dune::QuadratureRule<DomainFieldType, dimQuadrature> QuadratureRuleType;
 
   explicit EntropyBasedLocalFlux(
@@ -132,7 +192,8 @@ public:
       const size_t k_0 = 50,
       const size_t k_max = 200,
       const RangeFieldType epsilon = std::pow(2, -52),
-      const MatrixType& T_minus_one = *(internal::field_unit_matrix<RangeFieldType, dimRange>),
+      //      const MatrixType& T_minus_one = internal::sparse_unit_matrix<RangeFieldType, dimRange>,
+      const MatrixType& T_minus_one = internal::sparse_unit_matrix<RangeFieldType, dimRange>,
       const std::string name = static_id())
     : index_set_(grid_layer.indexSet())
     , basis_functions_(basis_functions)
@@ -151,9 +212,10 @@ public:
     , alpha_cache_(2 * index_set_.size(0))
     , beta_cache_(2 * index_set_.size(0))
     , T_cache_(2 * index_set_.size(0))
+    , mutexes_(index_set_.size(0))
   {
     for (size_t ii = 0; ii < quadrature_.size(); ++ii)
-      M_[ii] = basis_functions_.evaluate(quadrature_[ii].position());
+      M_[ii] = VectorType(basis_functions_.evaluate(quadrature_[ii].position()), true);
   }
 
   class Localfunction : public LocalfunctionType
@@ -181,7 +243,8 @@ public:
                   std::unique_ptr<MatrixType>& T_cache,
                   std::unique_ptr<std::pair<StateRangeType, StateRangeType>>& alpha_cache_boundary,
                   std::unique_ptr<StateRangeType>& beta_cache_boundary,
-                  std::unique_ptr<MatrixType>& T_cache_boundary)
+                  std::unique_ptr<MatrixType>& T_cache_boundary,
+                  std::mutex& mutex)
       : LocalfunctionType(e)
       , basis_functions_(basis_functions)
       , quadrature_(quadrature)
@@ -201,6 +264,7 @@ public:
       , alpha_cache_boundary_(alpha_cache_boundary)
       , beta_cache_boundary_(beta_cache_boundary)
       , T_cache_boundary_(T_cache_boundary)
+      , mutex_(mutex)
     {
     }
 
@@ -213,14 +277,19 @@ public:
       // get initial multiplier and basis matrix from last time step
       StateRangeType alpha;
 
-      static size_t hitcounter = 0;
+      static std::atomic<size_t> hitcounter(0);
       // if value has already been calculated for these values, skip computation
+      mutex_.lock();
       if (!boundary && alpha_cache_ && XT::Common::FloatCmp::eq(alpha_cache_->first, u)) {
         alpha = alpha_cache_->second;
         std::cout << hitcounter++ << std::endl;
+        mutex_.unlock();
+        return alpha;
       } else if (boundary && alpha_cache_boundary_ && XT::Common::FloatCmp::eq(alpha_cache_boundary_->first, u)) {
         alpha = alpha_cache_boundary_->second;
         std::cout << hitcounter++ << std::endl;
+        mutex_.unlock();
+        return alpha;
       } else {
 
         StateRangeType u_iso, alpha_iso;
@@ -247,10 +316,10 @@ public:
           v += r_times_u_iso;
           // calculate T_k u
           StateRangeType v_k;
-          internal::solve_lower_triangular(T_k, v_k, v);
+          internal::solve_lower_triangular_sparse(T_k, v_k, v);
           // calculate values of basis p = T_k m
           for (size_t ii = 0; ii < M_.size(); ++ii)
-            internal::solve_lower_triangular(T_k, P_k[ii], M_[ii]);
+            internal::solve_lower_triangular_sparse(T_k, P_k[ii], M_[ii]);
           // calculate f_0
           RangeFieldType f_k(0);
           for (size_t ll = 0; ll < quadrature_.size(); ++ll)
@@ -269,7 +338,7 @@ public:
             for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
               auto m = M_[ll];
               StateRangeType Tinv_m(0);
-              internal::solve_lower_triangular(T_k, Tinv_m, m);
+              internal::solve_lower_triangular_sparse(T_k, Tinv_m, m);
               m *= std::exp(beta_out * Tinv_m) * quadrature_[ll].weight();
               error += m;
             }
@@ -279,7 +348,7 @@ public:
             d_k *= -1;
             StateRangeType T_k_inv_transp_d_k;
             try {
-              internal::solve_lower_triangular_transposed(T_k, T_k_inv_transp_d_k, d_k);
+              internal::solve_lower_triangular_transposed_sparse(T_k, T_k_inv_transp_d_k, d_k);
             } catch (const Dune::FMatrixError& e) {
               if (r < r_max)
                 break;
@@ -287,7 +356,7 @@ public:
                 DUNE_THROW(Dune::FMatrixError, e.what());
             }
             if (error.two_norm() < tau_ && std::exp(5 * T_k_inv_transp_d_k.one_norm()) < 1 + epsilon_gamma_) {
-              internal::solve_lower_triangular_transposed(T_k, alpha, beta_out);
+              internal::solve_lower_triangular_transposed_sparse(T_k, alpha, beta_out);
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
@@ -325,6 +394,7 @@ public:
           beta_cache_boundary_ = std::make_unique<StateRangeType>(beta_out);
           T_cache_boundary_ = std::make_unique<MatrixType>(T_k);
         }
+        mutex_.unlock();
       } // else ( value has not been calculated before )
 
       return alpha;
@@ -374,7 +444,7 @@ public:
                            const XT::Common::Parameter& param) const override
     {
       const auto alpha = get_alpha(x_local, u, param);
-      MatrixType H_inv;
+      FieldMatrixType H_inv;
       calculate_hessian(alpha, M_, H_inv);
       H_inv.invert();
       helper<dimDomain>::partial_u(alpha, M_, H_inv, ret, this);
@@ -387,7 +457,7 @@ public:
                                const XT::Common::Parameter& param) const override
     {
       const auto alpha = get_alpha(x_local, u, param);
-      MatrixType H_inv;
+      FieldMatrixType H_inv;
       calculate_hessian(alpha, M_, H_inv);
       H_inv.invert();
       helper<dimDomain>::partial_u_col(col, alpha, M_, H_inv, ret, this);
@@ -410,7 +480,7 @@ public:
 
       static void partial_u(const StateRangeType& alpha,
                             const BasisValuesMatrixType& M,
-                            const MatrixType& H_inv,
+                            const FieldMatrixType& H_inv,
                             PartialURangeType& ret,
                             const Localfunction* entropy_flux)
       {
@@ -423,7 +493,7 @@ public:
       static void partial_u_col(const size_t col,
                                 const StateRangeType& alpha,
                                 const BasisValuesMatrixType& M,
-                                const MatrixType& H_inv,
+                                const FieldMatrixType& H_inv,
                                 ColPartialURangeType& ret,
                                 const Localfunction* entropy_flux)
       {
@@ -443,7 +513,7 @@ public:
 
       static void partial_u(const StateRangeType& alpha,
                             const BasisValuesMatrixType& M,
-                            const MatrixType& H_inv,
+                            const FieldMatrixType& H_inv,
                             PartialURangeType& ret,
                             const Localfunction* entropy_flux)
       {
@@ -454,7 +524,7 @@ public:
       static void partial_u_col(const size_t col,
                                 const StateRangeType& alpha,
                                 const BasisValuesMatrixType& M,
-                                const MatrixType& H_inv,
+                                const FieldMatrixType& H_inv,
                                 PartialURangeType& ret,
                                 const Localfunction* entropy_flux)
       {
@@ -463,7 +533,7 @@ public:
       } // void partial_u(...)
     }; // class helper<1, ...>
 
-    void calculate_hessian(const StateRangeType& alpha, const BasisValuesMatrixType& M, MatrixType& H) const
+    void calculate_hessian(const StateRangeType& alpha, const BasisValuesMatrixType& M, FieldMatrixType& H) const
     {
       std::fill(H.begin(), H.end(), 0);
       for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
@@ -516,18 +586,20 @@ public:
                       StateRangeType& g_k,
                       StateRangeType& beta_out) const
     {
-      MatrixType H(0), L(0);
-      calculate_hessian(beta_in, P_k, H);
-      chol_flag = cholesky_L(H, L);
+      auto H = XT::Common::make_unique<FieldMatrixType>(0);
+      auto L = XT::Common::make_unique<FieldMatrixType>(0);
+      calculate_hessian(beta_in, P_k, *H);
+      chol_flag = cholesky_L(*H, *L);
       if (chol_flag == false)
         return;
       const auto P_k_copy = P_k;
       const auto v_k_copy = v_k;
+      const MatrixType sparse_L(*L, true);
       for (size_t ll = 0; ll < P_k.size(); ++ll)
-        internal::solve_lower_triangular(L, P_k[ll], P_k_copy[ll]);
-      T_k.rightmultiply(L);
-      L.mtv(beta_in, beta_out);
-      internal::solve_lower_triangular(L, v_k, v_k_copy);
+        internal::solve_lower_triangular_sparse(sparse_L, P_k[ll], P_k_copy[ll]);
+      T_k.rightmultiply(*L);
+      sparse_L.mtv(beta_in, beta_out);
+      internal::solve_lower_triangular_sparse(sparse_L, v_k, v_k_copy);
       g_k = v_k;
       g_k *= -1;
       for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
@@ -586,6 +658,7 @@ public:
     std::unique_ptr<std::pair<StateRangeType, StateRangeType>>& alpha_cache_boundary_;
     std::unique_ptr<StateRangeType>& beta_cache_boundary_;
     std::unique_ptr<MatrixType>& T_cache_boundary_;
+    std::mutex& mutex_;
   }; // class Localfunction>
 
   static std::string static_id()
@@ -614,7 +687,8 @@ public:
                                            T_cache_[index],
                                            alpha_cache_[index_set_.size(0) + index],
                                            beta_cache_[index_set_.size(0) + index],
-                                           T_cache_[index_set_.size(0) + index]);
+                                           T_cache_[index_set_.size(0) + index],
+                                           mutexes_[index]);
   }
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
@@ -669,6 +743,7 @@ public:
   mutable std::vector<std::unique_ptr<std::pair<StateRangeType, StateRangeType>>> alpha_cache_;
   mutable std::vector<std::unique_ptr<StateRangeType>> beta_cache_;
   mutable std::vector<std::unique_ptr<MatrixType>> T_cache_;
+  mutable std::vector<std::mutex> mutexes_;
 };
 
 #if 0
