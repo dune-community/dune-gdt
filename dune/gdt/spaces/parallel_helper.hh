@@ -51,7 +51,7 @@ public:
     if (view.comm().size() > 1) {
       // find out about ghosts
       GDT::GhostDataHandle<SpaceType, GhostVector> gdh(space, ghosts_, false);
-      space.grid_layer().grid().communicate(gdh, _interiorBorder_all_interface, Dune::ForwardCommunication);
+      space.grid_layer().communicate(gdh, _interiorBorder_all_interface, Dune::ForwardCommunication);
 
       // create disjoint DOF partitioning
       //            SpaceTypeDataHandle<SpaceType,RankVector,DisjointPartitioningGatherScatter<RankIndex> >
