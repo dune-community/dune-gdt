@@ -29,6 +29,7 @@
 #include <dune/xt/common/ranges.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/common/type_traits.hh>
+#include <dune/xt/common/tuple.hh>
 
 #include <dune/xt/la/container/pattern.hh>
 
