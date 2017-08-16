@@ -60,6 +60,7 @@ add_subdirectory(doc)
 add_subdirectory(dune)
 add_subdirectory(cmake/modules)
 
+dune_install_python_package(PATH python)
 if(dune-pybindxi_FOUND)
   foreach(_file
           dune/__init__.py
