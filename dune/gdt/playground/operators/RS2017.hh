@@ -43,7 +43,7 @@ namespace Dune {
 namespace GDT {
 namespace RS2017 {
 
-#if HAVE_DUNE_FEM
+#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL && HAVE_DUNE_PDELAB
 
 
 template <class G>
@@ -913,9 +913,6 @@ void bind_neighborhood_discretization(pybind11::module& m)
 } // ... bind_neighborhood_discretization(...)
 
 
-#if HAVE_DUNE_PDELAB
-
-
 template <class G>
 class HdivSemiProduct
     : public GDT::
@@ -1241,91 +1238,66 @@ void bind_neighborhood_reconstruction(pybind11::module& m)
 } // ... bind_neighborhood_reconstruction(...)
 
 
-#else // HAVE_DUNE_PDELAB
-
-
-template <class G>
-class HdivSemiProduct
-{
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-pdelab!");
-};
-
-
-template <class G>
-class ResidualPartFunctional
-{
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-pdelab!");
-};
-
-
-template <class G>
-void bind_neighborhood_reconstruction(pybind11::module& /*m*/)
-{
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-pdelab!");
-};
-
-
-#endif // HAVE_DUNE_PDELAB
-#else // HAVE_DUNE_FEM
+#else // HAVE_DUNE_FEM && HAVE_DUNE_ISTL && HAVE_DUNE_PDELAB
 
 
 template <class G>
 class DiffusiveFluxAaProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
 };
 
 
 template <class G>
 class DiffusiveFluxAbProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
 };
 
 
 template <class G>
 class DiffusiveFluxBbProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
 };
 
 
 template <class G>
 class SwipdgPenaltySubdomainProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
 };
 
 
 template <class G>
 void bind_neighborhood_discretization(pybind11::module& /*m*/)
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem!");
-};
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+}
 
 
 template <class G>
 class HdivSemiProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
 };
 
 
 template <class G>
 class ResidualPartFunctional
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
 };
 
 
 template <class G>
 void bind_neighborhood_reconstruction(pybind11::module& /*m*/)
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem!");
-};
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+}
 
 
-#endif // HAVE_DUNE_FEM
+#endif // HAVE_DUNE_FEM && HAVE_DUNE_ISTL && HAVE_DUNE_PDELAB
 
 } // namespace RS2017
 } // namespace GDT
