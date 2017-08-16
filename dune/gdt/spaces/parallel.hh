@@ -14,7 +14,9 @@
 
 #include <dune/common/parallel/communicator.hh>
 
+#if HAVE_DUNE_ISTL
 #include <dune/istl/owneroverlapcopy.hh>
+#endif
 
 #if HAVE_DUNE_PDELAB
 #include <dune/pdelab/backend/istl.hh>
@@ -46,7 +48,7 @@ struct CommunicationChooser
 }; // struct CommunicationChooser
 
 
-#if HAVE_MPI
+#if HAVE_MPI && HAVE_DUNE_ISTL
 
 
 template <class ViewImp>
@@ -79,7 +81,7 @@ struct CommunicationChooser<ViewImp, true>
 }; // struct CommunicationChooser< ..., true >
 
 
-#endif // HAVE_MPI
+#endif // HAVE_MPI && HAVE_DUNE_ISTL
 
 } // namespace GDT
 } // namespace Dune
