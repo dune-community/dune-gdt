@@ -17,6 +17,7 @@
 #include <dune/xt/la/container/common.hh>
 
 #include <dune/gdt/operators/fv.hh>
+#include <dune/gdt/projections/l2.hh>
 #include <dune/gdt/timestepper/factory.hh>
 #include <dune/gdt/timestepper/fractional-step.hh>
 
