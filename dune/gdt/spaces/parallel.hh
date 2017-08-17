@@ -39,7 +39,6 @@ struct CommunicationChooser
 
   static Type* create(const ViewImp& /*gridView*/)
   {
-    DUNE_THROW(InvalidStateException, "DEBUG");
     return new Type;
   }
 
@@ -71,6 +70,7 @@ struct CommunicationChooser<ViewImp, true>
     return new Type(gridView.comm());
   }
 
+  //  disabled for testing
   template <class Space>
   static typename std::enable_if<Space::backend_type == Dune::GDT::Backends::pdelab, bool>::type
   prepare(const Space& space, Type& communicator)
@@ -79,21 +79,16 @@ struct CommunicationChooser<ViewImp, true>
     XT::LA::IstlRowMajorSparseMatrix<typename Space::RangeFieldType> matrix;
     PDELab::istl::ParallelHelper<typename Space::BackendType>(space.backend(), 0)
         .createIndexSetAndProjectForAMG(matrix.backend(), communicator);
+    return true;
+#else
+    DUNE_THROW(InvalidStateException, "trying to use pdelab space backend and HAVE_DUNE_PDELAB is false");
 #endif // HAVE_DUNE_PDELAB
-    return true;
+    return false;
   } // ... prepare(...)
 
-  template <class Space>
-  static typename std::enable_if<Space::backend_type == Dune::GDT::Backends::gdt, bool>::type
-  prepare(const Space& space, Type& communicator)
-  {
-#if HAVE_DUNE_PDELAB
-    GDT::GenericParallelHelper<Space>(space, 1).createIndexSetAndProjectForAMG(communicator);
-    return true;
-  } // ... prepare(...)
 
   template <class Space>
-  static typename std::enable_if<Space::backend_type == Dune::GDT::Backends::fem, bool>::type
+  static typename std::enable_if<Space::backend_type != Dune::GDT::Backends::pdelab, bool>::type
   prepare(const Space& space, Type& communicator)
   {
     GDT::GenericParallelHelper<Space>(space, 1).createIndexSetAndProjectForAMG(communicator);
