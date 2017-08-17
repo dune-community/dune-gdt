@@ -195,6 +195,12 @@ public:
   {
   }
 
+  AO2013TestCase(XT::Common::Configuration cfg)
+    : BaseType(cfg.sub("grid", false, grid_cfg()), cfg.get("grid.num_refinements", 1))
+    , problem_()
+  {
+  }
+
   virtual const ProblemType& problem() const override final
   {
     return problem_;

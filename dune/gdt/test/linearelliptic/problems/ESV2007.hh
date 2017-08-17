@@ -213,6 +213,13 @@ public:
   {
   }
 
+  ESV2007TestCase(XT::Common::Configuration cfg)
+    : BaseType(cfg.sub("grid", false, grid_cfg()), cfg.get("grid.num_refinements", 1))
+    , problem_()
+    , exact_solution_()
+  {
+  }
+
   const ProblemType& problem() const override final
   {
     return problem_;
@@ -274,6 +281,7 @@ public:
 private:
   typedef Test::StationaryTestCase<G, ProblemType, XT::Grid::DD::SubdomainGrid<G>> BaseType;
 
+public:
   static XT::Common::Configuration grid_cfg()
   {
     auto cfg = ESV2007TestCase<G, R, r>::grid_cfg();
@@ -282,7 +290,6 @@ private:
     return cfg;
   }
 
-public:
   ESV2007DdSubdomainsTestCase(const size_t num_refs =
 #if DXT_DISABLE_LARGE_TESTS
                                   1
@@ -291,6 +298,13 @@ public:
 #endif
                               )
     : BaseType(grid_cfg(), num_refs)
+    , problem_()
+    , exact_solution_()
+  {
+  }
+
+  ESV2007DdSubdomainsTestCase(XT::Common::Configuration cfg)
+    : BaseType(cfg.sub("grid", false, grid_cfg()), cfg.get("grid.num_refinements", 1))
     , problem_()
     , exact_solution_()
   {

@@ -80,6 +80,27 @@ public:
   }
 }; // class ER2007Problem< ..., 1 >
 
+template <size_t polorder,
+          class EntityImp,
+          class DomainFieldImp,
+          size_t domainDim,
+          class RangeFieldImp,
+          size_t rangeDim>
+class ER2007ExactSolution
+    : public XT::Functions::ExpressionFunction<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>
+{
+  using BaseType = XT::Functions::ExpressionFunction<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim>;
+
+public:
+  ER2007ExactSolution()
+    : BaseType("x",
+               "cos(8.0*pi*x[0])+cos(8.0*pi*x[1])",
+               polorder,
+               "exact solution",
+               {"-8.0*pi*sin(8.0*pi*x[0])", "-8.0*pi*sin(8.0*pi*x[1])"})
+  {
+  }
+};
 
 template <class G, class R = double, int r = 1>
 class ER2007TestCase
@@ -93,12 +114,12 @@ class ER2007TestCase
   typedef typename G::template Codim<0>::Entity E;
   typedef typename G::ctype D;
   static const size_t d = G::dimension;
-  typedef XT::Functions::ExpressionFunction<E, D, d, R, r> ExactSolutionType;
 
 public:
   typedef LinearElliptic::ER2007Problem<E, D, d, R, r> ProblemType;
 
 private:
+  typedef ER2007ExactSolution<ProblemType::default_integration_order, E, D, d, R, r> ExactSolutionType;
   typedef Test::StationaryTestCase<G, ProblemType> BaseType;
 
 #if DXT_DISABLE_LARGE_TESTS
@@ -170,7 +191,7 @@ private:
 
 #endif // HAVE_DUNE_ALUGRID
 #endif // DXT_DISABLE_LARGE_TESTS
-
+public:
   static XT::Common::Configuration grid_cfg()
   {
     auto cfg = ProblemType::default_grid_cfg();
@@ -178,7 +199,6 @@ private:
     return cfg;
   }
 
-public:
   using typename BaseType::GridType;
 
   ER2007TestCase(const size_t num_refs =
@@ -190,11 +210,14 @@ public:
                  )
     : BaseType(grid_cfg(), num_refs)
     , problem_()
-    , exact_solution_("x",
-                      "cos(8.0*pi*x[0])+cos(8.0*pi*x[1])",
-                      ProblemType::default_integration_order,
-                      "exact solution",
-                      {"-8.0*pi*sin(8.0*pi*x[0])", "-8.0*pi*sin(8.0*pi*x[1])"})
+    , exact_solution_()
+  {
+  }
+
+  ER2007TestCase(XT::Common::Configuration cfg)
+    : BaseType(cfg.sub("grid", false, grid_cfg()), cfg.get("grid.num_refinements", 1))
+    , problem_()
+    , exact_solution_()
   {
   }
 
