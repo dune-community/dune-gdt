@@ -192,6 +192,7 @@ private:
 #endif // HAVE_DUNE_ALUGRID
 #endif // DXT_DISABLE_LARGE_TESTS
 
+public:
   static XT::Common::Configuration grid_cfg()
   {
     auto cfg = ProblemType::default_grid_cfg();
@@ -199,7 +200,6 @@ private:
     return cfg;
   }
 
-public:
   ESV2007TestCase(const size_t num_refs =
 #if DXT_DISABLE_LARGE_TESTS
                       1
