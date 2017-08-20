@@ -49,7 +49,8 @@ class LocalReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayer
   typedef typename BoundaryValueType::RangeType RangeType;
   typedef typename BoundaryValueType::RangeFieldType RangeFieldType;
   typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
-  typedef typename XT::LA::CommonSparseMatrix<RangeFieldType> SparseMatrixType;
+  typedef typename XT::LA::CommonSparseMatrixCsr<RangeFieldType> SparseMatrixType;
+  typedef typename XT::LA::CommonSparseMatrixCsc<RangeFieldType> CscSparseMatrixType;
   typedef typename XT::LA::EigenSolver<MatrixType> EigenSolverType;
   typedef Dune::QuadratureRule<DomainFieldType, 1> QuadratureType;
   typedef FieldVector<typename GridLayerType::Intersection, 2 * dimDomain> IntersectionVectorType;
@@ -111,21 +112,32 @@ public:
         jacobian_ = XT::Common::make_unique<JacobianRangeType>();
       if (!eigenvectors_) {
         eigenvectors_ = XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>();
-        eigenvectors_inverse_ = XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>();
+        Q_ = XT::Common::make_unique<FieldVector<CscSparseMatrixType, dimDomain>>(
+            CscSparseMatrixType(dimRange, dimRange));
+        R_ = XT::Common::make_unique<FieldVector<CscSparseMatrixType, dimDomain>>(
+            CscSparseMatrixType(dimRange, dimRange));
       }
       const auto& u_entity = values[stencil[0] / 2][stencil[1] / 2][stencil[2] / 2];
       const auto flux_local_func = analytical_flux_.local_function(entity);
       helper<dimDomain>::get_jacobian(
           flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, *jacobian_, param_);
-      helper<dimDomain>::get_eigenvectors(*jacobian_, *eigenvectors_, *eigenvectors_inverse_);
+      helper<dimDomain>::get_eigenvectors(*jacobian_, *eigenvectors_, *Q_, *R_, tau_, permutations_);
       if (is_linear_) {
         jacobian_ = nullptr;
         ++local_initialization_count_;
       }
     }
     for (size_t dd = 0; dd < dimDomain; ++dd)
-      helper<dimDomain>::reconstruct(
-          dd, values, *eigenvectors_, *eigenvectors_inverse_, quadrature_, reconstructed_values_map, intersections);
+      helper<dimDomain>::reconstruct(dd,
+                                     values,
+                                     *eigenvectors_,
+                                     *Q_,
+                                     *R_,
+                                     tau_,
+                                     permutations_,
+                                     quadrature_,
+                                     reconstructed_values_map,
+                                     intersections);
   } // void apply_local(...)
 
   static void reset()
@@ -134,6 +146,281 @@ public:
   }
 
 private:
+  // H * A(row_begin:row_end,col_begin, col_end) where H = I-tau*w*w^T and w = v[row_begin:row_end]
+  static void multiply_householder_from_left(MatrixType& A,
+                                             const RangeFieldType& tau,
+                                             const RangeType& v,
+                                             const size_t row_begin,
+                                             const size_t row_end,
+                                             const size_t col_begin,
+                                             const size_t col_end)
+  {
+    // calculate w^T A first
+    RangeType wT_A(0.);
+    for (size_t cc = col_begin; cc < col_end; ++cc)
+      for (size_t rr = row_begin; rr < row_end; ++rr)
+        wT_A[cc] += v[rr] * A[rr][cc];
+    for (size_t rr = row_begin; rr < row_end; ++rr)
+      for (size_t cc = col_begin; cc < col_end; ++cc)
+        A[rr][cc] -= tau * v[rr] * wT_A[cc];
+  }
+
+  //   // H * A(row_begin:row_end,col_begin, col_end) where H = I-tau*w*w^T and w = v[row_begin:row_end]
+  //  void multiply_householder_from_left_sparse(CscSparseMatrixType& A,
+  //                                             const FieldType& tau,
+  //                                             const VectorType& v,
+  //                                             const FieldVector<size_t, dimDomain> diagonal_indices,
+  //                                             jj) const
+  //  {
+  //    // calculate w^T A first
+  //    VectorType wT_A(0.);
+  //    for (size_t cc = jj+1; cc < num_cols; ++cc)
+  //      for (size_t kk = diagonal_indices[jj]; kk < column_pointers[jj+1]; ++kk)
+  //        wT_A[cc] += v[row_indices[kk]] * entries[kk];
+  //    for (size_t rr = row_begin; rr < row_end; ++rr)
+  //      for (size_t cc = col_begin; cc < col_end; ++cc)
+  //        A[rr][cc] -= tau * v[rr] * wT_A[cc];
+  //  }
+
+  // Calculates A * H.
+  // \see multiply_householder_from_left
+  static void multiply_householder_from_right(MatrixType& A,
+                                              const RangeFieldType& tau,
+                                              const RangeType& v,
+                                              const size_t row_begin,
+                                              const size_t row_end,
+                                              const size_t col_begin,
+                                              const size_t col_end)
+  {
+    // calculate A w first
+    RangeType Aw(0.);
+    for (size_t rr = row_begin; rr < row_end; ++rr)
+      for (size_t cc = col_begin; cc < col_end; ++cc)
+        Aw[rr] += A[rr][cc] * v[cc];
+    for (size_t rr = row_begin; rr < row_end; ++rr)
+      for (size_t cc = col_begin; cc < col_end; ++cc)
+        A[rr][cc] -= tau * Aw[rr] * v[cc];
+  }
+
+
+  /** \brief This is a simple QR scheme using Householder reflections.
+  * The householder matrix is written as H = I - 2 v v^T, where v = u/||u|| and u = x - s ||x|| e_1, s = +-1 has the
+  * opposite sign of u_1 and x is the current column of A. The matrix H is rewritten as
+  * H = I - tau w w^T, where w=u/u_1 and tau = -s u_1/||x||.
+  * \see https://en.wikipedia.org/wiki/QR_decomposition#Using_Householder_reflections.
+  * \see http://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf
+  */
+  void QR_decomp(MatrixType& A, RangeType& tau, FieldVector<size_t, dimDomain>& permutations)
+  {
+    const size_t num_rows = A.M();
+    const size_t num_cols = A.N();
+    std::fill(tau.begin(), tau.end(), 0.);
+    for (size_t ii = 0; ii < num_cols; ++ii)
+      permutations[ii] = ii;
+
+    // compute (squared) column norms
+    RangeType col_norms(0.);
+    for (size_t rr = 0; rr < num_rows; ++rr)
+      for (size_t cc = 0; cc < num_cols; ++cc)
+        col_norms[cc] += std::pow(A[rr][cc], 2);
+
+    RangeType w(0.);
+
+    for (size_t jj = 0; jj < num_cols; ++jj) {
+
+      // Pivoting
+      // swap column jj and column with greatest norm
+      auto max_it = std::max_element(col_norms.begin() + jj, col_norms.end());
+      size_t max_index = std::distance(col_norms.begin(), max_it);
+      if (max_index != jj) {
+        for (size_t rr = 0; rr < num_rows; ++rr)
+          std::swap(A[rr][jj], A[rr][max_index]);
+        std::swap(col_norms[jj], col_norms[max_index]);
+        std::swap(permutations[jj], permutations[max_index]);
+      }
+
+      // Matrix update
+      // Reduction by householder matrix
+      RangeFieldType normx(0);
+      for (size_t rr = jj; rr < num_rows; ++rr)
+        normx += std::pow(A[rr][jj], 2);
+      normx = std::sqrt(normx);
+
+      if (XT::Common::FloatCmp::ne(normx, 0.)) {
+        const auto s = -sign(A[jj][jj]);
+        const RangeFieldType u1 = A[jj][jj] - s * normx;
+        w[jj] = 1.;
+        for (size_t rr = jj + 1; rr < num_rows; ++rr) {
+          w[rr] = A[rr][jj] / u1;
+          A[rr][jj] = w[rr];
+        }
+        A[jj][jj] = s * normx;
+        tau[jj] = -s * u1 / normx;
+        // calculate A = H A
+        multiply_householder_from_left(A, tau[jj], w, jj, num_rows, jj + 1, num_cols);
+      } // if (normx != 0)
+
+      // Norm downdate
+      for (size_t rr = jj + 1; rr < num_rows; ++rr)
+        col_norms[rr] -= std::pow(A[jj][rr], 2);
+
+    } // jj
+  } // void QR_decomp(...)
+
+  /** \brief This is a simple QR scheme using Householder reflections.
+  * The householder matrix is written as H = I - 2 v v^T, where v = u/||u|| and u = x - s ||x|| e_1, s = +-1 has the
+  * opposite sign of u_1 and x is the current column of A. The matrix H is rewritten as
+  * H = I - tau w w^T, where w=u/u_1 and tau = -s u_1/||x||.
+  * \see https://en.wikipedia.org/wiki/QR_decomposition#Using_Householder_reflections.
+  * \see http://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf
+  */
+  static void
+  QR_decomp(MatrixType& A, RangeType& tau, FieldVector<size_t, dimRange>& permutations, CscSparseMatrixType& Q)
+  {
+    //    std::cout << "A: " << XT::Common::to_string(A) << std::endl;
+    Q.clear();
+    //    auto& Q_entries = Q.entries();
+    //    auto& Q_column_pointers = Q.column_pointers();
+    //    auto& Q_row_indices = Q.row_indices();
+    const size_t num_rows = A.M();
+    const size_t num_cols = A.N();
+    std::fill(tau.begin(), tau.end(), 0.);
+    for (size_t ii = 0; ii < num_cols; ++ii)
+      permutations[ii] = ii;
+
+    // compute (squared) column norms
+    RangeType col_norms(0.);
+    for (size_t rr = 0; rr < num_rows; ++rr)
+      for (size_t cc = 0; cc < num_cols; ++cc)
+        col_norms[cc] += std::pow(A[rr][cc], 2);
+
+    RangeType w(0.);
+
+    for (size_t jj = 0; jj < num_cols; ++jj) {
+
+      // Pivoting
+      // swap column jj and column with greatest norm
+      auto max_it = std::max_element(col_norms.begin() + jj, col_norms.end());
+      size_t max_index = std::distance(col_norms.begin(), max_it);
+      if (max_index != jj) {
+        for (size_t rr = 0; rr < num_rows; ++rr)
+          std::swap(A[rr][jj], A[rr][max_index]);
+        std::swap(col_norms[jj], col_norms[max_index]);
+        std::swap(permutations[jj], permutations[max_index]);
+      }
+
+      // Matrix update
+      // Reduction by householder matrix
+      RangeFieldType normx(0);
+      for (size_t rr = jj; rr < num_rows; ++rr)
+        normx += std::pow(A[rr][jj], 2);
+      normx = std::sqrt(normx);
+
+      if (XT::Common::FloatCmp::ne(normx, 0.)) {
+        const auto s = -sign(A[jj][jj]);
+        const RangeFieldType u1 = A[jj][jj] - s * normx;
+        w[jj] = 1.;
+        for (size_t rr = jj + 1; rr < num_rows; ++rr) {
+          w[rr] = A[rr][jj] / u1;
+          A[rr][jj] = 0.;
+          if (XT::Common::FloatCmp::ne(w[rr], 0.)) {
+            Q.entries().push_back(w[rr]);
+            Q.row_indices().push_back(rr);
+          }
+        }
+        Q.column_pointers()[jj + 1] = Q.entries().size();
+        A[jj][jj] = s * normx;
+        tau[jj] = -s * u1 / normx;
+        // calculate A = H A
+        multiply_householder_from_left(A, tau[jj], w, jj, num_rows, jj + 1, num_cols);
+      } // if (normx != 0)
+
+      // Norm downdate
+      for (size_t rr = jj + 1; rr < num_rows; ++rr)
+        col_norms[rr] -= std::pow(A[jj][rr], 2);
+
+    } // jj
+    //    std::cout << "R: " << XT::Common::to_string(A) << std::endl;
+  } // void QR_decomp(...)
+
+  /** \brief This is a simple QR scheme using Householder reflections.
+  * The householder matrix is written as H = I - 2 v v^T, where v = u/||u|| and u = x - s ||x|| e_1, s = +-1 has the
+  * opposite sign of u_1 and x is the current column of A. The matrix H is rewritten as
+  * H = I - tau w w^T, where w=u/u_1 and tau = -s u_1/||x||.
+  * \see https://en.wikipedia.org/wiki/QR_decomposition#Using_Householder_reflections.
+  * \see http://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf
+  */
+  static void QR_decomp(MatrixType& A, RangeType& tau, FieldVector<size_t, dimRange>& permutations, MatrixType& Q)
+  {
+    //    std::cout << "A: " << XT::Common::to_string(A) << std::endl;
+    std::fill(Q.begin(), Q.end(), 0.);
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      Q[ii][ii] = 1.;
+
+    //    auto& Q_entries = Q.entries();
+    //    auto& Q_column_pointers = Q.column_pointers();
+    //    auto& Q_row_indices = Q.row_indices();
+    const size_t num_rows = A.M();
+    const size_t num_cols = A.N();
+    std::fill(tau.begin(), tau.end(), 0.);
+    for (size_t ii = 0; ii < num_cols; ++ii)
+      permutations[ii] = ii;
+
+    // compute (squared) column norms
+    RangeType col_norms(0.);
+    for (size_t rr = 0; rr < num_rows; ++rr)
+      for (size_t cc = 0; cc < num_cols; ++cc)
+        col_norms[cc] += std::pow(A[rr][cc], 2);
+
+    RangeType w(0.);
+
+    for (size_t jj = 0; jj < num_cols; ++jj) {
+
+      // Pivoting
+      // swap column jj and column with greatest norm
+      auto max_it = std::max_element(col_norms.begin() + jj, col_norms.end());
+      size_t max_index = std::distance(col_norms.begin(), max_it);
+      if (max_index != jj) {
+        for (size_t rr = 0; rr < num_rows; ++rr)
+          std::swap(A[rr][jj], A[rr][max_index]);
+        std::swap(col_norms[jj], col_norms[max_index]);
+        std::swap(permutations[jj], permutations[max_index]);
+      }
+
+      // Matrix update
+      // Reduction by householder matrix
+      RangeFieldType normx(0);
+      for (size_t rr = jj; rr < num_rows; ++rr)
+        normx += std::pow(A[rr][jj], 2);
+      normx = std::sqrt(normx);
+
+      if (XT::Common::FloatCmp::ne(normx, 0.)) {
+        const auto s = -sign(A[jj][jj]);
+        const RangeFieldType u1 = A[jj][jj] - s * normx;
+        w[jj] = 1.;
+        for (size_t rr = jj + 1; rr < num_rows; ++rr) {
+          w[rr] = A[rr][jj] / u1;
+        }
+        //        A[jj][jj] = s * normx;
+        tau[jj] = -s * u1 / normx;
+        // calculate A = H A
+        multiply_householder_from_left(A, tau[jj], w, jj, num_rows, jj, num_cols);
+        multiply_householder_from_right(Q, tau[jj], w, 0, num_rows, jj, num_cols);
+      } // if (normx != 0)
+
+      // Norm downdate
+      for (size_t rr = jj + 1; rr < num_rows; ++rr)
+        col_norms[rr] -= std::pow(A[jj][rr], 2);
+
+    } // jj
+    //    std::cout << "R: " << XT::Common::to_string(A) << std::endl;
+    //    std::cout << "Q: " << XT::Common::to_string(Q) << std::endl;
+    MatrixType P(0);
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      P[permutations[ii]][ii] = 1.;
+    //    std::cout << "P: " << XT::Common::to_string(P) << std::endl;
+  } // void QR_decomp(...)
+
   // quadrature rule containing left and right interface points
   static QuadratureType left_right_quadrature()
   {
@@ -294,7 +581,10 @@ private:
     static void reconstruct(size_t dd,
                             const ValuesType& values,
                             FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
-                            FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse,
+                            FieldVector<CscSparseMatrixType, dimDomain>& Q,
+                            FieldVector<CscSparseMatrixType, dimDomain>& R,
+                            FieldVector<RangeType, dimDomain>& taus,
+                            FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations,
                             const QuadratureType& quadrature,
                             std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
@@ -302,16 +592,32 @@ private:
       // We always treat dd as the x-direction and set y- and z-direction accordingly. For that purpose, define new
       // coordinates x', y', z'. First reorder x, y, z to x', y', z' and convert to x'-characteristic variables.
       // Reordering is done such that the indices in char_values are in the order z', y', x'
+      size_t curr_dir = dd;
       FieldVector<FieldVector<FieldVector<RangeType, stencil_size>, stencil_size>, stencil_size> char_values;
       for (size_t ii = 0; ii < stencil_size; ++ii) {
         for (size_t jj = 0; jj < stencil_size; ++jj) {
           for (size_t kk = 0; kk < stencil_size; ++kk) {
             if (dd == 0)
-              eigenvectors_inverse[dd].mv(values[ii][jj][kk], char_values[kk][jj][ii]);
+              apply_inverse_eigenvectors(Q[curr_dir],
+                                         R[curr_dir],
+                                         taus[curr_dir],
+                                         permutations[curr_dir],
+                                         values[ii][jj][kk],
+                                         char_values[kk][jj][ii]);
             else if (dd == 1)
-              eigenvectors_inverse[dd].mv(values[ii][jj][kk], char_values[ii][kk][jj]);
+              apply_inverse_eigenvectors(Q[curr_dir],
+                                         R[curr_dir],
+                                         taus[curr_dir],
+                                         permutations[curr_dir],
+                                         values[ii][jj][kk],
+                                         char_values[ii][kk][jj]);
             else if (dd == 2)
-              eigenvectors_inverse[dd].mv(values[ii][jj][kk], char_values[jj][ii][kk]);
+              apply_inverse_eigenvectors(Q[curr_dir],
+                                         R[curr_dir],
+                                         taus[curr_dir],
+                                         permutations[curr_dir],
+                                         values[ii][jj][kk],
+                                         char_values[jj][ii][kk]);
           }
         }
       }
@@ -332,14 +638,20 @@ private:
       }
 
       // convert from x'-characteristic variables to y'-characteristic variables
+      size_t next_dir = (dd + 1) % 3;
       RangeType tmp_vec;
       for (size_t kk = 0; kk < stencil_size; ++kk) {
         for (size_t ii = 0; ii < 2; ++ii) {
           for (size_t jj = 0; jj < stencil_size; ++jj) {
             tmp_vec = x_reconstructed_values[kk][ii][jj];
-            eigenvectors[dd].mv(tmp_vec, x_reconstructed_values[kk][ii][jj]);
+            eigenvectors[curr_dir].mv(tmp_vec, x_reconstructed_values[kk][ii][jj]);
             tmp_vec = x_reconstructed_values[kk][ii][jj];
-            eigenvectors_inverse[(dd + 1) % 3].mv(tmp_vec, x_reconstructed_values[kk][ii][jj]);
+            apply_inverse_eigenvectors(Q[next_dir],
+                                       R[next_dir],
+                                       taus[next_dir],
+                                       permutations[next_dir],
+                                       tmp_vec,
+                                       x_reconstructed_values[kk][ii][jj]);
           }
         }
       }
@@ -361,13 +673,20 @@ private:
       } // kk
 
       // convert from y'-characteristic variables to z'-characteristic variables
+      curr_dir = next_dir;
+      next_dir = (dd + 2) % 3;
       for (size_t ii = 0; ii < 2; ++ii) {
         for (size_t jj = 0; jj < num_quad_points; ++jj) {
           for (size_t kk = 0; kk < stencil_size; ++kk) {
             tmp_vec = y_reconstructed_values[ii][jj][kk];
-            eigenvectors[(dd + 1) % 3].mv(tmp_vec, y_reconstructed_values[ii][jj][kk]);
+            eigenvectors[curr_dir].mv(tmp_vec, y_reconstructed_values[ii][jj][kk]);
             tmp_vec = y_reconstructed_values[ii][jj][kk];
-            eigenvectors_inverse[(dd + 2) % 3].mv(tmp_vec, y_reconstructed_values[ii][jj][kk]);
+            apply_inverse_eigenvectors(Q[next_dir],
+                                       R[next_dir],
+                                       taus[next_dir],
+                                       permutations[next_dir],
+                                       tmp_vec,
+                                       y_reconstructed_values[ii][jj][kk]);
           }
         }
       }
@@ -387,7 +706,7 @@ private:
         for (size_t jj = 0; jj < num_quad_points; ++jj) {
           for (size_t kk = 0; kk < num_quad_points; ++kk) {
             // convert back to non-characteristic variables
-            eigenvectors[(dd + 2) % 3].mv(reconstructed_values[ii][jj][kk], tmp_vec);
+            eigenvectors[next_dir].mv(reconstructed_values[ii][jj][kk], tmp_vec);
             IntersectionLocalCoordType quadrature_point = {quadrature[jj].position(), quadrature[kk].position()};
             reconstructed_values_map.insert(
                 std::make_pair(intersections[2 * dd + ii].geometryInInside().global(quadrature_point), tmp_vec));
@@ -407,7 +726,10 @@ private:
 
     static void get_eigenvectors(const JacobianRangeType& jacobian,
                                  FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
-                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse)
+                                 FieldVector<CscSparseMatrixType, dimDomain>& Q,
+                                 FieldVector<CscSparseMatrixType, dimDomain>& R,
+                                 FieldVector<RangeType, dimDomain>& tau,
+                                 FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations)
     {
       XT::Common::Configuration eigensolver_options(
           {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
@@ -416,11 +738,93 @@ private:
         const auto eigensolver = EigenSolverType(jacobian[ii]);
         auto eigenvectors_dense = eigensolver.real_eigenvectors_as_matrix(eigensolver_options);
         eigenvectors[ii] = SparseMatrixType(*eigenvectors_dense, true);
-        eigenvectors_dense->invert();
-        eigenvectors_inverse[ii] = SparseMatrixType(*eigenvectors_dense, true);
+        thread_local MatrixType Qdense(0);
+        QR_decomp(*eigenvectors_dense, tau[ii], permutations[ii], Qdense);
+        R[ii] = CscSparseMatrixType(*eigenvectors_dense, true, size_t(0));
+        Q[ii] = CscSparseMatrixType(Qdense, true, size_t(0));
       } // ii
     } // ... get_eigenvectors(...)
   }; // struct helper<3, ...
+
+  static void
+  apply_Q_transposed(const CscSparseMatrixType& compressedQ, const RangeType& tau, const RangeType& x, RangeType& ret)
+  {
+    const size_t num_cols = compressedQ.cols();
+    const auto& entries = compressedQ.entries();
+    const auto& column_pointers = compressedQ.column_pointers();
+    const auto& row_indices = compressedQ.row_indices();
+    ret = x;
+    for (size_t jj = 0; jj < num_cols; ++jj) {
+      RangeFieldType w_QTx = ret[jj];
+      for (size_t kk = column_pointers[jj]; kk < column_pointers[jj + 1]; ++kk)
+        w_QTx += entries[kk] * ret[row_indices[kk]];
+      const RangeFieldType factor = tau[jj] * w_QTx;
+      ret[jj] -= factor;
+      for (size_t kk = column_pointers[jj]; kk < column_pointers[jj + 1]; ++kk)
+        ret[row_indices[kk]] -= entries[kk] * factor;
+    } // jj
+  }
+
+  static void solve_upper_triangular(const CscSparseMatrixType& R, RangeType& x, const RangeType& b)
+  {
+    const size_t num_cols = R.cols();
+    const auto& entries = R.entries();
+    const auto& column_pointers = R.column_pointers();
+    const auto& row_indices = R.row_indices();
+    RangeType& rhs = x; // use x to store rhs
+    rhs = b; // copy data
+    // backsolve
+    for (int ii = int(num_cols) - 1; ii >= 0; ii--) {
+      // column_pointers[ii+1]-1 is the diagonal entry as we assume an upper triangular matrix with non-zero entries
+      // on the diagonal
+      if (XT::Common::FloatCmp::ne(rhs[ii], 0.)) {
+        int kk = int(column_pointers[ii + 1]) - 1;
+        x[ii] = rhs[ii] / entries[kk];
+        --kk;
+        for (; kk >= int(column_pointers[ii]); --kk)
+          rhs[row_indices[kk]] -= entries[kk] * x[ii];
+      }
+    } // ii
+  }
+
+  //  // Calculate A^{-1} x, where we have a QR decomposition with column pivoting A = QRP^T.
+  //  // A^{-1} x = (QRP^T)^{-1} x = P R^{-1} Q^T x
+  //  static void apply_inverse_eigenvectors(const CscSparseMatrixType& compressedQ,
+  //                                         const CscSparseMatrixType& R,
+  //                                         const RangeType& tau,
+  //                                         const FieldVector<size_t, dimRange>& permutations,
+  //                                         const RangeType& x,
+  //                                         RangeType& ret)
+  //  {
+  //    // calculate ret = Q^T x
+  //    apply_Q_transposed(compressedQ, tau, x, ret);
+  //    // calculate ret = R^{-1} ret
+  //    auto y = ret;
+  //    solve_upper_triangular(R, ret, y);
+  //    // calculate ret = P ret
+  //    for (size_t ii = 0; ii < dimRange; ++ii)
+  //      ret[ii] = ret[permutations[ii]];
+  //  }
+
+  // Calculate A^{-1} x, where we have a QR decomposition with column pivoting A = QRP^T.
+  // A^{-1} x = (QRP^T)^{-1} x = P R^{-1} Q^T x
+  static void apply_inverse_eigenvectors(const CscSparseMatrixType& Q,
+                                         const CscSparseMatrixType& R,
+                                         const RangeType& tau,
+                                         const FieldVector<size_t, dimRange>& permutations,
+                                         const RangeType& x,
+                                         RangeType& ret)
+  {
+    // calculate ret = Q^T x
+    Q.mtv(x, ret);
+    // calculate ret = R^{-1} ret
+    auto y = ret;
+    solve_upper_triangular(R, ret, y);
+    // calculate ret = P ret
+    y = ret;
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      ret[permutations[ii]] = y[ii];
+  }
 
 
   class StencilIterator
@@ -545,7 +949,10 @@ private:
   std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values_;
   static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
   static thread_local std::unique_ptr<FieldVector<SparseMatrixType, dimDomain>> eigenvectors_;
-  static thread_local std::unique_ptr<FieldVector<SparseMatrixType, dimDomain>> eigenvectors_inverse_;
+  static thread_local std::unique_ptr<FieldVector<CscSparseMatrixType, dimDomain>> Q_;
+  static thread_local std::unique_ptr<FieldVector<CscSparseMatrixType, dimDomain>> R_;
+  static thread_local FieldVector<RangeType, dimDomain> tau_;
+  static thread_local FieldVector<FieldVector<size_t, dimRange>, dimDomain> permutations_;
   static std::atomic<size_t> initialization_count_;
   static thread_local size_t local_initialization_count_;
   static bool is_instantiated_;
@@ -586,11 +993,61 @@ thread_local std::unique_ptr<FieldVector<
                                            AnalyticalFluxType,
                                            BoundaryValueType,
                                            polOrder,
-                                           slope_limiter>::SparseMatrixType,
+                                           slope_limiter>::CscSparseMatrixType,
     LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
         dimDomain>>
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::Q_;
+
+template <class GridLayerType,
+          class AnalyticalFluxType,
+          class BoundaryValueType,
+          size_t polOrder,
+          SlopeLimiters slope_limiter>
+thread_local std::unique_ptr<FieldVector<
+    typename LocalReconstructionFvOperator<GridLayerType,
+                                           AnalyticalFluxType,
+                                           BoundaryValueType,
+                                           polOrder,
+                                           slope_limiter>::CscSparseMatrixType,
     LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
-        eigenvectors_inverse_;
+        dimDomain>>
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::R_;
+
+
+template <class GridLayerType,
+          class AnalyticalFluxType,
+          class BoundaryValueType,
+          size_t polOrder,
+          SlopeLimiters slope_limiter>
+thread_local FieldVector<
+    typename LocalReconstructionFvOperator<GridLayerType,
+                                           AnalyticalFluxType,
+                                           BoundaryValueType,
+                                           polOrder,
+                                           slope_limiter>::RangeType,
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
+        dimDomain>
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::tau_;
+
+
+template <class GridLayerType,
+          class AnalyticalFluxType,
+          class BoundaryValueType,
+          size_t polOrder,
+          SlopeLimiters slope_limiter>
+thread_local FieldVector<FieldVector<size_t,
+                                     LocalReconstructionFvOperator<GridLayerType,
+                                                                   AnalyticalFluxType,
+                                                                   BoundaryValueType,
+                                                                   polOrder,
+                                                                   slope_limiter>::dimRange>,
+                         LocalReconstructionFvOperator<GridLayerType,
+                                                       AnalyticalFluxType,
+                                                       BoundaryValueType,
+                                                       polOrder,
+                                                       slope_limiter>::dimDomain>
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
+        permutations_;
 
 template <class GridLayerType,
           class AnalyticalFluxType,
