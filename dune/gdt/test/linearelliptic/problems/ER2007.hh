@@ -102,6 +102,79 @@ public:
   }
 };
 
+namespace internal {
+
+#if DXT_DISABLE_LARGE_TESTS
+
+template <class T, bool anything = true>
+struct ER2007GridConfig
+{
+  static XT::Common::Configuration value(XT::Common::Configuration cfg)
+  {
+    cfg["num_elements"] = "[4 4]";
+    return cfg;
+  }
+};
+
+#else // DXT_DISABLE_LARGE_TESTS
+
+template <class T, bool anything = true>
+struct ER2007GridConfig
+{
+  static_assert(AlwaysFalse<T>::value, "Please add a configuration for this grid type!");
+  static XT::Common::Configuration value(XT::Common::Configuration cfg)
+  {
+    return cfg;
+  }
+};
+
+template <bool anything>
+struct ER2007GridConfig<Yasp2Grid, anything>
+{
+  static XT::Common::Configuration value(XT::Common::Configuration cfg)
+  {
+    cfg["num_elements"] = "[8 8]";
+    return cfg;
+  }
+};
+
+#if HAVE_DUNE_ALUGRID
+template <bool anything>
+struct ER2007GridConfig<AluConform2dGridType, anything>
+{
+  static XT::Common::Configuration value(XT::Common::Configuration cfg)
+  {
+    cfg["num_elements"] = "[8 8]";
+    cfg["num_refinements"] = "1";
+    return cfg;
+  }
+};
+
+template <bool anything>
+struct ER2007GridConfig<AluCube2dGridType, anything>
+{
+  static XT::Common::Configuration value(XT::Common::Configuration cfg)
+  {
+    cfg["num_elements"] = "[8 8]";
+    cfg["num_refinements"] = "1";
+    return cfg;
+  }
+};
+
+template <bool anything>
+struct ER2007GridConfig<AluSimplex2dGridType, anything>
+{
+  static XT::Common::Configuration value(XT::Common::Configuration cfg)
+  {
+    cfg["num_elements"] = "[8 8]";
+    return cfg;
+  }
+};
+
+#endif // HAVE_DUNE_ALUGRID
+#endif // DXT_DISABLE_LARGE_TESTS
+}
+
 template <class G, class R = double, int r = 1>
 class ER2007TestCase
     : public Test::StationaryTestCase<G,
@@ -122,81 +195,11 @@ private:
   typedef ER2007ExactSolution<ProblemType::default_integration_order, E, D, d, R, r> ExactSolutionType;
   typedef Test::StationaryTestCase<G, ProblemType> BaseType;
 
-#if DXT_DISABLE_LARGE_TESTS
-
-  template <class T, bool anything = true>
-  struct Helper
-  {
-    static XT::Common::Configuration value(XT::Common::Configuration cfg)
-    {
-      cfg["num_elements"] = "[4 4]";
-      return cfg;
-    }
-  };
-
-#else // DXT_DISABLE_LARGE_TESTS
-
-  template <class T, bool anything = true>
-  struct Helper
-  {
-    static_assert(AlwaysFalse<T>::value, "Please add a configuration for this grid type!");
-    static XT::Common::Configuration value(XT::Common::Configuration cfg)
-    {
-      return cfg;
-    }
-  };
-
-  template <bool anything>
-  struct Helper<Yasp2Grid, anything>
-  {
-    static XT::Common::Configuration value(XT::Common::Configuration cfg)
-    {
-      cfg["num_elements"] = "[8 8]";
-      return cfg;
-    }
-  };
-
-#if HAVE_DUNE_ALUGRID
-  template <bool anything>
-  struct Helper<AluConform2dGridType, anything>
-  {
-    static XT::Common::Configuration value(XT::Common::Configuration cfg)
-    {
-      cfg["num_elements"] = "[8 8]";
-      cfg["num_refinements"] = "1";
-      return cfg;
-    }
-  };
-
-  template <bool anything>
-  struct Helper<AluCube2dGridType, anything>
-  {
-    static XT::Common::Configuration value(XT::Common::Configuration cfg)
-    {
-      cfg["num_elements"] = "[8 8]";
-      cfg["num_refinements"] = "1";
-      return cfg;
-    }
-  };
-
-  template <bool anything>
-  struct Helper<AluSimplex2dGridType, anything>
-  {
-    static XT::Common::Configuration value(XT::Common::Configuration cfg)
-    {
-      cfg["num_elements"] = "[8 8]";
-      return cfg;
-    }
-  };
-
-#endif // HAVE_DUNE_ALUGRID
-#endif // DXT_DISABLE_LARGE_TESTS
 public:
   static XT::Common::Configuration grid_cfg()
   {
     auto cfg = ProblemType::default_grid_cfg();
-    cfg = Helper<typename std::decay<G>::type>::value(cfg);
-    return cfg;
+    return internal::ER2007GridConfig<typename std::decay<G>::type>::value(cfg);
   }
 
   using typename BaseType::GridType;
