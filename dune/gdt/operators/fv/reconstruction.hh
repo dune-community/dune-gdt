@@ -127,6 +127,7 @@ public:
         ++local_initialization_count_;
       }
     }
+
     for (size_t dd = 0; dd < dimDomain; ++dd)
       helper<dimDomain>::reconstruct(dd,
                                      values,
@@ -277,7 +278,6 @@ private:
   static void
   QR_decomp(MatrixType& A, RangeType& tau, FieldVector<size_t, dimRange>& permutations, CscSparseMatrixType& Q)
   {
-    //    std::cout << "A: " << XT::Common::to_string(A) << std::endl;
     Q.clear();
     //    auto& Q_entries = Q.entries();
     //    auto& Q_column_pointers = Q.column_pointers();
@@ -340,7 +340,6 @@ private:
         col_norms[rr] -= std::pow(A[jj][rr], 2);
 
     } // jj
-    //    std::cout << "R: " << XT::Common::to_string(A) << std::endl;
   } // void QR_decomp(...)
 
   /** \brief This is a simple QR scheme using Householder reflections.
@@ -352,7 +351,6 @@ private:
   */
   static void QR_decomp(MatrixType& A, RangeType& tau, FieldVector<size_t, dimRange>& permutations, MatrixType& Q)
   {
-    //    std::cout << "A: " << XT::Common::to_string(A) << std::endl;
     std::fill(Q.begin(), Q.end(), 0.);
     for (size_t ii = 0; ii < dimRange; ++ii)
       Q[ii][ii] = 1.;
@@ -413,12 +411,6 @@ private:
         col_norms[rr] -= std::pow(A[jj][rr], 2);
 
     } // jj
-    //    std::cout << "R: " << XT::Common::to_string(A) << std::endl;
-    //    std::cout << "Q: " << XT::Common::to_string(Q) << std::endl;
-    MatrixType P(0);
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      P[permutations[ii]][ii] = 1.;
-    //    std::cout << "P: " << XT::Common::to_string(P) << std::endl;
   } // void QR_decomp(...)
 
   // quadrature rule containing left and right interface points
@@ -731,7 +723,7 @@ private:
                                  FieldVector<RangeType, dimDomain>& tau,
                                  FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations)
     {
-      XT::Common::Configuration eigensolver_options(
+      static XT::Common::Configuration eigensolver_options(
           {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
           {EigenSolverType::types()[1], "1", "1", "0", "1"});
       for (size_t ii = 0; ii < dimDomain; ++ii) {
