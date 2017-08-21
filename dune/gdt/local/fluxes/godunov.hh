@@ -173,10 +173,15 @@ private:
       RangeType u_mean = u_i + u_j;
       u_mean *= RangeFieldType(0.5);
       const auto& local_flux = std::get<0>(local_functions_tuple);
-      if (!jacobian())
+      thread_local std::unique_ptr<MatrixType> jacobian_neg_dense;
+      thread_local std::unique_ptr<MatrixType> jacobian_pos_dense;
+      if (!jacobian()) {
         jacobian() = XT::Common::make_unique<JacobianRangeType>();
+        jacobian_neg_dense = XT::Common::make_unique<MatrixType>(0);
+        jacobian_pos_dense = XT::Common::make_unique<MatrixType>(0);
+      }
       helper<dimDomain>::get_jacobian(direction, local_flux, x_local, u_mean, *(jacobian()), param_inside_);
-      XT::Common::Configuration eigensolver_options(
+      static XT::Common::Configuration eigensolver_options(
           {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
           {EigenSolverType::types()[1], "1", "1", "0", "1"});
       const auto eigen_solver = EigenSolverType((*(jacobian()))[direction]);
@@ -184,24 +189,27 @@ private:
       const auto eigenvectors = eigen_solver.real_eigenvectors_as_matrix(eigensolver_options);
       auto eigenvectors_inverse = std::make_shared<MatrixType>(*eigenvectors);
       eigenvectors_inverse->invert();
-      if (is_linear_)
-        jacobian() = nullptr;
+      std::fill(jacobian_neg_dense->begin(), jacobian_neg_dense->end(), 0.);
+      std::fill(jacobian_pos_dense->begin(), jacobian_pos_dense->end(), 0.);
+      RangeFieldType eigenvalue;
+      for (size_t kk = 0; kk < dimRange; ++kk) {
+        eigenvalue = eigenvalues[kk].real();
+        if (XT::Common::FloatCmp::eq(eigenvalue, 0.))
+          continue;
+        auto& jacobian_dense = eigenvalue < 0. ? *jacobian_neg_dense : *jacobian_pos_dense;
+        auto& eigvec_inverse_row = (*eigenvectors_inverse)[kk];
+        for (size_t rr = 0; rr < dimRange; ++rr)
+          jacobian_dense[rr].axpy((*eigenvectors)[rr][kk] * eigenvalue, eigvec_inverse_row);
+      } // kk
 
-      auto jacobian_neg_dense = XT::Common::make_unique<MatrixType>(0);
-      auto jacobian_pos_dense = XT::Common::make_unique<MatrixType>(0);
-      for (size_t rr = 0; rr < dimRange; ++rr)
-        for (size_t cc = 0; cc < dimRange; ++cc)
-          for (size_t kk = 0; kk < dimRange; ++kk)
-            if (XT::Common::FloatCmp::lt(eigenvalues[kk].real(), 0.))
-              (*jacobian_neg_dense)[rr][cc] +=
-                  (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk].real();
-            else
-              (*jacobian_pos_dense)[rr][cc] +=
-                  (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk].real();
-      jacobian_neg()[direction] = SparseMatrixType(*jacobian_neg_dense, true);
-      jacobian_pos()[direction] = SparseMatrixType(*jacobian_pos_dense, true);
-      if (is_linear_)
+      jacobian_neg()[direction] = SparseMatrixType(*jacobian_neg_dense, true, size_t(0));
+      jacobian_pos()[direction] = SparseMatrixType(*jacobian_pos_dense, true, size_t(0));
+      if (is_linear_) {
+        jacobian() = nullptr;
+        jacobian_neg_dense = nullptr;
+        jacobian_pos_dense = nullptr;
         ++local_initialization_counts_[direction];
+      }
     } // if (local_initialization_counts_[direction] != initialization_count_)
   } // void calculate_jacobians(...)
 
