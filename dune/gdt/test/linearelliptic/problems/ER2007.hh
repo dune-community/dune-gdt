@@ -261,6 +261,99 @@ private:
 }; // class ER2007TestCase
 
 
+template <class G, class R = double, int r = 1>
+class ER2007DdSubdomainsTestCase
+    : public Test::StationaryTestCase<G,
+                                      LinearElliptic::ER2007Problem<typename G::template Codim<0>::Entity,
+                                                                    typename G::ctype,
+                                                                    G::dimension,
+                                                                    R,
+                                                                    r>,
+                                      XT::Grid::DD::SubdomainGrid<G>>
+{
+  typedef typename G::template Codim<0>::Entity E;
+  typedef typename G::ctype D;
+  static const size_t d = G::dimension;
+
+public:
+  typedef LinearElliptic::ER2007Problem<E, D, d, R, r> ProblemType;
+
+private:
+  typedef ER2007ExactSolution<ProblemType::default_integration_order, E, D, d, R, r> ExactSolutionType;
+  typedef Test::StationaryTestCase<G, ProblemType, XT::Grid::DD::SubdomainGrid<G>> BaseType;
+
+  static constexpr int default_refinements()
+  {
+#if DXT_DISABLE_LARGE_TESTS
+    return 1;
+#else
+    return 2;
+#endif
+  }
+
+public:
+  static XT::Common::Configuration grid_cfg()
+  {
+    auto cfg = internal::ER2007GridConfig<typename std::decay<G>::type>::value(ProblemType::default_grid_cfg());
+    cfg["type"] = XT::Grid::cube_dd_subdomains_gridprovider_id();
+    cfg["num_partitions"] = "[1 1 1 1]";
+    cfg.set("num_refinements", default_refinements());
+    return cfg;
+  }
+
+  using typename BaseType::GridType;
+
+  ER2007DdSubdomainsTestCase(const size_t num_refs = default_refinements())
+    : BaseType(grid_cfg(), num_refs)
+    , problem_()
+    , exact_solution_()
+  {
+  }
+
+  ER2007DdSubdomainsTestCase(XT::Common::Configuration cfg)
+    : BaseType(cfg.sub("grid", false, grid_cfg()), cfg.get("grid.num_refinements", default_refinements()))
+    , problem_()
+    , exact_solution_()
+  {
+  }
+
+  virtual const ProblemType& problem() const override final
+  {
+    return problem_;
+  }
+
+  virtual void print_header(std::ostream& out = DXTC_LOG_INFO_0) const override final
+  {
+    out << "+============================================================+\n"
+        << "|+==========================================================+|\n"
+        << "||  Testcase ER2007: smooth data, nonhomogeneous dirichlet  ||\n"
+        << "||  (see page 858 in Epshteyn, Riviere, 2007)               ||\n"
+        << "|+----------------------------------------------------------+|\n"
+        << "||  domain = [0, 1] x [0, 1]                                ||\n"
+        << "||  diffusion = 1                                           ||\n"
+        << "||  force     = 64 pi^2 (cos(8 pi x) + cos(8 pi y))         ||\n"
+        << "||  dirichlet = cos(8 pi x) + cos(8 pi y)                   ||\n"
+        << "||  exact solution = cos(8 pi x) + cos(8 pi y)              ||\n"
+        << "|+==========================================================+|\n"
+        << "+============================================================+" << std::endl;
+  }
+
+  virtual bool provides_exact_solution() const override final
+  {
+    return true;
+  }
+
+  virtual const ExactSolutionType& exact_solution() const override final
+  {
+    return exact_solution_;
+  }
+
+private:
+  const ProblemType problem_;
+  const ExactSolutionType exact_solution_;
+}; // class ER2007DdSubdomainsTestCase
+
+
 } // namespace LinearElliptic
 } // namespace GDT
 } // namespace Dune
