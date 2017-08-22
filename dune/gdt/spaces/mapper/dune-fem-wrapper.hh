@@ -56,6 +56,18 @@ public:
   typedef typename BackendType::ElementType EntityType;
 };
 
+template <class Backend, class Entity, int cd>
+size_t fem_dof_count(Backend& /*backend*/, Entity& entity, std::integral_constant<int, cd>)
+{
+  DUNE_THROW(NotImplemented, "not sure if this should ever be called");
+  return 0;
+};
+
+template <class Backend, class Entity>
+size_t fem_dof_count(Backend& backend, Entity& entity, std::integral_constant<int, 0>)
+{
+  return backend.numDofs(entity);
+};
 
 } // namespace internal
 
@@ -181,7 +193,7 @@ public:
   template <int cd, class GridImp, template <int, int, class> class EntityImp>
   size_t numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity) const
   {
-    return backend_.numDofs(entity);
+    return internal::fem_dof_count(backend_, entity, std::integral_constant<int, cd>());
   }
 
   size_t maxNumDofs() const
