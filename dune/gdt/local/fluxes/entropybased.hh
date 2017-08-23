@@ -18,245 +18,17 @@
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/math.hh>
 
+#include <dune/xt/la/container/algorithms.hh>
 #include <dune/xt/la/container/common.hh>
 
 #include <dune/gdt/local/fluxes/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
-namespace internal {
 
 
-template <class FieldType, size_t dimRange>
-std::unique_ptr<Dune::FieldMatrix<FieldType, dimRange, dimRange>> get_dense_unit_matrix()
-{
-  auto ret = XT::Common::make_unique<Dune::FieldMatrix<FieldType, dimRange, dimRange>>(0);
-  for (size_t ii = 0; ii < dimRange; ++ii)
-    (*ret)[ii][ii] = 1.;
-  return ret;
-}
-
-template <class FieldType>
-XT::LA::CommonSparseMatrix<FieldType> get_sparse_unit_matrix(const size_t dimRange)
-{
-  XT::LA::SparsityPatternDefault pattern(dimRange);
-  for (size_t ii = 0; ii < dimRange; ++ii)
-    pattern.insert(ii, ii);
-  XT::LA::CommonSparseMatrix<FieldType> ret(dimRange, dimRange, pattern, 0);
-  for (size_t ii = 0; ii < dimRange; ++ii)
-    ret.set_entry(ii, ii, 1.);
-  return ret;
-}
-
-template <class FieldType>
-XT::LA::CommonSparseMatrixCsc<FieldType> get_sparse_csc_unit_matrix(const size_t dimRange)
-{
-  XT::LA::SparsityPatternDefault pattern(dimRange);
-  for (size_t ii = 0; ii < dimRange; ++ii)
-    pattern.insert(ii, ii);
-  XT::LA::CommonSparseMatrixCsc<FieldType> ret(dimRange, dimRange, pattern, 0);
-  for (size_t ii = 0; ii < dimRange; ++ii)
-    ret.set_entry(ii, ii, 1.);
-  return ret;
-}
-
-
-template <class FieldType, size_t dimRange>
-static const std::unique_ptr<Dune::FieldMatrix<FieldType, dimRange, dimRange>>
-    dense_unit_matrix = get_dense_unit_matrix<FieldType, dimRange>();
-
-template <class FieldType, size_t dimRange>
-static const XT::LA::CommonSparseMatrix<FieldType> sparse_unit_matrix = get_sparse_unit_matrix<FieldType>(dimRange);
-
-template <class FieldType, size_t dimRange>
-static const XT::LA::CommonSparseMatrixCsc<FieldType>
-    sparse_csc_unit_matrix = get_sparse_csc_unit_matrix<FieldType>(dimRange);
-
-template <class MatrixType, class VectorType>
-void solve_lower_triangular(const MatrixType& A, VectorType& x, const VectorType& b)
-{
-  VectorType& rhs = x; // use x to store rhs
-  rhs = b; // copy data
-  // forward solve
-  for (size_t ii = 0; ii < A.N(); ++ii) {
-    for (size_t jj = 0; jj < ii; ++jj)
-      rhs[ii] -= A[ii][jj] * x[jj];
-    x[ii] = rhs[ii] / A[ii][ii];
-  }
-}
-
-template <class MatrixType, class VectorType>
-void solve_lower_triangular_transposed(const MatrixType& A, VectorType& x, const VectorType& b)
-{
-  VectorType& rhs = x; // use x to store rhs
-  rhs = b; // copy data
-  // backsolve
-  double min_eigval(std::abs(A[0][0]));
-  double max_eigval = min_eigval;
-  for (int ii = int(A.N()) - 1; ii >= 0; ii--) {
-    auto abs = std::abs(A[ii][ii]);
-    min_eigval = std::min(abs, min_eigval);
-    max_eigval = std::max(abs, max_eigval);
-    for (size_t jj = ii + 1; jj < A.N(); jj++)
-      rhs[ii] -= A[jj][ii] * x[jj];
-    x[ii] = rhs[ii] / A[ii][ii];
-  }
-  if (XT::Common::FloatCmp::eq(min_eigval, 0.) || max_eigval / min_eigval > 1e10)
-    DUNE_THROW(Dune::FMatrixError, "A is singular!");
-}
-
-template <class MatrixType, class VectorType>
-void solve_lower_triangular_sparse(const MatrixType& A, VectorType& x, const VectorType& b)
-{
-  VectorType& rhs = x; // use x to store rhs
-  rhs = b; // copy data
-  const auto& entries = A.entries();
-  const auto& row_pointers = A.row_pointers();
-  const auto& column_indices = A.column_indices();
-  // forward solve
-  for (size_t ii = 0; ii < A.rows(); ++ii) {
-    // row_pointers[ii+1]-1 is the diagonal entry as we assume a lower triangular matrix with non-zero entries on the
-    // diagonal
-    size_t kk = row_pointers[ii];
-    for (; kk < row_pointers[ii + 1] - 1; ++kk)
-      rhs[ii] -= entries[kk] * x[column_indices[kk]];
-    x[ii] = rhs[ii] / entries[kk];
-  }
-}
-
-template <class MatrixType>
-void solve_lower_triangular_sparse_csc(const MatrixType& A,
-                                       XT::LA::CommonSparseVector<typename MatrixType::ScalarType>& x,
-                                       const XT::LA::CommonSparseVector<typename MatrixType::ScalarType>& b_in)
-{
-  x.clear();
-  static thread_local std::vector<typename MatrixType::ScalarType> b(b_in.size());
-  std::fill(b.begin(), b.end(), 0.);
-  for (size_t kk = 0; kk < b_in.entries().size(); ++kk)
-    b[b_in.indices()[kk]] = b_in.entries()[kk];
-  const auto& entries = A.entries();
-  const auto& column_pointers = A.column_pointers();
-  const auto& row_indices = A.row_indices();
-  // forward solve
-  const size_t size = b.size();
-  for (size_t ii = 0; ii < size; ++ii) {
-    // column_pointers[ii] is the diagonal entry as we assume a lower triangular matrix with non-zero entries on the
-    // diagonal
-    const auto rhs_ii = b[ii];
-    if (XT::Common::FloatCmp::ne(rhs_ii, 0.)) {
-      size_t kk = column_pointers[ii];
-      const auto x_ii = rhs_ii / entries[kk];
-      x.set_new_entry(ii, x_ii);
-      ++kk;
-      for (; kk < column_pointers[ii + 1]; ++kk)
-        b[row_indices[kk]] -= entries[kk] * x_ii;
-    }
-  } // ii
-}
-
-template <class MatrixType, int dimRange>
-void solve_lower_triangular_sparse_csc(const MatrixType& A,
-                                       XT::LA::CommonSparseVector<typename MatrixType::ScalarType>& x,
-                                       const FieldVector<typename MatrixType::ScalarType, dimRange>& b_in)
-{
-  x.clear();
-  auto b = b_in;
-  const auto& entries = A.entries();
-  const auto& column_pointers = A.column_pointers();
-  const auto& row_indices = A.row_indices();
-  // forward solve
-  for (size_t ii = 0; ii < dimRange; ++ii) {
-    // column_pointers[ii] is the diagonal entry as we assume a lower triangular matrix with non-zero entries on the
-    // diagonal
-    const auto rhs_ii = b[ii];
-    if (XT::Common::FloatCmp::ne(rhs_ii, 0.)) {
-      size_t kk = column_pointers[ii];
-      const auto x_ii = rhs_ii / entries[kk];
-      x.set_new_entry(ii, x_ii);
-      ++kk;
-      for (; kk < column_pointers[ii + 1]; ++kk)
-        b[row_indices[kk]] -= entries[kk] * x_ii;
-    }
-  } // ii
-}
-
-template <class MatrixType, class VectorType>
-void solve_lower_triangular_transposed_sparse(const MatrixType& A, VectorType& x, const VectorType& b)
-{
-  VectorType& rhs = x; // use x to store rhs
-  rhs = b; // copy data
-  // backsolve
-  double min_eigval(std::abs(A.get_entry(0, 0)));
-  double max_eigval = min_eigval;
-  for (int ii = int(A.rows()) - 1; ii >= 0; ii--) {
-    auto abs = std::abs(A.get_entry(ii, ii));
-    min_eigval = std::min(abs, min_eigval);
-    max_eigval = std::max(abs, max_eigval);
-    for (size_t jj = ii + 1; jj < A.rows(); jj++)
-      rhs[ii] -= A.get_entry(jj, ii) * x[jj];
-    x[ii] = rhs[ii] / A.get_entry(ii, ii);
-  }
-  if (XT::Common::FloatCmp::eq(min_eigval, 0.) || max_eigval / min_eigval > 1e10)
-    DUNE_THROW(Dune::FMatrixError, "A is singular!");
-}
-
-template <class MatrixType>
-void solve_lower_triangular_transposed_sparse_csc(const MatrixType& A,
-                                                  XT::LA::CommonSparseVector<typename MatrixType::ScalarType>& x,
-                                                  const XT::LA::CommonSparseVector<typename MatrixType::ScalarType>& b)
-{
-  x.clear();
-  const auto& entries = A.entries();
-  const auto& column_pointers = A.column_pointers();
-  const auto& row_indices = A.row_indices();
-  // forward solve
-  typename MatrixType::ScalarType rhs_ii;
-  for (int ii = int(A.cols()) - 1; ii >= 0; --ii) {
-    // column_pointers[ii] is the diagonal entry as we assume a lower triangular matrix with non-zero entries on the
-    // diagonal
-    rhs_ii = b.get_entry(ii);
-    const size_t ll = column_pointers[ii];
-    for (size_t kk = ll + 1; kk < column_pointers[ii + 1]; ++kk)
-      rhs_ii -= entries[kk] * x.get_entry(row_indices[kk]);
-    if (XT::Common::FloatCmp::ne(rhs_ii, 0.))
-      x.set_new_entry(ii, rhs_ii / entries[ll], true);
-  } // ii
-}
-
-template <class MatrixType, int dimRange>
-void solve_lower_triangular_transposed_sparse_csc(const MatrixType& A,
-                                                  FieldVector<typename MatrixType::ScalarType, dimRange>& x,
-                                                  const XT::LA::CommonSparseVector<typename MatrixType::ScalarType>& b)
-{
-  std::fill(x.begin(), x.end(), 0.);
-  const auto& entries = A.entries();
-  const auto& column_pointers = A.column_pointers();
-  const auto& row_indices = A.row_indices();
-  // forward solve
-  typename MatrixType::ScalarType rhs_ii;
-  for (int ii = int(A.cols()) - 1; ii >= 0; --ii) {
-    // column_pointers[ii] is the diagonal entry as we assume a lower triangular matrix with non-zero entries on the
-    // diagonal
-    rhs_ii = b.get_entry(ii);
-    const size_t ll = column_pointers[ii];
-    for (size_t kk = ll + 1; kk < column_pointers[ii + 1]; ++kk)
-      rhs_ii -= entries[kk] * x[row_indices[kk]];
-    x[ii] = rhs_ii / entries[ll];
-  } // ii
-}
-
-
-} // namespace internal
-
-
-template <class ScalarType, int size>
-FieldVector<ScalarType, size>& operator+=(FieldVector<ScalarType, size>& lhs,
-                                          const XT::LA::CommonSparseVector<ScalarType>& rhs)
-{
-  for (size_t kk = 0; kk < rhs.indices().size(); ++kk)
-    lhs[rhs.indices()[kk]] += rhs.entries()[kk];
-  return lhs;
-}
+template <class MatrixType, size_t size>
+static const std::unique_ptr<const MatrixType> unit_matrix = XT::LA::get_unit_matrix<MatrixType>(size, 0);
 
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * for the notation see
@@ -320,8 +92,7 @@ public:
       const size_t k_0 = 50,
       const size_t k_max = 200,
       const RangeFieldType epsilon = std::pow(2, -52),
-      //      const MatrixType& T_minus_one = internal::sparse_unit_matrix<RangeFieldType, dimRange>,
-      const MatrixType& T_minus_one = internal::sparse_csc_unit_matrix<RangeFieldType, dimRange>,
+      const MatrixType& T_minus_one = *unit_matrix<MatrixType, dimRange>,
       const std::string name = static_id())
     : index_set_(grid_layer.indexSet())
     , basis_functions_(basis_functions)
@@ -445,11 +216,11 @@ public:
           v += r_times_u_iso;
           // calculate T_k u
           static thread_local VectorType v_k(dimRange, size_t(0));
-          internal::solve_lower_triangular_sparse_csc(T_k, v_k, v);
+          XT::LA::solve_lower_triangular(T_k, v_k, v);
           // calculate values of basis p = S_k m
           static thread_local BasisValuesMatrixType P_k(M_.size(), VectorType(dimRange, size_t(0)));
           for (size_t ii = 0; ii < M_.size(); ++ii)
-            internal::solve_lower_triangular_sparse_csc(T_k, P_k[ii], M_[ii]);
+            XT::LA::solve_lower_triangular(T_k, P_k[ii], M_[ii]);
           // calculate f_0
           RangeFieldType f_k(0);
           for (size_t ll = 0; ll < quadrature_.size(); ++ll)
@@ -472,7 +243,7 @@ public:
             std::fill(error.begin(), error.end(), 0.);
             for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
               tmp_m.deep_copy(M_[ll]);
-              internal::solve_lower_triangular_sparse_csc(T_k, Tinv_m, tmp_m);
+              XT::LA::solve_lower_triangular(T_k, Tinv_m, tmp_m);
               tmp_m *= std::exp(beta_out * Tinv_m) * quadrature_[ll].weight();
               for (size_t nn = 0; nn < tmp_m_indices.size(); ++nn)
                 error[tmp_m_indices[nn]] += tmp_m_entries[nn];
@@ -485,7 +256,7 @@ public:
             d_k *= -1;
             static thread_local VectorType T_k_inv_transp_d_k(dimRange, size_t(0));
             try {
-              internal::solve_lower_triangular_transposed_sparse_csc(T_k, T_k_inv_transp_d_k, d_k);
+              XT::LA::solve_lower_triangular_transposed(T_k, T_k_inv_transp_d_k, d_k);
             } catch (const Dune::FMatrixError& e) {
               if (r < r_max)
                 break;
@@ -493,7 +264,7 @@ public:
                 DUNE_THROW(Dune::FMatrixError, e.what());
             }
             if (error.two_norm() < tau_ && std::exp(5 * T_k_inv_transp_d_k.l1_norm()) < 1 + epsilon_gamma_) {
-              internal::solve_lower_triangular_transposed_sparse_csc(T_k, alpha, beta_out);
+              XT::LA::solve_lower_triangular_transposed(T_k, alpha, beta_out);
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
@@ -697,16 +468,16 @@ public:
       static thread_local MatrixType L(dimRange, dimRange, size_t(0));
       if (!reuse_L) {
         // calculate B = LL^T
-        bool chol_flag = cholesky_L(B, L);
+        bool chol_flag = XT::LA::cholesky_L(B, L);
         if (!chol_flag)
           DUNE_THROW(Dune::MathError, "B has to be symmetric positive definite!");
       }
       thread_local VectorType tmp_vec;
       for (size_t ii = 0; ii < dimRange; ++ii) {
         // calculate C = A (L^T)^{-1} and store in B
-        internal::solve_lower_triangular_sparse_csc(L, tmp_vec, A[ii]);
+        XT::LA::solve_lower_triangular(L, tmp_vec, A[ii]);
         // calculate ret = C L^{-1}
-        internal::solve_lower_triangular_transposed_sparse_csc(L, A[ii], tmp_vec);
+        XT::LA::solve_lower_triangular_transposed(L, A[ii], tmp_vec);
       } // ii
     } // void calculate_A_Binv(...)
 
@@ -776,19 +547,19 @@ public:
       thread_local MatrixType L(dimRange, dimRange, size_t(0));
 
       calculate_hessian(beta_in, P_k, *H);
-      chol_flag = cholesky_L(*H, L);
+      chol_flag = XT::LA::cholesky_L(*H, L);
       if (chol_flag == false)
         return;
       static thread_local VectorType Linv_P(dimRange, size_t(0));
       for (size_t ll = 0; ll < P_k.size(); ++ll) {
-        internal::solve_lower_triangular_sparse_csc(L, Linv_P, P_k[ll]);
+        XT::LA::solve_lower_triangular(L, Linv_P, P_k[ll]);
         P_k[ll].deep_copy(Linv_P);
       }
       T_k.rightmultiply(L);
       L.mtv(beta_in, beta_out);
 
       VectorType& v_k_tmp = Linv_P;
-      internal::solve_lower_triangular_sparse_csc(L, v_k_tmp, v_k);
+      XT::LA::solve_lower_triangular(L, v_k_tmp, v_k);
       v_k.deep_copy(v_k_tmp);
       StateRangeType g_k_tmp(0);
       for (size_t kk = 0; kk < v_k.indices().size(); ++kk)
@@ -803,67 +574,6 @@ public:
       }
       g_k = g_k_tmp;
     } // void change_basis(...)
-
-    //    // copied and adapted from dune/geometry/affinegeometry.hh
-    //    template <int size>
-    //    static bool cholesky_L(const FieldMatrix<RangeFieldType, size, size>& H, FieldMatrix<RangeFieldType, size,
-    //    size>& L)
-    //    {
-    //      for (int ii = 0; ii < size; ++ii) {
-    //        RangeFieldType& rii = L[ii][ii];
-
-    //        RangeFieldType xDiag = H[ii][ii];
-    //        for (int jj = 0; jj < ii; ++jj)
-    //          xDiag -= std::pow(L[ii][jj], 2);
-
-    //        if (XT::Common::FloatCmp::le(xDiag, RangeFieldType(0)))
-    //          return false;
-
-    //        rii = std::sqrt(xDiag);
-
-    //        RangeFieldType invrii = RangeFieldType(1) / rii;
-    //        for (int ll = ii + 1; ll < size; ++ll) {
-    //          RangeFieldType x = H[ll][ii];
-    //          for (int jj = 0; jj < ii; ++jj)
-    //            x -= L[ii][jj] * L[ll][jj];
-    //          L[ll][ii] = invrii * x;
-    //        }
-    //      }
-    //      return true;
-    //    }
-
-    template <int size>
-    static bool cholesky_L(const FieldMatrix<RangeFieldType, size, size>& H, MatrixType& L)
-    {
-      thread_local FieldVector<VectorType, size> rows(VectorType(size, size_t(0)));
-      for (auto& vec : rows)
-        vec.clear();
-      L.clear();
-      for (int ii = 0; ii < size; ++ii) {
-        RangeFieldType xDiag = H[ii][ii];
-        for (size_t kk = 0; kk < rows[ii].entries().size(); ++kk)
-          xDiag -= std::pow(rows[ii].entries()[kk], 2);
-
-        if (XT::Common::FloatCmp::le(xDiag, RangeFieldType(0)))
-          return false;
-
-        L.entries().push_back(std::sqrt(xDiag));
-        L.row_indices().push_back(ii);
-        rows[ii].set_new_entry(ii, L.entries().back());
-
-        RangeFieldType invrii = RangeFieldType(1) / L.entries().back();
-        for (int ll = ii + 1; ll < size; ++ll) {
-          RangeFieldType x = H[ll][ii] - rows[ii] * rows[ll];
-          if (XT::Common::FloatCmp::ne(x, 0.)) {
-            L.entries().push_back(invrii * x);
-            L.row_indices().push_back(ll);
-            rows[ll].set_new_entry(ii, L.entries().back());
-          }
-        } // ll
-        L.column_pointers()[ii + 1] = L.row_indices().size();
-      } // ii
-      return true;
-    }
 
     const BasisfunctionType& basis_functions_;
     const QuadratureRuleType& quadrature_;

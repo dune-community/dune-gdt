@@ -19,6 +19,7 @@
 
 #include <dune/xt/functions/interfaces.hh>
 
+#include <dune/xt/la/container/algorithms/qr.hh>
 #include <dune/xt/la/eigen-solver.hh>
 
 #include "interfaces.hh"
@@ -162,117 +163,7 @@ public:
   }
 
 private:
-  // H * A(row_begin:row_end,col_begin, col_end) where H = I-tau*w*w^T and w = v[row_begin:row_end]
-  static void multiply_householder_from_left(MatrixType& A,
-                                             const RangeFieldType& tau,
-                                             const RangeType& v,
-                                             const size_t row_begin,
-                                             const size_t row_end,
-                                             const size_t col_begin,
-                                             const size_t col_end)
-  {
-    // calculate w^T A first
-    RangeType wT_A(0.);
-    for (size_t rr = row_begin; rr < row_end; ++rr)
-      //      if (XT::Common::FloatCmp::ne(v[rr], 0.))
-      for (size_t cc = col_begin; cc < col_end; ++cc)
-        wT_A[cc] += v[rr] * A[rr][cc];
-    for (size_t rr = row_begin; rr < row_end; ++rr)
-      //      if (XT::Common::FloatCmp::ne(v[rr], 0.))
-      for (size_t cc = col_begin; cc < col_end; ++cc)
-        A[rr][cc] -= tau * v[rr] * wT_A[cc];
-  }
-
-  // Calculates A * H.
-  // \see multiply_householder_from_left
-  static void multiply_householder_from_right(MatrixType& A,
-                                              const RangeFieldType& tau,
-                                              const RangeType& v,
-                                              const size_t row_begin,
-                                              const size_t row_end,
-                                              const size_t col_begin,
-                                              const size_t col_end)
-  {
-    // calculate A w first
-    RangeType Aw(0.);
-    for (size_t rr = row_begin; rr < row_end; ++rr)
-      for (size_t cc = col_begin; cc < col_end; ++cc)
-        Aw[rr] += A[rr][cc] * v[cc];
-    for (size_t rr = row_begin; rr < row_end; ++rr)
-      //      if (XT::Common::FloatCmp::ne(Aw[rr], 0.))
-      for (size_t cc = col_begin; cc < col_end; ++cc)
-        A[rr][cc] -= tau * Aw[rr] * v[cc];
-  }
-
-  /** \brief This is a simple QR scheme using Householder reflections.
-  * The householder matrix is written as H = I - 2 v v^T, where v = u/||u|| and u = x - s ||x|| e_1, s = +-1 has the
-  * opposite sign of u_1 and x is the current column of A. The matrix H is rewritten as
-  * H = I - tau w w^T, where w=u/u_1 and tau = -s u_1/||x||.
-  * \see https://en.wikipedia.org/wiki/QR_decomposition#Using_Householder_reflections.
-  * \see http://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf
-  */
-  static void QR_decomp(MatrixType& A, FieldVector<size_t, dimRange>& permutations, MatrixType& Q)
-  {
-    std::fill(Q.begin(), Q.end(), 0.);
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      Q[ii][ii] = 1.;
-
-    const size_t num_rows = A.M();
-    const size_t num_cols = A.N();
-    StateRangeType tau(0.);
-    for (size_t ii = 0; ii < num_cols; ++ii)
-      permutations[ii] = ii;
-
-    // compute (squared) column norms
-    RangeType col_norms(0.);
-    for (size_t rr = 0; rr < num_rows; ++rr)
-      for (size_t cc = 0; cc < num_cols; ++cc)
-        col_norms[cc] += std::pow(A[rr][cc], 2);
-
-    RangeType w(0.);
-
-    for (size_t jj = 0; jj < num_cols; ++jj) {
-
-      // Pivoting
-      // swap column jj and column with greatest norm
-      auto max_it = std::max_element(col_norms.begin() + jj, col_norms.end());
-      size_t max_index = std::distance(col_norms.begin(), max_it);
-      if (max_index != jj) {
-        for (size_t rr = 0; rr < num_rows; ++rr)
-          std::swap(A[rr][jj], A[rr][max_index]);
-        std::swap(col_norms[jj], col_norms[max_index]);
-        std::swap(permutations[jj], permutations[max_index]);
-      }
-
-      // Matrix update
-      // Reduction by householder matrix
-      RangeFieldType normx(0);
-      for (size_t rr = jj; rr < num_rows; ++rr)
-        normx += std::pow(A[rr][jj], 2);
-      normx = std::sqrt(normx);
-
-      if (XT::Common::FloatCmp::ne(normx, 0.)) {
-        const auto s = -sign(A[jj][jj]);
-        const RangeFieldType u1 = A[jj][jj] - s * normx;
-        w[jj] = 1.;
-        for (size_t rr = jj + 1; rr < num_rows; ++rr) {
-          w[rr] = A[rr][jj] / u1;
-        }
-        tau[jj] = -s * u1 / normx;
-        // calculate A = H A
-        multiply_householder_from_left(A, tau[jj], w, jj, num_rows, jj, num_cols);
-        multiply_householder_from_right(Q, tau[jj], w, 0, num_rows, jj, num_cols);
-      } // if (normx != 0)
-
-      // Norm downdate
-      for (size_t rr = jj + 1; rr < num_rows; ++rr)
-        col_norms[rr] -= std::pow(A[jj][rr], 2);
-
-    } // jj
-  } // void QR_decomp(...)
-
-
-  // R^T F = P^T D A^T and then computing C^T = Q F;
+  // solve R^T F = P^T D A^T where is P is the permutation matrix and D is the diagonal eigenvalue matrix
   static void solve_upper_triangular_transposed(CscSparseMatrixType& F,
                                                 const SparseMatrixType& R,
                                                 const FieldVector<size_t, dimRange>& permutations,
@@ -347,7 +238,7 @@ private:
       eigenvectors = *eigenvectors_dense;
       // calculate QR decomposition with column pivoting A = QRP^T
       FieldVector<size_t, dimRange> permutations;
-      QR_decomp(*eigenvectors_dense, permutations, *Qdense);
+      XT::LA::qr_decomposition(*eigenvectors_dense, permutations, *Qdense);
       FieldVector<size_t, dimRange> inverse_permutations;
       for (size_t ii = 0; ii < dimRange; ++ii)
         inverse_permutations[permutations[ii]] = ii;
