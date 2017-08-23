@@ -90,11 +90,12 @@ public:
   static const size_t dimRange = Traits::dimRange;
   typedef typename Dune::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
   typedef typename XT::LA::CommonSparseMatrix<RangeFieldType> SparseMatrixType;
+  typedef typename XT::LA::CommonSparseMatrixCsc<RangeFieldType> CscSparseMatrixType;
   typedef typename XT::LA::EigenSolver<MatrixType> EigenSolverType;
   typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
   typedef typename Dune::FieldVector<MatrixType, dimDomain> JacobianRangeType;
 
-  typedef FieldVector<SparseMatrixType, dimDomain> JacobiansType;
+  typedef FieldVector<CscSparseMatrixType, dimDomain> JacobiansType;
 
   explicit GodunovFluxImplementation(const AnalyticalFluxType& analytical_flux,
                                      XT::Common::Parameter param,
@@ -141,7 +142,7 @@ public:
     const RangeType delta_u = u_i - u_j;
     // calculate waves
     RangeType waves(0);
-    n_ij[direction] > 0 ? jacobian_neg()[direction].mv(delta_u, waves) : jacobian_pos()[direction].mv(delta_u, waves);
+    n_ij[direction] > 0 ? jacobian_neg()[direction].mtv(delta_u, waves) : jacobian_pos()[direction].mtv(delta_u, waves);
     // calculate flux
     const auto& local_flux = std::get<0>(local_functions_tuple);
     RangeType ret = local_flux->evaluate_col(direction, x_in_inside_coords, u_i, param_inside_);
@@ -161,6 +162,152 @@ public:
   }
 
 private:
+  // H * A(row_begin:row_end,col_begin, col_end) where H = I-tau*w*w^T and w = v[row_begin:row_end]
+  static void multiply_householder_from_left(MatrixType& A,
+                                             const RangeFieldType& tau,
+                                             const RangeType& v,
+                                             const size_t row_begin,
+                                             const size_t row_end,
+                                             const size_t col_begin,
+                                             const size_t col_end)
+  {
+    // calculate w^T A first
+    RangeType wT_A(0.);
+    for (size_t rr = row_begin; rr < row_end; ++rr)
+      //      if (XT::Common::FloatCmp::ne(v[rr], 0.))
+      for (size_t cc = col_begin; cc < col_end; ++cc)
+        wT_A[cc] += v[rr] * A[rr][cc];
+    for (size_t rr = row_begin; rr < row_end; ++rr)
+      //      if (XT::Common::FloatCmp::ne(v[rr], 0.))
+      for (size_t cc = col_begin; cc < col_end; ++cc)
+        A[rr][cc] -= tau * v[rr] * wT_A[cc];
+  }
+
+  // Calculates A * H.
+  // \see multiply_householder_from_left
+  static void multiply_householder_from_right(MatrixType& A,
+                                              const RangeFieldType& tau,
+                                              const RangeType& v,
+                                              const size_t row_begin,
+                                              const size_t row_end,
+                                              const size_t col_begin,
+                                              const size_t col_end)
+  {
+    // calculate A w first
+    RangeType Aw(0.);
+    for (size_t rr = row_begin; rr < row_end; ++rr)
+      for (size_t cc = col_begin; cc < col_end; ++cc)
+        Aw[rr] += A[rr][cc] * v[cc];
+    for (size_t rr = row_begin; rr < row_end; ++rr)
+      //      if (XT::Common::FloatCmp::ne(Aw[rr], 0.))
+      for (size_t cc = col_begin; cc < col_end; ++cc)
+        A[rr][cc] -= tau * Aw[rr] * v[cc];
+  }
+
+  /** \brief This is a simple QR scheme using Householder reflections.
+  * The householder matrix is written as H = I - 2 v v^T, where v = u/||u|| and u = x - s ||x|| e_1, s = +-1 has the
+  * opposite sign of u_1 and x is the current column of A. The matrix H is rewritten as
+  * H = I - tau w w^T, where w=u/u_1 and tau = -s u_1/||x||.
+  * \see https://en.wikipedia.org/wiki/QR_decomposition#Using_Householder_reflections.
+  * \see http://www.cs.cornell.edu/~bindel/class/cs6210-f09/lec18.pdf
+  */
+  static void QR_decomp(MatrixType& A, FieldVector<size_t, dimRange>& permutations, MatrixType& Q)
+  {
+    std::fill(Q.begin(), Q.end(), 0.);
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      Q[ii][ii] = 1.;
+
+    const size_t num_rows = A.M();
+    const size_t num_cols = A.N();
+    StateRangeType tau(0.);
+    for (size_t ii = 0; ii < num_cols; ++ii)
+      permutations[ii] = ii;
+
+    // compute (squared) column norms
+    RangeType col_norms(0.);
+    for (size_t rr = 0; rr < num_rows; ++rr)
+      for (size_t cc = 0; cc < num_cols; ++cc)
+        col_norms[cc] += std::pow(A[rr][cc], 2);
+
+    RangeType w(0.);
+
+    for (size_t jj = 0; jj < num_cols; ++jj) {
+
+      // Pivoting
+      // swap column jj and column with greatest norm
+      auto max_it = std::max_element(col_norms.begin() + jj, col_norms.end());
+      size_t max_index = std::distance(col_norms.begin(), max_it);
+      if (max_index != jj) {
+        for (size_t rr = 0; rr < num_rows; ++rr)
+          std::swap(A[rr][jj], A[rr][max_index]);
+        std::swap(col_norms[jj], col_norms[max_index]);
+        std::swap(permutations[jj], permutations[max_index]);
+      }
+
+      // Matrix update
+      // Reduction by householder matrix
+      RangeFieldType normx(0);
+      for (size_t rr = jj; rr < num_rows; ++rr)
+        normx += std::pow(A[rr][jj], 2);
+      normx = std::sqrt(normx);
+
+      if (XT::Common::FloatCmp::ne(normx, 0.)) {
+        const auto s = -sign(A[jj][jj]);
+        const RangeFieldType u1 = A[jj][jj] - s * normx;
+        w[jj] = 1.;
+        for (size_t rr = jj + 1; rr < num_rows; ++rr) {
+          w[rr] = A[rr][jj] / u1;
+        }
+        tau[jj] = -s * u1 / normx;
+        // calculate A = H A
+        multiply_householder_from_left(A, tau[jj], w, jj, num_rows, jj, num_cols);
+        multiply_householder_from_right(Q, tau[jj], w, 0, num_rows, jj, num_cols);
+      } // if (normx != 0)
+
+      // Norm downdate
+      for (size_t rr = jj + 1; rr < num_rows; ++rr)
+        col_norms[rr] -= std::pow(A[jj][rr], 2);
+
+    } // jj
+  } // void QR_decomp(...)
+
+
+  // R^T F = P^T D A^T and then computing C^T = Q F;
+  static void solve_upper_triangular_transposed(CscSparseMatrixType& F,
+                                                const SparseMatrixType& R,
+                                                const FieldVector<size_t, dimRange>& permutations,
+                                                const StateRangeType& eigenvalues,
+                                                const SparseMatrixType& A)
+  {
+    F.clear();
+    StateRangeType rhs(0.);
+    for (size_t cc = 0; cc < dimRange; ++cc) {
+      // apply permutations and scaling to column of A^T and store in vector
+      std::fill(rhs.begin(), rhs.end(), 0.);
+      size_t end = A.row_pointers()[cc + 1];
+      for (size_t kk = A.row_pointers()[cc]; kk < end; ++kk) {
+        size_t index = A.column_indices()[kk];
+        auto eigval = eigenvalues[index];
+        if (XT::Common::FloatCmp::ne(eigval, 0.))
+          rhs[permutations[index]] = A.entries()[kk] * eigval;
+      } // kk
+      // forward solve
+      for (size_t ii = 0; ii < dimRange; ++ii) {
+        if (XT::Common::FloatCmp::ne(rhs[ii], 0.)) {
+          size_t kk = R.row_pointers()[ii];
+          const auto& diag_ii = R.entries()[kk];
+          const auto x_ii = rhs[ii] / diag_ii;
+          F.entries().push_back(x_ii);
+          F.row_indices().push_back(ii);
+          ++kk;
+          for (; kk < R.row_pointers()[ii + 1]; ++kk)
+            rhs[R.column_indices()[kk]] -= R.entries()[kk] * x_ii;
+        }
+      } // ii
+      F.column_pointers()[cc + 1] = F.row_indices().size();
+    } // cc
+  } // void solve_upper_triangular_transposed(...)
+
   // use simple linearized Riemann solver, LeVeque p.316
   void initialize_jacobians(const size_t direction,
                             const LocalfunctionTupleType& local_functions_tuple,
@@ -173,41 +320,57 @@ private:
       RangeType u_mean = u_i + u_j;
       u_mean *= RangeFieldType(0.5);
       const auto& local_flux = std::get<0>(local_functions_tuple);
-      thread_local std::unique_ptr<MatrixType> jacobian_neg_dense;
-      thread_local std::unique_ptr<MatrixType> jacobian_pos_dense;
+      thread_local std::unique_ptr<MatrixType> Qdense;
       if (!jacobian()) {
         jacobian() = XT::Common::make_unique<JacobianRangeType>();
-        jacobian_neg_dense = XT::Common::make_unique<MatrixType>(0);
-        jacobian_pos_dense = XT::Common::make_unique<MatrixType>(0);
+        Qdense = XT::Common::make_unique<MatrixType>();
       }
       helper<dimDomain>::get_jacobian(direction, local_flux, x_local, u_mean, *(jacobian()), param_inside_);
+      // get matrix of eigenvectors A and eigenvalues
       static XT::Common::Configuration eigensolver_options(
           {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
           {EigenSolverType::types()[1], "1", "1", "0", "1"});
       const auto eigen_solver = EigenSolverType((*(jacobian()))[direction]);
       const auto eigenvalues = eigen_solver.eigenvalues(eigensolver_options);
-      const auto eigenvectors = eigen_solver.real_eigenvectors_as_matrix(eigensolver_options);
-      auto eigenvectors_inverse = std::make_shared<MatrixType>(*eigenvectors);
-      eigenvectors_inverse->invert();
-      std::fill(jacobian_neg_dense->begin(), jacobian_neg_dense->end(), 0.);
-      std::fill(jacobian_pos_dense->begin(), jacobian_pos_dense->end(), 0.);
-      RangeFieldType eigenvalue;
-      for (size_t kk = 0; kk < dimRange; ++kk) {
-        eigenvalue = eigenvalues[kk].real();
-        if (XT::Common::FloatCmp::eq(eigenvalue, 0.))
+      StateRangeType eigvals_neg(0.);
+      StateRangeType eigvals_pos(0.);
+      for (size_t ii = 0; ii < eigenvalues.size(); ++ii) {
+        if (XT::Common::FloatCmp::eq(eigenvalues[ii].real(), 0.))
           continue;
-        auto& jacobian_dense = eigenvalue < 0. ? *jacobian_neg_dense : *jacobian_pos_dense;
-        auto& eigvec_inverse_row = (*eigenvectors_inverse)[kk];
-        for (size_t rr = 0; rr < dimRange; ++rr)
-          jacobian_dense[rr].axpy((*eigenvectors)[rr][kk] * eigenvalue, eigvec_inverse_row);
-      } // kk
+        else if (eigenvalues[ii].real() < 0.)
+          eigvals_neg[ii] = eigenvalues[ii].real();
+        else
+          eigvals_pos[ii] = eigenvalues[ii].real();
+      }
+      const auto eigenvectors_dense = eigen_solver.real_eigenvectors_as_matrix(eigensolver_options);
+      thread_local SparseMatrixType eigenvectors(dimRange, dimRange, size_t(0));
+      eigenvectors = *eigenvectors_dense;
+      // calculate QR decomposition with column pivoting A = QRP^T
+      FieldVector<size_t, dimRange> permutations;
+      QR_decomp(*eigenvectors_dense, permutations, *Qdense);
+      FieldVector<size_t, dimRange> inverse_permutations;
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        inverse_permutations[permutations[ii]] = ii;
+      thread_local SparseMatrixType R(dimRange, dimRange, size_t(0));
+      R = *eigenvectors_dense;
+      // we want to compute C_{+,-} = A D_{+,-} A^{-1}, where D_+ is the diagonal matrix containing only positive
+      // eigenvalues and D_- contains only negative eigenvalues. Using the QR decomposition, we get
+      // C = A D A^{-1} = A D (QRP^T)^{-1} = A D P R^{-1} Q^T. For the transpose of C, we get
+      // C^T =  Q R^{-T} P^T D A^T. We calculate C^T by first solving (column-wise)
+      // R^T F = P^T D A^T and then computing C^T = Q F;
+      thread_local CscSparseMatrixType F_neg(dimRange, dimRange, size_t(0));
+      thread_local CscSparseMatrixType F_pos(dimRange, dimRange, size_t(0));
+      solve_upper_triangular_transposed(F_neg, R, inverse_permutations, eigvals_neg, eigenvectors);
+      solve_upper_triangular_transposed(F_pos, R, inverse_permutations, eigvals_pos, eigenvectors);
 
-      jacobian_neg()[direction] = SparseMatrixType(*jacobian_neg_dense, true, size_t(0));
-      jacobian_pos()[direction] = SparseMatrixType(*jacobian_pos_dense, true, size_t(0));
+      jacobian_neg()[direction] = *Qdense;
+      jacobian_pos()[direction].deep_copy(jacobian_neg()[direction]);
+      jacobian_neg()[direction].rightmultiply(F_neg);
+      jacobian_pos()[direction].rightmultiply(F_pos);
+
       if (is_linear_) {
         jacobian() = nullptr;
-        jacobian_neg_dense = nullptr;
-        jacobian_pos_dense = nullptr;
+        Qdense = nullptr;
         ++local_initialization_counts_[direction];
       }
     } // if (local_initialization_counts_[direction] != initialization_count_)
@@ -249,13 +412,13 @@ private:
   // work around gcc bug 66944
   static JacobiansType& jacobian_neg()
   {
-    static thread_local JacobiansType jacobian_neg_;
+    static thread_local JacobiansType jacobian_neg_(CscSparseMatrixType(dimRange, dimRange, size_t(0)));
     return jacobian_neg_;
   }
 
   static JacobiansType& jacobian_pos()
   {
-    static thread_local JacobiansType jacobian_pos_;
+    static thread_local JacobiansType jacobian_pos_(CscSparseMatrixType(dimRange, dimRange, size_t(0)));
     return jacobian_pos_;
   }
 
