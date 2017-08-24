@@ -244,7 +244,8 @@ public:
   {
   }
 
-  virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
+  virtual RangeFieldType step(const RangeFieldType dt,
+                              const RangeFieldType max_dt = std::numeric_limits<RangeFieldType>::max()) override final
   {
     const RangeFieldType actual_dt = std::min(dt, max_dt);
     auto& t = current_time();
@@ -278,7 +279,7 @@ public:
                    const RangeFieldType dt_refinement_factor = 2,
                    const RangeFieldType treshold = 0.9 * std::numeric_limits<RangeFieldType>::max(),
                    const size_t max_steps_per_dt = 20,
-                   const size_t max_refinements = 20)
+                   const size_t max_refinements = 0.9 * std::numeric_limits<size_t>::max())
   {
     auto& t = current_time();
     auto& u_n = current_solution();

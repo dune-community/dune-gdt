@@ -90,7 +90,8 @@ public:
    * solve will never finish execution (if current_time is not increased) or give wrong results (if current time is
    * increased by a wrong dt).
    */
-  virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) = 0;
+  virtual RangeFieldType step(const RangeFieldType dt,
+                              const RangeFieldType max_dt = std::numeric_limits<RangeFieldType>::max()) = 0;
 
   const RangeFieldType& current_time() const
   {
