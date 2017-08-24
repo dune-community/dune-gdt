@@ -281,6 +281,8 @@ public:
                    const size_t max_steps_per_dt = 20,
                    const size_t max_refinements = 0.9 * std::numeric_limits<size_t>::max())
   {
+    auto logger = XT::Common::TimedLogger().get("gdt.timestepper.explicitrungekutta.find_suitable_dt");
+
     auto& t = current_time();
     auto& u_n = current_solution();
     assert(treshold > 0);
@@ -291,7 +293,7 @@ public:
     RangeFieldType current_dt = initial_dt;
     size_t num_refinements = 0;
     while (num_refinements < max_refinements) {
-      std::cout << "Trying time step length dt = " << current_dt << "... " << std::flush;
+      logger.info() << "trying " << max_steps_per_dt << " steps with dt = " << current_dt << "... " << std::flush;
       bool unlikely_value_occured = false;
       size_t num_steps = 0;
       // do max_steps_per_dt time steps...
@@ -299,16 +301,14 @@ public:
         step(current_dt);
         ++num_steps;
         // ... unless there is a value above threshold
-        for (size_t kk = 0; kk < u_n.vector().size(); ++kk) {
-          if (std::abs(u_n.vector()[kk]) > treshold) {
-            unlikely_value_occured = true;
-            std::cout << "failed" << std::endl;
-            break;
-          }
+        if (u_n.vector().sup_norm() > treshold) {
+          unlikely_value_occured = true;
+          logger.info() << "failed: threshold of " << treshold << " reached after " << num_steps << " step"
+                        << (num_steps == 1 ? "!" : "s!") << std::endl;
         }
         // if we are able to do max_steps_per_dt time steps with this dt, we accept this dt
         if (num_steps == max_steps_per_dt) {
-          std::cout << "looks fine" << std::endl;
+          logger.info() << "succeeded!" << std::endl;
           u_n.vector() = initial_u_n.vector();
           t = initial_t;
           return std::make_pair(bool(true), current_dt);

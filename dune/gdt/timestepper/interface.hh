@@ -16,6 +16,7 @@
 
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/string.hh>
+#include <dune/xt/common/timedlogging.hh>
 #include <dune/xt/common/tuple.hh>
 
 #include <dune/xt/la/container.hh>
@@ -155,12 +156,14 @@ public:
                                const RangeFieldType initial_dt,
                                const size_t num_save_steps,
                                const bool save_solution,
-                               const bool output_progress,
+                               //                               const bool output_progress,
                                const bool visualize,
                                const std::string filename_prefix,
                                SolutionType& sol,
                                const VisualizerType& visualizer)
   {
+    auto logger = XT::Common::TimedLogger().get("gdt.timestepper.solve");
+
     RangeFieldType dt = initial_dt;
     RangeFieldType t = current_time();
     assert(Dune::XT::Common::FloatCmp::ge(t_end, t));
@@ -171,10 +174,16 @@ public:
     size_t save_step_counter = 1;
 
     // save/visualize initial solution
-    if (save_solution)
+    if (save_solution) {
+      logger.debug() << "t = " << t << ": storing initial values... " << std::flush;
       sol.insert(std::make_pair(t, current_solution()));
-    if (visualize)
-      visualizer(current_solution(), filename_prefix, 0);
+      logger.debug() << "done" << std::endl;
+    }
+    if (visualize) {
+      logger.debug() << "t = " << t << ": visualizing initial values... " << std::flush;
+      visualizer(current_solution(), filename_prefix + "_", 0);
+      logger.debug() << "done" << std::endl;
+    }
 
     while (Dune::XT::Common::FloatCmp::lt(t, t_end)) {
       RangeFieldType max_dt = dt;
@@ -185,7 +194,9 @@ public:
         max_dt = std::min(next_save_time - t, max_dt);
 
       // do a timestep
+      logger.info() << "t = " << t << ": stepping with dt = " << dt << "... " << std::flush;
       dt = step(dt, max_dt);
+      logger.info() << "done" << std::endl;
       t = current_time();
 
       // augment time step counter
@@ -193,12 +204,19 @@ public:
 
       // check if data should be written in this timestep (and write)
       if (Dune::XT::Common::FloatCmp::ge(t, next_save_time) || num_save_steps == size_t(-1)) {
-        if (save_solution)
+        if (save_solution) {
+          logger.debug() << "t = " << t << ": storing current state... " << std::flush;
           sol.insert(sol.end(), std::make_pair(t, current_solution()));
-        if (visualize)
-          visualizer(current_solution(), filename_prefix, save_step_counter);
-        if (output_progress)
-          std::cout << "time step " << time_step_counter << " done, time =" << t << ", current dt= " << dt << std::endl;
+          logger.debug() << "done" << std::endl;
+        }
+        if (visualize) {
+          logger.debug() << "t = " << t << ": visualizing current state... " << std::flush;
+          visualizer(current_solution(), filename_prefix + "_", save_step_counter);
+          logger.debug() << "done" << std::endl;
+        }
+        //        if (output_progress)
+        //          std::cout << "time step " << time_step_counter << " done, time =" << t << ", current dt= " << dt <<
+        //          std::endl;
         next_save_time += save_interval;
         ++save_step_counter;
       }
@@ -211,7 +229,7 @@ public:
                                const RangeFieldType initial_dt = 1e-4,
                                const size_t num_save_steps = -1,
                                const bool save_solution = true,
-                               const bool output_progress = false,
+                               //                               const bool output_progress = false,
                                const bool visualize = false,
                                const std::string filename_prefix = "solution",
                                const VisualizerType& visualizer = all_components_visualizer())
@@ -220,7 +238,7 @@ public:
                  initial_dt,
                  num_save_steps,
                  save_solution,
-                 output_progress,
+                 //                 output_progress,
                  visualize,
                  filename_prefix,
                  *solution_,
@@ -230,7 +248,7 @@ public:
   virtual RangeFieldType
   solve(const RangeFieldType t_end, const RangeFieldType initial_dt, const size_t num_save_steps, SolutionType& sol)
   {
-    return solve(t_end, initial_dt, num_save_steps, true, false, false, "", sol, 0);
+    return solve(t_end, initial_dt, num_save_steps, true /*, false*/, false, "", sol, 0);
   }
 
   /**
