@@ -84,7 +84,7 @@ public:
 
   FiniteVolume(const EntityType& en)
     : BaseType(en)
-    , backend_(1)
+    , backend_(1.)
   {
   }
 
@@ -114,7 +114,7 @@ public:
                 const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     assert(ret.size() >= 0);
-    ret[0] = 1.0;
+    ret[0] = backend_;
   }
 
   using BaseType::evaluate;
@@ -174,7 +174,7 @@ public:
 
   FiniteVolume(const EntityType& en)
     : BaseType(en)
-    , backend_(1)
+    , backend_(1.)
   {
   }
 
@@ -203,10 +203,10 @@ public:
                 std::vector<RangeType>& ret,
                 const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
-    assert(ret.size() >= dimRange);
-    for (size_t ii = 0; ii < dimRange; ++ii) {
+    assert(ret.size() >= size());
+    for (size_t ii = 0; ii < size(); ++ii) {
       ret[ii] *= 0.0;
-      ret[ii][ii] = 1.0;
+      ret[ii][ii] = backend_;
     }
   } // ... evaluate(...)
 
@@ -216,8 +216,8 @@ public:
                 std::vector<JacobianRangeType>& ret,
                 const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
-    assert(ret.size() >= dimRange);
-    for (size_t ii = 0; ii < dimRange; ++ii)
+    assert(ret.size() >= size());
+    for (size_t ii = 0; ii < size(); ++ii)
       ret[ii] *= 0.0;
   } // ... jacobian(...)
 
