@@ -15,7 +15,7 @@
 #include <dune/gdt/test/hyperbolic/problems/transport.hh>
 #include <dune/gdt/test/hyperbolic/problems/shallowwater.hh>
 #include <dune/gdt/test/hyperbolic/problems/sodshocktube.hh>
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/2dboltzmann.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/checkerboard.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/fokkerplanck/sourcebeam.hh>
 
 using Yasp1 = Yasp1Grid;
