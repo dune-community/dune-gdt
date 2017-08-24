@@ -159,14 +159,16 @@ private:
     static void reconstruct(size_t /*dd*/,
                             const ValuesType& values,
                             FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
-                            FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse,
+                            FieldVector<CscSparseMatrixType, dimDomain>& Q,
+                            FieldVector<CscSparseMatrixType, dimDomain>& R,
+                            FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations,
                             const QuadratureType& /*quadrature*/,
                             std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
     {
       FieldVector<RangeType, stencil_size> char_values;
       for (size_t ii = 0; ii < stencil_size; ++ii)
-        eigenvectors_inverse[0].mv(values[ii][0][0], char_values[ii]);
+        apply_inverse_eigenvectors(Q[0], R[0], permutations[0], values[ii][0][0], char_values[ii]);
 
       // reconstruction in x direction
       FieldVector<RangeType, 2> reconstructed_values;
@@ -196,16 +198,20 @@ private:
 
     static void get_eigenvectors(const JacobianRangeType& jacobian,
                                  FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
-                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse)
+                                 FieldVector<CscSparseMatrixType, dimDomain>& Q,
+                                 FieldVector<CscSparseMatrixType, dimDomain>& R,
+                                 FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations)
     {
-      XT::Common::Configuration eigensolver_options(
+      static XT::Common::Configuration eigensolver_options(
           {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
           {EigenSolverType::types()[1], "1", "1", "0", "1"});
       const auto eigensolver = EigenSolverType(jacobian);
       auto eigenvectors_dense = eigensolver.real_eigenvectors_as_matrix(eigensolver_options);
       eigenvectors[0] = SparseMatrixType(*eigenvectors_dense, true);
-      eigenvectors_dense->invert();
-      eigenvectors_inverse[0] = SparseMatrixType(*eigenvectors_dense, true);
+      thread_local MatrixType Qdense(0);
+      XT::LA::qr_decomposition(*eigenvectors_dense, permutations[0], Qdense);
+      R[0] = CscSparseMatrixType(*eigenvectors_dense, true, size_t(0));
+      Q[0] = CscSparseMatrixType(Qdense, true, size_t(0));
     } // ... get_eigenvectors(...)
   }; // struct helper<1,...
 
@@ -216,7 +222,9 @@ private:
     static void reconstruct(size_t dd,
                             const ValuesType& values,
                             FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
-                            FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse,
+                            FieldVector<CscSparseMatrixType, dimDomain>& Q,
+                            FieldVector<CscSparseMatrixType, dimDomain>& R,
+                            FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations,
                             const QuadratureType& quadrature,
                             std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
@@ -224,13 +232,16 @@ private:
       // We always treat dd as the x-direction and set y-direction accordingly. For that purpose, define new
       // coordinates x', y'. First reorder x, y to x', y' and convert to x'-characteristic variables.
       // Reordering is done such that the indices in char_values are in the order y', x'.
+      size_t curr_dir = dd;
       FieldVector<FieldVector<RangeType, stencil_size>, stencil_size> char_values;
       for (size_t ii = 0; ii < stencil_size; ++ii) {
         for (size_t jj = 0; jj < stencil_size; ++jj) {
           if (dd == 0)
-            eigenvectors_inverse[dd].mv(values[ii][jj][0], char_values[jj][ii]);
+            apply_inverse_eigenvectors(
+                Q[curr_dir], R[curr_dir], permutations[curr_dir], values[ii][jj][0], char_values[jj][ii]);
           else if (dd == 1)
-            eigenvectors_inverse[dd].mv(values[ii][jj][0], char_values[ii][jj]);
+            apply_inverse_eigenvectors(
+                Q[curr_dir], R[curr_dir], permutations[curr_dir], values[ii][jj][0], char_values[ii][jj]);
         }
       }
 
@@ -247,15 +258,18 @@ private:
       }
 
       // convert from x'-characteristic variables to y'-characteristic variables
+      size_t next_dir = (dd + 1) % 2;
       RangeType tmp_vec;
       for (size_t ii = 0; ii < 2; ++ii) {
         for (size_t jj = 0; jj < stencil_size; ++jj) {
           tmp_vec = x_reconstructed_values[ii][jj];
-          eigenvectors[dd].mv(tmp_vec, x_reconstructed_values[ii][jj]);
+          eigenvectors[curr_dir].mv(tmp_vec, x_reconstructed_values[ii][jj]);
           tmp_vec = x_reconstructed_values[ii][jj];
-          eigenvectors_inverse[(dd + 1) % 2].mv(tmp_vec, x_reconstructed_values[ii][jj]);
+          apply_inverse_eigenvectors(
+              Q[next_dir], R[next_dir], permutations[next_dir], tmp_vec, x_reconstructed_values[ii][jj]);
         }
       }
+      curr_dir = next_dir;
 
       const auto& num_quad_points = quadrature.size();
       // reconstruction in y' direction
@@ -269,7 +283,7 @@ private:
       for (size_t ii = 0; ii < 2; ++ii) {
         for (size_t jj = 0; jj < num_quad_points; ++jj) {
           // convert back to non-characteristic variables
-          eigenvectors[(dd + 1) % 2].mv(reconstructed_values[ii][jj], tmp_vec);
+          eigenvectors[curr_dir].mv(reconstructed_values[ii][jj], tmp_vec);
           auto quadrature_point = quadrature[jj].position();
           reconstructed_values_map.insert(
               std::make_pair(intersections[2 * dd + ii].geometryInInside().global(quadrature_point), tmp_vec));
@@ -288,9 +302,11 @@ private:
 
     static void get_eigenvectors(const JacobianRangeType& jacobian,
                                  FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
-                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse)
+                                 FieldVector<CscSparseMatrixType, dimDomain>& Q,
+                                 FieldVector<CscSparseMatrixType, dimDomain>& R,
+                                 FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations)
     {
-      helper<3, anything>::get_eigenvectors(jacobian, eigenvectors, eigenvectors_inverse);
+      helper<3, anything>::get_eigenvectors(jacobian, eigenvectors, Q, R, permutations);
     }
   }; // helper<2,...
 
