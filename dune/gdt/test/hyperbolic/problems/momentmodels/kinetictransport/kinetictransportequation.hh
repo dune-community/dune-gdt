@@ -134,12 +134,18 @@ public:
   // flux matrix A = B M^{-1} with B_{ij} = <v h_i h_j>
   virtual FluxType* create_flux() const override
   {
+    // calculate B row-wise by solving M^{T} A^T = B^T column-wise
     auto A = basis_functions_.mass_matrix_with_v();
-    std::cout << "A: " << XT::Common::to_string(A) << std::endl;
-    auto M_inv = basis_functions_.mass_matrix_inverse();
-    std::cout << "M_inv: " << XT::Common::to_string(M_inv) << std::endl;
-    for (size_t dd = 0; dd < dimDomain; ++dd)
-      A[dd].rightmultiply(M_inv);
+    auto M_T = basis_functions_.mass_matrix();
+    transpose_in_place(M_T);
+    // solve
+    DynamicVector<RangeFieldType> tmp_row(M_T.N(), 0.);
+    for (size_t dd = 0; dd < dimDomain; ++dd) {
+      for (size_t ii = 0; ii < M_T.N(); ++ii) {
+        M_T.solve(tmp_row, A[dd][ii]);
+        A[dd][ii] = tmp_row;
+      }
+    }
     return new ActualFluxType(A, typename ActualFluxType::RangeType(0));
   }
 
@@ -160,13 +166,16 @@ public:
     for (size_t ii = 0; ii < num_regions; ++ii)
       sigma_t[ii] += sigma_s[ii];
     const RangeType basis_integrated = basis_functions_.integrated();
-    const auto M_inv = basis_functions_.mass_matrix_inverse();
-    RangeType c(0);
-    M_inv.mtv(basis_integrated, c);
-    MatrixType I(dimRange, dimRange, 0);
+    std::cout << "basis_integrated = " << XT::Common::to_string(basis_integrated, 15) << std::endl;
+    // calculate c = M^{-T} <b>
+    auto M_T = basis_functions_.mass_matrix();
+    transpose_in_place(M_T);
+    RangeType c(0.);
+    M_T.solve(c, basis_integrated);
+    MatrixType I(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
       I[rr][rr] = 1;
-    MatrixType G(dimRange, dimRange, 0);
+    MatrixType G(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
       for (size_t cc = 0; cc < dimRange; ++cc)
         G[rr][cc] = basis_integrated[rr] * c[cc];
@@ -182,6 +191,7 @@ public:
       A -= I_scaled;
       RangeType b = basis_integrated;
       b *= Q[ii];
+      std::cout << "rhs = " << XT::Common::to_string(A, 15) << std::endl;
       affine_functions.emplace_back(A, b, true, "rhs");
     } // ii
     return new ActualRhsType(lower_left, upper_right, num_segments_, affine_functions);
@@ -258,6 +268,17 @@ protected:
       DUNE_THROW(NotImplemented, "");
       return 0;
     }
+  }
+
+  template <class MatrixType>
+  void transpose_in_place(MatrixType& M) const
+  {
+    for (size_t rr = 0; rr < dimRange; ++rr)
+      for (size_t cc = 0; cc < rr; ++cc) {
+        auto tmp_val = M[cc][rr];
+        M[cc][rr] = M[rr][cc];
+        M[rr][cc] = tmp_val;
+      }
   }
 
   using BaseType::basis_functions_;
