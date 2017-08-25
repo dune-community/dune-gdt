@@ -56,12 +56,14 @@ struct CommunicationChooser
 template <class ViewImp>
 struct CommunicationChooser<ViewImp, true>
 {
-  //! this _should_ be the idtype as per OwnerOverlapCopyCommunication docs
-  //  using GlobalId = typename XT::Grid::extract_grid_t<ViewImp>::GlobalIdSet::IdType;
-  //  using LocalId = typename XT::Grid::extract_grid_t<ViewImp>::LocalIdSet::IdType;
-  // alas they're hard assuming bigunsignedint for some reason
-  using GlobalId = bigunsignedint<96>;
-  using LocalId = int;
+private:
+  // this is necessary because alugrid's id is not integral
+  using RealGlobalId = typename XT::Grid::extract_grid_t<ViewImp>::GlobalIdSet::IdType;
+  using RealLocalId = typename XT::Grid::extract_grid_t<ViewImp>::LocalIdSet::IdType;
+
+public:
+  using GlobalId = std::conditional_t<std::is_arithmetic<RealGlobalId>::value, RealGlobalId, bigunsignedint<96>>;
+  using LocalId = std::conditional_t<std::is_arithmetic<RealLocalId>::value, RealLocalId, int>;
   using Type = OwnerOverlapCopyCommunication<GlobalId, LocalId>;
   using type = Type;
 
