@@ -30,6 +30,7 @@
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/common/tuple.hh>
+#include <dune/xt/common/fixed_map.hh>
 
 #include <dune/xt/la/container/pattern.hh>
 
@@ -53,6 +54,8 @@ enum class Backends
   pdelab
 };
 
+static const XT::Common::FixedMap<Backends, std::string, 4> backend_names = {
+    {Backends::fem, "fem"}, {Backends::functions, "functions"}, {Backends::gdt, "gdt"}, {Backends::pdelab, "pdelab"}};
 
 // disable GCC warning "type attributes ignored after type is already defined [-Wattributes]"
 #include <dune/xt/common/disable_warnings.hh>
