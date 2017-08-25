@@ -211,24 +211,23 @@ private:
       RangeType u_mean = u_i + u_j;
       u_mean *= RangeFieldType(0.5);
       const auto& local_flux = std::get<0>(local_functions_tuple);
+      thread_local std::unique_ptr<MatrixType> jacobian;
       thread_local std::unique_ptr<MatrixType> Qdense;
-      if (!jacobian()) {
-        jacobian() = XT::Common::make_unique<JacobianRangeType>();
+      if (!jacobian) {
+        jacobian = XT::Common::make_unique<MatrixType>();
         Qdense = XT::Common::make_unique<MatrixType>();
       }
-      helper<dimDomain>::get_jacobian(direction, local_flux, x_local, u_mean, *(jacobian()), param_inside_);
+      helper<dimDomain>::get_jacobian(direction, local_flux, x_local, u_mean, *jacobian, param_inside_);
       // get matrix of eigenvectors A and eigenvalues
       static XT::Common::Configuration eigensolver_options(
           {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
           {EigenSolverType::types()[1], "1", "1", "0", "1"});
-      const auto eigen_solver = EigenSolverType((*(jacobian()))[direction]);
+      const auto eigen_solver = EigenSolverType(*jacobian);
       const auto eigenvalues = eigen_solver.eigenvalues(eigensolver_options);
       StateRangeType eigvals_neg(0.);
       StateRangeType eigvals_pos(0.);
       for (size_t ii = 0; ii < eigenvalues.size(); ++ii) {
-        if (XT::Common::FloatCmp::eq(eigenvalues[ii].real(), 0.))
-          continue;
-        else if (eigenvalues[ii].real() < 0.)
+        if (eigenvalues[ii].real() < 0.)
           eigvals_neg[ii] = eigenvalues[ii].real();
         else
           eigvals_pos[ii] = eigenvalues[ii].real();
@@ -242,6 +241,9 @@ private:
       FieldVector<size_t, dimRange> inverse_permutations;
       for (size_t ii = 0; ii < dimRange; ++ii)
         inverse_permutations[permutations[ii]] = ii;
+      MatrixType P(0.);
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        P[permutations[ii]][ii] = 1.;
       thread_local SparseMatrixType R(dimRange, dimRange, size_t(0));
       R = *eigenvectors_dense;
       // we want to compute C_{+,-} = A D_{+,-} A^{-1}, where D_+ is the diagonal matrix containing only positive
@@ -260,7 +262,7 @@ private:
       jacobian_pos()[direction].rightmultiply(F_pos);
 
       if (is_linear_) {
-        jacobian() = nullptr;
+        jacobian = nullptr;
         Qdense = nullptr;
         ++local_initialization_counts_[direction];
       }
@@ -274,10 +276,10 @@ private:
                              const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
                              const DomainType& x_in_inside_coords,
                              const StateRangeType& u,
-                             JacobianRangeType& ret,
+                             MatrixType& ret,
                              const XT::Common::Parameter& param)
     {
-      local_func->partial_u_col(direction, x_in_inside_coords, u, ret[direction], param);
+      local_func->partial_u_col(direction, x_in_inside_coords, u, ret, param);
     }
   };
 
@@ -288,11 +290,11 @@ private:
                              const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
                              const DomainType& x_in_inside_coords,
                              const StateRangeType& u,
-                             JacobianRangeType& ret,
+                             MatrixType& ret,
                              const XT::Common::Parameter& param)
     {
       assert(direction == 0);
-      local_func->partial_u(x_in_inside_coords, u, ret[0], param);
+      local_func->partial_u(x_in_inside_coords, u, ret, param);
     }
   };
 
@@ -313,15 +315,8 @@ private:
     return jacobian_pos_;
   }
 
-  static std::unique_ptr<JacobianRangeType>& jacobian()
-  {
-    static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
-    return jacobian_;
-  }
-
   //  static thread_local JacobiansType jacobian_neg_;
   //  static thread_local JacobiansType jacobian_pos_;
-  //  static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
 
   const bool is_linear_;
   static bool is_instantiated_;
@@ -336,10 +331,6 @@ private:
 // template <class Traits>
 // thread_local
 //    typename GodunovFluxImplementation<Traits>::JacobiansType GodunovFluxImplementation<Traits>::jacobian_pos_;
-
-// template <class Traits>
-// thread_local std::unique_ptr<typename GodunovFluxImplementation<Traits>::JacobianRangeType>
-//    GodunovFluxImplementation<Traits>::jacobian_;
 
 template <class Traits>
 bool GodunovFluxImplementation<Traits>::is_instantiated_(false);
