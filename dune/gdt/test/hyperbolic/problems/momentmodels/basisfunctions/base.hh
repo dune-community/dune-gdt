@@ -274,19 +274,24 @@ public:
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const = 0;
 
 protected:
+  std::vector<std::vector<size_t>> create_decomposition(const size_t num_threads, const size_t size) const
+  {
+    std::vector<std::vector<size_t>> decomposition(num_threads);
+    for (size_t ii = 0; ii < num_threads - 1; ++ii) {
+      decomposition[ii].reserve(size / num_threads * (ii + 1) - size / num_threads * ii);
+      for (size_t jj = size / num_threads * ii; jj < size / num_threads * (ii + 1); ++jj)
+        decomposition[ii].push_back(jj);
+    }
+    decomposition[num_threads - 1].reserve(size - (size / num_threads) * (num_threads - 1));
+    for (size_t jj = size / num_threads * (num_threads - 1); jj < size; ++jj)
+      decomposition[num_threads - 1].push_back(jj);
+    return decomposition;
+  }
+
   void parallel_quadrature(const QuadratureType& quadrature, MatrixType& matrix, const size_t v_index) const
   {
     size_t num_threads = std::min(XT::Common::threadManager().max_threads(), quadrature.size());
-    std::vector<std::vector<size_t>> decomposition(num_threads);
-    for (size_t ii = 0; ii < num_threads - 1; ++ii) {
-      decomposition[ii].reserve(quadrature.size() / num_threads * (ii + 1) - quadrature.size() / num_threads * ii);
-      for (size_t jj = quadrature.size() / num_threads * ii; jj < quadrature.size() / num_threads * (ii + 1); ++jj)
-        decomposition[ii].push_back(jj);
-    }
-    decomposition[num_threads - 1].reserve(quadrature.size() - (quadrature.size() / num_threads) * (num_threads - 1));
-    for (size_t jj = quadrature.size() / num_threads * (num_threads - 1); jj < quadrature.size(); ++jj)
-      decomposition[num_threads - 1].push_back(jj);
-
+    auto decomposition = create_decomposition(num_threads, quadrature.size());
     std::vector<std::thread> threads(num_threads);
     // Launch a group of threads
     std::vector<MatrixType> local_matrices(num_threads, MatrixType(matrix.N(), matrix.M(), 0.));
@@ -296,7 +301,7 @@ protected:
                                 std::cref(quadrature),
                                 std::ref(local_matrices[ii]),
                                 v_index,
-                                decomposition[ii]);
+                                std::cref(decomposition[ii]));
     // Join the threads with the main thread
     for (size_t ii = 0; ii < num_threads; ++ii)
       threads[ii].join();
@@ -309,7 +314,7 @@ protected:
   void calculate_in_thread(const QuadratureType& quadrature,
                            MatrixType& local_matrix,
                            const size_t v_index,
-                           const std::set<size_t>& indices) const
+                           const std::vector<size_t>& indices) const
   {
     for (const auto& jj : indices) {
       const auto& quad_point = quadrature[jj];
