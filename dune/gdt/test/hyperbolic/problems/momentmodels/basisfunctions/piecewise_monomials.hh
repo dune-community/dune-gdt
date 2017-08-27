@@ -201,6 +201,16 @@ public:
     assert(4 * triangulation_.faces().size() == dimRange);
   }
 
+  PiecewiseMonomials(const size_t refinements,
+                     const QuadratureType& quadrature,
+                     std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points =
+                         {{1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
+    : triangulation_(initial_points, refinements)
+    , quadrature_(quadrature)
+  {
+    assert(4 * triangulation_.faces().size() == dimRange);
+  }
+
   virtual RangeType evaluate(const DomainType& v) const override final
   {
     RangeType ret(0);
