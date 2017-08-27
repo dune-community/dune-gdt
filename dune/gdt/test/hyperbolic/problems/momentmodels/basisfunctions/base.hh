@@ -259,6 +259,7 @@ public:
   typedef typename XT::Functions::RangeTypeSelector<RangeFieldType, dimRange, dimRangeCols>::type RangeType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename std::function<void(const DiscreteFunctionType&, const std::string&, const size_t)>;
+  typedef typename Dune::QuadratureRule<RangeFieldType, dimDomain> QuadratureType;
 
   virtual ~BasisfunctionsInterface(){};
 
@@ -271,6 +272,50 @@ public:
   virtual MatrixType mass_matrix_inverse() const = 0;
 
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const = 0;
+
+protected:
+  void parallel_quadrature(const QuadratureType& quadrature, MatrixType& matrix, const size_t v_index) const
+  {
+    size_t num_threads = std::min(XT::Common::threadManager().max_threads(), quadrature.size());
+    std::vector<std::set<size_t>> decomposition(num_threads);
+    for (size_t ii = 0; ii < quadrature.size(); ++ii)
+      decomposition[ii % num_threads].insert(ii);
+
+    std::vector<std::thread> threads(num_threads);
+    // Launch a group of threads
+    std::vector<MatrixType> local_matrices(num_threads, MatrixType(matrix.N(), matrix.M(), 0.));
+    for (size_t ii = 0; ii < num_threads; ++ii)
+      threads[ii] = std::thread(&BasisfunctionsInterface::calculate_in_thread,
+                                this,
+                                std::cref(quadrature),
+                                std::ref(local_matrices[ii]),
+                                v_index,
+                                decomposition[ii]);
+    // Join the threads with the main thread
+    for (size_t ii = 0; ii < num_threads; ++ii)
+      threads[ii].join();
+    // add local matrices
+    matrix *= 0.;
+    for (size_t ii = 0; ii < num_threads; ++ii)
+      matrix += local_matrices[ii];
+  } // void parallel_quadrature(...)
+
+  void calculate_in_thread(const QuadratureType& quadrature,
+                           MatrixType& local_matrix,
+                           const size_t v_index,
+                           const std::set<size_t>& indices) const
+  {
+    for (const auto& jj : indices) {
+      const auto& quad_point = quadrature[jj];
+      const auto& v = quad_point.position();
+      const auto basis_evaluated = evaluate(v);
+      const auto& weight = quad_point.weight();
+      const auto factor = (v_index == size_t(-1)) ? 1. : v[v_index];
+      for (size_t nn = 0; nn < local_matrix.N(); ++nn)
+        for (size_t mm = 0; mm < local_matrix.M(); ++mm)
+          local_matrix[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * factor * weight;
+    } // ii
+  } // void calculate_in_thread(...)
 };
 
 

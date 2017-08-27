@@ -348,14 +348,7 @@ public:
   virtual MatrixType mass_matrix() const override
   {
     MatrixType A(dimRange, dimRange, 0);
-    for (const auto& quad_point : quadrature_) {
-      const auto basis_evaluated = evaluate(quad_point.position());
-      for (size_t nn = 0; nn < dimRange; ++nn) {
-        for (size_t mm = 0; mm < dimRange; ++mm) {
-          A[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * quad_point.weight();
-        } // mm
-      } // nn
-    } // quadrature
+    parallel_quadrature(quadrature_, A, size_t(-1));
     return A;
   } // ... mass_matrix()
 
@@ -369,15 +362,8 @@ public:
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const override
   {
     FieldVector<MatrixType, dimFlux> B(MatrixType(dimRange, dimRange, 0.));
-    for (const auto& quad_point : quadrature_) {
-      const auto& v = quad_point.position();
-      const auto basis_evaluated = evaluate(v);
-      const auto& weight = quad_point.weight();
-      for (size_t nn = 0; nn < dimRange; ++nn)
-        for (size_t mm = 0; mm < dimRange; ++mm)
-          for (size_t dd = 0; dd < dimFlux; ++dd)
-            B[dd][nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * v[dd] * weight;
-    } // quadrature
+    for (size_t dd = 0; dd < dimFlux; ++dd)
+      parallel_quadrature(quadrature_, B[dd], dd);
     return B;
   } // ... mass_matrix_with_v()
 
@@ -413,6 +399,8 @@ public:
   }
 
 protected:
+  using BaseType::parallel_quadrature;
+
   RangeType integrated_initializer() const
   {
     RangeType ret(0);
