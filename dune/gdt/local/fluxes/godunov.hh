@@ -241,9 +241,6 @@ private:
       FieldVector<size_t, dimRange> inverse_permutations;
       for (size_t ii = 0; ii < dimRange; ++ii)
         inverse_permutations[permutations[ii]] = ii;
-      MatrixType P(0.);
-      for (size_t ii = 0; ii < dimRange; ++ii)
-        P[permutations[ii]][ii] = 1.;
       thread_local SparseMatrixType R(dimRange, dimRange, size_t(0));
       R = *eigenvectors_dense;
       // we want to compute C_{+,-} = A D_{+,-} A^{-1}, where D_+ is the diagonal matrix containing only positive
