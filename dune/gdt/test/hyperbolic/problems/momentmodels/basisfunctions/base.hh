@@ -277,9 +277,15 @@ protected:
   void parallel_quadrature(const QuadratureType& quadrature, MatrixType& matrix, const size_t v_index) const
   {
     size_t num_threads = std::min(XT::Common::threadManager().max_threads(), quadrature.size());
-    std::vector<std::set<size_t>> decomposition(num_threads);
-    for (size_t ii = 0; ii < quadrature.size(); ++ii)
-      decomposition[ii % num_threads].insert(ii);
+    std::vector<std::vector<size_t>> decomposition(num_threads);
+    for (size_t ii = 0; ii < num_threads - 1; ++ii) {
+      decomposition[ii].reserve(quadrature.size() / num_threads * (ii + 1) - quadrature.size() / num_threads * ii);
+      for (size_t jj = quadrature.size() / num_threads * ii; jj < quadrature.size() / num_threads * (ii + 1); ++jj)
+        decomposition[ii].push_back(jj);
+    }
+    decomposition[num_threads - 1].reserve(quadrature.size() - (quadrature.size() / num_threads) * (num_threads - 1));
+    for (size_t jj = quadrature.size() / num_threads * (num_threads - 1); jj < quadrature.size(); ++jj)
+      decomposition[num_threads - 1].push_back(jj);
 
     std::vector<std::thread> threads(num_threads);
     // Launch a group of threads
