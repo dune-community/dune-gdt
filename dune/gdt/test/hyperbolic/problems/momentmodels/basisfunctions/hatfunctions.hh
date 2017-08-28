@@ -341,7 +341,7 @@ public:
   // avoid recalculation of integral by using a static local variable that is initialized on first call
   virtual RangeType integrated() const override
   {
-    static const RangeType ret = integrated_initializer();
+    static const RangeType ret = integrated_initializer(quadrature_);
     return ret;
   }
 

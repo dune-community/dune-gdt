@@ -328,10 +328,10 @@ protected:
     } // ii
   } // void calculate_in_thread(...)
 
-  RangeType integrated_initializer() const
+  RangeType integrated_initializer(const QuadratureType& quadrature) const
   {
-    size_t num_threads = std::min(XT::Common::threadManager().max_threads(), quadrature_.size());
-    auto decomposition = create_decomposition(num_threads, quadrature_.size());
+    size_t num_threads = std::min(XT::Common::threadManager().max_threads(), quadrature.size());
+    auto decomposition = create_decomposition(num_threads, quadrature.size());
     std::vector<std::thread> threads(num_threads);
     std::vector<RangeType> local_vectors(num_threads, RangeType(0.));
     for (size_t ii = 0; ii < num_threads; ++ii)

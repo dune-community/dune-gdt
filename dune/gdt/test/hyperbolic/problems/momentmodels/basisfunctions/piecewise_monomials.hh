@@ -254,7 +254,7 @@ public:
   // returns <b>, where b is the basis functions vector
   virtual RangeType integrated() const override
   {
-    static const RangeType ret = integrated_initializer();
+    static const RangeType ret = integrated_initializer(quadrature_);
     return ret;
   }
 
