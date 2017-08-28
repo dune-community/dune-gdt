@@ -414,6 +414,10 @@ protected:
       // assumes the triangulation is fine enough that vertices[ii]*vertices[jj] >= 0 for all triangles
       if (XT::Common::FloatCmp::lt(scalar_prod, 0.))
         return false;
+      else if (XT::Common::FloatCmp::eq(scalar_prod, 1.)) {
+        ret *= 0.;
+        ret[ii] = 1.;
+      }
       auto v_scaled = v;
       v_scaled *= scalar_prod;
       gradients[ii] -= v_scaled;
@@ -444,9 +448,8 @@ protected:
     ret[0] = solution[0];
     ret[1] = solution[1];
     ret[2] = 1. - ret[0] - ret[1];
-    if (XT::Common::FloatCmp::lt(ret[0], 0.) || XT::Common::FloatCmp::lt(ret[1], 0.))
-      return false;
-    if (XT::Common::FloatCmp::lt(ret[2], 0.))
+    if (XT::Common::FloatCmp::lt(ret[0], 0.) || XT::Common::FloatCmp::lt(ret[1], 0.)
+        || XT::Common::FloatCmp::lt(ret[2], 0.))
       return false;
     return true;
   } // bool calculate_barycentric_coordinates(...)
