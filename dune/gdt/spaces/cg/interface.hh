@@ -286,16 +286,19 @@ public:
   } // ... local_constraints(..., Constraints::Dirichlet<...> ...)
   /** @} */
 
+  static constexpr bool associates_data_with(int codim, std::integral_constant<int, 1>)
+  {
+    return codim == dimDomain;
+  }
+
+  static constexpr bool associates_data_with(int codim, std::integral_constant<int, 2>)
+  {
+    return dimDomain == 1 ? codim >= 0 : codim > 0;
+  }
+
   static constexpr bool associates_data_with(int codim)
   {
-    switch (polOrder) {
-      case 1:
-        return codim == dimDomain;
-      case 2:
-        return dimDomain == 1 ? codim >= 0 : codim > 0;
-      default:
-        return true;
-    }
+    return polOrder > 2 ? true : associates_data_with(codim, std::integral_constant<int, polOrder>());
   }
 
 private:
