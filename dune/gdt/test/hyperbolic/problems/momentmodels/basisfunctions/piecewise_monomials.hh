@@ -218,33 +218,58 @@ public:
     FieldMatrix<RangeFieldType, 3, 3> determinant_matrix;
     bool success = false;
     for (const auto& face : triangulation_.faces()) {
-      // vertices are ordered counterclockwise, so if the point is inside the spherical triangle,
-      // the coordinate system formed by two adjacent vertices and v is always right-handed, i.e.
-      // the triple product is positive
-      const auto& vertices = face->vertices();
-      for (size_t ii = 0; ii < 3; ++ii)
-        vertices_matrix[ii] = vertices[ii]->position();
       bool v_in_this_facet = true;
-      // the triple products that need to be positive are the determinants of the matrices (v1, v2, v), (v2, v3, v),
-      // (v3, v1, v), where vi is the ith vertex. Swapping two columns changes the sign of det, the matrices used
-      // below all have an even number of column swaps
+      bool second_check = true;
+      RangeFieldType factor = 1.;
+      const auto& vertices = face->vertices();
       for (size_t ii = 0; ii < 3; ++ii) {
-        determinant_matrix = vertices_matrix;
-        determinant_matrix[ii] = v;
-        if (XT::Common::FloatCmp::lt(determinant_matrix.determinant(), 0.)) {
+        // if v is not on the same octant of the sphere as the vertices, return false
+        // assumes the triangulation is fine enough that vertices[ii]*vertices[jj] >= 0 for all triangles
+        const auto scalar_prod = v * vertices[ii]->position();
+        if (XT::Common::FloatCmp::lt(scalar_prod, 0.)) {
           v_in_this_facet = false;
+          second_check = false;
+          break;
+        } else if (XT::Common::FloatCmp::eq(scalar_prod, 1.)) {
+          // if scalar_prod equals 1., v is equal to this vertex. As there are 6 faces adjacent to each vertex,
+          // assign 1./6. the value of the basis function to this face.
+          factor = 1. / 6.;
+          second_check = false;
           break;
         }
-      }
+        vertices_matrix[ii] = vertices[ii]->position();
+      } // ii
+
+      if (second_check) {
+        // Vertices are ordered counterclockwise, so if the point is inside the spherical triangle,
+        // the coordinate system formed by two adjacent vertices and v is always right-handed, i.e.
+        // the triple product is positive.
+        // The triple products that need to be positive are the determinants of the matrices (v1, v2, v), (v2, v3, v),
+        // (v3, v1, v), where vi is the ith vertex. Swapping two columns changes the sign of det, the matrices used
+        // below all have an even number of column swaps.
+        // As we have checked before that v is in the same octant as the vertices, the determinant is 0 iff v is on
+        // an edge of the facet. In that case, assign half of the basis function to this edge.
+        for (size_t ii = 0; ii < 3; ++ii) {
+          determinant_matrix = vertices_matrix;
+          determinant_matrix[ii] = v;
+          auto det = determinant_matrix.determinant();
+          if (XT::Common::FloatCmp::eq(det, 0.)) {
+            factor = 0.5;
+            break;
+          } else if (det < 0.) {
+            v_in_this_facet = false;
+            break;
+          }
+        } // ii
+      } // if (second_check)
       if (v_in_this_facet) {
         const auto face_index = face->index();
-        ret[4 * face_index] = 1;
+        ret[4 * face_index] = 1. * factor;
         for (size_t ii = 1; ii < 4; ++ii) {
           assert(4 * face_index + ii < ret.size());
-          ret[4 * face_index + ii] = v[ii - 1];
+          ret[4 * face_index + ii] = v[ii - 1] * factor;
         }
         success = true;
-        break;
       }
     } // faces
     assert(success);
