@@ -288,7 +288,7 @@ protected:
     return decomposition;
   }
 
-  void parallel_quadrature(const QuadratureType& quadrature, MatrixType& matrix, const size_t v_index) const
+  virtual void parallel_quadrature(const QuadratureType& quadrature, MatrixType& matrix, const size_t v_index) const
   {
     size_t num_threads = std::min(XT::Common::threadManager().max_threads(), quadrature.size());
     auto decomposition = create_decomposition(num_threads, quadrature.size());
@@ -311,10 +311,10 @@ protected:
       matrix += local_matrices[ii];
   } // void parallel_quadrature(...)
 
-  void calculate_in_thread(const QuadratureType& quadrature,
-                           MatrixType& local_matrix,
-                           const size_t v_index,
-                           const std::vector<size_t>& indices) const
+  virtual void calculate_in_thread(const QuadratureType& quadrature,
+                                   MatrixType& local_matrix,
+                                   const size_t v_index,
+                                   const std::vector<size_t>& indices) const
   {
     for (const auto& jj : indices) {
       const auto& quad_point = quadrature[jj];

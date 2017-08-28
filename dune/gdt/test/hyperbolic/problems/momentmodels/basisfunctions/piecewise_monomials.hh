@@ -213,14 +213,21 @@ public:
 
   virtual RangeType evaluate(const DomainType& v) const override final
   {
+    size_t dummy;
+    return evaluate(v, true, dummy);
+  } // ... evaluate(...)
+
+  virtual RangeType evaluate(const DomainType& v, bool split_boundary, size_t& num_faces) const
+  {
     RangeType ret(0);
     FieldMatrix<RangeFieldType, 3, 3> vertices_matrix;
     FieldMatrix<RangeFieldType, 3, 3> determinant_matrix;
     bool success = false;
+    bool finished = false;
+    size_t num_adjacent_faces = 0;
     for (const auto& face : triangulation_.faces()) {
       bool v_in_this_facet = true;
       bool second_check = true;
-      RangeFieldType factor = 1.;
       const auto& vertices = face->vertices();
       for (size_t ii = 0; ii < 3; ++ii) {
         // if v is not on the same octant of the sphere as the vertices, return false
@@ -231,9 +238,7 @@ public:
           second_check = false;
           break;
         } else if (XT::Common::FloatCmp::eq(scalar_prod, 1.)) {
-          // if scalar_prod equals 1., v is equal to this vertex. As there are 6 faces adjacent to each vertex,
-          // assign 1./6. the value of the basis function to this face.
-          factor = 1. / 6.;
+          ++num_adjacent_faces;
           second_check = false;
           break;
         }
@@ -254,7 +259,7 @@ public:
           determinant_matrix[ii] = v;
           auto det = determinant_matrix.determinant();
           if (XT::Common::FloatCmp::eq(det, 0.)) {
-            factor = 0.5;
+            ++num_adjacent_faces;
             break;
           } else if (det < 0.) {
             v_in_this_facet = false;
@@ -262,16 +267,21 @@ public:
           }
         } // ii
       } // if (second_check)
-      if (v_in_this_facet) {
+      if (v_in_this_facet && !finished) {
         const auto face_index = face->index();
-        ret[4 * face_index] = 1. * factor;
+        ret[4 * face_index] = 1.;
         for (size_t ii = 1; ii < 4; ++ii) {
           assert(4 * face_index + ii < ret.size());
-          ret[4 * face_index + ii] = v[ii - 1] * factor;
+          ret[4 * face_index + ii] = v[ii - 1];
         }
+        if (!split_boundary)
+          finished = true;
         success = true;
       }
     } // faces
+    if (split_boundary && num_adjacent_faces > 0)
+      ret /= RangeFieldType(num_adjacent_faces);
+    num_faces = num_adjacent_faces > 0 ? num_adjacent_faces : 1;
     assert(success);
     return ret;
   } // ... evaluate(...)
@@ -351,6 +361,26 @@ public:
 
 protected:
   using BaseType::parallel_quadrature;
+
+  virtual void calculate_in_thread(const QuadratureType& quadrature,
+                                   MatrixType& local_matrix,
+                                   const size_t v_index,
+                                   const std::vector<size_t>& indices) const
+  {
+    for (const auto& jj : indices) {
+      const auto& quad_point = quadrature[jj];
+      const auto& v = quad_point.position();
+      size_t num_adjacent_faces;
+      const auto basis_evaluated = evaluate(v, false, num_adjacent_faces);
+      const auto& weight = quad_point.weight();
+      const auto factor = (v_index == size_t(-1)) ? 1. : v[v_index];
+      for (size_t kk = 0; kk < local_matrix.N(); kk += 4)
+        for (size_t nn = kk; nn < kk + 4; ++nn)
+          for (size_t mm = kk; mm < kk + 4; ++mm)
+            local_matrix[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * factor * weight / num_adjacent_faces;
+    } // ii
+  } // void calculate_in_thread(...)
+
   using BaseType::integrated_initializer;
 
   const TriangulationType triangulation_;
