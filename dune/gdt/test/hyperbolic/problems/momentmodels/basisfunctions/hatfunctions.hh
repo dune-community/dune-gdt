@@ -399,41 +399,8 @@ public:
   }
 
 protected:
-  using BaseType::create_decomposition;
   using BaseType::parallel_quadrature;
-
-  RangeType integrated_initializer() const
-  {
-    size_t num_threads = std::min(XT::Common::threadManager().max_threads(), quadrature_.size());
-    auto decomposition = create_decomposition(num_threads, quadrature_.size());
-    std::vector<std::thread> threads(num_threads);
-    std::vector<RangeType> local_vectors(num_threads, RangeType(0.));
-    for (size_t ii = 0; ii < num_threads; ++ii)
-      threads[ii] = std::thread(&HatFunctions::integrated_initializer_thread,
-                                this,
-                                std::cref(quadrature),
-                                std::ref(local_vectors[ii]),
-                                std::cref(decomposition[ii]));
-    // Join the threads with the main thread
-    for (size_t ii = 0; ii < num_threads; ++ii)
-      threads[ii].join();
-    // add local matrices
-    RangeType ret(0.);
-    for (size_t ii = 0; ii < num_threads; ++ii)
-      ret += local_vectors[ii];
-  }
-
-  void integrated_initializer_thread(const QuadratureType& quadrature,
-                                     RangeType& local_range,
-                                     const std::vector<size_t>& indices) const
-  {
-    for (const auto& jj : indices) {
-      const auto& quad_point = quadrature[jj];
-      auto basis_evaluated = evaluate(quad_point.position());
-      basis_evaluated *= quad_point.weight();
-      local_range += basis_evaluated;
-    } // jj
-  } // void calculate_in_thread(...)
+  using BaseType::integrated_initializer;
 
   template <class VertexVectorType>
   bool calculate_barycentric_coordinates(const DomainType& v, const VertexVectorType& vertices, DomainType& ret) const

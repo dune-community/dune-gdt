@@ -326,17 +326,7 @@ public:
 
 protected:
   using BaseType::parallel_quadrature;
-
-  RangeType integrated_initializer() const
-  {
-    RangeType ret(0);
-    for (const auto& quad_point : quadrature_) {
-      auto basis_evaluated = evaluate(quad_point.position());
-      basis_evaluated *= quad_point.weight();
-      ret += basis_evaluated;
-    } // quadrature
-    return ret;
-  }
+  using BaseType::integrated_initializer;
 
   const TriangulationType triangulation_;
   const QuadratureType quadrature_;
