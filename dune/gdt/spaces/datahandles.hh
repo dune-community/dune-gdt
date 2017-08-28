@@ -22,7 +22,7 @@ struct DOFDataCommunicationDescriptor
   template <typename SpaceType>
   bool contains(const SpaceType& space, int dim, int codim) const
   {
-    return codim == 0; // SpaceType::associates_data_with(codim);
+    return SpaceType::associates_data_with(codim);
   }
 
   template <typename SpaceType>
@@ -45,11 +45,14 @@ template <typename E>
 struct EntityDataCommunicationDescriptor
 {
   typedef E DataType;
+  // Data is per entity, so we don't need to send leaf ordering size and thus can avoid wrapping the
+  // grid's communication buffer
+  static const bool wrap_buffer = false;
 
   template <typename SpaceType>
   bool contains(const SpaceType& /*space*/, int /*dim*/, int codim) const
   {
-    return codim == 0; // SpaceType::associates_data_with(codim);
+    return SpaceType::associates_data_with(codim);
   }
 
   template <typename SpaceType>
@@ -61,7 +64,8 @@ struct EntityDataCommunicationDescriptor
   template <typename SpaceType, typename Entity>
   std::size_t size(const SpaceType& space, const Entity& e) const
   {
-    return space.grid_layer().indexSet().contains(e) ? _count : 0;
+    return (SpaceType::associates_data_with(Entity::codimension) && space.grid_layer().indexSet().contains(e)) ? _count
+                                                                                                               : 0;
   }
 
   explicit EntityDataCommunicationDescriptor(std::size_t count = 1)
