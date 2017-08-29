@@ -92,7 +92,7 @@ public:
   // returns matrix with entries <h_i h_j>
   virtual MatrixType mass_matrix() const override
   {
-    MatrixType M(0);
+    MatrixType M(dimRange, dimRange, 0.);
     for (size_t ii = 0; ii < dimRange / 2; ++ii) {
       M[2 * ii][2 * ii] = triangulation_[ii + 1] - triangulation_[ii];
       M[2 * ii + 1][2 * ii + 1] = (std::pow(triangulation_[ii + 1], 3) - std::pow(triangulation_[ii], 3)) / 3.;
@@ -110,7 +110,7 @@ public:
   // returns matrix with entries <v h_i h_j>
   virtual FieldVector<MatrixType, dimDomain> mass_matrix_with_v() const override
   {
-    MatrixType B(0);
+    MatrixType B(dimRange, dimRange, 0.);
     for (size_t ii = 0; ii < dimRange / 2; ++ii) {
       B[2 * ii][2 * ii] = (std::pow(triangulation_[ii + 1], 2) - std::pow(triangulation_[ii], 2)) / 2.;
       B[2 * ii + 1][2 * ii + 1] = (std::pow(triangulation_[ii + 1], 4) - std::pow(triangulation_[ii], 4)) / 4.;
@@ -223,7 +223,6 @@ public:
     FieldMatrix<RangeFieldType, 3, 3> vertices_matrix;
     FieldMatrix<RangeFieldType, 3, 3> determinant_matrix;
     bool success = false;
-    bool finished = false;
     size_t num_adjacent_faces = 0;
     for (const auto& face : triangulation_.faces()) {
       bool v_in_this_facet = true;
@@ -267,15 +266,13 @@ public:
           }
         } // ii
       } // if (second_check)
-      if (v_in_this_facet && !finished) {
+      if (v_in_this_facet) {
         const auto face_index = face->index();
         ret[4 * face_index] = 1.;
         for (size_t ii = 1; ii < 4; ++ii) {
           assert(4 * face_index + ii < ret.size());
           ret[4 * face_index + ii] = v[ii - 1];
         }
-        if (!split_boundary)
-          finished = true;
         success = true;
       }
     } // faces
@@ -365,7 +362,7 @@ protected:
   virtual void calculate_in_thread(const QuadratureType& quadrature,
                                    MatrixType& local_matrix,
                                    const size_t v_index,
-                                   const std::vector<size_t>& indices) const
+                                   const std::vector<size_t>& indices) const override
   {
     for (const auto& jj : indices) {
       const auto& quad_point = quadrature[jj];

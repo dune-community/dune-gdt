@@ -221,7 +221,7 @@ private:
       // get matrix of eigenvectors A and eigenvalues
       static XT::Common::Configuration eigensolver_options(
           {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
-          {EigenSolverType::types()[1], "1", "1", "0", "1"});
+          {EigenSolverType::types()[0], "1", "1", "0", "1"});
       const auto eigen_solver = EigenSolverType(*jacobian);
       const auto eigenvalues = eigen_solver.eigenvalues(eigensolver_options);
       StateRangeType eigvals_neg(0.);
