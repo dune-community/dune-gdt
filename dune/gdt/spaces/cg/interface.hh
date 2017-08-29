@@ -298,7 +298,8 @@ public:
 
   static constexpr bool associates_data_with(int codim)
   {
-    return polOrder > 2 ? true : associates_data_with(codim, std::integral_constant<int, polOrder>());
+    // actually: return polOrder > 2 ? true : associates_data_with(codim, std::integral_constant<int, polOrder>());
+    return codim == 0;
   }
 
 private:
