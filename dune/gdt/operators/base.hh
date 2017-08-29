@@ -162,9 +162,9 @@ public:
   using BaseType::grid_layer;
   using BaseType::append;
 
-  ThisType& append(
-      const LocalVolumeTwoFormInterface<LocalRangeType, LocalSourceType, FieldType>& local_volume_twoform,
-      const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
+  ThisType& append(const LocalVolumeTwoFormInterface<LocalRangeType, LocalSourceType, FieldType>& local_volume_twoform,
+                   const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where =
+                       new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::InteriorBorder>())
   {
     local_volume_twoforms_.emplace_back(
         new LocalVolumeTwoFormAccumulatorFunctor<GridLayerType, RangeType, SourceType, FieldType>(
