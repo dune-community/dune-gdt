@@ -69,7 +69,7 @@ public:
 
   static Type* create(const ViewImp& gridView)
   {
-    return new Type(gridView.comm());
+    return new Type(gridView.comm(), SolverCategory::overlapping);
   }
 
   //  disabled for testing

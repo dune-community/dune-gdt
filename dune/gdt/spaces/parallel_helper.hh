@@ -128,7 +128,6 @@ void GenericParallelHelper<SpaceType>::createIndexSetAndProjectForAMG(Communicat
   // identically. For that reason, the code often restricts itself to inspecting the
   // first entry of the blocks in the diverse BlockVectors.
   // ********************************************************************************
-
   const auto& view = space_.grid_layer();
   const auto vector_size = space_.mapper().size();
 
@@ -171,7 +170,7 @@ void GenericParallelHelper<SpaceType>::createIndexSetAndProjectForAMG(Communicat
 
   // Publish global indices for the shared DOFS to other processors.
   if (need_communication) {
-    MinDataHandle<SpaceType, GlobalIndexVector> data_handle(space_, scalarIndices);
+    GDT::MinDataHandle<SpaceType, GlobalIndexVector> data_handle(space_, scalarIndices);
     view.communicate(data_handle, _interiorBorder_all_interface, Dune::ForwardCommunication);
   }
 
