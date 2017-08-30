@@ -164,7 +164,7 @@ public:
           } else {
             ret_neg[nn][mm] = -std::pow(triangulation_[mm], 2) / 48.;
             ret_pos[nn][mm] = (5 * std::pow(triangulation_[mm], 2) + 8 * triangulation_[mm] * triangulation_[mm + 1]
-                               - 4 * std::pow(triangulation_[mm + 1], 2))
+                               + 4 * std::pow(triangulation_[mm + 1], 2))
                               / 48.;
           }
         } else if (!(N % 2) && mm == N / 2 - 1 && nn == N / 2 - 1) {
