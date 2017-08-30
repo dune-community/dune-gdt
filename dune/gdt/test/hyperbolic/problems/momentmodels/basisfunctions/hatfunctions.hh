@@ -143,6 +143,44 @@ public:
     return ret;
   }
 
+  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
+  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const
+  {
+    FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
+    auto mm_with_v = mass_matrix_with_v();
+    auto& ret_neg = ret[0][0];
+    auto& ret_pos = ret[0][1];
+    size_t N = dimRange;
+    for (size_t nn = 0; nn < N; ++nn) {
+      for (size_t mm = 0; mm < N; ++mm) {
+        if (nn < N / 2 || mm < N / 2)
+          ret_neg[nn][mm] = mm_with_v[0][nn][mm];
+        else if (nn > N / 2 || mm > N / 2)
+          ret_pos[nn][mm] = mm_with_v[0][nn][mm];
+        else if (nn == N / 2 && mm == N / 2) {
+          if (N % 2) {
+            ret_neg[nn][mm] = -std::pow(triangulation_[mm - 1], 2) / 12.;
+            ret_pos[nn][mm] = std::pow(triangulation_[mm + 1], 2) / 12.;
+          } else {
+            ret_neg[nn][mm] = -std::pow(triangulation_[mm], 2) / 48.;
+            ret_pos[nn][mm] = (5 * std::pow(triangulation_[mm], 2) + 8 * triangulation_[mm] * triangulation_[mm + 1]
+                               - 4 * std::pow(triangulation_[mm + 1], 2))
+                              / 48.;
+          }
+        } else if (!(N % 2) && mm == N / 2 - 1 && nn == N / 2 - 1) {
+          ret_neg[nn][mm] = (-3 * std::pow(triangulation_[mm], 2) - 8 * triangulation_[mm] * triangulation_[mm - 1]
+                             - 4 * std::pow(triangulation_[mm - 1], 2))
+                            / 48.;
+          ret_pos[nn][mm] = std::pow(triangulation_[mm], 2) / 48.;
+        } else if (!(N % 2) && ((mm == N / 2 && nn == N / 2 - 1) || (mm == N / 2 - 1 && nn == N / 2))) {
+          ret_neg[nn][mm] = -std::pow(triangulation_[mm], 2) / 16.;
+          ret_pos[nn][mm] = std::pow(triangulation_[mm], 2) / 16.;
+        }
+      } // mm
+    } // nn
+    return ret;
+  }
+
   template <class DiscreteFunctionType>
   VisualizerType<DiscreteFunctionType> visualizer() const
   {
@@ -264,6 +302,34 @@ public:
       parallel_quadrature(quadrature_, B[dd], dd);
     return B;
   } // ... mass_matrix_with_v()
+
+  virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const override
+  {
+    FieldVector<FieldVector<MatrixType, 2>, dimFlux> B_kinetic(
+        FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
+    QuadratureType pos_quadrature;
+    QuadratureType neg_quadrature;
+    pos_quadrature.reserve(quadrature_.size());
+    neg_quadrature.reserve(quadrature_.size());
+    for (size_t dd = 0; dd < dimFlux; ++dd) {
+      pos_quadrature.clear();
+      neg_quadrature.clear();
+      for (const auto& quad_point : quadrature) {
+        const auto& v = quad_point.position();
+        const auto& weight = quad_point.weight();
+        if (XT::Common::FloatCmp::eq(v[dd], 0.)) {
+          pos_quadrature.emplace_back(v, weight / 2.);
+          neg_quadrature.emplace_back(v, weight / 2.);
+        } else if (v[dd] > 0.)
+          pos_quadrature.emplace_back(v, weight);
+        else
+          neg_quadrature.emplace_back(v, weight);
+      }
+      parallel_quadrature(neg_quadrature, B_kinetic[dd][0], dd);
+      parallel_quadrature(pos_quadrature, B_kinetic[dd][1], dd);
+    }
+    return B_kinetic;
+  } // ... kinetic_flux_matrices()
 
   template <class DiscreteFunctionType>
   VisualizerType<DiscreteFunctionType> visualizer() const

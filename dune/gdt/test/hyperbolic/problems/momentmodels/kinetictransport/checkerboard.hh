@@ -72,7 +72,7 @@ public:
   static std::string static_id()
   {
     size_t domainDim = dimDomain; // avoid linker error for dimDomain
-    return "checkerboard" + XT::Common::to_string(domainDim) + "d_Pn";
+    return "checkerboard" + XT::Common::to_string(domainDim) + "d_pn";
   }
 
   static XT::Common::Configuration default_grid_cfg()

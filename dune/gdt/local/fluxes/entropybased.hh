@@ -35,29 +35,31 @@ static const std::unique_ptr<const MatrixType> unit_matrix = XT::LA::get_unit_ma
  * Alldredge, Hauck, O'Leary, Tits, "Adaptive change of basis in entropy-based moment closures for linear kinetic
  * equations"
  */
-template <class BasisfunctionType, class GridLayerType, class U, size_t quadratureDim = BasisfunctionType::dimDomain>
+template <class BasisfunctionImp, class GridLayerImp, class U, size_t quadratureDim = BasisfunctionImp::dimDomain>
 class EntropyBasedLocalFlux
-    : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerType::template Codim<0>::Entity,
-                                                             typename BasisfunctionType::DomainFieldType,
-                                                             BasisfunctionType::dimFlux,
+    : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                             typename BasisfunctionImp::DomainFieldType,
+                                                             BasisfunctionImp::dimFlux,
                                                              U,
                                                              0,
-                                                             typename BasisfunctionType::RangeFieldType,
-                                                             BasisfunctionType::dimRange,
-                                                             BasisfunctionType::dimFlux>
+                                                             typename BasisfunctionImp::RangeFieldType,
+                                                             BasisfunctionImp::dimRange,
+                                                             BasisfunctionImp::dimFlux>
 {
-  typedef typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerType::template Codim<0>::Entity,
-                                                                   typename BasisfunctionType::DomainFieldType,
-                                                                   BasisfunctionType::dimFlux,
+  typedef typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                                   typename BasisfunctionImp::DomainFieldType,
+                                                                   BasisfunctionImp::dimFlux,
                                                                    U,
                                                                    0,
-                                                                   typename BasisfunctionType::RangeFieldType,
-                                                                   BasisfunctionType::dimRange,
-                                                                   BasisfunctionType::dimFlux>
+                                                                   typename BasisfunctionImp::RangeFieldType,
+                                                                   BasisfunctionImp::dimRange,
+                                                                   BasisfunctionImp::dimFlux>
       BaseType;
   typedef EntropyBasedLocalFlux ThisType;
 
 public:
+  typedef BasisfunctionImp BasisfunctionType;
+  typedef GridLayerImp GridLayerType;
   using typename BaseType::EntityType;
   using typename BaseType::DomainType;
   using typename BaseType::DomainFieldType;
@@ -181,12 +183,12 @@ public:
       mutex_.lock();
       if (!boundary && alpha_cache_ && XT::Common::FloatCmp::eq(alpha_cache_->first, u)) {
         alpha.deep_copy(alpha_cache_->second);
-        std::cout << hitcounter++ << std::endl;
+        //        std::cout << hitcounter++ << std::endl;
         mutex_.unlock();
         return alpha;
       } else if (boundary && alpha_cache_boundary_ && XT::Common::FloatCmp::eq(alpha_cache_boundary_->first, u)) {
         alpha.deep_copy(alpha_cache_boundary_->second);
-        std::cout << hitcounter++ << std::endl;
+        //        std::cout << hitcounter++ << std::endl;
         mutex_.unlock();
         return alpha;
       } else {
@@ -432,10 +434,13 @@ public:
     template <class anything>
     struct helper<1, anything>
     {
-      static void axpy(const size_t dd, RangeType& ret, const VectorType& m, const RangeFieldType& factor)
+      static void axpy(const size_t dd, RangeType& ret, const RangeFieldType& factor, const VectorType& m)
       {
         assert(dd == 0);
-        ret.axpy(factor, m);
+        const auto& m_entries = m.entries();
+        const auto& m_indices = m.indices();
+        for (size_t kk = 0; kk < m_entries.size(); ++kk)
+          ret[m_indices[kk]] += factor * m_entries[kk];
       }
 
       static void partial_u(const VectorType& alpha,
@@ -631,15 +636,17 @@ public:
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
   // m is the basis function vector, phi_u is the ansatz corresponding to u
   // and x, v, t are the space, velocity and time variable, respectively
-  StateRangeType evaluate_kinetic_integral(const EntityType& entity,
-                                           const DomainType& x_local_entity,
-                                           const StateRangeType& u_i,
-                                           const EntityType& neighbor,
-                                           const DomainType& x_local_neighbor,
-                                           const StateRangeType u_j,
-                                           const DomainType& n_ij,
-                                           const XT::Common::Parameter& param,
-                                           const XT::Common::Parameter& param_neighbor) const
+  // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
+  StateRangeType evaluate_kinetic_flux(const EntityType& entity,
+                                       const DomainType& x_local_entity,
+                                       const StateRangeType& u_i,
+                                       const EntityType& neighbor,
+                                       const DomainType& x_local_neighbor,
+                                       const StateRangeType u_j,
+                                       const DomainType& n_ij,
+                                       const size_t dd,
+                                       const XT::Common::Parameter& param,
+                                       const XT::Common::Parameter& param_neighbor) const
   {
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto local_function_entity = local_function(entity);
@@ -652,14 +659,12 @@ public:
       const auto& weight = quadrature_[ll].weight();
       const auto& m = M_[ll];
       const auto factor = position * n_ij > 0 ? std::exp(alpha_i * m) * weight : std::exp(alpha_j * m) * weight;
-      for (size_t dd = 0; dd < dimDomain; ++dd) {
-        auto contribution = m;
-        contribution *= position[dd] * factor * n_ij[dd];
-        ret += contribution;
-      }
+      auto contribution = m;
+      contribution *= position[dd] * factor * n_ij[dd];
+      ret += contribution;
     }
     return ret;
-  } // StateRangeType evaluate_kinetic_integral(...)
+  } // StateRangeType evaluate_kinetic_flux(...)
 
   const typename GridLayerType::IndexSet& index_set_;
   const BasisfunctionType& basis_functions_;

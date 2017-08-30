@@ -169,6 +169,7 @@ public:
     std::cout << "basis_integrated = " << XT::Common::to_string(basis_integrated, 15) << std::endl;
     // calculate c = M^{-T} <b>
     auto M_T = basis_functions_.mass_matrix();
+    // calculate c = M^{-T} <b>
     transpose_in_place(M_T);
     RangeType c(0.);
     M_T.solve(c, basis_integrated);
@@ -191,7 +192,6 @@ public:
       A -= I_scaled;
       RangeType b = basis_integrated;
       b *= Q[ii];
-      std::cout << "rhs = " << XT::Common::to_string(A, 15) << std::endl;
       affine_functions.emplace_back(A, b, true, "rhs");
     } // ii
     return new ActualRhsType(lower_left, upper_right, num_segments_, affine_functions);

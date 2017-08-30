@@ -69,7 +69,7 @@ public:
     grid_config["upper_right"] = "[1.2]";
     grid_config["num_elements"] = "[240]";
     grid_config["overlap_size"] = "[1]";
-    grid_config["num_quad_cells"] = "[20]";
+    grid_config["num_quad_cells"] = "[100]";
     grid_config["quad_order"] = "20";
     return grid_config;
   }

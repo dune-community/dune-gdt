@@ -45,7 +45,7 @@ private:
 
 public:
   typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
-  typedef FieldVector<DomainFieldType, dimRange + 1> TriangulationType;
+  typedef FieldVector<DomainFieldType, dimRange / 2 + 1> TriangulationType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
@@ -62,7 +62,7 @@ public:
   {
     TriangulationType ret;
     for (size_t ii = 0; ii < dimRange / 2 + 1; ++ii)
-      ret[ii] = -1. + 4. * ii / dimRange;
+      ret[ii] = -1. + (4. * ii) / dimRange;
     return ret;
   }
 
@@ -71,7 +71,7 @@ public:
     RangeType ret(0);
     for (size_t ii = 0; ii < dimRange / 2; ++ii) {
       if (XT::Common::FloatCmp::ge(v[0], triangulation_[ii])
-          && XT::Common::FloatCmp::le(v[0], triangulation_[ii + 1])) {
+          && XT::Common::FloatCmp::lt(v[0], triangulation_[ii + 1])) {
         ret[2 * ii] = 1;
         ret[2 * ii + 1] = v[0];
       }

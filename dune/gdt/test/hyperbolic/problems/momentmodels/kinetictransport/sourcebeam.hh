@@ -60,7 +60,7 @@ public:
                const QuadratureType& quadrature = default_quadrature(),
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, 6, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, quadrature, {6}, grid_cfg, boundary_cfg)
   {
   }
 
