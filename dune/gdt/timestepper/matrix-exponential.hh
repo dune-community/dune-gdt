@@ -9,6 +9,8 @@
 #ifndef DUNE_GDT_TIMESTEPPER_MATRIXEXPONENTIAL_HH
 #define DUNE_GDT_TIMESTEPPER_MATRIXEXPONENTIAL_HH
 
+#include "config.h"
+
 #include <dune/xt/functions/affine.hh>
 #include <dune/xt/functions/checkerboard.hh>
 
@@ -141,7 +143,7 @@ public:
   using BaseType::current_time;
 
   MatrixExponentialTimeStepper(const OperatorType& op,
-                               const DiscreteFunctionType& initial_values,
+                               DiscreteFunctionType& initial_values,
                                const RangeFieldType t_0 = 0.0)
     : BaseType(t_0, initial_values)
     , op_(op)
