@@ -12,11 +12,10 @@
 #ifndef DUNE_GDT_OPERATORS_PROJECTIONS_HH
 #define DUNE_GDT_OPERATORS_PROJECTIONS_HH
 
-#include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/grid/layers.hh>
+#include <dune/xt/functions/interfaces/localizable-function.hh>
 
-#include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/spaces/cg/interface.hh>
+#include <dune/gdt/type_traits.hh>
 
 #include "projections/dirichlet.hh"
 #include "projections/l2.hh"
