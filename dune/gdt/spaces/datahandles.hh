@@ -68,7 +68,8 @@ struct EntityDataCommunicationDescriptor
                                                                                                                : 0;
   }
 
-  explicit EntityDataCommunicationDescriptor(std::size_t count = 1)
+  //! remove default value, force handles to use actual space provided values
+  explicit EntityDataCommunicationDescriptor(std::size_t count = 4)
     : _count(count)
   {
   }
