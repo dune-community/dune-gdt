@@ -82,7 +82,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_functional_(dirichlet, diffusion)
   {
-    this->append(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+    append_local_functional(boundary_info);
   }
 
   template <typename Diffusion,
@@ -98,7 +98,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_functional_(over_integrate, dirichlet, diffusion)
   {
-    this->append(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+    append_local_functional(boundary_info);
   }
 
   /// \}
@@ -119,7 +119,7 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_functional_(dirichlet, diffusion_factor, diffusion_tensor)
   {
-    this->append(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+    append_local_functional(boundary_info);
   }
 
   template <typename DiffusionFactor,
@@ -137,11 +137,16 @@ public:
     : BaseType(std::forward<Args>(args)...)
     , local_functional_(over_integrate, dirichlet, diffusion_factor, diffusion_tensor)
   {
-    this->append(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+    append_local_functional(boundary_info);
   }
   /// \}
 
 private:
+  void append_local_functional(const XT::Grid::BoundaryInfo<IntersectionType>& boundary_info)
+  {
+    this->append(local_functional_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+  }
+
   const LocalFaceIntegralFunctional<LocalEllipticIpdgIntegrands::
                                         BoundaryRHS<DirichletType, DiffusionFactorType, DiffusionTensorType>,
                                     typename Space::BaseFunctionSetType,

@@ -82,9 +82,7 @@ public:
     , local_coupling_operator_(diffusion)
     , local_boundary_operator_(diffusion)
   {
-    this->append(local_volume_operator_);
-    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
-    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+    append_all(boundary_info);
   }
 
   template <typename DiffusionImp,
@@ -101,9 +99,7 @@ public:
     , local_coupling_operator_(over_integrate, diffusion)
     , local_boundary_operator_(over_integrate, diffusion)
   {
-    this->append(local_volume_operator_);
-    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
-    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+    append_all(boundary_info);
   }
 
   /// \}
@@ -125,9 +121,7 @@ public:
     , local_coupling_operator_(diffusion_factor, diffusion_tensor)
     , local_boundary_operator_(diffusion_factor, diffusion_tensor)
   {
-    this->append(local_volume_operator_);
-    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
-    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+    append_all(boundary_info);
   }
 
   template <typename DiffusionFactorImp,
@@ -146,14 +140,19 @@ public:
     , local_coupling_operator_(over_integrate, diffusion_factor, diffusion_tensor)
     , local_boundary_operator_(over_integrate, diffusion_factor, diffusion_tensor)
   {
-    this->append(local_volume_operator_);
-    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
-    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+    append_all(boundary_info);
   }
 
   /// \}
 
 private:
+  void append_all(const XT::Grid::BoundaryInfo<IntersectionType>& boundary_info)
+  {
+    this->append(local_volume_operator_);
+    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
+    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+  }
+
   typedef typename RangeSpace::BaseFunctionSetType RangeBaseType;
   typedef typename SourceSpace::BaseFunctionSetType SourceBaseType;
 
