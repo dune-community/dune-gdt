@@ -12,6 +12,7 @@
 
 #include <functional>
 
+#include <dune/xt/common/parameter.hh>
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/type_traits.hh>
@@ -73,18 +74,29 @@ public:
                       })
     : grid_layer_(grid_layer)
     , local_coupling_operator_(flux, numerical_coupling_flux)
+    , parameter_type_("dt_", 1)
   {
   }
 
   AdvectionFvOperator(const ThisType& other) = delete;
   AdvectionFvOperator(ThisType&& source) = delete;
 
-  void apply(const DF& source, DF& range, const Dune::XT::Common::Parameter& /*param*/ = {}) const
+  bool is_parametric() const override final
+  {
+    return true;
+  }
+
+  const XT::Common::ParameterType& parameter_type() const override final
+  {
+    return parameter_type_;
+  }
+
+  void apply(const DF& source, DF& range, const XT::Common::Parameter& mu = {}) const
   {
     range.vector() *= 0.;
     LocalizableOperatorBase<GL, DF, DF> walker(grid_layer_, source, range);
-    walker.append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GL>());
-    walker.append(local_coupling_operator_, new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GL>());
+    walker.append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GL>(), mu);
+    walker.append(local_coupling_operator_, new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GL>(), mu);
     walker.walk();
   }
 
@@ -135,6 +147,7 @@ public:
 private:
   const GL& grid_layer_;
   const LocalCouplingOperatorType local_coupling_operator_;
+  const XT::Common::ParameterType parameter_type_;
 }; // class AdvectionFvOperator
 
 

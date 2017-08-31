@@ -70,19 +70,32 @@ public:
   using NumericalFluxType = std::function<R(const typename FluxType::LocalfunctionType&,
                                             const typename StateType::RangeType&,
                                             const typename StateType::RangeType&,
-                                            const typename StateType::DomainType&)>;
+                                            const typename StateType::DomainType&,
+                                            const XT::Common::Parameter&)>;
 
   LocalAdvectionFvInnerOperator(const FluxType& flux, NumericalFluxType numerical_flux)
     : flux_(flux)
     , numerical_flux_(numerical_flux)
+    , parameter_type_("dt_", 1)
   {
+  }
+
+  bool is_parametric() const override final
+  {
+    return true;
+  }
+
+  const XT::Common::ParameterType& parameter_type() const override final
+  {
+    return parameter_type_;
   }
 
   template <class VectorType, class I>
   void apply(const ConstDiscreteFunction<SpaceType, VectorType>& source,
              const I& intersection,
              LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor) const
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor,
+             const XT::Common::Parameter& mu = {}) const
   {
     static_assert(XT::Grid::is_intersection<I>::value, "");
     const auto& entity = local_range_entity.entity();
@@ -99,8 +112,8 @@ public:
     // * use u_outside->evaluate(x_neighbor) instead of u_outside->vector().get(0)
     // * \int_entity basis^2 \dx instead of h
     // where x_entity and x_neighbor are the corresponding coordinates of the intersections midpoint.
-    const auto g =
-        numerical_flux_(*flux_.local_function(entity), u_inside->vector().get(0), u_outside->vector().get(0), normal);
+    const auto g = numerical_flux_(
+        *flux_.local_function(entity), u_inside->vector().get(0), u_outside->vector().get(0), normal, mu);
     const auto h = local_range_entity.entity().geometry().volume();
     local_range_entity.vector().add(0, (g * intersection.geometry().volume()) / h);
     local_range_neighbor.vector().add(0, (-1.0 * g * intersection.geometry().volume()) / h);
@@ -109,6 +122,7 @@ public:
 private:
   const FluxType& flux_;
   const NumericalFluxType numerical_flux_;
+  const XT::Common::ParameterType parameter_type_;
 }; // class LocalAdvectionFvInnerOperator
 
 
