@@ -303,23 +303,23 @@ public:
     return B;
   } // ... mass_matrix_with_v()
 
-  virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const override
+  virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const
   {
     FieldVector<FieldVector<MatrixType, 2>, dimFlux> B_kinetic(
         FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
-    QuadratureType pos_quadrature;
     QuadratureType neg_quadrature;
-    pos_quadrature.reserve(quadrature_.size());
+    QuadratureType pos_quadrature;
     neg_quadrature.reserve(quadrature_.size());
+    pos_quadrature.reserve(quadrature_.size());
     for (size_t dd = 0; dd < dimFlux; ++dd) {
-      pos_quadrature.clear();
       neg_quadrature.clear();
-      for (const auto& quad_point : quadrature) {
+      pos_quadrature.clear();
+      for (const auto& quad_point : quadrature_) {
         const auto& v = quad_point.position();
         const auto& weight = quad_point.weight();
         if (XT::Common::FloatCmp::eq(v[dd], 0.)) {
-          pos_quadrature.emplace_back(v, weight / 2.);
           neg_quadrature.emplace_back(v, weight / 2.);
+          pos_quadrature.emplace_back(v, weight / 2.);
         } else if (v[dd] > 0.)
           pos_quadrature.emplace_back(v, weight);
         else

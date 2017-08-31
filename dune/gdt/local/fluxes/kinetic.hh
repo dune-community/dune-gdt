@@ -34,66 +34,54 @@ namespace GDT {
 
 
 // forwards
-template <class AnalyticalFluxImp, class BasisfunctionImp>
+template <class AnalyticalFluxImp, class BasisfunctionImp, class GridLayerImp, size_t quadratureDim>
 class KineticLocalNumericalCouplingFlux;
 
-template <class AnalyticalFluxImp, class BoundaryValueType, class BasisfunctionImp>
+template <class AnalyticalFluxImp,
+          class BoundaryValueType,
+          class BasisfunctionImp,
+          class GridLayerImp,
+          size_t quadratureDim>
 class KineticLocalNumericalBoundaryFlux;
 
 
 namespace internal {
 
 
-template <class AnalyticalFluxImp, class BasisfunctionImp>
+template <class AnalyticalFluxImp, class BasisfunctionImp, class GridLayerImp, size_t quadratureDim>
 class KineticLocalNumericalCouplingFluxTraits : public GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp>
 {
 public:
   typedef BasisfunctionImp BasisfunctionType;
+  typedef GridLayerImp GridLayerType;
   typedef std::tuple<> LocalfunctionTupleType;
-  typedef KineticLocalNumericalCouplingFlux<AnalyticalFluxImp, BasisfunctionImp> derived_type;
+  static const size_t dimQuadrature = quadratureDim;
+  typedef KineticLocalNumericalCouplingFlux<AnalyticalFluxImp, BasisfunctionImp, GridLayerImp, quadratureDim>
+      derived_type;
 }; // class KineticLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalFluxImp, class BoundaryValueImp, class BasisfunctionImp>
+template <class AnalyticalFluxImp,
+          class BoundaryValueImp,
+          class BasisfunctionImp,
+          class GridLayerImp,
+          size_t quadratureDim>
 class KineticLocalNumericalBoundaryFluxTraits
-    : public KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, BasisfunctionImp>
+    : public KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, BasisfunctionImp, GridLayerImp, quadratureDim>
 {
-  typedef KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, BasisfunctionImp> BaseType;
+  typedef KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, BasisfunctionImp, GridLayerImp, quadratureDim>
+      BaseType;
 
 public:
   typedef BoundaryValueImp BoundaryValueType;
   typedef typename BoundaryValueType::LocalfunctionType BoundaryValueLocalfunctionType;
-  typedef KineticLocalNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp, BasisfunctionImp> derived_type;
+  typedef KineticLocalNumericalBoundaryFlux<AnalyticalFluxImp,
+                                            BoundaryValueImp,
+                                            BasisfunctionImp,
+                                            GridLayerImp,
+                                            quadratureDim>
+      derived_type;
   typedef std::tuple<std::shared_ptr<BoundaryValueLocalfunctionType>> LocalfunctionTupleType;
 }; // class KineticLocalNumericalBoundaryFluxTraits
-
-
-template <class AnalyticalFluxType>
-struct is_entropy_flux_candidate
-{
-  DXTC_has_typedef_initialize_once(BasisfunctionType);
-  DXTC_has_typedef_initialize_once(GridLayerType);
-  DXTC_has_typedef_initialize_once(StateType);
-  DXTC_has_static_member_initialize_once(dimQuadrature);
-
-  static const bool value = DXTC_has_typedef(BasisfunctionType)<AnalyticalFluxType>::value
-                            && DXTC_has_typedef(GridLayerType)<AnalyticalFluxType>::value
-                            && DXTC_has_typedef(StateType)<AnalyticalFluxType>::value
-                            && DXTC_has_static_member(dimQuadrature)<AnalyticalFluxType>::value;
-}; // class is_entropy_flux_candidate
-
-template <class AnalyticalFluxType, bool candidate = is_entropy_flux_candidate<AnalyticalFluxType>::value>
-struct is_entropy_flux : public std::is_base_of<EntropyBasedLocalFlux<typename AnalyticalFluxType::BasisfunctionType,
-                                                                      typename AnalyticalFluxType::GridLayerType,
-                                                                      typename AnalyticalFluxType::StateType,
-                                                                      AnalyticalFluxType::dimQuadrature>,
-                                                AnalyticalFluxType>
-{
-};
-
-template <class AnalyticalFluxType>
-struct is_entropy_flux<AnalyticalFluxType, false> : public std::false_type
-{
-};
 
 
 template <class Traits>
@@ -108,12 +96,15 @@ public:
   typedef typename Traits::DomainType DomainType;
   typedef typename Traits::AnalyticalFluxLocalfunctionType AnalyticalFluxLocalfunctionType;
   typedef typename Traits::BasisfunctionType BasisfunctionType;
-  typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
+  typedef typename Traits::GridLayerType GridLayerType;
+  typedef typename AnalyticalFluxType::StateType StateType;
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
+  static const size_t dimQuadrature = Traits::dimQuadrature;
   typedef typename XT::LA::CommonSparseMatrix<RangeFieldType> SparseMatrixType;
+  typedef EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, StateType, dimQuadrature> EntropyFluxType;
 
-  explicit KineticFluxImplementation(const AnalyticalFluxType& analytical_flux,
+  explicit KineticFluxImplementation(const AnalyticalFluxType* analytical_flux,
                                      const XT::Common::Parameter& param,
                                      const BasisfunctionType& basis_functions,
                                      const bool boundary)
@@ -139,18 +130,31 @@ public:
     // find direction of unit outer normal
     size_t direction = intersection.indexInInside() / 2;
     auto n_ij = intersection.unitOuterNormal(x_in_intersection_coords);
-    return helper<>::evaluate_kinetic_flux(analytical_flux_,
-                                           basis_functions_,
-                                           entity,
-                                           x_in_inside_coords,
-                                           u_i,
-                                           neighbor,
-                                           x_in_outside_coords,
-                                           u_j,
-                                           n_ij,
-                                           direction,
-                                           param_inside_,
-                                           param_outside_);
+
+    if (dynamic_cast<const EntropyFluxType*>(analytical_flux_) != nullptr) {
+      return dynamic_cast<const EntropyFluxType*>(analytical_flux_)
+          ->evaluate_kinetic_flux(entity,
+                                  x_in_inside_coords,
+                                  u_i,
+                                  neighbor,
+                                  x_in_outside_coords,
+                                  u_j,
+                                  n_ij,
+                                  direction,
+                                  param_inside_,
+                                  param_outside_);
+    } else {
+      static auto flux_matrices = initialize_flux_matrices(basis_functions_);
+      RangeType ret(0);
+      auto tmp_vec = ret;
+      const auto& inner_flux_matrix = flux_matrices[direction][n_ij[direction] > 0 ? 1 : 0];
+      const auto& outer_flux_matrix = flux_matrices[direction][n_ij[direction] > 0 ? 0 : 1];
+      inner_flux_matrix.mv(u_i, tmp_vec);
+      outer_flux_matrix.mv(u_j, ret);
+      ret += tmp_vec;
+      ret *= n_ij[direction];
+      return ret;
+    }
   } // ... evaluate(...)
 
   const AnalyticalFluxType& analytical_flux() const
@@ -185,61 +189,10 @@ private:
     return flux_matrices;
   }
 
-  template <bool entropy_flux = is_entropy_flux<AnalyticalFluxType>::value, class anything = void>
-  struct helper
-  {
-    static RangeType evaluate_kinetic_flux(const AnalyticalFluxType& analytical_flux,
-                                           const BasisfunctionType& /*basis_functions*/,
-                                           const EntityType& entity,
-                                           const DomainType& x_local_entity,
-                                           const RangeType& u_i,
-                                           const EntityType& neighbor,
-                                           const DomainType& x_local_neighbor,
-                                           const RangeType u_j,
-                                           const DomainType& n_ij,
-                                           size_t direction,
-                                           const XT::Common::Parameter& param,
-                                           const XT::Common::Parameter& param_neighbor)
-    {
-      static_assert(std::is_same<BasisfunctionType, typename AnalyticalFluxType::BasisfunctionType>::value, "");
-      return analytical_flux.evaluate_kinetic_flux(
-          entity, x_local_entity, u_i, neighbor, x_local_neighbor, u_j, n_ij, direction, param, param_neighbor);
-    }
-  }; // struct helper<true, ...>
-
-  template <class anything>
-  struct helper<false, anything>
-  {
-    static RangeType evaluate_kinetic_flux(const AnalyticalFluxType& /*analytical_flux*/,
-                                           const BasisfunctionType& basis_functions,
-                                           const EntityType& /*entity*/,
-                                           const DomainType& /*x_local_entity*/,
-                                           const RangeType& u_i,
-                                           const EntityType& /*neighbor*/,
-                                           const DomainType& /*x_local_neighbor*/,
-                                           const RangeType u_j,
-                                           const DomainType& n_ij,
-                                           const size_t direction,
-                                           const XT::Common::Parameter& /*param*/,
-                                           const XT::Common::Parameter& /*param_neighbor*/)
-    {
-      static auto flux_matrices = initialize_flux_matrices(basis_functions);
-      RangeType ret(0);
-      auto tmp_vec = ret;
-      const auto& inner_flux_matrix = flux_matrices[direction][n_ij[direction] > 0 ? 1 : 0];
-      const auto& outer_flux_matrix = flux_matrices[direction][n_ij[direction] > 0 ? 0 : 1];
-      inner_flux_matrix.mv(u_i, tmp_vec);
-      outer_flux_matrix.mv(u_j, ret);
-      ret += tmp_vec;
-      ret *= n_ij[direction];
-      return ret;
-    }
-  }; // struct helper<false, ...>
-
-  const AnalyticalFluxType& analytical_flux_;
-  const BasisfunctionType& basis_functions_;
+  const AnalyticalFluxType* analytical_flux_;
   XT::Common::Parameter param_inside_;
   XT::Common::Parameter param_outside_;
+  const BasisfunctionType& basis_functions_;
 }; // class KineticFluxImplementation<...>
 
 
@@ -249,13 +202,17 @@ private:
 /**
  *  \brief  Kinetic flux evaluation for inner intersections and periodic boundary intersections.
  */
-template <class AnalyticalFluxImp, class BasisfunctionImp>
+template <class AnalyticalFluxImp, class BasisfunctionImp, class GridLayerImp, size_t quadratureDim>
 class KineticLocalNumericalCouplingFlux
     : public LocalNumericalCouplingFluxInterface<internal::KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
-                                                                                                   BasisfunctionImp>>
+                                                                                                   BasisfunctionImp,
+                                                                                                   GridLayerImp,
+                                                                                                   quadratureDim>>
 {
 public:
-  typedef internal::KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, BasisfunctionImp> Traits;
+  typedef internal::
+      KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, BasisfunctionImp, GridLayerImp, quadratureDim>
+          Traits;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
@@ -270,7 +227,7 @@ public:
   explicit KineticLocalNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
                                              const XT::Common::Parameter param,
                                              const BasisfunctionType& basis_functions)
-    : implementation_(analytical_flux, param, basis_functions, false)
+    : implementation_(&analytical_flux, param, basis_functions, false)
   {
   }
 
@@ -312,14 +269,24 @@ private:
 /**
 *  \brief  Kinetic flux evaluation for Dirichlet boundary intersections.
 */
-template <class AnalyticalFluxImp, class BoundaryValueImp, class BasisfunctionImp>
+template <class AnalyticalFluxImp,
+          class BoundaryValueImp,
+          class BasisfunctionImp,
+          class GridLayerImp,
+          size_t quadratureDim>
 class KineticLocalNumericalBoundaryFlux
     : public LocalNumericalBoundaryFluxInterface<internal::KineticLocalNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                                                    BoundaryValueImp,
-                                                                                                   BasisfunctionImp>>
+                                                                                                   BasisfunctionImp,
+                                                                                                   GridLayerImp,
+                                                                                                   quadratureDim>>
 {
 public:
-  typedef internal::KineticLocalNumericalBoundaryFluxTraits<AnalyticalFluxImp, BoundaryValueImp, BasisfunctionImp>
+  typedef internal::KineticLocalNumericalBoundaryFluxTraits<AnalyticalFluxImp,
+                                                            BoundaryValueImp,
+                                                            BasisfunctionImp,
+                                                            GridLayerImp,
+                                                            quadratureDim>
       Traits;
   typedef typename Traits::BoundaryValueType BoundaryValueType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
@@ -337,7 +304,7 @@ public:
                                              const BoundaryValueType& boundary_values,
                                              const XT::Common::Parameter param,
                                              const BasisfunctionType& basis_functions)
-    : implementation_(analytical_flux, param, basis_functions, true)
+    : implementation_(&analytical_flux, param, basis_functions, true)
     , boundary_values_(boundary_values)
   {
   }

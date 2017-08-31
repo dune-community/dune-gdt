@@ -24,6 +24,8 @@ namespace GDT {
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           class BasisfunctionImp,
+          class GridLayerImp,
+          size_t quadratureDim,
           size_t polOrder,
           SlopeLimiters slope_lim,
           class RealizabilityLimiterImp,
@@ -37,6 +39,8 @@ namespace internal {
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           class BasisfunctionImp,
+          class GridLayerImp,
+          size_t quadratureDim,
           size_t reconstruction_order,
           SlopeLimiters slope_lim,
           class RealizabilityLimiterImp>
@@ -54,13 +58,20 @@ class AdvectionKineticOperatorTraits : public AdvectionTraitsBase<AnalyticalFlux
       BaseType;
 
 public:
-  typedef typename Dune::GDT::KineticLocalNumericalCouplingFlux<AnalyticalFluxImp, BasisfunctionImp>
-      NumericalCouplingFluxType;
-  typedef typename Dune::GDT::KineticLocalNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp, BasisfunctionImp>
+  typedef typename Dune::GDT::
+      KineticLocalNumericalCouplingFlux<AnalyticalFluxImp, BasisfunctionImp, GridLayerImp, quadratureDim>
+          NumericalCouplingFluxType;
+  typedef typename Dune::GDT::KineticLocalNumericalBoundaryFlux<AnalyticalFluxImp,
+                                                                BoundaryValueImp,
+                                                                BasisfunctionImp,
+                                                                GridLayerImp,
+                                                                quadratureDim>
       NumericalBoundaryFluxType;
   typedef AdvectionKineticOperator<AnalyticalFluxImp,
                                    BoundaryValueImp,
                                    BasisfunctionImp,
+                                   GridLayerImp,
+                                   quadratureDim,
                                    reconstruction_order,
                                    slope_lim,
                                    RealizabilityLimiterImp,
@@ -75,12 +86,16 @@ public:
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           class BasisfunctionImp,
+          class GridLayerImp,
+          size_t quadratureDim = BasisfunctionImp::dimDomain,
           size_t polOrder = 0,
           SlopeLimiters slope_lim = SlopeLimiters::minmod,
           class RealizabilityLimiterImp = NonLimitingRealizabilityLimiter<typename AnalyticalFluxImp::EntityType>,
           class Traits = internal::AdvectionKineticOperatorTraits<AnalyticalFluxImp,
                                                                   BoundaryValueImp,
                                                                   BasisfunctionImp,
+                                                                  GridLayerImp,
+                                                                  quadratureDim,
                                                                   polOrder,
                                                                   slope_lim,
                                                                   RealizabilityLimiterImp>>

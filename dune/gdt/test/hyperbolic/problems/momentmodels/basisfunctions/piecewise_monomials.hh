@@ -120,6 +120,50 @@ public:
     return FieldVector<MatrixType, dimDomain>(B);
   }
 
+  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
+  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const
+  {
+    FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
+    auto mm_with_v = mass_matrix_with_v();
+    auto& ret_neg = ret[0][0];
+    auto& ret_pos = ret[0][1];
+    for (size_t ii = 0; ii < dimRange / 2; ++ii) {
+      if (dimRange / 2 % 2) {
+        // if there is an odd number of intervals, the middle interval is split in 2 parts
+        // copy other intervals
+        for (size_t nn = 0; nn < dimRange / 2 - 1; ++nn)
+          for (size_t mm = 0; mm < dimRange / 2 - 1; ++mm)
+            ret_neg[nn][mm] = mm_with_v[0][nn][mm];
+        for (size_t nn = dimRange / 2 + 1; nn < dimRange; ++nn)
+          for (size_t mm = dimRange / 2 + 1; mm < dimRange; ++mm)
+            ret_pos[nn][mm] = mm_with_v[0][nn][mm];
+        // treat middle interval
+        // mixed integrals are symmetric, so ret_pos and ret_neg both get half of it
+        ret_neg[dimRange / 2 - 1][dimRange / 2] = mm_with_v[0][dimRange / 2 - 1][dimRange / 2] / 2;
+        ret_neg[dimRange / 2][dimRange / 2 - 1] = mm_with_v[0][dimRange / 2][dimRange / 2 - 1] / 2;
+        ret_pos[dimRange / 2 - 1][dimRange / 2] = mm_with_v[0][dimRange / 2 - 1][dimRange / 2] / 2;
+        ret_pos[dimRange / 2][dimRange / 2 - 1] = mm_with_v[0][dimRange / 2][dimRange / 2 - 1] / 2;
+        // integral corresponding to constant basis function
+        ret_neg[dimRange / 2 - 1][dimRange / 2 - 1] = -std::pow(triangulation_[dimRange / 4], 2) / 2;
+        ret_pos[dimRange / 2 - 1][dimRange / 2 - 1] = std::pow(triangulation_[dimRange / 4], 2) / 2;
+        // integral corresponding to v basis function
+        ret_neg[dimRange / 2][dimRange / 2] = -std::pow(triangulation_[dimRange / 4], 4) / 4;
+        ret_pos[dimRange / 2][dimRange / 2] = std::pow(triangulation_[dimRange / 4], 4) / 4;
+      } else {
+        // if there is an even number of intervals, the matrix is just split up in upper and lower part
+        for (size_t nn = 0; nn < dimRange / 2; ++nn)
+          for (size_t mm = 0; mm < dimRange / 2; ++mm)
+            ret_neg[nn][mm] = mm_with_v[0][nn][mm];
+        for (size_t nn = dimRange / 2; nn < dimRange; ++nn)
+          for (size_t mm = dimRange / 2; mm < dimRange; ++mm)
+            ret_pos[nn][mm] = mm_with_v[0][nn][mm];
+      }
+    } // nn
+    std::cout << "pos: " << XT::Common::to_string(ret_pos) << std::endl;
+    std::cout << "neg: " << XT::Common::to_string(ret_neg) << std::endl;
+    return ret;
+  }
+
   template <class DiscreteFunctionType>
   VisualizerType<DiscreteFunctionType> visualizer() const
   {
@@ -311,6 +355,34 @@ public:
       parallel_quadrature(quadrature_, B[dd], dd);
     return B;
   }
+
+  virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const
+  {
+    FieldVector<FieldVector<MatrixType, 2>, dimFlux> B_kinetic(
+        FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
+    QuadratureType neg_quadrature;
+    QuadratureType pos_quadrature;
+    neg_quadrature.reserve(quadrature_.size());
+    pos_quadrature.reserve(quadrature_.size());
+    for (size_t dd = 0; dd < dimFlux; ++dd) {
+      neg_quadrature.clear();
+      pos_quadrature.clear();
+      for (const auto& quad_point : quadrature_) {
+        const auto& v = quad_point.position();
+        const auto& weight = quad_point.weight();
+        if (XT::Common::FloatCmp::eq(v[dd], 0.)) {
+          neg_quadrature.emplace_back(v, weight / 2.);
+          pos_quadrature.emplace_back(v, weight / 2.);
+        } else if (v[dd] > 0.)
+          pos_quadrature.emplace_back(v, weight);
+        else
+          neg_quadrature.emplace_back(v, weight);
+      }
+      parallel_quadrature(neg_quadrature, B_kinetic[dd][0], dd);
+      parallel_quadrature(pos_quadrature, B_kinetic[dd][1], dd);
+    }
+    return B_kinetic;
+  } // ... kinetic_flux_matrices()
 
   template <class DiscreteFunctionType>
   VisualizerType<DiscreteFunctionType> visualizer() const
