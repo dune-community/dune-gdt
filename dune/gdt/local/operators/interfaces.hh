@@ -17,6 +17,7 @@
 #include <dune/common/dynmatrix.hh>
 
 #include <dune/xt/common/crtp.hh>
+#include <dune/xt/common/parameter.hh>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/functions/type_traits.hh>
@@ -68,6 +69,7 @@ public:
 
 template <class Traits>
 class LocalCouplingOperatorInterface : public XT::CRTPInterface<LocalCouplingOperatorInterface<Traits>, Traits>,
+                                       public XT::Common::ParametricInterface,
                                        internal::IsLocalCouplingOperator
 {
 public:
@@ -75,9 +77,10 @@ public:
   void apply(const SourceType& source,
              const IntersectionType& intersection,
              LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor) const
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor,
+             const XT::Common::Parameter& mu = {}) const
   {
-    this->as_imp().apply(source, intersection, local_range_entity, local_range_neighbor);
+    this->as_imp().apply(source, intersection, local_range_entity, local_range_neighbor, mu);
   }
 }; // class LocalCouplingOperatorInterface
 
