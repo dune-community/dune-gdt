@@ -22,6 +22,7 @@
 #include <dune/xt/la/container/common.hh>
 
 #include <dune/gdt/local/fluxes/interfaces.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/hatfunctions.hh>
 
 namespace Dune {
 namespace GDT {
@@ -695,35 +696,62 @@ public:
   mutable std::vector<std::mutex> mutexes_;
 };
 
-#if 0
-/** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
- * for the notation see
- * Alldredge, Hauck, O'Leary, Tits, "Adaptive change of basis in entropy-based moment closures for linear kinetic
- * equations"
- * domainDim, rangeDim, rangeDimCols are the respective dimensions of pde solution u, not the dimensions of \mathbf{f}.
+/**
+ * Specialization of EntropyBasedLocalFlux for 1D Hatfunctions
  */
-template <class GridLayerType, class E, class D, size_t d, class R, size_t rangeDim, size_t rC>
-class EntropyBasedLocalFluxHatFunctions1D : public AnalyticalFluxInterface<E, D, d, R, rangeDim, rC>
+template <class GridLayerImp, class U>
+class EntropyBasedLocalFlux<Hyperbolic::Problems::HatFunctions<typename U::DomainFieldType,
+                                                               1,
+                                                               typename U::RangeFieldType,
+                                                               U::dimRange,
+                                                               1,
+                                                               1>,
+                            GridLayerImp,
+                            U,
+                            1>
+    : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                             typename U::DomainFieldType,
+                                                             GridLayerImp::dimension,
+                                                             U,
+                                                             0,
+                                                             typename U::RangeFieldType,
+                                                             U::dimRange,
+                                                             1>
 {
-  typedef AnalyticalFluxInterface<E, D, d, R, rangeDim, rC> BaseType;
-  typedef EntropyBasedLocalFluxHatFunctions1D<GridLayerType, E, D, d, R, rangeDim, rC> ThisType;
+  typedef typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                                   typename U::DomainFieldType,
+                                                                   GridLayerImp::dimension,
+                                                                   U,
+                                                                   0,
+                                                                   typename U::RangeFieldType,
+                                                                   U::dimRange,
+                                                                   1>
+      BaseType;
+  typedef EntropyBasedLocalFlux ThisType;
 
 public:
+  using typename BaseType::EntityType;
   using typename BaseType::DomainType;
   using typename BaseType::DomainFieldType;
+  using typename BaseType::StateType;
+  using typename BaseType::StateRangeType;
   using typename BaseType::RangeType;
   using typename BaseType::RangeFieldType;
+  using typename BaseType::PartialURangeType;
+  using typename BaseType::LocalfunctionType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
-  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
-  using typename BaseType::FluxRangeType;
-  using typename BaseType::FluxJacobianRangeType;
+  typedef Hyperbolic::Problems::HatFunctions<DomainFieldType, 1, RangeFieldType, dimRange, 1, 1> BasisfunctionType;
+  typedef GridLayerImp GridLayerType;
+  typedef Dune::QuadratureRule<DomainFieldType, 1> QuadratureRuleType;
+  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
 
-  explicit EntropyBasedLocalFluxHatFunctions1D(
+  explicit EntropyBasedLocalFlux(
+      const BasisfunctionType& basis_functions,
       const GridLayerType& grid_layer,
-      const RangeType v_points,
-      const RangeFieldType tau = 1e-7,
+      const QuadratureRuleType& /*quadrature*/,
+      const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
       const RangeFieldType xi = 1e-3,
@@ -734,8 +762,8 @@ public:
       const RangeFieldType taylor_tol = 1e-4,
       const size_t taylor_order = 10,
       const std::string name = static_id())
-    : global_index_set_(grid_layer, 0)
-    , v_points_(v_points)
+    : index_set_(grid_layer.indexSet())
+    , v_points_(basis_functions.triangulation())
     , tau_(tau)
     , epsilon_gamma_(epsilon_gamma)
     , chi_(chi)
@@ -747,294 +775,452 @@ public:
     , taylor_tol_(taylor_tol)
     , taylor_order_(taylor_order)
     , name_(name)
-    , alpha_cache_(2 * global_index_set_.size(0))
+    , alpha_cache_(2 * index_set_.size(0))
+    , mutexes_(index_set_.size(0))
   {
   }
 
-  virtual FluxJacobianRangeType
-  jacobian(const RangeType& /*u*/, const E& /*entity*/, const DomainType& /*x_local*/, const double /*t*/ = 1) const
+  class Localfunction : public LocalfunctionType
   {
-    DUNE_THROW(NotImplemented, "");
-  }
+  public:
+    using LocalfunctionType::dimDomain;
+    using typename LocalfunctionType::ColRangeType;
+    using typename LocalfunctionType::ColPartialURangeType;
 
-  RangeType get_alpha(const RangeType& u, const E& entity, const DomainType& x_local, const double t) const
-  {
-    // in the numerical flux, we are setting x_local to DomainType(200) if we are actually not on the entity,
-    // but on the boundary (YaspGrid does not support ghost entities, thus we use this hack)
-    const auto index = global_index_set_.index(entity) + global_index_set_.size(0) * (x_local[0] > 100);
-    RangeType alpha;
+    Localfunction(const EntityType& e,
+                  const RangeType& v_points,
+                  const RangeFieldType tau,
+                  const RangeFieldType epsilon_gamma,
+                  const RangeFieldType chi,
+                  const RangeFieldType xi,
+                  const std::vector<RangeFieldType>& r_sequence,
+                  const size_t k_0,
+                  const size_t k_max,
+                  const RangeFieldType epsilon,
+                  const RangeFieldType taylor_tol,
+                  const size_t taylor_order,
+                  std::unique_ptr<std::pair<StateRangeType, StateRangeType>>& alpha_cache,
+                  std::unique_ptr<std::pair<StateRangeType, StateRangeType>>& alpha_cache_boundary,
+                  std::mutex& mutex)
+      : LocalfunctionType(e)
+      , v_points_(v_points)
+      , tau_(tau)
+      , epsilon_gamma_(epsilon_gamma)
+      , chi_(chi)
+      , xi_(xi)
+      , r_sequence_(r_sequence)
+      , k_0_(k_0)
+      , k_max_(k_max)
+      , epsilon_(epsilon)
+      , taylor_order_(taylor_order)
+      , taylor_tol_(taylor_tol)
+      , alpha_cache_(alpha_cache)
+      , alpha_cache_boundary_(alpha_cache_boundary)
+      , mutex_(mutex)
+    {
+    }
 
-    // if value has already been calculated for this entity at this time, skip computation
-    if (alpha_cache_[index] && alpha_cache_[index]->first == t) {
-      alpha = alpha_cache_[index]->second;
-    } else {
-      // get initial multiplier and basis matrix from last time step
-      RangeType alpha_iso(1);
-      RangeFieldType psi_iso(0);
-      for (size_t ii = 0; ii < dimRange; ++ii)
-        psi_iso += u[ii];
-      psi_iso /= 2.;
-      alpha_iso *= std::log(psi_iso);
+    using LocalfunctionType::entity;
 
-      // define further variables
-      RangeType g_k;
-      MatrixType H_k;
+    RangeType get_alpha(const DomainType& /*x_local*/, const StateRangeType& u, const XT::Common::Parameter param) const
+    {
+      const bool boundary = bool(param.get("boundary")[0]);
+      RangeType alpha(0.);
 
-      // calculate moment vector for isotropic distribution
-      RangeType u_iso(0);
-      u_iso[0] = v_points_[1] - v_points_[0];
-      for (size_t ii = 1; ii < dimRange - 1; ++ii)
-        u_iso[ii] = v_points_[ii + 1] - v_points_[ii - 1];
-      u_iso[dimRange - 1] = v_points_[dimRange - 1] - v_points_[dimRange - 2];
-      u_iso *= psi_iso / 2.;
+      mutex_.lock();
+      if (!boundary && alpha_cache_ && XT::Common::FloatCmp::eq(alpha_cache_->first, u)) {
+        alpha = alpha_cache_->second;
+        mutex_.unlock();
+        return alpha;
+      } else if (boundary && alpha_cache_boundary_ && XT::Common::FloatCmp::eq(alpha_cache_boundary_->first, u)) {
+        alpha = alpha_cache_boundary_->second;
+        mutex_.unlock();
+        return alpha;
+      } else {
+        // if value has already been calculated for this entity at this time, skip computation
 
-      const auto r_max = r_sequence_.back();
-      for (const auto& r : r_sequence_) {
-        // get initial alpha
-        RangeType alpha_k = alpha_cache_[index] ? alpha_cache_[index]->second : alpha_iso;
-        // normalize u
-        RangeType r_times_u_iso(u_iso);
-        r_times_u_iso *= r;
-        RangeType v = u;
-        v *= 1 - r;
-        v += r_times_u_iso;
+        // get initial multiplier and basis matrix from last time step
+        RangeType alpha_iso(1);
+        RangeFieldType psi_iso(0);
+        for (size_t ii = 0; ii < dimRange; ++ii)
+          psi_iso += u[ii];
+        psi_iso /= 2.;
+        alpha_iso *= std::log(psi_iso);
 
-        // calculate f_0
-        RangeFieldType f_k(0);
-        for (size_t ii = 0; ii < dimRange - 1; ++ii) {
-          if (XT::Common::FloatCmp::ne(alpha_k[ii + 1], alpha_k[ii], taylor_tol_))
-            f_k += (v_points_[ii + 1] - v_points_[ii]) / (alpha_k[ii + 1] - alpha_k[ii])
-                   * (std::exp(alpha_k[ii + 1]) - std::exp(alpha_k[ii]));
-          else {
-            RangeFieldType taylorsum = 0.;
-            for (size_t ll = 1; ll <= taylor_order_; ++ll)
-              taylorsum += std::pow(alpha_k[ii + 1] - alpha_k[ii], ll - 1.) / XT::Common::factorial(ll);
-            f_k += (v_points_[ii + 1] - v_points_[ii]) * std::exp(alpha_k[ii]) * taylorsum;
-          }
-        }
-        f_k -= alpha_k * v;
+        // define further variables
+        RangeType g_k;
+        MatrixType H_k;
 
-        for (size_t kk = 0; kk < k_max_; ++kk) {
-          // exit inner for loop to increase r if too many iterations are used
-          if (kk > k_0_ && r < r_max)
-            break;
+        // calculate moment vector for isotropic distribution
+        RangeType u_iso(0);
+        u_iso[0] = v_points_[1] - v_points_[0];
+        for (size_t ii = 1; ii < dimRange - 1; ++ii)
+          u_iso[ii] = v_points_[ii + 1] - v_points_[ii - 1];
+        u_iso[dimRange - 1] = v_points_[dimRange - 1] - v_points_[dimRange - 2];
+        u_iso *= psi_iso / 2.;
 
-          // calculate gradient g
-          g_k *= 0;
-          for (size_t nn = 0; nn < dimRange; ++nn) {
-            if (nn > 0) {
-              if (XT::Common::FloatCmp::ne(alpha_k[nn], alpha_k[nn - 1], taylor_tol_)) {
-                g_k[nn] +=
-                    -(v_points_[nn] - v_points_[nn - 1]) / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2)
-                        * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1]))
-                    + (v_points_[nn] - v_points_[nn - 1]) / (alpha_k[nn] - alpha_k[nn - 1]) * std::exp(alpha_k[nn]);
-              } else {
-                RangeFieldType taylorsum = 0.;
-                for (size_t ll = 2; ll <= taylor_order_; ++ll)
-                  taylorsum += std::pow(alpha_k[nn - 1] - alpha_k[nn], ll - 2.) / XT::Common::factorial(ll);
-                g_k[nn] += taylorsum * std::exp(alpha_k[nn]) * (v_points_[nn] - v_points_[nn - 1]);
-              }
-            } // if (nn > 0)
-            if (nn < dimRange - 1) {
-              if (XT::Common::FloatCmp::ne(alpha_k[nn + 1], alpha_k[nn], taylor_tol_)) {
-                g_k[nn] +=
-                    (v_points_[nn + 1] - v_points_[nn]) / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2)
-                        * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn]))
-                    - (v_points_[nn + 1] - v_points_[nn]) / (alpha_k[nn + 1] - alpha_k[nn]) * std::exp(alpha_k[nn]);
-              } else {
-                RangeFieldType taylorsum = 0.;
-                for (size_t ll = 2; ll <= taylor_order_; ++ll)
-                  taylorsum += std::pow(alpha_k[nn + 1] - alpha_k[nn], ll - 2.) / XT::Common::factorial(ll);
-                g_k[nn] += taylorsum * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
-              }
-            } // if (nn < dimRange-1)
-          } // nn
-          g_k -= v;
+        const auto r_max = r_sequence_.back();
+        for (const auto& r : r_sequence_) {
+          // get initial alpha
+          RangeType alpha_k = (alpha_cache_ && !boundary)
+                                  ? alpha_cache_->second
+                                  : ((alpha_cache_boundary_ && boundary) ? alpha_cache_boundary_->second : alpha_iso);
+          // normalize u
+          RangeType r_times_u_iso(u_iso);
+          r_times_u_iso *= r;
+          RangeType v = u;
+          v *= 1 - r;
+          v += r_times_u_iso;
 
-          // calculate Hessian H
-          H_k *= 0;
-          for (size_t nn = 0; nn < dimRange; ++nn) {
-            if (nn > 0) {
-              if (XT::Common::FloatCmp::ne(alpha_k[nn], alpha_k[nn - 1], taylor_tol_)) {
-                H_k[nn][nn - 1] =
-                    (v_points_[nn] - v_points_[nn - 1])
-                    * ((std::exp(alpha_k[nn]) + std::exp(alpha_k[nn - 1])) / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2)
-                       - 2. * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1]))
-                             / std::pow(alpha_k[nn] - alpha_k[nn - 1], 3));
-                H_k[nn][nn] =
-                    (v_points_[nn] - v_points_[nn - 1])
-                    * ((-2. / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2) + 1. / (alpha_k[nn] - alpha_k[nn - 1]))
-                           * std::exp(alpha_k[nn])
-                       + 2. / std::pow(alpha_k[nn] - alpha_k[nn - 1], 3)
-                             * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1])));
-
-              } else {
-                RangeFieldType taylorsum = 0.;
-                for (size_t ll = 2; ll <= taylor_order_; ++ll)
-                  taylorsum += std::pow(alpha_k[nn - 1] - alpha_k[nn], ll - 2.)
-                               * (1. / XT::Common::factorial(ll) - 2. / XT::Common::factorial(ll + 1));
-                H_k[nn][nn - 1] = taylorsum * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn]);
-                taylorsum = 0.;
-                for (size_t ll = 3; ll <= taylor_order_; ++ll)
-                  taylorsum += std::pow(alpha_k[nn - 1] - alpha_k[nn], ll - 3.) * 2. / XT::Common::factorial(ll);
-                H_k[nn][nn] = taylorsum * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn]);
-              }
-            } // if (nn > 0)
-            if (nn < dimRange - 1) {
-              if (XT::Common::FloatCmp::ne(alpha_k[nn + 1], alpha_k[nn], taylor_tol_)) {
-                H_k[nn][nn + 1] =
-                    (v_points_[nn + 1] - v_points_[nn])
-                    * ((std::exp(alpha_k[nn + 1]) + std::exp(alpha_k[nn])) / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2)
-                       - 2. * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn]))
-                             / std::pow(alpha_k[nn + 1] - alpha_k[nn], 3));
-                H_k[nn][nn] +=
-                    (v_points_[nn + 1] - v_points_[nn])
-                    * ((-2. / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2) - 1. / (alpha_k[nn + 1] - alpha_k[nn]))
-                           * std::exp(alpha_k[nn])
-                       + 2. / std::pow(alpha_k[nn + 1] - alpha_k[nn], 3)
-                             * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn])));
-              } else {
-                RangeFieldType taylorsum = 0.;
-                for (size_t ll = 2; ll <= taylor_order_; ++ll)
-                  taylorsum += std::pow(alpha_k[nn + 1] - alpha_k[nn], ll - 2.)
-                               * (1. / XT::Common::factorial(ll) - 2. / XT::Common::factorial(ll + 1));
-                H_k[nn][nn + 1] = taylorsum * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
-                taylorsum = 0.;
-                for (size_t ll = 3; ll <= taylor_order_; ++ll)
-                  taylorsum += std::pow(alpha_k[nn + 1] - alpha_k[nn], ll - 3.) * 2. / XT::Common::factorial(ll);
-                H_k[nn][nn] += taylorsum * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
-              }
-            } // if (nn < dimRange - 1)
-          } // nn
-
-          // calculate descent direction d_k;
-          RangeType d_k(0), minus_g_k(g_k);
-          minus_g_k *= -1;
-          try {
-            H_k.solve(d_k, minus_g_k);
-          } catch (const Dune::FMatrixError& err) {
-            if (r < r_max) {
-              break;
-            } else {
-              DUNE_THROW(Dune::FMatrixError, "Failure to converge!");
+          // calculate f_0
+          RangeFieldType f_k(0);
+          for (size_t ii = 0; ii < dimRange - 1; ++ii) {
+            if (XT::Common::FloatCmp::ne(alpha_k[ii + 1], alpha_k[ii], taylor_tol_))
+              f_k += (v_points_[ii + 1] - v_points_[ii]) / (alpha_k[ii + 1] - alpha_k[ii])
+                     * (std::exp(alpha_k[ii + 1]) - std::exp(alpha_k[ii]));
+            else {
+              RangeFieldType taylorsum = 0.;
+              for (size_t ll = 1; ll <= taylor_order_; ++ll)
+                taylorsum += std::pow(alpha_k[ii + 1] - alpha_k[ii], ll - 1.) / XT::Common::factorial(ll);
+              f_k += (v_points_[ii + 1] - v_points_[ii]) * std::exp(alpha_k[ii]) * taylorsum;
             }
           }
+          f_k -= alpha_k * v;
 
-          if (g_k.two_norm() < tau_ && std::exp(5 * d_k.one_norm()) < 1 + epsilon_gamma_) {
-            alpha = alpha_k;
-            goto outside_all_loops;
-          } else {
-            RangeFieldType zeta_k = 1;
-            // backtracking line search
-            while (zeta_k > epsilon_ * alpha_k.two_norm() / d_k.two_norm()) {
+          for (size_t kk = 0; kk < k_max_; ++kk) {
+            // exit inner for loop to increase r if too many iterations are used
+            if (kk > k_0_ && r < r_max)
+              break;
 
-              // calculate alpha_new = alpha_k + zeta_k d_k
-              auto alpha_new = d_k;
-              alpha_new *= zeta_k;
-              alpha_new += alpha_k;
-
-              // calculate f(alpha_new)
-
-              RangeFieldType f_new(0);
-              for (size_t ii = 0; ii < dimRange - 1; ++ii) {
-                if (XT::Common::FloatCmp::ne(alpha_new[ii + 1], alpha_new[ii], taylor_tol_))
-                  f_new += (v_points_[ii + 1] - v_points_[ii]) / (alpha_new[ii + 1] - alpha_new[ii])
-                           * (std::exp(alpha_new[ii + 1]) - std::exp(alpha_new[ii]));
-                else {
+            // calculate gradient g
+            g_k *= 0;
+            for (size_t nn = 0; nn < dimRange; ++nn) {
+              if (nn > 0) {
+                if (XT::Common::FloatCmp::ne(alpha_k[nn], alpha_k[nn - 1], taylor_tol_)) {
+                  g_k[nn] +=
+                      -(v_points_[nn] - v_points_[nn - 1]) / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2)
+                          * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1]))
+                      + (v_points_[nn] - v_points_[nn - 1]) / (alpha_k[nn] - alpha_k[nn - 1]) * std::exp(alpha_k[nn]);
+                } else {
                   RangeFieldType taylorsum = 0.;
-                  for (size_t ll = 1; ll <= taylor_order_; ++ll)
-                    taylorsum += std::pow(alpha_new[ii + 1] - alpha_new[ii], ll - 1.) / XT::Common::factorial(ll);
-                  f_new += (v_points_[ii + 1] - v_points_[ii]) * std::exp(alpha_new[ii]) * taylorsum;
+                  for (size_t ll = 2; ll <= taylor_order_; ++ll)
+                    taylorsum += std::pow(alpha_k[nn - 1] - alpha_k[nn], ll - 2.) / XT::Common::factorial(ll);
+                  g_k[nn] += taylorsum * std::exp(alpha_k[nn]) * (v_points_[nn] - v_points_[nn - 1]);
                 }
-              }
-              f_new -= alpha_new * v;
+              } // if (nn > 0)
+              if (nn < dimRange - 1) {
+                if (XT::Common::FloatCmp::ne(alpha_k[nn + 1], alpha_k[nn], taylor_tol_)) {
+                  g_k[nn] +=
+                      (v_points_[nn + 1] - v_points_[nn]) / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2)
+                          * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn]))
+                      - (v_points_[nn + 1] - v_points_[nn]) / (alpha_k[nn + 1] - alpha_k[nn]) * std::exp(alpha_k[nn]);
+                } else {
+                  RangeFieldType taylorsum = 0.;
+                  for (size_t ll = 2; ll <= taylor_order_; ++ll)
+                    taylorsum += std::pow(alpha_k[nn + 1] - alpha_k[nn], ll - 2.) / XT::Common::factorial(ll);
+                  g_k[nn] += taylorsum * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
+                }
+              } // if (nn < dimRange-1)
+            } // nn
+            g_k -= v;
 
-              if (XT::Common::FloatCmp::le(f_new, f_k + xi_ * zeta_k * (g_k * d_k))) {
-                alpha_k = alpha_new;
-                f_k = f_new;
+            // calculate Hessian H
+            H_k *= 0;
+            for (size_t nn = 0; nn < dimRange; ++nn) {
+              if (nn > 0) {
+                if (XT::Common::FloatCmp::ne(alpha_k[nn], alpha_k[nn - 1], taylor_tol_)) {
+                  H_k[nn][nn - 1] =
+                      (v_points_[nn] - v_points_[nn - 1]) * ((std::exp(alpha_k[nn]) + std::exp(alpha_k[nn - 1]))
+                                                                 / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2)
+                                                             - 2. * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1]))
+                                                                   / std::pow(alpha_k[nn] - alpha_k[nn - 1], 3));
+                  H_k[nn][nn] =
+                      (v_points_[nn] - v_points_[nn - 1])
+                      * ((-2. / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2) + 1. / (alpha_k[nn] - alpha_k[nn - 1]))
+                             * std::exp(alpha_k[nn])
+                         + 2. / std::pow(alpha_k[nn] - alpha_k[nn - 1], 3)
+                               * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1])));
+
+                } else {
+                  RangeFieldType taylorsum = 0.;
+                  for (size_t ll = 2; ll <= taylor_order_; ++ll)
+                    taylorsum += std::pow(alpha_k[nn - 1] - alpha_k[nn], ll - 2.)
+                                 * (1. / XT::Common::factorial(ll) - 2. / XT::Common::factorial(ll + 1));
+                  H_k[nn][nn - 1] = taylorsum * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn]);
+                  taylorsum = 0.;
+                  for (size_t ll = 3; ll <= taylor_order_; ++ll)
+                    taylorsum += std::pow(alpha_k[nn - 1] - alpha_k[nn], ll - 3.) * 2. / XT::Common::factorial(ll);
+                  H_k[nn][nn] = taylorsum * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn]);
+                }
+              } // if (nn > 0)
+              if (nn < dimRange - 1) {
+                if (XT::Common::FloatCmp::ne(alpha_k[nn + 1], alpha_k[nn], taylor_tol_)) {
+                  H_k[nn][nn + 1] =
+                      (v_points_[nn + 1] - v_points_[nn]) * ((std::exp(alpha_k[nn + 1]) + std::exp(alpha_k[nn]))
+                                                                 / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2)
+                                                             - 2. * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn]))
+                                                                   / std::pow(alpha_k[nn + 1] - alpha_k[nn], 3));
+                  H_k[nn][nn] +=
+                      (v_points_[nn + 1] - v_points_[nn])
+                      * ((-2. / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2) - 1. / (alpha_k[nn + 1] - alpha_k[nn]))
+                             * std::exp(alpha_k[nn])
+                         + 2. / std::pow(alpha_k[nn + 1] - alpha_k[nn], 3)
+                               * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn])));
+                } else {
+                  RangeFieldType taylorsum = 0.;
+                  for (size_t ll = 2; ll <= taylor_order_; ++ll)
+                    taylorsum += std::pow(alpha_k[nn + 1] - alpha_k[nn], ll - 2.)
+                                 * (1. / XT::Common::factorial(ll) - 2. / XT::Common::factorial(ll + 1));
+                  H_k[nn][nn + 1] = taylorsum * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
+                  taylorsum = 0.;
+                  for (size_t ll = 3; ll <= taylor_order_; ++ll)
+                    taylorsum += std::pow(alpha_k[nn + 1] - alpha_k[nn], ll - 3.) * 2. / XT::Common::factorial(ll);
+                  H_k[nn][nn] += taylorsum * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
+                }
+              } // if (nn < dimRange - 1)
+            } // nn
+
+            // calculate descent direction d_k;
+            RangeType d_k(0), minus_g_k(g_k);
+            minus_g_k *= -1;
+            try {
+              H_k.solve(d_k, minus_g_k);
+            } catch (const Dune::FMatrixError& err) {
+              if (r < r_max) {
                 break;
+              } else {
+                DUNE_THROW(Dune::FMatrixError, "Failure to converge!");
               }
-              zeta_k = chi_ * zeta_k;
-            } // backtracking linesearch while
-          } // else (stopping conditions)
-        } // k loop (Newton iterations)
-      } // r loop (Regularization parameter)
+            }
 
-      DUNE_THROW(MathError, "Failed to converge");
+            if (g_k.two_norm() < tau_ && std::exp(5 * d_k.one_norm()) < 1 + epsilon_gamma_) {
+              alpha = alpha_k;
+              goto outside_all_loops;
+            } else {
+              RangeFieldType zeta_k = 1;
+              // backtracking line search
+              while (zeta_k > epsilon_ * alpha_k.two_norm() / d_k.two_norm()) {
 
-    outside_all_loops:
-      // store values as initial conditions for next time step on this entity
-      alpha_cache_[index] = std::make_unique<std::pair<double, RangeType>>(std::make_pair(t, alpha));
+                // calculate alpha_new = alpha_k + zeta_k d_k
+                auto alpha_new = d_k;
+                alpha_new *= zeta_k;
+                alpha_new += alpha_k;
+
+                // calculate f(alpha_new)
+
+                RangeFieldType f_new(0);
+                for (size_t ii = 0; ii < dimRange - 1; ++ii) {
+                  if (XT::Common::FloatCmp::ne(alpha_new[ii + 1], alpha_new[ii], taylor_tol_))
+                    f_new += (v_points_[ii + 1] - v_points_[ii]) / (alpha_new[ii + 1] - alpha_new[ii])
+                             * (std::exp(alpha_new[ii + 1]) - std::exp(alpha_new[ii]));
+                  else {
+                    RangeFieldType taylorsum = 0.;
+                    for (size_t ll = 1; ll <= taylor_order_; ++ll)
+                      taylorsum += std::pow(alpha_new[ii + 1] - alpha_new[ii], ll - 1.) / XT::Common::factorial(ll);
+                    f_new += (v_points_[ii + 1] - v_points_[ii]) * std::exp(alpha_new[ii]) * taylorsum;
+                  }
+                }
+                f_new -= alpha_new * v;
+
+                if (XT::Common::FloatCmp::le(f_new, f_k + xi_ * zeta_k * (g_k * d_k))) {
+                  alpha_k = alpha_new;
+                  f_k = f_new;
+                  break;
+                }
+                zeta_k = chi_ * zeta_k;
+              } // backtracking linesearch while
+            } // else (stopping conditions)
+          } // k loop (Newton iterations)
+        } // r loop (Regularization parameter)
+
+        DUNE_THROW(MathError, "Failed to converge");
+
+      outside_all_loops:
+        // store values as initial conditions for next time step on this entity
+        if (!boundary) {
+          if (!alpha_cache_) {
+            alpha_cache_ = std::make_unique<std::pair<StateRangeType, StateRangeType>>(std::make_pair(u, alpha));
+          } else {
+            alpha_cache_->first = u;
+            alpha_cache_->second = alpha;
+          }
+        } else {
+          if (!alpha_cache_boundary_) {
+            alpha_cache_boundary_ =
+                std::make_unique<std::pair<StateRangeType, StateRangeType>>(std::make_pair(u, alpha));
+          } else {
+            alpha_cache_boundary_->first = u;
+            alpha_cache_boundary_->second = alpha;
+          }
+        } // else (!boundary)
+        mutex_.unlock();
+      } // else ( value has not been calculated before )
+
+      return alpha;
+    } // ... get_alpha(...)
+
+    virtual size_t order(const XT::Common::Parameter& /*param*/) const override
+    {
+      return 1;
     }
-    return alpha;
+
+    virtual void evaluate(const DomainType& x_local,
+                          const StateRangeType& u,
+                          RangeType& ret,
+                          const XT::Common::Parameter& param) const override
+    {
+      const auto alpha = get_alpha(x_local, u, param);
+
+      // calculate < \mu m G_\alpha(u) >
+      ret *= 0.;
+      for (size_t nn = 0; nn < dimRange; ++nn) {
+        if (nn > 0) {
+          if (XT::Common::FloatCmp::ne(alpha[nn], alpha[nn - 1], taylor_tol_)) {
+            ret[nn] += 2. * std::pow(v_points_[nn] - v_points_[nn - 1], 2) / std::pow(alpha[nn] - alpha[nn - 1], 3)
+                           * (std::exp(alpha[nn]) - std::exp(alpha[nn - 1]))
+                       + (v_points_[nn] - v_points_[nn - 1]) / std::pow(alpha[nn] - alpha[nn - 1], 2)
+                             * (v_points_[nn - 1] * (std::exp(alpha[nn]) + std::exp(alpha[nn - 1]))
+                                - 2 * v_points_[nn] * std::exp(alpha[nn]))
+                       + v_points_[nn] * (v_points_[nn] - v_points_[nn - 1]) / (alpha[nn] - alpha[nn - 1])
+                             * std::exp(alpha[nn]);
+          } else {
+            RangeFieldType taylorsum = 0;
+            for (size_t ll = 3; ll <= taylor_order_; ++ll)
+              taylorsum += std::pow(alpha[nn - 1] - alpha[nn], ll - 3.) / XT::Common::factorial(ll);
+            ret[nn] += taylorsum * 2 * std::pow(v_points_[nn] - v_points_[nn - 1], 2) * std::exp(alpha[nn]);
+            taylorsum = 0;
+            for (size_t ll = 2; ll <= taylor_order_; ++ll)
+              taylorsum += std::pow(alpha[nn - 1] - alpha[nn], ll - 2.) / XT::Common::factorial(ll);
+            ret[nn] += taylorsum * v_points_[nn - 1] * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha[nn]);
+          }
+        } // if (nn > 0)
+        if (nn < dimRange - 1) {
+          if (XT::Common::FloatCmp::ne(alpha[nn + 1], alpha[nn], taylor_tol_)) {
+            ret[nn] += -2. * std::pow(v_points_[nn + 1] - v_points_[nn], 2) / std::pow(alpha[nn + 1] - alpha[nn], 3)
+                           * (std::exp(alpha[nn + 1]) - std::exp(alpha[nn]))
+                       + (v_points_[nn + 1] - v_points_[nn]) / std::pow(alpha[nn + 1] - alpha[nn], 2)
+                             * (v_points_[nn + 1] * (std::exp(alpha[nn + 1]) + std::exp(alpha[nn]))
+                                - 2 * v_points_[nn] * std::exp(alpha[nn]))
+                       - v_points_[nn] * (v_points_[nn + 1] - v_points_[nn]) / (alpha[nn + 1] - alpha[nn])
+                             * std::exp(alpha[nn]);
+          } else {
+            RangeFieldType taylorsum = 0;
+            for (size_t ll = 3; ll <= taylor_order_; ++ll)
+              taylorsum += std::pow(alpha[nn + 1] - alpha[nn], ll - 3.) / XT::Common::factorial(ll);
+            ret[nn] += taylorsum * 2 * std::pow(v_points_[nn + 1] - v_points_[nn], 2) * std::exp(alpha[nn]);
+            taylorsum = 0;
+            for (size_t ll = 2; ll <= taylor_order_; ++ll)
+              taylorsum += std::pow(alpha[nn + 1] - alpha[nn], ll - 2.) / XT::Common::factorial(ll);
+            ret[nn] += taylorsum * v_points_[nn + 1] * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha[nn]);
+          }
+        } // if (nn < dimRange - 1)
+      } // nn
+    } // void evaluate(...)
+
+    virtual void evaluate_col(const size_t col,
+                              const DomainType& x_local,
+                              const StateRangeType& u,
+                              ColRangeType& ret,
+                              const XT::Common::Parameter& param) const override
+    {
+      assert(col == 0);
+      evaluate(x_local, u, ret, param);
+    } // void evaluate_col(...)
+
+
+    virtual void partial_u(const DomainType& x_local,
+                           const StateRangeType& u,
+                           PartialURangeType& ret,
+                           const XT::Common::Parameter& param) const override
+    {
+      DUNE_THROW(NotImplemented, "");
+    }
+
+    virtual void partial_u_col(const size_t col,
+                               const DomainType& x_local,
+                               const StateRangeType& u,
+                               ColPartialURangeType& ret,
+                               const XT::Common::Parameter& param) const override
+    {
+      assert(col == 0);
+      partial_u(x_local, u, ret, param);
+    }
+
+    static std::string static_id()
+    {
+      return "gdt.entropybasedlocalflux";
+    }
+
+  private:
+    const RangeType& v_points_;
+    const RangeFieldType tau_;
+    const RangeFieldType epsilon_gamma_;
+    const RangeFieldType chi_;
+    const RangeFieldType xi_;
+    const std::vector<RangeFieldType>& r_sequence_;
+    const size_t k_0_;
+    const size_t k_max_;
+    const RangeFieldType epsilon_;
+    const RangeFieldType taylor_tol_;
+    const size_t taylor_order_;
+    const std::string name_;
+    std::unique_ptr<std::pair<StateRangeType, StateRangeType>>& alpha_cache_;
+    std::unique_ptr<std::pair<StateRangeType, StateRangeType>>& alpha_cache_boundary_;
+    std::mutex& mutex_;
+  }; // class Localfunction>
+
+  static std::string static_id()
+  {
+    return "gdt.entropybasedflux";
   }
 
-  // integrals can be evaluated exactly for hatfunctions
-  FluxRangeType evaluate(const RangeType& u, const E& entity, const DomainType& x_local, const double t) const
+  std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const
   {
-    const auto alpha = get_alpha(u, entity, x_local, t);
+    return derived_local_function(entity);
+  }
 
-    // calculate < \mu m G_\alpha(u) >
-    RangeType ret(0);
-    for (size_t nn = 0; nn < dimRange; ++nn) {
-      if (nn > 0) {
-        if (XT::Common::FloatCmp::ne(alpha[nn], alpha[nn - 1], taylor_tol_)) {
-          ret[nn] +=
-              2. * std::pow(v_points_[nn] - v_points_[nn - 1], 2) / std::pow(alpha[nn] - alpha[nn - 1], 3)
-                  * (std::exp(alpha[nn]) - std::exp(alpha[nn - 1]))
-              + (v_points_[nn] - v_points_[nn - 1]) / std::pow(alpha[nn] - alpha[nn - 1], 2)
-                    * (v_points_[nn - 1] * (std::exp(alpha[nn]) + std::exp(alpha[nn - 1]))
-                       - 2 * v_points_[nn] * std::exp(alpha[nn]))
-              + v_points_[nn] * (v_points_[nn] - v_points_[nn - 1]) / (alpha[nn] - alpha[nn - 1]) * std::exp(alpha[nn]);
-        } else {
-          RangeFieldType taylorsum = 0;
-          for (size_t ll = 3; ll <= taylor_order_; ++ll)
-            taylorsum += std::pow(alpha[nn - 1] - alpha[nn], ll - 3.) / XT::Common::factorial(ll);
-          ret[nn] += taylorsum * 2 * std::pow(v_points_[nn] - v_points_[nn - 1], 2) * std::exp(alpha[nn]);
-          taylorsum = 0;
-          for (size_t ll = 2; ll <= taylor_order_; ++ll)
-            taylorsum += std::pow(alpha[nn - 1] - alpha[nn], ll - 2.) / XT::Common::factorial(ll);
-          ret[nn] += taylorsum * v_points_[nn - 1] * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha[nn]);
-        }
-      } // if (nn > 0)
-      if (nn < dimRange - 1) {
-        if (XT::Common::FloatCmp::ne(alpha[nn + 1], alpha[nn], taylor_tol_)) {
-          ret[nn] +=
-              -2. * std::pow(v_points_[nn + 1] - v_points_[nn], 2) / std::pow(alpha[nn + 1] - alpha[nn], 3)
-                  * (std::exp(alpha[nn + 1]) - std::exp(alpha[nn]))
-              + (v_points_[nn + 1] - v_points_[nn]) / std::pow(alpha[nn + 1] - alpha[nn], 2)
-                    * (v_points_[nn + 1] * (std::exp(alpha[nn + 1]) + std::exp(alpha[nn]))
-                       - 2 * v_points_[nn] * std::exp(alpha[nn]))
-              - v_points_[nn] * (v_points_[nn + 1] - v_points_[nn]) / (alpha[nn + 1] - alpha[nn]) * std::exp(alpha[nn]);
-        } else {
-          RangeFieldType taylorsum = 0;
-          for (size_t ll = 3; ll <= taylor_order_; ++ll)
-            taylorsum += std::pow(alpha[nn + 1] - alpha[nn], ll - 3.) / XT::Common::factorial(ll);
-          ret[nn] += taylorsum * 2 * std::pow(v_points_[nn + 1] - v_points_[nn], 2) * std::exp(alpha[nn]);
-          taylorsum = 0;
-          for (size_t ll = 2; ll <= taylor_order_; ++ll)
-            taylorsum += std::pow(alpha[nn + 1] - alpha[nn], ll - 2.) / XT::Common::factorial(ll);
-          ret[nn] += taylorsum * v_points_[nn + 1] * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha[nn]);
-        }
-      } // if (nn < dimRange - 1)
-    } // nn
+  std::unique_ptr<Localfunction> derived_local_function(const EntityType& entity) const
+  {
+    const auto& index = index_set_.index(entity);
+    return std::make_unique<Localfunction>(entity,
+                                           v_points_,
+                                           tau_,
+                                           epsilon_gamma_,
+                                           chi_,
+                                           xi_,
+                                           r_sequence_,
+                                           k_0_,
+                                           k_max_,
+                                           epsilon_,
+                                           taylor_tol_,
+                                           taylor_order_,
+                                           alpha_cache_[index],
+                                           alpha_cache_[index_set_.size(0) + index],
+                                           mutexes_[index]);
+  }
 
-    return ret;
-  } // FluxRangeType evaluate(...)
-
-  virtual FluxRangeType calculate_flux_integral(const RangeType& u_i,
-                                                const E& entity,
-                                                const DomainType& x_local_entity,
-                                                const RangeType u_j,
-                                                const E& neighbor,
-                                                const DomainType& x_local_neighbor,
-                                                const DomainType& n_ij,
-                                                const double t) const
+  // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
+  // m is the basis function vector, phi_u is the ansatz corresponding to u
+  // and x, v, t are the space, velocity and time variable, respectively
+  // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
+  StateRangeType evaluate_kinetic_flux(const EntityType& entity,
+                                       const DomainType& x_local_entity,
+                                       const StateRangeType& u_i,
+                                       const EntityType& neighbor,
+                                       const DomainType& x_local_neighbor,
+                                       const StateRangeType u_j,
+                                       const DomainType& n_ij,
+                                       const size_t dd,
+                                       const XT::Common::Parameter& param,
+                                       const XT::Common::Parameter& param_neighbor) const
   {
     assert(v_points_.size() % 2 && "Not implemented for odd number of points!");
+    assert(dd == 0);
     // calculate < \mu m G_\alpha(u) > * n_ij
-    const auto alpha_i = get_alpha(u_i, entity, x_local_entity, t);
-    const auto alpha_j = get_alpha(u_j, neighbor, x_local_neighbor, t);
+    const auto local_function_entity = derived_local_function(entity);
+    const auto local_function_neighbor = derived_local_function(neighbor);
+    const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param);
+    const auto alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor);
     RangeType ret(0);
     for (size_t nn = 0; nn < dimRange; ++nn) {
       if (nn > 0) {
@@ -1086,15 +1272,9 @@ public:
     ret *= n_ij[0];
 
     return ret;
-  } // FluxRangeType calculate_flux_integral(...)
+  } // StateRangeType evaluate_kinetic_flux(...)
 
-  static std::string static_id()
-  {
-    return "gdt.entropybasedflux";
-  }
-
-private:
-  const Dune::GlobalIndexSet<GridLayerType> global_index_set_;
+  const typename GridLayerType::IndexSet& index_set_;
   const RangeType v_points_;
   const RangeFieldType tau_;
   const RangeFieldType epsilon_gamma_;
@@ -1107,9 +1287,11 @@ private:
   const RangeFieldType taylor_tol_;
   const size_t taylor_order_;
   const std::string name_;
-  mutable std::vector<std::unique_ptr<std::pair<double, RangeType>>> alpha_cache_;
+  // Use unique_ptr in the vectors to avoid the memory cost for storing twice as many matrices or vectors as needed
+  // (see constructor)
+  mutable std::vector<std::unique_ptr<std::pair<StateRangeType, StateRangeType>>> alpha_cache_;
+  mutable std::vector<std::mutex> mutexes_;
 };
-#endif
 
 
 } // namespace GDT
