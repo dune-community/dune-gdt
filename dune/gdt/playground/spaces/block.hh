@@ -184,6 +184,11 @@ public:
     return *(local_spaces_->at(block));
   }
 
+  static constexpr bool associates_data_with(int codim)
+  {
+    return LocalSpaceType::associates_data_with(codim);
+  }
+
 private:
   template <class EntityType>
   size_t find_block_of(const EntityType& entity) const
