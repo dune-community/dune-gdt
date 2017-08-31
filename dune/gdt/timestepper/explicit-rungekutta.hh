@@ -200,7 +200,7 @@ public:
    * \param c Coefficients for time steps (only provide if you use ExplicitRungeKuttaMethods::other)
    */
   ExplicitRungeKuttaTimeStepper(const OperatorType& op,
-                                const DiscreteFunctionType& initial_values,
+                                DiscreteFunctionType& initial_values,
                                 const RangeFieldType r = 1.0,
                                 const double t_0 = 0.0,
                                 const MatrixType& A = ButcherArrayProviderType::A(),
