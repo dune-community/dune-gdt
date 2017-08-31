@@ -72,7 +72,8 @@ public:
   void apply(const SourceType& source,
              const IntersectionType& intersection,
              LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor) const
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor,
+             const XT::Common::Parameter& /*mu*/ = {}) const
   {
     const auto entity = intersection.inside();
     const auto neighbor = intersection.outside();
