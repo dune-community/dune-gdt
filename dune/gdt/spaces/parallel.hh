@@ -45,6 +45,7 @@ struct CommunicationChooser
   template <class SpaceBackend>
   static bool prepare(const SpaceBackend& /*space_backend*/, Type& /*communicator*/)
   {
+    DUNE_THROW(InvalidStateException, "SQUENTIAL");
     return false;
   }
 }; // struct CommunicationChooser
@@ -72,26 +73,8 @@ public:
     return new Type(gridView.comm(), SolverCategory::overlapping);
   }
 
-  //  disabled for testing
   template <class Space>
-  static typename std::enable_if<Space::backend_type == Dune::GDT::Backends::pdelab, bool>::type
-  prepare(const Space& space, Type& communicator)
-  {
-#if HAVE_DUNE_PDELAB
-    XT::LA::IstlRowMajorSparseMatrix<typename Space::RangeFieldType> matrix;
-    PDELab::istl::ParallelHelper<typename Space::BackendType>(space.backend(), 0)
-        .createIndexSetAndProjectForAMG(matrix.backend(), communicator);
-    return true;
-#else
-    DUNE_THROW(InvalidStateException, "trying to use pdelab space backend and HAVE_DUNE_PDELAB is false");
-#endif // HAVE_DUNE_PDELAB
-    return false;
-  } // ... prepare(...)
-
-
-  template <class Space>
-  static typename std::enable_if<Space::backend_type != Dune::GDT::Backends::pdelab, bool>::type
-  prepare(const Space& space, Type& communicator)
+  static bool prepare(const Space& space, Type& communicator)
   {
     GDT::GenericParallelHelper<Space>(space, 1).createIndexSetAndProjectForAMG(communicator);
     return true;
