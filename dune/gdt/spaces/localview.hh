@@ -46,7 +46,7 @@ public:
     resize(size);
     space_.mapper().globalIndices(entity, global_indices_);
     for (auto i : XT::Common::value_range(size)) {
-      assert(size == global_indices_.size());
+      assert(i < global_indices_.size());
       const auto global = global_indices_[i];
       const auto vector_size = vector_.size();
       assert(global < vector_size);
@@ -65,7 +65,7 @@ public:
 
   void commit()
   {
-    assert(value_cache_.size() == global_indices_.size());
+    assert(value_cache_.size() <= global_indices_.size());
     for (auto i : XT::Common::value_range(value_cache_.size())) {
       const auto global = global_indices_[i];
       vector_[global] = value_cache_[i];
@@ -84,7 +84,7 @@ public:
 
   size_t size() const
   {
-    assert(value_cache_.size() == global_indices_.size());
+    assert(value_cache_.size() <= global_indices_.size());
     return value_cache_.size();
   }
 
