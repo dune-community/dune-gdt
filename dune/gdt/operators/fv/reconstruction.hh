@@ -21,8 +21,8 @@
 
 #include <dune/xt/grid/walker/functors.hh>
 
-#include <dune/xt/la/container/algorithms/triangular_solves.hh>
-#include <dune/xt/la/container/algorithms/qr.hh>
+#include <dune/xt/la/algorithms/triangular_solves.hh>
+#include <dune/xt/la/algorithms/qr.hh>
 #include <dune/xt/la/eigen-solver.hh>
 
 #include "slopelimiters.hh"

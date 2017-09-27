@@ -18,8 +18,9 @@
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/math.hh>
 
-#include <dune/xt/la/container/algorithms.hh>
+#include <dune/xt/la/algorithms.hh>
 #include <dune/xt/la/container/common.hh>
+#include <dune/xt/la/container/unit_matrices.hh>
 
 #include <dune/gdt/local/fluxes/interfaces.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/hatfunctions.hh>
