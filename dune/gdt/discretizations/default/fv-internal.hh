@@ -227,6 +227,7 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
   }
 }; // struct AdvectionOperatorCreator<..., laxwendroff, ...>
 
+#if 0
 template <class AnalyticalFluxType,
           class BoundaryValueType,
           class ConstantFunctionType,
@@ -260,6 +261,7 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
         analytical_flux, boundary_values, quadrature_1d, realizability_limiter, is_linear);
   }
 }; // struct AdvectionOperatorCreator<..., kinetic, ...>
+#endif
 
 
 } // namespace internal
