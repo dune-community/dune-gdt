@@ -204,7 +204,7 @@ private:
     {
       static XT::Common::Configuration eigensolver_options(
           {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
-          {EigenSolverType::types()[0], "1", "1", "0", "1"});
+          {EigenSolverType::types()[0].c_str(), "1", "1", "0", "1"});
       const auto eigensolver = EigenSolverType(jacobian);
       auto eigenvectors_dense = eigensolver.real_eigenvectors_as_matrix(eigensolver_options);
       eigenvectors[0] = SparseMatrixType(*eigenvectors_dense, true);
