@@ -30,7 +30,7 @@ namespace GDT {
 
 
 template <class MatrixType, size_t size>
-static const std::unique_ptr<const MatrixType> unit_matrix = XT::LA::get_unit_matrix<MatrixType>(size, 0);
+static const std::unique_ptr<const MatrixType> unit_matrix = XT::LA::UnitMatrix<MatrixType>::get(size, 0);
 
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * for the notation see
