@@ -389,11 +389,11 @@ public:
     assert(ret.rows() >= rows);
     assert(ret.cols() >= cols);
     for (size_t ii = 0; ii < rows; ++ii) {
-      left_sum = diffusion_value * test_gradients[ii];
+      left_sum = diffusion_value * test_gradients[ii][0];
       left_sum += diffusive_flux_value;
       auto& retRow = ret[ii];
       for (size_t jj = 0; jj < cols; ++jj) {
-        right_sum = diffusion_value * ansatz_gradients[jj];
+        right_sum = diffusion_value * ansatz_gradients[jj][0];
         right_sum += diffusive_flux_value;
         retRow[jj] = (one_over_diffusion_value * left_sum) * right_sum;
       }
