@@ -143,6 +143,44 @@ public:
     return ret;
   }
 
+  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
+  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const
+  {
+    FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
+    auto mm_with_v = mass_matrix_with_v();
+    auto& ret_neg = ret[0][0];
+    auto& ret_pos = ret[0][1];
+    size_t N = dimRange;
+    for (size_t nn = 0; nn < N; ++nn) {
+      for (size_t mm = 0; mm < N; ++mm) {
+        if (nn < N / 2 || mm < N / 2)
+          ret_neg[nn][mm] = mm_with_v[0][nn][mm];
+        else if (nn > N / 2 || mm > N / 2)
+          ret_pos[nn][mm] = mm_with_v[0][nn][mm];
+        else if (nn == N / 2 && mm == N / 2) {
+          if (N % 2) {
+            ret_neg[nn][mm] = -std::pow(triangulation_[mm - 1], 2) / 12.;
+            ret_pos[nn][mm] = std::pow(triangulation_[mm + 1], 2) / 12.;
+          } else {
+            ret_neg[nn][mm] = -std::pow(triangulation_[mm], 2) / 48.;
+            ret_pos[nn][mm] = (5 * std::pow(triangulation_[mm], 2) + 8 * triangulation_[mm] * triangulation_[mm + 1]
+                               + 4 * std::pow(triangulation_[mm + 1], 2))
+                              / 48.;
+          }
+        } else if (!(N % 2) && mm == N / 2 - 1 && nn == N / 2 - 1) {
+          ret_neg[nn][mm] = (-3 * std::pow(triangulation_[mm], 2) - 8 * triangulation_[mm] * triangulation_[mm - 1]
+                             - 4 * std::pow(triangulation_[mm - 1], 2))
+                            / 48.;
+          ret_pos[nn][mm] = std::pow(triangulation_[mm], 2) / 48.;
+        } else if (!(N % 2) && ((mm == N / 2 && nn == N / 2 - 1) || (mm == N / 2 - 1 && nn == N / 2))) {
+          ret_neg[nn][mm] = -std::pow(triangulation_[mm], 2) / 16.;
+          ret_pos[nn][mm] = std::pow(triangulation_[mm], 2) / 16.;
+        }
+      } // mm
+    } // nn
+    return ret;
+  }
+
   template <class DiscreteFunctionType>
   VisualizerType<DiscreteFunctionType> visualizer() const
   {
@@ -177,108 +215,6 @@ public:
 private:
   const TriangulationType triangulation_;
 }; // class HatFunctions<DomainFieldType, 1, ...>
-
-template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t fluxDim>
-class HatFunctions<DomainFieldType, 2, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
-    : public BasisfunctionsInterface<DomainFieldType, 2, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
-{
-public:
-  static const size_t dimDomain = 2;
-  static const size_t dimRange = rangeDim;
-  static const size_t dimRangeCols = rangeDimCols;
-
-private:
-  typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, rangeDimCols, fluxDim> BaseType;
-
-public:
-  typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
-  using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
-  using typename BaseType::MatrixType;
-  template <class DiscreteFunctionType>
-  using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
-  typedef RangeType TriangulationType;
-
-  HatFunctions(const TriangulationType triangulation = create_triangulation(),
-               const QuadratureType& /*quadrature*/ = QuadratureType())
-    : triangulation_(triangulation)
-  {
-  }
-
-  static TriangulationType create_triangulation()
-  {
-    RangeType ret;
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      ret[ii] = -1. + 2. * ii / (dimRange - 1.);
-    return ret;
-  }
-
-  virtual RangeType evaluate(const DomainType& v) const override
-  {
-    RangeType ret(0);
-    return ret;
-  } // ... evaluate(...)
-
-  virtual RangeType integrated() const override
-  {
-    RangeType ret(0);
-    return ret;
-  }
-
-  // returns matrix with entries <h_i h_j>
-  virtual MatrixType mass_matrix() const override
-  {
-    MatrixType ret(dimRange, dimRange, 0);
-    return ret;
-  }
-
-  virtual MatrixType mass_matrix_inverse() const override
-  {
-    MatrixType ret(dimRange, dimRange, 0);
-    return ret;
-  }
-
-  // returns matrix with entries <v h_i h_j>
-  virtual FieldVector<MatrixType, fluxDim> mass_matrix_with_v() const override
-  {
-    MatrixType ret(dimRange, dimRange, 0);
-    return ret;
-  }
-
-  template <class DiscreteFunctionType>
-  VisualizerType<DiscreteFunctionType> visualizer() const
-  {
-    return [](const DiscreteFunctionType& u_n, const std::string& filename_prefix, const size_t ii) {
-      sum_visualizer<DiscreteFunctionType, dimRange>(u_n, filename_prefix, ii);
-    };
-  }
-
-  std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
-  {
-    RangeFieldType psi_iso(0);
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      psi_iso += u[ii];
-    psi_iso /= 2.;
-    RangeType alpha_iso(std::log(psi_iso)), u_iso;
-    u_iso = integrated();
-    u_iso *= psi_iso / 2.;
-    return std::make_pair(u_iso, alpha_iso);
-  }
-
-  const TriangulationType& triangulation() const
-  {
-    return triangulation_;
-  }
-
-  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
-  {
-    return 2 * std::max(std::accumulate(u.begin(), u.end(), RangeFieldType(0)),
-                        std::accumulate(u_bar.begin(), u_bar.end(), RangeFieldType(0)));
-  }
-
-private:
-  const TriangulationType triangulation_;
-}; // class HatFunctions<DomainFieldType, 2, ...>
 
 template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t fluxDim>
 class HatFunctions<DomainFieldType, 3, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
@@ -341,21 +277,14 @@ public:
   // avoid recalculation of integral by using a static local variable that is initialized on first call
   virtual RangeType integrated() const override
   {
-    static const RangeType ret = integrated_initializer();
+    static const RangeType ret = integrated_initializer(quadrature_);
     return ret;
   }
 
   virtual MatrixType mass_matrix() const override
   {
     MatrixType A(dimRange, dimRange, 0);
-    for (const auto& quad_point : quadrature_) {
-      const auto basis_evaluated = evaluate(quad_point.position());
-      for (size_t nn = 0; nn < dimRange; ++nn) {
-        for (size_t mm = 0; mm < dimRange; ++mm) {
-          A[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * quad_point.weight();
-        } // mm
-      } // nn
-    } // quadrature
+    parallel_quadrature(quadrature_, A, size_t(-1));
     return A;
   } // ... mass_matrix()
 
@@ -369,17 +298,38 @@ public:
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const override
   {
     FieldVector<MatrixType, dimFlux> B(MatrixType(dimRange, dimRange, 0.));
-    for (const auto& quad_point : quadrature_) {
-      const auto& v = quad_point.position();
-      const auto basis_evaluated = evaluate(v);
-      const auto& weight = quad_point.weight();
-      for (size_t nn = 0; nn < dimRange; ++nn)
-        for (size_t mm = 0; mm < dimRange; ++mm)
-          for (size_t dd = 0; dd < dimFlux; ++dd)
-            B[dd][nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * v[dd] * weight;
-    } // quadrature
+    for (size_t dd = 0; dd < dimFlux; ++dd)
+      parallel_quadrature(quadrature_, B[dd], dd);
     return B;
   } // ... mass_matrix_with_v()
+
+  virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const
+  {
+    FieldVector<FieldVector<MatrixType, 2>, dimFlux> B_kinetic(
+        FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
+    QuadratureType neg_quadrature;
+    QuadratureType pos_quadrature;
+    neg_quadrature.reserve(quadrature_.size());
+    pos_quadrature.reserve(quadrature_.size());
+    for (size_t dd = 0; dd < dimFlux; ++dd) {
+      neg_quadrature.clear();
+      pos_quadrature.clear();
+      for (const auto& quad_point : quadrature_) {
+        const auto& v = quad_point.position();
+        const auto& weight = quad_point.weight();
+        if (XT::Common::FloatCmp::eq(v[dd], 0.)) {
+          neg_quadrature.emplace_back(v, weight / 2.);
+          pos_quadrature.emplace_back(v, weight / 2.);
+        } else if (v[dd] > 0.)
+          pos_quadrature.emplace_back(v, weight);
+        else
+          neg_quadrature.emplace_back(v, weight);
+      }
+      parallel_quadrature(neg_quadrature, B_kinetic[dd][0], dd);
+      parallel_quadrature(pos_quadrature, B_kinetic[dd][1], dd);
+    }
+    return B_kinetic;
+  } // ... kinetic_flux_matrices()
 
   template <class DiscreteFunctionType>
   VisualizerType<DiscreteFunctionType> visualizer() const
@@ -413,16 +363,8 @@ public:
   }
 
 protected:
-  RangeType integrated_initializer() const
-  {
-    RangeType ret(0);
-    for (const auto& quad_point : quadrature_) {
-      auto basis_evaluated = evaluate(quad_point.position());
-      basis_evaluated *= quad_point.weight();
-      ret += basis_evaluated;
-    } // quadrature
-    return ret;
-  }
+  using BaseType::parallel_quadrature;
+  using BaseType::integrated_initializer;
 
   template <class VertexVectorType>
   bool calculate_barycentric_coordinates(const DomainType& v, const VertexVectorType& vertices, DomainType& ret) const
@@ -436,6 +378,10 @@ protected:
       // assumes the triangulation is fine enough that vertices[ii]*vertices[jj] >= 0 for all triangles
       if (XT::Common::FloatCmp::lt(scalar_prod, 0.))
         return false;
+      else if (XT::Common::FloatCmp::eq(scalar_prod, 1.)) {
+        ret *= 0.;
+        ret[ii] = 1.;
+      }
       auto v_scaled = v;
       v_scaled *= scalar_prod;
       gradients[ii] -= v_scaled;
@@ -466,9 +412,8 @@ protected:
     ret[0] = solution[0];
     ret[1] = solution[1];
     ret[2] = 1. - ret[0] - ret[1];
-    if (XT::Common::FloatCmp::lt(ret[0], 0.) || XT::Common::FloatCmp::lt(ret[1], 0.))
-      return false;
-    if (XT::Common::FloatCmp::lt(ret[2], 0.))
+    if (XT::Common::FloatCmp::lt(ret[0], 0.) || XT::Common::FloatCmp::lt(ret[1], 0.)
+        || XT::Common::FloatCmp::lt(ret[2], 0.))
       return false;
     return true;
   } // bool calculate_barycentric_coordinates(...)

@@ -56,7 +56,7 @@ public:
   typedef GridPartImp GridLayerType;
   static const int polOrder = polynomialOrder;
   static const bool continuous = false;
-  static_assert(polOrder >= 1, "Wrong polOrder given!");
+  static_assert(polOrder >= 0, "Wrong polOrder given!");
   static const constexpr Backends backend_type{Backends::fem};
 
 private:

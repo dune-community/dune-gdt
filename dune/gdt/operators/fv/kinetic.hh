@@ -23,6 +23,9 @@ namespace GDT {
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
+          class BasisfunctionImp,
+          class GridLayerImp,
+          size_t quadratureDim,
           size_t polOrder,
           SlopeLimiters slope_lim,
           class RealizabilityLimiterImp,
@@ -35,6 +38,9 @@ namespace internal {
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
+          class BasisfunctionImp,
+          class GridLayerImp,
+          size_t quadratureDim,
           size_t reconstruction_order,
           SlopeLimiters slope_lim,
           class RealizabilityLimiterImp>
@@ -52,11 +58,20 @@ class AdvectionKineticOperatorTraits : public AdvectionTraitsBase<AnalyticalFlux
       BaseType;
 
 public:
-  typedef typename Dune::GDT::KineticLocalNumericalCouplingFlux<AnalyticalFluxImp> NumericalCouplingFluxType;
-  typedef typename Dune::GDT::KineticLocalNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp>
+  typedef typename Dune::GDT::
+      KineticLocalNumericalCouplingFlux<AnalyticalFluxImp, BasisfunctionImp, GridLayerImp, quadratureDim>
+          NumericalCouplingFluxType;
+  typedef typename Dune::GDT::KineticLocalNumericalBoundaryFlux<AnalyticalFluxImp,
+                                                                BoundaryValueImp,
+                                                                BasisfunctionImp,
+                                                                GridLayerImp,
+                                                                quadratureDim>
       NumericalBoundaryFluxType;
   typedef AdvectionKineticOperator<AnalyticalFluxImp,
                                    BoundaryValueImp,
+                                   BasisfunctionImp,
+                                   GridLayerImp,
+                                   quadratureDim,
                                    reconstruction_order,
                                    slope_lim,
                                    RealizabilityLimiterImp,
@@ -70,11 +85,17 @@ public:
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
+          class BasisfunctionImp,
+          class GridLayerImp,
+          size_t quadratureDim = BasisfunctionImp::dimDomain,
           size_t polOrder = 0,
           SlopeLimiters slope_lim = SlopeLimiters::minmod,
           class RealizabilityLimiterImp = NonLimitingRealizabilityLimiter<typename AnalyticalFluxImp::EntityType>,
           class Traits = internal::AdvectionKineticOperatorTraits<AnalyticalFluxImp,
                                                                   BoundaryValueImp,
+                                                                  BasisfunctionImp,
+                                                                  GridLayerImp,
+                                                                  quadratureDim,
                                                                   polOrder,
                                                                   slope_lim,
                                                                   RealizabilityLimiterImp>>
@@ -89,25 +110,32 @@ public:
 
   AdvectionKineticOperator(const AnalyticalFluxType& analytical_flux,
                            const BoundaryValueType& boundary_values,
+                           const BasisfunctionImp& basis_functions,
                            const bool is_linear = false)
     : BaseType(analytical_flux, boundary_values, is_linear)
+    , basis_functions_(basis_functions)
   {
   }
 
   AdvectionKineticOperator(const AnalyticalFluxType& analytical_flux,
                            const BoundaryValueType& boundary_values,
+                           const BasisfunctionImp& basis_functions,
                            const OnedQuadratureType& quadrature_1d,
                            const std::shared_ptr<RealizabilityLimiterImp>& realizability_limiter = nullptr,
                            const bool is_linear = false)
     : BaseType(analytical_flux, boundary_values, is_linear, quadrature_1d, realizability_limiter)
+    , basis_functions_(basis_functions)
   {
   }
 
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
   {
-    BaseType::apply(source, range, param);
+    BaseType::apply(source, range, param, basis_functions_);
   }
+
+private:
+  const BasisfunctionImp& basis_functions_;
 }; // class AdvectionKineticOperator
 
 

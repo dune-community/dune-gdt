@@ -77,14 +77,14 @@ class LaplaceLocalizableProduct
 
   template <class... Args>
   explicit LaplaceLocalizableProduct(tag<false>, Args&&... args)
-    : FunctionProvider(1.)
+    : FunctionProvider(FunctionProvider::make(1.))
     , BaseType(FunctionProvider::access(), std::forward<Args>(args)...)
   {
   }
 
   template <class... Args>
   explicit LaplaceLocalizableProduct(tag<true>, const size_t over_integrate, Args&&... args)
-    : FunctionProvider(1.)
+    : FunctionProvider(FunctionProvider::make(1.))
     , BaseType(over_integrate, FunctionProvider::access(), std::forward<Args>(args)...)
   {
   }
@@ -196,14 +196,14 @@ class LaplaceMatrixOperator
 
   template <class... Args>
   explicit LaplaceMatrixOperator(tag<false>, Args&&... args)
-    : FunctionProvider(1.)
+    : FunctionProvider(FunctionProvider::make(1.))
     , BaseType(FunctionProvider::access(), std::forward<Args>(args)...)
   {
   }
 
   template <class... Args>
   explicit LaplaceMatrixOperator(tag<true>, const size_t over_integrate, Args&&... args)
-    : FunctionProvider(1.)
+    : FunctionProvider(FunctionProvider::make(1.))
     , BaseType(over_integrate, FunctionProvider::access(), std::forward<Args>(args)...)
   {
   }

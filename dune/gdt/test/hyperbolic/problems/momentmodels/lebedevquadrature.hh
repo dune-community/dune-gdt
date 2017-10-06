@@ -18,7 +18,7 @@
 
 #include <dune/xt/common/math.hh>
 
-#if HAVE_LEBEDEV_DATA
+#if HAVE_LEBEDEVDATA
 #include "lebedev_data.hh"
 #endif
 
@@ -28,7 +28,7 @@ namespace Hyperbolic {
 namespace Problems {
 
 
-#if HAVE_LEBEDEV_DATA
+#if HAVE_LEBEDEVDATA
 
 // The tabulated values are in cartesian coordinates (x, y, z). If cartesian is false, the
 // quadrature points are converted to spherical coordinates (\theta, \varphi), with
@@ -194,7 +194,7 @@ const std::vector<size_t> LebedevQuadrature<FieldType, cartesian>::allowed_order
     3,  5,  7,  9,  11, 13, 15, 17, 19, 21, 23,  25,  27,  29,  31,  35,
     41, 47, 53, 59, 65, 71, 77, 83, 89, 95, 101, 107, 113, 119, 125, 131};
 
-#else // HAVE_LEBEDEV_DATA
+#else // HAVE_LEBEDEVDATA
 
 template <class FieldType, bool cartesian = true>
 class LebedevQuadrature
@@ -202,7 +202,7 @@ class LebedevQuadrature
   static_assert(AlwaysFalse<FieldType>::value, "You are missing the lebedev quadrature data library!");
 };
 
-#endif // HAVE_LEBEDEV_DATA
+#endif // HAVE_LEBEDEVDATA
 
 
 } // namespace Problems

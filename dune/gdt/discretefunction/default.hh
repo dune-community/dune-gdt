@@ -345,7 +345,7 @@ public:
   }
 
   DiscreteFunction(const ThisType& other)
-    : VectorProviderBaseType(VectorType(other.vector()))
+    : VectorProviderBaseType(new VectorType(other.vector()))
     , BaseType(other.space(), VectorProviderBaseType::access(), other.name())
   {
   }

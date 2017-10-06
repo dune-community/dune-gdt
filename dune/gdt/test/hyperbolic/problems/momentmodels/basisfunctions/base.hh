@@ -259,6 +259,7 @@ public:
   typedef typename XT::Functions::RangeTypeSelector<RangeFieldType, dimRange, dimRangeCols>::type RangeType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename std::function<void(const DiscreteFunctionType&, const std::string&, const size_t)>;
+  typedef typename Dune::QuadratureRule<RangeFieldType, dimDomain> QuadratureType;
 
   virtual ~BasisfunctionsInterface(){};
 
@@ -271,6 +272,95 @@ public:
   virtual MatrixType mass_matrix_inverse() const = 0;
 
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const = 0;
+
+protected:
+  std::vector<std::vector<size_t>> create_decomposition(const size_t num_threads, const size_t size) const
+  {
+    std::vector<std::vector<size_t>> decomposition(num_threads);
+    for (size_t ii = 0; ii < num_threads - 1; ++ii) {
+      decomposition[ii].reserve(size / num_threads * (ii + 1) - size / num_threads * ii);
+      for (size_t jj = size / num_threads * ii; jj < size / num_threads * (ii + 1); ++jj)
+        decomposition[ii].push_back(jj);
+    }
+    decomposition[num_threads - 1].reserve(size - (size / num_threads) * (num_threads - 1));
+    for (size_t jj = size / num_threads * (num_threads - 1); jj < size; ++jj)
+      decomposition[num_threads - 1].push_back(jj);
+    return decomposition;
+  }
+
+  virtual void parallel_quadrature(const QuadratureType& quadrature, MatrixType& matrix, const size_t v_index) const
+  {
+    size_t num_threads = std::min(XT::Common::threadManager().max_threads(), quadrature.size());
+    auto decomposition = create_decomposition(num_threads, quadrature.size());
+    std::vector<std::thread> threads(num_threads);
+    // Launch a group of threads
+    std::vector<MatrixType> local_matrices(num_threads, MatrixType(matrix.N(), matrix.M(), 0.));
+    for (size_t ii = 0; ii < num_threads; ++ii)
+      threads[ii] = std::thread(&BasisfunctionsInterface::calculate_in_thread,
+                                this,
+                                std::cref(quadrature),
+                                std::ref(local_matrices[ii]),
+                                v_index,
+                                std::cref(decomposition[ii]));
+    // Join the threads with the main thread
+    for (size_t ii = 0; ii < num_threads; ++ii)
+      threads[ii].join();
+    // add local matrices
+    matrix *= 0.;
+    for (size_t ii = 0; ii < num_threads; ++ii)
+      matrix += local_matrices[ii];
+  } // void parallel_quadrature(...)
+
+  virtual void calculate_in_thread(const QuadratureType& quadrature,
+                                   MatrixType& local_matrix,
+                                   const size_t v_index,
+                                   const std::vector<size_t>& indices) const
+  {
+    for (const auto& jj : indices) {
+      const auto& quad_point = quadrature[jj];
+      const auto& v = quad_point.position();
+      const auto basis_evaluated = evaluate(v);
+      const auto& weight = quad_point.weight();
+      const auto factor = (v_index == size_t(-1)) ? 1. : v[v_index];
+      for (size_t nn = 0; nn < local_matrix.N(); ++nn)
+        for (size_t mm = 0; mm < local_matrix.M(); ++mm)
+          local_matrix[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * factor * weight;
+    } // ii
+  } // void calculate_in_thread(...)
+
+  RangeType integrated_initializer(const QuadratureType& quadrature) const
+  {
+    size_t num_threads = std::min(XT::Common::threadManager().max_threads(), quadrature.size());
+    auto decomposition = create_decomposition(num_threads, quadrature.size());
+    std::vector<std::thread> threads(num_threads);
+    std::vector<RangeType> local_vectors(num_threads, RangeType(0.));
+    for (size_t ii = 0; ii < num_threads; ++ii)
+      threads[ii] = std::thread(&BasisfunctionsInterface::integrated_initializer_thread,
+                                this,
+                                std::cref(quadrature),
+                                std::ref(local_vectors[ii]),
+                                std::cref(decomposition[ii]));
+    // Join the threads with the main thread
+    for (size_t ii = 0; ii < num_threads; ++ii)
+      threads[ii].join();
+    // add local matrices
+    RangeType ret(0.);
+    for (size_t ii = 0; ii < num_threads; ++ii)
+      ret += local_vectors[ii];
+    return ret;
+  }
+
+  void integrated_initializer_thread(const QuadratureType& quadrature,
+                                     RangeType& local_range,
+                                     const std::vector<size_t>& indices) const
+  {
+    for (const auto& jj : indices) {
+      const auto& quad_point = quadrature[jj];
+      auto basis_evaluated = evaluate(quad_point.position());
+      basis_evaluated *= quad_point.weight();
+      local_range += basis_evaluated;
+    } // jj
+  } // void calculate_in_thread(...)
 };
 
 

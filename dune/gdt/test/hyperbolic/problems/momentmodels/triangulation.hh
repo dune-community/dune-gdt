@@ -14,21 +14,27 @@
 #include <vector>
 #include <string>
 
+#include <dune/common/typetraits.hh>
+
+#include <dune/xt/common/string.hh>
+#include <dune/xt/la/container.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
+#include <dune/xt/functions/affine.hh>
+
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/spaces/cg.hh>
 
-#include <dune/xt/common/string.hh>
-#include <dune/xt/functions/affine.hh>
-#include <dune/xt/grid/gridprovider/cube.hh>
-#include <dune/xt/la/container.hh>
-
+#if HAVE_DUNE_PDELAB
 #include <dune/pdelab/common/crossproduct.hh>
+#endif
 
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
 namespace Problems {
+
+#if HAVE_DUNE_PDELAB
 
 
 template <class FieldType, size_t dimDomain>
@@ -375,6 +381,30 @@ private:
   std::atomic<size_t> current_vertex_index_;
 }; // class SphericalTriangulation<...>
 
+
+#else // HAVE_DUNE_PDELAB
+
+
+template <class FieldType, size_t dimDomain>
+class Vertex
+{
+  static_assert(AlwaysFalse<FieldType>::value, "You are missing dune-pdelab!");
+};
+
+template <class RangeFieldImp = double>
+class SphericalTriangle
+{
+  static_assert(AlwaysFalse<RangeFieldImp>::value, "You are missing dune-pdelab!");
+};
+
+template <class RangeFieldImp = double>
+class SphericalTriangulation
+{
+  static_assert(AlwaysFalse<RangeFieldImp>::value, "You are missing dune-pdelab!");
+};
+
+
+#endif // HAVE_DUNE_PDELAB
 
 } // namespace Problems
 } // namespace Hyperbolic

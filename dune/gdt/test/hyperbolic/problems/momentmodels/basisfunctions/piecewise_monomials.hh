@@ -45,7 +45,7 @@ private:
 
 public:
   typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
-  typedef FieldVector<DomainFieldType, dimRange + 1> TriangulationType;
+  typedef FieldVector<DomainFieldType, dimRange / 2 + 1> TriangulationType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
@@ -62,7 +62,7 @@ public:
   {
     TriangulationType ret;
     for (size_t ii = 0; ii < dimRange / 2 + 1; ++ii)
-      ret[ii] = -1. + 4. * ii / dimRange;
+      ret[ii] = -1. + (4. * ii) / dimRange;
     return ret;
   }
 
@@ -71,7 +71,7 @@ public:
     RangeType ret(0);
     for (size_t ii = 0; ii < dimRange / 2; ++ii) {
       if (XT::Common::FloatCmp::ge(v[0], triangulation_[ii])
-          && XT::Common::FloatCmp::le(v[0], triangulation_[ii + 1])) {
+          && XT::Common::FloatCmp::lt(v[0], triangulation_[ii + 1])) {
         ret[2 * ii] = 1;
         ret[2 * ii + 1] = v[0];
       }
@@ -92,7 +92,7 @@ public:
   // returns matrix with entries <h_i h_j>
   virtual MatrixType mass_matrix() const override
   {
-    MatrixType M(0);
+    MatrixType M(dimRange, dimRange, 0.);
     for (size_t ii = 0; ii < dimRange / 2; ++ii) {
       M[2 * ii][2 * ii] = triangulation_[ii + 1] - triangulation_[ii];
       M[2 * ii + 1][2 * ii + 1] = (std::pow(triangulation_[ii + 1], 3) - std::pow(triangulation_[ii], 3)) / 3.;
@@ -110,7 +110,7 @@ public:
   // returns matrix with entries <v h_i h_j>
   virtual FieldVector<MatrixType, dimDomain> mass_matrix_with_v() const override
   {
-    MatrixType B(0);
+    MatrixType B(dimRange, dimRange, 0.);
     for (size_t ii = 0; ii < dimRange / 2; ++ii) {
       B[2 * ii][2 * ii] = (std::pow(triangulation_[ii + 1], 2) - std::pow(triangulation_[ii], 2)) / 2.;
       B[2 * ii + 1][2 * ii + 1] = (std::pow(triangulation_[ii + 1], 4) - std::pow(triangulation_[ii], 4)) / 4.;
@@ -118,6 +118,50 @@ public:
       B[2 * ii + 1][2 * ii] = B[2 * ii][2 * ii + 1];
     }
     return FieldVector<MatrixType, dimDomain>(B);
+  }
+
+  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
+  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const
+  {
+    FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
+    auto mm_with_v = mass_matrix_with_v();
+    auto& ret_neg = ret[0][0];
+    auto& ret_pos = ret[0][1];
+    for (size_t ii = 0; ii < dimRange / 2; ++ii) {
+      if (dimRange / 2 % 2) {
+        // if there is an odd number of intervals, the middle interval is split in 2 parts
+        // copy other intervals
+        for (size_t nn = 0; nn < dimRange / 2 - 1; ++nn)
+          for (size_t mm = 0; mm < dimRange / 2 - 1; ++mm)
+            ret_neg[nn][mm] = mm_with_v[0][nn][mm];
+        for (size_t nn = dimRange / 2 + 1; nn < dimRange; ++nn)
+          for (size_t mm = dimRange / 2 + 1; mm < dimRange; ++mm)
+            ret_pos[nn][mm] = mm_with_v[0][nn][mm];
+        // treat middle interval
+        // mixed integrals are symmetric, so ret_pos and ret_neg both get half of it
+        ret_neg[dimRange / 2 - 1][dimRange / 2] = mm_with_v[0][dimRange / 2 - 1][dimRange / 2] / 2;
+        ret_neg[dimRange / 2][dimRange / 2 - 1] = mm_with_v[0][dimRange / 2][dimRange / 2 - 1] / 2;
+        ret_pos[dimRange / 2 - 1][dimRange / 2] = mm_with_v[0][dimRange / 2 - 1][dimRange / 2] / 2;
+        ret_pos[dimRange / 2][dimRange / 2 - 1] = mm_with_v[0][dimRange / 2][dimRange / 2 - 1] / 2;
+        // integral corresponding to constant basis function
+        ret_neg[dimRange / 2 - 1][dimRange / 2 - 1] = -std::pow(triangulation_[dimRange / 4], 2) / 2;
+        ret_pos[dimRange / 2 - 1][dimRange / 2 - 1] = std::pow(triangulation_[dimRange / 4], 2) / 2;
+        // integral corresponding to v basis function
+        ret_neg[dimRange / 2][dimRange / 2] = -std::pow(triangulation_[dimRange / 4], 4) / 4;
+        ret_pos[dimRange / 2][dimRange / 2] = std::pow(triangulation_[dimRange / 4], 4) / 4;
+      } else {
+        // if there is an even number of intervals, the matrix is just split up in upper and lower part
+        for (size_t nn = 0; nn < dimRange / 2; ++nn)
+          for (size_t mm = 0; mm < dimRange / 2; ++mm)
+            ret_neg[nn][mm] = mm_with_v[0][nn][mm];
+        for (size_t nn = dimRange / 2; nn < dimRange; ++nn)
+          for (size_t mm = dimRange / 2; mm < dimRange; ++mm)
+            ret_pos[nn][mm] = mm_with_v[0][nn][mm];
+      }
+    } // nn
+    std::cout << "pos: " << XT::Common::to_string(ret_pos) << std::endl;
+    std::cout << "neg: " << XT::Common::to_string(ret_neg) << std::endl;
+    return ret;
   }
 
   template <class DiscreteFunctionType>
@@ -201,42 +245,84 @@ public:
     assert(4 * triangulation_.faces().size() == dimRange);
   }
 
+  PiecewiseMonomials(const size_t refinements,
+                     const QuadratureType& quadrature,
+                     std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points =
+                         {{1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
+    : triangulation_(initial_points, refinements)
+    , quadrature_(quadrature)
+  {
+    assert(4 * triangulation_.faces().size() == dimRange);
+  }
+
   virtual RangeType evaluate(const DomainType& v) const override final
+  {
+    size_t dummy;
+    return evaluate(v, true, dummy);
+  } // ... evaluate(...)
+
+  virtual RangeType evaluate(const DomainType& v, bool split_boundary, size_t& num_faces) const
   {
     RangeType ret(0);
     FieldMatrix<RangeFieldType, 3, 3> vertices_matrix;
     FieldMatrix<RangeFieldType, 3, 3> determinant_matrix;
     bool success = false;
+    size_t num_adjacent_faces = 0;
     for (const auto& face : triangulation_.faces()) {
-      // vertices are ordered counterclockwise, so if the point is inside the spherical triangle,
-      // the coordinate system formed by two adjacent vertices and v is always right-handed, i.e.
-      // the triple product is positive
-      const auto& vertices = face->vertices();
-      for (size_t ii = 0; ii < 3; ++ii)
-        vertices_matrix[ii] = vertices[ii]->position();
       bool v_in_this_facet = true;
-      // the triple products that need to be positive are the determinants of the matrices (v1, v2, v), (v2, v3, v),
-      // (v3, v1, v), where vi is the ith vertex. Swapping two columns changes the sign of det, the matrices used
-      // below all have an even number of column swaps
+      bool second_check = true;
+      const auto& vertices = face->vertices();
       for (size_t ii = 0; ii < 3; ++ii) {
-        determinant_matrix = vertices_matrix;
-        determinant_matrix[ii] = v;
-        if (XT::Common::FloatCmp::lt(determinant_matrix.determinant(), 0.)) {
+        // if v is not on the same octant of the sphere as the vertices, return false
+        // assumes the triangulation is fine enough that vertices[ii]*vertices[jj] >= 0 for all triangles
+        const auto scalar_prod = v * vertices[ii]->position();
+        if (XT::Common::FloatCmp::lt(scalar_prod, 0.)) {
           v_in_this_facet = false;
+          second_check = false;
+          break;
+        } else if (XT::Common::FloatCmp::eq(scalar_prod, 1.)) {
+          ++num_adjacent_faces;
+          second_check = false;
           break;
         }
-      }
+        vertices_matrix[ii] = vertices[ii]->position();
+      } // ii
+
+      if (second_check) {
+        // Vertices are ordered counterclockwise, so if the point is inside the spherical triangle,
+        // the coordinate system formed by two adjacent vertices and v is always right-handed, i.e.
+        // the triple product is positive.
+        // The triple products that need to be positive are the determinants of the matrices (v1, v2, v), (v2, v3, v),
+        // (v3, v1, v), where vi is the ith vertex. Swapping two columns changes the sign of det, the matrices used
+        // below all have an even number of column swaps.
+        // As we have checked before that v is in the same octant as the vertices, the determinant is 0 iff v is on
+        // an edge of the facet. In that case, assign half of the basis function to this edge.
+        for (size_t ii = 0; ii < 3; ++ii) {
+          determinant_matrix = vertices_matrix;
+          determinant_matrix[ii] = v;
+          auto det = determinant_matrix.determinant();
+          if (XT::Common::FloatCmp::eq(det, 0.)) {
+            ++num_adjacent_faces;
+            break;
+          } else if (det < 0.) {
+            v_in_this_facet = false;
+            break;
+          }
+        } // ii
+      } // if (second_check)
       if (v_in_this_facet) {
         const auto face_index = face->index();
-        ret[4 * face_index] = 1;
+        ret[4 * face_index] = 1.;
         for (size_t ii = 1; ii < 4; ++ii) {
           assert(4 * face_index + ii < ret.size());
           ret[4 * face_index + ii] = v[ii - 1];
         }
         success = true;
-        break;
       }
     } // faces
+    if (split_boundary && num_adjacent_faces > 0)
+      ret /= RangeFieldType(num_adjacent_faces);
+    num_faces = num_adjacent_faces > 0 ? num_adjacent_faces : 1;
     assert(success);
     return ret;
   } // ... evaluate(...)
@@ -244,19 +330,14 @@ public:
   // returns <b>, where b is the basis functions vector
   virtual RangeType integrated() const override
   {
-    static const RangeType ret = integrated_initializer();
+    static const RangeType ret = integrated_initializer(quadrature_);
     return ret;
   }
 
   virtual MatrixType mass_matrix() const override
   {
     MatrixType M(dimRange, dimRange, 0.);
-    for (const auto& quad_point : quadrature_) {
-      const auto basis_evaluated = evaluate(quad_point.position());
-      for (size_t nn = 0; nn < dimRange; ++nn)
-        for (size_t mm = 0; mm < dimRange; ++mm)
-          M[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * quad_point.weight();
-    } // quadrature
+    parallel_quadrature(quadrature_, M, size_t(-1));
     return M;
   } // ... mass_matrix()
 
@@ -270,17 +351,38 @@ public:
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const override
   {
     FieldVector<MatrixType, dimFlux> B(MatrixType(dimRange, dimRange, 0));
-    for (const auto& quad_point : quadrature_) {
-      const auto& v = quad_point.position();
-      const auto basis_evaluated = evaluate(v);
-      const auto& weight = quad_point.weight();
-      for (size_t dd = 0; dd < dimFlux; ++dd)
-        for (size_t nn = 0; nn < dimRange; ++nn)
-          for (size_t mm = 0; mm < dimRange; ++mm)
-            B[dd][nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * v[dd] * weight;
-    } // quadrature
+    for (size_t dd = 0; dd < dimFlux; ++dd)
+      parallel_quadrature(quadrature_, B[dd], dd);
     return B;
   }
+
+  virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const
+  {
+    FieldVector<FieldVector<MatrixType, 2>, dimFlux> B_kinetic(
+        FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
+    QuadratureType neg_quadrature;
+    QuadratureType pos_quadrature;
+    neg_quadrature.reserve(quadrature_.size());
+    pos_quadrature.reserve(quadrature_.size());
+    for (size_t dd = 0; dd < dimFlux; ++dd) {
+      neg_quadrature.clear();
+      pos_quadrature.clear();
+      for (const auto& quad_point : quadrature_) {
+        const auto& v = quad_point.position();
+        const auto& weight = quad_point.weight();
+        if (XT::Common::FloatCmp::eq(v[dd], 0.)) {
+          neg_quadrature.emplace_back(v, weight / 2.);
+          pos_quadrature.emplace_back(v, weight / 2.);
+        } else if (v[dd] > 0.)
+          pos_quadrature.emplace_back(v, weight);
+        else
+          neg_quadrature.emplace_back(v, weight);
+      }
+      parallel_quadrature(neg_quadrature, B_kinetic[dd][0], dd);
+      parallel_quadrature(pos_quadrature, B_kinetic[dd][1], dd);
+    }
+    return B_kinetic;
+  } // ... kinetic_flux_matrices()
 
   template <class DiscreteFunctionType>
   VisualizerType<DiscreteFunctionType> visualizer() const
@@ -326,17 +428,29 @@ public:
     return quadrature_;
   }
 
-private:
-  RangeType integrated_initializer() const
+protected:
+  using BaseType::parallel_quadrature;
+
+  virtual void calculate_in_thread(const QuadratureType& quadrature,
+                                   MatrixType& local_matrix,
+                                   const size_t v_index,
+                                   const std::vector<size_t>& indices) const override
   {
-    RangeType ret(0);
-    for (const auto& quad_point : quadrature_) {
-      auto basis_evaluated = evaluate(quad_point.position());
-      basis_evaluated *= quad_point.weight();
-      ret += basis_evaluated;
-    } // quadrature
-    return ret;
-  }
+    for (const auto& jj : indices) {
+      const auto& quad_point = quadrature[jj];
+      const auto& v = quad_point.position();
+      size_t num_adjacent_faces;
+      const auto basis_evaluated = evaluate(v, false, num_adjacent_faces);
+      const auto& weight = quad_point.weight();
+      const auto factor = (v_index == size_t(-1)) ? 1. : v[v_index];
+      for (size_t kk = 0; kk < local_matrix.N(); kk += 4)
+        for (size_t nn = kk; nn < kk + 4; ++nn)
+          for (size_t mm = kk; mm < kk + 4; ++mm)
+            local_matrix[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * factor * weight / num_adjacent_faces;
+    } // ii
+  } // void calculate_in_thread(...)
+
+  using BaseType::integrated_initializer;
 
   const TriangulationType triangulation_;
   const QuadratureType quadrature_;

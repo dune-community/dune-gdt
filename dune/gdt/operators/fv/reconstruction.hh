@@ -21,6 +21,8 @@
 
 #include <dune/xt/grid/walker/functors.hh>
 
+#include <dune/xt/la/algorithms/triangular_solves.hh>
+#include <dune/xt/la/algorithms/qr.hh>
 #include <dune/xt/la/eigen-solver.hh>
 
 #include "slopelimiters.hh"
@@ -49,7 +51,8 @@ class LocalReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayer
   typedef typename BoundaryValueType::RangeType RangeType;
   typedef typename BoundaryValueType::RangeFieldType RangeFieldType;
   typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
-  typedef typename XT::LA::CommonSparseMatrix<RangeFieldType> SparseMatrixType;
+  typedef typename XT::LA::CommonSparseMatrixCsr<RangeFieldType> SparseMatrixType;
+  typedef typename XT::LA::CommonSparseMatrixCsc<RangeFieldType> CscSparseMatrixType;
   typedef typename XT::LA::EigenSolver<MatrixType> EigenSolverType;
   typedef Dune::QuadratureRule<DomainFieldType, 1> QuadratureType;
   typedef FieldVector<typename GridLayerType::Intersection, 2 * dimDomain> IntersectionVectorType;
@@ -61,7 +64,7 @@ class LocalReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayer
 
 public:
   explicit LocalReconstructionFvOperator(
-      const std::vector<RangeType> source_values,
+      const std::vector<RangeType>& source_values,
       const AnalyticalFluxType& analytical_flux,
       const BoundaryValueType& boundary_values,
       const GridLayerType& grid_layer,
@@ -110,24 +113,26 @@ public:
       if (!jacobian_)
         jacobian_ = XT::Common::make_unique<JacobianRangeType>();
       if (!eigenvectors_) {
-        eigenvectors_ =
-            XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>(SparseMatrixType(dimRange, dimRange));
-        eigenvectors_inverse_ =
-            XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>(SparseMatrixType(dimRange, dimRange));
+        eigenvectors_ = XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>();
+        Q_ = XT::Common::make_unique<FieldVector<CscSparseMatrixType, dimDomain>>(
+            CscSparseMatrixType(dimRange, dimRange));
+        R_ = XT::Common::make_unique<FieldVector<CscSparseMatrixType, dimDomain>>(
+            CscSparseMatrixType(dimRange, dimRange));
       }
       const auto& u_entity = values[stencil[0] / 2][stencil[1] / 2][stencil[2] / 2];
       const auto flux_local_func = analytical_flux_.local_function(entity);
       helper<dimDomain>::get_jacobian(
           flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, *jacobian_, param_);
-      helper<dimDomain>::get_eigenvectors(*jacobian_, *eigenvectors_, *eigenvectors_inverse_);
+      helper<dimDomain>::get_eigenvectors(*jacobian_, *eigenvectors_, *Q_, *R_, permutations_);
       if (is_linear_) {
         jacobian_ = nullptr;
         ++local_initialization_count_;
       }
     }
+
     for (size_t dd = 0; dd < dimDomain; ++dd)
       helper<dimDomain>::reconstruct(
-          dd, values, *eigenvectors_, *eigenvectors_inverse_, quadrature_, reconstructed_values_map, intersections);
+          dd, values, *eigenvectors_, *Q_, *R_, permutations_, quadrature_, reconstructed_values_map, intersections);
   } // void apply_local(...)
 
   static void reset()
@@ -154,14 +159,16 @@ private:
     static void reconstruct(size_t /*dd*/,
                             const ValuesType& values,
                             FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
-                            FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse,
+                            FieldVector<CscSparseMatrixType, dimDomain>& Q,
+                            FieldVector<CscSparseMatrixType, dimDomain>& R,
+                            FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations,
                             const QuadratureType& /*quadrature*/,
                             std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
     {
       FieldVector<RangeType, stencil_size> char_values;
       for (size_t ii = 0; ii < stencil_size; ++ii)
-        eigenvectors_inverse[0].mv(values[ii][0][0], char_values[ii]);
+        apply_inverse_eigenvectors(Q[0], R[0], permutations[0], values[ii][0][0], char_values[ii]);
 
       // reconstruction in x direction
       FieldVector<RangeType, 2> reconstructed_values;
@@ -191,16 +198,20 @@ private:
 
     static void get_eigenvectors(const JacobianRangeType& jacobian,
                                  FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
-                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse)
+                                 FieldVector<CscSparseMatrixType, dimDomain>& Q,
+                                 FieldVector<CscSparseMatrixType, dimDomain>& R,
+                                 FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations)
     {
-      XT::Common::Configuration eigensolver_options(
+      static XT::Common::Configuration eigensolver_options(
           {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
-          {EigenSolverType::types()[0], "1", "1", "0", "1"});
+          {EigenSolverType::types()[0].c_str(), "1", "1", "0", "1"});
       const auto eigensolver = EigenSolverType(jacobian);
       auto eigenvectors_dense = eigensolver.real_eigenvectors_as_matrix(eigensolver_options);
       eigenvectors[0] = SparseMatrixType(*eigenvectors_dense, true);
-      eigenvectors_dense->invert();
-      eigenvectors_inverse[0] = SparseMatrixType(*eigenvectors_dense, true);
+      thread_local MatrixType Qdense(0);
+      XT::LA::qr_decomposition(*eigenvectors_dense, permutations[0], Qdense);
+      R[0] = CscSparseMatrixType(*eigenvectors_dense, true, size_t(0));
+      Q[0] = CscSparseMatrixType(Qdense, true, size_t(0));
     } // ... get_eigenvectors(...)
   }; // struct helper<1,...
 
@@ -211,7 +222,9 @@ private:
     static void reconstruct(size_t dd,
                             const ValuesType& values,
                             FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
-                            FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse,
+                            FieldVector<CscSparseMatrixType, dimDomain>& Q,
+                            FieldVector<CscSparseMatrixType, dimDomain>& R,
+                            FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations,
                             const QuadratureType& quadrature,
                             std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
@@ -219,13 +232,16 @@ private:
       // We always treat dd as the x-direction and set y-direction accordingly. For that purpose, define new
       // coordinates x', y'. First reorder x, y to x', y' and convert to x'-characteristic variables.
       // Reordering is done such that the indices in char_values are in the order y', x'.
+      size_t curr_dir = dd;
       FieldVector<FieldVector<RangeType, stencil_size>, stencil_size> char_values;
       for (size_t ii = 0; ii < stencil_size; ++ii) {
         for (size_t jj = 0; jj < stencil_size; ++jj) {
           if (dd == 0)
-            eigenvectors_inverse[dd].mv(values[ii][jj][0], char_values[jj][ii]);
+            apply_inverse_eigenvectors(
+                Q[curr_dir], R[curr_dir], permutations[curr_dir], values[ii][jj][0], char_values[jj][ii]);
           else if (dd == 1)
-            eigenvectors_inverse[dd].mv(values[ii][jj][0], char_values[ii][jj]);
+            apply_inverse_eigenvectors(
+                Q[curr_dir], R[curr_dir], permutations[curr_dir], values[ii][jj][0], char_values[ii][jj]);
         }
       }
 
@@ -242,15 +258,18 @@ private:
       }
 
       // convert from x'-characteristic variables to y'-characteristic variables
+      size_t next_dir = (dd + 1) % 2;
       RangeType tmp_vec;
       for (size_t ii = 0; ii < 2; ++ii) {
         for (size_t jj = 0; jj < stencil_size; ++jj) {
           tmp_vec = x_reconstructed_values[ii][jj];
-          eigenvectors[dd].mv(tmp_vec, x_reconstructed_values[ii][jj]);
+          eigenvectors[curr_dir].mv(tmp_vec, x_reconstructed_values[ii][jj]);
           tmp_vec = x_reconstructed_values[ii][jj];
-          eigenvectors_inverse[(dd + 1) % 2].mv(tmp_vec, x_reconstructed_values[ii][jj]);
+          apply_inverse_eigenvectors(
+              Q[next_dir], R[next_dir], permutations[next_dir], tmp_vec, x_reconstructed_values[ii][jj]);
         }
       }
+      curr_dir = next_dir;
 
       const auto& num_quad_points = quadrature.size();
       // reconstruction in y' direction
@@ -264,7 +283,7 @@ private:
       for (size_t ii = 0; ii < 2; ++ii) {
         for (size_t jj = 0; jj < num_quad_points; ++jj) {
           // convert back to non-characteristic variables
-          eigenvectors[(dd + 1) % 2].mv(reconstructed_values[ii][jj], tmp_vec);
+          eigenvectors[curr_dir].mv(reconstructed_values[ii][jj], tmp_vec);
           auto quadrature_point = quadrature[jj].position();
           reconstructed_values_map.insert(
               std::make_pair(intersections[2 * dd + ii].geometryInInside().global(quadrature_point), tmp_vec));
@@ -283,9 +302,11 @@ private:
 
     static void get_eigenvectors(const JacobianRangeType& jacobian,
                                  FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
-                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse)
+                                 FieldVector<CscSparseMatrixType, dimDomain>& Q,
+                                 FieldVector<CscSparseMatrixType, dimDomain>& R,
+                                 FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations)
     {
-      helper<3, anything>::get_eigenvectors(jacobian, eigenvectors, eigenvectors_inverse);
+      helper<3, anything>::get_eigenvectors(jacobian, eigenvectors, Q, R, permutations);
     }
   }; // helper<2,...
 
@@ -296,7 +317,9 @@ private:
     static void reconstruct(size_t dd,
                             const ValuesType& values,
                             FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
-                            FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse,
+                            FieldVector<CscSparseMatrixType, dimDomain>& Q,
+                            FieldVector<CscSparseMatrixType, dimDomain>& R,
+                            FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations,
                             const QuadratureType& quadrature,
                             std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
@@ -304,16 +327,20 @@ private:
       // We always treat dd as the x-direction and set y- and z-direction accordingly. For that purpose, define new
       // coordinates x', y', z'. First reorder x, y, z to x', y', z' and convert to x'-characteristic variables.
       // Reordering is done such that the indices in char_values are in the order z', y', x'
+      size_t curr_dir = dd;
       FieldVector<FieldVector<FieldVector<RangeType, stencil_size>, stencil_size>, stencil_size> char_values;
       for (size_t ii = 0; ii < stencil_size; ++ii) {
         for (size_t jj = 0; jj < stencil_size; ++jj) {
           for (size_t kk = 0; kk < stencil_size; ++kk) {
             if (dd == 0)
-              eigenvectors_inverse[dd].mv(values[ii][jj][kk], char_values[kk][jj][ii]);
+              apply_inverse_eigenvectors(
+                  Q[curr_dir], R[curr_dir], permutations[curr_dir], values[ii][jj][kk], char_values[kk][jj][ii]);
             else if (dd == 1)
-              eigenvectors_inverse[dd].mv(values[ii][jj][kk], char_values[ii][kk][jj]);
+              apply_inverse_eigenvectors(
+                  Q[curr_dir], R[curr_dir], permutations[curr_dir], values[ii][jj][kk], char_values[ii][kk][jj]);
             else if (dd == 2)
-              eigenvectors_inverse[dd].mv(values[ii][jj][kk], char_values[jj][ii][kk]);
+              apply_inverse_eigenvectors(
+                  Q[curr_dir], R[curr_dir], permutations[curr_dir], values[ii][jj][kk], char_values[jj][ii][kk]);
           }
         }
       }
@@ -334,14 +361,16 @@ private:
       }
 
       // convert from x'-characteristic variables to y'-characteristic variables
+      size_t next_dir = (dd + 1) % 3;
       RangeType tmp_vec;
       for (size_t kk = 0; kk < stencil_size; ++kk) {
         for (size_t ii = 0; ii < 2; ++ii) {
           for (size_t jj = 0; jj < stencil_size; ++jj) {
             tmp_vec = x_reconstructed_values[kk][ii][jj];
-            eigenvectors[dd].mv(tmp_vec, x_reconstructed_values[kk][ii][jj]);
+            eigenvectors[curr_dir].mv(tmp_vec, x_reconstructed_values[kk][ii][jj]);
             tmp_vec = x_reconstructed_values[kk][ii][jj];
-            eigenvectors_inverse[(dd + 1) % 3].mv(tmp_vec, x_reconstructed_values[kk][ii][jj]);
+            apply_inverse_eigenvectors(
+                Q[next_dir], R[next_dir], permutations[next_dir], tmp_vec, x_reconstructed_values[kk][ii][jj]);
           }
         }
       }
@@ -363,13 +392,16 @@ private:
       } // kk
 
       // convert from y'-characteristic variables to z'-characteristic variables
+      curr_dir = next_dir;
+      next_dir = (dd + 2) % 3;
       for (size_t ii = 0; ii < 2; ++ii) {
         for (size_t jj = 0; jj < num_quad_points; ++jj) {
           for (size_t kk = 0; kk < stencil_size; ++kk) {
             tmp_vec = y_reconstructed_values[ii][jj][kk];
-            eigenvectors[(dd + 1) % 3].mv(tmp_vec, y_reconstructed_values[ii][jj][kk]);
+            eigenvectors[curr_dir].mv(tmp_vec, y_reconstructed_values[ii][jj][kk]);
             tmp_vec = y_reconstructed_values[ii][jj][kk];
-            eigenvectors_inverse[(dd + 2) % 3].mv(tmp_vec, y_reconstructed_values[ii][jj][kk]);
+            apply_inverse_eigenvectors(
+                Q[next_dir], R[next_dir], permutations[next_dir], tmp_vec, y_reconstructed_values[ii][jj][kk]);
           }
         }
       }
@@ -389,7 +421,7 @@ private:
         for (size_t jj = 0; jj < num_quad_points; ++jj) {
           for (size_t kk = 0; kk < num_quad_points; ++kk) {
             // convert back to non-characteristic variables
-            eigenvectors[(dd + 2) % 3].mv(reconstructed_values[ii][jj][kk], tmp_vec);
+            eigenvectors[next_dir].mv(reconstructed_values[ii][jj][kk], tmp_vec);
             IntersectionLocalCoordType quadrature_point = {quadrature[jj].position(), quadrature[kk].position()};
             reconstructed_values_map.insert(
                 std::make_pair(intersections[2 * dd + ii].geometryInInside().global(quadrature_point), tmp_vec));
@@ -409,21 +441,44 @@ private:
 
     static void get_eigenvectors(const JacobianRangeType& jacobian,
                                  FieldVector<SparseMatrixType, dimDomain>& eigenvectors,
-                                 FieldVector<SparseMatrixType, dimDomain>& eigenvectors_inverse)
+                                 FieldVector<CscSparseMatrixType, dimDomain>& Q,
+                                 FieldVector<CscSparseMatrixType, dimDomain>& R,
+                                 FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations)
     {
-      XT::Common::Configuration eigensolver_options(
+      static XT::Common::Configuration eigensolver_options(
           {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
           {EigenSolverType::types()[0], "1", "1", "0", "1"});
       for (size_t ii = 0; ii < dimDomain; ++ii) {
         const auto eigensolver = EigenSolverType(jacobian[ii]);
         auto eigenvectors_dense = eigensolver.real_eigenvectors_as_matrix(eigensolver_options);
         eigenvectors[ii] = SparseMatrixType(*eigenvectors_dense, true);
-        eigenvectors_dense->invert();
-        eigenvectors_inverse[ii] = SparseMatrixType(*eigenvectors_dense, true);
+        thread_local MatrixType Qdense(0);
+        XT::LA::qr_decomposition(*eigenvectors_dense, permutations[ii], Qdense);
+        R[ii] = CscSparseMatrixType(*eigenvectors_dense, true, size_t(0));
+        Q[ii] = CscSparseMatrixType(Qdense, true, size_t(0));
       } // ii
     } // ... get_eigenvectors(...)
   }; // struct helper<3, ...
 
+
+  // Calculate A^{-1} x, where we have a QR decomposition with column pivoting A = QRP^T.
+  // A^{-1} x = (QRP^T)^{-1} x = P R^{-1} Q^T x
+  static void apply_inverse_eigenvectors(const CscSparseMatrixType& Q,
+                                         const CscSparseMatrixType& R,
+                                         const FieldVector<size_t, dimRange>& permutations,
+                                         const RangeType& x,
+                                         RangeType& ret)
+  {
+    // calculate ret = Q^T x
+    Q.mtv(x, ret);
+    // calculate ret = R^{-1} ret
+    auto y = ret;
+    XT::LA::solve_upper_triangular(R, ret, y);
+    // calculate ret = P ret
+    y = ret;
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      ret[permutations[ii]] = y[ii];
+  }
 
   class StencilIterator
   {
@@ -537,7 +592,7 @@ private:
     std::copy(result_vec.begin(), result_vec.end(), result.begin());
   }
 
-  const std::vector<RangeType> source_values_;
+  const std::vector<RangeType>& source_values_;
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueType& boundary_values_;
   const GridLayerType& grid_layer_;
@@ -547,7 +602,9 @@ private:
   std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values_;
   static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
   static thread_local std::unique_ptr<FieldVector<SparseMatrixType, dimDomain>> eigenvectors_;
-  static thread_local std::unique_ptr<FieldVector<SparseMatrixType, dimDomain>> eigenvectors_inverse_;
+  static thread_local std::unique_ptr<FieldVector<CscSparseMatrixType, dimDomain>> Q_;
+  static thread_local std::unique_ptr<FieldVector<CscSparseMatrixType, dimDomain>> R_;
+  static thread_local FieldVector<FieldVector<size_t, dimRange>, dimDomain> permutations_;
   static std::atomic<size_t> initialization_count_;
   static thread_local size_t local_initialization_count_;
   static bool is_instantiated_;
@@ -588,11 +645,44 @@ thread_local std::unique_ptr<FieldVector<
                                            AnalyticalFluxType,
                                            BoundaryValueType,
                                            polOrder,
-                                           slope_limiter>::SparseMatrixType,
+                                           slope_limiter>::CscSparseMatrixType,
     LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
         dimDomain>>
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::Q_;
+
+template <class GridLayerType,
+          class AnalyticalFluxType,
+          class BoundaryValueType,
+          size_t polOrder,
+          SlopeLimiters slope_limiter>
+thread_local std::unique_ptr<FieldVector<
+    typename LocalReconstructionFvOperator<GridLayerType,
+                                           AnalyticalFluxType,
+                                           BoundaryValueType,
+                                           polOrder,
+                                           slope_limiter>::CscSparseMatrixType,
     LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
-        eigenvectors_inverse_;
+        dimDomain>>
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::R_;
+
+template <class GridLayerType,
+          class AnalyticalFluxType,
+          class BoundaryValueType,
+          size_t polOrder,
+          SlopeLimiters slope_limiter>
+thread_local FieldVector<FieldVector<size_t,
+                                     LocalReconstructionFvOperator<GridLayerType,
+                                                                   AnalyticalFluxType,
+                                                                   BoundaryValueType,
+                                                                   polOrder,
+                                                                   slope_limiter>::dimRange>,
+                         LocalReconstructionFvOperator<GridLayerType,
+                                                       AnalyticalFluxType,
+                                                       BoundaryValueType,
+                                                       polOrder,
+                                                       slope_limiter>::dimDomain>
+    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
+        permutations_;
 
 template <class GridLayerType,
           class AnalyticalFluxType,

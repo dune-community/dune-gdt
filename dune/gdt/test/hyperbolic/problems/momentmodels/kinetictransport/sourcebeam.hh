@@ -60,7 +60,7 @@ public:
                const QuadratureType& quadrature = default_quadrature(),
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, 6, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, quadrature, {6}, grid_cfg, boundary_cfg)
   {
   }
 
@@ -249,7 +249,7 @@ public:
 
   virtual FluxType* create_flux() const
   {
-    return new ActualFluxType(grid_layer_, quadrature_, basis_functions_);
+    return new ActualFluxType(basis_functions_, grid_layer_, quadrature_);
   }
 
 protected:

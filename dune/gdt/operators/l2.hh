@@ -82,14 +82,14 @@ class L2LocalizableProduct
 
   template <class... Args>
   explicit L2LocalizableProduct(tag<false>, Args&&... args)
-    : FunctionProvider(1.)
+    : FunctionProvider(FunctionProvider::make(1.))
     , BaseType(FunctionProvider::access(), std::forward<Args>(args)...)
   {
   }
 
   template <class... Args>
   explicit L2LocalizableProduct(tag<true>, const size_t over_integrate, Args&&... args)
-    : FunctionProvider(1.)
+    : FunctionProvider(FunctionProvider::make(1.))
     , BaseType(over_integrate, FunctionProvider::access(), std::forward<Args>(args)...)
   {
   }
@@ -207,14 +207,14 @@ class L2MatrixOperator
 
   template <class... Args>
   explicit L2MatrixOperator(tag<false>, Args&&... args)
-    : FunctionProvider(1.)
+    : FunctionProvider(FunctionProvider::make(1.))
     , BaseType(FunctionProvider::access(), std::forward<Args>(args)...)
   {
   }
 
   template <class... Args>
   explicit L2MatrixOperator(tag<true>, const size_t over_integrate, Args&&... args)
-    : FunctionProvider(1.)
+    : FunctionProvider(FunctionProvider::make(1.))
     , BaseType(over_integrate, FunctionProvider::access(), std::forward<Args>(args)...)
   {
   }

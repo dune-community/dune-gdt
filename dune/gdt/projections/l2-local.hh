@@ -19,7 +19,6 @@
 #include <dune/gdt/local/operators/l2-projection.hh>
 #include <dune/gdt/operators/base.hh>
 #include <dune/gdt/operators/interfaces.hh>
-#include <dune/gdt/spaces/dg/interface.hh>
 #include <dune/gdt/type_traits.hh>
 
 namespace Dune {

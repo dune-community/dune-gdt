@@ -66,7 +66,7 @@ private:
           SolutionStorageProviderType;
 
 protected:
-  TimeStepperInterface(const RangeFieldType t_0, const DiscreteFunctionType& initial_values)
+  TimeStepperInterface(const RangeFieldType t_0, DiscreteFunctionType& initial_values)
     : CurrentSolutionStorageProviderType(initial_values)
     , SolutionStorageProviderType(new SolutionType())
     , t_(t_0)

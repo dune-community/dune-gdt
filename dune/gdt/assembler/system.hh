@@ -438,7 +438,6 @@ public:
     return *this;
   } // ... append(...)
 
-
   void assemble(const bool use_tbb = false)
   {
     this->walk(use_tbb);

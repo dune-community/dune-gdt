@@ -19,6 +19,7 @@
 
 #include <dune/xt/functions/interfaces.hh>
 
+#include <dune/xt/la/algorithms/qr.hh>
 #include <dune/xt/la/eigen-solver.hh>
 
 #include "interfaces.hh"
@@ -90,11 +91,12 @@ public:
   static const size_t dimRange = Traits::dimRange;
   typedef typename Dune::FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
   typedef typename XT::LA::CommonSparseMatrix<RangeFieldType> SparseMatrixType;
+  typedef typename XT::LA::CommonSparseMatrixCsc<RangeFieldType> CscSparseMatrixType;
   typedef typename XT::LA::EigenSolver<MatrixType> EigenSolverType;
   typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
   typedef typename Dune::FieldVector<MatrixType, dimDomain> JacobianRangeType;
 
-  typedef FieldVector<SparseMatrixType, dimDomain> JacobiansType;
+  typedef FieldVector<CscSparseMatrixType, dimDomain> JacobiansType;
 
   explicit GodunovFluxImplementation(const AnalyticalFluxType& analytical_flux,
                                      XT::Common::Parameter param,
@@ -141,7 +143,7 @@ public:
     const RangeType delta_u = u_i - u_j;
     // calculate waves
     RangeType waves(0);
-    n_ij[direction] > 0 ? jacobian_neg()[direction].mv(delta_u, waves) : jacobian_pos()[direction].mv(delta_u, waves);
+    n_ij[direction] > 0 ? jacobian_neg()[direction].mtv(delta_u, waves) : jacobian_pos()[direction].mtv(delta_u, waves);
     // calculate flux
     const auto& local_flux = std::get<0>(local_functions_tuple);
     RangeType ret = local_flux->evaluate_col(direction, x_in_inside_coords, u_i, param_inside_);
@@ -161,6 +163,42 @@ public:
   }
 
 private:
+  // solve R^T F = P^T D A^T where is P is the permutation matrix and D is the diagonal eigenvalue matrix
+  static void solve_upper_triangular_transposed(CscSparseMatrixType& F,
+                                                const SparseMatrixType& R,
+                                                const FieldVector<size_t, dimRange>& permutations,
+                                                const StateRangeType& eigenvalues,
+                                                const SparseMatrixType& A)
+  {
+    F.clear();
+    StateRangeType rhs(0.);
+    for (size_t cc = 0; cc < dimRange; ++cc) {
+      // apply permutations and scaling to column of A^T and store in vector
+      std::fill(rhs.begin(), rhs.end(), 0.);
+      size_t end = A.row_pointers()[cc + 1];
+      for (size_t kk = A.row_pointers()[cc]; kk < end; ++kk) {
+        size_t index = A.column_indices()[kk];
+        auto eigval = eigenvalues[index];
+        if (XT::Common::FloatCmp::ne(eigval, 0.))
+          rhs[permutations[index]] = A.entries()[kk] * eigval;
+      } // kk
+      // forward solve
+      for (size_t ii = 0; ii < dimRange; ++ii) {
+        if (XT::Common::FloatCmp::ne(rhs[ii], 0.)) {
+          size_t kk = R.row_pointers()[ii];
+          const auto& diag_ii = R.entries()[kk];
+          const auto x_ii = rhs[ii] / diag_ii;
+          F.entries().push_back(x_ii);
+          F.row_indices().push_back(ii);
+          ++kk;
+          for (; kk < R.row_pointers()[ii + 1]; ++kk)
+            rhs[R.column_indices()[kk]] -= R.entries()[kk] * x_ii;
+        }
+      } // ii
+      F.column_pointers()[cc + 1] = F.row_indices().size();
+    } // cc
+  } // void solve_upper_triangular_transposed(...)
+
   // use simple linearized Riemann solver, LeVeque p.316
   void initialize_jacobians(const size_t direction,
                             const LocalfunctionTupleType& local_functions_tuple,
@@ -173,35 +211,58 @@ private:
       RangeType u_mean = u_i + u_j;
       u_mean *= RangeFieldType(0.5);
       const auto& local_flux = std::get<0>(local_functions_tuple);
-      if (!jacobian())
-        jacobian() = XT::Common::make_unique<JacobianRangeType>();
-      helper<dimDomain>::get_jacobian(direction, local_flux, x_local, u_mean, *(jacobian()), param_inside_);
-      XT::Common::Configuration eigensolver_options(
+      thread_local std::unique_ptr<MatrixType> jacobian;
+      thread_local std::unique_ptr<MatrixType> Qdense;
+      if (!jacobian) {
+        jacobian = XT::Common::make_unique<MatrixType>();
+        Qdense = XT::Common::make_unique<MatrixType>();
+      }
+      helper<dimDomain>::get_jacobian(direction, local_flux, x_local, u_mean, *jacobian, param_inside_);
+      // get matrix of eigenvectors A and eigenvalues
+      static XT::Common::Configuration eigensolver_options(
           {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
-          {EigenSolverType::types()[1], "1", "1", "0", "1"});
-      const auto eigen_solver = EigenSolverType((*(jacobian()))[direction]);
+          {EigenSolverType::types()[0].c_str(), "1", "1", "0", "1"});
+      const auto eigen_solver = EigenSolverType(*jacobian);
       const auto eigenvalues = eigen_solver.eigenvalues(eigensolver_options);
-      const auto eigenvectors = eigen_solver.real_eigenvectors_as_matrix(eigensolver_options);
-      auto eigenvectors_inverse = std::make_shared<MatrixType>(*eigenvectors);
-      eigenvectors_inverse->invert();
-      if (is_linear_)
-        jacobian() = nullptr;
+      StateRangeType eigvals_neg(0.);
+      StateRangeType eigvals_pos(0.);
+      for (size_t ii = 0; ii < eigenvalues.size(); ++ii) {
+        if (eigenvalues[ii].real() < 0.)
+          eigvals_neg[ii] = eigenvalues[ii].real();
+        else
+          eigvals_pos[ii] = eigenvalues[ii].real();
+      }
+      const auto eigenvectors_dense = eigen_solver.real_eigenvectors_as_matrix(eigensolver_options);
+      thread_local SparseMatrixType eigenvectors(dimRange, dimRange, size_t(0));
+      eigenvectors = *eigenvectors_dense;
+      // calculate QR decomposition with column pivoting A = QRP^T
+      FieldVector<size_t, dimRange> permutations;
+      XT::LA::qr_decomposition(*eigenvectors_dense, permutations, *Qdense);
+      FieldVector<size_t, dimRange> inverse_permutations;
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        inverse_permutations[permutations[ii]] = ii;
+      thread_local SparseMatrixType R(dimRange, dimRange, size_t(0));
+      R = *eigenvectors_dense;
+      // we want to compute C_{+,-} = A D_{+,-} A^{-1}, where D_+ is the diagonal matrix containing only positive
+      // eigenvalues and D_- contains only negative eigenvalues. Using the QR decomposition, we get
+      // C = A D A^{-1} = A D (QRP^T)^{-1} = A D P R^{-1} Q^T. For the transpose of C, we get
+      // C^T =  Q R^{-T} P^T D A^T. We calculate C^T by first solving (column-wise)
+      // R^T F = P^T D A^T and then computing C^T = Q F;
+      thread_local CscSparseMatrixType F_neg(dimRange, dimRange, size_t(0));
+      thread_local CscSparseMatrixType F_pos(dimRange, dimRange, size_t(0));
+      solve_upper_triangular_transposed(F_neg, R, inverse_permutations, eigvals_neg, eigenvectors);
+      solve_upper_triangular_transposed(F_pos, R, inverse_permutations, eigvals_pos, eigenvectors);
 
-      auto jacobian_neg_dense = XT::Common::make_unique<MatrixType>(0);
-      auto jacobian_pos_dense = XT::Common::make_unique<MatrixType>(0);
-      for (size_t rr = 0; rr < dimRange; ++rr)
-        for (size_t cc = 0; cc < dimRange; ++cc)
-          for (size_t kk = 0; kk < dimRange; ++kk)
-            if (XT::Common::FloatCmp::lt(eigenvalues[kk].real(), 0.))
-              (*jacobian_neg_dense)[rr][cc] +=
-                  (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk].real();
-            else
-              (*jacobian_pos_dense)[rr][cc] +=
-                  (*eigenvectors)[rr][kk] * (*eigenvectors_inverse)[kk][cc] * eigenvalues[kk].real();
-      jacobian_neg()[direction] = SparseMatrixType(*jacobian_neg_dense, true);
-      jacobian_pos()[direction] = SparseMatrixType(*jacobian_pos_dense, true);
-      if (is_linear_)
+      jacobian_neg()[direction] = *Qdense;
+      jacobian_pos()[direction].deep_copy(jacobian_neg()[direction]);
+      jacobian_neg()[direction].rightmultiply(F_neg);
+      jacobian_pos()[direction].rightmultiply(F_pos);
+
+      if (is_linear_) {
+        jacobian = nullptr;
+        Qdense = nullptr;
         ++local_initialization_counts_[direction];
+      }
     } // if (local_initialization_counts_[direction] != initialization_count_)
   } // void calculate_jacobians(...)
 
@@ -212,10 +273,10 @@ private:
                              const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
                              const DomainType& x_in_inside_coords,
                              const StateRangeType& u,
-                             JacobianRangeType& ret,
+                             MatrixType& ret,
                              const XT::Common::Parameter& param)
     {
-      local_func->partial_u_col(direction, x_in_inside_coords, u, ret[direction], param);
+      local_func->partial_u_col(direction, x_in_inside_coords, u, ret, param);
     }
   };
 
@@ -226,11 +287,11 @@ private:
                              const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
                              const DomainType& x_in_inside_coords,
                              const StateRangeType& u,
-                             JacobianRangeType& ret,
+                             MatrixType& ret,
                              const XT::Common::Parameter& param)
     {
       assert(direction == 0);
-      local_func->partial_u(x_in_inside_coords, u, ret[0], param);
+      local_func->partial_u(x_in_inside_coords, u, ret, param);
     }
   };
 
@@ -241,25 +302,18 @@ private:
   // work around gcc bug 66944
   static JacobiansType& jacobian_neg()
   {
-    static thread_local JacobiansType jacobian_neg_;
+    static thread_local JacobiansType jacobian_neg_(CscSparseMatrixType(dimRange, dimRange, size_t(0)));
     return jacobian_neg_;
   }
 
   static JacobiansType& jacobian_pos()
   {
-    static thread_local JacobiansType jacobian_pos_;
+    static thread_local JacobiansType jacobian_pos_(CscSparseMatrixType(dimRange, dimRange, size_t(0)));
     return jacobian_pos_;
-  }
-
-  static std::unique_ptr<JacobianRangeType>& jacobian()
-  {
-    static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
-    return jacobian_;
   }
 
   //  static thread_local JacobiansType jacobian_neg_;
   //  static thread_local JacobiansType jacobian_pos_;
-  //  static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
 
   const bool is_linear_;
   static bool is_instantiated_;
@@ -274,10 +328,6 @@ private:
 // template <class Traits>
 // thread_local
 //    typename GodunovFluxImplementation<Traits>::JacobiansType GodunovFluxImplementation<Traits>::jacobian_pos_;
-
-// template <class Traits>
-// thread_local std::unique_ptr<typename GodunovFluxImplementation<Traits>::JacobianRangeType>
-//    GodunovFluxImplementation<Traits>::jacobian_;
 
 template <class Traits>
 bool GodunovFluxImplementation<Traits>::is_instantiated_(false);

@@ -174,7 +174,7 @@ public:
                                                        "check_evs_are_real",
                                                        "check_evs_are_positive",
                                                        "check_eigenvectors_are_real"},
-                                                      {EigenSolverType::types()[0], "1", "1", "0", "1"});
+                                                      {EigenSolverType::types()[0].c_str(), "1", "1", "0", "1"});
         const auto eigen_solver_inside = EigenSolverType((*jacobian_inside())[direction]);
         const auto eigen_solver_outside = EigenSolverType((*jacobian_outside())[direction]);
         const auto& eigenvalues_inside = eigen_solver_inside.eigenvalues(eigensolver_options);

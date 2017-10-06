@@ -47,8 +47,7 @@ struct ChooseLimiter<SlopeLimiters::minmod>
     VectorType ret(0.);
     for (size_t ii = 0; ii < slope_left.size(); ++ii)
       if (slope_left[ii] * slope_right[ii] > 0) // check for equal sign
-        ret[ii] = XT::Common::FloatCmp::lt(std::abs(slope_left[ii]), std::abs(slope_right[ii])) ? slope_left[ii]
-                                                                                                : slope_right[ii];
+        ret[ii] = (std::abs(slope_left[ii]) < std::abs(slope_right[ii])) ? slope_left[ii] : slope_right[ii];
     return ret;
   }
 };

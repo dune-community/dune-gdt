@@ -13,6 +13,7 @@
 #define DUNE_GDT_OPERATORS_BASE_HH
 
 #include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/parameter.hh>
 #include <dune/xt/grid/walker/apply-on.hh>
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/grid/type_traits.hh>
@@ -673,7 +674,8 @@ public:
   template <class T>
   ThisType& append(const LocalCouplingOperatorInterface<T>& local_operator,
                    const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where =
-                       new XT::Grid::ApplyOn::InnerIntersections<GridLayerType>())
+                       new XT::Grid::ApplyOn::InnerIntersections<GridLayerType>(),
+                   const XT::Common::Parameter& mu = {})
   {
     typedef LocalCouplingOperatorApplicator<GridLayerType,
                                             typename LocalCouplingOperatorInterface<T>::derived_type,
@@ -681,10 +683,16 @@ public:
                                             RangeType>
         Applicator;
     local_operators_codim_1.emplace_back(
-        new Applicator(grid_layer(), local_operator.as_imp(), source_, range_, *where));
+        new Applicator(grid_layer(), local_operator.as_imp(), source_, range_, *where, mu));
     BaseType::append(*local_operators_codim_1.back(), where);
     return *this;
   } // ... append(...)
+
+  template <class T>
+  ThisType& append(const LocalCouplingOperatorInterface<T>& local_operator, const XT::Common::Parameter& mu)
+  {
+    return this->append(local_operator, new XT::Grid::ApplyOn::InnerIntersections<GridLayerType>(), mu);
+  }
 
   template <class T>
   ThisType& append(const LocalBoundaryOperatorInterface<T>& local_operator,

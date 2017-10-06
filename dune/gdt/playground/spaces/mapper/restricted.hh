@@ -15,6 +15,7 @@
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/grid/type_traits.hh>
 
+#include <dune/gdt/exceptions.hh>
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/type_traits.hh>

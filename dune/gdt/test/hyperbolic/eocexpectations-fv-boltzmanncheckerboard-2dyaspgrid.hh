@@ -12,7 +12,7 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_FV_BOLTZMANNCHECKERBOARD_2DYASPGRID_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_EOCEXPECTATIONS_FV_BOLTZMANNCHECKERBOARD_2DYASPGRID_HH
 
-#include "problems/momentmodels/kinetictransport/2dboltzmann.hh"
+#include "problems/momentmodels/kinetictransport/checkerboard.hh"
 #include "eocexpectations.hh"
 
 namespace Dune {

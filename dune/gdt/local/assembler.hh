@@ -15,7 +15,7 @@
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/dynvector.hh>
 
-#include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/functions/interfaces/localizable-function.hh>
 #include <dune/xt/grid/walker/apply-on.hh>
 #include <dune/xt/grid/walker/wrapper.hh>
 #include <dune/xt/la/container/interfaces.hh>
@@ -489,12 +489,14 @@ public:
                                   const LocalOperatorType& local_operator,
                                   const SourceType& source,
                                   RangeType& range,
-                                  const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>& where)
+                                  const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>& where,
+                                  const XT::Common::Parameter& mu = {})
     : grid_layer_(grid_layer)
     , local_operator_(local_operator)
     , source_(source)
     , range_(range)
     , where_(where)
+    , mu_(mu)
   {
   }
 
@@ -509,7 +511,8 @@ public:
     local_operator_.apply(source_,
                           intersection,
                           *range_.local_discrete_function(inside_entity),
-                          *range_.local_discrete_function(outside_entity));
+                          *range_.local_discrete_function(outside_entity),
+                          mu_);
   }
 
 private:
@@ -518,6 +521,7 @@ private:
   const SourceType& source_;
   RangeType& range_;
   const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>& where_;
+  const XT::Common::Parameter& mu_;
 }; // class LocalCouplingOperatorApplicator
 
 
