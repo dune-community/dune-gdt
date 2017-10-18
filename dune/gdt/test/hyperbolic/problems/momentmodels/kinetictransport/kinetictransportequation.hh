@@ -106,9 +106,9 @@ public:
     if (quadrature_.empty())
       quadrature_ = default_quadrature(grid_cfg);
     if (parameter_type_.empty())
-      parameter_type_ = XT::Common::ParameterType({std::make_pair("sigma_a", get_num_regions(num_segments)),
-                                                   std::make_pair("sigma_s", get_num_regions(num_segments)),
-                                                   std::make_pair("Q", get_num_regions(num_segments)),
+      parameter_type_ = XT::Common::ParameterType({std::make_pair("sigma_a", get_num_regions(num_segments_)),
+                                                   std::make_pair("sigma_s", get_num_regions(num_segments_)),
+                                                   std::make_pair("Q", get_num_regions(num_segments_)),
                                                    std::make_pair("CFL", 1),
                                                    std::make_pair("t_end", 1)});
   }
