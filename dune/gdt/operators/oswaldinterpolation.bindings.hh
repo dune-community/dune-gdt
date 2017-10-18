@@ -41,10 +41,9 @@ class OswaldInterpolationOperator
   typedef typename SpaceProvider<G, space_layer_type, space_type, space_backend, p, R, r>::type S;
   typedef typename S::GridLayerType GL;
   typedef typename XT::LA::Container<R, la_backend>::VectorType V;
-  typedef typename XT::Grid::Layer<G,
-                                   interpolation_layer_type,
-                                   interpolation_layer_backend,
-                                   XT::Grid::DD::SubdomainGrid<G>>::type InterpolationLayerType;
+  typedef typename XT::Grid::
+      Layer<G, interpolation_layer_type, interpolation_layer_backend, XT::Grid::DD::SubdomainGrid<G>>::type
+          InterpolationLayerType;
 
 public:
   static void bind(pybind11::module& m)

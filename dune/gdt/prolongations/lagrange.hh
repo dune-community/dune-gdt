@@ -126,10 +126,11 @@ make_lagrange_prolongation_localizable_operator(const ConstDiscreteFunction<Sour
                                                 DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
                                                 const XT::Common::Parameter& param = {})
 {
-  return Dune::XT::Common::make_unique<LagrangeProlongationLocalizableOperator<
-      typename RangeSpaceType::GridLayerType,
-      ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
-      DiscreteFunction<RangeSpaceType, RangeVectorType>>>(range.space().grid_layer(), source, range, param);
+  return Dune::XT::Common::
+      make_unique<LagrangeProlongationLocalizableOperator<typename RangeSpaceType::GridLayerType,
+                                                          ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
+                                                          DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
+          range.space().grid_layer(), source, range, param);
 } // ... make_lagrange_prolongation_localizable_operator(...)
 
 

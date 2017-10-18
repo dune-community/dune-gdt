@@ -248,10 +248,9 @@ class LocalDiffusiveFluxEstimateESV2007Integrand
       BaseType;
 
 public:
-  typedef internal::LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionFactorType,
-                                                                     DiffusiveFluxType,
-                                                                     DiffusionTensorType>
-      Traits;
+  typedef internal::
+      LocalDiffusiveFluxEstimateESV2007IntegrandTraits<DiffusionFactorType, DiffusiveFluxType, DiffusionTensorType>
+          Traits;
   using typename BaseType::LocalfunctionTupleType;
   using typename BaseType::EntityType;
   using typename BaseType::DomainFieldType;
