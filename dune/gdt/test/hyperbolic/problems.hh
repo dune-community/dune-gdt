@@ -22,12 +22,12 @@ using Yasp1 = Yasp1Grid;
 using Yasp2 = Yasp2Grid;
 using Yasp3 = Yasp3Grid;
 
-typedef testing::Types<Dune::GDT::Hyperbolic::CheckerboardTestCase<Yasp2, double, 1>,
+typedef testing::Types<Dune::GDT::Hyperbolic::SourceBeamTestCase<Yasp1, double>,
+                       Dune::GDT::Hyperbolic::CheckerboardTestCase<Yasp2, double, 1>,
                        Dune::GDT::Hyperbolic::BurgersTestCase<Yasp1>,
                        Dune::GDT::Hyperbolic::BurgersTestCase<Yasp2>,
                        Dune::GDT::Hyperbolic::ShallowWaterTestCase<Yasp1>,
                        Dune::GDT::Hyperbolic::ShockTubeTestCase<Yasp1>,
-                       Dune::GDT::Hyperbolic::SourceBeamTestCase<Yasp1, double>,
                        Dune::GDT::Hyperbolic::TransportTestCase<Yasp1, double, 1>,
                        Dune::GDT::Hyperbolic::TransportTestCase<Yasp2, double, 1>>
     YaspGridTestCasesAll;
