@@ -60,10 +60,9 @@ public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
   typedef typename Dune::GDT::ForceLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionType>
       NumericalCouplingFluxType;
-  typedef typename Dune::GDT::ForceLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
-                                                                       BoundaryValueImp,
-                                                                       LocalizableFunctionType>
-      NumericalBoundaryFluxType;
+  typedef typename Dune::GDT::
+      ForceLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionType>
+          NumericalBoundaryFluxType;
   typedef AdvectionForceOperator<AnalyticalFluxImp,
                                  BoundaryValueImp,
                                  LocalizableFunctionImp,

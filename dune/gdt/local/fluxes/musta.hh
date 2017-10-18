@@ -317,10 +317,9 @@ class MustaLocalDirichletNumericalBoundaryFlux
                                                                                                     LocalizableFunctionImp>>
 {
 public:
-  typedef internal::MustaLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                   BoundaryValueImp,
-                                                                   LocalizableFunctionImp>
-      Traits;
+  typedef internal::
+      MustaLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>
+          Traits;
   typedef typename Traits::BoundaryValueType BoundaryValueType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;

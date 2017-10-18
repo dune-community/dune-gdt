@@ -211,13 +211,13 @@ struct AdvectionOperatorApplier
                                 BoundaryValueType,
                                 ReconstructedLocalizableFunctionType,
                                 RangeType>
-        localizable_operator(analytical_flux,
-                             boundary_values,
-                             reconstructed_function,
-                             range,
-                             param,
-                             intersection_quadrature,
-                             std::forward<LocalOperatorArgTypes>(local_operator_args)...);
+    localizable_operator(analytical_flux,
+                         boundary_values,
+                         reconstructed_function,
+                         range,
+                         param,
+                         intersection_quadrature,
+                         std::forward<LocalOperatorArgTypes>(local_operator_args)...);
     localizable_operator.apply(true);
   }
 }; // struct AdvectionOperatorApplier<..., polOrder>0,...>
@@ -256,13 +256,13 @@ struct AdvectionOperatorApplier<NumericalCouplingFluxType,
                                 BoundaryValueType,
                                 SourceType,
                                 RangeType>
-        localizable_operator(analytical_flux,
-                             boundary_values,
-                             source,
-                             range,
-                             param,
-                             intersection_quadrature,
-                             std::forward<LocalOperatorArgTypes>(local_operator_args)...);
+    localizable_operator(analytical_flux,
+                         boundary_values,
+                         source,
+                         range,
+                         param,
+                         intersection_quadrature,
+                         std::forward<LocalOperatorArgTypes>(local_operator_args)...);
     localizable_operator.apply(true);
   }
 }; // struct AdvectionOperatorApplier<..., polOrder=0,...>

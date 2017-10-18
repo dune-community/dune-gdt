@@ -61,10 +61,9 @@ public:
   using typename BaseType::BoundaryValueType;
   typedef typename Dune::GDT::LaxFriedrichsLocalNumericalCouplingFlux<AnalyticalFluxType, LocalizableFunctionType>
       NumericalCouplingFluxType;
-  typedef typename Dune::GDT::LaxFriedrichsLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType,
-                                                                               BoundaryValueType,
-                                                                               LocalizableFunctionType>
-      NumericalBoundaryFluxType;
+  typedef typename Dune::GDT::
+      LaxFriedrichsLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueType, LocalizableFunctionType>
+          NumericalBoundaryFluxType;
   typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxImp,
                                          BoundaryValueImp,
                                          LocalizableFunctionImp,

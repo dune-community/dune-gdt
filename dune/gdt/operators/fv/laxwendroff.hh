@@ -60,10 +60,9 @@ public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
   typedef typename Dune::GDT::LaxWendroffLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionType>
       NumericalCouplingFluxType;
-  typedef typename Dune::GDT::LaxWendroffLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
-                                                                             BoundaryValueImp,
-                                                                             LocalizableFunctionType>
-      NumericalBoundaryFluxType;
+  typedef typename Dune::GDT::
+      LaxWendroffLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionType>
+          NumericalBoundaryFluxType;
   typedef AdvectionLaxWendroffOperator<AnalyticalFluxImp,
                                        BoundaryValueImp,
                                        LocalizableFunctionImp,

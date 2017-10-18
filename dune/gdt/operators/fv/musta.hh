@@ -61,10 +61,9 @@ public:
   using typename BaseType::BoundaryValueType;
   typedef typename Dune::GDT::MustaLocalNumericalCouplingFlux<AnalyticalFluxType, LocalizableFunctionType>
       NumericalCouplingFluxType;
-  typedef typename Dune::GDT::MustaLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType,
-                                                                       BoundaryValueType,
-                                                                       LocalizableFunctionType>
-      NumericalBoundaryFluxType;
+  typedef typename Dune::GDT::
+      MustaLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueType, LocalizableFunctionType>
+          NumericalBoundaryFluxType;
   typedef AdvectionMustaOperator<AnalyticalFluxImp,
                                  BoundaryValueImp,
                                  LocalizableFunctionImp,

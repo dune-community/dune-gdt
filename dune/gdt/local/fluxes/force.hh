@@ -172,10 +172,9 @@ class ForceLocalDirichletNumericalBoundaryFlux
       LaxWendroffLocalFluxType;
 
 public:
-  typedef internal::ForceLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                   BoundaryValueImp,
-                                                                   LocalizableFunctionImp>
-      Traits;
+  typedef internal::
+      ForceLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>
+          Traits;
   typedef typename Traits::BoundaryValueType BoundaryValueType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;

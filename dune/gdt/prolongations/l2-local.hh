@@ -143,11 +143,11 @@ make_local_l2_prolongation_localizable_operator(const ConstDiscreteFunction<Sour
                                                 const size_t over_integrate = 0,
                                                 const XT::Common::Parameter& param = {})
 {
-  return Dune::XT::Common::make_unique<L2LocalProlongationLocalizableOperator<
-      typename RangeSpaceType::GridLayerType,
-      ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
-      DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
-      over_integrate, range.space().grid_layer(), source, range, param);
+  return Dune::XT::Common::
+      make_unique<L2LocalProlongationLocalizableOperator<typename RangeSpaceType::GridLayerType,
+                                                         ConstDiscreteFunction<SourceSpaceType, SourceVectorType>,
+                                                         DiscreteFunction<RangeSpaceType, RangeVectorType>>>(
+          over_integrate, range.space().grid_layer(), source, range, param);
 } // ... make_local_l2_prolongation_localizable_operator(...)
 
 
