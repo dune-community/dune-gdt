@@ -34,6 +34,10 @@ using XT::Grid::Backends;
 namespace py = pybind11;
 
 
+#ifndef NDEBUG
+#endif
+#ifndef NDEBUG
+#endif
 PYBIND11_PLUGIN(__operators_RS2017)
 {
   using namespace pybind11::literals;
