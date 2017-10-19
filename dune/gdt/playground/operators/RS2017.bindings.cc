@@ -325,7 +325,9 @@ public:
                          const TensorFunctionType& kappa,
                          const size_t over_integrate = 2)
     : BaseType(range_space, source_space, grd_lyr)
+#ifndef NDEBUG
     , unit_matrix_(XT::Common::from_string<XT::Common::FieldMatrix<D, d, d>>("[1 0 0; 0 1 0; 0 0 1]"))
+#endif
     , over_integrate_(over_integrate)
     , local_operator_(
           [&](const auto& test_base, const auto& ansatz_base) {
@@ -381,7 +383,9 @@ public:
   DiffusiveFluxAbProduct(ThisType&&) = delete;
 
 private:
+#ifndef NDEBUG
   const XT::Common::FieldMatrix<D, d, d> unit_matrix_;
+#endif
   const size_t over_integrate_;
   const GDT::LocalVolumeIntegralOperator<GDT::LocalLambdaBinaryVolumeIntegrand<E, R, 1, 1, d, 1>,
                                          RangeBaseType,
