@@ -653,6 +653,165 @@ private:
 
 
 template <class G>
+class SubdomainDivergenceMatrixOperator
+    : public GDT::
+          MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                             typename GDT::SpaceProvider<G,
+                                                         Layers::dd_subdomain,
+                                                         GDT::SpaceType::dg,
+                                                         GDT::Backends::fem,
+                                                         1,
+                                                         double,
+                                                         1>::type,
+                             typename XT::Grid::
+                                 Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type,
+                             GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
+                                                                              Layers::leaf,
+                                                                              GDT::SpaceType::rt,
+                                                                              GDT::Backends::pdelab,
+                                                                              0,
+                                                                              double,
+                                                                              G::dimension>::type,
+                                                  typename XT::Grid::Layer<G,
+                                                                           Layers::dd_subdomain,
+                                                                           Backends::part,
+                                                                           XT::Grid::DD::SubdomainGrid<G>>::type>,
+                             double,
+                             GDT::ChoosePattern::volume>
+{
+  static_assert(XT::Grid::is_grid<G>::value, "");
+  typedef GDT::
+      MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
+                         typename GDT::SpaceProvider<G,
+                                                     Layers::dd_subdomain,
+                                                     GDT::SpaceType::dg,
+                                                     GDT::Backends::fem,
+                                                     1,
+                                                     double,
+                                                     1>::type,
+                         typename XT::Grid::
+                             Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type,
+                         GDT::RestrictedSpace<
+                             typename GDT::SpaceProvider<G,
+                                                         Layers::leaf,
+                                                         GDT::SpaceType::rt,
+                                                         GDT::Backends::pdelab,
+                                                         0,
+                                                         double,
+                                                         G::dimension>::type,
+                             typename XT::Grid::
+                                 Layer<G, Layers::dd_subdomain, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>,
+                         double,
+                         GDT::ChoosePattern::volume>
+          BaseType;
+  typedef SubdomainDivergenceMatrixOperator<G> ThisType;
+
+public:
+  using typename BaseType::GridLayerType;
+  using typename BaseType::RangeSpaceType;
+  using typename BaseType::SourceSpaceType;
+
+  typedef XT::Grid::extract_entity_t<GridLayerType> E;
+  typedef XT::Grid::extract_intersection_t<GridLayerType> I;
+  typedef typename G::ctype D;
+  static const constexpr size_t d = G::dimension;
+  typedef double R;
+  typedef typename RangeSpaceType::BaseFunctionSetType RangeBasisType;
+
+  static void bind(py::module& m)
+  {
+    using namespace pybind11::literals;
+
+    py::class_<ThisType, XT::Grid::Walker<GridLayerType>> c(
+        m,
+        XT::Common::to_camel_case("RS2017_divergence_matrix_operator_subdomain_"
+                                  + XT::Grid::bindings::grid_name<G>::value())
+            .c_str());
+    c.def("assemble", [](ThisType& self) { self.assemble(); });
+    c.def("matrix", [](ThisType& self) { return self.matrix(); });
+
+    m.def("RS2017_make_divergence_matrix_operator_on_subdomain",
+          [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
+             const ssize_t subdomain,
+             const RangeSpaceType& dg_space,
+             const SourceSpaceType& rt_space,
+             const size_t over_integrate) {
+            return new ThisType(dg_space,
+                                rt_space,
+                                dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+                                    XT::Common::numeric_cast<size_t>(subdomain)),
+                                over_integrate);
+          },
+          "dd_grid_provider"_a,
+          "subdomain"_a,
+          "dg_space"_a,
+          "rt_space"_a,
+          "over_integrate"_a = 2);
+  } // ... bind(...)
+
+  SubdomainDivergenceMatrixOperator(RangeSpaceType dg_space,
+                                    SourceSpaceType rt_space,
+                                    GridLayerType grd_lyr,
+                                    const size_t over_integrate = 2)
+    : BaseType(dg_space, rt_space, grd_lyr)
+    , over_integrate_(over_integrate)
+  {
+    this->append([&](const auto& entity) {
+      const auto rt_source_basis = this->source_space().base_function_set(entity);
+      const auto dg_range_basis = this->range_space().base_function_set(entity);
+      for (size_t jj = 0; jj < rt_source_basis.size(); ++jj) {
+        const auto JJ = this->source_space().mapper().mapToGlobal(entity, jj);
+
+        XT::LA::CommonDenseMatrix<R> local_matrix(dg_range_basis.size(), dg_range_basis.size(), 0.);
+        XT::LA::CommonDenseVector<R> local_vector(dg_range_basis.size(), 0.);
+
+        typedef XT::Functions::ConstantFunction<E, D, d, R, 1> OneType;
+        const OneType one(1.);
+        const GDT::LocalVolumeIntegralOperator<GDT::LocalProductIntegrand<OneType>, RangeBasisType, RangeBasisType, R>
+            local_l2_operator(one);
+
+        const GDT::LocalVolumeIntegralFunctional<GDT::LocalLambdaUnaryVolumeIntegrand<E, R, 1, 1>, RangeBasisType, R>
+        local_l2_functional([&](const auto& test_base) { return test_base.order(); },
+                            [&](const auto& test_base, const auto& xx, auto& local_vec) {
+                              const auto rt_jacs = rt_source_basis.jacobian(xx);
+                              R div = 0;
+                              for (size_t ss = 0; ss < d; ++ss)
+                                div += rt_jacs[jj][ss][ss];
+                              const auto test_vals = test_base.evaluate(xx);
+                              for (size_t ii = 0; ii < test_base.size(); ++ii)
+                                local_vec[ii] = div * test_vals[ii];
+                            });
+
+        local_l2_operator.apply2(dg_range_basis, dg_range_basis, local_matrix.backend());
+        local_l2_functional.apply(dg_range_basis, local_vector.backend());
+
+        // solve
+        XT::LA::CommonDenseVector<R> local_solution(dg_range_basis.size(), 0.);
+        try {
+          XT::LA::solve(local_matrix, local_vector, local_solution);
+        } catch (XT::LA::Exceptions::linear_solver_failed& ee) {
+          DUNE_THROW(GDT::projection_error,
+                     "Divergence projection failed because a local matrix could not be inverted!\n\n"
+                         << "This was the original error: "
+                         << ee.what());
+        }
+        for (size_t ii = 0; ii < dg_range_basis.size(); ++ii) {
+          const auto II = this->range_space().mapper().mapToGlobal(entity, ii);
+          this->matrix().set_entry(II, JJ, local_solution[ii]);
+        }
+      }
+    });
+  } // SubdomainDivergenceMatrixOperator(...)
+
+  SubdomainDivergenceMatrixOperator(const ThisType&) = delete;
+  SubdomainDivergenceMatrixOperator(ThisType&&) = delete;
+
+private:
+  const size_t over_integrate_;
+}; // class SubdomainDivergenceMatrixOperator
+
+
+template <class G>
 class ResidualPartFunctional
     : public GDT::
           VectorFunctionalBase<XT::LA::IstlDenseVector<double>,
@@ -1470,6 +1629,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
 #if HAVE_DUNE_ALUGRID
   SwipdgPenaltySubdomainProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
   SwipdgPenaltyNeighborhoodProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
+  SubdomainDivergenceMatrixOperator<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
   HdivSemiProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
   DiffusiveFluxAaProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
   DiffusiveFluxAbProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
