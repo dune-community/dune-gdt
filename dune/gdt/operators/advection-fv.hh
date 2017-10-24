@@ -54,7 +54,7 @@ class AdvectionFvOperator : public OperatorInterface<internal::AdvectionFvOperat
   static_assert(XT::Grid::is_layer<GL>::value, "");
   using ThisType = AdvectionFvOperator<DF, GL>;
   using BaseType = OperatorInterface<internal::AdvectionFvOperatorTraits<DF, GL>>;
-  using LocalCouplingOperatorType = LocalAdvectionFvInnerOperator<SpaceType>;
+  using LocalCouplingOperatorType = LocalAdvectionFvCouplingOperator<SpaceType>;
 
 public:
   using typename BaseType::FieldType;

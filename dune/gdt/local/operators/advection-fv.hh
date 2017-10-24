@@ -32,19 +32,19 @@ namespace GDT {
 
 // forward
 template <class SpaceType>
-class LocalAdvectionFvInnerOperator;
+class LocalAdvectionFvCouplingOperator;
 
 
 namespace internal {
 
 
 template <class SpaceType>
-class LocalAdvectionFvInnerOperatorTraits
+class LocalAdvectionFvCouplingOperatorTraits
 {
   static_assert(is_fv_space<SpaceType>::value, "Use LocalAdvectionDgInnerOperator instead!");
 
 public:
-  using derived_type = LocalAdvectionFvInnerOperator<SpaceType>;
+  using derived_type = LocalAdvectionFvCouplingOperator<SpaceType>;
 };
 
 
@@ -129,8 +129,8 @@ private:
  * \todo Improve local vector handling in apply.
  */
 template <class SpaceType>
-class LocalAdvectionFvInnerOperator
-    : public LocalCouplingOperatorInterface<internal::LocalAdvectionFvInnerOperatorTraits<SpaceType>>
+class LocalAdvectionFvCouplingOperator
+    : public LocalCouplingOperatorInterface<internal::LocalAdvectionFvCouplingOperatorTraits<SpaceType>>
 {
   static_assert(SpaceType::dimRangeCols == 1, "Not Implemented yet!");
   using E = typename SpaceType::EntityType;
@@ -144,7 +144,7 @@ class LocalAdvectionFvInnerOperator
 public:
   using NumericalFluxType = NumericalFluxInterface<E, D, d, R, r>;
 
-  LocalAdvectionFvInnerOperator(const NumericalFluxType& numerical_flux)
+  LocalAdvectionFvCouplingOperator(const NumericalFluxType& numerical_flux)
     : numerical_flux_(numerical_flux)
   {
   }
@@ -188,7 +188,7 @@ public:
 
 private:
   const NumericalFluxType& numerical_flux_;
-}; // class LocalAdvectionFvInnerOperator
+}; // class LocalAdvectionFvCouplingOperator
 
 
 } // namespace GDT
