@@ -596,11 +596,9 @@ private:
 template <class GridLayerType, class LocalOperatorType, class SourceType, class RangeType>
 class LocalBoundaryOperatorApplicator : public XT::Grid::internal::Codim1Object<GridLayerType>
 {
-  static_assert(is_local_boundary_operator<LocalOperatorType>::value,
-                "LocalOperatorType has to be derived from LocalCouplingOperatorInterface!");
-  static_assert(XT::Functions::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
-  static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
+  static_assert(is_local_boundary_operator<LocalOperatorType>::value, "");
+  static_assert(XT::Functions::is_localizable_function<SourceType>::value, "");
+  static_assert(is_discrete_function<RangeType>::value, "");
   typedef XT::Grid::internal::Codim1Object<GridLayerType> BaseType;
 
 public:
