@@ -97,11 +97,17 @@ public:
 
   void apply(const DF& source, DF& range, const XT::Common::Parameter& mu = {}) const
   {
+    if (!source.vector().valid())
+      DUNE_THROW(InvalidStateException, "");
     range.vector() *= 0.;
+    if (!range.vector().valid())
+      DUNE_THROW(InvalidStateException, "");
     LocalizableOperatorBase<GL, DF, DF> walker(grid_layer_, source, range);
     walker.append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GL>(), mu);
     walker.append(local_coupling_operator_, new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GL>(), mu);
     walker.walk();
+    if (!range.vector().valid())
+      DUNE_THROW(InvalidStateException, "");
   }
 
   template <class RangeType, class SourceType>
