@@ -420,8 +420,8 @@ GTEST_TEST(empty, main)
   using I = XT::Grid::extract_intersection_t<GL>;
 
   MyNormalBasedBoundaryInfo<I> boundary_info;
-  boundary_info.register_new_type({-1.}, new XT::Grid::InflowBoundary());
-  //  boundary_info.register_new_type({-1.}, new XT::Grid::ImpermeableBoundary());
+  //  boundary_info.register_new_type({-1.}, new XT::Grid::InflowBoundary());
+  boundary_info.register_new_type({-1.}, new XT::Grid::ImpermeableBoundary());
   boundary_info.register_new_type({1.}, new XT::Grid::ImpermeableBoundary());
 
   const double gamma = 1.4; // air or water at roughly 20 deg Cels.
@@ -512,7 +512,28 @@ GTEST_TEST(empty, main)
       /*order=*/0,
       /*parameter_type=*/{},
       /*name=*/"initial_values_euler");
-  const auto& u_0 = initial_values_euler;
+  const U0 periodic_initial_values_euler(
+      [&](const auto& xx, const auto& /*mu*/) {
+        FieldVector<R, m> primitive_variables(0.);
+        // density
+        if (-0.5 < xx[0] && xx[0] < 0)
+          primitive_variables[0] = 4.;
+        else
+          primitive_variables[0] = 1.;
+        // velocity
+        for (size_t ii = 0; ii < d; ++ii)
+          primitive_variables[1 + ii] = 0.;
+        // pressure
+        if (-0.5 < xx[0] && xx[0] < 0)
+          primitive_variables[m - 1] = 1.6;
+        else
+          primitive_variables[m - 1] = 0.4;
+        return to_conservative(primitive_variables);
+      },
+      /*order=*/0,
+      /*parameter_type=*/{},
+      /*name=*/"initial_values_euler");
+  const auto& u_0 = periodic_initial_values_euler;
   visualizer(u_0, "initial_values", "");
 
   using S = FvSpace<GL, R, m>;
@@ -667,18 +688,8 @@ GTEST_TEST(empty, main)
         check_values(jacobian_f);
         return ret;
       });
-  const auto flux = euler_1d;
+  const auto& flux = euler_1d;
 
-  //  auto upwinding = [&](const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
-  //    const auto df = flux.partial_u({}, 0.5 * (u + v));
-  //    FieldVector<R, m> ret;
-  //    if ((n * FieldVector<R, 2>({df[0][0][0], df[0][1][1]})) > 0)
-  //      ret = flux.evaluate({}, u)[0] * n;
-  //    else
-  //      ret = flux.evaluate({}, v)[0] * n;
-  //    return ret;
-  //  };
-  /// \todo Implement vijayasundaram numerical flux
   auto vijayasundaram = [&](const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
     check_values(u);
     check_values(v);
@@ -751,7 +762,7 @@ GTEST_TEST(empty, main)
 
   auto numerical_flux = vijayasundaram;
   using OpType = GDT::AdvectionFvOperator<DF>;
-  OpType advec_op(grid_layer, numerical_flux, gamma, boundary_info);
+  OpType advec_op(grid_layer, flux, numerical_flux);
 
   // compute dt via Cockburn, Coquel, LeFloch, 1995
   // (in general, looking for the min/max should also include the boundary data)
@@ -792,7 +803,7 @@ GTEST_TEST(empty, main)
   const auto dt = 1. / (perimeter_over_volume * max_flux_derivative);
 
   const double T = 5.;
-  ExplicitRungeKuttaTimeStepper<OpType, DF, TimeStepperMethods::explicit_rungekutta_third_order_ssp> time_stepper(
+  ExplicitRungeKuttaTimeStepper<OpType, DF, TimeStepperMethods::explicit_euler> time_stepper(
       advec_op, initial_values, -1.);
   const auto test_dt = time_stepper.find_suitable_dt(dt, 10, 1.1 * T * initial_values.vector().sup_norm(), 25);
   if (!test_dt.first)
