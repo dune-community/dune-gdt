@@ -192,7 +192,7 @@ GTEST_TEST(hyperbolic, scalar_equation)
   const auto dt = 1. / (perimeter_over_volume * max_flux_derivative);
 
   const double T = 5.;
-  ExplicitRungeKuttaTimeStepper<OpType, DF, TimeStepperMethods::explicit_rungekutta_third_order_ssp> time_stepper(
+  ExplicitRungeKuttaTimeStepper<OpType, DF, TimeStepperMethods::explicit_euler> time_stepper(
       advec_op, initial_values, -1.);
   const auto test_dt = time_stepper.find_suitable_dt(dt, 10, 1.1 * initial_values.vector().sup_norm(), 25);
   if (!test_dt.first)
