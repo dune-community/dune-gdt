@@ -116,7 +116,7 @@ GTEST_TEST(hyperbolic, scalar_equation)
       "burgers_flux",
       [](const XT::Common::Parameter& /*mu*/) { return 2; },
       [](const auto& /*x*/, const auto& u, const auto& /*mu*/) { return u[0]; });
-  auto flux = burgers;
+  const auto& flux = burgers;
 
   using S = FvSpace<GL, R, r>;
   //  using S = DuneFemDgSpaceWrapper<GL, 1, R, r>;
@@ -127,7 +127,6 @@ GTEST_TEST(hyperbolic, scalar_equation)
   using V = XT::LA::EigenDenseVector<R>;
   using DF = DiscreteFunction<S, V>;
   DF initial_values(space, "solution");
-
   project(u_0, initial_values);
 
   using OpType = GDT::AdvectionFvOperator<DF>;
@@ -162,7 +161,7 @@ GTEST_TEST(hyperbolic, scalar_equation)
            + integrate_f(v, [](const double& a, const double& b) { return std::min(a, b); });
   };
   auto numerical_flux = engquist_osher;
-  OpType advec_op(periodic_leaf_layer, numerical_flux);
+  OpType advec_op(periodic_leaf_layer, flux, numerical_flux);
 
   // compute dt via Cockburn, Coquel, LeFloch, 1995
   // (in general, looking for the min/max should also include the boundary data)
