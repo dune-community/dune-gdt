@@ -295,7 +295,7 @@ private:
 
     size_t order(const XT::Common::Parameter& = {}) const override final
     {
-      local_function_->order();
+      return local_function_->order();
     }
 
     void evaluate(const DomainType& xx, RangeType& ret, const XT::Common::Parameter& mu = {}) const override final
