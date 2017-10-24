@@ -132,18 +132,18 @@ GTEST_TEST(hyperbolic, scalar_equation)
 
   using OpType = GDT::AdvectionFvOperator<DF>;
   //  using OpType = GDT::AdvectionDgOperator<DF>;
-  auto upwinding = [&](const auto& /*f*/, const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
+  auto upwinding = [&](const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
     const auto df = flux.partial_u({}, (u + v) / 2.);
     if ((n * df) > 0)
       return flux.evaluate({}, u) * n;
     else
       return flux.evaluate({}, v) * n;
   };
-  auto lax_friedrichs = [&](const auto& /*f*/, const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
+  auto lax_friedrichs = [&](const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
     const auto lambda = 1. / std::max(flux.partial_u({}, u).infinity_norm(), flux.partial_u({}, v).infinity_norm());
     return 0.5 * ((flux.evaluate({}, u) + flux.evaluate({}, v)) * n) + 0.5 * ((u - v) / lambda);
   };
-  auto engquist_osher = [&](const auto& /*f*/, const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
+  auto engquist_osher = [&](const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
     auto integrate_f = [&](const auto& s, const std::function<double(const double&, const double&)>& min_max) {
       if (XT::Common::FloatCmp::eq(s[0], 0.))
         return 0.;
@@ -162,7 +162,7 @@ GTEST_TEST(hyperbolic, scalar_equation)
            + integrate_f(v, [](const double& a, const double& b) { return std::min(a, b); });
   };
   auto numerical_flux = engquist_osher;
-  OpType advec_op(periodic_leaf_layer, flux, numerical_flux);
+  OpType advec_op(periodic_leaf_layer, numerical_flux);
 
   // compute dt via Cockburn, Coquel, LeFloch, 1995
   // (in general, looking for the min/max should also include the boundary data)
