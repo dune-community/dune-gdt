@@ -188,7 +188,7 @@ GTEST_TEST(hyperbolic, scalar_equation)
     D perimeter = 0;
     for (auto&& intersection : intersections(periodic_leaf_layer, entity))
       perimeter += intersection.geometry().volume();
-    perimeter_over_volume = std::max(perimeter_over_volume, perimeter /= entity.geometry().volume());
+    perimeter_over_volume = std::max(perimeter_over_volume, perimeter / entity.geometry().volume());
   }
   const auto dt = 1. / (perimeter_over_volume * max_flux_derivative);
 
