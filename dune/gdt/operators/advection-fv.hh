@@ -59,36 +59,40 @@ class AdvectionFvOperator : public OperatorInterface<internal::AdvectionFvOperat
 public:
   using typename BaseType::FieldType;
   using typename BaseType::JacobianType;
-  using FluxType = typename LocalCouplingOperatorType::FluxType;
-  using NumericalCouplingFluxType = typename LocalCouplingOperatorType::NumericalFluxType;
+  using NumericalFluxType = typename LocalCouplingOperatorType::NumericalFluxType;
 
-  AdvectionFvOperator(const GL& grid_layer,
-                      const FluxType& flux,
-                      NumericalCouplingFluxType numerical_coupling_flux = /*simple upwinding*/
-                      [](const auto& f, const auto& u, const auto& v, const auto& n) {
-                        const auto df = f.partial_u({}, (u + v) / 2.);
-                        if ((df[0] * n) > 0)
-                          return f.evaluate({}, u) * n;
-                        else
-                          return f.evaluate({}, v) * n;
-                      })
+  AdvectionFvOperator(const GL& grid_layer, const NumericalFluxType& numerical_flx)
     : grid_layer_(grid_layer)
-    , local_coupling_operator_(flux, numerical_coupling_flux)
-    , parameter_type_("dt_", 1)
+    , numerical_flux_()
+    , local_coupling_operator_(numerical_flux_.access())
+  {
+  }
+
+  AdvectionFvOperator(
+      const GL& grid_layer,
+      const typename NumericalFluxType::FluxType& flux,
+      std::function<typename NumericalFluxType::RangeType(const typename NumericalFluxType::RangeType&,
+                                                          const typename NumericalFluxType::RangeType&,
+                                                          const typename NumericalFluxType::DomainType&,
+                                                          const XT::Common::Parameter&)> numerical_flux_lambda,
+      const XT::Common::ParameterType& numerical_flux_parameter_type = {})
+    : grid_layer_(grid_layer)
+    , numerical_flux_(new NumericalLambdaFlux<DF>(flux, numerical_flux_lambda, numerical_flux_parameter_type))
+    , local_coupling_operator_(numerical_flux_.access())
   {
   }
 
   AdvectionFvOperator(const ThisType& other) = delete;
   AdvectionFvOperator(ThisType&& source) = delete;
 
-  bool is_parametric() const override final
+  const NumericalFluxType& numerical_flux() const
   {
-    return true;
+    return numerical_flux_.access();
   }
 
   const XT::Common::ParameterType& parameter_type() const override final
   {
-    return parameter_type_;
+    return numerical_flux_.access().parameter_type();
   }
 
   void apply(const DF& source, DF& range, const XT::Common::Parameter& mu = {}) const
@@ -146,8 +150,8 @@ public:
 
 private:
   const GL& grid_layer_;
+  const XT::Common::ConstStorageProvider<NumericalFluxType> numerical_flux_;
   const LocalCouplingOperatorType local_coupling_operator_;
-  const XT::Common::ParameterType parameter_type_;
 }; // class AdvectionFvOperator
 
 
