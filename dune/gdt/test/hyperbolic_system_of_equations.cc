@@ -723,11 +723,11 @@ GTEST_TEST(empty, main)
       const auto T = eigensolver.real_eigenvectors_as_matrix();
       check_values(T);
       const auto T_inv = compute_pseudo_inverse(T);
-#ifndef NDEBUG
+      //#ifndef NDEBUG
       const auto unit_matrix = XT::Common::from_string<XT::LA::EigenDenseMatrix<R>>(
           "[1 0 0 0 0; 0 1 0 0 0; 0 0 1 0 0; 0 0 0 1 0; 0 0 0 0 1]", T.rows(), T.cols());
       const auto T_times_T_inv = T * T_inv;
-      if ((T_times_T_inv - unit_matrix).sup_norm() > 1e-12)
+      if ((T_times_T_inv - unit_matrix).sup_norm() > 1e-14)
         DUNE_THROW(InvalidStateException,
                    "Inversion not successfull!\n\n"
                        << "P = "
@@ -742,15 +742,15 @@ GTEST_TEST(empty, main)
                        << T_times_T_inv
                        << "\n\n||(T * T_inv) - I||_\\infty = "
                        << (T_times_T_inv - unit_matrix).sup_norm());
-#endif // NDEBUG
+      //#endif // NDEBUG
       check_values(T_inv);
 
-#ifndef NDEBUG
+      //#ifndef NDEBUG
       // test decomposition
       XT::LA::EigenDenseMatrix<R> lambda(m, m);
       for (size_t ii = 0; ii < m; ++ii)
         lambda.set_entry(ii, ii, evs[ii]);
-      if (((T * lambda * T_inv) - P).sup_norm() > 1e-14)
+      if (((T * lambda * T_inv) - P).sup_norm() / P.sup_norm() > 1e-14)
         DUNE_THROW(InvalidStateException,
                    "Eigen decomposition of flux jacobians P not successfull!\n\n"
                        << "P = "
@@ -759,9 +759,9 @@ GTEST_TEST(empty, main)
                        << evs
                        << "\n\nT (eigenvectors) = "
                        << T
-                       << "\n\n||(T * lambda * T_inv) - P||_\infty = "
-                       << ((T * lambda * T_inv) - P).sup_norm());
-#endif
+                       << "\n\n||(T * lambda * T_inv) - P||_\\infty / ||P||_\\infty = "
+                       << ((T * lambda * T_inv) - P).sup_norm() / P.sup_norm());
+      //#endif
 
       // compute numerical flux [DF2016, p. 428, (8.108)]
       XT::LA::EigenDenseMatrix<R> lambda_plus(m, m, 0.);
