@@ -14,7 +14,9 @@
 #include <type_traits>
 
 #include <dune/common/typetraits.hh>
+#include <dune/geometry/quadraturerules.hh>
 #include <dune/geometry/referenceelements.hh>
+#include <dune/grid/onedgrid.hh>
 
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/grid/type_traits.hh>
@@ -206,6 +208,64 @@ NumericalLaxFriedrichsFlux<E, D, d, R, m> make_numerical_lax_friedrichs_flux(
             flux)
 {
   return NumericalLaxFriedrichsFlux<E, D, d, R, m>(flux);
+}
+
+
+template <class E, class D, size_t d, class R, size_t m>
+class NumericalEngquistOsherFlux
+{
+  static_assert(AlwaysFalse<E>::value, "Not implemented for systems yet!");
+};
+
+
+template <class E, class D, size_t d, class R>
+class NumericalEngquistOsherFlux<E, D, d, R, 1> : public NumericalFluxInterface<E, D, d, R, 1>
+{
+  using BaseType = NumericalFluxInterface<E, D, d, R, 1>;
+
+public:
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+
+  template <class... Args>
+  explicit NumericalEngquistOsherFlux(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
+  {
+  }
+
+  RangeType apply(const RangeType& u,
+                  const RangeType& v,
+                  const DomainType& n,
+                  const XT::Common::Parameter& /*mu*/ = {}) const override final
+  {
+    auto integrate_f = [&](const auto& s, const std::function<double(const R&, const R&)>& min_max) {
+      if (XT::Common::FloatCmp::eq(s[0], 0.))
+        return 0.;
+      D ret = 0.;
+      const OneDGrid state_grid(1, 0., s[0]);
+      const auto state_interval = *state_grid.leafGridView().template begin<0>();
+      for (const auto& quadrature_point : QuadratureRules<R, 1>::rule(state_interval.type(), this->flux().order())) {
+        const auto local_uu = quadrature_point.position();
+        const auto uu = state_interval.geometry().global(local_uu);
+        const auto df = this->flux().partial_u({}, uu);
+        ret += state_interval.geometry().integrationElement(local_uu) * quadrature_point.weight() * min_max(n * df, 0.);
+      }
+      return ret;
+    };
+    return (this->flux().evaluate({}, 0.) * n)
+           + integrate_f(u, [](const double& a, const double& b) { return std::max(a, b); })
+           + integrate_f(v, [](const double& a, const double& b) { return std::min(a, b); });
+  }
+}; // class NumericalEngquistOsherFlux
+
+
+template <class E, class D, size_t d, class R, size_t m>
+NumericalEngquistOsherFlux<E, D, d, R, m> make_numerical_engquist_osher_flux(
+    const XT::Functions::
+        GlobalFluxFunctionInterface<E, D, d, XT::Functions::LocalizableFunctionInterface<E, D, d, R, m, 1>, 0, R, d, m>&
+            flux)
+{
+  return NumericalEngquistOsherFlux<E, D, d, R, m>(flux);
 }
 
 
