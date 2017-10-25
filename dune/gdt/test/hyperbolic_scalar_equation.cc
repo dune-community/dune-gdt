@@ -131,10 +131,6 @@ GTEST_TEST(hyperbolic, scalar_equation)
 
   using OpType = GDT::AdvectionFvOperator<DF>;
   //  using OpType = GDT::AdvectionDgOperator<DF>;
-  auto lax_friedrichs = [&](const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
-    const auto lambda = 1. / std::max(flux.partial_u({}, u).infinity_norm(), flux.partial_u({}, v).infinity_norm());
-    return 0.5 * ((flux.evaluate({}, u) + flux.evaluate({}, v)) * n) + 0.5 * ((u - v) / lambda);
-  };
   auto engquist_osher = [&](const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
     auto integrate_f = [&](const auto& s, const std::function<double(const double&, const double&)>& min_max) {
       if (XT::Common::FloatCmp::eq(s[0], 0.))
