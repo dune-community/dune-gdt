@@ -165,6 +165,50 @@ NumericalUpwindingFlux<E, D, d, R, m> make_numerical_upwinding_flux(
 }
 
 
+template <class E, class D, size_t d, class R, size_t m>
+class NumericalLaxFriedrichsFlux
+{
+  static_assert(AlwaysFalse<E>::value, "Not implemented for systems yet!");
+};
+
+
+template <class E, class D, size_t d, class R>
+class NumericalLaxFriedrichsFlux<E, D, d, R, 1> : public NumericalFluxInterface<E, D, d, R, 1>
+{
+  using BaseType = NumericalFluxInterface<E, D, d, R, 1>;
+
+public:
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+
+  template <class... Args>
+  explicit NumericalLaxFriedrichsFlux(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
+  {
+  }
+
+  RangeType apply(const RangeType& u,
+                  const RangeType& v,
+                  const DomainType& n,
+                  const XT::Common::Parameter& /*mu*/ = {}) const override final
+  {
+    const auto lambda =
+        1. / std::max(this->flux().partial_u({}, u).infinity_norm(), this->flux().partial_u({}, v).infinity_norm());
+    return 0.5 * ((this->flux().evaluate({}, u) + this->flux().evaluate({}, v)) * n) + 0.5 * ((u - v) / lambda);
+  }
+}; // class NumericalLaxFriedrichsFlux
+
+
+template <class E, class D, size_t d, class R, size_t m>
+NumericalLaxFriedrichsFlux<E, D, d, R, m> make_numerical_lax_friedrichs_flux(
+    const XT::Functions::
+        GlobalFluxFunctionInterface<E, D, d, XT::Functions::LocalizableFunctionInterface<E, D, d, R, m, 1>, 0, R, d, m>&
+            flux)
+{
+  return NumericalLaxFriedrichsFlux<E, D, d, R, m>(flux);
+}
+
+
 /**
  * \note Presumes that the basis evaluates to 1.
  * \todo Improve local vector handling in apply.
