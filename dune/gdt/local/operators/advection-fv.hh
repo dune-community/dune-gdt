@@ -119,6 +119,52 @@ private:
 }; // class NumericalLambdaFlux
 
 
+template <class E, class D, size_t d, class R, size_t m>
+class NumericalUpwindingFlux
+{
+  static_assert(AlwaysFalse<E>::value, "Not implemented for systems yet!");
+};
+
+
+template <class E, class D, size_t d, class R>
+class NumericalUpwindingFlux<E, D, d, R, 1> : public NumericalFluxInterface<E, D, d, R, 1>
+{
+  using BaseType = NumericalFluxInterface<E, D, d, R, 1>;
+
+public:
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+
+  template <class... Args>
+  explicit NumericalUpwindingFlux(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
+  {
+  }
+
+  RangeType apply(const RangeType& u,
+                  const RangeType& v,
+                  const DomainType& n,
+                  const XT::Common::Parameter& /*mu*/ = {}) const override final
+  {
+    const auto df = this->flux().partial_u({}, (u + v) / 2.);
+    if ((n * df) > 0)
+      return this->flux().evaluate({}, u) * n;
+    else
+      return this->flux().evaluate({}, v) * n;
+  }
+}; // class NumericalUpwindingFlux
+
+
+template <class E, class D, size_t d, class R, size_t m>
+NumericalUpwindingFlux<E, D, d, R, m> make_numerical_upwinding_flux(
+    const XT::Functions::
+        GlobalFluxFunctionInterface<E, D, d, XT::Functions::LocalizableFunctionInterface<E, D, d, R, m, 1>, 0, R, d, m>&
+            flux)
+{
+  return NumericalUpwindingFlux<E, D, d, R, m>(flux);
+}
+
+
 /**
  * \note Presumes that the basis evaluates to 1.
  * \todo Improve local vector handling in apply.
