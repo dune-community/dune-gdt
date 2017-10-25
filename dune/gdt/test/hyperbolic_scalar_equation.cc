@@ -131,13 +131,6 @@ GTEST_TEST(hyperbolic, scalar_equation)
 
   using OpType = GDT::AdvectionFvOperator<DF>;
   //  using OpType = GDT::AdvectionDgOperator<DF>;
-  auto upwinding = [&](const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
-    const auto df = flux.partial_u({}, (u + v) / 2.);
-    if ((n * df) > 0)
-      return flux.evaluate({}, u) * n;
-    else
-      return flux.evaluate({}, v) * n;
-  };
   auto lax_friedrichs = [&](const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
     const auto lambda = 1. / std::max(flux.partial_u({}, u).infinity_norm(), flux.partial_u({}, v).infinity_norm());
     return 0.5 * ((flux.evaluate({}, u) + flux.evaluate({}, v)) * n) + 0.5 * ((u - v) / lambda);
@@ -160,8 +153,8 @@ GTEST_TEST(hyperbolic, scalar_equation)
     return (flux.evaluate({}, 0.) * n) + integrate_f(u, [](const double& a, const double& b) { return std::max(a, b); })
            + integrate_f(v, [](const double& a, const double& b) { return std::min(a, b); });
   };
-  auto numerical_flux = engquist_osher;
-  OpType advec_op(periodic_leaf_layer, flux, numerical_flux);
+  auto numerical_flux = GDT::make_numerical_upwinding_flux(flux);
+  OpType advec_op(periodic_leaf_layer, numerical_flux);
 
   // compute dt via Cockburn, Coquel, LeFloch, 1995
   // (in general, looking for the min/max should also include the boundary data)
