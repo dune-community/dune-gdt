@@ -12,6 +12,9 @@
 
 #include <functional>
 
+#include <dune/geometry/quadraturerules.hh>
+#include <dune/grid/onedgrid.hh>
+
 #include <dune/xt/common/parameter.hh>
 #include <dune/xt/grid/type_traits.hh>
 
@@ -166,6 +169,47 @@ private:
   const XT::Common::ConstStorageProvider<NumericalFluxType> numerical_flux_;
   const LocalCouplingOperatorType local_coupling_operator_;
 }; // class AdvectionFvOperator
+
+
+/**
+ * \brief Estimates dt via [Cockburn, Coquel, LeFloch, 1995]
+ */
+template <class GL, class E, class D, size_t d, class R>
+double estimate_dt_for_scalar_advection_equation(
+    const GL& grid_layer,
+    const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1>& initial_data,
+    const XT::Functions::
+        GlobalFluxFunctionInterface<E, D, d, XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1>, 0, R, d, 1>&
+            flux,
+    const std::pair<R, R>& boundary_data_range = {std::numeric_limits<R>::max(), std::numeric_limits<R>::min()})
+{
+  R data_minimum = boundary_data_range.first;
+  R data_maximum = boundary_data_range.second;
+  for (auto&& entity : elements(grid_layer)) {
+    const auto u0_local = initial_data.local_function(entity);
+    for (const auto& quadrature_point : QuadratureRules<D, d>::rule(entity.type(), u0_local->order())) {
+      const auto value = u0_local->evaluate(quadrature_point.position());
+      data_minimum = std::min(data_minimum, value[0]);
+      data_maximum = std::max(data_maximum, value[0]);
+    }
+  }
+  R max_flux_derivative = std::numeric_limits<R>::min();
+  OneDGrid max_flux_grid(1, data_minimum, data_maximum);
+  const auto max_flux_interval = *max_flux_grid.leafGridView().template begin<0>();
+  for (const auto& quadrature_point : QuadratureRules<R, 1>::rule(max_flux_interval.type(), flux.order())) {
+    const auto df = flux.partial_u({}, max_flux_interval.geometry().global(quadrature_point.position()));
+    max_flux_derivative = std::max(max_flux_derivative, df.infinity_norm());
+  }
+  D perimeter_over_volume = std::numeric_limits<D>::min();
+  for (auto&& entity : elements(grid_layer)) {
+    D perimeter = 0;
+    for (auto&& intersection : intersections(grid_layer, entity))
+      perimeter += intersection.geometry().volume();
+    perimeter_over_volume = std::max(perimeter_over_volume, perimeter / entity.geometry().volume());
+  }
+  const auto dt = 1. / (perimeter_over_volume * max_flux_derivative);
+  return dt;
+} // ... estimate_dt_for_scalar_advection_equation(...)
 
 
 } // namespace GDT
