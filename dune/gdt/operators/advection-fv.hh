@@ -63,7 +63,14 @@ public:
 
   AdvectionFvOperator(const GL& grid_layer, const NumericalFluxType& numerical_flx)
     : grid_layer_(grid_layer)
-    , numerical_flux_()
+    , numerical_flux_(numerical_flx)
+    , local_coupling_operator_(numerical_flux_.access())
+  {
+  }
+
+  AdvectionFvOperator(const GL& grid_layer, NumericalFluxType*&& numerical_flx_ptr)
+    : grid_layer_(grid_layer)
+    , numerical_flux_(std::move(numerical_flx_ptr))
     , local_coupling_operator_(numerical_flux_.access())
   {
   }
