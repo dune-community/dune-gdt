@@ -55,8 +55,8 @@
 using namespace Dune;
 using namespace Dune::GDT;
 
-// using G = YASP_1D_EQUIDISTANT_OFFSET;
-using G = ALU_2D_SIMPLEX_CONFORMING;
+using G = YASP_1D_EQUIDISTANT_OFFSET;
+// using G = ALU_2D_SIMPLEX_CONFORMING;
 using E = typename G::template Codim<0>::Entity;
 using D = double;
 static const constexpr size_t d = G::dimension;
@@ -66,28 +66,40 @@ static const constexpr size_t r = 1;
 using DomainType = XT::Common::FieldVector<D, d>;
 
 using U = XT::Functions::LocalizableFunctionInterface<E, D, d, R, r>;
-using F = XT::Functions::LocalizableFluxFunctionInterface<E, D, d, U, 0, R, d>;
 
 
 GTEST_TEST(hyperbolic, scalar_equation)
 {
-  auto grid = XT::Grid::make_cube_grid<G>(DomainType(0.), DomainType(1.), XT::Common::FieldVector<unsigned int, d>(32));
+  auto grid =
+      XT::Grid::make_cube_grid<G>(DomainType(-1.), DomainType(1.), XT::Common::FieldVector<unsigned int, d>(128));
   grid.global_refine(1);
 
   auto leaf_layer = grid.leaf_view();
-  //  auto leaf_layer = grid.leaf_part();
-  std::cout << "grid has " << leaf_layer.indexSet().size(0) << " elements" << std::endl;
-  auto periodic_leaf_layer = XT::Grid::make_periodic_grid_layer(leaf_layer);
-  using GL = decltype(periodic_leaf_layer);
+  //  auto leaf_layer = grid.leaf_part(); // for DG with dune-fem
+  //  auto periodic_leaf_layer = XT::Grid::make_periodic_grid_layer(leaf_layer);
+  auto& grid_layer = leaf_layer;
+  using GL = std::decay_t<decltype(grid_layer)>;
+  using I = XT::Grid::extract_intersection_t<GL>;
+  std::cout << "grid has " << grid_layer.indexSet().size(0) << " elements" << std::endl;
 
+  using S = FvSpace<GL, R, r>;
+  //  using S = DuneFemDgSpaceWrapper<GL, 1, R, r>;
+  S space(grid_layer);
+  std::cout << "space has " << space.mapper().size() << " DoFs\n" << std::endl;
+
+  // initial values
   using U0 = XT::Functions::GlobalLambdaFunction<E, D, d, R, r>;
-  U0 bump(
+  U0 inflow_from_the_left(
       [](const auto& xx, const auto& /*mu*/) {
-        return std::exp(-0.5 * (((xx - DomainType(0.5)) * (xx - DomainType(0.5))) / std::pow(0.1, d)));
+        if (XT::Common::FloatCmp::le(xx, DomainType(-0.9))
+            || (XT::Common::FloatCmp::ge(xx, DomainType(-0.25)) && XT::Common::FloatCmp::le(xx, DomainType(0.))))
+          return 1.;
+        else
+          return 0.;
       },
-      3,
+      0,
       {},
-      "bump");
+      "inflow_from_the_left");
   U0 indicator(
       [](const auto& xx, const auto& /*mu*/) {
         if (XT::Common::FloatCmp::ge(xx, DomainType(0.25)) && XT::Common::FloatCmp::le(xx, DomainType(0.5)))
@@ -98,9 +110,32 @@ GTEST_TEST(hyperbolic, scalar_equation)
       0,
       {},
       "indicator");
-  const auto& u_0 = indicator;
-  u_0.visualize(periodic_leaf_layer, "initial_values");
+  const auto& u_0 = inflow_from_the_left;
+  u_0.visualize(grid_layer, "initial_values");
 
+  // boundary values (needs to match grid layer)
+  XT::Grid::NormalBasedBoundaryInfo<I> boundary_info;
+  boundary_info.register_new_normal({-1.}, new XT::Grid::InflowOutflowBoundary());
+  boundary_info.register_new_normal({1.}, new XT::Grid::InflowOutflowBoundary());
+
+  U0 zero([](const auto& /*xx*/, const auto& /*mu*/) { return 0.; }, 0, {}, "zero");
+  const auto& bv = inflow_from_the_left;
+  bv.visualize(grid_layer, "boundary_values");
+
+  const auto inflow_outflow_boundary_treatment =
+      [&](const auto& intersection, const auto& x_intersection, const auto& f, const auto& u, const auto& /*mu*/ = {}) {
+        const auto entity = intersection.inside();
+        const auto normal = intersection.unitOuterNormal(x_intersection);
+        const auto df = f.partial_u({}, u);
+        if ((normal * df) > 0) { // inflow
+          const auto local_bv = bv.local_function(entity);
+          return local_bv->evaluate(intersection.geometryInInside().global(x_intersection));
+        } else { // outflow
+          return u;
+        }
+      };
+
+  // flux
   XT::Functions::GlobalLambdaFluxFunction<U, 0, R, d, r> linear_transport(
       [](const auto& /*x*/, const auto& u, const auto& /*mu*/) { return XT::Common::FieldVector<R, d>(u[0]); },
       {},
@@ -118,27 +153,25 @@ GTEST_TEST(hyperbolic, scalar_equation)
       [](const auto& /*x*/, const auto& u, const auto& /*mu*/) { return u[0]; });
   const auto& flux = burgers;
 
-  using S = FvSpace<GL, R, r>;
-  //  using S = DuneFemDgSpaceWrapper<GL, 1, R, r>;
-  S space(periodic_leaf_layer);
-  std::cout << "space has " << space.mapper().size() << " DoFs" << std::endl;
-  std::cout << std::endl;
-
+  // inital projection
   using V = XT::LA::EigenDenseVector<R>;
   using DF = DiscreteFunction<S, V>;
   DF initial_values(space, "solution");
   project(u_0, initial_values);
 
+  // spatial discretization
   using OpType = GDT::AdvectionFvOperator<DF>;
   //  using OpType = GDT::AdvectionDgOperator<DF>;
   auto numerical_flux = GDT::make_numerical_engquist_osher_flux(flux);
-  OpType advec_op(periodic_leaf_layer, numerical_flux);
+  OpType advec_op(grid_layer, numerical_flux);
+  advec_op.append(
+      inflow_outflow_boundary_treatment,
+      new XT::Grid::ApplyOn::CustomBoundaryIntersections<GL>(boundary_info, new XT::Grid::InflowOutflowBoundary()));
 
-  const auto dt = GDT::estimate_dt_for_scalar_advection_equation(periodic_leaf_layer, u_0, flux);
-  const double T = 10.;
-
+  // temporal discretization
   ExplicitRungeKuttaTimeStepper<OpType, DF, TimeStepperMethods::explicit_euler> time_stepper(
       advec_op, initial_values, -1.);
+  const auto dt = GDT::estimate_dt_for_scalar_advection_equation(grid_layer, u_0, flux);
   const auto test_dt = time_stepper.find_suitable_dt(dt, 10, 1.1 * initial_values.vector().sup_norm(), 25);
   if (!test_dt.first)
     DUNE_THROW(InvalidStateException,
@@ -150,5 +183,7 @@ GTEST_TEST(hyperbolic, scalar_equation)
                    << dt
                    << "\n   The following dt seems to work fine: "
                    << test_dt.second);
+
+  const double T = 5.;
   time_stepper.solve(T, dt, std::min(100, int(T / dt)), false, true);
 }
