@@ -57,61 +57,6 @@ using namespace Dune;
 using namespace Dune::GDT;
 
 
-template <class I>
-class MyNormalBasedBoundaryInfo : public XT::Grid::BoundaryInfo<I>
-{
-  using BaseType = XT::Grid::BoundaryInfo<I>;
-
-public:
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::IntersectionType;
-  using typename BaseType::WorldType;
-
-  /**
-   * \attention Takes ownership of default_boundary_type, do not delete manually!
-   */
-  MyNormalBasedBoundaryInfo(const DomainFieldType tol = 1e-10,
-                            XT::Grid::BoundaryType* default_boundary_type = new XT::Grid::NoBoundary())
-    : tol_(tol)
-    , default_boundary_type_(default_boundary_type)
-  {
-  }
-
-  /**
-   * \attention Takes ownership of boundary_type, do not delete manually!
-   */
-  void register_new_type(const WorldType& normal, XT::Grid::BoundaryType* boundary_type)
-  {
-    for (const auto& normal_and_type_pair : normal_to_type_map_) {
-      const auto& existing_normal = normal_and_type_pair.first;
-      if (XT::Common::FloatCmp::eq(existing_normal, normal))
-        DUNE_THROW(InvalidStateException, "Given normal already contained!");
-    }
-    normal_to_type_map_.emplace(normal, boundary_type);
-  } // ... void register_new_type(...)
-
-  const XT::Grid::BoundaryType& type(const IntersectionType& intersection) const override final
-  {
-    if (!intersection.boundary())
-      return no_boundary_;
-    const WorldType outer_normal = intersection.centerUnitOuterNormal();
-    for (const auto& normal_and_type_pair : normal_to_type_map_) {
-      const auto& normal = normal_and_type_pair.first;
-      const auto& type_ptr = normal_and_type_pair.second;
-      if (XT::Common::FloatCmp::eq(outer_normal, normal))
-        return *type_ptr;
-    }
-    return *default_boundary_type_;
-  } // ... type(...)
-
-private:
-  const DomainFieldType tol_;
-  const std::unique_ptr<XT::Grid::BoundaryType> default_boundary_type_;
-  const XT::Grid::NoBoundary no_boundary_;
-  std::map<WorldType, std::shared_ptr<XT::Grid::BoundaryType>> normal_to_type_map_;
-}; // class MyNormalBasedBoundaryInfo
-
-
 template <class T>
 class Converter
 {
@@ -435,10 +380,9 @@ GTEST_TEST(empty, main)
   using GL = std::decay_t<decltype(grid_layer)>;
   using I = XT::Grid::extract_intersection_t<GL>;
 
-  MyNormalBasedBoundaryInfo<I> boundary_info;
-  //  boundary_info.register_new_type({-1.}, new XT::Grid::InflowBoundary());
-  boundary_info.register_new_type({-1.}, new XT::Grid::ImpermeableBoundary());
-  boundary_info.register_new_type({1.}, new XT::Grid::ImpermeableBoundary());
+  XT::Grid::NormalBasedBoundaryInfo<I> boundary_info;
+  boundary_info.register_new_normal({-1.}, new XT::Grid::ImpermeableBoundary());
+  boundary_info.register_new_normal({1.}, new XT::Grid::ImpermeableBoundary());
 
   const double gamma = 1.4; // air or water at roughly 20 deg Cels.
 
