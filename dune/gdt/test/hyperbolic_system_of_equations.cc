@@ -43,6 +43,7 @@
 #include <dune/xt/functions/lambda/global-function.hh>
 #include <dune/xt/functions/lambda/global-flux-function.hh>
 #include <dune/xt/functions/sliced.hh>
+#include <dune/xt/functions/transformed.hh>
 
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/discretefunction/default.hh>
@@ -181,78 +182,6 @@ typename std::enable_if<XT::Common::is_matrix<M>::value, void>::type check_value
 }
 
 
-template <class F, size_t r = F::r, size_t rC = F::rC>
-class TransformedFunction
-    : public XT::Functions::LocalizableFunctionInterface<typename F::E, typename F::D, F::d, typename F::R, r, rC>
-{
-  using BaseType =
-      XT::Functions::LocalizableFunctionInterface<typename F::E, typename F::D, F::d, typename F::R, r, rC>;
-
-  class TransformedLocalFunction
-      : public XT::Functions::LocalfunctionInterface<typename F::E, typename F::D, F::d, typename F::R, r, rC>
-  {
-    using BaseType = XT::Functions::LocalfunctionInterface<typename F::E, typename F::D, F::d, typename F::R, r, rC>;
-    using UntransformedLocalFunctionType = typename F::LocalfunctionType;
-    using UntransformedRangeType = typename UntransformedLocalFunctionType::RangeType;
-
-  public:
-    using typename BaseType::DomainType;
-    using typename BaseType::RangeType;
-    using typename BaseType::JacobianRangeType;
-    using typename BaseType::EntityType;
-    using Transformation = std::function<RangeType(const UntransformedRangeType&)>;
-
-    TransformedLocalFunction(const EntityType& en, const F& f, const Transformation& transform)
-      : BaseType(en)
-      , local_f_(f.local_function(en))
-      , transform_(transform)
-    {
-    }
-
-    size_t order(const XT::Common::Parameter& mu = {}) const override final
-    {
-      return local_f_->order(mu);
-    }
-
-    void evaluate(const DomainType& xx, RangeType& ret, const XT::Common::Parameter& mu = {}) const override final
-    {
-      RangeType tmp;
-      local_f_->evaluate(xx, tmp, mu);
-      ret = transform_(tmp);
-    }
-
-    void jacobian(const DomainType& /*xx*/,
-                  JacobianRangeType& /*ret*/,
-                  const XT::Common::Parameter& /*mu*/ = {}) const override final
-    {
-      DUNE_THROW(NotImplemented, "");
-    }
-
-  private:
-    const std::unique_ptr<UntransformedLocalFunctionType> local_f_;
-    const Transformation& transform_;
-  }; // class TransformedLocalFunction
-
-public:
-  using typename BaseType::LocalfunctionType;
-
-  TransformedFunction(const F& f, typename TransformedLocalFunction::Transformation transform)
-    : f_(f)
-    , transform_(transform)
-  {
-  }
-
-  std::unique_ptr<LocalfunctionType> local_function(const typename F::E& entity) const override final
-  {
-    return std::make_unique<TransformedLocalFunction>(entity, f_, transform_);
-  }
-
-private:
-  const F& f_;
-  const typename TransformedLocalFunction::Transformation transform_;
-}; // class TransformedFunction
-
-
 using G = YASP_1D_EQUIDISTANT_OFFSET;
 // using G = ALU_2D_SIMPLEX_CONFORMING;
 using E = typename G::template Codim<0>::Entity;
@@ -343,7 +272,7 @@ GTEST_TEST(empty, main)
         .visualize(grid_layer, filename_prefix + "_density_times_velocity_" + XT::Common::to_string(step));
     XT::Functions::make_sliced_function<1>(u_conservative, {2} /*{3}*/, "energy")
         .visualize(grid_layer, filename_prefix + "_energy_" + XT::Common::to_string(step));
-    TransformedFunction<U_C, m> u_primitive(u_conservative, to_primitive);
+    const auto u_primitive = XT::Functions::make_transformed_function<m, 1, R>(u_conservative, to_primitive);
     XT::Functions::make_sliced_function<d>(u_primitive, {1} /*{1, 2}*/, "velocity")
         .visualize(grid_layer, filename_prefix + "_velocity_" + XT::Common::to_string(step));
     XT::Functions::make_sliced_function<1>(u_primitive, {2} /*{3}*/, "pressure")
