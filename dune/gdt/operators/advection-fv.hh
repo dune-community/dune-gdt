@@ -63,6 +63,8 @@ public:
   using typename BaseType::FieldType;
   using typename BaseType::JacobianType;
   using NumericalFluxType = typename LocalCouplingOperatorType::NumericalFluxType;
+  using LocalAdvectionFvBoundaryTreatmentType = LocalAdvectionFvBoundaryTreatmentInterface<SpaceType>;
+  using LocalAdvectionFvLambdaBoundaryTreatmentType = LocalAdvectionFvLambdaBoundaryTreatment<SpaceType>;
 
   AdvectionFvOperator(const GL& grid_layer, const NumericalFluxType& numerical_flx)
     : grid_layer_(grid_layer)
@@ -105,6 +107,20 @@ public:
     return numerical_flux_.access().parameter_type();
   }
 
+  void append(const LocalAdvectionFvBoundaryTreatmentType& boundary_treatment,
+              XT::Grid::ApplyOn::WhichIntersection<GL>*&& filter)
+  {
+    boundary_treatments_.emplace_back(boundary_treatment, std::move(filter));
+  }
+
+  void append(typename LocalAdvectionFvLambdaBoundaryTreatmentType::LambdaType boundary_treatment_lambda,
+              XT::Grid::ApplyOn::WhichIntersection<GL>*&& filter,
+              const XT::Common::ParameterType& param_type = {})
+  {
+    boundary_treatments_.emplace_back(
+        new LocalAdvectionFvLambdaBoundaryTreatmentType(boundary_treatment_lambda, param_type), std::move(filter));
+  }
+
   void apply(const DF& source, DF& range, const XT::Common::Parameter& mu = {}) const
   {
     if (!source.vector().valid())
@@ -115,6 +131,15 @@ public:
     LocalizableOperatorBase<GL, DF, DF> walker(grid_layer_, source, range);
     walker.append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GL>(), mu);
     walker.append(local_coupling_operator_, new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GL>(), mu);
+    using LocalBoundaryOperatorType = LocalAdvectionFvBoundaryOperator<SpaceType>;
+    std::vector<std::unique_ptr<LocalBoundaryOperatorType>> local_boundary_operators;
+    for (const auto& boundary_treatment_and_filter : boundary_treatments_) {
+      const auto& boundary_treatment = boundary_treatment_and_filter.first.access();
+      const auto& filter = *boundary_treatment_and_filter.second;
+      local_boundary_operators.emplace_back(
+          new LocalBoundaryOperatorType(numerical_flux_.access(), boundary_treatment));
+      walker.append(*local_boundary_operators.back(), filter.copy());
+    }
     walker.walk();
     if (!range.vector().valid())
       DUNE_THROW(InvalidStateException, "");
@@ -168,6 +193,9 @@ private:
   const GL& grid_layer_;
   const XT::Common::ConstStorageProvider<NumericalFluxType> numerical_flux_;
   const LocalCouplingOperatorType local_coupling_operator_;
+  std::list<std::pair<XT::Common::ConstStorageProvider<LocalAdvectionFvBoundaryTreatmentType>,
+                      std::unique_ptr<XT::Grid::ApplyOn::WhichIntersection<GL>>>>
+      boundary_treatments_;
 }; // class AdvectionFvOperator
 
 
