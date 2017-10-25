@@ -131,25 +131,7 @@ GTEST_TEST(hyperbolic, scalar_equation)
 
   using OpType = GDT::AdvectionFvOperator<DF>;
   //  using OpType = GDT::AdvectionDgOperator<DF>;
-  auto engquist_osher = [&](const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
-    auto integrate_f = [&](const auto& s, const std::function<double(const double&, const double&)>& min_max) {
-      if (XT::Common::FloatCmp::eq(s[0], 0.))
-        return 0.;
-      D ret = 0.;
-      const OneDGrid state_grid(1, 0., s[0]);
-      const auto state_interval = *state_grid.leafGridView().template begin<0>();
-      for (const auto& quadrature_point : QuadratureRules<double, 1>::rule(state_interval.type(), flux.order())) {
-        const auto local_uu = quadrature_point.position();
-        const auto uu = state_interval.geometry().global(local_uu);
-        const auto df = flux.partial_u({}, uu);
-        ret += state_interval.geometry().integrationElement(local_uu) * quadrature_point.weight() * min_max(n * df, 0.);
-      }
-      return ret;
-    };
-    return (flux.evaluate({}, 0.) * n) + integrate_f(u, [](const double& a, const double& b) { return std::max(a, b); })
-           + integrate_f(v, [](const double& a, const double& b) { return std::min(a, b); });
-  };
-  auto numerical_flux = GDT::make_numerical_upwinding_flux(flux);
+  auto numerical_flux = GDT::make_numerical_engquist_osher_flux(flux);
   OpType advec_op(periodic_leaf_layer, numerical_flux);
 
   // compute dt via Cockburn, Coquel, LeFloch, 1995
