@@ -311,7 +311,7 @@ public:
     const auto& neighbor = local_range_neighbor.entity();
     const auto u_inside = source.local_discrete_function(entity);
     const auto u_outside = source.local_discrete_function(neighbor);
-    const auto normal = intersection.centerUnitOuterNormal(/*x_intersection*/);
+    const auto normal = intersection.centerUnitOuterNormal();
     // copy the local DoF vector to matching FieldVectors
     typename StateType::RangeType u;
     typename StateType::RangeType v;
@@ -324,7 +324,7 @@ public:
       v[ii] = u_outside->vector().get(ii);
     }
     const auto g = numerical_flux_.apply(u, v, normal, mu);
-    const auto h = local_range_entity.entity().geometry().volume();
+    const auto h = entity.geometry().volume();
     for (size_t ii = 0; ii < r; ++ii) {
       local_range_entity.vector().add(ii, (g[ii] * intersection.geometry().volume()) / h);
       local_range_neighbor.vector().add(ii, (-1.0 * g[ii] * intersection.geometry().volume()) / h);
