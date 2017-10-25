@@ -42,6 +42,7 @@
 #include <dune/xt/grid/view/periodic.hh>
 #include <dune/xt/functions/lambda/global-function.hh>
 #include <dune/xt/functions/lambda/global-flux-function.hh>
+#include <dune/xt/functions/sliced.hh>
 
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/discretefunction/default.hh>
@@ -178,94 +179,6 @@ typename std::enable_if<XT::Common::is_matrix<M>::value, void>::type check_value
       if (XT::Common::isnan(MM::get_entry(mat, ii, jj)) || XT::Common::isinf(MM::get_entry(mat, ii, jj)))
         DUNE_THROW(InvalidStateException, mat);
 }
-
-
-template <class F, size_t r>
-class FunctionSlicer
-    : public XT::Functions::LocalizableFunctionInterface<typename F::E, typename F::D, F::d, typename F::R, r, 1>
-{
-  static_assert(r <= F::r, "");
-  static_assert(F::rC == 1, "Not implemented yet!");
-  using BaseType = XT::Functions::LocalizableFunctionInterface<typename F::E, typename F::D, F::d, typename F::R, r, 1>;
-
-public:
-  using typename BaseType::EntityType;
-  using typename BaseType::LocalfunctionType;
-
-  FunctionSlicer(const F& function, const std::array<size_t, r>& dims, const std::string& nm)
-    : function_(function)
-    , dims_(dims)
-    , name_(nm)
-  {
-    for (size_t ii = 0; ii < r; ++ii)
-      if (dims_[ii] >= F::r)
-        DUNE_THROW(InvalidStateException,
-                   "F::r = " << F::r << "\n   "
-                             << "r = "
-                             << r
-                             << "\n   "
-                             << "dims["
-                             << ii
-                             << "] = "
-                             << dims_[ii]);
-  }
-
-  std::string name() const override final
-  {
-    return name_;
-  }
-
-  std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const override final
-  {
-    return std::make_unique<LocalFunction>(function_, dims_, entity);
-  }
-
-private:
-  class LocalFunction
-      : public XT::Functions::LocalfunctionInterface<typename F::E, typename F::D, F::d, typename F::R, r, 1>
-  {
-    using BaseType = XT::Functions::LocalfunctionInterface<typename F::E, typename F::D, F::d, typename F::R, r, 1>;
-
-  public:
-    using typename BaseType::DomainType;
-    using typename BaseType::RangeType;
-    using typename BaseType::JacobianRangeType;
-
-    LocalFunction(const F& function, const std::array<size_t, r>& dims, const EntityType& ent)
-      : BaseType(ent)
-      , local_function_(function.local_function(ent))
-      , dims_(dims)
-    {
-    }
-
-    size_t order(const XT::Common::Parameter& = {}) const override final
-    {
-      return local_function_->order();
-    }
-
-    void evaluate(const DomainType& xx, RangeType& ret, const XT::Common::Parameter& mu = {}) const override final
-    {
-      const auto value = local_function_->evaluate(xx, mu);
-      for (size_t ii = 0; ii < r; ++ii)
-        ret[ii] = value[dims_[ii]];
-    }
-
-    void jacobian(const DomainType& /*xx*/,
-                  JacobianRangeType& /*ret*/,
-                  const XT::Common::Parameter& /*mu*/ = {}) const override final
-    {
-      DUNE_THROW(NotImplemented, "Yet!");
-    }
-
-  private:
-    const std::unique_ptr<typename F::LocalfunctionType> local_function_;
-    const std::array<size_t, r>& dims_;
-  }; // class LocalFunction
-
-  const F& function_;
-  const std::array<size_t, r> dims_;
-  const std::string name_;
-}; // class FunctionSlicer
 
 
 template <class F, size_t r = F::r, size_t rC = F::rC>
@@ -424,18 +337,16 @@ GTEST_TEST(empty, main)
   };
 
   const auto visualizer = [&](const auto& u_conservative, const std::string& filename_prefix, const auto step) {
-    using U_C = std::decay_t<decltype(u_conservative)>;
-    FunctionSlicer<U_C, 1>(u_conservative, {0}, "density")
+    XT::Functions::make_sliced_function<1>(u_conservative, {0}, "density")
         .visualize(grid_layer, filename_prefix + "_density_" + XT::Common::to_string(step));
-    FunctionSlicer<U_C, d>(u_conservative, {1} /*{1, 2}*/, "density_times_velocity")
+    XT::Functions::make_sliced_function<d>(u_conservative, {1} /*{1, 2}*/, "density_times_velocity")
         .visualize(grid_layer, filename_prefix + "_density_times_velocity_" + XT::Common::to_string(step));
-    FunctionSlicer<U_C, 1>(u_conservative, {2} /*{3}*/, "energy")
+    XT::Functions::make_sliced_function<1>(u_conservative, {2} /*{3}*/, "energy")
         .visualize(grid_layer, filename_prefix + "_energy_" + XT::Common::to_string(step));
     TransformedFunction<U_C, m> u_primitive(u_conservative, to_primitive);
-    using U_P = decltype(u_primitive);
-    FunctionSlicer<U_P, d>(u_primitive, {1} /*{1, 2}*/, "velocity")
+    XT::Functions::make_sliced_function<d>(u_primitive, {1} /*{1, 2}*/, "velocity")
         .visualize(grid_layer, filename_prefix + "_velocity_" + XT::Common::to_string(step));
-    FunctionSlicer<U_P, 1>(u_primitive, {2} /*{3}*/, "pressure")
+    XT::Functions::make_sliced_function<1>(u_primitive, {2} /*{3}*/, "pressure")
         .visualize(grid_layer, filename_prefix + "_pressure_" + XT::Common::to_string(step));
   };
 
