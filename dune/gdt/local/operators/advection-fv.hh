@@ -60,13 +60,15 @@ public:
   using DomainType = typename StateType::DomainType;
   using RangeType = typename StateType::RangeType;
 
-  NumericalFluxInterface(const FluxType& flx)
-    : flux_(flx)
+  NumericalFluxInterface(const FluxType& flx, const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+    , flux_(flx)
   {
   }
 
-  NumericalFluxInterface(const FluxType*&& flx_ptr)
-    : flux_(flx_ptr)
+  NumericalFluxInterface(FluxType*&& flx_ptr, const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+    , flux_(flx_ptr)
   {
   }
 
@@ -98,16 +100,10 @@ public:
   using LambdaType =
       std::function<RangeType(const RangeType&, const RangeType&, const DomainType&, const XT::Common::Parameter&)>;
 
-  NumericalLambdaFlux(const FluxType& flx, LambdaType lambda, const XT::Common::ParameterType& tp = {})
-    : BaseType(flx)
+  NumericalLambdaFlux(const FluxType& flx, LambdaType lambda, const XT::Common::ParameterType& param_type = {})
+    : BaseType(flx, param_type)
     , lambda_(lambda)
-    , parameter_type_(tp)
   {
-  }
-
-  const XT::Common::ParameterType& parameter_type() const override final
-  {
-    return parameter_type_;
   }
 
   RangeType apply(const RangeType& u,
@@ -120,7 +116,6 @@ public:
 
 private:
   const LambdaType lambda_;
-  const XT::Common::ParameterType parameter_type_;
 }; // class NumericalLambdaFlux
 
 
