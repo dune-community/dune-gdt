@@ -1,4 +1,4 @@
-// This file is part of the dune-gdt project:
+﻿// This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
 // Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
@@ -32,9 +32,12 @@ namespace Dune {
 namespace GDT {
 
 
-// forward
+// forwards
 template <class SpaceType>
 class LocalAdvectionFvCouplingOperator;
+
+template <class SpaceType>
+class LocalAdvectionFvBoundaryOperator;
 
 
 namespace internal {
@@ -47,6 +50,16 @@ class LocalAdvectionFvCouplingOperatorTraits
 
 public:
   using derived_type = LocalAdvectionFvCouplingOperator<SpaceType>;
+};
+
+
+template <class SpaceType>
+class LocalAdvectionFvBoundaryOperatorTraits
+{
+  static_assert(is_fv_space<SpaceType>::value, "Use LocalAdvectionDgCouplingOperator instead!");
+
+public:
+  using derived_type = LocalAdvectionFvBoundaryOperator<SpaceType>;
 };
 
 
@@ -334,6 +347,142 @@ public:
 private:
   const NumericalFluxType& numerical_flux_;
 }; // class LocalAdvectionFvCouplingOperator
+
+
+template <class SpaceType>
+class LocalAdvectionFvBoundaryTreatmentInterface : public XT::Common::ParametricInterface
+{
+  static_assert(is_space<SpaceType>::value, "");
+  static_assert(SpaceType::dimRangeCols == 1, "Not Implemented yet!");
+  using E = typename SpaceType::EntityType;
+  using D = typename SpaceType::DomainFieldType;
+  static const constexpr size_t d = SpaceType::dimDomain;
+  using R = typename SpaceType::RangeFieldType;
+  static const constexpr size_t r = SpaceType::dimRange;
+  static const constexpr size_t rC = 1;
+  using StateType = XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>;
+
+public:
+  using IntersectionType = XT::Grid::extract_intersection_t<typename SpaceType::GridLayerType>;
+  using IntersectionPointType = FieldVector<D, d - 1>;
+  using RangeType = typename StateType::RangeType;
+  using NumericalFluxType = NumericalFluxInterface<E, D, d, R, r>;
+  using FluxType = typename NumericalFluxType::FluxType;
+
+  LocalAdvectionFvBoundaryTreatmentInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+  {
+  }
+
+  virtual ~LocalAdvectionFvBoundaryTreatmentInterface() = default;
+
+  virtual RangeType apply(const IntersectionType& intersection,
+                          const IntersectionPointType& x_intersection,
+                          const FluxType& flux,
+                          const RangeType& u,
+                          const XT::Common::Parameter& mu = {}) const = 0;
+}; // class LocalAdvectionFvBoundaryTreatmentInterface
+
+
+template <class SpaceType>
+class LocalAdvectionFvLambdaBoundaryTreatment : public LocalAdvectionFvBoundaryTreatmentInterface<SpaceType>
+{
+  using BaseType = LocalAdvectionFvBoundaryTreatmentInterface<SpaceType>;
+
+public:
+  using typename BaseType::IntersectionType;
+  using typename BaseType::IntersectionPointType;
+  using typename BaseType::RangeType;
+  using typename BaseType::NumericalFluxType;
+  using typename BaseType::FluxType;
+
+  using LambdaType = std::function<RangeType(const IntersectionType&,
+                                             const IntersectionPointType&,
+                                             const FluxType&,
+                                             const RangeType&,
+                                             const XT::Common::Parameter&)>;
+
+  LocalAdvectionFvLambdaBoundaryTreatment(LambdaType lambda, const XT::Common::ParameterType& param_type = {})
+    : BaseType(param_type)
+    , lambda_(lambda)
+  {
+  }
+
+  RangeType apply(const IntersectionType& intersection,
+                  const IntersectionPointType& x_intersection,
+                  const FluxType& flux,
+                  const RangeType& u,
+                  const XT::Common::Parameter& mu = {}) const override final
+  {
+    return lambda_(intersection, x_intersection, flux, u, this->parse_parameter(mu));
+  }
+
+private:
+  const LambdaType lambda_;
+}; // class LocalAdvectionFvLambdaBoundaryTreatment
+
+
+/**
+ * \note Presumes that the basis evaluates to 1.
+ * \todo Improve local vector handling in apply.
+ */
+template <class SpaceType>
+class LocalAdvectionFvBoundaryOperator
+    : public LocalBoundaryOperatorInterface<internal::LocalAdvectionFvBoundaryOperatorTraits<SpaceType>>
+{
+  static_assert(SpaceType::dimRangeCols == 1, "Not Implemented yet!");
+  using E = typename SpaceType::EntityType;
+  using D = typename SpaceType::DomainFieldType;
+  static const constexpr size_t d = SpaceType::dimDomain;
+  using R = typename SpaceType::RangeFieldType;
+  static const constexpr size_t r = SpaceType::dimRange;
+  static const constexpr size_t rC = 1;
+  using StateType = XT::Functions::LocalizableFunctionInterface<E, D, d, R, r>;
+
+public:
+  using NumericalFluxType = NumericalFluxInterface<E, D, d, R, r>;
+  using BoundaryTreatmentType = LocalAdvectionFvBoundaryTreatmentInterface<SpaceType>;
+
+  LocalAdvectionFvBoundaryOperator(const NumericalFluxType& numerical_flux,
+                                   const BoundaryTreatmentType& boundary_treatment)
+    : numerical_flux_(numerical_flux)
+    , boundary_treatment_(boundary_treatment)
+  {
+  }
+
+  //  const XT::Common::ParameterType& parameter_type() const override final
+  //  {
+  //    return numerical_flux_.parameter_type();
+  //  }
+
+  template <class VectorType, class I>
+  void apply(const ConstDiscreteFunction<SpaceType, VectorType>& source,
+             const I& intersection,
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range /*,
+             const XT::Common::Parameter& mu = {}*/) const
+  {
+    static_assert(XT::Grid::is_intersection<I>::value, "");
+    const auto& entity = local_range.entity();
+    const auto u_inside = source.local_discrete_function(entity);
+    const auto x_intersection = ReferenceElements<D, d - 1>::general(intersection.type()).position(0, 0);
+    const auto normal = intersection.unitOuterNormal(x_intersection);
+    // copy the local DoF vector to matching FieldVector
+    typename StateType::RangeType u;
+    if (u.size() != u_inside->vector().size())
+      DUNE_THROW(InvalidStateException, "");
+    for (size_t ii = 0; ii < u.size(); ++ii)
+      u[ii] = u_inside->vector().get(ii);
+    const auto v = boundary_treatment_.apply(intersection, x_intersection, numerical_flux_.flux(), u, /*mu*/ {});
+    const auto g = numerical_flux_.apply(u, v, normal, /*mu*/ {});
+    const auto h = entity.geometry().volume();
+    for (size_t ii = 0; ii < r; ++ii)
+      local_range.vector().add(ii, (g[ii] * intersection.geometry().volume()) / h);
+  } // ... apply(...)
+
+private:
+  const NumericalFluxType& numerical_flux_;
+  const BoundaryTreatmentType& boundary_treatment_;
+}; // class LocalAdvectionFvBoundaryOperator
 
 
 } // namespace GDT
