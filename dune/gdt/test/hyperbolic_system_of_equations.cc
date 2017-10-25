@@ -193,22 +193,6 @@ static const constexpr size_t m = d + 2;
 using DomainType = XT::Common::FieldVector<D, d>;
 
 
-// from http://eigen.tuxfamily.org/bz/show_bug.cgi?id=257#c14
-XT::LA::EigenDenseMatrix<R> compute_pseudo_inverse(const XT::LA::EigenDenseMatrix<R>& mat,
-                                                   const R& epsilon = std::numeric_limits<R>::epsilon())
-{
-  Eigen::JacobiSVD<typename XT::LA::EigenDenseMatrix<R>::BackendType> svd(mat.backend(),
-                                                                          Eigen::ComputeThinU | Eigen::ComputeThinV);
-  R tolerance = epsilon * std::max(mat.cols(), mat.rows()) * svd.singularValues().array().abs()(0);
-  return XT::LA::EigenDenseMatrix<R>(svd.matrixV()
-                                     * (svd.singularValues().array().abs() > tolerance)
-                                           .select(svd.singularValues().array().inverse(), 0)
-                                           .matrix()
-                                           .asDiagonal()
-                                     * svd.matrixU().adjoint());
-} // ... compute_pseudo_inverse(...)
-
-
 GTEST_TEST(empty, main)
 {
   auto grid =
@@ -506,27 +490,7 @@ GTEST_TEST(empty, main)
       check_values(evs);
       const auto T = eigensolver.real_eigenvectors_as_matrix();
       check_values(T);
-      const auto T_inv = compute_pseudo_inverse(T);
-      //#ifndef NDEBUG
-      const auto unit_matrix = XT::Common::from_string<XT::LA::EigenDenseMatrix<R>>(
-          "[1 0 0 0 0; 0 1 0 0 0; 0 0 1 0 0; 0 0 0 1 0; 0 0 0 0 1]", T.rows(), T.cols());
-      const auto T_times_T_inv = T * T_inv;
-      if ((T_times_T_inv - unit_matrix).sup_norm() > 1e-14)
-        DUNE_THROW(InvalidStateException,
-                   "Inversion not successfull!\n\n"
-                       << "P = "
-                       << P
-                       << "\n\ndiagonal of lambda (eigenvalues) = "
-                       << evs
-                       << "\n\nT (eigenvectors) = "
-                       << T
-                       << "\n\nT^-1 = "
-                       << T_inv
-                       << "\n\nT * T^-1 = "
-                       << T_times_T_inv
-                       << "\n\n||(T * T_inv) - I||_\\infty = "
-                       << (T_times_T_inv - unit_matrix).sup_norm());
-      //#endif // NDEBUG
+      const auto T_inv = XT::LA::make_inverse_matrix(T, {{"type", "moore_penrose"}}).inverse();
       check_values(T_inv);
 
       //#ifndef NDEBUG
