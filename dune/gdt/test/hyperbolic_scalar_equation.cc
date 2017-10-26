@@ -100,9 +100,16 @@ GTEST_TEST(hyperbolic, scalar_equation)
       0,
       {},
       "inflow_from_the_left");
+  U0 smooth_inflow_from_the_left(
+      [](const auto& xx, const auto& /*mu*/) {
+        return std::exp(-0.5 * (((xx - DomainType(-1.)) * (xx - DomainType(-1.))) / std::pow(0.1, d)));
+      },
+      0,
+      {},
+      "smooth_inflow_from_the_left");
   U0 indicator(
       [](const auto& xx, const auto& /*mu*/) {
-        if (XT::Common::FloatCmp::ge(xx, DomainType(0.25)) && XT::Common::FloatCmp::le(xx, DomainType(0.5)))
+        if (XT::Common::FloatCmp::ge(xx, DomainType(-0.5)) && XT::Common::FloatCmp::le(xx, DomainType(0.)))
           return 1.;
         else
           return 0.;
@@ -110,7 +117,7 @@ GTEST_TEST(hyperbolic, scalar_equation)
       0,
       {},
       "indicator");
-  const auto& u_0 = inflow_from_the_left;
+  const auto& u_0 = smooth_inflow_from_the_left;
   u_0.visualize(grid_layer, "initial_values");
 
   // boundary values (needs to match grid layer)
@@ -119,7 +126,7 @@ GTEST_TEST(hyperbolic, scalar_equation)
   boundary_info.register_new_normal({1.}, new XT::Grid::InflowOutflowBoundary());
 
   U0 zero([](const auto& /*xx*/, const auto& /*mu*/) { return 0.; }, 0, {}, "zero");
-  const auto& bv = inflow_from_the_left;
+  const auto& bv = smooth_inflow_from_the_left;
   bv.visualize(grid_layer, "boundary_values");
 
   const auto inflow_outflow_boundary_treatment =
