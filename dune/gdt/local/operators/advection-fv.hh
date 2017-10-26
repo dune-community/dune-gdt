@@ -252,7 +252,7 @@ public:
                   const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     auto integrate_f = [&](const auto& s, const std::function<double(const R&, const R&)>& min_max) {
-      if (XT::Common::FloatCmp::eq(s[0], 0.))
+      if (!(s[0] > 0.))
         return 0.;
       D ret = 0.;
       const OneDGrid state_grid(1, 0., s[0]);
