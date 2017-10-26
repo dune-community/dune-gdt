@@ -217,7 +217,7 @@ GTEST_TEST(empty, main)
     const auto& rho = conservative_variables[0];
     DomainType v;
     for (size_t ii = 0; ii < d; ++ii)
-      v = conservative_variables[ii + 1] / rho;
+      v[ii] = conservative_variables[ii + 1] / rho;
     const auto& E = conservative_variables[m - 1];
     // convert
     FieldVector<R, m> primitive_variables;
@@ -235,7 +235,7 @@ GTEST_TEST(empty, main)
     const auto& rho = primitive_variables[0];
     DomainType v;
     for (size_t ii = 0; ii < d; ++ii)
-      v = primitive_variables[ii + 1];
+      v[ii] = primitive_variables[ii + 1];
     const auto& p = primitive_variables[m - 1];
     // convert
     FieldVector<R, m> conservative_variables;
