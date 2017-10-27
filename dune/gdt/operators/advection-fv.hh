@@ -66,17 +66,25 @@ public:
   using LocalAdvectionFvBoundaryTreatmentType = LocalAdvectionFvBoundaryTreatmentInterface<SpaceType>;
   using LocalAdvectionFvLambdaBoundaryTreatmentType = LocalAdvectionFvLambdaBoundaryTreatment<SpaceType>;
 
-  AdvectionFvOperator(const GL& grid_layer, const NumericalFluxType& numerical_flx)
+  AdvectionFvOperator(
+      const GL& grid_layer,
+      const NumericalFluxType& numerical_flx,
+      XT::Grid::ApplyOn::WhichIntersection<GL>*&& periodicity_exception = new XT::Grid::ApplyOn::AllIntersections<GL>)
     : grid_layer_(grid_layer)
     , numerical_flux_(numerical_flx)
     , local_coupling_operator_(numerical_flux_.access())
+    , periodicity_exception_(periodicity_exception)
   {
   }
 
-  AdvectionFvOperator(const GL& grid_layer, NumericalFluxType*&& numerical_flx_ptr)
+  AdvectionFvOperator(
+      const GL& grid_layer,
+      NumericalFluxType*&& numerical_flx_ptr,
+      XT::Grid::ApplyOn::WhichIntersection<GL>*&& periodicity_exception = new XT::Grid::ApplyOn::AllIntersections<GL>)
     : grid_layer_(grid_layer)
     , numerical_flux_(std::move(numerical_flx_ptr))
     , local_coupling_operator_(numerical_flux_.access())
+    , periodicity_exception_(periodicity_exception)
   {
   }
 
@@ -87,10 +95,12 @@ public:
                                                           const typename NumericalFluxType::RangeType&,
                                                           const typename NumericalFluxType::DomainType&,
                                                           const XT::Common::Parameter&)> numerical_flux_lambda,
-      const XT::Common::ParameterType& numerical_flux_parameter_type = {})
+      const XT::Common::ParameterType& numerical_flux_parameter_type = {},
+      XT::Grid::ApplyOn::WhichIntersection<GL>*&& periodicity_exception = new XT::Grid::ApplyOn::NoIntersections<GL>)
     : grid_layer_(grid_layer)
     , numerical_flux_(new NumericalLambdaFlux<DF>(flux, numerical_flux_lambda, numerical_flux_parameter_type))
     , local_coupling_operator_(numerical_flux_.access())
+    , periodicity_exception_(periodicity_exception)
   {
   }
 
@@ -129,8 +139,10 @@ public:
     if (!range.vector().valid())
       DUNE_THROW(InvalidStateException, "");
     LocalizableOperatorBase<GL, DF, DF> walker(grid_layer_, source, range);
-    walker.append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GL>(), mu);
-    walker.append(local_coupling_operator_, new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GL>(), mu);
+    walker.append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GL>());
+    walker.append(local_coupling_operator_,
+                  XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GL>() && !(*periodicity_exception_),
+                  mu);
     using LocalBoundaryOperatorType = LocalAdvectionFvBoundaryOperator<SpaceType>;
     std::vector<std::unique_ptr<LocalBoundaryOperatorType>> local_boundary_operators;
     for (const auto& boundary_treatment_and_filter : boundary_treatments_) {
@@ -196,6 +208,7 @@ private:
   std::list<std::pair<XT::Common::ConstStorageProvider<LocalAdvectionFvBoundaryTreatmentType>,
                       std::unique_ptr<XT::Grid::ApplyOn::WhichIntersection<GL>>>>
       boundary_treatments_;
+  std::unique_ptr<XT::Grid::ApplyOn::WhichIntersection<GL>> periodicity_exception_;
 }; // class AdvectionFvOperator
 
 
