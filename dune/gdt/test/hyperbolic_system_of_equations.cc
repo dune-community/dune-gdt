@@ -319,7 +319,7 @@ GTEST_TEST(empty, main)
       [&](const auto& xx, const auto& /*mu*/) {
         FieldVector<R, m> primitive_variables(0.);
         // density
-        if (-0.5 < xx[0] && xx[0] < 0)
+        if (XT::Common::FloatCmp::ge(xx, DomainType(-0.5)) && XT::Common::FloatCmp::le(xx, DomainType(0)))
           primitive_variables[0] = 4.;
         else
           primitive_variables[0] = 1.;
@@ -327,7 +327,7 @@ GTEST_TEST(empty, main)
         for (size_t ii = 0; ii < d; ++ii)
           primitive_variables[1 + ii] = 0.;
         // pressure
-        if (-0.5 < xx[0] && xx[0] < 0)
+        if (XT::Common::FloatCmp::ge(xx, DomainType(-0.5)) && XT::Common::FloatCmp::le(xx, DomainType(0)))
           primitive_variables[m - 1] = 1.6;
         else
           primitive_variables[m - 1] = 0.4;
