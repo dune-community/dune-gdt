@@ -492,42 +492,6 @@ GTEST_TEST(empty, main)
       });
   const auto& flux = euler_2d;
 
-  auto P_euler_2d = [&](const auto& w_conservative, const auto& n) {
-    if (d != 2)
-      DUNE_THROW(NotImplemented, "Only for 2d!\nd = " << d);
-    // compute P matrix directly for euler [DF2016, p.405, (8.20)]
-    const auto w_primitiv = to_primitive(w_conservative);
-    const auto& rho = w_conservative[0];
-    DomainType v;
-    v[0] = w_primitiv[1];
-    v[1] = w_primitiv[2];
-    const auto& e = w_conservative[3];
-    const auto gamma_1 = gamma - 1;
-    const auto gamma_2 = gamma - 2;
-    const auto G = gamma * e / rho - 0.5 * gamma_1 * v.two_norm2();
-    XT::Common::FieldMatrix<R, m, m> P(0.);
-    P[0][0] = 0;
-    P[0][1] = n[0];
-    P[0][2] = n[1];
-    P[0][3] = 0;
-
-    P[1][0] = 0.5 * gamma_1 * v.two_norm2() * n[0] - v[0] * (v * n);
-    P[1][1] = -gamma_2 * v[0] * n[0] + v * n;
-    P[1][2] = v[0] * n[1] - gamma_1 * v[1] * n[0];
-    P[1][3] = gamma_1 * n[0];
-
-    P[2][0] = 0.5 * gamma_1 * v.two_norm2() * n[1] - v[1] * (v * n);
-    P[2][1] = v[1] * n[0] - gamma_1 * v[0] * n[1];
-    P[2][2] = -gamma_2 * v[1] * n[1] + v * n;
-    P[2][3] = gamma_1 * n[1];
-
-    P[3][0] = (gamma_1 * v.two_norm2() - gamma * e / rho) * (v * n);
-    P[3][1] = G * n[0] - gamma_1 * v[0] * (v * n);
-    P[3][2] = G * n[1] - gamma_1 * v[1] * (v * n);
-    P[3][3] = gamma * (v * n);
-    return P;
-  };
-
   auto vijayasundaram_generic = [&](const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
     check_values(u);
     check_values(v);
@@ -838,100 +802,9 @@ GTEST_TEST(empty, main)
     return result;
   };
 
-  auto vijayasundaram_euler_2d =
-      [&](const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
-        const auto w_conservative = 0.5 * (u + v);
-        const auto w_primitive = to_primitive(w_conservative);
-        const auto& rho = w_conservative[0];
-        const auto& v_0 = w_primitive[1];
-        const auto& v_1 = w_primitive[2];
-        const auto v_abs_2 = v_0 * v_0 + v_1 * v_1;
-        const auto v_abs = std::sqrt(v_abs_2);
-        const auto& e = w_conservative[3];
-        const auto& p = w_primitive[3];
-        const auto a = std::sqrt(gamma * p / rho);
-        const auto M = v_abs / a;
-        const auto H = (e + p) / rho;
-        const auto rho_over_2a = rho / (2 * a);
-        const auto v_times_n = v_0 * n[0] + v_1 * n[1];
-
-        XT::Common::FieldMatrix<R, m, m> eigenvectors(0.);
-        eigenvectors[0] = {1., 0., rho_over_2a, rho_over_2a};
-        eigenvectors[1] = {v_0, rho * n[1], rho_over_2a * (v_0 + a * n[0]), rho_over_2a * (v_0 - a * n[0])};
-        eigenvectors[2] = {v_1, -rho * n[0], rho_over_2a * (v_1 + a * n[1]), rho_over_2a * (v_1 - a * n[1])};
-        eigenvectors[3] = {v_abs_2 / 2.,
-                           rho * (v_0 * n[1] - v_1 * n[0]),
-                           rho_over_2a * (H + a * v_times_n),
-                           rho_over_2a * (H - a * v_times_n)};
-
-        XT::Common::FieldMatrix<R, m, m> eigenvectors_inv(0.);
-        eigenvectors_inv[0] = {1. - ((gamma - 1.) / 2.) * M * M,
-                               (gamma - 1.) * v_0 / (a * a),
-                               (gamma - 1.) * v_1 / (a * a),
-                               -(gamma - 1.) / (a * a)};
-        eigenvectors_inv[1] = {(1. / rho) * (v_1 * n[0] - v_0 * n[1]), n[1] / rho, -n[0] / rho, 0.};
-        eigenvectors_inv[2] = {(a / rho) * (((gamma - 1.) / 2) * M * M - v_times_n / a),
-                               (1. / rho) * (n[0] - (gamma - 1.) * (v_0 / a)),
-                               (1. / rho) * (n[1] - (gamma - 1.) * (v_1 / a)),
-                               (gamma - 1.) / (rho * a)};
-        eigenvectors_inv[3] = {(a / rho) * (((gamma - 1.) / 2) * M * M + v_times_n / a),
-                               (-1. / rho) * (n[0] + (gamma - 1.) * (v_0 / a)),
-                               (-1. / rho) * (n[1] + (gamma - 1.) * (v_1 / a)),
-                               (gamma - 1.) / (rho * a)};
-
-        const auto identity = XT::LA::eye_matrix<XT::Common::FieldMatrix<R, m, m>>(m, m);
-
-        if ((eigenvectors_inv * eigenvectors - identity).infinity_norm() > 1e-14)
-          DUNE_THROW(InvalidStateException,
-                     "\n\neigenvectors:\n\n"
-                         << eigenvectors
-                         << "\n\neigenvectors_inverse:\n\n"
-                         << eigenvectors_inv
-                         << "\n\n|| eigenvectors_inv * eigenvectors - identity ||_infty = "
-                         << (eigenvectors_inv * eigenvectors - identity).infinity_norm());
-
-        XT::Common::FieldMatrix<R, m, m> eigenvalues(0.);
-        eigenvalues[0][0] = v_times_n;
-        eigenvalues[1][1] = v_times_n;
-        eigenvalues[2][2] = v_times_n + a;
-        eigenvalues[3][3] = v_times_n - a;
-
-        if (((eigenvectors_inv * (P_euler_2d(w_conservative, n) * eigenvectors)) - eigenvalues).infinity_norm() > 1e-14)
-          DUNE_THROW(InvalidStateException,
-                     "\n\neigenvectors:\n\n"
-                         << eigenvectors
-                         << "\n\neigenvectors_inverse:\n\n"
-                         << eigenvectors_inv
-                         << "\n\neigenvalues:"
-                         << eigenvalues
-                         << "\n\nP:\n\n"
-                         << P_euler_2d(w_conservative, n)
-                         << "\n\neigenvectors_inv * (P * eigenvectors):\n\n"
-                         << eigenvectors_inv * (P_euler_2d(w_conservative, n) * eigenvectors)
-                         << "\n\n|| eigenvectors_inv * (P * eigenvectors) ||_infty = "
-                         << ((eigenvectors_inv * (P_euler_2d(w_conservative, n) * eigenvectors)) - eigenvalues)
-                                .infinity_norm());
-
-        XT::Common::FieldMatrix<R, m, m> eigenvalues_plus(0.);
-        eigenvalues_plus[0][0] = std::max(0., eigenvalues[0][0]);
-        eigenvalues_plus[1][1] = std::max(0., eigenvalues[1][1]);
-        eigenvalues_plus[2][2] = std::max(0., eigenvalues[2][2]);
-        eigenvalues_plus[3][3] = std::max(0., eigenvalues[3][3]);
-
-        XT::Common::FieldMatrix<R, m, m> eigenvalues_minus(0.);
-        eigenvalues_minus[0][0] = std::min(0., eigenvalues[0][0]);
-        eigenvalues_minus[1][1] = std::min(0., eigenvalues[1][1]);
-        eigenvalues_minus[2][2] = std::min(0., eigenvalues[2][2]);
-        eigenvalues_minus[3][3] = std::min(0., eigenvalues[3][3]);
-
-        const auto P_plus = eigenvectors * eigenvalues_plus * eigenvectors_inv;
-        const auto P_minus = eigenvectors * eigenvalues_minus * eigenvectors_inv;
-        return P_plus * u + P_minus * v;
-      };
-
-  auto numerical_flux = vijayasundaram_euler_2d;
+  auto numerical_flux = GDT::make_numerical_vijayasundaram_euler_flux(flux, gamma);
   using OpType = GDT::AdvectionFvOperator<DF>;
-  OpType advec_op(grid_layer, flux, numerical_flux);
+  OpType advec_op(grid_layer /*, flux*/, numerical_flux);
 
   // compute dt via Cockburn, Coquel, LeFloch, 1995
   // (in general, looking for the min/max should also include the boundary data)
