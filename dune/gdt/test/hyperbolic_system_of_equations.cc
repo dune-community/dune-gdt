@@ -220,7 +220,7 @@ GTEST_TEST(empty, main)
     DomainType v;
     for (size_t ii = 0; ii < d; ++ii)
       v[ii] = conservative_variables[ii + 1] / rho;
-    const auto& E = conservative_variables[m - 1];
+    const auto& e = conservative_variables[m - 1];
     // convert
     FieldVector<R, m> primitive_variables;
     // * density
@@ -229,7 +229,7 @@ GTEST_TEST(empty, main)
     for (size_t ii = 0; ii < d; ++ii)
       primitive_variables[ii + 1] = v[ii];
     // * pressure
-    primitive_variables[m - 1] = (gamma - 1.) * (E - 0.5 * rho * v.two_norm2());
+    primitive_variables[m - 1] = (gamma - 1.) * (e - 0.5 * rho * v.two_norm2());
     return primitive_variables;
   };
   const auto to_conservative = [&](const FieldVector<R, m>& primitive_variables) {
@@ -377,13 +377,13 @@ GTEST_TEST(empty, main)
         check_values(primitive_variables);
         const auto& rho = conservative_variables[0];
         const auto& v = primitive_variables[1];
-        const auto& E = conservative_variables[2];
+        const auto& e = conservative_variables[2];
         const auto& p = primitive_variables[2];
         FieldMatrix<R, d, m> ret;
         auto& f = ret[0];
         f[0] = rho * v;
         f[1] = rho * v * v + p;
-        f[2] = (E + p) * v;
+        f[2] = (e + p) * v;
         check_values(ret);
         return ret;
       },
@@ -398,8 +398,7 @@ GTEST_TEST(empty, main)
         check_values(primitive_variables);
         const auto& rho = conservative_variables[0];
         const auto& v = primitive_variables[1];
-        const auto& E = conservative_variables[2];
-        const auto& p = primitive_variables[2];
+        const auto& e = conservative_variables[2];
         FieldVector<FieldMatrix<R, m, m>, d> ret;
         auto& jacobian_f = ret[0];
         jacobian_f[0][0] = 0.;
@@ -408,8 +407,8 @@ GTEST_TEST(empty, main)
         jacobian_f[1][0] = 0.5 * (gamma - 3.) * v * v;
         jacobian_f[1][1] = (3. - gamma) * v;
         jacobian_f[1][2] = gamma - 1.;
-        jacobian_f[2][0] = v * ((gamma - 1.) * v * v - gamma * (E / rho));
-        jacobian_f[2][1] = gamma * (E / rho) - (3. * (gamma - 1.) / 2.) * v * v;
+        jacobian_f[2][0] = v * ((gamma - 1.) * v * v - gamma * (e / rho));
+        jacobian_f[2][1] = gamma * (e / rho) - (3. * (gamma - 1.) / 2.) * v * v;
         jacobian_f[2][2] = gamma * v;
         check_values(jacobian_f);
         return ret;
@@ -427,7 +426,7 @@ GTEST_TEST(empty, main)
         DomainType v;
         for (size_t ii = 0; ii < d; ++ii)
           v = primitive_variables[ii + 1];
-        const auto& E = conservative_variables[m - 1];
+        const auto& e = conservative_variables[m - 1];
         const auto& p = primitive_variables[m - 1];
         FieldMatrix<R, d, m> ret;
         for (size_t ss = 0; ss < d; ++ss) {
@@ -435,7 +434,7 @@ GTEST_TEST(empty, main)
           f_s[0] = rho * v[ss];
           for (size_t ii = 0; ii < d; ++ii)
             f_s[1 + ii] = rho * v[ii] * v[ss] + (ss == 1 ? 1 : 0) * p;
-          f_s[m - 1] = (E + p) * v[ss];
+          f_s[m - 1] = (e + p) * v[ss];
         }
         check_values(ret);
         return ret;
@@ -453,8 +452,7 @@ GTEST_TEST(empty, main)
         DomainType v;
         for (size_t ii = 0; ii < d; ++ii)
           v = primitive_variables[ii + 1];
-        const auto& E = conservative_variables[m - 1];
-        const auto& p = primitive_variables[m - 1];
+        const auto& e = conservative_variables[m - 1];
         FieldVector<FieldMatrix<R, m, m>, d> ret;
         static_assert(d == 2, "");
         const auto gamma_1 = gamma - 1.;
@@ -469,8 +467,8 @@ GTEST_TEST(empty, main)
         jacobian_f_0[2][1] = v[1];
         jacobian_f_0[2][2] = v[0];
         jacobian_f_0[2][3] = 0.;
-        jacobian_f_0[3][0] = v[0] * (gamma_1 * v.two_norm2() - (gamma * E) / rho);
-        jacobian_f_0[3][1] = ((gamma * E) / rho) - gamma_1 * v[0] * v[0] - 0.5 * gamma_1 * v.two_norm2();
+        jacobian_f_0[3][0] = v[0] * (gamma_1 * v.two_norm2() - (gamma * e) / rho);
+        jacobian_f_0[3][1] = ((gamma * e) / rho) - gamma_1 * v[0] * v[0] - 0.5 * gamma_1 * v.two_norm2();
         jacobian_f_0[3][2] = -1. * gamma_1 * v[0] * v[1];
         jacobian_f_0[3][3] = gamma * v[0];
         check_values(jacobian_f_0);
@@ -485,9 +483,9 @@ GTEST_TEST(empty, main)
         jacobian_f_1[2][1] = -1. * gamma_1 * v[0];
         jacobian_f_1[2][2] = (3. - gamma) * v[1];
         jacobian_f_1[2][3] = gamma_1;
-        jacobian_f_1[3][0] = v[1] * (gamma_1 * v.two_norm2() - ((gamma * E) / rho));
+        jacobian_f_1[3][0] = v[1] * (gamma_1 * v.two_norm2() - ((gamma * e) / rho));
         jacobian_f_1[3][1] = -1. * gamma_1 * v[0] * v[1];
-        jacobian_f_1[3][2] = ((gamma * E) / rho) - gamma_1 * v[1] * v[1] - 0.5 * gamma_1 * v.two_norm2();
+        jacobian_f_1[3][2] = ((gamma * e) / rho) - gamma_1 * v[1] * v[1] - 0.5 * gamma_1 * v.two_norm2();
         jacobian_f_1[3][3] = gamma * v[1];
         check_values(jacobian_f_1);
         return ret;
@@ -503,10 +501,10 @@ GTEST_TEST(empty, main)
     DomainType v;
     v[0] = w_primitiv[1];
     v[1] = w_primitiv[2];
-    const auto& E = w_conservative[3];
+    const auto& e = w_conservative[3];
     const auto gamma_1 = gamma - 1;
     const auto gamma_2 = gamma - 2;
-    const auto G = gamma * E / rho - 0.5 * gamma_1 * v.two_norm2();
+    const auto G = gamma * e / rho - 0.5 * gamma_1 * v.two_norm2();
     XT::Common::FieldMatrix<R, m, m> P(0.);
     P[0][0] = 0;
     P[0][1] = n[0];
@@ -523,7 +521,7 @@ GTEST_TEST(empty, main)
     P[2][2] = -gamma_2 * v[1] * n[1] + v * n;
     P[2][3] = gamma_1 * n[1];
 
-    P[3][0] = (gamma_1 * v.two_norm2() - gamma * E / rho) * (v * n);
+    P[3][0] = (gamma_1 * v.two_norm2() - gamma * e / rho) * (v * n);
     P[3][1] = G * n[0] - gamma_1 * v[0] * (v * n);
     P[3][2] = G * n[1] - gamma_1 * v[1] * (v * n);
     P[3][3] = gamma * (v * n);
@@ -595,8 +593,8 @@ GTEST_TEST(empty, main)
         const auto identity = XT::LA::eye_matrix<XT::LA::EigenDenseMatrix<R>>(m, m);
         // check each eigenvalue/eigenvector pair individually
         for (size_t ii = 0; ii < m; ++ii) {
-          const auto& lambda = evs[ii];
-          std::cerr << "\n\nchecking lambda_" << ii << " = " << lambda << ":" << std::endl;
+          const auto& lmbd = evs[ii];
+          std::cerr << "\n\nchecking lambda_" << ii << " = " << lmbd << ":" << std::endl;
           // try all possible eigenvectors
           XT::LA::EigenDenseVector<R> eigenvector(m, 0.);
           for (size_t jj = 0; jj < m; ++jj) {
@@ -605,7 +603,7 @@ GTEST_TEST(empty, main)
               eigenvector[kk] = T.get_entry(kk, jj);
             std::cerr << "  testing column " << jj << " = " << eigenvector << ": ";
             const auto tolerance = 1e-15;
-            const auto error = ((P - identity * lambda) * eigenvector).sup_norm();
+            const auto error = ((P - identity * lmbd) * eigenvector).sup_norm();
             if (error < tolerance)
               std::cerr << "this IS an eigenvector (up to " << tolerance << ")!" << std::endl;
             else {
@@ -678,10 +676,10 @@ GTEST_TEST(empty, main)
     DomainType v;
     v[0] = w_primitiv[1];
     v[1] = w_primitiv[2];
-    const auto& E = w_conservative[3];
+    const auto& e = w_conservative[3];
     const auto gamma_1 = gamma - 1;
     const auto gamma_2 = gamma - 2;
-    const auto G = gamma * E / rho - 0.5 * gamma_1 * v.two_norm2();
+    const auto G = gamma * e / rho - 0.5 * gamma_1 * v.two_norm2();
     XT::LA::EigenDenseMatrix<R> P_euler(m, m, 0.);
     P_euler.set_entry(0, 0, 0);
     P_euler.set_entry(0, 1, n[0]);
@@ -698,7 +696,7 @@ GTEST_TEST(empty, main)
     P_euler.set_entry(2, 2, -gamma_2 * v[1] * n[1] + v * n);
     P_euler.set_entry(2, 3, gamma_1 * n[1]);
 
-    P_euler.set_entry(3, 0, (gamma_1 * v.two_norm2() - gamma * E / rho) * (v * n));
+    P_euler.set_entry(3, 0, (gamma_1 * v.two_norm2() - gamma * e / rho) * (v * n));
     P_euler.set_entry(3, 1, G * n[0] - gamma_1 * v[0] * (v * n));
     P_euler.set_entry(3, 2, G * n[1] - gamma_1 * v[1] * (v * n));
     P_euler.set_entry(3, 3, gamma * (v * n));
@@ -775,8 +773,8 @@ GTEST_TEST(empty, main)
         const auto identity = XT::LA::eye_matrix<XT::LA::EigenDenseMatrix<R>>(m, m);
         // check each eigenvalue/eigenvector pair individually
         for (size_t ii = 0; ii < m; ++ii) {
-          const auto& lambda = evs[ii];
-          std::cerr << "\n\nchecking lambda_" << ii << " = " << lambda << ":" << std::endl;
+          const auto& lmbd = evs[ii];
+          std::cerr << "\n\nchecking lambda_" << ii << " = " << lmbd << ":" << std::endl;
           // try all possible eigenvectors
           XT::LA::EigenDenseVector<R> eigenvector(m, 0.);
           for (size_t jj = 0; jj < m; ++jj) {
@@ -785,7 +783,7 @@ GTEST_TEST(empty, main)
               eigenvector[kk] = T.get_entry(kk, jj);
             std::cerr << "  testing column " << jj << " = " << eigenvector << ": ";
             const auto tolerance = 1e-15;
-            const auto error = ((P - identity * lambda) * eigenvector).sup_norm();
+            const auto error = ((P - identity * lmbd) * eigenvector).sup_norm();
             if (error < tolerance)
               std::cerr << "this IS an eigenvector (up to " << tolerance << ")!" << std::endl;
             else {
@@ -849,11 +847,11 @@ GTEST_TEST(empty, main)
         const auto& v_1 = w_primitive[2];
         const auto v_abs_2 = v_0 * v_0 + v_1 * v_1;
         const auto v_abs = std::sqrt(v_abs_2);
-        const auto& E = w_conservative[3];
+        const auto& e = w_conservative[3];
         const auto& p = w_primitive[3];
         const auto a = std::sqrt(gamma * p / rho);
         const auto M = v_abs / a;
-        const auto H = (E + p) / rho;
+        const auto H = (e + p) / rho;
         const auto rho_over_2a = rho / (2 * a);
         const auto v_times_n = v_0 * n[0] + v_1 * n[1];
 
