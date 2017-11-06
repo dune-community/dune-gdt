@@ -265,21 +265,6 @@ GTEST_TEST(empty, main)
         .visualize(grid_layer, filename_prefix + "_velocity_" + XT::Common::to_string(step), /*subsampling=*/false);
     XT::Functions::make_sliced_function<1>(u_primitive, {3} /*{2}*/, "pressure")
         .visualize(grid_layer, filename_prefix + "_pressure_" + XT::Common::to_string(step), /*subsampling=*/false);
-    //    const auto u_conservative_check = XT::Functions::make_transformed_function<m, 1, R>(u_primitive,
-    //    to_conservative);
-    //    const auto error = u_conservative - u_conservative_check;
-    //    XT::Functions::make_sliced_function<1>(error, {0}, "0")
-    //        .visualize(grid_layer, filename_prefix + "_error_0_" + XT::Common::to_string(step),
-    //        /*subsampling=*/false);
-    //    XT::Functions::make_sliced_function<1>(error, {1}, "1")
-    //        .visualize(grid_layer, filename_prefix + "_error_1_" + XT::Common::to_string(step),
-    //        /*subsampling=*/false);
-    //    XT::Functions::make_sliced_function<1>(error, {2}, "2")
-    //        .visualize(grid_layer, filename_prefix + "_error_2_" + XT::Common::to_string(step),
-    //        /*subsampling=*/false);
-    //    XT::Functions::make_sliced_function<1>(error, {3}, "3")
-    //        .visualize(grid_layer, filename_prefix + "_error_3_" + XT::Common::to_string(step),
-    //        /*subsampling=*/false);
   };
 
   using U = XT::Functions::LocalizableFunctionInterface<E, D, d, R, m>;
@@ -454,7 +439,6 @@ GTEST_TEST(empty, main)
           v = primitive_variables[ii + 1];
         const auto& e = conservative_variables[m - 1];
         FieldVector<FieldMatrix<R, m, m>, d> ret;
-        static_assert(d == 2, "");
         const auto gamma_1 = gamma - 1.;
         // f_0
         auto& jacobian_f_0 = ret[0];
