@@ -20,6 +20,7 @@
 
 #include <dune/xt/common/densevector.hh>
 #include <dune/xt/common/memory.hh>
+#include <dune/xt/common/vector.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces/localizable-function.hh>
 #include <dune/xt/functions/interfaces/localizable-flux-function.hh>
@@ -1009,7 +1010,7 @@ private:
 
 /**
  * \note Presumes that the basis evaluates to 1.
- * \todo Improve local vector handling in apply.
+ * \todo Improve local vector conversion in apply.
  */
 template <class SpaceType>
 class LocalAdvectionFvBoundaryOperator
@@ -1035,16 +1036,10 @@ public:
   {
   }
 
-  //  const XT::Common::ParameterType& parameter_type() const override final
-  //  {
-  //    return numerical_flux_.parameter_type();
-  //  }
-
   template <class VectorType, class I>
   void apply(const ConstDiscreteFunction<SpaceType, VectorType>& source,
              const I& intersection,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range /*,
-             const XT::Common::Parameter& mu = {}*/) const
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range) const
   {
     static_assert(XT::Grid::is_intersection<I>::value, "");
     const auto& entity = local_range.entity();
