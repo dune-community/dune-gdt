@@ -79,9 +79,9 @@ typename std::enable_if<XT::Common::is_matrix<M>::value, void>::type check_value
 }
 
 
-// using G = YASP_1D_EQUIDISTANT_OFFSET;
+using G = YASP_1D_EQUIDISTANT_OFFSET;
 // using G = YASP_2D_EQUIDISTANT_OFFSET;
-using G = ALU_2D_SIMPLEX_CONFORMING;
+// using G = ALU_2D_SIMPLEX_CONFORMING;
 using E = typename G::template Codim<0>::Entity;
 using D = double;
 static const constexpr size_t d = G::dimension;
@@ -89,6 +89,7 @@ using R = double;
 static const constexpr size_t m = d + 2;
 
 using DomainType = XT::Common::FieldVector<D, d>;
+using RangeType = XT::Common::FieldVector<D, m>;
 
 
 GTEST_TEST(empty, main)
@@ -102,11 +103,6 @@ GTEST_TEST(empty, main)
   auto periodic_leaf_layer = XT::Grid::make_periodic_grid_layer(leaf_layer);
   auto& grid_layer = periodic_leaf_layer;
   using GL = std::decay_t<decltype(grid_layer)>;
-
-  //  using I = XT::Grid::extract_intersection_t<GL>;
-  //  XT::Grid::NormalBasedBoundaryInfo<I> boundary_info;
-  //  boundary_info.register_new_normal({-1., 0.}, new XT::Grid::InflowOutflowBoundary());
-  //  boundary_info.register_new_normal({1., 0.}, new XT::Grid::InflowOutflowBoundary());
 
   const double gamma = 1.4; // air or water at roughly 20 deg Cels.
 
@@ -150,16 +146,16 @@ GTEST_TEST(empty, main)
   const auto visualizer = [&](const auto& u_conservative, const std::string& filename_prefix, const auto step) {
     XT::Functions::make_sliced_function<1>(u_conservative, {0}, "density")
         .visualize(grid_layer, filename_prefix + "_density_" + XT::Common::to_string(step), /*subsampling=*/false);
-    XT::Functions::make_sliced_function<d>(u_conservative, {1, 2} /*{1}*/, "density_times_velocity")
+    XT::Functions::make_sliced_function<d>(u_conservative, {1} /*{1, 2}*/, "density_times_velocity")
         .visualize(grid_layer,
                    filename_prefix + "_density_times_velocity_" + XT::Common::to_string(step),
                    /*subsampling=*/false);
-    XT::Functions::make_sliced_function<1>(u_conservative, {3} /*{2}*/, "energy")
+    XT::Functions::make_sliced_function<1>(u_conservative, {2} /*{3}*/, "energy")
         .visualize(grid_layer, filename_prefix + "_energy_" + XT::Common::to_string(step), /*subsampling=*/false);
     const auto u_primitive = XT::Functions::make_transformed_function<m, 1, R>(u_conservative, to_primitive);
-    XT::Functions::make_sliced_function<d>(u_primitive, {1, 2} /*{1}*/, "velocity")
+    XT::Functions::make_sliced_function<d>(u_primitive, {1} /*{1, 2}*/, "velocity")
         .visualize(grid_layer, filename_prefix + "_velocity_" + XT::Common::to_string(step), /*subsampling=*/false);
-    XT::Functions::make_sliced_function<1>(u_primitive, {3} /*{2}*/, "pressure")
+    XT::Functions::make_sliced_function<1>(u_primitive, {2} /*{3}*/, "pressure")
         .visualize(grid_layer, filename_prefix + "_pressure_" + XT::Common::to_string(step), /*subsampling=*/false);
   };
 
@@ -217,8 +213,37 @@ GTEST_TEST(empty, main)
       /*order=*/0,
       /*parameter_type=*/{},
       /*name=*/"periodic_initial_values_euler");
-  const auto& u_0 = periodic_initial_values_euler;
+  const auto& u_0 = initial_values_euler;
   visualizer(u_0, "initial_values", "");
+
+  using I = XT::Grid::extract_intersection_t<GL>;
+  XT::Grid::NormalBasedBoundaryInfo<I> boundary_info;
+  boundary_info.register_new_normal({-1.}, new XT::Grid::ImpermeableBoundary());
+  boundary_info.register_new_normal({1.}, new XT::Grid::ImpermeableBoundary());
+  XT::Grid::ApplyOn::CustomBoundaryIntersections<GL> impermeable_wall_filter(boundary_info,
+                                                                             new XT::Grid::ImpermeableBoundary());
+
+  // see [DF2015, p. 414, (8.58)]
+  const auto euler_impermeable_wall_treatment = [&](const auto& source, const auto& intersection, auto& local_range) {
+    const auto& entity = local_range.entity();
+    const auto u_inside = source.local_discrete_function(entity);
+    const auto normal = intersection.centerUnitOuterNormal();
+    RangeType u_cons;
+    if (u_cons.size() != u_inside->vector().size())
+      DUNE_THROW(InvalidStateException, "");
+    for (size_t ii = 0; ii < u_cons.size(); ++ii)
+      u_cons[ii] = u_inside->vector().get(ii);
+    const auto pressure = to_primitive(u_cons)[m - 1];
+    RangeType g(0.);
+    const auto tmp = normal * pressure;
+    for (size_t ii = 0; ii < d; ++ii)
+      g[ii + 1] = tmp[ii];
+    const auto h = local_range.entity().geometry().volume();
+    for (size_t ii = 0; ii < m; ++ii)
+      local_range.vector().add(ii, (g[ii] * intersection.geometry().volume()) / h);
+  };
+
+  const auto& impermeable_wall_treatment = euler_impermeable_wall_treatment;
 
   using S = FvSpace<GL, R, m>;
   S space(grid_layer);
@@ -353,11 +378,13 @@ GTEST_TEST(empty, main)
         check_values(jacobian_f_1);
         return ret;
       });
-  const auto& flux = euler_2d;
+  const auto& flux = euler_1d;
 
-  auto numerical_flux = GDT::make_numerical_vijayasundaram_euler_flux(flux, gamma);
+  auto numerical_flux = GDT::make_numerical_vijayasundaram_flux(flux);
   using OpType = GDT::AdvectionFvOperator<DF>;
-  OpType advec_op(grid_layer /*, flux*/, numerical_flux);
+  OpType advec_op(grid_layer, numerical_flux, /*periodicity_restriction=*/impermeable_wall_filter.copy());
+  // impermeable wall
+  advec_op.append(impermeable_wall_treatment, impermeable_wall_filter.copy());
 
   // compute dt via Cockburn, Coquel, LeFloch, 1995
   // (in general, looking for the min/max should also include the boundary data)
