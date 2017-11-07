@@ -69,7 +69,7 @@ public:
   AdvectionFvOperator(
       const GL& grid_layer,
       const NumericalFluxType& numerical_flx,
-      XT::Grid::ApplyOn::WhichIntersection<GL>*&& periodicity_exception = new XT::Grid::ApplyOn::AllIntersections<GL>)
+      XT::Grid::ApplyOn::WhichIntersection<GL>*&& periodicity_exception = new XT::Grid::ApplyOn::NoIntersections<GL>())
     : grid_layer_(grid_layer)
     , numerical_flux_(numerical_flx)
     , local_coupling_operator_(numerical_flux_.access())
@@ -80,7 +80,7 @@ public:
   AdvectionFvOperator(
       const GL& grid_layer,
       NumericalFluxType*&& numerical_flx_ptr,
-      XT::Grid::ApplyOn::WhichIntersection<GL>*&& periodicity_exception = new XT::Grid::ApplyOn::AllIntersections<GL>)
+      XT::Grid::ApplyOn::WhichIntersection<GL>*&& periodicity_exception = new XT::Grid::ApplyOn::NoIntersections<GL>())
     : grid_layer_(grid_layer)
     , numerical_flux_(std::move(numerical_flx_ptr))
     , local_coupling_operator_(numerical_flux_.access())
@@ -96,7 +96,7 @@ public:
                                                           const typename NumericalFluxType::DomainType&,
                                                           const XT::Common::Parameter&)> numerical_flux_lambda,
       const XT::Common::ParameterType& numerical_flux_parameter_type = {},
-      XT::Grid::ApplyOn::WhichIntersection<GL>*&& periodicity_exception = new XT::Grid::ApplyOn::NoIntersections<GL>)
+      XT::Grid::ApplyOn::WhichIntersection<GL>*&& periodicity_exception = new XT::Grid::ApplyOn::NoIntersections<GL>())
     : grid_layer_(grid_layer)
     , numerical_flux_(new NumericalLambdaFlux<DF>(flux, numerical_flux_lambda, numerical_flux_parameter_type))
     , local_coupling_operator_(numerical_flux_.access())
