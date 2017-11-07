@@ -102,8 +102,8 @@ GTEST_TEST(empty, main)
   auto periodic_leaf_layer = XT::Grid::make_periodic_grid_layer(leaf_layer);
   auto& grid_layer = periodic_leaf_layer;
   using GL = std::decay_t<decltype(grid_layer)>;
-  using I = XT::Grid::extract_intersection_t<GL>;
 
+  //  using I = XT::Grid::extract_intersection_t<GL>;
   //  XT::Grid::NormalBasedBoundaryInfo<I> boundary_info;
   //  boundary_info.register_new_normal({-1., 0.}, new XT::Grid::InflowOutflowBoundary());
   //  boundary_info.register_new_normal({1., 0.}, new XT::Grid::InflowOutflowBoundary());
@@ -231,23 +231,6 @@ GTEST_TEST(empty, main)
 
   project(u_0, initial_values);
   visualizer(initial_values, "projected_initial_values", "");
-
-  const XT::Functions::GlobalLambdaFluxFunction<U, 0, R, d, m> linear_transport(
-      [&](const auto& /*x*/, const auto& uu, const auto& /*mu*/) {
-        FieldMatrix<R, d, m> ret;
-        ret[0] = uu;
-        return ret;
-      },
-      {},
-      "linear_transport",
-      [](const auto& /*mu*/) { return 1; },
-      [&](const auto& /*x*/, const auto& /*uu*/, const auto& /*mu*/) {
-        FieldVector<FieldMatrix<R, m, m>, d> ret;
-        ret[0] = 0.;
-        for (size_t ii = 0; ii < m; ++ii)
-          ret[ii][ii] = 1.;
-        return ret;
-      });
 
   const XT::Functions::GlobalLambdaFluxFunction<U, 0, R, d, m> euler_1d(
       [&](const auto& /*x*/, const auto& conservative_variables, const auto& /*mu*/) {
