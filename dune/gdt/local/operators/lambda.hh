@@ -34,6 +34,9 @@ class LocalLambdaOperator;
 template <class S, class I, class RS, class RV>
 class LocalLambdaCouplingOperator;
 
+template <class S, class I, class RS, class RV>
+class LocalLambdaBoundaryOperator;
+
 
 namespace internal {
 
@@ -63,6 +66,19 @@ public:
 };
 
 
+template <class S, class I, class RS, class RV>
+class LocalLambdaBoundaryOperatorTraits
+{
+  static_assert(XT::Functions::is_localizable_function<S>::value, "");
+  static_assert(XT::Grid::is_intersection<I>::value, "");
+  static_assert(is_space<RS>::value, "");
+  static_assert(XT::LA::is_vector<RV>::value, "");
+
+public:
+  using derived_type = LocalLambdaBoundaryOperator<S, I, RS, RV>;
+};
+
+
 } // namespace internal
 
 
@@ -74,10 +90,10 @@ class LocalLambdaOperator : public LocalOperatorInterface<internal::LocalLambdaO
 public:
   typedef S SourceType;
   typedef LocalDiscreteFunction<RS, RV> LocalRangeType;
-  typedef std::function<void(const SourceType&, LocalRangeType&)> LocalLambdaType;
+  typedef std::function<void(const SourceType&, LocalRangeType&)> LambdaType;
 
-  LocalLambdaOperator(LocalLambdaType local_lambda)
-    : local_lambda_(local_lambda)
+  LocalLambdaOperator(LambdaType lambda)
+    : lambda_(lambda)
   {
   }
 
@@ -90,14 +106,14 @@ public:
 
   void apply(const SourceType& source, LocalRangeType& local_range) const
   {
-    local_lambda_(source, local_range);
+    lambda_(source, local_range);
   }
 
   LocalLambdaOperator(const ThisType&) = default;
   LocalLambdaOperator(ThisType&&) = default;
 
 private:
-  const LocalLambdaType local_lambda_;
+  const LambdaType lambda_;
 }; // class LocalLambdaOperator
 
 
@@ -113,11 +129,10 @@ public:
   using SourceType = S;
   using IntersectionType = I;
   using LocalRangeType = LocalDiscreteFunction<RS, RV>;
-  using LocalLambdaType =
-      std::function<void(const SourceType&, const IntersectionType, LocalRangeType&, LocalRangeType&)>;
+  using LambdaType = std::function<void(const SourceType&, const IntersectionType&, LocalRangeType&, LocalRangeType&)>;
 
-  LocalLambdaCouplingOperator(LocalLambdaType local_lambda)
-    : local_lambda_(local_lambda)
+  LocalLambdaCouplingOperator(LambdaType lambda)
+    : lambda_(lambda)
   {
   }
 
@@ -136,15 +151,47 @@ public:
              LocalRangeType& local_range_entity,
              LocalRangeType& local_range_neighbor) const
   {
-    local_lambda_(source, intersection, local_range_entity, local_range_neighbor);
+    lambda_(source, intersection, local_range_entity, local_range_neighbor);
   }
 
   LocalLambdaCouplingOperator(const ThisType&) = default;
   LocalLambdaCouplingOperator(ThisType&&) = default;
 
 private:
-  const LocalLambdaType local_lambda_;
+  const LambdaType lambda_;
 }; // class LocalLambdaCouplingOperator
+
+
+template <class S, class I, class RS, class RV>
+class LocalLambdaBoundaryOperator
+    : public LocalBoundaryOperatorInterface<internal::LocalLambdaBoundaryOperatorTraits<S, I, RS, RV>>
+{
+  using ThisType = LocalLambdaBoundaryOperator<S, I, RS, RV>;
+  using BaseType = LocalBoundaryOperatorInterface<internal::LocalLambdaBoundaryOperatorTraits<S, I, RS, RV>>;
+
+public:
+  using Traits = internal::LocalLambdaBoundaryOperatorTraits<S, I, RS, RV>;
+  using SourceType = S;
+  using IntersectionType = I;
+  using LocalRangeType = LocalDiscreteFunction<RS, RV>;
+  using LambdaType = std::function<void(const SourceType&, const IntersectionType&, LocalRangeType&)>;
+
+  LocalLambdaBoundaryOperator(LambdaType lambda)
+    : lambda_(lambda)
+  {
+  }
+
+  void apply(const SourceType& source, const IntersectionType& intersection, LocalRangeType& local_range_entity) const
+  {
+    lambda_(source, intersection, local_range_entity);
+  }
+
+  LocalLambdaBoundaryOperator(const ThisType&) = default;
+  LocalLambdaBoundaryOperator(ThisType&&) = default;
+
+private:
+  const LambdaType lambda_;
+}; // class LocalLambdaBoundaryOperator
 
 
 } // namespace GDT
