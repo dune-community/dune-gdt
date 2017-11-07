@@ -20,6 +20,7 @@
 
 #include <dune/gdt/type_traits.hh>
 #include <dune/gdt/local/operators/advection-fv.hh>
+#include <dune/gdt/local/operators/lambda.hh>
 
 #include "base.hh"
 
@@ -65,6 +66,10 @@ public:
   using NumericalFluxType = typename LocalCouplingOperatorType::NumericalFluxType;
   using LocalAdvectionFvBoundaryTreatmentType = LocalAdvectionFvBoundaryTreatmentInterface<SpaceType>;
   using LocalAdvectionFvLambdaBoundaryTreatmentType = LocalAdvectionFvLambdaBoundaryTreatment<SpaceType>;
+  using LocalLambdaBoundaryOperatorType = LocalLambdaBoundaryOperator<DF,
+                                                                      XT::Grid::extract_intersection_t<GL>,
+                                                                      typename DF::SpaceType,
+                                                                      typename DF::VectorType>;
 
   AdvectionFvOperator(
       const GL& grid_layer,
@@ -131,6 +136,13 @@ public:
         new LocalAdvectionFvLambdaBoundaryTreatmentType(boundary_treatment_lambda, param_type), std::move(filter));
   }
 
+  void append(typename LocalLambdaBoundaryOperatorType::LambdaType boundary_operator_lambda,
+              XT::Grid::ApplyOn::WhichIntersection<GL>*&& filter)
+  {
+    boundary_lambda_operators_.emplace_back(new LocalLambdaBoundaryOperatorType(boundary_operator_lambda),
+                                            std::move(filter));
+  }
+
   void apply(const DF& source, DF& range, const XT::Common::Parameter& mu = {}) const
   {
     if (!source.vector().valid())
@@ -143,14 +155,19 @@ public:
     walker.append(local_coupling_operator_,
                   XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GL>() && !(*periodicity_exception_),
                   mu);
-    using LocalBoundaryOperatorType = LocalAdvectionFvBoundaryOperator<SpaceType>;
-    std::vector<std::unique_ptr<LocalBoundaryOperatorType>> local_boundary_operators;
+    using LocalFvBoundaryOperatorType = LocalAdvectionFvBoundaryOperator<SpaceType>;
+    std::vector<std::unique_ptr<LocalFvBoundaryOperatorType>> local_fv_boundary_operators;
     for (const auto& boundary_treatment_and_filter : boundary_treatments_) {
       const auto& boundary_treatment = boundary_treatment_and_filter.first.access();
       const auto& filter = *boundary_treatment_and_filter.second;
-      local_boundary_operators.emplace_back(
-          new LocalBoundaryOperatorType(numerical_flux_.access(), boundary_treatment));
-      walker.append(*local_boundary_operators.back(), filter.copy());
+      local_fv_boundary_operators.emplace_back(
+          new LocalFvBoundaryOperatorType(numerical_flux_.access(), boundary_treatment));
+      walker.append(*local_fv_boundary_operators.back(), filter.copy());
+    }
+    for (const auto& lambda_boundary_op_and_filter : boundary_lambda_operators_) {
+      const auto& lambda_boundary_op = lambda_boundary_op_and_filter.first.access();
+      const auto& filter = *lambda_boundary_op_and_filter.second;
+      walker.append(lambda_boundary_op, filter.copy());
     }
     walker.walk();
     if (!range.vector().valid())
@@ -208,6 +225,9 @@ private:
   std::list<std::pair<XT::Common::ConstStorageProvider<LocalAdvectionFvBoundaryTreatmentType>,
                       std::unique_ptr<XT::Grid::ApplyOn::WhichIntersection<GL>>>>
       boundary_treatments_;
+  std::list<std::pair<XT::Common::ConstStorageProvider<LocalLambdaBoundaryOperatorType>,
+                      std::unique_ptr<XT::Grid::ApplyOn::WhichIntersection<GL>>>>
+      boundary_lambda_operators_;
   std::unique_ptr<XT::Grid::ApplyOn::WhichIntersection<GL>> periodicity_exception_;
 }; // class AdvectionFvOperator
 
