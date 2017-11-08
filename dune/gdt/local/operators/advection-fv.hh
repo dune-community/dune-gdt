@@ -26,6 +26,7 @@
 #include <dune/xt/functions/interfaces/localizable-flux-function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/tools/euler.hh>
 #include <dune/gdt/type_traits.hh>
 
 #include "interfaces.hh"
@@ -286,7 +287,9 @@ NumericalEngquistOsherFlux<E, D, d, R, m> make_numerical_engquist_osher_flux(
 
 /**
  * \todo \attention Does not work for d > 1, the computation of df * n and the eigenvalue decomposition is probably
- * broken!
+ *                  broken!
+ * \note Checks can be disabled (to improve performance) by defining
+ *       DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
  */
 template <class E, class D, size_t d, class R, size_t m>
 class NumericalVijayasundaramFlux : public NumericalFluxInterface<E, D, d, R, m>
@@ -364,7 +367,7 @@ public:
                 << ee.what());
       }
 
-      //#ifndef NDEBUG
+#ifndef DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
       // test decomposition
       XT::LA::EigenDenseMatrix<R> lambda(m, m);
       for (size_t ii = 0; ii < m; ++ii)
@@ -403,7 +406,7 @@ public:
                        << "\n\n||(T * lambda * T_inv) - P||_infty / ||P||_infty = "
                        << ((T * lambda * T_inv) - P).sup_norm() / P.sup_norm());
       }
-      //#endif
+#endif // DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
 
       // compute numerical flux [DF2016, p. 428, (8.108)]
       XT::LA::EigenDenseMatrix<R> lambda_plus(m, m, 0.);
@@ -586,7 +589,7 @@ private:
   //                << ee.what());
   //      }
 
-  //#ifndef NDEBUG
+  //#ifndef DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
   //      // test decomposition
   //      XT::LA::EigenDenseMatrix<R> lambda(m, m);
   //      for (size_t ii = 0; ii < m; ++ii)
@@ -625,7 +628,7 @@ private:
   //                       << "\n\n||(T * lambda * T_inv) - P||_infty / ||P||_infty = "
   //                       << ((T * lambda * T_inv) - P).sup_norm() / P.sup_norm());
   //      }
-  //#endif
+  //#endif // DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
 
   //      // compute numerical flux [DF2016, p. 428, (8.108)]
   //      XT::LA::EigenDenseMatrix<R> lambda_plus(m, m, 0.);
@@ -679,6 +682,10 @@ class NumericalVijayasundaramEulerFlux
 };
 
 
+/**
+ * \note Checks can be disabled (to improve performance) by defining
+ *       DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
+ */
 template <class E, class D, class R>
 class NumericalVijayasundaramEulerFlux<E, D, 2, R, 4> : public NumericalFluxInterface<E, D, 2, R, 4>
 {
@@ -695,7 +702,7 @@ public:
                                             const double& eigenvalue_check_tolerance,
                                             Args&&... args)
     : BaseType(std::forward<Args>(args)...)
-    , gamma_(gamma)
+    , euler_tools_(gamma)
     , tolerance_(eigenvalue_check_tolerance)
   {
   }
@@ -706,45 +713,12 @@ public:
                   const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     const auto w_conservative = 0.5 * (u + v);
-    const auto w_primitive = to_primitive(w_conservative);
-    const auto& rho = w_conservative[0];
-    const auto& v_0 = w_primitive[1];
-    const auto& v_1 = w_primitive[2];
-    const auto v_abs_2 = v_0 * v_0 + v_1 * v_1;
-    const auto v_abs = std::sqrt(v_abs_2);
-    const auto& e = w_conservative[3];
-    const auto& p = w_primitive[3];
-    const auto a = std::sqrt(gamma_ * p / rho);
-    const auto M = v_abs / a;
-    const auto H = (e + p) / rho;
-    const auto rho_over_2a = rho / (2 * a);
-    const auto v_times_n = v_0 * n[0] + v_1 * n[1];
 
-    XT::Common::FieldMatrix<R, m, m> eigenvectors(0.);
-    eigenvectors[0] = {1., 0., rho_over_2a, rho_over_2a};
-    eigenvectors[1] = {v_0, rho * n[1], rho_over_2a * (v_0 + a * n[0]), rho_over_2a * (v_0 - a * n[0])};
-    eigenvectors[2] = {v_1, -rho * n[0], rho_over_2a * (v_1 + a * n[1]), rho_over_2a * (v_1 - a * n[1])};
-    eigenvectors[3] = {v_abs_2 / 2.,
-                       rho * (v_0 * n[1] - v_1 * n[0]),
-                       rho_over_2a * (H + a * v_times_n),
-                       rho_over_2a * (H - a * v_times_n)};
+    const auto eigenvalues = euler_tools_.eigenvalues_flux_jacobi_matrix(w_conservative, n);
+    const auto eigenvectors = euler_tools_.eigenvectors_flux_jacobi_matrix(w_conservative, n);
+    const auto eigenvectors_inv = euler_tools_.eigenvectors_inv_flux_jacobi_matrix(w_conservative, n);
 
-    XT::Common::FieldMatrix<R, m, m> eigenvectors_inv(0.);
-    eigenvectors_inv[0] = {1. - ((gamma_ - 1.) / 2.) * M * M,
-                           (gamma_ - 1.) * v_0 / (a * a),
-                           (gamma_ - 1.) * v_1 / (a * a),
-                           -(gamma_ - 1.) / (a * a)};
-    eigenvectors_inv[1] = {(1. / rho) * (v_1 * n[0] - v_0 * n[1]), n[1] / rho, -n[0] / rho, 0.};
-    eigenvectors_inv[2] = {(a / rho) * (((gamma_ - 1.) / 2) * M * M - v_times_n / a),
-                           (1. / rho) * (n[0] - (gamma_ - 1.) * (v_0 / a)),
-                           (1. / rho) * (n[1] - (gamma_ - 1.) * (v_1 / a)),
-                           (gamma_ - 1.) / (rho * a)};
-    eigenvectors_inv[3] = {(a / rho) * (((gamma_ - 1.) / 2) * M * M + v_times_n / a),
-                           (-1. / rho) * (n[0] + (gamma_ - 1.) * (v_0 / a)),
-                           (-1. / rho) * (n[1] + (gamma_ - 1.) * (v_1 / a)),
-                           (gamma_ - 1.) / (rho * a)};
-
-#ifndef NDEBUG
+#ifndef DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
     const auto identity = XT::LA::eye_matrix<XT::Common::FieldMatrix<R, m, m>>(m, m);
     if ((eigenvectors_inv * eigenvectors - identity).infinity_norm() > tolerance_)
       DUNE_THROW(InvalidStateException,
@@ -754,39 +728,35 @@ public:
                      << eigenvectors_inv
                      << "\n\n|| eigenvectors_inv * eigenvectors - identity ||_infty = "
                      << (eigenvectors_inv * eigenvectors - identity).infinity_norm());
-#endif // NDEBUG
 
-    XT::Common::FieldMatrix<R, m, m> eigenvalues(0.);
-    eigenvalues[0][0] = v_times_n;
-    eigenvalues[1][1] = v_times_n;
-    eigenvalues[2][2] = v_times_n + a;
-    eigenvalues[3][3] = v_times_n - a;
-
-#ifndef NDEBUG
-    if (((eigenvectors_inv * (P_exact(w_conservative, n) * eigenvectors)) - eigenvalues).infinity_norm() > tolerance_)
-      DUNE_THROW(
-          InvalidStateException,
-          "\n\neigenvectors:\n\n"
-              << eigenvectors
-              << "\n\neigenvectors_inverse:\n\n"
-              << eigenvectors_inv
-              << "\n\neigenvalues:"
-              << eigenvalues
-              << "\n\nP:\n\n"
-              << P_exact(w_conservative, n)
-              << "\n\neigenvectors_inv * (P * eigenvectors):\n\n"
-              << eigenvectors_inv * (P_exact(w_conservative, n) * eigenvectors)
-              << "\n\n|| eigenvectors_inv * (P * eigenvectors) ||_infty = "
-              << ((eigenvectors_inv * (P_exact(w_conservative, n) * eigenvectors)) - eigenvalues).infinity_norm());
-#endif // NDEBUG
+    const auto eigenvaluematrix = euler_tools_.eigenvaluematrix_flux_jacobi_matrix(w_conservative, n);
+    if (((eigenvectors_inv * (euler_tools_.flux_jacobi_matrix(w_conservative, n) * eigenvectors)) - eigenvaluematrix)
+            .infinity_norm()
+        > tolerance_)
+      DUNE_THROW(InvalidStateException,
+                 "\n\neigenvectors:\n\n"
+                     << eigenvectors
+                     << "\n\neigenvectors_inverse:\n\n"
+                     << eigenvectors_inv
+                     << "\n\neigenvalues:"
+                     << eigenvalues
+                     << "\n\nP:\n\n"
+                     << euler_tools_.flux_jacobi_matrix(w_conservative, n)
+                     << "\n\neigenvectors_inv * (P * eigenvectors):\n\n"
+                     << eigenvectors_inv * (euler_tools_.flux_jacobi_matrix(w_conservative, n) * eigenvectors)
+                     << "\n\n|| eigenvectors_inv * (P * eigenvectors) - eigenvalues||_infty = "
+                     << ((eigenvectors_inv * (euler_tools_.flux_jacobi_matrix(w_conservative, n) * eigenvectors))
+                         - eigenvaluematrix)
+                            .infinity_norm());
+#endif // DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
 
     XT::Common::FieldMatrix<R, m, m> eigenvalues_plus(0.);
     for (size_t ii = 0; ii < m; ++ii)
-      eigenvalues_plus[ii][ii] = std::max(0., eigenvalues[ii][ii]);
+      eigenvalues_plus[ii][ii] = std::max(0., eigenvalues[ii]);
 
     XT::Common::FieldMatrix<R, m, m> eigenvalues_minus(0.);
     for (size_t ii = 0; ii < m; ++ii)
-      eigenvalues_minus[ii][ii] = std::min(0., eigenvalues[ii][ii]);
+      eigenvalues_minus[ii][ii] = std::min(0., eigenvalues[ii]);
 
     const auto P_plus = eigenvectors * eigenvalues_plus * eigenvectors_inv;
     const auto P_minus = eigenvectors * eigenvalues_minus * eigenvectors_inv;
@@ -794,64 +764,7 @@ public:
   } // ... apply(...)
 
 private:
-  RangeType to_primitive(const RangeType& conservative_variables) const
-  {
-    // extract
-    const auto& rho = conservative_variables[0];
-    DomainType v;
-    for (size_t ii = 0; ii < d; ++ii)
-      v[ii] = conservative_variables[ii + 1] / rho;
-    const auto& e = conservative_variables[m - 1];
-    // convert
-    RangeType primitive_variables;
-    // * density
-    primitive_variables[0] = rho;
-    // * velocity
-    for (size_t ii = 0; ii < d; ++ii)
-      primitive_variables[ii + 1] = v[ii];
-    // * pressure
-    primitive_variables[m - 1] = (gamma_ - 1.) * (e - 0.5 * rho * v.two_norm2());
-    return primitive_variables;
-  } // ... to_primitive(...)
-
-#ifndef NDEBUG
-  XT::Common::FieldMatrix<R, m, m> P_exact(const RangeType& w_conservative, const DomainType& n) const
-  {
-    // compute P matrix directly for euler [DF2016, p.405, (8.20)]
-    const auto w_primitiv = to_primitive(w_conservative);
-    const auto& rho = w_conservative[0];
-    DomainType v;
-    v[0] = w_primitiv[1];
-    v[1] = w_primitiv[2];
-    const auto& e = w_conservative[3];
-    const auto gamma_1 = gamma_ - 1;
-    const auto gamma_2 = gamma_ - 2;
-    const auto G = gamma_ * e / rho - 0.5 * gamma_1 * v.two_norm2();
-    XT::Common::FieldMatrix<R, m, m> P(0.);
-    P[0][0] = 0;
-    P[0][1] = n[0];
-    P[0][2] = n[1];
-    P[0][3] = 0;
-
-    P[1][0] = 0.5 * gamma_1 * v.two_norm2() * n[0] - v[0] * (v * n);
-    P[1][1] = -gamma_2 * v[0] * n[0] + v * n;
-    P[1][2] = v[0] * n[1] - gamma_1 * v[1] * n[0];
-    P[1][3] = gamma_1 * n[0];
-
-    P[2][0] = 0.5 * gamma_1 * v.two_norm2() * n[1] - v[1] * (v * n);
-    P[2][1] = v[1] * n[0] - gamma_1 * v[0] * n[1];
-    P[2][2] = -gamma_2 * v[1] * n[1] + v * n;
-    P[2][3] = gamma_1 * n[1];
-
-    P[3][0] = (gamma_1 * v.two_norm2() - gamma_ * e / rho) * (v * n);
-    P[3][1] = G * n[0] - gamma_1 * v[0] * (v * n);
-    P[3][2] = G * n[1] - gamma_1 * v[1] * (v * n);
-    P[3][3] = gamma_ * (v * n);
-    return P;
-  } // ... P_exact(...)
-#endif // NDEBUG
-
-  const double gamma_;
+  const EulerTools<d, R> euler_tools_;
   const double tolerance_;
 }; // class NumericalVijayasundaramEulerFlux
 
