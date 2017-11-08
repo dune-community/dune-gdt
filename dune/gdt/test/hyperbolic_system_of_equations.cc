@@ -43,8 +43,6 @@
 #include <dune/xt/grid/view/periodic.hh>
 #include <dune/xt/functions/lambda/global-function.hh>
 #include <dune/xt/functions/lambda/global-flux-function.hh>
-#include <dune/xt/functions/sliced.hh>
-#include <dune/xt/functions/transformed.hh>
 
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/discretefunction/default.hh>
@@ -55,6 +53,7 @@
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/timestepper/explicit-rungekutta.hh>
+#include <dune/gdt/tools/euler.hh>
 
 using namespace Dune;
 using namespace Dune::GDT;
@@ -105,59 +104,7 @@ GTEST_TEST(empty, main)
   using GL = std::decay_t<decltype(grid_layer)>;
 
   const double gamma = 1.4; // air or water at roughly 20 deg Cels.
-
-  const auto to_primitive = [&](const FieldVector<R, m>& conservative_variables) {
-    // extract
-    const auto& rho = conservative_variables[0];
-    DomainType v;
-    for (size_t ii = 0; ii < d; ++ii)
-      v[ii] = conservative_variables[ii + 1] / rho;
-    const auto& e = conservative_variables[m - 1];
-    // convert
-    FieldVector<R, m> primitive_variables;
-    // * density
-    primitive_variables[0] = rho;
-    // * velocity
-    for (size_t ii = 0; ii < d; ++ii)
-      primitive_variables[ii + 1] = v[ii];
-    // * pressure
-    primitive_variables[m - 1] = (gamma - 1.) * (e - 0.5 * rho * v.two_norm2());
-    return primitive_variables;
-  };
-  const auto to_conservative = [&](const FieldVector<R, m>& primitive_variables) {
-    // extract
-    const auto& rho = primitive_variables[0];
-    DomainType v;
-    for (size_t ii = 0; ii < d; ++ii)
-      v[ii] = primitive_variables[ii + 1];
-    const auto& p = primitive_variables[m - 1];
-    // convert
-    FieldVector<R, m> conservative_variables;
-    // * density
-    conservative_variables[0] = rho;
-    // * density times velocity component
-    for (size_t ii = 0; ii < d; ++ii)
-      conservative_variables[1 + ii] = rho * v[ii];
-    // * energy
-    conservative_variables[m - 1] = p / (gamma - 1.) + 0.5 * rho * v.two_norm2();
-    return conservative_variables;
-  };
-
-  const auto visualizer = [&](const auto& u_conservative, const std::string& filename_prefix, const auto step) {
-    XT::Functions::make_sliced_function<1>(u_conservative, {0}, "density")
-        .visualize(grid_layer, filename_prefix + "_density_" + XT::Common::to_string(step), /*subsampling=*/false);
-    XT::Functions::make_sliced_function<d>(u_conservative, {1, 2} /*{1}*/, "density_times_velocity")
-        .visualize(grid_layer,
-                   filename_prefix + "_density_times_velocity_" + XT::Common::to_string(step),
-                   /*subsampling=*/false);
-    XT::Functions::make_sliced_function<1>(u_conservative, {3} /*{2}*/, "energy")
-        .visualize(grid_layer, filename_prefix + "_energy_" + XT::Common::to_string(step), /*subsampling=*/false);
-    const auto u_primitive = XT::Functions::make_transformed_function<m, 1, R>(u_conservative, to_primitive);
-    XT::Functions::make_sliced_function<d>(u_primitive, {1, 2} /*{1}*/, "velocity")
-        .visualize(grid_layer, filename_prefix + "_velocity_" + XT::Common::to_string(step), /*subsampling=*/false);
-    XT::Functions::make_sliced_function<1>(u_primitive, {3} /*{2}*/, "pressure")
-        .visualize(grid_layer, filename_prefix + "_pressure_" + XT::Common::to_string(step), /*subsampling=*/false);
-  };
+  EulerTools<d> euler_tools(gamma);
 
   using U = XT::Functions::LocalizableFunctionInterface<E, D, d, R, m>;
   using U0 = XT::Functions::GlobalLambdaFunction<E, D, d, R, m>;
@@ -177,7 +124,7 @@ GTEST_TEST(empty, main)
           primitive_variables[m - 1] = 1.6;
         else
           primitive_variables[m - 1] = 0.4;
-        return to_conservative(primitive_variables);
+        return euler_tools.to_conservative(primitive_variables);
       },
       /*order=*/0,
       /*parameter_type=*/{},
@@ -198,13 +145,13 @@ GTEST_TEST(empty, main)
           primitive_variables[m - 1] = 1.6;
         else
           primitive_variables[m - 1] = 0.4;
-        return to_conservative(primitive_variables);
+        return euler_tools.to_conservative(primitive_variables);
       },
       /*order=*/0,
       /*parameter_type=*/{},
       /*name=*/"periodic_initial_values_euler");
   const auto& u_0 = periodic_initial_values_euler;
-  visualizer(u_0, "initial_values", "");
+  euler_tools.visualize(u_0, grid_layer, "initial_values");
 
   using I = XT::Grid::extract_intersection_t<GL>;
   XT::Grid::NormalBasedBoundaryInfo<I> boundary_info;
@@ -225,7 +172,7 @@ GTEST_TEST(empty, main)
       DUNE_THROW(InvalidStateException, "");
     for (size_t ii = 0; ii < u_cons.size(); ++ii)
       u_cons[ii] = u_inside->vector().get(ii);
-    const auto pressure = to_primitive(u_cons)[m - 1];
+    const auto pressure = euler_tools.to_primitive(u_cons)[m - 1];
     RangeType g(0.);
     const auto tmp = normal * pressure;
     for (size_t ii = 0; ii < d; ++ii)
@@ -247,130 +194,19 @@ GTEST_TEST(empty, main)
   DF initial_values(space, "solution");
 
   project(u_0, initial_values);
-  visualizer(initial_values, "projected_initial_values", "");
+  euler_tools.visualize(initial_values, grid_layer, "projected_initial_values");
 
-  const XT::Functions::GlobalLambdaFluxFunction<U, 0, R, d, m> euler_1d(
+  const XT::Functions::GlobalLambdaFluxFunction<U, 0, R, d, m> euler_flux(
       [&](const auto& /*x*/, const auto& conservative_variables, const auto& /*mu*/) {
-        if (d != 1)
-          DUNE_THROW(NotImplemented, "Only for 1d!\nd = " << d);
-        check_values(conservative_variables);
-        const auto primitive_variables = to_primitive(conservative_variables);
-        check_values(primitive_variables);
-        const auto& rho = conservative_variables[0];
-        const auto& v = primitive_variables[1];
-        const auto& e = conservative_variables[2];
-        const auto& p = primitive_variables[2];
-        FieldMatrix<R, d, m> ret;
-        auto& f = ret[0];
-        f[0] = rho * v;
-        f[1] = rho * v * v + p;
-        f[2] = (e + p) * v;
-        check_values(ret);
-        return ret;
+        return euler_tools.flux(conservative_variables);
       },
       {},
-      "euler_1d",
+      "euler_flux",
       [](const auto& /*mu*/) { return 3; },
       [&](const auto& /*x*/, const auto& conservative_variables, const auto& /*mu*/) {
-        if (d != 1)
-          DUNE_THROW(NotImplemented, "Only for 1d!\nd = " << d);
-        check_values(conservative_variables);
-        const auto primitive_variables = to_primitive(conservative_variables);
-        check_values(primitive_variables);
-        const auto& rho = conservative_variables[0];
-        const auto& v = primitive_variables[1];
-        const auto& e = conservative_variables[2];
-        FieldVector<FieldMatrix<R, m, m>, d> ret;
-        auto& jacobian_f = ret[0];
-        jacobian_f[0][0] = 0.;
-        jacobian_f[0][1] = 1.;
-        jacobian_f[0][2] = 0.;
-        jacobian_f[1][0] = 0.5 * (gamma - 3.) * v * v;
-        jacobian_f[1][1] = (3. - gamma) * v;
-        jacobian_f[1][2] = gamma - 1.;
-        jacobian_f[2][0] = v * ((gamma - 1.) * v * v - gamma * (e / rho));
-        jacobian_f[2][1] = gamma * (e / rho) - (3. * (gamma - 1.) / 2.) * v * v;
-        jacobian_f[2][2] = gamma * v;
-        check_values(jacobian_f);
-        return ret;
+        return euler_tools.flux_jacobian(conservative_variables);
       });
-
-  // See DF2016, 8.1.1, pp. 402 - 405
-  const XT::Functions::GlobalLambdaFluxFunction<U, 0, R, d, m> euler_2d(
-      [&](const auto& /*x*/, const auto& conservative_variables, const auto& /*mu*/) {
-        if (d != 2)
-          DUNE_THROW(NotImplemented, "Only for 2d!\nd = " << d);
-        check_values(conservative_variables);
-        const auto primitive_variables = to_primitive(conservative_variables);
-        check_values(primitive_variables);
-        const auto& rho = conservative_variables[0];
-        DomainType v;
-        for (size_t ii = 0; ii < d; ++ii)
-          v = primitive_variables[ii + 1];
-        const auto& e = conservative_variables[m - 1];
-        const auto& p = primitive_variables[m - 1];
-        FieldMatrix<R, d, m> ret;
-        for (size_t ss = 0; ss < d; ++ss) {
-          auto& f_s = ret[ss];
-          f_s[0] = rho * v[ss];
-          for (size_t ii = 0; ii < d; ++ii)
-            f_s[1 + ii] = rho * v[ii] * v[ss] + (ss == 1 ? 1 : 0) * p;
-          f_s[m - 1] = (e + p) * v[ss];
-        }
-        check_values(ret);
-        return ret;
-      },
-      {},
-      "euler_2d",
-      [](const auto& /*mu*/) { return 3; },
-      [&](const auto& /*x*/, const auto& conservative_variables, const auto& /*mu*/) {
-        if (d != 2)
-          DUNE_THROW(NotImplemented, "Only for 2d!\nd = " << d);
-        check_values(conservative_variables);
-        const auto primitive_variables = to_primitive(conservative_variables);
-        check_values(primitive_variables);
-        const auto& rho = conservative_variables[0];
-        DomainType v;
-        for (size_t ii = 0; ii < d; ++ii)
-          v = primitive_variables[ii + 1];
-        const auto& e = conservative_variables[m - 1];
-        FieldVector<FieldMatrix<R, m, m>, d> ret;
-        const auto gamma_1 = gamma - 1.;
-        // f_0
-        auto& jacobian_f_0 = ret[0];
-        jacobian_f_0[0] = {0., 1., 0., 0.};
-        jacobian_f_0[1][0] = 0.5 * gamma_1 * v.two_norm2() - v[0] * v[0];
-        jacobian_f_0[1][1] = (3. - gamma) * v[0];
-        jacobian_f_0[1][2] = -1. * gamma_1 * v[1];
-        jacobian_f_0[1][3] = gamma_1;
-        jacobian_f_0[2][0] = -1. * v[0] * v[1];
-        jacobian_f_0[2][1] = v[1];
-        jacobian_f_0[2][2] = v[0];
-        jacobian_f_0[2][3] = 0.;
-        jacobian_f_0[3][0] = v[0] * (gamma_1 * v.two_norm2() - (gamma * e) / rho);
-        jacobian_f_0[3][1] = ((gamma * e) / rho) - gamma_1 * v[0] * v[0] - 0.5 * gamma_1 * v.two_norm2();
-        jacobian_f_0[3][2] = -1. * gamma_1 * v[0] * v[1];
-        jacobian_f_0[3][3] = gamma * v[0];
-        check_values(jacobian_f_0);
-        // f_1
-        auto& jacobian_f_1 = ret[1];
-        jacobian_f_1[0] = {0., 0., 1., 0.};
-        jacobian_f_1[1][0] = -1. * v[0] * v[1];
-        jacobian_f_1[1][1] = v[1];
-        jacobian_f_1[1][2] = v[0];
-        jacobian_f_1[1][3] = 0.;
-        jacobian_f_1[2][0] = 0.5 * gamma_1 * v.two_norm2() - v[1] * v[1];
-        jacobian_f_1[2][1] = -1. * gamma_1 * v[0];
-        jacobian_f_1[2][2] = (3. - gamma) * v[1];
-        jacobian_f_1[2][3] = gamma_1;
-        jacobian_f_1[3][0] = v[1] * (gamma_1 * v.two_norm2() - ((gamma * e) / rho));
-        jacobian_f_1[3][1] = -1. * gamma_1 * v[0] * v[1];
-        jacobian_f_1[3][2] = ((gamma * e) / rho) - gamma_1 * v[1] * v[1] - 0.5 * gamma_1 * v.two_norm2();
-        jacobian_f_1[3][3] = gamma * v[1];
-        check_values(jacobian_f_1);
-        return ret;
-      });
-  const auto& flux = euler_2d;
+  const auto& flux = euler_flux;
 
   auto numerical_flux = GDT::make_numerical_vijayasundaram_euler_flux(flux, gamma);
   using OpType = GDT::AdvectionFvOperator<DF>;
@@ -431,5 +267,13 @@ GTEST_TEST(empty, main)
                    << "\n   The following dt seems to work fine: "
                    << test_dt.second);
   } else
-    time_stepper.solve(T, dt, std::min(100, int(T / dt)), false, true, "solution", visualizer);
+    time_stepper.solve(T,
+                       dt,
+                       std::min(100, int(T / dt)),
+                       false,
+                       true,
+                       "solution",
+                       /*visualizer=*/[&](const auto& u, const auto& filename_prefix, const auto& step) {
+                         euler_tools.visualize(u, grid_layer, filename_prefix, XT::Common::to_string(step));
+                       });
 }
