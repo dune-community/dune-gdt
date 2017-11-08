@@ -95,13 +95,13 @@ using RangeType = XT::Common::FieldVector<D, m>;
 GTEST_TEST(empty, main)
 {
   auto grid =
-      XT::Grid::make_cube_grid<G>(DomainType(-1.), DomainType(1.), XT::Common::FieldVector<unsigned int, d>(32));
+      XT::Grid::make_cube_grid<G>(DomainType(-1.), DomainType(1.), XT::Common::FieldVector<unsigned int, d>(128));
   grid.global_refine(1);
 
   auto leaf_layer = grid.leaf_view();
   std::cout << "grid has " << leaf_layer.indexSet().size(0) << " elements" << std::endl;
-  auto periodic_leaf_layer = XT::Grid::make_periodic_grid_layer(leaf_layer);
-  auto& grid_layer = periodic_leaf_layer;
+  //  auto periodic_leaf_layer = XT::Grid::make_periodic_grid_layer(leaf_layer);
+  auto& grid_layer = /*periodic_*/ leaf_layer;
   using GL = std::decay_t<decltype(grid_layer)>;
 
   const double gamma = 1.4; // air or water at roughly 20 deg Cels.
@@ -161,16 +161,6 @@ GTEST_TEST(empty, main)
 
   using U = XT::Functions::LocalizableFunctionInterface<E, D, d, R, m>;
   using U0 = XT::Functions::GlobalLambdaFunction<E, D, d, R, m>;
-  const U0 indicator(
-      [](const auto& xx, const auto& /*mu*/) {
-        if (XT::Common::FloatCmp::ge(xx, DomainType(0.25)) && XT::Common::FloatCmp::le(xx, DomainType(0.5)))
-          return FieldVector<R, m>(2.);
-        else
-          return FieldVector<R, m>(1.);
-      },
-      0,
-      {},
-      "indicator");
   const U0 initial_values_euler( // see [Kröner, 1997, p.394]
       [&](const auto& xx, const auto& /*mu*/) {
         FieldVector<R, m> primitive_variables(0.);
@@ -213,13 +203,15 @@ GTEST_TEST(empty, main)
       /*order=*/0,
       /*parameter_type=*/{},
       /*name=*/"periodic_initial_values_euler");
-  const auto& u_0 = initial_values_euler;
+  const auto& u_0 = periodic_initial_values_euler;
   visualizer(u_0, "initial_values", "");
 
   using I = XT::Grid::extract_intersection_t<GL>;
   XT::Grid::NormalBasedBoundaryInfo<I> boundary_info;
-  boundary_info.register_new_normal({-1.}, new XT::Grid::ImpermeableBoundary());
-  boundary_info.register_new_normal({1.}, new XT::Grid::ImpermeableBoundary());
+  boundary_info.register_new_normal({-1., 0.}, new XT::Grid::ImpermeableBoundary());
+  boundary_info.register_new_normal({1., 0.}, new XT::Grid::ImpermeableBoundary());
+  boundary_info.register_new_normal({0., -1.}, new XT::Grid::ImpermeableBoundary());
+  boundary_info.register_new_normal({0., 1.}, new XT::Grid::ImpermeableBoundary());
   XT::Grid::ApplyOn::CustomBoundaryIntersections<GL> impermeable_wall_filter(boundary_info,
                                                                              new XT::Grid::ImpermeableBoundary());
 
