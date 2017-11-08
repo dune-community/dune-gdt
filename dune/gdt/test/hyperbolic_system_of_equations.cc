@@ -79,9 +79,9 @@ typename std::enable_if<XT::Common::is_matrix<M>::value, void>::type check_value
 }
 
 
-using G = YASP_1D_EQUIDISTANT_OFFSET;
+// using G = YASP_1D_EQUIDISTANT_OFFSET;
 // using G = YASP_2D_EQUIDISTANT_OFFSET;
-// using G = ALU_2D_SIMPLEX_CONFORMING;
+using G = ALU_2D_SIMPLEX_CONFORMING;
 using E = typename G::template Codim<0>::Entity;
 using D = double;
 static const constexpr size_t d = G::dimension;
@@ -95,7 +95,7 @@ using RangeType = XT::Common::FieldVector<D, m>;
 GTEST_TEST(empty, main)
 {
   auto grid =
-      XT::Grid::make_cube_grid<G>(DomainType(-1.), DomainType(1.), XT::Common::FieldVector<unsigned int, d>(128));
+      XT::Grid::make_cube_grid<G>(DomainType(-1.), DomainType(1.), XT::Common::FieldVector<unsigned int, d>(32));
   grid.global_refine(1);
 
   auto leaf_layer = grid.leaf_view();
@@ -146,16 +146,16 @@ GTEST_TEST(empty, main)
   const auto visualizer = [&](const auto& u_conservative, const std::string& filename_prefix, const auto step) {
     XT::Functions::make_sliced_function<1>(u_conservative, {0}, "density")
         .visualize(grid_layer, filename_prefix + "_density_" + XT::Common::to_string(step), /*subsampling=*/false);
-    XT::Functions::make_sliced_function<d>(u_conservative, {1} /*{1, 2}*/, "density_times_velocity")
+    XT::Functions::make_sliced_function<d>(u_conservative, {1, 2} /*{1}*/, "density_times_velocity")
         .visualize(grid_layer,
                    filename_prefix + "_density_times_velocity_" + XT::Common::to_string(step),
                    /*subsampling=*/false);
-    XT::Functions::make_sliced_function<1>(u_conservative, {2} /*{3}*/, "energy")
+    XT::Functions::make_sliced_function<1>(u_conservative, {3} /*{2}*/, "energy")
         .visualize(grid_layer, filename_prefix + "_energy_" + XT::Common::to_string(step), /*subsampling=*/false);
     const auto u_primitive = XT::Functions::make_transformed_function<m, 1, R>(u_conservative, to_primitive);
-    XT::Functions::make_sliced_function<d>(u_primitive, {1} /*{1, 2}*/, "velocity")
+    XT::Functions::make_sliced_function<d>(u_primitive, {1, 2} /*{1}*/, "velocity")
         .visualize(grid_layer, filename_prefix + "_velocity_" + XT::Common::to_string(step), /*subsampling=*/false);
-    XT::Functions::make_sliced_function<1>(u_primitive, {2} /*{3}*/, "pressure")
+    XT::Functions::make_sliced_function<1>(u_primitive, {3} /*{2}*/, "pressure")
         .visualize(grid_layer, filename_prefix + "_pressure_" + XT::Common::to_string(step), /*subsampling=*/false);
   };
 
@@ -378,9 +378,9 @@ GTEST_TEST(empty, main)
         check_values(jacobian_f_1);
         return ret;
       });
-  const auto& flux = euler_1d;
+  const auto& flux = euler_2d;
 
-  auto numerical_flux = GDT::make_numerical_vijayasundaram_flux(flux);
+  auto numerical_flux = GDT::make_numerical_vijayasundaram_euler_flux(flux, gamma);
   using OpType = GDT::AdvectionFvOperator<DF>;
   OpType advec_op(grid_layer, numerical_flux, /*periodicity_restriction=*/impermeable_wall_filter.copy());
   // impermeable wall
