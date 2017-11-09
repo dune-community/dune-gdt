@@ -59,25 +59,6 @@ using namespace Dune;
 using namespace Dune::GDT;
 
 
-template <class V>
-typename std::enable_if<XT::Common::is_vector<V>::value, void>::type check_values(const V& vec)
-{
-  for (size_t ii = 0; ii < vec.size(); ++ii)
-    if (XT::Common::isnan(vec[ii]) || XT::Common::isinf(vec[ii]))
-      DUNE_THROW(InvalidStateException, vec);
-}
-
-template <class M>
-typename std::enable_if<XT::Common::is_matrix<M>::value, void>::type check_values(const M& mat)
-{
-  using MM = XT::Common::MatrixAbstraction<M>;
-  for (size_t ii = 0; ii < MM::rows(mat); ++ii)
-    for (size_t jj = 0; jj < MM::cols(mat); ++jj)
-      if (XT::Common::isnan(MM::get_entry(mat, ii, jj)) || XT::Common::isinf(MM::get_entry(mat, ii, jj)))
-        DUNE_THROW(InvalidStateException, mat);
-}
-
-
 // using G = YASP_1D_EQUIDISTANT_OFFSET;
 // using G = YASP_2D_EQUIDISTANT_OFFSET;
 using G = ALU_2D_SIMPLEX_CONFORMING;
