@@ -80,8 +80,8 @@ GTEST_TEST(empty, main)
 
   auto leaf_layer = grid.leaf_view();
   std::cout << "grid has " << leaf_layer.indexSet().size(0) << " elements" << std::endl;
-  //  auto periodic_leaf_layer = XT::Grid::make_periodic_grid_layer(leaf_layer);
-  auto& grid_layer = /*periodic_*/ leaf_layer;
+  auto periodic_leaf_layer = XT::Grid::make_periodic_grid_layer(leaf_layer);
+  auto& grid_layer = periodic_leaf_layer;
   using GL = std::decay_t<decltype(grid_layer)>;
 
   const double gamma = 1.4; // air or water at roughly 20 deg Cels.
@@ -143,25 +143,26 @@ GTEST_TEST(empty, main)
   XT::Grid::ApplyOn::CustomBoundaryIntersections<GL> impermeable_wall_filter(boundary_info,
                                                                              new XT::Grid::ImpermeableBoundary());
 
-  // see [DF2015, p. 414, (8.58)]
-  const auto euler_impermeable_wall_treatment = [&](const auto& source, const auto& intersection, auto& local_range) {
-    const auto& entity = local_range.entity();
-    const auto u_inside = source.local_discrete_function(entity);
-    const auto normal = intersection.centerUnitOuterNormal();
-    RangeType u_cons;
-    if (u_cons.size() != u_inside->vector().size())
-      DUNE_THROW(InvalidStateException, "");
-    for (size_t ii = 0; ii < u_cons.size(); ++ii)
-      u_cons[ii] = u_inside->vector().get(ii);
-    const auto pressure = euler_tools.to_primitive(u_cons)[m - 1];
-    RangeType g(0.);
-    const auto tmp = normal * pressure;
-    for (size_t ii = 0; ii < d; ++ii)
-      g[ii + 1] = tmp[ii];
-    const auto h = local_range.entity().geometry().volume();
-    for (size_t ii = 0; ii < m; ++ii)
-      local_range.vector().add(ii, (g[ii] * intersection.geometry().volume()) / h);
+  const auto euler_impermeable_wall_treatment = [&](const auto& u, const auto& n /*, const auto& mu = {}*/) {
+    return euler_tools.flux_at_impermeable_walls(u, n);
   };
+
+  // see [DF2015, p. 415, (8.66 - 8.67)]
+  const auto inviscid_mirror_impermeable_wall_treatment = [&](
+      const auto& intersection, const auto& x_intersection, const auto& /*f*/, const auto& u, const auto& /*mu*/ = {}) {
+    const auto normal = intersection.unitOuterNormal(x_intersection);
+
+    auto u_prim = euler_tools.to_primitive(u);
+    XT::Common::FieldVector<R, d> velocity;
+    for (size_t ii = 0; ii < d; ++ii)
+      velocity[ii] = u_prim[1 + ii];
+
+    velocity -= normal * 2. * (velocity * normal);
+    for (size_t ii = 0; ii < d; ++ii)
+      u_prim[1 + ii] = velocity[ii];
+
+    return euler_tools.to_conservative(u_prim);
+  }; // ... inviscid_mirror_impermeable_wall_treatment(...)
 
   const auto& impermeable_wall_treatment = euler_impermeable_wall_treatment;
 
