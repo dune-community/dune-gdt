@@ -105,6 +105,22 @@ public:
   } // ... flux(...)
 
   /**
+   * \brief The Euler flux at impermeable walls (e.g., v*n = 0).
+   * \sa    [DF2015, p. 414, (8.58)]
+   */
+  template <class D>
+  XT::Common::FieldVector<R, m> flux_at_impermeable_walls(const FieldVector<R, m>& conservative_variables,
+                                                          const FieldVector<D, d>& normal) const
+  {
+    const auto pressure = to_primitive(conservative_variables)[m - 1];
+    const auto tmp = normal * pressure;
+    XT::Common::FieldVector<R, m> ret(0.);
+    for (size_t ii = 0; ii < d; ++ii)
+      ret[ii + 1] = tmp[ii];
+    return ret;
+  } // ... flux_at_impermeable_walls(...)
+
+  /**
    * \sa [Dolejsi, Feistauer, 2016, p.405, (8.18 - 8.19)] for the 2d case
    */
   XT::Common::FieldVector<XT::Common::FieldMatrix<R, m, m>, d>
