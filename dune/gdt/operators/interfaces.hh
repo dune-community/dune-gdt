@@ -55,6 +55,11 @@ public:
   typedef typename Traits::FieldType FieldType;
   typedef typename Traits::JacobianType JacobianType;
 
+  OperatorInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+  {
+  }
+
   /// \name Methods that have to be implemented by any derived class
   /// \{
 
