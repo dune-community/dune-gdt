@@ -59,7 +59,7 @@ public:
   }
 
   /**
-   * \sa [Dolejsi, Feistauer, 2016, p.404, (8.11)]
+   * \sa [Dolejsi, Feistauer, 2016, p.404, (8.11) or p. 421, (8.89)]
    */
   XT::Common::FieldVector<R, m> to_conservative(const FieldVector<R, m>& primitive_variables) const
   {
