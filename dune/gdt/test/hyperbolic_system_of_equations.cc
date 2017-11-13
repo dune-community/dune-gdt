@@ -131,17 +131,19 @@ GTEST_TEST(empty, main)
       /*order=*/0,
       /*parameter_type=*/{},
       /*name=*/"periodic_initial_values_euler");
-  const auto& u_0 = periodic_initial_values_euler;
+  const auto& u_0 = initial_values_euler;
   euler_tools.visualize(u_0, grid_layer, "initial_values");
 
   using I = XT::Grid::extract_intersection_t<GL>;
   XT::Grid::NormalBasedBoundaryInfo<I> boundary_info;
-  boundary_info.register_new_normal({-1., 0.}, new XT::Grid::ImpermeableBoundary());
-  boundary_info.register_new_normal({1., 0.}, new XT::Grid::ImpermeableBoundary());
-  boundary_info.register_new_normal({0., -1.}, new XT::Grid::ImpermeableBoundary());
-  boundary_info.register_new_normal({0., 1.}, new XT::Grid::ImpermeableBoundary());
+  boundary_info.register_new_normal({-1, 0}, new XT::Grid::InflowOutflowBoundary());
+  boundary_info.register_new_normal({1, 0}, new XT::Grid::InflowOutflowBoundary());
+  //  boundary_info.register_new_normal({0., -1.}, new XT::Grid::ImpermeableBoundary());
+  //  boundary_info.register_new_normal({0., 1.}, new XT::Grid::ImpermeableBoundary());
   XT::Grid::ApplyOn::CustomBoundaryIntersections<GL> impermeable_wall_filter(boundary_info,
                                                                              new XT::Grid::ImpermeableBoundary());
+  XT::Grid::ApplyOn::CustomBoundaryIntersections<GL> inflow_outflow_filter(boundary_info,
+                                                                           new XT::Grid::InflowOutflowBoundary());
 
   const auto euler_impermeable_wall_treatment = [&](const auto& u, const auto& n /*, const auto& mu = {}*/) {
     return euler_tools.flux_at_impermeable_walls(u, n);
@@ -159,6 +161,42 @@ GTEST_TEST(empty, main)
   };
 
   const auto& impermeable_wall_treatment = euler_impermeable_wall_treatment;
+
+  // see [DF2015, p. 421, (8.88)], this does not work well for slow flows!
+  const auto heuristic_euler_inflow_outflow_treatment = [&](
+      const auto& intersection, const auto& x_intersection, const auto& /*f*/, const auto& u, const auto& /*mu*/ = {}) {
+    // evaluate boundary values
+    const auto entity = intersection.inside();
+    const auto x_entity = intersection.geometryInInside().global(x_intersection);
+    const RangeType bv_cons = u_0.local_function(entity)->evaluate(x_entity);
+    // determine flow regime
+    const auto a = euler_tools.speed_of_sound_from_conservative(u);
+    const auto velocity = euler_tools.velocity_from_conservative(u);
+    const auto normal = intersection.unitOuterNormal(x_intersection);
+    const auto flow_speed = velocity * normal;
+    // compute v
+    if (flow_speed < -a) {
+      // supersonic inlet
+      return bv_cons;
+    } else if (-a < flow_speed && flow_speed < 0) {
+      // subsonic inlet
+      const auto rho_outer = euler_tools.density_from_conservative(bv_cons);
+      const auto v_outer = euler_tools.velocity_from_conservative(bv_cons);
+      const auto p_inner = euler_tools.pressure_from_conservative(u);
+      return euler_tools.to_conservative(XT::Common::hstack(rho_outer, v_outer, p_inner));
+    } else if (flow_speed < a) {
+      // subsonic outlet
+      const auto rho_inner = euler_tools.density_from_conservative(u);
+      const auto v_inner = euler_tools.velocity_from_conservative(u);
+      const auto p_outer = euler_tools.pressure_from_conservative(bv_cons);
+      return euler_tools.to_conservative(XT::Common::hstack(rho_inner, v_inner, p_outer));
+    } else {
+      // supersonic outlet
+      return RangeType(u);
+    }
+  }; // ... heuristic_euler_inflow_outflow_treatment(...)
+
+  const auto& inflow_outflow_treatment = heuristic_euler_inflow_outflow_treatment;
 
   using S = FvSpace<GL, R, m>;
   S space(grid_layer);
@@ -187,8 +225,9 @@ GTEST_TEST(empty, main)
   auto numerical_flux = GDT::make_numerical_vijayasundaram_euler_flux(flux, gamma);
   using OpType = GDT::AdvectionFvOperator<DF>;
   OpType advec_op(grid_layer, numerical_flux, /*periodicity_restriction=*/impermeable_wall_filter.copy());
-  // impermeable wall
+  // non-periodic boundary treatment
   advec_op.append(impermeable_wall_treatment, impermeable_wall_filter.copy());
+  advec_op.append(inflow_outflow_treatment, inflow_outflow_filter.copy());
 
   // compute dt via Cockburn, Coquel, LeFloch, 1995
   // (in general, looking for the min/max should also include the boundary data)
