@@ -10,6 +10,8 @@
 #ifndef DUNE_GDT_TOOLS_EULER_HH
 #define DUNE_GDT_TOOLS_EULER_HH
 
+#include <cmath>
+
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/fmatrix.hh>
 #include <dune/xt/grid/type_traits.hh>
@@ -36,7 +38,7 @@ public:
   }
 
   /**
-   * \sa [Dolejsi, Feistauer, 2016, p.404, (8.11)]
+   * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11)]
    */
   XT::Common::FieldVector<R, m> to_primitive(const FieldVector<R, m>& conservative_variables) const
   {
@@ -59,7 +61,7 @@ public:
   }
 
   /**
-   * \sa [Dolejsi, Feistauer, 2016, p.404, (8.11) or p. 421, (8.89)]
+   * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11) or p. 421, (8.89)]
    */
   XT::Common::FieldVector<R, m> to_conservative(const FieldVector<R, m>& primitive_variables) const
   {
@@ -82,7 +84,112 @@ public:
   }
 
   /**
-   * \sa [Dolejsi, Feistauer, 2016, p.403, (8.10)]
+   * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11) or p. 421, (8.89)]
+   */
+  XT::Common::FieldVector<R, 1> density_from_conservative(const FieldVector<R, m>& conservative_variables)
+  {
+    return conservative_variables[0];
+  }
+
+  /**
+   * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11) or p. 421, (8.89)]
+   */
+  XT::Common::FieldVector<R, 1> density_from_primitive(const FieldVector<R, m>& primitive_variables)
+  {
+    return primitive_variables[0];
+  }
+
+  /**
+   * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11) or p. 421, (8.89)]
+   */
+  XT::Common::FieldVector<R, d>
+  density_times_velocity_from_conservative(const FieldVector<R, m>& conservative_variables)
+  {
+    XT::Common::FieldVector<R, d> v;
+    for (size_t ii = 0; ii < d; ++ii)
+      v[ii] = conservative_variables[1 + ii];
+    return v;
+  }
+
+  /**
+   * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11) or p. 421, (8.89)]
+   */
+  XT::Common::FieldVector<R, d> density_times_velocity_from_primitive(const FieldVector<R, m>& primitive_variables)
+  {
+    const auto& rho = primitive_variables[0];
+    XT::Common::FieldVector<R, d> v;
+    for (size_t ii = 0; ii < d; ++ii)
+      v[ii] = rho * primitive_variables[1 + ii];
+    return v;
+  }
+
+  /**
+   * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11) or p. 421, (8.89)]
+   */
+  XT::Common::FieldVector<R, d> velocity_from_conservative(const FieldVector<R, m>& conservative_variables)
+  {
+    const auto& rho = conservative_variables[0];
+    XT::Common::FieldVector<R, d> v;
+    for (size_t ii = 0; ii < d; ++ii)
+      v[ii] = conservative_variables[1 + ii] / rho;
+    return v;
+  }
+
+  /**
+   * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11) or p. 421, (8.89)]
+   */
+  XT::Common::FieldVector<R, d> velocity_from_primitive(const FieldVector<R, m>& primitive_variables)
+  {
+    XT::Common::FieldVector<R, d> v;
+    for (size_t ii = 0; ii < d; ++ii)
+      v[ii] = primitive_variables[1 + ii];
+    return v;
+  }
+
+  /**
+   * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11) or p. 421, (8.89)]
+   */
+  XT::Common::FieldVector<R, 1> energy_from_conservative(const FieldVector<R, m>& conservative_variables)
+  {
+    return conservative_variables[m - 1];
+  }
+
+  /**
+   * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11) or p. 421, (8.89)]
+   */
+  XT::Common::FieldVector<R, 1> energy_from_primitive(const FieldVector<R, m>& primitive_variables)
+  {
+    const auto& rho = primitive_variables[0];
+    FieldVector<R, d> v;
+    for (size_t ii = 0; ii < d; ++ii)
+      v[ii] = primitive_variables[ii + 1];
+    const auto& p = primitive_variables[m - 1];
+    return p / (gamma_ - 1.) + 0.5 * rho * v.two_norm2();
+  }
+
+  /**
+   * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11) or p. 421, (8.89)]
+   */
+  XT::Common::FieldVector<R, 1> pressure_from_conservative(const FieldVector<R, m>& conservative_variables)
+  {
+    const auto& rho = conservative_variables[0];
+    FieldVector<R, d> v;
+    for (size_t ii = 0; ii < d; ++ii)
+      v[ii] = conservative_variables[ii + 1] / rho;
+    const auto& e = conservative_variables[m - 1];
+    return (gamma_ - 1.) * (e - 0.5 * rho * v.two_norm2());
+  }
+
+  /**
+   * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11) or p. 421, (8.89)]
+   */
+  XT::Common::FieldVector<R, 1> pressure_from_primitive(const FieldVector<R, m>& primitive_variables)
+  {
+    return primitive_variables[m - 1];
+  }
+
+  /**
+   * \sa [Dolejsi, Feistauer, 2016, p. 403, (8.10)]
    */
   XT::Common::FieldMatrix<R, d, m> flux(const FieldVector<R, m>& conservative_variables) const
   {
@@ -121,7 +228,7 @@ public:
   } // ... flux_at_impermeable_walls(...)
 
   /**
-   * \sa [Dolejsi, Feistauer, 2016, p.405, (8.18 - 8.19)] for the 2d case
+   * \sa [Dolejsi, Feistauer, 2016, p. 405, (8.18 - 8.19)] for the 2d case
    */
   XT::Common::FieldVector<XT::Common::FieldMatrix<R, m, m>, d>
   flux_jacobian(const FieldVector<R, m>& conservative_variables) const
@@ -130,7 +237,7 @@ public:
   }
 
   /**
-   * \sa [Dolejsi, Feistauer, 2016, p.405, (8.20)] for the 2d case
+   * \sa [Dolejsi, Feistauer, 2016, p. 405, (8.20)] for the 2d case
    */
   XT::Common::FieldMatrix<R, m, m> flux_jacobi_matrix(const FieldVector<R, m>& conservative_variables,
                                                       const FieldVector<double, d>& normal) const
@@ -173,6 +280,26 @@ public:
                                                                        const FieldVector<double, d>& normal) const
   {
     return dim_switch<>::eigenvectors_inv_flux_jacobi_matrix(gamma_, conservative_variables, normal);
+  }
+
+  /**
+   * \sa [Dolejsi, Feistauer, 2016, p. 403, (8.7)] for the 2d case
+   */
+  R speed_of_sound_from_conservative(const FieldVector<R, m>& conservative_variables)
+  {
+    const auto rho = density_from_conservative(conservative_variables);
+    const auto p = pressure_from_conservative(conservative_variables);
+    return std::sqrt((gamma_ * p) / rho);
+  }
+
+  /**
+   * \sa [Dolejsi, Feistauer, 2016, p. 403, (8.7)] for the 2d case
+   */
+  R speed_of_sound_from_primitive(const FieldVector<R, m>& primitive_variables)
+  {
+    const auto rho = density_from_primiitve(primitive_variables);
+    const auto p = pressure_from_primitive(primitive_variables);
+    return std::sqrt((gamma_ * p) / rho);
   }
 
   template <class E, class D, class GL>
@@ -241,7 +368,7 @@ private:
     }
 
     /**
-     * \sa [Dolejsi, Feistauer, 2016, p.405, (8.18 - 8.19)]
+     * \sa [Dolejsi, Feistauer, 2016, p. 405, (8.18 - 8.19)]
      */
     static XT::Common::FieldVector<XT::Common::FieldMatrix<R, m, m>, d>
     flux_jacobian(const double& gamma, const FieldVector<R, m>& conservative_variables)
@@ -286,7 +413,7 @@ private:
     } // ... flux_jacobian(...)
 
     /**
-     * \sa [Dolejsi, Feistauer, 2016, p.405, (8.20)]
+     * \sa [Dolejsi, Feistauer, 2016, p. 405, (8.20)]
      */
     static XT::Common::FieldMatrix<R, m, m> flux_jacobi_matrix(const double& gamma,
                                                                const FieldVector<R, m>& conservative_variables,
