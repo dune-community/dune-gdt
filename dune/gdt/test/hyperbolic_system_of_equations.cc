@@ -58,7 +58,6 @@
 using namespace Dune;
 using namespace Dune::GDT;
 
-
 // using G = YASP_1D_EQUIDISTANT_OFFSET;
 // using G = YASP_2D_EQUIDISTANT_OFFSET;
 using G = ALU_2D_SIMPLEX_CONFORMING;
@@ -138,12 +137,13 @@ GTEST_TEST(empty, main)
   XT::Grid::NormalBasedBoundaryInfo<I> boundary_info;
   boundary_info.register_new_normal({-1, 0}, new XT::Grid::InflowOutflowBoundary());
   boundary_info.register_new_normal({1, 0}, new XT::Grid::InflowOutflowBoundary());
-  //  boundary_info.register_new_normal({0., -1.}, new XT::Grid::ImpermeableBoundary());
-  //  boundary_info.register_new_normal({0., 1.}, new XT::Grid::ImpermeableBoundary());
+  //  boundary_info.register_new_normal({0, -1}, new XT::Grid::ImpermeableBoundary());
+  //  boundary_info.register_new_normal({0, 1}, new XT::Grid::ImpermeableBoundary());
   XT::Grid::ApplyOn::CustomBoundaryIntersections<GL> impermeable_wall_filter(boundary_info,
                                                                              new XT::Grid::ImpermeableBoundary());
   XT::Grid::ApplyOn::CustomBoundaryIntersections<GL> inflow_outflow_filter(boundary_info,
                                                                            new XT::Grid::InflowOutflowBoundary());
+  const auto& bv = u_0;
 
   const auto euler_impermeable_wall_treatment = [&](const auto& u, const auto& n /*, const auto& mu = {}*/) {
     return euler_tools.flux_at_impermeable_walls(u, n);
@@ -168,7 +168,7 @@ GTEST_TEST(empty, main)
     // evaluate boundary values
     const auto entity = intersection.inside();
     const auto x_entity = intersection.geometryInInside().global(x_intersection);
-    const RangeType bv_cons = u_0.local_function(entity)->evaluate(x_entity);
+    const RangeType bv_cons = bv.local_function(entity)->evaluate(x_entity);
     // determine flow regime
     const auto a = euler_tools.speed_of_sound_from_conservative(u);
     const auto velocity = euler_tools.velocity_from_conservative(u);
@@ -224,7 +224,8 @@ GTEST_TEST(empty, main)
 
   auto numerical_flux = GDT::make_numerical_vijayasundaram_euler_flux(flux, gamma);
   using OpType = GDT::AdvectionFvOperator<DF>;
-  OpType advec_op(grid_layer, numerical_flux, /*periodicity_restriction=*/impermeable_wall_filter.copy());
+  OpType advec_op(
+      grid_layer, numerical_flux, /*periodicity_restriction=*/impermeable_wall_filter && inflow_outflow_filter);
   // non-periodic boundary treatment
   advec_op.append(impermeable_wall_treatment, impermeable_wall_filter.copy());
   advec_op.append(inflow_outflow_treatment, inflow_outflow_filter.copy());
