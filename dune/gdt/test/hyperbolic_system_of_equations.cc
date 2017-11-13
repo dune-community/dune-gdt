@@ -151,18 +151,12 @@ GTEST_TEST(empty, main)
   const auto inviscid_mirror_impermeable_wall_treatment = [&](
       const auto& intersection, const auto& x_intersection, const auto& /*f*/, const auto& u, const auto& /*mu*/ = {}) {
     const auto normal = intersection.unitOuterNormal(x_intersection);
-
-    auto u_prim = euler_tools.to_primitive(u);
-    XT::Common::FieldVector<R, d> velocity;
-    for (size_t ii = 0; ii < d; ++ii)
-      velocity[ii] = u_prim[1 + ii];
-
+    const auto rho = euler_tools.density_from_conservative(u);
+    auto velocity = euler_tools.velocity_from_conservative(u);
     velocity -= normal * 2. * (velocity * normal);
-    for (size_t ii = 0; ii < d; ++ii)
-      u_prim[1 + ii] = velocity[ii];
-
-    return euler_tools.to_conservative(u_prim);
-  }; // ... inviscid_mirror_impermeable_wall_treatment(...)
+    const auto pressure = euler_tools.pressure_from_conservative(u);
+    return euler_tools.to_conservative(XT::Common::hstack(rho, velocity, pressure));
+  };
 
   const auto& impermeable_wall_treatment = euler_impermeable_wall_treatment;
 
