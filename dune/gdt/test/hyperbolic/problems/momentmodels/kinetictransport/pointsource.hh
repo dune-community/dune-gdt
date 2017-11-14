@@ -26,10 +26,10 @@ namespace Problems {
 namespace KineticTransport {
 
 
-template <class BasisfunctionImp, class GridLayerImp, class U_>
-class PointSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
+template <class BasisfunctionImp, class GridLayerImp, class U_, bool linear = true>
+class PointSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, linear>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, linear> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -126,13 +126,12 @@ protected:
 }; // class PointSourcePn<...>
 
 template <class BasisfunctionType, class GridLayerType, class U_>
-class PointSourceMn : public PointSourcePn<BasisfunctionType, GridLayerType, U_>
+class PointSourceMn : public PointSourcePn<BasisfunctionType, GridLayerType, U_, false /*nonlinear*/>
 {
-  typedef PointSourcePn<BasisfunctionType, GridLayerType, U_> BaseType;
+  typedef PointSourcePn<BasisfunctionType, GridLayerType, U_, false> BaseType;
   typedef PointSourceMn ThisType;
 
 public:
-  static const bool linear = false;
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
   typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
