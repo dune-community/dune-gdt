@@ -29,11 +29,10 @@ template <class BasisfunctionImp, class GridLayerImp, class U_, size_t quadratur
 class KineticTransportEquation : public KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_>,
                                  public XT::Common::ParametricInterface
 {
-  typedef KineticTransportEquation ThisType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, quadratureDim> ThisType;
   typedef KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
-  static const bool linear = true;
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
   using typename BaseType::DomainFieldType;
