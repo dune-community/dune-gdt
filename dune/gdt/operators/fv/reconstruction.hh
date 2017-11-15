@@ -99,8 +99,9 @@ public:
   {
     // get cell averages on stencil
     FieldVector<int, 3> offsets(0);
-    ValuesType values(FieldVector<FieldVector<RangeType, stencil[2]>, stencil[1]>(
-        FieldVector<RangeType, stencil[2]>(RangeType(std::numeric_limits<double>::quiet_NaN()))));
+    const RangeType nan{std::numeric_limits<double>::quiet_NaN()};
+    ValuesType values(
+        (FieldVector<FieldVector<RangeType, stencil[2]>, stencil[1]>(FieldVector<RangeType, stencil[2]>(nan))));
     StencilIterator::apply(source_values_, boundary_values_, values, entity, grid_layer_, -1, offsets);
     // get intersections
     FieldVector<typename GridLayerType::Intersection, 2 * dimDomain> intersections;
