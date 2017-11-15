@@ -23,5 +23,9 @@
 /* Define to the revision of dune-gdt */
 #define DUNE_GDT_VERSION_REVISION ${DUNE_GDT_VERSION_REVISION}
 
+// alberta and lpsolve both define a clashing get_max_level
+#if HAVE_LPSOLVE && HAVE_ALBERTA
+#undef HAVE_LPSOLVE
+#endif
 /* end dune-gdt */
 // NEVER delete/alter above comment, dune's cmake relies on it
