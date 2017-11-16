@@ -574,81 +574,63 @@ class NumericalVijayasundaramEulerFlux
  *       DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
  */
 template <class E, class D, class R>
-class NumericalVijayasundaramEulerFlux<E, D, 2, R, 4> : public NumericalFluxInterface<E, D, 2, R, 4>
+class NumericalVijayasundaramEulerFlux<E, D, 2, R, 4> : public NumericalVijayasundaramFlux<E, D, 2, R, 4>
 {
   static const constexpr size_t d = 2;
   static const constexpr size_t m = d + 2;
-  using BaseType = NumericalFluxInterface<E, D, d, R, m>;
+  using BaseType = NumericalVijayasundaramFlux<E, D, d, R, m>;
 
 public:
+  using typename BaseType::FluxType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
 
-  template <class... Args>
-  explicit NumericalVijayasundaramEulerFlux(const double& gamma,
-                                            const double& eigenvalue_check_tolerance,
-                                            Args&&... args)
-    : BaseType(std::forward<Args>(args)...)
+  explicit NumericalVijayasundaramEulerFlux(const FluxType& flx,
+                                            const double& gamma,
+                                            const double& eigenvalue_check_tolerance)
+    : BaseType(flx,
+               [&](const auto& w, const auto& n) {
+                 const auto eigenvalues = euler_tools_.eigenvalues_flux_jacobi_matrix(w, n);
+                 const auto eigenvectors = euler_tools_.eigenvectors_flux_jacobi_matrix(w, n);
+                 const auto eigenvectors_inv = euler_tools_.eigenvectors_inv_flux_jacobi_matrix(w, n);
+
+#ifndef DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
+                 const auto identity = XT::LA::eye_matrix<XT::Common::FieldMatrix<R, m, m>>(m, m);
+                 if ((eigenvectors_inv * eigenvectors - identity).infinity_norm() > tolerance_)
+                   DUNE_THROW(InvalidStateException,
+                              "\n\neigenvectors:\n\n"
+                                  << eigenvectors
+                                  << "\n\neigenvectors_inverse:\n\n"
+                                  << eigenvectors_inv
+                                  << "\n\n|| eigenvectors_inv * eigenvectors - identity ||_infty = "
+                                  << (eigenvectors_inv * eigenvectors - identity).infinity_norm());
+
+                 const auto eigenvaluematrix = euler_tools_.eigenvaluematrix_flux_jacobi_matrix(w, n);
+                 if (((eigenvectors_inv * (euler_tools_.flux_jacobi_matrix(w, n) * eigenvectors)) - eigenvaluematrix)
+                         .infinity_norm()
+                     > tolerance_)
+                   DUNE_THROW(InvalidStateException,
+                              "\n\neigenvectors:\n\n"
+                                  << eigenvectors
+                                  << "\n\neigenvectors_inverse:\n\n"
+                                  << eigenvectors_inv
+                                  << "\n\neigenvalues:"
+                                  << eigenvalues
+                                  << "\n\nP:\n\n"
+                                  << euler_tools_.flux_jacobi_matrix(w, n)
+                                  << "\n\neigenvectors_inv * (P * eigenvectors):\n\n"
+                                  << eigenvectors_inv * (euler_tools_.flux_jacobi_matrix(w, n) * eigenvectors)
+                                  << "\n\n|| eigenvectors_inv * (P * eigenvectors) - eigenvalues||_infty = "
+                                  << ((eigenvectors_inv * (euler_tools_.flux_jacobi_matrix(w, n) * eigenvectors))
+                                      - eigenvaluematrix)
+                                         .infinity_norm());
+#endif // DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
+                 return std::make_tuple(eigenvalues, eigenvectors, eigenvectors_inv);
+               })
     , euler_tools_(gamma)
     , tolerance_(eigenvalue_check_tolerance)
   {
   }
-
-  RangeType apply(const RangeType& u,
-                  const RangeType& v,
-                  const DomainType& n,
-                  const XT::Common::Parameter& /*mu*/ = {}) const override final
-  {
-    const auto w_conservative = 0.5 * (u + v);
-
-    const auto eigenvalues = euler_tools_.eigenvalues_flux_jacobi_matrix(w_conservative, n);
-    const auto eigenvectors = euler_tools_.eigenvectors_flux_jacobi_matrix(w_conservative, n);
-    const auto eigenvectors_inv = euler_tools_.eigenvectors_inv_flux_jacobi_matrix(w_conservative, n);
-
-#ifndef DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
-    const auto identity = XT::LA::eye_matrix<XT::Common::FieldMatrix<R, m, m>>(m, m);
-    if ((eigenvectors_inv * eigenvectors - identity).infinity_norm() > tolerance_)
-      DUNE_THROW(InvalidStateException,
-                 "\n\neigenvectors:\n\n"
-                     << eigenvectors
-                     << "\n\neigenvectors_inverse:\n\n"
-                     << eigenvectors_inv
-                     << "\n\n|| eigenvectors_inv * eigenvectors - identity ||_infty = "
-                     << (eigenvectors_inv * eigenvectors - identity).infinity_norm());
-
-    const auto eigenvaluematrix = euler_tools_.eigenvaluematrix_flux_jacobi_matrix(w_conservative, n);
-    if (((eigenvectors_inv * (euler_tools_.flux_jacobi_matrix(w_conservative, n) * eigenvectors)) - eigenvaluematrix)
-            .infinity_norm()
-        > tolerance_)
-      DUNE_THROW(InvalidStateException,
-                 "\n\neigenvectors:\n\n"
-                     << eigenvectors
-                     << "\n\neigenvectors_inverse:\n\n"
-                     << eigenvectors_inv
-                     << "\n\neigenvalues:"
-                     << eigenvalues
-                     << "\n\nP:\n\n"
-                     << euler_tools_.flux_jacobi_matrix(w_conservative, n)
-                     << "\n\neigenvectors_inv * (P * eigenvectors):\n\n"
-                     << eigenvectors_inv * (euler_tools_.flux_jacobi_matrix(w_conservative, n) * eigenvectors)
-                     << "\n\n|| eigenvectors_inv * (P * eigenvectors) - eigenvalues||_infty = "
-                     << ((eigenvectors_inv * (euler_tools_.flux_jacobi_matrix(w_conservative, n) * eigenvectors))
-                         - eigenvaluematrix)
-                            .infinity_norm());
-#endif // DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
-
-    XT::Common::FieldMatrix<R, m, m> eigenvalues_plus(0.);
-    for (size_t ii = 0; ii < m; ++ii)
-      eigenvalues_plus[ii][ii] = std::max(0., eigenvalues[ii]);
-
-    XT::Common::FieldMatrix<R, m, m> eigenvalues_minus(0.);
-    for (size_t ii = 0; ii < m; ++ii)
-      eigenvalues_minus[ii][ii] = std::min(0., eigenvalues[ii]);
-
-    const auto P_plus = eigenvectors * eigenvalues_plus * eigenvectors_inv;
-    const auto P_minus = eigenvectors * eigenvalues_minus * eigenvectors_inv;
-    return P_plus * u + P_minus * v;
-  } // ... apply(...)
 
 private:
   const EulerTools<d, R> euler_tools_;
@@ -664,7 +646,7 @@ NumericalVijayasundaramEulerFlux<E, D, d, R, m> make_numerical_vijayasundaram_eu
     const double& gamma,
     const double eigenvalue_check_tolerance = 1e-10)
 {
-  return NumericalVijayasundaramEulerFlux<E, D, d, R, m>(gamma, eigenvalue_check_tolerance, flux);
+  return NumericalVijayasundaramEulerFlux<E, D, d, R, m>(flux, gamma, eigenvalue_check_tolerance);
 }
 
 
