@@ -92,7 +92,7 @@ public:
 
   virtual void evaluate(const DomainType& x, RangeType& ret, const XT::Common::Parameter& mu) const override final
   {
-    double t = this->parse_and_check(mu).get("t")[0];
+    double t = this->parse_parameter(mu).get("t")[0];
     if (Dune::XT::Common::FloatCmp::eq(t, 0.0)) {
       if (x < 0.5)
         evaluate_region_1(x[0], ret);
