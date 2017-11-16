@@ -20,7 +20,11 @@
 
 #include <dune/xt/common/densevector.hh>
 #include <dune/xt/common/memory.hh>
+#include <dune/xt/common/matrix.hh>
 #include <dune/xt/common/vector.hh>
+#include <dune/xt/la/eigen-solver.hh>
+#include <dune/xt/la/exceptions.hh>
+#include <dune/xt/la/matrix-inverter.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces/localizable-function.hh>
 #include <dune/xt/functions/interfaces/localizable-flux-function.hh>
@@ -313,10 +317,29 @@ class NumericalVijayasundaramFlux : public NumericalFluxInterface<E, D, d, R, m>
 public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
+  using typename BaseType::FluxType;
 
-  template <class... Args>
-  explicit NumericalVijayasundaramFlux(Args&&... args)
-    : BaseType(std::forward<Args>(args)...)
+  using FluxEigenDecompositionLambdaType =
+      std::function<std::tuple<std::vector<R>, XT::Common::FieldMatrix<R, m, m>, XT::Common::FieldMatrix<R, m, m>>(
+          const FieldVector<R, m>&, const FieldVector<D, d>&)>;
+
+  NumericalVijayasundaramFlux(const FluxType& flx)
+    : BaseType(flx)
+    , flux_eigen_decomposition_lambda_([&](const auto& w, const auto& n) {
+      // evaluate flux jacobian, compute P matrix [DF2016, p. 404, (8.17)]
+      const auto df = XT::Common::make_field_container(this->flux().partial_u({}, w));
+      const auto P = df * n;
+      auto eigensolver = XT::LA::make_eigen_solver(
+          P, {{"type", XT::LA::eigen_solver_types(P)[0]}, {"ensure_real_eigendecomposition", "1e-10"}});
+      return std::make_tuple(
+          eigensolver.real_eigenvalues(), eigensolver.real_eigenvectors(), eigensolver.real_eigenvectors_inverse());
+    })
+  {
+  }
+
+  NumericalVijayasundaramFlux(const FluxType& flx, FluxEigenDecompositionLambdaType flux_eigen_decomposition_lambda)
+    : BaseType(flx)
+    , flux_eigen_decomposition_lambda_(flux_eigen_decomposition_lambda)
   {
   }
 
@@ -325,177 +348,26 @@ public:
                   const DomainType& n,
                   const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
-    check_values(u);
-    check_values(v);
-    check_values(n);
-    // evaluate flux jacobian, compute P matrix [DF2016, p. 404, (8.17)]
-    const auto df = this->flux().partial_u({}, 0.5 * (u + v));
-    const auto P = convert_to_eigen_matrix(df * n);
-    check_values(P);
-    FieldVector<R, m> result(0.);
-    try {
-      // compute decomposition
-      auto eigensolver = XT::LA::make_eigen_solver(P);
-      const auto evs = eigensolver.real_eigenvalues();
-      check_values(evs);
-      const auto T = eigensolver.real_eigenvectors_as_matrix();
-      check_values(T);
-      auto T_inv = T.copy();
-      try {
-        T_inv = XT::LA::invert_matrix(T);
-        check_values(T_inv);
-      } catch (XT::LA::Exceptions::matrix_invert_failed_bc_result_is_not_a_left_inverse& ee) {
-        const auto identity = XT::LA::eye_matrix<XT::LA::EigenDenseMatrix<R>>(m, m);
-        // check each eigenvalue/eigenvector pair individually
-        for (size_t ii = 0; ii < m; ++ii) {
-          const auto& lambda = evs[ii];
-          std::cerr << "\n\nchecking lambda_" << ii << " = " << lambda << ":" << std::endl;
-          // try all possible eigenvectors
-          XT::LA::EigenDenseVector<R> eigenvector(m, 0.);
-          for (size_t jj = 0; jj < m; ++jj) {
-            // get jth column of T
-            for (size_t kk = 0; kk < m; ++kk)
-              eigenvector[kk] = T.get_entry(kk, jj);
-            std::cerr << "  testing column " << jj << " = " << eigenvector << ": ";
-            const auto tolerance = 1e-15;
-            const auto error = ((P - identity * lambda) * eigenvector).sup_norm();
-            if (error < tolerance)
-              std::cerr << "this IS an eigenvector (up to " << tolerance << ")!" << std::endl;
-            else {
-              std::cerr << "this IS NOT an eigenvector (|| (P - lambda I) * ev ||_infty = " << error << ")!"
-                        << std::endl;
-            }
-          }
-        }
-        DUNE_THROW(
-            InvalidStateException,
-            "Eigen decomposition of flux jacobians P not successfull, because T is not invertible (see below)!\n\n"
-                << "P = "
-                << P
-                << "\n\ndiagonal of lambda (eigenvalues) = "
-                << evs
-                << "\n\nT (eigenvectors) = "
-                << T
-                << "\n\n\n\nThis was the original error: "
-                << ee.what());
-      }
-
-#ifndef DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
-      // test decomposition
-      XT::LA::EigenDenseMatrix<R> lambda(m, m);
-      for (size_t ii = 0; ii < m; ++ii)
-        lambda.set_entry(ii, ii, evs[ii]);
-      if (((T * lambda * T_inv) - P).sup_norm() / P.sup_norm() > 1e-14) {
-        const auto identity = XT::LA::eye_matrix<XT::LA::EigenDenseMatrix<R>>(m, m);
-        // check each eigenvalue/eigenvector pair individually
-        for (size_t ii = 0; ii < m; ++ii) {
-          const auto& lmbd = evs[ii];
-          std::cerr << "\n\nchecking lambda_" << ii << " = " << lmbd << ":" << std::endl;
-          // try all possible eigenvectors
-          XT::LA::EigenDenseVector<R> eigenvector(m, 0.);
-          for (size_t jj = 0; jj < m; ++jj) {
-            // get jth column of T
-            for (size_t kk = 0; kk < m; ++kk)
-              eigenvector[kk] = T.get_entry(kk, jj);
-            std::cerr << "  testing column " << jj << " = " << eigenvector << ": ";
-            const auto tolerance = 1e-15;
-            const auto error = ((P - identity * lmbd) * eigenvector).sup_norm();
-            if (error < tolerance)
-              std::cerr << "this IS an eigenvector (up to " << tolerance << ")!" << std::endl;
-            else {
-              std::cerr << "this IS NOT an eigenvector (|| (P - lambda I) * ev ||_infty = " << error << ")!"
-                        << std::endl;
-            }
-          }
-        }
-        DUNE_THROW(InvalidStateException,
-                   "Eigen decomposition of flux jacobians P not successfull!\n\n"
-                       << "P = "
-                       << P
-                       << "\n\ndiagonal of lambda (eigenvalues) = "
-                       << evs
-                       << "\n\nT (eigenvectors) = "
-                       << T
-                       << "\n\n||(T * lambda * T_inv) - P||_infty / ||P||_infty = "
-                       << ((T * lambda * T_inv) - P).sup_norm() / P.sup_norm());
-      }
-#endif // DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
-
-      // compute numerical flux [DF2016, p. 428, (8.108)]
-      XT::LA::EigenDenseMatrix<R> lambda_plus(m, m, 0.);
-      XT::LA::EigenDenseMatrix<R> lambda_minus(m, m, 0.);
-      for (size_t ii = 0; ii < m; ++ii) {
-        lambda_plus.set_entry(ii, ii, std::max(evs[ii], 0.));
-        lambda_minus.set_entry(ii, ii, std::min(evs[ii], 0.));
-      }
-      check_values(lambda_plus);
-      check_values(lambda_minus);
-      const auto P_plus = convert_to_common_matrix(T * lambda_plus * T_inv);
-      const auto P_minus = convert_to_common_matrix(T * lambda_minus * T_inv);
-      check_values(P_plus);
-      check_values(P_minus);
-
-      result = P_plus * u + P_minus * v;
-      check_values(result);
-    } catch (XT::LA::Exceptions::eigen_solver_failed& ee) {
-      DUNE_THROW(InvalidStateException,
-                 "Eigen decomposition of flux jacobians P not successfull (see below for the original error)!\n\n"
-                     << "u = "
-                     << u
-                     << "\n\nv = "
-                     << v
-                     << "\n\nDF((u + v)/2) = "
-                     << df
-                     << "\n\nP = "
-                     << P
-                     << "\n\nThis was the original error:\n\n"
-                     << ee.what());
+    // compute decomposition
+    const auto eigendecomposition = flux_eigen_decomposition_lambda_(0.5 * (u + v), n);
+    const auto& evs = std::get<0>(eigendecomposition);
+    const auto& T = std::get<1>(eigendecomposition);
+    const auto& T_inv = std::get<2>(eigendecomposition);
+    // compute numerical flux [DF2016, p. 428, (8.108)]
+    auto lambda_plus = XT::Common::zeros_like(T);
+    auto lambda_minus = XT::Common::zeros_like(T);
+    for (size_t ii = 0; ii < m; ++ii) {
+      XT::Common::set_matrix_entry(lambda_plus, ii, ii, std::max(evs[ii], 0.));
+      XT::Common::set_matrix_entry(lambda_minus, ii, ii, std::min(evs[ii], 0.));
     }
-    return result;
+    const auto P_plus = T * lambda_plus * T_inv;
+    const auto P_minus = T * lambda_minus * T_inv;
+    return P_plus * u + P_minus * v;
   } // ... apply(...)
 
 private:
-  template <class V>
-  static typename std::enable_if<XT::Common::is_vector<V>::value, void>::type check_values(const V& vec)
-  {
-    for (size_t ii = 0; ii < vec.size(); ++ii)
-      if (XT::Common::isnan(vec[ii]) || XT::Common::isinf(vec[ii]))
-        DUNE_THROW(InvalidStateException, vec);
-  }
-
-  template <class M>
-  static typename std::enable_if<XT::Common::is_matrix<M>::value, void>::type check_values(const M& mat)
-  {
-    using MM = XT::Common::MatrixAbstraction<M>;
-    for (size_t ii = 0; ii < MM::rows(mat); ++ii)
-      for (size_t jj = 0; jj < MM::cols(mat); ++jj)
-        if (XT::Common::isnan(MM::get_entry(mat, ii, jj)) || XT::Common::isinf(MM::get_entry(mat, ii, jj)))
-          DUNE_THROW(InvalidStateException, mat);
-  }
-
-  static XT::LA::EigenDenseMatrix<R> convert_to_eigen_matrix(const XT::Common::FieldMatrix<R, m, m>& source)
-  {
-    using Abstraction = XT::Common::MatrixAbstraction<XT::Common::FieldMatrix<R, m, m>>;
-    XT::LA::EigenDenseMatrix<R> target(Abstraction::rows(source), Abstraction::cols(source), 0.);
-    for (size_t ii = 0; ii < target.rows(); ++ii)
-      for (size_t jj = 0; jj < target.cols(); ++jj)
-        target.set_entry(ii, jj, Abstraction::get_entry(source, ii, jj));
-    return target;
-  }
-
-  static XT::Common::FieldMatrix<R, m, m> convert_to_common_matrix(const XT::LA::EigenDenseMatrix<R>& source)
-  {
-    using TargetAbstraction = XT::Common::MatrixAbstraction<XT::Common::FieldMatrix<R, m, m>>;
-    using SourceAbstraction = XT::Common::MatrixAbstraction<XT::LA::EigenDenseMatrix<R>>;
-    auto target = TargetAbstraction::create(SourceAbstraction::rows(source), SourceAbstraction::cols(source), 0.);
-    for (size_t ii = 0; ii < SourceAbstraction::rows(source); ++ii)
-      for (size_t jj = 0; jj < SourceAbstraction::cols(source); ++jj)
-        TargetAbstraction::set_entry(target, ii, jj, SourceAbstraction::get_entry(source, ii, jj));
-    return target;
-  }
-
   /// This was the first attempt to use an eigenvalue decomposition, but the one from eigen is bad!
-  /// In addition, the P comin from df * n is also bad!
+  /// In addition, the P coming from df * n is also bad!
   //  auto vijayasundaram_euler = [&](const auto& u_, const auto& v_, const auto& n, const auto& /*mu*/) {
   //    if (d != 2)
   //      DUNE_THROW(NotImplemented, "Only for 2d!\nd = " << d);
@@ -675,16 +547,18 @@ private:
   //    }
   //    return result;
   //  }; // ... vijayasundaram_euler(...)
+  const FluxEigenDecompositionLambdaType flux_eigen_decomposition_lambda_;
 }; // class NumericalVijayasundaramFlux
 
 
-template <class E, class D, size_t d, class R, size_t m>
+template <class E, class D, size_t d, class R, size_t m, class... Args>
 NumericalVijayasundaramFlux<E, D, d, R, m> make_numerical_vijayasundaram_flux(
     const XT::Functions::
         GlobalFluxFunctionInterface<E, D, d, XT::Functions::LocalizableFunctionInterface<E, D, d, R, m, 1>, 0, R, d, m>&
-            flux)
+            flux,
+    Args&&... args)
 {
-  return NumericalVijayasundaramFlux<E, D, d, R, m>(flux);
+  return NumericalVijayasundaramFlux<E, D, d, R, m>(flux, std::forward<Args>(args)...);
 }
 
 
