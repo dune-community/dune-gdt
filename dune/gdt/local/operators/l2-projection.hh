@@ -103,7 +103,7 @@ public:
     try {
       XT::LA::Solver<XT::LA::CommonDenseMatrix<R>>(local_matrix).apply(local_vector, local_solution);
     } catch (XT::LA::Exceptions::linear_solver_failed& ee) {
-      DUNE_THROW(projection_error,
+      DUNE_THROW(Exceptions::projection_error,
                  "L2 projection failed because a local matrix could not be inverted!\n\n"
                      << "This was the original error: "
                      << ee.what());
