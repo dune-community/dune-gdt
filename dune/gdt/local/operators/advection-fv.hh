@@ -22,6 +22,7 @@
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/matrix.hh>
 #include <dune/xt/common/vector.hh>
+#include <dune/xt/common/type_traits.hh>
 #include <dune/xt/la/eigen-solver.hh>
 #include <dune/xt/la/exceptions.hh>
 #include <dune/xt/la/matrix-inverter.hh>
@@ -30,6 +31,7 @@
 #include <dune/xt/functions/interfaces/localizable-flux-function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/exceptions.hh>
 #include <dune/gdt/tools/euler.hh>
 #include <dune/gdt/type_traits.hh>
 
@@ -311,7 +313,6 @@ NumericalEngquistOsherFlux<E, D, d, R, m> make_numerical_engquist_osher_flux(
 template <class E, class D, size_t d, class R, size_t m>
 class NumericalVijayasundaramFlux : public NumericalFluxInterface<E, D, d, R, m>
 {
-  static_assert(d == 1, "Unreliable for other dimension!");
   using BaseType = NumericalFluxInterface<E, D, d, R, m>;
 
 public:
@@ -320,8 +321,10 @@ public:
   using typename BaseType::FluxType;
 
   using FluxEigenDecompositionLambdaType =
-      std::function<std::tuple<std::vector<R>, XT::Common::FieldMatrix<R, m, m>, XT::Common::FieldMatrix<R, m, m>>(
-          const FieldVector<R, m>&, const FieldVector<D, d>&)>;
+      std::function<std::tuple<std::vector<XT::Common::complex_t<R>>,
+                               XT::Common::FieldMatrix<XT::Common::complex_t<R>, m, m>,
+                               XT::Common::FieldMatrix<XT::Common::complex_t<R>, m, m>>(const FieldVector<R, m>&,
+                                                                                        const FieldVector<D, d>&)>;
 
   NumericalVijayasundaramFlux(const FluxType& flx)
     : BaseType(flx)
@@ -329,10 +332,11 @@ public:
       // evaluate flux jacobian, compute P matrix [DF2016, p. 404, (8.17)]
       const auto df = XT::Common::make_field_container(this->flux().partial_u({}, w));
       const auto P = df * n;
-      auto eigensolver = XT::LA::make_eigen_solver(
-          P, {{"type", XT::LA::eigen_solver_types(P)[0]}, {"ensure_real_eigendecomposition", "1e-10"}});
-      return std::make_tuple(
-          eigensolver.real_eigenvalues(), eigensolver.real_eigenvectors(), eigensolver.real_eigenvectors_inverse());
+      auto eigensolver = XT::LA::make_eigen_solver(P,
+                                                   {{"type", XT::LA::eigen_solver_types(P)[0]},
+                                                    {"assert_real_eigenvalues", "1e-15"},
+                                                    {"ensure_eigendecomposition", "1e-10"}});
+      return std::make_tuple(eigensolver.eigenvalues(), eigensolver.eigenvectors(), eigensolver.eigenvectors_inverse());
     })
   {
   }
@@ -357,11 +361,46 @@ public:
     auto lambda_plus = XT::Common::zeros_like(T);
     auto lambda_minus = XT::Common::zeros_like(T);
     for (size_t ii = 0; ii < m; ++ii) {
-      XT::Common::set_matrix_entry(lambda_plus, ii, ii, std::max(evs[ii], 0.));
-      XT::Common::set_matrix_entry(lambda_minus, ii, ii, std::min(evs[ii], 0.));
+      const auto& complex_ev = evs[ii];
+#ifndef DUNE_GDT_DISABLE_CHECKS
+      if (std::abs(complex_ev.imag()) > 1e-15)
+        DUNE_THROW(Exceptions::operator_error,
+                   "Eigendecomposition gave eigenvalues with nontrivial complex part!"
+                       << "\n\nw = "
+                       << 0.5 * (u + v)
+                       << "\n\nn = "
+                       << n
+                       << "\n\neigenvalues = \n"
+                       << evs
+                       << "\n\neigenvectors = \n"
+                       << T
+                       << "\n\neigenvectors_inverse = \n"
+                       << T_inv);
+#endif // DUNE_GDT_DISABLE_CHECKS
+      const auto& real_ev = complex_ev.real();
+      XT::Common::set_matrix_entry(lambda_plus, ii, ii, std::max(real_ev, 0.));
+      XT::Common::set_matrix_entry(lambda_minus, ii, ii, std::min(real_ev, 0.));
     }
-    const auto P_plus = T * lambda_plus * T_inv;
-    const auto P_minus = T * lambda_minus * T_inv;
+#ifndef DUNE_GDT_DISABLE_CHECKS
+    // ensure nearly real P_plus/P_minus
+    if (XT::Common::imag(T * lambda_plus * T_inv).infinity_norm() > 1e-5)
+      DUNE_THROW(Exceptions::operator_error,
+                 "P_plus has nontrivial imaginary part!"
+                     << "\n\nT * lambda_plus * T_inv = \n"
+                     << T * lambda_plus * T_inv
+                     << "\n\n|| imag(T * lambda_plus * T_inv) ||_L^\\infty = "
+                     << XT::Common::imag(T * lambda_plus * T_inv).infinity_norm());
+    if (XT::Common::imag(T * lambda_minus * T_inv).infinity_norm() > 1e-5)
+      DUNE_THROW(Exceptions::operator_error,
+                 "P_minus has nontrivial imaginary part!"
+                     << "\n\nT * lambda_minus * T_inv = \n"
+                     << T * lambda_minus * T_inv
+                     << "\n\n|| imag(T * lambda_minus * T_inv) ||_L^\\infty = "
+                     << XT::Common::imag(T * lambda_minus * T_inv).infinity_norm());
+#endif // DUNE_GDT_DISABLE_CHECKS
+    // strip remaining complex parts
+    const auto P_plus = XT::Common::real(T * lambda_plus * T_inv);
+    const auto P_minus = XT::Common::real(T * lambda_minus * T_inv);
     return P_plus * u + P_minus * v;
   } // ... apply(...)
 
