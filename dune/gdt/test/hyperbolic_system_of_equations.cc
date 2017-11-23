@@ -32,6 +32,7 @@
 
 #include <dune/grid/common/rangegenerators.hh>
 
+#include <dune/xt/common/vector.hh>
 #include <dune/xt/la/container/common.hh>
 #include <dune/xt/la/container/eigen.hh>
 #include <dune/xt/la/eigen-solver.hh>
@@ -73,9 +74,11 @@ using RangeType = XT::Common::FieldVector<D, m>;
 
 GTEST_TEST(empty, main)
 {
-  auto grid =
-      XT::Grid::make_cube_grid<G>(DomainType(-1.), DomainType(1.), XT::Common::FieldVector<unsigned int, d>(128));
-  grid.global_refine(1);
+  auto grid = XT::Grid::make_cube_grid<G>(
+      DomainType(DXTC_CONFIG.get("grid.lower_left", -1.)),
+      DomainType(DXTC_CONFIG.get("grid.upper_right", 1.)),
+      XT::Common::FieldVector<unsigned int, d>(DXTC_CONFIG.get("grid.num_elements_per_dim", 32u)));
+  grid.global_refine(DXTC_CONFIG.get("grid.global_refine", 1));
 
   auto leaf_layer = grid.leaf_view();
   std::cout << "grid has " << leaf_layer.indexSet().size(0) << " elements" << std::endl;
@@ -83,7 +86,7 @@ GTEST_TEST(empty, main)
   auto& grid_layer = periodic_leaf_layer;
   using GL = std::decay_t<decltype(grid_layer)>;
 
-  const double gamma = 1.4; // air or water at roughly 20 deg Cels.
+  const double gamma = DXTC_CONFIG.get("problem.gamma", 1.4); // air or water at roughly 20 deg Cels.
   EulerTools<d> euler_tools(gamma);
 
   using U = XT::Functions::LocalizableFunctionInterface<E, D, d, R, m>;
@@ -130,15 +133,36 @@ GTEST_TEST(empty, main)
       /*order=*/0,
       /*parameter_type=*/{},
       /*name=*/"periodic_initial_values_euler");
-  const auto& u_0 = initial_values_euler;
+  const U0 periodic_initial_values_euler_no_y_variation(
+      [&](const auto& xx, const auto& /*mu*/) {
+        FieldVector<R, m> primitive_variables(0.);
+        // density
+        if (-0.5 <= xx[0] && xx[0] <= 0)
+          primitive_variables[0] = 4.;
+        else
+          primitive_variables[0] = 1.;
+        // velocity
+        for (size_t ii = 0; ii < d; ++ii)
+          primitive_variables[1 + ii] = 0.;
+        // pressure
+        if (-0.5 <= xx[0] && xx[0] <= 0)
+          primitive_variables[m - 1] = 1.6;
+        else
+          primitive_variables[m - 1] = 0.4;
+        return euler_tools.to_conservative(primitive_variables);
+      },
+      /*order=*/0,
+      /*parameter_type=*/{},
+      /*name=*/"periodic_initial_values_euler_no_y_variation");
+  const auto& u_0 = periodic_initial_values_euler;
   euler_tools.visualize(u_0, grid_layer, "initial_values");
 
   using I = XT::Grid::extract_intersection_t<GL>;
   XT::Grid::NormalBasedBoundaryInfo<I> boundary_info;
-  boundary_info.register_new_normal({-1, 0}, new XT::Grid::InflowOutflowBoundary());
-  boundary_info.register_new_normal({1, 0}, new XT::Grid::InflowOutflowBoundary());
-  //  boundary_info.register_new_normal({0, -1}, new XT::Grid::ImpermeableBoundary());
-  //  boundary_info.register_new_normal({0, 1}, new XT::Grid::ImpermeableBoundary());
+  boundary_info.register_new_normal({-1, 0}, new XT::Grid::ImpermeableBoundary());
+  boundary_info.register_new_normal({1, 0}, new XT::Grid::ImpermeableBoundary());
+  boundary_info.register_new_normal({0, -1}, new XT::Grid::ImpermeableBoundary());
+  boundary_info.register_new_normal({0, 1}, new XT::Grid::ImpermeableBoundary());
   XT::Grid::ApplyOn::CustomBoundaryIntersections<GL> impermeable_wall_filter(boundary_info,
                                                                              new XT::Grid::ImpermeableBoundary());
   XT::Grid::ApplyOn::CustomBoundaryIntersections<GL> inflow_outflow_filter(boundary_info,
@@ -160,7 +184,7 @@ GTEST_TEST(empty, main)
     return euler_tools.to_conservative(XT::Common::hstack(rho, velocity, pressure));
   };
 
-  const auto& impermeable_wall_treatment = euler_impermeable_wall_treatment;
+  const auto& impermeable_wall_treatment = inviscid_mirror_impermeable_wall_treatment;
 
   // see [DF2015, p. 421, (8.88)], this does not work well for slow flows!
   const auto heuristic_euler_inflow_outflow_treatment = [&](
@@ -222,10 +246,114 @@ GTEST_TEST(empty, main)
       });
   const auto& flux = euler_flux;
 
-  auto numerical_flux = GDT::make_numerical_vijayasundaram_euler_flux(flux, gamma);
+  auto numerical_flux = [&](const auto& u, const auto& v, const auto& n, const auto& /*mu*/) {
+    const auto w = 0.5 * (u + v);
+    const auto df = XT::Common::make_field_container(flux.partial_u({}, w));
+    const auto approximate_P = df * n;
+    const auto exact_P = euler_tools.flux_jacobi_matrix(w, n);
+    if ((exact_P - approximate_P).infinity_norm() > DXTC_CONFIG.get("numerical_flux.P_tolerance", 1e-14))
+      DUNE_THROW(InvalidStateException,
+                 "w = " << w << "\n\nn = " << n << "\n\ndf = " << df << "\n\nexact_P = " << std::setprecision(17)
+                        << exact_P
+                        << "\n\napproximate_P = "
+                        << std::setprecision(17)
+                        << approximate_P
+                        << "\n\n(exact_P - approximate_P).infinity_norm() = "
+                        << (exact_P - approximate_P).infinity_norm()
+                        << "\n\nexact_P - approximate_P = "
+                        << std::setprecision(17)
+                        << exact_P - approximate_P
+                        << "\n\ntolerance = "
+                        << DXTC_CONFIG.get("numerical_flux.P_tolerance", 1e-14));
+    const auto& P = approximate_P;
+    try {
+      auto eigensolver = XT::LA::make_eigen_solver(
+          P,
+          DXTC_CONFIG.has_sub("numerical_flux.eigen_solver")
+              ? DXTC_CONFIG.sub("numerical_flux.eigen_solver")
+              : XT::Common::Configuration({{"type", "lapack"},
+                                           {"assert_real_eigenvalues", "1e-15"},
+                                           {"assert_eigendecomposition", "-1"},
+                                           {"matrix-inverter.type", "moore_penrose"},
+                                           {"matrix-inverter.post_check_is_left_inverse", "-1"},
+                                           {"matrix-inverter.post_check_is_right_inverse", "-1"}}));
+      const auto& evs = eigensolver.eigenvalues();
+      const auto& T = eigensolver.eigenvectors();
+      const auto& T_inv = eigensolver.eigenvectors_inverse();
+      auto lambda_plus = XT::Common::zeros_like(T);
+      auto lambda_minus = XT::Common::zeros_like(T);
+      for (size_t ii = 0; ii < m; ++ii) {
+        const auto& complex_ev = evs[ii];
+        if (std::abs(complex_ev.imag()) > DXTC_CONFIG.get("numerical_flux.eigenvalues_imag_tolerance", 1e-15))
+          DUNE_THROW(Exceptions::operator_error,
+                     "Eigendecomposition gave eigenvalues with nontrivial complex part!"
+                         << "\n\nw = "
+                         << w
+                         << "\n\nn = "
+                         << n
+                         << "\n\neigenvalues = \n"
+                         << evs
+                         << "\n\neigenvectors = \n"
+                         << T
+                         << "\n\neigenvectors_inverse = \n"
+                         << T_inv);
+        const auto& real_ev = complex_ev.real();
+        XT::Common::set_matrix_entry(lambda_plus, ii, ii, std::max(real_ev, 0.));
+        XT::Common::set_matrix_entry(lambda_minus, ii, ii, std::min(real_ev, 0.));
+      }
+      // ensure nearly real P_plus/P_minus
+      if (XT::Common::imag(T * lambda_plus * T_inv).infinity_norm()
+          > DXTC_CONFIG.get("numerical_flux.P_plus_minus_tolerance", 1e-15))
+        DUNE_THROW(Exceptions::operator_error,
+                   "P_plus has nontrivial imaginary part!"
+                       << "\n\nT * lambda_plus * T_inv = \n"
+                       << T * lambda_plus * T_inv
+                       << "\n\n|| imag(T * lambda_plus * T_inv) ||_L^\\infty = "
+                       << XT::Common::imag(T * lambda_plus * T_inv).infinity_norm());
+      if (XT::Common::imag(T * lambda_minus * T_inv).infinity_norm()
+          > DXTC_CONFIG.get("numerical_flux.P_plus_minus_tolerance", 1e-15))
+        DUNE_THROW(Exceptions::operator_error,
+                   "P_minus has nontrivial imaginary part!"
+                       << "\n\nT * lambda_minus * T_inv = \n"
+                       << T * lambda_minus * T_inv
+                       << "\n\n|| imag(T * lambda_minus * T_inv) ||_L^\\infty = "
+                       << XT::Common::imag(T * lambda_minus * T_inv).infinity_norm());
+      // strip remaining complex parts
+      const auto P_plus = XT::Common::real(T * lambda_plus * T_inv);
+      const auto P_minus = XT::Common::real(T * lambda_minus * T_inv);
+      return P_plus * u + P_minus * v;
+    } catch (const XT::LA::Exceptions::eigen_solver_failed& ee) {
+      DUNE_THROW(InvalidStateException,
+                 "There was no eigensolver that could provide a real eigendecomposition!"
+                 "\n\nw = "
+                     << w
+                     << "\n\nn = "
+                     << n
+                     << "\n\ndf = "
+                     << df
+                     << "\n\nexact_P = "
+                     << euler_tools.flux_jacobi_matrix(w, n)
+                     << "\n\nP = "
+                     << P
+                     << "\n\nexact_eigenvalues = "
+                     << std::setprecision(17)
+                     << euler_tools.eigenvalues_flux_jacobi_matrix(w, n)
+                     << "\n\nexact_eigenvectors = "
+                     << std::setprecision(17)
+                     << euler_tools.eigenvectors_flux_jacobi_matrix(w, n)
+                     << "\n\nexact_eigenvectors_inv = "
+                     << std::setprecision(17)
+                     << euler_tools.eigenvectors_inv_flux_jacobi_matrix(w, n)
+                     << "\n\nThis was the original error: "
+                     << ee.what());
+    }
+  };
   using OpType = GDT::AdvectionFvOperator<DF>;
-  OpType advec_op(
-      grid_layer, numerical_flux, /*periodicity_restriction=*/impermeable_wall_filter && inflow_outflow_filter);
+  OpType advec_op(grid_layer,
+                  flux,
+                  numerical_flux,
+                  {},
+                  /*periodicity_restriction=*/impermeable_wall_filter && inflow_outflow_filter);
   // non-periodic boundary treatment
   advec_op.append(impermeable_wall_treatment, impermeable_wall_filter.copy());
   advec_op.append(inflow_outflow_treatment, inflow_outflow_filter.copy());
