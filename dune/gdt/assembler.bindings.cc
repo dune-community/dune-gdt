@@ -35,13 +35,6 @@ PYBIND11_PLUGIN(__assembler)
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
-  py::module::import("dune.xt.common");
-  py::module::import("dune.xt.grid");
-  py::module::import("dune.xt.functions");
-  py::module::import("dune.xt.la");
-  py::module::import("dune.gdt.__spaces");
-  py::module::import("dune.gdt.__local_elliptic_ipdg_operators");
-
   py::class_<Dune::GDT::bindings::ResultStorage> ResultStorage(m, "ResultStorage", "dune-gdt: ResultStorage");
   ResultStorage.def(pybind11::init<>());
   ResultStorage.def_property(

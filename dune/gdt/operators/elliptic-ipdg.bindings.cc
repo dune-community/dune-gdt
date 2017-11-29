@@ -34,13 +34,6 @@ PYBIND11_PLUGIN(__operators_elliptic_ipdg)
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
-  py::module::import("dune.xt.common");
-  py::module::import("dune.xt.grid");
-  py::module::import("dune.xt.functions");
-  py::module::import("dune.xt.la");
-  py::module::import("dune.gdt.__spaces");
-  py::module::import("dune.gdt.__discretefunction");
-
 // alu_istl.cc
 #if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
   DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, leaf, view, dg, gdt, 1, istl_sparse);

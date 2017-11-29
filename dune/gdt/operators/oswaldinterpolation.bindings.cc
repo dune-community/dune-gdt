@@ -37,13 +37,6 @@ PYBIND11_PLUGIN(__operators_oswaldinterpolation)
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
-  py::module::import("dune.xt.common");
-  py::module::import("dune.xt.grid");
-  py::module::import("dune.xt.functions");
-  py::module::import("dune.xt.la");
-  py::module::import("dune.gdt.__spaces");
-  py::module::import("dune.gdt.__discretefunction");
-
 #if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
   Dune::GDT::bindings::OswaldInterpolationOperator<ALU_2D_SIMPLEX_CONFORMING,
                                                    Dune::GDT::SpaceType::block_dg,

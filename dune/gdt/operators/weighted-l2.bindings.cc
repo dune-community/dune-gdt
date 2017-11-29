@@ -40,13 +40,6 @@ PYBIND11_PLUGIN(__operators_weighted_l2)
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
-  py::module::import("dune.xt.common");
-  py::module::import("dune.xt.grid");
-  py::module::import("dune.xt.functions");
-  py::module::import("dune.xt.la");
-  py::module::import("dune.gdt.__spaces");
-  py::module::import("dune.gdt.__discretefunction");
-
 #if HAVE_DUNE_ALUGRID
   Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
   Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::level, Backends::view>::bind(m);
