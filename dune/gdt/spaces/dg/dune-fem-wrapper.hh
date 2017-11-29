@@ -198,7 +198,4 @@ class DuneFemDgSpaceWrapper
 } // namespace Dune
 
 
-#include "dune-fem-wrapper.lib.hh"
-
-
 #endif // DUNE_GDT_SPACES_DG_DUNE_FEM_WRAPPER_HH
