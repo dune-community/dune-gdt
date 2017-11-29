@@ -62,6 +62,13 @@ PYBIND11_PLUGIN(__operators_l2)
 
   Dune::GDT::bindings::L2MatrixOperator<ALU_2D_SIMPLEX_CONFORMING,
                                         Layers::dd_subdomain,
+                                        SpaceType::block_dg,
+                                        GDT::Backends::fem,
+                                        1,
+                                        1,
+                                        LA::Backends::istl_sparse>::bind(m);
+  Dune::GDT::bindings::L2MatrixOperator<ALU_2D_SIMPLEX_CONFORMING,
+                                        Layers::dd_subdomain,
                                         SpaceType::dg,
                                         GDT::Backends::gdt,
                                         1,
