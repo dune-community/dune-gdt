@@ -59,7 +59,15 @@ PYBIND11_PLUGIN(__operators_l2)
 
 #if HAVE_DUNE_ALUGRID
   bind_l2_localizable_product<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, XT::Grid::Backends::part>(m);
+  bind_l2_localizable_product<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, XT::Grid::Backends::part>(m);
 #if HAVE_DUNE_FEM
+  Dune::GDT::bindings::L2MatrixOperator<ALU_2D_SIMPLEX_CONFORMING,
+                                        Layers::dd_subdomain,
+                                        SpaceType::block_dg,
+                                        GDT::Backends::fem,
+                                        1,
+                                        1,
+                                        LA::Backends::istl_sparse>::bind(m);
   Dune::GDT::bindings::L2MatrixOperator<ALU_2D_SIMPLEX_CONFORMING,
                                         Layers::dd_subdomain,
                                         SpaceType::dg,
