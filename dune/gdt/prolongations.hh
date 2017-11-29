@@ -15,6 +15,7 @@
 #include <dune/xt/grid/layers.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/playground/spaces/block.hh>
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/cg/interface.hh>
 
@@ -71,6 +72,22 @@ prolong(const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
 {
   prolong_l2(source, range, over_integrate);
 }
+
+
+template <class SourceSpaceType, class SourceVectorType, class RangeSpaceType, class RangeVectorType>
+void prolong(const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
+             DiscreteFunction<BlockSpace<RangeSpaceType>, RangeVectorType>& range,
+             const size_t over_integrate = 0)
+{
+  const auto& block_space = range.space();
+  for (size_t subdomain = 0; subdomain < block_space.dd_grid().size(); ++subdomain) {
+    const auto& local_space = block_space.local_space(subdomain);
+    auto subdomain_range = make_discrete_function<RangeVectorType>(local_space);
+    prolong(source, subdomain_range, over_integrate);
+    for (size_t ii = 0; ii < local_space.mapper().size(); ++ii)
+      range.vector()[block_space.mapper().mapToGlobal(subdomain, ii)] = subdomain_range.vector()[ii];
+  }
+} // ... prolong(...)
 
 
 } // namespace GDT
