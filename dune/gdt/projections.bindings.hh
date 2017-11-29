@@ -17,6 +17,7 @@
 #include <dune/xt/la/container.bindings.hh>
 
 #include <dune/gdt/spaces.bindings.hh>
+#include <dune/gdt/playground/spaces/block.bindings.hh>
 #include <dune/gdt/type_traits.hh>
 
 #include "projections.hh"
@@ -109,6 +110,9 @@ public:
   _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, gdt, cg, 1, _la);                                             \
   _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, gdt, fv, 0, _la);                                                    \
   _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, gdt, dg, 1, _la)
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, gdt, block_cg, 1, _la);                                       \
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, gdt, block_dg, 1, _la)
+
 
 
 #define _DUNE_GDT_PROJECTIONS_BIND_ALL_SPACES(_m, _la) _DUNE_GDT_PROJECTIONS_BIND_DEFAULT(_m, _la);
