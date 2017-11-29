@@ -13,12 +13,16 @@ from importlib import import_module
 import numpy as np
 
 from dune.xt.common import DEBUG # inits MPI via mpi4py
+import dune.xt.la
+import dune.xt.grid
+import dune.xt.functions
 
 _init_logger_methods = list()
 _test_logger_methods = list()
 _init_mpi_methods = list()
 _other_modules = ('xt.common', 'xt.grid', 'xt.functions', 'xt.la')
 
+# The ordering of these module imports matter, do not change unless you know what you are doing!
 _gdt_modules = ['spaces',
                 'spaces_block',
                 'local_diffusive_flux_estimation_operator',

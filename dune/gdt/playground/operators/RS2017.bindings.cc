@@ -1621,11 +1621,6 @@ PYBIND11_PLUGIN(__operators_RS2017)
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
-  py::module::import("dune.xt.common");
-  py::module::import("dune.xt.grid");
-  py::module::import("dune.xt.functions");
-  py::module::import("dune.xt.la");
-
 #if HAVE_DUNE_ALUGRID
   SwipdgPenaltySubdomainProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
   SwipdgPenaltyNeighborhoodProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);

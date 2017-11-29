@@ -35,11 +35,6 @@ PYBIND11_PLUGIN(__local_diffusive_flux_estimation_operator)
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
-  py::module::import("dune.xt.common");
-  py::module::import("dune.xt.grid");
-  py::module::import("dune.xt.functions");
-  py::module::import("dune.xt.la");
-
   DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(m);
 
   m.def("_init_mpi",

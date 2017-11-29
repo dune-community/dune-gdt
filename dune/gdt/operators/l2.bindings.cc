@@ -57,13 +57,6 @@ PYBIND11_PLUGIN(__operators_l2)
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
-  py::module::import("dune.xt.common");
-  py::module::import("dune.xt.grid");
-  py::module::import("dune.xt.functions");
-  py::module::import("dune.xt.la");
-  py::module::import("dune.gdt.__spaces");
-  py::module::import("dune.gdt.__discretefunction");
-
 #if HAVE_DUNE_ALUGRID
   bind_l2_localizable_product<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, XT::Grid::Backends::part>(m);
 #if HAVE_DUNE_FEM
