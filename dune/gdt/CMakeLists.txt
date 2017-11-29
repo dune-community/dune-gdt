@@ -9,23 +9,6 @@
 #   Rene Milk       (2017 - 2018)
 #   Tobias Leibner  (2017)
 
-if(DUNE_XT_WITH_PYTHON_BINDINGS)
-  set(dunegdt_sources
-      assembler/system.lib/alu_2d_simplex_conforming.cc
-      assembler/system.lib/yasp_1d_equidistant_offset.cc
-      assembler/system.lib/yasp_2d_equidistant_offset.cc
-      assembler/system.lib/yasp_3d_equidistant_offset.cc
-      spaces/cg.lib/alu_2d_simplex_conforming.cc
-      spaces/cg.lib/yasp_1d_equidistant_offset.cc
-      spaces/cg.lib/yasp_2d_equidistant_offset.cc
-      spaces/cg.lib/yasp_3d_equidistant_offset.cc
-      spaces/dg.lib/alu_2d_simplex_conforming.cc
-      spaces/dg.lib/yasp_1d_equidistant_offset.cc
-      spaces/dg.lib/yasp_2d_equidistant_offset.cc
-      spaces/dg.lib/yasp_3d_equidistant_offset.cc)
-  dune_library_add_sources(dunegdt SOURCES ${dunegdt_sources})
-endif()
-
 if(dune-pybindxi_FOUND)
   set(pybindxi_modules)
   # some top-level modules

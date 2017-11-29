@@ -35,13 +35,7 @@ include(DuneUtils)
 
 # start a dune project with information from dune.module
 dune_project()
-if(DUNE_XT_WITH_PYTHON_BINDINGS)
-  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune
-                           MODULE_LIBRARIES dunegdt)
-else()
-  dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune)
-endif()
-
+dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune)
 
 add_header_listing()
 make_dependent_modules_sys_included()
