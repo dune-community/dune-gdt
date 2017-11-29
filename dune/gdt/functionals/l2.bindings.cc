@@ -34,12 +34,6 @@ PYBIND11_PLUGIN(__functionals_l2)
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
-  py::module::import("dune.xt.common");
-  py::module::import("dune.xt.grid");
-  py::module::import("dune.xt.functions");
-  py::module::import("dune.xt.la");
-  py::module::import("dune.gdt.__spaces");
-
   // alu_istl.cc
   DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, leaf, view, dg, gdt, 1, istl_sparse);
   DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, level, view, dg, gdt, 1, istl_sparse);

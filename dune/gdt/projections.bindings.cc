@@ -35,12 +35,6 @@ PYBIND11_PLUGIN(__projections)
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
-  py::module::import("dune.xt.common");
-  py::module::import("dune.xt.grid");
-  py::module::import("dune.xt.functions");
-  py::module::import("dune.xt.la");
-  py::module::import("dune.gdt.__spaces");
-
   DUNE_GDT_PROJECTIONS_BIND(m);
   DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(m);
 

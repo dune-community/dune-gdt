@@ -34,13 +34,6 @@ PYBIND11_PLUGIN(__discretefunction)
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
-  py::module::import("dune.xt.common");
-  py::module::import("dune.xt.grid");
-  py::module::import("dune.xt.functions");
-  py::module::import("dune.xt.la");
-  py::module::import("dune.gdt.__spaces");
-  py::module::import("dune.gdt.__spaces_block");
-
   DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m);
 
   m.def("_init_mpi",

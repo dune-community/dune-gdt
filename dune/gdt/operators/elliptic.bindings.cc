@@ -34,13 +34,6 @@ PYBIND11_PLUGIN(__operators_elliptic)
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
-  py::module::import("dune.xt.common");
-  py::module::import("dune.xt.grid");
-  py::module::import("dune.xt.functions");
-  py::module::import("dune.xt.la");
-  py::module::import("dune.gdt.__spaces");
-  py::module::import("dune.gdt.__discretefunction");
-
   DUNE_GDT_OPERATORS_ELLIPTIC_BIND_ISTL(m);
 
   m.def("_init_mpi",
