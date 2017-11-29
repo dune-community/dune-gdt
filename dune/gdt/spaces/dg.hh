@@ -99,28 +99,27 @@ public:
   typedef typename XT::Grid::Layer<GridType, grid_layer, layer_backend>::type GridLayerType;
 
 private:
-  typedef typename DgSpaceProvider<GridType,
-                                   grid_layer,
-                                   space_backend,
-                                   polOrder,
-                                   RangeFieldType,
-                                   dimRange,
-                                   dimRangeCols,
-                                   layer_backend>::Type LocalType;
+  using LocalProviderType = DgSpaceProvider<GridType,
+                                            grid_layer,
+                                            space_backend,
+                                            polOrder,
+                                            RangeFieldType,
+                                            dimRange,
+                                            dimRangeCols,
+                                            layer_backend>;
+  using LocalType = typename LocalProviderType::Type;
 
 public:
-  typedef GDT::BlockSpace<LocalType> Type;
+  typedef BlockSpace<LocalType> Type;
   typedef Type type;
 
-  static Type create(GridLayerType /*grid_layer*/)
-  {
-    DUNE_THROW(NotImplemented, "Only usable to extract the correct type");
-  }
-
   template <class DdGridType>
-  static Type create(XT::Grid::GridProvider<GridType, DdGridType>& /*grid_provider*/, const int /*level*/ = 0)
+  static Type create(XT::Grid::GridProvider<GridType, DdGridType>& grid_provider, const int /*level*/ = 0)
   {
-    DUNE_THROW(NotImplemented, "Only usable to extract the correct type");
+    std::vector<std::shared_ptr<const LocalType>> local_spaces;
+    for (size_t ii = 0; ii < grid_provider.dd_grid().size(); ++ii)
+      local_spaces.emplace_back(new LocalType(LocalProviderType::create(grid_provider)));
+    return Type(grid_provider.dd_grid(), local_spaces);
   }
 }; // class BlockDgSpaceProvider
 
