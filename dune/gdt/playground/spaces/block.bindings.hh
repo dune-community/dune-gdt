@@ -123,7 +123,7 @@ public:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    const auto ClassName = XT::Common::to_camel_case("block_" + space_name<SP>::value() + "_mappe");
+    const auto ClassName = XT::Common::to_camel_case("block_" + space_name<SP>::value() + "_mapper");
 
     bound_type c(m, ClassName.c_str());
 
@@ -271,7 +271,11 @@ private:
 public:
   static bound_type bind(pybind11::module& m)
   {
-    BlockMapper<SP>::bind(m);
+    try {
+      BlockMapper<SP>::bind(m);
+    } catch (const std::runtime_error&) {
+      // already exists
+    }
 
     namespace py = pybind11;
     using namespace pybind11::literals;
