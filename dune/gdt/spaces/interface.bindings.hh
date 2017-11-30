@@ -25,9 +25,6 @@
 #include <dune/gdt/type_traits.hh>
 
 #include "interface.hh"
-#include "cg.hh"
-#include "dg.hh"
-#include "fv.hh"
 
 namespace Dune {
 namespace GDT {

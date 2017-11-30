@@ -21,8 +21,22 @@
 #include <dune/pybindxi/stl.h>
 
 #include <dune/xt/common/bindings.hh>
+#include <dune/xt/grid/grids.hh>
 
-#include "spaces.bindings.hh"
+#include "spaces/interface.bindings.hh"
+#include "spaces.hh"
+
+
+#define DUNE_GDT_SPACES_BIND(_m, _GRID, _layer, _space_type, _space_backend, _p, _r, _rC, _grid_backend)               \
+  Dune::GDT::bindings::SpaceInterface<Dune::GDT::SpaceProvider<_GRID,                                                  \
+                                                               Dune::XT::Grid::Layers::_layer,                         \
+                                                               Dune::GDT::SpaceType::_space_type,                      \
+                                                               Dune::GDT::Backends::_space_backend,                    \
+                                                               _p,                                                     \
+                                                               double,                                                 \
+                                                               _r,                                                     \
+                                                               _rC,                                                    \
+                                                               Dune::XT::Grid::Backends::_grid_backend>>::bind(_m)
 
 
 PYBIND11_PLUGIN(__spaces)
@@ -34,10 +48,10 @@ PYBIND11_PLUGIN(__spaces)
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
-  DUNE_GDT_SPACES_CG_BIND(m);
-  DUNE_GDT_SPACES_DG_BIND(m);
-  DUNE_GDT_SPACES_FV_BIND(m);
-  DUNE_GDT_SPACES_RT_BIND(m);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, fem, 1, 1, 1, part);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, fem, 2, 1, 1, part);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, dg, fem, 1, 1, 1, part);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, rt, pdelab, 0, 2, 1, view);
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {
