@@ -16,6 +16,7 @@
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/type_traits.hh>
+#include <dune/gdt/assembler/system.bindings.hh>
 
 #include "base.hh"
 
@@ -31,24 +32,34 @@ class MatrixOperatorBase
 
 public:
   typedef OperatorType type;
-  typedef GDT::SystemAssembler<typename OperatorType::RangeSpaceType,
-                               typename OperatorType::GridLayerType,
-                               typename OperatorType::SourceSpaceType>
-      BaseType;
+  using R = typename OperatorType::RangeSpaceType;
+  using S = typename OperatorType::RangeSpaceType;
+  using GL = typename OperatorType::GridLayerType;
+  typedef GDT::SystemAssembler<R, GL, S> BaseType;
   typedef pybind11::class_<type, BaseType> bound_type;
 
 private:
-  typedef typename type::RangeSpaceType R;
-  typedef typename type::SourceSpaceType S;
   typedef typename XT::LA::Container<typename type::FieldType, type::MatrixType::vector_type>::VectorType V;
 
-public:
-  template <bool same_spaces =
-                std::is_same<typename OperatorType::RangeSpaceType, typename OperatorType::SourceSpaceType>::value,
+  template <bool same_spaces = std::is_same<R, S>::value,
+            bool same_layer =
+                std::is_same<GL, typename R::GridLayerType>::value&& std::is_same<GL, typename S::GridLayerType>::value,
             bool anything = true>
-  struct induced_norm
+  struct addbind_switch
   {
-    static void addbind(bound_type& c)
+    static void induced_norm(bound_type& /*c*/)
+    {
+    }
+
+    static void pattern(bound_type& /*c*/)
+    {
+    }
+  };
+
+  template <bool anything>
+  struct addbind_switch<true, true, anything>
+  {
+    static void induced_norm(bound_type& c)
     {
       namespace py = pybind11;
       using namespace pybind11::literals;
@@ -60,33 +71,53 @@ public:
             },
             "range"_a);
       c.def("induced_norm",
-            [](type& self, const GDT::ConstDiscreteFunction<R, V>& range) {
+            [](type& self, const GDT::ConstDiscreteFunction<S, V>& range) {
               py::gil_scoped_release DUNE_UNUSED(release);
               return self.induced_norm(range);
             },
             "range"_a);
+    } // ... induced_norm(...)
+
+    static void pattern(bound_type& c)
+    {
+      c.def_static("pattern", [](const R& space) { return type::pattern(space); });
+      addbind_switch<false, true>::induced_norm(c);
     }
-  }; // struct induced_norm
+  }; // struct addbind_switch<true, true, ...>
 
   template <bool anything>
-  struct induced_norm<false, anything>
+  struct addbind_switch<false, true, anything>
   {
-    static void addbind(bound_type& /*c*/)
+    static void induced_norm(bound_type& /*c*/)
     {
     }
-  };
 
-  static bound_type bind(pybind11::module& m, const std::string& class_id)
+    static void pattern(bound_type& c)
+    {
+      c.def_static("pattern", [](const R& range_space, const S& source_space) {
+        return type::pattern(range_space, source_space);
+      });
+    }
+  }; // struct addbind_switch<true, true, ...>
+
+public:
+  static bound_type bind(pybind11::module& m,
+                         const std::string& class_id,
+                         const std::string& test_space_name,
+                         const std::string& ansatz_space_name,
+                         const std::string& grid_layer_name)
   {
+    try { //  we might not be the first to add this
+      internal::SystemAssembler<R, GL, S>::bind(m, test_space_name, ansatz_space_name, grid_layer_name);
+    } catch (const std::runtime_error&) {
+    }
+
     namespace py = pybind11;
     using namespace pybind11::literals;
 
     bound_type c(m, std::string(class_id).c_str(), std::string(class_id).c_str());
-
-    // Does not work if the grid layer of the operator is not the same as the one from the space:
-    // c.def_static("pattern", [](const R& space) { return type::pattern(space); });
-
     // from MatrixOperatorBase
+    addbind_switch<>::pattern(c);
     c.def("pattern",
           [](type& self) { return self.pattern(self.range_space(), self.source_space(), self.grid_layer()); });
     c.def("matrix", [](type& self) { return self.matrix(); });
@@ -177,8 +208,7 @@ public:
           },
           "range"_a,
           "source"_a);
-
-    induced_norm<>::addbind(c);
+    addbind_switch<>::induced_norm(c);
 
     return c;
   } // ... bind(...)
