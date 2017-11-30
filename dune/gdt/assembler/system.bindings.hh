@@ -365,61 +365,6 @@ public:
 DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB(extern template);
 
 // end: this is what we need for the lib
-// begin: this is what we need for the .so
-
-
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND(_m, _G, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC) \
-  Dune::GDT::bindings::SystemAssembler<Dune::GDT::SpaceProvider<_G,                                                    \
-                                                                Dune::XT::Grid::Layers::_s_grid_layer,                 \
-                                                                Dune::GDT::SpaceType::_s_type,                         \
-                                                                Dune::GDT::Backends::_s_backend,                       \
-                                                                _p,                                                    \
-                                                                double,                                                \
-                                                                _r,                                                    \
-                                                                _rC>,                                                  \
-                                       Dune::XT::Grid::Layers::_g_layer,                                               \
-                                       Dune::XT::Grid::Backends::_g_backend>::bind(_m)
-
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_YASP(_m, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)
-//  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND(                                                                                     \
-//      _m, YASP_1D_EQUIDISTANT_OFFSET, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC);          \
-//  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND(                                                                                     \
-//      _m, YASP_2D_EQUIDISTANT_OFFSET, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)
-
-#if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALU(_m, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC) \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND(                                                                                     \
-      _m, ALU_2D_SIMPLEX_CONFORMING, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)
-#else
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALU(_m, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)
-#endif
-
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(                                                                     \
-    _m, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)                                         \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_YASP(_m, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC);     \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALU(_m, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)
-
-#if HAVE_DUNE_FEM
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_m, _s_type, _p, _r, _rC)                                                  \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, leaf, part, _s_type, fem, leaf, _p, 1, 1);                             \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, level, part, _s_type, fem, level, _p, 1, 1);                           \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain, part, _s_type, fem, dd_subdomain, _p, 1, 1)
-#else
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_m, _s_type, _p, _r, _rC)
-#endif
-
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT(_m, _s_type, _p, _r, _rC)                                                  \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, leaf, view, _s_type, gdt, leaf, _p, 1, 1);                             \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, level, view, _s_type, gdt, level, _p, 1, 1)
-
-#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND(_m)                                                                             \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_m, cg, 1, 1, 1);                                                                \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_m, dg, 1, 1, 1);                                                                \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain_boundary, part, dg, fem, dd_subdomain, 1, 1, 1);          \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain_coupling, part, dg, fem, dd_subdomain, 1, 1, 1);          \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT(_m, fv, 0, 1, 1)
-
-// end: this is what we need for the .so
 
 
 #endif // HAVE_DUNE_PYBINDXI
