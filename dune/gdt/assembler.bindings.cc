@@ -46,6 +46,19 @@
           addbind<Dune::XT::LA::Backends::_la>(dirichlet_constraints_##_GRID##_##_layer##_##_backend)
 
 
+#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND(_m, _G, _s_grid_layer, _s_type, _s_backend, _p, _r, _rC, _g_layer, _g_backend)  \
+  Dune::GDT::bindings::SystemAssembler<Dune::GDT::SpaceProvider<_G,                                                    \
+                                                                Dune::XT::Grid::Layers::_s_grid_layer,                 \
+                                                                Dune::GDT::SpaceType::_s_type,                         \
+                                                                Dune::GDT::Backends::_s_backend,                       \
+                                                                _p,                                                    \
+                                                                double,                                                \
+                                                                _r,                                                    \
+                                                                _rC>,                                                  \
+                                       Dune::XT::Grid::Layers::_g_layer,                                               \
+                                       Dune::XT::Grid::Backends::_g_backend>::bind(_m)
+
+
 PYBIND11_PLUGIN(__assembler)
 {
   namespace py = pybind11;
@@ -67,7 +80,12 @@ PYBIND11_PLUGIN(__assembler)
   DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, part, "dd_subdomain");
   DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, part, istl_sparse);
 
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, fem, 1, 1, 1, leaf, part);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, dg, fem, 1, 1, 1, dd_subdomain, part);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(
+      m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, dg, fem, 1, 1, 1, dd_subdomain_boundary, part);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(
+      m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, dg, fem, 1, 1, 1, dd_subdomain_coupling, part);
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {
