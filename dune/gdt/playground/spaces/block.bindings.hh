@@ -9,7 +9,7 @@
 
 #ifndef DUNE_GDT_PLAYGROUND_SPACES_BLOCK_BINDINGS_HH
 #define DUNE_GDT_PLAYGROUND_SPACES_BLOCK_BINDINGS_HH
-//#if HAVE_DUNE_PYBINDXI
+#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -416,39 +416,5 @@ public:
 } // namespace Dune
 
 
-// begin: this is what we need for the .so
-
-#define _DUNE_GDT_SPACES_BLOCK_BIND(_m, _GRID, _s_type, _s_backend, _p)                                                \
-  Dune::GDT::bindings::BlockSpace<Dune::GDT::SpaceProvider<_GRID,                                                      \
-                                                           Dune::XT::Grid::Layers::dd_subdomain,                       \
-                                                           Dune::GDT::SpaceType::_s_type,                              \
-                                                           Dune::GDT::Backends::_s_backend,                            \
-                                                           _p,                                                         \
-                                                           double,                                                     \
-                                                           1,                                                          \
-                                                           1>>::bind(_m)
-
-#if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_SPACES_BLOCK_BIND_ALU(_m, _s_type, _s_backend, _p)                                                   \
-  _DUNE_GDT_SPACES_BLOCK_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, _s_type, _s_backend, _p)
-#else
-#define _DUNE_GDT_SPACES_BLOCK_BIND_ALU(_m, _s_type, _s_backend, _p)
-#endif
-
-#define _DUNE_GDT_SPACES_BLOCK_BIND_YASP(_m, _s_type, _s_backend, _p)                                                  \
-  _DUNE_GDT_SPACES_BLOCK_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _s_type, _s_backend, _p);                                \
-  _DUNE_GDT_SPACES_BLOCK_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _s_type, _s_backend, _p)
-
-#define _DUNE_GDT_SPACES_BLOCK_BIND_ALL_GRIDS(_m, _s_type, _s_backend, _p)                                             \
-  _DUNE_GDT_SPACES_BLOCK_BIND_ALU(_m, _s_type, _s_backend, _p);                                                        \
-  _DUNE_GDT_SPACES_BLOCK_BIND_YASP(_m, _s_type, _s_backend, _p)
-
-
-#define DUNE_GDT_SPACES_BLOCK_BIND(_m) _DUNE_GDT_SPACES_BLOCK_BIND_ALL_GRIDS(_m, dg, gdt, 1)
-#define _DUNE_GDT_SPACES_BLOCK_BIND_FEM(_m) _DUNE_GDT_SPACES_BLOCK_BIND_ALL_GRIDS(_m, dg, gdt, 1)
-
-// end: this is what we need for the .so
-
-
-//#endif // HAVE_DUNE_PYBINDXI
+#endif // HAVE_DUNE_PYBINDXI
 #endif // DUNE_GDT_PLAYGROUND_SPACES_BLOCK_BINDINGS_HH
