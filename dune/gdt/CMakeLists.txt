@@ -16,10 +16,6 @@ if(dune-pybindxi_FOUND)
     dune_pybindxi_add_module(__${_target} EXCLUDE_FROM_ALL ${_target}.bindings.cc)
     list(APPEND pybindxi_modules __${_target})
   endforeach()
-  dune_pybindxi_add_helper_lib(__assembler_helper EXCLUDE_FROM_ALL
-                               assembler/system.bindings/alu.cc
-                               assembler/system.bindings/yasp.cc)
-  target_link_libraries(__assembler __assembler_helper)
   dune_pybindxi_add_module(__spaces_block EXCLUDE_FROM_ALL playground/spaces/block.bindings.cc)
   list(APPEND pybindxi_modules __spaces_block)
   # the local operators
@@ -31,17 +27,10 @@ if(dune-pybindxi_FOUND)
   list(APPEND pybindxi_modules __local_elliptic_ipdg_operators)
   # the operators
   # * elliptic
-  dune_pybindxi_add_helper_lib(__operators_elliptic_helper EXCLUDE_FROM_ALL
-                               operators/elliptic.bindings/istl.cc)
   dune_pybindxi_add_module(__operators_elliptic EXCLUDE_FROM_ALL operators/elliptic.bindings.cc)
-  target_link_libraries(__operators_elliptic __operators_elliptic_helper)
   list(APPEND pybindxi_modules __operators_elliptic)
   # * elliptic-ipdg
-  dune_pybindxi_add_helper_lib(__operators_elliptic_ipdg_helper EXCLUDE_FROM_ALL
-                               operators/elliptic-ipdg.bindings/alu_istl.cc
-                               operators/elliptic-ipdg.bindings/yasp_istl.cc)
   dune_pybindxi_add_module(__operators_elliptic_ipdg EXCLUDE_FROM_ALL operators/elliptic-ipdg.bindings.cc)
-  target_link_libraries(__operators_elliptic_ipdg __operators_elliptic_ipdg_helper)
   list(APPEND pybindxi_modules __operators_elliptic_ipdg)
   # * flux reconstruction
   dune_pybindxi_add_module(__operators_fluxreconstruction EXCLUDE_FROM_ALL operators/fluxreconstruction.bindings.cc)
