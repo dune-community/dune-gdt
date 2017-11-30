@@ -25,6 +25,17 @@
 #include "block.bindings.hh"
 
 
+#define DUNE_GDT_SPACES_BLOCK_BIND(_m, _GRID, _s_type, _s_backend, _p)                                                 \
+  Dune::GDT::bindings::BlockSpace<Dune::GDT::SpaceProvider<_GRID,                                                      \
+                                                           Dune::XT::Grid::Layers::dd_subdomain,                       \
+                                                           Dune::GDT::SpaceType::_s_type,                              \
+                                                           Dune::GDT::Backends::_s_backend,                            \
+                                                           _p,                                                         \
+                                                           double,                                                     \
+                                                           1,                                                          \
+                                                           1>>::bind(_m)
+
+
 PYBIND11_PLUGIN(__spaces_block)
 {
   namespace py = pybind11;
@@ -34,7 +45,7 @@ PYBIND11_PLUGIN(__spaces_block)
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
-  DUNE_GDT_SPACES_BLOCK_BIND(m);
+  DUNE_GDT_SPACES_BLOCK_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dg, fem, 1);
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {
