@@ -25,6 +25,10 @@
 #include "diffusive-flux-estimation-operator.bindings.hh"
 
 
+#define DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(_G, _m)                                                 \
+  Dune::GDT::bindings::LocalDiffusiveFluxEstimationOperator<_G>::bind(_m)
+
+
 PYBIND11_PLUGIN(__local_diffusive_flux_estimation_operator)
 {
   namespace py = pybind11;
@@ -35,7 +39,7 @@ PYBIND11_PLUGIN(__local_diffusive_flux_estimation_operator)
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
-  DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(m);
+  DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(ALU_2D_SIMPLEX_CONFORMING, m);
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {

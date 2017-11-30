@@ -93,23 +93,5 @@ public:
 } // namespace Dune
 
 
-// begin: this is what we need for the .so
-
-
-#define _DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(_G, _m)                                                \
-  Dune::GDT::bindings::LocalDiffusiveFluxEstimationOperator<_G>::bind(_m)
-
-#if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND_ALU(_m)                                                \
-  _DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(ALU_2D_SIMPLEX_CONFORMING, _m)
-#else
-#define _DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND_ALU(_m)
-#endif
-
-#define DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(_m)                                                     \
-  _DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND_ALU(_m)
-
-// end: this is what we need for the .so
-
 #endif // HAVE_DUNE_PYBINDXI
 #endif // DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BINDINGS_HH
