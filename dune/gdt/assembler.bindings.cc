@@ -46,17 +46,26 @@
           addbind<Dune::XT::LA::Backends::_la>(dirichlet_constraints_##_GRID##_##_layer##_##_backend)
 
 
-#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND(_m, _G, _s_grid_layer, _s_type, _s_backend, _p, _r, _rC, _g_layer, _g_backend)  \
+#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND(                                                                                \
+    _m, _G, _gl, _gl_backend, _t_backend, _t_type, _t_gl, _t_p, _t_r, _a_backend, _a_type, _a_gl, _a_p, _a_r)          \
   Dune::GDT::bindings::SystemAssembler<Dune::GDT::SpaceProvider<_G,                                                    \
-                                                                Dune::XT::Grid::Layers::_s_grid_layer,                 \
-                                                                Dune::GDT::SpaceType::_s_type,                         \
-                                                                Dune::GDT::Backends::_s_backend,                       \
-                                                                _p,                                                    \
+                                                                Dune::XT::Grid::Layers::_t_gl,                         \
+                                                                Dune::GDT::SpaceType::_t_type,                         \
+                                                                Dune::GDT::Backends::_t_backend,                       \
+                                                                _t_p,                                                  \
                                                                 double,                                                \
-                                                                _r,                                                    \
-                                                                _rC>,                                                  \
-                                       Dune::XT::Grid::Layers::_g_layer,                                               \
-                                       Dune::XT::Grid::Backends::_g_backend>::bind(_m)
+                                                                _t_r,                                                  \
+                                                                1>,                                                    \
+                                       Dune::XT::Grid::Layers::_gl,                                                    \
+                                       Dune::XT::Grid::Backends::_gl_backend,                                          \
+                                       Dune::GDT::SpaceProvider<_G,                                                    \
+                                                                Dune::XT::Grid::Layers::_a_gl,                         \
+                                                                Dune::GDT::SpaceType::_a_type,                         \
+                                                                Dune::GDT::Backends::_a_backend,                       \
+                                                                _a_p,                                                  \
+                                                                double,                                                \
+                                                                _a_r,                                                  \
+                                                                1>>::bind(_m)
 
 
 PYBIND11_PLUGIN(__assembler)
@@ -80,12 +89,38 @@ PYBIND11_PLUGIN(__assembler)
   DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, part, "dd_subdomain");
   DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, part, istl_sparse);
 
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, fem, 1, 1, 1, leaf, part);
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, dg, fem, 1, 1, 1, dd_subdomain, part);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, part, fem, dg, leaf, 1, 1, fem, dg, leaf, 1, 1);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, part, fem, dg, leaf, 2, 1, fem, dg, leaf, 2, 1);
   DUNE_GDT_ASSEMBLER_SYSTEM_BIND(
-      m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, dg, fem, 1, 1, 1, dd_subdomain_boundary, part);
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(
-      m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, dg, fem, 1, 1, 1, dd_subdomain_coupling, part);
+      m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, part, fem, dg, dd_subdomain, 1, 1, fem, dg, dd_subdomain, 1, 1);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m,
+                                 ALU_2D_SIMPLEX_CONFORMING,
+                                 dd_subdomain_boundary,
+                                 part,
+                                 fem,
+                                 dg,
+                                 dd_subdomain,
+                                 1,
+                                 1,
+                                 fem,
+                                 dg,
+                                 dd_subdomain,
+                                 1,
+                                 1);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m,
+                                 ALU_2D_SIMPLEX_CONFORMING,
+                                 dd_subdomain_coupling,
+                                 part,
+                                 fem,
+                                 dg,
+                                 dd_subdomain,
+                                 1,
+                                 1,
+                                 fem,
+                                 dg,
+                                 dd_subdomain,
+                                 1,
+                                 1);
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {
