@@ -27,6 +27,17 @@
 #include <dune/gdt/operators/l2.bindings.hh>
 #include <dune/gdt/playground/spaces/restricted.hh>
 
+
+#define DUNE_GDT_OPERATORS_L2_BIND(_m, _G, _gl, _s_backend, _s_type, _p, _r, _la)                                      \
+  Dune::GDT::bindings::L2MatrixOperator<_G,                                                                            \
+                                        Dune::XT::Grid::Layers::_gl,                                                   \
+                                        Dune::GDT::SpaceType::_s_type,                                                 \
+                                        Dune::GDT::Backends::_s_backend,                                               \
+                                        _p,                                                                            \
+                                        _r,                                                                            \
+                                        Dune::XT::LA::Backends::_la>::bind(m)
+
+
 using namespace Dune;
 namespace py = pybind11;
 using namespace pybind11::literals;
@@ -57,49 +68,24 @@ PYBIND11_PLUGIN(__operators_l2)
   DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.operators.l2");
 
 #if HAVE_DUNE_ALUGRID
-  bind_l2_localizable_product<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, XT::Grid::Backends::view>(m);
+  using G = ALU_2D_SIMPLEX_CONFORMING;
 
-  Dune::GDT::bindings::L2MatrixOperator<ALU_2D_SIMPLEX_CONFORMING,
-                                        Layers::dd_subdomain,
-                                        SpaceType::block_dg,
-                                        GDT::Backends::fem,
-                                        1,
-                                        1,
-                                        LA::Backends::istl_sparse>::bind(m);
-  Dune::GDT::bindings::L2MatrixOperator<ALU_2D_SIMPLEX_CONFORMING,
-                                        Layers::dd_subdomain,
-                                        SpaceType::dg,
-                                        GDT::Backends::gdt,
-                                        1,
-                                        1,
-                                        LA::Backends::istl_sparse>::bind(m);
-  Dune::GDT::bindings::L2MatrixOperator<ALU_2D_SIMPLEX_CONFORMING,
-                                        Layers::leaf,
-                                        SpaceType::dg,
-                                        GDT::Backends::gdt,
-                                        1,
-                                        1,
-                                        LA::Backends::istl_sparse>::bind(m);
-  Dune::GDT::bindings::L2MatrixOperator<ALU_2D_SIMPLEX_CONFORMING,
-                                        Layers::level,
-                                        SpaceType::dg,
-                                        GDT::Backends::gdt,
-                                        1,
-                                        1,
-                                        LA::Backends::istl_sparse>::bind(m);
+  bind_l2_localizable_product<G, Layers::dd_subdomain, XT::Grid::Backends::part>(m);
+  bind_l2_localizable_product<G, Layers::leaf, XT::Grid::Backends::part>(m);
+  DUNE_GDT_OPERATORS_L2_BIND(m, G, leaf, fem, dg, 1, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_L2_BIND(m, G, leaf, fem, dg, 2, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_L2_BIND(m, G, leaf, fem, dg, 3, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_L2_BIND(m, G, dd_subdomain, fem, block_dg, 1, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_L2_BIND(m, G, dd_subdomain, fem, dg, 1, 1, istl_sparse);
   Dune::GDT::bindings::internal::
       L2MatrixOperator<GDT::RestrictedSpace<
-                           typename GDT::SpaceProvider<ALU_2D_SIMPLEX_CONFORMING,
-                                                       Layers::leaf,
-                                                       GDT::SpaceType::rt,
-                                                       GDT::Backends::gdt,
-                                                       0,
-                                                       double,
-                                                       2>::type,
-                           typename XT::Grid::Layer<ALU_2D_SIMPLEX_CONFORMING,
+                           typename GDT::
+                               SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::pdelab, 0, double, 2>::
+                                   type,
+                           typename XT::Grid::Layer<G,
                                                     Layers::dd_subdomain,
                                                     XT::Grid::Backends::view,
-                                                    XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>::type>,
+                                                    XT::Grid::DD::SubdomainGrid<G>>::type>,
                        XT::LA::IstlRowMajorSparseMatrix<double>>::bind(m,
                                                                        "RtAlu2dSimplexLeafRestrictedSubdomainPartSpace",
                                                                        "istl_row_major_sparse_matrix_double");
