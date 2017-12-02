@@ -25,6 +25,60 @@
 #include <dune/gdt/functionals/l2.bindings.hh>
 
 
+#define DUNE_GDT_FUNCTIONALS_L2_BIND(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)                  \
+  Dune::GDT::bindings::                                                                                                \
+      L2VolumeVectorFunctional<Dune::XT::Functions::                                                                   \
+                                   LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<                      \
+                                                                    typename Dune::XT::Grid::                          \
+                                                                        Layer<_GRID,                                   \
+                                                                              Dune::XT::Grid::Layers::_layer,          \
+                                                                              Dune::XT::Grid::Backends::_g_backend,    \
+                                                                              Dune::XT::Grid::DD::                     \
+                                                                                  SubdomainGrid<_GRID>>::type>,        \
+                                                                double,                                                \
+                                                                _d,                                                    \
+                                                                double,                                                \
+                                                                1,                                                     \
+                                                                1>,                                                    \
+                               Dune::GDT::SpaceProvider<_GRID,                                                         \
+                                                        Dune::XT::Grid::Layers::_layer,                                \
+                                                        Dune::GDT::SpaceType::_s_type,                                 \
+                                                        Dune::GDT::Backends::_s_backend,                               \
+                                                        _p,                                                            \
+                                                        double,                                                        \
+                                                        1,                                                             \
+                                                        1>,                                                            \
+                               typename Dune::XT::LA::Container<double,                                                \
+                                                                Dune::XT::LA::Backends::_la>::VectorType>::bind(_m);   \
+  Dune::GDT::bindings::                                                                                                \
+      L2FaceVectorFunctional<Dune::XT::Functions::                                                                     \
+                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<                        \
+                                                                  typename Dune::XT::Grid::                            \
+                                                                      Layer<_GRID,                                     \
+                                                                            Dune::XT::Grid::Layers::_layer,            \
+                                                                            Dune::XT::Grid::Backends::_g_backend,      \
+                                                                            Dune::XT::Grid::DD::                       \
+                                                                                SubdomainGrid<_GRID>>::type>,          \
+                                                              double,                                                  \
+                                                              _d,                                                      \
+                                                              double,                                                  \
+                                                              1,                                                       \
+                                                              1>,                                                      \
+                             Dune::GDT::SpaceProvider<_GRID,                                                           \
+                                                      Dune::XT::Grid::Layers::_layer,                                  \
+                                                      Dune::GDT::SpaceType::_s_type,                                   \
+                                                      Dune::GDT::Backends::_s_backend,                                 \
+                                                      _p,                                                              \
+                                                      double,                                                          \
+                                                      1,                                                               \
+                                                      1>,                                                              \
+                             typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType,        \
+                             typename Dune::XT::Grid::Layer<_GRID,                                                     \
+                                                            Dune::XT::Grid::Layers::_layer,                            \
+                                                            Dune::XT::Grid::Backends::_g_backend,                      \
+                                                            Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>::bind(_m)
+
+
 PYBIND11_PLUGIN(__functionals_l2)
 {
   namespace py = pybind11;
@@ -33,27 +87,18 @@ PYBIND11_PLUGIN(__functionals_l2)
   py::module m("__functionals_l2", "dune-gdt: l2 functionals");
   DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.functionsl.l2");
 
+  using G = ALU_2D_SIMPLEX_CONFORMING;
 
-  // alu_istl.cc
-  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, leaf, view, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, level, view, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, dd_subdomain, view, dg, gdt, 1, istl_sparse);
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
-  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, leaf, view, cg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, level, view, cg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, dd_subdomain, view, cg, gdt, 1, istl_sparse);
-#endif
-
-// yasp_istl.cc
-#if HAVE_DUNE_ISTL
+  DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, part, dg, fem, 1, istl_sparse);
+  DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, part, dg, fem, 2, istl_sparse);
+  DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, part, dg, fem, 3, istl_sparse);
+  DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, dd_subdomain, part, dg, fem, 1, istl_sparse);
   DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, leaf, view, dg, gdt, 1, istl_sparse);
   DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, level, view, dg, gdt, 1, istl_sparse);
   DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, dd_subdomain, view, dg, gdt, 1, istl_sparse);
   DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, leaf, view, cg, gdt, 1, istl_sparse);
   DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, level, view, cg, gdt, 1, istl_sparse);
   DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, dd_subdomain, view, cg, gdt, 1, istl_sparse);
-#endif
-
 
   return m.ptr();
 }
