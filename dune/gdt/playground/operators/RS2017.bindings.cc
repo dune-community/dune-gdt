@@ -106,7 +106,11 @@ public:
         m,
         XT::Common::to_camel_case("RS2017_diffusive_flux_aa_product_matrix_operator_subdomain_"
                                   + XT::Grid::bindings::grid_name<G>::value())
-            .c_str());
+            .c_str(),
+        GDT::bindings::space_name<SP>::value(),
+        GDT::bindings::space_name<SP>::value(),
+        XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
+            + XT::Grid::bindings::backend_name<Backends::part>::value());
 
     m.def("RS2017_make_diffusive_flux_aa_product_matrix_operator_on_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
@@ -965,16 +969,15 @@ public:
   {
     using namespace pybind11::literals;
 
-    //    try { // we might not be the first to add this SystemAssembler
-    //      GDT::bindings::SystemAssembler<SP, Layers::dd_subdomain, Backends::part>::bind(m);
-    //    } catch (std::runtime_error&) {
-    //    }
-
     GDT::bindings::MatrixOperatorBase<ThisType>::bind(
         m,
         XT::Common::to_camel_case("RS2017_penalty_product_matrix_operator_subdomain_"
                                   + XT::Grid::bindings::grid_name<G>::value())
-            .c_str());
+            .c_str(),
+        GDT::bindings::space_name<SP>::value(),
+        GDT::bindings::space_name<SP>::value(),
+        XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
+            + XT::Grid::bindings::backend_name<Backends::part>::value());
 
     m.def("RS2017_make_penalty_product_matrix_operator_on_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
@@ -1201,16 +1204,18 @@ public:
   {
     using namespace pybind11::literals;
 
-    try { // we might not be the first to add this SystemAssembler
-      GDT::bindings::SystemAssembler<SP, Layers::dd_subdomain, Backends::part>::bind(m);
-    } catch (std::runtime_error&) {
-    }
+    const auto space_name = GDT::bindings::space_name<SP>::value();
+    const auto grid_layer_name = XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
+                                 + XT::Grid::bindings::backend_name<Backends::part>::value();
 
     GDT::bindings::MatrixOperatorBase<ThisType>::bind(
         m,
         XT::Common::to_camel_case("RS2017_penalty_product_matrix_operator_oversampled_subdomain_"
                                   + XT::Grid::bindings::grid_name<G>::value())
-            .c_str());
+            .c_str(),
+        space_name,
+        space_name,
+        grid_layer_name);
 
     m.def("RS2017_make_penalty_product_matrix_operator_on_oversampled_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
@@ -1502,7 +1507,12 @@ void bind_neighborhood_discretization(py::module& m)
   typedef XT::LA::IstlRowMajorSparseMatrix<R> M;
 
   try { // we might not be the first to add this SystemAssembler
-    GDT::bindings::SystemAssembler<SP, Layers::dd_subdomain_oversampled, Backends::part>::bind(m);
+    GDT::bindings::internal::SystemAssembler<S, NGL>::bind(
+        m,
+        GDT::bindings::space_name<SP>::value(),
+        GDT::bindings::space_name<SP>::value(),
+        XT::Grid::bindings::layer_name<Layers::dd_subdomain_oversampled>::value() + "_"
+            + XT::Grid::bindings::backend_name<Backends::part>::value());
   } catch (std::runtime_error&) {
   }
 
