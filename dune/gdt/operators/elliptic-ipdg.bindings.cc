@@ -25,6 +25,20 @@
 #include <dune/gdt/operators/elliptic-ipdg.bindings.hh>
 
 
+#define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(                                                                         \
+    _m, _G, _gl, _gl_backend, _dt, _ipdg, _la, _s_backend, _s_type, _s_layer, _s_p)                                    \
+  Dune::GDT::bindings::EllipticIpdgMatrixOperator<_G,                                                                  \
+                                                  Dune::XT::Grid::Layers::_gl,                                         \
+                                                  Dune::XT::Grid::Backends::_gl_backend,                               \
+                                                  _dt,                                                                 \
+                                                  Dune::GDT::LocalEllipticIpdgIntegrands::Method::_ipdg,               \
+                                                  Dune::XT::LA::Backends::_la,                                         \
+                                                  Dune::GDT::Backends::_s_backend,                                     \
+                                                  Dune::GDT::SpaceType::_s_type,                                       \
+                                                  Dune::XT::Grid::Layers::_s_layer,                                    \
+                                                  _s_p>::bind(_m)
+
+
 PYBIND11_PLUGIN(__operators_elliptic_ipdg)
 {
   namespace py = pybind11;
@@ -33,21 +47,13 @@ PYBIND11_PLUGIN(__operators_elliptic_ipdg)
   py::module m("__operators_elliptic_ipdg", "dune-gdt: EllipticIpdgMatrixOperator");
   DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.operators.elliptic-ipdg");
 
+  using G = ALU_2D_SIMPLEX_CONFORMING;
 
-// alu_istl.cc
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, leaf, view, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, level, view, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, dd_subdomain, view, dg, gdt, 1, istl_sparse);
-#endif
-
-// yasp_istl.cc
-#if HAVE_DUNE_ISTL
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, leaf, view, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, level, view, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, dd_subdomain, view, dg, gdt, 1, istl_sparse);
-#endif
-
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(m, G, leaf, part, true, swipdg_affine_factor, istl_sparse, fem, dg, leaf, 1);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(m, G, leaf, part, true, swipdg_affine_factor, istl_sparse, fem, dg, leaf, 2);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(m, G, leaf, part, true, swipdg_affine_factor, istl_sparse, fem, dg, leaf, 3);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(
+      m, G, dd_subdomain, part, true, swipdg_affine_factor, istl_sparse, fem, dg, dd_subdomain, 1);
 
   return m.ptr();
 }
