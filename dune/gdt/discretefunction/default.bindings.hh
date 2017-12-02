@@ -20,7 +20,7 @@
 #include <dune/xt/la/type_traits.hh>
 #include <dune/xt/la/container.bindings.hh>
 
-#include <dune/gdt/spaces.bindings.hh>
+#include <dune/gdt/spaces/interface.bindings.hh>
 #include <dune/gdt/playground/spaces/block.hh>
 #include <dune/gdt/playground/spaces/restricted.hh>
 #include <dune/gdt/type_traits.hh>
