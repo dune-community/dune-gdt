@@ -827,12 +827,12 @@ DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, level, view, cg
 
 #define _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_METHODS_D(                                                            \
     _m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)                                                   \
-  _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, sipdg);  \
-  _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, swipdg); \
   _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(                                                                          \
-      _m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, swipdg_affine_factor);                          \
-  _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(                                                                          \
-      _m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, swipdg_affine_tensor)
+      _m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, swipdg_affine_factor)
+//_DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, sipdg);  \
+//_DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, swipdg); \
+//_DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(                                                                          \
+//    _m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, swipdg_affine_tensor)
 
 //#if HAVE_ALBERTA
 //#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_ALBERTA(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)          \
