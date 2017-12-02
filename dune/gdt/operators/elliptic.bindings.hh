@@ -26,22 +26,23 @@
 namespace Dune {
 namespace GDT {
 namespace bindings {
+namespace internal {
 
 
 template <class DF,
           typename DT, // may be void
-          class RP,
-          class M /* = typename XT::LA::Container<typename R::RangeFieldType>::MatrixType,
-          class GL = typename R::GridLayerType,
-          class S = R,
-          class F = typename R::RangeFieldType*/>
+          class R,
+          class M,
+          class GL /*,
+          class S,
+          class F*/>
 class EllipticMatrixOperator
 {
-  typedef typename RP::type R;
   static_assert(is_space<R>::value, "");
+  static_assert(XT::Grid::is_layer<GL>::value, "");
 
 public:
-  typedef GDT::EllipticMatrixOperator<DF, DT, R, M /*, GL, S, F*/> type;
+  typedef GDT::EllipticMatrixOperator<DF, DT, R, M, GL /*, S, F*/> type;
   typedef pybind11::class_<type> bound_type;
 
 private:
@@ -152,16 +153,16 @@ private:
   };
 
 public:
-  static bound_type bind(pybind11::module& m)
+  static bound_type bind(pybind11::module& m, const std::string& space_name, const std::string& grid_layer_name)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
 
     const auto ClassName = XT::Common::to_camel_case(
-        "elliptic_matrix_operator_" + space_name<RP>::value() + "_" + XT::LA::bindings::container_name<M>::value() + "_"
+        "elliptic_matrix_operator_" + space_name + "_" + XT::LA::bindings::container_name<M>::value() + "_"
         + diffusion_switch<>::suffix());
 
-    auto c = MatrixOperatorBase<type>::bind(m, ClassName);
+    auto c = MatrixOperatorBase<type>::bind(m, ClassName, space_name, space_name, grid_layer_name);
 
     diffusion_switch<>::template addbind_factory_methods<type>(m);
 
@@ -170,163 +171,48 @@ public:
 }; // class EllipticMatrixOperator
 
 
+} // namespace internal
+
+
+template <class G,
+          XT::Grid::Layers gl,
+          XT::Grid::Backends gl_backend,
+          bool with_tensor,
+          XT::LA::Backends la,
+          Backends space_backend,
+          SpaceType space_type,
+          XT::Grid::Layers space_layer,
+          int space_polorder>
+class EllipticMatrixOperator
+{
+  using GL = typename XT::Grid::Layer<G, gl, gl_backend, XT::Grid::DD::SubdomainGrid<G>>::type;
+  using E = XT::Grid::extract_entity_t<GL>;
+  using D = typename G::ctype;
+  static const constexpr size_t d = G::dimension;
+  using R = double;
+  using DF = XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>;
+  using DT = std::conditional_t<with_tensor, XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>, void>;
+  using SP = SpaceProvider<G, space_layer, space_type, space_backend, space_polorder, R, 1, 1>;
+  using S = typename SP::type;
+  using M = typename Dune::XT::LA::Container<R, la>::MatrixType;
+
+  using binder = internal::EllipticMatrixOperator<DF, DT, S, M, GL>;
+
+public:
+  using bound_type = typename binder::bound_type;
+
+  static bound_type bind(pybind11::module& m)
+  {
+    return binder::bind(m,
+                        space_name<SP>::value(),
+                        XT::Grid::bindings::layer_name<gl>::value()
+                            + XT::Grid::bindings::backend_name<gl_backend>::value());
+  }
+}; // class EllipticMatrixOperator
+
 } // namespace bindings
 } // namespace GDT
 } // namespace Dune
-
-
-// begin: this is what we need for the .so
-
-#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_1D(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)          \
-  Dune::GDT::bindings::                                                                                                \
-      EllipticMatrixOperator<Dune::XT::Functions::                                                                     \
-                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<                        \
-                                                                  typename Dune::XT::Grid::                            \
-                                                                      Layer<_GRID,                                     \
-                                                                            Dune::XT::Grid::Layers::_layer,            \
-                                                                            Dune::XT::Grid::Backends::_g_backend,      \
-                                                                            Dune::XT::Grid::DD::                       \
-                                                                                SubdomainGrid<_GRID>>::type>,          \
-                                                              double,                                                  \
-                                                              _d,                                                      \
-                                                              double,                                                  \
-                                                              1,                                                       \
-                                                              1>,                                                      \
-                             Dune::XT::Functions::                                                                     \
-                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<                        \
-                                                                  typename Dune::XT::Grid::                            \
-                                                                      Layer<_GRID,                                     \
-                                                                            Dune::XT::Grid::Layers::_layer,            \
-                                                                            Dune::XT::Grid::Backends::_g_backend,      \
-                                                                            Dune::XT::Grid::DD::                       \
-                                                                                SubdomainGrid<_GRID>>::type>,          \
-                                                              double,                                                  \
-                                                              _d,                                                      \
-                                                              double,                                                  \
-                                                              _d,                                                      \
-                                                              _d>,                                                     \
-                             Dune::GDT::SpaceProvider<_GRID,                                                           \
-                                                      Dune::XT::Grid::Layers::_layer,                                  \
-                                                      Dune::GDT::SpaceType::_s_type,                                   \
-                                                      Dune::GDT::Backends::_s_backend,                                 \
-                                                      _p,                                                              \
-                                                      double,                                                          \
-                                                      1,                                                               \
-                                                      1>,                                                              \
-                             typename Dune::XT::LA::Container<double,                                                  \
-                                                              Dune::XT::LA::Backends::_la>::MatrixType>::bind(_m);     \
-  Dune::GDT::bindings::                                                                                                \
-      EllipticMatrixOperator<Dune::XT::Functions::                                                                     \
-                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<                        \
-                                                                  typename Dune::XT::Grid::                            \
-                                                                      Layer<_GRID,                                     \
-                                                                            Dune::XT::Grid::Layers::_layer,            \
-                                                                            Dune::XT::Grid::Backends::_g_backend,      \
-                                                                            Dune::XT::Grid::DD::                       \
-                                                                                SubdomainGrid<_GRID>>::type>,          \
-                                                              double,                                                  \
-                                                              _d,                                                      \
-                                                              double,                                                  \
-                                                              1,                                                       \
-                                                              1>,                                                      \
-                             void,                                                                                     \
-                             Dune::GDT::SpaceProvider<_GRID,                                                           \
-                                                      Dune::XT::Grid::Layers::_layer,                                  \
-                                                      Dune::GDT::SpaceType::_s_type,                                   \
-                                                      Dune::GDT::Backends::_s_backend,                                 \
-                                                      _p,                                                              \
-                                                      double,                                                          \
-                                                      1,                                                               \
-                                                      1>,                                                              \
-                             typename Dune::XT::LA::Container<double,                                                  \
-                                                              Dune::XT::LA::Backends::_la>::MatrixType>::bind(_m)
-
-#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_D(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)           \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_1D(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la);               \
-  Dune::GDT::bindings::                                                                                                \
-      EllipticMatrixOperator<Dune::XT::Functions::                                                                     \
-                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<                        \
-                                                                  typename Dune::XT::Grid::                            \
-                                                                      Layer<_GRID,                                     \
-                                                                            Dune::XT::Grid::Layers::_layer,            \
-                                                                            Dune::XT::Grid::Backends::_g_backend,      \
-                                                                            Dune::XT::Grid::DD::                       \
-                                                                                SubdomainGrid<_GRID>>::type>,          \
-                                                              double,                                                  \
-                                                              _d,                                                      \
-                                                              double,                                                  \
-                                                              _d,                                                      \
-                                                              _d>,                                                     \
-                             void,                                                                                     \
-                             Dune::GDT::SpaceProvider<_GRID,                                                           \
-                                                      Dune::XT::Grid::Layers::_layer,                                  \
-                                                      Dune::GDT::SpaceType::_s_type,                                   \
-                                                      Dune::GDT::Backends::_s_backend,                                 \
-                                                      _p,                                                              \
-                                                      double,                                                          \
-                                                      1,                                                               \
-                                                      1>,                                                              \
-                             typename Dune::XT::LA::Container<double,                                                  \
-                                                              Dune::XT::LA::Backends::_la>::MatrixType>::bind(_m)
-
-//#if HAVE_ALBERTA
-//#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_ALBERTA(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)              \
-//  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_D(_m, 2, ALBERTA_2D, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-//#else
-#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_ALBERTA(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-//#endif
-
-#if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_ALU(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)                    \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_D(                                                                                 \
-      _m, 2, ALU_2D_SIMPLEX_CONFORMING, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-#else
-#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_ALU(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-#endif
-
-//#if HAVE_DUNE_UGGRID || HAVE_UG
-//#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_UG(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)                   \
-//  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_D(_m, 2, UG_2D, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-//#else
-#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_UG(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-//#endif
-
-#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_YASP(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-//  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_1D(                                                                                \
-//      _m, 1, YASP_1D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la);                            \
-//  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_D(                                                                                 \
-//      _m, 2, YASP_2D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-
-#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)                  \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_ALBERTA(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la);                     \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_ALU(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la);                         \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_UG(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la);                          \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_YASP(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-
-#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND(_m, _la)                                                                     \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, leaf, view, cg, gdt, 1, _la);                                            \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, level, view, cg, gdt, 1, _la);                                           \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, leaf, view, dg, gdt, 1, _la);                                            \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, level, view, dg, gdt, 1, _la);                                           \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, dd_subdomain, view, dg, gdt, 1, _la);                                    \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, dd_subdomain, view, dg, gdt, 1, _la)
-#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_COMMON(_m)
-//_DUNE_GDT_OPERATORS_ELLIPTIC_BIND(_m, common_dense)
-//#if HAVE_EIGEN
-//#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_EIGEN(_m)                                                               \
-//  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND(_m, eigen_dense);                                                            \
-//  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND(_m, eigen_sparse)
-//#else
-#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_EIGEN(_m)
-//#endif
-#if HAVE_DUNE_ISTL
-#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_ISTL(_m) _DUNE_GDT_OPERATORS_ELLIPTIC_BIND(_m, istl_sparse)
-#else
-#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_ISTL(_m)
-#endif
-
-// end: this is what we need for the .so
-
 
 #endif // HAVE_DUNE_PYBINDXI
 #endif // DUNE_GDT_OPERATORS_ELLIPTIC_BINDINGS_HH
