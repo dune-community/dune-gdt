@@ -105,20 +105,20 @@ public:
 
 // for each space backend
 
-#define _DUNE_GDT_PROJECTIONS_BIND_DEFAULT(_m, _la)                                                                    \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, gdt, fv, 0, _la);                                                     \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, gdt, fv, 0, _la)
+#define _DUNE_GDT_PROJECTIONS_BIND_DEFAULT(_m, _la)
+//  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, gdt, fv, 0, _la);                                                   \
+//  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, gdt, fv, 0, _la)
 
 #if HAVE_DUNE_FEM
 #define _DUNE_GDT_PROJECTIONS_BIND_FEM(_m, _la)                                                                        \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, fem, cg, 1, _la);                                                     \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, fem, cg, 1, _la);                                                    \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, cg, 1, _la);                                             \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, block_cg, 1, _la);                                       \
   _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, fem, dg, 1, _la);                                                     \
   _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, fem, dg, 1, _la);                                                    \
   _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, dg, 1, _la);                                             \
   _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, block_dg, 1, _la)
+//_DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, fem, cg, 1, _la);                                                     \
+//_DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, fem, cg, 1, _la);                                                    \
+//_DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, cg, 1, _la);                                             \
+//_DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, block_cg, 1, _la);                                       \
 
 #else
 #define _DUNE_GDT_PROJECTIONS_BIND_FEM(_m, _la)
