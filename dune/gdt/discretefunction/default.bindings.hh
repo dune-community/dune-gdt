@@ -214,137 +214,38 @@ public:
   typedef GDT::DiscreteFunction<S, V> type;
   typedef pybind11::class_<type, BaseType> bound_type;
 
-  template <XT::Grid::Backends backend, XT::Grid::Layers layer>
-  static void addbind_restricted(pybind11::module& m, const std::string sp_name)
-  {
-    try { // we might not be the first to add this
-      internal::DiscreteFunction<GDT::RestrictedSpace<S,
-                                                      typename XT::Grid::
-                                                          Layer<XT::Grid::extract_grid_t<typename S::GridLayerType>,
-                                                                layer,
-                                                                backend>::type>,
-                                 V>::bind(m,
-                                          sp_name + "_restricted_to_" + XT::Grid::bindings::layer_name<layer>::value()
-                                              + "_"
-                                              + XT::Grid::bindings::backend_name<backend>::value());
-    } catch (std::runtime_error&) {
-    }
-  } // ... addbind_restricted(...)
-
   static bound_type bind(pybind11::module& m)
   {
-    const auto sp_name = space_name<SP>::value();
-    auto c = internal::DiscreteFunction<S, V>::bind(m, sp_name);
-
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::adaptive_leaf>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain_boundary>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain_coupling>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain_oversampled>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::leaf>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::level>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain_oversampled>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::leaf>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::level>(m, sp_name);
-
-    return c;
+    return internal::DiscreteFunction<S, V>::bind(m, space_name<SP>::value());
   }
+
+  template <XT::Grid::Backends backend, XT::Grid::Layers layer>
+  static
+      typename internal::DiscreteFunction<GDT::RestrictedSpace<S,
+                                                               typename XT::Grid::Layer<XT::Grid::extract_grid_t<
+                                                                                            typename S::GridLayerType>,
+                                                                                        layer,
+                                                                                        backend>::type>,
+                                          V>::bound_type
+      bind_restricted(pybind11::module& m)
+  {
+    return internal::DiscreteFunction<GDT::RestrictedSpace<S,
+                                                           typename XT::Grid::Layer<XT::Grid::extract_grid_t<
+                                                                                        typename S::GridLayerType>,
+                                                                                    layer,
+                                                                                    backend>::type>,
+                                      V>::bind(m,
+                                               space_name<SP>::value() + "_restricted_to_"
+                                                   + XT::Grid::bindings::layer_name<layer>::value()
+                                                   + "_"
+                                                   + XT::Grid::bindings::backend_name<backend>::value());
+  } // ... addbind_restricted(...)
 }; // class DiscreteFunction
 
 
 } // namespace bindings
 } // namespace GDT
 } // namespace Dune
-
-
-// begin: this is what we need for the .so
-
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, _la)               \
-  Dune::GDT::bindings::                                                                                                \
-      DiscreteFunction<Dune::GDT::SpaceProvider<_G,                                                                    \
-                                                Dune::XT::Grid::Layers::_g_layer,                                      \
-                                                Dune::GDT::SpaceType::_s_type,                                         \
-                                                Dune::GDT::Backends::_s_backend,                                       \
-                                                _p,                                                                    \
-                                                double,                                                                \
-                                                _r,                                                                    \
-                                                _rC>,                                                                  \
-                       typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_COMMON(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)             \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, common_dense)
-
-#if HAVE_EIGEN
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)              \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, eigen_dense)
-#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)
-#endif
-
-#if HAVE_DUNE_ISTL
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ISTL(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)               \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC, istl_dense)
-#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ISTL(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)
-#endif
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)             \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ISTL(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC)
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_COMMON(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC);                  \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC);                   \
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_YASP(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(                                                                      \
-//      _m, YASP_1D_EQUIDISTANT_OFFSET, _g_layer, _s_type, _s_backend, _p, _r, _rC);                                     \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(                                                                      \
-//      _m, YASP_2D_EQUIDISTANT_OFFSET, _g_layer, _s_type, _s_backend, _p, _r, _rC)
-
-#if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)                    \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_LA(                                                                      \
-      _m, ALU_2D_SIMPLEX_CONFORMING, _g_layer, _s_type, _s_backend, _p, _r, _rC)
-#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)
-#endif
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)              \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_YASP(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC);                        \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)
-
-#if HAVE_DUNE_FEM
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM(_m)                                                                \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, cg, fem, 1, 1, 1);                                       \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, cg, fem, 1, 1, 1);                                      \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, cg, fem, 1, 1, 1);                               \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, block_cg, fem, 1, 1, 1);                         \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, dg, fem, 1, 1, 1);                                       \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, dg, fem, 1, 1, 1);                                      \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, dg, fem, 1, 1, 1);                               \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, block_dg, fem, 1, 1, 1)
-#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM(_m)
-#endif
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT(_m)                                                                \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, fv, gdt, 0, 1, 1);                                       \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, fv, gdt, 0, 1, 1)
-
-#if HAVE_DUNE_PDELAB
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB(_m)                                                             \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, leaf, rt, pdelab, 0, 2, 1);                                          \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, level, rt, pdelab, 0, 2, 1)
-#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB(_m)
-#endif
-
-#define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m)                                                                     \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM(_m);                                                                     \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT(_m);                                                                     \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_PDELAB(_m)
-
-// end: this is what we need for the .so
 
 
 #endif // HAVE_DUNE_PYBINDXI
