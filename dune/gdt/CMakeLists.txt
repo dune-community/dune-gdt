@@ -58,11 +58,7 @@ if(dune-pybindxi_FOUND)
   dune_pybindxi_add_module(__functionals_elliptic_ipdg functionals/elliptic-ipdg.bindings.cc)
   target_link_libraries(__functionals_elliptic_ipdg __functionals_elliptic_ipdg_helper)
   list(APPEND pybindxi_modules __functionals_elliptic_ipdg)
-  dune_pybindxi_add_helper_lib(__functionals_l2_helper
-                               functionals/l2.bindings/alu_fem_istl.cc
-                               functionals/l2.bindings/yasp_fem_istl.cc)
   dune_pybindxi_add_module(__functionals_l2 functionals/l2.bindings.cc)
-  target_link_libraries(__functionals_l2 __functionals_l2_helper)
   list(APPEND pybindxi_modules __functionals_l2)
   foreach(_target ${pybindxi_modules})
     target_link_dune_default_libraries(${_target})
