@@ -24,7 +24,6 @@
 
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/spaces/cg/interface.hh>
-#include <dune/gdt/spaces/cg.bindings.hh>
 
 #include "constraints.hh"
 
