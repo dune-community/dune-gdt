@@ -34,6 +34,29 @@ using XT::Grid::Backends;
 namespace py = pybind11;
 
 
+            .c_str(),
+        GDT::bindings::space_name<SP>::value(),
+        GDT::bindings::space_name<SP>::value(),
+        XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
+            + XT::Grid::bindings::backend_name<Backends::part>::value());
+            .c_str(),
+        GDT::bindings::space_name<SP>::value(),
+        GDT::bindings::space_name<SP>::value(),
+        XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
+            + XT::Grid::bindings::backend_name<Backends::part>::value());
+    const auto space_name = GDT::bindings::space_name<SP>::value();
+    const auto grid_layer_name = XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
+                                 + XT::Grid::bindings::backend_name<Backends::part>::value();
+            .c_str(),
+        space_name,
+        space_name,
+        grid_layer_name);
+    GDT::bindings::internal::SystemAssembler<S, NGL>::bind(
+        m,
+        GDT::bindings::space_name<SP>::value(),
+        GDT::bindings::space_name<SP>::value(),
+        XT::Grid::bindings::layer_name<Layers::dd_subdomain_oversampled>::value() + "_"
+            + XT::Grid::bindings::backend_name<Backends::part>::value());
 PYBIND11_PLUGIN(__operators_RS2017)
 {
   using namespace pybind11::literals;
