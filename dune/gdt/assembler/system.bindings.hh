@@ -19,7 +19,7 @@
 #include <dune/xt/grid/layers.bindings.hh>
 #include <dune/xt/grid/walker.bindings.hh>
 
-#include <dune/gdt/spaces.bindings.hh>
+#include <dune/gdt/spaces/interface.bindings.hh>
 #include <dune/gdt/spaces/constraints.bindings.hh>
 #include <dune/gdt/type_traits.hh>
 

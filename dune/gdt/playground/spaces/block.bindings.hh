@@ -25,7 +25,7 @@
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/projections.hh>
-#include <dune/gdt/spaces.bindings.hh>
+#include <dune/gdt/spaces/interface.bindings.hh>
 #include <dune/gdt/type_traits.hh>
 
 #include "block.hh"

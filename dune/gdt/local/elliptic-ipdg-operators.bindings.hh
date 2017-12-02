@@ -20,7 +20,7 @@
 #include <dune/xt/grid/dd/subdomains/grid.hh>
 
 #include <dune/gdt/spaces.hh>
-#include <dune/gdt/spaces.bindings.hh>
+#include <dune/gdt/spaces/interface.bindings.hh>
 #include <dune/gdt/type_traits.hh>
 
 #include "integrands/elliptic-ipdg.hh"

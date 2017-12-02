@@ -18,7 +18,7 @@
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/la/container.bindings.hh>
 
-#include <dune/gdt/spaces.bindings.hh>
+#include <dune/gdt/spaces/interface.bindings.hh>
 #include <dune/gdt/type_traits.hh>
 
 #include "elliptic-ipdg.hh"
