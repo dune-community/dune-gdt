@@ -83,44 +83,21 @@ PYBIND11_PLUGIN(__assembler)
       [](const Dune::GDT::bindings::ResultStorage& self) { return self.result(); },
       [](Dune::GDT::bindings::ResultStorage& self, const double& value) { self.result() = value; });
 
-  DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, view, "leaf");
-  DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(ALU_2D_SIMPLEX_CONFORMING, leaf, view, istl_sparse);
-  DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, part, "dd_subdomain");
-  DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, part, istl_sparse);
+  using G = ALU_2D_SIMPLEX_CONFORMING;
 
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, part, fem, dg, leaf, 1, 1, fem, dg, leaf, 1, 1);
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, part, fem, dg, leaf, 2, 1, fem, dg, leaf, 2, 1);
+  DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, G, leaf, view, "leaf");
+  DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(G, leaf, view, istl_sparse);
+  DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, G, dd_subdomain, part, "dd_subdomain");
+  DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(G, dd_subdomain, part, istl_sparse);
+
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, part, fem, dg, leaf, 1, 1, fem, dg, leaf, 1, 1);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, part, fem, dg, leaf, 2, 1, fem, dg, leaf, 2, 1);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, part, fem, dg, leaf, 3, 1, fem, dg, leaf, 3, 1);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, dd_subdomain, part, fem, dg, dd_subdomain, 1, 1, fem, dg, dd_subdomain, 1, 1);
   DUNE_GDT_ASSEMBLER_SYSTEM_BIND(
-      m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, part, fem, dg, dd_subdomain, 1, 1, fem, dg, dd_subdomain, 1, 1);
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m,
-                                 ALU_2D_SIMPLEX_CONFORMING,
-                                 dd_subdomain_boundary,
-                                 part,
-                                 fem,
-                                 dg,
-                                 dd_subdomain,
-                                 1,
-                                 1,
-                                 fem,
-                                 dg,
-                                 dd_subdomain,
-                                 1,
-                                 1);
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m,
-                                 ALU_2D_SIMPLEX_CONFORMING,
-                                 dd_subdomain_coupling,
-                                 part,
-                                 fem,
-                                 dg,
-                                 dd_subdomain,
-                                 1,
-                                 1,
-                                 fem,
-                                 dg,
-                                 dd_subdomain,
-                                 1,
-                                 1);
-
+      m, G, dd_subdomain_boundary, part, fem, dg, dd_subdomain, 1, 1, fem, dg, dd_subdomain, 1, 1);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(
+      m, G, dd_subdomain_coupling, part, fem, dg, dd_subdomain, 1, 1, fem, dg, dd_subdomain, 1, 1);
 
   return m.ptr();
 }
