@@ -16,8 +16,11 @@ services: docker
 
 before_script:
     - export IMAGE="dunecommunity/${MY_MODULE}-testing_${DOCKER_TAG}:${TRAVIS_BRANCH}"
+    - ./.travis.add_swap.bash 2000 &
     # get image with fallback to master branch of the super repo
     - docker pull ${IMAGE} || export IMAGE="dunecommunity/${MY_MODULE}-testing_${DOCKER_TAG}:master" ; docker pull ${IMAGE}
+    # for add swap
+    - wait
     - export ENV_FILE=${HOME}/env
     - printenv | \grep TRAVIS > ${ENV_FILE} || echo This is not a failure
     - printenv | \grep encrypt >> ${ENV_FILE} || echo This is not a failure
