@@ -31,18 +31,6 @@ using namespace Dune::GDT::Test;
 // clang-format off
 {% for SpaceType,Name in config.spaces_with_names %}
 
-typedef ProjectionTest<{{SpaceType}}> ProjectionTest_{{Name}};
-TEST_F(ProjectionTest_{{Name}}, produces_correct_results)
-{
-  {% if 'FvSpace' in SpaceType %}
-    const double tolerance = 0.096226;
-  {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
-    const double tolerance = 0.0925927;
-  {% else %}
-    const auto tolerance = this->default_tolerance;
-  {% endif %}
-  this->produces_correct_results(tolerance);
-}
 
 typedef L2ProjectionOperatorTest<{{SpaceType}}> L2ProjectionOperatorTest_{{Name}};
 TEST_F(L2ProjectionOperatorTest_{{Name}}, constructible_by_ctor)
@@ -66,30 +54,6 @@ TEST_F(L2ProjectionOperatorTest_{{Name}}, produces_correct_results)
     const double tolerance = 0.0925927;
   {% else %}
     using Grid = Dune::XT::Grid::extract_grid_t<typename L2ProjectionOperatorTest_{{Name}}::GridLayerType>;
-    const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
-  {% endif %}
-  this->produces_correct_results(tolerance);
-  this->produces_correct_results(tolerance);
-}
-
-typedef L2ProjectionLocalizableOperatorTest<{{SpaceType}}> L2ProjectionLocalizableOperatorTest_{{Name}};
-TEST_F(L2ProjectionLocalizableOperatorTest_{{Name}}, constructible_by_ctor)
-{
-  this->constructible_by_ctor();
-}
-TEST_F(L2ProjectionLocalizableOperatorTest_{{Name}}, constructible_by_factory)
-{
-  this->constructible_by_factory();
-}
-TEST_F(L2ProjectionLocalizableOperatorTest_{{Name}}, produces_correct_results)
-{
-  // RT : 0.096226
-  {% if 'FvSpace' in SpaceType %}
-    const double tolerance = 0.096226;
-  {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
-    const double tolerance = 0.0925927;
-  {% else %}
-    typedef Dune::XT::Grid::extract_grid_t<L2ProjectionLocalizableOperatorTest_{{Name}}::GridLayerType> Grid;
     const auto tolerance = Dune::XT::Grid::is_alugrid<Grid>::value ? this->alugrid_tolerance : this->default_tolerance;
   {% endif %}
   this->produces_correct_results(tolerance);
