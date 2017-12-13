@@ -65,7 +65,7 @@ private:
   using RealLocalId = typename XT::Grid::extract_grid_t<ViewImp>::LocalIdSet::IdType;
 
 public:
-  using GlobalId = std::conditional_t<std::is_arithmetic<RealGlobalId>::value, RealGlobalId, bigunsignedint<96>>;
+  using GlobalId = std::conditional_t<std::is_arithmetic<RealGlobalId>::value, RealGlobalId, uint64_t>;
   using LocalId = std::conditional_t<std::is_arithmetic<RealLocalId>::value, RealLocalId, int>;
   using Type = OwnerOverlapCopyCommunication<GlobalId, LocalId>;
   using type = Type;
