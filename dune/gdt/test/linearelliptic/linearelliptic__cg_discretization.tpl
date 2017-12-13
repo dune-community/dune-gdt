@@ -45,8 +45,7 @@ struct linearelliptic_CG_discretization : public ::testing::Test
                                           typename TestCaseType::ProblemType::RangeFieldType,
                                           1>
         Discretizer;
-    const auto solver_options = DXTC_CONFIG.sub("solver", false);
-    Dune::GDT::Test::LinearEllipticEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {}, "", solver_options);
+    Dune::GDT::Test::LinearEllipticEocStudy<TestCaseType, Discretizer> eoc_study(test_case);
     try {
       Dune::XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DXTC_LOG_INFO));
     } catch (Dune::XT::Common::Exceptions::spe10_data_file_missing&) {
