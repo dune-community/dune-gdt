@@ -18,9 +18,9 @@
 #include <dune/xt/grid/dd/subdomains/grid.hh>
 #include <dune/gdt/type_traits.hh>
 
-#include "mapper/block.hh"
-
-#include "../../spaces/interface.hh"
+#include <dune/gdt/playground/spaces/mapper/block.hh>
+#include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/spaces/parallel.hh>
 
 namespace Dune {
 namespace GDT {

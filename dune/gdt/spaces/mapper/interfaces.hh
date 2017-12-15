@@ -13,6 +13,7 @@
 #define DUNE_GDT_SPACES_MAPPER_INTERFACES_HH
 
 #include <dune/common/dynvector.hh>
+#include <dune/grid/common/entity.hh>
 
 #include <dune/xt/common/crtp.hh>
 #include <dune/xt/common/type_traits.hh>

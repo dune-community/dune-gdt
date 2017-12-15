@@ -7,7 +7,9 @@
 
 #include <dune/xt/common/ranges.hh>
 #include <dune/xt/grid/entity.hh>
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/la/container/vector-interface.hh>
+
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 
 #include <boost/container/vector.hpp>

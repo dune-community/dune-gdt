@@ -25,7 +25,7 @@ namespace GDT {
 namespace Test {
 
 
-virtual void print_header(std::ostream& out = DXTC_LOG_INFO_0) const template <class TestCaseImp, class DiscretizerImp>
+template <class TestCaseImp, class DiscretizerImp>
 class InstationaryEocStudy : public XT::Common::ConvergenceStudy
 {
   typedef XT::Common::ConvergenceStudy BaseType;

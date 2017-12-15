@@ -89,8 +89,7 @@ public:
   static const bool needs_grid_view = true;
   typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
   typedef typename CommunicationChooserType::Type CommunicatorType;
-  static const constexpr Backends backend_type{
-      typename std::tuple_element<0, std::tuple<SpaceImps...>>::Traits::backend_type};
+  static const constexpr Backends backend_type{std::tuple_element<0, std::tuple<SpaceImps...>>::Traits::backend_type};
 }; // class ProductSpaceTraits
 
 
@@ -189,7 +188,7 @@ public:
     return *communicator_;
   }
 
-  static constexpr bool associates_data_with(int codim) const
+  static constexpr bool associates_data_with(int codim)
   {
     return BaseType::associates_data_with(codim);
   }
