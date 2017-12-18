@@ -27,7 +27,7 @@
 #include <dune/gdt/local/integrands/ESV2007.hh>
 #include <dune/gdt/operators/fluxreconstruction.hh>
 #include <dune/gdt/spaces/fv/default.hh>
-#include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
+#include <dune/gdt/spaces/rt/default.hh>
 
 namespace Dune {
 namespace GDT {
@@ -204,7 +204,7 @@ class LocalResidualESV2007 : public XT::Grid::Functor::Codim0Return<GridLayerTyp
       ThisType;
   typedef typename ForceType::RangeFieldType RangeFieldType;
   typedef ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
-  typedef DunePdelabRtSpaceWrapper<GridLayerType, 0, RangeFieldType, SpaceType::dimDomain> RTN0SpaceType;
+  typedef RtSpace<GridLayerType, 0, RangeFieldType> RTN0SpaceType;
   typedef DiscreteFunction<RTN0SpaceType, VectorType> DiffusiveFluxType;
   typedef XT::Functions::DivergenceFunction<DiffusiveFluxType> DivergenceType;
   typedef typename DivergenceType::DifferenceType DifferenceType;
@@ -338,7 +338,7 @@ class LocalDiffusiveFluxESV2007
   typedef XT::Grid::Functor::Codim0Return<GridLayerType, typename SpaceType::RangeFieldType> BaseType;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   typedef ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
-  typedef DunePdelabRtSpaceWrapper<GridLayerType, 0, RangeFieldType, SpaceType::dimDomain> RTN0SpaceType;
+  typedef RtSpace<GridLayerType, 0> RTN0SpaceType;
   typedef DiscreteFunction<RTN0SpaceType, VectorType> RTN0DiscreteFunctionType;
 
 public:
