@@ -13,14 +13,15 @@
 #include <memory>
 #include <vector>
 
+#include <dune/common/typetraits.hh>
+
 #include <dune/geometry/referenceelements.hh>
 #include <dune/geometry/type.hh>
 
+#include <dune/grid/common/capabilities.hh>
 #include <dune/grid/common/rangegenerators.hh>
 
 #include <dune/localfunctions/raviartthomas.hh>
-#include <dune/localfunctions/common/virtualinterface.hh>
-#include <dune/localfunctions/common/virtualwrappers.hh>
 
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/numeric_cast.hh>
@@ -62,6 +63,11 @@ class RtSpaceTraits
 {
   static_assert(XT::Grid::is_layer<GL>::value, "");
   static_assert(p == 0, "Not implemented yet!");
+  using G = XT::Grid::extract_grid_t<GL>;
+  static_assert(Capabilities::hasSingleGeometryType<G>::v
+                    && Capabilities::hasSingleGeometryType<G>::topologyId
+                           == Impl::SimplexTopology<GL::dimension>::type::id,
+                "Not Implemented yet!");
 
 public:
   using derived_type = RtSpace<GL, p, R>;
@@ -108,12 +114,9 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::JacobianRangeType;
-  using typename BaseType::D;
   using BaseType::d;
 
-  RaviartThomasBasefunctionSet(const EntityType& en,
-                               const BackendType& finite_element,
-                               const std::vector<bool>& switches)
+  RaviartThomasBasefunctionSet(const EntityType& en, const BackendType& finite_element, const std::vector<R>& switches)
     : BaseType(en)
     , finite_element_(finite_element)
     , switches_(switches)
@@ -139,7 +142,7 @@ public:
     return finite_element_.localBasis().size();
   }
 
-  size_t order(const XT::Common::Parameter& = {}) const override final
+  size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
     return finite_element_.localBasis().order();
   }
@@ -153,10 +156,11 @@ public:
     assert(this->is_a_valid_point(xx));
     // evaluate shape functions
     finite_element_.localBasis().evaluateFunction(xx, ret);
-    // flip shape functions to ensure continuity of normal component
+    // flip and scale shape functions to ensure
+    // - continuity of normal component and
+    // - to ensure basis*integrationElementNormal = 1
     for (size_t ii = 0; ii < finite_element_.localBasis().size(); ++ii)
-      if (switches_[ii])
-        ret[ii] *= -1;
+      ret[ii] *= switches_[ii];
     // apply piola transformation
     const auto J_T = this->entity().geometry().jacobianTransposed(xx);
     const auto det_J_T = std::abs(J_T.determinant());
@@ -177,10 +181,11 @@ public:
     assert(this->is_a_valid_point(xx));
     // evaluate jacobian of shape functions
     finite_element_.localBasis().evaluateJacobian(xx, ret);
-    // flip shape functions to ensure continuity of normal component
+    // flip and scale shape functions to ensure
+    // - continuity of normal component and
+    // - to ensure basis*integrationElementNormal = 1
     for (size_t ii = 0; ii < finite_element_.localBasis().size(); ++ii)
-      if (switches_[ii])
-        ret[ii] *= -1;
+      ret[ii] *= switches_[ii];
     // apply piola transformation
     const auto J_T = this->entity().geometry().jacobianTransposed(xx);
     const auto det_J_T = std::abs(J_T.determinant());
@@ -197,7 +202,7 @@ public:
 
 private:
   const BackendType& finite_element_;
-  const std::vector<bool>& switches_;
+  const std::vector<R>& switches_;
 }; // class RaviartThomasBasefunctionSet
 
 
@@ -225,8 +230,8 @@ public:
     , communicator_(0)
     , backend_(0)
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
-    , local_DoF_indices_(new std::map<GeometryType, std::vector<size_t>>())
-    , switches_(new std::vector<std::vector<bool>>(grid_layer_.indexSet().size(0)))
+    , geometry_to_local_DoF_indices_map_(new std::map<GeometryType, std::vector<size_t>>())
+    , switches_(new std::vector<std::vector<R>>(grid_layer_.indexSet().size(0)))
     , mapper_(nullptr)
   {
     const auto& index_set = grid_layer_.indexSet();
@@ -235,31 +240,52 @@ public:
       auto finite_element = std::make_shared<FiniteElementType>(geometry_type, p);
       finite_elements_->insert(std::make_pair(geometry_type, finite_element));
       // this is only valid for p0 elements
-      local_DoF_indices_->insert(std::make_pair(geometry_type, std::vector<size_t>(finite_element->size())));
+      geometry_to_local_DoF_indices_map_->insert(
+          std::make_pair(geometry_type, std::vector<size_t>(finite_element->size())));
     }
     // compute local-key-to-intersection relationship
     for (const auto& geometry_type_and_finite_element_ptr : *finite_elements_) {
       const auto& geometry_type = geometry_type_and_finite_element_ptr.first;
       const auto& finite_element = *geometry_type_and_finite_element_ptr.second;
       const auto& coeffs = finite_element.localCoefficients();
-      auto& local_key_to_intersection_map = (*local_DoF_indices_)[geometry_type];
+      auto& local_key_to_intersection_map = geometry_to_local_DoF_indices_map_->at(geometry_type);
       for (size_t ii = 0; ii < coeffs.size(); ++ii) {
         const auto& local_key = coeffs.localKey(ii);
         if (local_key.index() != 0)
           DUNE_THROW(XT::Common::Exceptions::internal_error, "This must not happen for p0!");
         if (local_key.codim() != 1)
-          DUNE_THROW(XT::Common::Exceptions::internal_error, "This must not happen for p0 on simplices!");
+          DUNE_THROW(XT::Common::Exceptions::internal_error, "This must not happen for p0!");
         local_key_to_intersection_map[ii] = local_key.subEntity();
       }
     }
-    // compute switches to ensure continuity of the normal component
+    // compute scaling to ensure basis*integrationElementNormal = 1
+    std::map<GeometryType, std::vector<R>> geometry_to_scaling_factors_map;
+    for (const auto& geometry_type_and_finite_element_ptr : *finite_elements_) {
+      const auto& geometry_type = geometry_type_and_finite_element_ptr.first;
+      const auto& finite_element = *geometry_type_and_finite_element_ptr.second;
+      const auto& shape_functions = finite_element.localBasis();
+      std::vector<typename BaseFunctionSetType::RangeType> shape_functions_evaluations(shape_functions.size());
+      const auto& reference_element = ReferenceElements<D, d>::general(geometry_type);
+      const auto num_intersections = reference_element.size(1);
+      geometry_to_scaling_factors_map.insert(std::make_pair(geometry_type, std::vector<R>(num_intersections, R(1.))));
+      auto& scaling_factors = geometry_to_scaling_factors_map.at(geometry_type);
+      const auto& DoF_indices = geometry_to_local_DoF_indices_map_->at(geometry_type);
+      for (auto&& intersection_index : XT::Common::value_range(num_intersections)) {
+        const auto& normal = reference_element.integrationOuterNormal(intersection_index);
+        const auto& intersection_center = reference_element.position(intersection_index, 1);
+        const auto DoF_index = DoF_indices[intersection_index];
+        shape_functions.evaluateFunction(intersection_center, shape_functions_evaluations);
+        scaling_factors[intersection_index] /= shape_functions_evaluations[DoF_index] * normal;
+      }
+    }
+    // compute switches (as signs of the scaling factor) to ensure continuity of the normal component
     for (auto&& entity : elements(grid_layer_)) {
       const auto geometry_type = entity.geometry().type();
       const auto& finite_element = *finite_elements_->at(geometry_type);
       const auto& coeffs = finite_element.localCoefficients();
       const auto entity_index = index_set.index(entity);
-      (*switches_)[entity_index] = std::vector<bool>(coeffs.size(), false);
-      auto& local_switches = (*switches_)[entity_index];
+      (*switches_)[entity_index] = geometry_to_scaling_factors_map.at(geometry_type);
+      auto& local_switches = switches_->at(entity_index);
       for (auto&& intersection : intersections(grid_layer_, entity)) {
         if (intersection.neighbor() && entity_index < index_set.index(intersection.outside())) {
           const auto intersection_index = XT::Common::numeric_cast<unsigned int>(intersection.indexInInside());
@@ -267,7 +293,7 @@ public:
             const auto& local_key = coeffs.localKey(ii);
             const auto DoF_subentity_index = local_key.subEntity();
             if (local_key.codim() == 1 && DoF_subentity_index == intersection_index)
-              local_switches[DoF_subentity_index] = true;
+              local_switches[DoF_subentity_index] *= -1.;
           }
         }
       }
@@ -318,8 +344,8 @@ public:
   // this makes sense only for for p0 (and only on simplices?)
   std::vector<size_t> local_DoF_indices(const EntityType& entity) const
   {
-    const auto search_result = local_DoF_indices_->find(entity.geometry().type());
-    if (search_result == local_DoF_indices_->end())
+    const auto search_result = geometry_to_local_DoF_indices_map_->find(entity.geometry().type());
+    if (search_result == geometry_to_local_DoF_indices_map_->end())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "This must not happen after the checks in the ctor, the grid layer did not report all geometry types!"
                  "\n   entity.geometry().type() = "
@@ -332,8 +358,8 @@ private:
   mutable double communicator_;
   const double backend_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
-  std::shared_ptr<std::map<GeometryType, std::vector<size_t>>> local_DoF_indices_;
-  std::shared_ptr<std::vector<std::vector<bool>>> switches_;
+  std::shared_ptr<std::map<GeometryType, std::vector<size_t>>> geometry_to_local_DoF_indices_map_;
+  std::shared_ptr<std::vector<std::vector<R>>> switches_;
   std::shared_ptr<MapperType> mapper_;
 }; // class RtSpace
 
