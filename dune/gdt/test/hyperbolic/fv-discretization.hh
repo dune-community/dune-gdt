@@ -53,7 +53,7 @@ struct hyperbolic_FV_discretization_base : public ::testing::Test
                                                time_stepper_splitting>
         Discretizer;
     Dune::GDT::Test::HyperbolicEocStudy<TestCaseType, Discretizer> eoc_study(test_case, {});
-    XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DXTC_LOG_INFO));
+    XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DXTC_LOG_INFO_0));
   } // ... eoc_study()
 }; // hyperbolic_FV_discretization_base
 
