@@ -283,7 +283,7 @@ public:
   static const constexpr ChoosePattern pattern_type = pt;
 
 private:
-  typedef XT::LA::Solver<MatrixType, typename SourceSpaceType::CommunicatorType> LinearSolverType;
+  typedef XT::LA::Solver<MatrixType, typename SourceSpaceType::DofCommunicatorType> LinearSolverType;
 
   template <ChoosePattern pp = ChoosePattern::face_and_volume, bool anything = true>
   struct Compute
@@ -569,7 +569,7 @@ public:
                      const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     this->assemble();
-    LinearSolverType(matrix(), source_space().communicator()).apply(range.as_imp(), source.as_imp(), opts);
+    LinearSolverType(matrix(), source_space().dof_communicator()).apply(range.as_imp(), source.as_imp(), opts);
   }
 
   template <class R, class S>

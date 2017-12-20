@@ -79,7 +79,7 @@ public:
   using typename BaseType::MapperType;
   using typename BaseType::EntityType;
   using typename BaseType::BaseFunctionSetType;
-  using typename BaseType::CommunicatorType;
+  using typename BaseType::DofCommunicatorType;
   typedef typename Traits::FactorSpaceType FactorSpaceType;
 
   FvProductSpace(GridLayerType grd_layr)
@@ -123,9 +123,9 @@ public:
     return default_fv_space_.base_function_set(entity);
   }
 
-  CommunicatorType& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
-    return default_fv_space_.communicator();
+    return default_fv_space_.dof_communicator();
   }
 
 private:

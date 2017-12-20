@@ -83,8 +83,8 @@ public:
       BaseFunctionSetType;
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::part;
   static const bool needs_grid_view = false;
-  typedef CommunicationChooser<GridLayerType, true> CommunicationChooserType;
-  typedef typename CommunicationChooserType::Type CommunicatorType;
+  typedef DofCommunicationChooser<GridLayerType, true> DofCommunicationChooserType;
+  typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
 }; // class DuneFemCgSpaceWrapperTraits
 
 
@@ -118,10 +118,10 @@ public:
   typedef typename Traits::EntityType EntityType;
 
 private:
-  typedef typename Traits::CommunicationChooserType CommunicationChooserType;
+  typedef typename Traits::DofCommunicationChooserType DofCommunicationChooserType;
 
 public:
-  typedef typename Traits::CommunicatorType CommunicatorType;
+  typedef typename Traits::DofCommunicatorType DofCommunicatorType;
 
   using typename BaseType::DomainType;
 
@@ -129,7 +129,7 @@ public:
     : grid_part_(new GridLayerType(grd_prt))
     , backend_(new BackendType(*grid_part_))
     , mapper_(new MapperType(backend_->blockMapper()))
-    , communicator_(CommunicationChooserType::create(*grid_part_))
+    , communicator_(DofCommunicationChooserType::create(*grid_part_))
     , communicator_prepared_(false)
   {
   }
@@ -186,11 +186,11 @@ public:
     return BaseFunctionSetType(*backend_, entity);
   }
 
-  CommunicatorType& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
     if (!communicator_prepared_) {
       //      communicator_->remoteIndices().template rebuild<true>();
-      communicator_prepared_ = CommunicationChooserType::prepare(*this, *communicator_);
+      communicator_prepared_ = DofCommunicationChooserType::prepare(*this, *communicator_);
     }
     return *communicator_;
   }
@@ -199,7 +199,7 @@ private:
   std::shared_ptr<GridLayerType> grid_part_;
   const std::shared_ptr<const BackendType> backend_;
   const std::shared_ptr<const MapperType> mapper_;
-  mutable std::shared_ptr<CommunicatorType> communicator_;
+  mutable std::shared_ptr<DofCommunicatorType> communicator_;
   mutable bool communicator_prepared_;
 }; // class DuneFemCgSpaceWrapper< ..., 1 >
 

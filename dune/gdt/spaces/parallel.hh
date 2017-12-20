@@ -35,7 +35,7 @@ namespace GDT {
 
 template <class ViewImp,
           bool is_parallel = Dune::XT::UseParallelCommunication<typename ViewImp::Grid::CollectiveCommunication>::value>
-struct CommunicationChooser
+struct DofCommunicationChooser
 {
   typedef Dune::XT::SequentialCommunication Type;
 
@@ -47,17 +47,16 @@ struct CommunicationChooser
   template <class SpaceBackend>
   static bool prepare(const SpaceBackend& /*space_backend*/, Type& /*communicator*/)
   {
-    DUNE_THROW(InvalidStateException, "SQUENTIAL");
     return false;
   }
-}; // struct CommunicationChooser
+}; // struct DofCommunicationChooser
 
 
 #if HAVE_MPI && HAVE_DUNE_ISTL
 
 
 template <class ViewImp>
-struct CommunicationChooser<ViewImp, true>
+struct DofCommunicationChooser<ViewImp, true>
 {
 private:
   // this is necessary because alugrid's id is not integral
@@ -78,11 +77,11 @@ public:
   template <class Space>
   static bool prepare(const Space& space, Type& communicator)
   {
-    GDT::GenericParallelHelper<Space>(space, 1).createIndexSetAndProjectForAMG(communicator);
+    GDT::GenericParallelHelper<Space>(space, 1).setup_parallel_indexset(communicator);
     return true;
   } // ... prepare(...)
 
-}; // struct CommunicationChooser< ..., true >
+}; // struct DofCommunicationChooser< ..., true >
 
 
 #endif // HAVE_MPI && HAVE_DUNE_ISTL

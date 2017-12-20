@@ -155,8 +155,8 @@ public:
   typedef typename Dune::DynamicVector<RangeFieldType> VectorType;
   typedef typename XT::LA::Container<RangeFieldType, container_backend>::MatrixType SolverMatrixType;
   typedef typename XT::LA::Container<RangeFieldType, container_backend>::VectorType SolverVectorType;
-  typedef typename DiscreteFunctionType::SpaceType::CommunicatorType CommunicatorType;
-  typedef typename XT::LA::Solver<SolverMatrixType, CommunicatorType> SolverType;
+  typedef typename DiscreteFunctionType::SpaceType::DofCommunicatorType DofCommunicatorType;
+  typedef typename XT::LA::Solver<SolverMatrixType, DofCommunicatorType> SolverType;
   typedef typename Dune::GDT::MatrixDataHandle<SolverMatrixType, typename DiscreteFunctionType::SpaceType>
       SolverMatrixDataHandleType;
 
@@ -197,7 +197,7 @@ public:
     , solver_type_(solver_type)
     , beta_(beta)
     , newton_matrix_(u_i_.vector().size(), u_i_.vector().size(), this->newton_matrix_pattern(u_i_.space()))
-    , solver_(newton_matrix_, u_i_.space().communicator())
+    , solver_(newton_matrix_, u_i_.space().dof_communicator())
     , A_(A)
     , b_(b)
     , c_(c)

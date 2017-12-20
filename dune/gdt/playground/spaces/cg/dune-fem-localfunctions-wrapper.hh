@@ -106,7 +106,7 @@ public:
   typedef typename BaseFunctionSetType::EntityType EntityType;
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::part;
   static const bool needs_grid_view = false;
-  typedef double CommunicatorType;
+  typedef XT::SequentialCommunicationType DofCommunicatorType;
 
 private:
   template <class G, int p, class R, size_t r, size_t rC>
@@ -231,7 +231,7 @@ public:
     return BaseFunctionSetType(baseFunctionSetMap_, entity);
   }
 
-  double& communicator() const
+  double& dof_communicator() const
   {
     return communicator_;
   }

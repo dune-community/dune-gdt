@@ -154,7 +154,7 @@ public:
   using typename BaseType::VectorType;
 
 private:
-  typedef typename XT::LA::Solver<MatrixType, typename BaseType::TestSpaceType::CommunicatorType> LinearSolverType;
+  typedef typename XT::LA::Solver<MatrixType, typename BaseType::TestSpaceType::DofCommunicatorType> LinearSolverType;
 
 public:
   /// \name Have to be implemented by any derived class.
@@ -210,7 +210,7 @@ public:
 
   void solve(VectorType& solution, const XT::Common::Configuration& options) const
   {
-    LinearSolverType(system_matrix(), BaseType::test_space().communicator()).apply(rhs_vector(), solution, options);
+    LinearSolverType(system_matrix(), BaseType::test_space().dof_communicator()).apply(rhs_vector(), solution, options);
     if (has_dirichlet_shift())
       solution += dirichlet_shift();
   }

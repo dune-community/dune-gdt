@@ -64,7 +64,7 @@ public:
   typedef UnrestrictedSpace BackendType;
   typedef RestrictedMapper<UnrestrictedSpace, RestrictionGridLayer> MapperType;
   typedef typename UnrestrictedSpace::BaseFunctionSetType BaseFunctionSetType;
-  typedef typename UnrestrictedSpace::CommunicatorType CommunicatorType;
+  typedef typename UnrestrictedSpace::DofCommunicatorType DofCommunicatorType;
   typedef RestrictionGridLayer GridLayerType;
   typedef typename UnrestrictedSpace::RangeFieldType RangeFieldType;
   static const XT::Grid::Backends layer_backend = layer_backend_helper<>::value;
@@ -96,7 +96,7 @@ public:
   using typename BaseType::BackendType;
   using typename BaseType::EntityType;
   using typename BaseType::BaseFunctionSetType;
-  using typename BaseType::CommunicatorType;
+  using typename BaseType::DofCommunicatorType;
   using typename BaseType::PatternType;
   using typename BaseType::DomainType;
 
@@ -136,9 +136,9 @@ public:
     return unrestricted_space_.base_function_set(entity);
   }
 
-  CommunicatorType& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
-    return unrestricted_space_.communicator();
+    return unrestricted_space_.dof_communicator();
   }
 
   using BaseType::local_constraints;

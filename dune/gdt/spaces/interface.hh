@@ -163,7 +163,7 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
-  typedef typename Traits::CommunicatorType CommunicatorType;
+  typedef typename Traits::DofCommunicatorType DofCommunicatorType;
   typedef typename Traits::GridLayerType GridViewType DUNE_DEPRECATED_MSG("Use GridLayerType instead (02.04.2017)!");
   typedef typename Traits::GridLayerType GridLayerType;
   typedef typename Traits::RangeFieldType RangeFieldType;
@@ -227,10 +227,10 @@ public:
     return this->as_imp().base_function_set(entity);
   }
 
-  CommunicatorType& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
-    CHECK_CRTP(this->as_imp().communicator());
-    return this->as_imp().communicator();
+    CHECK_CRTP(this->as_imp().dof_communicator());
+    return this->as_imp().dof_communicator();
   }
 
   //! communication data handles may require to know this to setup buffers and trnasmission patterns

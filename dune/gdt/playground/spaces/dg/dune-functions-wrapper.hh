@@ -52,7 +52,7 @@ public:
   typedef Functions::LagrangeDGBasis<GL, p> BackendType;
   typedef DuneFunctionsMapperWrapper<GL, p, R, r, rC> MapperType;
   typedef DuneFunctionsBaseFunctionSetWrapper<GL, p, R, r, rC> BaseFunctionSetType;
-  typedef double CommunicatorType;
+  typedef double DofCommunicatorType;
   typedef GL GridLayerType;
   typedef R RangeFieldType;
 }; // class DuneFunctionsDgSpaceWrapperTraits
@@ -73,7 +73,7 @@ public:
 
   using typename BaseType::BackendType;
   using typename BaseType::BaseFunctionSetType;
-  using typename BaseType::CommunicatorType;
+  using typename BaseType::DofCommunicatorType;
   using typename BaseType::EntityType;
   using typename BaseType::GridLayerType;
   using typename BaseType::MapperType;
@@ -83,7 +83,7 @@ public:
     : grid_layer_(new GridLayerType(grd_layr))
     , backend_(new BackendType(*grid_layer_))
     , mapper_(new MapperType(backend_))
-    , communicator_(new CommunicatorType(0.))
+    , communicator_(new DofCommunicatorType(0.))
   {
   }
 
@@ -127,7 +127,7 @@ public:
     return this->compute_face_and_volume_pattern(grd_layr, ansatz_space);
   }
 
-  CommunicatorType& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
     return *communicator_;
   }
@@ -136,7 +136,7 @@ private:
   std::shared_ptr<GridLayerType> grid_layer_;
   const std::shared_ptr<const BackendType> backend_;
   const std::shared_ptr<const MapperType> mapper_;
-  mutable std::shared_ptr<CommunicatorType> communicator_;
+  mutable std::shared_ptr<DofCommunicatorType> communicator_;
 }; // class DuneFunctionsDgSpaceWrapper
 
 

@@ -87,8 +87,8 @@ public:
   using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static const bool needs_grid_view = true;
-  typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
-  typedef typename CommunicationChooserType::Type CommunicatorType;
+  typedef DofCommunicationChooser<GridLayerType> DofCommunicationChooserType;
+  typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
   static const constexpr Backends backend_type{std::tuple_element<0, std::tuple<SpaceImps...>>::Traits::backend_type};
 }; // class ProductSpaceTraits
 
@@ -123,23 +123,23 @@ public:
   using typename BaseType::BaseFunctionSetType;
 
 private:
-  typedef typename Traits::CommunicationChooserType CommunicationChooserType;
+  typedef typename Traits::DofCommunicationChooserType DofCommunicationChooserType;
 
 public:
-  using typename BaseType::CommunicatorType;
+  using typename BaseType::DofCommunicatorType;
   typedef typename Traits::SpaceTupleType SpaceTupleType;
 
   DefaultProductSpace(const SpaceImps&... spaces)
     : spaces_(std::make_tuple(spaces...))
     , product_mapper_(spaces_)
-    , communicator_(CommunicationChooserType::create(std::get<0>(spaces_).grid_layer()))
+    , communicator_(DofCommunicationChooserType::create(std::get<0>(spaces_).grid_layer()))
   {
   }
 
   DefaultProductSpace(const ThisType& other)
     : spaces_(other.spaces_)
     , product_mapper_(other.product_mapper_)
-    , communicator_(CommunicationChooserType::create(std::get<0>(spaces_).grid_layer()))
+    , communicator_(DofCommunicationChooserType::create(std::get<0>(spaces_).grid_layer()))
   {
   }
 
@@ -183,7 +183,7 @@ public:
                                     typename Dune::XT::Common::make_index_sequence<sizeof...(SpaceImps)>::type());
   }
 
-  CommunicatorType& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
     return *communicator_;
   }
@@ -202,7 +202,7 @@ private:
 
   std::tuple<SpaceImps...> spaces_;
   const MapperType product_mapper_;
-  const std::unique_ptr<CommunicatorType> communicator_;
+  const std::unique_ptr<DofCommunicatorType> communicator_;
 }; // class DefaultProductSpace
 
 

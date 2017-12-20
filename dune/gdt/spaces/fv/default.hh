@@ -62,8 +62,8 @@ public:
       BaseFunctionSetType;
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static const bool needs_grid_view = true;
-  typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
-  typedef typename CommunicationChooserType::Type CommunicatorType;
+  typedef DofCommunicationChooser<GridLayerType> DofCommunicationChooserType;
+  typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
   static const constexpr Backends backend_type{GDT::Backends::gdt};
 }; // class FvSpaceTraits
 
@@ -94,22 +94,22 @@ public:
   using typename BaseType::BaseFunctionSetType;
 
 private:
-  typedef typename Traits::CommunicationChooserType CommunicationChooserType;
+  typedef typename Traits::DofCommunicationChooserType DofCommunicationChooserType;
 
 public:
-  using typename BaseType::CommunicatorType;
+  using typename BaseType::DofCommunicatorType;
 
   FvSpace(GridLayerType grd_layr)
     : grid_layer_(grd_layr)
     , mapper_(grid_layer_)
-    , communicator_(CommunicationChooserType::create(grid_layer_))
+    , communicator_(DofCommunicationChooserType::create(grid_layer_))
   {
   }
 
   FvSpace(const ThisType& other)
     : grid_layer_(other.grid_layer_)
     , mapper_(other.mapper_)
-    , communicator_(CommunicationChooserType::create(grid_layer_))
+    , communicator_(DofCommunicationChooserType::create(grid_layer_))
   {
   }
 
@@ -144,7 +144,7 @@ public:
     return BaseFunctionSetType(entity);
   }
 
-  CommunicatorType& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
     // no need to prepare the communicator, since we are not pdelab based
     return *communicator_;
@@ -153,7 +153,7 @@ public:
 private:
   GridLayerType grid_layer_;
   const MapperType mapper_;
-  const std::unique_ptr<CommunicatorType> communicator_;
+  const std::unique_ptr<DofCommunicatorType> communicator_;
 }; // class FvSpace< ..., 1, 1 >
 
 

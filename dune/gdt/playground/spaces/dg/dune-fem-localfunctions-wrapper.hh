@@ -102,7 +102,7 @@ public:
   typedef typename BaseFunctionSetType::EntityType EntityType;
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::part;
   static const bool needs_grid_view = false;
-  typedef double CommunicatorType;
+  typedef double DofCommunicatorType;
 
 private:
   template <class G, int p, class R, size_t r, size_t rC>
@@ -219,7 +219,7 @@ public:
     return BaseType::compute_face_and_volume_pattern(local_grid_layer, ansatz_space);
   }
 
-  double& communicator() const
+  double& dof_communicator() const
   {
     return communicator_;
   }

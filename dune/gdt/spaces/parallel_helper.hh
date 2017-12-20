@@ -33,6 +33,7 @@ class GenericParallelHelper
   using BoolVector = CommunicatedVector<uint_fast8_t>;
   //! Type used to store ghost flag of all DOFs,
   using GhostVector = BoolVector;
+  using DofCommunicatorType = typename SpaceType::DofCommunicatorType;
 
 public:
   GenericParallelHelper(const SpaceType& space, int verbose = 1)
@@ -70,25 +71,16 @@ public:
 
 #if HAVE_MPI
 
-  //! Makes the matrix consistent and creates the parallel information for AMG.
-  /**
-   * This function accomplishes two things:
-   *
-   * 1. Makes the matrix consistent w.r.t. to the disjoint partitioning of the DOF space,
-   *    i.e. aggregates matrix entries for border entries from neighboring ranks.
-   *
-   * 2. Sets up the parallel communication information for AMG.
+  /* \brief Sets up the parallel communication information for AMG.
    *
    * \warning  This function silenty assumes that the matrix only has a single level
    *           of blocking and will not work correctly otherwise. Also note that AMG
    *           will only work correctly for P1 discretisations.
    *
-   * \param matrix  The PDELab matrix container.
-   * \param c  The parallel information object providing index set, interfaces and
+   * \param dof_communicator  The parallel information object providing index set, interfaces and
    *           communicators.
    */
-  template <typename Comm>
-  void createIndexSetAndProjectForAMG(Comm& c);
+  void setup_parallel_indexset(DofCommunicatorType& dof_communicator);
 
 private:
   // Checks whether a matrix block is owned by the current process. Used for the AMG
@@ -118,8 +110,7 @@ private:
 #if HAVE_MPI
 
 template <typename SpaceType>
-template <class CommunicatorType>
-void GenericParallelHelper<SpaceType>::createIndexSetAndProjectForAMG(CommunicatorType& c)
+void GenericParallelHelper<SpaceType>::setup_parallel_indexset(DofCommunicatorType& dof_communicator)
 {
 
   // ********************************************************************************
@@ -143,7 +134,7 @@ void GenericParallelHelper<SpaceType>::createIndexSetAndProjectForAMG(Communicat
   }
 
   // Count shared dofs that we own
-  using GlobalIndex = typename CommunicatorType::ParallelIndexSet::GlobalIndex;
+  using GlobalIndex = typename DofCommunicatorType::ParallelIndexSet::GlobalIndex;
   GlobalIndex count{0};
 
   for (size_t i = 0; i < sharedDOF.size(); ++i) {
@@ -175,7 +166,7 @@ void GenericParallelHelper<SpaceType>::createIndexSetAndProjectForAMG(Communicat
   }
 
   // Setup the index set
-  c.indexSet().beginResize();
+  dof_communicator.indexSet().beginResize();
   for (size_t i = 0; i < scalarIndices.size(); ++i) {
     Dune::OwnerOverlapCopyAttributeSet::AttributeSet attr;
     if (scalarIndices[i] != std::numeric_limits<GlobalIndex>::max()) {
@@ -186,10 +177,11 @@ void GenericParallelHelper<SpaceType>::createIndexSetAndProjectForAMG(Communicat
       } else {
         attr = Dune::OwnerOverlapCopyAttributeSet::copy;
       }
-      c.indexSet().add(scalarIndices[i], typename CommunicatorType::ParallelIndexSet::LocalIndex(i, attr));
+      dof_communicator.indexSet().add(scalarIndices[i],
+                                      typename DofCommunicatorType::ParallelIndexSet::LocalIndex(i, attr));
     }
   }
-  c.indexSet().endResize();
+  dof_communicator.indexSet().endResize();
 
   // Compute neighbors using communication
   std::set<int> neighbors;
@@ -199,8 +191,8 @@ void GenericParallelHelper<SpaceType>::createIndexSetAndProjectForAMG(Communicat
     view.communicate(data_handle, _all_all_interface, Dune::ForwardCommunication);
   }
 
-  c.remoteIndices().setNeighbours(neighbors);
-  c.remoteIndices().template rebuild<false>();
+  dof_communicator.remoteIndices().setNeighbours(neighbors);
+  dof_communicator.remoteIndices().template rebuild<false>();
 }
 
 #endif // HAVE_MPI

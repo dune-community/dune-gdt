@@ -124,8 +124,8 @@ public:
       BaseFunctionSetType;
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static const bool needs_grid_view = true;
-  typedef CommunicationChooser<GridLayerType, false> CommunicationChooserType;
-  typedef typename CommunicationChooserType::Type CommunicatorType;
+  typedef DofCommunicationChooser<GridLayerType, false> DofCommunicationChooserType;
+  typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
 
 private:
   friend class DunePdelabRtSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
@@ -162,7 +162,7 @@ public:
   using typename BaseType::BackendType;
   using typename BaseType::MapperType;
   using typename BaseType::BaseFunctionSetType;
-  using typename BaseType::CommunicatorType;
+  using typename BaseType::DofCommunicatorType;
 
   using typename BaseType::PatternType;
   using typename BaseType::EntityType;
@@ -176,7 +176,7 @@ public:
     , fe_map_(grid_view_)
     , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
-    , communicator_(Traits::CommunicationChooserType::create(grid_view_))
+    , communicator_(Traits::DofCommunicationChooserType::create(grid_view_))
     , communicator_prepared_(false)
   {
   }
@@ -191,12 +191,12 @@ public:
     , fe_map_(grid_view_)
     , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
-    , communicator_(Traits::CommunicationChooserType::create(grid_view_))
+    , communicator_(Traits::DofCommunicationChooserType::create(grid_view_))
     , communicator_prepared_(false)
   {
     // make sure our new communicator is prepared if other's was
     if (other.communicator_prepared_)
-      const auto& comm DUNE_UNUSED = this->communicator();
+      const auto& comm DUNE_UNUSED = this->dof_communicator();
   }
 
   /**
@@ -243,11 +243,11 @@ public:
     return BaseFunctionSetType(backend_, entity);
   }
 
-  CommunicatorType& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
     DUNE_UNUSED std::lock_guard<std::mutex> gg(communicator_mutex_);
     if (!communicator_prepared_)
-      communicator_prepared_ = Traits::CommunicationChooserType::prepare(*this, *communicator_);
+      communicator_prepared_ = Traits::DofCommunicationChooserType::prepare(*this, *communicator_);
     return *communicator_;
   } // ... communicator(...)
 
@@ -279,7 +279,7 @@ private:
   const FEMapType fe_map_;
   const BackendType backend_;
   const MapperType mapper_;
-  mutable std::unique_ptr<CommunicatorType> communicator_;
+  mutable std::unique_ptr<DofCommunicatorType> communicator_;
   mutable bool communicator_prepared_;
   mutable std::mutex communicator_mutex_;
 }; // class DunePdelabRtSpaceWrapper< ..., 0, ..., 1 >

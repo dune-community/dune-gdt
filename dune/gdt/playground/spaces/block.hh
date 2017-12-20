@@ -52,8 +52,8 @@ public:
 
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::part;
   static const constexpr Backends backend_type{Backends::gdt};
-  using CommunicationChooserType = CommunicationChooser<GridLayerType, true>;
-  using CommunicatorType = typename CommunicationChooserType::type;
+  using DofCommunicationChooserType = DofCommunicationChooser<GridLayerType, true>;
+  using DofCommunicatorType = typename DofCommunicationChooserType::type;
 
   static const bool needs_grid_view = false;
 }; // class BlockSpaceTraits
@@ -85,8 +85,8 @@ public:
   typedef typename BaseType::PatternType PatternType;
   typedef typename BaseType::GridLayerType GridLayerType;
   typedef typename BaseType::EntityType EntityType;
-  typedef CommunicationChooser<GridLayerType, true> CommunicationChooserType;
-  typedef typename CommunicationChooserType::Type CommunicatorType;
+  typedef DofCommunicationChooser<GridLayerType, true> DofCommunicationChooserType;
+  typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
 
   typedef XT::Grid::DD::SubdomainGrid<typename XT::Grid::extract_grid<GridLayerType>::type> DdSubdomainsGridType;
   static const constexpr Backends backend_type{Backends::gdt};
@@ -97,7 +97,7 @@ public:
     , global_grid_part_(new GridLayerType(dd_grid_.globalGridPart()))
     , local_spaces_(new std::vector<std::shared_ptr<const LocalSpaceType>>(spaces))
     , mapper_(new MapperType(dd_grid_, global_grid_part_, local_spaces_))
-    , communicator_(Traits::CommunicationChooserType::create(*global_grid_part_))
+    , communicator_(Traits::DofCommunicationChooserType::create(*global_grid_part_))
     , communicator_prepared_(false)
   {
     if (local_spaces_->size() != dd_grid_.size())
@@ -158,10 +158,10 @@ public:
     return PatternType();
   }
 
-  typename Traits::CommunicatorType& communicator() const
+  typename Traits::DofCommunicatorType& dof_communicator() const
   {
     if (!communicator_prepared_)
-      communicator_prepared_ = CommunicationChooserType::prepare(*this, *communicator_);
+      communicator_prepared_ = DofCommunicationChooserType::prepare(*this, *communicator_);
     return *communicator_;
     return *communicator_;
   }
@@ -219,7 +219,7 @@ private:
   const std::shared_ptr<GridLayerType> global_grid_part_;
   const std::shared_ptr<std::vector<std::shared_ptr<const LocalSpaceType>>> local_spaces_;
   const std::shared_ptr<MapperType> mapper_;
-  mutable std::shared_ptr<typename Traits::CommunicatorType> communicator_;
+  mutable std::shared_ptr<typename Traits::DofCommunicatorType> communicator_;
   mutable bool communicator_prepared_;
 }; // class BlockSpace
 
