@@ -9,7 +9,7 @@ namespace GDT {
 //! Communication descriptor for sending one item of type E per DOF.
 //! used in Mindatahandle
 template <typename E>
-struct DOFDataCommunicationDescriptor
+struct DofDataCommunicationDescriptor
 {
   typedef E DataType;
 
@@ -64,25 +64,25 @@ struct EntityDataCommunicationDescriptor
   template <typename SpaceType, typename Entity>
   std::size_t size(const SpaceType& space, const Entity& e) const
   {
-    return (SpaceType::associates_data_with(Entity::codimension) && space.grid_layer().indexSet().contains(e)) ? _count
+    return (SpaceType::associates_data_with(Entity::codimension) && space.grid_layer().indexSet().contains(e)) ? count_
                                                                                                                : 0;
   }
 
   //! remove default value, force handles to use actual space provided values
   explicit EntityDataCommunicationDescriptor(std::size_t count = 4)
-    : _count(count)
+    : count_(count)
   {
   }
 
 private:
-  const std::size_t _count;
+  const std::size_t count_;
 };
 
 
 template <typename SpaceType,
           typename VectorType,
           typename GatherScatter,
-          typename CommunicationDescriptor = DOFDataCommunicationDescriptor<typename VectorType::ScalarType>>
+          typename CommunicationDescriptor = DofDataCommunicationDescriptor<typename VectorType::ScalarType>>
 class SpaceDataHandle
     : public Dune::CommDataHandleIF<SpaceDataHandle<SpaceType, VectorType, GatherScatter, CommunicationDescriptor>,
                                     typename CommunicationDescriptor::DataType>
@@ -97,22 +97,22 @@ public:
                   GatherScatter gather_scatter = GatherScatter(),
                   CommunicationDescriptor communication_descriptor = CommunicationDescriptor())
     : space_(space)
-    , _gather_scatter(gather_scatter)
-    , _communication_descriptor(communication_descriptor)
-    , local_view_(v, space, _communication_descriptor)
+    , gather_scatter_(gather_scatter)
+    , communication_descriptor_(communication_descriptor)
+    , local_view_(v, space, communication_descriptor_)
   {
   }
 
   //! returns true if data for this codim should be communicated
   bool contains(int dim, int codim) const
   {
-    return _communication_descriptor.contains(space_, dim, codim);
+    return communication_descriptor_.contains(space_, dim, codim);
   }
 
   //!  \brief returns true if size per entity of given dim and codim is a constant
   bool fixedsize(int dim, int codim) const
   {
-    return _communication_descriptor.fixedSize(space_, dim, codim);
+    return communication_descriptor_.fixedSize(space_, dim, codim);
   }
 
   /*!  \brief how many objects of type DataType have to be sent for a given entity
@@ -122,7 +122,7 @@ public:
   template <class EntityType>
   size_t size(const EntityType& entity) const
   {
-    return _communication_descriptor.size(space_, entity);
+    return communication_descriptor_.size(space_, entity);
   }
 
   /** pack data from user to message buffer
@@ -135,7 +135,7 @@ public:
   void gather(MessageBuffer& buffer, const EntityType& entity) const
   {
     local_view_.bind(entity);
-    if (_gather_scatter.gather(buffer, entity, local_view_))
+    if (gather_scatter_.gather(buffer, entity, local_view_))
       local_view_.commit();
   }
 
@@ -148,7 +148,7 @@ public:
   void scatter(MessageBuffer& buff, const EntityType& e, size_t n)
   {
     local_view_.bind(e);
-    if (_gather_scatter.scatter(buff, n, e, local_view_))
+    if (gather_scatter_.scatter(buff, n, e, local_view_))
       local_view_.commit();
   }
 
@@ -156,8 +156,8 @@ public:
 private:
   const SpaceType& space_;
   //! has to be mutable because gather is const
-  mutable GatherScatter _gather_scatter;
-  CommunicationDescriptor _communication_descriptor;
+  mutable GatherScatter gather_scatter_;
+  CommunicationDescriptor communication_descriptor_;
   mutable LocalView<typename VectorType::Traits, typename VectorType::ScalarType, SpaceType, CommunicationDescriptor>
       local_view_;
 };
@@ -227,7 +227,7 @@ public:
   bool gather(MessageBuffer& buff, const Entity& e, const LocalView& local_view) const
   {
     for (std::size_t i = 0; i < local_view.size(); ++i)
-      _gather_scatter.gather(buff, e, local_view[i]);
+      gather_scatter_.gather(buff, e, local_view[i]);
     return false;
   }
 
@@ -242,7 +242,7 @@ public:
                                                                            << n);
 
       for (std::size_t i = 0; i < local_view.size(); ++i)
-        _gather_scatter.scatter(buff, e, local_view[i]);
+        gather_scatter_.scatter(buff, e, local_view[i]);
       return true;
     } else {
       if (local_view.size() != 0)
@@ -258,12 +258,12 @@ public:
   }
 
   DataEntityGatherScatter(GatherScatter gather_scatter = GatherScatter())
-    : _gather_scatter(gather_scatter)
+    : gather_scatter_(gather_scatter)
   {
   }
 
 private:
-  GatherScatter _gather_scatter;
+  GatherScatter gather_scatter_;
 };
 
 class MinGatherScatter
@@ -288,12 +288,12 @@ template <class SpaceType, class VectorType>
 class MinDataHandle : public SpaceDataHandle<SpaceType,
                                              VectorType,
                                              DataGatherScatter<MinGatherScatter>,
-                                             DOFDataCommunicationDescriptor<typename VectorType::ScalarType>>
+                                             DofDataCommunicationDescriptor<typename VectorType::ScalarType>>
 {
   typedef SpaceDataHandle<SpaceType,
                           VectorType,
                           DataGatherScatter<MinGatherScatter>,
-                          DOFDataCommunicationDescriptor<typename VectorType::ScalarType>>
+                          DofDataCommunicationDescriptor<typename VectorType::ScalarType>>
       BaseType;
 
 public:
@@ -400,7 +400,7 @@ public:
   {
     // We only gather from interior and border entities, so we can throw in our ownership
     // claim without any further checks.
-    buff.write(_rank);
+    buff.write(rank_);
 
     return true;
   }
@@ -428,7 +428,7 @@ public:
       // receiving side. We also need to make sure not to overwrite any data already
       // received, so we only blank the rank value if the currently stored value is
       // equal to our own rank.
-      if (!is_interior_or_border && current_rank == _rank)
+      if (!is_interior_or_border && current_rank == rank_)
         current_rank = unknown_rank;
 
       // Assign DOFs to minimum rank value.
@@ -442,12 +442,12 @@ public:
    * \param rank  The MPI rank of the current process.
    */
   DisjointPartitioningGatherScatter(RankIndex rank)
-    : _rank(rank)
+    : rank_(rank)
   {
   }
 
 private:
-  const RankIndex _rank;
+  const RankIndex rank_;
 };
 
 //! GatherScatter data handle for creating a disjoint DOF partitioning.
@@ -479,17 +479,17 @@ public:
    * result vector with the current MPI rank. If you have already done that
    * externally, you can skip the initialization.
    *
-   * \param space_         The GridFunctionSpace to operate on.
-   * \param v_           The result vector.
+   * \param space         The GridFunctionSpace to operate on.
+   * \param v           The result vector.
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
-  DisjointPartitioningDataHandle(const SpaceType& space_, VectorType& v_, bool init_vector = true)
-    : BaseType(space_,
-               v_,
-               DisjointPartitioningGatherScatter<typename VectorType::ScalarType>(space_.grid_layer().comm().rank()))
+  DisjointPartitioningDataHandle(const SpaceType& space, VectorType& v, bool init_vector = true)
+    : BaseType(space,
+               v,
+               DisjointPartitioningGatherScatter<typename VectorType::ScalarType>(space.grid_layer().comm().rank()))
   {
     if (init_vector)
-      v_.set_all(space_.grid_layer().comm().rank());
+      v.set_all(space.grid_layer().comm().rank());
   }
 };
 
@@ -549,15 +549,15 @@ public:
    * with the correct value of false. If you have already done that externally,
    * you can skip the initialization.
    *
-   * \param space_         The GridFunctionSpace to operate on.
-   * \param v_           The result vector.
+   * \param space         The GridFunctionSpace to operate on.
+   * \param v           The result vector.
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
-  SharedDOFDataHandle(const SpaceType& space_, VectorType& v_, bool init_vector = true)
-    : BaseType(space_, v_)
+  SharedDOFDataHandle(const SpaceType& space, VectorType& v, bool init_vector = true)
+    : BaseType(space, v)
   {
     if (init_vector)
-      v_.set_all(false);
+      v.set_all(false);
   }
 };
 
@@ -582,8 +582,8 @@ public:
 
   SpaceNeighborDataHandle(const SpaceType& space, RankIndex rank, std::set<RankIndex>& neighbors)
     : space_(space)
-    , _rank(rank)
-    , _neighbors(neighbors)
+    , rank_(rank)
+    , neighbors_(neighbors)
   {
   }
 
@@ -607,7 +607,7 @@ public:
   template <typename MessageBuffer, typename Entity>
   void gather(MessageBuffer& buff, const Entity& /*e*/) const
   {
-    buff.write(_rank);
+    buff.write(rank_);
   }
 
   template <typename MessageBuffer, typename Entity>
@@ -615,13 +615,13 @@ public:
   {
     RankIndex rank;
     buff.read(rank);
-    _neighbors.insert(rank);
+    neighbors_.insert(rank);
   }
 
 private:
   const SpaceType& space_;
-  const RankIndex _rank;
-  std::set<RankIndex>& _neighbors;
+  const RankIndex rank_;
+  std::set<RankIndex>& neighbors_;
 };
 
 
