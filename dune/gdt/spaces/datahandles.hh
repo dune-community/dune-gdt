@@ -69,7 +69,7 @@ struct EntityDataCommunicationDescriptor
   }
 
   //! remove default value, force handles to use actual space provided values
-  explicit EntityDataCommunicationDescriptor(std::size_t count = 4)
+  explicit EntityDataCommunicationDescriptor(std::size_t count)
     : count_(count)
   {
   }
@@ -94,8 +94,8 @@ public:
 
   SpaceDataHandle(const SpaceType& space,
                   VectorType& v,
-                  GatherScatter gather_scatter = GatherScatter(),
-                  CommunicationDescriptor communication_descriptor = CommunicationDescriptor())
+                  CommunicationDescriptor communication_descriptor,
+                  GatherScatter gather_scatter = GatherScatter())
     : space_(space)
     , gather_scatter_(gather_scatter)
     , communication_descriptor_(communication_descriptor)
@@ -298,7 +298,7 @@ class MinDataHandle : public SpaceDataHandle<SpaceType,
 
 public:
   MinDataHandle(const SpaceType& space_, VectorType& v_)
-    : BaseType(space_, v_)
+    : BaseType(space_, v_, DofDataCommunicationDescriptor<typename VectorType::ScalarType>())
   {
   }
 };
@@ -373,7 +373,7 @@ public:
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
   GhostDataHandle(const SpaceType& space_, VectorType& v_, bool init_vector = true)
-    : BaseType(space_, v_)
+    : BaseType(space_, v_, EntityDataCommunicationDescriptor<bool>(space_.mapper().maxNumDofs()))
   {
     if (init_vector)
       v_.set_all(false);
@@ -486,6 +486,7 @@ public:
   DisjointPartitioningDataHandle(const SpaceType& space, VectorType& v, bool init_vector = true)
     : BaseType(space,
                v,
+               EntityDataCommunicationDescriptor<typename VectorType::ScalarType>(space.mapper().maxNumDofs()),
                DisjointPartitioningGatherScatter<typename VectorType::ScalarType>(space.grid_layer().comm().rank()))
   {
     if (init_vector)
@@ -554,7 +555,7 @@ public:
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
   SharedDOFDataHandle(const SpaceType& space, VectorType& v, bool init_vector = true)
-    : BaseType(space, v)
+    : BaseType(space, v, EntityDataCommunicationDescriptor<bool>(space.mapper().maxNumDofs()))
   {
     if (init_vector)
       v.set_all(false);
