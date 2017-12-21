@@ -1,1 +1,0 @@
-linearelliptic__cg_discretization.tpl
