@@ -110,8 +110,8 @@ public:
       const auto& coeffs = finite_element.localCoefficients();
       for (size_t ii = 0; ii < coeffs.size(); ++ii) {
         const auto& local_key = coeffs.localKey(ii);
-        if (local_key.index() != 0) // Would require twisting of DoFs and possile more knowledge from the finite element
-          DUNE_THROW(NotImplemented, "yet, when we have more than one DoF per (sub)entity!");
+        if (local_key.index() != 0) // Would require twisting of DoFs and possibly more knowledge from the FE
+          DUNE_THROW(mapper_error, "This case is not covered yet, when we have more than one DoF per (sub)entity!");
         // find the (sub)entity for this key
         const auto sub_entity = local_key.subEntity();
         const auto codim = local_key.codim();
