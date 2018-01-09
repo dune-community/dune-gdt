@@ -25,6 +25,7 @@ typedef testing::Types<
                       ,*/ std::pair<SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 1), SPACE_RT_PDELAB_ALUCONFORMGRID(2)>>
     SpaceTypes;
 
+// this test cannot run in parallel ATM because the RT space does not have a parallel dof_comm setup
 TYPED_TEST_CASE(DarcyOperatorTest, SpaceTypes);
 TYPED_TEST(DarcyOperatorTest, produces_correct_results)
 {
