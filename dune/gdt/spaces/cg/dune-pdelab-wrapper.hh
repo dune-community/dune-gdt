@@ -119,37 +119,6 @@ private:
 }; // class DunePdelabCgSpaceWrapperTraits
 
 
-namespace internal {
-
-
-template <int polOrder, class SpaceType>
-struct LocalDirichletDoFs
-{
-  template <class I>
-  static std::set<size_t> get(const typename SpaceType::EntityType& entity,
-                              const XT::Grid::BoundaryInfo<I>& boundaryInfo,
-                              const SpaceType& space)
-  {
-    return space.local_dirichlet_DoFs_simplicial_lagrange_elements(entity, boundaryInfo);
-  }
-};
-
-template <class SpaceType>
-struct LocalDirichletDoFs<1, SpaceType>
-{
-  template <class I>
-  static std::set<size_t> get(const typename SpaceType::EntityType& entity,
-                              const XT::Grid::BoundaryInfo<I>& boundaryInfo,
-                              const SpaceType& space)
-  {
-    return space.local_dirichlet_DoFs_order_1(entity, boundaryInfo);
-  }
-};
-
-
-} // namespace internal
-
-
 template <class GridViewImp, int polynomialOrder, class RangeFieldImp>
 class DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>
     : public CgSpaceInterface<DunePdelabCgSpaceWrapperTraits<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>,
@@ -258,13 +227,9 @@ public:
 
   std::vector<DomainType> lagrange_points(const EntityType& entity) const
   {
+    if (polOrder != 1)
+      DUNE_THROW(NotImplemented, "");
     return BaseType::lagrange_points_order_1(entity);
-  }
-
-  template <class I>
-  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const XT::Grid::BoundaryInfo<I>& boundaryInfo) const
-  {
-    return internal::LocalDirichletDoFs<polynomialOrder, ThisType>::get(entity, boundaryInfo, *this);
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
@@ -421,13 +386,9 @@ public:
 
   std::vector<DomainType> lagrange_points(const EntityType& entity) const
   {
+    if (polOrder != 1)
+      DUNE_THROW(NotImplemented, "");
     return BaseType::lagrange_points_order_1(entity);
-  }
-
-  template <class I>
-  std::set<size_t> local_dirichlet_DoFs(const EntityType& entity, const XT::Grid::BoundaryInfo<I>& boundaryInfo) const
-  {
-    return internal::LocalDirichletDoFs<polynomialOrder, ThisType>::get(entity, boundaryInfo, *this);
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const

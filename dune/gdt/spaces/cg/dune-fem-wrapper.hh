@@ -169,14 +169,9 @@ public:
 
   std::vector<DomainType> lagrange_points(const EntityType& entity) const
   {
+    if (polOrder != 1)
+      DUNE_THROW(NotImplemented, "");
     return BaseType::lagrange_points_order_1(entity);
-  }
-
-  std::set<size_t> local_dirichlet_DoFs(
-      const EntityType& entity,
-      const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GridLayerType>>& boundaryInfo) const
-  {
-    return BaseType::local_dirichlet_DoFs_order_1(entity, boundaryInfo);
   }
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
