@@ -1,0 +1,301 @@
+// This file is part of the dune-gdt project:
+//   https://github.com/dune-community/dune-gdt
+// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+//      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
+//          with "runtime exception" (http://www.dune-project.org/license.html)
+// Authors:
+//   Felix Schindler (2017)
+
+#ifndef DUNE_GDT_SPACES_CG_DEFAULT_HH
+#define DUNE_GDT_SPACES_CG_DEFAULT_HH
+
+#include <memory>
+#include <vector>
+
+#include <dune/common/typetraits.hh>
+
+#include <dune/geometry/referenceelements.hh>
+#include <dune/geometry/type.hh>
+
+#include <dune/grid/common/capabilities.hh>
+#include <dune/grid/common/rangegenerators.hh>
+
+#include <dune/localfunctions/lagrange/equidistantpoints.hh>
+#include <dune/localfunctions/lagrange.hh>
+
+#include <dune/xt/common/exceptions.hh>
+#include <dune/xt/common/numeric_cast.hh>
+
+#include <dune/gdt/spaces/basefunctionset/interface.hh>
+#include <dune/gdt/spaces/mapper/default.hh>
+#include <dune/gdt/spaces/cg/interface.hh>
+
+namespace Dune {
+namespace GDT {
+
+
+// forwards, required for the traits
+template <class E, class R = double>
+class ContinuousLagrangeBasefunctionSet;
+
+template <class GL, int p, class R = double>
+class ContinuousLagrangeSpace;
+
+
+namespace internal {
+
+
+template <class E, class R>
+class ContinuousLagrangeBasefunctionSetTraits
+{
+  using LocalFunctionTraits =
+      XT::Functions::LocalfunctionSetInterface<E, typename E::Geometry::ctype, E::dimension, R, 1>;
+
+public:
+  using derived_type = ContinuousLagrangeBasefunctionSet<E, R>;
+  using EntityType = E;
+  using BackendType = LagrangeLocalFiniteElement<EquidistantPointSet, E::dimension, typename E::Geometry::ctype, R>;
+};
+
+
+template <class GL, int p, class R>
+class ContinuousLagrangeSpaceTraits
+{
+  static_assert(XT::Grid::is_layer<GL>::value, "");
+  static_assert(1 <= p && p <= 2, "Not implemented yet!");
+  using G = XT::Grid::extract_grid_t<GL>;
+
+public:
+  using derived_type = ContinuousLagrangeSpace<GL, p, R>;
+  static const constexpr int polOrder = p;
+  static const constexpr size_t dimDomain = GL::dimension;
+  static const constexpr size_t dimRange = 1;
+  static const constexpr size_t dimRangeCols = 1;
+  static const constexpr bool continuous = false;
+  using GridLayerType = GL;
+  using BaseFunctionSetType = ContinuousLagrangeBasefunctionSet<XT::Grid::extract_entity_t<GL>, R>;
+  using MapperType = FixedOrderMultipleCodimMultipleGeomTypeMapper<GL,
+                                                                   LagrangeLocalFiniteElement<EquidistantPointSet,
+                                                                                              dimDomain,
+                                                                                              typename GL::ctype,
+                                                                                              R>>;
+  using RangeFieldType = R;
+  using BackendType = double;
+  static const constexpr XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
+  using CommunicatorType = double;
+}; // class ContinuousLagrangeSpaceTraits
+
+
+} // namespace internal
+
+
+/**
+ * \note These are untrasformed shape function evaluations and jacoian-inverse transformed shape function jacobians,
+ *       this class could thus be used for other finite elements.
+ */
+template <class E, class R>
+class ContinuousLagrangeBasefunctionSet
+    : public BaseFunctionSetInterface<internal::ContinuousLagrangeBasefunctionSetTraits<E, R>,
+                                      typename E::Geometry::ctype,
+                                      E::dimension,
+                                      R,
+                                      1>
+{
+public:
+  using Traits = internal::ContinuousLagrangeBasefunctionSetTraits<E, R>;
+
+private:
+  using BaseType = BaseFunctionSetInterface<Traits, typename E::Geometry::ctype, E::dimension, R, 1>;
+  using ThisType = ContinuousLagrangeBasefunctionSet<E, R>;
+
+public:
+  using typename BaseType::BackendType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::JacobianRangeType;
+
+  ContinuousLagrangeBasefunctionSet(const EntityType& en, const BackendType& finite_element)
+    : BaseType(en)
+    , finite_element_(finite_element)
+  {
+  }
+
+  ContinuousLagrangeBasefunctionSet(const ThisType&) = default;
+  ContinuousLagrangeBasefunctionSet(ThisType&&) = default;
+
+  ThisType& operator=(const ThisType&) = delete;
+  ThisType& operator=(ThisType&&) = delete;
+
+  const BackendType& backend() const
+  {
+    return finite_element_;
+  }
+
+  size_t size() const override final
+  {
+    return finite_element_.localBasis().size();
+  }
+
+  size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override final
+  {
+    return finite_element_.localBasis().order();
+  }
+
+  using BaseType::evaluate;
+
+  void evaluate(const DomainType& xx,
+                std::vector<RangeType>& ret,
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
+  {
+    assert(this->is_a_valid_point(xx));
+    finite_element_.localBasis().evaluateFunction(xx, ret);
+  }
+
+  using BaseType::jacobian;
+
+  void jacobian(const DomainType& xx,
+                std::vector<JacobianRangeType>& ret,
+                const XT::Common::Parameter& /*mu*/ = {}) const override final
+  {
+    assert(this->is_a_valid_point(xx));
+    // evaluate jacobian of shape functions
+    finite_element_.localBasis().evaluateJacobian(xx, ret);
+    // apply transformation
+    const auto J_inv_T = this->entity().geometry().jacobianInverseTransposed(xx);
+    auto tmp_value = ret[0][0];
+    for (size_t ii = 0; ii < finite_element_.localBasis().size(); ++ii) {
+      J_inv_T.mv(ret[ii][0], tmp_value);
+      ret[ii][0] = tmp_value;
+    }
+  } // ... jacobian(...)
+
+private:
+  const BackendType& finite_element_;
+}; // class ContinuousLagrangeBasefunctionSet
+
+
+/**
+ * The following dimensions/orders/elements are tested to work:
+ *
+ * - 1d: orders 1, 2 work
+ * - 2d: orders 1, 2 work on simplices, cubes and mixed simplices and cubes
+ * - 3d: orders 1, 2 work on simplices, cubes, prisms
+ *
+ * The following dimensions/orders/elements are tested to fail:
+ * - 3d: pyramids (jacobians seem to be incorrect)
+ * - 3d: mixed simplices and cubes
+ */
+template <class GL, int p, class R>
+class ContinuousLagrangeSpace
+    : public CgSpaceInterface<internal::ContinuousLagrangeSpaceTraits<GL, p, R>, GL::dimension, 1>
+{
+public:
+  using Traits = internal::ContinuousLagrangeSpaceTraits<GL, p, R>;
+
+private:
+  using BaseType = CgSpaceInterface<Traits, GL::dimension, 1>;
+  using ThisType = ContinuousLagrangeSpace<GL, p, R>;
+  using D = typename GL::ctype;
+  static const constexpr size_t d = BaseType::dimDomain;
+  using FiniteElementType = LagrangeLocalFiniteElement<EquidistantPointSet, d, D, R>;
+
+public:
+  using typename BaseType::GridLayerType;
+  using typename BaseType::EntityType;
+  using typename BaseType::MapperType;
+  using typename BaseType::BaseFunctionSetType;
+  using DomainType = typename BaseFunctionSetType::DomainType;
+
+  ContinuousLagrangeSpace(GridLayerType grd_lr)
+    : grid_layer_(grd_lr)
+    , communicator_(0)
+    , backend_(0)
+    , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
+    , lagrange_points_(new std::map<GeometryType, std::vector<DomainType>>())
+    , mapper_(nullptr)
+  {
+    // create finite elements and lagrange points
+    for (auto&& geometry_type : grid_layer_.indexSet().types(0)) {
+      if (geometry_type == GeometryType(GeometryType::pyramid, 3))
+        DUNE_THROW(space_error, "Continuous Lagrange space does not seem to have working jacobians on pyramid grids!");
+      auto fe = std::make_shared<FiniteElementType>(geometry_type, p);
+      const auto& lp = fe->localInterpolation().lagrangePoints();
+      std::vector<DomainType> lagrange_points(lp.size());
+      for (size_t ii = 0; ii < lp.size(); ++ii)
+        lagrange_points[ii] = lp[ii].point();
+      lagrange_points_->insert(std::make_pair(geometry_type, std::move(lagrange_points)));
+      finite_elements_->insert(std::make_pair(geometry_type, std::move(fe)));
+    }
+    // check
+    if (d == 3 && finite_elements_->size() != 1)
+      DUNE_THROW(space_error, "Continuous Lagrange space with multiple finite elements in 3d not supported (yet)!");
+    // create mapper
+    mapper_ = std::make_shared<MapperType>(grid_layer_, finite_elements_);
+  }
+
+  ContinuousLagrangeSpace(const ThisType&) = default;
+  ContinuousLagrangeSpace(ThisType&&) = default;
+
+  ThisType& operator=(const ThisType&) = delete;
+  ThisType& operator=(ThisType&&) = delete;
+
+  const GridLayerType& grid_layer() const
+  {
+    return grid_layer_;
+  }
+
+  const double& backend() const
+  {
+    return backend_;
+  }
+
+  const MapperType& mapper() const
+  {
+    return *mapper_;
+  }
+
+  BaseFunctionSetType base_function_set(const EntityType& entity) const
+  {
+    const auto finite_element_search_result = finite_elements_->find(entity.geometry().type());
+    if (finite_element_search_result == finite_elements_->end())
+      DUNE_THROW(XT::Common::Exceptions::internal_error,
+                 "This must not happen, the grid layer did not report all geometry types!"
+                     << "\n   entity.geometry().type() = "
+                     << entity.geometry().type());
+    const auto& finite_element = *finite_element_search_result->second;
+    return BaseFunctionSetType(entity, finite_element);
+  }
+
+  double& communicator() const
+  {
+    DUNE_THROW(NotImplemented, "");
+    return communicator_;
+  }
+
+  std::vector<DomainType> lagrange_points(const EntityType& entity) const
+  {
+    const auto lagrange_points_search_result = lagrange_points_->find(entity.geometry().type());
+    if (lagrange_points_search_result == lagrange_points_->end())
+      DUNE_THROW(XT::Common::Exceptions::internal_error,
+                 "This must not happen, the grid layer did not report all geometry types!"
+                     << "\n   entity.geometry().type() = "
+                     << entity.geometry().type());
+    return lagrange_points_search_result->second;
+  }
+
+private:
+  const GridLayerType grid_layer_;
+  mutable double communicator_;
+  const double backend_;
+  std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
+  std::shared_ptr<std::map<GeometryType, std::vector<DomainType>>> lagrange_points_;
+  std::shared_ptr<MapperType> mapper_;
+}; // class ContinuousLagrangeSpace
+
+
+} // namespace GDT
+} // namespace Dune
+
+#endif // DUNE_GDT_SPACES_CG_DEFAULT_HH
