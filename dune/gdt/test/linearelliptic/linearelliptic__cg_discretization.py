@@ -23,7 +23,7 @@ except KeyError:
 casenames = ['AO2013TestCase', 'ER2007TestCase', 'ESV2007TestCase', 'MixedBoundaryTestCase', 'Spe10Model1TestCase']
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 
-space_backends = []
+space_backends = ['gdt',]
 for s in ('fem', 'pdelab'):
     try:
         if cache['dune-{}'.format(s)]:
