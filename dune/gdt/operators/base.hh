@@ -214,6 +214,7 @@ protected:
 /**
  * \todo add static checks of dimensions
  * \note Does a const_cast in apply() and apply2(), not sure yet if this is fine.
+ * \warning: only apply2(DiscreteFunction, DiscreteFunction) automagically sums over mpi processes
  */
 template <class MatrixImp,
           class RangeSpaceImp,
@@ -544,7 +545,8 @@ public:
                    const ConstDiscreteFunction<SourceSpaceType, S>& source,
                    const Dune::XT::Common::Parameter& param = {}) const
   {
-    return apply2(range.vector(), source.vector(), param);
+    auto ret = apply2(range.vector(), source.vector(), param);
+    return range.space().grid_view().grid().comm().sum(ret);
   }
 
   template <class SourceType>

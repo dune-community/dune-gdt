@@ -194,7 +194,7 @@ private:
 
     // solve
     try {
-      XT::LA::Solver<MatrixType>(lhs).apply(rhs, range.vector());
+      XT::LA::make_solver(lhs, range.space().dof_communicator()).apply(rhs, range.vector());
     } catch (XT::LA::Exceptions::linear_solver_failed& ee) {
       DUNE_THROW(operator_error,
                  "Application of the Darcy operator failed because a matrix could not be inverted!\n\n"
