@@ -32,7 +32,7 @@ struct ProlongationOperatorsBaseGridHolder
   typedef Dune::XT::Grid::GridProvider<GridType> GridProviderType;
 
   ProlongationOperatorsBaseGridHolder()
-    : grid_provider_(XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 2u))
+    : grid_provider_(XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 6u))
   {
     grid_provider_.global_refine(1);
   }
