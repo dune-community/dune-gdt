@@ -116,51 +116,44 @@ struct LaplaceMatrixOperatorTest : public EllipticMatrixOperatorTest<SpaceType>
     // without matrix
     //   without over_integrate
     //     simplified argument list
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_1(space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_2(space, grid_layer);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_3(space, space, grid_layer);
+    using TwoArgsOp = LaplaceMatrixOperator<SpaceType, MatrixType>;
+    DUNE_UNUSED TwoArgsOp no_matrix_1(space);
+    DUNE_UNUSED TwoArgsOp no_matrix_2(space, grid_layer);
+    DUNE_UNUSED TwoArgsOp no_matrix_3(space, space, grid_layer);
     //     full argument list
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_4(space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_5(space,
-                                                                                                           grid_layer);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_6(
-        space, space, grid_layer);
+    using FiveArgsOp = LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double>;
+    DUNE_UNUSED FiveArgsOp no_matrix_4(space);
+    DUNE_UNUSED FiveArgsOp no_matrix_5(space, grid_layer);
+    DUNE_UNUSED FiveArgsOp no_matrix_6(space, space, grid_layer);
     //   with over_integrate
     //     simplified argument list
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_7(1, space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_8(1, space, grid_layer);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> no_matrix_9(1, space, space, grid_layer);
+    DUNE_UNUSED TwoArgsOp no_matrix_7(1, space);
+    DUNE_UNUSED TwoArgsOp no_matrix_8(1, space, grid_layer);
+    DUNE_UNUSED TwoArgsOp no_matrix_9(1, space, space, grid_layer);
     //     full argument list
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_10(1, space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_11(
-        1, space, grid_layer);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_12(
-        1, space, space, grid_layer);
+    DUNE_UNUSED FiveArgsOp no_matrix_10(1, space);
+    DUNE_UNUSED FiveArgsOp no_matrix_11(1, space, grid_layer);
+    DUNE_UNUSED FiveArgsOp no_matrix_12(1, space, space, grid_layer);
     // with matrix
     MatrixType matrix(space.mapper().size(), space.mapper().size(), space.compute_volume_pattern());
     //   without over_integrate
     //     simplified argument list
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_1(matrix, space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_2(matrix, space, grid_layer);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_3(matrix, space, space, grid_layer);
+    DUNE_UNUSED TwoArgsOp matrix_1(matrix, space);
+    DUNE_UNUSED TwoArgsOp matrix_2(matrix, space, grid_layer);
+    DUNE_UNUSED TwoArgsOp matrix_3(matrix, space, space, grid_layer);
     //     full argument list
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_4(matrix, space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_5(
-        matrix, space, grid_layer);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_6(
-        matrix, space, space, grid_layer);
+    DUNE_UNUSED FiveArgsOp matrix_4(matrix, space);
+    DUNE_UNUSED FiveArgsOp matrix_5(matrix, space, grid_layer);
+    DUNE_UNUSED FiveArgsOp matrix_6(matrix, space, space, grid_layer);
     //   with over_integrate
     //     simplified argument list
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_7(1, matrix, space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_8(1, matrix, space, grid_layer);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType> matrix_9(1, matrix, space, space, grid_layer);
+    DUNE_UNUSED TwoArgsOp matrix_7(1, matrix, space);
+    DUNE_UNUSED TwoArgsOp matrix_8(1, matrix, space, grid_layer);
+    DUNE_UNUSED TwoArgsOp matrix_9(1, matrix, space, space, grid_layer);
     //     full argument list
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_10(
-        1, matrix, space);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_11(
-        1, matrix, space, grid_layer);
-    DUNE_UNUSED LaplaceMatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_12(
-        1, matrix, space, space, grid_layer);
+    DUNE_UNUSED FiveArgsOp matrix_10(1, matrix, space);
+    DUNE_UNUSED FiveArgsOp matrix_11(1, matrix, space, grid_layer);
+    DUNE_UNUSED FiveArgsOp matrix_12(1, matrix, space, space, grid_layer);
   } // ... constructible_by_ctor(...)
 
   void constructible_by_factory()

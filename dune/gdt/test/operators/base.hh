@@ -50,8 +50,8 @@ struct OperatorBaseTraits
   typedef Dune::XT::Functions::
       ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain>
           TensorFunctionType;
-  typedef typename XT::LA::Container<RangeFieldType, XT::LA::default_backend>::MatrixType MatrixType;
-  typedef typename XT::LA::Container<RangeFieldType, XT::LA::default_backend>::VectorType VectorType;
+  typedef typename XT::LA::Container<RangeFieldType, XT::LA::Backends::istl_sparse>::MatrixType MatrixType;
+  typedef typename XT::LA::Container<RangeFieldType, XT::LA::Backends::istl_sparse>::VectorType VectorType;
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
 }; // class OperatorBaseTraits
 

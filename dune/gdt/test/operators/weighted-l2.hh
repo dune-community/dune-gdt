@@ -178,59 +178,45 @@ struct WeightedL2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, p
     // without matrix
     //   without over_integrate
     //     simplified argument list
-    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> no_matrix_1(weight, space);
-    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> no_matrix_2(weight, space, grid_layer);
-    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> no_matrix_3(
-        weight, space, space, grid_layer);
+    using ThreeArgsOp = WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType>;
+    DUNE_UNUSED ThreeArgsOp no_matrix_1(weight, space);
+    DUNE_UNUSED ThreeArgsOp no_matrix_2(weight, space, grid_layer);
+    DUNE_UNUSED ThreeArgsOp no_matrix_3(weight, space, space, grid_layer);
     //     full argument list
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridLayerType, SpaceType, double>
-        DUNE_UNUSED no_matrix_4(weight, space);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridLayerType, SpaceType, double>
-        DUNE_UNUSED no_matrix_5(weight, space, grid_layer);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridLayerType, SpaceType, double>
-        DUNE_UNUSED no_matrix_6(weight, space, space, grid_layer);
+    using SixArgsOp =
+        WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridLayerType, SpaceType, double>;
+    DUNE_UNUSED SixArgsOp no_matrix_4(weight, space);
+    SixArgsOp DUNE_UNUSED no_matrix_5(weight, space, grid_layer);
+    SixArgsOp DUNE_UNUSED no_matrix_6(weight, space, space, grid_layer);
     //   with over_integrate
     //     simplified argument list
-    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> no_matrix_7(1, weight, space);
-    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> no_matrix_8(1, weight, space, grid_layer);
-    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> no_matrix_9(
-        1, weight, space, space, grid_layer);
+    DUNE_UNUSED ThreeArgsOp no_matrix_7(1, weight, space);
+    DUNE_UNUSED ThreeArgsOp no_matrix_8(1, weight, space, grid_layer);
+    DUNE_UNUSED ThreeArgsOp no_matrix_9(1, weight, space, space, grid_layer);
     //     full argument list
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridLayerType, SpaceType, double>
-        DUNE_UNUSED no_matrix_10(1, weight, space);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridLayerType, SpaceType, double>
-        DUNE_UNUSED no_matrix_11(1, weight, space, grid_layer);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridLayerType, SpaceType, double>
-        DUNE_UNUSED no_matrix_12(1, weight, space, space, grid_layer);
+    SixArgsOp DUNE_UNUSED no_matrix_10(1, weight, space);
+    SixArgsOp DUNE_UNUSED no_matrix_11(1, weight, space, grid_layer);
+    SixArgsOp DUNE_UNUSED no_matrix_12(1, weight, space, space, grid_layer);
     // with matrix
     MatrixType matrix(space.mapper().size(), space.mapper().size(), space.compute_volume_pattern());
     //   without over_integrate
     //     simplified argument list
-    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> matrix_1(weight, matrix, space);
-    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> matrix_2(weight, matrix, space, grid_layer);
-    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> matrix_3(
-        weight, matrix, space, space, grid_layer);
+    DUNE_UNUSED ThreeArgsOp matrix_1(weight, matrix, space);
+    DUNE_UNUSED ThreeArgsOp matrix_2(weight, matrix, space, grid_layer);
+    DUNE_UNUSED ThreeArgsOp matrix_3(weight, matrix, space, space, grid_layer);
     //     full argument list
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridLayerType, SpaceType, double>
-        DUNE_UNUSED matrix_4(weight, matrix, space);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridLayerType, SpaceType, double>
-        DUNE_UNUSED matrix_5(weight, matrix, space, grid_layer);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridLayerType, SpaceType, double>
-        DUNE_UNUSED matrix_6(weight, matrix, space, space, grid_layer);
+    SixArgsOp DUNE_UNUSED matrix_4(weight, matrix, space);
+    SixArgsOp DUNE_UNUSED matrix_5(weight, matrix, space, grid_layer);
+    SixArgsOp DUNE_UNUSED matrix_6(weight, matrix, space, space, grid_layer);
     //   with over_integrate
     //     simplified argument list
-    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> matrix_7(1, weight, matrix, space);
-    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> matrix_8(
-        1, weight, matrix, space, grid_layer);
-    DUNE_UNUSED WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType> matrix_9(
-        1, weight, matrix, space, space, grid_layer);
+    DUNE_UNUSED ThreeArgsOp matrix_7(1, weight, matrix, space);
+    DUNE_UNUSED ThreeArgsOp matrix_8(1, weight, matrix, space, grid_layer);
+    DUNE_UNUSED ThreeArgsOp matrix_9(1, weight, matrix, space, space, grid_layer);
     //     full argument list
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridLayerType, SpaceType, double>
-        DUNE_UNUSED matrix_10(1, weight, matrix, space);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridLayerType, SpaceType, double>
-        DUNE_UNUSED matrix_11(1, weight, matrix, space, grid_layer);
-    WeightedL2MatrixOperator<ExpressionFunctionType, SpaceType, MatrixType, GridLayerType, SpaceType, double>
-        DUNE_UNUSED matrix_12(1, weight, matrix, space, space, grid_layer);
+    SixArgsOp DUNE_UNUSED matrix_10(1, weight, matrix, space);
+    SixArgsOp DUNE_UNUSED matrix_11(1, weight, matrix, space, grid_layer);
+    SixArgsOp DUNE_UNUSED matrix_12(1, weight, matrix, space, space, grid_layer);
   } // ... constructible_by_ctor(...)
 
   void constructible_by_factory()
@@ -304,8 +290,10 @@ struct WeightedL2OperatorTest : public WeightedL2ProductBase<SpaceType>, public 
     const auto& weight = this->weight_;
     const auto& grid_layer = this->space_.grid_layer();
 
-    DUNE_UNUSED WeightedL2Operator<ExpressionFunctionType, GridLayerType> wo_over_integrate(weight, grid_layer);
-    DUNE_UNUSED WeightedL2Operator<ExpressionFunctionType, GridLayerType> with_over_integrate(weight, grid_layer, 1);
+    DUNE_UNUSED WeightedL2Operator<ExpressionFunctionType, GridLayerType, MatrixType> wo_over_integrate(weight,
+                                                                                                        grid_layer);
+    DUNE_UNUSED WeightedL2Operator<ExpressionFunctionType, GridLayerType, MatrixType> with_over_integrate(
+        weight, grid_layer, 1);
   } // ... constructible_by_ctor(...)
 
   void constructible_by_factory()
