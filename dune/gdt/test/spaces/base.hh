@@ -228,6 +228,8 @@ public:
       I_BaseFunctionSetType i_base_function_set = i_space.base_function_set(entity);
       size_t i_bfs_size = i_base_function_set.size();
       EXPECT_EQ(d_bfs_size, i_bfs_size);
+      // make sure backend_type is defined
+      constexpr auto backend_type = SpaceType::backend_type;
     } // walk the grid
   } // ... fulfills_interface()
 

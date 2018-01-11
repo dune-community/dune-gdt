@@ -55,6 +55,7 @@ public:
   typedef double DofCommunicatorType;
   typedef GL GridLayerType;
   typedef R RangeFieldType;
+  static const constexpr Backends backend_type{Backends::functions};
 }; // class DuneFunctionsDgSpaceWrapperTraits
 
 
