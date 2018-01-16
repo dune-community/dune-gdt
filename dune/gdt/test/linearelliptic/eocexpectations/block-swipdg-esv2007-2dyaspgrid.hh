@@ -26,11 +26,11 @@ namespace Test {
 // polorder 1, conforming
 
 template <>
-class LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<AluConform2dGridType, double, 1>,
+class LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
                                     LinearElliptic::ChooseDiscretizer::block_ipdg,
                                     1> : public internal::LinearEllipticEocExpectationsBase<1>
 {
-  typedef LinearElliptic::ESV2007DdSubdomainsTestCase<AluConform2dGridType, double, 1> TestCaseType;
+  typedef LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1> TestCaseType;
 
 public:
   static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type);
@@ -39,42 +39,15 @@ public:
 // polorder 2, conforming
 
 template <>
-class LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<AluConform2dGridType, double, 1>,
+class LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1>,
                                     LinearElliptic::ChooseDiscretizer::block_ipdg,
                                     2> : public internal::LinearEllipticEocExpectationsBase<2>
 {
-  typedef LinearElliptic::ESV2007DdSubdomainsTestCase<AluConform2dGridType, double, 1> TestCaseType;
+  typedef LinearElliptic::ESV2007DdSubdomainsTestCase<Yasp2Grid, double, 1> TestCaseType;
 
 public:
   static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type);
 }; // LinearEllipticEocExpectations
-
-// polorder 1, nonconforming
-
-template <>
-class LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<AluSimplex2dGridType, double, 1>,
-                                    LinearElliptic::ChooseDiscretizer::block_ipdg,
-                                    1> : public internal::LinearEllipticEocExpectationsBase<1>
-{
-  typedef LinearElliptic::ESV2007DdSubdomainsTestCase<AluSimplex2dGridType, double, 1> TestCaseType;
-
-public:
-  static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type);
-}; // LinearEllipticEocExpectations
-
-// polorder 2, nonconforming
-
-template <>
-class LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdomainsTestCase<AluSimplex2dGridType, double, 1>,
-                                    LinearElliptic::ChooseDiscretizer::block_ipdg,
-                                    2> : public internal::LinearEllipticEocExpectationsBase<2>
-{
-  typedef LinearElliptic::ESV2007DdSubdomainsTestCase<AluSimplex2dGridType, double, 1> TestCaseType;
-
-public:
-  static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type); // ... results(...)
-}; // LinearEllipticEocExpectations
-
 
 } // namespace Test
 } // namespace GDT

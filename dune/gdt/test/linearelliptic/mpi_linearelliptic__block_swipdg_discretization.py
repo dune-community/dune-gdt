@@ -10,18 +10,13 @@
 import itertools
 from dune.xt.codegen import typeid_to_typedef_name, la_backends
 
-grids = []
-try:
-    if cache['dune-alugrid']:
-        grids.extend(['AluConform2dGridType'])
-except KeyError:
-    pass
+grids = ['Yasp2Grid']
 
 casenames = ['ESV2007DdSubdomainsTestCase',]
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 
 space_backends = []
-for s in ('fem',):
+for s in ('pdelab',):
     try:
         if cache['dune-{}'.format(s)]:
             space_backends.extend([s])

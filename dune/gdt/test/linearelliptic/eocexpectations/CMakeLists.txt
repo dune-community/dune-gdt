@@ -12,7 +12,7 @@
 dune_add_library(block_swipdg_expectations
                  NO_EXPORT
                  SOURCES
-                 block-swipdg-esv2007-2dalugrid.cxx)
+                 block-swipdg-esv2007-2dyaspgrid.cxx)
 dune_add_library(cg_expectations
                  NO_EXPORT
                  SOURCES

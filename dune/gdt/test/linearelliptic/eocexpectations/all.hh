@@ -8,7 +8,7 @@
 //   Felix Schindler (2017)
 //   Rene Milk       (2016)
 
-#include "block-swipdg-esv2007-2dalugrid.hh"
+#include "block-swipdg-esv2007-2dyaspgrid.hh"
 #include "cg-ao2013-2dalugrid.hh"
 #include "cg-ao2013-2dyaspgrid.hh"
 #include "cg-er2007-2dalugrid.hh"
