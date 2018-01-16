@@ -53,7 +53,8 @@ TYPED_TEST(L2MatrixOperatorTest, is_matrix_operator)
 }
 TYPED_TEST(L2MatrixOperatorTest, correct_for_constant_arguments)
 {
-  this->correct_for_constant_arguments(1.5e-14);
+  const double rel_tol = this->space_.grid_layer().grid().comm().size() > 1 ? 1.5e-14 : 1.5e-13;
+  this->correct_for_constant_arguments(rel_tol);
 }
 
 #if HAVE_DUNE_FEM || HAVE_DUNE_PDELAB
