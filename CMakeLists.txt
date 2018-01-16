@@ -59,6 +59,7 @@ find_file(SPE10MODEL1DATA
 add_subdirectory(doc)
 add_subdirectory(dune)
 add_subdirectory(cmake/modules)
+add_subdirectory(examples EXCLUDE_FROM_ALL)
 
 if(dune-pybindxi_FOUND)
   foreach(_file
