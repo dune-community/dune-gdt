@@ -60,7 +60,7 @@ struct ProlongationOperatorsBase
   typedef Dune::GDT::DiscreteFunction<CoarseSpaceType, VectorType> CoarseDiscreteFunctionType;
   typedef Dune::GDT::DiscreteFunction<FineSpaceType, VectorType> FineDiscreteFunctionType;
 
-  static constexpr double default_tolerance = 1e-15;
+  static constexpr double default_tolerance = 1e-14;
   static constexpr double alugrid_tolerance = 3.8e-11;
 
   ProlongationOperatorsBase()
