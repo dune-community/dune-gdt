@@ -96,9 +96,7 @@ public:
 
 
 template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
-                                                             ESV2007TestCase<ALUGrid<2, 2, simplex, conforming>,
-                                                                             double,
-                                                                             1>,
+                                                             ESV2007TestCase<AluConform2dGridType, double, 1>,
                                                          LinearElliptic::ChooseDiscretizer::swipdg,
                                                          1>;
 
@@ -175,9 +173,7 @@ public:
 
 
 template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
-                                                             ESV2007TestCase<ALUGrid<2, 2, simplex, nonconforming>,
-                                                                             double,
-                                                                             1>,
+                                                             ESV2007TestCase<AluSimplex2dGridType, double, 1>,
                                                          LinearElliptic::ChooseDiscretizer::swipdg,
                                                          1>;
 
