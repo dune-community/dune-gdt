@@ -15,10 +15,10 @@
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/dynvector.hh>
 
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/la/container/interfaces.hh>
 #include <dune/xt/grid/walker/apply-on.hh>
 #include <dune/xt/grid/walker/wrapper.hh>
-#include <dune/xt/la/container/interfaces.hh>
+#include <dune/xt/functions/interfaces/localizable-function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/discretefunction.hh>
@@ -184,14 +184,12 @@ public:
   LocalVolumeTwoFormAccumulator(const LocalVolumeTwoFormAccumulator& other) = default;
 #include <dune/xt/common/reenable_warnings.hh>
 
-  virtual ~LocalVolumeTwoFormAccumulator() = default;
-
-  virtual bool apply_on(const GridLayerType& grid_layer, const EntityType& entity) const override final
+  bool apply_on(const GridLayerType& grid_layer, const EntityType& entity) const override final
   {
     return where_.apply_on(grid_layer, entity);
   }
 
-  virtual FieldType compute_locally(const EntityType& entity) override final
+  FieldType compute_locally(const EntityType& entity) override final
   {
     DynamicMatrix<FieldType> local_twoform_result(1, 1, 0.); // \todo: make mutable member, after SMP refactor
     this->local_operator_.apply2(
@@ -199,12 +197,12 @@ public:
     return local_twoform_result[0][0];
   } // ... compute_locally(...)
 
-  virtual void apply_local(const EntityType& entity) override
+  void apply_local(const EntityType& entity) override final
   {
     *result_ += compute_locally(entity);
   }
 
-  virtual void finalize() override
+  void finalize() override final
   {
     if (!finalized_) {
       finalized_result_ = result_.sum();
@@ -213,7 +211,7 @@ public:
     }
   } // ... finalize(...)
 
-  virtual FieldType result() const override final
+  FieldType result() const override final
   {
     if (!finalized_)
       DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong, "Call finalize() first!");
@@ -258,12 +256,12 @@ public:
   {
   }
 
-  virtual bool apply_on(const GridLayerType& grid_layer, const EntityType& entity) const
+  bool apply_on(const GridLayerType& grid_layer, const EntityType& entity) const override final
   {
     return where_.apply_on(grid_layer, entity);
   }
 
-  virtual void apply_local(const EntityType& entity)
+  void apply_local(const EntityType& entity) override final
   {
     local_operator_.apply(source_, *range_.local_discrete_function(entity));
   }
@@ -305,12 +303,12 @@ public:
   {
   }
 
-  virtual bool apply_on(const GridViewType& grid_view, const EntityType& entity) const
+  bool apply_on(const GridViewType& grid_view, const EntityType& entity) const override final
   {
     return where_.apply_on(grid_view, entity);
   }
 
-  virtual void apply_local(const EntityType& entity)
+  void apply_local(const EntityType& entity) override final
   {
     local_operator_.assemble_jacobian(x_, source_, *range_.local_discrete_function(entity));
   }
@@ -500,13 +498,14 @@ public:
   {
   }
 
-  virtual bool apply_on(const GridLayerType& grid_layer, const IntersectionType& intersection) const
+  bool apply_on(const GridLayerType& grid_layer, const IntersectionType& intersection) const override final
   {
     return where_.apply_on(grid_layer, intersection);
   }
 
-  virtual void
-  apply_local(const IntersectionType& intersection, const EntityType& inside_entity, const EntityType& outside_entity)
+  void apply_local(const IntersectionType& intersection,
+                   const EntityType& inside_entity,
+                   const EntityType& outside_entity) override final
   {
     local_operator_.apply(source_,
                           intersection,
@@ -618,14 +617,14 @@ public:
   {
   }
 
-  virtual bool apply_on(const GridLayerType& grid_layer, const IntersectionType& intersection) const
+  bool apply_on(const GridLayerType& grid_layer, const IntersectionType& intersection) const override final
   {
     return where_.apply_on(grid_layer, intersection);
   }
 
-  virtual void apply_local(const IntersectionType& intersection,
-                           const EntityType& inside_entity,
-                           const EntityType& /*outside_entity*/)
+  void apply_local(const IntersectionType& intersection,
+                   const EntityType& inside_entity,
+                   const EntityType& /*outside_entity*/) override final
   {
     local_operator_.apply(source_, intersection, *range_.local_discrete_function(inside_entity));
   }
