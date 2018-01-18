@@ -119,51 +119,51 @@ public:
   }
 
   void append(typename LocalAdvectionFvBoundaryOperatorByCustomExtrapolationType::LambdaType boundary_treatment_lambda,
-              XT::Grid::ApplyOn::WhichIntersection<GL>*&& filter /*,
-              const XT::Common::ParameterType& param_type = {}*/)
+              XT::Grid::ApplyOn::WhichIntersection<GL>*&& filter,
+              const XT::Common::ParameterType& param_type = {})
   {
     boundary_treatment_by_extrapolation_operators_.emplace_back(
-        new LocalAdvectionFvBoundaryOperatorByCustomExtrapolationType(numerical_flux(),
-                                                                      boundary_treatment_lambda /*, param_type*/),
+        new LocalAdvectionFvBoundaryOperatorByCustomExtrapolationType(
+            numerical_flux(), boundary_treatment_lambda, param_type),
         std::move(filter));
   }
 
   void
   append(typename LocalAdvectionFvBoundaryOperatorByCustomNumericalFluxType::LambdaType boundary_numerical_flux_lambda,
-         XT::Grid::ApplyOn::WhichIntersection<GL>*&& filter /*,
-              const XT::Common::ParameterType& param_type = {}*/)
+         XT::Grid::ApplyOn::WhichIntersection<GL>*&& filter,
+         const XT::Common::ParameterType& param_type = {})
   {
     boundary_treatment_by_boundary_flux_operators_.emplace_back(
-        new LocalAdvectionFvBoundaryOperatorByCustomNumericalFluxType(boundary_numerical_flux_lambda /*, param_type*/),
+        new LocalAdvectionFvBoundaryOperatorByCustomNumericalFluxType(boundary_numerical_flux_lambda, param_type),
         std::move(filter));
   }
 
-  void apply(const DF& source, DF& range, const XT::Common::Parameter& mu = {}) const
+  void apply(const DF& source, DF& range, const XT::Common::Parameter& param = {}) const
   {
     if (!source.vector().valid())
-      DUNE_THROW(InvalidStateException, "");
+      DUNE_THROW(InvalidStateException, "source contains inf or nan!");
     range.vector() *= 0.;
     if (!range.vector().valid())
-      DUNE_THROW(InvalidStateException, "");
+      DUNE_THROW(InvalidStateException, "range contains inf or nan!");
     LocalizableOperatorBase<GL, DF, DF> walker(grid_layer_, source, range);
-    walker.append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GL>());
+    walker.append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GL>(), param);
     walker.append(local_coupling_operator_,
                   XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GL>() && !(*periodicity_exception_),
-                  mu);
+                  param);
     for (const auto& boundary_treatment_op_and_filter : boundary_treatment_by_extrapolation_operators_) {
       const auto& op = boundary_treatment_op_and_filter.first.access();
       const auto& filter = *boundary_treatment_op_and_filter.second;
-      walker.append(op, filter.copy());
+      walker.append(op, filter.copy(), param);
     }
     for (const auto& lambda_boundary_op_and_filter : boundary_treatment_by_boundary_flux_operators_) {
       const auto& op = lambda_boundary_op_and_filter.first.access();
       const auto& filter = *lambda_boundary_op_and_filter.second;
-      walker.append(op, filter.copy());
+      walker.append(op, filter.copy(), param);
     }
     walker.walk();
     if (!range.vector().valid())
-      DUNE_THROW(InvalidStateException, "");
-  }
+      DUNE_THROW(InvalidStateException, "range contains inf or nan!");
+  } // ... apply(...)
 
   template <class RangeType, class SourceType>
   FieldType apply2(const RangeType& /*range*/,
