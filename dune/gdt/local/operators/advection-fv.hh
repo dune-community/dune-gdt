@@ -543,6 +543,8 @@ class LocalAdvectionFvBoundaryOperatorByCustomExtrapolation
     : public LocalBoundaryOperatorInterface<internal::
                                                 LocalAdvectionFvBoundaryOperatorByCustomExtrapolationTraits<SpaceType>>
 {
+  using BaseType =
+      LocalBoundaryOperatorInterface<internal::LocalAdvectionFvBoundaryOperatorByCustomExtrapolationTraits<SpaceType>>;
   static_assert(SpaceType::dimRangeCols == 1, "Not Implemented yet!");
   using E = typename SpaceType::EntityType;
   using D = typename SpaceType::DomainFieldType;
@@ -564,18 +566,23 @@ public:
                                              const RangeType&,
                                              const XT::Common::Parameter&)>;
 
-  LocalAdvectionFvBoundaryOperatorByCustomExtrapolation(const NumericalFluxType& numerical_flux,
-                                                        LambdaType boundary_treatment_lambda /*,
-      const XT::Common::ParameterType& boundary_treatment_param_type = {}*/)
-    : numerical_flux_(numerical_flux)
+  LocalAdvectionFvBoundaryOperatorByCustomExtrapolation(
+      const NumericalFluxType& numerical_flux,
+      LambdaType boundary_treatment_lambda,
+      const XT::Common::ParameterType& boundary_treatment_param_type = {})
+    : BaseType(boundary_treatment_param_type)
+    , numerical_flux_(numerical_flux)
     , boundary_treatment_(boundary_treatment_lambda)
   {
+    if (numerical_flux_.is_parametric())
+      DUNE_THROW(NotImplemented, "todo: merge boundary_treatment_param_type and numerical_flux.parameter_type()!");
   }
 
   template <class VectorType, class I>
   void apply(const ConstDiscreteFunction<SpaceType, VectorType>& source,
              const I& intersection,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range) const
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range,
+             const XT::Common::Parameter& param = {}) const
   {
     static_assert(XT::Grid::is_intersection<I>::value, "");
     const auto& entity = local_range.entity();
@@ -588,7 +595,7 @@ public:
       DUNE_THROW(InvalidStateException, "");
     for (size_t ii = 0; ii < u.size(); ++ii)
       u[ii] = u_inside->vector().get(ii);
-    const auto v = boundary_treatment_(intersection, x_intersection, numerical_flux_.flux(), u, /*mu*/ {});
+    const auto v = boundary_treatment_(intersection, x_intersection, numerical_flux_.flux(), u, param);
     const auto g = numerical_flux_.apply(u, v, normal, /*mu*/ {});
     const auto h = entity.geometry().volume();
     for (size_t ii = 0; ii < r; ++ii)
@@ -610,6 +617,8 @@ class LocalAdvectionFvBoundaryOperatorByCustomNumericalFlux
     : public LocalBoundaryOperatorInterface<internal::
                                                 LocalAdvectionFvBoundaryOperatorByCustomNumericalFluxTraits<SpaceType>>
 {
+  using BaseType =
+      LocalBoundaryOperatorInterface<internal::LocalAdvectionFvBoundaryOperatorByCustomNumericalFluxTraits<SpaceType>>;
   static_assert(SpaceType::dimRangeCols == 1, "Not Implemented yet!");
   using E = typename SpaceType::EntityType;
   using D = typename SpaceType::DomainFieldType;
@@ -622,18 +631,20 @@ class LocalAdvectionFvBoundaryOperatorByCustomNumericalFlux
 public:
   using DomainType = typename StateType::DomainType;
   using RangeType = typename StateType::RangeType;
-  using LambdaType = std::function<RangeType(const RangeType&, const DomainType& /*, const XT::Common::Parameter&*/)>;
+  using LambdaType = std::function<RangeType(const RangeType&, const DomainType&, const XT::Common::Parameter&)>;
 
-  LocalAdvectionFvBoundaryOperatorByCustomNumericalFlux(LambdaType boundary_numerical_flux_lambda /*,
-      const XT::Common::ParameterType& boundary_treatment_param_type = {}*/)
-    : boundary_numerical_flux_lambda_(boundary_numerical_flux_lambda)
+  LocalAdvectionFvBoundaryOperatorByCustomNumericalFlux(
+      LambdaType boundary_numerical_flux_lambda, const XT::Common::ParameterType& boundary_treatment_param_type = {})
+    : BaseType(boundary_treatment_param_type)
+    , boundary_numerical_flux_lambda_(boundary_numerical_flux_lambda)
   {
   }
 
   template <class VectorType, class I>
   void apply(const ConstDiscreteFunction<SpaceType, VectorType>& source,
              const I& intersection,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range) const
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range,
+             const XT::Common::Parameter& param = {}) const
   {
     static_assert(XT::Grid::is_intersection<I>::value, "");
     const auto& entity = local_range.entity();
@@ -646,7 +657,7 @@ public:
       DUNE_THROW(InvalidStateException, "");
     for (size_t ii = 0; ii < u.size(); ++ii)
       u[ii] = u_inside->vector().get(ii);
-    const auto g = boundary_numerical_flux_lambda_(u, normal /*, mu*/);
+    const auto g = boundary_numerical_flux_lambda_(u, normal, param);
     const auto h = entity.geometry().volume();
     for (size_t ii = 0; ii < r; ++ii)
       local_range.vector().add(ii, (g[ii] * intersection.geometry().volume()) / h);
