@@ -175,7 +175,8 @@ struct linearelliptic_SWIPDG_estimators : public ::testing::Test
         Discretizer;
     Dune::GDT::Test::LinearEllipticSwipdgEstimatorStudy<TestCaseType, Discretizer> eoc_study(test_case);
     try {
-      Dune::XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DXTC_LOG_INFO_0), /*zero_tolerance=*/1e-10);
+      Dune::XT::Test::check_eoc_study_for_success(
+          eoc_study, eoc_study.run(DXTC_LOG_INFO_0), /*zero_tolerance=*/1.4e-10);
     } catch (Dune::XT::Common::Exceptions::spe10_data_file_missing&) {
       Dune::XT::Common::TimedLogger().get("gdt.test.linearelliptic.swipdg.discretization").warn()
           << "missing SPE10 data file!" << std::endl;
