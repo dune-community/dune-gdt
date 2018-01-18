@@ -247,7 +247,7 @@ public:
                           const LocalOperatorType& local_operator,
                           const SourceType& source,
                           RangeType& range,
-                          const XT::Grid::ApplyOn::WhichEntity<GridLayerType>& where)
+                          XT::Grid::ApplyOn::WhichEntity<GridLayerType>*&& where)
     : grid_layer_(grid_layer)
     , local_operator_(local_operator)
     , source_(source)
@@ -258,7 +258,7 @@ public:
 
   bool apply_on(const GridLayerType& grid_layer, const EntityType& entity) const override final
   {
-    return where_.apply_on(grid_layer, entity);
+    return where_->apply_on(grid_layer, entity);
   }
 
   void apply_local(const EntityType& entity) override final
@@ -271,7 +271,7 @@ private:
   const LocalOperatorType& local_operator_;
   const SourceType& source_;
   RangeType& range_;
-  const XT::Grid::ApplyOn::WhichEntity<GridLayerType>& where_;
+  const std::unique_ptr<XT::Grid::ApplyOn::WhichEntity<GridLayerType>> where_;
 }; // class LocalOperatorApplicator
 
 
@@ -487,20 +487,20 @@ public:
                                   const LocalOperatorType& local_operator,
                                   const SourceType& source,
                                   RangeType& range,
-                                  const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>& where,
-                                  const XT::Common::Parameter& mu = {})
+                                  XT::Grid::ApplyOn::WhichIntersection<GridLayerType>*&& where,
+                                  const XT::Common::Parameter& param)
     : grid_layer_(grid_layer)
     , local_operator_(local_operator)
     , source_(source)
     , range_(range)
-    , where_(where)
-    , mu_(mu)
+    , where_(std::move(where))
+    , param_(param)
   {
   }
 
   bool apply_on(const GridLayerType& grid_layer, const IntersectionType& intersection) const override final
   {
-    return where_.apply_on(grid_layer, intersection);
+    return where_->apply_on(grid_layer, intersection);
   }
 
   void apply_local(const IntersectionType& intersection,
@@ -511,7 +511,7 @@ public:
                           intersection,
                           *range_.local_discrete_function(inside_entity),
                           *range_.local_discrete_function(outside_entity),
-                          mu_);
+                          param_);
   }
 
 private:
@@ -519,8 +519,8 @@ private:
   const LocalOperatorType& local_operator_;
   const SourceType& source_;
   RangeType& range_;
-  const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>& where_;
-  const XT::Common::Parameter& mu_;
+  const std::unique_ptr<XT::Grid::ApplyOn::WhichIntersection<GridLayerType>> where_;
+  const XT::Common::Parameter& param_;
 }; // class LocalCouplingOperatorApplicator
 
 
@@ -608,25 +608,27 @@ public:
                                   const LocalOperatorType& local_operator,
                                   const SourceType& source,
                                   RangeType& range,
-                                  const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>& where)
+                                  XT::Grid::ApplyOn::WhichIntersection<GridLayerType>*&& where,
+                                  const XT::Common::Parameter& param)
     : grid_layer_(grid_layer)
     , local_operator_(local_operator)
     , source_(source)
     , range_(range)
-    , where_(where)
+    , where_(std::move(where))
+    , param_(param)
   {
   }
 
   bool apply_on(const GridLayerType& grid_layer, const IntersectionType& intersection) const override final
   {
-    return where_.apply_on(grid_layer, intersection);
+    return where_->apply_on(grid_layer, intersection);
   }
 
   void apply_local(const IntersectionType& intersection,
                    const EntityType& inside_entity,
                    const EntityType& /*outside_entity*/) override final
   {
-    local_operator_.apply(source_, intersection, *range_.local_discrete_function(inside_entity));
+    local_operator_.apply(source_, intersection, *range_.local_discrete_function(inside_entity), param_);
   }
 
 private:
@@ -634,7 +636,8 @@ private:
   const LocalOperatorType& local_operator_;
   const SourceType& source_;
   RangeType& range_;
-  const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>& where_;
+  const std::unique_ptr<XT::Grid::ApplyOn::WhichIntersection<GridLayerType>> where_;
+  const XT::Common::Parameter& param_;
 }; // class LocalBoundaryOperatorApplicator
 
 
