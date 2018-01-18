@@ -146,19 +146,21 @@ public:
     if (!range.vector().valid())
       DUNE_THROW(InvalidStateException, "range contains inf or nan!");
     LocalizableOperatorBase<GL, DF, DF> walker(grid_layer_, source, range);
-    walker.append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GL>(), param);
+    walker.append(
+        local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GL>(), param, "fv_coupling_inner");
     walker.append(local_coupling_operator_,
                   XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GL>() && !(*periodicity_exception_),
-                  param);
+                  param,
+                  "fv_coupling_periodic");
     for (const auto& boundary_treatment_op_and_filter : boundary_treatment_by_extrapolation_operators_) {
       const auto& op = boundary_treatment_op_and_filter.first.access();
       const auto& filter = *boundary_treatment_op_and_filter.second;
-      walker.append(op, filter.copy(), param);
+      walker.append(op, filter.copy(), param, "fv_boundary_extrapolation");
     }
     for (const auto& lambda_boundary_op_and_filter : boundary_treatment_by_boundary_flux_operators_) {
       const auto& op = lambda_boundary_op_and_filter.first.access();
       const auto& filter = *lambda_boundary_op_and_filter.second;
-      walker.append(op, filter.copy(), param);
+      walker.append(op, filter.copy(), param, "fv_boundary_custom_flux");
     }
     walker.walk();
     if (!range.vector().valid())
