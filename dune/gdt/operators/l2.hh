@@ -47,12 +47,12 @@ class L2LocalizableProduct
                                           Source,
                                           Field>
 {
-  typedef XT::Common::ConstStorageProvider<XT::Functions::ConstantFunction<XT::Grid::extract_entity_t<GridLayer>,
-                                                                           typename GridLayer::ctype,
-                                                                           GridLayer::dimension,
-                                                                           Field,
-                                                                           1>>
-      FunctionProvider;
+  using ConstantFunction = XT::Functions::ConstantFunction<XT::Grid::extract_entity_t<GridLayer>,
+                                                           typename GridLayer::ctype,
+                                                           GridLayer::dimension,
+                                                           Field,
+                                                           1>;
+  typedef XT::Common::ConstStorageProvider<ConstantFunction> FunctionProvider;
   typedef WeightedL2LocalizableProduct<XT::Functions::ConstantFunction<XT::Grid::extract_entity_t<GridLayer>,
                                                                        typename GridLayer::ctype,
                                                                        GridLayer::dimension,
@@ -82,14 +82,14 @@ class L2LocalizableProduct
 
   template <class... Args>
   explicit L2LocalizableProduct(tag<false>, Args&&... args)
-    : FunctionProvider(1.)
+    : FunctionProvider(new ConstantFunction(1.))
     , BaseType(FunctionProvider::access(), std::forward<Args>(args)...)
   {
   }
 
   template <class... Args>
   explicit L2LocalizableProduct(tag<true>, const size_t over_integrate, Args&&... args)
-    : FunctionProvider(1.)
+    : FunctionProvider(new ConstantFunction(1.))
     , BaseType(over_integrate, FunctionProvider::access(), std::forward<Args>(args)...)
   {
   }
@@ -408,8 +408,9 @@ public:
              DiscreteFunction<RangeSpaceType, VectorType>& range,
              const XT::Common::Parameter& param = {}) const
   {
-    typedef typename XT::LA::Container<typename VectorType::ScalarType,
-                                       VectorType::Traits::sparse_matrix_type>::MatrixType MatrixType;
+    typedef
+        typename XT::LA::Container<typename VectorType::ScalarType, VectorType::Traits::sparse_matrix_type>::MatrixType
+            MatrixType;
     auto op = make_l2_matrix_operator<MatrixType>(source.space(), range.space(), grid_layer_, over_integrate_);
     op->apply(source, range, param);
   }
