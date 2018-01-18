@@ -359,19 +359,33 @@ GTEST_TEST(empty, main)
   advec_op.append(inflow_outflow_treatment, inflow_outflow_filter.copy());
 
   // compute dt via Cockburn, Coquel, LeFloch, 1995
-  // (in general, looking for the min/max should also include the boundary data)
   FieldVector<R, m> data_minimum(std::numeric_limits<R>::max());
   FieldVector<R, m> data_maximum(std::numeric_limits<R>::min());
   for (auto&& entity : elements(grid_layer)) {
     const auto u0_local = u_0.local_function(entity);
+    const auto bv_local = bv.local_function(entity);
     for (const auto& quadrature_point : QuadratureRules<D, d>::rule(entity.type(), u0_local->order())) {
-      const auto value = u0_local->evaluate(quadrature_point.position());
+      const auto u0_value = u0_local->evaluate(quadrature_point.position());
       for (size_t ii = 0; ii < m; ++ii) {
-        data_minimum[ii] = std::min(data_minimum[ii], value[ii]);
-        data_maximum[ii] = std::max(data_maximum[ii], value[ii]);
+        data_minimum[ii] = std::min(data_minimum[ii], u0_value[ii]);
+        data_maximum[ii] = std::max(data_maximum[ii], u0_value[ii]);
+      }
+      if (entity.hasBoundaryIntersections()) {
+        // loop over "all times"
+        for (double t = 0.; t < 5.; t += 0.1) {
+          const auto bv_value = bv_local->evaluate(quadrature_point.position(), {"t_", t});
+          for (size_t ii = 0; ii < m; ++ii) {
+            data_minimum[ii] = std::min(data_minimum[ii], bv_value[ii]);
+            data_maximum[ii] = std::max(data_maximum[ii], bv_value[ii]);
+          }
+        }
       }
     }
   }
+  // ensure distinct minima/maxima (otherwise the grid creation below will fail)
+  for (size_t ii = 0; ii < m; ++ii)
+    if (!(data_minimum[ii] < data_maximum[ii]))
+      data_maximum[ii] = 1.01 * std::abs(data_minimum[ii]);
   R max_flux_derivative = std::numeric_limits<R>::min();
   if (XT::Common::FloatCmp::eq(data_minimum, data_maximum)) {
     const auto df = flux.partial_u({}, data_minimum);
@@ -420,4 +434,4 @@ GTEST_TEST(empty, main)
                        /*visualizer=*/[&](const auto& u, const auto& filename_prefix, const auto& step) {
                          euler_tools.visualize(u, grid_layer, filename_prefix, XT::Common::to_string(step));
                        });
-}
+} // ... main(...)
