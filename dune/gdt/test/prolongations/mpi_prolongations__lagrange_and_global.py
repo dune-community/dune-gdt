@@ -18,4 +18,9 @@ for sp, nm in zip(cg.spaces, cg.names):
     if not ('AluConform2dLevelGrid' in sp):
         spaces.append(sp)
         names.append(nm)
-spaces_with_names = zip(spaces, names)
+spaces_with_names = []
+for space, name in zip(spaces, names):
+    if 'mpi' in __file__ and 'FemCg' in name:
+        continue
+    spaces_with_names.append((space, name))
+

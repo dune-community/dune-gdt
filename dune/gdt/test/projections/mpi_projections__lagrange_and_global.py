@@ -15,4 +15,8 @@ import spaces as sp
 cg = sp.CG(cache)
 spaces = cg.spaces
 names = cg.names
-spaces_with_names = zip(spaces, names)
+spaces_with_names = []
+for space, name in zip(spaces, names):
+    if 'mpi' in __file__ and 'FemCg' in name:
+        continue
+    spaces_with_names.append((space, name))
