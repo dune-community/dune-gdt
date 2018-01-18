@@ -672,7 +672,8 @@ public:
   ThisType& append(const LocalCouplingOperatorInterface<T>& local_operator,
                    XT::Grid::ApplyOn::WhichIntersection<GridLayerType>*&& where =
                        new XT::Grid::ApplyOn::InnerIntersections<GridLayerType>(),
-                   const XT::Common::Parameter& mu = {})
+                   const XT::Common::Parameter& param = {},
+                   const std::string& id = "")
   {
     typedef LocalCouplingOperatorApplicator<GridLayerType,
                                             typename LocalCouplingOperatorInterface<T>::derived_type,
@@ -680,22 +681,23 @@ public:
                                             RangeType>
         Applicator;
     local_operators_codim_1.emplace_back(
-        new Applicator(grid_layer(), local_operator.as_imp(), source_, range_, where->copy(), mu));
-    BaseType::append(*local_operators_codim_1.back(), std::move(where));
+        new Applicator(grid_layer(), local_operator.as_imp(), source_, range_, where->copy(), param, id));
+    BaseType::append(*local_operators_codim_1.back(), std::move(where), id);
     return *this;
   } // ... append(...)
 
   template <class T>
-  ThisType& append(const LocalCouplingOperatorInterface<T>& local_operator, const XT::Common::Parameter& mu)
+  ThisType& append(const LocalCouplingOperatorInterface<T>& local_operator, const XT::Common::Parameter& param)
   {
-    return this->append(local_operator, new XT::Grid::ApplyOn::InnerIntersections<GridLayerType>(), mu);
+    return this->append(local_operator, new XT::Grid::ApplyOn::InnerIntersections<GridLayerType>(), param);
   }
 
   template <class T>
   ThisType& append(const LocalBoundaryOperatorInterface<T>& local_operator,
                    XT::Grid::ApplyOn::WhichIntersection<GridLayerType>*&& where =
                        new XT::Grid::ApplyOn::BoundaryIntersections<GridLayerType>(),
-                   const XT::Common::Parameter& mu = {})
+                   const XT::Common::Parameter& param = {},
+                   const std::string& id = "")
   {
     typedef LocalBoundaryOperatorApplicator<GridLayerType,
                                             typename LocalBoundaryOperatorInterface<T>::derived_type,
@@ -703,8 +705,8 @@ public:
                                             RangeType>
         Applicator;
     local_operators_codim_1.emplace_back(
-        new Applicator(grid_layer(), local_operator.as_imp(), source_, range_, where->copy(), mu));
-    BaseType::append(*local_operators_codim_1.back(), std::move(where));
+        new Applicator(grid_layer(), local_operator.as_imp(), source_, range_, where->copy(), param, id));
+    BaseType::append(*local_operators_codim_1.back(), std::move(where), id);
     return *this;
   } // ... append(...)
 
