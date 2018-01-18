@@ -91,6 +91,8 @@ public:
 template <class E, class D, size_t d, class R, size_t m>
 class NumericalFluxInterface : public XT::Common::ParametricInterface
 {
+  using ThisType = NumericalFluxInterface<E, D, d, R, m>;
+
 public:
   using StateType = XT::Functions::LocalizableFunctionInterface<E, D, d, R, m, 1>;
   using FluxType = XT::Functions::GlobalFluxFunctionInterface<E, D, d, StateType, 0, R, d, m>;
@@ -108,6 +110,12 @@ public:
     , flux_(flx_ptr)
   {
   }
+
+  NumericalFluxInterface(const ThisType&) = default;
+  NumericalFluxInterface(ThisType&&) = default;
+
+  ThisType& operator=(const ThisType&) = delete;
+  ThisType& operator=(ThisType&&) = delete;
 
   const FluxType& flux() const
   {
@@ -127,6 +135,7 @@ class NumericalLambdaFlux : public NumericalFluxInterface<typename LF::E, typena
 {
   static_assert(XT::Functions::is_localizable_function<LF>::value, "");
   static_assert(LF::rC == 1, "");
+  using ThisType = NumericalLambdaFlux<LF>;
   using BaseType = NumericalFluxInterface<typename LF::E, typename LF::D, LF::d, typename LF::R, LF::r>;
 
 public:
@@ -142,6 +151,12 @@ public:
     , lambda_(lambda)
   {
   }
+
+  NumericalLambdaFlux(const ThisType&) = default;
+  NumericalLambdaFlux(ThisType&&) = default;
+
+  ThisType& operator=(const ThisType&) = delete;
+  ThisType& operator=(ThisType&&) = delete;
 
   RangeType apply(const RangeType& u,
                   const RangeType& v,
@@ -166,6 +181,7 @@ class NumericalUpwindingFlux
 template <class E, class D, size_t d, class R>
 class NumericalUpwindingFlux<E, D, d, R, 1> : public NumericalFluxInterface<E, D, d, R, 1>
 {
+  using ThisType = NumericalUpwindingFlux<E, D, d, R, 1>;
   using BaseType = NumericalFluxInterface<E, D, d, R, 1>;
 
 public:
@@ -177,6 +193,12 @@ public:
     : BaseType(std::forward<Args>(args)...)
   {
   }
+
+  NumericalUpwindingFlux(const ThisType&) = default;
+  NumericalUpwindingFlux(ThisType&&) = default;
+
+  ThisType& operator=(const ThisType&) = delete;
+  ThisType& operator=(ThisType&&) = delete;
 
   RangeType apply(const RangeType& u,
                   const RangeType& v,
@@ -212,6 +234,7 @@ class NumericalLaxFriedrichsFlux
 template <class E, class D, size_t d, class R>
 class NumericalLaxFriedrichsFlux<E, D, d, R, 1> : public NumericalFluxInterface<E, D, d, R, 1>
 {
+  using ThisType = NumericalLaxFriedrichsFlux<E, D, d, R, 1>;
   using BaseType = NumericalFluxInterface<E, D, d, R, 1>;
 
 public:
@@ -223,6 +246,12 @@ public:
     : BaseType(std::forward<Args>(args)...)
   {
   }
+
+  NumericalLaxFriedrichsFlux(const ThisType&) = default;
+  NumericalLaxFriedrichsFlux(ThisType&&) = default;
+
+  ThisType& operator=(const ThisType&) = delete;
+  ThisType& operator=(ThisType&&) = delete;
 
   RangeType apply(const RangeType& u,
                   const RangeType& v,
@@ -256,6 +285,7 @@ class NumericalEngquistOsherFlux
 template <class E, class D, size_t d, class R>
 class NumericalEngquistOsherFlux<E, D, d, R, 1> : public NumericalFluxInterface<E, D, d, R, 1>
 {
+  using ThisType = NumericalEngquistOsherFlux<E, D, d, R, 1>;
   using BaseType = NumericalFluxInterface<E, D, d, R, 1>;
 
 public:
@@ -267,6 +297,12 @@ public:
     : BaseType(std::forward<Args>(args)...)
   {
   }
+
+  NumericalEngquistOsherFlux(const ThisType&) = default;
+  NumericalEngquistOsherFlux(ThisType&&) = default;
+
+  ThisType& operator=(const ThisType&) = delete;
+  ThisType& operator=(ThisType&&) = delete;
 
   RangeType apply(const RangeType& u,
                   const RangeType& v,
@@ -311,6 +347,7 @@ NumericalEngquistOsherFlux<E, D, d, R, m> make_numerical_engquist_osher_flux(
 template <class E, class D, size_t d, class R, size_t m>
 class NumericalVijayasundaramFlux : public NumericalFluxInterface<E, D, d, R, m>
 {
+  using ThisType = NumericalVijayasundaramFlux<E, D, d, R, m>;
   using BaseType = NumericalFluxInterface<E, D, d, R, m>;
 
 public:
@@ -343,6 +380,12 @@ public:
     , flux_eigen_decomposition_lambda_(flux_eigen_decomposition_lambda)
   {
   }
+
+  NumericalVijayasundaramFlux(const ThisType&) = default;
+  NumericalVijayasundaramFlux(ThisType&&) = default;
+
+  ThisType& operator=(const ThisType&) = delete;
+  ThisType& operator=(ThisType&&) = delete;
 
   RangeType apply(const RangeType& u,
                   const RangeType& v,
@@ -390,6 +433,7 @@ template <class E, class D, size_t d, class R>
 class NumericalVijayasundaramEulerFlux : public NumericalVijayasundaramFlux<E, D, d, R, d + 2>
 {
   static const constexpr size_t m = d + 2;
+  using ThisType = NumericalVijayasundaramEulerFlux<E, D, d, R>;
   using BaseType = NumericalVijayasundaramFlux<E, D, d, R, m>;
 
 public:
@@ -409,7 +453,7 @@ public:
 #ifndef DUNE_GDT_DISABLE_CHECKS
                  const auto identity = XT::LA::eye_matrix<XT::Common::FieldMatrix<R, m, m>>(m, m);
                  if ((eigenvectors_inv * eigenvectors - identity).infinity_norm() > tolerance_)
-                   DUNE_THROW(InvalidStateException,
+                   DUNE_THROW(Exceptions::numerical_flux_error,
                               "\n\neigenvectors:\n\n"
                                   << eigenvectors
                                   << "\n\neigenvectors_inverse:\n\n"
@@ -421,7 +465,7 @@ public:
                  if (((eigenvectors_inv * (euler_tools_.flux_jacobi_matrix(w, n) * eigenvectors)) - eigenvaluematrix)
                          .infinity_norm()
                      > tolerance_)
-                   DUNE_THROW(InvalidStateException,
+                   DUNE_THROW(Exceptions::numerical_flux_error,
                               "\n\neigenvectors:\n\n"
                                   << eigenvectors
                                   << "\n\neigenvectors_inverse:\n\n"
@@ -443,6 +487,12 @@ public:
     , tolerance_(eigenvalue_check_tolerance)
   {
   }
+
+  NumericalVijayasundaramEulerFlux(const ThisType&) = default;
+  NumericalVijayasundaramEulerFlux(ThisType&&) = default;
+
+  ThisType& operator=(const ThisType&) = delete;
+  ThisType& operator=(ThisType&&) = delete;
 
 private:
   const EulerTools<d, R> euler_tools_;
@@ -514,9 +564,11 @@ public:
     typename StateType::RangeType u;
     typename StateType::RangeType v;
     if (u.size() != u_inside->vector().size())
-      DUNE_THROW(InvalidStateException, "");
+      DUNE_THROW(Exceptions::local_operator_error,
+                 "u.size() = " << u.size() << "\n   u_inside->vector().size() = " << u_inside->vector().size());
     if (v.size() != u_outside->vector().size())
-      DUNE_THROW(InvalidStateException, "");
+      DUNE_THROW(Exceptions::local_operator_error,
+                 "v.size() = " << v.size() << "\n   u_outside->vector().size() = " << u_outside->vector().size());
     for (size_t ii = 0; ii < u.size(); ++ii) {
       u[ii] = u_inside->vector().get(ii);
       v[ii] = u_outside->vector().get(ii);
@@ -592,7 +644,8 @@ public:
     // copy the local DoF vector to matching FieldVector
     typename StateType::RangeType u;
     if (u.size() != u_inside->vector().size())
-      DUNE_THROW(InvalidStateException, "");
+      DUNE_THROW(Exceptions::local_operator_error,
+                 "u.size() = " << u.size() << "\n   u_inside->vector().size() = " << u_inside->vector().size());
     for (size_t ii = 0; ii < u.size(); ++ii)
       u[ii] = u_inside->vector().get(ii);
     const auto v = boundary_treatment_(intersection, x_intersection, numerical_flux_.flux(), u, param);
@@ -654,7 +707,8 @@ public:
     // copy the local DoF vector to matching FieldVector
     typename StateType::RangeType u;
     if (u.size() != u_inside->vector().size())
-      DUNE_THROW(InvalidStateException, "");
+      DUNE_THROW(Exceptions::local_operator_error,
+                 "u.size() = " << u.size() << "\n   u_inside->vector().size() = " << u_inside->vector().size());
     for (size_t ii = 0; ii < u.size(); ++ii)
       u[ii] = u_inside->vector().get(ii);
     const auto g = boundary_numerical_flux_lambda_(u, normal, param);

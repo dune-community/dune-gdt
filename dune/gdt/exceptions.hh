@@ -22,6 +22,14 @@ class operator_error : public Dune::Exception
 {
 };
 
+class local_operator_error : public operator_error
+{
+};
+
+class numerical_flux_error : public local_operator_error
+{
+};
+
 class prolongation_error : public operator_error
 {
 };
