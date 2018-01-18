@@ -205,7 +205,7 @@ public:
       auto& f_s = ret[ss];
       f_s[0] = rho * v[ss];
       for (size_t ii = 0; ii < d; ++ii)
-        f_s[1 + ii] = rho * v[ii] * v[ss] + (ss == 1 ? 1 : 0) * p;
+        f_s[1 + ii] = rho * v[ii] * v[ss] + (ss == ii ? 1 : 0) * p;
       f_s[m - 1] = (e + p) * v[ss];
     }
     return ret;
