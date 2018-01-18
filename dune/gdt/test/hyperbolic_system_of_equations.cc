@@ -353,7 +353,7 @@ GTEST_TEST(empty, main)
                   flux,
                   numerical_flux,
                   {},
-                  /*periodicity_restriction=*/impermeable_wall_filter && inflow_outflow_filter);
+                  /*periodicity_restriction=*/impermeable_wall_filter || inflow_outflow_filter);
   // non-periodic boundary treatment
   advec_op.append(impermeable_wall_treatment, impermeable_wall_filter.copy());
   advec_op.append(inflow_outflow_treatment, inflow_outflow_filter.copy());
