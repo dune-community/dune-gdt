@@ -383,21 +383,12 @@ NumericalVijayasundaramFlux<E, D, d, R, m> make_numerical_vijayasundaram_flux(
 }
 
 
-template <class E, class D, size_t d, class R, size_t m>
-class NumericalVijayasundaramEulerFlux
-{
-  static_assert(AlwaysFalse<E>::value, "Not implemented for these dimensions yet!");
-};
-
-
 /**
- * \note Checks can be disabled (to improve performance) by defining
- *       DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
+ * \note Checks can be disabled (to improve performance) by defining DUNE_GDT_DISABLE_CHECKS
  */
-template <class E, class D, class R>
-class NumericalVijayasundaramEulerFlux<E, D, 2, R, 4> : public NumericalVijayasundaramFlux<E, D, 2, R, 4>
+template <class E, class D, size_t d, class R>
+class NumericalVijayasundaramEulerFlux : public NumericalVijayasundaramFlux<E, D, d, R, d + 2>
 {
-  static const constexpr size_t d = 2;
   static const constexpr size_t m = d + 2;
   using BaseType = NumericalVijayasundaramFlux<E, D, d, R, m>;
 
@@ -415,7 +406,7 @@ public:
                  const auto eigenvectors = euler_tools_.eigenvectors_flux_jacobi_matrix(w, n);
                  const auto eigenvectors_inv = euler_tools_.eigenvectors_inv_flux_jacobi_matrix(w, n);
 
-#ifndef DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
+#ifndef DUNE_GDT_DISABLE_CHECKS
                  const auto identity = XT::LA::eye_matrix<XT::Common::FieldMatrix<R, m, m>>(m, m);
                  if ((eigenvectors_inv * eigenvectors - identity).infinity_norm() > tolerance_)
                    DUNE_THROW(InvalidStateException,
@@ -445,7 +436,7 @@ public:
                                   << ((eigenvectors_inv * (euler_tools_.flux_jacobi_matrix(w, n) * eigenvectors))
                                       - eigenvaluematrix)
                                          .infinity_norm());
-#endif // DUNE_GDT_LOCAL_OPERATORS_ADVECTION_FV_DISABLE_CHECKS
+#endif // DUNE_GDT_DISABLE_CHECKS
                  return std::make_tuple(eigenvalues, eigenvectors, eigenvectors_inv);
                })
     , euler_tools_(gamma)
@@ -459,15 +450,20 @@ private:
 }; // class NumericalVijayasundaramEulerFlux
 
 
-template <class E, class D, size_t d, class R, size_t m>
-NumericalVijayasundaramEulerFlux<E, D, d, R, m> make_numerical_vijayasundaram_euler_flux(
-    const XT::Functions::
-        GlobalFluxFunctionInterface<E, D, d, XT::Functions::LocalizableFunctionInterface<E, D, d, R, m, 1>, 0, R, d, m>&
-            flux,
+template <class E, class D, size_t d, class R>
+NumericalVijayasundaramEulerFlux<E, D, d, R> make_numerical_vijayasundaram_euler_flux(
+    const XT::Functions::GlobalFluxFunctionInterface<E,
+                                                     D,
+                                                     d,
+                                                     XT::Functions::LocalizableFunctionInterface<E, D, d, R, d + 2, 1>,
+                                                     0,
+                                                     R,
+                                                     d,
+                                                     d + 2>& flux,
     const double& gamma,
     const double eigenvalue_check_tolerance = 1e-10)
 {
-  return NumericalVijayasundaramEulerFlux<E, D, d, R, m>(flux, gamma, eigenvalue_check_tolerance);
+  return NumericalVijayasundaramEulerFlux<E, D, d, R>(flux, gamma, eigenvalue_check_tolerance);
 }
 
 
