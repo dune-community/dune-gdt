@@ -228,31 +228,43 @@ private:
 /**
  * \brief Estimates dt via [Cockburn, Coquel, LeFloch, 1995]
  */
-template <class GL, class E, class D, size_t d, class R>
-double estimate_dt_for_scalar_advection_equation(
+template <class GL, class E, class D, size_t d, class R, size_t m>
+double estimate_dt_for_hyperbolic_system(
     const GL& grid_layer,
-    const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1>& initial_data,
+    const XT::Functions::LocalizableFunctionInterface<E, D, d, R, m, 1>& state,
     const XT::Functions::
-        GlobalFluxFunctionInterface<E, D, d, XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1>, 0, R, d, 1>&
+        GlobalFluxFunctionInterface<E, D, d, XT::Functions::LocalizableFunctionInterface<E, D, d, R, m, 1>, 0, R, d, m>&
             flux,
-    const std::pair<R, R>& boundary_data_range = {std::numeric_limits<R>::max(), std::numeric_limits<R>::min()})
+    const std::pair<XT::Common::FieldVector<R, m>, XT::Common::FieldVector<R, m>>& boundary_data_range = {
+        XT::Common::FieldVector<R, m>(std::numeric_limits<R>::max()),
+        XT::Common::FieldVector<R, m>(std::numeric_limits<R>::min())})
 {
-  R data_minimum = boundary_data_range.first;
-  R data_maximum = boundary_data_range.second;
+  // estimate data range
+  auto data_minimum = boundary_data_range.first;
+  auto data_maximum = boundary_data_range.second;
   for (auto&& entity : elements(grid_layer)) {
-    const auto u0_local = initial_data.local_function(entity);
-    for (const auto& quadrature_point : QuadratureRules<D, d>::rule(entity.type(), u0_local->order())) {
-      const auto value = u0_local->evaluate(quadrature_point.position());
-      data_minimum = std::min(data_minimum, value[0]);
-      data_maximum = std::max(data_maximum, value[0]);
+    const auto state_local = state.local_function(entity);
+    for (const auto& quadrature_point : QuadratureRules<D, d>::rule(entity.type(), state_local->order())) {
+      const auto u0_value = state_local->evaluate(quadrature_point.position());
+      for (size_t ii = 0; ii < m; ++ii) {
+        data_minimum[ii] = std::min(data_minimum[ii], u0_value[ii]);
+        data_maximum[ii] = std::max(data_maximum[ii], u0_value[ii]);
+      }
     }
   }
+  // ensure distinct minima/maxima (otherwise the grid creation below will fail)
+  for (size_t ii = 0; ii < m; ++ii)
+    if (!(data_minimum[ii] < data_maximum[ii]))
+      data_maximum[ii] = 1.01 * std::abs(data_minimum[ii]);
+  // estimate flux derivative range
   R max_flux_derivative = std::numeric_limits<R>::min();
-  OneDGrid max_flux_grid(1, data_minimum, data_maximum);
-  const auto max_flux_interval = *max_flux_grid.leafGridView().template begin<0>();
-  for (const auto& quadrature_point : QuadratureRules<R, 1>::rule(max_flux_interval.type(), flux.order())) {
+  const auto max_flux_grid = XT::Grid::make_cube_grid<YaspGrid<m, EquidistantOffsetCoordinates<double, m>>>(
+      data_minimum, data_maximum, XT::Common::FieldVector<unsigned int, m>(1));
+  const auto max_flux_interval = *max_flux_grid.leaf_view().template begin<0>();
+  for (const auto& quadrature_point : QuadratureRules<R, m>::rule(max_flux_interval.type(), flux.order())) {
     const auto df = flux.partial_u({}, max_flux_interval.geometry().global(quadrature_point.position()));
-    max_flux_derivative = std::max(max_flux_derivative, df.infinity_norm());
+    for (size_t ss = 0; ss < d; ++ss)
+      max_flux_derivative = std::max(max_flux_derivative, df[ss].infinity_norm());
   }
   D perimeter_over_volume = std::numeric_limits<D>::min();
   for (auto&& entity : elements(grid_layer)) {
@@ -263,7 +275,7 @@ double estimate_dt_for_scalar_advection_equation(
   }
   const auto dt = 1. / (perimeter_over_volume * max_flux_derivative);
   return dt;
-} // ... estimate_dt_for_scalar_advection_equation(...)
+} // ... estimate_dt_for_hyperbolic_system(...)
 
 
 } // namespace GDT
