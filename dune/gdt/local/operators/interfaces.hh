@@ -73,6 +73,11 @@ class LocalCouplingOperatorInterface : public XT::CRTPInterface<LocalCouplingOpe
                                        internal::IsLocalCouplingOperator
 {
 public:
+  LocalCouplingOperatorInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+  {
+  }
+
   template <class SourceType, class IntersectionType, class SpaceType, class VectorType>
   void apply(const SourceType& source,
              const IntersectionType& intersection,
@@ -87,15 +92,22 @@ public:
 
 template <class Traits>
 class LocalBoundaryOperatorInterface : public XT::CRTPInterface<LocalBoundaryOperatorInterface<Traits>, Traits>,
+                                       public XT::Common::ParametricInterface,
                                        internal::IsLocalBoundaryOperator
 {
 public:
+  LocalBoundaryOperatorInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+  {
+  }
+
   template <class SourceType, class IntersectionType, class SpaceType, class VectorType>
   void apply(const SourceType& source,
              const IntersectionType& intersection,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity) const
+             LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity,
+             const XT::Common::Parameter& param /*= {}*/) const
   {
-    this->as_imp().apply(source, intersection, local_range_entity);
+    this->as_imp().apply(source, intersection, local_range_entity, param);
   }
 }; // class LocalBoundaryOperatorInterface
 
