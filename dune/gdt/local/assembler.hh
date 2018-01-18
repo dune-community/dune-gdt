@@ -15,6 +15,9 @@
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/dynvector.hh>
 
+#ifndef DUNE_XT_DISABLE_LOGGING
+#include <dune/xt/common/timedlogging.hh>
+#endif
 #include <dune/xt/la/container/interfaces.hh>
 #include <dune/xt/grid/walker/apply-on.hh>
 #include <dune/xt/grid/walker/wrapper.hh>
@@ -488,18 +491,28 @@ public:
                                   const SourceType& source,
                                   RangeType& range,
                                   XT::Grid::ApplyOn::WhichIntersection<GridLayerType>*&& where,
-                                  const XT::Common::Parameter& param)
+                                  const XT::Common::Parameter& param,
+                                  const std::string& id = "")
     : grid_layer_(grid_layer)
     , local_operator_(local_operator)
     , source_(source)
     , range_(range)
     , where_(std::move(where))
     , param_(param)
+    , id_(id)
+#ifndef DUNE_XT_DISABLE_LOGGING
+    , logger_(
+          XT::Common::TimedLogger().get("gdt.local.coupling_operator_applicator" + (id.empty() ? "" : "(" + id + ")")))
+#endif
   {
   }
 
   bool apply_on(const GridLayerType& grid_layer, const IntersectionType& intersection) const override final
   {
+#ifndef DUNE_XT_DISABLE_LOGGING
+    logger_.debug() << "apply_on(intersection.geometry().center()=" << intersection.geometry().center()
+                    << "): " << where_->apply_on(grid_layer, intersection) << std::endl;
+#endif
     return where_->apply_on(grid_layer, intersection);
   }
 
@@ -507,6 +520,12 @@ public:
                    const EntityType& inside_entity,
                    const EntityType& outside_entity) override final
   {
+#ifndef DUNE_XT_DISABLE_LOGGING
+    logger_.debug() << "apply_local(intersection.geometry().center()=" << intersection.geometry().center()
+                    << ", inside_entity.geometry().center()=" << inside_entity.geometry().center()
+                    << ", outside_entity.geometry().center()=" << outside_entity.geometry().center() << ")"
+                    << std::endl;
+#endif
     local_operator_.apply(source_,
                           intersection,
                           *range_.local_discrete_function(inside_entity),
@@ -521,6 +540,10 @@ private:
   RangeType& range_;
   const std::unique_ptr<XT::Grid::ApplyOn::WhichIntersection<GridLayerType>> where_;
   const XT::Common::Parameter& param_;
+  const std::string id_;
+#ifndef DUNE_XT_DISABLE_LOGGING
+  mutable XT::Common::TimedLogManager logger_;
+#endif
 }; // class LocalCouplingOperatorApplicator
 
 
@@ -609,18 +632,28 @@ public:
                                   const SourceType& source,
                                   RangeType& range,
                                   XT::Grid::ApplyOn::WhichIntersection<GridLayerType>*&& where,
-                                  const XT::Common::Parameter& param)
+                                  const XT::Common::Parameter& param,
+                                  const std::string& id = "")
     : grid_layer_(grid_layer)
     , local_operator_(local_operator)
     , source_(source)
     , range_(range)
     , where_(std::move(where))
     , param_(param)
+    , id_(id)
+#ifndef DUNE_XT_DISABLE_LOGGING
+    , logger_(
+          XT::Common::TimedLogger().get("gdt.local.boundary_operator_applicator" + (id.empty() ? "" : "(" + id + ")")))
+#endif
   {
   }
 
   bool apply_on(const GridLayerType& grid_layer, const IntersectionType& intersection) const override final
   {
+#ifndef DUNE_XT_DISABLE_LOGGING
+    logger_.debug() << "apply_on(intersection.geometry().center()=" << intersection.geometry().center()
+                    << "): " << where_->apply_on(grid_layer, intersection) << std::endl;
+#endif
     return where_->apply_on(grid_layer, intersection);
   }
 
@@ -628,6 +661,10 @@ public:
                    const EntityType& inside_entity,
                    const EntityType& /*outside_entity*/) override final
   {
+#ifndef DUNE_XT_DISABLE_LOGGING
+    logger_.debug() << "apply_local(intersection.geometry().center()=" << intersection.geometry().center()
+                    << ", inside_entity.geometry().center()=" << inside_entity.geometry().center() << ")" << std::endl;
+#endif
     local_operator_.apply(source_, intersection, *range_.local_discrete_function(inside_entity), param_);
   }
 
@@ -638,6 +675,10 @@ private:
   RangeType& range_;
   const std::unique_ptr<XT::Grid::ApplyOn::WhichIntersection<GridLayerType>> where_;
   const XT::Common::Parameter& param_;
+  const std::string id_;
+#ifndef DUNE_XT_DISABLE_LOGGING
+  mutable XT::Common::TimedLogManager logger_;
+#endif
 }; // class LocalBoundaryOperatorApplicator
 
 
