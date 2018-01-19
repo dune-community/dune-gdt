@@ -1,12 +1,12 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2015 - 2017)
-//   Rene Milk       (2016 - 2017)
+//   Rene Milk       (2016 - 2018)
 
 #ifndef DUNE_GDT_TEST_PROLONGATIONS_BASE_HH
 #define DUNE_GDT_TEST_PROLONGATIONS_BASE_HH
@@ -32,7 +32,7 @@ struct ProlongationOperatorsBaseGridHolder
   typedef Dune::XT::Grid::GridProvider<GridType> GridProviderType;
 
   ProlongationOperatorsBaseGridHolder()
-    : grid_provider_(XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 2u))
+    : grid_provider_(XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 6u))
   {
     grid_provider_.global_refine(1);
   }
@@ -60,7 +60,7 @@ struct ProlongationOperatorsBase
   typedef Dune::GDT::DiscreteFunction<CoarseSpaceType, VectorType> CoarseDiscreteFunctionType;
   typedef Dune::GDT::DiscreteFunction<FineSpaceType, VectorType> FineDiscreteFunctionType;
 
-  static constexpr double default_tolerance = 1e-15;
+  static constexpr double default_tolerance = 1e-14;
   static constexpr double alugrid_tolerance = 3.8e-11;
 
   ProlongationOperatorsBase()

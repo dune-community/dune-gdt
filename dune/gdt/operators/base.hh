@@ -1,13 +1,13 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2015 - 2017)
-//   Rene Milk       (2016 - 2017)
-//   Tobias Leibner  (2016)
+//   Rene Milk       (2016 - 2018)
+//   Tobias Leibner  (2016 - 2017)
 
 #ifndef DUNE_GDT_OPERATORS_BASE_HH
 #define DUNE_GDT_OPERATORS_BASE_HH
@@ -163,9 +163,9 @@ public:
   using BaseType::grid_layer;
   using BaseType::append;
 
-  ThisType& append(
-      const LocalVolumeTwoFormInterface<LocalRangeType, LocalSourceType, FieldType>& local_volume_twoform,
-      const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
+  ThisType& append(const LocalVolumeTwoFormInterface<LocalRangeType, LocalSourceType, FieldType>& local_volume_twoform,
+                   const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where =
+                       new XT::Grid::ApplyOn::PartitionSetEntities<GridLayerType, Partitions::InteriorBorder>())
   {
     local_volume_twoforms_.emplace_back(
         new LocalVolumeTwoFormAccumulatorFunctor<GridLayerType, RangeType, SourceType, FieldType>(
@@ -214,6 +214,7 @@ protected:
 /**
  * \todo add static checks of dimensions
  * \note Does a const_cast in apply() and apply2(), not sure yet if this is fine.
+ * \warning: only apply2(DiscreteFunction, DiscreteFunction) automagically sums over mpi processes
  */
 template <class MatrixImp,
           class RangeSpaceImp,
@@ -283,7 +284,7 @@ public:
   static const constexpr ChoosePattern pattern_type = pt;
 
 private:
-  typedef XT::LA::Solver<MatrixType, typename SourceSpaceType::CommunicatorType> LinearSolverType;
+  typedef XT::LA::Solver<MatrixType, typename SourceSpaceType::DofCommunicatorType> LinearSolverType;
 
   template <ChoosePattern pp = ChoosePattern::face_and_volume, bool anything = true>
   struct Compute
@@ -544,7 +545,8 @@ public:
                    const ConstDiscreteFunction<SourceSpaceType, S>& source,
                    const Dune::XT::Common::Parameter& param = {}) const
   {
-    return apply2(range.vector(), source.vector(), param);
+    auto ret = apply2(range.vector(), source.vector(), param);
+    return range.space().grid_view().grid().comm().sum(ret);
   }
 
   template <class SourceType>
@@ -569,7 +571,7 @@ public:
                      const Dune::XT::Common::Parameter& /*param*/ = {}) const
   {
     this->assemble();
-    LinearSolverType(matrix(), source_space().communicator()).apply(range.as_imp(), source.as_imp(), opts);
+    LinearSolverType(matrix(), source_space().dof_communicator()).apply(range.as_imp(), source.as_imp(), opts);
   }
 
   template <class R, class S>

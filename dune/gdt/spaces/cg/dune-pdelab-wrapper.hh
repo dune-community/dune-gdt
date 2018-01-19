@@ -1,6 +1,6 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
@@ -65,6 +65,7 @@ public:
   static const int polOrder = polynomialOrder;
   static_assert(polOrder >= 1, "Wrong polOrder given!");
   static const bool continuous = true;
+  static const constexpr Backends backend_type{Backends::pdelab};
 
 private:
   typedef typename GridLayerType::ctype DomainFieldType;
@@ -109,7 +110,7 @@ public:
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static const bool needs_grid_view = true;
 
-  typedef typename CommunicationChooser<GridLayerType>::Type CommunicatorType;
+  typedef typename DofCommunicationChooser<GridLayerType>::Type DofCommunicatorType;
   typedef typename Dune::XT::Common::
       make_identical_tuple<DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1>, rangeDim>::type
           SpaceTupleType;
@@ -149,8 +150,8 @@ public:
 
   typedef typename GridLayerType::ctype DomainFieldType;
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
-  typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
-  typedef typename CommunicationChooserType::Type CommunicatorType;
+  typedef DofCommunicationChooser<GridLayerType> DofCommunicationChooserType;
+  typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
 
 private:
   typedef typename Traits::FEMapType FEMapType;
@@ -164,7 +165,7 @@ public:
     , fe_map_(grid_view_)
     , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
-    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
+    , communicator_(DofCommunicationChooser<GridViewImp>::create(grid_view_))
     , communicator_prepared_(false)
   {
   }
@@ -178,12 +179,12 @@ public:
     , fe_map_(grid_view_)
     , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
-    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
+    , communicator_(DofCommunicationChooser<GridViewImp>::create(grid_view_))
     , communicator_prepared_(false)
   {
     // make sure our new communicator is prepared if other's was
     if (other.communicator_prepared_) {
-      const auto& comm DUNE_UNUSED = this->communicator();
+      const auto& comm DUNE_UNUSED = this->dof_communicator();
       communicator_prepared_ = true;
     }
   }
@@ -237,11 +238,11 @@ public:
     return BaseFunctionSetType(backend_, entity);
   }
 
-  CommunicatorType& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
     DUNE_UNUSED std::lock_guard<std::mutex> gg(communicator_mutex_);
     if (!communicator_prepared_)
-      communicator_prepared_ = CommunicationChooserType::prepare(*this, *communicator_);
+      communicator_prepared_ = DofCommunicationChooserType::prepare(*this, *communicator_);
     return *communicator_;
   } // ... communicator(...)
 
@@ -250,7 +251,7 @@ private:
   const FEMapType fe_map_;
   const BackendType backend_;
   const MapperType mapper_;
-  mutable std::unique_ptr<CommunicatorType> communicator_;
+  mutable std::unique_ptr<DofCommunicatorType> communicator_;
   mutable bool communicator_prepared_;
   mutable std::mutex communicator_mutex_;
 }; // class DunePdelabCgSpaceWrapper<..., 1, 1>
@@ -303,8 +304,8 @@ public:
 
   typedef typename GridLayerType::ctype DomainFieldType;
   typedef FieldVector<DomainFieldType, dimDomain> DomainType;
-  typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
-  typedef typename CommunicationChooserType::Type CommunicatorType;
+  typedef DofCommunicationChooser<GridLayerType> DofCommunicationChooserType;
+  typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
 
   using typename ProductInterfaceType::SpaceTupleType;
   typedef DunePdelabCgSpaceWrapper<GridViewImp, polynomialOrder, RangeFieldImp, 1, 1> FactorSpaceType;
@@ -322,7 +323,7 @@ public:
     , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
     , factor_space_(grd_vw)
-    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
+    , communicator_(DofCommunicationChooser<GridViewImp>::create(grid_view_))
     , communicator_prepared_(false)
   {
   }
@@ -337,12 +338,12 @@ public:
     , backend_(grid_view_, fe_map_)
     , mapper_(backend_)
     , factor_space_(other.factor_space_)
-    , communicator_(CommunicationChooser<GridViewImp>::create(grid_view_))
+    , communicator_(DofCommunicationChooser<GridViewImp>::create(grid_view_))
     , communicator_prepared_(false)
   {
     // make sure our new communicator is prepared if other's was
     if (other.communicator_prepared_)
-      const auto& comm DUNE_UNUSED = this->communicator();
+      const auto& comm DUNE_UNUSED = this->dof_communicator();
   }
 
   /**
@@ -396,11 +397,11 @@ public:
     return BaseFunctionSetType(backend_, entity);
   }
 
-  CommunicatorType& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
     DUNE_UNUSED std::lock_guard<std::mutex> gg(communicator_mutex_);
     if (!communicator_prepared_)
-      communicator_prepared_ = CommunicationChooserType::prepare(*this, *communicator_);
+      communicator_prepared_ = DofCommunicationChooserType::prepare(*this, *communicator_);
     return *communicator_;
   } // ... communicator(...)
 
@@ -416,7 +417,7 @@ private:
   const BackendType backend_;
   const MapperType mapper_;
   const FactorSpaceType factor_space_;
-  mutable std::unique_ptr<CommunicatorType> communicator_;
+  mutable std::unique_ptr<DofCommunicatorType> communicator_;
   mutable bool communicator_prepared_;
   mutable std::mutex communicator_mutex_;
 }; // class DunePdelabCgSpaceWrapper< ..., 1 >

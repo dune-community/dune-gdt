@@ -1,6 +1,6 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
@@ -102,7 +102,7 @@ public:
   typedef typename BaseFunctionSetType::EntityType EntityType;
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::part;
   static const bool needs_grid_view = false;
-  typedef double CommunicatorType;
+  typedef double DofCommunicatorType;
 
 private:
   template <class G, int p, class R, size_t r, size_t rC>
@@ -219,7 +219,7 @@ public:
     return BaseType::compute_face_and_volume_pattern(local_grid_layer, ansatz_space);
   }
 
-  double& communicator() const
+  double& dof_communicator() const
   {
     return communicator_;
   }

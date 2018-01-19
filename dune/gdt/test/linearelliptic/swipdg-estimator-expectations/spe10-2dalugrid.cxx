@@ -1,12 +1,12 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2016 - 2017)
-//   Rene Milk       (2016 - 2017)
+//   Rene Milk       (2016 - 2018)
 //   Tobias Leibner  (2016)
 
 #include "config.h"
@@ -91,9 +91,7 @@ public:
 
 
 template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
-                                                             Spe10Model1TestCase<ALUGrid<2, 2, simplex, conforming>,
-                                                                                 double,
-                                                                                 1>,
+                                                             Spe10Model1TestCase<AluConform2dGridType, double, 1>,
                                                          LinearElliptic::ChooseDiscretizer::swipdg,
                                                          1>;
 
@@ -165,9 +163,7 @@ public:
 
 
 template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
-                                                             Spe10Model1TestCase<ALUGrid<2, 2, simplex, nonconforming>,
-                                                                                 double,
-                                                                                 1>,
+                                                             Spe10Model1TestCase<AluSimplex2dGridType, double, 1>,
                                                          LinearElliptic::ChooseDiscretizer::swipdg,
                                                          1>;
 

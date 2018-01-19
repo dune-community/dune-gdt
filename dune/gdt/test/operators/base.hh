@@ -1,12 +1,12 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2015 - 2017)
-//   Rene Milk       (2016 - 2017)
+//   Rene Milk       (2016 - 2018)
 //   Tobias Leibner  (2016)
 
 #ifndef DUNE_GDT_TEST_OPERATORS_BASE_HH
@@ -50,8 +50,8 @@ struct OperatorBaseTraits
   typedef Dune::XT::Functions::
       ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain>
           TensorFunctionType;
-  typedef typename XT::LA::Container<RangeFieldType, XT::LA::default_backend>::MatrixType MatrixType;
-  typedef typename XT::LA::Container<RangeFieldType, XT::LA::default_backend>::VectorType VectorType;
+  typedef typename XT::LA::Container<RangeFieldType, XT::LA::Backends::istl_sparse>::MatrixType MatrixType;
+  typedef typename XT::LA::Container<RangeFieldType, XT::LA::Backends::istl_sparse>::VectorType VectorType;
   typedef DiscreteFunction<SpaceType, VectorType> DiscreteFunctionType;
 }; // class OperatorBaseTraits
 

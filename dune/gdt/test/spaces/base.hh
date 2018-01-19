@@ -1,13 +1,13 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2014 - 2017)
-//   Rene Milk       (2014, 2016 - 2017)
-//   Tobias Leibner  (2014, 2016)
+//   Rene Milk       (2014, 2016 - 2018)
+//   Tobias Leibner  (2014, 2016 - 2017)
 
 #ifndef DUNE_GDT_TEST_SPACES_BASE_HH
 #define DUNE_GDT_TEST_SPACES_BASE_HH
@@ -103,7 +103,7 @@ public:
     typedef typename SpaceType::BaseFunctionSetType D_BaseFunctionSetType;
     typedef typename SpaceType::EntityType D_EntityType;
     typedef typename SpaceType::PatternType D_PatternType;
-    typedef typename SpaceType::CommunicatorType D_CommunicatorType;
+    typedef typename SpaceType::DofCommunicatorType D_DofCommunicatorType;
     static const auto d_layer_backend = SpaceType::layer_backend;
     // * as the interface
     typedef SpaceInterface<Traits, d_dimDomain, d_dimRange, d_dimRangeCols> InterfaceType;
@@ -120,7 +120,7 @@ public:
     typedef typename InterfaceType::BaseFunctionSetType I_BaseFunctionSetType;
     typedef typename InterfaceType::EntityType I_EntityType;
     typedef typename InterfaceType::PatternType I_PatternType;
-    typedef typename InterfaceType::CommunicatorType I_CommunicatorType;
+    typedef typename InterfaceType::DofCommunicatorType I_DofCommunicatorType;
     static const auto i_layer_backend = InterfaceType::layer_backend;
     static_assert(std::is_base_of<InterfaceType, SpaceType>::value, "SpaceType has to be derived from SpaceInterface!");
     static_assert(std::is_same<derived_type, SpaceType>::value, "Types do not match!");
@@ -132,7 +132,7 @@ public:
     static_assert(std::is_same<I_BaseFunctionSetType, D_BaseFunctionSetType>::value, "Types do not match!");
     static_assert(std::is_same<I_EntityType, D_EntityType>::value, "Types do not match!");
     static_assert(std::is_same<I_PatternType, D_PatternType>::value, "Types do not match!");
-    static_assert(std::is_same<I_CommunicatorType, D_CommunicatorType>::value, "Types do not match!");
+    static_assert(std::is_same<I_DofCommunicatorType, D_DofCommunicatorType>::value, "Types do not match!");
     static_assert(std::is_move_constructible<SpaceType>::value, "SpaceType isn't move constructible");
     static_assert(std::is_copy_constructible<SpaceType>::value, "SpaceType isn't copy constructible");
     static_assert(i_dimDomain == d_dimDomain, "Dimensions do not match!");
@@ -145,7 +145,7 @@ public:
     const D_BackendType& d_backend = space_.backend();
     const D_MapperType& d_mapper = space_.mapper();
     const D_GridLayerType& d_grid_layer = space_.grid_layer();
-    D_CommunicatorType& d_comm = space_.communicator();
+    D_DofCommunicatorType& d_comm = space_.dof_communicator();
     D_PatternType d_pattern = space_.compute_pattern();
     D_PatternType d_pattern_view = space_.compute_pattern(d_grid_layer);
     D_PatternType d_pattern_other = space_.compute_pattern(space_);
@@ -179,7 +179,7 @@ public:
     const I_BackendType& i_backend = i_space.backend();
     const I_MapperType& i_mapper = i_space.mapper();
     const I_GridLayerType& i_grid_layer = i_space.grid_layer();
-    I_CommunicatorType& i_comm = i_space.communicator();
+    I_DofCommunicatorType& i_comm = i_space.dof_communicator();
     I_PatternType i_pattern = i_space.compute_pattern();
     I_PatternType i_pattern_view = i_space.compute_pattern(i_grid_layer);
     I_PatternType i_pattern_other = i_space.compute_pattern(i_space);
@@ -228,6 +228,8 @@ public:
       I_BaseFunctionSetType i_base_function_set = i_space.base_function_set(entity);
       size_t i_bfs_size = i_base_function_set.size();
       EXPECT_EQ(d_bfs_size, i_bfs_size);
+      // make sure backend_type is defined
+      constexpr auto backend_type = SpaceType::backend_type;
     } // walk the grid
   } // ... fulfills_interface()
 

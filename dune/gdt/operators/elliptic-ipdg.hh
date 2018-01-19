@@ -1,12 +1,13 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2016 - 2017)
-//   Rene Milk       (2016 - 2017)
+//   Rene Milk       (2016 - 2018)
+//   Tobias Leibner  (2017)
 
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_OPERATORS_ELLIPTIC_IPDG_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_OPERATORS_ELLIPTIC_IPDG_HH
@@ -82,9 +83,7 @@ public:
     , local_coupling_operator_(diffusion)
     , local_boundary_operator_(diffusion)
   {
-    this->append(local_volume_operator_);
-    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
-    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+    append_all(boundary_info);
   }
 
   template <typename DiffusionImp,
@@ -101,9 +100,7 @@ public:
     , local_coupling_operator_(over_integrate, diffusion)
     , local_boundary_operator_(over_integrate, diffusion)
   {
-    this->append(local_volume_operator_);
-    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
-    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+    append_all(boundary_info);
   }
 
   /// \}
@@ -125,9 +122,7 @@ public:
     , local_coupling_operator_(diffusion_factor, diffusion_tensor)
     , local_boundary_operator_(diffusion_factor, diffusion_tensor)
   {
-    this->append(local_volume_operator_);
-    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
-    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+    append_all(boundary_info);
   }
 
   template <typename DiffusionFactorImp,
@@ -146,14 +141,19 @@ public:
     , local_coupling_operator_(over_integrate, diffusion_factor, diffusion_tensor)
     , local_boundary_operator_(over_integrate, diffusion_factor, diffusion_tensor)
   {
-    this->append(local_volume_operator_);
-    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
-    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+    append_all(boundary_info);
   }
 
   /// \}
 
 private:
+  void append_all(const XT::Grid::BoundaryInfo<IntersectionType>& boundary_info)
+  {
+    this->append(local_volume_operator_);
+    this->append(local_coupling_operator_, new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>());
+    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::DirichletIntersections<GridLayerType>(boundary_info));
+  }
+
   typedef typename RangeSpace::BaseFunctionSetType RangeBaseType;
   typedef typename SourceSpace::BaseFunctionSetType SourceBaseType;
 

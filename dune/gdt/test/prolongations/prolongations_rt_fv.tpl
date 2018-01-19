@@ -1,1 +1,1 @@
-prolongations_cg_dg.tpl
+mpi_prolongations_cg_dg.tpl

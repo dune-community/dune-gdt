@@ -83,7 +83,8 @@ public:
   using RangeFieldType = R;
   using BackendType = double;
   static const constexpr XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
-  using CommunicatorType = double;
+  typedef DofCommunicationChooser<GridLayerType, true> DofCommunicationChooserType;
+  typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
 }; // class ContinuousLagrangeSpaceTraits
 
 

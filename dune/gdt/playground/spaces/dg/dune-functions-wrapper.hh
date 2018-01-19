@@ -1,11 +1,12 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2017)
+//   Rene Milk       (2017 - 2018)
 
 #ifndef DUNE_GDT_PLAYGROUND_SPACES_DG_DUNE_FUNCTIONS_WRAPPER_HH
 #define DUNE_GDT_PLAYGROUND_SPACES_DG_DUNE_FUNCTIONS_WRAPPER_HH
@@ -52,9 +53,10 @@ public:
   typedef Functions::LagrangeDGBasis<GL, p> BackendType;
   typedef DuneFunctionsMapperWrapper<GL, p, R, r, rC> MapperType;
   typedef DuneFunctionsBaseFunctionSetWrapper<GL, p, R, r, rC> BaseFunctionSetType;
-  typedef double CommunicatorType;
+  typedef double DofCommunicatorType;
   typedef GL GridLayerType;
   typedef R RangeFieldType;
+  static const constexpr Backends backend_type{Backends::functions};
 }; // class DuneFunctionsDgSpaceWrapperTraits
 
 
@@ -73,7 +75,7 @@ public:
 
   using typename BaseType::BackendType;
   using typename BaseType::BaseFunctionSetType;
-  using typename BaseType::CommunicatorType;
+  using typename BaseType::DofCommunicatorType;
   using typename BaseType::EntityType;
   using typename BaseType::GridLayerType;
   using typename BaseType::MapperType;
@@ -83,7 +85,7 @@ public:
     : grid_layer_(new GridLayerType(grd_layr))
     , backend_(new BackendType(*grid_layer_))
     , mapper_(new MapperType(backend_))
-    , communicator_(new CommunicatorType(0.))
+    , communicator_(new DofCommunicatorType(0.))
   {
   }
 
@@ -127,7 +129,7 @@ public:
     return this->compute_face_and_volume_pattern(grd_layr, ansatz_space);
   }
 
-  CommunicatorType& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
     return *communicator_;
   }
@@ -136,7 +138,7 @@ private:
   std::shared_ptr<GridLayerType> grid_layer_;
   const std::shared_ptr<const BackendType> backend_;
   const std::shared_ptr<const MapperType> mapper_;
-  mutable std::shared_ptr<CommunicatorType> communicator_;
+  mutable std::shared_ptr<DofCommunicatorType> communicator_;
 }; // class DuneFunctionsDgSpaceWrapper
 
 

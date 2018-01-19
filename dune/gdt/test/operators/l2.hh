@@ -1,12 +1,12 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2015 - 2017)
-//   Rene Milk       (2016 - 2017)
+//   Rene Milk       (2016 - 2018)
 //   Tobias Leibner  (2016)
 
 #ifndef DUNE_GDT_TEST_OPERATORS_L2_HH
@@ -116,50 +116,44 @@ struct L2MatrixOperatorTest : public WeightedL2ProductBase<SpaceType>, public Ma
     // without matrix
     //   without over_integrate
     //     simplified argument list
-    DUNE_UNUSED L2MatrixOperator<SpaceType> no_matrix_1(space);
-    DUNE_UNUSED L2MatrixOperator<SpaceType> no_matrix_2(space, grid_layer);
-    DUNE_UNUSED L2MatrixOperator<SpaceType> no_matrix_3(space, space, grid_layer);
+    using TwoArgsOp = L2MatrixOperator<SpaceType, MatrixType>;
+    TwoArgsOp no_matrix_1(space);
+    TwoArgsOp no_matrix_2(space, grid_layer);
+    TwoArgsOp no_matrix_3(space, space, grid_layer);
     //     full argument list
-    DUNE_UNUSED L2MatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_4(space);
-    DUNE_UNUSED L2MatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_5(space,
-                                                                                                      grid_layer);
-    DUNE_UNUSED L2MatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_6(
-        space, space, grid_layer);
+    using FiveArgsOp = L2MatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double>;
+    DUNE_UNUSED FiveArgsOp no_matrix_4(space);
+    DUNE_UNUSED FiveArgsOp no_matrix_5(space, grid_layer);
+    DUNE_UNUSED FiveArgsOp no_matrix_6(space, space, grid_layer);
     //   with over_integrate
     //     simplified argument list
-    DUNE_UNUSED L2MatrixOperator<SpaceType> no_matrix_7(1, space);
-    DUNE_UNUSED L2MatrixOperator<SpaceType> no_matrix_8(1, space, grid_layer);
-    DUNE_UNUSED L2MatrixOperator<SpaceType> no_matrix_9(1, space, space, grid_layer);
+    TwoArgsOp no_matrix_7(1, space);
+    TwoArgsOp no_matrix_8(1, space, grid_layer);
+    TwoArgsOp no_matrix_9(1, space, space, grid_layer);
     //     full argument list
-    DUNE_UNUSED L2MatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_10(1, space);
-    DUNE_UNUSED L2MatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_11(
-        1, space, grid_layer);
-    DUNE_UNUSED L2MatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> no_matrix_12(
-        1, space, space, grid_layer);
+    DUNE_UNUSED FiveArgsOp no_matrix_10(1, space);
+    DUNE_UNUSED FiveArgsOp no_matrix_11(1, space, grid_layer);
+    DUNE_UNUSED FiveArgsOp no_matrix_12(1, space, space, grid_layer);
     // with matrix
     MatrixType matrix(space.mapper().size(), space.mapper().size(), space.compute_volume_pattern());
     //   without over_integrate
     //     simplified argument list
-    DUNE_UNUSED L2MatrixOperator<SpaceType> matrix_1(matrix, space);
-    DUNE_UNUSED L2MatrixOperator<SpaceType> matrix_2(matrix, space, grid_layer);
-    DUNE_UNUSED L2MatrixOperator<SpaceType> matrix_3(matrix, space, space, grid_layer);
+    TwoArgsOp matrix_1(matrix, space);
+    TwoArgsOp matrix_2(matrix, space, grid_layer);
+    TwoArgsOp matrix_3(matrix, space, space, grid_layer);
     //     full argument list
-    DUNE_UNUSED L2MatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_4(matrix, space);
-    DUNE_UNUSED L2MatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_5(
-        matrix, space, grid_layer);
-    DUNE_UNUSED L2MatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_6(
-        matrix, space, space, grid_layer);
+    DUNE_UNUSED FiveArgsOp matrix_4(matrix, space);
+    DUNE_UNUSED FiveArgsOp matrix_5(matrix, space, grid_layer);
+    DUNE_UNUSED FiveArgsOp matrix_6(matrix, space, space, grid_layer);
     //   with over_integrate
     //     simplified argument list
-    DUNE_UNUSED L2MatrixOperator<SpaceType> matrix_7(1, matrix, space);
-    DUNE_UNUSED L2MatrixOperator<SpaceType> matrix_8(1, matrix, space, grid_layer);
-    DUNE_UNUSED L2MatrixOperator<SpaceType> matrix_9(1, matrix, space, space, grid_layer);
+    TwoArgsOp matrix_7(1, matrix, space);
+    TwoArgsOp matrix_8(1, matrix, space, grid_layer);
+    TwoArgsOp matrix_9(1, matrix, space, space, grid_layer);
     //     full argument list
-    DUNE_UNUSED L2MatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_10(1, matrix, space);
-    DUNE_UNUSED L2MatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_11(
-        1, matrix, space, grid_layer);
-    DUNE_UNUSED L2MatrixOperator<SpaceType, MatrixType, GridLayerType, SpaceType, double> matrix_12(
-        1, matrix, space, space, grid_layer);
+    DUNE_UNUSED FiveArgsOp matrix_10(1, matrix, space);
+    DUNE_UNUSED FiveArgsOp matrix_11(1, matrix, space, grid_layer);
+    DUNE_UNUSED FiveArgsOp matrix_12(1, matrix, space, space, grid_layer);
   } // ... constructible_by_ctor(...)
 
   void constructible_by_factory()

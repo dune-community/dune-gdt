@@ -1,6 +1,6 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
@@ -142,6 +142,18 @@ private:
     }
   };
 
+#if HAVE_DUNE_SPGRID
+  template <class ct, int dim, template <int> class Ref, class Comm, bool anything>
+  struct Helper<SPGrid<ct, dim, Ref, Comm>, anything>
+  {
+    static XT::Common::Configuration value(XT::Common::Configuration cfg)
+    {
+      cfg["num_elements"] = "[8 8]";
+      return cfg;
+    }
+  };
+#endif
+
 #if HAVE_DUNE_ALUGRID
 
   template <bool anything>
@@ -180,6 +192,7 @@ private:
 #endif // HAVE_DUNE_ALUGRID
 #endif // DXT_DISABLE_LARGE_TESTS
 
+public:
   static XT::Common::Configuration grid_cfg()
   {
     auto cfg = ProblemType::default_grid_cfg();
@@ -187,7 +200,6 @@ private:
     return cfg;
   }
 
-public:
   ESV2007TestCase(const size_t num_refs =
 #if DXT_DISABLE_LARGE_TESTS
                       1
@@ -201,12 +213,19 @@ public:
   {
   }
 
+  ESV2007TestCase(XT::Common::Configuration cfg)
+    : BaseType(cfg.sub("grid", false, grid_cfg()), cfg.get("grid.num_refinements", 1))
+    , problem_()
+    , exact_solution_()
+  {
+  }
+
   const ProblemType& problem() const override final
   {
     return problem_;
   }
 
-  void print_header(std::ostream& out = std::cout) const override final
+  void print_header(std::ostream& out = DXTC_LOG_INFO_0) const override final
   {
     out << "+==================================================================+\n"
         << "|+================================================================+|\n"
@@ -262,6 +281,7 @@ public:
 private:
   typedef Test::StationaryTestCase<G, ProblemType, XT::Grid::DD::SubdomainGrid<G>> BaseType;
 
+public:
   static XT::Common::Configuration grid_cfg()
   {
     auto cfg = ESV2007TestCase<G, R, r>::grid_cfg();
@@ -270,7 +290,6 @@ private:
     return cfg;
   }
 
-public:
   ESV2007DdSubdomainsTestCase(const size_t num_refs =
 #if DXT_DISABLE_LARGE_TESTS
                                   1
@@ -284,12 +303,19 @@ public:
   {
   }
 
+  ESV2007DdSubdomainsTestCase(XT::Common::Configuration cfg)
+    : BaseType(cfg.sub("grid", false, grid_cfg()), cfg.get("grid.num_refinements", 1))
+    , problem_()
+    , exact_solution_()
+  {
+  }
+
   const ProblemType& problem() const override final
   {
     return problem_;
   }
 
-  void print_header(std::ostream& out = std::cout) const override final
+  void print_header(std::ostream& out = DXTC_LOG_INFO_0) const override final
   {
     out << "+==================================================================+\n"
         << "|+================================================================+|\n"

@@ -1,11 +1,12 @@
 # This file is part of the dune-gdt project:
 #   https://github.com/dune-community/dune-gdt
-# Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+# Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 # License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 #      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 #          with "runtime exception" (http://www.dune-project.org/license.html)
 # Authors:
 #   Felix Schindler (2013 - 2014, 2016 - 2017)
+#   Rene Milk       (2018)
 
 Barbara Verfürth <b_verf01@uni-muenster.de> b_verf01 <b_verf01@uni-muenster.de>
 Felix Schindler <f_albr01@4028485c-44d9-4cde-a312-5a4635ee2db9>
@@ -56,3 +57,5 @@ Felix Schindler <felix.schindler@wwu.de> Mario Ohlberger <duneadm@JAX.uni-muenst
 Rene Milk <rene.milk@wwu.de> Mario Ohlberger <duneadm@DUNE-PROJECT.(none)>
 Rene Milk <rene.milk@wwu.de> Mario Ohlberger <duneadm@SCORPION.uni-muenster.de>
 Rene Milk <rene.milk@wwu.de> Mario Ohlberger <duneadm@zivsmp001.cvos.cluster>
+
+Tim Keil <keil.menden@web.de> TiKeil <keil.menden@web.de>

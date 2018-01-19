@@ -1,6 +1,6 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
@@ -78,7 +78,8 @@ private:
     typedef typename DdSubdomainsGridType::EntityType Comdim0EntityType;
 
   public:
-    static size_t numDofs(const ThisType& self, const Comdim0EntityType& entity)
+    template <int cd, class GridImp, template <int, int, class> class EntityImp>
+    static size_t numDofs(const ThisType& self, const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity)
     {
       const size_t block = find_block_of(self, entity);
       if (self.backend()[block] == nullptr)
@@ -108,7 +109,9 @@ private:
     }
 
   private:
-    static size_t find_block_of(const ThisType& self, const Comdim0EntityType& entity)
+    template <int cd, class GridImp, template <int, int, class> class EntityImp>
+    static size_t find_block_of(const ThisType& self,
+                                const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity)
     {
       const auto global_entity_index = self.global_grid_part_->indexSet().index(entity);
       const auto result = self.entity_to_subdomain_map_->find(global_entity_index);
@@ -201,7 +204,8 @@ public:
     return max_num_dofs_;
   }
 
-  size_t numDofs(const EntityType& entity) const
+  template <int cd, class GridImp, template <int, int, class> class EntityImp>
+  size_t numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity) const
   {
     return Compute<LocalSpaceType, EntityType>::numDofs(*this, entity);
   }
