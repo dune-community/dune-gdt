@@ -131,6 +131,7 @@ protected:
 
   void do_the_timestepping(
       const size_t num_timesteps = 100,
+      const double& expected_dt = 0.002708880865541605,
       const std::pair<XT::Common::FieldVector<R, m>, XT::Common::FieldVector<R, m>>& boundary_data_range = {
           XT::Common::FieldVector<R, m>(std::numeric_limits<R>::max()),
           XT::Common::FieldVector<R, m>(std::numeric_limits<R>::min())})
@@ -142,16 +143,17 @@ protected:
     // no idea why we need to provide the <GL, E, D, d, R, m> here, but the compiler could not figure it out without
     const auto dt = estimate_dt_for_hyperbolic_system<GL, E, D, d, R, m>(
         *grid_layer_, *initial_values_, *flux_, boundary_data_range);
-    EXPECT_DOUBLE_EQ(0.002708880865541605, dt);
+    EXPECT_DOUBLE_EQ(expected_dt, dt);
     const double T = num_timesteps * dt;
 
     // test for stability
     const auto test_dt =
-        time_stepper_->find_suitable_dt(dt, 10, 1.1 * std::max(T, 1.) * initial_values_->vector().sup_norm(), 25);
+        time_stepper_->find_suitable_dt(dt, 10, 1.5 * std::max(T, 1.) * initial_values_->vector().sup_norm(), 25);
     ASSERT_TRUE(test_dt.first) << "Could not determine optimal dt (in particular, the dt computed to match the CFL "
                                   "condition did not yield a stable scheme)!";
-    ASSERT_LE(test_dt.second, dt) << "The computed dt (to match the CFL condition) does not yield a stable scheme: "
-                                  << dt << "\nThe following dt seems to work fine: " << test_dt.second;
+    ASSERT_DOUBLE_EQ(test_dt.second, dt)
+        << "The computed dt (to match the CFL condition) does not yield a stable scheme: " << dt
+        << "\nThe following dt seems to work fine: " << test_dt.second;
 
     // do the work
     time_stepper_->solve(T,
@@ -619,3 +621,222 @@ TEST_F(InviscidCompressibleFlow1dExplicitEuler, impermeable_walls_by_inviscid_mi
   EXPECT_LT((expected_end_state - actual_end_state).sup_norm(), 1e-15) << "actual_end_state = "
                                                                        << print_vector(actual_end_state);
 } // ... (inviscid_compressible_flow__euler_1d_explicit_fv, impermeable_walls_by_inviscid_mirror_treatment)
+
+
+TEST_F(InviscidCompressibleFlow1dExplicitEuler,
+       inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right)
+{
+  ASSERT_NE(grid_layer_, nullptr);
+  ASSERT_NE(numerical_flux_, nullptr);
+  ASSERT_NE(space_, nullptr);
+
+  // inflow/outflow left, impermeable wall right
+  XT::Grid::NormalBasedBoundaryInfo<XT::Grid::extract_intersection_t<GL>> boundary_info;
+  boundary_info.register_new_normal({-1}, new XT::Grid::InflowOutflowBoundary());
+  boundary_info.register_new_normal({1}, new XT::Grid::ImpermeableBoundary());
+  XT::Grid::ApplyOn::CustomBoundaryIntersections<GL> impermeable_wall_filter(boundary_info,
+                                                                             new XT::Grid::ImpermeableBoundary());
+  XT::Grid::ApplyOn::CustomBoundaryIntersections<GL> inflow_outflow_filter(boundary_info,
+                                                                           new XT::Grid::InflowOutflowBoundary());
+
+  // create operator, the layer is periodic and the operator includes handling of periodic boundaries so we need to make
+  // an exception for all non-periodic boundaries
+  fv_op_ = std::make_shared<FvOperator>(
+      *grid_layer_, *numerical_flux_, /*periodicity_restriction=*/inflow_outflow_filter.copy());
+
+  // define timedependent inflow/outflow boundary values
+  const U periodic_density_variation(
+      [&](const auto& /*xx*/, const auto& mu) {
+        FieldVector<R, m> primitive_variables(0.);
+        const auto t = mu.get("t_").at(0);
+        // density
+        primitive_variables[0] = 1. + 0.5 * std::sin(2. * M_PI * (t - 0.25));
+        // velocity
+        for (size_t ii = 0; ii < d; ++ii)
+          primitive_variables[1 + ii] = 0.25 + 0.25 * std::sin(2. * M_PI * (t - 0.25));
+        // pressure
+        primitive_variables[m - 1] = 0.4;
+        return euler_tools_.to_conservative(primitive_variables);
+      },
+      /*order=*/0,
+      /*parameter_type=*/{"t_", 1},
+      /*name=*/"periodic_density_variation");
+  // overwrite initial values
+  project(U(
+              [&](const auto& /*xx*/, const auto& /*mu*/) {
+                FieldVector<R, m> primitive_variables(0.);
+                // density
+                primitive_variables[0] = 0.5;
+                // velocity
+                for (size_t ii = 0; ii < d; ++ii)
+                  primitive_variables[1 + ii] = 0.;
+                // pressure
+                primitive_variables[m - 1] = 0.4;
+                return euler_tools_.to_conservative(primitive_variables);
+              },
+              /*order=*/0,
+              /*parameter_type=*/{},
+              /*name=*/""),
+          *initial_values_);
+
+  // the actual handling of inflow/outflow, see [DF2015, p. 421, (8.88)]
+  // (supposedly this does not work well for slow flows!)
+  const auto heuristic_euler_inflow_outflow_treatment =
+      [&](const auto& intersection, const auto& x_intersection, const auto& /*f*/, const auto& u, const auto& mu = {}) {
+        // evaluate boundary values
+        const auto entity = intersection.inside();
+        const auto x_entity = intersection.geometryInInside().global(x_intersection);
+        const RangeType bv = periodic_density_variation.local_function(entity)->evaluate(x_entity, mu);
+        // determine flow regime
+        const auto a = euler_tools_.speed_of_sound_from_conservative(u);
+        const auto velocity = euler_tools_.velocity_from_conservative(u);
+        const auto normal = intersection.unitOuterNormal(x_intersection);
+        const auto flow_speed = velocity * normal;
+        // compute v
+        if (flow_speed < -a) {
+          // supersonic inlet
+          return bv;
+        } else if (!(flow_speed > 0)) {
+          // subsonic inlet
+          const auto rho_outer = euler_tools_.density_from_conservative(bv);
+          const auto v_outer = euler_tools_.velocity_from_conservative(bv);
+          const auto p_inner = euler_tools_.pressure_from_conservative(u);
+          return euler_tools_.to_conservative(XT::Common::hstack(rho_outer, v_outer, p_inner));
+        } else if (flow_speed < a) {
+          // subsonic outlet
+          const auto rho_inner = euler_tools_.density_from_conservative(u);
+          const auto v_inner = euler_tools_.velocity_from_conservative(u);
+          const auto p_outer = euler_tools_.pressure_from_conservative(bv);
+          return euler_tools_.to_conservative(XT::Common::hstack(rho_inner, v_inner, p_outer));
+        } else {
+          // supersonic outlet
+          return RangeType(u);
+        }
+      }; // ... heuristic_euler_inflow_outflow_treatment(...)
+  fv_op_->append(heuristic_euler_inflow_outflow_treatment, inflow_outflow_filter.copy(), {});
+
+  // the actual handling of impermeable walls, see [DF2015, p. 415, (8.66 - 8.67)]
+  const auto inviscid_mirror_impermeable_wall_treatment = [&](
+      const auto& intersection, const auto& x_intersection, const auto& /*f*/, const auto& u, const auto& /*mu*/ = {}) {
+    const auto normal = intersection.unitOuterNormal(x_intersection);
+    const auto rho = euler_tools_.density_from_conservative(u);
+    auto velocity = euler_tools_.velocity_from_conservative(u);
+    velocity -= normal * 2. * (velocity * normal);
+    const auto pressure = euler_tools_.pressure_from_conservative(u);
+    return euler_tools_.to_conservative(XT::Common::hstack(rho, velocity, pressure));
+  };
+  fv_op_->append(inviscid_mirror_impermeable_wall_treatment, impermeable_wall_filter.copy(), {});
+
+  // do timestepping
+  this->do_the_timestepping(300, 0.0024452850605123986, {{0.5, 0., 0.4}, {1.5, 0.5, 0.4}});
+  ASSERT_NE(time_stepper_, nullptr);
+
+  // check expected state at the end
+  V expected_end_state(space_->mapper().size());
+  size_t counter = 0;
+  for (const auto& value :
+       {1.1009118973633434,      0.35330249410648068,     1.4732830984568579,      1.1528295046402057,
+        0.39351888721419487,     1.5271089670477516,      1.1963674667694724,      0.4310102575107661,
+        1.5801186255762272,      1.2338037112033473,      0.46611202209041547,     1.6318285053294048,
+        1.2659945247710827,      0.49873585938714832,     1.6819019952027696,      1.2926406817944998,
+        0.52842412370511005,     1.7299367921142861,      1.3124041615447823,      0.55430879609217054,
+        1.7754164185418981,      1.3230579260721504,      0.57511713691656619,     1.8176881204010453,
+        1.3218702012380497,      0.58931121642033002,     1.8559940286922998,      1.3063074876478125,
+        0.59540933404349183,     1.889573542848326,       1.274953974405266,       0.59244905919578528,
+        1.9178262522679761,      1.2283534732043544,      0.58044694123895779,     1.9404872935329662,
+        1.1694024160837084,      0.56065467009137904,     1.9577441454205602,      1.1030428756888055,
+        0.53545939583137325,     1.9702356249195334,      1.035289426164856,       0.50791979278674648,
+        1.9789199980060443,      0.97192175094953237,     0.48109368523598067,     1.9848557974144547,
+        0.91731440205618819,     0.45740237549473334,     1.9889742764461675,      0.87378323669504732,
+        0.43824346845489659,     1.9919184792701508,      0.84157494050205128,     0.42393748367005879,
+        1.9939871489647392,      0.8193634459277005,      0.41395234361198568,     1.9951755605649688,
+        0.80497183894162028,     0.4072646467013149,      1.9952733964349643,      0.79604530283777386,
+        0.40271155335473108,     1.9939726079495295,      0.79050961827123123,     0.39923968467029169,
+        1.9909513850831044,      0.78677962513132305,     0.39602554253192285,     1.9859212591484101,
+        0.78377261812475107,     0.39249202335558087,     1.978641408517352,       0.78081421528657957,
+        0.38826548393707616,     1.9689122430401578,      0.77751268652663563,     0.38311351423660339,
+        1.9565603525822062,      0.77364748246910242,     0.3768883000500125,      1.9414228601360284,
+        0.76908903903740922,     0.36948533459855687,     1.9233347559699963,      0.76374893284839285,
+        0.36081752382070131,     1.9021197982813507,      0.75755221147879925,     0.35080074293026509,
+        1.8775843600286302,      0.75042332168935078,     0.33934667545987346,     1.8495137374894906,
+        0.74227952771358718,     0.32636021587727165,     1.8176714274927479,      0.73302862110206579,
+        0.31174057326583826,     1.7818035129562562,      0.72257017002411217,     0.29538701102349274,
+        1.7416525794260496,      0.71080148956981359,     0.27721180687406594,     1.6969884268364226,
+        0.69763104445998225,     0.2571642854162508,      1.6476654472790284,      0.6830028437412996,
+        0.23526978147932917,     1.5937165528681008,      0.66693449800650384,     0.21168429275412737,
+        1.5354863561090466,      0.64956715206332305,     0.18675705773034484,     1.4737861730404609,
+        0.63121601464394772,     0.16107900272828329,     1.4100190941293984,      0.61239765375553912,
+        0.13548121676978261,     1.3461891225994962,      0.593803604577538,       0.11094977027671478,
+        1.2847104313849813,      0.57620293324689065,     0.088456248786680652,    1.228007749482394,
+        0.56029330547756695,     0.068758094013782828,    1.1780287518342782,      0.54655892838193221,
+        0.052256124113481274,    1.1358758434121634,      0.53519794571784207,     0.038969738531927728,
+        1.1017128665416849,      0.52614163355940946,     0.0286211075461545,      1.0749428775382575,
+        0.51913731313135303,     0.020767999559807498,    1.0545221752562521,      0.5138460793153582,
+        0.01492416088339227,     1.039260788216088,       0.50991966215516382,     0.01063755820644093,
+        1.0280279462402258,      0.50704516800763766,     0.007526559558001117,    1.0198543036838899,
+        0.50496295767673682,     0.0052874790227797706,   1.013959869095912,       0.50346796637654989,
+        0.0036873825319877788,   1.0097414369157862,      0.50240319707008119,     0.0025516060280478129,
+        1.0067439452043401,      0.50165080623606495,     0.0017509788676654161,   1.0046293550588179,
+        0.50112347230547649,     0.0011907975087860653,   1.0031490212400551,      0.50075707259308821,
+        0.0008020424408123507,   1.0021213068093537,      0.50050485931893141,     0.00053466424077653794,
+        1.0014142773516008,      0.50033298152175465,     0.00035255665831436837,  1.0009326414716553,
+        0.50021710143822451,     0.00022982775202697262,  1.0006080092056961,      0.50013986012434863,
+        0.00014804286833330256,  1.000391660530624,       0.50008898785166045,     9.4187606313609248e-05,
+        1.0002491872067794,      0.50005589991330124,     5.9163549814854394e-05,  1.0001565281710296,
+        0.50003465718610851,     3.6679510128642371e-05,  1.0000970433708212,      0.50002120089446056,
+        2.2437591147216144e-05,  1.0000593637265589,      0.50001279345975336,     1.3539571454165479e-05,
+        1.0000358221345438,      0.50000761385460635,     8.0578339383196815e-06,  1.0000213189521017,
+        0.50000446814920585,     4.7286749510812885e-06,  1.0000125108728719,      0.50000258519570362,
+        2.7359241662090618e-06,  1.0000072385665286,      0.50000147451416443,     1.5604824416932356e-06,
+        1.0000041286457182,      0.50000082899311338,     8.7732490630837905e-07,  1.0000023211826501,
+        0.50000045937192428,     4.8615387430160871e-07,  1.0000012862419818,      0.500000250877638,
+        2.6550403290674893e-07,  1.0000007024575626,      0.50000013502750529,     1.4289970993991296e-07,
+        1.0000003780770712,      0.50000007161924098,     7.579468884605042e-08,   1.000000200533891,
+        0.50000003743463151,     3.9617091786446708e-08,  1.0000001048169707,      0.50000001928178273,
+        2.0405920008947353e-08,  1.0000000539889893,      0.50000000978695491,     1.0357538663497255e-08,
+        1.000000027403471,       0.50000000489524898,     5.1806457488363833e-09,  1.0000000137067,
+        0.50000000241286091,     2.5535306549620701e-09,  1.0000000067560066,      0.50000000117199062,
+        1.2403188968585907e-09,  1.0000000032815752,      0.50000000056099259,     5.9370130116855074e-10,
+        1.0000000015707859,      0.50000000026463487,     2.8006191140957485e-10,  1.0000000007409744,
+        0.50000000012302537,     1.301972558974602e-10,   1.0000000003444696,      0.50000000005636758,
+        5.9651755568724845e-11,  1.000000000157824,       0.50000000002545142,     2.6935954133312421e-11,
+        1.0000000000712657,      0.50000000001132616,     1.1987792187225288e-11,  1.0000000000317171,
+        0.50000000000497247,     5.2584557553564567e-12,  1.0000000000139129,      0.5000000000021495,
+        2.2733964122793859e-12,  1.0000000000060154,      0.50000000000091382,     9.6883596440898041e-13,
+        1.0000000000025639,      0.50000000000038458,     4.0696114446242613e-13,  1.0000000000010769,
+        0.50000000000015965,     1.684573284720014e-13,   1.0000000000004456,      0.50000000000006373,
+        6.8708628275233809e-14,  1.0000000000001819,      0.50000000000002776,     2.7460864076117602e-14,
+        1.0000000000000731,      0.5000000000000091,      1.0798435320029793e-14,  1.0000000000000291,
+        0.50000000000000577,     4.1786382855465251e-15,  1.0000000000000115,      0.50000000000000056,
+        1.5637315829488035e-15,  1.000000000000004,       0.49999999999999845,     3.4749590732195643e-16,
+        1.0000000000000013,      0.50000000000000144,     6.9499181464391299e-17,  1.0000000000000002,
+        0.49999999999999822,     -1.3031096524573359e-16, 1.0000000000000000,      0.50000000000000078,
+        3.6977854932234928e-32,  1.0000000000000000,      0.49999999999999956,     -1.7374795366097817e-16,
+        0.99999999999999978,     0.50000000000000078,     -3.0405891890671181e-16, 0.99999999999999978,
+        0.4999999999999985,      -1.4768576061183139e-16, 0.99999999999999989,     0.50000000000000167,
+        -1.9112274902707594e-16, 1.0000000000000000,      0.49999999999999911,     -2.9537152122366282e-16,
+        0.99999999999999967,     0.499999999999999,       -2.6062193049146723e-16, 1.0000000000000000,
+        0.49999999999999822,     -2.1718494207622277e-16, 0.99999999999999989,     0.50000000000000311,
+        -3.4749590732195631e-17, 0.99999999999999978,     0.50000000000000033,     -3.4749590732195576e-17,
+        1.0000000000000002,      0.499999999999999,       -2.6062193049146683e-17, 1.0000000000000002,
+        0.49999999999999889,     -2.6062193049146702e-17, 1.0000000000000002,      0.50000000000000155,
+        1.7374795366097831e-17,  1.0000000000000000,      0.49999999999999928,     6.9499181464391287e-17,
+        1.0000000000000000,      0.49999999999999856,     -5.212438609829344e-17,  1.0000000000000000,
+        0.50000000000000111,     -6.949918146439125e-17,  1.0000000000000000,      0.5000000000000000,
+        4.343698841524453e-17,   1.0000000000000000,      0.49999999999999978,     -3.4749590732195631e-17,
+        1.0000000000000002,      0.49999999999999784,     -1.7374795366097775e-17, 1.0000000000000002,
+        0.49999999999999928,     1.5637315829488032e-16,  1.0000000000000002,      0.50000000000000067,
+        1.7374795366097822e-16,  1.0000000000000000,      0.50000000000000056,     5.2124386098293471e-17,
+        1.0000000000000000,      0.50000000000000033,     -6.0811783781342376e-17, 1.0000000000000000,
+        0.4999999999999985,      -6.9499181464391213e-17, 1.0000000000000000,      0.50000000000000044,
+        -6.9499181464391262e-17, 1.0000000000000000,      0.50000000000000033,     -1.0424877219658691e-16,
+        1.0000000000000002,      0.4999999999999995,      5.2124386098293447e-17,  1.0000000000000002}) {
+    expected_end_state[counter] = value;
+    ++counter;
+  }
+
+  const auto& actual_end_state = time_stepper_->solution().rbegin()->second.vector();
+  EXPECT_LT((expected_end_state - actual_end_state).sup_norm(), 1e-15) << "actual_end_state = "
+                                                                       << print_vector(actual_end_state);
+} // ... (inviscid_compressible_flow__euler_1d_explicit_fv,
+//        inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right)
