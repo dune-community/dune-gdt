@@ -1,3 +1,13 @@
+# This file is part of the dune-gdt project:
+#   https://github.com/dune-community/dune-gdt
+# Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
+# License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+#      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
+#          with "runtime exception" (http://www.dune-project.org/license.html)
+# Authors:
+#   Felix Schindler (2017)
+#   Rene Milk       (2016 - 2018)
+
 set(DXT_BIN_COUNT "13" CACHE STRING "number of bins for test targets" )
 add_custom_target(test_binaries_builder_0 DEPENDS test_mpi_linearelliptic__swipdg_discretization)
 set_tests_properties(test_mpi_linearelliptic__swipdg_discretization PROPERTIES LABELS "builder_0")
