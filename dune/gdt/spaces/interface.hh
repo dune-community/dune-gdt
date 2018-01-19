@@ -1,14 +1,14 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2013 - 2017)
-//   Rene Milk       (2014, 2016 - 2017)
+//   Rene Milk       (2014, 2016 - 2018)
 //   Sven Kaulmann   (2014)
-//   Tobias Leibner  (2014, 2016)
+//   Tobias Leibner  (2014, 2016 - 2017)
 
 #ifndef DUNE_GDT_SPACES_INTERFACE_HH
 #define DUNE_GDT_SPACES_INTERFACE_HH
@@ -27,8 +27,10 @@
 #include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
 #include <dune/xt/common/ranges.hh>
-#include <dune/xt/common/tuple.hh>
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/common/type_traits.hh>
+#include <dune/xt/common/tuple.hh>
+#include <dune/xt/common/fixed_map.hh>
 
 #include <dune/xt/la/container/pattern.hh>
 
@@ -52,6 +54,8 @@ enum class Backends
   pdelab
 };
 
+static const XT::Common::FixedMap<Backends, std::string, 4> backend_names = {
+    {Backends::fem, "fem"}, {Backends::functions, "functions"}, {Backends::gdt, "gdt"}, {Backends::pdelab, "pdelab"}};
 
 // disable GCC warning "type attributes ignored after type is already defined [-Wattributes]"
 #include <dune/xt/common/disable_warnings.hh>
@@ -159,13 +163,14 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
-  typedef typename Traits::CommunicatorType CommunicatorType;
+  typedef typename Traits::DofCommunicatorType DofCommunicatorType;
   typedef typename Traits::GridLayerType GridViewType DUNE_DEPRECATED_MSG("Use GridLayerType instead (02.04.2017)!");
   typedef typename Traits::GridLayerType GridLayerType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   static const size_t dimDomain = domainDim;
   static const size_t dimRange = rangeDim;
   static const size_t dimRangeCols = rangeDimCols;
+  static const constexpr Backends backend_type{Traits::backend_type};
 
 private:
   static_assert(dimDomain > 0, "dimDomain has to be positive");
@@ -222,12 +227,17 @@ public:
     return this->as_imp().base_function_set(entity);
   }
 
-  CommunicatorType& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
-    CHECK_CRTP(this->as_imp().communicator());
-    return this->as_imp().communicator();
+    CHECK_CRTP(this->as_imp().dof_communicator());
+    return this->as_imp().dof_communicator();
   }
 
+  //! communication data handles may require to know this to setup buffers and trnasmission patterns
+  static constexpr bool associates_data_with(int codim)
+  {
+    return derived_type::associates_data_with(codim);
+  }
   /**
    *  \brief Computes local constraints.
    *
@@ -412,9 +422,9 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
   }
 
   template <class S, size_t d, size_t r, size_t rC>
-  PatternType compute_face_pattern(const SpaceInterface<S, d, r, rC>& ansatz_space) const
+  PatternType compute_face_pattern(const SpaceInterface<S, d, r, rC>& space) const
   {
-    return compute_face_pattern(grid_layer(), ansatz_space);
+    return compute_face_pattern(grid_layer(), space);
   }
 
   template <class GL, class S, size_t d, size_t r, size_t rC>

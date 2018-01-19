@@ -1,6 +1,6 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
@@ -48,8 +48,9 @@ public:
   LinearEllipticEocStudy(TestCaseType& test_case,
                          const std::vector<std::string> only_these_norms = {},
                          const std::string visualize_prefix = "",
-                         const size_t over_integrate = 2)
-    : BaseType(test_case, only_these_norms, visualize_prefix)
+                         const size_t over_integrate = 2,
+                         XT::Common::Configuration solver_options = DiscretizationType::solver_options())
+    : BaseType(test_case, only_these_norms, visualize_prefix, solver_options)
     , over_integrate_(over_integrate)
   {
   }

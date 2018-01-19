@@ -1,10 +1,12 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2016 dune-gdt developers and contributors. All rights reserved.
-// License: BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
+// License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+//      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
+//          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2016)
-//   Tobias Leibner  (2016)
+//   Rene Milk      (2017 - 2018)
+//   Tobias Leibner (2017)
 
 #ifndef DUNE_GDT_TIMESTEPPER_IMPLICIT_RUNGEKUTTA_HH
 #define DUNE_GDT_TIMESTEPPER_IMPLICIT_RUNGEKUTTA_HH
@@ -155,8 +157,8 @@ public:
   typedef typename Dune::DynamicVector<RangeFieldType> VectorType;
   typedef typename XT::LA::Container<RangeFieldType, container_backend>::MatrixType SolverMatrixType;
   typedef typename XT::LA::Container<RangeFieldType, container_backend>::VectorType SolverVectorType;
-  typedef typename DiscreteFunctionType::SpaceType::CommunicatorType CommunicatorType;
-  typedef typename XT::LA::Solver<SolverMatrixType, CommunicatorType> SolverType;
+  typedef typename DiscreteFunctionType::SpaceType::DofCommunicatorType DofCommunicatorType;
+  typedef typename XT::LA::Solver<SolverMatrixType, DofCommunicatorType> SolverType;
   typedef typename Dune::GDT::MatrixDataHandle<SolverMatrixType, typename DiscreteFunctionType::SpaceType>
       SolverMatrixDataHandleType;
 
@@ -197,7 +199,7 @@ public:
     , solver_type_(solver_type)
     , beta_(beta)
     , newton_matrix_(u_i_.vector().size(), u_i_.vector().size(), this->newton_matrix_pattern(u_i_.space()))
-    , solver_(newton_matrix_, u_i_.space().communicator())
+    , solver_(newton_matrix_, u_i_.space().dof_communicator())
     , A_(A)
     , b_(b)
     , c_(c)

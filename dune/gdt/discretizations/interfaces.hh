@@ -1,13 +1,13 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2015 - 2017)
-//   Rene Milk       (2016)
-//   Tobias Leibner  (2016)
+//   Rene Milk       (2016 - 2018)
+//   Tobias Leibner  (2016 - 2017)
 
 #ifndef DUNE_GDT_DISCRETIZATIONS_INTERFACES_HH
 #define DUNE_GDT_DISCRETIZATIONS_INTERFACES_HH
@@ -147,13 +147,14 @@ template <class Traits>
 class ContainerBasedStationaryDiscretizationInterface : public StationaryDiscretizationInterface<Traits>
 {
   typedef StationaryDiscretizationInterface<Traits> BaseType;
+  typedef ContainerBasedStationaryDiscretizationInterface<Traits> ThisType;
 
 public:
   typedef typename Traits::MatrixType MatrixType;
   using typename BaseType::VectorType;
 
 private:
-  typedef typename XT::LA::Solver<MatrixType> LinearSolverType;
+  typedef typename XT::LA::Solver<MatrixType, typename BaseType::TestSpaceType::DofCommunicatorType> LinearSolverType;
 
 public:
   /// \name Have to be implemented by any derived class.
@@ -195,12 +196,12 @@ public:
   /// \name Provided by the interface for convenience.
   /// \{
 
-  std::vector<std::string> solver_types() const
+  static std::vector<std::string> solver_types()
   {
     return LinearSolverType::types();
   }
 
-  XT::Common::Configuration solver_options(const std::string type = "") const
+  static XT::Common::Configuration solver_options(const std::string type = ThisType::solver_types()[0])
   {
     return LinearSolverType::options(type);
   }
@@ -209,7 +210,7 @@ public:
 
   void solve(VectorType& solution, const XT::Common::Configuration& options) const
   {
-    LinearSolverType(system_matrix()).apply(rhs_vector(), solution, options);
+    LinearSolverType(system_matrix(), BaseType::test_space().dof_communicator()).apply(rhs_vector(), solution, options);
     if (has_dirichlet_shift())
       solution += dirichlet_shift();
   }

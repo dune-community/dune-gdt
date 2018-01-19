@@ -1,13 +1,13 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2014 - 2017)
-//   Rene Milk       (2016 - 2017)
-//   Tobias Leibner  (2016)
+//   Rene Milk       (2016 - 2018)
+//   Tobias Leibner  (2016 - 2017)
 
 #include <dune/xt/common/test/main.hxx> // <- This one has to come first (includes the config.h)!
 
@@ -25,6 +25,7 @@ typedef testing::Types<
                       ,*/ std::pair<SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 1), SPACE_RT_PDELAB_ALUCONFORMGRID(2)>>
     SpaceTypes;
 
+// this test cannot run in parallel ATM because the RT space does not have a parallel dof_comm setup
 TYPED_TEST_CASE(DarcyOperatorTest, SpaceTypes);
 TYPED_TEST(DarcyOperatorTest, produces_correct_results)
 {

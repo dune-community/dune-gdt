@@ -1,18 +1,19 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2013 - 2017)
-//   Rene Milk       (2014, 2016)
+//   Rene Milk       (2014, 2016 - 2018)
 //   Tobias Leibner  (2016)
 
 #ifndef DUNE_GDT_SPACES_MAPPER_INTERFACES_HH
 #define DUNE_GDT_SPACES_MAPPER_INTERFACES_HH
 
 #include <dune/common/dynvector.hh>
+#include <dune/grid/common/entity.hh>
 
 #include <dune/xt/common/crtp.hh>
 #include <dune/xt/common/type_traits.hh>
@@ -50,8 +51,12 @@ public:
     return this->as_imp(*this).maxNumDofs();
   }
 
-  size_t numDofs(const EntityType& entity) const
+  template <int cd, class GridImp, template <int, int, class> class EntityImp>
+  size_t numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity) const
   {
+    //    static_assert(std::is_same<Entity<cd, EntityType::dimension, GridImp, EntityImp>,
+    //                               XT::Grid::extract_entity_t<EntityType, cd>>::value,
+    //                  "Entity mismatch");
     CHECK_CRTP(this->as_imp(*this).numDofs(entity));
     return this->as_imp(*this).numDofs(entity);
   }

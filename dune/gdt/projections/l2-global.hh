@@ -1,12 +1,13 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2016 - 2017)
-//   Rene Milk       (2016 - 2017)
+//   Rene Milk       (2016 - 2018)
+//   Tobias Leibner  (2017)
 
 #ifndef DUNE_GDT_PROJECTIONS_L2_GLOBAL_HH
 #define DUNE_GDT_PROJECTIONS_L2_GLOBAL_HH
@@ -103,7 +104,8 @@ public:
       return;
     BaseType::apply();
     try {
-      XT::LA::Solver<MatrixType>(lhs_operator_.matrix()).apply(rhs_functional_.vector(), range_.vector());
+      XT::LA::make_solver(lhs_operator_.matrix(), this->range().space().dof_communicator())
+          .apply(rhs_functional_.vector(), range_.vector());
     } catch (XT::LA::Exceptions::linear_solver_failed& ee) {
       DUNE_THROW(projection_error,
                  "L2 projection failed because a global matrix could not be inverted!\n\n"

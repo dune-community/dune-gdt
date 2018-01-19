@@ -1,6 +1,6 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
@@ -285,6 +285,22 @@ public:
     }
   } // ... local_constraints(..., Constraints::Dirichlet<...> ...)
   /** @} */
+
+  static constexpr bool associates_data_with(int codim, std::integral_constant<int, 1>)
+  {
+    return codim == dimDomain;
+  }
+
+  static constexpr bool associates_data_with(int codim, std::integral_constant<int, 2>)
+  {
+    return dimDomain == 1 ? codim >= 0 : codim > 0;
+  }
+
+  static constexpr bool associates_data_with(int codim)
+  {
+    // actually: return polOrder > 2 ? true : associates_data_with(codim, std::integral_constant<int, polOrder>());
+    return codim == 0;
+  }
 
 private:
   void possible_convex_combination_coefficients(std::set<std::vector<double>>& vectors_in,

@@ -1,12 +1,12 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2013 - 2017)
-//   Rene Milk       (2014, 2016)
+//   Rene Milk       (2014, 2016 - 2018)
 
 #ifndef DUNE_GDT_SPACES_MAPPER_DUNE_FEM_WRAPPER_HH
 #define DUNE_GDT_SPACES_MAPPER_DUNE_FEM_WRAPPER_HH
@@ -56,6 +56,18 @@ public:
   typedef typename BackendType::ElementType EntityType;
 };
 
+template <class Backend, class Entity, int cd>
+size_t fem_dof_count(Backend& /*backend*/, Entity& entity, std::integral_constant<int, cd>)
+{
+  DUNE_THROW(NotImplemented, "not sure if this should ever be called");
+  return 0;
+};
+
+template <class Backend, class Entity>
+size_t fem_dof_count(Backend& backend, Entity& entity, std::integral_constant<int, 0>)
+{
+  return backend.numDofs(entity);
+};
 
 } // namespace internal
 
@@ -73,6 +85,7 @@ public:
   explicit FemDofWrapper(FemDofMapperImp& femNonBlockMapper)
     : backend_(femNonBlockMapper)
   {
+    assert(size() > 0);
   }
 
   const BackendType& backend() const
@@ -83,6 +96,12 @@ public:
   size_t size() const
   {
     return backend_.size();
+  }
+
+  template <int cd, class GridImp, template <int, int, class> class EntityImp>
+  size_t numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity) const
+  {
+    return backend_.numEntityDofs(entity);
   }
 
   size_t numDofs(const EntityType& entity) const
@@ -158,6 +177,7 @@ public:
   explicit FemDofWrapper(const BackendType& femMapper)
     : backend_(femMapper)
   {
+    assert(size() > 0);
   }
 
   const BackendType& backend() const
@@ -170,9 +190,10 @@ public:
     return backend_.size();
   }
 
-  size_t numDofs(const EntityType& entity) const
+  template <int cd, class GridImp, template <int, int, class> class EntityImp>
+  size_t numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity) const
   {
-    return backend_.numDofs(entity);
+    return internal::fem_dof_count(backend_, entity, std::integral_constant<int, cd>());
   }
 
   size_t maxNumDofs() const

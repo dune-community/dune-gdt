@@ -1,12 +1,12 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2016 - 2017)
-//   Rene Milk       (2016 - 2017)
+//   Rene Milk       (2016 - 2018)
 
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_SWIPDG_ESTIMATORS_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_SWIPDG_ESTIMATORS_HH
@@ -162,8 +162,8 @@ struct linearelliptic_SWIPDG_estimators : public ::testing::Test
     using namespace Dune;
     using namespace Dune::GDT;
     TestCaseType test_case;
-    test_case.print_header(DXTC_LOG_INFO);
-    DXTC_LOG_INFO << std::endl;
+    test_case.print_header(DXTC_LOG_INFO_0);
+    DXTC_LOG_INFO_0 << std::endl;
     typedef LinearElliptic::IpdgDiscretizer<typename TestCaseType::GridType,
                                             TestCaseType::layer_type,
                                             space_backend,
@@ -175,7 +175,8 @@ struct linearelliptic_SWIPDG_estimators : public ::testing::Test
         Discretizer;
     Dune::GDT::Test::LinearEllipticSwipdgEstimatorStudy<TestCaseType, Discretizer> eoc_study(test_case);
     try {
-      Dune::XT::Test::check_eoc_study_for_success(eoc_study, eoc_study.run(DXTC_LOG_INFO), /*zero_tolerance=*/1e-10);
+      Dune::XT::Test::check_eoc_study_for_success(
+          eoc_study, eoc_study.run(DXTC_LOG_INFO_0), /*zero_tolerance=*/1.4e-10);
     } catch (Dune::XT::Common::Exceptions::spe10_data_file_missing&) {
       Dune::XT::Common::TimedLogger().get("gdt.test.linearelliptic.swipdg.discretization").warn()
           << "missing SPE10 data file!" << std::endl;

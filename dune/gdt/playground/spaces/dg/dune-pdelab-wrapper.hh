@@ -1,13 +1,13 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2014 - 2017)
-//   Rene Milk       (2014, 2016 - 2017)
-//   Tobias Leibner  (2014, 2016)
+//   Rene Milk       (2014, 2016 - 2018)
+//   Tobias Leibner  (2014, 2016 - 2017)
 
 #ifndef DUNE_GDT_PLAYGROUND_SPACES_DG_DUNE_PDELAB_WRAPPER_HH
 #define DUNE_GDT_PLAYGROUND_SPACES_DG_DUNE_PDELAB_WRAPPER_HH
@@ -30,6 +30,7 @@
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/la/container/istl.hh>
 #include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/grid/grids.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/parallel.hh>
@@ -70,6 +71,7 @@ public:
   typedef GridLayerImp GridLayerType;
   static const int polOrder = polynomialOrder;
   static const bool continuous = false;
+  static const constexpr Backends backend_type{Backends::pdelab};
 
 private:
   typedef typename GridLayerType::ctype DomainFieldType;
@@ -82,20 +84,12 @@ private:
   template <class G, bool single_geom, bool is_simplex, bool is_cube>
   struct FeMap
   {
-    static_assert(Dune::AlwaysFalse<G>::value,
+    static_assert(single_geom, "This space is only implemented for grids with a single geometry type!");
+    static_assert(is_simplex != is_cube,
                   "This space is only implemented for either fully simplicial or fully cubic grids!");
+    using Type = PDELab::QkDGLocalFiniteElementMap<DomainFieldType, RangeFieldType, polOrder, dimDomain>;
   };
-  template <class G>
-  struct FeMap<G, true, true, false>
-  {
-    static_assert(Dune::AlwaysFalse<G>::value, "Not yet implemented for simplicial grids!");
-  };
-  template <class G>
-  struct FeMap<G, true, false, true>
-  {
-    typedef PDELab::QkDGLocalFiniteElementMap<DomainFieldType, RangeFieldType, polOrder, dimDomain> Type;
-  };
-  typedef XT::Grid::extract_grid_t<GridLayerType> GridType;
+  using GridType = XT::Grid::extract_grid_t<GridLayerType>;
   static const bool single_geom_ = Dune::Capabilities::hasSingleGeometryType<GridType>::v;
   static const bool simplicial_ =
       (Dune::Capabilities::hasSingleGeometryType<GridType>::topologyId == Impl::SimplexTopology<dimDomain>::type::id);
@@ -113,8 +107,8 @@ public:
           BaseFunctionSetType;
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static const bool needs_grid_view = true;
-  typedef CommunicationChooser<GridLayerType> CommunicationChooserType;
-  typedef typename CommunicationChooserType::Type CommunicatorType;
+  typedef DofCommunicationChooser<GridLayerType> DofCommunicationChooserType;
+  typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
 
 private:
   friend class DunePdelabDgSpaceWrapper<GridLayerImp, polynomialOrder, RangeFieldImp, rangeDim, rangeDimCols>;
@@ -176,18 +170,18 @@ public:
   using typename BaseType::BaseFunctionSetType;
 
 private:
-  typedef typename Traits::CommunicationChooserType CommunicationChooserType;
+  typedef typename Traits::DofCommunicationChooserType DofCommunicationChooserType;
   typedef typename Traits::FEMapType FEMapType;
 
 public:
-  using typename BaseType::CommunicatorType;
+  using typename BaseType::DofCommunicatorType;
 
   DunePdelabDgSpaceWrapper(GridLayerType grd_vw)
     : grid_layer_(grd_vw)
     , fe_map_()
     , backend_(grid_layer_, fe_map_)
     , mapper_(backend_)
-    , communicator_(CommunicationChooser<GridLayerImp>::create(grid_layer_))
+    , communicator_(DofCommunicationChooser<GridLayerImp>::create(grid_layer_))
     , communicator_prepared_(false)
   {
   }
@@ -201,12 +195,12 @@ public:
     , fe_map_()
     , backend_(grid_layer_, fe_map_)
     , mapper_(backend_)
-    , communicator_(CommunicationChooser<GridLayerImp>::create(grid_layer_))
+    , communicator_(DofCommunicationChooser<GridLayerImp>::create(grid_layer_))
     , communicator_prepared_(false)
   {
     // make sure our new communicator is prepared if other's was
     if (other.communicator_prepared_)
-      const auto& comm DUNE_UNUSED = this->communicator();
+      const auto& comm DUNE_UNUSED = this->dof_communicator();
   }
 
   /**
@@ -252,11 +246,11 @@ public:
     return BaseFunctionSetType(backend_, entity);
   }
 
-  CommunicatorType& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
     DUNE_UNUSED std::lock_guard<std::mutex> gg(communicator_mutex_);
     if (!communicator_prepared_)
-      communicator_prepared_ = CommunicationChooser<GridLayerType>::prepare(*this, *communicator_);
+      communicator_prepared_ = DofCommunicationChooser<GridLayerType>::prepare(*this, *communicator_);
     return *communicator_;
   } // ... communicator(...)
 
@@ -265,7 +259,7 @@ private:
   const FEMapType fe_map_;
   const BackendType backend_;
   const MapperType mapper_;
-  mutable std::unique_ptr<CommunicatorType> communicator_;
+  mutable std::unique_ptr<DofCommunicatorType> communicator_;
   mutable bool communicator_prepared_;
   mutable std::mutex communicator_mutex_;
 }; // class DunePdelabDgSpaceWrapper< ..., 1 >
@@ -309,7 +303,7 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::BaseFunctionSetType;
   using typename BaseType::MapperType;
-  using typename BaseType::CommunicatorType;
+  using typename BaseType::DofCommunicatorType;
   using typename BaseType::BackendType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
@@ -321,7 +315,7 @@ public:
     : grid_layer_(grd_vw)
     , factor_space_(grid_layer_)
     , factor_mapper_(factor_space_.backend())
-    , communicator_(CommunicationChooser<GridLayerImp>::create(grid_layer_))
+    , communicator_(DofCommunicationChooser<GridLayerImp>::create(grid_layer_))
     , communicator_prepared_(false)
   {
   }
@@ -330,12 +324,12 @@ public:
     : grid_layer_(other.grid_layer_)
     , factor_space_(other.factor_space_)
     , factor_mapper_(other.factor_mapper_)
-    , communicator_(CommunicationChooser<GridLayerImp>::create(grid_layer_))
+    , communicator_(DofCommunicationChooser<GridLayerImp>::create(grid_layer_))
     , communicator_prepared_(false)
   {
     // make sure our new communicator is prepared if other's was
     if (other.communicator_prepared_)
-      const auto& comm DUNE_UNUSED = this->communicator();
+      const auto& comm DUNE_UNUSED = this->dof_communicator();
   }
 
   DunePdelabDgProductSpaceWrapper(ThisType&& source) = default;
@@ -369,11 +363,11 @@ public:
     return BaseFunctionSetType(backend(), entity);
   }
 
-  CommunicatorType& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
     DUNE_UNUSED std::lock_guard<std::mutex> gg(communicator_mutex_);
     if (!communicator_prepared_)
-      communicator_prepared_ = CommunicationChooser<GridLayerType>::prepare(*this, *communicator_);
+      communicator_prepared_ = DofCommunicationChooser<GridLayerType>::prepare(*this, *communicator_);
     return *communicator_;
   } // ... communicator(...)
 
@@ -387,7 +381,7 @@ private:
   GridLayerType grid_layer_;
   const FactorSpaceType factor_space_;
   const MapperType factor_mapper_;
-  mutable std::unique_ptr<CommunicatorType> communicator_;
+  mutable std::unique_ptr<DofCommunicatorType> communicator_;
   mutable bool communicator_prepared_;
   mutable std::mutex communicator_mutex_;
 }; // class DefaultProduct< ..., 1 >
