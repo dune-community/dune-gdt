@@ -15,7 +15,7 @@
 #include <dune/gdt/operators/advection-dg.hh>
 #include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
 
-#include "inviscid_compressible_flow__euler_1d_explicit.hh"
+#include "inviscid_compressible_flow__euler_1d__explicit.hh"
 
 using namespace Dune;
 using namespace Dune::GDT;
