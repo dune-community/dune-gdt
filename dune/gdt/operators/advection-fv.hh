@@ -16,6 +16,7 @@
 #include <dune/grid/onedgrid.hh>
 
 #include <dune/xt/common/parameter.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/type_traits.hh>
@@ -125,6 +126,20 @@ public:
     boundary_treatment_by_extrapolation_operators_.emplace_back(
         new LocalAdvectionFvBoundaryOperatorByCustomExtrapolationType(
             numerical_flux(), boundary_treatment_lambda, param_type),
+        std::move(filter));
+  }
+
+  /**
+    * \note This variant exists for compatibility with AdvectionDgOperator.
+    **/
+  void
+  append(typename LocalAdvectionFvBoundaryOperatorByCustomNumericalFluxType::LambdaType boundary_numerical_flux_lambda,
+         const int /*flux_order*/,
+         XT::Grid::ApplyOn::WhichIntersection<GL>*&& filter,
+         const XT::Common::ParameterType& param_type = {})
+  {
+    boundary_treatment_by_boundary_flux_operators_.emplace_back(
+        new LocalAdvectionFvBoundaryOperatorByCustomNumericalFluxType(boundary_numerical_flux_lambda, param_type),
         std::move(filter));
   }
 

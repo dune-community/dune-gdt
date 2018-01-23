@@ -626,7 +626,7 @@ public:
     , numerical_flux_(numerical_flux)
     , boundary_treatment_(boundary_treatment_lambda)
   {
-    if (numerical_flux_.is_parametric())
+    if (numerical_flux_.parameter_type() != boundary_treatment_param_type)
       DUNE_THROW(NotImplemented, "todo: merge boundary_treatment_param_type and numerical_flux.parameter_type()!");
   }
 
@@ -649,7 +649,7 @@ public:
     for (size_t ii = 0; ii < u.size(); ++ii)
       u[ii] = u_inside->vector().get(ii);
     const auto v = boundary_treatment_(intersection, x_intersection, numerical_flux_.flux(), u, param);
-    const auto g = numerical_flux_.apply(u, v, normal, /*mu*/ {});
+    const auto g = numerical_flux_.apply(u, v, normal, param);
     const auto h = entity.geometry().volume();
     for (size_t ii = 0; ii < r; ++ii)
       local_range.vector().add(ii, (g[ii] * intersection.geometry().volume()) / h);
