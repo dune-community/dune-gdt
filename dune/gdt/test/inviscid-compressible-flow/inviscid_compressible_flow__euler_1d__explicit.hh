@@ -485,8 +485,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
                                                                                new XT::Grid::ImpermeableBoundary());
 
     // create operator, the layer is periodic and the operator includes handling of periodic boundaries so we need to
-    // make
-    // an exception for all non-periodic boundaries
+    // make an exception for all non-periodic boundaries
     op_ = std::make_shared<Op>(
         *grid_layer_, *numerical_flux_, /*periodicity_restriction=*/impermeable_wall_filter.copy());
 
@@ -624,6 +623,8 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
   } // ... expected_end_state__impermeable_walls_by_inviscid_mirror_treatment(...)
 
   void inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right(
+      const size_t num_timesteps = 300,
+      const double& CFL = 1.,
       const double& relative_expected_state_l2_error_tolerance = 1e-15)
   {
     ASSERT_NE(grid_layer_, nullptr);
@@ -640,8 +641,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
                                                                              new XT::Grid::InflowOutflowBoundary());
 
     // create operator, the layer is periodic and the operator includes handling of periodic boundaries so we need to
-    // make
-    // an exception for all non-periodic boundaries
+    // make an exception for all non-periodic boundaries
     op_ = std::make_shared<Op>(
         *grid_layer_, *numerical_flux_, /*periodicity_restriction=*/inflow_outflow_filter || impermeable_wall_filter);
 
@@ -732,7 +732,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     op_->append(inviscid_mirror_impermeable_wall_treatment, impermeable_wall_filter.copy(), {});
 
     // do timestepping
-    this->do_the_timestepping(300, 0.0024452850605123986, 1., {{0.5, 0., 0.4}, {1.5, 0.5, 0.4}});
+    this->do_the_timestepping(num_timesteps, 0.0024452850605123986, CFL, {{0.5, 0., 0.4}, {1.5, 0.5, 0.4}});
     ASSERT_NE(time_stepper_, nullptr);
 
     // check expected state at the end
