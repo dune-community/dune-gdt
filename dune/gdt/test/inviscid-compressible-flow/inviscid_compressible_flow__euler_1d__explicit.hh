@@ -642,8 +642,8 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     // create operator, the layer is periodic and the operator includes handling of periodic boundaries so we need to
     // make
     // an exception for all non-periodic boundaries
-    op_ =
-        std::make_shared<Op>(*grid_layer_, *numerical_flux_, /*periodicity_restriction=*/inflow_outflow_filter.copy());
+    op_ = std::make_shared<Op>(
+        *grid_layer_, *numerical_flux_, /*periodicity_restriction=*/inflow_outflow_filter || impermeable_wall_filter);
 
     // define timedependent inflow/outflow boundary values
     const U periodic_density_variation(
