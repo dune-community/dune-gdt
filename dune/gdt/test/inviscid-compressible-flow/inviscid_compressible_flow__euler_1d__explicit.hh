@@ -21,12 +21,14 @@
 #include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/grid/intersection.hh>
 #include <dune/xt/grid/view/periodic.hh>
+#include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/lambda/global-function.hh>
 #include <dune/xt/functions/lambda/global-flux-function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/operators/lambda.hh>
 #include <dune/gdt/operators/advection-fv.hh>
+#include <dune/gdt/operators/l1.hh>
 #include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/timestepper/explicit-rungekutta.hh>
@@ -182,22 +184,20 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     this->do_the_timestepping(num_timesteps, 0.002708880865541605, CFL);
     ASSERT_NE(time_stepper_, nullptr);
 
+    const auto& relative_mass_conservation_error_tolerance = std::get<0>(tolerances);
+    const auto& relative_expected_state_l_2_error_tolerance = std::get<1>(tolerances);
+
     // check conservation principle
-    const auto initial_l_infty_norm = initial_values_->vector().sup_norm();
-    const auto initial_l_2_norm = make_l2_operator(*grid_layer_)->induced_norm(*initial_values_);
+    const auto initial_mass = make_l1_operator(*grid_layer_)->induced_norm(*initial_values_);
     size_t saved_timesteps = 0;
     for (const auto& t_and_u : time_stepper_->solution()) {
       ++saved_timesteps;
       const auto& u_conservative = t_and_u.second;
-      const auto relative_l_infty_error =
-          std::abs(initial_l_infty_norm - u_conservative.vector().sup_norm()) / initial_l_infty_norm;
-      EXPECT_LT(relative_l_infty_error, 0.065554) << "initial_l_infty_norm = " << initial_l_infty_norm
-                                                  << "\nl_infty_norm = " << u_conservative.vector().sup_norm();
-      const auto relative_l_2_error =
-          std::abs(initial_l_2_norm - make_l2_operator(*grid_layer_)->induced_norm(u_conservative)) / initial_l_2_norm;
-      EXPECT_LT(relative_l_2_error, 0.10577)
-          << "initial_l_2_norm = " << initial_l_2_norm
-          << "\nl_2_norm = " << make_l2_operator(*grid_layer_)->induced_norm(u_conservative);
+      const auto mass_conservation_error =
+          std::abs(initial_mass - make_l1_operator(*grid_layer_)->induced_norm(u_conservative));
+      EXPECT_LT(mass_conservation_error / initial_mass, relative_mass_conservation_error_tolerance)
+          << "mass_conservation_error = " << mass_conservation_error << "\n"
+          << "initial_mass = " << initial_mass;
     }
     EXPECT_EQ(num_timesteps + 1, saved_timesteps);
 
