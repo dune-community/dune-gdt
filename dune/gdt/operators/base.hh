@@ -655,7 +655,9 @@ public:
   template <class L>
   ThisType&
   append(const LocalOperatorInterface<L>& local_operator,
-         XT::Grid::ApplyOn::WhichEntity<GridLayerType>*&& where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
+         XT::Grid::ApplyOn::WhichEntity<GridLayerType>*&& where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>(),
+         const XT::Common::Parameter& param = {},
+         const std::string& id = "")
   {
     typedef LocalOperatorApplicator<GridLayerType,
                                     typename LocalOperatorInterface<L>::derived_type,
@@ -663,8 +665,8 @@ public:
                                     RangeType>
         Applicator;
     local_operators_codim_0.emplace_back(
-        new Applicator(grid_layer(), local_operator.as_imp(), source_, range_, where->copy()));
-    BaseType::append(*local_operators_codim_0.back(), std::move(where));
+        new Applicator(grid_layer(), local_operator.as_imp(), source_, range_, where->copy(), param, id));
+    BaseType::append(*local_operators_codim_0.back(), std::move(where), id);
     return *this;
   } // ... append(...)
 
