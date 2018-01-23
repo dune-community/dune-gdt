@@ -194,7 +194,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     ASSERT_NE(time_stepper_, nullptr);
 
     const auto& relative_mass_conservation_error_tolerance = std::get<0>(tolerances);
-    const auto& relative_expected_state_l_2_error_tolerance = std::get<1>(tolerances);
+    const auto& relative_expected_state_l2_error_tolerance = std::get<1>(tolerances);
 
     // check conservation principle
     const auto initial_mass = make_l1_operator(*grid_layer_)->induced_norm(*initial_values_);
@@ -218,7 +218,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     const auto l2_error = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv - actual_end_state);
     const auto reference_l2_norm = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv);
 
-    EXPECT_LT(l2_error / reference_l2_norm, relative_expected_state_l_2_error_tolerance)
+    EXPECT_LT(l2_error / reference_l2_norm, relative_expected_state_l2_error_tolerance)
         << "l2_error = " << l2_error << "\n"
         << "reference_l2_norm = " << reference_l2_norm << "\n\n"
         << "actual_end_state = " << print_vector(actual_end_state.vector());
@@ -326,7 +326,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
 
   void impermeable_walls_by_direct_euler_treatment(const size_t num_timesteps = 300, // We need enough for the wave to
                                                    const double& CFL = 1., //                        hit the boundary.
-                                                   const double& relative_expected_state_l_2_error_tolerance = 1e-15)
+                                                   const double& relative_expected_state_l2_error_tolerance = 1e-15)
   {
     ASSERT_NE(grid_layer_, nullptr);
     ASSERT_NE(numerical_flux_, nullptr);
@@ -362,7 +362,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     const auto l2_error = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv - actual_end_state);
     const auto reference_l2_norm = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv);
 
-    EXPECT_LT(l2_error / reference_l2_norm, relative_expected_state_l_2_error_tolerance)
+    EXPECT_LT(l2_error / reference_l2_norm, relative_expected_state_l2_error_tolerance)
         << "l2_error = " << l2_error << "\n"
         << "reference_l2_norm = " << reference_l2_norm << "\n\n"
         << "actual_end_state = " << print_vector(actual_end_state.vector());
@@ -468,7 +468,10 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
             1.0012729617122325,      1.0006280611243779,      0.00024873614355938508,  1.0008794416251166};
   } // ... expected_end_state__impermeable_walls_by_direct_euler_treatment(...)
 
-  void impermeable_walls_by_inviscid_mirror_treatment(const double& relative_expected_state_l_2_error_tolerance = 1e-15)
+  void
+  impermeable_walls_by_inviscid_mirror_treatment(const size_t num_timesteps = 300, // We need enough for the wave to
+                                                 const double& CFL = 1., //                        hit the boundary.
+                                                 const double& relative_expected_state_l2_error_tolerance = 1e-15)
   {
     ASSERT_NE(grid_layer_, nullptr);
     ASSERT_NE(numerical_flux_, nullptr);
@@ -503,7 +506,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     op_->append(inviscid_mirror_impermeable_wall_treatment, impermeable_wall_filter.copy(), {});
 
     // do timestepping
-    this->do_the_timestepping(300); // we need enough for the wave to hit the boundary
+    this->do_the_timestepping(num_timesteps, 0.002708880865541605, CFL);
     ASSERT_NE(time_stepper_, nullptr);
 
     // check expected state at the end
@@ -514,7 +517,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     const auto l2_error = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv - actual_end_state);
     const auto reference_l2_norm = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv);
 
-    EXPECT_LT(l2_error / reference_l2_norm, relative_expected_state_l_2_error_tolerance)
+    EXPECT_LT(l2_error / reference_l2_norm, relative_expected_state_l2_error_tolerance)
         << "l2_error = " << l2_error << "\n"
         << "reference_l2_norm = " << reference_l2_norm << "\n\n"
         << "actual_end_state = " << print_vector(actual_end_state.vector());
@@ -621,7 +624,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
   } // ... expected_end_state__impermeable_walls_by_inviscid_mirror_treatment(...)
 
   void inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right(
-      const double& relative_expected_state_l_2_error_tolerance = 1e-15)
+      const double& relative_expected_state_l2_error_tolerance = 1e-15)
   {
     ASSERT_NE(grid_layer_, nullptr);
     ASSERT_NE(numerical_flux_, nullptr);
@@ -741,7 +744,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     const auto l2_error = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv - actual_end_state);
     const auto reference_l2_norm = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv);
 
-    EXPECT_LT(l2_error / reference_l2_norm, relative_expected_state_l_2_error_tolerance)
+    EXPECT_LT(l2_error / reference_l2_norm, relative_expected_state_l2_error_tolerance)
         << "l2_error = " << l2_error << "\n"
         << "reference_l2_norm = " << reference_l2_norm << "\n\n"
         << "actual_end_state = " << print_vector(actual_end_state.vector());
