@@ -211,6 +211,11 @@ public:
     return ret;
   } // ... flux(...)
 
+  int flux_order()
+  {
+    return 4;
+  }
+
   /**
    * \brief The Euler flux at impermeable walls (e.g., v*n = 0).
    * \sa    [DF2015, p. 414, (8.58)]
