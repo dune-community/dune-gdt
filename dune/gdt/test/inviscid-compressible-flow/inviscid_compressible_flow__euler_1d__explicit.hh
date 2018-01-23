@@ -32,6 +32,7 @@
 #include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/timestepper/explicit-rungekutta.hh>
+#include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/tools/euler.hh>
 
 namespace Dune {
@@ -202,11 +203,20 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     EXPECT_EQ(num_timesteps + 1, saved_timesteps);
 
     // check expected state at the end
+    auto leaf_view = grid_->leaf_view();
+    using FvS = FvSpace<decltype(leaf_view), R, m>;
+    const FvS fv_space(leaf_view);
+    const V expected_end_state_vector(expected_end_state__periodic_boundaries());
+    const ConstDiscreteFunction<FvS, V> expected_end_state_fv(fv_space, expected_end_state_vector);
+    const auto& actual_end_state = time_stepper_->solution().rbegin()->second;
 
-    V expected_end_state(expected_end_state__periodic_boundaries);
-    const auto& actual_end_state = time_stepper_->solution().rbegin()->second.vector();
-    EXPECT_LT((expected_end_state - actual_end_state).sup_norm(), 1e-15) << "actual_end_state = "
-                                                                         << print_vector(actual_end_state);
+    const auto l2_error = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv - actual_end_state);
+    const auto reference_l2_norm = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv);
+
+    EXPECT_LT(l2_error / reference_l2_norm, relative_expected_state_l_2_error_tolerance)
+        << "l2_error = " << l2_error << "\n"
+        << "reference_l2_norm = " << reference_l2_norm << "\n\n"
+        << "actual_end_state = " << print_vector(actual_end_state.vector());
   } // ... periodic_boundaries(...)
 
   static std::vector<double> expected_end_state__periodic_boundaries()
