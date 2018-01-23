@@ -30,20 +30,20 @@ using FvOperator = GDT::AdvectionFvOperator<DF, typename DF::SpaceType::GridLaye
 using InviscidCompressibleFlowEuler1dExplicitFV = InviscidCompressibleFlowEuler1dExplicitTest<FvSpaceType, FvOperator>;
 
 
-// TEST_F(InviscidCompressibleFlowEuler1dExplicitFV, periodic_boundaries)
-//{
-//  this->periodic_boundaries();
-//}
-// TEST_F(InviscidCompressibleFlowEuler1dExplicitFV, impermeable_walls_by_direct_euler_treatment)
-//{
-//  this->impermeable_walls_by_direct_euler_treatment();
-//}
+TEST_F(InviscidCompressibleFlowEuler1dExplicitFV, periodic_boundaries)
+{
+  this->periodic_boundaries();
+}
+TEST_F(InviscidCompressibleFlowEuler1dExplicitFV, impermeable_walls_by_direct_euler_treatment)
+{
+  this->impermeable_walls_by_direct_euler_treatment();
+}
 TEST_F(InviscidCompressibleFlowEuler1dExplicitFV, impermeable_walls_by_inviscid_mirror_treatment)
 {
   this->impermeable_walls_by_inviscid_mirror_treatment();
 }
-// TEST_F(InviscidCompressibleFlowEuler1dExplicitFV,
-//       inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right)
-//{
-//  this->inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right();
-//}
+TEST_F(InviscidCompressibleFlowEuler1dExplicitFV,
+       inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right)
+{
+  this->inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right();
+}
