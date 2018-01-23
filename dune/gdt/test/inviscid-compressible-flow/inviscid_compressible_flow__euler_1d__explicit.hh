@@ -324,7 +324,9 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
             1.0000001528871256,      1.0000003911827926,      -2.9273450717886344e-07, 1.0000005476560563};
   } // ... expected_end_state__periodic_boundaries(...)
 
-  void impermeable_walls_by_direct_euler_treatment(const double& relative_expected_state_l_2_error_tolerance = 1e-15)
+  void impermeable_walls_by_direct_euler_treatment(const size_t num_timesteps = 300, // We need enough for the wave to
+                                                   const double& CFL = 1., //                        hit the boundary.
+                                                   const double& relative_expected_state_l_2_error_tolerance = 1e-15)
   {
     ASSERT_NE(grid_layer_, nullptr);
     ASSERT_NE(numerical_flux_, nullptr);
@@ -349,7 +351,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     op_->append(euler_impermeable_wall_treatment, euler_tools_.flux_order(), impermeable_wall_filter.copy(), {});
 
     // do timestepping
-    this->do_the_timestepping(300); // we need enough for the wave to hit the boundary
+    this->do_the_timestepping(num_timesteps, 0.002708880865541605, CFL);
     ASSERT_NE(time_stepper_, nullptr);
 
     // check expected state at the end
