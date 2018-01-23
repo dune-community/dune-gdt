@@ -130,7 +130,8 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
 
   void do_the_timestepping(
       const size_t num_timesteps = 100,
-      const double& expected_dt = 0.002708880865541605,
+      const double& expected_fv_dt = 0.002708880865541605,
+      const double& CFL = 1.,
       const std::pair<XT::Common::FieldVector<R, m>, XT::Common::FieldVector<R, m>>& boundary_data_range = {
           XT::Common::FieldVector<R, m>(std::numeric_limits<R>::max()),
           XT::Common::FieldVector<R, m>(std::numeric_limits<R>::min())})
@@ -141,7 +142,8 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     // no idea why we need to provide the <GL, E, D, d, R, m> here, but the compiler could not figure it out without
     auto dt = estimate_dt_for_hyperbolic_system<GL, E, D, d, R, m>(
         *grid_layer_, *initial_values_, *flux_, boundary_data_range);
-    EXPECT_DOUBLE_EQ(expected_dt, dt);
+    EXPECT_DOUBLE_EQ(expected_fv_dt, dt);
+    dt *= CFL;
     const double T = num_timesteps * dt;
 
     // test for stability
@@ -164,7 +166,9 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
                          });
   } // ... do_the_timestepping(...)
 
-  void periodic_boundaries()
+  void periodic_boundaries(const size_t num_timesteps = 100,
+                           const double& CFL = 1.,
+                           const std::tuple<double, double>& tolerances = {1e-15, 1e-15})
   {
     ASSERT_NE(grid_layer_, nullptr);
     ASSERT_NE(numerical_flux_, nullptr);
@@ -175,8 +179,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     op_ = std::make_shared<Op>(*grid_layer_, *numerical_flux_);
 
     // do timestepping
-    const size_t num_timesteps = 100;
-    this->do_the_timestepping(num_timesteps);
+    this->do_the_timestepping(num_timesteps, 0.002708880865541605, CFL);
     ASSERT_NE(time_stepper_, nullptr);
 
     // check conservation principle
@@ -700,7 +703,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     op_->append(inviscid_mirror_impermeable_wall_treatment, impermeable_wall_filter.copy(), {});
 
     // do timestepping
-    this->do_the_timestepping(300, 0.0024452850605123986, {{0.5, 0., 0.4}, {1.5, 0.5, 0.4}});
+    this->do_the_timestepping(300, 0.0024452850605123986, 1., {{0.5, 0., 0.4}, {1.5, 0.5, 0.4}});
     ASSERT_NE(time_stepper_, nullptr);
 
     // check expected state at the end
