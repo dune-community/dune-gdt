@@ -55,6 +55,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
   using RangeType = XT::Common::FieldVector<D, m>;
 
   using GridProvider = XT::Grid::GridProvider<G>;
+  using LeafView = typename XT::Grid::Layer<G, XT::Grid::Layers::leaf, XT::Grid::Backends::view>::type;
   using LeafGL = typename XT::Grid::Layer<G, XT::Grid::Layers::leaf, layer_backend>::type;
   using GL = XT::Grid::PeriodicGridLayer<LeafGL>;
 
@@ -64,6 +65,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
 
   using NF = NumericalVijayasundaramFlux<E, D, d, R, m>;
 
+  using FvS = FvSpace<LeafView, R, m>;
   using S = Space<GL, R, m>;
   using V = XT::LA::CommonDenseVector<R>;
   using DF = DiscreteFunction<S, V>;
@@ -75,8 +77,10 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     : logger_(XT::Common::TimedLogger().get("main"))
     , euler_tools_(/*gamma=*/1.4) // air or water at roughly 20 deg Cels.
     , grid_(nullptr)
+    , leaf_grid_view_(nullptr)
     , leaf_grid_layer_(nullptr)
     , grid_layer_(nullptr)
+    , fv_space_(nullptr)
     , space_(nullptr)
     , initial_values_(nullptr)
     , flux_(nullptr)
@@ -94,6 +98,10 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
 
     space_ = std::make_shared<S>(*grid_layer_);
     logger_.info() << "space has " << space_->mapper().size() << " DoFs\n" << std::endl;
+
+    // these are mainly for DG, to compare to the FV solution
+    leaf_grid_view_ = std::make_shared<LeafView>(grid_->leaf_view());
+    fv_space_ = std::make_shared<FvS>(*leaf_grid_view_);
 
     initial_values_ = std::make_shared<DF>(*space_, "solution");
     const U periodic_initial_values_euler( // compare [Kröner, 1997, p. 394]
@@ -203,11 +211,8 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     EXPECT_EQ(num_timesteps + 1, saved_timesteps);
 
     // check expected state at the end
-    auto leaf_view = grid_->leaf_view();
-    using FvS = FvSpace<decltype(leaf_view), R, m>;
-    const FvS fv_space(leaf_view);
     const V expected_end_state_vector(expected_end_state__periodic_boundaries());
-    const ConstDiscreteFunction<FvS, V> expected_end_state_fv(fv_space, expected_end_state_vector);
+    const ConstDiscreteFunction<FvS, V> expected_end_state_fv(*fv_space_, expected_end_state_vector);
     const auto& actual_end_state = time_stepper_->solution().rbegin()->second;
 
     const auto l2_error = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv - actual_end_state);
@@ -319,7 +324,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
             1.0000001528871256,      1.0000003911827926,      -2.9273450717886344e-07, 1.0000005476560563};
   } // ... expected_end_state__periodic_boundaries(...)
 
-  void impermeable_walls_by_direct_euler_treatment()
+  void impermeable_walls_by_direct_euler_treatment(const double& relative_expected_state_l_2_error_tolerance = 1e-15)
   {
     ASSERT_NE(grid_layer_, nullptr);
     ASSERT_NE(numerical_flux_, nullptr);
@@ -348,11 +353,17 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     ASSERT_NE(time_stepper_, nullptr);
 
     // check expected state at the end
-    V expected_end_state(expected_end_state__impermeable_walls_by_direct_euler_treatment());
+    const V expected_end_state_vector(expected_end_state__impermeable_walls_by_direct_euler_treatment());
+    const ConstDiscreteFunction<FvS, V> expected_end_state_fv(*fv_space_, expected_end_state_vector);
+    const auto& actual_end_state = time_stepper_->solution().rbegin()->second;
 
-    const auto& actual_end_state = time_stepper_->solution().rbegin()->second.vector();
-    EXPECT_LT((expected_end_state - actual_end_state).sup_norm(), 1e-15) << "actual_end_state = "
-                                                                         << print_vector(actual_end_state);
+    const auto l2_error = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv - actual_end_state);
+    const auto reference_l2_norm = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv);
+
+    EXPECT_LT(l2_error / reference_l2_norm, relative_expected_state_l_2_error_tolerance)
+        << "l2_error = " << l2_error << "\n"
+        << "reference_l2_norm = " << reference_l2_norm << "\n\n"
+        << "actual_end_state = " << print_vector(actual_end_state.vector());
   } // ... impermeable_walls_by_direct_euler_treatment(...)
 
   static std::vector<double> expected_end_state__impermeable_walls_by_direct_euler_treatment()
@@ -455,7 +466,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
             1.0012729617122325,      1.0006280611243779,      0.00024873614355938508,  1.0008794416251166};
   } // ... expected_end_state__impermeable_walls_by_direct_euler_treatment(...)
 
-  void impermeable_walls_by_inviscid_mirror_treatment()
+  void impermeable_walls_by_inviscid_mirror_treatment(const double& relative_expected_state_l_2_error_tolerance = 1e-15)
   {
     ASSERT_NE(grid_layer_, nullptr);
     ASSERT_NE(numerical_flux_, nullptr);
@@ -494,11 +505,17 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     ASSERT_NE(time_stepper_, nullptr);
 
     // check expected state at the end
-    V expected_end_state(expected_end_state__impermeable_walls_by_inviscid_mirror_treatment());
+    const V expected_end_state_vector(expected_end_state__impermeable_walls_by_inviscid_mirror_treatment());
+    const ConstDiscreteFunction<FvS, V> expected_end_state_fv(*fv_space_, expected_end_state_vector);
+    const auto& actual_end_state = time_stepper_->solution().rbegin()->second;
 
-    const auto& actual_end_state = time_stepper_->solution().rbegin()->second.vector();
-    EXPECT_LT((expected_end_state - actual_end_state).sup_norm(), 1e-15) << "actual_end_state = "
-                                                                         << print_vector(actual_end_state);
+    const auto l2_error = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv - actual_end_state);
+    const auto reference_l2_norm = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv);
+
+    EXPECT_LT(l2_error / reference_l2_norm, relative_expected_state_l_2_error_tolerance)
+        << "l2_error = " << l2_error << "\n"
+        << "reference_l2_norm = " << reference_l2_norm << "\n\n"
+        << "actual_end_state = " << print_vector(actual_end_state.vector());
   } // ... impermeable_walls_by_inviscid_mirror_treatment(...)
 
   static std::vector<double> expected_end_state__impermeable_walls_by_inviscid_mirror_treatment()
@@ -601,7 +618,8 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
             1.0013007699017782,      1.0005909086926197,      0.00015832581657331679, 1.000827421420597};
   } // ... expected_end_state__impermeable_walls_by_inviscid_mirror_treatment(...)
 
-  void inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right()
+  void inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right(
+      const double& relative_expected_state_l_2_error_tolerance = 1e-15)
   {
     ASSERT_NE(grid_layer_, nullptr);
     ASSERT_NE(numerical_flux_, nullptr);
@@ -713,12 +731,18 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
     ASSERT_NE(time_stepper_, nullptr);
 
     // check expected state at the end
-    V expected_end_state(
+    const V expected_end_state_vector(
         expected_end_state__inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right());
+    const ConstDiscreteFunction<FvS, V> expected_end_state_fv(*fv_space_, expected_end_state_vector);
+    const auto& actual_end_state = time_stepper_->solution().rbegin()->second;
 
-    const auto& actual_end_state = time_stepper_->solution().rbegin()->second.vector();
-    EXPECT_LT((expected_end_state - actual_end_state).sup_norm(), 1e-15) << "actual_end_state = "
-                                                                         << print_vector(actual_end_state);
+    const auto l2_error = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv - actual_end_state);
+    const auto reference_l2_norm = make_l2_operator(*grid_layer_)->induced_norm(expected_end_state_fv);
+
+    EXPECT_LT(l2_error / reference_l2_norm, relative_expected_state_l_2_error_tolerance)
+        << "l2_error = " << l2_error << "\n"
+        << "reference_l2_norm = " << reference_l2_norm << "\n\n"
+        << "actual_end_state = " << print_vector(actual_end_state.vector());
   } // ... inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right(...)
 
   static std::vector<double>
@@ -837,8 +861,10 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
   XT::Common::TimedLogManager logger_;
   EulerTools<d> euler_tools_;
   std::shared_ptr<GridProvider> grid_;
+  std::shared_ptr<LeafView> leaf_grid_view_;
   std::shared_ptr<LeafGL> leaf_grid_layer_;
   std::shared_ptr<GL> grid_layer_;
+  std::shared_ptr<FvS> fv_space_;
   std::shared_ptr<S> space_;
   std::shared_ptr<DF> initial_values_;
   std::shared_ptr<F> flux_;
