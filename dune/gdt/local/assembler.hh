@@ -250,22 +250,35 @@ public:
                           const LocalOperatorType& local_operator,
                           const SourceType& source,
                           RangeType& range,
-                          XT::Grid::ApplyOn::WhichEntity<GridLayerType>*&& where)
+                          XT::Grid::ApplyOn::WhichEntity<GridLayerType>*&& where,
+                          const XT::Common::Parameter& param,
+                          const std::string& id = "")
     : grid_layer_(grid_layer)
     , local_operator_(local_operator)
     , source_(source)
     , range_(range)
     , where_(where)
+    , id_(id)
+#ifndef DUNE_XT_DISABLE_LOGGING
+    , logger_(XT::Common::TimedLogger().get("gdt.local.operator_applicator" + (id.empty() ? "" : "(" + id + ")")))
+#endif
   {
   }
 
   bool apply_on(const GridLayerType& grid_layer, const EntityType& entity) const override final
   {
+#ifndef DUNE_XT_DISABLE_LOGGING
+    logger_.debug() << "apply_on(entity.geometry().center()=" << entity.geometry().center()
+                    << "): " << where_->apply_on(grid_layer, entity) << std::endl;
+#endif
     return where_->apply_on(grid_layer, entity);
   }
 
   void apply_local(const EntityType& entity) override final
   {
+#ifndef DUNE_XT_DISABLE_LOGGING
+    logger_.debug() << "apply_local(entity.geometry().center()=" << entity.geometry().center() << ")" << std::endl;
+#endif
     local_operator_.apply(source_, *range_.local_discrete_function(entity));
   }
 
@@ -275,6 +288,10 @@ private:
   const SourceType& source_;
   RangeType& range_;
   const std::unique_ptr<XT::Grid::ApplyOn::WhichEntity<GridLayerType>> where_;
+  const std::string id_;
+#ifndef DUNE_XT_DISABLE_LOGGING
+  mutable XT::Common::TimedLogManager logger_;
+#endif
 }; // class LocalOperatorApplicator
 
 
