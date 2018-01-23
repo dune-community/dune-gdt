@@ -324,8 +324,7 @@ struct InviscidCompressibleFlowEuler1dExplicitTest : public ::testing::Test
                                                                                new XT::Grid::ImpermeableBoundary());
 
     // create operator, the layer is periodic and the operator includes handling of periodic boundaries so we need to
-    // make
-    // an exception for all non-periodic boundaries
+    // make an exception for all non-periodic boundaries
     op_ = std::make_shared<Op>(
         *grid_layer_, *numerical_flux_, /*periodicity_restriction=*/impermeable_wall_filter.copy());
 
