@@ -85,7 +85,7 @@ public:
   typedef typename BaseType::PatternType PatternType;
   typedef typename BaseType::GridLayerType GridLayerType;
   typedef typename BaseType::EntityType EntityType;
-  typedef DofCommunicationChooser<GridLayerType, true> DofCommunicationChooserType;
+  typedef DofCommunicationChooser<GridLayerType> DofCommunicationChooserType;
   typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
 
   typedef XT::Grid::DD::SubdomainGrid<typename XT::Grid::extract_grid<GridLayerType>::type> DdSubdomainsGridType;

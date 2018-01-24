@@ -83,7 +83,7 @@ public:
       BaseFunctionSetType;
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::part;
   static const bool needs_grid_view = false;
-  typedef DofCommunicationChooser<GridLayerType, true> DofCommunicationChooserType;
+  typedef DofCommunicationChooser<GridLayerType> DofCommunicationChooserType;
   typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
 }; // class DuneFemDgSpaceWrapperTraits
 
