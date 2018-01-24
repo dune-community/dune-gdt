@@ -34,7 +34,8 @@ namespace GDT {
 
 
 template <class ViewImp,
-          bool is_parallel = Dune::XT::UseParallelCommunication<typename ViewImp::Grid::CollectiveCommunication>::value>
+          bool is_parallel = Dune::XT::UseParallelCommunication<
+              typename XT::Grid::extract_grid<ViewImp>::type::CollectiveCommunication>::value>
 struct DofCommunicationChooser
 {
   typedef Dune::XT::SequentialCommunication Type;

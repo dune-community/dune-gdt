@@ -164,6 +164,13 @@ public:
     return finite_element.size();
   } // ... numDofs(...)
 
+  template <int cd, class GridImp, template <int, int, class> class EntityImp>
+  typename std::enable_if<cd != EntityType::codimension, size_t>::type
+  numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity) const
+  {
+    return 0;
+  }
+
   using BaseType::globalIndices;
 
   void globalIndices(const EntityType& entity, DynamicVector<size_t>& ret) const

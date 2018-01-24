@@ -219,21 +219,24 @@ private:
   using D = typename GL::ctype;
   static const constexpr size_t d = BaseType::dimDomain;
   using FiniteElementType = RaviartThomasSimplexLocalFiniteElement<d, D, R>;
+  typedef typename Traits::DofCommunicationChooserType DofCommunicationChooserType;
 
 public:
   using typename BaseType::GridLayerType;
   using typename BaseType::EntityType;
   using typename BaseType::MapperType;
   using typename BaseType::BaseFunctionSetType;
+  typedef typename Traits::DofCommunicatorType DofCommunicatorType;
 
   RtSpace(GridLayerType grd_lr)
     : grid_layer_(grd_lr)
-    , communicator_(0)
+    , communicator_(DofCommunicationChooserType::create(grid_layer_))
     , backend_(0)
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
     , geometry_to_local_DoF_indices_map_(new std::map<GeometryType, std::vector<size_t>>())
     , switches_(new std::vector<std::vector<R>>(grid_layer_.indexSet().size(0)))
     , mapper_(nullptr)
+    , communicator_prepared_(false)
   {
     const auto& index_set = grid_layer_.indexSet();
     // create finite elements
@@ -336,10 +339,12 @@ public:
     return BaseFunctionSetType(entity, finite_element, (*switches_)[grid_layer_.indexSet().index(entity)]);
   }
 
-  double& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
-    DUNE_THROW(NotImplemented, "");
-    return communicator_;
+    if (!communicator_prepared_) {
+      communicator_prepared_ = DofCommunicationChooserType::prepare(*this, *communicator_);
+    }
+    return *communicator_;
   }
 
   // this makes sense only for for p0 (and only on simplices?)
@@ -356,12 +361,13 @@ public:
 
 private:
   const GridLayerType grid_layer_;
-  mutable double communicator_;
+  mutable std::shared_ptr<DofCommunicatorType> communicator_;
   const double backend_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
   std::shared_ptr<std::map<GeometryType, std::vector<size_t>>> geometry_to_local_DoF_indices_map_;
   std::shared_ptr<std::vector<std::vector<R>>> switches_;
   std::shared_ptr<MapperType> mapper_;
+  mutable bool communicator_prepared_;
 }; // class RtSpace
 
 

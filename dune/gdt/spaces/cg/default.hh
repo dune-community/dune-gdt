@@ -201,6 +201,7 @@ private:
   using D = typename GL::ctype;
   static const constexpr size_t d = BaseType::dimDomain;
   using FiniteElementType = LagrangeLocalFiniteElement<EquidistantPointSet, d, D, R>;
+  using DofCommunicationChooserType = typename Traits::DofCommunicationChooserType;
 
 public:
   using typename BaseType::GridLayerType;
@@ -208,10 +209,11 @@ public:
   using typename BaseType::MapperType;
   using typename BaseType::BaseFunctionSetType;
   using DomainType = typename BaseFunctionSetType::DomainType;
+  using DofCommunicatorType = typename Traits::DofCommunicatorType;
 
   ContinuousLagrangeSpace(GridLayerType grd_lr)
     : grid_layer_(grd_lr)
-    , communicator_(0)
+    , communicator_(DofCommunicationChooserType::create(grid_layer_))
     , backend_(0)
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
     , lagrange_points_(new std::map<GeometryType, std::vector<DomainType>>())
@@ -269,10 +271,10 @@ public:
     return BaseFunctionSetType(entity, finite_element);
   }
 
-  double& communicator() const
+  DofCommunicatorType& dof_communicator() const
   {
-    DUNE_THROW(NotImplemented, "");
-    return communicator_;
+    DofCommunicationChooserType::prepare(*this, *communicator_);
+    return *communicator_;
   }
 
   std::vector<DomainType> lagrange_points(const EntityType& entity) const
@@ -288,7 +290,7 @@ public:
 
 private:
   const GridLayerType grid_layer_;
-  mutable double communicator_;
+  mutable std::shared_ptr<DofCommunicatorType> communicator_;
   const double backend_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
   std::shared_ptr<std::map<GeometryType, std::vector<DomainType>>> lagrange_points_;
