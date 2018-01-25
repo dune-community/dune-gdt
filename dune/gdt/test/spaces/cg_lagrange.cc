@@ -7,20 +7,6 @@
 // Authors:
 //   Felix Schindler (2017)
 
-
-#ifndef DUNE_XT_COMMON_TEST_MAIN_CATCH_EXCEPTIONS
-#define DUNE_XT_COMMON_TEST_MAIN_CATCH_EXCEPTIONS 1
-#endif
-#ifndef DUNE_XT_COMMON_TEST_MAIN_ENABLE_TIMED_LOGGING
-#define DUNE_XT_COMMON_TEST_MAIN_ENABLE_TIMED_LOGGING 1
-#endif
-#ifndef DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING
-#define DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING 1
-#endif
-#ifndef DUNE_XT_COMMON_TEST_MAIN_ENABLE_DEBUG_LOGGING
-#define DUNE_XT_COMMON_TEST_MAIN_ENABLE_DEBUG_LOGGING 1
-#endif
-
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
 #include <algorithm>
@@ -38,7 +24,6 @@
 #include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/gdt/spaces/cg/default.hh>
-#include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
 
 
 template <class GridLayerType, int p>
