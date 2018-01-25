@@ -12,8 +12,7 @@
 
 #include <dune/gdt/test/projections/lagrange.hh>
 #include <dune/gdt/test/projections/l2-global.hh>
-#include <dune/gdt/test/spaces/cg/pdelab.hh>
-#include <dune/gdt/test/spaces/cg/fem.hh>
+#include <dune/gdt/test/spaces/cg/default.hh>
 
 using namespace Dune::GDT::Test;
 

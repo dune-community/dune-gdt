@@ -12,7 +12,7 @@
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first
 
 #include "l2.hh"
-#include <dune/gdt/test/spaces/cg/pdelab.hh>
+#include <dune/gdt/test/spaces/cg/default.hh>
 #include <dune/gdt/test/spaces/dg/fem.hh>
 #include <dune/gdt/test/spaces/fv/default.hh>
 

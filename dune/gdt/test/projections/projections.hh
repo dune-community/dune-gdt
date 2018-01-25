@@ -13,7 +13,7 @@
 
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/test/projections/base.hh>
-#include <dune/gdt/test/spaces/cg/fem.hh>
+#include <dune/gdt/test/spaces/cg/default.hh>
 
 namespace Dune {
 namespace GDT {

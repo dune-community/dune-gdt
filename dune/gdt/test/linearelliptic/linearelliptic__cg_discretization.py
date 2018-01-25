@@ -24,12 +24,6 @@ casenames = ['AO2013TestCase', 'ER2007TestCase', 'ESV2007TestCase', 'MixedBounda
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 
 space_backends = ['gdt',]
-for s in ('fem', 'pdelab'):
-    try:
-        if cache['dune-{}'.format(s)]:
-            space_backends.extend([s])
-    except KeyError:
-        pass
 
 if len(space_backends) == 0:
     # prevent unusable iteration in template

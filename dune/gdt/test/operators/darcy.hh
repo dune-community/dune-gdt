@@ -22,7 +22,7 @@
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/operators/laplace.hh>
 #include <dune/gdt/operators/l2.hh>
-#include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
+#include <dune/gdt/spaces/cg/default.hh>
 #include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
 
@@ -88,7 +88,7 @@ struct DarcyOperatorTest : public ::testing::Test
   RangeFieldType
   expected_result_(const std::string type, const FunctionType& desired_output, const GL& grid_layer) const
   {
-    if (std::is_base_of<DuneFemCgSpaceWrapper<GL, 1, RangeFieldType, dimDomain>, RangeSpaceType>::value) {
+    if (std::is_base_of<Dune::GDT::ContinuousLagrangeSpace<GL, 1, double>, RangeSpaceType>::value) {
       if (type == "l2")
         return 2.18e-16;
       else if (type == "h1")

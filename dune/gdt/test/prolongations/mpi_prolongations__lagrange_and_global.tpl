@@ -15,8 +15,8 @@
 #include <dune/gdt/test/grids.hh>
 #include <dune/gdt/test/prolongations/l2-global.hh>
 #include <dune/gdt/test/prolongations/lagrange.hh>
-#include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
-#include <dune/gdt/spaces/cg/dune-pdelab-wrapper.hh>
+#include <dune/gdt/spaces/cg/default.hh>
+
 #include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
 #include <dune/gdt/playground/spaces/dg/dune-functions-wrapper.hh>
 #include <dune/gdt/spaces/fv/default.hh>

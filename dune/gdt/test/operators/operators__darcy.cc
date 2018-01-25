@@ -11,7 +11,7 @@
 
 #include <dune/xt/common/test/main.hxx> // <- This one has to come first (includes the config.h)!
 
-#include <dune/gdt/test/spaces/cg/fem.hh>
+#include <dune/gdt/test/spaces/cg/default.hh>
 #include <dune/gdt/test/spaces/rt/pdelab.hh>
 
 #include "darcy.hh"
@@ -21,8 +21,8 @@ using namespace Dune::GDT::Test;
 #if HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_DUNE_ALUGRID
 
 typedef testing::Types<
-    /*std::pair< SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 1), SPACE_CG_FEM_ALUCONFORMGRID(2, 2, 1) > // <- TODO: enable once #40 is resolved
-                      ,*/ std::pair<SPACE_CG_FEM_ALUCONFORMGRID(2, 1, 1), SPACE_RT_PDELAB_ALUCONFORMGRID(2)>>
+    /*std::pair< SPACE_CG_DEFAULT_ALUCONFORMGRID(2, 1, 1), SPACE_CG_DEFAULT_ALUCONFORMGRID(2, 2, 1) > // <- TODO: enable once #40 is resolved
+                      ,*/ std::pair<SPACE_CG_DEFAULT_ALUCONFORMGRID(2, 1, 1), SPACE_RT_PDELAB_ALUCONFORMGRID(2)>>
     SpaceTypes;
 
 // this test cannot run in parallel ATM because the RT space does not have a parallel dof_comm setup

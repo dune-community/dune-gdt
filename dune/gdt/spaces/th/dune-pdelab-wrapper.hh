@@ -10,7 +10,7 @@
 #ifndef DUNE_GDT_SPACES_TH_DUNE_PDELAB_WRAPPER_HH
 #define DUNE_GDT_SPACES_TH_DUNE_PDELAB_WRAPPER_HH
 
-#include <dune/gdt/spaces/cg/dune-pdelab-wrapper.hh>
+
 #include <dune/gdt/spaces/product.hh>
 
 namespace Dune {

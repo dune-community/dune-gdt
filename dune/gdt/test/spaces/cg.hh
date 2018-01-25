@@ -22,8 +22,8 @@
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/grid/type_traits.hh>
 
-#include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
-#include <dune/gdt/spaces/cg/dune-pdelab-wrapper.hh>
+#include <dune/gdt/spaces/cg/default.hh>
+
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 #include <dune/gdt/spaces/basefunctionset/interface.hh>
 
