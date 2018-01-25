@@ -16,6 +16,8 @@
 
 #include <dune/common/dynvector.hh>
 
+#include <dune/grid/common/mcmgmapper.hh>
+
 #include <dune/xt/common/unused.hh>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
@@ -49,10 +51,20 @@ class FvMapperTraits
   static_assert(rangeDim >= 1, "Really?");
   static_assert(rangeDimCols >= 1, "Really?");
 
+  template <int dim_>
+  struct GeometryTypeLayout
+  {
+    bool contains(const GeometryType& gt) const
+    {
+      return gt.dim() == dim_;
+    }
+  };
+
 public:
   typedef GridLayerImp GridLayerType;
   typedef FvMapper<GridLayerType, rangeDim, rangeDimCols> derived_type;
-  typedef typename GridLayerImp::IndexSet BackendType;
+  // just using the index set of the grid layer fails for mixed geometry types
+  typedef MultipleCodimMultipleGeomTypeMapper<GridLayerImp, GeometryTypeLayout> BackendType;
   using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
 };
 
@@ -81,19 +93,18 @@ public:
   typedef typename Traits::EntityType EntityType;
 
   FvMapper(const GridLayerType& grd_layr)
-    : backend_(grd_layr.indexSet())
+    : mapper_(new BackendType(grd_layr))
   {
-    assert(size() > 0);
   }
 
   const BackendType& backend() const
   {
-    return backend_;
+    return *mapper_;
   }
 
   size_t size() const
   {
-    return dimRange * backend_.size(0);
+    return dimRange * mapper_.size();
   }
 
   template <int cd, class GridImp, template <int, int, class> class EntityImp>
@@ -111,7 +122,7 @@ public:
   {
     if (ret.size() < dimRange)
       ret.resize(dimRange);
-    const size_t base = dimRange * backend_.index(entity);
+    const size_t base = dimRange * mapper_->subIndex(entity, 0, 0);
     for (size_t ii = 0; ii < dimRange; ++ii)
       ret[ii] = base + ii;
   } // ... globalIndices(...)
@@ -121,11 +132,11 @@ public:
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
     assert(localIndex < dimRange);
-    return (dimRange * backend_.index(entity)) + localIndex;
+    return (dimRange * mapper_->subIndex(entity, 0, 0)) + localIndex;
   }
 
 private:
-  const BackendType& backend_;
+  const std::shared_ptr<BackendType> mapper_;
 }; // class FvMapper< ..., rangeDim, 1 >
 
 
@@ -141,18 +152,18 @@ public:
   typedef typename Traits::EntityType EntityType;
 
   FvMapper(const GridLayerType& grd_layr)
-    : backend_(grd_layr.indexSet())
+    : mapper_(new BackendType(grd_layr))
   {
   }
 
   const BackendType& backend() const
   {
-    return backend_;
+    return *mapper_;
   }
 
   size_t size() const
   {
-    return backend_.size(0);
+    return mapper_->size();
   }
 
   size_t numDofs(const EntityType& /*entity*/) const
@@ -177,11 +188,11 @@ public:
   size_t mapToGlobal(const EntityType& entity, const size_t& DXTC_DEBUG_ONLY(localIndex)) const
   {
     assert(localIndex == 0);
-    return backend_.index(entity);
+    return mapper_->subIndex(entity, 0, 0);
   }
 
 private:
-  const BackendType& backend_;
+  const std::shared_ptr<BackendType> mapper_;
 }; // class FvMapper< ..., 1, 1 >
 
 
