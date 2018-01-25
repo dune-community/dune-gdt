@@ -27,7 +27,7 @@
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/numeric_cast.hh>
 
-#include <dune/gdt/spaces/basefunctionset/interface.hh>
+#include <dune/gdt/spaces/basefunctionset/default.hh>
 #include <dune/gdt/spaces/mapper/default.hh>
 #include <dune/gdt/spaces/cg/interface.hh>
 
@@ -35,28 +35,11 @@ namespace Dune {
 namespace GDT {
 
 
-// forwards, required for the traits
-template <class E, class R = double>
-class ContinuousLagrangeBasefunctionSet;
-
 template <class GL, int p, class R = double>
 class ContinuousLagrangeSpace;
 
 
 namespace internal {
-
-
-template <class E, class R>
-class ContinuousLagrangeBasefunctionSetTraits
-{
-  using LocalFunctionTraits =
-      XT::Functions::LocalfunctionSetInterface<E, typename E::Geometry::ctype, E::dimension, R, 1>;
-
-public:
-  using derived_type = ContinuousLagrangeBasefunctionSet<E, R>;
-  using EntityType = E;
-  using BackendType = LagrangeLocalFiniteElement<EquidistantPointSet, E::dimension, typename E::Geometry::ctype, R>;
-};
 
 
 template <class GL, int p, class R>
@@ -74,12 +57,9 @@ public:
   static const constexpr size_t dimRangeCols = 1;
   static const constexpr bool continuous = false;
   using GridLayerType = GL;
-  using BaseFunctionSetType = ContinuousLagrangeBasefunctionSet<XT::Grid::extract_entity_t<GL>, R>;
-  using MapperType = FixedOrderMultipleCodimMultipleGeomTypeMapper<GL,
-                                                                   LagrangeLocalFiniteElement<EquidistantPointSet,
-                                                                                              dimDomain,
-                                                                                              typename GL::ctype,
-                                                                                              R>>;
+  using LocalFiniteElement = LagrangeLocalFiniteElement<EquidistantPointSet, dimDomain, typename GL::ctype, R>;
+  using BaseFunctionSetType = ScalarBasefunctionSet<LocalFiniteElement, XT::Grid::extract_entity_t<GL>, R>;
+  using MapperType = FixedOrderMultipleCodimMultipleGeomTypeMapper<GL, LocalFiniteElement>;
   using RangeFieldType = R;
   using BackendType = double;
   static const constexpr XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
@@ -93,92 +73,6 @@ public:
 
 
 /**
- * \note These are untrasformed shape function evaluations and jacoian-inverse transformed shape function jacobians,
- *       this class could thus be used for other finite elements.
- */
-template <class E, class R>
-class ContinuousLagrangeBasefunctionSet
-    : public BaseFunctionSetInterface<internal::ContinuousLagrangeBasefunctionSetTraits<E, R>,
-                                      typename E::Geometry::ctype,
-                                      E::dimension,
-                                      R,
-                                      1>
-{
-public:
-  using Traits = internal::ContinuousLagrangeBasefunctionSetTraits<E, R>;
-
-private:
-  using BaseType = BaseFunctionSetInterface<Traits, typename E::Geometry::ctype, E::dimension, R, 1>;
-  using ThisType = ContinuousLagrangeBasefunctionSet<E, R>;
-
-public:
-  using typename BaseType::BackendType;
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
-  using typename BaseType::JacobianRangeType;
-
-  ContinuousLagrangeBasefunctionSet(const EntityType& en, const BackendType& finite_element)
-    : BaseType(en)
-    , finite_element_(finite_element)
-  {
-  }
-
-  ContinuousLagrangeBasefunctionSet(const ThisType&) = default;
-  ContinuousLagrangeBasefunctionSet(ThisType&&) = default;
-
-  ThisType& operator=(const ThisType&) = delete;
-  ThisType& operator=(ThisType&&) = delete;
-
-  const BackendType& backend() const
-  {
-    return finite_element_;
-  }
-
-  size_t size() const override final
-  {
-    return finite_element_.localBasis().size();
-  }
-
-  size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override final
-  {
-    return finite_element_.localBasis().order();
-  }
-
-  using BaseType::evaluate;
-
-  void evaluate(const DomainType& xx,
-                std::vector<RangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = {}) const override final
-  {
-    assert(this->is_a_valid_point(xx));
-    finite_element_.localBasis().evaluateFunction(xx, ret);
-  }
-
-  using BaseType::jacobian;
-
-  void jacobian(const DomainType& xx,
-                std::vector<JacobianRangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = {}) const override final
-  {
-    assert(this->is_a_valid_point(xx));
-    // evaluate jacobian of shape functions
-    finite_element_.localBasis().evaluateJacobian(xx, ret);
-    // apply transformation
-    const auto J_inv_T = this->entity().geometry().jacobianInverseTransposed(xx);
-    auto tmp_value = ret[0][0];
-    for (size_t ii = 0; ii < finite_element_.localBasis().size(); ++ii) {
-      J_inv_T.mv(ret[ii][0], tmp_value);
-      ret[ii][0] = tmp_value;
-    }
-  } // ... jacobian(...)
-
-private:
-  const BackendType& finite_element_;
-}; // class ContinuousLagrangeBasefunctionSet
-
-
-/**
  * The following dimensions/orders/elements are tested to work:
  *
  * - 1d: orders 1, 2 work
@@ -186,6 +80,7 @@ private:
  * - 3d: orders 1, 2 work on simplices, cubes, prisms
  *
  * The following dimensions/orders/elements are tested to fail:
+ *
  * - 3d: pyramids (jacobians seem to be incorrect)
  * - 3d: mixed simplices and cubes
  */
