@@ -61,13 +61,13 @@ size_t fem_dof_count(Backend& /*backend*/, Entity& entity, std::integral_constan
 {
   DUNE_THROW(NotImplemented, "not sure if this should ever be called");
   return 0;
-};
+}
 
 template <class Backend, class Entity>
 size_t fem_dof_count(Backend& backend, Entity& entity, std::integral_constant<int, 0>)
 {
   return backend.numDofs(entity);
-};
+}
 
 } // namespace internal
 
