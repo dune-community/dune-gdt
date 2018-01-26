@@ -118,29 +118,14 @@ public:
   _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _backend, 1, 1, _la);                   \
   _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, _backend, 1, 1, _la)
 
-#if HAVE_DUNE_FEM
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_FEM(_m, _la)                                                              \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALBERTA(_m, leaf, fem, _la);                                                    \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALU(_m, leaf, fem, _la);                                                        \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, leaf, fem, _la);                                                         \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_YASP(_m, leaf, fem, _la)
-#else
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_FEM(_m, _la)
-#endif
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_GDT(_m, _la)                                                              \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALBERTA(_m, leaf, gdt, _la);                                                    \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALU(_m, leaf, gdt, _la);                                                        \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, leaf, gdt, _la);                                                         \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_YASP(_m, leaf, gdt, _la)
 
-//#if HAVE_DUNE_PDELAB
-//#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_PDELAB(_m, _la)                                                         \
-//  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALBERTA(_m, leaf, pdelab, _la);                                               \
-//  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALU(_m, leaf, pdelab, _la);                                                   \
-//  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_YASP(_m, leaf, pdelab, _la)
-////  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, leaf, pdelab, _la); // <- does not work
-//#else
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_PDELAB(_m, _la)
-//#endif
 
-#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_BACKENDS(_m, _la)                                                         \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_FEM(_m, _la);                                                                   \
-  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_PDELAB(_m, _la)
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_BACKENDS(_m, _la) _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_GDT(_m, _la);
 
 #define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_COMMON(_m)
 //_DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_BACKENDS(_m, common_dense)

@@ -69,6 +69,7 @@ public:
   typedef RestrictionGridLayer GridLayerType;
   typedef typename UnrestrictedSpace::RangeFieldType RangeFieldType;
   static const XT::Grid::Backends layer_backend = layer_backend_helper<>::value;
+  static constexpr const GDT::Backends backend_type{UnrestrictedSpace::backend_type};
 }; // class RestrictedSpaceTraits
 
 
