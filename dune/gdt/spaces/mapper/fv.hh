@@ -104,7 +104,7 @@ public:
 
   size_t size() const
   {
-    return dimRange * mapper_.size();
+    return dimRange * mapper_->size();
   }
 
   template <int cd, class GridImp, template <int, int, class> class EntityImp>
