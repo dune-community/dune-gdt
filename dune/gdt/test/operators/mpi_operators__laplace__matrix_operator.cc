@@ -13,7 +13,7 @@
 
 #include "laplace.hh"
 #include <dune/gdt/test/spaces/fv/default.hh>
-#include <dune/gdt/test/spaces/dg/fem.hh>
+#include <dune/gdt/test/spaces/dg/default.hh>
 #include <dune/gdt/test/spaces/cg/default.hh>
 
 using namespace Dune::GDT::Test;

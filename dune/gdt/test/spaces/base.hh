@@ -356,7 +356,7 @@ public:
     typedef typename InterfaceType::RangeType I_RangeType;
     typedef typename InterfaceType::JacobianRangeType I_JacobianRangeType;
     //! TODO no longer true for new spaces?
-//    static_assert(std::is_same<derived_type, BaseFunctionSetType>::value, "Types do not match!");
+    //    static_assert(std::is_same<derived_type, BaseFunctionSetType>::value, "Types do not match!");
     static_assert(std::is_same<I_BackendType, D_BackendType>::value, "Types do not match!");
     static_assert(std::is_same<I_EntityType, D_EntityType>::value, "Types do not match!");
     static_assert(std::is_same<I_DomainFieldType, D_DomainFieldType>::value, "Types do not match!");

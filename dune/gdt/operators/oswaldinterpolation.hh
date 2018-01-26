@@ -28,7 +28,7 @@
 #include <dune/xt/functions/interfaces/localizable-function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
-#include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
+#include <dune/gdt/spaces/dg/default.hh>
 #include <dune/gdt/playground/spaces/block.hh>
 #include <dune/gdt/playground/spaces/dg/dune-functions-wrapper.hh>
 
@@ -86,7 +86,7 @@ public:
 
   template <class GL, class V>
   void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, FieldType, 1>& source,
-             DiscreteFunction<DuneFemDgSpaceWrapper<GL, 1, FieldType, 1, 1>, V>& range) const
+             DiscreteFunction<DiscontinuousLagrangeSpace<GL, 1, FieldType>, V>& range) const
   {
     apply_p1_dg(source, range);
   }
@@ -100,7 +100,7 @@ public:
 
   template <class GL, class V>
   void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, FieldType, 1>& source,
-             DiscreteFunction<BlockSpace<DuneFemDgSpaceWrapper<GL, 1, FieldType, 1, 1>>, V>& range) const
+             DiscreteFunction<BlockSpace<DiscontinuousLagrangeSpace<GL, 1, FieldType>>, V>& range) const
   {
     apply_p1_dg(source, range);
   }

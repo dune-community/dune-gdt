@@ -221,7 +221,7 @@ public:
 private:
   GatherScatter _gather_scatter;
   // this is currently the default since we have no non-overlapping parallel code
-  static const Partitions::All partitions_;
+  static constexpr const Partitions::All partitions_{};
 };
 
 

@@ -20,8 +20,6 @@
 
 #include "interface.hh"
 #include "dg/default.hh"
-#include "dg/dune-fem-wrapper.hh"
-#include "../playground/spaces/dg/dune-pdelab-wrapper.hh"
 #include "../playground/spaces/dg/dune-functions-wrapper.hh"
 #include <dune/gdt/playground/spaces/block.hh>
 
@@ -56,11 +54,6 @@ private:
     static_assert(AlwaysFalse<G>::value, "No space available for this backend!");
   };
 
-  template <class G, int p, class R, size_t r, size_t rC>
-  struct SpaceChooser<G, p, R, r, rC, GDT::Backends::fem>
-  {
-    typedef GDT::DuneFemDgSpaceWrapper<GridLayerType, p, R, r, rC> Type;
-  };
 
   template <class G, int p, class R, size_t r, size_t rC>
   struct SpaceChooser<G, p, R, r, rC, GDT::Backends::gdt>
@@ -76,11 +69,6 @@ private:
     typedef GDT::DuneFunctionsDgSpaceWrapper<GridLayerType, p, R, r, rC> Type;
   };
 
-  template <class G, int p, class R, size_t r, size_t rC>
-  struct SpaceChooser<G, p, R, r, rC, GDT::Backends::pdelab>
-  {
-    typedef GDT::DunePdelabDgSpaceWrapper<GridLayerType, p, R, r, rC> Type;
-  };
 
 public:
   typedef typename SpaceChooser<GridType, polOrder, RangeFieldType, dimRange, dimRangeCols, backend_type>::Type Type;

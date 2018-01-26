@@ -19,10 +19,6 @@ if(DUNE_XT_WITH_PYTHON_BINDINGS)
       spaces/cg.lib/fem_yasp_1d_equidistant_offset.cc
       spaces/cg.lib/fem_yasp_2d_equidistant_offset.cc
       spaces/cg.lib/fem_yasp_3d_equidistant_offset.cc
-      spaces/dg/dune-fem-wrapper.lib/alu_2d_simplex_conforming.cc
-      spaces/dg/dune-fem-wrapper.lib/yasp_1d_equidistant_offset.cc
-      spaces/dg/dune-fem-wrapper.lib/yasp_2d_equidistant_offset.cc
-      spaces/dg/dune-fem-wrapper.lib/yasp_3d_equidistant_offset.cc
       spaces/dg.lib/fem_alu_2d_simplex_conforming.cc
       spaces/dg.lib/fem_yasp_1d_equidistant_offset.cc
       spaces/dg.lib/fem_yasp_2d_equidistant_offset.cc

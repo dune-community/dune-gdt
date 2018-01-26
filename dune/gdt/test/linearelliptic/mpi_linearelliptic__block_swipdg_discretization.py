@@ -16,13 +16,7 @@ grids = ['Yasp2Grid']
 casenames = ['ESV2007DdSubdomainsTestCase',]
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 
-space_backends = []
-for s in ('pdelab',):
-    try:
-        if cache['dune-{}'.format(s)]:
-            space_backends.extend([s])
-    except KeyError:
-        pass
+space_backends = ['gdt']
 
 if len(space_backends) == 0 or len(la_backends(cache)) == 0:
     # prevent unusable iteration in template

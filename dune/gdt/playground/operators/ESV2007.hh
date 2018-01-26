@@ -27,7 +27,7 @@
 #include <dune/gdt/operators/base.hh>
 #include <dune/gdt/operators/fluxreconstruction.hh>
 #include <dune/gdt/operators/oswaldinterpolation.hh>
-#include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
+#include <dune/gdt/spaces/dg/default.hh>
 #include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
 
 namespace Dune {

@@ -17,11 +17,11 @@
 #include <dune/gdt/test/prolongations/lagrange.hh>
 #include <dune/gdt/spaces/cg/default.hh>
 
-#include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
+#include <dune/gdt/spaces/dg/default.hh>
 #include <dune/gdt/playground/spaces/dg/dune-functions-wrapper.hh>
 #include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
-#include <dune/gdt/playground/spaces/dg/dune-pdelab-wrapper.hh>
+
 
 using namespace Dune::GDT::Test;
 

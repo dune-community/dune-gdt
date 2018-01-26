@@ -9,23 +9,20 @@
 //   Rene Milk       (2016)
 //   Tobias Leibner  (2014, 2016)
 
-#ifndef DUNE_GDT_TEST_SPACES_DG_FEM_HH
-#define DUNE_GDT_TEST_SPACES_DG_FEM_HH
+#ifndef DUNE_GDT_TEST_SPACES_DG_DEFAULT_HH
+#define DUNE_GDT_TEST_SPACES_DG_DEFAULT_HH
 
-#include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
-
+#include <dune/gdt/spaces/dg/default.hh>
 #include <dune/gdt/test/grids.hh>
 
-#if HAVE_DUNE_FEM
 
-
-#define SPACE_DG_FEM_YASPGRID(dd, rr, pp) Dune::GDT::DuneFemDgSpaceWrapper<Yasp##dd##dLeafGridPartType, pp, double, rr>
+#define SPACE_DG_FEM_YASPGRID(dd, rr, pp) Dune::GDT::DiscontinuousLagrangeSpace<Yasp##dd##dLeafGridViewType, pp, double>
 
 #define SPACES_DG_FEM(pp)                                                                                              \
   SPACE_DG_FEM_YASPGRID(1, 1, pp), SPACE_DG_FEM_YASPGRID(2, 1, pp), SPACE_DG_FEM_YASPGRID(3, 1, pp)
 
 #define SPACE_DG_FEM_YASPGRID_LEVEL(dd, rr, pp)                                                                        \
-  Dune::GDT::DuneFemDgSpaceWrapper<Yasp##dd##dLevelGridPartType, pp, double, rr>
+  Dune::GDT::DiscontinuousLagrangeSpace<Yasp##dd##dLevelGridViewType, pp, double>
 
 #define SPACES_DG_FEM_LEVEL(pp)                                                                                        \
   SPACE_DG_FEM_YASPGRID_LEVEL(1, 1, pp), SPACE_DG_FEM_YASPGRID_LEVEL(2, 1, pp), SPACE_DG_FEM_YASPGRID_LEVEL(3, 1, pp)
@@ -35,10 +32,10 @@
 
 
 #define SPACE_DG_FEM_ALUCONFORMGRID(dd, rr, pp)                                                                        \
-  Dune::GDT::DuneFemDgSpaceWrapper<AluConform##dd##dLeafGridPartType, pp, double, rr>
+  Dune::GDT::DiscontinuousLagrangeSpace<AluConform##dd##dLeafGridViewType, pp, double>
 
 #define SPACE_DG_FEM_ALUCUBEGRID(dd, rr, pp)                                                                           \
-  Dune::GDT::DuneFemDgSpaceWrapper<AluCube##dd##dLeafGridPartType, pp, double, rr>
+  Dune::GDT::DiscontinuousLagrangeSpace<AluCube##dd##dLeafGridViewType, pp, double>
 
 #define SPACES_DG_FEM_ALUGRID(pp)                                                                                      \
   SPACE_DG_FEM_ALUCONFORMGRID(2, 1, pp)                                                                                \
@@ -46,10 +43,10 @@
 
 
 #define SPACE_DG_FEM_ALUCONFORMGRID_LEVEL(dd, rr, pp)                                                                  \
-  Dune::GDT::DuneFemDgSpaceWrapper<AluConform##dd##dLevelGridPartType, pp, double, rr>
+  Dune::GDT::DiscontinuousLagrangeSpace<AluConform##dd##dLevelGridViewType, pp, double>
 
 #define SPACE_DG_FEM_ALUCUBEGRID_LEVEL(dd, rr, pp)                                                                     \
-  Dune::GDT::DuneFemDgSpaceWrapper<AluCube##dd##dLevelGridPartType, pp, double, rr>
+  Dune::GDT::DiscontinuousLagrangeSpace<AluCube##dd##dLevelGridViewType, pp, double>
 
 #define SPACES_DG_FEM_ALUGRID_LEVEL(pp)                                                                                \
   SPACE_DG_FEM_ALUCONFORMGRID_LEVEL(2, 1, pp)                                                                          \
@@ -58,6 +55,5 @@
 
 
 #endif // HAVE_DUNE_ALUGRID
-#endif // HAVE_DUNE_FEM
 
-#endif // DUNE_GDT_TEST_SPACES_DG_FEM_HH
+#endif // DUNE_GDT_TEST_SPACES_DG_DEFAULT_HH
