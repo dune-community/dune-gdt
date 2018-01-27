@@ -31,11 +31,20 @@
 #include <dune/gdt/spaces/rt/interface.hh>
 
 namespace Dune {
+
+
+// forwards
+template <int dim, class Coordinates>
+class YaspGrid;
+
+class OneDGrid;
+
+
 namespace GDT {
 
 
 // forwards, required for the traits
-template <class E, class R = double>
+template <class FE, class E, class R = double>
 class RaviartThomasBasefunctionSet;
 
 template <class GL, int p, class R = double>
@@ -45,16 +54,16 @@ class RtSpace;
 namespace internal {
 
 
-template <class E, class R>
+template <class FE, class E, class R>
 class RaviartThomasBasefunctionSetTraits
 {
   using LocalFunctionTraits =
       XT::Functions::LocalfunctionSetInterface<E, typename E::Geometry::ctype, E::dimension, R, E::dimension>;
 
 public:
-  using derived_type = RaviartThomasBasefunctionSet<E, R>;
+  using derived_type = RaviartThomasBasefunctionSet<FE, E, R>;
   using EntityType = E;
-  using BackendType = RaviartThomasSimplexLocalFiniteElement<E::dimension, typename E::Geometry::ctype, R>;
+  using BackendType = FE;
 };
 
 
@@ -64,51 +73,120 @@ class RtSpaceTraits
   static_assert(XT::Grid::is_layer<GL>::value, "");
   static_assert(p == 0, "Not implemented yet!");
   using G = XT::Grid::extract_grid_t<GL>;
-  static_assert(Capabilities::hasSingleGeometryType<G>::v
-                    && Capabilities::hasSingleGeometryType<G>::topologyId
-                           == Impl::SimplexTopology<GL::dimension>::type::id,
-                "Not Implemented yet!");
 
 public:
-  using derived_type = RtSpace<GL, p, R>;
   static const constexpr int polOrder = p;
   static const constexpr size_t dimDomain = GL::dimension;
   static const constexpr size_t dimRange = dimDomain;
   static const constexpr size_t dimRangeCols = 1;
+
+private:
+  template <class G_ = G, bool anything = true>
+  struct ChooseLocalFiniteElement
+  {
+    template <class some_type_we_need_for_the_always_false = G_,
+              bool single_geometry_type = Capabilities::hasSingleGeometryType<G>::v,
+              bool is_simplex =
+                  Capabilities::hasSingleGeometryType<G>::topologyId == Impl::SimplexTopology<dimDomain>::type::id,
+              bool is_cube =
+                  Capabilities::hasSingleGeometryType<G>::topologyId == Impl::CubeTopology<dimDomain>::type::id>
+    struct geometry_type_switch
+    {
+      // This requires virtual interfaces for the local finite elements.
+      static_assert(AlwaysFalse<some_type_we_need_for_the_always_false>::value,
+                    "RtSpace is only available for purely simplicial or purely cubic grids atm!");
+    };
+
+    template <class some_type_we_need_for_the_always_false>
+    struct geometry_type_switch<some_type_we_need_for_the_always_false, true, true, false>
+    {
+      using type = RaviartThomasSimplexLocalFiniteElement<dimDomain, typename GL::ctype, R>;
+
+      static std::shared_ptr<type> create(const Dune::GeometryType& geometry_type, const int& polorder)
+      {
+        return std::make_shared<type>(geometry_type, polorder);
+      }
+    };
+
+    template <class some_type_we_need_for_the_always_false>
+    struct geometry_type_switch<some_type_we_need_for_the_always_false, true, false, true>
+    {
+      using type = RaviartThomasCubeLocalFiniteElement<typename GL::ctype, R, dimDomain, p>;
+
+      static std::shared_ptr<type> create(const Dune::GeometryType& /*geometry_type*/, const int& /*polorder*/)
+      {
+        return std::make_shared<type>();
+      }
+    };
+
+    using type = typename geometry_type_switch<>::type;
+
+    static std::shared_ptr<type> create(const Dune::GeometryType& geometry_type, const int& polorder)
+    {
+      return geometry_type_switch<>::create(geometry_type, polorder);
+    }
+  };
+
+  // We need an exception for 1d YaspGrid: it reports to contain cubes but everything is a simplex in 1d.
+  template <bool anything, class Coordinates>
+  struct ChooseLocalFiniteElement<YaspGrid<1, Coordinates>, anything>
+  {
+    using type = RaviartThomasSimplexLocalFiniteElement<dimDomain, typename GL::ctype, R>;
+
+    static std::shared_ptr<type> create(const Dune::GeometryType& geometry_type, const int& polorder)
+    {
+      return std::make_shared<type>(geometry_type, polorder);
+    }
+  };
+
+  // We need an exception for OneDGrid: it reports to contain cubes but everything is a simplex in 1d.
+  template <bool anything>
+  struct ChooseLocalFiniteElement<OneDGrid, anything>
+  {
+    using type = RaviartThomasSimplexLocalFiniteElement<dimDomain, typename GL::ctype, R>;
+
+    static std::shared_ptr<type> create(const Dune::GeometryType& geometry_type, const int& polorder)
+    {
+      return std::make_shared<type>(geometry_type, polorder);
+    }
+  };
+
+public:
+  using derived_type = RtSpace<GL, p, R>;
   static const constexpr bool continuous = false;
   using GridLayerType = GL;
-  using BaseFunctionSetType = RaviartThomasBasefunctionSet<XT::Grid::extract_entity_t<GL>, R>;
-  using MapperType =
-      FixedOrderMultipleCodimMultipleGeomTypeMapper<GL,
-                                                    RaviartThomasSimplexLocalFiniteElement<dimDomain,
-                                                                                           typename GL::ctype,
-                                                                                           R>>;
+  using BackendType = typename ChooseLocalFiniteElement<>::type;
+  using BaseFunctionSetType = RaviartThomasBasefunctionSet<BackendType, XT::Grid::extract_entity_t<GL>, R>;
+  using MapperType = FixedOrderMultipleCodimMultipleGeomTypeMapper<GL, BackendType>;
   using RangeFieldType = R;
-  using BackendType = double;
   static const constexpr XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static const constexpr Backends backend_type{Backends::gdt};
   typedef DofCommunicationChooser<GridLayerType, false> DofCommunicationChooserType;
   typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
+
+private:
+  friend class RtSpace<GL, p, R>;
 }; // class RtSpaceTraits
 
 
 } // namespace internal
 
 
-template <class E, class R>
-class RaviartThomasBasefunctionSet : public BaseFunctionSetInterface<internal::RaviartThomasBasefunctionSetTraits<E, R>,
-                                                                     typename E::Geometry::ctype,
-                                                                     E::dimension,
-                                                                     R,
-                                                                     E::dimension,
-                                                                     1>
+template <class FE, class E, class R>
+class RaviartThomasBasefunctionSet
+    : public BaseFunctionSetInterface<internal::RaviartThomasBasefunctionSetTraits<FE, E, R>,
+                                      typename E::Geometry::ctype,
+                                      E::dimension,
+                                      R,
+                                      E::dimension,
+                                      1>
 {
 public:
-  using Traits = internal::RaviartThomasBasefunctionSetTraits<E, R>;
+  using Traits = internal::RaviartThomasBasefunctionSetTraits<FE, E, R>;
 
 private:
   using BaseType = BaseFunctionSetInterface<Traits, typename E::Geometry::ctype, E::dimension, R, E::dimension, 1>;
-  using ThisType = RaviartThomasBasefunctionSet<E, R>;
+  using ThisType = RaviartThomasBasefunctionSet<FE, E, R>;
 
 public:
   using typename BaseType::BackendType;
@@ -219,11 +297,12 @@ private:
   using ThisType = RtSpace<GL, p, R>;
   using D = typename GL::ctype;
   static const constexpr size_t d = BaseType::dimDomain;
-  using FiniteElementType = RaviartThomasSimplexLocalFiniteElement<d, D, R>;
+  using FiniteElementType = typename BaseType::BackendType;
   typedef typename Traits::DofCommunicationChooserType DofCommunicationChooserType;
 
 public:
   using typename BaseType::GridLayerType;
+  using typename BaseType::BackendType;
   using typename BaseType::EntityType;
   using typename BaseType::MapperType;
   using typename BaseType::BaseFunctionSetType;
@@ -235,14 +314,14 @@ public:
     , backend_(0)
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
     , geometry_to_local_DoF_indices_map_(new std::map<GeometryType, std::vector<size_t>>())
-    , switches_(new std::vector<std::vector<R>>(grid_layer_.indexSet().size(0)))
-    , mapper_(nullptr)
+    , entity_indices_(new ZeroOrderScalarDiscontinuousMapper<GL>(grid_layer_)) // <- We need unique indices for codim 0
+    , switches_(new std::vector<std::vector<R>>(entity_indices_->size())) //       entities: this cannot be achieved by
+    , mapper_(nullptr) //                                                     the grid layers index set for mixed grids.
     , communicator_prepared_(false)
   {
-    const auto& index_set = grid_layer_.indexSet();
     // create finite elements
-    for (auto&& geometry_type : index_set.types(0)) {
-      auto finite_element = std::make_shared<FiniteElementType>(geometry_type, p);
+    for (auto&& geometry_type : grid_layer_.indexSet().types(0)) {
+      auto finite_element = Traits::template ChooseLocalFiniteElement<>::create(geometry_type, p);
       finite_elements_->insert(std::make_pair(geometry_type, finite_element));
       // this is only valid for p0 elements
       geometry_to_local_DoF_indices_map_->insert(
@@ -288,11 +367,11 @@ public:
       const auto geometry_type = entity.geometry().type();
       const auto& finite_element = *finite_elements_->at(geometry_type);
       const auto& coeffs = finite_element.localCoefficients();
-      const auto entity_index = index_set.index(entity);
+      const auto entity_index = entity_indices_->mapToGlobal(entity, 0);
       (*switches_)[entity_index] = geometry_to_scaling_factors_map.at(geometry_type);
       auto& local_switches = switches_->at(entity_index);
       for (auto&& intersection : intersections(grid_layer_, entity)) {
-        if (intersection.neighbor() && entity_index < index_set.index(intersection.outside())) {
+        if (intersection.neighbor() && entity_index < entity_indices_->mapToGlobal(intersection.outside(), 0)) {
           const auto intersection_index = XT::Common::numeric_cast<unsigned int>(intersection.indexInInside());
           for (size_t ii = 0; ii < coeffs.size(); ++ii) {
             const auto& local_key = coeffs.localKey(ii);
@@ -318,9 +397,9 @@ public:
     return grid_layer_;
   }
 
-  const double& backend() const
+  const BackendType& backend() const
   {
-    return backend_;
+    return *finite_elements_->begin();
   }
 
   const MapperType& mapper() const
@@ -337,7 +416,7 @@ public:
                  "\n   entity.geometry().type() = "
                      << entity.geometry().type());
     const auto& finite_element = *finite_element_search_result->second;
-    return BaseFunctionSetType(entity, finite_element, (*switches_)[grid_layer_.indexSet().index(entity)]);
+    return BaseFunctionSetType(entity, finite_element, (*switches_)[entity_indices_->mapToGlobal(entity, 0)]);
   }
 
   DofCommunicatorType& dof_communicator() const
@@ -366,6 +445,7 @@ private:
   const double backend_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
   std::shared_ptr<std::map<GeometryType, std::vector<size_t>>> geometry_to_local_DoF_indices_map_;
+  std::shared_ptr<ZeroOrderScalarDiscontinuousMapper<GL>> entity_indices_;
   std::shared_ptr<std::vector<std::vector<R>>> switches_;
   std::shared_ptr<MapperType> mapper_;
   mutable bool communicator_prepared_;
