@@ -33,6 +33,9 @@ namespace GDT {
 template <class GL, class FiniteElementType>
 class FixedOrderMultipleCodimMultipleGeomTypeMapper;
 
+template <class GL>
+class ZeroOrderScalarDiscontinuousMapper;
+
 template <class GL, class FiniteElementType>
 class FixedOrderScalarDiscontinuousMapper;
 
@@ -72,6 +75,27 @@ public:
 private:
   friend class FixedOrderMultipleCodimMultipleGeomTypeMapper<GL, FiniteElementType>;
 }; // class FixedOrderMultipleCodimMultipleGeomTypeMapperTraits
+
+
+template <class GL>
+class ZeroOrderScalarDiscontinuousMapperTraits
+{
+  static_assert(XT::Grid::is_layer<GL>::value, "");
+
+  template <int dim_>
+  struct GeometryTypeLayout
+  {
+    bool contains(const GeometryType& gt) const
+    {
+      return gt.dim() == dim_;
+    }
+  };
+
+public:
+  using derived_type = ZeroOrderScalarDiscontinuousMapper<GL>;
+  using BackendType = MultipleCodimMultipleGeomTypeMapper<GL, GeometryTypeLayout>;
+  using EntityType = XT::Grid::extract_entity_t<GL>;
+};
 
 
 template <class GL, class FiniteElementType>
@@ -240,6 +264,79 @@ private:
   const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
   std::shared_ptr<BackendType> mapper_;
 }; // class FixedOrderMultipleCodimMultipleGeomTypeMapper
+
+
+template <class GL>
+class ZeroOrderScalarDiscontinuousMapper
+    : public MapperInterface<internal::ZeroOrderScalarDiscontinuousMapperTraits<GL>>
+{
+public:
+  using Traits = internal::ZeroOrderScalarDiscontinuousMapperTraits<GL>;
+
+private:
+  using ThisType = ZeroOrderScalarDiscontinuousMapper<GL>;
+  using BaseType = MapperInterface<Traits>;
+  using D = typename GL::ctype;
+  static const constexpr size_t d = GL::dimension;
+
+public:
+  using typename BaseType::EntityType;
+  using typename BaseType::BackendType;
+
+  ZeroOrderScalarDiscontinuousMapper(const GL& grid_layer)
+    : mapper_(new BackendType(grid_layer))
+  {
+  }
+
+  ZeroOrderScalarDiscontinuousMapper(const ThisType&) = default;
+  ZeroOrderScalarDiscontinuousMapper(ThisType&&) = default;
+  ZeroOrderScalarDiscontinuousMapper& operator=(const ThisType&) = delete;
+  ZeroOrderScalarDiscontinuousMapper& operator=(ThisType&&) = delete;
+
+  const BackendType& backend() const
+  {
+    return *mapper_;
+  }
+
+  size_t size() const
+  {
+    return mapper_->size();
+  }
+
+  size_t maxNumDofs() const
+  {
+    return 1;
+  }
+
+  size_t numDofs(const EntityType& /*entity*/) const
+  {
+    return 1;
+  }
+
+  template <int cd, class GridImp, template <int, int, class> class EntityImp>
+  typename std::enable_if<cd != EntityType::codimension, size_t>::type
+  numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& /*entity*/) const
+  {
+    return 0;
+  }
+
+  using BaseType::globalIndices;
+
+  void globalIndices(const EntityType& entity, DynamicVector<size_t>& ret) const
+  {
+    ret[0] = mapper_->subIndex(entity, 0, 0);
+  }
+
+  size_t mapToGlobal(const EntityType& entity, const size_t local_index) const
+  {
+    if (local_index >= 1)
+      DUNE_THROW(Exception, "numDofs(entity) = " << numDofs(entity) << "\n   local_index = " << local_index);
+    return mapper_->subIndex(entity, 0, 0);
+  }
+
+private:
+  const std::shared_ptr<BackendType> mapper_;
+}; // class ZeroOrderScalarDiscontinuousMapper
 
 
 template <class GL, class FiniteElementType>
