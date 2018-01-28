@@ -14,5 +14,6 @@ dune_add_library(swipdg_estimator_expectations
                 SOURCES
                 ao2013-2dalugrid.cxx
                 esv2007-2dalugrid.cxx
+                esv2007-2dyaspgrid.cxx
                 spe10-2dalugrid.cxx)
 
