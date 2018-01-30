@@ -15,7 +15,6 @@
 
 #include "rt/interface.hh"
 #include "rt/default.hh"
-#include "rt/dune-pdelab-wrapper.hh"
 #include <dune/gdt/playground/spaces/block.hh>
 
 namespace Dune {
@@ -45,12 +44,6 @@ private:
   struct SpaceChooser
   {
     static_assert(AlwaysFalse<G>::value, "No space available for this backend!");
-  };
-
-  template <class G, int p, class R, size_t r, size_t rC>
-  struct SpaceChooser<G, p, R, r, rC, GDT::Backends::pdelab>
-  {
-    typedef GDT::DunePdelabRtSpaceWrapper<GridLayerType, p, R, r, rC> Type;
   };
 
   template <class G, int p, class R, size_t r, size_t rC>

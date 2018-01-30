@@ -24,7 +24,7 @@
 #include <dune/gdt/spaces/dg/default.hh>
 #include <dune/gdt/playground/spaces/dg/dune-functions-wrapper.hh>
 #include <dune/gdt/spaces/fv/default.hh>
-#include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
+#include <dune/gdt/spaces/rt/default.hh>
 
 #include <dune/gdt/test/projections/projections.hh>
 #include <dune/gdt/test/projections/l2.hh>
@@ -39,7 +39,7 @@ TEST_F(ProjectionTest_{{Name}}, produces_correct_results)
 {
   {% if 'FvSpace' in SpaceType %}
     const double tolerance = 0.096226;
-  {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
+  {% elif 'RaviartThomasSpace' in SpaceType %}
     const double tolerance = 0.0925927;
   {% else %}
     const auto tolerance = this->default_tolerance;

@@ -43,7 +43,7 @@ namespace Dune {
 namespace GDT {
 namespace RS2017 {
 
-#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL && HAVE_DUNE_PDELAB
+#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
 
 
 template <class G>
@@ -221,7 +221,7 @@ class DiffusiveFluxAbProduct
                              GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
                                                                               XT::Grid::Layers::leaf,
                                                                               GDT::SpaceType::rt,
-                                                                              GDT::Backends::pdelab,
+                                                                              GDT::Backends::gdt,
                                                                               0,
                                                                               double,
                                                                               G::dimension>::type,
@@ -246,7 +246,7 @@ class DiffusiveFluxAbProduct
                                   GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
                                                                                    XT::Grid::Layers::leaf,
                                                                                    GDT::SpaceType::rt,
-                                                                                   GDT::Backends::pdelab,
+                                                                                   GDT::Backends::gdt,
                                                                                    0,
                                                                                    double,
                                                                                    G::dimension>::type,
@@ -394,7 +394,7 @@ class DiffusiveFluxBbProduct
                              GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
                                                                               XT::Grid::Layers::leaf,
                                                                               GDT::SpaceType::rt,
-                                                                              GDT::Backends::pdelab,
+                                                                              GDT::Backends::gdt,
                                                                               0,
                                                                               double,
                                                                               G::dimension>::type,
@@ -412,7 +412,7 @@ class DiffusiveFluxBbProduct
                                   GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
                                                                                    XT::Grid::Layers::leaf,
                                                                                    GDT::SpaceType::rt,
-                                                                                   GDT::Backends::pdelab,
+                                                                                   GDT::Backends::gdt,
                                                                                    0,
                                                                                    double,
                                                                                    G::dimension>::type,
@@ -920,7 +920,7 @@ class HdivSemiProduct
                              GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
                                                                               XT::Grid::Layers::leaf,
                                                                               GDT::SpaceType::rt,
-                                                                              GDT::Backends::pdelab,
+                                                                              GDT::Backends::gdt,
                                                                               0,
                                                                               double,
                                                                               G::dimension>::type,
@@ -938,7 +938,7 @@ class HdivSemiProduct
                                   GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
                                                                                    XT::Grid::Layers::leaf,
                                                                                    GDT::SpaceType::rt,
-                                                                                   GDT::Backends::pdelab,
+                                                                                   GDT::Backends::gdt,
                                                                                    0,
                                                                                    double,
                                                                                    G::dimension>::type,
@@ -1037,7 +1037,7 @@ class ResidualPartFunctional
                                GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
                                                                                 XT::Grid::Layers::leaf,
                                                                                 GDT::SpaceType::rt,
-                                                                                GDT::Backends::pdelab,
+                                                                                GDT::Backends::gdt,
                                                                                 0,
                                                                                 double,
                                                                                 G::dimension>::type,
@@ -1053,7 +1053,7 @@ class ResidualPartFunctional
   static_assert(XT::Grid::is_grid<G>::value, "");
   typedef GDT::RestrictedSpace<
       typename GDT::
-          SpaceProvider<G, XT::Grid::Layers::leaf, GDT::SpaceType::rt, GDT::Backends::pdelab, 0, double, G::dimension>::
+          SpaceProvider<G, XT::Grid::Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, G::dimension>::
               type,
       typename XT::Grid::
           Layer<G, XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>
@@ -1161,7 +1161,7 @@ void bind_neighborhood_reconstruction(pybind11::module& m)
   static const constexpr size_t d = 2;
   typedef double R;
   typedef typename XT::Grid::Layer<G, XT::Grid::Layers::leaf, XT::Grid::Backends::view>::type LeafViewType;
-  typedef GDT::DunePdelabRtSpaceWrapper<LeafViewType, 0, double, d> RtSpaceType;
+  typedef GDT::RaviartThomasSpace<LeafViewType, 0> RtSpaceType;
   typedef typename XT::Grid::Layer<G,
                                    XT::Grid::Layers::dd_subdomain_oversampled,
                                    XT::Grid::Backends::part,
@@ -1238,66 +1238,66 @@ void bind_neighborhood_reconstruction(pybind11::module& m)
 } // ... bind_neighborhood_reconstruction(...)
 
 
-#else // HAVE_DUNE_FEM && HAVE_DUNE_ISTL && HAVE_DUNE_PDELAB
+#else // HAVE_DUNE_FEM && HAVE_DUNE_ISTL
 
 
 template <class G>
 class DiffusiveFluxAaProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
 };
 
 
 template <class G>
 class DiffusiveFluxAbProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
 };
 
 
 template <class G>
 class DiffusiveFluxBbProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
 };
 
 
 template <class G>
 class SwipdgPenaltySubdomainProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
 };
 
 
 template <class G>
 void bind_neighborhood_discretization(pybind11::module& /*m*/)
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
 }
 
 
 template <class G>
 class HdivSemiProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
 };
 
 
 template <class G>
 class ResidualPartFunctional
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
 };
 
 
 template <class G>
 void bind_neighborhood_reconstruction(pybind11::module& /*m*/)
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
 }
 
 
-#endif // HAVE_DUNE_FEM && HAVE_DUNE_ISTL && HAVE_DUNE_PDELAB
+#endif // HAVE_DUNE_FEM && HAVE_DUNE_ISTL
 
 } // namespace RS2017
 } // namespace GDT

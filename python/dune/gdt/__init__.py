@@ -97,5 +97,4 @@ def init_mpi(args=list()):
 
 
 HAVE_DUNE_FEM = np.any(['FemP1Space' in var for var in globals().keys()])
-HAVE_DUNE_PDELAB = np.any(['PdelabP1Space' in var for var in globals().keys()])
 

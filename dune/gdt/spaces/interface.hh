@@ -51,12 +51,11 @@ enum class Backends
 {
   fem,
   functions,
-  gdt,
-  pdelab
+  gdt
 };
 
 static const XT::Common::FixedMap<Backends, std::string, 4> backend_names = {
-    {Backends::fem, "fem"}, {Backends::functions, "functions"}, {Backends::gdt, "gdt"}, {Backends::pdelab, "pdelab"}};
+    {Backends::fem, "fem"}, {Backends::functions, "functions"}, {Backends::gdt, "gdt"}};
 
 // disable GCC warning "type attributes ignored after type is already defined [-Wattributes]"
 #include <dune/xt/common/disable_warnings.hh>
@@ -104,8 +103,6 @@ struct space_type_dependent_typename
 static constexpr Backends default_space_backend =
 #if HAVE_DUNE_FEM
     Backends::fem;
-#elif HAVE_DUNE_PDELAB
-    Backends::pdelab;
 #else
     Backends::gdt;
 #endif
@@ -136,12 +133,6 @@ struct layer_from_backend<Backends::functions>
 
 template <>
 struct layer_from_backend<Backends::gdt>
-{
-  static const XT::Grid::Backends type = XT::Grid::Backends::view;
-};
-
-template <>
-struct layer_from_backend<Backends::pdelab>
 {
   static const XT::Grid::Backends type = XT::Grid::Backends::view;
 };

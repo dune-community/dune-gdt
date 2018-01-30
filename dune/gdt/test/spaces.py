@@ -44,7 +44,7 @@ def FV(cache, base=LeafGrids, rdim=None):
 
 def RT(cache, base=LeafGrids):
     rt = base(cache)
-    rt.spaces = ['Dune::GDT::DunePdelabRtSpaceWrapper<{}, 0, double, {}>'.format(s.format(d), d)
+    rt.spaces = ['Dune::GDT::RaviartThomasSpace<{}, 0>'.format(s.format(d))
                    for s, d in itertools.product(rt.all_views_fmt, rt.world_dim)]
     rt.names = [typeid_to_typedef_name(sp) for sp in rt.spaces]
     return rt

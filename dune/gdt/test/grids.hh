@@ -134,7 +134,7 @@ typedef typename Dune::XT::Grid::Layer<AluCube3dGridType,
 #endif // HAVE_DUNE_ALUGRID
 
 template <class T>
-double pdelab_rt_tolerance()
+double rt_tolerance()
 {
   using Grid = Dune::XT::Grid::extract_grid_t<typename T::GridLayerType>;
   constexpr auto dim = Grid::dimension;
@@ -144,7 +144,7 @@ double pdelab_rt_tolerance()
 }
 
 template <class T>
-double pdelab_cg_tolerance()
+double cg_tolerance()
 {
   using Grid = Dune::XT::Grid::extract_grid_t<typename T::GridLayerType>;
   const auto dim = Grid::dimension;
@@ -153,13 +153,4 @@ double pdelab_cg_tolerance()
   return tolerance;
 }
 
-template <class T>
-double fem_cg_tolerance()
-{
-  using Grid = Dune::XT::Grid::extract_grid_t<typename T::GridLayerType>;
-  const auto dim = Grid::dimension;
-  const auto tolerance =
-      Dune::XT::Grid::is_conforming_alugrid<Grid>::value ? (dim == 3 ? 1.1e-13 : 1e-15) : (dim == 3 ? 2.49e-14 : 1e-15);
-  return tolerance;
-}
 #endif // DUNE_GDT_TEST_GRIDS_HH

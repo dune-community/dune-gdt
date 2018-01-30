@@ -14,7 +14,6 @@
 #include "l2.hh"
 #include <dune/gdt/test/spaces/cg/default.hh>
 #include <dune/gdt/test/spaces/dg/default.hh>
-#include <dune/gdt/test/spaces/fv/default.hh>
 
 using namespace Dune::GDT::Test;
 
@@ -25,19 +24,12 @@ typedef testing::Types<SPACE_DG_FEM_YASPGRID(1, 1, 2), SPACE_DG_FEM_YASPGRID(2, 
     QuadraticSpaces;
 TYPED_TEST_CASE(L2MatrixOperatorTest, QuadraticSpaces);
 
-#elif HAVE_DUNE_PDELAB // HAVE_DUNE_FEM
+#else HAVE_DUNE_FEM
 
-typedef testing::
-    Types<SPACE_CG_PDELAB_YASPGRID(1, 1, 1), SPACE_CG_PDELAB_YASPGRID(2, 1, 1), SPACE_CG_PDELAB_YASPGRID(3, 1, 1)>
-        LinearSpaces;
+typedef testing::Types<SPACE_CG_YASPGRID(1, 1, 1), SPACE_CG_YASPGRID(2, 1, 1), SPACE_CG_YASPGRID(3, 1, 1)> LinearSpaces;
 TYPED_TEST_CASE(L2MatrixOperatorTest, LinearSpaces);
 
-#else // HAVE_DUNE_FEM || HAVE_DUNE_PDELAB
-
-typedef testing::Types<SPACE_FV_YASPGRID(1, 1), SPACE_FV_YASPGRID(2, 1), SPACE_FV_YASPGRID(3, 1)> ConstantSpaces;
-TYPED_TEST_CASE(L2MatrixOperatorTest, ConstantSpaces);
-
-#endif // HAVE_DUNE_FEM || HAVE_DUNE_PDELAB
+#endif // HAVE_DUNE_FEM
 
 
 TYPED_TEST(L2MatrixOperatorTest, constructible_by_ctor)
@@ -58,17 +50,10 @@ TYPED_TEST(L2MatrixOperatorTest, correct_for_constant_arguments)
   this->correct_for_constant_arguments(rel_tol);
 }
 
-#if HAVE_DUNE_FEM || HAVE_DUNE_PDELAB
 TYPED_TEST(L2MatrixOperatorTest, correct_for_linear_arguments)
 {
   this->correct_for_linear_arguments();
 }
-#else
-TEST(DISABLED_L2MatrixOperatorTest, correct_for_linear_arguments)
-{
-  std::cerr << Dune::XT::Common::colorStringRed("Missing dependencies!") << std::endl;
-}
-#endif
 
 #if HAVE_DUNE_FEM
 TYPED_TEST(L2MatrixOperatorTest, correct_for_quadratic_arguments)

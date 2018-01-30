@@ -515,7 +515,7 @@ PYBIND11_PLUGIN(__operators_ESV2007)
                        Layers::dd_subdomain_oversampled>::bind(m);
   ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
   ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::part>::bind(m);
-  // This is not efficient: we reconstruct on the whole leaf instead of only the neighborhood, but the rt pdelab space
+  // This is not efficient: we reconstruct on the whole leaf instead of only the neighborhood, but the rt space
   //                        on a dd_subdomain_oversampled grid view (which is a wrapped part) is broken, if based on
   //                        a 2d simplex alugrid.
   ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::part, Layers::leaf>::bind(m);

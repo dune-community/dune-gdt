@@ -12,7 +12,6 @@
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first
 
 #include "elliptic.hh"
-#include <dune/gdt/test/spaces/fv/default.hh>
 #include <dune/gdt/test/spaces/dg/default.hh>
 #include <dune/gdt/test/spaces/cg/default.hh>
 
@@ -25,19 +24,12 @@ typedef testing::Types<SPACE_DG_FEM_YASPGRID(1, 1, 3), SPACE_DG_FEM_YASPGRID(2, 
     CubicSpaces;
 TYPED_TEST_CASE(EllipticMatrixOperatorTest, CubicSpaces);
 
-#elif HAVE_DUNE_PDELAB // HAVE_DUNE_FEM
+#else // HAVE_DUNE_FEM
 
-typedef testing::
-    Types<SPACE_CG_PDELAB_YASPGRID(1, 1, 1), SPACE_CG_PDELAB_YASPGRID(2, 1, 1), SPACE_CG_PDELAB_YASPGRID(3, 1, 1)>
-        LinearSpaces;
+typedef testing::Types<SPACE_CG_YASPGRID(1, 1, 1), SPACE_CG_YASPGRID(2, 1, 1), SPACE_CG_YASPGRID(3, 1, 1)> LinearSpaces;
 TYPED_TEST_CASE(EllipticMatrixOperatorTest, LinearSpaces);
 
-#else // HAVE_DUNE_FEM || HAVE_DUNE_PDELAB
-
-typedef testing::Types<SPACE_FV_YASPGRID(1, 1), SPACE_FV_YASPGRID(2, 1), SPACE_FV_YASPGRID(3, 1)> ConstantSpaces;
-TYPED_TEST_CASE(EllipticMatrixOperatorTest, ConstantSpaces);
-
-#endif // HAVE_DUNE_FEM || HAVE_DUNE_PDELAB
+#endif // HAVE_DUNE_FEM
 
 
 TYPED_TEST(EllipticMatrixOperatorTest, constructible_by_ctor)
@@ -53,17 +45,10 @@ TYPED_TEST(EllipticMatrixOperatorTest, is_matrix_operator)
   this->is_matrix_operator();
 }
 
-#if HAVE_DUNE_FEM || HAVE_DUNE_PDELAB
 TYPED_TEST(EllipticMatrixOperatorTest, correct_for_constant_arguments)
 {
   this->correct_for_constant_arguments(6.90e-13);
 }
-#else
-TEST(DISABLED_EllipticMatrixOperatorTest, correct_for_constant_arguments)
-{
-  std::cerr << Dune::XT::Common::colorStringRed("Missing dependencies!") << std::endl;
-}
-#endif
 
 #if HAVE_DUNE_FEM
 TYPED_TEST(EllipticMatrixOperatorTest, correct_for_linear_arguments)

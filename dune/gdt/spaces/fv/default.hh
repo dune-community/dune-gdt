@@ -146,7 +146,7 @@ public:
 
   DofCommunicatorType& dof_communicator() const
   {
-    // no need to prepare the communicator, since we are not pdelab based
+    // no need to prepare the communicator
     return *communicator_;
   }
 

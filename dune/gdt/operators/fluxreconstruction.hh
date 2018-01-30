@@ -31,7 +31,6 @@
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>
 #include <dune/gdt/local/operators/lambda.hh>
 #include <dune/gdt/operators/base.hh>
-#include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
 #include <dune/gdt/spaces/rt/default.hh>
 
 namespace Dune {
@@ -275,15 +274,7 @@ public:
   template <class GL, class V>
   void
   apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
-        DiscreteFunction<DunePdelabRtSpaceWrapper<GL, 0, FieldType, dimDomain>, V>& range) const
-  {
-    apply_rt0_simplex(source, range);
-  }
-
-  template <class GL, class V>
-  void
-  apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
-        DiscreteFunction<RtSpace<GL, 0, FieldType>, V>& range) const
+        DiscreteFunction<RaviartThomasSpace<GL, 0, FieldType>, V>& range) const
   {
     apply_rt0_simplex(source, range);
   }
@@ -480,7 +471,7 @@ public:
   template <class GL, class V>
   void
   apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
-        DiscreteFunction<DunePdelabRtSpaceWrapper<GL, 0, FieldType, dimDomain>, V>& range) const
+        DiscreteFunction<RaviartThomasSpace<GL, 0, FieldType>, V>& range) const
   {
     const auto& rtn0_space = range.space();
     auto& range_vector = range.vector();
@@ -496,9 +487,9 @@ public:
     DynamicMatrix<FieldType> tmp_matrix(1, 1, 0);
     DynamicMatrix<FieldType> tmp_matrix_en_en(1, 1, 0);
     DynamicMatrix<FieldType> tmp_matrix_en_ne(1, 1, 0);
-    std::vector<typename DunePdelabRtSpaceWrapper<GL, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType>
-        basis_values(rtn0_space.mapper().maxNumDofs(),
-                     typename DunePdelabRtSpaceWrapper<GL, 0, FieldType, dimDomain>::BaseFunctionSetType::RangeType(0));
+    std::vector<typename RaviartThomasSpace<GL, 0, FieldType>::BaseFunctionSetType::RangeType> basis_values(
+        rtn0_space.mapper().maxNumDofs(),
+        typename RaviartThomasSpace<GL, 0, FieldType>::BaseFunctionSetType::RangeType(0));
     // walk the grid
     const auto entity_it_end = grid_layer_.template end<0>();
     for (auto entity_it = grid_layer_.template begin<0>(); entity_it != entity_it_end; ++entity_it) {

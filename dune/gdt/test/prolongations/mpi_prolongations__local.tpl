@@ -20,7 +20,7 @@
 #include <dune/gdt/spaces/dg/default.hh>
 #include <dune/gdt/playground/spaces/dg/dune-functions-wrapper.hh>
 #include <dune/gdt/spaces/fv/default.hh>
-#include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
+#include <dune/gdt/spaces/rt/default.hh>
 
 
 using namespace Dune::GDT::Test;
@@ -35,10 +35,10 @@ typedef L2LocalProlongationLocalizableOperatorTest<{{SpaceType}}>
 
 {% if 'FvSpace' in SpaceType %}
   const double {{Name}}_tolerance = 1.45e-1;
-{% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
-    const auto {{Name}}_tolerance = pdelab_rt_tolerance<L2LocalProlongationOperatorTest_{{Name}}>();
+{% elif 'RaviartThomasSpace' in SpaceType %}
+    const auto {{Name}}_tolerance = rt_tolerance<L2LocalProlongationOperatorTest_{{Name}}>();
 {% elif 'FemCg' in SpaceType %}
-    const auto {{Name}}_tolerance = fem_cg_tolerance<L2LocalProlongationOperatorTest_{{Name}}>();
+    const auto {{Name}}_tolerance = cg_tolerance<L2LocalProlongationOperatorTest_{{Name}}>();
 {% else %}
   const auto {{Name}}_tolerance = Dune::XT::Grid::is_alugrid<Dune::XT::Grid::extract_grid_t<{{SpaceType}}::GridLayerType>>::value
       ? L2LocalProlongationOperatorTest_{{Name}}::alugrid_tolerance

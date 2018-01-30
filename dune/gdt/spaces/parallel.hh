@@ -18,10 +18,6 @@
 #include <dune/istl/owneroverlapcopy.hh>
 #endif
 
-#if HAVE_DUNE_PDELAB
-#include <dune/pdelab/backend/istl.hh>
-#endif
-
 #include <dune/xt/la/container/istl.hh>
 #include <dune/xt/common/parallel/helper.hh>
 //#include <dune/xt/grid/layers.hh>

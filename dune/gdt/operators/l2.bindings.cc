@@ -93,7 +93,7 @@ PYBIND11_PLUGIN(__operators_l2)
                            typename GDT::SpaceProvider<ALU_2D_SIMPLEX_CONFORMING,
                                                        Layers::leaf,
                                                        GDT::SpaceType::rt,
-                                                       GDT::Backends::pdelab,
+                                                       GDT::Backends::gdt,
                                                        0,
                                                        double,
                                                        2>::type,
@@ -101,8 +101,9 @@ PYBIND11_PLUGIN(__operators_l2)
                                                     Layers::dd_subdomain,
                                                     XT::Grid::Backends::part,
                                                     XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>::type>,
-                       XT::LA::IstlRowMajorSparseMatrix<double>>::
-          bind(m, "RtPdelabAlu2dSimplexLeafRestrictedSubdomainPartSpace", "istl_row_major_sparse_matrix_double");
+                       XT::LA::IstlRowMajorSparseMatrix<double>>::bind(m,
+                                                                       "RtAlu2dSimplexLeafRestrictedSubdomainPartSpace",
+                                                                       "istl_row_major_sparse_matrix_double");
 #endif // HAVE_DUNE_FEM
 #endif // HAVE_DUNE_ALUGRID
 

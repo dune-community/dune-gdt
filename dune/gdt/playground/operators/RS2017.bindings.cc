@@ -9,7 +9,7 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_DUNE_PYBINDXI
+#if HAVE_DUNE_ALUGRID && HAVE_DUNE_PYBINDXI
 
 #include <dune/common/parallel/mpihelper.hh>
 
@@ -245,4 +245,4 @@ PYBIND11_PLUGIN(__operators_RS2017)
   return m.ptr();
 }
 
-#endif // HAVE_DUNE_FEM && HAVE_DEUN_PDELAB && HAVE_DUNE_PYBINDXI
+#endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_PYBINDXI

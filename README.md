@@ -17,9 +17,8 @@ discretization toolbox for grid-based numerical methods. It contains building bl
 local operators, local evaluations, local assemblers - for discretization methods as well as
 generic interfaces for objects like discrete function spaces and basefunction sets.
 Implementations are provided using the main DUNE discretization modules, like
-[dune-fem](https://www.dune-project.org/modules/dune-fem/),
-[dune-functions](https://www.dune-project.org/modules/dune-functions/) and
-[dune-pdelab](https://gitlab.dune-project.org/pdelab/dune-pdelab).
+[dune-fem](https://www.dune-project.org/modules/dune-fem/) and
+[dune-functions](https://www.dune-project.org/modules/dune-functions/).
 
 New users may best try out this module by using the git supermodule
 [dune-gdt-super](https://github.com/dune-community/dune-gdt-super). Experienced DUNE users

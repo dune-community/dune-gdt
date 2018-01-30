@@ -65,15 +65,6 @@ struct backend_name<Backends::gdt>
   }
 };
 
-template <>
-struct backend_name<Backends::pdelab>
-{
-  static std::string value()
-  {
-    return "pdelab";
-  }
-};
-
 
 template <SpaceType tp>
 struct space_type_name

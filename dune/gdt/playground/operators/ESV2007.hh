@@ -27,7 +27,7 @@
 #include <dune/gdt/operators/fluxreconstruction.hh>
 #include <dune/gdt/operators/oswaldinterpolation.hh>
 #include <dune/gdt/spaces/dg/default.hh>
-#include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
+#include <dune/gdt/spaces/rt/default.hh>
 
 namespace Dune {
 namespace GDT {
@@ -143,7 +143,6 @@ class NonconformityProduct
 
 
 #endif // HAVE_DUNE_FEM
-#if HAVE_DUNE_PDELAB
 
 namespace internal {
 
@@ -169,7 +168,7 @@ public:
   typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
 
 private:
-  typedef DunePdelabRtSpaceWrapper<ReconstructionGridLayer, 0, R, d> RtSpaceType;
+  typedef RaviartThomasSpace<ReconstructionGridLayer, 0, R> RtSpaceType;
   typedef DiscreteFunction<RtSpaceType> FluxReconstructionType;
   typedef XT::Functions::DivergenceFunction<FluxReconstructionType> DivergenceOfFluxReconstructionType;
   typedef typename ScalarFunctionType::DifferenceType DifferenceType;
@@ -325,7 +324,7 @@ public:
   typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
 
 private:
-  typedef DunePdelabRtSpaceWrapper<ReconstructionGridLayer, 0, R, d> RtSpaceType;
+  typedef RaviartThomasSpace<ReconstructionGridLayer, 0, R> RtSpaceType;
   typedef DiscreteFunction<RtSpaceType> FluxReconstructionType;
   typedef LocalizableProductBase<ProductGridLayer, XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>> BaseType;
   typedef LocalVolumeIntegralOperator<LocalLambdaBinaryVolumeIntegrand<E>,
@@ -391,25 +390,6 @@ private:
   const LocalProductType local_product_;
 }; // class DiffusiveFluxProduct
 
-
-#else // HAVE_DUNE_PDELAB
-
-
-template <class ProductGridLayer, class ReconstructionGridLayer>
-class ResidualProduct
-{
-  static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing dune-pdelab!");
-};
-
-
-template <class ProductGridLayer, class ReconstructionGridLayer>
-class DiffusiveFluxProduct
-{
-  static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing dune-pdelab!");
-};
-
-
-#endif // HAVE_DUNE_PDELAB
 
 } // namespace ESV2007
 } // namespace GDT

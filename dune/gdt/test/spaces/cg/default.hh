@@ -20,13 +20,10 @@
 #define SPACE_CG_DEFAULT_YASPGRID(dd, rr, pp)                                                                          \
   Dune::GDT::ContinuousLagrangeSpace<Yasp##dd##dLeafGridViewType, pp, double>
 
-#define SPACES_CG_PDELAB(pp)                                                                                           \
-  SPACE_CG_DEFAULT_YASPGRID(1, 1, pp), SPACE_CG_DEFAULT_YASPGRID(2, 1, pp), SPACE_CG_DEFAULT_YASPGRID(3, 1, pp)
-
 #define SPACE_CG_DEFAULT_YASPGRID_LEVEL(dd, rr, pp)                                                                    \
   Dune::GDT::ContinuousLagrangeSpace<Yasp##dd##dLevelGridViewType, pp, double>
 
-#define SPACES_CG_PDELAB_LEVEL(pp)                                                                                     \
+#define SPACES_CG_LEVEL(pp)                                                                                            \
   SPACE_CG_DEFAULT_YASPGRID_LEVEL(1, 1, pp)                                                                            \
   , SPACE_CG_DEFAULT_YASPGRID_LEVEL(2, 1, pp), SPACE_CG_DEFAULT_YASPGRID_LEVEL(3, 1, pp)
 
@@ -40,7 +37,7 @@
 #define SPACE_CG_DEFAULT_ALUCUBEGRID(dd, rr, pp)                                                                       \
   Dune::GDT::ContinuousLagrangeSpace<AluCube##dd##dLeafGridViewType, pp, double>
 
-#define SPACES_CG_PDELAB_ALUGRID(pp)                                                                                   \
+#define SPACES_CG_ALUGRID(pp)                                                                                          \
   SPACE_CG_DEFAULT_ALUCONFORMGRID(2, 1, pp)                                                                            \
   , SPACE_CG_DEFAULT_ALUCONFORMGRID(3, 1, pp), SPACE_CG_DEFAULT_ALUCUBEGRID(2, 1, pp),                                 \
       SPACE_CG_DEFAULT_ALUCUBEGRID(3, 1, pp)
@@ -49,7 +46,7 @@
 #define SPACE_CG_DEFAULT_ALUCUBEGRID_LEVEL(dd, rr, pp)                                                                 \
   Dune::GDT::ContinuousLagrangeSpace<AluCube##dd##dLevelGridViewType, pp, double>
 
-#define SPACES_CG_PDELAB_ALUGRID_LEVEL(pp)                                                                             \
+#define SPACES_CG_ALUGRID_LEVEL(pp)                                                                                    \
   SPACE_CG_DEFAULT_ALUCUBEGRID_LEVEL(2, 1, pp)                                                                         \
   , SPACE_CG_DEFAULT_ALUCUBEGRID_LEVEL(3, 1, pp)
 

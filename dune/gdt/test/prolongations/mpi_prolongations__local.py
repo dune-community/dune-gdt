@@ -17,7 +17,7 @@ rt = sp.RT(cache, base=LevelGrids)
 spaces = []
 names = []
 for sp, nm in zip(dg.spaces + fv.spaces + rt.spaces, dg.names + fv.names + rt.names):
-    if not ('Rt' in sp and 'Pdelab' in sp and 'Alu' in sp and 'LevelGridView' in sp):
+    if not ('RaviartThomasSpace' in sp and 'Alu' in sp and 'LevelGridView' in sp):
         spaces.append(sp)
         names.append(nm)
 spaces_with_names = zip(spaces, names)
