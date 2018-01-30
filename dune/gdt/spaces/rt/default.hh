@@ -48,7 +48,7 @@ template <class FE, class E, class R = double>
 class RaviartThomasBasefunctionSet;
 
 template <class GL, int p, class R = double>
-class RtSpace;
+class RaviartThomasSpace;
 
 
 namespace internal {
@@ -68,7 +68,7 @@ public:
 
 
 template <class GL, int p, class R>
-class RtSpaceTraits
+class RaviartThomasSpaceTraits
 {
   static_assert(XT::Grid::is_layer<GL>::value, "");
   static_assert(p == 0, "Not implemented yet!");
@@ -94,7 +94,7 @@ private:
     {
       // This requires virtual interfaces for the local finite elements.
       static_assert(AlwaysFalse<some_type_we_need_for_the_always_false>::value,
-                    "RtSpace is only available for purely simplicial or purely cubic grids atm!");
+                    "RaviartThomasSpace is only available for purely simplicial or purely cubic grids atm!");
     };
 
     template <class some_type_we_need_for_the_always_false>
@@ -152,7 +152,7 @@ private:
   };
 
 public:
-  using derived_type = RtSpace<GL, p, R>;
+  using derived_type = RaviartThomasSpace<GL, p, R>;
   static const constexpr bool continuous = false;
   using GridLayerType = GL;
   using BackendType = typename ChooseLocalFiniteElement<>::type;
@@ -165,8 +165,8 @@ public:
   typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
 
 private:
-  friend class RtSpace<GL, p, R>;
-}; // class RtSpaceTraits
+  friend class RaviartThomasSpace<GL, p, R>;
+}; // class RaviartThomasSpaceTraits
 
 
 } // namespace internal
@@ -287,14 +287,15 @@ private:
 
 
 template <class GL, int p, class R>
-class RtSpace : public RtSpaceInterface<internal::RtSpaceTraits<GL, p, R>, GL::dimension, GL::dimension>
+class RaviartThomasSpace
+    : public RtSpaceInterface<internal::RaviartThomasSpaceTraits<GL, p, R>, GL::dimension, GL::dimension>
 {
 public:
-  using Traits = internal::RtSpaceTraits<GL, p, R>;
+  using Traits = internal::RaviartThomasSpaceTraits<GL, p, R>;
 
 private:
   using BaseType = RtSpaceInterface<Traits, GL::dimension, GL::dimension>;
-  using ThisType = RtSpace<GL, p, R>;
+  using ThisType = RaviartThomasSpace<GL, p, R>;
   using D = typename GL::ctype;
   static const constexpr size_t d = BaseType::dimDomain;
   using FiniteElementType = typename BaseType::BackendType;
@@ -308,7 +309,7 @@ public:
   using typename BaseType::BaseFunctionSetType;
   typedef typename Traits::DofCommunicatorType DofCommunicatorType;
 
-  RtSpace(GridLayerType grd_lr)
+  RaviartThomasSpace(GridLayerType grd_lr)
     : grid_layer_(grd_lr)
     , communicator_(DofCommunicationChooserType::create(grid_layer_))
     , backend_(0)
@@ -384,10 +385,10 @@ public:
     }
     // create mapper
     mapper_ = std::make_shared<MapperType>(grid_layer_, finite_elements_);
-  } // RtSpace(...)
+  } // RaviartThomasSpace(...)
 
-  RtSpace(const ThisType&) = default;
-  RtSpace(ThisType&&) = default;
+  RaviartThomasSpace(const ThisType&) = default;
+  RaviartThomasSpace(ThisType&&) = default;
 
   ThisType& operator=(const ThisType&) = delete;
   ThisType& operator=(ThisType&&) = delete;
@@ -449,7 +450,7 @@ private:
   std::shared_ptr<std::vector<std::vector<R>>> switches_;
   std::shared_ptr<MapperType> mapper_;
   mutable bool communicator_prepared_;
-}; // class RtSpace
+}; // class RaviartThomasSpace
 
 
 } // namespace GDT

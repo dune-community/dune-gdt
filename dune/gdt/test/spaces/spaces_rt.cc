@@ -30,7 +30,7 @@ template <class GridLayerType, int p>
 struct RtSpace : public ::testing::Test
 {
   static_assert(p == 0, "The space cannot handle higher orders (yet)!");
-  using SpaceType = Dune::GDT::RtSpace<GridLayerType, p>;
+  using SpaceType = Dune::GDT::RaviartThomasSpace<GridLayerType, p>;
   using D = typename SpaceType::DomainFieldType;
   static const constexpr size_t d = SpaceType::dimDomain;
 

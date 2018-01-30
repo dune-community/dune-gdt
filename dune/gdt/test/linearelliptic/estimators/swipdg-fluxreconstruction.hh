@@ -204,7 +204,7 @@ class LocalResidualESV2007 : public XT::Grid::Functor::Codim0Return<GridLayerTyp
       ThisType;
   typedef typename ForceType::RangeFieldType RangeFieldType;
   typedef ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
-  typedef RtSpace<GridLayerType, 0, RangeFieldType> RTN0SpaceType;
+  typedef RaviartThomasSpace<GridLayerType, 0, RangeFieldType> RTN0SpaceType;
   typedef DiscreteFunction<RTN0SpaceType, VectorType> DiffusiveFluxType;
   typedef XT::Functions::DivergenceFunction<DiffusiveFluxType> DivergenceType;
   typedef typename DivergenceType::DifferenceType DifferenceType;
@@ -338,7 +338,7 @@ class LocalDiffusiveFluxESV2007
   typedef XT::Grid::Functor::Codim0Return<GridLayerType, typename SpaceType::RangeFieldType> BaseType;
   typedef typename SpaceType::RangeFieldType RangeFieldType;
   typedef ConstDiscreteFunction<SpaceType, VectorType> ConstDiscreteFunctionType;
-  typedef RtSpace<GridLayerType, 0> RTN0SpaceType;
+  typedef RaviartThomasSpace<GridLayerType, 0> RTN0SpaceType;
   typedef DiscreteFunction<RTN0SpaceType, VectorType> RTN0DiscreteFunctionType;
 
 public:
