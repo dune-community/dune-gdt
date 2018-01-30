@@ -22,8 +22,8 @@
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/operators/laplace.hh>
 #include <dune/gdt/operators/l2.hh>
-#include <dune/gdt/spaces/cg/default.hh>
-#include <dune/gdt/spaces/fv/default.hh>
+#include <dune/gdt/spaces/cg.hh>
+#include <dune/gdt/spaces/fv.hh>
 #include <dune/gdt/spaces/rt/default.hh>
 
 namespace Dune {

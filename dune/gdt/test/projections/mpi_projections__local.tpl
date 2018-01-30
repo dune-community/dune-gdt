@@ -15,9 +15,9 @@
 #include <dune/gdt/test/grids.hh>
 #include <dune/gdt/test/projections/l2-local.hh>
 #include <dune/gdt/test/projections/l2.hh>
-#include <dune/gdt/spaces/cg/default.hh>
-#include <dune/gdt/spaces/dg/default.hh>
-#include <dune/gdt/spaces/fv/default.hh>
+#include <dune/gdt/spaces/cg.hh>
+#include <dune/gdt/spaces/dg.hh>
+#include <dune/gdt/spaces/fv.hh>
 #include <dune/gdt/spaces/rt/default.hh>
 
 

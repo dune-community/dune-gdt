@@ -11,7 +11,7 @@
 
 #include <dune/xt/common/test/main.hxx> // <- This one has to come first (includes the config.h)!
 
-#include <dune/gdt/test/spaces/cg/default.hh>
+#include <dune/gdt/test/spaces/cg.hh>
 #include <dune/gdt/test/spaces/rt.hh>
 
 #include "darcy.hh"

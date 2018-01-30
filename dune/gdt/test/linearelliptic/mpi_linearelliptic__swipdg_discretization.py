@@ -31,16 +31,10 @@ except KeyError:
     casenames.append('Spe10Model1TestCase')
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 
-space_backends = ['gdt']
-
-if len(space_backends) == 0:
-    # prevent unusable iteration in template
-    permutations = []
+if 'mpi' in __file__:
+    la = ('istl_sparse',)
 else:
-    if 'mpi' in __file__:
-        la = ('istl_sparse',)
-    else:
-        la = la_backends(cache)
-    permutations = itertools.product(testcases, space_backends, la)
+    la = la_backends(cache)
+permutations = itertools.product(testcases, ('gdt',), la)
 
 permutations = [(t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]

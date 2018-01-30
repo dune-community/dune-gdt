@@ -12,7 +12,7 @@
 
 #include <dune/gdt/test/projections/lagrange.hh>
 #include <dune/gdt/test/projections/l2-global.hh>
-#include <dune/gdt/test/spaces/cg/default.hh>
+#include <dune/gdt/test/spaces/cg.hh>
 
 using namespace Dune::GDT::Test;
 

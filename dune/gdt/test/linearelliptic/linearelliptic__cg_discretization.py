@@ -23,11 +23,5 @@ except KeyError:
 casenames = ['AO2013TestCase', 'ER2007TestCase', 'ESV2007TestCase', 'MixedBoundaryTestCase', 'Spe10Model1TestCase']
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 
-space_backends = ['gdt',]
-
-if len(space_backends) == 0:
-    # prevent unusable iteration in template
-    permutations = []
-else:
-    permutations = itertools.product(testcases, space_backends, la_backends(cache))
-    permutations = [(t,s,l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]
+permutations = itertools.product(testcases, ('gdt',), la_backends(cache))
+permutations = [(t,s,l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]

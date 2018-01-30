@@ -11,7 +11,7 @@
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first
 
 #include "laplace.hh"
-#include <dune/gdt/test/spaces/fv/default.hh>
+#include <dune/gdt/test/spaces/fv.hh>
 
 using namespace Dune::GDT::Test;
 

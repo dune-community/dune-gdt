@@ -16,11 +16,5 @@ grids = ['Yasp2Grid']
 casenames = ['ESV2007DdSubdomainsTestCase',]
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 
-space_backends = ['gdt']
-
-if len(space_backends) == 0 or len(la_backends(cache)) == 0:
-    # prevent unusable iteration in template
-    permutations = []
-else:
-    permutations = itertools.product(testcases, space_backends, ('istl_sparse', ))
-    permutations = [(t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]
+permutations = itertools.product(testcases, ('gdt',), ('istl_sparse', ))
+permutations = [(t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]

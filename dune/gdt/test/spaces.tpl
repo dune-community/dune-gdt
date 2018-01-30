@@ -12,17 +12,12 @@
 
 #include <dune/xt/grid/type_traits.hh>
 
-#include <dune/gdt/test/grids.hh>
-#include <dune/gdt/spaces/cg/default.hh>
-
-#include <dune/gdt/spaces/dg/default.hh>
-#include <dune/gdt/spaces/fv/default.hh>
+#include <dune/gdt/spaces/cg.hh>
+#include <dune/gdt/spaces/dg.hh>
+#include <dune/gdt/spaces/fv.hh>
 #include <dune/gdt/spaces/rt/default.hh>
 
-#include <dune/gdt/test/spaces/cg.hh>
-#include <dune/gdt/test/spaces/dg.hh>
-#include <dune/gdt/test/spaces/fv.hh>
-#include <dune/gdt/test/spaces/rt.hh>
+#include <dune/gdt/test/grids.hh>
 
 // clang-format off
 {% for SpaceType,Name in config.spaces_with_names %}
