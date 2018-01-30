@@ -5,7 +5,7 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2017 - 2018)
+//   Felix Schindler (2018)
 
 #define DUNE_XT_COMMON_TEST_MAIN_ENABLE_TIMED_LOGGING 1
 #define DUNE_XT_COMMON_TEST_MAIN_ENABLE_INFO_LOGGING 1
