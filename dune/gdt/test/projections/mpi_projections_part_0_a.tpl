@@ -22,7 +22,6 @@
 #include <dune/gdt/spaces/cg/default.hh>
 
 #include <dune/gdt/spaces/dg/default.hh>
-#include <dune/gdt/playground/spaces/dg/dune-functions-wrapper.hh>
 #include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/spaces/rt/default.hh>
 

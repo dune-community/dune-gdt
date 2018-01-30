@@ -18,10 +18,10 @@
 #include <dune/xt/grid/layers.hh>
 #include <dune/xt/grid/gridprovider/provider.hh>
 
+#include <dune/gdt/playground/spaces/block.hh>
+
 #include "interface.hh"
 #include "dg/default.hh"
-#include "../playground/spaces/dg/dune-functions-wrapper.hh"
-#include <dune/gdt/playground/spaces/block.hh>
 
 
 namespace Dune {
@@ -62,13 +62,6 @@ private:
     static_assert(r == 1, "");
     typedef GDT::DiscontinuousLagrangeSpace<GridLayerType, p, R> Type;
   };
-
-  template <class G, int p, class R, size_t r, size_t rC>
-  struct SpaceChooser<G, p, R, r, rC, GDT::Backends::functions>
-  {
-    typedef GDT::DuneFunctionsDgSpaceWrapper<GridLayerType, p, R, r, rC> Type;
-  };
-
 
 public:
   typedef typename SpaceChooser<GridType, polOrder, RangeFieldType, dimRange, dimRangeCols, backend_type>::Type Type;

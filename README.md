@@ -14,10 +14,8 @@
 
 dune-gdt is a [DUNE](http://www.dune-project.org/) module which provides a generic
 discretization toolbox for grid-based numerical methods. It contains building blocks - like
-local operators, local evaluations, local assemblers - for discretization methods as well as
-generic interfaces for objects like discrete function spaces and basefunction sets.
-Implementations are provided using the main DUNE discretization modules, like
-[dune-functions](https://www.dune-project.org/modules/dune-functions/).
+local operators, local evaluations, local assemblers - for discretization methods and suitable
+discrete function spaces.
 
 New users may best try out this module by using the git supermodule
 [dune-gdt-super](https://github.com/dune-community/dune-gdt-super). Experienced DUNE users

@@ -49,12 +49,10 @@ namespace GDT {
 
 enum class Backends
 {
-  functions,
   gdt
 };
 
-static const XT::Common::FixedMap<Backends, std::string, 4> backend_names = {{Backends::functions, "functions"},
-                                                                             {Backends::gdt, "gdt"}};
+static const XT::Common::FixedMap<Backends, std::string, 4> backend_names = {{Backends::gdt, "gdt"}};
 
 // disable GCC warning "type attributes ignored after type is already defined [-Wattributes]"
 #include <dune/xt/common/disable_warnings.hh>
@@ -112,12 +110,6 @@ enum class ChoosePattern
 
 template <Backends type>
 struct layer_from_backend;
-
-template <>
-struct layer_from_backend<Backends::functions>
-{
-  static const XT::Grid::Backends type = XT::Grid::Backends::view;
-};
 
 template <>
 struct layer_from_backend<Backends::gdt>

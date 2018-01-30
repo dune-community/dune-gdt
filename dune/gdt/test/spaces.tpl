@@ -19,8 +19,6 @@
 #include <dune/gdt/spaces/fv/default.hh>
 #include <dune/gdt/spaces/rt/default.hh>
 
-#include <dune/gdt/playground/spaces/dg/dune-functions-wrapper.hh>
-
 #include <dune/gdt/test/spaces/cg.hh>
 #include <dune/gdt/test/spaces/dg.hh>
 #include <dune/gdt/test/spaces/fv.hh>
