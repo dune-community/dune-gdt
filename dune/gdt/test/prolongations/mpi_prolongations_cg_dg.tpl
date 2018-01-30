@@ -39,7 +39,7 @@ typedef L2ProlongationLocalizableOperatorTest<{{SpaceType}}>
   const double {{Name}}_tolerance = 1.45e-1;
 {% elif 'RaviartThomasSpace' in SpaceType %}
     const auto {{Name}}_tolerance = rt_tolerance<L2ProlongationOperatorTest_{{Name}}>();
-{% elif 'FemCg' in SpaceType %}
+{% elif 'ContinuousLagrangeSpace' in SpaceType %}
     const auto {{Name}}_tolerance = cg_tolerance<L2ProlongationOperatorTest_{{Name}}>();
 {% else %}
   const auto {{Name}}_tolerance = Dune::XT::Grid::is_alugrid<Dune::XT::Grid::extract_grid_t<typename {{SpaceType}}::GridLayerType>>::value ? L2ProlongationOperatorTest_{{Name}}::alugrid_tolerance : L2ProlongationOperatorTest_{{Name}}::default_tolerance;

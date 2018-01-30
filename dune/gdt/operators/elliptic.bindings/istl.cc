@@ -11,14 +11,10 @@
 
 #if HAVE_DUNE_PYBINDXI
 
-#include <dune/gdt/functionals/elliptic-ipdg.bindings.hh>
+#include <dune/gdt/operators/elliptic.bindings.hh>
 
 
-#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
-DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(template, leaf, part, dg, fem, 1, istl_sparse);
-DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(template, level, part, dg, fem, 1, istl_sparse);
-DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(template, dd_subdomain, part, dg, fem, 1, istl_sparse);
-#endif
+DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_ISTL(template);
 
 
 #endif // HAVE_DUNE_PYBINDXI

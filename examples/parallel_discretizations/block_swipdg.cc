@@ -280,20 +280,20 @@ int main(int argc, char** argv)
 
       switch (DXTC_CONFIG_GET("global.problem", 0)) {
         case 0:
-          single_run<GDT::Backends::fem,
+          single_run<GDT::Backends::gdt,
                      GDT::LinearElliptic::ER2007TestCase<GridType>,
                      GDT::LinearElliptic::ER2007DdSubdomainsTestCase<GridType>>();
           break;
         case 1:
-          single_run<GDT::Backends::fem,
+          single_run<GDT::Backends::gdt,
                      GDT::LinearElliptic::ESV2007TestCase<GridType>,
                      GDT::LinearElliptic::ESV2007DdSubdomainsTestCase<GridType>>();
           break;
         case 2:
-          single_run<GDT::Backends::fem,
+          single_run<GDT::Backends::gdt,
                      GDT::LinearElliptic::ER2007TestCase<GridType>,
                      GDT::LinearElliptic::ER2007DdSubdomainsTestCase<GridType>>();
-          single_run<GDT::Backends::fem,
+          single_run<GDT::Backends::gdt,
                      GDT::LinearElliptic::ESV2007TestCase<GridType>,
                      GDT::LinearElliptic::ESV2007DdSubdomainsTestCase<GridType>>();
           break;

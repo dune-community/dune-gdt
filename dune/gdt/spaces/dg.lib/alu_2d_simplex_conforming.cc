@@ -7,14 +7,14 @@
 // Authors:
 //   Felix Schindler (2017)
 
-#include "config.h"
+#include <config.h>
 
-#if HAVE_DUNE_PYBINDXI
+#if HAVE_DUNE_ALUGRID
 
-#include <dune/gdt/operators/elliptic.bindings.hh>
-
-
-DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_FEM_ISTL(template);
+#include "../dg.lib.hh"
 
 
-#endif // HAVE_DUNE_PYBINDXI
+DUNE_GDT_SPACES_DG_LIB(template, ALU_2D_SIMPLEX_CONFORMING);
+
+
+#endif // HAVE_DUNE_ALUGRID

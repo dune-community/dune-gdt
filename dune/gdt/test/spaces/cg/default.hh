@@ -17,38 +17,34 @@
 #include <dune/gdt/spaces/cg/default.hh>
 
 
-#define SPACE_CG_DEFAULT_YASPGRID(dd, rr, pp)                                                                          \
-  Dune::GDT::ContinuousLagrangeSpace<Yasp##dd##dLeafGridViewType, pp, double>
+#define SPACE_CG_YASPGRID(dd, rr, pp) Dune::GDT::ContinuousLagrangeSpace<Yasp##dd##dLeafGridViewType, pp, double>
 
-#define SPACE_CG_DEFAULT_YASPGRID_LEVEL(dd, rr, pp)                                                                    \
-  Dune::GDT::ContinuousLagrangeSpace<Yasp##dd##dLevelGridViewType, pp, double>
+#define SPACE_CG_YASPGRID_LEVEL(dd, rr, pp) Dune::GDT::ContinuousLagrangeSpace<Yasp##dd##dLevelGridViewType, pp, double>
 
 #define SPACES_CG_LEVEL(pp)                                                                                            \
-  SPACE_CG_DEFAULT_YASPGRID_LEVEL(1, 1, pp)                                                                            \
-  , SPACE_CG_DEFAULT_YASPGRID_LEVEL(2, 1, pp), SPACE_CG_DEFAULT_YASPGRID_LEVEL(3, 1, pp)
+  SPACE_CG_YASPGRID_LEVEL(1, 1, pp)                                                                                    \
+  , SPACE_CG_YASPGRID_LEVEL(2, 1, pp), SPACE_CG_YASPGRID_LEVEL(3, 1, pp)
 
 
 #if HAVE_DUNE_ALUGRID
 
 
-#define SPACE_CG_DEFAULT_ALUCONFORMGRID(dd, rr, pp)                                                                    \
+#define SPACE_CG_ALUCONFORMGRID(dd, rr, pp)                                                                            \
   Dune::GDT::ContinuousLagrangeSpace<AluConform##dd##dLeafGridViewType, pp, double>
 
-#define SPACE_CG_DEFAULT_ALUCUBEGRID(dd, rr, pp)                                                                       \
-  Dune::GDT::ContinuousLagrangeSpace<AluCube##dd##dLeafGridViewType, pp, double>
+#define SPACE_CG_ALUCUBEGRID(dd, rr, pp) Dune::GDT::ContinuousLagrangeSpace<AluCube##dd##dLeafGridViewType, pp, double>
 
 #define SPACES_CG_ALUGRID(pp)                                                                                          \
-  SPACE_CG_DEFAULT_ALUCONFORMGRID(2, 1, pp)                                                                            \
-  , SPACE_CG_DEFAULT_ALUCONFORMGRID(3, 1, pp), SPACE_CG_DEFAULT_ALUCUBEGRID(2, 1, pp),                                 \
-      SPACE_CG_DEFAULT_ALUCUBEGRID(3, 1, pp)
+  SPACE_CG_ALUCONFORMGRID(2, 1, pp)                                                                                    \
+  , SPACE_CG_ALUCONFORMGRID(3, 1, pp), SPACE_CG_ALUCUBEGRID(2, 1, pp), SPACE_CG_ALUCUBEGRID(3, 1, pp)
 
 
-#define SPACE_CG_DEFAULT_ALUCUBEGRID_LEVEL(dd, rr, pp)                                                                 \
+#define SPACE_CG_ALUCUBEGRID_LEVEL(dd, rr, pp)                                                                         \
   Dune::GDT::ContinuousLagrangeSpace<AluCube##dd##dLevelGridViewType, pp, double>
 
 #define SPACES_CG_ALUGRID_LEVEL(pp)                                                                                    \
-  SPACE_CG_DEFAULT_ALUCUBEGRID_LEVEL(2, 1, pp)                                                                         \
-  , SPACE_CG_DEFAULT_ALUCUBEGRID_LEVEL(3, 1, pp)
+  SPACE_CG_ALUCUBEGRID_LEVEL(2, 1, pp)                                                                                 \
+  , SPACE_CG_ALUCUBEGRID_LEVEL(3, 1, pp)
 
 
 #endif // HAVE_DUNE_ALUGRID

@@ -41,18 +41,18 @@ PYBIND11_PLUGIN(__operators_elliptic_ipdg)
   py::module::import("dune.gdt.__spaces");
   py::module::import("dune.gdt.__discretefunction");
 
-// alu_fem_istl.cc
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_ISTL
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, leaf, part, dg, fem, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, level, part, dg, fem, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, dd_subdomain, part, dg, fem, 1, istl_sparse);
+// alu_istl.cc
+#if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, leaf, part, dg, gdt, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, level, part, dg, gdt, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, dd_subdomain, part, dg, gdt, 1, istl_sparse);
 #endif
 
-// yasp_fem_istl.cc
-#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, leaf, part, dg, fem, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, level, part, dg, fem, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, dd_subdomain, part, dg, fem, 1, istl_sparse);
+// yasp_istl.cc
+#if HAVE_DUNE_ISTL
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, leaf, part, dg, gdt, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, level, part, dg, gdt, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, dd_subdomain, part, dg, gdt, 1, istl_sparse);
 #endif
 
   m.def("_init_mpi",

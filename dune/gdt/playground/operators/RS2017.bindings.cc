@@ -160,7 +160,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
                                       typename GDT::SpaceProvider<ALU_2D_SIMPLEX_CONFORMING,
                                                                   Layers::dd_subdomain,
                                                                   GDT::SpaceType::dg,
-                                                                  GDT::Backends::fem,
+                                                                  GDT::Backends::gdt,
                                                                   1,
                                                                   double,
                                                                   1>::type,

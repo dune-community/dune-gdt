@@ -48,25 +48,5 @@ TEST_F(TestType_{{Name}}, check_for_correct_copy)
   this->check_for_correct_copy();
 }
 
-{% if 'CgSpaceWrapper' in SpaceType %}
-  typedef P1Q1_CG_Space<{{SpaceType}}> P1Q1_CG_Space_{{Name}};
-  TEST_F(P1Q1_CG_Space_{{Name}}, fulfills_cg_interface)
-  {
-    this->fulfills_continuous_interface();
-  }
-  TEST_F(P1Q1_CG_Space_{{Name}}, maps_correctly)
-  {
-    this->maps_correctly();
-  }
-{% endif %}
-
-{% if 'DgSpaceWrapper' in SpaceType %}
-  typedef P1Q1_DG_Space<{{SpaceType}}> P1Q1_DG_Space_{{Name}};
-  TEST_F(P1Q1_DG_Space_{{Name}}, fulfills_dg_interface)
-  {
-    this->maps_correctly();
-  }
-{% endif %}
-
 {% endfor %}
 // clang-format on

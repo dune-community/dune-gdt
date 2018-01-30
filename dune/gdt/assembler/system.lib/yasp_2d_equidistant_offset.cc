@@ -9,12 +9,7 @@
 
 #include <config.h>
 
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM
-
 #include "../system.lib.hh"
 
 
-DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(template, ALU_2D_SIMPLEX_CONFORMING, cg, fem, 1, 1, 1);
-
-
-#endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM
+DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(template, YASP_2D_EQUIDISTANT_OFFSET, cg, gdt, 1, 1, 1);

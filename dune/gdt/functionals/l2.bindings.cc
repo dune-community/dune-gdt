@@ -40,24 +40,14 @@ PYBIND11_PLUGIN(__functionals_l2)
   py::module::import("dune.xt.la");
   py::module::import("dune.gdt.__spaces");
 
-// alu_fem_istl.cc
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_ISTL
-  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, leaf, part, dg, fem, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, level, part, dg, fem, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, dd_subdomain, part, dg, fem, 1, istl_sparse);
-#endif
+// alu_istl.cc
 #if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
   DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, leaf, view, cg, gdt, 1, istl_sparse);
   DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, level, view, cg, gdt, 1, istl_sparse);
 //  DUNE_GDT_FUNCTIONALS_L2_BIND_ALU(m, dd_subdomain, view, cg, gdt, 1, istl_sparse);
 #endif
 
-// yasp_fem_istl.cc
-#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, leaf, part, dg, fem, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, level, part, dg, fem, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, dd_subdomain, part, dg, fem, 1, istl_sparse);
-#endif
+// yasp_istl.cc
 #if HAVE_DUNE_ISTL
   DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, leaf, view, cg, gdt, 1, istl_sparse);
   DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, level, view, cg, gdt, 1, istl_sparse);

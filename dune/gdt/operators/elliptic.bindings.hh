@@ -301,32 +301,22 @@ public:
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_YASP(_prefix, _layer, _g_backend, _s_type, _s_backend, _p, _la)
 
 
-#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_DEFAULT(_prefix, _la)                                                    \
+#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB(_prefix, _la)                                                            \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, leaf, part, cg, gdt, 1, _la);                                   \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, level, part, cg, gdt, 1, _la);                                  \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, dd_subdomain, part, cg, gdt, 1, _la);                           \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, leaf, part, dg, fem, 1, _la);                                   \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, level, part, dg, fem, 1, _la);                                  \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, dd_subdomain, part, dg, fem, 1, _la)
-#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_FEM_COMMON(_prefix)
-//_DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_DEFAULT(_prefix, common_dense)
-//#if HAVE_EIGEN
-//#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_FEM_EIGEN(_prefix)                                                               \
-//  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_DEFAULT(_prefix, eigen_dense);                                                            \
-//  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_DEFAULT(_prefix, eigen_sparse)
-//#else
-#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_FEM_EIGEN(_prefix)
-//#endif
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, leaf, view, dg, gdt, 1, _la);                                   \
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, level, view, dg, gdt, 1, _la);                                  \
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, dd_subdomain, view, dg, gdt, 1, _la)
+
 #if HAVE_DUNE_ISTL
-#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_FEM_ISTL(_prefix)                                                         \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_DEFAULT(_prefix, istl_sparse)
+#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_ISTL(_prefix) _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB(_prefix, istl_sparse)
 #else
-#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_FEM_ISTL(_prefix)
+#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_ISTL(_prefix)
 #endif
 
-
-// fem_istl.cc
-DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_FEM_ISTL(extern template);
+// istl.cc
+DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_ISTL(extern template);
 
 // end: this is what we need for the lib
 
@@ -459,32 +449,26 @@ DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_FEM_ISTL(extern template);
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_UG(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la);                          \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_YASP(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
 
-#if HAVE_DUNE_FEM
-#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM(_m, _la)                                                                 \
+#define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND(_m, _la)                                                                     \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, leaf, view, cg, gdt, 1, _la);                                            \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, level, view, cg, gdt, 1, _la);                                           \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, leaf, part, dg, fem, 1, _la);                                            \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, level, part, dg, fem, 1, _la);                                           \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, dd_subdomain, part, dg, fem, 1, _la)
-//_DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, dd_subdomain, view, cg, gdt, 1, _la);
-#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM_COMMON(_m)
-//_DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM(_m, common_dense)
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, leaf, view, dg, gdt, 1, _la);                                            \
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, level, view, dg, gdt, 1, _la);                                           \
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, dd_subdomain, view, cg, gdt, 1, _la);                                    \
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, dd_subdomain, view, dg, gdt, 1, _la)
+#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_COMMON(_m)
+//_DUNE_GDT_OPERATORS_ELLIPTIC_BIND(_m, common_dense)
 //#if HAVE_EIGEN
-//#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM_EIGEN(_m)                                                               \
-//  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM(_m, eigen_dense);                                                            \
-//  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM(_m, eigen_sparse)
+//#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_EIGEN(_m)                                                               \
+//  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND(_m, eigen_dense);                                                            \
+//  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND(_m, eigen_sparse)
 //#else
-#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM_EIGEN(_m)
+#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_EIGEN(_m)
 //#endif
 #if HAVE_DUNE_ISTL
-#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM_ISTL(_m) _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM(_m, istl_sparse)
+#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_ISTL(_m) _DUNE_GDT_OPERATORS_ELLIPTIC_BIND(_m, istl_sparse)
 #else
-#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM_ISTL(_m)
-#endif
-#else
-#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM_COMMON(_m)
-#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM_EIGEN(_m)
-#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM_ISTL(_m)
+#define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_ISTL(_m)
 #endif
 
 // end: this is what we need for the .so

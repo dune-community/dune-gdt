@@ -16,42 +16,38 @@
 #include <dune/gdt/test/grids.hh>
 
 
-#define SPACE_DG_FEM_YASPGRID(dd, rr, pp) Dune::GDT::DiscontinuousLagrangeSpace<Yasp##dd##dLeafGridViewType, pp, double>
+#define SPACE_DG_YASPGRID(dd, rr, pp) Dune::GDT::DiscontinuousLagrangeSpace<Yasp##dd##dLeafGridViewType, pp, double>
 
-#define SPACES_DG_FEM(pp)                                                                                              \
-  SPACE_DG_FEM_YASPGRID(1, 1, pp), SPACE_DG_FEM_YASPGRID(2, 1, pp), SPACE_DG_FEM_YASPGRID(3, 1, pp)
-
-#define SPACE_DG_FEM_YASPGRID_LEVEL(dd, rr, pp)                                                                        \
+#define SPACE_DG_YASPGRID_LEVEL(dd, rr, pp)                                                                            \
   Dune::GDT::DiscontinuousLagrangeSpace<Yasp##dd##dLevelGridViewType, pp, double>
 
-#define SPACES_DG_FEM_LEVEL(pp)                                                                                        \
-  SPACE_DG_FEM_YASPGRID_LEVEL(1, 1, pp), SPACE_DG_FEM_YASPGRID_LEVEL(2, 1, pp), SPACE_DG_FEM_YASPGRID_LEVEL(3, 1, pp)
+#define SPACES_DG_LEVEL(pp)                                                                                            \
+  SPACE_DG_YASPGRID_LEVEL(1, 1, pp), SPACE_DG_YASPGRID_LEVEL(2, 1, pp), SPACE_DG_YASPGRID_LEVEL(3, 1, pp)
 
 
 #if HAVE_DUNE_ALUGRID
 
 
-#define SPACE_DG_FEM_ALUCONFORMGRID(dd, rr, pp)                                                                        \
+#define SPACE_DG_ALUCONFORMGRID(dd, rr, pp)                                                                            \
   Dune::GDT::DiscontinuousLagrangeSpace<AluConform##dd##dLeafGridViewType, pp, double>
 
-#define SPACE_DG_FEM_ALUCUBEGRID(dd, rr, pp)                                                                           \
+#define SPACE_DG_ALUCUBEGRID(dd, rr, pp)                                                                               \
   Dune::GDT::DiscontinuousLagrangeSpace<AluCube##dd##dLeafGridViewType, pp, double>
 
-#define SPACES_DG_FEM_ALUGRID(pp)                                                                                      \
-  SPACE_DG_FEM_ALUCONFORMGRID(2, 1, pp)                                                                                \
-  , SPACE_DG_FEM_ALUCONFORMGRID(3, 1, pp), SPACE_DG_FEM_ALUCUBEGRID(2, 1, pp), SPACE_DG_FEM_ALUCUBEGRID(3, 1, pp)
+#define SPACES_DG_ALUGRID(pp)                                                                                          \
+  SPACE_DG_ALUCONFORMGRID(2, 1, pp)                                                                                    \
+  , SPACE_DG_ALUCONFORMGRID(3, 1, pp), SPACE_DG_ALUCUBEGRID(2, 1, pp), SPACE_DG_ALUCUBEGRID(3, 1, pp)
 
 
-#define SPACE_DG_FEM_ALUCONFORMGRID_LEVEL(dd, rr, pp)                                                                  \
+#define SPACE_DG_ALUCONFORMGRID_LEVEL(dd, rr, pp)                                                                      \
   Dune::GDT::DiscontinuousLagrangeSpace<AluConform##dd##dLevelGridViewType, pp, double>
 
-#define SPACE_DG_FEM_ALUCUBEGRID_LEVEL(dd, rr, pp)                                                                     \
+#define SPACE_DG_ALUCUBEGRID_LEVEL(dd, rr, pp)                                                                         \
   Dune::GDT::DiscontinuousLagrangeSpace<AluCube##dd##dLevelGridViewType, pp, double>
 
-#define SPACES_DG_FEM_ALUGRID_LEVEL(pp)                                                                                \
-  SPACE_DG_FEM_ALUCONFORMGRID_LEVEL(2, 1, pp)                                                                          \
-  , SPACE_DG_FEM_ALUCONFORMGRID_LEVEL(3, 1, pp), SPACE_DG_FEM_ALUCUBEGRID_LEVEL(2, 1, pp),                             \
-      SPACE_DG_FEM_ALUCUBEGRID_LEVEL(3, 1, pp)
+#define SPACES_DG_ALUGRID_LEVEL(pp)                                                                                    \
+  SPACE_DG_ALUCONFORMGRID_LEVEL(2, 1, pp)                                                                              \
+  , SPACE_DG_ALUCONFORMGRID_LEVEL(3, 1, pp), SPACE_DG_ALUCUBEGRID_LEVEL(2, 1, pp), SPACE_DG_ALUCUBEGRID_LEVEL(3, 1, pp)
 
 
 #endif // HAVE_DUNE_ALUGRID

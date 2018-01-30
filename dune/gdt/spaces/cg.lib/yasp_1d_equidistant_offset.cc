@@ -7,23 +7,9 @@
 // Authors:
 //   Felix Schindler (2017)
 
-#include "config.h"
+#include <config.h>
 
-#if HAVE_DUNE_PYBINDXI && HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM
-
-#include "../system.bindings.hh"
+#include "../cg.lib.hh"
 
 
-namespace Dune {
-namespace GDT {
-namespace bindings {
-
-
-DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_FEM(template);
-
-
-} // namespace bindings
-} // namespace GDT
-} // namespace Dune
-
-#endif // HAVE_DUNE_PYBINDXI && HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM
+DUNE_GDT_SPACES_CG_LIB(template, YASP_1D_EQUIDISTANT_OFFSET);

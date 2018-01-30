@@ -48,15 +48,6 @@ struct backend_name
 };
 
 template <>
-struct backend_name<Backends::fem>
-{
-  static std::string value()
-  {
-    return "fem";
-  }
-};
-
-template <>
 struct backend_name<Backends::gdt>
 {
   static std::string value()

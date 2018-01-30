@@ -50,12 +50,8 @@ PYBIND11_PLUGIN(__operators_weighted_l2)
 #if HAVE_DUNE_ALUGRID
   Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
   Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::level, Backends::view>::bind(m);
-#if HAVE_DUNE_FEM
-  Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::part>::bind(m);
-  Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::level, Backends::part>::bind(m);
-  Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::part>::
+  Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view>::
       bind(m);
-#endif // HAVE_DUNE_FEM
 #endif // HAVE_DUNE_ALUGRID
 
   m.def("_init_mpi",

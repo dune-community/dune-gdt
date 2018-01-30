@@ -9,7 +9,7 @@
 
 #ifndef DUNE_GDT_SPACES_DG_BINDINGS_HH
 #define DUNE_GDT_SPACES_DG_BINDINGS_HH
-//#if HAVE_DUNE_PYBINDXI
+#if HAVE_DUNE_PYBINDXI
 
 #include <dune/xt/grid/grids.bindings.hh>
 
@@ -19,70 +19,63 @@
 
 // begin: this is what we need for the .so
 
-// * fem
-#if HAVE_DUNE_FEM
-#define _DUNE_GDT_SPACES_DG_BIND_FEM(_m, _GRID, _layer, _r, _rC)                                                       \
+#define _DUNE_GDT_SPACES_DG_BIND(_m, _GRID, _layer, _r, _rC)                                                           \
   Dune::GDT::bindings::SpaceInterface<Dune::GDT::DgSpaceProvider<_GRID,                                                \
                                                                  Dune::XT::Grid::Layers::_layer,                       \
-                                                                 Dune::GDT::Backends::fem,                             \
+                                                                 Dune::GDT::Backends::gdt,                             \
                                                                  1,                                                    \
                                                                  double,                                               \
                                                                  _r,                                                   \
                                                                  _rC>>::bind(_m)
 
 //#if HAVE_ALBERTA
-//#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, _layer)                                                       \
-//  _DUNE_GDT_SPACES_DG_BIND_FEM(_m, ALBERTA_2D, _layer, 1, 1)
-//#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA(_m)                                                                     \
-//  _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, dd_subdomain);                                                      \
-//  _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, leaf);                                                              \
-//  _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA_LAYER(_m, level)
+//#define _DUNE_GDT_SPACES_DG_BIND_ALBERTA_LAYER(_m, _layer)                                                       \
+//  _DUNE_GDT_SPACES_DG_BIND(_m, ALBERTA_2D, _layer, 1, 1)
+//#define _DUNE_GDT_SPACES_DG_BIND_ALBERTA(_m)                                                                     \
+//  _DUNE_GDT_SPACES_DG_BIND_ALBERTA_LAYER(_m, dd_subdomain);                                                      \
+//  _DUNE_GDT_SPACES_DG_BIND_ALBERTA_LAYER(_m, leaf);                                                              \
+//  _DUNE_GDT_SPACES_DG_BIND_ALBERTA_LAYER(_m, level)
 //#else
-#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA(_m)
+#define _DUNE_GDT_SPACES_DG_BIND_ALBERTA(_m)
 //#endif
 
 #if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALU_LAYER(_m, _layer)                                                             \
-  _DUNE_GDT_SPACES_DG_BIND_FEM(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, 1, 1)
-#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALU(_m)                                                                           \
-  _DUNE_GDT_SPACES_DG_BIND_FEM_ALU_LAYER(_m, dd_subdomain);                                                            \
-  _DUNE_GDT_SPACES_DG_BIND_FEM_ALU_LAYER(_m, leaf);                                                                    \
-  _DUNE_GDT_SPACES_DG_BIND_FEM_ALU_LAYER(_m, level)
+#define _DUNE_GDT_SPACES_DG_BIND_ALU_LAYER(_m, _layer)                                                                 \
+  _DUNE_GDT_SPACES_DG_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, _layer, 1, 1)
+#define _DUNE_GDT_SPACES_DG_BIND_ALU(_m)                                                                               \
+  _DUNE_GDT_SPACES_DG_BIND_ALU_LAYER(_m, dd_subdomain);                                                                \
+  _DUNE_GDT_SPACES_DG_BIND_ALU_LAYER(_m, leaf);                                                                        \
+  _DUNE_GDT_SPACES_DG_BIND_ALU_LAYER(_m, level)
 #else
-#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALU(_m)
+#define _DUNE_GDT_SPACES_DG_BIND_ALU(_m)
 #endif
 
 //#if HAVE_DUNE_UGGRID || HAVE_UG // <- does not work
-//#define _DUNE_GDT_SPACES_DG_BIND_FEM_UG_LAYER(_m, _layer) _DUNE_GDT_SPACES_DG_BIND_FEM(_m, UG_2D, _layer, 1, 1)
-//#define _DUNE_GDT_SPACES_DG_BIND_FEM_UG(_m)
-//  _DUNE_GDT_SPACES_DG_BIND_FEM_UG_LAYER(_m, dd_subdomain);
-//  _DUNE_GDT_SPACES_DG_BIND_FEM_UG_LAYER(_m, leaf);
-//  _DUNE_GDT_SPACES_DG_BIND_FEM_UG_LAYER(_m, level)
+//#define _DUNE_GDT_SPACES_DG_BIND_UG_LAYER(_m, _layer) _DUNE_GDT_SPACES_DG_BIND(_m, UG_2D, _layer, 1, 1)
+//#define _DUNE_GDT_SPACES_DG_BIND_UG(_m)
+//  _DUNE_GDT_SPACES_DG_BIND_UG_LAYER(_m, dd_subdomain);
+//  _DUNE_GDT_SPACES_DG_BIND_UG_LAYER(_m, leaf);
+//  _DUNE_GDT_SPACES_DG_BIND_UG_LAYER(_m, level)
 //#else
-//#define _DUNE_GDT_SPACES_DG_BIND_FEM_UG(_m)
+//#define _DUNE_GDT_SPACES_DG_BIND_UG(_m)
 //#endif
 
-#define _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, _layer)                                                            \
-  _DUNE_GDT_SPACES_DG_BIND_FEM(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, 1, 1);                                          \
-  _DUNE_GDT_SPACES_DG_BIND_FEM(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1)
-#define _DUNE_GDT_SPACES_DG_BIND_FEM_YASP(_m)                                                                          \
-  _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, dd_subdomain);                                                           \
-  _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, leaf);                                                                   \
-  _DUNE_GDT_SPACES_DG_BIND_FEM_YASP_LAYER(_m, level)
+#define _DUNE_GDT_SPACES_DG_BIND_YASP_LAYER(_m, _layer)                                                                \
+  _DUNE_GDT_SPACES_DG_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _layer, 1, 1);                                              \
+  _DUNE_GDT_SPACES_DG_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1)
+#define _DUNE_GDT_SPACES_DG_BIND_YASP(_m)                                                                              \
+  _DUNE_GDT_SPACES_DG_BIND_YASP_LAYER(_m, dd_subdomain);                                                               \
+  _DUNE_GDT_SPACES_DG_BIND_YASP_LAYER(_m, leaf);                                                                       \
+  _DUNE_GDT_SPACES_DG_BIND_YASP_LAYER(_m, level)
 
-#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALL(_m)                                                                           \
-  _DUNE_GDT_SPACES_DG_BIND_FEM_ALBERTA(_m);                                                                            \
-  _DUNE_GDT_SPACES_DG_BIND_FEM_ALU(_m);                                                                                \
-  _DUNE_GDT_SPACES_DG_BIND_FEM_YASP(_m)
-//_DUNE_GDT_SPACES_DG_BIND_FEM_UG(_m); // <- does not work
-#else // HAVE_DUNE_FEM
-#define _DUNE_GDT_SPACES_DG_BIND_FEM_ALL(_m)
-#endif
-
-#define DUNE_GDT_SPACES_DG_BIND(_m) _DUNE_GDT_SPACES_DG_BIND_FEM_ALL(_m)
+#define DUNE_GDT_SPACES_DG_BIND(_m)                                                                                    \
+  _DUNE_GDT_SPACES_DG_BIND_ALBERTA(_m);                                                                                \
+  _DUNE_GDT_SPACES_DG_BIND_ALU(_m);                                                                                    \
+  _DUNE_GDT_SPACES_DG_BIND_YASP(_m)
+//_DUNE_GDT_SPACES_DG_BIND_UG(_m); // <- does not work
 
 // end: this is what we need for the .so
 
 
-//#endif // HAVE_DUNE_PYBINDXI
+#endif // HAVE_DUNE_PYBINDXI
 #endif // DUNE_GDT_SPACES_DG_BINDINGS_HH

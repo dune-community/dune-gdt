@@ -440,13 +440,7 @@ public:
   _DUNE_GDT_SPACES_BLOCK_BIND_YASP(_m, _s_type, _s_backend, _p)
 
 
-#if HAVE_DUNE_FEM
-#define _DUNE_GDT_SPACES_BLOCK_BIND_FEM(_m) _DUNE_GDT_SPACES_BLOCK_BIND_ALL_GRIDS(_m, dg, fem, 1)
-#else
-#define _DUNE_GDT_SPACES_BLOCK_BIND_FEM(_m)
-#endif
-
-#define DUNE_GDT_SPACES_BLOCK_BIND(_m) _DUNE_GDT_SPACES_BLOCK_BIND_FEM(_m)
+#define DUNE_GDT_SPACES_BLOCK_BIND(_m) _DUNE_GDT_SPACES_BLOCK_BIND_ALL_GRIDS(_m, dg, gdt, 1)
 
 // end: this is what we need for the .so
 

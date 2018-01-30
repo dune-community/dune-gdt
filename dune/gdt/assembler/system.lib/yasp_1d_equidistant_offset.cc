@@ -9,12 +9,7 @@
 
 #include <config.h>
 
-#if HAVE_DUNE_FEM
-
 #include "../system.lib.hh"
 
 
-DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(template, YASP_3D_EQUIDISTANT_OFFSET, cg, fem, 1, 1, 1);
-
-
-#endif // HAVE_DUNE_FEM
+DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(template, YASP_1D_EQUIDISTANT_OFFSET, cg, gdt, 1, 1, 1);

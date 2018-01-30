@@ -25,7 +25,6 @@
 
 
 // everything related to dd subdomain
-#if HAVE_DUNE_FEM
 #define _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_APPEND_DD_SUBDOMAIN(                                                                                                           \
     _pre, _G, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC, _la)                                                                             \
   typedef typename Dune::GDT::SpaceProvider<_G,                                                                                                                       \
@@ -188,10 +187,6 @@
                                                                        Dune::XT::Grid::DD::SubdomainGrid<_G>>::type>;  \
   _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_APPEND_DD_SUBDOMAIN_ISTL(                                                             \
       _pre, _G, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)
-#else
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(                                                                   \
-    _pre, _G, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)
-#endif
 
 // everything not related to dd subdomain
 #define _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_APPEND(                                                                                                                      \
@@ -361,25 +356,23 @@
 #define DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(_pre, _G, _s_type, _s_backend, _p, _r, _rC)                         \
   DUNE_GDT_ASSEMBLER_SYSTEM_LIB(_pre, _G, _s_type, _s_backend, _p, _r, _rC);                                           \
   _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(                                                                         \
-      _pre, _G, adaptive_leaf, part, _s_type, _s_backend, adaptive_leaf, _p, _r, _rC);                                 \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(_pre, _G, leaf, part, _s_type, _s_backend, leaf, _p, _r, _rC);           \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(_pre, _G, level, part, _s_type, _s_backend, level, _p, _r, _rC);         \
+      _pre, _G, adaptive_leaf, view, _s_type, _s_backend, adaptive_leaf, _p, _r, _rC);                                 \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(_pre, _G, leaf, view, _s_type, _s_backend, leaf, _p, _r, _rC);           \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(_pre, _G, level, view, _s_type, _s_backend, level, _p, _r, _rC);         \
   _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(                                                                         \
-      _pre, _G, dd_subdomain, part, _s_type, _s_backend, dd_subdomain, _p, _r, _rC);                                   \
+      _pre, _G, dd_subdomain, view, _s_type, _s_backend, dd_subdomain, _p, _r, _rC);                                   \
   _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(                                                                         \
-      _pre, _G, dd_subdomain_boundary, part, _s_type, _s_backend, dd_subdomain, _p, _r, _rC);                          \
+      _pre, _G, dd_subdomain_boundary, view, _s_type, _s_backend, dd_subdomain, _p, _r, _rC);                          \
   _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(                                                                         \
-      _pre, _G, dd_subdomain_coupling, part, _s_type, _s_backend, dd_subdomain, _p, _r, _rC)
+      _pre, _G, dd_subdomain_coupling, view, _s_type, _s_backend, dd_subdomain, _p, _r, _rC)
 
 
-#if HAVE_DUNE_FEM
 #if HAVE_DUNE_ALUGRID
-DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(extern template, ALU_2D_SIMPLEX_CONFORMING, cg, fem, 1, 1, 1);
+DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(extern template, ALU_2D_SIMPLEX_CONFORMING, cg, gdt, 1, 1, 1);
 #endif
-DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(extern template, YASP_1D_EQUIDISTANT_OFFSET, cg, fem, 1, 1, 1);
-DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(extern template, YASP_2D_EQUIDISTANT_OFFSET, cg, fem, 1, 1, 1);
-DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(extern template, YASP_3D_EQUIDISTANT_OFFSET, cg, fem, 1, 1, 1);
-#endif
+DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(extern template, YASP_1D_EQUIDISTANT_OFFSET, cg, gdt, 1, 1, 1);
+DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(extern template, YASP_2D_EQUIDISTANT_OFFSET, cg, gdt, 1, 1, 1);
+DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(extern template, YASP_3D_EQUIDISTANT_OFFSET, cg, gdt, 1, 1, 1);
 
 
 #endif // DUNE_XT_WITH_PYTHON_BINDINGS

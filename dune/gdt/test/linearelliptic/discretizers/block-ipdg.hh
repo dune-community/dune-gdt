@@ -39,7 +39,7 @@ namespace LinearElliptic {
  * \todo add pattern() to StationaryContainerBasedDefaultDiscretization, avoid computation of local_pattern below
  */
 template <class GridType,
-          Backends spacebackend = Backends::fem, // we only have local grid parts atm
+          Backends spacebackend = Backends::gdt, // we only have local grid parts atm
           XT::LA::Backends la = XT::LA::default_sparse_backend,
           int pol = 1,
           class RangeFieldType = double,

@@ -33,7 +33,7 @@ namespace Test {
 
 /**
  * \note This test assumes that DiscreteFunction, Operators::L2Projection, Products::L2, Products::H1Semi,
- *       DuneFemCgSpaceWrapper, RaviartThomasSpace and FvSpace work correctly.
+ *       ContinuousLagrangeSpace, RaviartThomasSpace and FvSpace work correctly.
  * \todo This test is rather old and could be refactored in terms of the other operator tests.
  * \todo Missing ctor and make_darcy_operator tests.
  */

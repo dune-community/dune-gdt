@@ -9,12 +9,12 @@
 
 #include <config.h>
 
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM
+#if HAVE_DUNE_ALUGRID
 
-#include "../dg.lib.hh"
-
-
-DUNE_GDT_SPACES_DG_FEM_LIB(template, ALU_2D_SIMPLEX_CONFORMING);
+#include "../cg.lib.hh"
 
 
-#endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM
+DUNE_GDT_SPACES_CG_LIB(template, ALU_2D_SIMPLEX_CONFORMING);
+
+
+#endif // HAVE_DUNE_ALUGRID

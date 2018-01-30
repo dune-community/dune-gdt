@@ -43,7 +43,7 @@ namespace Dune {
 namespace GDT {
 namespace RS2017 {
 
-#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
+#if HAVE_DUNE_ISTL
 
 
 template <class G>
@@ -52,7 +52,7 @@ class DiffusiveFluxAaProduct
                                      typename GDT::SpaceProvider<G,
                                                                  XT::Grid::Layers::dd_subdomain,
                                                                  GDT::SpaceType::dg,
-                                                                 GDT::Backends::fem,
+                                                                 GDT::Backends::gdt,
                                                                  1,
                                                                  double,
                                                                  1>::type,
@@ -63,7 +63,7 @@ class DiffusiveFluxAaProduct
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
   typedef typename GDT::
-      SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::fem, 1, double, 1>
+      SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1>
           SP;
   typedef GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
                                   typename SP::type,
@@ -210,7 +210,7 @@ class DiffusiveFluxAbProduct
                              typename GDT::SpaceProvider<G,
                                                          XT::Grid::Layers::dd_subdomain,
                                                          GDT::SpaceType::dg,
-                                                         GDT::Backends::fem,
+                                                         GDT::Backends::gdt,
                                                          1,
                                                          double,
                                                          1>::type,
@@ -235,7 +235,7 @@ class DiffusiveFluxAbProduct
                                   typename GDT::SpaceProvider<G,
                                                               XT::Grid::Layers::dd_subdomain,
                                                               GDT::SpaceType::dg,
-                                                              GDT::Backends::fem,
+                                                              GDT::Backends::gdt,
                                                               1,
                                                               double,
                                                               1>::type,
@@ -546,7 +546,7 @@ class SwipdgPenaltySubdomainProduct
                                      typename GDT::SpaceProvider<G,
                                                                  XT::Grid::Layers::dd_subdomain,
                                                                  GDT::SpaceType::dg,
-                                                                 GDT::Backends::fem,
+                                                                 GDT::Backends::gdt,
                                                                  1,
                                                                  double,
                                                                  1>::type,
@@ -556,7 +556,7 @@ class SwipdgPenaltySubdomainProduct
                                                               XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
-  typedef GDT::SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::fem, 1, double, 1>
+  typedef GDT::SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1>
       SP;
   typedef GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
                                   typename SP::type,
@@ -794,7 +794,7 @@ void bind_neighborhood_discretization(pybind11::module& m)
                                    XT::Grid::Backends::part,
                                    XT::Grid::DD::SubdomainGrid<G>>::type NGL;
   typedef GDT::
-      SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::block_dg, GDT::Backends::fem, 1, double, 1>
+      SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::block_dg, GDT::Backends::gdt, 1, double, 1>
           SP;
   typedef typename SP::type S;
   typedef XT::LA::IstlDenseVector<R> V;
@@ -1238,66 +1238,66 @@ void bind_neighborhood_reconstruction(pybind11::module& m)
 } // ... bind_neighborhood_reconstruction(...)
 
 
-#else // HAVE_DUNE_FEM && HAVE_DUNE_ISTL
+#else // HAVE_DUNE_ISTL
 
 
 template <class G>
 class DiffusiveFluxAaProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 };
 
 
 template <class G>
 class DiffusiveFluxAbProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 };
 
 
 template <class G>
 class DiffusiveFluxBbProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 };
 
 
 template <class G>
 class SwipdgPenaltySubdomainProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 };
 
 
 template <class G>
 void bind_neighborhood_discretization(pybind11::module& /*m*/)
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 }
 
 
 template <class G>
 class HdivSemiProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 };
 
 
 template <class G>
 class ResidualPartFunctional
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 };
 
 
 template <class G>
 void bind_neighborhood_reconstruction(pybind11::module& /*m*/)
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 }
 
 
-#endif // HAVE_DUNE_FEM && HAVE_DUNE_ISTL
+#endif // HAVE_DUNE_ISTL
 
 } // namespace RS2017
 } // namespace GDT

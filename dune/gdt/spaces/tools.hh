@@ -19,11 +19,6 @@
 
 #include "interface.hh"
 
-#if HAVE_DUNE_FEM
-#include <dune/fem/gridpart/levelgridpart.hh>
-#include <dune/fem/gridpart/leafgridpart.hh>
-#endif
-
 #include <dune/xt/grid/type_traits.hh>
 
 namespace Dune {
@@ -55,40 +50,6 @@ struct DUNE_DEPRECATED_MSG("Do not use this any more, all information is in the 
     return Type(grid.levelGridView(level));
   }
 }; // struct LevelGridPartView< ..., true >
-
-
-#if HAVE_DUNE_FEM
-
-
-template <class GridType>
-struct DUNE_DEPRECATED_MSG("Do not use this any more, all information is in the space (04.04.2017)!")
-    LeafGridPartView<GridType, false>
-{
-  typedef Dune::Fem::LeafGridPart<GridType> Type;
-
-  static Type create(GridType& grid)
-  {
-    return Type(grid);
-  }
-}; // struct LeafGridPartView< ..., false >
-
-
-template <class GridType>
-struct DUNE_DEPRECATED_MSG("Do not use this any more, all information is in the space (04.04.2017)!")
-    LevelGridPartView<GridType, false>
-{
-  typedef Dune::Fem::LevelGridPart<GridType> Type;
-
-  static Type create(GridType& grid, const int level)
-  {
-    assert(level >= 0);
-    assert(level <= grid.maxLevel());
-    return Type(grid, level);
-  }
-}; // struct LevelGridPartView< ..., false >
-
-
-#endif // HAVE_DUNE_FEM
 
 
 template <class SpaceType>

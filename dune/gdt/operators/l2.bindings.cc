@@ -66,25 +66,24 @@ PYBIND11_PLUGIN(__operators_l2)
 
 #if HAVE_DUNE_ALUGRID
   bind_l2_localizable_product<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, XT::Grid::Backends::part>(m);
-#if HAVE_DUNE_FEM
   Dune::GDT::bindings::L2MatrixOperator<ALU_2D_SIMPLEX_CONFORMING,
                                         Layers::dd_subdomain,
                                         SpaceType::dg,
-                                        GDT::Backends::fem,
+                                        GDT::Backends::gdt,
                                         1,
                                         1,
                                         LA::Backends::istl_sparse>::bind(m);
   Dune::GDT::bindings::L2MatrixOperator<ALU_2D_SIMPLEX_CONFORMING,
                                         Layers::leaf,
                                         SpaceType::dg,
-                                        GDT::Backends::fem,
+                                        GDT::Backends::gdt,
                                         1,
                                         1,
                                         LA::Backends::istl_sparse>::bind(m);
   Dune::GDT::bindings::L2MatrixOperator<ALU_2D_SIMPLEX_CONFORMING,
                                         Layers::level,
                                         SpaceType::dg,
-                                        GDT::Backends::fem,
+                                        GDT::Backends::gdt,
                                         1,
                                         1,
                                         LA::Backends::istl_sparse>::bind(m);
@@ -104,7 +103,6 @@ PYBIND11_PLUGIN(__operators_l2)
                        XT::LA::IstlRowMajorSparseMatrix<double>>::bind(m,
                                                                        "RtAlu2dSimplexLeafRestrictedSubdomainPartSpace",
                                                                        "istl_row_major_sparse_matrix_double");
-#endif // HAVE_DUNE_FEM
 #endif // HAVE_DUNE_ALUGRID
 
   m.def("_init_mpi",

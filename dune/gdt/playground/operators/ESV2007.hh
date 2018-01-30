@@ -33,8 +33,6 @@ namespace Dune {
 namespace GDT {
 namespace ESV2007 {
 
-#if HAVE_DUNE_FEM
-
 
 template <class ProductGridLayer, class InterpolationGridLayerType>
 class NonconformityProduct
@@ -64,7 +62,7 @@ private:
   typedef LocalVolumeIntegralOperator<LocalLambdaBinaryVolumeIntegrand<E>,
                                       typename ScalarFunctionType::LocalfunctionType>
       LocalProductType;
-  typedef DuneFemDgSpaceWrapper<InterpolationGridLayerType, 1, R, 1> DgSpaceType;
+  typedef DiscontinuousLagrangeSpace<InterpolationGridLayerType, 1, R> DgSpaceType;
   typedef DiscreteFunction<DgSpaceType> DiscreteFunctionType;
 
 public:
@@ -131,18 +129,6 @@ private:
   const LocalProductType local_product_;
 }; // class NonconformityProduct
 
-
-#else // HAVE_DUNE_FEM
-
-
-template <class ProductGridLayer, class InterpolationGridLayerType>
-class NonconformityProduct
-{
-  static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing dune-fem!");
-};
-
-
-#endif // HAVE_DUNE_FEM
 
 namespace internal {
 

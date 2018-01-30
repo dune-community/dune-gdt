@@ -45,7 +45,7 @@ struct NonconformityProduct
   static_assert(XT::Grid::is_grid<G>::value, "");
   typedef typename XT::Grid::Layer<G, layer_type, layer_backend, XT::Grid::DD::SubdomainGrid<G>>::type GL;
   typedef
-      typename XT::Grid::Layer<G, interpolation_layer_type, Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type IGL;
+      typename XT::Grid::Layer<G, interpolation_layer_type, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type IGL;
 
   typedef GDT::ESV2007::NonconformityProduct<GL, IGL> type;
   typedef py::class_<type, XT::Grid::Walker<GL>> bound_type;
@@ -107,7 +107,7 @@ struct NonconformityProduct
                const ssize_t over_integrate) {
               return new type(dd_grid_provider.template layer<layer_type, layer_backend>(
                                   XT::Common::numeric_cast<int>(layer_level_or_subdomain)),
-                              dd_grid_provider.template layer<interpolation_layer_type, Backends::part>(
+                              dd_grid_provider.template layer<interpolation_layer_type, Backends::view>(
                                   XT::Common::numeric_cast<int>(interpolation_layer_level_or_subdomain)),
                               interpolation_boundary_info,
                               lambda,
@@ -147,7 +147,7 @@ struct NonconformityProduct
                const ssize_t over_integrate) {
               return new type(
                   grid_provider.template layer<layer_type, layer_backend>(XT::Common::numeric_cast<int>(layer_level)),
-                  grid_provider.template layer<interpolation_layer_type, Backends::part>(
+                  grid_provider.template layer<interpolation_layer_type, Backends::view>(
                       XT::Common::numeric_cast<int>(interpolation_layer_level)),
                   interpolation_boundary_info,
                   lambda,
@@ -505,24 +505,21 @@ PYBIND11_PLUGIN(__operators_ESV2007)
   py::module::import("dune.xt.functions");
   py::module::import("dune.xt.la");
 
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM
+#if HAVE_DUNE_ALUGRID
   NonconformityProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
-  NonconformityProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::part>::bind(m);
-  NonconformityProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::part>::bind(m);
+  NonconformityProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view>::bind(m);
   NonconformityProduct<ALU_2D_SIMPLEX_CONFORMING,
                        Layers::dd_subdomain,
-                       Backends::part,
+                       Backends::view,
                        Layers::dd_subdomain_oversampled>::bind(m);
   ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
-  ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::part>::bind(m);
   // This is not efficient: we reconstruct on the whole leaf instead of only the neighborhood, but the rt space
-  //                        on a dd_subdomain_oversampled grid view (which is a wrapped part) is broken, if based on
+  //                        on a dd_subdomain_oversampled grid view is broken, if based on
   //                        a 2d simplex alugrid.
-  ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::part, Layers::leaf>::bind(m);
+  ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
   DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
-  DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::part>::bind(m);
   // s.a.
-  DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::part, Layers::leaf>::bind(m);
+  DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
 #endif
 
   m.def("_init_mpi",

@@ -102,7 +102,6 @@ public:
           "level"_a = -1,
           "path"_a,
           "subsampling"_a = true);
-#if HAVE_DUNE_FEM
     c.def("visualize",
           [](const type& self,
              const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
@@ -141,7 +140,6 @@ public:
           "level_or_subdomain"_a = -1,
           "path"_a,
           "subsampling"_a = true);
-#endif // HAVE_DUNE_FEM
     return c;
   } // ... bind(...)
 }; // class ConstDiscreteFunction
@@ -313,17 +311,7 @@ public:
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_YASP(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC);                        \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)
 
-#if HAVE_DUNE_FEM
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM(_m)                                                                \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, dg, fem, 1, 1, 1);                                       \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, dg, fem, 1, 1, 1);                                      \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, dg, fem, 1, 1, 1);                               \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, block_dg, fem, 1, 1, 1)
-#else
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM(_m)
-#endif
-
-#define _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT(_m)                                                                \
+#define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m)                                                                     \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, fv, gdt, 0, 1, 1);                                       \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, fv, gdt, 0, 1, 1);                                      \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, cg, gdt, 1, 1, 1);                                       \
@@ -331,10 +319,6 @@ public:
 //  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, cg, gdt, 1, 1, 1);                               \
 //  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, block_cg, gdt, 1, 1, 1);
 
-
-#define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m)                                                                     \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_FEM(_m);                                                                     \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_GDT(_m)
 
 // end: this is what we need for the .so
 
