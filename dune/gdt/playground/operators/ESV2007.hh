@@ -13,7 +13,6 @@
 #include <dune/common/typetraits.hh>
 
 #include <dune/xt/common/fmatrix.hh>
-#include <dune/xt/la/container/eigen.hh>
 #include <dune/xt/la/eigen-solver.hh>
 #include <dune/xt/grid/boundaryinfo/interfaces.hh>
 #include <dune/xt/grid/entity.hh>
@@ -145,7 +144,6 @@ class NonconformityProduct
 
 #endif // HAVE_DUNE_FEM
 #if HAVE_DUNE_PDELAB
-#if HAVE_EIGEN
 
 namespace internal {
 
@@ -281,9 +279,10 @@ public:
             const auto& entity = local_f_minus_divergence_of_reconstructed_u.entity();
             // we need the min_ev for this entity, so we just evaluate in one point
             const auto center = entity.geometry().local(entity.geometry().center());
-            XT::LA::EigenDenseMatrix<R> diffusion = kappa_.local_function(entity)->evaluate(center);
+            auto diffusion = kappa_.local_function(entity)->evaluate(center);
             diffusion *= lambda_.local_function(entity)->evaluate(center);
-            const auto min_ev = XT::LA::make_eigen_solver(diffusion).min_eigenvalues(1).at(0);
+            const auto min_ev =
+                XT::LA::make_eigen_solver(diffusion, {"assert_positive_eigenvalues", 1e-15}).min_eigenvalues(1).at(0);
             const auto h = XT::Grid::entity_diameter(entity);
             ret[0][0] = (poincare_constant_ / min_ev) * h * h
                         * local_f_minus_divergence_of_reconstructed_u.evaluate(local_point).at(0)[0]
@@ -300,19 +299,6 @@ private:
   const size_t over_integrate_;
   const LocalProductType local_product_;
 }; // class ResidualProduct
-
-
-#else // HAVE_EIGEN
-
-
-template <class ProductGridLayer, class ReconstructionGridLayer>
-class ResidualProduct
-{
-  static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing eigen!");
-};
-
-
-#endif // HAVE_EIGEN
 
 
 template <class ProductGridLayer, class ReconstructionGridLayer>

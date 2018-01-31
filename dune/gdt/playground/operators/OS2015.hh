@@ -16,7 +16,6 @@
 #include <dune/geometry/referenceelements.hh>
 
 #include <dune/xt/common/fmatrix.hh>
-#include <dune/xt/la/container/eigen.hh>
 #include <dune/xt/la/eigen-solver.hh>
 #include <dune/xt/grid/boundaryinfo/interfaces.hh>
 #include <dune/xt/grid/entity.hh>
@@ -36,7 +35,6 @@ namespace GDT {
 namespace OS2015 {
 
 #if HAVE_DUNE_PDELAB
-#if HAVE_EIGEN
 
 namespace internal {
 
@@ -199,17 +197,21 @@ public:
       for (const auto& quadrature_point :
            QuadratureRules<D, d>::rule(entity.type(), local_lambda->order() + local_kappa->order() + over_integrate_)) {
         const auto xx = quadrature_point.position();
-        XT::LA::EigenDenseMatrix<R> diffusion = local_kappa->evaluate(xx);
+        auto diffusion = local_kappa->evaluate(xx);
         diffusion *= local_lambda->evaluate(xx);
-        min_diffusion_ev_ = std::min(min_diffusion_ev_, XT::LA::make_eigen_solver(diffusion).min_eigenvalues(1).at(0));
+        min_diffusion_ev_ = std::min(
+            min_diffusion_ev_,
+            XT::LA::make_eigen_solver(diffusion, {"assert_positive_eigenvalues", 1e-15}).min_eigenvalues(1).at(0));
       }
       // * and in the corners of the gigen entity.
       const auto& reference_element = ReferenceElements<D, d>::general(entity.type());
       for (int ii = 0; ii < reference_element.size(d); ++ii) {
         const auto xx = reference_element.position(ii, d);
-        XT::LA::EigenDenseMatrix<R> diffusion = local_kappa->evaluate(xx);
+        auto diffusion = local_kappa->evaluate(xx);
         diffusion *= local_lambda->evaluate(xx);
-        min_diffusion_ev_ = std::min(min_diffusion_ev_, XT::LA::make_eigen_solver(diffusion).min_eigenvalues(1).at(0));
+        min_diffusion_ev_ = std::min(
+            min_diffusion_ev_,
+            XT::LA::make_eigen_solver(diffusion, {"assert_positive_eigenvalues", 1e-15}).min_eigenvalues(1).at(0));
       }
     });
   } // ResidualProduct(...)
@@ -237,19 +239,6 @@ private:
   std::vector<FieldVector<D, d>> subdomain_vertices_;
   bool finalized_;
 }; // class ResidualProduct
-
-
-#else // HAVE_EIGEN
-
-
-template <class ProductGridLayer, class ReconstructionGridLayer>
-class ResidualProduct
-{
-  static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing eigen!");
-};
-
-
-#endif // HAVE_EIGEN
 
 
 template <class ProductGridLayer, class ReconstructionGridLayer>
