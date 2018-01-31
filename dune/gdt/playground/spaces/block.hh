@@ -53,7 +53,7 @@ public:
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::part;
   static const constexpr Backends backend_type{Backends::gdt};
   using DofCommunicationChooserType = DofCommunicationChooser<GridLayerType, true>;
-  using DofCommunicatorType = typename DofCommunicationChooserType::type;
+  using DofCommunicatorType = typename DofCommunicationChooserType::Type;
 
   static const bool needs_grid_view = false;
 }; // class BlockSpaceTraits
