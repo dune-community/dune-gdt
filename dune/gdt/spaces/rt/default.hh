@@ -400,7 +400,8 @@ public:
 
   const BackendType& backend() const
   {
-    return *finite_elements_->begin();
+    // this only works because we know that there can only be one geometry.
+    return *finite_elements_->begin()->second;
   }
 
   const MapperType& mapper() const
@@ -429,6 +430,7 @@ public:
   }
 
   // this makes sense only for for p0 (and only on simplices?)
+  // once we export the local finite element, this should become obsolete!
   std::vector<size_t> local_DoF_indices(const EntityType& entity) const
   {
     const auto search_result = geometry_to_local_DoF_indices_map_->find(entity.geometry().type());
