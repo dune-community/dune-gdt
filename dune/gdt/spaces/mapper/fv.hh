@@ -108,7 +108,12 @@ public:
   }
 
   template <int cd, class GridImp, template <int, int, class> class EntityImp>
-  size_t numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity) const
+  size_t numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& /*entity*/) const
+  {
+    return 0;
+  }
+
+  size_t numDofs(const EntityType& /*entity*/) const
   {
     return dimRange;
   }
