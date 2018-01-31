@@ -77,14 +77,14 @@ class LaplaceLocalizableProduct
 
   template <class... Args>
   explicit LaplaceLocalizableProduct(tag<false>, Args&&... args)
-    : FunctionProvider(1.)
+    : FunctionProvider(FunctionProvider::make(1.))
     , BaseType(FunctionProvider::access(), std::forward<Args>(args)...)
   {
   }
 
   template <class... Args>
   explicit LaplaceLocalizableProduct(tag<true>, const size_t over_integrate, Args&&... args)
-    : FunctionProvider(1.)
+    : FunctionProvider(FunctionProvider::make(1.))
     , BaseType(over_integrate, FunctionProvider::access(), std::forward<Args>(args)...)
   {
   }
@@ -196,14 +196,14 @@ class LaplaceMatrixOperator
 
   template <class... Args>
   explicit LaplaceMatrixOperator(tag<false>, Args&&... args)
-    : FunctionProvider(1.)
+    : FunctionProvider(FunctionProvider::make(1.))
     , BaseType(FunctionProvider::access(), std::forward<Args>(args)...)
   {
   }
 
   template <class... Args>
   explicit LaplaceMatrixOperator(tag<true>, const size_t over_integrate, Args&&... args)
-    : FunctionProvider(1.)
+    : FunctionProvider(FunctionProvider::make(1.))
     , BaseType(over_integrate, FunctionProvider::access(), std::forward<Args>(args)...)
   {
   }
@@ -396,8 +396,9 @@ public:
              DiscreteFunction<RangeSpaceType, VectorType>& range,
              const XT::Common::Parameter& param = {}) const
   {
-    typedef typename XT::LA::Container<typename VectorType::ScalarType,
-                                       VectorType::Traits::sparse_matrix_type>::MatrixType MatrixType;
+    typedef
+        typename XT::LA::Container<typename VectorType::ScalarType, VectorType::Traits::sparse_matrix_type>::MatrixType
+            MatrixType;
     auto op = make_laplace_matrix_operator<MatrixType>(source.space(), range.space(), grid_layer_, over_integrate_);
     op->apply(source, range, param);
   }
