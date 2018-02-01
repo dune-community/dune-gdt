@@ -19,6 +19,7 @@
 #include <dune/grid/onedgrid.hh>
 
 #include <dune/xt/common/densevector.hh>
+#include <dune/xt/common/math.hh>
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/matrix.hh>
 #include <dune/xt/common/vector.hh>
@@ -402,8 +403,8 @@ public:
     auto lambda_minus = XT::Common::zeros_like(T);
     for (size_t ii = 0; ii < m; ++ii) {
       const auto& real_ev = evs[ii];
-      XT::Common::set_matrix_entry(lambda_plus, ii, ii, std::max(real_ev, 0.));
-      XT::Common::set_matrix_entry(lambda_minus, ii, ii, std::min(real_ev, 0.));
+      XT::Common::set_matrix_entry(lambda_plus, ii, ii, XT::Common::max(real_ev, 0.));
+      XT::Common::set_matrix_entry(lambda_minus, ii, ii, XT::Common::min(real_ev, 0.));
     }
     const auto P_plus = T * lambda_plus * T_inv;
     const auto P_minus = T * lambda_minus * T_inv;
