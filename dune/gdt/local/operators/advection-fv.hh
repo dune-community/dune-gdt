@@ -626,8 +626,13 @@ public:
     , numerical_flux_(numerical_flux)
     , boundary_treatment_(boundary_treatment_lambda)
   {
-    if (numerical_flux_.parameter_type() != boundary_treatment_param_type)
-      DUNE_THROW(NotImplemented, "todo: merge boundary_treatment_param_type and numerical_flux.parameter_type()!");
+    if (numerical_flux_.is_parametric() && (numerical_flux_.parameter_type() != boundary_treatment_param_type))
+      DUNE_THROW(NotImplemented,
+                 "todo: merge boundary_treatment_param_type and numerical_flux.parameter_type()!"
+                     << "\n\nnumerical_flux_.parameter_type() = "
+                     << numerical_flux_.parameter_type()
+                     << "\nboundary_treatment_param_type = "
+                     << boundary_treatment_param_type);
   }
 
   template <class VectorType, class I>
