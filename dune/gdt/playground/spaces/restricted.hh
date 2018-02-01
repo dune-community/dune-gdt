@@ -132,7 +132,7 @@ public:
   {
     const auto error_message = check_entity(entity);
     if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+      DUNE_THROW(Exceptions::restricted_space_error, error_message);
     return unrestricted_space_.base_function_set(entity);
   }
 
@@ -150,7 +150,7 @@ public:
   {
     const auto error_message = check_entity(entity);
     if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+      DUNE_THROW(Exceptions::restricted_space_error, error_message);
     return unrestricted_space_.local_constraints(ansatz_space, entity, ret);
   }
 
@@ -169,7 +169,7 @@ public:
   {
     const auto error_message = check_entity(entity);
     if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+      DUNE_THROW(Exceptions::restricted_space_error, error_message);
     return unrestricted_space_.lagrange_points(entity);
   }
 
@@ -178,7 +178,7 @@ public:
   {
     const auto error_message = check_entity(entity);
     if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+      DUNE_THROW(Exceptions::restricted_space_error, error_message);
     return unrestricted_space_.local_dirichlet_DoFs(entity, boundaryInfo);
   }
 
@@ -188,7 +188,7 @@ public:
   {
     const auto error_message = check_entity(entity);
     if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+      DUNE_THROW(Exceptions::restricted_space_error, error_message);
     return unrestricted_space_.local_DoF_indices(entity);
   }
 

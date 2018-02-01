@@ -161,7 +161,7 @@ public:
   {
     const auto error_message = check_entity(entity);
     if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+      DUNE_THROW(Exceptions::restricted_space_error, error_message);
     return backend().numDofs(entity);
   }
 
@@ -171,7 +171,7 @@ public:
   {
     const auto error_message = check_entity(entity);
     if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+      DUNE_THROW(Exceptions::restricted_space_error, error_message);
     backend().globalIndices(entity, ret);
     for (size_t ii = 0; ii < numDofs(entity); ++ii)
       ret[ii] = map_to_restricted_.at(ret[ii]);
@@ -181,7 +181,7 @@ public:
   {
     const auto error_message = check_entity(entity);
     if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+      DUNE_THROW(Exceptions::restricted_space_error, error_message);
     return map_to_restricted_.at(backend().mapToGlobal(entity, localIndex));
   }
 
