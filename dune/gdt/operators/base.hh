@@ -480,7 +480,8 @@ public:
   append(const LocalVolumeTwoFormInterface<RangeBaseType, SourceBaseType, FieldType>& local_volume_twoform,
          XT::Grid::ApplyOn::WhichEntity<GridLayerType>*&& where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
-    return this->append(local_volume_twoform, matrix_in_in_.access(), std::move(where));
+    this->append(local_volume_twoform, matrix_in_in_.access(), std::move(where));
+    return *this;
   }
 
   ThisType& append(const LocalCouplingTwoFormInterface<RangeBaseType,
@@ -492,12 +493,13 @@ public:
                    XT::Grid::ApplyOn::WhichIntersection<GridLayerType>*&& where =
                        new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>())
   {
-    return this->append(local_coupling_twoform,
-                        matrix_in_in_.access(),
-                        matrix_out_out_.access(),
-                        matrix_in_out_.access(),
-                        matrix_out_in_.access(),
-                        std::move(where));
+    this->append(local_coupling_twoform,
+                 matrix_in_in_.access(),
+                 matrix_out_out_.access(),
+                 matrix_in_out_.access(),
+                 matrix_out_in_.access(),
+                 std::move(where));
+    return *this;
   }
 
   ThisType& append(const LocalBoundaryTwoFormInterface<RangeBaseType, IntersectionType, SourceBaseType, FieldType>&
@@ -505,7 +507,8 @@ public:
                    XT::Grid::ApplyOn::WhichIntersection<GridLayerType>*&& where =
                        new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>())
   {
-    return this->append(local_boundary_twoform, matrix_in_in_.access(), std::move(where));
+    this->append(local_boundary_twoform, matrix_in_in_.access(), std::move(where));
+    return *this;
   }
 
   template <class S, class R>
@@ -689,9 +692,10 @@ public:
   } // ... append(...)
 
   template <class T>
-  ThisType& append(const LocalCouplingOperatorInterface<T>& local_operator, const XT::Common::Parameter& param)
+  ThisType& append(const LocalCouplingOperatorInterface<T>& local_operator, const XT::Common::Parameter& param = {})
   {
-    return this->append(local_operator, new XT::Grid::ApplyOn::InnerIntersections<GridLayerType>(), param);
+    this->append(local_operator, new XT::Grid::ApplyOn::InnerIntersections<GridLayerType>(), param);
+    return *this;
   }
 
   template <class T>
@@ -713,9 +717,10 @@ public:
   } // ... append(...)
 
   template <class T>
-  ThisType& append(const LocalBoundaryOperatorInterface<T>& local_operator, const XT::Common::Parameter& param)
+  ThisType& append(const LocalBoundaryOperatorInterface<T>& local_operator, const XT::Common::Parameter& param = {})
   {
-    return this->append(local_operator, new XT::Grid::ApplyOn::BoundaryIntersections<GridLayerType>(), param);
+    this->append(local_operator, new XT::Grid::ApplyOn::BoundaryIntersections<GridLayerType>(), param);
+    return *this;
   }
 
   void apply(const bool use_tbb = false)
