@@ -366,7 +366,7 @@ PYBIND11_PLUGIN(__operators_OS2015)
   py::module::import("dune.xt.functions");
   py::module::import("dune.xt.la");
 
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM
+#if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_PDELAB
   // This is not efficient: we reconstruct on the whole leaf instead of only the neighborhood, but the rt pdelab space
   //                        on a dd_subdomain_oversampled grid view (which is a wrapped part) is broken, if based on
   //                        a 2d simplex alugrid.
@@ -375,7 +375,7 @@ PYBIND11_PLUGIN(__operators_OS2015)
   DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::part>::bind(m);
   // s.a.
   DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::part, Layers::leaf>::bind(m);
-#endif
+#endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_PDELAB
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {

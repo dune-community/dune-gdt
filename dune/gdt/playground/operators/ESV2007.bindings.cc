@@ -513,6 +513,7 @@ PYBIND11_PLUGIN(__operators_ESV2007)
                        Layers::dd_subdomain,
                        Backends::part,
                        Layers::dd_subdomain_oversampled>::bind(m);
+#if HAVE_DUNE_PDELAB
   ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
   ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::part>::bind(m);
   // This is not efficient: we reconstruct on the whole leaf instead of only the neighborhood, but the rt pdelab space
@@ -523,7 +524,8 @@ PYBIND11_PLUGIN(__operators_ESV2007)
   DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::part>::bind(m);
   // s.a.
   DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::part, Layers::leaf>::bind(m);
-#endif
+#endif // HAVE_DUNE_PDELAB
+#endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {

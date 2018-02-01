@@ -9,7 +9,7 @@
 
 #ifndef DUNE_GDT_SPACES_DG_BINDINGS_HH
 #define DUNE_GDT_SPACES_DG_BINDINGS_HH
-//#if HAVE_DUNE_PYBINDXI
+#if HAVE_DUNE_PYBINDXI
 
 #include <dune/xt/grid/grids.bindings.hh>
 
@@ -84,5 +84,5 @@
 // end: this is what we need for the .so
 
 
-//#endif // HAVE_DUNE_PYBINDXI
+#endif // HAVE_DUNE_PYBINDXI
 #endif // DUNE_GDT_SPACES_DG_BINDINGS_HH

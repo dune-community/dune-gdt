@@ -9,7 +9,7 @@
 
 #ifndef DUNE_GDT_PROJECTIONS_BINDINGS_HH
 #define DUNE_GDT_PROJECTIONS_BINDINGS_HH
-//#if HAVE_DUNE_PYBINDXI
+#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -167,5 +167,5 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-//#endif // HAVE_DUNE_PYBINDXI
+#endif // HAVE_DUNE_PYBINDXI
 #endif // DUNE_GDT_PROJECTIONS_BINDINGS_HH
