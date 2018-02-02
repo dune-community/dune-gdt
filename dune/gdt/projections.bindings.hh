@@ -107,20 +107,11 @@ public:
 #define _DUNE_GDT_PROJECTIONS_BIND_DEFAULT(_m, _la)                                                                    \
   _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, gdt, fv, 0, _la);                                                     \
   _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, gdt, cg, 1, _la);                                             \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, gdt, fv, 0, _la)
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, gdt, fv, 0, _la);                                                    \
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, gdt, dg, 1, _la)
 
-#define _DUNE_GDT_PROJECTIONS_BIND(_m, _la) _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, gdt, dg, 1, _la)
 
-//#if HAVE_DUNE_FUNCTIONS
-//  ...
-//#else
-#define _DUNE_GDT_PROJECTIONS_BIND_FUNCTIONS(_m, _la)
-//#endif
-
-#define _DUNE_GDT_PROJECTIONS_BIND_ALL_SPACES(_m, _la)                                                                 \
-  _DUNE_GDT_PROJECTIONS_BIND_DEFAULT(_m, _la);                                                                         \
-  _DUNE_GDT_PROJECTIONS_BIND(_m, _la);                                                                                 \
-  _DUNE_GDT_PROJECTIONS_BIND_FUNCTIONS(_m, _la)
+#define _DUNE_GDT_PROJECTIONS_BIND_ALL_SPACES(_m, _la) _DUNE_GDT_PROJECTIONS_BIND_DEFAULT(_m, _la);
 
 // for each la backend
 

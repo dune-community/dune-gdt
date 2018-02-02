@@ -15,6 +15,7 @@
 
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/la/container.hh>
+#include <dune/xt/grid/grids.hh>
 #include <dune/xt/grid/grids.bindings.hh>
 #include <dune/xt/grid/layers.bindings.hh>
 #include <dune/xt/grid/walker.hh>
@@ -372,16 +373,14 @@ DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB(extern template);
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_YASP(_m, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC);     \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALU(_m, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)
 
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND(_m, _s_type, _p, _r, _rC)                                                      \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, leaf, view, _s_type, gdt, leaf, _p, 1, 1);                             \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, level, view, _s_type, gdt, level, _p, 1, 1)
 
 #define DUNE_GDT_ASSEMBLER_SYSTEM_BIND(_m)                                                                             \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND(_m, cg, 1, 1, 1);                                                                    \
-  /*_DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain_boundary, view, dg, gdt, dd_subdomain, 1, 1, 1);*/      \
-  /*_DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain_coupling, view, dg, gdt, dd_subdomain, 1, 1, 1);*/      \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND(_m, fv, 0, 1, 1)
-
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain_boundary, view, dg, gdt, dd_subdomain, 1, 1, 1);          \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain_coupling, view, dg, gdt, dd_subdomain, 1, 1, 1);          \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, leaf, view, cg, gdt, leaf, 1, 1, 1);                                   \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, level, view, cg, gdt, level, 1, 1, 1);                                 \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, leaf, view, fv, gdt, leaf, 0, 1, 1);                                   \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, level, view, fv, gdt, level, 0, 1, 1)
 // end: this is what we need for the .so
 
 

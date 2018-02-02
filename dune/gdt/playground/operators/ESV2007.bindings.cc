@@ -50,7 +50,7 @@ struct NonconformityProduct
   typedef GDT::ESV2007::NonconformityProduct<GL, IGL> type;
   typedef py::class_<type, XT::Grid::Walker<GL>> bound_type;
 
-  template <bool is_same = (interpolation_layer_type == layer_type) && (layer_backend == Backends::part),
+  template <bool is_same = (interpolation_layer_type == layer_type) && (layer_backend == Backends::view),
             bool anything = true>
   struct interpolation_layer_suffix
   {
@@ -66,7 +66,7 @@ struct NonconformityProduct
     static std::string value()
     {
       return "_" + XT::Grid::bindings::layer_name<interpolation_layer_type>::value() + "_"
-             + XT::Grid::bindings::backend_name<Backends::part>::value();
+             + XT::Grid::bindings::backend_name<Backends::view>::value();
     }
   }; // struct interpolation_layer_suffix<false, ...>
 
@@ -513,10 +513,11 @@ PYBIND11_PLUGIN(__operators_ESV2007)
                        Backends::view,
                        Layers::dd_subdomain_oversampled>::bind(m);
   ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
-  // This is not efficient: we reconstruct on the whole leaf instead of only the neighborhood, but the rt space
+  ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
   //                        on a dd_subdomain_oversampled grid view is broken, if based on
   //                        a 2d simplex alugrid.
   ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
+  DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
   DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
   // s.a.
   DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);

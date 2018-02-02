@@ -199,7 +199,9 @@ public:
         diffusion *= local_lambda->evaluate(xx);
         min_diffusion_ev_ = std::min(
             min_diffusion_ev_,
-            XT::LA::make_eigen_solver(diffusion, {"assert_positive_eigenvalues", 1e-15}).min_eigenvalues(1).at(0));
+            XT::LA::make_eigen_solver(diffusion, XT::Common::Configuration{{"assert_positive_eigenvalues"}, {1e-15}})
+                .min_eigenvalues(1)
+                .at(0));
       }
       // * and in the corners of the gigen entity.
       const auto& reference_element = ReferenceElements<D, d>::general(entity.type());
@@ -209,7 +211,9 @@ public:
         diffusion *= local_lambda->evaluate(xx);
         min_diffusion_ev_ = std::min(
             min_diffusion_ev_,
-            XT::LA::make_eigen_solver(diffusion, {"assert_positive_eigenvalues", 1e-15}).min_eigenvalues(1).at(0));
+            XT::LA::make_eigen_solver(diffusion, XT::Common::Configuration{{"assert_positive_eigenvalues"}, {1e-15}})
+                .min_eigenvalues(1)
+                .at(0));
       }
     });
   } // ResidualProduct(...)

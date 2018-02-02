@@ -65,60 +65,63 @@ PYBIND11_PLUGIN(__operators_RS2017)
   typedef XT::LA::IstlDenseVector<R> V;
   typedef XT::LA::IstlRowMajorSparseMatrix<R> M;
 
-  m.def(
-      "RS2017_residual_indicator_min_diffusion_eigenvalue",
-      [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
-             dd_grid_provider,
-         const ssize_t subdomain,
-         const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
-         const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
-         const ssize_t over_int) {
-        py::gil_scoped_release DUNE_UNUSED(release);
-        const auto over_integrate = XT::Common::numeric_cast<size_t>(over_int);
-        auto subdomain_layer = dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
-            XT::Common::numeric_cast<size_t>(subdomain));
-        typedef decltype(subdomain_layer) GL;
-        XT::Grid::Walker<GL> walker(subdomain_layer);
-        double min_ev = std::numeric_limits<double>::max();
-        walker.append([&](const E& entity) {
-          const auto local_lambda = lambda.local_function(entity);
-          const auto local_kappa = kappa.local_function(entity);
-          // To find the minimum of a function we evaluate it
-          // * in all quadrature points of a quadrature which would integrate such a function exactly
-          for (const auto& quadrature_point : QuadratureRules<D, d>::rule(
-                   entity.type(), local_lambda->order() + local_kappa->order() + over_integrate)) {
-            const auto xx = quadrature_point.position();
-            auto diffusion = local_kappa->evaluate(xx);
-            diffusion *= local_lambda->evaluate(xx);
-            min_ev = std::min(
-                min_ev,
-                XT::LA::make_eigen_solver(diffusion, {"assert_positive_eigenvalues", 1e-15}).min_eigenvalues(1).at(0));
-          }
-          // * and in the corners of the gigen entity.
-          const auto& reference_element = ReferenceElements<D, d>::general(entity.type());
-          for (int ii = 0; ii < reference_element.size(d); ++ii) {
-            const auto xx = reference_element.position(ii, d);
-            auto diffusion = local_kappa->evaluate(xx);
-            diffusion *= local_lambda->evaluate(xx);
-            min_ev = std::min(
-                min_ev,
-                XT::LA::make_eigen_solver(diffusion, {"assert_positive_eigenvalues", 1e-15}).min_eigenvalues(1).at(0));
-          }
-        });
-        walker.walk();
-        return min_ev;
-      },
-      "dd_grid_provider"_a,
-      "subdomain"_a,
-      "lambda"_a,
-      "kappa"_a,
-      "over_integrate"_a = 2);
+  m.def("RS2017_residual_indicator_min_diffusion_eigenvalue",
+        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
+               dd_grid_provider,
+           const ssize_t subdomain,
+           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
+           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
+           const ssize_t over_int) {
+          py::gil_scoped_release DUNE_UNUSED(release);
+          const auto over_integrate = XT::Common::numeric_cast<size_t>(over_int);
+          auto subdomain_layer = dd_grid_provider.template layer<Layers::dd_subdomain, Backends::view>(
+              XT::Common::numeric_cast<size_t>(subdomain));
+          typedef decltype(subdomain_layer) GL;
+          XT::Grid::Walker<GL> walker(subdomain_layer);
+          double min_ev = std::numeric_limits<double>::max();
+          walker.append([&](const E& entity) {
+            const auto local_lambda = lambda.local_function(entity);
+            const auto local_kappa = kappa.local_function(entity);
+            // To find the minimum of a function we evaluate it
+            // * in all quadrature points of a quadrature which would integrate such a function exactly
+            for (const auto& quadrature_point : QuadratureRules<D, d>::rule(
+                     entity.type(), local_lambda->order() + local_kappa->order() + over_integrate)) {
+              const auto xx = quadrature_point.position();
+              auto diffusion = local_kappa->evaluate(xx);
+              diffusion *= local_lambda->evaluate(xx);
+              min_ev = std::min(min_ev,
+                                XT::LA::make_eigen_solver(
+                                    diffusion, XT::Common::Configuration{{"assert_positive_eigenvalues"}, {1e-15}})
+                                    .min_eigenvalues(1)
+                                    .at(0));
+            }
+            // * and in the corners of the gigen entity.
+            const auto& reference_element = ReferenceElements<D, d>::general(entity.type());
+            for (int ii = 0; ii < reference_element.size(d); ++ii) {
+              const auto xx = reference_element.position(ii, d);
+              auto diffusion = local_kappa->evaluate(xx);
+              diffusion *= local_lambda->evaluate(xx);
+              min_ev = std::min(min_ev,
+                                XT::LA::make_eigen_solver(
+                                    diffusion, XT::Common::Configuration{{"assert_positive_eigenvalues"}, {1e-15}})
+                                    .min_eigenvalues(1)
+                                    .at(0));
+            }
+          });
+          walker.walk();
+          return min_ev;
+        },
+        "dd_grid_provider"_a,
+        "subdomain"_a,
+        "lambda"_a,
+        "kappa"_a,
+        "over_integrate"_a = 2);
   m.def("RS2017_residual_indicator_subdomain_diameter",
         [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
                dd_grid_provider,
            const ssize_t subdomain) {
           py::gil_scoped_release DUNE_UNUSED(release);
-          auto subdomain_layer = dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+          auto subdomain_layer = dd_grid_provider.template layer<Layers::dd_subdomain, Backends::view>(
               XT::Common::numeric_cast<size_t>(subdomain));
           typedef decltype(subdomain_layer) GL;
           XT::Grid::Walker<GL> walker(subdomain_layer);
@@ -144,7 +147,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& v,
            const ssize_t over_integrate) {
           py::gil_scoped_release DUNE_UNUSED(release);
-          return GDT::make_l2_operator(dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+          return GDT::make_l2_operator(dd_grid_provider.template layer<Layers::dd_subdomain, Backends::view>(
                                            XT::Common::numeric_cast<size_t>(subdomain)),
                                        XT::Common::numeric_cast<size_t>(over_integrate))
               ->apply2(u, v);
@@ -166,7 +169,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
                                                                   1>::type,
                                       XT::LA::IstlRowMajorSparseMatrix<double>,
                                       typename XT::Grid::
-                                          Layer<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::part>::type>
+                                          Layer<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view>::type>
       EllipticMatrixOperatorType;
   try { // we might not be the first to add this
     py::class_<EllipticMatrixOperatorType,
@@ -188,7 +191,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
                                                 lambda,
                                                 kappa,
                                                 space,
-                                                dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+                                                dd_grid_provider.template layer<Layers::dd_subdomain, Backends::view>(
                                                     XT::Common::numeric_cast<int>(subdomain)));
         },
         "dd_grid_provider"_a,

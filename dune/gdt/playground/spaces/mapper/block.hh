@@ -63,7 +63,7 @@ public:
       DdSubdomainsGridType;
 
 private:
-  typedef typename DdSubdomainsGridType::GlobalGridPartType GridLayerType;
+  typedef typename DdSubdomainsGridType::GlobalGridViewType GridLayerType;
   typedef typename DdSubdomainsGridType::EntityToSubdomainMapType EntityToSubdomainMapType;
 
   template <class L, class E>

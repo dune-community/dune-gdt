@@ -15,9 +15,9 @@
 
 
 #if HAVE_DUNE_ISTL
-DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(template, leaf, part, dg, gdt, 1, istl_sparse);
-DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(template, level, part, dg, gdt, 1, istl_sparse);
-DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(template, dd_subdomain, part, dg, gdt, 1, istl_sparse);
+DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(template, leaf, view, dg, gdt, 1, istl_sparse);
+DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(template, level, view, dg, gdt, 1, istl_sparse);
+DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(template, dd_subdomain, view, dg, gdt, 1, istl_sparse);
 #endif
 
 

@@ -19,7 +19,7 @@ namespace GDT {
 namespace bindings {
 
 
-DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_GDT(template);
+DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(template);
 
 
 } // namespace bindings

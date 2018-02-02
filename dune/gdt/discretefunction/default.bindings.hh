@@ -118,13 +118,13 @@ public:
                              path,
                              subsampling);
             else if (layer == "dd_subdomain")
-              self.visualize(dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
+              self.visualize(dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::view>(
                                  level_or_subdomain),
                              path,
                              subsampling);
             else if (layer == "dd_subdomain_oversampled")
               self.visualize(
-                  dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+                  dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::view>(
                       level_or_subdomain),
                   path,
                   subsampling);
@@ -234,14 +234,9 @@ public:
     const auto sp_name = space_name<SP>::value();
     auto c = internal::DiscreteFunction<S, V>::bind(m, sp_name);
 
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::adaptive_leaf>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain_boundary>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain_coupling>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain_oversampled>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::leaf>(m, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::level>(m, sp_name);
     addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain>(m, sp_name);
+    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain_boundary>(m, sp_name);
+    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain_coupling>(m, sp_name);
     addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain_oversampled>(m, sp_name);
     addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::leaf>(m, sp_name);
     addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::level>(m, sp_name);
@@ -312,13 +307,18 @@ public:
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALU(_m, _g_layer, _s_type, _s_backend, _p, _r, _rC)
 
 #define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m)                                                                     \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, dg, gdt, 1, 1, 1);                                       \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, dg, gdt, 1, 1, 1);                                      \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, fv, gdt, 0, 1, 1);                                       \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, fv, gdt, 0, 1, 1);                                      \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, leaf, cg, gdt, 1, 1, 1);                                       \
   _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, level, cg, gdt, 1, 1, 1);
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, cg, gdt, 1, 1, 1);                               \
-//  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, block_cg, gdt, 1, 1, 1);
 
+#define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_DD(_m)                                                                  \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, dg, gdt, 1, 1, 1);                               \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, block_dg, gdt, 1, 1, 1);                         \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, cg, gdt, 1, 1, 1);                               \
+  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, block_cg, gdt, 1, 1, 1);
 
 // end: this is what we need for the .so
 

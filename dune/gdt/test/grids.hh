@@ -23,12 +23,6 @@
 #define YASPGRID_TYPES(dim)                                                                                            \
   typedef typename Dune::XT::Grid::Layer<Dune::YaspGrid<dim, Dune::EquidistantOffsetCoordinates<double, dim>>,         \
                                          Dune::XT::Grid::Layers::leaf,                                                 \
-                                         Dune::XT::Grid::Backends::part>::type Yasp##dim##dLeafGridPartType;           \
-  typedef typename Dune::XT::Grid::Layer<Dune::YaspGrid<dim, Dune::EquidistantOffsetCoordinates<double, dim>>,         \
-                                         Dune::XT::Grid::Layers::level,                                                \
-                                         Dune::XT::Grid::Backends::part>::type Yasp##dim##dLevelGridPartType;          \
-  typedef typename Dune::XT::Grid::Layer<Dune::YaspGrid<dim, Dune::EquidistantOffsetCoordinates<double, dim>>,         \
-                                         Dune::XT::Grid::Layers::leaf,                                                 \
                                          Dune::XT::Grid::Backends::view>::type Yasp##dim##dLeafGridViewType;           \
   typedef typename Dune::XT::Grid::Layer<Dune::YaspGrid<dim, Dune::EquidistantOffsetCoordinates<double, dim>>,         \
                                          Dune::XT::Grid::Layers::level,                                                \
@@ -49,12 +43,6 @@ typedef Dune::ALUGridNoComm AluComm;
 typedef Dune::ALUGrid<2, 2, Dune::simplex, Dune::conforming, AluComm> AluConform2dGridType;
 typedef typename Dune::XT::Grid::Layer<AluConform2dGridType,
                                        Dune::XT::Grid::Layers::leaf,
-                                       Dune::XT::Grid::Backends::part>::type AluConform2dLeafGridPartType;
-typedef typename Dune::XT::Grid::Layer<AluConform2dGridType,
-                                       Dune::XT::Grid::Layers::level,
-                                       Dune::XT::Grid::Backends::part>::type AluConform2dLevelGridPartType;
-typedef typename Dune::XT::Grid::Layer<AluConform2dGridType,
-                                       Dune::XT::Grid::Layers::leaf,
                                        Dune::XT::Grid::Backends::view>::type AluConform2dLeafGridViewType;
 typedef typename Dune::XT::Grid::Layer<AluConform2dGridType,
                                        Dune::XT::Grid::Layers::level,
@@ -62,12 +50,6 @@ typedef typename Dune::XT::Grid::Layer<AluConform2dGridType,
 
 // typedef Dune::ALUGrid<3, 3, Dune::simplex, Dune::conforming, AluComm> AluConform3dGridType;
 typedef Dune::YaspGrid<3, Dune::EquidistantOffsetCoordinates<double, 3>> AluConform3dGridType;
-typedef typename Dune::XT::Grid::Layer<AluConform3dGridType,
-                                       Dune::XT::Grid::Layers::leaf,
-                                       Dune::XT::Grid::Backends::part>::type AluConform3dLeafGridPartType;
-typedef typename Dune::XT::Grid::Layer<AluConform3dGridType,
-                                       Dune::XT::Grid::Layers::level,
-                                       Dune::XT::Grid::Backends::part>::type AluConform3dLevelGridPartType;
 typedef typename Dune::XT::Grid::Layer<AluConform3dGridType,
                                        Dune::XT::Grid::Layers::leaf,
                                        Dune::XT::Grid::Backends::view>::type AluConform3dLeafGridViewType;
@@ -78,24 +60,12 @@ typedef typename Dune::XT::Grid::Layer<AluConform3dGridType,
 typedef Dune::ALUGrid<2, 2, Dune::simplex, Dune::nonconforming, AluComm> AluSimplex2dGridType;
 typedef typename Dune::XT::Grid::Layer<AluSimplex2dGridType,
                                        Dune::XT::Grid::Layers::leaf,
-                                       Dune::XT::Grid::Backends::part>::type AluSimplex2dLeafGridPartType;
-typedef typename Dune::XT::Grid::Layer<AluSimplex2dGridType,
-                                       Dune::XT::Grid::Layers::level,
-                                       Dune::XT::Grid::Backends::part>::type AluSimplex2dLevelGridPartType;
-typedef typename Dune::XT::Grid::Layer<AluSimplex2dGridType,
-                                       Dune::XT::Grid::Layers::leaf,
                                        Dune::XT::Grid::Backends::view>::type AluSimplex2dLeafGridViewType;
 typedef typename Dune::XT::Grid::Layer<AluSimplex2dGridType,
                                        Dune::XT::Grid::Layers::level,
                                        Dune::XT::Grid::Backends::view>::type AluSimplex2dLevelGridViewType;
 
 typedef Dune::ALUGrid<3, 3, Dune::simplex, Dune::nonconforming, AluComm> AluSimplex3dGridType;
-typedef typename Dune::XT::Grid::Layer<AluSimplex3dGridType,
-                                       Dune::XT::Grid::Layers::leaf,
-                                       Dune::XT::Grid::Backends::part>::type AluSimplex3dLeafGridPartType;
-typedef typename Dune::XT::Grid::Layer<AluSimplex3dGridType,
-                                       Dune::XT::Grid::Layers::level,
-                                       Dune::XT::Grid::Backends::part>::type AluSimplex3dLevelGridPartType;
 typedef typename Dune::XT::Grid::Layer<AluSimplex3dGridType,
                                        Dune::XT::Grid::Layers::leaf,
                                        Dune::XT::Grid::Backends::view>::type AluSimplex3dLeafGridViewType;
@@ -106,24 +76,12 @@ typedef typename Dune::XT::Grid::Layer<AluSimplex3dGridType,
 typedef Dune::ALUGrid<2, 2, Dune::cube, Dune::nonconforming, AluComm> AluCube2dGridType;
 typedef typename Dune::XT::Grid::Layer<AluCube2dGridType,
                                        Dune::XT::Grid::Layers::leaf,
-                                       Dune::XT::Grid::Backends::part>::type AluCube2dLeafGridPartType;
-typedef typename Dune::XT::Grid::Layer<AluCube2dGridType,
-                                       Dune::XT::Grid::Layers::level,
-                                       Dune::XT::Grid::Backends::part>::type AluCube2dLevelGridPartType;
-typedef typename Dune::XT::Grid::Layer<AluCube2dGridType,
-                                       Dune::XT::Grid::Layers::leaf,
                                        Dune::XT::Grid::Backends::view>::type AluCube2dLeafGridViewType;
 typedef typename Dune::XT::Grid::Layer<AluCube2dGridType,
                                        Dune::XT::Grid::Layers::level,
                                        Dune::XT::Grid::Backends::view>::type AluCube2dLevelGridViewType;
 
 typedef Dune::ALUGrid<3, 3, Dune::cube, Dune::nonconforming, AluComm> AluCube3dGridType;
-typedef typename Dune::XT::Grid::Layer<AluCube3dGridType,
-                                       Dune::XT::Grid::Layers::leaf,
-                                       Dune::XT::Grid::Backends::part>::type AluCube3dLeafGridPartType;
-typedef typename Dune::XT::Grid::Layer<AluCube3dGridType,
-                                       Dune::XT::Grid::Layers::level,
-                                       Dune::XT::Grid::Backends::part>::type AluCube3dLevelGridPartType;
 typedef typename Dune::XT::Grid::Layer<AluCube3dGridType,
                                        Dune::XT::Grid::Layers::leaf,
                                        Dune::XT::Grid::Backends::view>::type AluCube3dLeafGridViewType;

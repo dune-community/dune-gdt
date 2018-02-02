@@ -99,7 +99,6 @@ struct space_type_dependent_typename
 
 static constexpr Backends default_space_backend = Backends::gdt;
 
-
 enum class ChoosePattern
 {
   volume,

@@ -47,10 +47,10 @@ public:
   typedef std::vector<std::shared_ptr<const LocalSpaceType>> BackendType;
   typedef BlockMapper<LocalSpaceType> MapperType;
   typedef typename LocalSpaceType::BaseFunctionSetType BaseFunctionSetType;
-  typedef typename DdSubdomainsGridType::GlobalGridPartType GridLayerType;
+  typedef typename DdSubdomainsGridType::GlobalGridViewType GridLayerType;
   typedef typename LocalSpaceType::RangeFieldType RangeFieldType;
 
-  static const XT::Grid::Backends layer_backend = XT::Grid::Backends::part;
+  static const XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static const constexpr Backends backend_type{Backends::gdt};
   using DofCommunicationChooserType = DofCommunicationChooser<GridLayerType, true>;
   using DofCommunicatorType = typename DofCommunicationChooserType::Type;
@@ -94,7 +94,7 @@ public:
   BlockSpace(const DdSubdomainsGridType& grid, const std::vector<std::shared_ptr<const LocalSpaceType>>& spaces)
     : dd_grid_(grid)
     , entity_to_subdomain_map_(dd_grid_.entityToSubdomainMap())
-    , global_grid_part_(new GridLayerType(dd_grid_.globalGridPart()))
+    , global_grid_part_(new GridLayerType(dd_grid_.global_grid_view()))
     , local_spaces_(new std::vector<std::shared_ptr<const LocalSpaceType>>(spaces))
     , mapper_(new MapperType(dd_grid_, global_grid_part_, local_spaces_))
     , communicator_(Traits::DofCommunicationChooserType::create(*global_grid_part_))

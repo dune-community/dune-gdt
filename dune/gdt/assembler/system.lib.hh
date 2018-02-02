@@ -355,8 +355,6 @@
 
 #define DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(_pre, _G, _s_type, _s_backend, _p, _r, _rC)                         \
   DUNE_GDT_ASSEMBLER_SYSTEM_LIB(_pre, _G, _s_type, _s_backend, _p, _r, _rC);                                           \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(                                                                         \
-      _pre, _G, adaptive_leaf, view, _s_type, _s_backend, adaptive_leaf, _p, _r, _rC);                                 \
   _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(_pre, _G, leaf, view, _s_type, _s_backend, leaf, _p, _r, _rC);           \
   _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(_pre, _G, level, view, _s_type, _s_backend, level, _p, _r, _rC);         \
   _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(                                                                         \

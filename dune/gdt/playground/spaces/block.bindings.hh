@@ -318,11 +318,11 @@ public:
           [](const type& self, const ssize_t block, const std::string tp) {
             auto bb = XT::Common::numeric_cast<size_t>(block);
             if (tp == "volume")
-              return self.local_space(bb).compute_volume_pattern(self.dd_grid().boundaryGridPart(bb));
+              return self.local_space(bb).compute_volume_pattern(self.dd_grid().boundary_grid_view(bb));
             else if (tp == "face")
-              return self.local_space(bb).compute_face_pattern(self.dd_grid().boundaryGridPart(bb));
+              return self.local_space(bb).compute_face_pattern(self.dd_grid().boundary_grid_view(bb));
             else if (tp == "face_and_volume")
-              return self.local_space(bb).compute_face_and_volume_pattern(self.dd_grid().boundaryGridPart(bb));
+              return self.local_space(bb).compute_face_and_volume_pattern(self.dd_grid().boundary_grid_view(bb));
             else
               DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                          "  type has to be one of ('volume', 'face', 'face_and_volume'), is '" << tp << "'!");
@@ -336,13 +336,13 @@ public:
             auto ss = XT::Common::numeric_cast<size_t>(subdomain);
             auto nn = XT::Common::numeric_cast<size_t>(neighbor);
             if (tp == "volume")
-              return self.local_space(ss).compute_volume_pattern(self.dd_grid().couplingGridPart(ss, nn),
+              return self.local_space(ss).compute_volume_pattern(self.dd_grid().coupling_grid_view(ss, nn),
                                                                  self.local_space(nn));
             else if (tp == "face")
-              return self.local_space(ss).compute_face_pattern(self.dd_grid().couplingGridPart(ss, nn),
+              return self.local_space(ss).compute_face_pattern(self.dd_grid().coupling_grid_view(ss, nn),
                                                                self.local_space(nn));
             else if (tp == "face_and_volume")
-              return self.local_space(ss).compute_face_and_volume_pattern(self.dd_grid().couplingGridPart(ss, nn),
+              return self.local_space(ss).compute_face_and_volume_pattern(self.dd_grid().coupling_grid_view(ss, nn),
                                                                           self.local_space(nn));
             else
               DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
@@ -356,7 +356,7 @@ public:
     c.def("boundary_assembler",
           [](const type& self, const ssize_t subdomain) {
             auto ss = XT::Common::numeric_cast<size_t>(subdomain);
-            auto boundary_grid_part = self.dd_grid().boundaryGridPart(ss);
+            auto boundary_grid_part = self.dd_grid().boundary_grid_view(ss);
             return new GDT::SystemAssembler<S, decltype(boundary_grid_part), S>(self.local_space(ss), // see below for
                                                                                 boundary_grid_part); //  the 'new'
           },
@@ -365,7 +365,7 @@ public:
           [](const type& self, const ssize_t subdomain, const ssize_t neighbor) {
             auto ss = XT::Common::numeric_cast<size_t>(subdomain);
             auto nn = XT::Common::numeric_cast<size_t>(neighbor);
-            auto coupling_grid_part = self.dd_grid().couplingGridPart(ss, nn);
+            auto coupling_grid_part = self.dd_grid().coupling_grid_view(ss, nn);
             return new GDT::SystemAssembler<S, decltype(coupling_grid_part), S>(coupling_grid_part, //   SystemAssembler
                                                                                 self.local_space(ss), // is not copyable
                                                                                 self.local_space(ss), // or movable,
@@ -441,6 +441,7 @@ public:
 
 
 #define DUNE_GDT_SPACES_BLOCK_BIND(_m) _DUNE_GDT_SPACES_BLOCK_BIND_ALL_GRIDS(_m, dg, gdt, 1)
+#define _DUNE_GDT_SPACES_BLOCK_BIND_FEM(_m) _DUNE_GDT_SPACES_BLOCK_BIND_ALL_GRIDS(_m, dg, gdt, 1)
 
 // end: this is what we need for the .so
 

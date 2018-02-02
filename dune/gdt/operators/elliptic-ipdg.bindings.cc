@@ -43,16 +43,16 @@ PYBIND11_PLUGIN(__operators_elliptic_ipdg)
 
 // alu_istl.cc
 #if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, leaf, part, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, level, part, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, dd_subdomain, part, dg, gdt, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, leaf, view, dg, gdt, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, level, view, dg, gdt, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_ALU(m, dd_subdomain, view, dg, gdt, 1, istl_sparse);
 #endif
 
 // yasp_istl.cc
 #if HAVE_DUNE_ISTL
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, leaf, part, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, level, part, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, dd_subdomain, part, dg, gdt, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, leaf, view, dg, gdt, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, level, view, dg, gdt, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_YASP(m, dd_subdomain, view, dg, gdt, 1, istl_sparse);
 #endif
 
   m.def("_init_mpi",

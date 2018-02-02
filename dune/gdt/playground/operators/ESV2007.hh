@@ -266,8 +266,10 @@ public:
             const auto center = entity.geometry().local(entity.geometry().center());
             auto diffusion = kappa_.local_function(entity)->evaluate(center);
             diffusion *= lambda_.local_function(entity)->evaluate(center);
-            const auto min_ev =
-                XT::LA::make_eigen_solver(diffusion, {"assert_positive_eigenvalues", 1e-15}).min_eigenvalues(1).at(0);
+            const auto min_ev = XT::LA::make_eigen_solver(
+                                    diffusion, XT::Common::Configuration{{"assert_positive_eigenvalues"}, {1e-15}})
+                                    .min_eigenvalues(1)
+                                    .at(0);
             const auto h = XT::Grid::entity_diameter(entity);
             ret[0][0] = (poincare_constant_ / min_ev) * h * h
                         * local_f_minus_divergence_of_reconstructed_u.evaluate(local_point).at(0)[0]

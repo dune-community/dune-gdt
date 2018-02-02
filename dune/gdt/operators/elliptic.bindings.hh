@@ -302,12 +302,10 @@ public:
 
 
 #define _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB(_prefix, _la)                                                            \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, leaf, part, cg, gdt, 1, _la);                                   \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, level, part, cg, gdt, 1, _la);                                  \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, dd_subdomain, part, cg, gdt, 1, _la);                           \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, leaf, view, dg, gdt, 1, _la);                                   \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, level, view, dg, gdt, 1, _la);                                  \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, dd_subdomain, view, dg, gdt, 1, _la)
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, dd_subdomain, view, dg, gdt, 1, _la);                           \
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_GRIDS(_prefix, dd_subdomain, view, cg, gdt, 1, _la)
 
 #if HAVE_DUNE_ISTL
 #define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_ISTL(_prefix) _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB(_prefix, istl_sparse)
@@ -454,7 +452,7 @@ DUNE_GDT_OPERATORS_ELLIPTIC_BIND_LIB_ISTL(extern template);
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, level, view, cg, gdt, 1, _la);                                           \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, leaf, view, dg, gdt, 1, _la);                                            \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, level, view, dg, gdt, 1, _la);                                           \
-  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, dd_subdomain, view, cg, gdt, 1, _la);                                    \
+  _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, dd_subdomain, view, dg, gdt, 1, _la);                                    \
   _DUNE_GDT_OPERATORS_ELLIPTIC_BIND_GRIDS(_m, dd_subdomain, view, dg, gdt, 1, _la)
 #define DUNE_GDT_OPERATORS_ELLIPTIC_BIND_COMMON(_m)
 //_DUNE_GDT_OPERATORS_ELLIPTIC_BIND(_m, common_dense)

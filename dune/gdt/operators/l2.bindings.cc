@@ -65,7 +65,8 @@ PYBIND11_PLUGIN(__operators_l2)
   py::module::import("dune.gdt.__discretefunction");
 
 #if HAVE_DUNE_ALUGRID
-  bind_l2_localizable_product<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, XT::Grid::Backends::part>(m);
+  bind_l2_localizable_product<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, XT::Grid::Backends::view>(m);
+
   Dune::GDT::bindings::L2MatrixOperator<ALU_2D_SIMPLEX_CONFORMING,
                                         Layers::dd_subdomain,
                                         SpaceType::dg,
@@ -98,11 +99,12 @@ PYBIND11_PLUGIN(__operators_l2)
                                                        2>::type,
                            typename XT::Grid::Layer<ALU_2D_SIMPLEX_CONFORMING,
                                                     Layers::dd_subdomain,
-                                                    XT::Grid::Backends::part,
+                                                    XT::Grid::Backends::view,
                                                     XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>::type>,
                        XT::LA::IstlRowMajorSparseMatrix<double>>::bind(m,
                                                                        "RtAlu2dSimplexLeafRestrictedSubdomainPartSpace",
                                                                        "istl_row_major_sparse_matrix_double");
+
 #endif // HAVE_DUNE_ALUGRID
 
   m.def("_init_mpi",
@@ -110,11 +112,9 @@ PYBIND11_PLUGIN(__operators_l2)
           int argc = Dune::XT::Common::numeric_cast<int>(args.size());
           char** argv = Dune::XT::Common::vector_to_main_args(args);
           Dune::MPIHelper::instance(argc, argv);
-#if HAVE_DUNE_FEM
-          Dune::Fem::MPIManager::initialize(argc, argv);
-#endif
         },
         "args"_a = std::vector<std::string>());
+
 
   m.def("_init_logger",
         [](const ssize_t max_info_level,
