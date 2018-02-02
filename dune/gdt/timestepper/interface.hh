@@ -175,14 +175,16 @@ public:
 
     // save/visualize initial solution
     if (save_solution) {
-      logger.debug() << "t = " << t << ": storing initial values... " << std::flush;
+      logger.info() << "t = " << std::scientific << std::setprecision(2) << t << ": storing initial values... "
+                    << std::flush;
       sol.insert(std::make_pair(t, current_solution()));
-      logger.debug() << "done" << std::endl;
+      logger.info() << "done" << std::endl;
     }
     if (visualize) {
-      logger.debug() << "t = " << t << ": visualizing initial values... " << std::flush;
+      logger.info() << "t = " << std::scientific << std::setprecision(2) << t << ": visualizing initial values... "
+                    << std::flush;
       visualizer(current_solution(), filename_prefix + "_", 0);
-      logger.debug() << "done" << std::endl;
+      logger.info() << "done" << std::endl;
     }
 
     while (Dune::XT::Common::FloatCmp::lt(t, t_end)) {
@@ -194,9 +196,10 @@ public:
         max_dt = std::min(next_save_time - t, max_dt);
 
       // do a timestep
-      logger.info() << "t = " << t << ": stepping with dt = " << dt << "... " << std::flush;
+      logger.debug() << "t = " << std::scientific << std::setprecision(2) << t << ": stepping with dt = " << dt
+                     << "... " << std::flush;
       dt = step(dt, max_dt);
-      logger.info() << "done" << std::endl;
+      logger.debug() << "done" << std::endl;
       t = current_time();
 
       // augment time step counter
@@ -205,18 +208,17 @@ public:
       // check if data should be written in this timestep (and write)
       if (Dune::XT::Common::FloatCmp::ge(t, next_save_time) || num_save_steps == size_t(-1)) {
         if (save_solution) {
-          logger.debug() << "t = " << t << ": storing current state... " << std::flush;
+          logger.info() << "t = " << std::scientific << std::setprecision(2) << t << ": storing current state... "
+                        << std::flush;
           sol.insert(sol.end(), std::make_pair(t, current_solution()));
-          logger.debug() << "done" << std::endl;
+          logger.info() << "done" << std::endl;
         }
         if (visualize) {
-          logger.debug() << "t = " << t << ": visualizing current state... " << std::flush;
+          logger.info() << "t = " << std::scientific << std::setprecision(2) << t << ": visualizing current state... "
+                        << std::flush;
           visualizer(current_solution(), filename_prefix + "_", save_step_counter);
-          logger.debug() << "done" << std::endl;
+          logger.info() << "done" << std::endl;
         }
-        //        if (output_progress)
-        //          std::cout << "time step " << time_step_counter << " done, time =" << t << ", current dt= " << dt <<
-        //          std::endl;
         next_save_time += save_interval;
         ++save_step_counter;
       }
