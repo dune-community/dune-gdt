@@ -12,6 +12,7 @@
 
 #include <dune/xt/grid/type_traits.hh>
 
+#include <dune/gdt/test/spaces/base.hh>
 #include <dune/gdt/spaces/cg.hh>
 #include <dune/gdt/spaces/dg.hh>
 #include <dune/gdt/spaces/fv.hh>

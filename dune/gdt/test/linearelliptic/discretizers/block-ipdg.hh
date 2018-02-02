@@ -18,7 +18,7 @@
 #include <dune/xt/grid/boundaryinfo.hh>
 #include <dune/xt/grid/layers.hh>
 #include <dune/xt/grid/gridprovider.hh>
-#include <dune/xt/grid/view/subdomain/part.hh>
+#include <dune/xt/grid/view/subdomain/view.hh>
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/playground/spaces/block.hh>

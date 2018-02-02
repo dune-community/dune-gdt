@@ -99,7 +99,7 @@ class SpaceDataHandle
 
 public:
   using DataType = typename CommunicationDescriptor::DataType;
-  using Codim0EntityType = XT::Grid::extract_entity_t<typename SpaceType::GridViewType>;
+  using Codim0EntityType = XT::Grid::extract_entity_t<typename SpaceType::GridLayerType>;
 
   SpaceDataHandle(const SpaceType& space,
                   VectorType& v,
