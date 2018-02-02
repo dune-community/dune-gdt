@@ -81,8 +81,8 @@ public:
       map_to_unrestricted_[counter] = index;
       ++counter;
     }
-    if (map_to_restricted_.size() != map_to_unrestricted_.size())
-      DUNE_THROW(InvalidStateException, "This should not happen!");
+    DUNE_THROW_IF(
+        map_to_restricted_.size() != map_to_unrestricted_.size(), InvalidStateException, "This should not happen!");
   }
 
   RestrictedMapper(const ThisType& other) = default;
@@ -95,14 +95,14 @@ public:
   void restrict(const XT::LA::VectorInterface<U>& unrestricted_vector,
                 XT::LA::VectorInterface<V>& restricted_vector) const
   {
-    if (unrestricted_vector.size() != backend().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "unrestricted_vector.size() = " << unrestricted_vector.size()
-                                                 << "\n   unrestricted_space.mapper().size() = "
-                                                 << backend().size());
-    if (restricted_vector.size() != size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "restricted_vector.size() = " << restricted_vector.size() << "\n   size() = " << size());
+    DUNE_THROW_IF(unrestricted_vector.size() != backend().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "unrestricted_vector.size() = " << unrestricted_vector.size()
+                                                  << "\n   unrestricted_space.mapper().size() = "
+                                                  << backend().size());
+    DUNE_THROW_IF(restricted_vector.size() != size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "restricted_vector.size() = " << restricted_vector.size() << "\n   size() = " << size());
     // the actual work
     for (size_t restricted_DoF = 0; restricted_DoF < map_to_unrestricted_.size(); ++restricted_DoF)
       restricted_vector[restricted_DoF] = unrestricted_vector[map_to_unrestricted_[restricted_DoF]];
@@ -120,14 +120,14 @@ public:
   void extend(const XT::LA::VectorInterface<U>& restricted_vector,
               XT::LA::VectorInterface<V>& unrestricted_vector) const
   {
-    if (restricted_vector.size() != size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "restricted_vector.size() = " << restricted_vector.size() << "\n   size() = " << size());
-    if (unrestricted_vector.size() != backend().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "unrestricted_vector.size() = " << unrestricted_vector.size()
-                                                 << "\n   unrestricted_space.mapper().size() = "
-                                                 << backend().size());
+    DUNE_THROW_IF(restricted_vector.size() != size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "restricted_vector.size() = " << restricted_vector.size() << "\n   size() = " << size());
+    DUNE_THROW_IF(unrestricted_vector.size() != backend().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "unrestricted_vector.size() = " << unrestricted_vector.size()
+                                                  << "\n   unrestricted_space.mapper().size() = "
+                                                  << backend().size());
     // the actual work
     unrestricted_vector *= 0.;
     for (size_t restricted_DoF = 0; restricted_DoF < map_to_unrestricted_.size(); ++restricted_DoF)
@@ -159,9 +159,7 @@ public:
 
   size_t numDofs(const EntityType& entity) const
   {
-    const auto error_message = check_entity(entity);
-    if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+    check_entity(entity);
     return backend().numDofs(entity);
   }
 
@@ -169,9 +167,7 @@ public:
 
   void globalIndices(const EntityType& entity, DynamicVector<size_t>& ret) const
   {
-    const auto error_message = check_entity(entity);
-    if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+    check_entity(entity);
     backend().globalIndices(entity, ret);
     for (size_t ii = 0; ii < numDofs(entity); ++ii)
       ret[ii] = map_to_restricted_.at(ret[ii]);
@@ -179,25 +175,24 @@ public:
 
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
-    const auto error_message = check_entity(entity);
-    if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+    check_entity(entity);
     return map_to_restricted_.at(backend().mapToGlobal(entity, localIndex));
   }
 
 private:
-  std::string check_entity(const EntityType& entity) const
+  void check_entity(const EntityType& entity) const
   {
-    std::stringstream error_message;
-    if (!grid_layer_.indexSet().contains(entity)) {
-      if (unrestricted_space_.grid_layer().indexSet().contains(entity))
-        error_message << "Entity not contained in restriction grid layer, but contained in the unrestricted grid layer "
-                         "with index "
-                      << unrestricted_space_.grid_layer().indexSet().index(entity) << "!";
-      else
-        error_message << "Entity neither contained in restriction grid layer nor in the unrestricted grid layer!";
-    }
-    return error_message.str();
+    if (grid_layer_.indexSet().contains(entity))
+      return;
+    if (unrestricted_space_.grid_layer().indexSet().contains(entity))
+      DUNE_THROW(restricted_space_error,
+                 "Entity not contained in restriction grid layer, but contained in the unrestricted grid layer "
+                     << "with index "
+                     << unrestricted_space_.grid_layer().indexSet().index(entity)
+                     << "!");
+    else
+      DUNE_THROW(restricted_space_error,
+                 "Entity neither contained in restriction grid layer nor in the unrestricted grid layer!");
   } // ... check_entity(...)
 
   const UnrestrictedSpace unrestricted_space_;

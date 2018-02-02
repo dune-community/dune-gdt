@@ -132,9 +132,7 @@ public:
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
-    const auto error_message = check_entity(entity);
-    if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+    check_entity(entity);
     return unrestricted_space_.base_function_set(entity);
   }
 
@@ -150,9 +148,7 @@ public:
                          const EntityType& entity,
                          ConstraintsInterface<C>& ret) const
   {
-    const auto error_message = check_entity(entity);
-    if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+    check_entity(entity);
     return unrestricted_space_.local_constraints(ansatz_space, entity, ret);
   }
 
@@ -169,18 +165,14 @@ public:
   template <class E>
   std::vector<DomainType> lagrange_points(const E& entity) const
   {
-    const auto error_message = check_entity(entity);
-    if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+    check_entity(entity);
     return unrestricted_space_.lagrange_points(entity);
   }
 
   template <class E, class I>
   std::set<size_t> local_dirichlet_DoFs(const E& entity, const XT::Grid::BoundaryInfo<I>& boundaryInfo) const
   {
-    const auto error_message = check_entity(entity);
-    if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+    check_entity(entity);
     return unrestricted_space_.local_dirichlet_DoFs(entity, boundaryInfo);
   }
 
@@ -188,25 +180,25 @@ public:
   template <class E>
   std::vector<size_t> local_DoF_indices(const E& entity) const
   {
-    const auto error_message = check_entity(entity);
-    if (error_message.size() > 0)
-      DUNE_THROW(restricted_space_error, error_message);
+    check_entity(entity);
     return unrestricted_space_.local_DoF_indices(entity);
   }
 
 private:
-  std::string check_entity(const EntityType& entity) const
+  void check_entity(const EntityType& entity) const
   {
-    std::stringstream error_message;
-    if (!grid_layer_.indexSet().contains(entity)) {
-      if (unrestricted_space_.grid_layer().indexSet().contains(entity))
-        error_message << "Entity not contained in restriction grid layer, but contained in the unrestricted grid layer "
-                         "with index "
-                      << unrestricted_space_.grid_layer().indexSet().index(entity) << "!";
-      else
-        error_message << "Entity neither contained in restriction grid layer nor in the unrestricted grid layer!";
-    }
-    return error_message.str();
+    if (grid_layer_.indexSet().contains(entity))
+      return;
+    if (unrestricted_space_.grid_layer().indexSet().contains(entity))
+      DUNE_THROW(restricted_space_error,
+                 "Entity not contained in restriction grid layer, but contained in the unrestricted grid layer "
+                     << "with index "
+                     << unrestricted_space_.grid_layer().indexSet().index(entity)
+                     << "!");
+    else
+      DUNE_THROW(restricted_space_error,
+                 "Entity neither contained in restriction grid layer nor in the unrestricted grid layer!");
+
   } // ... check_entity(...)
 
   const UnrestrictedSpace unrestricted_space_;
