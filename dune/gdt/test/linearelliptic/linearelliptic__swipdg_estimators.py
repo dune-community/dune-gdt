@@ -26,17 +26,5 @@ except KeyError:
     casenames.append('Spe10Model1TestCase')
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 
-space_backends = []
-for s in ('fem',):
-    try:
-        if cache['dune-{}'.format(s)]:
-            space_backends.extend([s])
-    except KeyError:
-        pass
-
-if len(grids) == 0 or len(space_backends) == 0:
-    # prevent unusable iteration in template
-    permutations = []
-else:
-    permutations = itertools.product(testcases, space_backends, la_backends(cache))
-    permutations = [(t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]
+permutations = itertools.product(testcases, ('gdt',), la_backends(cache))
+permutations = [(t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]

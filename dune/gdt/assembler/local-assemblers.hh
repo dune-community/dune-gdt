@@ -54,16 +54,17 @@ public:
                        const EntityType& entity,
                        MatrixType& global_matrix)
   {
-    if (global_matrix.rows() != test_space.mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "global_matrix.rows() = " << global_matrix.rows() << "\n  "
-                                           << "test_space.mapper().size()"
-                                           << test_space.mapper().size());
-    if (global_matrix.cols() != ansatz_space.mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "global_matrix.cols() = " << global_matrix.cols() << "\n  "
-                                           << "ansatz_space.mapper().size()"
-                                           << ansatz_space.mapper().size());
+
+    DUNE_THROW_IF(global_matrix.rows() != test_space.mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "global_matrix.rows() = " << global_matrix.rows() << "\n  "
+                                            << "test_space.mapper().size()"
+                                            << test_space.mapper().size());
+    DUNE_THROW_IF(global_matrix.cols() != ansatz_space.mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "global_matrix.cols() = " << global_matrix.cols() << "\n  "
+                                            << "ansatz_space.mapper().size()"
+                                            << ansatz_space.mapper().size());
     // prepare
     const size_t rows = test_space.mapper().numDofs(entity);
     const size_t cols = ansatz_space.mapper().numDofs(entity);
@@ -166,46 +167,46 @@ public:
                        MatrixType& global_matrix_in_out,
                        MatrixType& global_matrix_out_in)
   {
-    if (global_matrix_in_in.rows() != inner_test_space.mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "global_matrix_in_in.rows() = " << global_matrix_in_in.rows() << "\n  "
-                                                 << "inner_test_space.mapper().size()"
-                                                 << inner_test_space.mapper().size());
-    if (global_matrix_in_in.cols() != inner_ansatz_space.mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "global_matrix_in_in.cols() = " << global_matrix_in_in.cols() << "\n  "
-                                                 << "inner_ansatz_space.mapper().size()"
-                                                 << inner_ansatz_space.mapper().size());
-    if (global_matrix_out_out.rows() != outer_test_space.mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "global_matrix_out_out.rows() = " << global_matrix_out_out.rows() << "\n  "
-                                                   << "outer_test_space.mapper().size()"
-                                                   << outer_test_space.mapper().size());
-    if (global_matrix_out_out.cols() != outer_ansatz_space.mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "global_matrix_out_out.cols() = " << global_matrix_out_out.cols() << "\n  "
-                                                   << "outer_ansatz_space.mapper().size()"
-                                                   << outer_ansatz_space.mapper().size());
-    if (global_matrix_in_out.rows() != inner_test_space.mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "global_matrix_in_out.rows() = " << global_matrix_in_out.rows() << "\n  "
+    DUNE_THROW_IF(global_matrix_in_in.rows() != inner_test_space.mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "global_matrix_in_in.rows() = " << global_matrix_in_in.rows() << "\n  "
                                                   << "inner_test_space.mapper().size()"
                                                   << inner_test_space.mapper().size());
-    if (global_matrix_in_out.cols() != outer_ansatz_space.mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "global_matrix_in_out.cols() = " << global_matrix_in_out.cols() << "\n  "
-                                                  << "outer_ansatz_space.mapper().size()"
-                                                  << outer_ansatz_space.mapper().size());
-    if (global_matrix_out_in.rows() != outer_test_space.mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "global_matrix_out_in.rows() = " << global_matrix_out_in.rows() << "\n  "
-                                                  << "outer_test_space.mapper().size()"
-                                                  << outer_test_space.mapper().size());
-    if (global_matrix_out_in.cols() != inner_ansatz_space.mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "global_matrix_out_in.cols() = " << global_matrix_out_in.cols() << "\n  "
+    DUNE_THROW_IF(global_matrix_in_in.cols() != inner_ansatz_space.mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "global_matrix_in_in.cols() = " << global_matrix_in_in.cols() << "\n  "
                                                   << "inner_ansatz_space.mapper().size()"
                                                   << inner_ansatz_space.mapper().size());
+    DUNE_THROW_IF(global_matrix_out_out.rows() != outer_test_space.mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "global_matrix_out_out.rows() = " << global_matrix_out_out.rows() << "\n  "
+                                                    << "outer_test_space.mapper().size()"
+                                                    << outer_test_space.mapper().size());
+    DUNE_THROW_IF(global_matrix_out_out.cols() != outer_ansatz_space.mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "global_matrix_out_out.cols() = " << global_matrix_out_out.cols() << "\n  "
+                                                    << "outer_ansatz_space.mapper().size()"
+                                                    << outer_ansatz_space.mapper().size());
+    DUNE_THROW_IF(global_matrix_in_out.rows() != inner_test_space.mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "global_matrix_in_out.rows() = " << global_matrix_in_out.rows() << "\n  "
+                                                   << "inner_test_space.mapper().size()"
+                                                   << inner_test_space.mapper().size());
+    DUNE_THROW_IF(global_matrix_in_out.cols() != outer_ansatz_space.mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "global_matrix_in_out.cols() = " << global_matrix_in_out.cols() << "\n  "
+                                                   << "outer_ansatz_space.mapper().size()"
+                                                   << outer_ansatz_space.mapper().size());
+    DUNE_THROW_IF(global_matrix_out_in.rows() != outer_test_space.mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "global_matrix_out_in.rows() = " << global_matrix_out_in.rows() << "\n  "
+                                                   << "outer_test_space.mapper().size()"
+                                                   << outer_test_space.mapper().size());
+    DUNE_THROW_IF(global_matrix_out_in.cols() != inner_ansatz_space.mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "global_matrix_out_in.cols() = " << global_matrix_out_in.cols() << "\n  "
+                                                   << "inner_ansatz_space.mapper().size()"
+                                                   << inner_ansatz_space.mapper().size());
     // prepare
     const auto entity = intersection.inside();
     const auto neighbor = intersection.outside();
@@ -447,16 +448,16 @@ public:
                        const LocalBoundaryTwoFormType& local_boundary_two_form,
                        MatrixType& global_matrix)
   {
-    if (global_matrix.rows() != test_space.mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "global_matrix.rows() = " << global_matrix.rows() << "\n  "
-                                           << "test_space.mapper().size()"
-                                           << test_space.mapper().size());
-    if (global_matrix.cols() != ansatz_space.mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "global_matrix.cols() = " << global_matrix.cols() << "\n  "
-                                           << "ansatz_space.mapper().size()"
-                                           << ansatz_space.mapper().size());
+    DUNE_THROW_IF(global_matrix.rows() != test_space.mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "global_matrix.rows() = " << global_matrix.rows() << "\n  "
+                                            << "test_space.mapper().size()"
+                                            << test_space.mapper().size());
+    DUNE_THROW_IF(global_matrix.cols() != ansatz_space.mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "global_matrix.cols() = " << global_matrix.cols() << "\n  "
+                                            << "ansatz_space.mapper().size()"
+                                            << ansatz_space.mapper().size());
     // prepare
     const auto entity = intersection.inside();
     const size_t rows = test_space.mapper().numDofs(entity);
@@ -542,11 +543,11 @@ public:
                        const EntityType& entity,
                        VectorType& global_vector)
   {
-    if (global_vector.size() != test_space.mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "global_vector.size() = " << global_vector.size() << "\n  "
-                                           << "test_space.mapper().size()"
-                                           << test_space.mapper().size());
+    DUNE_THROW_IF(global_vector.size() != test_space.mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "global_vector.size() = " << global_vector.size() << "\n  "
+                                            << "test_space.mapper().size()"
+                                            << test_space.mapper().size());
     // prepare
     const size_t size = test_space.mapper().numDofs(entity);
     Dune::DynamicVector<FieldType> local_vector(size, 0.); // \todo: make mutable member, after SMP refactor

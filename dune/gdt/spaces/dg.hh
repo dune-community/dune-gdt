@@ -18,11 +18,10 @@
 #include <dune/xt/grid/layers.hh>
 #include <dune/xt/grid/gridprovider/provider.hh>
 
-#include "interface.hh"
-#include "dg/dune-fem-wrapper.hh"
-#include "../playground/spaces/dg/dune-pdelab-wrapper.hh"
-#include "../playground/spaces/dg/dune-functions-wrapper.hh"
 #include <dune/gdt/playground/spaces/block.hh>
+
+#include "interface.hh"
+#include "dg/default.hh"
 
 
 namespace Dune {
@@ -55,22 +54,13 @@ private:
     static_assert(AlwaysFalse<G>::value, "No space available for this backend!");
   };
 
-  template <class G, int p, class R, size_t r, size_t rC>
-  struct SpaceChooser<G, p, R, r, rC, GDT::Backends::fem>
-  {
-    typedef GDT::DuneFemDgSpaceWrapper<GridLayerType, p, R, r, rC> Type;
-  };
 
   template <class G, int p, class R, size_t r, size_t rC>
-  struct SpaceChooser<G, p, R, r, rC, GDT::Backends::functions>
+  struct SpaceChooser<G, p, R, r, rC, GDT::Backends::gdt>
   {
-    typedef GDT::DuneFunctionsDgSpaceWrapper<GridLayerType, p, R, r, rC> Type;
-  };
-
-  template <class G, int p, class R, size_t r, size_t rC>
-  struct SpaceChooser<G, p, R, r, rC, GDT::Backends::pdelab>
-  {
-    typedef GDT::DunePdelabDgSpaceWrapper<GridLayerType, p, R, r, rC> Type;
+    static_assert(rC == 1, "");
+    static_assert(r == 1, "");
+    typedef GDT::DiscontinuousLagrangeSpace<GridLayerType, p, R> Type;
   };
 
 public:

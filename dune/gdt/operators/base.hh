@@ -546,7 +546,7 @@ public:
                    const Dune::XT::Common::Parameter& param = {}) const
   {
     auto ret = apply2(range.vector(), source.vector(), param);
-    return range.space().grid_view().grid().comm().sum(ret);
+    return range.space().grid_layer().grid().comm().sum(ret);
   }
 
   template <class SourceType>

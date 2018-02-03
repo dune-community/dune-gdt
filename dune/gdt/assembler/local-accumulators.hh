@@ -94,8 +94,7 @@ public:
 
   FieldType result() const override final
   {
-    if (!finalized_)
-      DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong, "Call finalize() first!");
+    DUNE_THROW_IF(!finalized_, XT::Common::Exceptions::you_are_using_this_wrong, "Call finalize() first!");
     return final_result_;
   }
 

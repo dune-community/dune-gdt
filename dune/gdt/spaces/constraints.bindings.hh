@@ -204,7 +204,7 @@ public:
 #define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_ALU(_m)                                                                      \
   _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, leaf, view, "leaf");                                \
   _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, level, view, "level");                              \
-  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, part, "dd_subdomain")
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, view, "dd_subdomain")
 #else
 #define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_ALU(_m)
 #endif
@@ -220,9 +220,9 @@ public:
 
 #define _DUNE_GDT_SPACES_CONSTRAINTS_BIND_YASP(_m)                                                                     \
   _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, leaf, view, "");                                   \
-  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, dd_subdomain, part, "dd_subdomain");               \
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, dd_subdomain, view, "dd_subdomain");               \
   _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, leaf, view, "");                                   \
-  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, dd_subdomain, part, "dd_subdomain")
+  _DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, dd_subdomain, view, "dd_subdomain")
 
 #define DUNE_GDT_SPACES_CONSTRAINTS_BIND(_m)                                                                           \
   _DUNE_GDT_SPACES_CONSTRAINTS_BIND_ALBERTA(_m);                                                                       \

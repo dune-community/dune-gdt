@@ -40,18 +40,18 @@ PYBIND11_PLUGIN(__functionals_elliptic_ipdg)
   py::module::import("dune.xt.la");
   py::module::import("dune.gdt.__spaces");
 
-// alu_fem_istl.cc
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_ISTL
-  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_ALU(m, leaf, part, dg, fem, 1, istl_dense);
-  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_ALU(m, level, part, dg, fem, 1, istl_dense);
-  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_ALU(m, dd_subdomain, part, dg, fem, 1, istl_dense);
+// alu_istl.cc
+#if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
+  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_ALU(m, leaf, view, dg, gdt, 1, istl_dense);
+  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_ALU(m, level, view, dg, gdt, 1, istl_dense);
+  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_ALU(m, dd_subdomain, view, dg, gdt, 1, istl_dense);
 #endif
 
-// yasp_fem_istl.cc
-#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
-  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_YASP(m, leaf, part, dg, fem, 1, istl_dense);
-  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_YASP(m, level, part, dg, fem, 1, istl_dense);
-  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_YASP(m, dd_subdomain, part, dg, fem, 1, istl_dense);
+// yasp_istl.cc
+#if HAVE_DUNE_ISTL
+  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_YASP(m, leaf, view, dg, gdt, 1, istl_dense);
+  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_YASP(m, level, view, dg, gdt, 1, istl_dense);
+  DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_YASP(m, dd_subdomain, view, dg, gdt, 1, istl_dense);
 #endif
 
   m.def("_init_mpi",

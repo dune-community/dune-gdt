@@ -22,9 +22,9 @@
 #include <dune/gdt/projections.hh>
 #include <dune/gdt/operators/laplace.hh>
 #include <dune/gdt/operators/l2.hh>
-#include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
-#include <dune/gdt/spaces/fv/default.hh>
-#include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
+#include <dune/gdt/spaces/cg.hh>
+#include <dune/gdt/spaces/fv.hh>
+#include <dune/gdt/spaces/rt/default.hh>
 
 namespace Dune {
 namespace GDT {
@@ -33,7 +33,7 @@ namespace Test {
 
 /**
  * \note This test assumes that DiscreteFunction, Operators::L2Projection, Products::L2, Products::H1Semi,
- *       DuneFemCgSpaceWrapper, DunePdelabRtSpaceWrapper and FvSpace work correctly.
+ *       ContinuousLagrangeSpace, RaviartThomasSpace and FvSpace work correctly.
  * \todo This test is rather old and could be refactored in terms of the other operator tests.
  * \todo Missing ctor and make_darcy_operator tests.
  */
@@ -88,14 +88,14 @@ struct DarcyOperatorTest : public ::testing::Test
   RangeFieldType
   expected_result_(const std::string type, const FunctionType& desired_output, const GL& grid_layer) const
   {
-    if (std::is_base_of<DuneFemCgSpaceWrapper<GL, 1, RangeFieldType, dimDomain>, RangeSpaceType>::value) {
+    if (std::is_base_of<Dune::GDT::ContinuousLagrangeSpace<GL, 1, double>, RangeSpaceType>::value) {
       if (type == "l2")
         return 2.18e-16;
       else if (type == "h1")
         return 3.12e-15;
       else
         DUNE_THROW(Dune::XT::Common::Exceptions::internal_error, type);
-    } else if (std::is_base_of<DunePdelabRtSpaceWrapper<GL, 0, RangeFieldType, dimDomain>, RangeSpaceType>::value) {
+    } else if (std::is_base_of<RaviartThomasSpace<GL, 0, RangeFieldType>, RangeSpaceType>::value) {
       typedef FvSpace<GL, RangeFieldType, dimDomain> FvSpaceType;
       const FvSpaceType fv_space(grid_layer);
       VectorType fv_desired_output_vector(fv_space.mapper().size());

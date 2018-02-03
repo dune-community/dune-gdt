@@ -14,7 +14,7 @@
 #include <dune/xt/grid/gridprovider/provider.hh>
 
 #include "rt/interface.hh"
-#include "rt/dune-pdelab-wrapper.hh"
+#include "rt/default.hh"
 #include <dune/gdt/playground/spaces/block.hh>
 
 namespace Dune {
@@ -47,9 +47,11 @@ private:
   };
 
   template <class G, int p, class R, size_t r, size_t rC>
-  struct SpaceChooser<G, p, R, r, rC, GDT::Backends::pdelab>
+  struct SpaceChooser<G, p, R, r, rC, GDT::Backends::gdt>
   {
-    typedef GDT::DunePdelabRtSpaceWrapper<GridLayerType, p, R, r, rC> Type;
+    static_assert(rC == 1, "");
+    static_assert(r == G::dimension, "");
+    typedef GDT::RaviartThomasSpace<GridLayerType, p, R> Type;
   };
 
 public:

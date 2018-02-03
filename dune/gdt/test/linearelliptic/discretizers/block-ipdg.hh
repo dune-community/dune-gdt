@@ -18,7 +18,7 @@
 #include <dune/xt/grid/boundaryinfo.hh>
 #include <dune/xt/grid/layers.hh>
 #include <dune/xt/grid/gridprovider.hh>
-#include <dune/xt/grid/view/subdomain/part.hh>
+#include <dune/xt/grid/view/subdomain/view.hh>
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/playground/spaces/block.hh>
@@ -39,7 +39,7 @@ namespace LinearElliptic {
  * \todo add pattern() to StationaryContainerBasedDefaultDiscretization, avoid computation of local_pattern below
  */
 template <class GridType,
-          Backends spacebackend = Backends::fem, // we only have local grid parts atm
+          Backends spacebackend = Backends::gdt, // we only have local grid parts atm
           XT::LA::Backends la = XT::LA::default_sparse_backend,
           int pol = 1,
           class RangeFieldType = double,

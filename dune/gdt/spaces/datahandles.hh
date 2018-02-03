@@ -99,7 +99,7 @@ class SpaceDataHandle
 
 public:
   using DataType = typename CommunicationDescriptor::DataType;
-  using Codim0EntityType = XT::Grid::extract_entity_t<typename SpaceType::GridViewType>;
+  using Codim0EntityType = XT::Grid::extract_entity_t<typename SpaceType::GridLayerType>;
 
   SpaceDataHandle(const SpaceType& space,
                   VectorType& v,
@@ -221,7 +221,7 @@ public:
 private:
   GatherScatter _gather_scatter;
   // this is currently the default since we have no non-overlapping parallel code
-  static const Partitions::All partitions_;
+  static constexpr const Partitions::All partitions_{};
 };
 
 

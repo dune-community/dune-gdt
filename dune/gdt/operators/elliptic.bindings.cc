@@ -41,7 +41,7 @@ PYBIND11_PLUGIN(__operators_elliptic)
   py::module::import("dune.gdt.__spaces");
   py::module::import("dune.gdt.__discretefunction");
 
-  DUNE_GDT_OPERATORS_ELLIPTIC_BIND_FEM_ISTL(m);
+  DUNE_GDT_OPERATORS_ELLIPTIC_BIND_ISTL(m);
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {

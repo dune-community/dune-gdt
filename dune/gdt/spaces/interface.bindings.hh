@@ -48,29 +48,11 @@ struct backend_name
 };
 
 template <>
-struct backend_name<Backends::fem>
-{
-  static std::string value()
-  {
-    return "fem";
-  }
-};
-
-template <>
 struct backend_name<Backends::gdt>
 {
   static std::string value()
   {
     return "gdt";
-  }
-};
-
-template <>
-struct backend_name<Backends::pdelab>
-{
-  static std::string value()
-  {
-    return "pdelab";
   }
 };
 
@@ -552,14 +534,9 @@ public:
     const auto sp_name = space_name<SP>::value();
     auto c = SpaceInterfaceWoFactory<S>::bind(m, sp_name);
 
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::adaptive_leaf>(m, c, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain>(m, c, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain_boundary>(m, c, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain_coupling>(m, c, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::dd_subdomain_oversampled>(m, c, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::leaf>(m, c, sp_name);
-    addbind_restricted<XT::Grid::Backends::part, XT::Grid::Layers::level>(m, c, sp_name);
     addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain>(m, c, sp_name);
+    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain_boundary>(m, c, sp_name);
+    addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain_coupling>(m, c, sp_name);
     addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain_oversampled>(m, c, sp_name);
     addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::leaf>(m, c, sp_name);
     addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::level>(m, c, sp_name);

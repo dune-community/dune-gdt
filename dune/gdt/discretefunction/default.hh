@@ -173,8 +173,8 @@ public:
   typedef SpaceImp SpaceType;
   typedef typename SpaceType::Traits SpaceTraits;
   typedef VectorImp VectorType;
-  using typename BaseType::EntityType;
-  using typename BaseType::LocalfunctionType;
+  using EntityType = typename BaseType::EntityType;
+  using LocalfunctionType = typename BaseType::LocalfunctionType;
 
   typedef ConstLocalDiscreteFunction<SpaceType, VectorType> ConstLocalDiscreteFunctionType;
 

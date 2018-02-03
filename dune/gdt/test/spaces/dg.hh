@@ -6,115 +6,50 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2014 - 2017)
-//   Rene Milk       (2014, 2016 - 2017)
+//   Rene Milk       (2016)
+//   Tobias Leibner  (2014, 2016)
 
-#ifndef DUNE_GDT_TEST_SPACES_DG_HH
-#define DUNE_GDT_TEST_SPACES_DG_HH
+#ifndef DUNE_GDT_TEST_SPACES_DG_DEFAULT_HH
+#define DUNE_GDT_TEST_SPACES_DG_DEFAULT_HH
 
-#include <boost/numeric/conversion/cast.hpp>
-
-#include <dune/xt/common/print.hh>
-#include <dune/xt/common/ranges.hh>
-
-#include "base.hh"
+#include <dune/gdt/spaces/dg.hh>
+#include <dune/gdt/test/grids.hh>
 
 
-template <class SpaceType>
-class DG_Space : public SpaceBase<SpaceType>
-{
-};
+#define SPACE_DG_YASPGRID(dd, rr, pp) Dune::GDT::DiscontinuousLagrangeSpace<Yasp##dd##dLeafGridViewType, pp, double>
+
+#define SPACE_DG_YASPGRID_LEVEL(dd, rr, pp)                                                                            \
+  Dune::GDT::DiscontinuousLagrangeSpace<Yasp##dd##dLevelGridViewType, pp, double>
+
+#define SPACES_DG_LEVEL(pp)                                                                                            \
+  SPACE_DG_YASPGRID_LEVEL(1, 1, pp), SPACE_DG_YASPGRID_LEVEL(2, 1, pp), SPACE_DG_YASPGRID_LEVEL(3, 1, pp)
 
 
-template <class SpaceType>
-struct P1Q1_DG_Space : public SpaceBase<SpaceType>
-{
-  typedef typename SpaceType::GridLayerType GridLayerType;
-  using GridType = Dune::XT::Grid::extract_grid_t<typename SpaceType::GridLayerType>;
-  static const size_t dimDomain = GridType::dimension;
-  typedef typename GridType::ctype DomainFieldType;
-  typedef Dune::FieldVector<DomainFieldType, dimDomain> DomainType;
-
-  static std::vector<DomainFieldType> convert_vector(const DomainType& source)
-  {
-    std::vector<DomainFieldType> ret(dimDomain, DomainFieldType(0));
-    for (size_t ii = 0; ii < dimDomain; ++ii)
-      ret[ii] = source[ii];
-    return ret;
-  }
-
-  void maps_correctly()
-  {
-    using namespace Dune::XT;
-    // walk the grid to create a map of all vertices
-    std::map<std::vector<DomainFieldType>, std::pair<std::set<size_t>, size_t>> vertex_to_indices_map;
-    const auto entity_end_it = this->space_.grid_layer().template end<0>();
-    for (auto entity_it = this->space_.grid_layer().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
-      const auto& entity = *entity_it;
-      for (auto cc : Dune::XT::Common::value_range(entity.subEntities(dimDomain))) {
-        const auto vertex = entity.template subEntity<dimDomain>(cc);
-        const DomainType vertex_center = vertex.geometry().center();
-        vertex_to_indices_map[convert_vector(vertex_center)].first = std::set<size_t>();
-        ++vertex_to_indices_map[convert_vector(vertex_center)].second;
-      }
-    }
-    // walk the grid again to find all DoF ids
-    for (auto entity_it = this->space_.grid_layer().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
-      const auto& entity = *entity_it;
-      const size_t num_vertices = entity.subEntities(dimDomain);
-      const auto basis = this->space_.base_function_set(entity);
-      EXPECT_EQ(basis.size(), num_vertices);
-      for (size_t cc = 0; cc < num_vertices; ++cc) {
-        const auto vertex = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(cc));
-        const DomainType vertex_center = vertex.geometry().center();
-        // find the local basis function which corresponds to this vertex
-        const auto basis_values = basis.evaluate(entity.geometry().local(vertex_center));
-        EXPECT_EQ(basis_values.size(), num_vertices);
-        size_t ones = 0;
-        size_t zeros = 0;
-        size_t failures = 0;
-        size_t local_DoF_index = 0;
-        for (size_t ii = 0; ii < basis.size(); ++ii) {
-          if (Common::FloatCmp::eq(basis_values[ii][0], typename SpaceType::RangeFieldType(1))) {
-            local_DoF_index = ii;
-            ++ones;
-          } else if (Common::FloatCmp::eq(basis_values[ii][0] + 1, typename SpaceType::RangeFieldType(1)))
-            ++zeros;
-          else
-            ++failures;
-        }
-        if (ones != 1 || zeros != (basis.size() - 1) || failures > 0) {
-          std::stringstream ss;
-          ss << "ones = " << ones << ", zeros = " << zeros << ", failures = " << failures
-             << ", num_vertices = " << num_vertices << ", entity " << this->space_.grid_layer().indexSet().index(entity)
-             << ", vertex " << cc << ": [ " << vertex_center << "], ";
-          Dune::XT::Common::print(basis_values, "basis_values", ss);
-          EXPECT_TRUE(false) << ss.str();
-        }
-        // now we know that the local DoF index of this vertex is ii
-        const size_t global_DoF_index = this->space_.mapper().mapToGlobal(entity, local_DoF_index);
-        vertex_to_indices_map[convert_vector(vertex_center)].first.insert(global_DoF_index);
-      }
-    }
-    // check that each vertex has the appropiate number of associated DoF ids and that the numbering is consecutive
-    std::set<size_t> global_DoF_indices;
-    for (const auto& entry : vertex_to_indices_map) {
-      const auto vertex_ids = entry.second.first;
-      for (auto vertex_ids_it = vertex_ids.begin(); vertex_ids_it != vertex_ids.end(); ++vertex_ids_it)
-        global_DoF_indices.insert(*vertex_ids_it);
-    }
-    size_t count = 0;
-    for (const auto& global_DoF_id : global_DoF_indices) {
-      EXPECT_EQ(global_DoF_id, count);
-      ++count;
-    }
-    for (const auto& entry : vertex_to_indices_map) {
-      const auto vertex_ids = entry.second.first;
-      size_t number_of_associated_DoF_ids = vertex_ids.size();
-      size_t number_of_adjacent_entitys = entry.second.second;
-      EXPECT_EQ(number_of_associated_DoF_ids, number_of_adjacent_entitys);
-    }
-  } // ... maps_correctly()
-}; // struct P1Q1_DG_Space
+#if HAVE_DUNE_ALUGRID
 
 
-#endif // DUNE_GDT_TEST_SPACES_DG_HH
+#define SPACE_DG_ALUCONFORMGRID(dd, rr, pp)                                                                            \
+  Dune::GDT::DiscontinuousLagrangeSpace<AluConform##dd##dLeafGridViewType, pp, double>
+
+#define SPACE_DG_ALUCUBEGRID(dd, rr, pp)                                                                               \
+  Dune::GDT::DiscontinuousLagrangeSpace<AluCube##dd##dLeafGridViewType, pp, double>
+
+#define SPACES_DG_ALUGRID(pp)                                                                                          \
+  SPACE_DG_ALUCONFORMGRID(2, 1, pp)                                                                                    \
+  , SPACE_DG_ALUCONFORMGRID(3, 1, pp), SPACE_DG_ALUCUBEGRID(2, 1, pp), SPACE_DG_ALUCUBEGRID(3, 1, pp)
+
+
+#define SPACE_DG_ALUCONFORMGRID_LEVEL(dd, rr, pp)                                                                      \
+  Dune::GDT::DiscontinuousLagrangeSpace<AluConform##dd##dLevelGridViewType, pp, double>
+
+#define SPACE_DG_ALUCUBEGRID_LEVEL(dd, rr, pp)                                                                         \
+  Dune::GDT::DiscontinuousLagrangeSpace<AluCube##dd##dLevelGridViewType, pp, double>
+
+#define SPACES_DG_ALUGRID_LEVEL(pp)                                                                                    \
+  SPACE_DG_ALUCONFORMGRID_LEVEL(2, 1, pp)                                                                              \
+  , SPACE_DG_ALUCONFORMGRID_LEVEL(3, 1, pp), SPACE_DG_ALUCUBEGRID_LEVEL(2, 1, pp), SPACE_DG_ALUCUBEGRID_LEVEL(3, 1, pp)
+
+
+#endif // HAVE_DUNE_ALUGRID
+
+#endif // DUNE_GDT_TEST_SPACES_DG_DEFAULT_HH

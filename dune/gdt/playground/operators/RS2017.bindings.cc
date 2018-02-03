@@ -9,11 +9,13 @@
 
 #include "config.h"
 
-#if HAVE_EIGEN && HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_PDELAB && HAVE_DUNE_PYBINDXI
+#if HAVE_DUNE_ALUGRID && HAVE_DUNE_PYBINDXI
 
 #include <dune/common/parallel/mpihelper.hh>
 
+#if HAVE_DUNE_FEM
 #include <dune/fem/misc/mpimanager.hh>
+#endif
 
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
@@ -72,7 +74,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
            const ssize_t over_int) {
           py::gil_scoped_release DUNE_UNUSED(release);
           const auto over_integrate = XT::Common::numeric_cast<size_t>(over_int);
-          auto subdomain_layer = dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+          auto subdomain_layer = dd_grid_provider.template layer<Layers::dd_subdomain, Backends::view>(
               XT::Common::numeric_cast<size_t>(subdomain));
           typedef decltype(subdomain_layer) GL;
           XT::Grid::Walker<GL> walker(subdomain_layer);
@@ -85,17 +87,25 @@ PYBIND11_PLUGIN(__operators_RS2017)
             for (const auto& quadrature_point : QuadratureRules<D, d>::rule(
                      entity.type(), local_lambda->order() + local_kappa->order() + over_integrate)) {
               const auto xx = quadrature_point.position();
-              XT::LA::EigenDenseMatrix<R> diffusion = local_kappa->evaluate(xx);
+              auto diffusion = local_kappa->evaluate(xx);
               diffusion *= local_lambda->evaluate(xx);
-              min_ev = std::min(min_ev, XT::LA::make_eigen_solver(diffusion).min_eigenvalues(1).at(0));
+              min_ev = std::min(min_ev,
+                                XT::LA::make_eigen_solver(
+                                    diffusion, XT::Common::Configuration{{"assert_positive_eigenvalues"}, {1e-15}})
+                                    .min_eigenvalues(1)
+                                    .at(0));
             }
             // * and in the corners of the gigen entity.
             const auto& reference_element = ReferenceElements<D, d>::general(entity.type());
             for (int ii = 0; ii < reference_element.size(d); ++ii) {
               const auto xx = reference_element.position(ii, d);
-              XT::LA::EigenDenseMatrix<R> diffusion = local_kappa->evaluate(xx);
+              auto diffusion = local_kappa->evaluate(xx);
               diffusion *= local_lambda->evaluate(xx);
-              min_ev = std::min(min_ev, XT::LA::make_eigen_solver(diffusion).min_eigenvalues(1).at(0));
+              min_ev = std::min(min_ev,
+                                XT::LA::make_eigen_solver(
+                                    diffusion, XT::Common::Configuration{{"assert_positive_eigenvalues"}, {1e-15}})
+                                    .min_eigenvalues(1)
+                                    .at(0));
             }
           });
           walker.walk();
@@ -111,7 +121,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
                dd_grid_provider,
            const ssize_t subdomain) {
           py::gil_scoped_release DUNE_UNUSED(release);
-          auto subdomain_layer = dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+          auto subdomain_layer = dd_grid_provider.template layer<Layers::dd_subdomain, Backends::view>(
               XT::Common::numeric_cast<size_t>(subdomain));
           typedef decltype(subdomain_layer) GL;
           XT::Grid::Walker<GL> walker(subdomain_layer);
@@ -137,7 +147,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& v,
            const ssize_t over_integrate) {
           py::gil_scoped_release DUNE_UNUSED(release);
-          return GDT::make_l2_operator(dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+          return GDT::make_l2_operator(dd_grid_provider.template layer<Layers::dd_subdomain, Backends::view>(
                                            XT::Common::numeric_cast<size_t>(subdomain)),
                                        XT::Common::numeric_cast<size_t>(over_integrate))
               ->apply2(u, v);
@@ -153,13 +163,13 @@ PYBIND11_PLUGIN(__operators_RS2017)
                                       typename GDT::SpaceProvider<ALU_2D_SIMPLEX_CONFORMING,
                                                                   Layers::dd_subdomain,
                                                                   GDT::SpaceType::dg,
-                                                                  GDT::Backends::fem,
+                                                                  GDT::Backends::gdt,
                                                                   1,
                                                                   double,
                                                                   1>::type,
                                       XT::LA::IstlRowMajorSparseMatrix<double>,
                                       typename XT::Grid::
-                                          Layer<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::part>::type>
+                                          Layer<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view>::type>
       EllipticMatrixOperatorType;
   try { // we might not be the first to add this
     py::class_<EllipticMatrixOperatorType,
@@ -181,7 +191,7 @@ PYBIND11_PLUGIN(__operators_RS2017)
                                                 lambda,
                                                 kappa,
                                                 space,
-                                                dd_grid_provider.template layer<Layers::dd_subdomain, Backends::part>(
+                                                dd_grid_provider.template layer<Layers::dd_subdomain, Backends::view>(
                                                     XT::Common::numeric_cast<int>(subdomain)));
         },
         "dd_grid_provider"_a,
@@ -238,4 +248,4 @@ PYBIND11_PLUGIN(__operators_RS2017)
   return m.ptr();
 }
 
-#endif // HAVE_EIGEN && HAVE_DUNE_FEM && HAVE_DEUN_PDELAB && HAVE_DUNE_PYBINDXI
+#endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_PYBINDXI

@@ -43,7 +43,7 @@ namespace Dune {
 namespace GDT {
 namespace RS2017 {
 
-#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL && HAVE_DUNE_PDELAB
+#if HAVE_DUNE_ISTL
 
 
 template <class G>
@@ -52,24 +52,24 @@ class DiffusiveFluxAaProduct
                                      typename GDT::SpaceProvider<G,
                                                                  XT::Grid::Layers::dd_subdomain,
                                                                  GDT::SpaceType::dg,
-                                                                 GDT::Backends::fem,
+                                                                 GDT::Backends::gdt,
                                                                  1,
                                                                  double,
                                                                  1>::type,
                                      typename XT::Grid::Layer<G,
                                                               XT::Grid::Layers::dd_subdomain,
-                                                              XT::Grid::Backends::part,
+                                                              XT::Grid::Backends::view,
                                                               XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
   typedef typename GDT::
-      SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::fem, 1, double, 1>
+      SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1>
           SP;
   typedef GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
                                   typename SP::type,
                                   typename XT::Grid::Layer<G,
                                                            XT::Grid::Layers::dd_subdomain,
-                                                           XT::Grid::Backends::part,
+                                                           XT::Grid::Backends::view,
                                                            XT::Grid::DD::SubdomainGrid<G>>::type>
       BaseType;
   typedef DiffusiveFluxAaProduct<G> ThisType;
@@ -109,7 +109,7 @@ public:
              const size_t over_integrate) {
             return new ThisType(
                 space,
-                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
+                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::view>(
                     XT::Common::numeric_cast<size_t>(subdomain)),
                 lambda_hat,
                 lambda_u,
@@ -210,24 +210,24 @@ class DiffusiveFluxAbProduct
                              typename GDT::SpaceProvider<G,
                                                          XT::Grid::Layers::dd_subdomain,
                                                          GDT::SpaceType::dg,
-                                                         GDT::Backends::fem,
+                                                         GDT::Backends::gdt,
                                                          1,
                                                          double,
                                                          1>::type,
                              typename XT::Grid::Layer<G,
                                                       XT::Grid::Layers::dd_subdomain,
-                                                      XT::Grid::Backends::part,
+                                                      XT::Grid::Backends::view,
                                                       XT::Grid::DD::SubdomainGrid<G>>::type,
                              GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
                                                                               XT::Grid::Layers::leaf,
                                                                               GDT::SpaceType::rt,
-                                                                              GDT::Backends::pdelab,
+                                                                              GDT::Backends::gdt,
                                                                               0,
                                                                               double,
                                                                               G::dimension>::type,
                                                   typename XT::Grid::Layer<G,
                                                                            XT::Grid::Layers::dd_subdomain,
-                                                                           XT::Grid::Backends::part,
+                                                                           XT::Grid::Backends::view,
                                                                            XT::Grid::DD::SubdomainGrid<G>>::type>>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
@@ -235,24 +235,24 @@ class DiffusiveFluxAbProduct
                                   typename GDT::SpaceProvider<G,
                                                               XT::Grid::Layers::dd_subdomain,
                                                               GDT::SpaceType::dg,
-                                                              GDT::Backends::fem,
+                                                              GDT::Backends::gdt,
                                                               1,
                                                               double,
                                                               1>::type,
                                   typename XT::Grid::Layer<G,
                                                            XT::Grid::Layers::dd_subdomain,
-                                                           XT::Grid::Backends::part,
+                                                           XT::Grid::Backends::view,
                                                            XT::Grid::DD::SubdomainGrid<G>>::type,
                                   GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
                                                                                    XT::Grid::Layers::leaf,
                                                                                    GDT::SpaceType::rt,
-                                                                                   GDT::Backends::pdelab,
+                                                                                   GDT::Backends::gdt,
                                                                                    0,
                                                                                    double,
                                                                                    G::dimension>::type,
                                                        typename XT::Grid::Layer<G,
                                                                                 XT::Grid::Layers::dd_subdomain,
-                                                                                XT::Grid::Backends::part,
+                                                                                XT::Grid::Backends::view,
                                                                                 XT::Grid::DD::SubdomainGrid<G>>::type>>
       BaseType;
   typedef DiffusiveFluxAbProduct<G> ThisType;
@@ -297,7 +297,7 @@ public:
             return new ThisType(
                 range_space,
                 source_space,
-                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
+                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::view>(
                     XT::Common::numeric_cast<size_t>(subdomain)),
                 lambda_hat,
                 lambda_range,
@@ -394,17 +394,17 @@ class DiffusiveFluxBbProduct
                              GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
                                                                               XT::Grid::Layers::leaf,
                                                                               GDT::SpaceType::rt,
-                                                                              GDT::Backends::pdelab,
+                                                                              GDT::Backends::gdt,
                                                                               0,
                                                                               double,
                                                                               G::dimension>::type,
                                                   typename XT::Grid::Layer<G,
                                                                            XT::Grid::Layers::dd_subdomain,
-                                                                           XT::Grid::Backends::part,
+                                                                           XT::Grid::Backends::view,
                                                                            XT::Grid::DD::SubdomainGrid<G>>::type>,
                              typename XT::Grid::Layer<G,
                                                       XT::Grid::Layers::dd_subdomain,
-                                                      XT::Grid::Backends::part,
+                                                      XT::Grid::Backends::view,
                                                       XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
@@ -412,17 +412,17 @@ class DiffusiveFluxBbProduct
                                   GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
                                                                                    XT::Grid::Layers::leaf,
                                                                                    GDT::SpaceType::rt,
-                                                                                   GDT::Backends::pdelab,
+                                                                                   GDT::Backends::gdt,
                                                                                    0,
                                                                                    double,
                                                                                    G::dimension>::type,
                                                        typename XT::Grid::Layer<G,
                                                                                 XT::Grid::Layers::dd_subdomain,
-                                                                                XT::Grid::Backends::part,
+                                                                                XT::Grid::Backends::view,
                                                                                 XT::Grid::DD::SubdomainGrid<G>>::type>,
                                   typename XT::Grid::Layer<G,
                                                            XT::Grid::Layers::dd_subdomain,
-                                                           XT::Grid::Backends::part,
+                                                           XT::Grid::Backends::view,
                                                            XT::Grid::DD::SubdomainGrid<G>>::type>
       BaseType;
   typedef DiffusiveFluxBbProduct<G> ThisType;
@@ -462,7 +462,7 @@ public:
              const size_t over_integrate) {
             return new ThisType(
                 space,
-                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
+                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::view>(
                     XT::Common::numeric_cast<size_t>(subdomain)),
                 lambda_hat,
                 kappa,
@@ -546,23 +546,23 @@ class SwipdgPenaltySubdomainProduct
                                      typename GDT::SpaceProvider<G,
                                                                  XT::Grid::Layers::dd_subdomain,
                                                                  GDT::SpaceType::dg,
-                                                                 GDT::Backends::fem,
+                                                                 GDT::Backends::gdt,
                                                                  1,
                                                                  double,
                                                                  1>::type,
                                      typename XT::Grid::Layer<G,
                                                               XT::Grid::Layers::dd_subdomain,
-                                                              XT::Grid::Backends::part,
+                                                              XT::Grid::Backends::view,
                                                               XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
-  typedef GDT::SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::fem, 1, double, 1>
+  typedef GDT::SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1>
       SP;
   typedef GDT::MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
                                   typename SP::type,
                                   typename XT::Grid::Layer<G,
                                                            XT::Grid::Layers::dd_subdomain,
-                                                           XT::Grid::Backends::part,
+                                                           XT::Grid::Backends::view,
                                                            XT::Grid::DD::SubdomainGrid<G>>::type>
       BaseType;
   typedef SwipdgPenaltySubdomainProduct<G> ThisType;
@@ -601,7 +601,7 @@ public:
              const size_t over_integrate) {
             return new ThisType(
                 space,
-                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
+                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::view>(
                     XT::Common::numeric_cast<size_t>(subdomain)),
                 boundary_info,
                 lambda,
@@ -791,17 +791,17 @@ void bind_neighborhood_discretization(pybind11::module& m)
 
   typedef typename XT::Grid::Layer<G,
                                    XT::Grid::Layers::dd_subdomain_oversampled,
-                                   XT::Grid::Backends::part,
+                                   XT::Grid::Backends::view,
                                    XT::Grid::DD::SubdomainGrid<G>>::type NGL;
   typedef GDT::
-      SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::block_dg, GDT::Backends::fem, 1, double, 1>
+      SpaceProvider<G, XT::Grid::Layers::dd_subdomain, GDT::SpaceType::block_dg, GDT::Backends::gdt, 1, double, 1>
           SP;
   typedef typename SP::type S;
   typedef XT::LA::IstlDenseVector<R> V;
   typedef XT::LA::IstlRowMajorSparseMatrix<R> M;
 
   try { // we might not be the first to add this SystemAssembler
-    GDT::bindings::SystemAssembler<SP, XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>::bind(m);
+    GDT::bindings::SystemAssembler<SP, XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::view>::bind(m);
   } catch (std::runtime_error&) {
   }
 
@@ -811,7 +811,7 @@ void bind_neighborhood_discretization(pybind11::module& m)
            const S& neighborhood_space) {
           return new GDT::SystemAssembler<S, NGL>(
               neighborhood_space,
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::view>(
                   XT::Common::numeric_cast<size_t>(subdomain)));
         });
 
@@ -836,7 +836,7 @@ void bind_neighborhood_discretization(pybind11::module& m)
               lambda,
               kappa,
               neighborhood_space,
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::view>(
                   XT::Common::numeric_cast<size_t>(subdomain)));
         },
         "dd_grid_provider"_a,
@@ -875,7 +875,7 @@ void bind_neighborhood_discretization(pybind11::module& m)
               lambda,
               kappa,
               neighborhood_space,
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::view>(
                   XT::Common::numeric_cast<size_t>(subdomain)));
         },
         "dd_grid_provider"_a,
@@ -902,7 +902,7 @@ void bind_neighborhood_discretization(pybind11::module& m)
               over_integrate,
               f,
               neighborhood_space,
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::view>(
                   XT::Common::numeric_cast<size_t>(subdomain)));
         },
         "dd_grid_provider"_a,
@@ -920,17 +920,17 @@ class HdivSemiProduct
                              GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
                                                                               XT::Grid::Layers::leaf,
                                                                               GDT::SpaceType::rt,
-                                                                              GDT::Backends::pdelab,
+                                                                              GDT::Backends::gdt,
                                                                               0,
                                                                               double,
                                                                               G::dimension>::type,
                                                   typename XT::Grid::Layer<G,
                                                                            XT::Grid::Layers::dd_subdomain,
-                                                                           XT::Grid::Backends::part,
+                                                                           XT::Grid::Backends::view,
                                                                            XT::Grid::DD::SubdomainGrid<G>>::type>,
                              typename XT::Grid::Layer<G,
                                                       XT::Grid::Layers::dd_subdomain,
-                                                      XT::Grid::Backends::part,
+                                                      XT::Grid::Backends::view,
                                                       XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
@@ -938,17 +938,17 @@ class HdivSemiProduct
                                   GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
                                                                                    XT::Grid::Layers::leaf,
                                                                                    GDT::SpaceType::rt,
-                                                                                   GDT::Backends::pdelab,
+                                                                                   GDT::Backends::gdt,
                                                                                    0,
                                                                                    double,
                                                                                    G::dimension>::type,
                                                        typename XT::Grid::Layer<G,
                                                                                 XT::Grid::Layers::dd_subdomain,
-                                                                                XT::Grid::Backends::part,
+                                                                                XT::Grid::Backends::view,
                                                                                 XT::Grid::DD::SubdomainGrid<G>>::type>,
                                   typename XT::Grid::Layer<G,
                                                            XT::Grid::Layers::dd_subdomain,
-                                                           XT::Grid::Backends::part,
+                                                           XT::Grid::Backends::view,
                                                            XT::Grid::DD::SubdomainGrid<G>>::type>
       BaseType;
   typedef HdivSemiProduct<G> ThisType;
@@ -984,7 +984,7 @@ public:
              const size_t over_integrate) {
             return new ThisType(
                 space,
-                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
+                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::view>(
                     XT::Common::numeric_cast<size_t>(subdomain)),
                 over_integrate);
           },
@@ -1037,32 +1037,32 @@ class ResidualPartFunctional
                                GDT::RestrictedSpace<typename GDT::SpaceProvider<G,
                                                                                 XT::Grid::Layers::leaf,
                                                                                 GDT::SpaceType::rt,
-                                                                                GDT::Backends::pdelab,
+                                                                                GDT::Backends::gdt,
                                                                                 0,
                                                                                 double,
                                                                                 G::dimension>::type,
                                                     typename XT::Grid::Layer<G,
                                                                              XT::Grid::Layers::dd_subdomain,
-                                                                             XT::Grid::Backends::part,
+                                                                             XT::Grid::Backends::view,
                                                                              XT::Grid::DD::SubdomainGrid<G>>::type>,
                                typename XT::Grid::Layer<G,
                                                         XT::Grid::Layers::dd_subdomain,
-                                                        XT::Grid::Backends::part,
+                                                        XT::Grid::Backends::view,
                                                         XT::Grid::DD::SubdomainGrid<G>>::type>
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
   typedef GDT::RestrictedSpace<
       typename GDT::
-          SpaceProvider<G, XT::Grid::Layers::leaf, GDT::SpaceType::rt, GDT::Backends::pdelab, 0, double, G::dimension>::
+          SpaceProvider<G, XT::Grid::Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, G::dimension>::
               type,
       typename XT::Grid::
-          Layer<G, XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part, XT::Grid::DD::SubdomainGrid<G>>::type>
+          Layer<G, XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
       RtSpaceType;
   typedef GDT::VectorFunctionalBase<XT::LA::IstlDenseVector<double>,
                                     RtSpaceType,
                                     typename XT::Grid::Layer<G,
                                                              XT::Grid::Layers::dd_subdomain,
-                                                             XT::Grid::Backends::part,
+                                                             XT::Grid::Backends::view,
                                                              XT::Grid::DD::SubdomainGrid<G>>::type>
       BaseType;
   typedef ResidualPartFunctional<G> ThisType;
@@ -1100,7 +1100,7 @@ public:
              const size_t over_integrate) {
             return new ThisType(
                 space,
-                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::part>(
+                dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain, XT::Grid::Backends::view>(
                     XT::Common::numeric_cast<size_t>(subdomain)),
                 f,
                 over_integrate);
@@ -1161,10 +1161,10 @@ void bind_neighborhood_reconstruction(pybind11::module& m)
   static const constexpr size_t d = 2;
   typedef double R;
   typedef typename XT::Grid::Layer<G, XT::Grid::Layers::leaf, XT::Grid::Backends::view>::type LeafViewType;
-  typedef GDT::DunePdelabRtSpaceWrapper<LeafViewType, 0, double, d> RtSpaceType;
+  typedef GDT::RaviartThomasSpace<LeafViewType, 0> RtSpaceType;
   typedef typename XT::Grid::Layer<G,
                                    XT::Grid::Layers::dd_subdomain_oversampled,
-                                   XT::Grid::Backends::part,
+                                   XT::Grid::Backends::view,
                                    XT::Grid::DD::SubdomainGrid<G>>::type NeighborHoodGridLayer;
   typedef GDT::RestrictedSpace<RtSpaceType, NeighborHoodGridLayer> NeighborhoodRtSpaceType;
   typedef XT::LA::IstlDenseVector<R> VectorType;
@@ -1185,7 +1185,7 @@ void bind_neighborhood_reconstruction(pybind11::module& m)
            const ssize_t over_integrate) {
           py::gil_scoped_release DUNE_UNUSED(release);
           LocalizableDiffusiveFluxReconstructionOperatorForRestrictedSpaceType(
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::view>(
                   XT::Common::numeric_cast<size_t>(subdomain)),
               lambda,
               kappa,
@@ -1219,7 +1219,7 @@ void bind_neighborhood_reconstruction(pybind11::module& m)
            const ssize_t over_integrate) {
           py::gil_scoped_release DUNE_UNUSED(release);
           LocalizableDiffusiveFluxReconstructionOperatorForLeafSpaceType(
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::part>(
+              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::view>(
                   XT::Common::numeric_cast<size_t>(subdomain)),
               lambda,
               kappa,
@@ -1238,66 +1238,66 @@ void bind_neighborhood_reconstruction(pybind11::module& m)
 } // ... bind_neighborhood_reconstruction(...)
 
 
-#else // HAVE_DUNE_FEM && HAVE_DUNE_ISTL && HAVE_DUNE_PDELAB
+#else // HAVE_DUNE_ISTL
 
 
 template <class G>
 class DiffusiveFluxAaProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 };
 
 
 template <class G>
 class DiffusiveFluxAbProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 };
 
 
 template <class G>
 class DiffusiveFluxBbProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 };
 
 
 template <class G>
 class SwipdgPenaltySubdomainProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 };
 
 
 template <class G>
 void bind_neighborhood_discretization(pybind11::module& /*m*/)
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 }
 
 
 template <class G>
 class HdivSemiProduct
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 };
 
 
 template <class G>
 class ResidualPartFunctional
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 };
 
 
 template <class G>
 void bind_neighborhood_reconstruction(pybind11::module& /*m*/)
 {
-  static_assert(AlwaysFalse<G>::value, "You are missing dune-fem, dune-pdelab or dune-istl!");
+  static_assert(AlwaysFalse<G>::value, "You are missing dune-istl!");
 }
 
 
-#endif // HAVE_DUNE_FEM && HAVE_DUNE_ISTL && HAVE_DUNE_PDELAB
+#endif // HAVE_DUNE_ISTL
 
 } // namespace RS2017
 } // namespace GDT

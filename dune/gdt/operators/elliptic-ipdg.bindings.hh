@@ -419,18 +419,18 @@ public:
   _DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_METHODS_D(                                                                \
       _prefix, 2, YASP_2D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la)
 
-// alu_fem__istl.cc
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_ISTL
-DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, leaf, part, cg, fem, 1, istl_sparse);
-DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, level, part, cg, fem, 1, istl_sparse);
-DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, dd_subdomain, part, cg, fem, 1, istl_sparse);
+// alu_istl.cc
+#if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
+DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, leaf, view, cg, gdt, 1, istl_sparse);
+DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, level, view, cg, gdt, 1, istl_sparse);
+// DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, dd_subdomain, view, cg, gdt, 1, istl_sparse);
 #endif
 
-// yasp_fem_istl.cc
-#if HAVE_DUNE_FEM && HAVE_DUNE_ISTL
-DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, leaf, part, cg, fem, 1, istl_sparse);
-DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, level, part, cg, fem, 1, istl_sparse);
-DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, dd_subdomain, part, cg, fem, 1, istl_sparse);
+// yasp_istl.cc
+#if HAVE_DUNE_ISTL
+DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, leaf, view, cg, gdt, 1, istl_sparse);
+DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, level, view, cg, gdt, 1, istl_sparse);
+// DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, dd_subdomain, view, cg, gdt, 1, istl_sparse);
 #endif
 
 // end: this is what we need for the lib

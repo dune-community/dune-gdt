@@ -350,6 +350,7 @@ public:
   /// \name Actual implementation of evalaute.
   /// \{
 
+  /// \todo Use MatrixInverter from dune-xt-la
   template <class R>
   void evaluate(
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1>& local_diffusion_factor,

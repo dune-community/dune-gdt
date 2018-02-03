@@ -37,6 +37,10 @@ class restricted_space_error : public space_error
 {
 };
 
+class mapper_error : public space_error
+{
+};
+
 
 } // namespace GDT
 } // namespace Dune

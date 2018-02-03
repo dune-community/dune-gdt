@@ -165,8 +165,8 @@ public:
   typename std::enable_if<XT::Grid::is_layer<GL>::value, PatternType>::type
   compute_pattern(const GL& grd_layr, const SpaceInterface<S, d, r, rC>& ansatz_space) const
   {
-    Dune::XT::Common::TimedLogger().get("gdt.spaces.rt.pdelab.compute_pattern").warn()
-        << "Returning largest possible pattern!" << std::endl;
+    Dune::XT::Common::TimedLogger().get("gdt.spaces.rt.compute_pattern").warn() << "Returning largest possible pattern!"
+                                                                                << std::endl;
     return BaseType::compute_face_and_volume_pattern(grd_layr, ansatz_space);
   }
 

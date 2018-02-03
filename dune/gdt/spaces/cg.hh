@@ -21,8 +21,7 @@
 #include <dune/xt/grid/gridprovider/provider.hh>
 
 #include "interface.hh"
-#include "cg/dune-fem-wrapper.hh"
-#include "cg/dune-pdelab-wrapper.hh"
+#include "cg/default.hh"
 #include <dune/gdt/playground/spaces/block.hh>
 
 
@@ -56,15 +55,10 @@ private:
   };
 
   template <class G, int p, class R, size_t r, size_t rC>
-  struct SpaceChooser<G, p, R, r, rC, GDT::Backends::fem>
+  struct SpaceChooser<G, p, R, r, rC, GDT::Backends::gdt>
   {
-    typedef GDT::DuneFemCgSpaceWrapper<GridLayerType, p, R, r, rC> Type;
-  };
-
-  template <class G, int p, class R, size_t r, size_t rC>
-  struct SpaceChooser<G, p, R, r, rC, GDT::Backends::pdelab>
-  {
-    typedef GDT::DunePdelabCgSpaceWrapper<GridLayerType, p, R, r, rC> Type;
+    static_assert(r == 1 && rC == 1, "");
+    typedef GDT::ContinuousLagrangeSpace<GridLayerType, p, R> Type;
   };
 
 public:

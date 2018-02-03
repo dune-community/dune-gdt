@@ -39,6 +39,7 @@
 #include <dune/xt/grid/view/from-part.hh>
 
 #include <dune/gdt/spaces/mapper/interfaces.hh>
+#include <dune/gdt/spaces/parallel.hh>
 
 #include "constraints.hh"
 
@@ -48,23 +49,10 @@ namespace GDT {
 
 enum class Backends
 {
-  fem,
-  functions,
-  gdt,
-  pdelab
+  gdt
 };
 
-static const XT::Common::FixedMap<Backends, std::string, 4> backend_names = {
-    {Backends::fem, "fem"}, {Backends::functions, "functions"}, {Backends::gdt, "gdt"}, {Backends::pdelab, "pdelab"}};
-
-// disable GCC warning "type attributes ignored after type is already defined [-Wattributes]"
-#include <dune/xt/common/disable_warnings.hh>
-enum class DUNE_DEPRECATED_MSG("Use Backends instead (04.04.2017)!") ChooseSpaceBackend
-{
-  None
-};
-#include <dune/xt/common/reenable_warnings.hh>
-
+static const XT::Common::FixedMap<Backends, std::string, 1> backend_names = {{Backends::gdt, "gdt"}};
 
 enum class SpaceType
 {
@@ -100,15 +88,7 @@ struct space_type_dependent_typename
 } // namespace  internal
 
 
-static constexpr Backends default_space_backend =
-#if HAVE_DUNE_FEM
-    Backends::fem;
-#elif HAVE_DUNE_PDELAB
-    Backends::pdelab;
-#else
-    Backends::gdt;
-#endif
-
+static constexpr Backends default_space_backend = Backends::gdt;
 
 enum class ChoosePattern
 {
@@ -122,34 +102,9 @@ template <Backends type>
 struct layer_from_backend;
 
 template <>
-struct layer_from_backend<Backends::fem>
-{
-  static const XT::Grid::Backends type = XT::Grid::Backends::part;
-};
-
-template <>
-struct layer_from_backend<Backends::functions>
-{
-  static const XT::Grid::Backends type = XT::Grid::Backends::view;
-};
-
-template <>
 struct layer_from_backend<Backends::gdt>
 {
   static const XT::Grid::Backends type = XT::Grid::Backends::view;
-};
-
-template <>
-struct layer_from_backend<Backends::pdelab>
-{
-  static const XT::Grid::Backends type = XT::Grid::Backends::view;
-};
-
-
-template <Backends type>
-struct DUNE_DEPRECATED_MSG("Use layer_from_backend instead (04.04.2017)!") ChooseGridPartView
-    : public layer_from_backend<type>
-{
 };
 
 
@@ -164,7 +119,6 @@ public:
   typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::DofCommunicatorType DofCommunicatorType;
-  typedef typename Traits::GridLayerType GridViewType DUNE_DEPRECATED_MSG("Use GridLayerType instead (02.04.2017)!");
   typedef typename Traits::GridLayerType GridLayerType;
   typedef typename Traits::RangeFieldType RangeFieldType;
   static const size_t dimDomain = domainDim;
@@ -188,20 +142,11 @@ public:
 
   static const XT::Grid::Backends layer_backend = Traits::layer_backend;
 
-  static const XT::Grid::Backends
-      DUNE_DEPRECATED_MSG("Use layer_type instead (03.04.2017)!") part_view_type = layer_backend;
-  static const bool DUNE_DEPRECATED_MSG("Use layer_type instead (03.04.2017)!") needs_grid_view = false;
-
 public:
   /**
    * \defgroup interface ´´These methods have to be implemented!''
    * @{
    **/
-
-  const GridLayerType& DUNE_DEPRECATED_MSG("Use grid_layer() instead (02.04.2017)!") grid_view() const
-  {
-    return this->grid_layer();
-  }
 
   const GridLayerType& grid_layer() const
   {

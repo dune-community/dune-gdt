@@ -20,13 +20,12 @@
 #include <dune/gdt/test/projections/lagrange.hh>
 #include <dune/gdt/test/projections/l2-global.hh>
 
-#include <dune/gdt/playground/spaces/dg/dune-pdelab-wrapper.hh>
-#include <dune/gdt/spaces/cg/dune-fem-wrapper.hh>
-#include <dune/gdt/spaces/cg/dune-pdelab-wrapper.hh>
-#include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
-#include <dune/gdt/playground/spaces/dg/dune-functions-wrapper.hh>
-#include <dune/gdt/spaces/fv/default.hh>
-#include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
+
+#include <dune/gdt/spaces/cg.hh>
+
+#include <dune/gdt/spaces/dg.hh>
+#include <dune/gdt/spaces/fv.hh>
+#include <dune/gdt/spaces/rt/default.hh>
 
 #include <dune/gdt/test/projections/projections.hh>
 #include <dune/gdt/test/projections/l2.hh>
@@ -50,7 +49,7 @@ TEST_F(L2ProjectionLocalizableOperatorTest_{{Name}}, produces_correct_results)
   // RT : 0.096226
   {% if 'FvSpace' in SpaceType %}
     const double tolerance = 0.096226;
-  {% elif 'DunePdelabRtSpaceWrapper' in SpaceType %}
+  {% elif 'RaviartThomasSpace' in SpaceType %}
     const double tolerance = 0.0925927;
   {% else %}
     typedef Dune::XT::Grid::extract_grid_t<L2ProjectionLocalizableOperatorTest_{{Name}}::GridLayerType> Grid;

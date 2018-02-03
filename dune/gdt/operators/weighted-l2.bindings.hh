@@ -31,14 +31,7 @@ template <class G, XT::Grid::Layers layer_type, XT::Grid::Backends layer_backend
 class WeightedL2LocalizableProduct
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
-  typedef typename XT::Grid::Layer<G,
-                                   layer_type,
-                                   layer_backend
-#if HAVE_DUNE_FEM
-                                   ,
-                                   XT::Grid::DD::SubdomainGrid<G>
-#endif
-                                   >::type GL;
+  typedef typename XT::Grid::Layer<G, layer_type, layer_backend, XT::Grid::DD::SubdomainGrid<G>>::type GL;
 
   typedef XT::Grid::extract_entity_t<GL> E;
   typedef typename G::ctype D;
@@ -56,7 +49,6 @@ class WeightedL2LocalizableProduct
       namespace py = pybind11;
       using namespace pybind11::literals;
 
-#if HAVE_DUNE_FEM
       m.def(std::string("apply_weighted_l2_product_" + XT::Grid::bindings::layer_name<layer_type>::value() + "_"
                         + XT::Grid::bindings::backend_name<layer_backend>::value())
                 .c_str(),
@@ -80,7 +72,6 @@ class WeightedL2LocalizableProduct
             "grid"_a,
             "level_or_subdomain"_a = -1,
             "over_integrate"_a = 0);
-#endif // HAVE_DUNE_FEM
     } // ... bind(...)
   }; // struct helper<true, ...>
 
@@ -111,7 +102,6 @@ class WeightedL2LocalizableProduct
             "grid"_a,
             "level"_a = -1,
             "over_integrate"_a = 0);
-#if HAVE_DUNE_FEM
       m.def(std::string("apply_weighted_l2_product_" + XT::Grid::bindings::layer_name<layer_type>::value() + "_"
                         + XT::Grid::bindings::backend_name<layer_backend>::value())
                 .c_str(),
@@ -131,7 +121,6 @@ class WeightedL2LocalizableProduct
             "grid"_a,
             "layer"_a = -1,
             "over_integrate"_a = 0);
-#endif // HAVE_DUNE_FEM
     } // ... bind(...)
   }; // struct helper<false, ...>
 

@@ -32,31 +32,9 @@ except KeyError:
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 
 if 'mpi' in __file__:
-    possible_spc_backends = ('pdelab',)
+    la = ('istl_sparse',)
 else:
-    possible_spc_backends = ('fem',)
-space_backends = []
-for s in possible_spc_backends:
-    try:
-        if cache['dune-{}'.format(s)]:
-            space_backends.append(s)
-    except KeyError:
-        pass
+    la = la_backends(cache)
+permutations = itertools.product(testcases, ('gdt',), la)
 
-if len(space_backends) == 0:
-    # prevent unusable iteration in template
-    permutations = []
-else:
-    if 'mpi' in __file__:
-        la = ('istl_sparse',)
-    else:
-        la = la_backends(cache)
-    permutations = itertools.product(testcases, space_backends, la)
-
-def filter(t, s):
-    # pdelab has no DG impl for simplicial grids
-    if s == 'pdelab':
-        return 'AluSimplex' not in t
-    return True
-
-permutations = [(t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations if filter(t, s)]
+permutations = [(t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]

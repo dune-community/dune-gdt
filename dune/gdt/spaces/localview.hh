@@ -28,7 +28,7 @@ template <class VectorTraits, class ScalarType, class SpaceType, class Descripto
 class LocalView
 {
   using VectorInterface = XT::LA::VectorInterface<VectorTraits, ScalarType>;
-  using EntityType = XT::Grid::extract_entity_t<typename SpaceType::GridViewType>;
+  using EntityType = XT::Grid::extract_entity_t<typename SpaceType::GridLayerType>;
 
 private:
   void resize(size_t size)

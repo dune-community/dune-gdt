@@ -44,17 +44,17 @@ PYBIND11_PLUGIN(__operators_oswaldinterpolation)
   py::module::import("dune.gdt.__spaces");
   py::module::import("dune.gdt.__discretefunction");
 
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_ISTL
+#if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
   Dune::GDT::bindings::OswaldInterpolationOperator<ALU_2D_SIMPLEX_CONFORMING,
                                                    Dune::GDT::SpaceType::block_dg,
-                                                   Dune::GDT::Backends::fem,
+                                                   Dune::GDT::Backends::gdt,
                                                    Dune::XT::Grid::Layers::dd_subdomain,
                                                    1,
                                                    double,
                                                    1,
                                                    Dune::XT::LA::Backends::istl_dense,
                                                    Dune::XT::Grid::Layers::dd_subdomain_oversampled>::bind(m);
-#endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_FEM && HAVE_DUNE_ISTL
+#endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
 
   m.def("_init_mpi",
         [](const std::vector<std::string>& args) {

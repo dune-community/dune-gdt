@@ -13,7 +13,6 @@
 #include <dune/common/typetraits.hh>
 
 #include <dune/xt/common/fmatrix.hh>
-#include <dune/xt/la/container/eigen.hh>
 #include <dune/xt/la/eigen-solver.hh>
 #include <dune/xt/grid/boundaryinfo/interfaces.hh>
 #include <dune/xt/grid/entity.hh>
@@ -27,14 +26,12 @@
 #include <dune/gdt/operators/base.hh>
 #include <dune/gdt/operators/fluxreconstruction.hh>
 #include <dune/gdt/operators/oswaldinterpolation.hh>
-#include <dune/gdt/spaces/dg/dune-fem-wrapper.hh>
-#include <dune/gdt/spaces/rt/dune-pdelab-wrapper.hh>
+#include <dune/gdt/spaces/dg/default.hh>
+#include <dune/gdt/spaces/rt/default.hh>
 
 namespace Dune {
 namespace GDT {
 namespace ESV2007 {
-
-#if HAVE_DUNE_FEM
 
 
 template <class ProductGridLayer, class InterpolationGridLayerType>
@@ -65,7 +62,7 @@ private:
   typedef LocalVolumeIntegralOperator<LocalLambdaBinaryVolumeIntegrand<E>,
                                       typename ScalarFunctionType::LocalfunctionType>
       LocalProductType;
-  typedef DuneFemDgSpaceWrapper<InterpolationGridLayerType, 1, R, 1> DgSpaceType;
+  typedef DiscontinuousLagrangeSpace<InterpolationGridLayerType, 1, R> DgSpaceType;
   typedef DiscreteFunction<DgSpaceType> DiscreteFunctionType;
 
 public:
@@ -133,20 +130,6 @@ private:
 }; // class NonconformityProduct
 
 
-#else // HAVE_DUNE_FEM
-
-
-template <class ProductGridLayer, class InterpolationGridLayerType>
-class NonconformityProduct
-{
-  static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing dune-fem!");
-};
-
-
-#endif // HAVE_DUNE_FEM
-#if HAVE_DUNE_PDELAB
-#if HAVE_EIGEN
-
 namespace internal {
 
 
@@ -171,7 +154,7 @@ public:
   typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
 
 private:
-  typedef DunePdelabRtSpaceWrapper<ReconstructionGridLayer, 0, R, d> RtSpaceType;
+  typedef RaviartThomasSpace<ReconstructionGridLayer, 0, R> RtSpaceType;
   typedef DiscreteFunction<RtSpaceType> FluxReconstructionType;
   typedef XT::Functions::DivergenceFunction<FluxReconstructionType> DivergenceOfFluxReconstructionType;
   typedef typename ScalarFunctionType::DifferenceType DifferenceType;
@@ -281,9 +264,12 @@ public:
             const auto& entity = local_f_minus_divergence_of_reconstructed_u.entity();
             // we need the min_ev for this entity, so we just evaluate in one point
             const auto center = entity.geometry().local(entity.geometry().center());
-            XT::LA::EigenDenseMatrix<R> diffusion = kappa_.local_function(entity)->evaluate(center);
+            auto diffusion = kappa_.local_function(entity)->evaluate(center);
             diffusion *= lambda_.local_function(entity)->evaluate(center);
-            const auto min_ev = XT::LA::make_eigen_solver(diffusion).min_eigenvalues(1).at(0);
+            const auto min_ev = XT::LA::make_eigen_solver(
+                                    diffusion, XT::Common::Configuration{{"assert_positive_eigenvalues"}, {1e-15}})
+                                    .min_eigenvalues(1)
+                                    .at(0);
             const auto h = XT::Grid::entity_diameter(entity);
             ret[0][0] = (poincare_constant_ / min_ev) * h * h
                         * local_f_minus_divergence_of_reconstructed_u.evaluate(local_point).at(0)[0]
@@ -300,19 +286,6 @@ private:
   const size_t over_integrate_;
   const LocalProductType local_product_;
 }; // class ResidualProduct
-
-
-#else // HAVE_EIGEN
-
-
-template <class ProductGridLayer, class ReconstructionGridLayer>
-class ResidualProduct
-{
-  static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing eigen!");
-};
-
-
-#endif // HAVE_EIGEN
 
 
 template <class ProductGridLayer, class ReconstructionGridLayer>
@@ -339,7 +312,7 @@ public:
   typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
 
 private:
-  typedef DunePdelabRtSpaceWrapper<ReconstructionGridLayer, 0, R, d> RtSpaceType;
+  typedef RaviartThomasSpace<ReconstructionGridLayer, 0, R> RtSpaceType;
   typedef DiscreteFunction<RtSpaceType> FluxReconstructionType;
   typedef LocalizableProductBase<ProductGridLayer, XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>> BaseType;
   typedef LocalVolumeIntegralOperator<LocalLambdaBinaryVolumeIntegrand<E>,
@@ -405,25 +378,6 @@ private:
   const LocalProductType local_product_;
 }; // class DiffusiveFluxProduct
 
-
-#else // HAVE_DUNE_PDELAB
-
-
-template <class ProductGridLayer, class ReconstructionGridLayer>
-class ResidualProduct
-{
-  static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing dune-pdelab!");
-};
-
-
-template <class ProductGridLayer, class ReconstructionGridLayer>
-class DiffusiveFluxProduct
-{
-  static_assert(AlwaysFalse<ProductGridLayer>::value, "You are missing dune-pdelab!");
-};
-
-
-#endif // HAVE_DUNE_PDELAB
 
 } // namespace ESV2007
 } // namespace GDT

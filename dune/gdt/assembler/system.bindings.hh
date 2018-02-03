@@ -15,6 +15,7 @@
 
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/la/container.hh>
+#include <dune/xt/grid/grids.hh>
 #include <dune/xt/grid/grids.bindings.hh>
 #include <dune/xt/grid/layers.bindings.hh>
 #include <dune/xt/grid/walker.hh>
@@ -146,7 +147,7 @@ private:
   };
 
   template <XT::LA::Backends la>
-  static void addbind_matrix(bound_type& c)
+  static void addaddbind_matrixatrix(bound_type& c)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -206,7 +207,7 @@ private:
           py::keep_alive<0, 3>(),
           py::keep_alive<0, 4>(),
           py::keep_alive<0, 5>());
-  } // ... addbind_matrix(...)
+  } // ... addaddbind_matrixatrix(...)
 
 public:
   static bound_type bind(pybind11::module& m)
@@ -247,7 +248,7 @@ public:
                                    XT::Grid::extract_grid_t<typename type::GridLayerType>>::addbind(c);
 
 #if HAVE_DUNE_ISTL
-    addbind_matrix<XT::LA::Backends::istl_sparse>(c);
+    addaddbind_matrixatrix<XT::LA::Backends::istl_sparse>(c);
 #endif
 
     c.def("append",
@@ -298,69 +299,41 @@ public:
                                                   Dune::XT::Grid::Backends::_g_backend>
 
 #if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(                                                                       \
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_SPACE(                                                                 \
     _pre, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)                                       \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB(                                                                                 \
       _pre, ALU_2D_SIMPLEX_CONFORMING, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)
 #else
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(                                                                       \
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_SPACE(                                                                 \
     _pre, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)
 #endif
 
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(                                                                      \
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_SPACE(                                                                \
     _pre, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)                                       \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB(                                                                                 \
       _pre, YASP_1D_EQUIDISTANT_OFFSET, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC);        \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB(                                                                                 \
       _pre, YASP_2D_EQUIDISTANT_OFFSET, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)
 
-#if HAVE_DUNE_FEM
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre, _s_type, _p, _r, _rC)                                            \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_SPACE(_pre, leaf, view, _s_type, gdt, leaf, _p, 1, 1);                       \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_SPACE(_pre, level, view, _s_type, gdt, level, _p, 1, 1)
 
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_FEM(_pre, _s_type, _p, _r, _rC)                                        \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre, leaf, part, _s_type, fem, leaf, _p, 1, 1);                             \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre, level, part, _s_type, fem, level, _p, 1, 1);                           \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre, dd_subdomain, part, _s_type, fem, dd_subdomain, _p, 1, 1)
+#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre, _s_type, _p, _r, _rC)                                           \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_SPACE(_pre, leaf, view, _s_type, gdt, leaf, _p, 1, 1);                      \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_SPACE(_pre, level, view, _s_type, gdt, level, _p, 1, 1)
 
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_FEM(_pre, _s_type, _p, _r, _rC)                                       \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre, leaf, part, _s_type, fem, leaf, _p, 1, 1);                            \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre, level, part, _s_type, fem, level, _p, 1, 1);                          \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre, dd_subdomain, part, _s_type, fem, dd_subdomain, _p, 1, 1)
+#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre)                                                                   \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre, fv, 0, 1, 1);                                                          \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre, cg, 1, 1, 1)
 
-#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_FEM(_pre)                                                               \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_FEM(_pre, cg, 1, 1, 1);                                                      \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_FEM(_pre, dg, 1, 1, 1);                                                      \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre, dd_subdomain_boundary, part, dg, fem, dd_subdomain, 1, 1, 1);          \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre, dd_subdomain_coupling, part, dg, fem, dd_subdomain, 1, 1, 1)
-
-#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_FEM(_pre)                                                              \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_FEM(_pre, cg, 1, 1, 1);                                                     \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_FEM(_pre, dg, 1, 1, 1);                                                     \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre, dd_subdomain_boundary, part, dg, fem, dd_subdomain, 1, 1, 1);         \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre, dd_subdomain_coupling, part, dg, fem, dd_subdomain, 1, 1, 1)
-
-#else // HAVE_DUNE_FEM
-#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_FEM(_pre)
-#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_FEM(_pre)
-#endif
-
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_GDT(_pre, _s_type, _p, _r, _rC)                                        \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre, leaf, view, _s_type, gdt, leaf, _p, 1, 1);                             \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre, level, view, _s_type, gdt, level, _p, 1, 1)
-
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_GDT(_pre, _s_type, _p, _r, _rC)                                       \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre, leaf, view, _s_type, gdt, leaf, _p, 1, 1);                            \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre, level, view, _s_type, gdt, level, _p, 1, 1)
-
-#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_GDT(_pre) _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_GDT(_pre, fv, 0, 1, 1)
-
-#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_GDT(_pre)                                                              \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_GDT(_pre, fv, 0, 1, 1)
+#define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre)                                                                  \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre, fv, 0, 1, 1);                                                         \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre, cg, 1, 1, 1)
 
 #define DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB(_pre)                                                                       \
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_FEM(_pre);                                                                    \
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_FEM(_pre);                                                                   \
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU_GDT(_pre);                                                                    \
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP_GDT(_pre)
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_ALU(_pre);                                                                        \
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB_YASP(_pre)
 
 DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB(extern template);
 
@@ -400,26 +373,14 @@ DUNE_GDT_ASSEMBLER_SYSTEM_BIND_LIB(extern template);
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_YASP(_m, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC);     \
   _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALU(_m, _g_layer, _g_backend, _s_type, _s_backend, _s_grid_layer, _p, _r, _rC)
 
-#if HAVE_DUNE_FEM
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_m, _s_type, _p, _r, _rC)                                                  \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, leaf, part, _s_type, fem, leaf, _p, 1, 1);                             \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, level, part, _s_type, fem, level, _p, 1, 1);                           \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain, part, _s_type, fem, dd_subdomain, _p, 1, 1)
-#else
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_m, _s_type, _p, _r, _rC)
-#endif
-
-#define _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT(_m, _s_type, _p, _r, _rC)                                                  \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, leaf, view, _s_type, gdt, leaf, _p, 1, 1);                             \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, level, view, _s_type, gdt, level, _p, 1, 1)
 
 #define DUNE_GDT_ASSEMBLER_SYSTEM_BIND(_m)                                                                             \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_m, cg, 1, 1, 1);                                                                \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_FEM(_m, dg, 1, 1, 1);                                                                \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain_boundary, part, dg, fem, dd_subdomain, 1, 1, 1);          \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain_coupling, part, dg, fem, dd_subdomain, 1, 1, 1);          \
-  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_GDT(_m, fv, 0, 1, 1)
-
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain_boundary, view, dg, gdt, dd_subdomain, 1, 1, 1);          \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, dd_subdomain_coupling, view, dg, gdt, dd_subdomain, 1, 1, 1);          \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, leaf, view, cg, gdt, leaf, 1, 1, 1);                                   \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, level, view, cg, gdt, level, 1, 1, 1);                                 \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, leaf, view, fv, gdt, leaf, 0, 1, 1);                                   \
+  _DUNE_GDT_ASSEMBLER_SYSTEM_BIND_ALL_GRIDS(_m, level, view, fv, gdt, level, 0, 1, 1)
 // end: this is what we need for the .so
 
 

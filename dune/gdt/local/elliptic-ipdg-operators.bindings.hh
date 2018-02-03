@@ -40,14 +40,8 @@ class LocalEllipticIpdgInnerIntegralOperator
   static_assert(is_space<S>::value, "");
   typedef XT::Grid::extract_grid_t<typename S::GridLayerType> G;
   typedef typename S::BaseFunctionSetType B;
-  typedef XT::Grid::extract_intersection_t<typename XT::Grid::Layer<G,
-                                                                    layer,
-                                                                    S::layer_backend
-#if HAVE_DUNE_FEM
-                                                                    ,
-                                                                    XT::Grid::DD::SubdomainGrid<G>
-#endif
-                                                                    >::type>
+  typedef XT::Grid::extract_intersection_t<
+      typename XT::Grid::Layer<G, layer, S::layer_backend, XT::Grid::DD::SubdomainGrid<G>>::type>
       I;
 
 public:
@@ -213,14 +207,8 @@ class LocalEllipticIpdgBoundaryIntegralOperator
   static_assert(is_space<S>::value, "");
   typedef XT::Grid::extract_grid_t<typename S::GridLayerType> G;
   typedef typename S::BaseFunctionSetType B;
-  typedef XT::Grid::extract_intersection_t<typename XT::Grid::Layer<G,
-                                                                    layer,
-                                                                    S::layer_backend
-#if HAVE_DUNE_FEM
-                                                                    ,
-                                                                    XT::Grid::DD::SubdomainGrid<G>
-#endif
-                                                                    >::type>
+  typedef XT::Grid::extract_intersection_t<
+      typename XT::Grid::Layer<G, layer, S::layer_backend, XT::Grid::DD::SubdomainGrid<G>>::type>
       I;
 
 public:
@@ -741,22 +729,9 @@ public:
 //_DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_YASP(                                                                   \
 //    _m, dd_subdomain, part, _s_type, _s_backend, dd_subdomain_coupling, _p, _R, _r, _rC, "_dd_subdomain_")
 
-#if HAVE_DUNE_FEM
-#define _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_PARTS(_m, _s_type, _s_backend, _p, _R, _r, _rC)                   \
+#define DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND(_m)                                                                \
   _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_ALU(                                                                    \
-      _m, dd_subdomain, part, _s_type, _s_backend, dd_subdomain_coupling, _p, _R, _r, _rC, "_dd_subdomain_")
-#else
-#define _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_PARTS(_m, _s_type, _s_backend, _p, _R, _r, _rC)
-#endif
-
-#if HAVE_DUNE_FEM
-#define DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_FEM(_m)                                                            \
-  _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_PARTS(_m, dg, fem, 1, double, 1, 1)
-#else
-#define DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_FEM(_m)
-#endif
-
-#define DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND(_m) DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_FEM(_m)
+      _m, dd_subdomain, view, dg, gdt, dd_subdomain_coupling, 1, double, 1, 1, "_dd_subdomain_")
 
 // end: this is what we need for the .so
 

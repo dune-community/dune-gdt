@@ -78,6 +78,16 @@ extern template class LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
 
 #endif // HAVE_DUNE_ALUGRID
 
+
+extern template class
+    LinearEllipticSwipdgEstimatorExpectations<LinearElliptic::
+                                                  ESV2007TestCase<YaspGrid<2, EquidistantOffsetCoordinates<double, 2>>,
+                                                                  double,
+                                                                  1>,
+                                              LinearElliptic::ChooseDiscretizer::swipdg,
+                                              1>;
+
+
 } // namespace Test
 } // namespace GDT
 } // namespace Dune
