@@ -272,14 +272,14 @@ int main(int argc, char** argv)
                      << test_dt.second);
     } else {
       R t_max = 0;
-      const auto max_timesteps = DXTC_CONFIG.get("timestepping.max_steps", -1);
+      const auto max_timesteps = DXTC_CONFIG.get<ssize_t>("timestepping.max_steps", -1);
       if (max_timesteps > 0)
         t_max = dt * max_timesteps;
       else
         t_max = DXTC_CONFIG.get("problem.t_max", 10 * bv_frequency_factor);
       time_stepper.solve(t_max,
                          dt,
-                         DXTC_CONFIG.get("timestepping.num_saves", -1),
+                         DXTC_CONFIG.get<ssize_t>("timestepping.num_saves", -1),
                          false,
                          true,
                          "solution",
