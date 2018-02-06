@@ -1,0 +1,59 @@
+// This file is part of the dune-gdt project:
+//   https://github.com/dune-community/dune-gdt
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
+// License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
+//      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
+//          with "runtime exception" (http://www.dune-project.org/license.html)
+// Authors:
+//   Felix Schindler (2017)
+
+#include "config.h"
+
+#if HAVE_DUNE_PYBINDXI
+
+#include <dune/common/parallel/mpihelper.hh>
+
+#if HAVE_DUNE_FEM
+#include <dune/fem/misc/mpimanager.hh>
+#endif
+
+#include <dune/pybindxi/pybind11.h>
+#include <dune/pybindxi/stl.h>
+
+#include <python/dune/xt/common/bindings.hh>
+#include <dune/xt/grid/grids.hh>
+
+#include "spaces/interface.bindings.hh"
+#include "spaces.hh"
+
+
+#define DUNE_GDT_SPACES_BIND(_m, _GRID, _layer, _space_type, _space_backend, _p, _r, _rC, _grid_backend)               \
+  Dune::GDT::bindings::SpaceInterface<Dune::GDT::SpaceProvider<_GRID,                                                  \
+                                                               Dune::XT::Grid::Layers::_layer,                         \
+                                                               Dune::GDT::SpaceType::_space_type,                      \
+                                                               Dune::GDT::Backends::_space_backend,                    \
+                                                               _p,                                                     \
+                                                               double,                                                 \
+                                                               _r,                                                     \
+                                                               _rC,                                                    \
+                                                               Dune::XT::Grid::Backends::_grid_backend>>::bind(_m)
+
+
+PYBIND11_PLUGIN(__spaces)
+{
+  namespace py = pybind11;
+  using namespace pybind11::literals;
+
+  py::module m("__spaces", "dune-gdt: Spaces");
+  DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.spaces");
+
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, fem, 1, 1, 1, part);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, fem, 2, 1, 1, part);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, fem, 3, 1, 1, part);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, dg, fem, 1, 1, 1, part);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, rt, pdelab, 0, 2, 1, view);
+
+  return m.ptr();
+}
+
+#endif // HAVE_DUNE_PYBINDXI
