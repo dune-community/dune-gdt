@@ -357,7 +357,7 @@ public:
 
     const auto ClassName = XT::Common::to_camel_case(space_name /*space_name<SP>::value()*/);
 
-    bound_type c(m, ClassName.c_str(), ClassName.c_str(), py::metaclass());
+    bound_type c(m, ClassName.c_str(), ClassName.c_str());
 
     c.def_property_readonly("dimDomain", [](const type& /*self*/) { return S::dimDomain; });
     c.def_property_readonly("dimRange", [](const type& /*self*/) { return S::dimRange; });

@@ -278,7 +278,7 @@ public:
 
     const auto ClassName = XT::Common::to_camel_case("block_" + space_name<SP>::value());
 
-    bound_type c(m, ClassName.c_str(), ClassName.c_str(), py::metaclass()); // metaclass required for static properties
+    bound_type c(m, ClassName.c_str(), ClassName.c_str()); // metaclass required for static properties
 
     c.def("__init__",
           [](type& self, XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider) {

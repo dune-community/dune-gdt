@@ -166,7 +166,7 @@ public:
           + backend_name<SP::space_backend>::value()
           + "_space"
           + intersection_postfix<>::value());
-      py::class_<InterfaceType>(m, InterfaceName.c_str(), InterfaceName.c_str(), py::metaclass());
+      py::class_<InterfaceType>(m, InterfaceName.c_str(), InterfaceName.c_str());
     } catch (std::runtime_error&) {
     }
 
@@ -333,7 +333,7 @@ public:
           + backend_name<SP::space_backend>::value()
           + "_space"
           + intersection_postfix<>::value());
-      py::class_<InterfaceType>(m, InterfaceName.c_str(), InterfaceName.c_str(), py::metaclass());
+      py::class_<InterfaceType>(m, InterfaceName.c_str(), InterfaceName.c_str());
     } catch (std::runtime_error&) {
     }
 
