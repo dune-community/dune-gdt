@@ -25,12 +25,10 @@
 #include "elliptic-ipdg-operators.bindings.hh"
 
 
-PYBIND11_PLUGIN(__local_elliptic_ipdg_operators)
+PYBIND11_MODULE(__local_elliptic_ipdg_operators, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
-
-  py::module m("__local_elliptic_ipdg_operators", "dune-gdt");
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
@@ -85,8 +83,6 @@ PYBIND11_PLUGIN(__local_elliptic_ipdg_operators)
         "info"_a = true,
         "debug"_a = true,
         "warning"_a = true);
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

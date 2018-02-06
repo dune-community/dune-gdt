@@ -25,12 +25,10 @@
 #include <dune/gdt/functionals/elliptic-ipdg.bindings.hh>
 
 
-PYBIND11_PLUGIN(__functionals_elliptic_ipdg)
+PYBIND11_MODULE(__functionals_elliptic_ipdg, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
-
-  py::module m("__functionals_elliptic_ipdg", "dune-gdt: EllipticIpdgDirichletVolumeFunctional");
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
@@ -97,8 +95,6 @@ PYBIND11_PLUGIN(__functionals_elliptic_ipdg)
         "info"_a = true,
         "debug"_a = true,
         "warning"_a = true);
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

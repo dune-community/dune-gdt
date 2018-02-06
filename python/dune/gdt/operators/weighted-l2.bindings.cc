@@ -29,14 +29,12 @@
 #include <dune/gdt/operators/weighted-l2.bindings.hh>
 
 
-PYBIND11_PLUGIN(__operators_weighted_l2)
+PYBIND11_MODULE(__operators_weighted_l2, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
   using Dune::XT::Grid::Layers;
   using Dune::XT::Grid::Backends;
-
-  py::module m("__operators_weighted_l2", "dune-gdt: WeightedL2LocalizableProduct");
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
@@ -97,8 +95,6 @@ PYBIND11_PLUGIN(__operators_weighted_l2)
         "info"_a = true,
         "debug"_a = true,
         "warning"_a = true);
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

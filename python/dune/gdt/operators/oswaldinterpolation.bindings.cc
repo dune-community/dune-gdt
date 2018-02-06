@@ -28,12 +28,10 @@
 #include <dune/gdt/operators/oswaldinterpolation.bindings.hh>
 
 
-PYBIND11_PLUGIN(__operators_oswaldinterpolation)
+PYBIND11_MODULE(__operators_oswaldinterpolation, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
-
-  py::module m("__operators_oswaldinterpolation", "dune-gdt: OswaldInterpolationOperator");
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
@@ -99,8 +97,6 @@ PYBIND11_PLUGIN(__operators_oswaldinterpolation)
         "info"_a = true,
         "debug"_a = true,
         "warning"_a = true);
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

@@ -51,10 +51,8 @@ void bind_l2_localizable_product(py::module& m)
 }
 
 
-PYBIND11_PLUGIN(__operators_l2)
+PYBIND11_MODULE(__operators_l2, m)
 {
-  py::module m("__operators_l2", "dune-gdt: L2LocalizableProduct, L2MatrixOperator");
-
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
   py::module::import("dune.xt.common");
@@ -148,8 +146,6 @@ PYBIND11_PLUGIN(__operators_l2)
         "info"_a = true,
         "debug"_a = true,
         "warning"_a = true);
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

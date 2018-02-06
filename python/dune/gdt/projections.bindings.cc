@@ -26,12 +26,10 @@
 #include <dune/gdt/projections/dirichlet.bindings.hh>
 
 
-PYBIND11_PLUGIN(__projections)
+PYBIND11_MODULE(__projections, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
-
-  py::module m("__projections", "dune-gdt: projections");
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
@@ -87,8 +85,6 @@ PYBIND11_PLUGIN(__projections)
         "info"_a = true,
         "debug"_a = true,
         "warning"_a = true);
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

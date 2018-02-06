@@ -25,13 +25,10 @@
 #include "diffusive-flux-estimation-operator.bindings.hh"
 
 
-PYBIND11_PLUGIN(__local_diffusive_flux_estimation_operator)
+PYBIND11_MODULE(__local_diffusive_flux_estimation_operator, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
-
-  py::module m("__local_diffusive_flux_estimation_operator",
-               "dune-gdt: LocalVolumeIntegralOperator<LocalDiffusiveFluxEstimateESV2007Integrand<...>>");
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
@@ -85,8 +82,6 @@ PYBIND11_PLUGIN(__local_diffusive_flux_estimation_operator)
         "info"_a = true,
         "debug"_a = true,
         "warning"_a = true);
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

@@ -25,12 +25,10 @@
 #include "block.bindings.hh"
 
 
-PYBIND11_PLUGIN(__spaces_block)
+PYBIND11_MODULE(__spaces_block, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
-
-  py::module m("__spaces_block", "dune-gdt: Block spaces");
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
@@ -85,8 +83,6 @@ PYBIND11_PLUGIN(__spaces_block)
         "info"_a = true,
         "debug"_a = true,
         "warning"_a = true);
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

@@ -28,12 +28,10 @@
 #include <python/dune/gdt/operators/fluxreconstruction.bindings.hh>
 
 
-PYBIND11_PLUGIN(__operators_fluxreconstruction)
+PYBIND11_MODULE(__operators_fluxreconstruction, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
-
-  py::module m("__operators_fluxreconstruction", "dune-gdt: DiffusiveFluxReconstructionOperator");
 
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
@@ -98,8 +96,6 @@ PYBIND11_PLUGIN(__operators_fluxreconstruction)
         "info"_a = true,
         "debug"_a = true,
         "warning"_a = true);
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI
