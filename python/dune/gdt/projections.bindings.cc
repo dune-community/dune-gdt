@@ -26,18 +26,14 @@
 #include <dune/gdt/projections/dirichlet.bindings.hh>
 
 
-PYBIND11_PLUGIN(__projections)
+PYBIND11_MODULE(__projections, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  py::module m("__projections", "dune-gdt: projections");
-  DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.projections");
 
   DUNE_GDT_PROJECTIONS_BIND(m);
   //  DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(m);
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

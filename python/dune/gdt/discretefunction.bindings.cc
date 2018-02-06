@@ -37,24 +37,19 @@
                                                 1>,                                                                    \
                        typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
 
-
-PYBIND11_PLUGIN(__discretefunction)
+PYBIND11_MODULE(__discretefunction, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  py::module m("__discretefunction", "dune-gdt: discrete functions");
   DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.discretefunction");
-
   using G = ALU_2D_SIMPLEX_CONFORMING;
 
-  DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, fem, dg, 1, 1, istl_dense);
-  DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, fem, dg, 2, 1, istl_dense);
-  DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, fem, dg, 3, 1, istl_dense);
-  DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, dd_subdomain, fem, block_dg, 1, 1, istl_dense);
-  DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, pdelab, rt, 0, 2, istl_dense);
-
-  return m.ptr();
+  DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, gdt, dg, 1, 1, istl_dense);
+  DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, gdt, dg, 2, 1, istl_dense);
+  DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, gdt, dg, 3, 1, istl_dense);
+  DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_dense);
+  DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, gdt, rt, 0, 2, istl_dense);
 }
 
 #endif // HAVE_DUNE_PYBINDXI
