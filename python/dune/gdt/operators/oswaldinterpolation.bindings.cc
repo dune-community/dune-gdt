@@ -28,13 +28,11 @@
 #include <dune/gdt/operators/oswaldinterpolation.bindings.hh>
 
 
-PYBIND11_PLUGIN(__operators_oswaldinterpolation)
+PYBIND11_MODULE(__operators_oswaldinterpolation, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  py::module m("__operators_oswaldinterpolation", "dune-gdt: OswaldInterpolationOperator");
-  DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.operators.oswald-interpolation");
 
 #if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
   Dune::GDT::bindings::OswaldInterpolationOperator<ALU_2D_SIMPLEX_CONFORMING,
@@ -47,8 +45,6 @@ PYBIND11_PLUGIN(__operators_oswaldinterpolation)
                                                    Dune::XT::LA::Backends::istl_dense,
                                                    Dune::XT::Grid::Layers::dd_subdomain_oversampled>::bind(m);
 #endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

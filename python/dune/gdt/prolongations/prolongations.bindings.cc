@@ -20,9 +20,9 @@
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
 
-#include <dune/xt/common/bindings.hh>
+#include <python/dune/xt/common/bindings.hh>
 
-#include <dune/gdt/prolongations.bindings.hh>
+#include <dune/gdt/prolongations/prolongations.bindings.hh>
 
 
 #define DUNE_GDT_PROLONGATIONS_BIND(                                                                                   \
@@ -48,7 +48,7 @@
       typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_r_la>::VectorType>::bind(_m)
 
 
-PYBIND11_PLUGIN(__prolongations)
+PYBIND11_MODULE(__prolongations, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;

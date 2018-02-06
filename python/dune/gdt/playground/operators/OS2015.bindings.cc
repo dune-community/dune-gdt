@@ -353,12 +353,10 @@ struct DiffusiveFluxProduct
 }; // struct DiffusiveFluxProduct
 
 
-PYBIND11_PLUGIN(__operators_OS2015)
+PYBIND11_MODULE(__operators_OS2015, m)
 {
   using namespace pybind11::literals;
 
-  py::module m("__operators_OS2015", "dune-gdt");
-  DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.operators.OS2015");
 
 #if HAVE_DUNE_ALUGRID
   // This is not efficient: we reconstruct on the whole leaf instead of only the neighborhood, but the rt space
@@ -370,8 +368,6 @@ PYBIND11_PLUGIN(__operators_OS2015)
   // s.a.
   DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
 #endif
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

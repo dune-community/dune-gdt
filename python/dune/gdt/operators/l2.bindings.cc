@@ -62,25 +62,23 @@ void bind_l2_localizable_product(py::module& m)
 }
 
 
-PYBIND11_PLUGIN(__operators_l2)
+PYBIND11_MODULE(__operators_l2, m)
 {
-  py::module m("__operators_l2", "dune-gdt: L2LocalizableProduct, L2MatrixOperator");
-  DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.operators.l2");
 
 #if HAVE_DUNE_ALUGRID
   using G = ALU_2D_SIMPLEX_CONFORMING;
 
   bind_l2_localizable_product<G, Layers::dd_subdomain, XT::Grid::Backends::part>(m);
   bind_l2_localizable_product<G, Layers::leaf, XT::Grid::Backends::part>(m);
-  DUNE_GDT_OPERATORS_L2_BIND(m, G, leaf, fem, dg, 1, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_L2_BIND(m, G, leaf, fem, dg, 2, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_L2_BIND(m, G, leaf, fem, dg, 3, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_L2_BIND(m, G, dd_subdomain, fem, block_dg, 1, 1, istl_sparse);
-  DUNE_GDT_OPERATORS_L2_BIND(m, G, dd_subdomain, fem, dg, 1, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_L2_BIND(m, G, leaf, gdt, dg, 1, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_L2_BIND(m, G, leaf, gdt, dg, 2, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_L2_BIND(m, G, leaf, gdt, dg, 3, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_L2_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_sparse);
+  DUNE_GDT_OPERATORS_L2_BIND(m, G, dd_subdomain, gdt, dg, 1, 1, istl_sparse);
   Dune::GDT::bindings::internal::
       L2MatrixOperator<GDT::RestrictedSpace<
                            typename GDT::
-                               SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::pdelab, 0, double, 2>::
+                               SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, 2>::
                                    type,
                            typename XT::Grid::Layer<G,
                                                     Layers::dd_subdomain,
@@ -91,9 +89,6 @@ PYBIND11_PLUGIN(__operators_l2)
                                                                        "istl_row_major_sparse_matrix_double");
 
 #endif // HAVE_DUNE_ALUGRID
-
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

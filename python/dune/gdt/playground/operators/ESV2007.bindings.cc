@@ -492,12 +492,10 @@ struct DiffusiveFluxProduct
 }; // struct DiffusiveFluxProduct
 
 
-PYBIND11_PLUGIN(__operators_ESV2007)
+PYBIND11_MODULE(__operators_ESV2007, m)
 {
   using namespace pybind11::literals;
 
-  py::module m("__operators_ESV2007", "dune-gdt");
-  DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.operators.ESV2007");
 
 #if HAVE_DUNE_ALUGRID
   NonconformityProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
@@ -516,8 +514,6 @@ PYBIND11_PLUGIN(__operators_ESV2007)
   // s.a.
   DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
 #endif
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

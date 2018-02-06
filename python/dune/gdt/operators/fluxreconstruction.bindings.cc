@@ -28,13 +28,11 @@
 #include <python/dune/gdt/operators/fluxreconstruction.bindings.hh>
 
 
-PYBIND11_PLUGIN(__operators_fluxreconstruction)
+PYBIND11_MODULE(__operators_fluxreconstruction, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  py::module m("__operators_fluxreconstruction", "dune-gdt: DiffusiveFluxReconstructionOperator");
-  DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.operators.fluxreconstruction");
 
 #if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
   Dune::GDT::bindings::DiffusiveFluxReconstructionOperator<ALU_2D_SIMPLEX_CONFORMING,
@@ -46,8 +44,6 @@ PYBIND11_PLUGIN(__operators_fluxreconstruction)
                                                            2,
                                                            Dune::XT::LA::Backends::istl_dense>::bind(m);
 #endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

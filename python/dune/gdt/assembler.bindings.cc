@@ -67,14 +67,10 @@
                                                                 _a_r,                                                  \
                                                                 1>>::bind(_m)
 
-
-PYBIND11_PLUGIN(__assembler)
+PYBIND11_MODULE(__assembler, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
-
-  py::module m("__assembler", "dune-gdt: SystemAssembler");
-  DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.assembler");
 
   py::class_<Dune::GDT::bindings::ResultStorage> ResultStorage(m, "ResultStorage", "dune-gdt: ResultStorage");
   ResultStorage.def(pybind11::init<>());
@@ -98,8 +94,6 @@ PYBIND11_PLUGIN(__assembler)
       m, G, dd_subdomain_boundary, part, fem, dg, dd_subdomain, 1, 1, fem, dg, dd_subdomain, 1, 1);
   DUNE_GDT_ASSEMBLER_SYSTEM_BIND(
       m, G, dd_subdomain_coupling, part, fem, dg, dd_subdomain, 1, 1, fem, dg, dd_subdomain, 1, 1);
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

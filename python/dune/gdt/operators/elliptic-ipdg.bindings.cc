@@ -38,24 +38,20 @@
                                                   Dune::XT::Grid::Layers::_s_layer,                                    \
                                                   _s_p>::bind(_m)
 
-
-PYBIND11_PLUGIN(__operators_elliptic_ipdg)
+PYBIND11_MODULE(__local_elliptic_ipdg_operators, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  py::module m("__operators_elliptic_ipdg", "dune-gdt: EllipticIpdgMatrixOperator");
   DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.operators.elliptic-ipdg");
 
   using G = ALU_2D_SIMPLEX_CONFORMING;
 
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(m, G, leaf, part, true, swipdg_affine_factor, istl_sparse, fem, dg, leaf, 1);
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(m, G, leaf, part, true, swipdg_affine_factor, istl_sparse, fem, dg, leaf, 2);
-  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(m, G, leaf, part, true, swipdg_affine_factor, istl_sparse, fem, dg, leaf, 3);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(m, G, leaf, part, true, swipdg_affine_factor, istl_sparse, gdt, dg, leaf, 1);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(m, G, leaf, part, true, swipdg_affine_factor, istl_sparse, gdt, dg, leaf, 2);
+  DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(m, G, leaf, part, true, swipdg_affine_factor, istl_sparse, gdt, dg, leaf, 3);
   DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(
-      m, G, dd_subdomain, part, true, swipdg_affine_factor, istl_sparse, fem, dg, dd_subdomain, 1);
-
-  return m.ptr();
+      m, G, dd_subdomain, part, true, swipdg_affine_factor, istl_sparse, gdt, dg, dd_subdomain, 1);
 }
 
 #endif // HAVE_DUNE_PYBINDXI

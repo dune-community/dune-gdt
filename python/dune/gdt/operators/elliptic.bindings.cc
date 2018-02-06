@@ -36,24 +36,19 @@
                                               Dune::XT::Grid::Layers::_s_layer,                                        \
                                               _s_p>::bind(_m)
 
-
-PYBIND11_PLUGIN(__operators_elliptic)
+PYBIND11_MODULE(__operators_elliptic, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
   using namespace Dune;
 
-  py::module m("__operators_elliptic", "dune-gdt: EllipticMatrixOperator");
   DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.operators.elliptic");
-
   using G = ALU_2D_SIMPLEX_CONFORMING;
 
-  DUNE_GDT_OPERATORS_ELLIPTIC_BIND(m, G, leaf, part, true, istl_sparse, fem, dg, leaf, 1);
-  DUNE_GDT_OPERATORS_ELLIPTIC_BIND(m, G, leaf, part, true, istl_sparse, fem, dg, leaf, 2);
-  DUNE_GDT_OPERATORS_ELLIPTIC_BIND(m, G, leaf, part, true, istl_sparse, fem, dg, leaf, 3);
-  DUNE_GDT_OPERATORS_ELLIPTIC_BIND(m, G, dd_subdomain, part, true, istl_sparse, fem, dg, dd_subdomain, 1);
-
-  return m.ptr();
+  DUNE_GDT_OPERATORS_ELLIPTIC_BIND(m, G, leaf, part, true, istl_sparse, gdt, dg, leaf, 1);
+  DUNE_GDT_OPERATORS_ELLIPTIC_BIND(m, G, leaf, part, true, istl_sparse, gdt, dg, leaf, 2);
+  DUNE_GDT_OPERATORS_ELLIPTIC_BIND(m, G, leaf, part, true, istl_sparse, gdt, dg, leaf, 3);
+  DUNE_GDT_OPERATORS_ELLIPTIC_BIND(m, G, dd_subdomain, part, true, istl_sparse, gdt, dg, dd_subdomain, 1);
 }
 
 #endif // HAVE_DUNE_PYBINDXI

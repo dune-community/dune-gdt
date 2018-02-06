@@ -78,23 +78,18 @@
                                                             Dune::XT::Grid::Backends::_g_backend,                      \
                                                             Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>::bind(_m)
 
-
-PYBIND11_PLUGIN(__functionals_l2)
+PYBIND11_MODULE(__functionals_l2, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  py::module m("__functionals_l2", "dune-gdt: l2 functionals");
   DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.functionsl.l2");
-
   using G = ALU_2D_SIMPLEX_CONFORMING;
 
   DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, part, dg, gdt, 1, istl_sparse);
   DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, part, dg, gdt, 2, istl_sparse);
   DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, part, dg, gdt, 3, istl_sparse);
   DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, dd_subdomain, part, dg, gdt, 1, istl_sparse);
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

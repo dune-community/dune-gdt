@@ -24,7 +24,7 @@
 #include <dune/xt/grid/grids.hh>
 
 #include "spaces/interface.bindings.hh"
-#include "spaces.hh"
+#include <dune/gdt/spaces.hh>
 
 
 #define DUNE_GDT_SPACES_BIND(_m, _GRID, _layer, _space_type, _space_backend, _p, _r, _rC, _grid_backend)               \
@@ -39,21 +39,17 @@
                                                                Dune::XT::Grid::Backends::_grid_backend>>::bind(_m)
 
 
-PYBIND11_PLUGIN(__spaces)
+PYBIND11_MODULE(__spaces, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  py::module m("__spaces", "dune-gdt: Spaces");
   DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.spaces");
-
-  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, fem, 1, 1, 1, part);
-  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, fem, 2, 1, 1, part);
-  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, fem, 3, 1, 1, part);
-  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, dg, fem, 1, 1, 1, part);
-  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, rt, pdelab, 0, 2, 1, view);
-
-  return m.ptr();
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, gdt, 1, 1, 1, part);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, gdt, 2, 1, 1, part);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, gdt, 3, 1, 1, part);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, dg, gdt, 1, 1, 1, part);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, rt, gdt, 0, 2, 1, view);
 }
 
 #endif // HAVE_DUNE_PYBINDXI
