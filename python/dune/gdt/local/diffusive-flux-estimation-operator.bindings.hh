@@ -58,7 +58,7 @@ public:
     try {
       const auto InterfaceName = XT::Common::to_camel_case(
           "local_volume_two_form_interface_" + XT::Grid::bindings::grid_name<G>::value() + "_to_1x1");
-      py::class_<InterfaceType>(m, InterfaceName.c_str(), "LocalVolumeTwoFormInterface", py::metaclass());
+      py::class_<InterfaceType>(m, InterfaceName.c_str(), "LocalVolumeTwoFormInterface");
     } catch (std::runtime_error&) {
     }
 
