@@ -20,7 +20,7 @@
 #include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/la/container/istl.hh>
 #include <dune/xt/grid/dd/subdomains/grid.hh>
-#include <dune/xt/grid/grids.bindings.hh>
+#include <python/dune/xt/grid/grids.bindings.hh>
 #include <dune/xt/grid/layers.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces/localizable-function.hh>
