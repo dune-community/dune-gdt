@@ -30,8 +30,6 @@ PYBIND11_MODULE(__operators_elliptic_ipdg, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  py::module m("__operators_elliptic_ipdg", "dune-gdt: EllipticIpdgMatrixOperator");
-
   Dune::XT::Common::bindings::addbind_exceptions(m);
 
   py::module::import("dune.xt.common");
