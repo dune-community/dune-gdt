@@ -17,6 +17,7 @@
 #include <dune/pybindxi/stl.h>
 
 #include <python/dune/xt/common/bindings.hh>
+#include <python/dune/gdt/shared.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
 #include <dune/xt/grid/layers.hh>
 
@@ -85,6 +86,7 @@ PYBIND11_MODULE(__operators_l2, m)
                                                                        "istl_row_major_sparse_matrix_double");
 
 #endif // HAVE_DUNE_ALUGRID
+  add_initialization(m, "dune.gdt.operators.elliptic");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

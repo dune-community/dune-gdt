@@ -17,6 +17,7 @@
 #include <dune/pybindxi/stl.h>
 
 #include <python/dune/xt/common/bindings.hh>
+#include <python/dune/gdt/shared.hh>
 
 #include <dune/gdt/operators/elliptic.bindings.hh>
 
@@ -37,10 +38,8 @@ PYBIND11_MODULE(__operators_elliptic, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
   using namespace Dune;
-
-  DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.operators.elliptic");
   using G = ALU_2D_SIMPLEX_CONFORMING;
-
+  add_initialization(m, "dune.gdt.operators.elliptic");
   DUNE_GDT_OPERATORS_ELLIPTIC_BIND(m, G, leaf, part, true, istl_sparse, gdt, dg, leaf, 1);
   DUNE_GDT_OPERATORS_ELLIPTIC_BIND(m, G, leaf, part, true, istl_sparse, gdt, dg, leaf, 2);
   DUNE_GDT_OPERATORS_ELLIPTIC_BIND(m, G, leaf, part, true, istl_sparse, gdt, dg, leaf, 3);

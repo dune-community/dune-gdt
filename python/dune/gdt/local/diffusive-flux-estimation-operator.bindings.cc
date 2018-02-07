@@ -17,6 +17,7 @@
 #include <dune/pybindxi/stl.h>
 
 #include <python/dune/xt/common/bindings.hh>
+#include <python/dune/gdt/shared.hh>
 
 #include "diffusive-flux-estimation-operator.bindings.hh"
 
@@ -29,8 +30,8 @@ PYBIND11_MODULE(__local_diffusive_flux_estimation_operator)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.local.operators.diffusive-flux-reconstruction");
   DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(ALU_2D_SIMPLEX_CONFORMING, m);
+  add_initialization(m, "dune.gdt.assembler");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

@@ -17,6 +17,7 @@
 #include <dune/pybindxi/stl.h>
 
 #include <python/dune/xt/common/bindings.hh>
+#include <python/dune/gdt/shared.hh>
 
 #include <dune/gdt/projections.bindings.hh>
 #include <dune/gdt/projections/dirichlet.bindings.hh>
@@ -30,6 +31,7 @@ PYBIND11_MODULE(__projections, m)
 
   DUNE_GDT_PROJECTIONS_BIND(m);
   //  DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(m);
+  add_initialization(m, "dune.gdt.projections");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

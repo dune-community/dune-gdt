@@ -14,6 +14,7 @@
 #include <dune/common/parallel/mpihelper.hh>
 
 #include <dune/pybindxi/pybind11.h>
+#include <python/dune/gdt/shared.hh>
 #include <dune/pybindxi/stl.h>
 
 #include <python/dune/xt/common/bindings.hh>
@@ -40,6 +41,7 @@ PYBIND11_MODULE(__operators_fluxreconstruction, m)
                                                            2,
                                                            Dune::XT::LA::Backends::istl_dense>::bind(m);
 #endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
+  add_initialization(m, "dune.gdt.operators.elliptic");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

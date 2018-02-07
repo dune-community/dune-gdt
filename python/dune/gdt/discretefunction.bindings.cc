@@ -19,7 +19,7 @@
 #include <python/dune/xt/common/bindings.hh>
 
 #include <dune/gdt/discretefunction/default.bindings.hh>
-
+#include <python/dune/gdt/shared.hh>
 
 #define DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(_m, _G, _g_layer, _s_backend, _s_type, _p, _r, _la)                     \
   Dune::GDT::bindings::                                                                                                \
@@ -38,9 +38,8 @@ PYBIND11_MODULE(__discretefunction, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.discretefunction");
   using G = ALU_2D_SIMPLEX_CONFORMING;
-
+  add_initialization(m, "dune.gdt.discretefunction");
   DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, gdt, dg, 1, 1, istl_dense);
   DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, gdt, dg, 2, 1, istl_dense);
   DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, gdt, dg, 3, 1, istl_dense);

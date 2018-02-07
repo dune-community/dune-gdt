@@ -17,6 +17,7 @@
 #include <dune/pybindxi/stl.h>
 
 #include <python/dune/xt/common/bindings.hh>
+#include <python/dune/gdt/shared.hh>
 
 #include "block.bindings.hh"
 
@@ -37,8 +38,8 @@ PYBIND11_MODULE(__spaces_block, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.spaces.block");
   DUNE_GDT_SPACES_BLOCK_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dg, fem, 1);
+  add_initialization(m, "dune.gdt.spaces.block");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

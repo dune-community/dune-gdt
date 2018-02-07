@@ -19,6 +19,7 @@
 #include <dune/pybindxi/stl.h>
 
 #include <python/dune/xt/common/bindings.hh>
+#include <python/dune/gdt/shared.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
 #include <dune/xt/grid/layers.hh>
 
@@ -39,6 +40,7 @@ PYBIND11_MODULE(__operators_weighted_l2, m)
   Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view>::
       bind(m);
 #endif // HAVE_DUNE_ALUGRID
+  add_initialization(m, "dune.gdt.operators.elliptic");
 }
 
 #endif // HAVE_DUNE_PYBINDXI
