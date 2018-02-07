@@ -15,10 +15,6 @@
 
 #include <dune/common/parallel/mpihelper.hh>
 
-#if HAVE_DUNE_FEM
-#include <dune/fem/misc/mpimanager.hh>
-#endif
-
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
 
@@ -57,9 +53,6 @@ PYBIND11_MODULE(__operators_weighted_l2, m)
           int argc = Dune::XT::Common::numeric_cast<int>(args.size());
           char** argv = Dune::XT::Common::vector_to_main_args(args);
           Dune::MPIHelper::instance(argc, argv);
-#if HAVE_DUNE_FEM
-          Dune::Fem::MPIManager::initialize(argc, argv);
-#endif
         },
         "args"_a = std::vector<std::string>());
 

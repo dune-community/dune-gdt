@@ -25,9 +25,6 @@
 #include <dune/common/fmatrix.hh>
 #include <dune/common/parallel/mpihelper.hh>
 
-#if HAVE_DUNE_FEM
-#include <dune/fem/misc/mpimanager.hh>
-#endif
 #include <dune/alugrid/common/structuredgridfactory.hh>
 #include <dune/xt/common/vector.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
@@ -250,11 +247,7 @@ int main(int argc, char** argv)
   using namespace Dune::XT::Common;
   try {
 
-#if HAVE_DUNE_FEM
-    Dune::Fem::MPIManager::initialize(argc, argv);
-#else
     Dune::MPIHelper::instance(argc, argv);
-#endif
 
     DXTC_CONFIG.read_command_line(argc, argv);
 
