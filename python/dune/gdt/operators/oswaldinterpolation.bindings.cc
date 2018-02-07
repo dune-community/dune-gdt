@@ -17,6 +17,7 @@
 #include <dune/pybindxi/stl.h>
 
 #include <python/dune/xt/common/bindings.hh>
+#include <python/dune/gdt/shared.hh>
 #include <dune/xt/grid/dd/subdomains/grid.hh>
 #include <dune/xt/grid/grids.hh>
 
@@ -41,6 +42,7 @@ PYBIND11_MODULE(__operators_oswaldinterpolation, m)
                                                    Dune::XT::LA::Backends::istl_dense,
                                                    Dune::XT::Grid::Layers::dd_subdomain_oversampled>::bind(m);
 #endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
+  add_initialization(m, "dune.gdt.operators.elliptic");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

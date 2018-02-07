@@ -20,6 +20,7 @@
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
 
+#include <python/dune/gdt/shared.hh>
 #include <python/dune/xt/common/bindings.hh>
 #include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/common/numeric_cast.hh>
@@ -1623,8 +1624,6 @@ PYBIND11_MODULE(__operators_RS2017, m)
 {
   using namespace pybind11::literals;
 
-  DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.operators.RS2017");
-
 #if HAVE_DUNE_ALUGRID
   SwipdgPenaltySubdomainProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
   SwipdgPenaltyNeighborhoodProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
@@ -1926,9 +1925,7 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "kappa"_a,
         "over_integrate"_a = 2);
 
-#endif // HAVE_DUNE_ALUGRID
-
-  return m.ptr();
+  add_initialization(m, "dune.gdt.operators.elliptic");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

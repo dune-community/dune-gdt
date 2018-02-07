@@ -17,6 +17,7 @@
 #include <dune/pybindxi/stl.h>
 
 #include <python/dune/xt/common/bindings.hh>
+#include <python/dune/gdt/shared.hh>
 
 #include <dune/gdt/functionals/l2.bindings.hh>
 
@@ -79,9 +80,8 @@ PYBIND11_MODULE(__functionals_l2, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.functionsl.l2");
   using G = ALU_2D_SIMPLEX_CONFORMING;
-
+  add_initialization(m, "dune.gdt.functionals.l2");
   DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, part, dg, gdt, 1, istl_sparse);
   DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, part, dg, gdt, 2, istl_sparse);
   DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, part, dg, gdt, 3, istl_sparse);

@@ -53,8 +53,7 @@ PYBIND11_MODULE(__prolongations, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  py::module m("__prolongations", "dune-gdt: prolongations");
-  DUNE_XT_COMMON_BINDINGS_INITIALIZE(m, "dune.gdt.prolongations");
+  add_initialization(m, "dune.gdt.prolongations");
 
   using G = ALU_2D_SIMPLEX_CONFORMING;
 
@@ -64,8 +63,6 @@ PYBIND11_MODULE(__prolongations, m)
   DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, fem, block_dg, 1, 1, istl_dense, G, leaf, fem, dg, 1, istl_dense);
   DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, fem, block_dg, 1, 1, istl_dense, G, leaf, fem, dg, 2, istl_dense);
   DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, fem, block_dg, 1, 1, istl_dense, G, leaf, fem, dg, 3, istl_dense);
-
-  return m.ptr();
 }
 
 #endif // HAVE_DUNE_PYBINDXI

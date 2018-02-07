@@ -17,6 +17,7 @@
 #include <dune/pybindxi/stl.h>
 
 #include <python/dune/xt/common/bindings.hh>
+#include <python/dune/gdt/shared.hh>
 
 #include "elliptic-ipdg-operators.bindings.hh"
 
@@ -28,6 +29,7 @@ PYBIND11_MODULE(__local_elliptic_ipdg_operators, m)
 
 
   DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND(m);
+  add_initialization(m, "dune.gdt.assembler");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

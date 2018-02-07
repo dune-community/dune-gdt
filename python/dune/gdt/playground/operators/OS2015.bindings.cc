@@ -19,6 +19,7 @@
 #include <dune/pybindxi/stl.h>
 
 #include <python/dune/xt/common/bindings.hh>
+#include <python/dune/gdt/shared.hh>
 #include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/grid/dd/subdomains/grid.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
@@ -364,6 +365,7 @@ PYBIND11_MODULE(__operators_OS2015, m)
   // s.a.
   DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
 #endif
+  add_initialization(m, "dune.gdt.operators.elliptic");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

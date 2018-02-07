@@ -17,6 +17,7 @@
 #include <dune/pybindxi/stl.h>
 
 #include <python/dune/xt/common/bindings.hh>
+#include <python/dune/gdt/shared.hh>
 
 #include <dune/gdt/assembler/system.bindings.hh>
 #include <dune/gdt/spaces/constraints.bindings.hh>
@@ -76,12 +77,11 @@ PYBIND11_MODULE(__assembler, m)
       [](Dune::GDT::bindings::ResultStorage& self, const double& value) { self.result() = value; });
 
   using G = ALU_2D_SIMPLEX_CONFORMING;
-
+  add_initialization(m, "dune.gdt.assembler");
   DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, G, leaf, view, "leaf");
   DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(G, leaf, view, istl_sparse);
   DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, G, dd_subdomain, part, "dd_subdomain");
   DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(G, dd_subdomain, part, istl_sparse);
-
   DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, part, fem, dg, leaf, 1, 1, fem, dg, leaf, 1, 1);
   DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, part, fem, dg, leaf, 2, 1, fem, dg, leaf, 2, 1);
   DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, part, fem, dg, leaf, 3, 1, fem, dg, leaf, 3, 1);
