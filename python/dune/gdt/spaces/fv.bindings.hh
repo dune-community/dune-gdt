@@ -7,8 +7,8 @@
 // Authors:
 //   Felix Schindler (2017)
 
-#ifndef DUNE_GDT_SPACES_FV_BINDINGS_HH
-#define DUNE_GDT_SPACES_FV_BINDINGS_HH
+#ifndef PYTHON_DUNE_GDT_SPACES_FV_BINDINGS_HH
+#define PYTHON_DUNE_GDT_SPACES_FV_BINDINGS_HH
 #if HAVE_DUNE_PYBINDXI
 
 #include <python/dune/xt/grid/grids.bindings.hh>
@@ -72,4 +72,4 @@
 
 
 #endif // HAVE_DUNE_PYBINDXI
-#endif // DUNE_GDT_SPACES_FV_BINDINGS_HH
+#endif // PYTHON_DUNE_GDT_SPACES_FV_BINDINGS_HH

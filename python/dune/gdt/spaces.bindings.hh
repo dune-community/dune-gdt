@@ -7,8 +7,8 @@
 // Authors:
 //   Felix Schindler (2017)
 
-#ifndef DUNE_GDT_SPACES_BINDINGS_HH
-#define DUNE_GDT_SPACES_BINDINGS_HH
+#ifndef PYTHON_DUNE_GDT_SPACES_BINDINGS_HH
+#define PYTHON_DUNE_GDT_SPACES_BINDINGS_HH
 #if HAVE_DUNE_PYBINDXI
 
 #include <dune/gdt/spaces.hh>
@@ -19,4 +19,4 @@
 #include <python/dune/gdt/spaces/rt.bindings.hh>
 
 #endif // HAVE_DUNE_PYBINDXI
-#endif // DUNE_GDT_SPACES_BINDINGS_HH
+#endif // PYTHON_DUNE_GDT_SPACES_BINDINGS_HH
