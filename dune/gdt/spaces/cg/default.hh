@@ -27,6 +27,7 @@
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/numeric_cast.hh>
 
+#include <dune/gdt/local/finite-elements/wrapper.hh>
 #include <dune/gdt/spaces/basefunctionset/default.hh>
 #include <dune/gdt/spaces/mapper/default.hh>
 #include <dune/gdt/spaces/cg/interface.hh>
@@ -57,9 +58,8 @@ public:
   static const constexpr size_t dimRangeCols = 1;
   static const constexpr bool continuous = false;
   using GridLayerType = GL;
-  using LocalFiniteElement = LagrangeLocalFiniteElement<EquidistantPointSet, dimDomain, typename GL::ctype, R>;
-  using BaseFunctionSetType = ScalarBasefunctionSet<LocalFiniteElement, XT::Grid::extract_entity_t<GL>, R>;
-  using MapperType = FixedOrderMultipleCodimMultipleGeomTypeMapper<GL, LocalFiniteElement>;
+  using BaseFunctionSetType = DefaultGlobalBasis<XT::Grid::extract_entity_t<GL>, R, dimRange, dimRangeCols, R>;
+  using MapperType = FixedOrderMultipleCodimMultipleGeomTypeMapper<GL, R, dimRange, dimRangeCols, R>;
   using RangeFieldType = R;
   using BackendType = double;
   static const constexpr XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
@@ -96,7 +96,6 @@ private:
   using ThisType = ContinuousLagrangeSpace<GL, p, R>;
   using D = typename GL::ctype;
   static const constexpr size_t d = BaseType::dimDomain;
-  using FiniteElementType = LagrangeLocalFiniteElement<EquidistantPointSet, d, D, R>;
   using DofCommunicationChooserType = typename Traits::DofCommunicationChooserType;
 
 public:
@@ -104,6 +103,7 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::MapperType;
   using typename BaseType::BaseFunctionSetType;
+  using typename BaseType::FiniteElementType;
   using DomainType = typename BaseFunctionSetType::DomainType;
   using DofCommunicatorType = typename Traits::DofCommunicatorType;
 
@@ -112,27 +112,22 @@ public:
     , communicator_(DofCommunicationChooserType::create(grid_layer_))
     , backend_(0)
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
-    , lagrange_points_(new std::map<GeometryType, std::vector<DomainType>>())
     , mapper_(nullptr)
   {
-    // create finite elements and lagrange points
+    // create finite elements
     for (auto&& geometry_type : grid_layer_.indexSet().types(0)) {
       if (geometry_type == GeometryType(GeometryType::pyramid, 3))
         DUNE_THROW(space_error, "Continuous Lagrange space does not seem to have working jacobians on pyramid grids!");
-      auto fe = std::make_shared<FiniteElementType>(geometry_type, p);
-      const auto& lp = fe->localInterpolation().lagrangePoints();
-      std::vector<DomainType> lagrange_points(lp.size());
-      for (size_t ii = 0; ii < lp.size(); ++ii)
-        lagrange_points[ii] = lp[ii].point();
-      lagrange_points_->insert(std::make_pair(geometry_type, std::move(lagrange_points)));
-      finite_elements_->insert(std::make_pair(geometry_type, std::move(fe)));
+      using FE = LocalFiniteElementWrapper<LagrangeLocalFiniteElement<EquidistantPointSet, d, D, R>, D, d, R, 1, 1, R>;
+      finite_elements_->insert(
+          std::make_pair(geometry_type, std::shared_ptr<FiniteElementType>(new FE(geometry_type, p))));
     }
     // check
     if (d == 3 && finite_elements_->size() != 1)
       DUNE_THROW(space_error, "Continuous Lagrange space with multiple finite elements in 3d not supported (yet)!");
     // create mapper
     mapper_ = std::make_shared<MapperType>(grid_layer_, finite_elements_);
-  }
+  } // ContinuousLagrangeSpace(...)
 
   ContinuousLagrangeSpace(const ThisType&) = default;
   ContinuousLagrangeSpace(ThisType&&) = default;
@@ -157,14 +152,7 @@ public:
 
   BaseFunctionSetType base_function_set(const EntityType& entity) const
   {
-    const auto finite_element_search_result = finite_elements_->find(entity.geometry().type());
-    if (finite_element_search_result == finite_elements_->end())
-      DUNE_THROW(XT::Common::Exceptions::internal_error,
-                 "This must not happen, the grid layer did not report all geometry types!"
-                     << "\n   entity.geometry().type() = "
-                     << entity.geometry().type());
-    const auto& finite_element = *finite_element_search_result->second;
-    return BaseFunctionSetType(entity, finite_element);
+    return BaseFunctionSetType(entity, get_finite_element(entity.geometry().type()));
   }
 
   DofCommunicatorType& dof_communicator() const
@@ -173,23 +161,27 @@ public:
     return *communicator_;
   }
 
-  std::vector<DomainType> lagrange_points(const EntityType& entity) const
+  const std::vector<DomainType>& lagrange_points(const EntityType& entity) const
   {
-    const auto lagrange_points_search_result = lagrange_points_->find(entity.geometry().type());
-    if (lagrange_points_search_result == lagrange_points_->end())
-      DUNE_THROW(XT::Common::Exceptions::internal_error,
-                 "This must not happen, the grid layer did not report all geometry types!"
-                     << "\n   entity.geometry().type() = "
-                     << entity.geometry().type());
-    return lagrange_points_search_result->second;
+    return get_finite_element(entity.geometry().type()).lagrange_points();
   }
 
 private:
+  const FiniteElementType& get_finite_element(const GeometryType& geometry_type) const
+  {
+    const auto finite_element_search_result = finite_elements_->find(geometry_type);
+    if (finite_element_search_result == finite_elements_->end())
+      DUNE_THROW(XT::Common::Exceptions::internal_error,
+                 "This must not happen, the grid layer did not report all geometry types!"
+                     << "\n   entity.geometry().type() = "
+                     << geometry_type);
+    return *finite_element_search_result->second;
+  } // ... get_finite_element(...)
+
   const GridLayerType grid_layer_;
   mutable std::shared_ptr<DofCommunicatorType> communicator_;
   const double backend_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
-  std::shared_ptr<std::map<GeometryType, std::vector<DomainType>>> lagrange_points_;
   std::shared_ptr<MapperType> mapper_;
 }; // class ContinuousLagrangeSpace
 
