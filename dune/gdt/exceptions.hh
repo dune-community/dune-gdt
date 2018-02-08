@@ -29,6 +29,10 @@ class projection_error : public operator_error
 {
 };
 
+class finite_element_error : public Dune::Exception
+{
+};
+
 class space_error : public Dune::Exception
 {
 };
