@@ -205,6 +205,17 @@ private:
 }; // class RaviartThomasBasefunctionSet
 
 
+/**
+ * The following dimensions/orders/elements are tested to work:
+ *
+ * - 1d: order 0 works
+ * - 2d: order 0 works on simplices, cubes and mixed simplices and cubes
+ * - 3d: order 0 work on simplices, cubes
+ *
+ * The following dimensions/orders/elements are tested to fail:
+ *
+ * - 3d: mixed simplices and cubes (the mapper cannot handle non-conforming intersections/the switches are not corect)
+ */
 template <class GL, int p, class R>
 class RaviartThomasSpace
     : public RtSpaceInterface<internal::RaviartThomasSpaceTraits<GL, p, R>, GL::dimension, GL::dimension>
@@ -247,6 +258,11 @@ public:
           std::make_pair(geometry_type, std::vector<size_t>(finite_element->size())));
       finite_elements_->insert(std::make_pair(geometry_type, std::move(finite_element)));
     }
+    // check: the mapper does not work for non-conforming intersections
+    if (d == 3 && finite_elements_->size() != 1)
+      DUNE_THROW(space_error,
+                 "when creating a RaviartThomasSpace: non-conforming intersections are not (yet) "
+                 "supported, and more than one element type in 3d lead to non-conforming intersections!");
     // compute local-key-to-intersection relationship
     for (const auto& geometry_type_and_finite_element_ptr : *finite_elements_) {
       const auto& geometry_type = geometry_type_and_finite_element_ptr.first;
