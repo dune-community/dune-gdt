@@ -145,6 +145,8 @@ public:
     : finite_elements_(finite_elements)
     , mapper_(nullptr)
   {
+    if (d == 3 && finite_elements_->size() != 1)
+      DUNE_THROW(mapper_error, "The mapper does not seem to work with multiple finite elements in 3d!");
     std::set<GeometryType> all_DoF_attached_geometry_types;
     // collect all entities (for all codims) which are used to attach DoFs to
     for (auto&& geometry_type : grid_layer.indexSet().types(0)) {
