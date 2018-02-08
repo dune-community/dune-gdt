@@ -21,13 +21,10 @@
 #include <dune/grid/common/capabilities.hh>
 #include <dune/grid/common/rangegenerators.hh>
 
-#include <dune/localfunctions/lagrange/equidistantpoints.hh>
-#include <dune/localfunctions/lagrange.hh>
-
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/numeric_cast.hh>
 
-#include <dune/gdt/local/finite-elements/wrapper.hh>
+#include <dune/gdt/local/finite-elements/lagrange.hh>
 #include <dune/gdt/spaces/basefunctionset/default.hh>
 #include <dune/gdt/spaces/mapper/default.hh>
 #include <dune/gdt/spaces/dg/interface.hh>
@@ -47,40 +44,8 @@ namespace internal {
 template <class GL, int p, class R>
 class DiscontinuousLagrangeSpaceTraits
 {
-  template <int d_ = GL::dimension, int p_ = p>
-  struct dim_and_polorder_match
-  {
-    static const constexpr bool value = true;
-  };
-
-  template <int p_>
-  struct dim_and_polorder_match<1, p_>
-  {
-    static const constexpr bool value = std::conditional<p_ <= 18, std::true_type, std::false_type>::type::value;
-  };
-
-  template <int p_>
-  struct dim_and_polorder_match<2, p_>
-  {
-    // simplices: up to 15
-    // cubes: up to 10
-    static const constexpr bool value = std::conditional<p_ <= 10, std::true_type, std::false_type>::type::value;
-  };
-
-  template <int p_>
-  struct dim_and_polorder_match<3, p_>
-  {
-    // simplices: up to 14
-    // cubes: up to 7
-    // prisms: up to 9
-    static const constexpr bool value = std::conditional<p_ <= 7, std::true_type, std::false_type>::type::value;
-  };
-
   static_assert(XT::Grid::is_layer<GL>::value, "");
-  static_assert(p != 0, "This should not happen (should default to the FvSpace in this case)!");
   static_assert(0 <= p, "p-adaptive case not implemented yet!");
-  static_assert(dim_and_polorder_match<>::value,
-                "The LagrangeLocalFiniteElement is known to fail for these combinations!");
   using G = XT::Grid::extract_grid_t<GL>;
 
 public:
@@ -103,33 +68,6 @@ public:
 
 
 } // namespace internal
-
-
-/**
- * \todo Drop this specialization once the local FEs are wrapped and the LagrangeLocalFiniteElement works for order 0.
- */
-template <class GL, class R>
-class DiscontinuousLagrangeSpace<GL, 0, R> : public FvSpace<GL, R, 1>
-{
-private:
-  using BaseType = FvSpace<GL, R, 1>;
-  using ThisType = DiscontinuousLagrangeSpace<GL, 0, R>;
-
-public:
-  using typename BaseType::DomainType;
-  using typename BaseType::EntityType;
-  using typename BaseType::GridLayerType;
-
-  DiscontinuousLagrangeSpace(GridLayerType grd_lr)
-    : BaseType(grd_lr)
-  {
-  }
-
-  std::vector<DomainType> lagrange_points(const EntityType& entity) const
-  {
-    return {ReferenceElements<typename GL::ctype, GL::dimension>::general(entity.type()).position(0, 0)};
-  }
-}; // class DiscontinuousLagrangeSpace<..., 0, ...>
 
 
 /**
@@ -182,14 +120,9 @@ public:
     , mapper_(nullptr)
   {
     // create finite elements
-    for (auto&& geometry_type : grid_layer_.indexSet().types(0)) {
-      if (geometry_type == GeometryType(GeometryType::pyramid, 3))
-        DUNE_THROW(space_error,
-                   "Discontinuous Lagrange space does not seem to have working jacobians on pyramid grids!");
-      using FE = LocalFiniteElementWrapper<LagrangeLocalFiniteElement<EquidistantPointSet, d, D, R>, D, d, R, 1, 1, R>;
+    for (auto&& geometry_type : grid_layer_.indexSet().types(0))
       finite_elements_->insert(
-          std::make_pair(geometry_type, std::shared_ptr<FiniteElementType>(new FE(geometry_type, p))));
-    }
+          std::make_pair(geometry_type, make_lagrange_local_finite_element<D, d, R, R>(geometry_type, p)));
     // create mapper
     mapper_ = std::make_shared<MapperType>(grid_layer_, finite_elements_);
   }

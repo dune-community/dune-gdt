@@ -21,13 +21,10 @@
 #include <dune/grid/common/capabilities.hh>
 #include <dune/grid/common/rangegenerators.hh>
 
-#include <dune/localfunctions/lagrange/equidistantpoints.hh>
-#include <dune/localfunctions/lagrange.hh>
-
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/numeric_cast.hh>
 
-#include <dune/gdt/local/finite-elements/wrapper.hh>
+#include <dune/gdt/local/finite-elements/lagrange.hh>
 #include <dune/gdt/spaces/basefunctionset/default.hh>
 #include <dune/gdt/spaces/mapper/default.hh>
 #include <dune/gdt/spaces/cg/interface.hh>
@@ -115,16 +112,12 @@ public:
     , mapper_(nullptr)
   {
     // create finite elements
-    for (auto&& geometry_type : grid_layer_.indexSet().types(0)) {
-      if (geometry_type == GeometryType(GeometryType::pyramid, 3))
-        DUNE_THROW(space_error, "Continuous Lagrange space does not seem to have working jacobians on pyramid grids!");
-      using FE = LocalFiniteElementWrapper<LagrangeLocalFiniteElement<EquidistantPointSet, d, D, R>, D, d, R, 1, 1, R>;
+    for (auto&& geometry_type : grid_layer_.indexSet().types(0))
       finite_elements_->insert(
-          std::make_pair(geometry_type, std::shared_ptr<FiniteElementType>(new FE(geometry_type, p))));
-    }
+          std::make_pair(geometry_type, make_lagrange_local_finite_element<D, d, R, R>(geometry_type, p)));
     // check
     if (d == 3 && finite_elements_->size() != 1)
-      DUNE_THROW(space_error, "Continuous Lagrange space with multiple finite elements in 3d not supported (yet)!");
+      DUNE_THROW(space_error, "ContinuousLagrangeSpace with multiple finite elements in 3d not supported (yet)!");
     // create mapper
     mapper_ = std::make_shared<MapperType>(grid_layer_, finite_elements_);
   } // ContinuousLagrangeSpace(...)
