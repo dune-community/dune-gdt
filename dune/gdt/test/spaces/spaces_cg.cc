@@ -41,7 +41,7 @@ struct ContinuousLagrangeSpace : public ::testing::Test
 
   void SetUp() override final
   {
-    ASSERT_TRUE(grid_layer() != nullptr && grid_layer() != 0);
+    ASSERT_NE(grid_layer(), nullptr);
     space = std::shared_ptr<SpaceType>(new SpaceType(*grid_layer()));
   }
 
@@ -52,8 +52,8 @@ struct ContinuousLagrangeSpace : public ::testing::Test
 
   void basis_exists_on_each_element_with_correct_size()
   {
-    ASSERT_TRUE(grid_layer() != nullptr && grid_layer() != 0);
-    ASSERT_TRUE(space != nullptr && space != 0);
+    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer()))
       EXPECT_EQ(Dune::numLagrangePoints(element.geometry().type().id(), d, p),
                 space->base_function_set(element).size());
@@ -61,24 +61,24 @@ struct ContinuousLagrangeSpace : public ::testing::Test
 
   void basis_exists_on_each_element_with_correct_order()
   {
-    ASSERT_TRUE(grid_layer() != nullptr && grid_layer() != 0);
-    ASSERT_TRUE(space != nullptr && space != 0);
+    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer()))
       EXPECT_EQ(p, space->base_function_set(element).order());
   }
 
   void mapper_reports_correct_num_DoFs_on_each_element()
   {
-    ASSERT_TRUE(grid_layer() != nullptr && grid_layer() != 0);
-    ASSERT_TRUE(space != nullptr && space != 0);
+    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer()))
       EXPECT_EQ(Dune::numLagrangePoints(element.geometry().type().id(), d, p), space->mapper().numDofs(element));
   }
 
   void mapper_reports_correct_max_num_DoFs()
   {
-    ASSERT_TRUE(grid_layer() != nullptr && grid_layer() != 0);
-    ASSERT_TRUE(space != nullptr && space != 0);
+    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(space, nullptr);
     size_t max_num_dofs = 0;
     for (auto&& element : elements(*grid_layer()))
       max_num_dofs = std::max(max_num_dofs, space->mapper().numDofs(element));
@@ -87,8 +87,8 @@ struct ContinuousLagrangeSpace : public ::testing::Test
 
   void mapper_maps_correctly()
   {
-    ASSERT_TRUE(grid_layer() != nullptr && grid_layer() != 0);
-    ASSERT_TRUE(space != nullptr && space != 0);
+    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(space, nullptr);
     // collect all global ids that are associated with a global lagrange point
     std::map<Dune::FieldVector<D, d>, std::set<size_t>, Dune::XT::Common::FieldVectorLess>
         global_lagrange_point_to_global_indices_map;
@@ -123,16 +123,16 @@ struct ContinuousLagrangeSpace : public ::testing::Test
 
   void lagrange_points_exist_on_each_element_with_correct_size()
   {
-    ASSERT_TRUE(grid_layer() != nullptr && grid_layer() != 0);
-    ASSERT_TRUE(space != nullptr && space != 0);
+    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer()))
       EXPECT_EQ(Dune::numLagrangePoints(element.geometry().type().id(), d, p), space->lagrange_points(element).size());
   }
 
   void basis_is_lagrange_basis()
   {
-    ASSERT_TRUE(grid_layer() != nullptr && grid_layer() != 0);
-    ASSERT_TRUE(space != nullptr && space != 0);
+    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer())) {
       const auto basis = space->base_function_set(element);
       const auto lagrange_points = space->lagrange_points(element);
@@ -150,8 +150,8 @@ struct ContinuousLagrangeSpace : public ::testing::Test
 
   void basis_jacobians_seem_to_be_correct()
   {
-    ASSERT_TRUE(grid_layer() != nullptr && grid_layer() != 0);
-    ASSERT_TRUE(space != nullptr && space != 0);
+    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer())) {
       const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
       const auto basis = space->base_function_set(element);
