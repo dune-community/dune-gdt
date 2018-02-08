@@ -38,6 +38,7 @@
 #include <dune/xt/grid/layers.hh>
 #include <dune/xt/grid/view/from-part.hh>
 
+#include <dune/gdt/local/finite-elements/interfaces.hh>
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 #include <dune/gdt/spaces/parallel.hh>
 
@@ -143,6 +144,9 @@ public:
   static const XT::Grid::Backends layer_backend = Traits::layer_backend;
 
 public:
+  using FiniteElementType =
+      LocalFiniteElementInterface<typename GridLayerType::ctype, dimDomain, RangeFieldType, dimRange, dimRangeCols>;
+
   /**
    * \defgroup interface ´´These methods have to be implemented!''
    * @{
