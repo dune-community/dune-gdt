@@ -324,14 +324,14 @@ public:
 
   void globalIndices(const EntityType& entity, DynamicVector<size_t>& ret) const
   {
-    ret[0] = mapper_->subIndex(entity, 0, 0);
+    ret[0] = mapper_->index(entity);
   }
 
   size_t mapToGlobal(const EntityType& entity, const size_t local_index) const
   {
     if (local_index >= 1)
       DUNE_THROW(Exception, "numDofs(entity) = " << numDofs(entity) << "\n   local_index = " << local_index);
-    return mapper_->subIndex(entity, 0, 0);
+    return mapper_->index(entity);
   }
 
 private:
