@@ -498,10 +498,12 @@ struct ContinuousLagrangeSpaceOnPrismLeafView
 }; // struct ContinuousLagrangeSpaceOnPrismLeafView
 
 
+using PrismGrids = ::testing::Types<
 #if HAVE_DUNE_UGGRID || HAVE_UG
+    UG_3D
+#endif
+    >;
 
-
-using PrismGrids = ::testing::Types<UG_3D>;
 
 template <class G>
 using Order1PrismContinuousLagrangeSpace = ContinuousLagrangeSpaceOnPrismLeafView<G, 1>;
@@ -666,7 +668,12 @@ struct ContinuousLagrangeSpaceOnMixedLeafView
 
 
 // The mapper does not work in 3d.
-using MixedGrids = ::testing::Types<UG_2D>;
+using MixedGrids = ::testing::Types<
+#if HAVE_DUNE_UGGRID || HAVE_UG
+    UG_2D
+#endif
+    >;
+
 
 template <class G>
 using Order1MixedContinuousLagrangeSpace = ContinuousLagrangeSpaceOnMixedLeafView<G, 1>;
@@ -740,6 +747,3 @@ TYPED_TEST(Order2MixedContinuousLagrangeSpace, basis_jacobians_seem_to_be_correc
 {
   this->basis_jacobians_seem_to_be_correct();
 }
-
-
-#endif // HAVE_DUNE_UGGRID || HAVE_UG
