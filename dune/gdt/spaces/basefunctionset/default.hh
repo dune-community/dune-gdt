@@ -10,6 +10,8 @@
 #ifndef DUNE_GDT_SPACES_BASEFUNCTIONSET_DEFAULT_HH
 #define DUNE_GDT_SPACES_BASEFUNCTIONSET_DEFAULT_HH
 
+#include <dune/gdt/local/finite-elements/interfaces.hh>
+
 #include "interface.hh"
 
 namespace Dune {
@@ -17,42 +19,45 @@ namespace GDT {
 
 
 // forwards, required for the traits
-template <class Fe, class E, class R = double>
-class ScalarBasefunctionSet;
+template <class E, class R, size_t r = 1, size_t rC = 1, class F = R>
+class DefaultGlobalBasis;
 
 
 namespace internal {
 
 
-template <class Fe, class E, class R>
-class ScalarBasefunctionSetTraits
+template <class E, class R, size_t r, size_t rC, class F>
+class DefaultGlobalBasisTraits
 {
-  using LocalFunctionTraits =
-      XT::Functions::LocalfunctionSetInterface<E, typename E::Geometry::ctype, E::dimension, R, 1>;
-
 public:
-  using derived_type = ScalarBasefunctionSet<E, R>;
+  using derived_type = DefaultGlobalBasis<E, R, r, rC, F>;
   using EntityType = E;
-  using BackendType = Fe;
+  using BackendType = LocalFiniteElementInterface<typename E::Geometry::ctype, E::dimension, R, r, rC, F>;
 };
 
 
 } // namespace internal
 
 
-template <class Fe, class E, class R>
-class ScalarBasefunctionSet : public BaseFunctionSetInterface<internal::ScalarBasefunctionSetTraits<Fe, E, R>,
-                                                              typename E::Geometry::ctype,
-                                                              E::dimension,
-                                                              R,
-                                                              1>
+template <class E, class R, size_t r, size_t rC, class F>
+class DefaultGlobalBasis : public BaseFunctionSetInterface<internal::DefaultGlobalBasisTraits<E, R, r, rC, F>,
+                                                           typename E::Geometry::ctype,
+                                                           E::dimension,
+                                                           R,
+                                                           r,
+                                                           rC>
 {
 public:
-  using Traits = internal::ScalarBasefunctionSetTraits<Fe, E, R>;
+  using Traits = internal::DefaultGlobalBasisTraits<E, R, r, rC, F>;
 
 private:
-  using BaseType = BaseFunctionSetInterface<Traits, typename E::Geometry::ctype, E::dimension, R, 1>;
-  using ThisType = ScalarBasefunctionSet<Fe, E, R>;
+  using BaseType = BaseFunctionSetInterface<internal::DefaultGlobalBasisTraits<E, R, r, rC, F>,
+                                            typename E::Geometry::ctype,
+                                            E::dimension,
+                                            R,
+                                            r,
+                                            rC>;
+  using ThisType = DefaultGlobalBasis<E, R, r, rC, F>;
 
 public:
   using typename BaseType::BackendType;
@@ -61,14 +66,14 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::JacobianRangeType;
 
-  ScalarBasefunctionSet(const EntityType& en, const BackendType& finite_element)
+  DefaultGlobalBasis(const EntityType& en, const BackendType& finite_element)
     : BaseType(en)
     , finite_element_(finite_element)
   {
   }
 
-  ScalarBasefunctionSet(const ThisType&) = default;
-  ScalarBasefunctionSet(ThisType&&) = default;
+  DefaultGlobalBasis(const ThisType&) = default;
+  DefaultGlobalBasis(ThisType&&) = default;
 
   ThisType& operator=(const ThisType&) = delete;
   ThisType& operator=(ThisType&&) = delete;
@@ -80,25 +85,27 @@ public:
 
   size_t size() const override final
   {
-    return finite_element_.localBasis().size();
+    return finite_element_.basis().size();
   }
 
   size_t order(const XT::Common::Parameter& /*param*/ = {}) const override final
   {
-    return finite_element_.localBasis().order();
+    return finite_element_.basis().order();
   }
-
-  using BaseType::evaluate;
 
   void evaluate(const DomainType& xx,
                 std::vector<RangeType>& ret,
                 const XT::Common::Parameter& /*param*/ = {}) const override final
   {
     assert(this->is_a_valid_point(xx));
-    finite_element_.localBasis().evaluateFunction(xx, ret);
+    ret = finite_element_.basis().evaluate(xx);
   }
 
-  using BaseType::jacobian;
+  std::vector<RangeType> evaluate(const DomainType& xx, const XT::Common::Parameter& /*param*/ = {}) const
+  {
+    assert(this->is_a_valid_point(xx));
+    return finite_element_.basis().evaluate(xx);
+  }
 
   void jacobian(const DomainType& xx,
                 std::vector<JacobianRangeType>& ret,
@@ -106,19 +113,34 @@ public:
   {
     assert(this->is_a_valid_point(xx));
     // evaluate jacobian of shape functions
-    finite_element_.localBasis().evaluateJacobian(xx, ret);
+    ret = finite_element_.basis().jacobian(xx);
     // apply transformation
     const auto J_inv_T = this->entity().geometry().jacobianInverseTransposed(xx);
     auto tmp_value = ret[0][0];
-    for (size_t ii = 0; ii < finite_element_.localBasis().size(); ++ii) {
+    for (size_t ii = 0; ii < finite_element_.basis().size(); ++ii) {
       J_inv_T.mv(ret[ii][0], tmp_value);
       ret[ii][0] = tmp_value;
     }
   } // ... jacobian(...)
 
+  std::vector<JacobianRangeType> jacobian(const DomainType& xx, const XT::Common::Parameter& /*param*/ = {}) const
+  {
+    assert(this->is_a_valid_point(xx));
+    // evaluate jacobian of shape functions
+    auto ret = finite_element_.basis().jacobian(xx);
+    // apply transformation
+    const auto J_inv_T = this->entity().geometry().jacobianInverseTransposed(xx);
+    auto tmp_value = ret[0][0];
+    for (size_t ii = 0; ii < finite_element_.basis().size(); ++ii) {
+      J_inv_T.mv(ret[ii][0], tmp_value);
+      ret[ii][0] = tmp_value;
+    }
+    return ret;
+  } // ... jacobian(...)
+
 private:
   const BackendType& finite_element_;
-}; // class ScalarBasefunctionSet
+}; // class DefaultGlobalBasis
 
 
 } // namespace GDT
