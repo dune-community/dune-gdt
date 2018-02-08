@@ -13,13 +13,12 @@
 
 #include <dune/grid/common/mcmgmapper.hh>
 
-#include <dune/localfunctions/common/virtualinterface.hh>
-
 #include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces/local-functions.hh>
 
 #include <dune/gdt/exceptions.hh>
+#include <dune/gdt/local/finite-elements/interfaces.hh>
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 
 #ifndef DUNE_GDT_SPACES_MAPPER_DEFAULT_HH
@@ -30,20 +29,20 @@ namespace GDT {
 
 
 // forward, required for the traits
-template <class GL, class FiniteElementType>
+template <class GL, class R = double, size_t r = 1, size_t rC = 1, class F = R>
 class FixedOrderMultipleCodimMultipleGeomTypeMapper;
 
 template <class GL>
 class ZeroOrderScalarDiscontinuousMapper;
 
-template <class GL, class FiniteElementType>
+template <class GL, class R = double, size_t r = 1, size_t rC = 1, class F = R>
 class FixedOrderScalarDiscontinuousMapper;
 
 
 namespace internal {
 
 
-template <class GL, class FiniteElementType>
+template <class GL, class R, size_t r, size_t rC, class F>
 class FixedOrderMultipleCodimMultipleGeomTypeMapperTraits
 {
   static_assert(XT::Grid::is_layer<GL>::value, "");
@@ -68,12 +67,12 @@ class FixedOrderMultipleCodimMultipleGeomTypeMapperTraits
   };
 
 public:
-  using derived_type = FixedOrderMultipleCodimMultipleGeomTypeMapper<GL, FiniteElementType>;
+  using derived_type = FixedOrderMultipleCodimMultipleGeomTypeMapper<GL, R, r, rC, F>;
   using BackendType = MultipleCodimMultipleGeomTypeMapper<GL, GeometryTypeLayout>;
   using EntityType = XT::Grid::extract_entity_t<GL>;
 
 private:
-  friend class FixedOrderMultipleCodimMultipleGeomTypeMapper<GL, FiniteElementType>;
+  friend class FixedOrderMultipleCodimMultipleGeomTypeMapper<GL, R, r, rC, F>;
 }; // class FixedOrderMultipleCodimMultipleGeomTypeMapperTraits
 
 
@@ -98,7 +97,7 @@ public:
 };
 
 
-template <class GL, class FiniteElementType>
+template <class GL, class R = double, size_t r = 1, size_t rC = 1, class F = R>
 class FixedOrderScalarDiscontinuousMapperTraits
 {
   static_assert(XT::Grid::is_layer<GL>::value, "");
@@ -113,7 +112,7 @@ class FixedOrderScalarDiscontinuousMapperTraits
   };
 
 public:
-  using derived_type = FixedOrderScalarDiscontinuousMapper<GL, FiniteElementType>;
+  using derived_type = FixedOrderScalarDiscontinuousMapper<GL, R, r, rC, F>;
   using BackendType = MultipleCodimMultipleGeomTypeMapper<GL, GeometryTypeLayout>;
   using EntityType = XT::Grid::extract_entity_t<GL>;
 };
@@ -122,15 +121,15 @@ public:
 } // namespace internal
 
 
-template <class GL, class FiniteElementType>
+template <class GL, class R, size_t r, size_t rC, class F>
 class FixedOrderMultipleCodimMultipleGeomTypeMapper
-    : public MapperInterface<internal::FixedOrderMultipleCodimMultipleGeomTypeMapperTraits<GL, FiniteElementType>>
+    : public MapperInterface<internal::FixedOrderMultipleCodimMultipleGeomTypeMapperTraits<GL, R, r, rC, F>>
 {
 public:
-  using Traits = internal::FixedOrderMultipleCodimMultipleGeomTypeMapperTraits<GL, FiniteElementType>;
+  using Traits = internal::FixedOrderMultipleCodimMultipleGeomTypeMapperTraits<GL, R, r, rC, F>;
 
 private:
-  using ThisType = FixedOrderMultipleCodimMultipleGeomTypeMapper<GL, FiniteElementType>;
+  using ThisType = FixedOrderMultipleCodimMultipleGeomTypeMapper<GL, R, r, rC, F>;
   using BaseType = MapperInterface<Traits>;
   using D = typename GL::ctype;
   static const constexpr size_t d = GL::dimension;
@@ -138,6 +137,7 @@ private:
 public:
   using typename BaseType::EntityType;
   using typename BaseType::BackendType;
+  using FiniteElementType = LocalFiniteElementInterface<D, d, R, r, rC, F>;
 
   FixedOrderMultipleCodimMultipleGeomTypeMapper(
       const GL& grid_layer,
@@ -155,9 +155,9 @@ public:
       const auto& finite_element = *finite_element_search_result->second;
       // loop over all keys of this finite element
       const auto& reference_element = ReferenceElements<D, d>::general(geometry_type);
-      const auto& coeffs = finite_element.localCoefficients();
+      const auto& coeffs = finite_element.coefficients();
       for (size_t ii = 0; ii < coeffs.size(); ++ii) {
-        const auto& local_key = coeffs.localKey(ii);
+        const auto& local_key = coeffs.local_key(ii);
         if (local_key.index() != 0) // Would require twisting of DoFs and possibly more knowledge from the FE
           DUNE_THROW(mapper_error, "This case is not covered yet, when we have more than one DoF per (sub)entity!");
         // find the (sub)entity for this key
@@ -230,12 +230,12 @@ public:
                  "\n   entity.geometry().type() = "
                      << entity.geometry().type());
     const auto& finite_element = *finite_element_search_result->second;
-    const auto& local_coefficients = finite_element.localCoefficients();
+    const auto& local_coefficients = finite_element.coefficients();
     const auto local_size = local_coefficients.size();
     if (ret.size() < local_size)
       ret.resize(local_size, 0);
     for (size_t ii = 0; ii < local_size; ++ii) {
-      const auto& local_key = local_coefficients.localKey(ii);
+      const auto& local_key = local_coefficients.local_key(ii);
       // No need to assert local_key.index() == 0, has been checked in the ctor!
       ret[ii] = mapper_->subIndex(entity, local_key.subEntity(), local_key.codim());
     }
@@ -250,12 +250,12 @@ public:
                  "\n   entity.geometry().type() = "
                      << entity.geometry().type());
     const auto& finite_element = *finite_element_search_result->second;
-    const auto& local_coefficients = finite_element.localCoefficients();
+    const auto& local_coefficients = finite_element.coefficients();
     if (local_index >= local_coefficients.size())
       DUNE_THROW(Exception,
-                 "finite_element.localCoefficients().size() = " << local_coefficients.size() << "\n   local_index = "
-                                                                << local_index);
-    const auto& local_key = local_coefficients.localKey(local_index);
+                 "finite_element.coefficients().size() = " << local_coefficients.size() << "\n   local_index = "
+                                                           << local_index);
+    const auto& local_key = local_coefficients.local_key(local_index);
     // No need to assert local_key.index() == 0, has been checked in the ctor!
     return mapper_->subIndex(entity, local_key.subEntity(), local_key.codim());
   } // ... mapToGlobal(...)
@@ -339,20 +339,21 @@ private:
 }; // class ZeroOrderScalarDiscontinuousMapper
 
 
-template <class GL, class FiniteElementType>
+template <class GL, class R, size_t r, size_t rC, class F>
 class FixedOrderScalarDiscontinuousMapper
-    : public MapperInterface<internal::FixedOrderScalarDiscontinuousMapperTraits<GL, FiniteElementType>>
+    : public MapperInterface<internal::FixedOrderScalarDiscontinuousMapperTraits<GL, R, r, rC, F>>
 {
 public:
-  using Traits = internal::FixedOrderScalarDiscontinuousMapperTraits<GL, FiniteElementType>;
+  using Traits = internal::FixedOrderScalarDiscontinuousMapperTraits<GL, R, r, rC, F>;
 
 private:
-  using ThisType = FixedOrderScalarDiscontinuousMapper<GL, FiniteElementType>;
+  using ThisType = FixedOrderScalarDiscontinuousMapper<GL, R, r, rC, F>;
   using BaseType = MapperInterface<Traits>;
   using D = typename GL::ctype;
   static const constexpr size_t d = GL::dimension;
 
 public:
+  using FiniteElementType = LocalFiniteElementInterface<D, d, R, r, rC, F>;
   using typename BaseType::EntityType;
   using typename BaseType::BackendType;
 
