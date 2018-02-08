@@ -89,34 +89,65 @@ struct RtSpace : public ::testing::Test
     EXPECT_LE(max_num_dofs, space->mapper().maxNumDofs());
   }
 
+  // this only works for conforming intersections!
   void mapper_maps_correctly()
   {
     ASSERT_NE(grid_layer(), nullptr);
     ASSERT_NE(space, nullptr);
-    // collect all global ids that are associated with a global lagrange point
-    std::map<Dune::FieldVector<D, d>, std::set<size_t>, Dune::XT::Common::FieldVectorLess>
-        global_intersection_centers_to_global_indices_map;
+    Dune::GDT::ZeroOrderScalarDiscontinuousMapper<GridLayerType> entity_indices(*grid_layer());
+    // determine global numbering of intersections
+    std::map<size_t, std::map<size_t, size_t>> element_and_local_intersection_index_to_global_intersection_index;
+    size_t tmp_counter = 0;
     for (auto&& element : elements(*grid_layer())) {
-      const auto global_indices = space->mapper().globalIndices(element);
-      EXPECT_LE(space->mapper().numDofs(element), global_indices.size());
+      const auto global_element_index = entity_indices.mapToGlobal(element, 0);
+      for (auto&& intersection : intersections(*grid_layer(), element)) {
+        const auto element_local_intersection_index = intersection.indexInInside();
+        if (!intersection.neighbor()
+            || (entity_indices.mapToGlobal(element, 0) < entity_indices.mapToGlobal(intersection.outside(), 0))) {
+          // this is the place to handle this intersection
+          const auto global_intersection_index = tmp_counter;
+          ++tmp_counter;
+          // store the global intersection index for this element
+          element_and_local_intersection_index_to_global_intersection_index[global_element_index]
+                                                                           [element_local_intersection_index] =
+                                                                               global_intersection_index;
+          if (intersection.neighbor()) {
+            // as well as for the neighbor
+            const auto global_neighbor_index = entity_indices.mapToGlobal(intersection.outside(), 0);
+            const auto neighbor_local_intersection_index = intersection.indexInOutside();
+            element_and_local_intersection_index_to_global_intersection_index[global_neighbor_index]
+                                                                             [neighbor_local_intersection_index] =
+                                                                                 global_intersection_index;
+          }
+        }
+      }
+    }
+    // collect all global ids that are associated with an intersection
+    std::map<size_t, std::set<size_t>> global_intersection_index_to_global_indices_map;
+    for (auto&& element : elements(*grid_layer())) {
+      const auto global_DoF_indices = space->mapper().globalIndices(element);
+      EXPECT_LE(space->mapper().numDofs(element), global_DoF_indices.size());
       const auto intersection_to_DoF_map = space->local_DoF_indices(element);
       EXPECT_EQ(intersection_to_DoF_map.size(), space->mapper().numDofs(element));
       for (auto&& intersection : intersections(*grid_layer(), element)) {
-        const auto intersection_index = intersection.indexInInside();
-        const auto local_DoF_index = intersection_to_DoF_map[intersection_index];
-        const auto global_index = space->mapper().mapToGlobal(element, local_DoF_index);
-        EXPECT_EQ(global_indices[local_DoF_index], global_index);
-        global_intersection_centers_to_global_indices_map[intersection.geometry().center()].insert(global_index);
+        const auto local_intersection_index = intersection.indexInInside();
+        const auto local_DoF_index = intersection_to_DoF_map[local_intersection_index];
+        const auto global_DoF_index = space->mapper().mapToGlobal(element, local_DoF_index);
+        EXPECT_EQ(global_DoF_indices[local_DoF_index], global_DoF_index);
+        const auto global_intersection_index =
+            element_and_local_intersection_index_to_global_intersection_index.at(entity_indices.mapToGlobal(element, 0))
+                .at(local_intersection_index);
+        global_intersection_index_to_global_indices_map[global_intersection_index].insert(global_DoF_index);
       }
     }
     // check that all intersections have indeed one and only one global DoF id ...
     std::set<size_t> global_DoF_indices;
-    for (const auto& entry : global_intersection_centers_to_global_indices_map) {
+    for (const auto& entry : global_intersection_index_to_global_indices_map) {
       const auto global_DoF_indices_per_intersection = entry.second;
       EXPECT_EQ(global_DoF_indices_per_intersection.size(), 1);
       global_DoF_indices.insert(*(global_DoF_indices_per_intersection.begin()));
     }
-    EXPECT_EQ(global_intersection_centers_to_global_indices_map.size(), global_DoF_indices.size());
+    EXPECT_EQ(global_intersection_index_to_global_indices_map.size(), global_DoF_indices.size());
     // ... and that the numbering is consecutive
     size_t count = 0;
     for (const auto& global_DoF_id : global_DoF_indices) {
@@ -161,7 +192,8 @@ struct RtSpace : public ::testing::Test
           EXPECT_TRUE(Dune::XT::Common::FloatCmp::eq(
               (ii == DoF_index ? 1. : 0.) * switch_, basis_values[ii] * normal, 1e-14, 1e-14))
               << "ii = " << ii << "\nDoF_index = " << DoF_index << "\nii == DoF_index ? 1. : 0. "
-              << (ii == DoF_index ? 1. : 0.) << "\nbasis_values[ii] * normal = " << basis_values[ii] * normal;
+              << (ii == DoF_index ? 1. : 0.) << "\nswitch_ = " << switch_
+              << "\nbasis_values[ii] * normal = " << basis_values[ii] * normal;
       }
     }
   } // ... basis_is_rt_basis(...)
@@ -256,21 +288,19 @@ using SimplicialGrids = ::testing::Types<ONED_1D,
                                          ALU_2D_SIMPLEX_CONFORMING,
                                          ALU_2D_SIMPLEX_NONCONFORMING
 #endif
-// UG does not work until we have the virtual interfaces for the finite elements.
-//#if HAVE_DUNE_UGGRID || HAVE_UG
-//                                         ,
-//                                         UG_2D
-//#endif
+#if HAVE_DUNE_UGGRID || HAVE_UG
+                                         ,
+                                         UG_2D
+#endif
 #if HAVE_DUNE_ALUGRID
                                          ,
                                          ALU_3D_SIMPLEX_CONFORMING,
                                          ALU_3D_SIMPLEX_NONCONFORMING
 #endif
-                                         // s.a.
-                                         //#if HAVE_DUNE_UGGRID || HAVE_UG
-                                         //                                         ,
-                                         //                                         UG_3D
-                                         //#endif
+#if HAVE_DUNE_UGGRID || HAVE_UG
+                                         ,
+                                         UG_3D
+#endif
                                          >;
 
 
@@ -347,22 +377,20 @@ using CubicGrids = ::testing::Types<YASP_2D_EQUIDISTANT_OFFSET
                                     ,
                                     ALU_2D_CUBE
 #endif
-                                    //// s.a.
-                                    //#if HAVE_DUNE_UGGRID || HAVE_UG
-                                    //                                    ,
-                                    //                                    UG_2D
-                                    //#endif
+#if HAVE_DUNE_UGGRID || HAVE_UG
+                                    ,
+                                    UG_2D
+#endif
                                     ,
                                     YASP_3D_EQUIDISTANT_OFFSET
 #if HAVE_DUNE_ALUGRID
                                     ,
                                     ALU_3D_CUBE
 #endif
-                                    //// s.a.
-                                    //#if HAVE_DUNE_UGGRID || HAVE_UG
-                                    //                                    ,
-                                    //                                    UG_3D
-                                    //#endif
+#if HAVE_DUNE_UGGRID || HAVE_UG
+                                    ,
+                                    UG_3D
+#endif
                                     >;
 
 template <class G>
@@ -402,133 +430,133 @@ TYPED_TEST(Order0CubicRtSpace, basis_is_rt_basis)
 //}
 
 
-//// The space cannot handle mixed views (yet)!
-// template <class G, int p>
-// struct RtSpaceOnMixedLeafView : public RtSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>
-//{
-//  using GridProviderType = Dune::XT::Grid::GridProvider<G>;
-//  using LeafGridViewType = typename GridProviderType::LeafGridViewType;
+template <class G, int p>
+struct RtSpaceOnMixedLeafView : public RtSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>
+{
+  using GridProviderType = Dune::XT::Grid::GridProvider<G>;
+  using LeafGridViewType = typename GridProviderType::LeafGridViewType;
 
-//  std::shared_ptr<GridProviderType> grid_provider;
-//  std::shared_ptr<LeafGridViewType> leaf_view;
+  std::shared_ptr<GridProviderType> grid_provider;
+  std::shared_ptr<LeafGridViewType> leaf_view;
 
-//  RtSpaceOnMixedLeafView()
-//  {
-//    using D = typename G::ctype;
-//    static const constexpr size_t d = G::dimension;
-//    switch (d) {
-//      case 1: {
-//        // cannot use ASSERT_... in a ctor
-//        EXPECT_TRUE(false) << "Does not make sense in 1d (all cubes are simplices)!\n"
-//                           << "=> ALL OTHER TESTS WILL FAIL FOR THIS GRID!!!";
-//        grid_provider = nullptr;
-//        leaf_view = nullptr;
-//        break;
-//      }
-//      case 2: {
-//        Dune::GridFactory<G> factory;
-//        for (auto&& vertex : {Dune::XT::Common::FieldVector<D, d>({-1., -1.5}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1., -1.25}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1., -1.}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.5}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.25}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1.75, -1.25})}) {
-//          factory.insertVertex(vertex);
-//        }
-//        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 2), {3, 0, 4, 1});
-//        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 2), {4, 1, 5, 2});
-//        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 2), {4, 6, 3});
-//        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 2), {4, 5, 6});
-//        grid_provider = std::make_shared<GridProviderType>(factory.createGrid());
-//        grid_provider->global_refine(1);
-//        leaf_view = std::make_shared<LeafGridViewType>(grid_provider->leaf_view());
-//        break;
-//      }
-//      case 3: {
-//        Dune::GridFactory<G> factory;
-//        for (auto&& vertex : {Dune::XT::Common::FieldVector<D, d>({-1., -1.5, -1.}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1., -1.25, -1.}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1., -1., -1.}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.5, -1.}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.25, -1.}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1., -1.}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1., -1.5, -1.5}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1., -1.25, -1.5}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1., -1., -1.5}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.5, -1.5}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.25, -1.5}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1., -1.5}),
-//                              Dune::XT::Common::FieldVector<D, d>({-1.75, -1.25, -1.})}) {
-//          factory.insertVertex(vertex);
-//        }
-//        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 3), {3, 0, 4, 1, 9, 6, 10, 7});
-//        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 3), {4, 1, 5, 2, 10, 7, 11, 8});
-//        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 3), {4, 12, 3, 10});
-//        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 3), {4, 5, 12, 10});
-//        grid_provider = std::make_shared<GridProviderType>(factory.createGrid());
-//        grid_provider->global_refine(1);
-//        leaf_view = std::make_shared<LeafGridViewType>(grid_provider->leaf_view());
-//        break;
-//      }
-//      default: {
-//        // cannot use ASSERT_... in a ctor
-//        EXPECT_TRUE(false) << "Not implemented yet for dimension " << d << "!\n"
-//                           << "=> ALL OTHER TESTS WILL FAIL FOR THIS GRID!!!";
-//        grid_provider = nullptr;
-//        leaf_view = nullptr;
-//      }
-//    }
-//  } // RtSpaceOnMixedLeafView(...)
+  RtSpaceOnMixedLeafView()
+  {
+    using D = typename G::ctype;
+    static const constexpr size_t d = G::dimension;
+    switch (d) {
+      case 1: {
+        // cannot use ASSERT_... in a ctor
+        EXPECT_TRUE(false) << "Does not make sense in 1d (all cubes are simplices)!\n"
+                           << "=> ALL OTHER TESTS WILL FAIL FOR THIS GRID!!!";
+        grid_provider = nullptr;
+        leaf_view = nullptr;
+        break;
+      }
+      case 2: {
+        Dune::GridFactory<G> factory;
+        for (auto&& vertex : {Dune::XT::Common::FieldVector<D, d>({-1., -1.5}),
+                              Dune::XT::Common::FieldVector<D, d>({-1., -1.25}),
+                              Dune::XT::Common::FieldVector<D, d>({-1., -1.}),
+                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.5}),
+                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.25}),
+                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.}),
+                              Dune::XT::Common::FieldVector<D, d>({-1.75, -1.25})}) {
+          factory.insertVertex(vertex);
+        }
+        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 2), {3, 0, 4, 1});
+        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 2), {4, 1, 5, 2});
+        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 2), {4, 6, 3});
+        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 2), {4, 5, 6});
+        grid_provider = std::make_shared<GridProviderType>(factory.createGrid());
+        grid_provider->global_refine(1);
+        leaf_view = std::make_shared<LeafGridViewType>(grid_provider->leaf_view());
+        break;
+      }
+      case 3: {
+        Dune::GridFactory<G> factory;
+        for (auto&& vertex : {Dune::XT::Common::FieldVector<D, d>({-1., -1.5, -1.}),
+                              Dune::XT::Common::FieldVector<D, d>({-1., -1.25, -1.}),
+                              Dune::XT::Common::FieldVector<D, d>({-1., -1., -1.}),
+                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.5, -1.}),
+                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.25, -1.}),
+                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1., -1.}),
+                              Dune::XT::Common::FieldVector<D, d>({-1., -1.5, -1.5}),
+                              Dune::XT::Common::FieldVector<D, d>({-1., -1.25, -1.5}),
+                              Dune::XT::Common::FieldVector<D, d>({-1., -1., -1.5}),
+                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.5, -1.5}),
+                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.25, -1.5}),
+                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1., -1.5}),
+                              Dune::XT::Common::FieldVector<D, d>({-1.75, -1.25, -1.})}) {
+          factory.insertVertex(vertex);
+        }
+        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 3), {3, 0, 4, 1, 9, 6, 10, 7});
+        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 3), {4, 1, 5, 2, 10, 7, 11, 8});
+        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 3), {4, 12, 3, 10});
+        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 3), {4, 5, 12, 10});
+        grid_provider = std::make_shared<GridProviderType>(factory.createGrid());
+        grid_provider->global_refine(1);
+        leaf_view = std::make_shared<LeafGridViewType>(grid_provider->leaf_view());
+        break;
+      }
+      default: {
+        // cannot use ASSERT_... in a ctor
+        EXPECT_TRUE(false) << "Not implemented yet for dimension " << d << "!\n"
+                           << "=> ALL OTHER TESTS WILL FAIL FOR THIS GRID!!!";
+        grid_provider = nullptr;
+        leaf_view = nullptr;
+      }
+    }
+  } // RtSpaceOnMixedLeafView(...)
 
-//  ~RtSpaceOnMixedLeafView() = default;
+  ~RtSpaceOnMixedLeafView() = default;
 
-//  std::shared_ptr<LeafGridViewType> grid_layer() override final
-//  {
-//    return leaf_view;
-//  }
-//}; // struct RtSpaceOnMixedLeafView
-
-
-// using MixedGrids = ::testing::Types<
-//#ifHAVE_DUNE_UGGRID || HAVE_UG
-//    UG_2D,
-//    UG_3D
-//#endif
-//    >;
+  std::shared_ptr<LeafGridViewType> grid_layer() override final
+  {
+    return leaf_view;
+  }
+}; // struct RtSpaceOnMixedLeafView
 
 
-// template <class G>
-// using Order0MixedRtSpace = RtSpaceOnMixedLeafView<G, 0>;
-// TYPED_TEST_CASE(Order0MixedRtSpace, MixedGrids);
-// TYPED_TEST(Order0MixedRtSpace, basis_exists_on_each_element_with_correct_size)
-//{
-//  this->basis_exists_on_each_element_with_correct_size();
-//}
-// TYPED_TEST(Order0MixedRtSpace, basis_exists_on_each_element_with_correct_order)
-//{
-//  this->basis_exists_on_each_element_with_correct_order();
-//}
-// TYPED_TEST(Order0MixedRtSpace, mapper_reports_correct_num_DoFs_on_each_element)
-//{
-//  this->mapper_reports_correct_num_DoFs_on_each_element();
-//}
-// TYPED_TEST(Order0MixedRtSpace, mapper_reports_correct_max_num_DoFs)
-//{
-//  this->mapper_reports_correct_max_num_DoFs();
-//}
-// TYPED_TEST(Order0MixedRtSpace, mapper_maps_correctly)
-//{
-//  this->mapper_maps_correctly();
-//}
-// TYPED_TEST(Order0MixedRtSpace, local_DoF_indices_exist_on_each_element_with_correct_size)
-//{
-//  this->local_DoF_indices_exist_on_each_element_with_correct_size();
-//}
-// TYPED_TEST(Order0MixedRtSpace, basis_is_rt_basis)
-//{
-//  this->basis_is_rt_basis();
-//}
+using MixedGrids = ::testing::Types<
+#if HAVE_DUNE_UGGRID || HAVE_UG
+    UG_2D
+//,
+//    UG_3D // Intersections are non-conforming between simplices and cubes in 3d, which the mapper cannot handle yet!
+#endif
+    >;
+
+
+template <class G>
+using Order0MixedRtSpace = RtSpaceOnMixedLeafView<G, 0>;
+TYPED_TEST_CASE(Order0MixedRtSpace, MixedGrids);
+TYPED_TEST(Order0MixedRtSpace, basis_exists_on_each_element_with_correct_size)
+{
+  this->basis_exists_on_each_element_with_correct_size();
+}
+TYPED_TEST(Order0MixedRtSpace, basis_exists_on_each_element_with_correct_order)
+{
+  this->basis_exists_on_each_element_with_correct_order();
+}
+TYPED_TEST(Order0MixedRtSpace, mapper_reports_correct_num_DoFs_on_each_element)
+{
+  this->mapper_reports_correct_num_DoFs_on_each_element();
+}
+TYPED_TEST(Order0MixedRtSpace, mapper_reports_correct_max_num_DoFs)
+{
+  this->mapper_reports_correct_max_num_DoFs();
+}
+TYPED_TEST(Order0MixedRtSpace, mapper_maps_correctly)
+{
+  this->mapper_maps_correctly();
+}
+TYPED_TEST(Order0MixedRtSpace, local_DoF_indices_exist_on_each_element_with_correct_size)
+{
+  this->local_DoF_indices_exist_on_each_element_with_correct_size();
+}
+TYPED_TEST(Order0MixedRtSpace, basis_is_rt_basis)
+{
+  this->basis_is_rt_basis();
+}
 // TYPED_TEST(Order0MixedRtSpace, basis_jacobians_seem_to_be_correct)
 //{
 //  this->basis_jacobians_seem_to_be_correct();
