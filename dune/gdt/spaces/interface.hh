@@ -40,6 +40,7 @@
 
 #include <dune/gdt/local/finite-elements/interfaces.hh>
 #include <dune/gdt/spaces/mapper/interfaces.hh>
+#include <dune/gdt/spaces/basis/interface.hh>
 #include <dune/gdt/spaces/parallel.hh>
 
 #include "constraints.hh"
@@ -117,7 +118,6 @@ public:
   static const int polOrder = Traits::polOrder;
   static const bool continuous = Traits::continuous;
   typedef typename Traits::BackendType BackendType;
-  typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::DofCommunicatorType DofCommunicatorType;
   typedef typename Traits::GridLayerType GridLayerType;
   typedef typename Traits::RangeFieldType RangeFieldType;
@@ -125,7 +125,6 @@ public:
   static const size_t dimRange = rangeDim;
   static const size_t dimRangeCols = rangeDimCols;
   static const constexpr Backends backend_type{Traits::backend_type};
-  using MapperType = MapperInterface<GridLayerType>;
 
 private:
   static_assert(dimDomain > 0, "dimDomain has to be positive");
@@ -143,7 +142,8 @@ public:
 
   static const XT::Grid::Backends layer_backend = Traits::layer_backend;
 
-public:
+  using GlobalBasisType = GlobalBasisInterface<EntityType, dimRange, dimRangeCols, RangeFieldType>;
+  using MapperType = MapperInterface<GridLayerType>;
   using FiniteElementType =
       LocalFiniteElementInterface<typename GridLayerType::ctype, dimDomain, RangeFieldType, dimRange, dimRangeCols>;
 
@@ -170,10 +170,10 @@ public:
     return this->as_imp().mapper();
   }
 
-  BaseFunctionSetType base_function_set(const EntityType& entity) const
+  const GlobalBasisType& basis() const
   {
-    CHECK_CRTP(this->as_imp().base_function_set(entity));
-    return this->as_imp().base_function_set(entity);
+    CHECK_CRTP(this->as_imp().basis());
+    return this->as_imp().basis();
   }
 
   DofCommunicatorType& dof_communicator() const
@@ -417,8 +417,8 @@ private:
     static_assert(dimRangeCols == 1, "Not implemented for matrixvalued spaces yet!");
 
   public:
-    typedef typename BaseFunctionSetType::DomainType DomainType;
-    typedef typename BaseFunctionSetType::RangeType RangeType;
+    typedef typename GlobalBasisType::DomainType DomainType;
+    typedef typename GlobalBasisType::RangeType RangeType;
 
     BasisVisualization(const derived_type& sp, const size_t ind, const std::string nm = "basis")
       : space_(sp)
