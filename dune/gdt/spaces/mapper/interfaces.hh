@@ -13,130 +13,48 @@
 #define DUNE_GDT_SPACES_MAPPER_INTERFACES_HH
 
 #include <dune/common/dynvector.hh>
-#include <dune/grid/common/entity.hh>
 
-#include <dune/xt/common/crtp.hh>
-#include <dune/xt/common/type_traits.hh>
+#include <dune/xt/grid/type_traits.hh>
+
+#include <dune/gdt/local/finite-elements/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
 
 
-/**
- * \todo Add note that each implementation has to document which of globalIndices or mapToGlobal is more efficient!
- */
-template <class Traits>
-class MapperInterface : public XT::CRTPInterface<MapperInterface<Traits>, Traits>
+template <class GridViewImp>
+class MapperInterface
 {
+  static_assert(XT::Grid::is_view<GridViewImp>::value, "");
+
 public:
-  typedef typename Traits::derived_type derived_type;
-  typedef typename Traits::BackendType BackendType;
-  typedef typename Traits::EntityType EntityType;
+  using GridViewType = GridViewImp;
+  using ElementType = XT::Grid::extract_entity_t<GridViewType>;
 
-  const BackendType& backend() const
-  {
-    CHECK_CRTP(this->as_imp(*this).backend());
-    return this->as_imp(*this).backend();
-  }
+  virtual ~MapperInterface() = default;
 
-  size_t size() const
-  {
-    CHECK_CRTP(this->as_imp(*this).size());
-    return this->as_imp(*this).size();
-  }
+  virtual const GridViewType& grid_view() const = 0;
 
-  size_t maxNumDofs() const
-  {
-    CHECK_CRTP(this->as_imp(*this).maxNumDofs());
-    return this->as_imp(*this).maxNumDofs();
-  }
+  virtual const LocalFiniteElementCoefficientsInterface&
+  local_coefficients(const GeometryType& geometry_type) const = 0;
 
-  template <int cd, class GridImp, template <int, int, class> class EntityImp>
-  size_t numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity) const
-  {
-    //    static_assert(std::is_same<Entity<cd, EntityType::dimension, GridImp, EntityImp>,
-    //                               XT::Grid::extract_entity_t<EntityType, cd>>::value,
-    //                  "Entity mismatch");
-    CHECK_CRTP(this->as_imp(*this).numDofs(entity));
-    return this->as_imp(*this).numDofs(entity);
-  }
+  virtual size_t size() const = 0;
 
-  void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
-  {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).globalIndices(entity, ret));
-  }
+  virtual size_t max_local_size() const = 0;
 
-  Dune::DynamicVector<size_t> globalIndices(const EntityType& entity) const
+  virtual size_t local_size(const ElementType& element) const = 0;
+
+  virtual size_t global_index(const ElementType& element, const size_t local_index) const = 0;
+
+  virtual void global_indices(const ElementType& element, DynamicVector<size_t>& indices) const = 0;
+
+  virtual DynamicVector<size_t> global_indices(const ElementType& element) const
   {
-    Dune::DynamicVector<size_t> ret(numDofs(entity), 0);
-    globalIndices(entity, ret);
+    DynamicVector<size_t> ret(local_size(element));
+    global_indices(element, ret);
     return ret;
-  }
-
-  size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
-  {
-    CHECK_CRTP(this->as_imp(*this).mapToGlobal(entity, localIndex));
-    return this->as_imp(*this).mapToGlobal(entity, localIndex);
   }
 }; // class MapperInterface
-
-
-class IsProductMapper
-{
-};
-
-template <class Traits>
-class ProductMapperInterface : public MapperInterface<Traits>, IsProductMapper
-{
-  typedef MapperInterface<Traits> BaseType;
-
-public:
-  using typename BaseType::EntityType;
-
-  using BaseType::globalIndices;
-
-  size_t size(const size_t factor_index) const
-  {
-    CHECK_CRTP(this->as_imp(*this).size(factor_index));
-    return this->as_imp(*this).size(factor_index);
-  }
-
-  size_t numDofs(const size_t factor_index, const EntityType& entity) const
-  {
-    CHECK_CRTP(this->as_imp(*this).numDofs(factor_index, entity));
-    return this->as_imp(*this).numDofs(factor_index, entity);
-  }
-
-  size_t maxNumDofs(const size_t factor_index) const
-  {
-    CHECK_CRTP(this->as_imp(*this).maxNumDofs(factor_index));
-    return this->as_imp(*this).maxNumDofs(factor_index);
-  }
-
-  void globalIndices(const size_t factor_index, const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
-  {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).globalIndices(factor_index, entity, ret));
-  }
-
-  size_t mapToGlobal(const size_t factor_index, const EntityType& entity, const size_t& local_index_in_factor) const
-  {
-    CHECK_CRTP(this->as_imp(*this).mapToGlobal(factor_index, entity, local_index_in_factor));
-    return this->as_imp(*this).mapToGlobal(factor_index, entity, local_index_in_factor);
-  }
-
-  size_t mapToLocal(const size_t factor_index, const EntityType& entity, const size_t& local_index_in_factor) const
-  {
-    CHECK_CRTP(this->as_imp(*this).mapToLocal(factor_index, entity, local_index_in_factor));
-    return this->as_imp(*this).mapToLocal(factor_index, entity, local_index_in_factor);
-  }
-
-  Dune::DynamicVector<size_t> globalIndices(const size_t factor_index, const EntityType& entity) const
-  {
-    Dune::DynamicVector<size_t> ret(numDofs(factor_index, entity), 0);
-    globalIndices(factor_index, entity, ret);
-    return ret;
-  }
-}; // class ProductMapperInterface
 
 
 } // namespace GDT
