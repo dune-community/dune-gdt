@@ -26,7 +26,7 @@
 
 #include <dune/gdt/local/finite-elements/lagrange.hh>
 #include <dune/gdt/spaces/basefunctionset/default.hh>
-#include <dune/gdt/spaces/mapper/default.hh>
+#include <dune/gdt/spaces/mapper/discontinuous.hh>
 #include <dune/gdt/spaces/dg/interface.hh>
 #include <dune/gdt/spaces/fv/default.hh>
 
@@ -57,7 +57,6 @@ public:
   static const constexpr bool continuous = false;
   using GridLayerType = GL;
   using BaseFunctionSetType = DefaultGlobalBasis<XT::Grid::extract_entity_t<GL>, R, dimRange, dimRangeCols, R>;
-  using MapperType = FixedOrderScalarDiscontinuousMapper<GL, R, dimRange, dimRangeCols, R>;
   using RangeFieldType = R;
   using BackendType = double;
   static const constexpr XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
@@ -75,10 +74,10 @@ public:
  *
  * - 1d: orders 0, ..., 18
  * - 2d: orders 0, ..., 10 work on simplices, cubes and mixed simplices and cubes
- * - 2d: orders 11, ..., 15 also work on simplices but are disabled
+ * - 2d: orders 11, ..., 15 also work on simplices
  * - 3d: orders 0, ..., 7 work on simplices, cubes, prisms and mixed simplices and cubes
- * - 3d: orders 8, ..., 14 also work on simplices but are disabled
- * - 3d: orders 8, 9 also work on prisms but are disabled
+ * - 3d: orders 8, ..., 14 also work on simplices
+ * - 3d: orders 8, 9 also work on prisms
  *
  * The following dimensions/orders/elements are tested to fail:
  *
@@ -112,6 +111,10 @@ public:
   using DomainType = typename BaseFunctionSetType::DomainType;
   using DofCommunicatorType = typename Traits::DofCommunicatorType;
 
+private:
+  using MapperImplementation = DiscontinuousMapper<GridLayerType, FiniteElementType>;
+
+public:
   DiscontinuousLagrangeSpace(GridLayerType grd_lr)
     : grid_layer_(grd_lr)
     , communicator_(DofCommunicationChooserType::create(grid_layer_))
@@ -124,7 +127,7 @@ public:
       finite_elements_->insert(
           std::make_pair(geometry_type, make_lagrange_local_finite_element<D, d, R, R>(geometry_type, p)));
     // create mapper
-    mapper_ = std::make_shared<MapperType>(grid_layer_, finite_elements_);
+    mapper_ = std::make_shared<MapperImplementation>(grid_layer_, finite_elements_);
   }
 
   DiscontinuousLagrangeSpace(const ThisType&) = default;
@@ -180,7 +183,7 @@ private:
   mutable std::shared_ptr<DofCommunicatorType> communicator_;
   const double backend_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
-  std::shared_ptr<MapperType> mapper_;
+  std::shared_ptr<MapperImplementation> mapper_;
 }; // class DiscontinuousLagrangeSpace
 
 
