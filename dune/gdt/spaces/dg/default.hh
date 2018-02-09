@@ -25,10 +25,9 @@
 #include <dune/xt/common/numeric_cast.hh>
 
 #include <dune/gdt/local/finite-elements/lagrange.hh>
-#include <dune/gdt/spaces/basefunctionset/default.hh>
+#include <dune/gdt/spaces/basis/default.hh>
 #include <dune/gdt/spaces/mapper/discontinuous.hh>
 #include <dune/gdt/spaces/dg/interface.hh>
-#include <dune/gdt/spaces/fv/default.hh>
 
 namespace Dune {
 namespace GDT {
@@ -56,7 +55,6 @@ public:
   static const constexpr size_t dimRangeCols = 1;
   static const constexpr bool continuous = false;
   using GridLayerType = GL;
-  using BaseFunctionSetType = DefaultGlobalBasis<XT::Grid::extract_entity_t<GL>, R, dimRange, dimRangeCols, R>;
   using RangeFieldType = R;
   using BackendType = double;
   static const constexpr XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
@@ -87,6 +85,8 @@ public:
  * - 3d: orders > 14 on simplices(basis matrix fails to invert)
  * - 3d: orders > 7 on cubes (basis matrix fails to invert)
  * - 3d: orders > 9 on prisms (basis matrix fails to invert)
+ *
+ * \sa make_lagrange_local_finite_element
  */
 template <class GL, int p, class R>
 class DiscontinuousLagrangeSpace
@@ -107,12 +107,13 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::MapperType;
   using typename BaseType::FiniteElementType;
-  using typename BaseType::BaseFunctionSetType;
-  using DomainType = typename BaseFunctionSetType::DomainType;
+  using typename BaseType::GlobalBasisType;
+  using DomainType = FieldVector<D, d>;
   using DofCommunicatorType = typename Traits::DofCommunicatorType;
 
 private:
   using MapperImplementation = DiscontinuousMapper<GridLayerType, FiniteElementType>;
+  using GlobalBasisImplementation = DefaultGlobalBasis<EntityType, 1, 1, R>;
 
 public:
   DiscontinuousLagrangeSpace(GridLayerType grd_lr)
@@ -121,13 +122,15 @@ public:
     , backend_(0)
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
     , mapper_(nullptr)
+    , basis_(nullptr)
   {
     // create finite elements
     for (auto&& geometry_type : grid_layer_.indexSet().types(0))
       finite_elements_->insert(
           std::make_pair(geometry_type, make_lagrange_local_finite_element<D, d, R>(geometry_type, p)));
-    // create mapper
+    // create mapper and basis
     mapper_ = std::make_shared<MapperImplementation>(grid_layer_, finite_elements_);
+    basis_ = std::make_shared<GlobalBasisImplementation>(finite_elements_);
   }
 
   DiscontinuousLagrangeSpace(const ThisType&) = default;
@@ -151,9 +154,9 @@ public:
     return *mapper_;
   }
 
-  BaseFunctionSetType base_function_set(const EntityType& entity) const
+  const GlobalBasisType& basis() const
   {
-    return BaseFunctionSetType(entity, get_finite_element(entity.geometry().type()));
+    return *basis_;
   }
 
   DofCommunicatorType& dof_communicator() const
@@ -184,6 +187,7 @@ private:
   const double backend_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
   std::shared_ptr<MapperImplementation> mapper_;
+  std::shared_ptr<GlobalBasisImplementation> basis_;
 }; // class DiscontinuousLagrangeSpace
 
 

@@ -56,7 +56,7 @@ struct DiscontinuousLagrangeSpace : public ::testing::Test
     ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer()))
       EXPECT_EQ(Dune::numLagrangePoints(element.geometry().type().id(), d, p),
-                space->base_function_set(element).size());
+                space->basis().localize(element)->size());
   }
 
   void basis_exists_on_each_element_with_correct_order()
@@ -64,7 +64,7 @@ struct DiscontinuousLagrangeSpace : public ::testing::Test
     ASSERT_NE(grid_layer(), nullptr);
     ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer()))
-      EXPECT_EQ(p, space->base_function_set(element).order());
+      EXPECT_EQ(p, space->basis().localize(element)->order());
   }
 
   void mapper_reports_correct_num_DoFs_on_each_element()
@@ -128,15 +128,15 @@ struct DiscontinuousLagrangeSpace : public ::testing::Test
     ASSERT_NE(space, nullptr);
     double tolerance = 1e-15;
     for (auto&& element : elements(*grid_layer())) {
-      const auto basis = space->base_function_set(element);
+      const auto basis = space->basis().localize(element);
       const auto lagrange_points = space->lagrange_points(element);
-      EXPECT_EQ(lagrange_points.size(), basis.size());
+      EXPECT_EQ(lagrange_points.size(), basis->size());
       for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
-        const auto values = basis.evaluate(lagrange_points[ii]);
-        for (size_t jj = 0; jj < basis.size(); ++jj) {
+        const auto values = basis->evaluate(lagrange_points[ii]);
+        for (size_t jj = 0; jj < basis->size(); ++jj) {
           ASSERT_TRUE(Dune::XT::Common::FloatCmp::eq(values[jj][0], ii == jj ? 1. : 0., tolerance, tolerance))
               << "lagrange_points[" << ii << "] = " << lagrange_points[ii]
-              << "\nbasis.evaluate(lagrange_points[ii]) = " << values;
+              << "\nbasis->evaluate(lagrange_points[ii]) = " << values;
         }
       }
     }
@@ -148,15 +148,16 @@ struct DiscontinuousLagrangeSpace : public ::testing::Test
     ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer())) {
       const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
-      const auto basis = space->base_function_set(element);
+      const auto basis = space->basis().localize(element);
       const double h = 1e-6;
-      for (const auto& quadrature_point : Dune::QuadratureRules<D, d>::rule(element.geometry().type(), basis.order())) {
+      for (const auto& quadrature_point :
+           Dune::QuadratureRules<D, d>::rule(element.geometry().type(), basis->order())) {
         const auto& xx = quadrature_point.position();
         const auto& J_inv_T = element.geometry().jacobianInverseTransposed(xx);
-        const auto jacobians = basis.jacobian(xx);
-        EXPECT_EQ(basis.size(), jacobians.size());
-        const auto values_xx = basis.evaluate(xx);
-        EXPECT_EQ(basis.size(), values_xx.size());
+        const auto jacobians = basis->jacobian(xx);
+        EXPECT_EQ(basis->size(), jacobians.size());
+        const auto values_xx = basis->evaluate(xx);
+        EXPECT_EQ(basis->size(), values_xx.size());
         auto approximate_jacobians = jacobians;
         // compute approximate partial derivatives
         for (size_t dd = 0; dd < d; ++dd) {
@@ -168,9 +169,9 @@ struct DiscontinuousLagrangeSpace : public ::testing::Test
           }
           ASSERT_TRUE(reference_element.checkInside(xx_plus_h)) << "xx_plus_h = " << xx_plus_h
                                                                 << " is not inside the reference element!";
-          const auto values_xx_plus_h = basis.evaluate(xx_plus_h);
-          EXPECT_EQ(basis.size(), values_xx_plus_h.size());
-          for (size_t ii = 0; ii < basis.size(); ++ii) {
+          const auto values_xx_plus_h = basis->evaluate(xx_plus_h);
+          EXPECT_EQ(basis->size(), values_xx_plus_h.size());
+          for (size_t ii = 0; ii < basis->size(); ++ii) {
             approximate_jacobians[ii][0][dd] = (values_xx_plus_h[ii] - values_xx[ii]) / (xx_plus_h[dd] - xx[dd]);
             if (xx_plus_h[dd] - xx[dd] < 0)
               approximate_jacobians[ii][0][dd] *= -1.;
@@ -178,13 +179,13 @@ struct DiscontinuousLagrangeSpace : public ::testing::Test
         }
         // transform
         auto tmp_jac = approximate_jacobians[0][0];
-        for (size_t ii = 0; ii < basis.size(); ++ii) {
+        for (size_t ii = 0; ii < basis->size(); ++ii) {
           J_inv_T.mv(approximate_jacobians[ii][0], tmp_jac);
           approximate_jacobians[ii][0] = tmp_jac;
         }
         // check
         double tolerance = 1e-4;
-        for (size_t ii = 0; ii < basis.size(); ++ii)
+        for (size_t ii = 0; ii < basis->size(); ++ii)
           EXPECT_TRUE(
               Dune::XT::Common::FloatCmp::eq(jacobians[ii][0], approximate_jacobians[ii][0], tolerance, tolerance))
               << "ii = " << ii << "\njacobians[ii][0] = " << jacobians[ii][0] << "\n"
