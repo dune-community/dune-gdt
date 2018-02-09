@@ -45,6 +45,10 @@ class mapper_error : public space_error
 {
 };
 
+class basis_error : public space_error
+{
+};
+
 
 } // namespace GDT
 } // namespace Dune
