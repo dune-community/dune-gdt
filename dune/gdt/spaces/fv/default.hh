@@ -16,7 +16,7 @@
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/spaces/basefunctionset/fv.hh>
-#include <dune/gdt/spaces/mapper/fv.hh>
+#include <dune/gdt/spaces/mapper/finite-volume.hh>
 #include <dune/gdt/spaces/parallel.hh>
 
 #include "interface.hh"
@@ -52,7 +52,6 @@ public:
   typedef typename GridLayerType::IndexSet BackendType;
   using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
   typedef RangeFieldImp RangeFieldType;
-  typedef FvMapper<GridLayerType, rangeDim, rangeDimCols> MapperType;
   typedef BaseFunctionSet::FiniteVolume<EntityType,
                                         typename GridLayerType::ctype,
                                         GridLayerType::dimension,
@@ -95,6 +94,7 @@ public:
 
 private:
   typedef typename Traits::DofCommunicationChooserType DofCommunicationChooserType;
+  using MapperImplementation = FiniteVolumeMapper<GridLayerType, rangeDim, 1>;
 
 public:
   using typename BaseType::DofCommunicatorType;
@@ -152,7 +152,7 @@ public:
 
 private:
   GridLayerType grid_layer_;
-  const MapperType mapper_;
+  const MapperImplementation mapper_;
   const std::unique_ptr<DofCommunicatorType> communicator_;
 }; // class FvSpace< ..., 1, 1 >
 

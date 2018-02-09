@@ -72,7 +72,7 @@ struct FiniteVolumeSpace : public ::testing::Test
     ASSERT_NE(grid_layer(), nullptr);
     ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer()))
-      EXPECT_EQ(r, space->mapper().numDofs(element));
+      EXPECT_EQ(r, space->mapper().local_size(element));
   }
 
   void mapper_reports_correct_max_num_DoFs()
@@ -81,8 +81,8 @@ struct FiniteVolumeSpace : public ::testing::Test
     ASSERT_NE(space, nullptr);
     size_t max_num_dofs = 0;
     for (auto&& element : elements(*grid_layer()))
-      max_num_dofs = std::max(max_num_dofs, space->mapper().numDofs(element));
-    EXPECT_LE(max_num_dofs, space->mapper().maxNumDofs());
+      max_num_dofs = std::max(max_num_dofs, space->mapper().local_size(element));
+    EXPECT_LE(max_num_dofs, space->mapper().max_local_size());
   }
 
   void mapper_maps_correctly()
@@ -94,10 +94,10 @@ struct FiniteVolumeSpace : public ::testing::Test
     // we test both call variants
     std::set<size_t> map_to_global;
     for (auto&& element : Dune::elements(*grid_layer())) {
-      for (const auto& global_index : space->mapper().globalIndices(element))
+      for (const auto& global_index : space->mapper().global_indices(element))
         global_indices.insert(global_index);
-      for (size_t ii = 0; ii < space->mapper().numDofs(element); ++ii)
-        map_to_global.insert(space->mapper().mapToGlobal(element, ii));
+      for (size_t ii = 0; ii < space->mapper().local_size(element); ++ii)
+        map_to_global.insert(space->mapper().global_index(element, ii));
     }
     // check for consecutive numbering
     EXPECT_EQ(0, *global_indices.begin());
