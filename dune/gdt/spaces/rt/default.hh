@@ -56,7 +56,7 @@ class RaviartThomasBasefunctionSetTraits
 public:
   using derived_type = RaviartThomasBasefunctionSet<E, R>;
   using EntityType = E;
-  using BackendType = LocalFiniteElementInterface<D, d, R, d, 1, R>;
+  using BackendType = LocalFiniteElementInterface<D, d, R, d, 1>;
 };
 
 

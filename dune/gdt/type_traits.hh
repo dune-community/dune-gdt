@@ -22,7 +22,7 @@ namespace GDT {
 
 // forwards
 // from #include <dune/gdt/local/finite-elements/interfaces.hh>
-template <class D, size_t d, class R, size_t r, size_t rC, class F>
+template <class D, size_t d, class R, size_t r, size_t rC>
 class LocalFiniteElementInterface;
 
 // from #include <dune/gdt/spaces/interface.hh>
@@ -193,8 +193,8 @@ struct is_local_finite_element : public std::false_type
 {
 };
 
-template <class D, size_t d, class R, size_t r, size_t rC, class F>
-struct is_local_finite_element<LocalFiniteElementInterface<D, d, R, r, rC, F>> : public std::true_type
+template <class D, size_t d, class R, size_t r, size_t rC>
+struct is_local_finite_element<LocalFiniteElementInterface<D, d, R, r, rC>> : public std::true_type
 {
 };
 

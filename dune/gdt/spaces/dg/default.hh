@@ -125,7 +125,7 @@ public:
     // create finite elements
     for (auto&& geometry_type : grid_layer_.indexSet().types(0))
       finite_elements_->insert(
-          std::make_pair(geometry_type, make_lagrange_local_finite_element<D, d, R, R>(geometry_type, p)));
+          std::make_pair(geometry_type, make_lagrange_local_finite_element<D, d, R>(geometry_type, p)));
     // create mapper
     mapper_ = std::make_shared<MapperImplementation>(grid_layer_, finite_elements_);
   }

@@ -31,10 +31,10 @@ namespace GDT {
  * differs in the implementation with respect to LocalFiniteElementWrapper).
  */
 template <class D, size_t d, class R>
-class P0LagrangeFiniteElement : public LocalFiniteElementInterface<D, d, R, 1, 1, R>
+class P0LagrangeFiniteElement : public LocalFiniteElementInterface<D, d, R, 1, 1>
 {
   using ThisType = P0LagrangeFiniteElement<D, d, R>;
-  using BaseType = LocalFiniteElementInterface<D, d, R, 1, 1, R>;
+  using BaseType = LocalFiniteElementInterface<D, d, R, 1, 1>;
 
   using Implementation = P0LocalFiniteElement<D, R, d>;
   using BasisWrapperType =
@@ -42,7 +42,7 @@ class P0LagrangeFiniteElement : public LocalFiniteElementInterface<D, d, R, 1, 1
   using CoefficientsWrapperType =
       LocalFiniteElementCoefficientsWrapper<typename Implementation::Traits::LocalCoefficientsType>;
   using InterpolationWrapperType =
-      LocalFiniteElementInterpolationWrapper<typename Implementation::Traits::LocalInterpolationType, D, d, R, 1, 1, R>;
+      LocalFiniteElementInterpolationWrapper<typename Implementation::Traits::LocalInterpolationType, D, d, R, 1, 1>;
 
 public:
   using typename BaseType::DomainType;
@@ -122,13 +122,13 @@ private:
 }; // class P0LagrangeFiniteElement
 
 
-template <class D, size_t d, class R, class F = R>
-std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1, 1, F>>
+template <class D, size_t d, class R>
+std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1, 1>>
 make_lagrange_local_finite_element(const GeometryType& geometry_type, const int& polorder)
 {
   // special case
   if (d > 0 && polorder == 0)
-    return std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1, 1, F>>(
+    return std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1, 1>>(
         new P0LagrangeFiniteElement<D, d, R>(geometry_type));
   // checks
   if (d == 1) {
@@ -223,9 +223,9 @@ make_lagrange_local_finite_element(const GeometryType& geometry_type, const int&
                    << "- polorder: "
                    << polorder);
   // the actual finite element
-  return std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1, 1, F>>(
-      new LocalFiniteElementWrapper<LagrangeLocalFiniteElement<EquidistantPointSet, d, D, R>, D, d, R, 1, 1, R>(
-          geometry_type, polorder));
+  return std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1, 1>>(
+      new LocalFiniteElementWrapper<LagrangeLocalFiniteElement<EquidistantPointSet, d, D, R>, D, d, R, 1>(geometry_type,
+                                                                                                          polorder));
 } // ... make_lagrange_local_finite_element(...)
 
 

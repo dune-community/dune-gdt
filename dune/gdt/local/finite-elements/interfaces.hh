@@ -25,24 +25,21 @@ namespace Dune {
 namespace GDT {
 
 
-template <class D, size_t d, class R, size_t r, size_t rC = 1>
+template <class DomainField, size_t domain_dim, class RangeField, size_t range_dim, size_t range_dim_columns = 1>
 class LocalFiniteElementBasisInterface
 {
-  using ThisType = LocalFiniteElementBasisInterface<D, d, R, r, rC>;
-
 public:
+  using D = DomainField;
+  static const constexpr size_t d = domain_dim;
+  using R = RangeField;
+  static const constexpr size_t r = range_dim;
+  static const constexpr size_t rC = range_dim_columns;
+
   using DomainType = FieldVector<D, d>;
   using RangeType = typename XT::Functions::RangeTypeSelector<R, r, rC>::type;
   using JacobianRangeType = typename XT::Functions::JacobianRangeTypeSelector<d, R, r, rC>::type;
 
-  LocalFiniteElementBasisInterface() = default;
-  LocalFiniteElementBasisInterface(const ThisType&) = default;
-  LocalFiniteElementBasisInterface(ThisType&&) = default;
-
   virtual ~LocalFiniteElementBasisInterface() = default;
-
-  ThisType& operator=(const ThisType&) = delete;
-  ThisType& operator=(ThisType&&) = delete;
 
   virtual int order() const = 0;
 
@@ -54,41 +51,29 @@ public:
 }; // class LocalFiniteElementBasisInterface
 
 
-template <class D, size_t d, class R, size_t r, size_t rC = 1, class F = R>
+template <class DomainField, size_t domain_dim, class RangeField, size_t range_dim, size_t range_dim_columns = 1>
 class LocalFiniteElementInterpolationInterface
 {
-  using ThisType = LocalFiniteElementInterpolationInterface<D, d, R, r, rC, F>;
-
 public:
+  using D = DomainField;
+  static const constexpr size_t d = domain_dim;
+  using R = RangeField;
+  static const constexpr size_t r = range_dim;
+  static const constexpr size_t rC = range_dim_columns;
+
   using DomainType = FieldVector<D, d>;
   using RangeType = typename XT::Functions::RangeTypeSelector<R, r, rC>::type;
 
-  LocalFiniteElementInterpolationInterface() = default;
-  LocalFiniteElementInterpolationInterface(const ThisType&) = default;
-  LocalFiniteElementInterpolationInterface(ThisType&&) = default;
-
   virtual ~LocalFiniteElementInterpolationInterface() = default;
 
-  ThisType& operator=(const ThisType&) = delete;
-  ThisType& operator=(ThisType&&) = delete;
-
-  virtual std::vector<F> interpolate(const std::function<RangeType(DomainType)>& local_function) const = 0;
+  virtual std::vector<R> interpolate(const std::function<RangeType(DomainType)>& local_function) const = 0;
 }; // class LocalFiniteElementInterpolationInterface
 
 
 class LocalFiniteElementCoefficientsInterface
 {
-  using ThisType = LocalFiniteElementCoefficientsInterface;
-
 public:
-  LocalFiniteElementCoefficientsInterface() = default;
-  LocalFiniteElementCoefficientsInterface(const ThisType&) = default;
-  LocalFiniteElementCoefficientsInterface(ThisType&&) = default;
-
   virtual ~LocalFiniteElementCoefficientsInterface() = default;
-
-  ThisType& operator=(const ThisType&) = delete;
-  ThisType& operator=(ThisType&&) = delete;
 
   virtual size_t size() const = 0;
 
@@ -96,25 +81,22 @@ public:
 }; // class LocalFiniteElementCoefficientsInterface
 
 
-template <class D, size_t d, class R, size_t r, size_t rC = 1, class F = R>
+template <class DomainField, size_t domain_dim, class RangeField, size_t range_dim, size_t range_dim_columns = 1>
 class LocalFiniteElementInterface
 {
-  using ThisType = LocalFiniteElementInterface<D, d, R, r, rC, F>;
-
 public:
+  using D = DomainField;
+  static const constexpr size_t d = domain_dim;
+  using R = RangeField;
+  static const constexpr size_t r = range_dim;
+  static const constexpr size_t rC = range_dim_columns;
+
   using DomainType = FieldVector<D, d>;
   using BasisType = LocalFiniteElementBasisInterface<D, d, R, r, rC>;
   using CoefficientsType = LocalFiniteElementCoefficientsInterface;
-  using InterpolationType = LocalFiniteElementInterpolationInterface<D, d, R, r, rC, F>;
-
-  LocalFiniteElementInterface() = default;
-  LocalFiniteElementInterface(const ThisType&) = default;
-  LocalFiniteElementInterface(ThisType&&) = default;
+  using InterpolationType = LocalFiniteElementInterpolationInterface<D, d, R, r, rC>;
 
   virtual ~LocalFiniteElementInterface() = default;
-
-  ThisType& operator=(const ThisType&) = delete;
-  ThisType& operator=(ThisType&&) = delete;
 
   virtual GeometryType geometry_type() const = 0;
 

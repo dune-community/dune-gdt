@@ -117,7 +117,7 @@ public:
     // create finite elements
     for (auto&& geometry_type : grid_layer_.indexSet().types(0))
       finite_elements_->insert(
-          std::make_pair(geometry_type, make_lagrange_local_finite_element<D, d, R, R>(geometry_type, p)));
+          std::make_pair(geometry_type, make_lagrange_local_finite_element<D, d, R>(geometry_type, p)));
     // check
     if (d == 3 && finite_elements_->size() != 1)
       DUNE_THROW(space_error, "ContinuousLagrangeSpace with multiple finite elements in 3d not supported (yet)!");

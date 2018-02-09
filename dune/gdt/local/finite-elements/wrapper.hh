@@ -118,10 +118,10 @@ private:
 }; // class LocalFiniteElementBasisWrapper
 
 
-template <class Implementation, class D, size_t d, class R, size_t r, size_t rC = 1, class F = R>
+template <class Implementation, class D, size_t d, class R, size_t r, size_t rC = 1>
 class LocalFiniteElementInterpolationWrapper : public LocalFiniteElementInterpolationInterface<D, d, R, r, rC>
 {
-  using ThisType = LocalFiniteElementInterpolationWrapper<Implementation, D, d, R, r, rC, F>;
+  using ThisType = LocalFiniteElementInterpolationWrapper<Implementation, D, d, R, r, rC>;
   using BaseType = LocalFiniteElementInterpolationInterface<D, d, R, r, rC>;
 
   // This is what dune-localfunctions expects for interpolation.
@@ -170,9 +170,9 @@ public:
   {
   }
 
-  std::vector<F> interpolate(const std::function<RangeType(DomainType)>& local_function) const override final
+  std::vector<R> interpolate(const std::function<RangeType(DomainType)>& local_function) const override final
   {
-    std::vector<F> ret;
+    std::vector<R> ret;
     imp_.access().interpolate(FunctionWrapper(local_function), ret);
     return ret;
   }
@@ -221,11 +221,11 @@ private:
 }; // class LocalFiniteElementCoefficientsWrapper
 
 
-template <class Implementation, class D, size_t d, class R, size_t r, size_t rC = 1, class F = R>
-class LocalFiniteElementWrapper : public LocalFiniteElementInterface<D, d, R, r, rC, F>
+template <class Implementation, class D, size_t d, class R, size_t r, size_t rC = 1>
+class LocalFiniteElementWrapper : public LocalFiniteElementInterface<D, d, R, r, rC>
 {
   using ThisType = LocalFiniteElementWrapper<Implementation, D, d, R, r, rC>;
-  using BaseType = LocalFiniteElementInterface<D, d, R, r, rC, F>;
+  using BaseType = LocalFiniteElementInterface<D, d, R, r, rC>;
 
   using BasisWrapperType =
       LocalFiniteElementBasisWrapper<std::decay_t<typename Implementation::Traits::LocalBasisType>, D, d, R, r, rC>;
@@ -237,8 +237,7 @@ class LocalFiniteElementWrapper : public LocalFiniteElementInterface<D, d, R, r,
                                              d,
                                              R,
                                              r,
-                                             rC,
-                                             F>;
+                                             rC>;
 
 public:
   using typename BaseType::DomainType;

@@ -25,12 +25,12 @@ namespace internal {
 /**
  * \note Update this class if anything changes in dune-localfunctions.
  */
-template <class D, size_t d, class R, class F = R>
+template <class D, size_t d, class R>
 class RaviartThomasLocalFiniteElementFactory
 {
   static_assert(1 <= d && d <= 3, "There is no local Raviart-Thomas finite element available for other dimension!");
 
-  using LocalFiniteElementType = LocalFiniteElementInterface<D, d, R, d, 1, F>;
+  using LocalFiniteElementType = LocalFiniteElementInterface<D, d, R, d, 1>;
 
   template <size_t d_ = d, bool anything = true>
   struct helper;
@@ -42,7 +42,7 @@ class RaviartThomasLocalFiniteElementFactory
     {
       // everything is a simplex in 1d
       using FE = RaviartThomasSimplexLocalFiniteElement<d, D, R>;
-      return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d, 1, R>>(new FE(geometry_type, polorder));
+      return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d>>(new FE(geometry_type, polorder));
     }
   };
 
@@ -53,23 +53,23 @@ class RaviartThomasLocalFiniteElementFactory
     {
       if (geometry_type.isSimplex()) {
         using FE = RaviartThomasSimplexLocalFiniteElement<d, D, R>;
-        return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d, 1, R>>(new FE(geometry_type, polorder));
+        return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d>>(new FE(geometry_type, polorder));
       } else if (geometry_type.isCube()) {
         if (polorder == 0) {
           using FE = RaviartThomasCubeLocalFiniteElement<D, R, d, 0>;
-          return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d, 1, R>>(new FE());
+          return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d>>(new FE());
         } else if (polorder == 1) {
           using FE = RaviartThomasCubeLocalFiniteElement<D, R, d, 1>;
-          return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d, 1, R>>(new FE());
+          return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d>>(new FE());
         } else if (polorder == 2) {
           using FE = RaviartThomasCubeLocalFiniteElement<D, R, d, 2>;
-          return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d, 1, R>>(new FE());
+          return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d>>(new FE());
         } else if (polorder == 3) {
           using FE = RaviartThomasCubeLocalFiniteElement<D, R, d, 3>;
-          return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d, 1, R>>(new FE());
+          return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d>>(new FE());
         } else if (polorder == 4) {
           using FE = RaviartThomasCubeLocalFiniteElement<D, R, d, 4>;
-          return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d, 1, R>>(new FE());
+          return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d>>(new FE());
         } else
           DUNE_THROW(
               finite_element_error,
@@ -92,14 +92,14 @@ class RaviartThomasLocalFiniteElementFactory
     {
       if (geometry_type.isSimplex()) {
         using FE = RaviartThomasSimplexLocalFiniteElement<d, D, R>;
-        return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d, 1, R>>(new FE(geometry_type, polorder));
+        return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d>>(new FE(geometry_type, polorder));
       } else if (geometry_type.isCube()) {
         if (polorder == 0) {
           using FE = RaviartThomasCubeLocalFiniteElement<D, R, d, 0>;
-          return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d, 1, R>>(new FE());
+          return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d>>(new FE());
         } else if (polorder == 1) {
           using FE = RaviartThomasCubeLocalFiniteElement<D, R, d, 1>;
-          return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d, 1, R>>(new FE());
+          return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d>>(new FE());
         } else
           DUNE_THROW(
               finite_element_error,
@@ -116,10 +116,10 @@ class RaviartThomasLocalFiniteElementFactory
   }; // helper<3, ...>
 
 public:
-  static std::unique_ptr<LocalFiniteElementInterface<D, d, R, d, 1, F>> create(const GeometryType& geometry_type,
-                                                                               const int& polorder)
+  static std::unique_ptr<LocalFiniteElementInterface<D, d, R, d, 1>> create(const GeometryType& geometry_type,
+                                                                            const int& polorder)
   {
-    return std::unique_ptr<LocalFiniteElementInterface<D, d, R, d, 1, F>>(helper<>::create(geometry_type, polorder));
+    return std::unique_ptr<LocalFiniteElementInterface<D, d, R, d, 1>>(helper<>::create(geometry_type, polorder));
   }
 }; // class RaviartThomasLocalFiniteElementFactory
 
@@ -127,11 +127,11 @@ public:
 } // namespace internal
 
 
-template <class D, size_t d, class R, class F = R>
-std::unique_ptr<LocalFiniteElementInterface<D, d, R, d, 1, F>>
+template <class D, size_t d, class R>
+std::unique_ptr<LocalFiniteElementInterface<D, d, R, d, 1>>
 make_raviart_thomas_local_finite_element(const GeometryType& geometry_type, const int& polorder)
 {
-  return internal::RaviartThomasLocalFiniteElementFactory<D, d, R, F>::create(geometry_type, polorder);
+  return internal::RaviartThomasLocalFiniteElementFactory<D, d, R>::create(geometry_type, polorder);
 }
 
 

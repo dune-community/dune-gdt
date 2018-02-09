@@ -44,7 +44,7 @@ class FiniteVolumeMapper : public MapperInterface<GV>
   };
 
   using Implementation = MultipleCodimMultipleGeomTypeMapper<GV, Codim0EntityFilter>;
-  using FiniteElement = LocalFiniteElementInterface<D, d, double, r, rC, double>;
+  using FiniteElement = LocalFiniteElementInterface<D, d, double, r, rC>;
 
 public:
   using typename BaseType::ElementType;
