@@ -9,227 +9,132 @@
 //   Rene Milk       (2014, 2017 - 2018)
 //   Tobias Leibner  (2014, 2016 - 2017)
 
-#ifndef DUNE_GDT_SPACES_BASEFUNCTIONSET_FV_HH
-#define DUNE_GDT_SPACES_BASEFUNCTIONSET_FV_HH
+#ifndef DUNE_GDT_SPACES_BASIS_FINITE_VOLUME_HH
+#define DUNE_GDT_SPACES_BASIS_FINITE_VOLUME_HH
+
+#include <dune/localfunctions/lagrange/p0/p0localbasis.hh>
+
+#include <dune/gdt/local/finite-elements/wrapper.hh>
 
 #include "interface.hh"
 
 namespace Dune {
 namespace GDT {
-namespace BaseFunctionSet {
 
 
-// forward, to be used in the traits and to allow for specialization
-template <class EntityImp,
-          class DomainFieldImp,
-          size_t domainDim,
-          class RangeFieldImp,
-          size_t rangeDim,
-          size_t rangeDimCols = 1>
-class FiniteVolume
+template <class E, class R = double>
+class FiniteVolumeGlobalBasis : public GlobalBasisInterface<E, 1, 1, R>
 {
-  static_assert(Dune::AlwaysFalse<EntityImp>::value, "Untested for these dimensions!");
-};
-
-
-namespace internal {
-
-
-template <class EntityImp,
-          class DomainFieldImp,
-          size_t domainDim,
-          class RangeFieldImp,
-          size_t rangeDim,
-          size_t rangeDimCols>
-class FiniteVolumeTraits
-{
-public:
-  typedef FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
-  typedef RangeFieldImp BackendType;
-  typedef EntityImp EntityType;
-};
-
-
-} // namespace internal
-
-
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp>
-class FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>
-    : public BaseFunctionSetInterface<internal::
-                                          FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>,
-                                      DomainFieldImp,
-                                      domainDim,
-                                      RangeFieldImp,
-                                      1,
-                                      1>
-{
-  typedef FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1> ThisType;
-  typedef BaseFunctionSetInterface<internal::
-                                       FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1>,
-                                   DomainFieldImp,
-                                   domainDim,
-                                   RangeFieldImp,
-                                   1,
-                                   1>
-      BaseType;
+  using ThisType = FiniteVolumeGlobalBasis<E, R>;
+  using BaseType = GlobalBasisInterface<E, 1, 1, R>;
 
 public:
-  typedef internal::FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, 1, 1> Traits;
-  typedef typename Traits::BackendType BackendType;
-  typedef typename Traits::EntityType EntityType;
-
-  using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
-  using typename BaseType::JacobianRangeType;
-
-  FiniteVolume(const EntityType& en)
-    : BaseType(en)
-    , backend_(1.)
-  {
-  }
-
-  FiniteVolume(ThisType&& source) = default;
-
-  FiniteVolume(const ThisType& /*other*/) = delete;
-
-  ThisType& operator=(const ThisType& /*other*/) = delete;
-
-  const BackendType& backend() const
-  {
-    return backend_;
-  }
-
-  virtual size_t size() const override final
-  {
-    return 1;
-  }
-
-  virtual size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override final
-  {
-    return 0;
-  }
-
-  void evaluate(const DomainType& /*xx*/,
-                std::vector<RangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = {}) const override final
-  {
-    assert(ret.size() >= 0);
-    ret[0] = backend_;
-  }
-
-  using BaseType::evaluate;
-
-  void jacobian(const DomainType& /*xx*/,
-                std::vector<JacobianRangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = {}) const override final
-  {
-    assert(ret.size() >= 0);
-    ret[0] *= 0.0;
-  }
-
-  using BaseType::jacobian;
+  using typename BaseType::D;
+  using BaseType::d;
+  using BaseType::r;
+  using BaseType::rC;
+  using typename BaseType::ElementType;
+  using typename BaseType::ShapeFunctionsType;
+  using typename BaseType::LocalizedBasisType;
 
 private:
-  const BackendType backend_;
-}; // class FiniteVolume< ..., 1, 1 >
-
-
-template <class EntityImp, class DomainFieldImp, size_t domainDim, class RangeFieldImp, size_t rangeDim>
-class FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1>
-    : public BaseFunctionSetInterface<internal::FiniteVolumeTraits<EntityImp,
-                                                                   DomainFieldImp,
-                                                                   domainDim,
-                                                                   RangeFieldImp,
-                                                                   rangeDim,
-                                                                   1>,
-                                      DomainFieldImp,
-                                      domainDim,
-                                      RangeFieldImp,
-                                      rangeDim,
-                                      1>
-{
-  typedef FiniteVolume<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef BaseFunctionSetInterface<internal::FiniteVolumeTraits<EntityImp,
-                                                                DomainFieldImp,
-                                                                domainDim,
-                                                                RangeFieldImp,
-                                                                rangeDim,
-                                                                1>,
-                                   DomainFieldImp,
-                                   domainDim,
-                                   RangeFieldImp,
-                                   rangeDim,
-                                   1>
-      BaseType;
+  using ShapeFunctionSetImplementation = LocalFiniteElementBasisWrapper<P0LocalBasis<D, R, d>, D, d, R, 1, 1>;
 
 public:
-  typedef internal::FiniteVolumeTraits<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, 1> Traits;
-  typedef typename Traits::BackendType BackendType;
-  typedef typename Traits::EntityType EntityType;
+  FiniteVolumeGlobalBasis(const ThisType&) = default;
+  FiniteVolumeGlobalBasis(ThisType&&) = default;
 
-  using typename BaseType::DomainType;
-  using BaseType::dimRange;
-  using typename BaseType::RangeType;
-  using typename BaseType::JacobianRangeType;
+  ThisType& operator=(const ThisType&) = delete;
+  ThisType& operator=(ThisType&&) = delete;
 
-  FiniteVolume(const EntityType& en)
-    : BaseType(en)
-    , backend_(1.)
+  template <class GV>
+  FiniteVolumeGlobalBasis(const GridView<GV>& grid_view)
+    : shape_functions_(new std::map<GeometryType, ShapeFunctionSetImplementation>())
   {
+    for (auto&& geometry_type : grid_view.indexSet().types(0))
+      shape_functions_->emplace(geometry_type, ShapeFunctionSetImplementation());
   }
 
-  FiniteVolume(ThisType&& source) = default;
-
-  FiniteVolume(const ThisType& /*other*/) = delete;
-
-  ThisType& operator=(const ThisType& /*other*/) = delete;
-
-  const BackendType& backend() const
+  const ShapeFunctionsType& shape_functions(const GeometryType& geometry_type) const override final
   {
-    return backend_;
+    const auto search_result = shape_functions_->find(geometry_type);
+    if (search_result == shape_functions_->end())
+      DUNE_THROW(XT::Common::Exceptions::internal_error,
+                 "This must not happen, the grid layer did not report all geometry types!"
+                     << "\n   geometry_type = "
+                     << geometry_type);
+    return search_result->second;
   }
 
-  virtual size_t size() const override final
+  std::unique_ptr<LocalizedBasisType> localize(const ElementType& element) const override final
   {
-    return dimRange;
+    return std::make_unique<LocalizedFiniteVolumeGlobalBasis>(element);
   }
 
-  virtual size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override final
+private:
+  class LocalizedFiniteVolumeGlobalBasis : public XT::Functions::LocalfunctionSetInterface<E, D, d, R, 1, 1>
   {
-    return 0;
-  }
+    using ThisType = LocalizedFiniteVolumeGlobalBasis;
+    using BaseType = XT::Functions::LocalfunctionSetInterface<E, D, d, R, 1, 1>;
 
-  void evaluate(const DomainType& /*xx*/,
-                std::vector<RangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = {}) const override final
-  {
-    assert(ret.size() >= size());
-    for (size_t ii = 0; ii < size(); ++ii) {
-      ret[ii] *= 0.0;
-      ret[ii][ii] = backend_;
+  public:
+    using typename BaseType::EntityType;
+    using typename BaseType::DomainType;
+    using typename BaseType::RangeType;
+    using typename BaseType::JacobianRangeType;
+
+    LocalizedFiniteVolumeGlobalBasis(const EntityType& elemnt)
+      : BaseType(elemnt)
+    {
     }
-  } // ... evaluate(...)
 
-  using BaseType::evaluate;
+    LocalizedFiniteVolumeGlobalBasis(const ThisType&) = default;
+    LocalizedFiniteVolumeGlobalBasis(ThisType&&) = default;
 
-  void jacobian(const DomainType& /*xx*/,
-                std::vector<JacobianRangeType>& ret,
-                const XT::Common::Parameter& /*mu*/ = {}) const override final
-  {
-    assert(ret.size() >= size());
-    for (size_t ii = 0; ii < size(); ++ii)
-      ret[ii] *= 0.0;
-  } // ... jacobian(...)
+    ThisType& operator=(const ThisType&) = delete;
+    ThisType& operator=(ThisType&&) = delete;
 
-  using BaseType::jacobian;
+    size_t size() const override final
+    {
+      return 1;
+    }
 
-private:
-  const BackendType backend_;
-}; // class FiniteVolume< ..., rangeDim, 1 >
+    size_t order(const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      return 0;
+    }
 
+    void evaluate(const DomainType& /*xx*/,
+                  std::vector<RangeType>& ret,
+                  const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      ret[0] = 1;
+    }
 
-} // namespace BaseFunctionSet
+    std::vector<RangeType> evaluate(const DomainType& /*xx*/,
+                                    const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      return {1};
+    }
+
+    void jacobian(const DomainType& /*xx*/,
+                  std::vector<JacobianRangeType>& ret,
+                  const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      ret[0] *= 0;
+    }
+
+    std::vector<JacobianRangeType> jacobian(const DomainType& /*xx*/,
+                                            const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      return {0};
+    }
+  }; // class LocalizedFiniteVolumeGlobalBasis
+
+  std::shared_ptr<std::map<GeometryType, ShapeFunctionSetImplementation>> shape_functions_;
+}; // class class FiniteVolumeGlobalBasis
+
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_BASEFUNCTIONSET_FV_HH
+#endif // DUNE_GDT_SPACES_BASIS_FINITE_VOLUME_HH
