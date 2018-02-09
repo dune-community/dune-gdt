@@ -26,7 +26,8 @@
 
 #include <dune/gdt/local/finite-elements/raviart-thomas.hh>
 #include <dune/gdt/spaces/basefunctionset/interface.hh>
-#include <dune/gdt/spaces/mapper/default.hh>
+#include <dune/gdt/spaces/mapper/continuous.hh>
+#include <dune/gdt/spaces/mapper/finite-volume.hh>
 #include <dune/gdt/spaces/rt/interface.hh>
 
 namespace Dune {
@@ -77,7 +78,6 @@ public:
   using GridLayerType = GL;
   using BackendType = double;
   using BaseFunctionSetType = RaviartThomasBasefunctionSet<XT::Grid::extract_entity_t<GL>, R>;
-  using MapperType = FixedOrderMultipleCodimMultipleGeomTypeMapper<GL, R, dimRange, dimRangeCols, R>;
   using RangeFieldType = R;
   static const constexpr XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static const constexpr Backends backend_type{Backends::gdt};
@@ -228,8 +228,13 @@ private:
   using ThisType = RaviartThomasSpace<GL, p, R>;
   using D = typename GL::ctype;
   static const constexpr size_t d = BaseType::dimDomain;
+
+public:
   using typename BaseType::FiniteElementType;
+
+private:
   typedef typename Traits::DofCommunicationChooserType DofCommunicationChooserType;
+  using MapperImplementation = ContinuousMapper<GL, FiniteElementType>;
 
 public:
   using typename BaseType::GridLayerType;
@@ -245,7 +250,7 @@ public:
     , backend_(0)
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
     , geometry_to_local_DoF_indices_map_(new std::map<GeometryType, std::vector<size_t>>())
-    , entity_indices_(new ZeroOrderScalarDiscontinuousMapper<GL>(grid_layer_)) // <-  We need unique indices for codim 0
+    , entity_indices_(new FiniteVolumeMapper<GL>(grid_layer_)) //                  <- We need unique indices for codim 0
     , switches_(new std::vector<std::vector<R>>(entity_indices_->size())) //        entities: this cannot be achieved by
     , mapper_(nullptr) //                                                     the grid layers index set for mixed grids.
     , communicator_prepared_(false)
@@ -301,11 +306,11 @@ public:
       const auto geometry_type = entity.geometry().type();
       const auto& finite_element = *finite_elements_->at(geometry_type);
       const auto& coeffs = finite_element.coefficients();
-      const auto entity_index = entity_indices_->mapToGlobal(entity, 0);
+      const auto entity_index = entity_indices_->global_index(entity, 0);
       (*switches_)[entity_index] = geometry_to_scaling_factors_map.at(geometry_type);
       auto& local_switches = switches_->at(entity_index);
       for (auto&& intersection : intersections(grid_layer_, entity)) {
-        if (intersection.neighbor() && entity_index < entity_indices_->mapToGlobal(intersection.outside(), 0)) {
+        if (intersection.neighbor() && entity_index < entity_indices_->global_index(intersection.outside(), 0)) {
           const auto intersection_index = XT::Common::numeric_cast<unsigned int>(intersection.indexInInside());
           for (size_t ii = 0; ii < coeffs.size(); ++ii) {
             const auto& local_key = coeffs.local_key(ii);
@@ -317,7 +322,7 @@ public:
       }
     }
     // create mapper
-    mapper_ = std::make_shared<MapperType>(grid_layer_, finite_elements_);
+    mapper_ = std::make_shared<MapperImplementation>(grid_layer_, finite_elements_);
   } // RaviartThomasSpace(...)
 
   RaviartThomasSpace(const ThisType&) = default;
@@ -350,7 +355,7 @@ public:
                  "\n   entity.geometry().type() = "
                      << entity.geometry().type());
     const auto& finite_element = *finite_element_search_result->second;
-    return BaseFunctionSetType(entity, finite_element, (*switches_)[entity_indices_->mapToGlobal(entity, 0)]);
+    return BaseFunctionSetType(entity, finite_element, (*switches_)[entity_indices_->global_index(entity, 0)]);
   }
 
   DofCommunicatorType& dof_communicator() const
@@ -379,9 +384,9 @@ private:
   const double backend_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
   std::shared_ptr<std::map<GeometryType, std::vector<size_t>>> geometry_to_local_DoF_indices_map_;
-  std::shared_ptr<ZeroOrderScalarDiscontinuousMapper<GL>> entity_indices_;
+  std::shared_ptr<FiniteVolumeMapper<GL>> entity_indices_;
   std::shared_ptr<std::vector<std::vector<R>>> switches_;
-  std::shared_ptr<MapperType> mapper_;
+  std::shared_ptr<MapperImplementation> mapper_;
   mutable bool communicator_prepared_;
 }; // class RaviartThomasSpace
 

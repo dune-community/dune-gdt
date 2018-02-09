@@ -75,7 +75,7 @@ struct RtSpace : public ::testing::Test
     ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer())) {
       const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
-      EXPECT_EQ(reference_element.size(1), space->mapper().numDofs(element));
+      EXPECT_EQ(reference_element.size(1), space->mapper().local_size(element));
     }
   }
 
@@ -85,8 +85,8 @@ struct RtSpace : public ::testing::Test
     ASSERT_NE(space, nullptr);
     size_t max_num_dofs = 0;
     for (auto&& element : elements(*grid_layer()))
-      max_num_dofs = std::max(max_num_dofs, space->mapper().numDofs(element));
-    EXPECT_LE(max_num_dofs, space->mapper().maxNumDofs());
+      max_num_dofs = std::max(max_num_dofs, space->mapper().local_size(element));
+    EXPECT_LE(max_num_dofs, space->mapper().max_local_size());
   }
 
   // this only works for conforming intersections!
@@ -94,16 +94,16 @@ struct RtSpace : public ::testing::Test
   {
     ASSERT_NE(grid_layer(), nullptr);
     ASSERT_NE(space, nullptr);
-    Dune::GDT::ZeroOrderScalarDiscontinuousMapper<GridLayerType> entity_indices(*grid_layer());
+    Dune::GDT::FiniteVolumeMapper<GridLayerType> entity_indices(*grid_layer());
     // determine global numbering of intersections
     std::map<size_t, std::map<size_t, size_t>> element_and_local_intersection_index_to_global_intersection_index;
     size_t tmp_counter = 0;
     for (auto&& element : elements(*grid_layer())) {
-      const auto global_element_index = entity_indices.mapToGlobal(element, 0);
+      const auto global_element_index = entity_indices.global_index(element, 0);
       for (auto&& intersection : intersections(*grid_layer(), element)) {
         const auto element_local_intersection_index = intersection.indexInInside();
         if (!intersection.neighbor()
-            || (entity_indices.mapToGlobal(element, 0) < entity_indices.mapToGlobal(intersection.outside(), 0))) {
+            || (entity_indices.global_index(element, 0) < entity_indices.global_index(intersection.outside(), 0))) {
           // this is the place to handle this intersection
           const auto global_intersection_index = tmp_counter;
           ++tmp_counter;
@@ -113,7 +113,7 @@ struct RtSpace : public ::testing::Test
                                                                                global_intersection_index;
           if (intersection.neighbor()) {
             // as well as for the neighbor
-            const auto global_neighbor_index = entity_indices.mapToGlobal(intersection.outside(), 0);
+            const auto global_neighbor_index = entity_indices.global_index(intersection.outside(), 0);
             const auto neighbor_local_intersection_index = intersection.indexInOutside();
             element_and_local_intersection_index_to_global_intersection_index[global_neighbor_index]
                                                                              [neighbor_local_intersection_index] =
@@ -125,18 +125,18 @@ struct RtSpace : public ::testing::Test
     // collect all global ids that are associated with an intersection
     std::map<size_t, std::set<size_t>> global_intersection_index_to_global_indices_map;
     for (auto&& element : elements(*grid_layer())) {
-      const auto global_DoF_indices = space->mapper().globalIndices(element);
-      EXPECT_LE(space->mapper().numDofs(element), global_DoF_indices.size());
+      const auto global_DoF_indices = space->mapper().global_indices(element);
+      EXPECT_LE(space->mapper().local_size(element), global_DoF_indices.size());
       const auto intersection_to_DoF_map = space->local_DoF_indices(element);
-      EXPECT_EQ(intersection_to_DoF_map.size(), space->mapper().numDofs(element));
+      EXPECT_EQ(intersection_to_DoF_map.size(), space->mapper().local_size(element));
       for (auto&& intersection : intersections(*grid_layer(), element)) {
         const auto local_intersection_index = intersection.indexInInside();
         const auto local_DoF_index = intersection_to_DoF_map[local_intersection_index];
-        const auto global_DoF_index = space->mapper().mapToGlobal(element, local_DoF_index);
+        const auto global_DoF_index = space->mapper().global_index(element, local_DoF_index);
         EXPECT_EQ(global_DoF_indices[local_DoF_index], global_DoF_index);
-        const auto global_intersection_index =
-            element_and_local_intersection_index_to_global_intersection_index.at(entity_indices.mapToGlobal(element, 0))
-                .at(local_intersection_index);
+        const auto global_intersection_index = element_and_local_intersection_index_to_global_intersection_index
+                                                   .at(entity_indices.global_index(element, 0))
+                                                   .at(local_intersection_index);
         global_intersection_index_to_global_indices_map[global_intersection_index].insert(global_DoF_index);
       }
     }
@@ -171,7 +171,7 @@ struct RtSpace : public ::testing::Test
   {
     ASSERT_NE(grid_layer(), nullptr);
     ASSERT_NE(space, nullptr);
-    Dune::GDT::ZeroOrderScalarDiscontinuousMapper<GridLayerType> entity_indices(*grid_layer());
+    Dune::GDT::FiniteVolumeMapper<GridLayerType> entity_indices(*grid_layer());
     for (auto&& element : elements(*grid_layer())) {
       const auto basis = space->base_function_set(element);
       const auto intersection_to_DoF_index_map = space->local_DoF_indices(element);
@@ -186,7 +186,7 @@ struct RtSpace : public ::testing::Test
         const auto DoF_index = intersection_to_DoF_index_map[intersection_index];
         double switch_ = 1;
         if (intersection.neighbor()
-            && entity_indices.mapToGlobal(element, 0) < entity_indices.mapToGlobal(intersection.outside(), 0))
+            && entity_indices.global_index(element, 0) < entity_indices.global_index(intersection.outside(), 0))
           switch_ *= -1.;
         for (size_t ii = 0; ii < basis.size(); ++ii)
           EXPECT_TRUE(Dune::XT::Common::FloatCmp::eq(
