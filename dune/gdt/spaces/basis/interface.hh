@@ -10,48 +10,44 @@
 //   Rene Milk       (2014, 2016)
 //   Tobias Leibner  (2014)
 
-#ifndef DUNE_GDT_SPACES_BASEFUNCTIONSET_INTERFACE_HH
-#define DUNE_GDT_SPACES_BASEFUNCTIONSET_INTERFACE_HH
+#ifndef DUNE_GDT_SPACES_BASIS_INTERFACE_HH
+#define DUNE_GDT_SPACES_BASIS_INTERFACE_HH
 
-#include <dune/xt/common/crtp.hh>
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces/local-functions.hh>
+
+#include <dune/gdt/local/finite-elements/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
 
 
-/**
- *  \brief  The purpose of this interface is just to be used for template matching and to allow for access to the
- *          backend. All other functionality is enforced by XT::Functions::LocalfunctionSetInterface.
- *
- *          \see XT::Functions::LocalfunctionSetInterface for the template parameters D, d, R, r and rC.
- */
-template <class Traits, class D, size_t d, class R, size_t r, size_t rC = 1>
-class BaseFunctionSetInterface
-    : public XT::Functions::LocalfunctionSetInterface<typename Traits::EntityType, D, d, R, r, rC>,
-      public XT::CRTPInterface<BaseFunctionSetInterface<Traits, D, d, R, r, rC>, Traits>
+template <class Element, size_t range_dim = 1, size_t range_dim_columns = 1, class RangeField = double>
+class GlobalBasisInterface
 {
-  typedef XT::Functions::LocalfunctionSetInterface<typename Traits::EntityType, D, d, R, r, rC> BaseType;
+  static_assert(XT::Grid::is_entity<Element>::value, "");
 
 public:
-  typedef typename Traits::derived_type derived_type;
-  typedef typename Traits::BackendType BackendType;
-  typedef typename Traits::EntityType EntityType;
+  using E = Element;
+  using D = typename E::Geometry::ctype;
+  static const constexpr size_t d = E::dimension;
+  using R = RangeField;
+  static const constexpr size_t r = range_dim;
+  static const constexpr size_t rC = range_dim_columns;
 
-  explicit BaseFunctionSetInterface(const EntityType& ent)
-    : BaseType(ent)
-  {
-  }
+  using ElementType = E;
+  using ShapeFunctionsType = LocalFiniteElementBasisInterface<D, d, R, r, rC>;
+  using LocalizedBasisType = XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>;
 
-  const BackendType& backend() const
-  {
-    CHECK_CRTP(this->as_imp(*this).backend());
-    return this->as_imp(*this).backend();
-  }
-}; // class BaseFunctionSetInterface
+  virtual ~GlobalBasisInterface() = default;
+
+  virtual const ShapeFunctionsType& shape_functions(const GeometryType& geometry_type) const = 0;
+
+  virtual std::unique_ptr<LocalizedBasisType> localize(const ElementType& element) const = 0;
+}; // class GlobalBasisInterface
 
 
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_BASEFUNCTIONSET_INTERFACE_HH
+#endif // DUNE_GDT_SPACES_BASIS_INTERFACE_HH
