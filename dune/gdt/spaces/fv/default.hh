@@ -15,7 +15,7 @@
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
 
-#include <dune/gdt/spaces/basefunctionset/fv.hh>
+#include <dune/gdt/spaces/basis/finite-volume.hh>
 #include <dune/gdt/spaces/mapper/finite-volume.hh>
 #include <dune/gdt/spaces/parallel.hh>
 
@@ -26,10 +26,10 @@ namespace GDT {
 
 
 // forward, to be used in the traits and to allow for specialization
-template <class GridLayerImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols = 1>
+template <class GL, class R, size_t r, size_t rC = 1>
 class FvSpace
 {
-  static_assert(Dune::AlwaysFalse<GridLayerImp>::value, "Untested for these dimensions!");
+  static_assert(Dune::AlwaysFalse<GL>::value, "Untested for these dimensions!");
 };
 
 
@@ -39,26 +39,19 @@ namespace internal {
 /**
  *  \brief Traits class for FvSpace.
  */
-template <class GridLayerImp, class RangeFieldImp, size_t rangeDim, size_t rangeDimCols>
+template <class GL, class R, size_t r, size_t rC>
 class FvSpaceTraits
 {
-  static_assert(XT::Grid::is_layer<GridLayerImp>::value, "");
+  static_assert(XT::Grid::is_layer<GL>::value, "");
 
 public:
-  typedef FvSpace<GridLayerImp, RangeFieldImp, rangeDim, rangeDimCols> derived_type;
+  typedef FvSpace<GL, R, r, rC> derived_type;
   static const int polOrder = 0;
   static const bool continuous = false;
-  typedef GridLayerImp GridLayerType;
+  typedef GL GridLayerType;
   typedef typename GridLayerType::IndexSet BackendType;
   using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
-  typedef RangeFieldImp RangeFieldType;
-  typedef BaseFunctionSet::FiniteVolume<EntityType,
-                                        typename GridLayerType::ctype,
-                                        GridLayerType::dimension,
-                                        RangeFieldType,
-                                        rangeDim,
-                                        rangeDimCols>
-      BaseFunctionSetType;
+  typedef R RangeFieldType;
   static const XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static const bool needs_grid_view = true;
   typedef DofCommunicationChooser<GridLayerType> DofCommunicationChooserType;
@@ -70,31 +63,24 @@ public:
 } // namespace internal
 
 
-template <class GridLayerImp, class RangeFieldImp, size_t rangeDim>
-class FvSpace<GridLayerImp, RangeFieldImp, rangeDim, 1>
-    : public FvSpaceInterface<internal::FvSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1>,
-                              GridLayerImp::dimension,
-                              rangeDim,
-                              1>
+template <class GL, class R>
+class FvSpace<GL, R, 1, 1> : public FvSpaceInterface<internal::FvSpaceTraits<GL, R, 1, 1>, GL::dimension, 1, 1>
 {
-  typedef FvSpace<GridLayerImp, RangeFieldImp, rangeDim, 1> ThisType;
-  typedef FvSpaceInterface<internal::FvSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1>,
-                           GridLayerImp::dimension,
-                           rangeDim,
-                           1>
-      BaseType;
+  typedef FvSpace<GL, R, 1, 1> ThisType;
+  typedef FvSpaceInterface<internal::FvSpaceTraits<GL, R, 1, 1>, GL::dimension, 1, 1> BaseType;
 
 public:
-  typedef typename internal::FvSpaceTraits<GridLayerImp, RangeFieldImp, rangeDim, 1> Traits;
+  typedef typename internal::FvSpaceTraits<GL, R, 1, 1> Traits;
   using typename BaseType::GridLayerType;
   using typename BaseType::BackendType;
   using typename BaseType::MapperType;
   using typename BaseType::EntityType;
-  using typename BaseType::BaseFunctionSetType;
+  using typename BaseType::GlobalBasisType;
 
 private:
   typedef typename Traits::DofCommunicationChooserType DofCommunicationChooserType;
-  using MapperImplementation = FiniteVolumeMapper<GridLayerType, rangeDim, 1>;
+  using MapperImplementation = FiniteVolumeMapper<GridLayerType, 1, 1>;
+  using GlobalBasisImplementation = FiniteVolumeGlobalBasis<EntityType, R>;
 
 public:
   using typename BaseType::DofCommunicatorType;
@@ -102,6 +88,7 @@ public:
   FvSpace(GridLayerType grd_layr)
     : grid_layer_(grd_layr)
     , mapper_(grid_layer_)
+    , basis_(grid_layer_)
     , communicator_(DofCommunicationChooserType::create(grid_layer_))
   {
   }
@@ -109,6 +96,7 @@ public:
   FvSpace(const ThisType& other)
     : grid_layer_(other.grid_layer_)
     , mapper_(other.mapper_)
+    , basis_(other.basis_)
     , communicator_(DofCommunicationChooserType::create(grid_layer_))
   {
   }
@@ -139,9 +127,9 @@ public:
     return mapper_;
   }
 
-  BaseFunctionSetType base_function_set(const EntityType& entity) const
+  const GlobalBasisType& basis() const
   {
-    return BaseFunctionSetType(entity);
+    return basis_;
   }
 
   DofCommunicatorType& dof_communicator() const
@@ -153,6 +141,7 @@ public:
 private:
   GridLayerType grid_layer_;
   const MapperImplementation mapper_;
+  const GlobalBasisImplementation basis_;
   const std::unique_ptr<DofCommunicatorType> communicator_;
 }; // class FvSpace< ..., 1, 1 >
 

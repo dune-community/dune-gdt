@@ -56,7 +56,7 @@ struct FiniteVolumeSpace : public ::testing::Test
     ASSERT_NE(grid_layer(), nullptr);
     ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer()))
-      EXPECT_EQ(1, space->base_function_set(element).size());
+      EXPECT_EQ(1, space->basis().localize(element)->size());
   }
 
   void basis_exists_on_each_element_with_correct_order()
@@ -64,7 +64,7 @@ struct FiniteVolumeSpace : public ::testing::Test
     ASSERT_NE(grid_layer(), nullptr);
     ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer()))
-      EXPECT_EQ(0, space->base_function_set(element).order());
+      EXPECT_EQ(0, space->basis().localize(element)->order());
   }
 
   void mapper_reports_correct_num_DoFs_on_each_element()
@@ -120,7 +120,7 @@ struct FiniteVolumeSpace : public ::testing::Test
     ASSERT_NE(space, nullptr);
     double tolerance = 1e-15;
     for (auto&& element : elements(*grid_layer())) {
-      const auto values = space->base_function_set(element).evaluate(Dune::FieldVector<D, d>(0.));
+      const auto values = space->basis().localize(element)->evaluate(Dune::FieldVector<D, d>(0.));
       EXPECT_EQ(1, values.size());
       ASSERT_TRUE(Dune::XT::Common::FloatCmp::eq(values.at(0), Dune::FieldVector<R, r>(1), tolerance, tolerance));
     }
@@ -132,7 +132,7 @@ struct FiniteVolumeSpace : public ::testing::Test
     ASSERT_NE(space, nullptr);
     double tolerance = 1e-15;
     for (auto&& element : elements(*grid_layer())) {
-      const auto grads = space->base_function_set(element).jacobian(Dune::FieldVector<D, d>(0.));
+      const auto grads = space->basis().localize(element)->jacobian(Dune::FieldVector<D, d>(0.));
       EXPECT_EQ(1, grads.size());
       ASSERT_TRUE(Dune::XT::Common::FloatCmp::eq(grads.at(0), decltype(grads[0])(0), tolerance, tolerance));
     }
