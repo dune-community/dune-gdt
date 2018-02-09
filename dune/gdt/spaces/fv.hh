@@ -17,7 +17,6 @@
 
 #include "fv/interface.hh"
 #include "fv/default.hh"
-#include "fv/product.hh"
 
 #include <dune/gdt/playground/spaces/block.hh>
 
@@ -70,52 +69,6 @@ public:
     return Type(grid_provider.template layer<layer_type, layer_backend>(level));
   }
 }; // class FvSpaceProvider
-
-template <class GridType,
-          XT::Grid::Layers layer_type,
-          Backends backend_type,
-          class RangeFieldType,
-          size_t dimRange,
-          size_t dimRangeCols = 1,
-          XT::Grid::Backends grid_backend_type = layer_from_backend<backend_type>::type>
-class FvProductSpaceProvider
-{
-public:
-  static const constexpr SpaceType space_type = SpaceType::product_fv;
-  static const constexpr Backends space_backend = backend_type;
-  static const constexpr XT::Grid::Layers grid_layer = layer_type;
-  static const constexpr XT::Grid::Backends layer_backend = grid_backend_type;
-
-  typedef typename XT::Grid::Layer<GridType, layer_type, layer_backend>::type GridLayerType;
-
-private:
-  template <class G, class R, size_t r, size_t rC, GDT::Backends b>
-  struct SpaceChooser
-  {
-    static_assert(AlwaysFalse<G>::value, "No space available for this backend!");
-  };
-
-  template <class G, class R, size_t r, size_t rC>
-  struct SpaceChooser<G, R, r, rC, GDT::Backends::gdt>
-  {
-    typedef GDT::FvProductSpace<GridLayerType, R, r, rC> Type;
-  };
-
-public:
-  typedef typename SpaceChooser<GridType, RangeFieldType, dimRange, dimRangeCols, backend_type>::Type Type;
-  typedef Type type;
-
-  static Type create(GridLayerType grid_layer)
-  {
-    return Type(grid_layer);
-  }
-
-  template <class DdGridType>
-  static Type create(XT::Grid::GridProvider<GridType, DdGridType>& grid_provider, const int level = 0)
-  {
-    return Type(grid_provider.template layer<layer_type, layer_backend>(level));
-  }
-}; // class FvProductSpaceProvider
 
 
 template <class GridType,
