@@ -17,8 +17,8 @@
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
-#include <dune/gdt/local/finite-elements/interfaces.hh>
 #include <dune/gdt/local/finite-elements/lagrange.hh>
+#include <dune/gdt/type_traits.hh>
 
 #include "interfaces.hh"
 
@@ -26,142 +26,117 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GL, class R = double, size_t r = 1, size_t rC = 1, class F = R>
-class FixedOrderScalarDiscontinuousMapper;
-
-
-namespace internal {
-
-
-template <class GL, class R = double, size_t r = 1, size_t rC = 1, class F = R>
-class FixedOrderScalarDiscontinuousMapperTraits
+template <class GV, class FiniteElement>
+class DiscontinuousMapper : public MapperInterface<GV>
 {
-  static_assert(XT::Grid::is_layer<GL>::value, "");
+  static_assert(is_local_finite_element<FiniteElement>::value, "");
+  using ThisType = DiscontinuousMapper<GV, FiniteElement>;
+  using BaseType = MapperInterface<GV>;
+  using D = typename GV::ctype;
+  static const constexpr size_t d = GV::dimension;
 
-  template <int dim_>
-  struct GeometryTypeLayout
+  template <int>
+  struct Codim0EntityFilter
   {
     bool contains(const GeometryType& gt) const
     {
-      return gt.dim() == dim_;
+      return gt.dim() == d;
     }
   };
 
-public:
-  using derived_type = FixedOrderScalarDiscontinuousMapper<GL, R, r, rC, F>;
-  using BackendType = MultipleCodimMultipleGeomTypeMapper<GL, GeometryTypeLayout>;
-  using EntityType = XT::Grid::extract_entity_t<GL>;
-};
-
-
-} // namespace internal
-
-
-template <class GL, class R, size_t r, size_t rC, class F>
-class FixedOrderScalarDiscontinuousMapper
-    : public MapperInterface<internal::FixedOrderScalarDiscontinuousMapperTraits<GL, R, r, rC, F>>
-{
-public:
-  using Traits = internal::FixedOrderScalarDiscontinuousMapperTraits<GL, R, r, rC, F>;
-
-private:
-  using ThisType = FixedOrderScalarDiscontinuousMapper<GL, R, r, rC, F>;
-  using BaseType = MapperInterface<Traits>;
-  using D = typename GL::ctype;
-  static const constexpr size_t d = GL::dimension;
+  using Implementation = MultipleCodimMultipleGeomTypeMapper<GV, Codim0EntityFilter>;
 
 public:
-  using FiniteElementType = LocalFiniteElementInterface<D, d, R, r, rC, F>;
-  using typename BaseType::EntityType;
-  using typename BaseType::BackendType;
+  using typename BaseType::ElementType;
+  using typename BaseType::GridViewType;
 
-  FixedOrderScalarDiscontinuousMapper(
-      const GL& grid_layer,
-      const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>>& finite_elements)
-    : finite_elements_(finite_elements)
-    , mapper_(new BackendType(grid_layer))
+  DiscontinuousMapper(const GridViewType& grd_vw,
+                      const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElement>>>& finite_elements)
+    : grid_view_(grd_vw)
+    , finite_elements_(finite_elements)
+    , mapper_(new Implementation(grid_view_))
     , offset_(new std::vector<size_t>(mapper_->size()))
     , max_num_dofs_(0)
     , size_(0)
   {
-    for (auto&& element : elements(grid_layer)) {
-      (*offset_)[mapper_->subIndex(element, 0, 0)] = size_;
-      const auto finite_element_search_result = finite_elements_->find(element.geometry().type());
-      if (finite_element_search_result == finite_elements_->end())
-        DUNE_THROW(mapper_error,
-                   "Missing finite element for the required geometry type " << element.geometry().type() << "!");
-      const auto& finite_element = *finite_element_search_result->second;
+    for (auto&& element : elements(grid_view_)) {
+      (*offset_)[mapper_->index(element)] = size_;
+      const auto& finite_element = get_finite_element(element.geometry().type());
       size_ += finite_element.size();
-      max_num_dofs_ = std::max(max_num_dofs_, XT::Common::numeric_cast<size_t>(finite_element.size()));
+      max_num_dofs_ = std::max(max_num_dofs_, finite_element.size());
     }
-  } // ... FixedOrderScalarDiscontinuousMapper(...)
+  } // ... DiscontinuousMapper(...)
 
-  FixedOrderScalarDiscontinuousMapper(const ThisType&) = default;
-  FixedOrderScalarDiscontinuousMapper(ThisType&&) = default;
-  FixedOrderScalarDiscontinuousMapper& operator=(const ThisType&) = delete;
-  FixedOrderScalarDiscontinuousMapper& operator=(ThisType&&) = delete;
+  DiscontinuousMapper(const ThisType&) = default;
+  DiscontinuousMapper(ThisType&&) = default;
 
-  const BackendType& backend() const
+  DiscontinuousMapper& operator=(const ThisType&) = delete;
+  DiscontinuousMapper& operator=(ThisType&&) = delete;
+
+  const GridViewType& grid_view() const override final
   {
-    return *mapper_;
+    return grid_view_;
   }
 
-  size_t size() const
+  const LocalFiniteElementCoefficientsInterface&
+  local_coefficients(const GeometryType& geometry_type) const override final
+  {
+    return get_finite_element(geometry_type).coefficients();
+  }
+
+  size_t size() const override final
   {
     return size_;
   }
 
-  size_t maxNumDofs() const
+  size_t max_local_size() const override final
   {
     return max_num_dofs_;
   }
 
-  size_t numDofs(const EntityType& entity) const
+  size_t local_size(const ElementType& element) const override final
   {
-    const auto finite_element_search_result = finite_elements_->find(entity.geometry().type());
-    if (finite_element_search_result == finite_elements_->end())
-      DUNE_THROW(XT::Common::Exceptions::internal_error,
-                 "This must not happen after the checks in the ctor, the grid layer did not report all geometry types!"
-                     << "\n   entity.geometry().type() = "
-                     << entity.geometry().type());
-    const auto& finite_element = *finite_element_search_result->second;
-    return finite_element.size();
-  } // ... numDofs(...)
-
-  template <int cd, class GridImp, template <int, int, class> class EntityImp>
-  typename std::enable_if<cd != EntityType::codimension, size_t>::type
-  numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& /*entity*/) const
-  {
-    return 0;
+    return get_finite_element(element.geometry().type()).size();
   }
 
-  using BaseType::globalIndices;
-
-  void globalIndices(const EntityType& entity, DynamicVector<size_t>& ret) const
+  size_t global_index(const ElementType& element, const size_t local_index) const override final
   {
-    const size_t offset = (*offset_)[mapper_->subIndex(entity, 0, 0)];
-    const auto local_size = numDofs(entity);
-    if (ret.size() < local_size)
-      ret.resize(local_size, 0);
-    for (size_t ii = 0; ii < local_size; ++ii)
-      ret[ii] = offset + ii;
-  } // ... globalIndices(...)
-
-  size_t mapToGlobal(const EntityType& entity, const size_t local_index) const
-  {
-    if (local_index >= numDofs(entity))
-      DUNE_THROW(Exception, "numDofs(entity) = " << numDofs(entity) << "\n   local_index = " << local_index);
-    const size_t offset = (*offset_)[mapper_->subIndex(entity, 0, 0)];
-    return offset + local_index;
+    if (local_index >= local_size(element))
+      DUNE_THROW(mapper_error, "local_size(element) = " << local_size(element) << "\n   local_index = " << local_index);
+    return (*offset_)[mapper_->index(element)] + local_index;
   }
+
+  using BaseType::global_indices;
+
+  void global_indices(const ElementType& element, DynamicVector<size_t>& indices) const override final
+  {
+    const size_t offset = (*offset_)[mapper_->index(element)];
+    const auto local_sz = local_size(element);
+    if (indices.size() < local_sz)
+      indices.resize(local_sz, 0);
+    for (size_t ii = 0; ii < local_sz; ++ii)
+      indices[ii] = offset + ii;
+  } // ... global_indices(...)
 
 private:
-  const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
-  const std::shared_ptr<BackendType> mapper_;
+  const FiniteElement& get_finite_element(const GeometryType& geometry_type) const
+  {
+    const auto finite_element_search_result = finite_elements_->find(geometry_type);
+    if (finite_element_search_result == finite_elements_->end())
+      DUNE_THROW(XT::Common::Exceptions::internal_error,
+                 "This must not happen, the grid layer did not report all geometry types!"
+                     << "\n   geometry_type = "
+                     << geometry_type);
+    return *finite_element_search_result->second;
+  } // ... get_finite_element(...)
+
+  const GridViewType& grid_view_;
+  const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElement>>> finite_elements_;
+  const std::shared_ptr<Implementation> mapper_;
   std::shared_ptr<std::vector<size_t>> offset_;
   size_t max_num_dofs_;
   size_t size_;
-}; // class FixedOrderScalarDiscontinuousMapper
+}; // class DiscontinuousMapper
 
 
 } // namespace GDT
