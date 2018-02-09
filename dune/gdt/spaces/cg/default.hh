@@ -25,7 +25,7 @@
 #include <dune/xt/common/numeric_cast.hh>
 
 #include <dune/gdt/local/finite-elements/lagrange.hh>
-#include <dune/gdt/spaces/basefunctionset/default.hh>
+#include <dune/gdt/spaces/basis/default.hh>
 #include <dune/gdt/spaces/mapper/continuous.hh>
 #include <dune/gdt/spaces/cg/interface.hh>
 
@@ -55,7 +55,6 @@ public:
   static const constexpr size_t dimRangeCols = 1;
   static const constexpr bool continuous = false;
   using GridLayerType = GL;
-  using BaseFunctionSetType = DefaultGlobalBasis<XT::Grid::extract_entity_t<GL>, R, dimRange, dimRangeCols, R>;
   using RangeFieldType = R;
   using BackendType = double;
   static const constexpr XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
@@ -78,7 +77,9 @@ public:
  * The following dimensions/orders/elements are tested to fail:
  *
  * - 3d: pyramids (jacobians seem to be incorrect)
- * - 3d: mixed simplices and cubes
+ * - 3d: mixed simplices and cubes (intersections are non-conforming)
+ *
+ * \sa make_lagrange_local_finite_element
  */
 template <class GL, int p, class R>
 class ContinuousLagrangeSpace
@@ -98,13 +99,14 @@ public:
   using typename BaseType::GridLayerType;
   using typename BaseType::EntityType;
   using typename BaseType::MapperType;
-  using typename BaseType::BaseFunctionSetType;
+  using typename BaseType::GlobalBasisType;
   using typename BaseType::FiniteElementType;
-  using DomainType = typename BaseFunctionSetType::DomainType;
+  using DomainType = FieldVector<D, d>;
   using DofCommunicatorType = typename Traits::DofCommunicatorType;
 
 private:
   using MapperImplementation = ContinuousMapper<GridLayerType, FiniteElementType>;
+  using GlobalBasisImplementation = DefaultGlobalBasis<EntityType, 1, 1, R>;
 
 public:
   ContinuousLagrangeSpace(GridLayerType grd_lr)
@@ -113,6 +115,7 @@ public:
     , backend_(0)
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
     , mapper_(nullptr)
+    , basis_(nullptr)
   {
     // create finite elements
     for (auto&& geometry_type : grid_layer_.indexSet().types(0))
@@ -121,8 +124,9 @@ public:
     // check
     if (d == 3 && finite_elements_->size() != 1)
       DUNE_THROW(space_error, "ContinuousLagrangeSpace with multiple finite elements in 3d not supported (yet)!");
-    // create mapper
+    // create mapper and basis
     mapper_ = std::make_shared<MapperImplementation>(grid_layer_, finite_elements_);
+    basis_ = std::make_shared<GlobalBasisImplementation>(finite_elements_);
   } // ContinuousLagrangeSpace(...)
 
   ContinuousLagrangeSpace(const ThisType&) = default;
@@ -146,9 +150,9 @@ public:
     return *mapper_;
   }
 
-  BaseFunctionSetType base_function_set(const EntityType& entity) const
+  const GlobalBasisType& basis() const
   {
-    return BaseFunctionSetType(entity, get_finite_element(entity.geometry().type()));
+    return *basis_;
   }
 
   DofCommunicatorType& dof_communicator() const
@@ -179,6 +183,7 @@ private:
   const double backend_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
   std::shared_ptr<MapperImplementation> mapper_;
+  std::shared_ptr<GlobalBasisImplementation> basis_;
 }; // class ContinuousLagrangeSpace
 
 
