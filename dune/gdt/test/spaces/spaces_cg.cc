@@ -72,7 +72,7 @@ struct ContinuousLagrangeSpace : public ::testing::Test
     ASSERT_NE(grid_layer(), nullptr);
     ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer()))
-      EXPECT_EQ(Dune::numLagrangePoints(element.geometry().type().id(), d, p), space->mapper().numDofs(element));
+      EXPECT_EQ(Dune::numLagrangePoints(element.geometry().type().id(), d, p), space->mapper().local_size(element));
   }
 
   void mapper_reports_correct_max_num_DoFs()
@@ -81,8 +81,8 @@ struct ContinuousLagrangeSpace : public ::testing::Test
     ASSERT_NE(space, nullptr);
     size_t max_num_dofs = 0;
     for (auto&& element : elements(*grid_layer()))
-      max_num_dofs = std::max(max_num_dofs, space->mapper().numDofs(element));
-    EXPECT_LE(max_num_dofs, space->mapper().maxNumDofs());
+      max_num_dofs = std::max(max_num_dofs, space->mapper().local_size(element));
+    EXPECT_LE(max_num_dofs, space->mapper().max_local_size());
   }
 
   void mapper_maps_correctly()
@@ -93,13 +93,13 @@ struct ContinuousLagrangeSpace : public ::testing::Test
     std::map<Dune::FieldVector<D, d>, std::set<size_t>, Dune::XT::Common::FieldVectorLess>
         global_lagrange_point_to_global_indices_map;
     for (auto&& element : elements(*grid_layer())) {
-      const auto global_indices = space->mapper().globalIndices(element);
-      EXPECT_LE(space->mapper().numDofs(element), global_indices.size());
+      const auto global_indices = space->mapper().global_indices(element);
+      EXPECT_LE(space->mapper().local_size(element), global_indices.size());
       const auto lagrange_points = space->lagrange_points(element);
-      EXPECT_EQ(lagrange_points.size(), space->mapper().numDofs(element));
+      EXPECT_EQ(lagrange_points.size(), space->mapper().local_size(element));
       for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
         const auto global_lagrange_point = element.geometry().global(lagrange_points[ii]);
-        const auto global_index = space->mapper().mapToGlobal(element, ii);
+        const auto global_index = space->mapper().global_index(element, ii);
         EXPECT_EQ(global_indices[ii], global_index);
         global_lagrange_point_to_global_indices_map[global_lagrange_point].insert(global_index);
       }

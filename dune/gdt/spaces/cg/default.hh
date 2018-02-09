@@ -26,7 +26,7 @@
 
 #include <dune/gdt/local/finite-elements/lagrange.hh>
 #include <dune/gdt/spaces/basefunctionset/default.hh>
-#include <dune/gdt/spaces/mapper/default.hh>
+#include <dune/gdt/spaces/mapper/continuous.hh>
 #include <dune/gdt/spaces/cg/interface.hh>
 
 namespace Dune {
@@ -56,7 +56,6 @@ public:
   static const constexpr bool continuous = false;
   using GridLayerType = GL;
   using BaseFunctionSetType = DefaultGlobalBasis<XT::Grid::extract_entity_t<GL>, R, dimRange, dimRangeCols, R>;
-  using MapperType = FixedOrderMultipleCodimMultipleGeomTypeMapper<GL, R, dimRange, dimRangeCols, R>;
   using RangeFieldType = R;
   using BackendType = double;
   static const constexpr XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
@@ -104,6 +103,10 @@ public:
   using DomainType = typename BaseFunctionSetType::DomainType;
   using DofCommunicatorType = typename Traits::DofCommunicatorType;
 
+private:
+  using MapperImplementation = ContinuousMapper<GridLayerType, FiniteElementType>;
+
+public:
   ContinuousLagrangeSpace(GridLayerType grd_lr)
     : grid_layer_(grd_lr)
     , communicator_(DofCommunicationChooserType::create(grid_layer_))
@@ -119,7 +122,7 @@ public:
     if (d == 3 && finite_elements_->size() != 1)
       DUNE_THROW(space_error, "ContinuousLagrangeSpace with multiple finite elements in 3d not supported (yet)!");
     // create mapper
-    mapper_ = std::make_shared<MapperType>(grid_layer_, finite_elements_);
+    mapper_ = std::make_shared<MapperImplementation>(grid_layer_, finite_elements_);
   } // ContinuousLagrangeSpace(...)
 
   ContinuousLagrangeSpace(const ThisType&) = default;
@@ -175,7 +178,7 @@ private:
   mutable std::shared_ptr<DofCommunicatorType> communicator_;
   const double backend_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
-  std::shared_ptr<MapperType> mapper_;
+  std::shared_ptr<MapperImplementation> mapper_;
 }; // class ContinuousLagrangeSpace
 
 
