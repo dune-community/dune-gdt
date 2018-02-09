@@ -117,7 +117,6 @@ public:
   static const int polOrder = Traits::polOrder;
   static const bool continuous = Traits::continuous;
   typedef typename Traits::BackendType BackendType;
-  typedef typename Traits::MapperType MapperType;
   typedef typename Traits::BaseFunctionSetType BaseFunctionSetType;
   typedef typename Traits::DofCommunicatorType DofCommunicatorType;
   typedef typename Traits::GridLayerType GridLayerType;
@@ -126,6 +125,7 @@ public:
   static const size_t dimRange = rangeDim;
   static const size_t dimRangeCols = rangeDimCols;
   static const constexpr Backends backend_type{Traits::backend_type};
+  using MapperType = MapperInterface<GridLayerType>;
 
 private:
   static_assert(dimDomain > 0, "dimDomain has to be positive");
