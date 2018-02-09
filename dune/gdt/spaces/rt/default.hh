@@ -28,7 +28,7 @@
 #include <dune/gdt/spaces/basis/raviart-thomas.hh>
 #include <dune/gdt/spaces/mapper/continuous.hh>
 #include <dune/gdt/spaces/mapper/finite-volume.hh>
-#include <dune/gdt/spaces/rt/interface.hh>
+#include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {
 namespace GDT {
@@ -86,13 +86,13 @@ private:
  */
 template <class GL, int p, class R>
 class RaviartThomasSpace
-    : public RtSpaceInterface<internal::RaviartThomasSpaceTraits<GL, p, R>, GL::dimension, GL::dimension>
+    : public SpaceInterface<internal::RaviartThomasSpaceTraits<GL, p, R>, GL::dimension, GL::dimension>
 {
 public:
   using Traits = internal::RaviartThomasSpaceTraits<GL, p, R>;
 
 private:
-  using BaseType = RtSpaceInterface<Traits, GL::dimension, GL::dimension>;
+  using BaseType = SpaceInterface<internal::RaviartThomasSpaceTraits<GL, p, R>, GL::dimension, GL::dimension>;
   using ThisType = RaviartThomasSpace<GL, p, R>;
   using D = typename GL::ctype;
   static const constexpr size_t d = BaseType::dimDomain;
@@ -134,7 +134,7 @@ public:
     if (d == 3 && finite_elements_->size() != 1)
       DUNE_THROW(space_error,
                  "when creating a RaviartThomasSpace: non-conforming intersections are not (yet) "
-                 "supported, and more than one element type in 3d lead to non-conforming intersections!");
+                 "supported, and more than one element type in 3d leads to non-conforming intersections!");
     // compute local-key-to-intersection relationship
     for (const auto& geometry_type_and_finite_element_ptr : *finite_elements_) {
       const auto& geometry_type = geometry_type_and_finite_element_ptr.first;
