@@ -530,21 +530,6 @@ public:
 }; // class ProductSpaceInterface< ... >
 
 
-template <class Traits, size_t d, size_t r, size_t rC, size_t codim = 0>
-typename Traits::GridLayerType::template Codim<codim>::Iterator
-begin(const Dune::GDT::SpaceInterface<Traits, d, r, rC>& space)
-{
-  return space.grid_layer().template begin<codim>();
-}
-
-template <class Traits, size_t d, size_t r, size_t rC, size_t codim = 0>
-typename Traits::GridLayerType::template Codim<codim>::Iterator
-end(const Dune::GDT::SpaceInterface<Traits, d, r, rC>& space)
-{
-  return space.grid_layer().template end<codim>();
-}
-
-
 } // namespace GDT
 } // namespace Dune
 
