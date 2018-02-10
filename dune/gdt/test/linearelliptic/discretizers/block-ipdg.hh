@@ -117,7 +117,7 @@ public:
       local_patterns[ss] = local_spaces[ss]->compute_face_and_volume_pattern();
       copy_local_to_global(local_patterns[ss], space, ss, ss, pattern);
       if (dd_grid.boundary(ss)) {
-        boundary_patterns[ss] = local_spaces[ss]->compute_volume_pattern(dd_grid.boundaryGridPart(ss));
+        boundary_patterns[ss] = local_spaces[ss]->compute_volume_pattern(dd_grid.boundary_grid_view(ss));
         copy_local_to_global(boundary_patterns[ss], space, ss, ss, pattern);
       }
       coupling_patterns[ss][ss] =
@@ -125,9 +125,9 @@ public:
       for (auto&& nn : dd_grid.neighborsOf(ss)) {
         if (ss < nn) { //  each coupling only once
           coupling_patterns[ss][nn] =
-              local_spaces[ss]->compute_face_pattern(dd_grid.couplingGridPart(ss, nn), *local_spaces[nn]);
+              local_spaces[ss]->compute_face_pattern(dd_grid.coupling_grid_view(ss, nn), *local_spaces[nn]);
           coupling_patterns[nn][ss] =
-              local_spaces[nn]->compute_face_pattern(dd_grid.couplingGridPart(nn, ss), *local_spaces[ss]);
+              local_spaces[nn]->compute_face_pattern(dd_grid.coupling_grid_view(nn, ss), *local_spaces[ss]);
           copy_local_to_global(coupling_patterns[ss][ss], space, ss, ss, pattern);
           copy_local_to_global(coupling_patterns[ss][nn], space, ss, nn, pattern);
           copy_local_to_global(coupling_patterns[nn][ss], space, nn, ss, pattern);
@@ -154,7 +154,7 @@ public:
               local_spaces[ss]->mapper().size(), local_spaces[nn]->mapper().size(), coupling_patterns[ss][nn]);
           MatrixType outside_inside_matrix(
               local_spaces[nn]->mapper().size(), local_spaces[ss]->mapper().size(), coupling_patterns[nn][ss]);
-          auto coupling_grid_part = dd_grid.couplingGridPart(ss, nn);
+          auto coupling_grid_part = dd_grid.coupling_grid_view(ss, nn);
           // put all of this into a coupling operator
           SystemAssembler<LocalSpaceType, decltype(coupling_grid_part)> coupling_assembler(
               coupling_grid_part, *local_spaces[ss], *local_spaces[ss], *local_spaces[nn], *local_spaces[nn]);
@@ -184,7 +184,7 @@ public:
     logger.info() << "Assembling boundary contributions..." << std::endl;
     for (size_t ss = 0; ss < dd_grid.size(); ++ss) {
       if (dd_grid.boundary(ss)) {
-        auto boundary_grid_part = dd_grid.boundaryGridPart(ss);
+        auto boundary_grid_part = dd_grid.boundary_grid_view(ss);
         MatrixType boundary_matrix(
             local_spaces[ss]->mapper().size(), local_spaces[ss]->mapper().size(), boundary_patterns[ss]);
         VectorType boundary_vector(local_spaces[ss]->mapper().size());
