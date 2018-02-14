@@ -354,7 +354,6 @@
   _DUNE_GDT_ASSEMBLER_SYSTEM_LIB(_pre, _G, level, view, _s_type, _s_backend, level, _p, _r, _rC)
 
 #define DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(_pre, _G, _s_type, _s_backend, _p, _r, _rC)                         \
-  DUNE_GDT_ASSEMBLER_SYSTEM_LIB(_pre, _G, _s_type, _s_backend, _p, _r, _rC);                                           \
   _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(_pre, _G, leaf, view, _s_type, _s_backend, leaf, _p, _r, _rC);           \
   _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(_pre, _G, level, view, _s_type, _s_backend, level, _p, _r, _rC);         \
   _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(                                                                         \
@@ -363,6 +362,7 @@
       _pre, _G, dd_subdomain_boundary, view, _s_type, _s_backend, dd_subdomain, _p, _r, _rC);                          \
   _DUNE_GDT_ASSEMBLER_SYSTEM_LIB_DD_SUBDOMAIN(                                                                         \
       _pre, _G, dd_subdomain_coupling, view, _s_type, _s_backend, dd_subdomain, _p, _r, _rC)
+//DUNE_GDT_ASSEMBLER_SYSTEM_LIB(_pre, _G, _s_type, _s_backend, _p, _r, _rC);                                           \
 
 
 #if HAVE_DUNE_ALUGRID
