@@ -22,15 +22,14 @@
   _prefix class Dune::GDT::                                                                                            \
       CgSpaceProvider<_GRID, Dune::XT::Grid::Layers::_layer_type, Dune::GDT::Backends::_backend, _p, _R, _r, _rC>
 
-#define _DUNE_GDT_SPACES_CG_LIB(_prefix, _GRID, _p, _R, _r, _rC)                                                       \
-  _DUNE_GDT_SPACES_CG_LIB(_prefix, _GRID, adaptive_leaf, gdt, _p, _R, _r, _rC);                                        \
+#define _DUNE_GDT_SPACES_CG_LIB_ALL(_prefix, _GRID, _p, _R, _r, _rC)                                                   \
   _DUNE_GDT_SPACES_CG_LIB(_prefix, _GRID, leaf, gdt, _p, _R, _r, _rC);                                                 \
   _DUNE_GDT_SPACES_CG_LIB(_prefix, _GRID, level, gdt, _p, _R, _r, _rC);                                                \
   _DUNE_GDT_SPACES_CG_LIB(_prefix, _GRID, dd_subdomain, gdt, _p, _R, _r, _rC);                                         \
   _DUNE_GDT_SPACES_CG_LIB(_prefix, _GRID, dd_subdomain_boundary, gdt, _p, _R, _r, _rC);                                \
   _DUNE_GDT_SPACES_CG_LIB(_prefix, _GRID, dd_subdomain_coupling, gdt, _p, _R, _r, _rC)
 
-#define DUNE_GDT_SPACES_CG_LIB(_prefix, _GRID) _DUNE_GDT_SPACES_CG_LIB(_prefix, _GRID, 1, double, 1, 1)
+#define DUNE_GDT_SPACES_CG_LIB(_prefix, _GRID) _DUNE_GDT_SPACES_CG_LIB_ALL(_prefix, _GRID, 1, double, 1, 1)
 
 #if HAVE_DUNE_ALUGRID
 DUNE_GDT_SPACES_CG_LIB(extern template, ALU_2D_SIMPLEX_CONFORMING);
