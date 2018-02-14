@@ -57,7 +57,7 @@ struct RtSpace : public ::testing::Test
     ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer())) {
       const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
-      EXPECT_EQ(reference_element.size(1), space->base_function_set(element).size());
+      EXPECT_EQ(reference_element.size(1), space->basis().localize(element)->size());
     }
   }
 
@@ -66,7 +66,7 @@ struct RtSpace : public ::testing::Test
     ASSERT_NE(grid_layer(), nullptr);
     ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_layer()))
-      EXPECT_EQ(1, space->base_function_set(element).order());
+      EXPECT_EQ(1, space->basis().localize(element)->order());
   }
 
   void mapper_reports_correct_num_DoFs_on_each_element()
@@ -173,7 +173,7 @@ struct RtSpace : public ::testing::Test
     ASSERT_NE(space, nullptr);
     Dune::GDT::FiniteVolumeMapper<GridLayerType> entity_indices(*grid_layer());
     for (auto&& element : elements(*grid_layer())) {
-      const auto basis = space->base_function_set(element);
+      const auto basis = space->basis().localize(element);
       const auto intersection_to_DoF_index_map = space->local_DoF_indices(element);
       for (auto&& intersection : intersections(*grid_layer(), element)) {
         const auto xx_in_element_coordinates = intersection.geometry().center();
@@ -181,14 +181,14 @@ struct RtSpace : public ::testing::Test
         const auto xx_in_reference_intersection_coordinates =
             intersection.geometryInInside().local(xx_in_reference_element_coordinates);
         const auto normal = intersection.integrationOuterNormal(xx_in_reference_intersection_coordinates);
-        const auto basis_values = basis.evaluate(xx_in_reference_element_coordinates);
+        const auto basis_values = basis->evaluate(xx_in_reference_element_coordinates);
         const auto intersection_index = intersection.indexInInside();
         const auto DoF_index = intersection_to_DoF_index_map[intersection_index];
         double switch_ = 1;
         if (intersection.neighbor()
             && entity_indices.global_index(element, 0) < entity_indices.global_index(intersection.outside(), 0))
           switch_ *= -1.;
-        for (size_t ii = 0; ii < basis.size(); ++ii)
+        for (size_t ii = 0; ii < basis->size(); ++ii)
           EXPECT_TRUE(Dune::XT::Common::FloatCmp::eq(
               (ii == DoF_index ? 1. : 0.) * switch_, basis_values[ii] * normal, 1e-14, 1e-14))
               << "ii = " << ii << "\nDoF_index = " << DoF_index << "\nii == DoF_index ? 1. : 0. "
@@ -208,13 +208,13 @@ struct RtSpace : public ::testing::Test
     //      const auto basis = space->base_function_set(element);
     //      const double h = 1e-6;
     //      for (const auto& quadrature_point : Dune::QuadratureRules<D, d>::rule(element.geometry().type(),
-    //      basis.order())) {
+    //      basis->order())) {
     //        const auto& xx = quadrature_point.position();
     //        const auto& J_inv_T = element.geometry().jacobianInverseTransposed(xx);
-    //        const auto jacobians = basis.jacobian(xx);
-    //        EXPECT_EQ(basis.size(), jacobians.size());
-    //        const auto values_xx = basis.evaluate(xx);
-    //        EXPECT_EQ(basis.size(), values_xx.size());
+    //        const auto jacobians = basis->jacobian(xx);
+    //        EXPECT_EQ(basis->size(), jacobians.size());
+    //        const auto values_xx = basis->evaluate(xx);
+    //        EXPECT_EQ(basis->size(), values_xx.size());
     //        auto approximate_jacobians = jacobians;
     //        // compute approximate partial derivatives
     //        for (size_t dd = 0; dd < d; ++dd) {
@@ -226,9 +226,9 @@ struct RtSpace : public ::testing::Test
     //          }
     //          ASSERT_TRUE(reference_element.checkInside(xx_plus_h)) << "xx_plus_h = " << xx_plus_h
     //                                                                << " is not inside the reference element!";
-    //          const auto values_xx_plus_h = basis.evaluate(xx_plus_h);
-    //          EXPECT_EQ(basis.size(), values_xx_plus_h.size());
-    //          for (size_t ii = 0; ii < basis.size(); ++ii) {
+    //          const auto values_xx_plus_h = basis->evaluate(xx_plus_h);
+    //          EXPECT_EQ(basis->size(), values_xx_plus_h.size());
+    //          for (size_t ii = 0; ii < basis->size(); ++ii) {
     //            approximate_jacobians[ii][0][dd] = (values_xx_plus_h[ii] - values_xx[ii]) / (xx_plus_h[dd] - xx[dd]);
     //            if (xx_plus_h[dd] - xx[dd] < 0)
     //              approximate_jacobians[ii][0][dd] *= -1.;
@@ -236,12 +236,12 @@ struct RtSpace : public ::testing::Test
     //        }
     //        // transform
     //        auto tmp_jac = approximate_jacobians[0][0];
-    //        for (size_t ii = 0; ii < basis.size(); ++ii) {
+    //        for (size_t ii = 0; ii < basis->size(); ++ii) {
     //          J_inv_T.mv(approximate_jacobians[ii][0], tmp_jac);
     //          approximate_jacobians[ii][0] = tmp_jac;
     //        }
     //        // check
-    //        for (size_t ii = 0; ii < basis.size(); ++ii)
+    //        for (size_t ii = 0; ii < basis->size(); ++ii)
     //          EXPECT_TRUE(Dune::XT::Common::FloatCmp::eq(jacobians[ii][0], approximate_jacobians[ii][0], 1e-4, 1e-4))
     //              << "ii = " << ii << "\njacobians[ii][0] = " << jacobians[ii][0] << "\n"
     //              << "approximate_jacobians[ii][0] = " << approximate_jacobians[ii][0] << "\n"
