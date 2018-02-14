@@ -27,7 +27,7 @@
 #include <dune/gdt/local/finite-elements/lagrange.hh>
 #include <dune/gdt/spaces/basis/default.hh>
 #include <dune/gdt/spaces/mapper/continuous.hh>
-#include <dune/gdt/spaces/cg/interface.hh>
+#include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {
 namespace GDT {
@@ -83,13 +83,13 @@ public:
  */
 template <class GL, int p, class R>
 class ContinuousLagrangeSpace
-    : public CgSpaceInterface<internal::ContinuousLagrangeSpaceTraits<GL, p, R>, GL::dimension, 1>
+    : public SpaceInterface<internal::ContinuousLagrangeSpaceTraits<GL, p, R>, GL::dimension, 1>
 {
 public:
   using Traits = internal::ContinuousLagrangeSpaceTraits<GL, p, R>;
 
 private:
-  using BaseType = CgSpaceInterface<Traits, GL::dimension, 1>;
+  using BaseType = SpaceInterface<Traits, GL::dimension, 1>;
   using ThisType = ContinuousLagrangeSpace<GL, p, R>;
   using D = typename GL::ctype;
   static const constexpr size_t d = BaseType::dimDomain;
@@ -123,7 +123,9 @@ public:
           std::make_pair(geometry_type, make_lagrange_local_finite_element<D, d, R>(geometry_type, p)));
     // check
     if (d == 3 && finite_elements_->size() != 1)
-      DUNE_THROW(space_error, "ContinuousLagrangeSpace with multiple finite elements in 3d not supported (yet)!");
+      DUNE_THROW(space_error,
+                 "when creating a ContinuousLagrangeSpace: non-conforming intersections are not (yet) "
+                 "supported, and more than one element type in 3d leads to non-conforming intersections!");
     // create mapper and basis
     mapper_ = std::make_shared<MapperImplementation>(grid_layer_, finite_elements_);
     basis_ = std::make_shared<GlobalBasisImplementation>(finite_elements_);
