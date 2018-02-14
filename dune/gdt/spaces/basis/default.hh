@@ -7,8 +7,11 @@
 // Authors:
 //   Felix Schindler (2018)
 
-#ifndef DUNE_GDT_SPACES_BASEFUNCTIONSET_DEFAULT_HH
-#define DUNE_GDT_SPACES_BASEFUNCTIONSET_DEFAULT_HH
+#ifndef DUNE_GDT_SPACES_BASIS_DEFAULT_HH
+#define DUNE_GDT_SPACES_BASIS_DEFAULT_HH
+
+#include <dune/xt/common/numeric_cast.hh>
+#include <dune/xt/functions/interfaces/local-functions.hh>
 
 #include <dune/gdt/local/finite-elements/interfaces.hh>
 
@@ -18,59 +21,24 @@ namespace Dune {
 namespace GDT {
 
 
-// forwards, required for the traits
-template <class E, class R, size_t r = 1, size_t rC = 1, class F = R>
-class DefaultGlobalBasis;
-
-
-namespace internal {
-
-
-template <class E, class R, size_t r, size_t rC, class F>
-class DefaultGlobalBasisTraits
+/**
+ * Applies no transformation in evaluate, but left-multiplication by the geometry transformations jacobian inverse
+ * transpose in jacobian.
+ */
+template <class E, size_t r = 1, size_t rC = 1, class R = double>
+class DefaultGlobalBasis : public GlobalBasisInterface<E, r, rC, R>
 {
-public:
-  using derived_type = DefaultGlobalBasis<E, R, r, rC, F>;
-  using EntityType = E;
-  using BackendType = LocalFiniteElementInterface<typename E::Geometry::ctype, E::dimension, R, r, rC, F>;
-};
-
-
-} // namespace internal
-
-
-template <class E, class R, size_t r, size_t rC, class F>
-class DefaultGlobalBasis : public BaseFunctionSetInterface<internal::DefaultGlobalBasisTraits<E, R, r, rC, F>,
-                                                           typename E::Geometry::ctype,
-                                                           E::dimension,
-                                                           R,
-                                                           r,
-                                                           rC>
-{
-public:
-  using Traits = internal::DefaultGlobalBasisTraits<E, R, r, rC, F>;
-
-private:
-  using BaseType = BaseFunctionSetInterface<internal::DefaultGlobalBasisTraits<E, R, r, rC, F>,
-                                            typename E::Geometry::ctype,
-                                            E::dimension,
-                                            R,
-                                            r,
-                                            rC>;
-  using ThisType = DefaultGlobalBasis<E, R, r, rC, F>;
+  using ThisType = DefaultGlobalBasis<E, r, rC, R>;
+  using BaseType = GlobalBasisInterface<E, r, rC, R>;
 
 public:
-  using typename BaseType::BackendType;
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
-  using typename BaseType::JacobianRangeType;
-
-  DefaultGlobalBasis(const EntityType& en, const BackendType& finite_element)
-    : BaseType(en)
-    , finite_element_(finite_element)
-  {
-  }
+  using typename BaseType::E;
+  using typename BaseType::D;
+  using BaseType::d;
+  using typename BaseType::ElementType;
+  using typename BaseType::ShapeFunctionsType;
+  using typename BaseType::LocalizedBasisType;
+  using FiniteElementType = LocalFiniteElementInterface<D, d, R, r, rC>;
 
   DefaultGlobalBasis(const ThisType&) = default;
   DefaultGlobalBasis(ThisType&&) = default;
@@ -78,72 +46,116 @@ public:
   ThisType& operator=(const ThisType&) = delete;
   ThisType& operator=(ThisType&&) = delete;
 
-  const BackendType& backend() const
+  DefaultGlobalBasis(const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements)
+    : finite_elements_(finite_elements)
   {
-    return finite_element_;
   }
 
-  size_t size() const override final
+  const ShapeFunctionsType& shape_functions(const GeometryType& geometry_type) const override final
   {
-    return finite_element_.basis().size();
+    const auto finite_element_search_result = finite_elements_->find(geometry_type);
+    if (finite_element_search_result == finite_elements_->end())
+      DUNE_THROW(XT::Common::Exceptions::internal_error,
+                 "This must not happen, the grid layer did not report all geometry types!"
+                     << "\n   geometry_type = "
+                     << geometry_type);
+    return finite_element_search_result->second->basis();
   }
 
-  size_t order(const XT::Common::Parameter& /*param*/ = {}) const override final
+  std::unique_ptr<LocalizedBasisType> localize(const ElementType& element) const override final
   {
-    return finite_element_.basis().order();
+    return std::make_unique<LocalizedDefaultGlobalBasis>(element, shape_functions(element.geometry().type()));
   }
-
-  void evaluate(const DomainType& xx,
-                std::vector<RangeType>& ret,
-                const XT::Common::Parameter& /*param*/ = {}) const override final
-  {
-    assert(this->is_a_valid_point(xx));
-    ret = finite_element_.basis().evaluate(xx);
-  }
-
-  std::vector<RangeType> evaluate(const DomainType& xx, const XT::Common::Parameter& /*param*/ = {}) const
-  {
-    assert(this->is_a_valid_point(xx));
-    return finite_element_.basis().evaluate(xx);
-  }
-
-  void jacobian(const DomainType& xx,
-                std::vector<JacobianRangeType>& ret,
-                const XT::Common::Parameter& /*param*/ = {}) const override final
-  {
-    assert(this->is_a_valid_point(xx));
-    // evaluate jacobian of shape functions
-    ret = finite_element_.basis().jacobian(xx);
-    // apply transformation
-    const auto J_inv_T = this->entity().geometry().jacobianInverseTransposed(xx);
-    auto tmp_value = ret[0][0];
-    for (size_t ii = 0; ii < finite_element_.basis().size(); ++ii) {
-      J_inv_T.mv(ret[ii][0], tmp_value);
-      ret[ii][0] = tmp_value;
-    }
-  } // ... jacobian(...)
-
-  std::vector<JacobianRangeType> jacobian(const DomainType& xx, const XT::Common::Parameter& /*param*/ = {}) const
-  {
-    assert(this->is_a_valid_point(xx));
-    // evaluate jacobian of shape functions
-    auto ret = finite_element_.basis().jacobian(xx);
-    // apply transformation
-    const auto J_inv_T = this->entity().geometry().jacobianInverseTransposed(xx);
-    auto tmp_value = ret[0][0];
-    for (size_t ii = 0; ii < finite_element_.basis().size(); ++ii) {
-      J_inv_T.mv(ret[ii][0], tmp_value);
-      ret[ii][0] = tmp_value;
-    }
-    return ret;
-  } // ... jacobian(...)
 
 private:
-  const BackendType& finite_element_;
+  class LocalizedDefaultGlobalBasis : public XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>
+  {
+    using ThisType = LocalizedDefaultGlobalBasis;
+    using BaseType = XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>;
+
+  public:
+    using typename BaseType::DomainType;
+    using typename BaseType::RangeType;
+    using typename BaseType::JacobianRangeType;
+
+    LocalizedDefaultGlobalBasis(const ElementType& elemnt, const ShapeFunctionsType& shape_funcs)
+      : BaseType(elemnt)
+      , shape_functions_(shape_funcs)
+    {
+    }
+
+    LocalizedDefaultGlobalBasis(const ThisType&) = default;
+    LocalizedDefaultGlobalBasis(ThisType&&) = default;
+
+    ThisType& operator=(const ThisType&) = delete;
+    ThisType& operator=(ThisType&&) = delete;
+
+    size_t size() const override final
+    {
+      return shape_functions_.size();
+    }
+
+    size_t order(const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      return XT::Common::numeric_cast<size_t>(shape_functions_.order());
+    }
+
+    void evaluate(const DomainType& xx,
+                  std::vector<RangeType>& ret,
+                  const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      assert(this->is_a_valid_point(xx));
+      ret = shape_functions_.evaluate(xx);
+    }
+
+    std::vector<RangeType> evaluate(const DomainType& xx,
+                                    const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      assert(this->is_a_valid_point(xx));
+      return shape_functions_.evaluate(xx);
+    }
+
+    void jacobian(const DomainType& xx,
+                  std::vector<JacobianRangeType>& ret,
+                  const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      assert(this->is_a_valid_point(xx));
+      // evaluate jacobian of shape functions
+      ret = shape_functions_.jacobian(xx);
+      // apply transformation
+      const auto J_inv_T = this->entity().geometry().jacobianInverseTransposed(xx);
+      auto tmp_value = ret[0][0];
+      for (size_t ii = 0; ii < shape_functions_.size(); ++ii) {
+        J_inv_T.mv(ret[ii][0], tmp_value);
+        ret[ii][0] = tmp_value;
+      }
+    } // ... jacobian(...)
+
+    std::vector<JacobianRangeType> jacobian(const DomainType& xx,
+                                            const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      assert(this->is_a_valid_point(xx));
+      // evaluate jacobian of shape functions
+      auto ret = shape_functions_.jacobian(xx);
+      // apply transformation
+      const auto J_inv_T = this->entity().geometry().jacobianInverseTransposed(xx);
+      auto tmp_value = ret[0][0];
+      for (size_t ii = 0; ii < shape_functions_.size(); ++ii) {
+        J_inv_T.mv(ret[ii][0], tmp_value);
+        ret[ii][0] = tmp_value;
+      }
+      return ret;
+    } // ... jacobian(...)
+
+  private:
+    const ShapeFunctionsType& shape_functions_;
+  }; // class LocalizedDefaultGlobalBasis
+
+  const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
 }; // class DefaultGlobalBasis
 
 
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_BASEFUNCTIONSET_DEFAULT_HH
+#endif // DUNE_GDT_SPACES_BASIS_DEFAULT_HH
