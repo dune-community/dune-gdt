@@ -7,8 +7,8 @@
 // Authors:
 //   Felix Schindler (2018)
 
-#ifndef DUNE_GDT_SPACES_DG_DEFAULT_HH
-#define DUNE_GDT_SPACES_DG_DEFAULT_HH
+#ifndef DUNE_GDT_SPACES_L2_DISCONTINUOUS_LAGRANGE_HH
+#define DUNE_GDT_SPACES_L2_DISCONTINUOUS_LAGRANGE_HH
 
 #include <memory>
 #include <vector>
@@ -162,4 +162,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_DG_DEFAULT_HH
+#endif // DUNE_GDT_SPACES_L2_DISCONTINUOUS_LAGRANGE_HH

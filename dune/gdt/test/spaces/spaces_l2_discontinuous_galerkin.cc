@@ -23,7 +23,7 @@
 #include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
-#include <dune/gdt/spaces/dg/default.hh>
+#include <dune/gdt/spaces/l2/discontinuous-galerkin.hh>
 
 
 template <class GridViewType, int p>
