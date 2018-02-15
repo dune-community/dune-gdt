@@ -18,8 +18,8 @@
 #include <dune/gdt/spaces/basis/finite-volume.hh>
 #include <dune/gdt/spaces/mapper/finite-volume.hh>
 #include <dune/gdt/spaces/parallel.hh>
+#include <dune/gdt/spaces/interface.hh>
 
-#include "interface.hh"
 
 namespace Dune {
 namespace GDT {
@@ -64,10 +64,10 @@ public:
 
 
 template <class GL, class R>
-class FvSpace<GL, R, 1, 1> : public FvSpaceInterface<internal::FvSpaceTraits<GL, R, 1, 1>, GL::dimension, 1, 1>
+class FvSpace<GL, R, 1, 1> : public SpaceInterface<internal::FvSpaceTraits<GL, R, 1, 1>, GL::dimension, 1, 1>
 {
   typedef FvSpace<GL, R, 1, 1> ThisType;
-  typedef FvSpaceInterface<internal::FvSpaceTraits<GL, R, 1, 1>, GL::dimension, 1, 1> BaseType;
+  typedef SpaceInterface<internal::FvSpaceTraits<GL, R, 1, 1>, GL::dimension, 1, 1> BaseType;
 
 public:
   typedef typename internal::FvSpaceTraits<GL, R, 1, 1> Traits;
