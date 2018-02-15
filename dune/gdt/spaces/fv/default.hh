@@ -80,7 +80,7 @@ public:
 private:
   typedef typename Traits::DofCommunicationChooserType DofCommunicationChooserType;
   using MapperImplementation = FiniteVolumeMapper<GridLayerType, 1, 1>;
-  using GlobalBasisImplementation = FiniteVolumeGlobalBasis<EntityType, R>;
+  using GlobalBasisImplementation = FiniteVolumeGlobalBasis<GridLayerType, R>;
 
 public:
   using typename BaseType::DofCommunicatorType;

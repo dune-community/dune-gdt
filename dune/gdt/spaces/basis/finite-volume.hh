@@ -22,17 +22,19 @@ namespace Dune {
 namespace GDT {
 
 
-template <class E, class R = double>
-class FiniteVolumeGlobalBasis : public GlobalBasisInterface<E, 1, 1, R>
+template <class GV, class R = double>
+class FiniteVolumeGlobalBasis : public GlobalBasisInterface<GV, 1, 1, R>
 {
-  using ThisType = FiniteVolumeGlobalBasis<E, R>;
-  using BaseType = GlobalBasisInterface<E, 1, 1, R>;
+  using ThisType = FiniteVolumeGlobalBasis<GV, R>;
+  using BaseType = GlobalBasisInterface<GV, 1, 1, R>;
 
 public:
+  using typename BaseType::E;
   using typename BaseType::D;
   using BaseType::d;
   using BaseType::r;
   using BaseType::rC;
+  using typename BaseType::GridViewType;
   using typename BaseType::ElementType;
   using typename BaseType::ShapeFunctionsType;
   using typename BaseType::LocalizedBasisType;
@@ -47,12 +49,17 @@ public:
   ThisType& operator=(const ThisType&) = delete;
   ThisType& operator=(ThisType&&) = delete;
 
-  template <class GV>
-  FiniteVolumeGlobalBasis(const GridView<GV>& grid_view)
-    : shape_functions_(new std::map<GeometryType, ShapeFunctionSetImplementation>())
+  FiniteVolumeGlobalBasis(const GridViewType& grd_vw)
+    : grid_view_(grd_vw)
+    , shape_functions_(new std::map<GeometryType, ShapeFunctionSetImplementation>())
   {
-    for (auto&& geometry_type : grid_view.indexSet().types(0))
+    for (auto&& geometry_type : grd_vw.indexSet().types(0))
       shape_functions_->emplace(geometry_type, ShapeFunctionSetImplementation());
+  }
+
+  const GridViewType& grid_view() const
+  {
+    return grid_view_;
   }
 
   const ShapeFunctionsType& shape_functions(const GeometryType& geometry_type) const override final
@@ -131,6 +138,7 @@ private:
     }
   }; // class LocalizedFiniteVolumeGlobalBasis
 
+  const GridViewType& grid_view_;
   std::shared_ptr<std::map<GeometryType, ShapeFunctionSetImplementation>> shape_functions_;
 }; // class class FiniteVolumeGlobalBasis
 

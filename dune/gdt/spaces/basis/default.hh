@@ -25,16 +25,17 @@ namespace GDT {
  * Applies no transformation in evaluate, but left-multiplication by the geometry transformations jacobian inverse
  * transpose in jacobian.
  */
-template <class E, size_t r = 1, size_t rC = 1, class R = double>
-class DefaultGlobalBasis : public GlobalBasisInterface<E, r, rC, R>
+template <class GV, size_t r = 1, size_t rC = 1, class R = double>
+class DefaultGlobalBasis : public GlobalBasisInterface<GV, r, rC, R>
 {
-  using ThisType = DefaultGlobalBasis<E, r, rC, R>;
-  using BaseType = GlobalBasisInterface<E, r, rC, R>;
+  using ThisType = DefaultGlobalBasis<GV, r, rC, R>;
+  using BaseType = GlobalBasisInterface<GV, r, rC, R>;
 
 public:
   using typename BaseType::E;
   using typename BaseType::D;
   using BaseType::d;
+  using typename BaseType::GridViewType;
   using typename BaseType::ElementType;
   using typename BaseType::ShapeFunctionsType;
   using typename BaseType::LocalizedBasisType;
@@ -46,9 +47,16 @@ public:
   ThisType& operator=(const ThisType&) = delete;
   ThisType& operator=(ThisType&&) = delete;
 
-  DefaultGlobalBasis(const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements)
-    : finite_elements_(finite_elements)
+  DefaultGlobalBasis(const GridViewType& grd_vw,
+                     const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements)
+    : grid_view_(grd_vw)
+    , finite_elements_(finite_elements)
   {
+  }
+
+  const GridViewType& grid_view() const
+  {
+    return grid_view_;
   }
 
   const ShapeFunctionsType& shape_functions(const GeometryType& geometry_type) const override final
@@ -151,6 +159,7 @@ private:
     const ShapeFunctionsType& shape_functions_;
   }; // class LocalizedDefaultGlobalBasis
 
+  const GridViewType& grid_view_;
   const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
 }; // class DefaultGlobalBasis
 

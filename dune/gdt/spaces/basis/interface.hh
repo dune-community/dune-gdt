@@ -22,13 +22,14 @@ namespace Dune {
 namespace GDT {
 
 
-template <class Element, size_t range_dim = 1, size_t range_dim_columns = 1, class RangeField = double>
+template <class GV, size_t range_dim = 1, size_t range_dim_columns = 1, class RangeField = double>
 class GlobalBasisInterface
 {
-  static_assert(XT::Grid::is_entity<Element>::value, "");
+  static_assert(XT::Grid::is_view<GV>::value, "");
 
 public:
-  using E = Element;
+  using GridViewType = GV;
+  using E = XT::Grid::extract_entity_t<GridViewType>;
   using D = typename E::Geometry::ctype;
   static const constexpr size_t d = E::dimension;
   using R = RangeField;
@@ -40,6 +41,8 @@ public:
   using LocalizedBasisType = XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>;
 
   virtual ~GlobalBasisInterface() = default;
+
+  virtual const GridViewType& grid_view() const = 0;
 
   virtual const ShapeFunctionsType& shape_functions(const GeometryType& geometry_type) const = 0;
 

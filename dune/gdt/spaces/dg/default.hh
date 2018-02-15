@@ -113,7 +113,7 @@ public:
 
 private:
   using MapperImplementation = DiscontinuousMapper<GridLayerType, FiniteElementType>;
-  using GlobalBasisImplementation = DefaultGlobalBasis<EntityType, 1, 1, R>;
+  using GlobalBasisImplementation = DefaultGlobalBasis<GridLayerType, 1, 1, R>;
 
 public:
   DiscontinuousLagrangeSpace(GridLayerType grd_lr)
@@ -130,7 +130,7 @@ public:
           std::make_pair(geometry_type, make_lagrange_local_finite_element<D, d, R>(geometry_type, p)));
     // create mapper and basis
     mapper_ = std::make_shared<MapperImplementation>(grid_layer_, finite_elements_);
-    basis_ = std::make_shared<GlobalBasisImplementation>(finite_elements_);
+    basis_ = std::make_shared<GlobalBasisImplementation>(grid_layer_, finite_elements_);
   }
 
   DiscontinuousLagrangeSpace(const ThisType&) = default;

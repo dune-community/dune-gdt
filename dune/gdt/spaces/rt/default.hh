@@ -193,7 +193,7 @@ public:
     }
     // create mapper and basis
     mapper_ = std::make_shared<MapperImplementation>(grid_layer_, finite_elements_);
-    basis_ = std::make_shared<GlobalBasisImplementation>(finite_elements_, entity_indices, switches);
+    basis_ = std::make_shared<GlobalBasisImplementation>(grid_layer_, finite_elements_, entity_indices, switches);
   } // RaviartThomasSpace(...)
 
   RaviartThomasSpace(const ThisType&) = default;

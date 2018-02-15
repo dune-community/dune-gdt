@@ -29,18 +29,18 @@ namespace GDT {
  * - left-multiplication by the geometry transformations jacobian inverse transpose in jacobian
  */
 template <class GL, class R = double>
-class RaviartThomasGlobalBasis : public GlobalBasisInterface<XT::Grid::extract_entity_t<GL>, GL::dimension, 1, R>
+class RaviartThomasGlobalBasis : public GlobalBasisInterface<GL, GL::dimension, 1, R>
 {
-  static_assert(XT::Grid::is_layer<GL>::value, "");
   using ThisType = RaviartThomasGlobalBasis<GL, R>;
-  using BaseType = GlobalBasisInterface<XT::Grid::extract_entity_t<GL>, GL::dimension, 1, R>;
+  using BaseType = GlobalBasisInterface<GL, GL::dimension, 1, R>;
 
 public:
-  using E = XT::Grid::extract_entity_t<GL>;
+  using typename BaseType::E;
   using typename BaseType::D;
   using BaseType::d;
   using BaseType::r;
   using BaseType::rC;
+  using typename BaseType::GridViewType;
   using typename BaseType::ElementType;
   using typename BaseType::ShapeFunctionsType;
   using typename BaseType::LocalizedBasisType;
@@ -53,13 +53,20 @@ public:
   ThisType& operator=(ThisType&&) = delete;
 
   RaviartThomasGlobalBasis(
+      const GridViewType& grd_vw,
       const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements,
       const std::shared_ptr<FiniteVolumeMapper<GL>> entity_indices,
       const std::shared_ptr<std::vector<std::vector<R>>> switches)
-    : finite_elements_(finite_elements)
+    : grid_view_(grd_vw)
+    , finite_elements_(finite_elements)
     , entity_indices_(entity_indices)
     , switches_(switches)
   {
+  }
+
+  const GridViewType& grid_view() const
+  {
+    return grid_view_;
   }
 
   const ShapeFunctionsType& shape_functions(const GeometryType& geometry_type) const override final
@@ -178,6 +185,7 @@ private:
     const std::vector<R>& switches_;
   }; // class LocalizedRaviartThomasGlobalBasis
 
+  const GridViewType& grid_view_;
   const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
   const std::shared_ptr<FiniteVolumeMapper<GL>> entity_indices_;
   const std::shared_ptr<std::vector<std::vector<R>>> switches_;

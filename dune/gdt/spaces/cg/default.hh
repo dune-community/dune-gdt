@@ -106,7 +106,7 @@ public:
 
 private:
   using MapperImplementation = ContinuousMapper<GridLayerType, FiniteElementType>;
-  using GlobalBasisImplementation = DefaultGlobalBasis<EntityType, 1, 1, R>;
+  using GlobalBasisImplementation = DefaultGlobalBasis<GridLayerType, 1, 1, R>;
 
 public:
   ContinuousLagrangeSpace(GridLayerType grd_lr)
@@ -128,7 +128,7 @@ public:
                  "supported, and more than one element type in 3d leads to non-conforming intersections!");
     // create mapper and basis
     mapper_ = std::make_shared<MapperImplementation>(grid_layer_, finite_elements_);
-    basis_ = std::make_shared<GlobalBasisImplementation>(finite_elements_);
+    basis_ = std::make_shared<GlobalBasisImplementation>(grid_layer_, finite_elements_);
   } // ContinuousLagrangeSpace(...)
 
   ContinuousLagrangeSpace(const ThisType&) = default;
