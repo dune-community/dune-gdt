@@ -23,7 +23,7 @@
 #include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
-#include <dune/gdt/spaces/cg/default.hh>
+#include <dune/gdt/spaces/h1/continuous-lagrange.hh>
 
 
 template <class GridViewType, int p>
