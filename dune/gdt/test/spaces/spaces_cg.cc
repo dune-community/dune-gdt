@@ -23,17 +23,17 @@
 #include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
-#include <dune/gdt/spaces/cg.hh>
+#include <dune/gdt/spaces/cg/default.hh>
 
 
-template <class GridLayerType, int p>
+template <class GridViewType, int p>
 struct ContinuousLagrangeSpace : public ::testing::Test
 {
-  using SpaceType = Dune::GDT::ContinuousLagrangeSpace<GridLayerType, p>;
-  using D = typename SpaceType::DomainFieldType;
-  static const constexpr size_t d = SpaceType::dimDomain;
+  using SpaceType = Dune::GDT::ContinuousLagrangeSpace<GridViewType, p>;
+  using D = typename SpaceType::D;
+  static const constexpr size_t d = SpaceType::d;
 
-  virtual std::shared_ptr<GridLayerType> grid_layer() = 0;
+  virtual std::shared_ptr<GridViewType> grid_view() = 0;
 
   std::shared_ptr<SpaceType> space;
 
@@ -41,8 +41,8 @@ struct ContinuousLagrangeSpace : public ::testing::Test
 
   void SetUp() override final
   {
-    ASSERT_NE(grid_layer(), nullptr);
-    space = std::shared_ptr<SpaceType>(new SpaceType(*grid_layer()));
+    ASSERT_NE(grid_view(), nullptr);
+    space = std::shared_ptr<SpaceType>(new SpaceType(*grid_view()));
   }
 
   void TearDown() override final
@@ -50,52 +50,66 @@ struct ContinuousLagrangeSpace : public ::testing::Test
     space.reset();
   }
 
+  void gives_correct_identification()
+  {
+    ASSERT_NE(grid_view(), nullptr);
+    ASSERT_NE(space, nullptr);
+    EXPECT_EQ(Dune::GDT::SpaceType::continuous_lagrange, space->type());
+    EXPECT_EQ(p, space->min_polorder());
+    EXPECT_EQ(p, space->max_polorder());
+    EXPECT_TRUE(space->continuous(0));
+    for (int diff_order : {1, 2, 3, 4, 5})
+      EXPECT_FALSE(space->continuous(diff_order));
+    EXPECT_TRUE(space->continuous_normal_components());
+    EXPECT_TRUE(space->is_lagrangian());
+  }
+
   void basis_exists_on_each_element_with_correct_size()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_layer()))
+    for (auto&& element : elements(*grid_view()))
       EXPECT_EQ(Dune::numLagrangePoints(element.geometry().type().id(), d, p),
                 space->basis().localize(element)->size());
   }
 
   void basis_exists_on_each_element_with_correct_order()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_layer()))
+    for (auto&& element : elements(*grid_view()))
       EXPECT_EQ(p, space->basis().localize(element)->order());
   }
 
   void mapper_reports_correct_num_DoFs_on_each_element()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_layer()))
+    for (auto&& element : elements(*grid_view()))
       EXPECT_EQ(Dune::numLagrangePoints(element.geometry().type().id(), d, p), space->mapper().local_size(element));
   }
 
   void mapper_reports_correct_max_num_DoFs()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
     size_t max_num_dofs = 0;
-    for (auto&& element : elements(*grid_layer()))
+    for (auto&& element : elements(*grid_view()))
       max_num_dofs = std::max(max_num_dofs, space->mapper().local_size(element));
     EXPECT_LE(max_num_dofs, space->mapper().max_local_size());
   }
 
   void mapper_maps_correctly()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
     // collect all global ids that are associated with a global lagrange point
     std::map<Dune::FieldVector<D, d>, std::set<size_t>, Dune::XT::Common::FieldVectorLess>
         global_lagrange_point_to_global_indices_map;
-    for (auto&& element : elements(*grid_layer())) {
+    for (auto&& element : elements(*grid_view())) {
       const auto global_indices = space->mapper().global_indices(element);
       EXPECT_LE(space->mapper().local_size(element), global_indices.size());
-      const auto lagrange_points = space->lagrange_points(element);
+      const auto lagrange_points = space->finite_element(element.geometry().type()).lagrange_points();
       EXPECT_EQ(lagrange_points.size(), space->mapper().local_size(element));
       for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
         const auto global_lagrange_point = element.geometry().global(lagrange_points[ii]);
@@ -123,19 +137,20 @@ struct ContinuousLagrangeSpace : public ::testing::Test
 
   void lagrange_points_exist_on_each_element_with_correct_size()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_layer()))
-      EXPECT_EQ(Dune::numLagrangePoints(element.geometry().type().id(), d, p), space->lagrange_points(element).size());
+    for (auto&& element : elements(*grid_view()))
+      EXPECT_EQ(Dune::numLagrangePoints(element.geometry().type().id(), d, p),
+                space->finite_element(element.geometry().type()).lagrange_points().size());
   }
 
   void basis_is_lagrange_basis()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_layer())) {
+    for (auto&& element : elements(*grid_view())) {
       const auto basis = space->basis().localize(element);
-      const auto lagrange_points = space->lagrange_points(element);
+      const auto lagrange_points = space->finite_element(element.geometry().type()).lagrange_points();
       EXPECT_EQ(lagrange_points.size(), basis->size());
       for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
         const auto values = basis->evaluate(lagrange_points[ii]);
@@ -150,9 +165,9 @@ struct ContinuousLagrangeSpace : public ::testing::Test
 
   void basis_jacobians_seem_to_be_correct()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_layer())) {
+    for (auto&& element : elements(*grid_view())) {
       const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
       const auto basis = space->basis().localize(element);
       const double h = 1e-6;
@@ -222,7 +237,7 @@ struct ContinuousLagrangeSpaceOnSimplicialLeafView
 
   ~ContinuousLagrangeSpaceOnSimplicialLeafView() = default;
 
-  std::shared_ptr<LeafGridViewType> grid_layer() override final
+  std::shared_ptr<LeafGridViewType> grid_view() override final
   {
     return leaf_view;
   }
@@ -255,6 +270,10 @@ using SimplicialGrids = ::testing::Types<ONED_1D,
 template <class G>
 using Order1SimplicialContinuousLagrangeSpace = ContinuousLagrangeSpaceOnSimplicialLeafView<G, 1>;
 TYPED_TEST_CASE(Order1SimplicialContinuousLagrangeSpace, SimplicialGrids);
+TYPED_TEST(Order1SimplicialContinuousLagrangeSpace, gives_correct_identification)
+{
+  this->gives_correct_identification();
+}
 TYPED_TEST(Order1SimplicialContinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
@@ -292,6 +311,10 @@ TYPED_TEST(Order1SimplicialContinuousLagrangeSpace, basis_jacobians_seem_to_be_c
 template <class G>
 using Order2SimplicialContinuousLagrangeSpace = ContinuousLagrangeSpaceOnSimplicialLeafView<G, 2>;
 TYPED_TEST_CASE(Order2SimplicialContinuousLagrangeSpace, SimplicialGrids);
+TYPED_TEST(Order2SimplicialContinuousLagrangeSpace, gives_correct_identification)
+{
+  this->gives_correct_identification();
+}
 TYPED_TEST(Order2SimplicialContinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
@@ -351,7 +374,7 @@ struct ContinuousLagrangeSpaceOnCubicLeafView
 
   ~ContinuousLagrangeSpaceOnCubicLeafView() = default;
 
-  std::shared_ptr<LeafGridViewType> grid_layer() override final
+  std::shared_ptr<LeafGridViewType> grid_view() override final
   {
     return leaf_view;
   }
@@ -382,6 +405,10 @@ using CubicGrids = ::testing::Types<YASP_2D_EQUIDISTANT_OFFSET
 template <class G>
 using Order1CubicContinuousLagrangeSpace = ContinuousLagrangeSpaceOnCubicLeafView<G, 1>;
 TYPED_TEST_CASE(Order1CubicContinuousLagrangeSpace, CubicGrids);
+TYPED_TEST(Order1CubicContinuousLagrangeSpace, gives_correct_identification)
+{
+  this->gives_correct_identification();
+}
 TYPED_TEST(Order1CubicContinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
@@ -419,6 +446,10 @@ TYPED_TEST(Order1CubicContinuousLagrangeSpace, basis_jacobians_seem_to_be_correc
 template <class G>
 using Order2CubicContinuousLagrangeSpace = ContinuousLagrangeSpaceOnCubicLeafView<G, 2>;
 TYPED_TEST_CASE(Order2CubicContinuousLagrangeSpace, CubicGrids);
+TYPED_TEST(Order2CubicContinuousLagrangeSpace, gives_correct_identification)
+{
+  this->gives_correct_identification();
+}
 TYPED_TEST(Order2CubicContinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
@@ -492,7 +523,7 @@ struct ContinuousLagrangeSpaceOnPrismLeafView
 
   ~ContinuousLagrangeSpaceOnPrismLeafView() = default;
 
-  std::shared_ptr<LeafGridViewType> grid_layer() override final
+  std::shared_ptr<LeafGridViewType> grid_view() override final
   {
     return leaf_view;
   }
@@ -509,6 +540,10 @@ using PrismGrids = ::testing::Types<
 template <class G>
 using Order1PrismContinuousLagrangeSpace = ContinuousLagrangeSpaceOnPrismLeafView<G, 1>;
 TYPED_TEST_CASE(Order1PrismContinuousLagrangeSpace, PrismGrids);
+TYPED_TEST(Order1PrismContinuousLagrangeSpace, gives_correct_identification)
+{
+  this->gives_correct_identification();
+}
 TYPED_TEST(Order1PrismContinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
@@ -546,6 +581,10 @@ TYPED_TEST(Order1PrismContinuousLagrangeSpace, basis_jacobians_seem_to_be_correc
 template <class G>
 using Order2PrismContinuousLagrangeSpace = ContinuousLagrangeSpaceOnPrismLeafView<G, 2>;
 TYPED_TEST_CASE(Order2PrismContinuousLagrangeSpace, PrismGrids);
+TYPED_TEST(Order2PrismContinuousLagrangeSpace, gives_correct_identification)
+{
+  this->gives_correct_identification();
+}
 TYPED_TEST(Order2PrismContinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
@@ -661,7 +700,7 @@ struct ContinuousLagrangeSpaceOnMixedLeafView
 
   ~ContinuousLagrangeSpaceOnMixedLeafView() = default;
 
-  std::shared_ptr<LeafGridViewType> grid_layer() override final
+  std::shared_ptr<LeafGridViewType> grid_view() override final
   {
     return leaf_view;
   }
@@ -679,6 +718,10 @@ using MixedGrids = ::testing::Types<
 template <class G>
 using Order1MixedContinuousLagrangeSpace = ContinuousLagrangeSpaceOnMixedLeafView<G, 1>;
 TYPED_TEST_CASE(Order1MixedContinuousLagrangeSpace, MixedGrids);
+TYPED_TEST(Order1MixedContinuousLagrangeSpace, gives_correct_identification)
+{
+  this->gives_correct_identification();
+}
 TYPED_TEST(Order1MixedContinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
@@ -716,6 +759,10 @@ TYPED_TEST(Order1MixedContinuousLagrangeSpace, basis_jacobians_seem_to_be_correc
 template <class G>
 using Order2MixedContinuousLagrangeSpace = ContinuousLagrangeSpaceOnMixedLeafView<G, 2>;
 TYPED_TEST_CASE(Order2MixedContinuousLagrangeSpace, MixedGrids);
+TYPED_TEST(Order2MixedContinuousLagrangeSpace, gives_correct_identification)
+{
+  this->gives_correct_identification();
+}
 TYPED_TEST(Order2MixedContinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();

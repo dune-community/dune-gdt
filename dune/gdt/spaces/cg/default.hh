@@ -15,14 +15,9 @@
 
 #include <dune/common/typetraits.hh>
 
-#include <dune/geometry/referenceelements.hh>
 #include <dune/geometry/type.hh>
 
-#include <dune/grid/common/capabilities.hh>
-#include <dune/grid/common/rangegenerators.hh>
-
 #include <dune/xt/common/exceptions.hh>
-#include <dune/xt/common/numeric_cast.hh>
 
 #include <dune/gdt/local/finite-elements/lagrange.hh>
 #include <dune/gdt/spaces/basis/default.hh>
@@ -31,40 +26,6 @@
 
 namespace Dune {
 namespace GDT {
-
-
-template <class GL, int p, class R = double>
-class ContinuousLagrangeSpace;
-
-
-namespace internal {
-
-
-template <class GL, int p, class R>
-class ContinuousLagrangeSpaceTraits
-{
-  static_assert(XT::Grid::is_layer<GL>::value, "");
-  static_assert(1 <= p && p <= 2, "Not implemented yet!");
-  using G = XT::Grid::extract_grid_t<GL>;
-
-public:
-  using derived_type = ContinuousLagrangeSpace<GL, p, R>;
-  static const constexpr int polOrder = p;
-  static const constexpr size_t dimDomain = GL::dimension;
-  static const constexpr size_t dimRange = 1;
-  static const constexpr size_t dimRangeCols = 1;
-  static const constexpr bool continuous = false;
-  using GridLayerType = GL;
-  using RangeFieldType = R;
-  using BackendType = double;
-  static const constexpr XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
-  static const constexpr Backends backend_type{Backends::gdt};
-  typedef DofCommunicationChooser<GridLayerType> DofCommunicationChooserType;
-  typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
-}; // class ContinuousLagrangeSpaceTraits
-
-
-} // namespace internal
 
 
 /**
@@ -81,44 +42,33 @@ public:
  *
  * \sa make_lagrange_local_finite_element
  */
-template <class GL, int p, class R>
-class ContinuousLagrangeSpace
-    : public SpaceInterface<internal::ContinuousLagrangeSpaceTraits<GL, p, R>, GL::dimension, 1>
+template <class GV, int p, class R = double>
+class ContinuousLagrangeSpace : public SpaceInterface<GV, 1, 1, R>
 {
-public:
-  using Traits = internal::ContinuousLagrangeSpaceTraits<GL, p, R>;
-
-private:
-  using BaseType = SpaceInterface<Traits, GL::dimension, 1>;
-  using ThisType = ContinuousLagrangeSpace<GL, p, R>;
-  using D = typename GL::ctype;
-  static const constexpr size_t d = BaseType::dimDomain;
-  using DofCommunicationChooserType = typename Traits::DofCommunicationChooserType;
+  using ThisType = ContinuousLagrangeSpace<GV, p, R>;
+  using BaseType = SpaceInterface<GV, 1, 1, R>;
 
 public:
-  using typename BaseType::GridLayerType;
-  using typename BaseType::EntityType;
-  using typename BaseType::MapperType;
+  using typename BaseType::D;
+  using BaseType::d;
+  using typename BaseType::GridViewType;
   using typename BaseType::GlobalBasisType;
+  using typename BaseType::MapperType;
   using typename BaseType::FiniteElementType;
-  using DomainType = FieldVector<D, d>;
-  using DofCommunicatorType = typename Traits::DofCommunicatorType;
 
 private:
-  using MapperImplementation = ContinuousMapper<GridLayerType, FiniteElementType>;
-  using GlobalBasisImplementation = DefaultGlobalBasis<GridLayerType, 1, 1, R>;
+  using MapperImplementation = ContinuousMapper<GridViewType, FiniteElementType>;
+  using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, 1, 1, R>;
 
 public:
-  ContinuousLagrangeSpace(GridLayerType grd_lr)
-    : grid_layer_(grd_lr)
-    , communicator_(DofCommunicationChooserType::create(grid_layer_))
-    , backend_(0)
+  ContinuousLagrangeSpace(GridViewType grd_vw)
+    : grid_view_(grd_vw)
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
     , mapper_(nullptr)
     , basis_(nullptr)
   {
     // create finite elements
-    for (auto&& geometry_type : grid_layer_.indexSet().types(0))
+    for (auto&& geometry_type : grid_view_.indexSet().types(0))
       finite_elements_->insert(
           std::make_pair(geometry_type, make_lagrange_local_finite_element<D, d, R>(geometry_type, p)));
     // check
@@ -126,9 +76,10 @@ public:
       DUNE_THROW(Exceptions::space_error,
                  "when creating a ContinuousLagrangeSpace: non-conforming intersections are not (yet) "
                  "supported, and more than one element type in 3d leads to non-conforming intersections!");
-    // create mapper and basis
-    mapper_ = std::make_shared<MapperImplementation>(grid_layer_, finite_elements_);
-    basis_ = std::make_shared<GlobalBasisImplementation>(grid_layer_, finite_elements_);
+    // create mapper, basis and communicator
+    mapper_ = std::make_shared<MapperImplementation>(grid_view_, finite_elements_);
+    basis_ = std::make_shared<GlobalBasisImplementation>(grid_view_, finite_elements_);
+    this->create_communicator();
   } // ContinuousLagrangeSpace(...)
 
   ContinuousLagrangeSpace(const ThisType&) = default;
@@ -137,39 +88,22 @@ public:
   ThisType& operator=(const ThisType&) = delete;
   ThisType& operator=(ThisType&&) = delete;
 
-  const GridLayerType& grid_layer() const
+  const GridViewType& grid_view() const override final
   {
-    return grid_layer_;
+    return grid_view_;
   }
 
-  const double& backend() const
-  {
-    return backend_;
-  }
-
-  const MapperType& mapper() const
+  const MapperType& mapper() const override final
   {
     return *mapper_;
   }
 
-  const GlobalBasisType& basis() const
+  const GlobalBasisType& basis() const override final
   {
     return *basis_;
   }
 
-  DofCommunicatorType& dof_communicator() const
-  {
-    DofCommunicationChooserType::prepare(*this, *communicator_);
-    return *communicator_;
-  }
-
-  const std::vector<DomainType>& lagrange_points(const EntityType& entity) const
-  {
-    return get_finite_element(entity.geometry().type()).lagrange_points();
-  }
-
-private:
-  const FiniteElementType& get_finite_element(const GeometryType& geometry_type) const
+  const FiniteElementType& finite_element(const GeometryType& geometry_type) const override final
   {
     const auto finite_element_search_result = finite_elements_->find(geometry_type);
     if (finite_element_search_result == finite_elements_->end())
@@ -178,11 +112,40 @@ private:
                      << "\n   entity.geometry().type() = "
                      << geometry_type);
     return *finite_element_search_result->second;
-  } // ... get_finite_element(...)
+  }
 
-  const GridLayerType grid_layer_;
-  mutable std::shared_ptr<DofCommunicatorType> communicator_;
-  const double backend_;
+  SpaceType type() const override final
+  {
+    return SpaceType::continuous_lagrange;
+  }
+
+  int min_polorder() const override final
+  {
+    return p;
+  }
+
+  int max_polorder() const override final
+  {
+    return p;
+  }
+
+  bool continuous(const int diff_order) const override final
+  {
+    return diff_order == 0;
+  }
+
+  bool continuous_normal_components() const override final
+  {
+    return true;
+  }
+
+  bool is_lagrangian() const override final
+  {
+    return true;
+  }
+
+private:
+  const GridViewType grid_view_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
   std::shared_ptr<MapperImplementation> mapper_;
   std::shared_ptr<GlobalBasisImplementation> basis_;
