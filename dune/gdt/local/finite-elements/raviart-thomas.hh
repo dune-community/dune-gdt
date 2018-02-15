@@ -72,12 +72,12 @@ class RaviartThomasLocalFiniteElementFactory
           return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d>>(new FE());
         } else
           DUNE_THROW(
-              finite_element_error,
+              Exceptions::finite_element_error,
               "when creating a local Raviart-Thomas finite element: there is none available on cubes for polorder "
                   << polorder
                   << " (if you think there is, update this class)!");
       } else
-        DUNE_THROW(finite_element_error,
+        DUNE_THROW(Exceptions::finite_element_error,
                    "when creating a local Raviart-Thomas finite element: there is none available for the "
                    "following geometry type: "
                        << geometry_type
@@ -102,12 +102,12 @@ class RaviartThomasLocalFiniteElementFactory
           return std::make_unique<LocalFiniteElementWrapper<FE, D, d, R, d>>(new FE());
         } else
           DUNE_THROW(
-              finite_element_error,
+              Exceptions::finite_element_error,
               "when creating a local Raviart-Thomas finite element: there is none available on cubes for polorder "
                   << polorder
                   << " (if you think there is, update this class)!");
       } else
-        DUNE_THROW(finite_element_error,
+        DUNE_THROW(Exceptions::finite_element_error,
                    "when creating a local Raviart-Thomas finite element: there is none available for the "
                    "following geometry type: "
                        << geometry_type

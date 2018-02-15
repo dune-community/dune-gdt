@@ -123,7 +123,7 @@ public:
           std::make_pair(geometry_type, make_lagrange_local_finite_element<D, d, R>(geometry_type, p)));
     // check
     if (d == 3 && finite_elements_->size() != 1)
-      DUNE_THROW(space_error,
+      DUNE_THROW(Exceptions::space_error,
                  "when creating a ContinuousLagrangeSpace: non-conforming intersections are not (yet) "
                  "supported, and more than one element type in 3d leads to non-conforming intersections!");
     // create mapper and basis

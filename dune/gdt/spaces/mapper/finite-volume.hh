@@ -105,7 +105,7 @@ public:
   size_t global_index(const ElementType& element, const size_t local_index) const override final
   {
     if (local_index >= r * rC)
-      DUNE_THROW(mapper_error, "local_size(element) = " << r * rC << "\n   local_index = " << local_index);
+      DUNE_THROW(Exceptions::mapper_error, "local_size(element) = " << r * rC << "\n   local_index = " << local_index);
     return mapper_->index(element) * r * rC + local_index;
   }
 

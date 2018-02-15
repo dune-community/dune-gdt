@@ -133,7 +133,7 @@ make_lagrange_local_finite_element(const GeometryType& geometry_type, const int&
   // checks
   if (d == 1) {
     if (polorder > 18)
-      DUNE_THROW(finite_element_error,
+      DUNE_THROW(Exceptions::finite_element_error,
                  "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 1d "
                  "for polorder "
                      << polorder
@@ -142,7 +142,7 @@ make_lagrange_local_finite_element(const GeometryType& geometry_type, const int&
     if (geometry_type == GeometryType(GeometryType::simplex, 2)) {
       if (polorder > 15)
         DUNE_THROW(
-            finite_element_error,
+            Exceptions::finite_element_error,
             "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 2d "
             "on simplices for polorder "
                 << polorder
@@ -150,13 +150,13 @@ make_lagrange_local_finite_element(const GeometryType& geometry_type, const int&
     } else if (geometry_type == GeometryType(GeometryType::cube, 2)) {
       if (polorder > 10)
         DUNE_THROW(
-            finite_element_error,
+            Exceptions::finite_element_error,
             "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 2d "
             "on cubes for polorder "
                 << polorder
                 << " (if you think it is working, update this check)!");
     } else
-      DUNE_THROW(finite_element_error,
+      DUNE_THROW(Exceptions::finite_element_error,
                  "when creating a local Lagrange finite element: this is untested!\n"
                      << "Please update this check if you believe that a suitable finite element is available for\n"
                      << "- dimension: "
@@ -171,7 +171,7 @@ make_lagrange_local_finite_element(const GeometryType& geometry_type, const int&
     if (geometry_type == GeometryType(GeometryType::simplex, 3)) {
       if (polorder > 14)
         DUNE_THROW(
-            finite_element_error,
+            Exceptions::finite_element_error,
             "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
             "on simplices for polorder "
                 << polorder
@@ -179,7 +179,7 @@ make_lagrange_local_finite_element(const GeometryType& geometry_type, const int&
     } else if (geometry_type == GeometryType(GeometryType::cube, 3)) {
       if (polorder > 7)
         DUNE_THROW(
-            finite_element_error,
+            Exceptions::finite_element_error,
             "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
             "on cubes for polorder "
                 << polorder
@@ -187,19 +187,19 @@ make_lagrange_local_finite_element(const GeometryType& geometry_type, const int&
     } else if (geometry_type == GeometryType(GeometryType::prism, 3)) {
       if (polorder > 9)
         DUNE_THROW(
-            finite_element_error,
+            Exceptions::finite_element_error,
             "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
             "on prisms for polorder "
                 << polorder
                 << " (if you think it is working, update this check)!");
     } else if (geometry_type == GeometryType(GeometryType::pyramid, 3)) {
-      DUNE_THROW(finite_element_error,
+      DUNE_THROW(Exceptions::finite_element_error,
                  "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
                  "on pyramids for polorder "
                      << polorder
                      << " (if you think it is working, update this check)!");
     } else
-      DUNE_THROW(finite_element_error,
+      DUNE_THROW(Exceptions::finite_element_error,
                  "when creating a local Lagrange finite element: this is untested!\n"
                      << "Please update this check if you believe that a suitable finite element is available for\n"
                      << "- dimension: "
@@ -211,7 +211,7 @@ make_lagrange_local_finite_element(const GeometryType& geometry_type, const int&
                      << "- polorder: "
                      << polorder);
   } else
-    DUNE_THROW(finite_element_error,
+    DUNE_THROW(Exceptions::finite_element_error,
                "when creating a local Lagrange finite element: this is untested!\n"
                    << "Please update this check if you believe that a suitable finite element is available for\n"
                    << "- dimension: "

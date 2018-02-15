@@ -107,7 +107,7 @@ public:
       XT::LA::make_solver(lhs_operator_.matrix(), this->range().space().dof_communicator())
           .apply(rhs_functional_.vector(), range_.vector());
     } catch (XT::LA::Exceptions::linear_solver_failed& ee) {
-      DUNE_THROW(projection_error,
+      DUNE_THROW(Exceptions::projection_error,
                  "L2 projection failed because a global matrix could not be inverted!\n\n"
                      << "This was the original error: "
                      << ee.what());

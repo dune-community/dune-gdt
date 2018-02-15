@@ -70,14 +70,15 @@ public:
     , mapper_(nullptr)
   {
     if (d == 3 && finite_elements_->size() != 1) // Probably due to non-conforming intersections.
-      DUNE_THROW(mapper_error, "The mapper does not seem to work with multiple finite elements in 3d!");
+      DUNE_THROW(Exceptions::mapper_error, "The mapper does not seem to work with multiple finite elements in 3d!");
     std::set<GeometryType> all_DoF_attached_geometry_types;
     // collect all entities (for all codims) which are used to attach DoFs to
     for (auto&& geometry_type : grid_view_.indexSet().types(0)) {
       // get the finite element for this geometry type
       const auto finite_element_search_result = finite_elements_->find(geometry_type);
       if (finite_element_search_result == finite_elements_->end())
-        DUNE_THROW(mapper_error, "Missing finite element for the required geometry type " << geometry_type << "!");
+        DUNE_THROW(Exceptions::mapper_error,
+                   "Missing finite element for the required geometry type " << geometry_type << "!");
       const auto& finite_element = *finite_element_search_result->second;
       max_local_size_ = std::max(max_local_size_, finite_element.size());
       // loop over all keys of this finite element
@@ -86,7 +87,8 @@ public:
       for (size_t ii = 0; ii < coeffs.size(); ++ii) {
         const auto& local_key = coeffs.local_key(ii);
         if (local_key.index() != 0) // Would require twisting of DoFs and possibly more knowledge from the FE
-          DUNE_THROW(mapper_error, "This case is not covered yet, when we have more than one DoF per (sub)entity!");
+          DUNE_THROW(Exceptions::mapper_error,
+                     "This case is not covered yet, when we have more than one DoF per (sub)entity!");
         // find the (sub)entity for this key
         const auto sub_entity = local_key.subEntity();
         const auto codim = local_key.codim();
@@ -96,7 +98,8 @@ public:
       }
     }
     if (all_DoF_attached_geometry_types.size() == 0)
-      DUNE_THROW(mapper_error, "This must not happen, the finite elements report no DoFs attached to (sub)entities!");
+      DUNE_THROW(Exceptions::mapper_error,
+                 "This must not happen, the finite elements report no DoFs attached to (sub)entities!");
     mapper_ = std::make_shared<Implementation>(
         grid_view_, std::move(GeometryTypeLayout<d>(std::move(all_DoF_attached_geometry_types))));
   } // ... ContinuousMapper(...)
@@ -143,7 +146,8 @@ public:
   {
     const auto& coeffs = local_coefficients(element.geometry().type());
     if (local_index >= coeffs.size())
-      DUNE_THROW(mapper_error, "local_size(element) = " << coeffs.size() << "\n   local_index = " << local_index);
+      DUNE_THROW(Exceptions::mapper_error,
+                 "local_size(element) = " << coeffs.size() << "\n   local_index = " << local_index);
     const auto& local_key = coeffs.local_key(local_index);
     // No need to assert local_key.index() == 0, has been checked in the ctor!
     return mapper_->subIndex(element, local_key.subEntity(), local_key.codim());

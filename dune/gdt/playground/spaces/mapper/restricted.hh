@@ -185,13 +185,13 @@ private:
     if (grid_layer_.indexSet().contains(entity))
       return;
     if (unrestricted_space_.grid_layer().indexSet().contains(entity))
-      DUNE_THROW(restricted_space_error,
+      DUNE_THROW(Exceptions::restricted_space_error,
                  "Entity not contained in restriction grid layer, but contained in the unrestricted grid layer "
                      << "with index "
                      << unrestricted_space_.grid_layer().indexSet().index(entity)
                      << "!");
     else
-      DUNE_THROW(restricted_space_error,
+      DUNE_THROW(Exceptions::restricted_space_error,
                  "Entity neither contained in restriction grid layer nor in the unrestricted grid layer!");
   } // ... check_entity(...)
 

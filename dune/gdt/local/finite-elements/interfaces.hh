@@ -120,7 +120,7 @@ public:
                  "the implementor of this local finite element has to provider lagrange_points(), if "
                  "is_lagrangian() is true!");
     else
-      DUNE_THROW(finite_element_error, "do not call lagrange_points() if is_lagrangian() is false!");
+      DUNE_THROW(Exceptions::finite_element_error, "do not call lagrange_points() if is_lagrangian() is false!");
   }
 }; // class LocalFiniteElementInterface
 

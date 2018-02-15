@@ -132,7 +132,7 @@ public:
     }
     // check: the mapper does not work for non-conforming intersections
     if (d == 3 && finite_elements_->size() != 1)
-      DUNE_THROW(space_error,
+      DUNE_THROW(Exceptions::space_error,
                  "when creating a RaviartThomasSpace: non-conforming intersections are not (yet) "
                  "supported, and more than one element type in 3d leads to non-conforming intersections!");
     // compute local-key-to-intersection relationship

@@ -84,7 +84,7 @@ public:
     try {
       BaseOperatorType::apply();
     } catch (XT::Common::Exceptions::reinterpretation_error& ee) {
-      DUNE_THROW(prolongation_error,
+      DUNE_THROW(Exceptions::prolongation_error,
                  "This prolongation (using a lagrange projection) failed, because the source could not be reinterpreted"
                      << " on the given grid layer!\n"
                      << "This was the original error:\n\n"

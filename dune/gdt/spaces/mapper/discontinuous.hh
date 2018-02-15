@@ -102,7 +102,8 @@ public:
   size_t global_index(const ElementType& element, const size_t local_index) const override final
   {
     if (local_index >= local_size(element))
-      DUNE_THROW(mapper_error, "local_size(element) = " << local_size(element) << "\n   local_index = " << local_index);
+      DUNE_THROW(Exceptions::mapper_error,
+                 "local_size(element) = " << local_size(element) << "\n   local_index = " << local_index);
     return (*offset_)[mapper_->index(element)] + local_index;
   }
 

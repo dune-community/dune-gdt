@@ -107,7 +107,7 @@ private:
     {
       if (switches_.size() != shape_functions_.size())
         DUNE_THROW(
-            basis_error,
+            Exceptions::basis_error,
             "shape_functions_.size() = " << shape_functions_.size() << "\n   switches.size() = " << switches_.size());
     }
 

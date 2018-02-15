@@ -212,7 +212,7 @@ public:
   const LocalKey& local_key(const size_t ii) const override final
   {
     if (ii >= size())
-      DUNE_THROW(finite_element_error, "ii = " << ii << "\n   size() = " << size());
+      DUNE_THROW(Exceptions::finite_element_error, "ii = " << ii << "\n   size() = " << size());
     return imp_.access().localKey(ii);
   }
 
@@ -312,7 +312,7 @@ public:
   const std::vector<DomainType>& lagrange_points() const override final
   {
     if (!is_lagrangian())
-      DUNE_THROW(finite_element_error, "do not call lagrange_points() if is_lagrangian() is false!");
+      DUNE_THROW(Exceptions::finite_element_error, "do not call lagrange_points() if is_lagrangian() is false!");
     return lagrange_points_;
   }
 

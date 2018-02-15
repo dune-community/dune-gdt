@@ -15,6 +15,7 @@
 
 namespace Dune {
 namespace GDT {
+namespace Exceptions {
 
 
 class operator_error : public Dune::Exception
@@ -50,6 +51,7 @@ class basis_error : public space_error
 };
 
 
+} // namespace Exceptions
 } // namespace GDT
 } // namespace Dune
 
