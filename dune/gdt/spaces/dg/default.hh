@@ -27,7 +27,7 @@
 #include <dune/gdt/local/finite-elements/lagrange.hh>
 #include <dune/gdt/spaces/basis/default.hh>
 #include <dune/gdt/spaces/mapper/discontinuous.hh>
-#include <dune/gdt/spaces/dg/interface.hh>
+#include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {
 namespace GDT {
@@ -90,13 +90,13 @@ public:
  */
 template <class GL, int p, class R>
 class DiscontinuousLagrangeSpace
-    : public DgSpaceInterface<internal::DiscontinuousLagrangeSpaceTraits<GL, p, R>, GL::dimension, 1>
+    : public SpaceInterface<internal::DiscontinuousLagrangeSpaceTraits<GL, p, R>, GL::dimension, 1>
 {
 public:
   using Traits = internal::DiscontinuousLagrangeSpaceTraits<GL, p, R>;
 
 private:
-  using BaseType = DgSpaceInterface<Traits, GL::dimension, 1>;
+  using BaseType = SpaceInterface<Traits, GL::dimension, 1>;
   using ThisType = DiscontinuousLagrangeSpace<GL, p, R>;
   using D = typename GL::ctype;
   static const constexpr size_t d = BaseType::dimDomain;
