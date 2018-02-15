@@ -22,13 +22,13 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridViewImp>
+template <class GV>
 class MapperInterface
 {
-  static_assert(XT::Grid::is_view<GridViewImp>::value, "");
+  static_assert(XT::Grid::is_view<GV>::value, "");
 
 public:
-  using GridViewType = GridViewImp;
+  using GridViewType = GV;
   using ElementType = XT::Grid::extract_entity_t<GridViewType>;
 
   virtual ~MapperInterface() = default;
