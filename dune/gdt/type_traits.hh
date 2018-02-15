@@ -20,17 +20,22 @@ namespace Dune {
 namespace GDT {
 
 
+enum class SpaceType
+{
+  continuous_lagrange,
+  discontinuous_lagrange,
+  finite_volume,
+  raviart_thomas
+};
+
+
 // forwards
 // from #include <dune/gdt/local/finite-elements/interfaces.hh>
 template <class D, size_t d, class R, size_t r, size_t rC>
 class LocalFiniteElementInterface;
 
 // from #include <dune/gdt/spaces/interface.hh>
-enum class Backends;
-
-enum class ChoosePattern;
-
-template <class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols>
+template <class GV, size_t r, size_t rC, class R>
 class SpaceInterface;
 
 template <class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols>
@@ -74,21 +79,6 @@ namespace internal {
 
 
 // helper structs
-// from #include <dune/gdt/spaces/interface.hh>
-template <class S>
-struct is_space_helper
-{
-  DXTC_has_typedef_initialize_once(Traits);
-  DXTC_has_static_member_initialize_once(dimDomain);
-  DXTC_has_static_member_initialize_once(dimRange);
-  DXTC_has_static_member_initialize_once(dimRangeCols);
-
-  static const bool is_candidate = DXTC_has_typedef(Traits)<S>::value && DXTC_has_static_member(dimDomain)<S>::value
-                                   && DXTC_has_static_member(dimRange)<S>::value
-                                   && DXTC_has_static_member(dimRangeCols)<S>::value;
-}; // class is_space_helper
-
-
 // from #include <dune/gdt/playground/spaces/restricted.hh>
 template <class S>
 struct is_restricted_space_helper
@@ -199,14 +189,13 @@ struct is_local_finite_element<LocalFiniteElementInterface<D, d, R, r, rC>> : pu
 };
 
 // from #include <dune/gdt/spaces/interface.hh>
-template <class S, bool candidate = internal::is_space_helper<S>::is_candidate>
-struct is_space
-    : public std::is_base_of<SpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
+template <class S>
+struct is_space : public std::false_type
 {
 };
 
-template <class S>
-struct is_space<S, false> : public std::false_type
+template <class GV, size_t r, size_t rC, class R>
+struct is_space<SpaceInterface<GV, r, rC, R>> : public std::true_type
 {
 };
 
