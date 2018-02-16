@@ -25,17 +25,17 @@ namespace GDT {
 
 
 // forward, to allow for specialization
-template <class GV, class R, size_t r, size_t rC = 1>
-class FvSpace
+template <class GV, size_t r, size_t rC = 1, class R = double>
+class FiniteVolumeSpace
 {
   static_assert(Dune::AlwaysFalse<GV>::value, "Untested for these dimensions!");
 };
 
 
 template <class GV, class R>
-class FvSpace<GV, R, 1, 1> : public SpaceInterface<GV, 1, 1, R>
+class FiniteVolumeSpace<GV, 1, 1, R> : public SpaceInterface<GV, 1, 1, R>
 {
-  using ThisType = FvSpace<GV, R, 1, 1>;
+  using ThisType = FiniteVolumeSpace<GV, 1, 1, R>;
   using BaseType = SpaceInterface<GV, 1, 1, R>;
 
 public:
@@ -51,7 +51,7 @@ private:
   using GlobalBasisImplementation = FiniteVolumeGlobalBasis<GridViewType, R>;
 
 public:
-  FvSpace(GridViewType grd_vw)
+  FiniteVolumeSpace(GridViewType grd_vw)
     : grid_view_(grd_vw)
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
     , mapper_(new MapperImplementation(grid_view_))
@@ -65,8 +65,8 @@ public:
     this->create_communicator();
   }
 
-  FvSpace(const ThisType&) = default;
-  FvSpace(ThisType&&) = default;
+  FiniteVolumeSpace(const ThisType&) = default;
+  FiniteVolumeSpace(ThisType&&) = default;
 
   ThisType& operator=(const ThisType&) = delete;
   ThisType& operator=(ThisType&&) = delete;
@@ -132,19 +132,25 @@ private:
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
   const std::shared_ptr<MapperImplementation> mapper_;
   const std::shared_ptr<GlobalBasisImplementation> basis_;
-}; // class FvSpace< ..., 1, 1 >
+}; // class FiniteVolumeSpace< ..., 1, 1 >
 
 
-template <class R, size_t r, size_t rC, class GV>
-FvSpace<GV, R, r, rC> make_fv_space(const GV& grid_layer)
+template <size_t r, size_t rC, class R, class GV>
+FiniteVolumeSpace<GV, r, rC, R> make_finite_volume_space(const GV& grid_view)
 {
-  return FvSpace<GV, R, r, rC>(grid_layer);
+  return FiniteVolumeSpace<GV, r, rC, R>(grid_view);
 }
 
-template <class R, size_t r, class GV>
-FvSpace<GV, R, r, 1> make_fv_space(const GV& grid_layer)
+template <size_t r, size_t rC, class GV>
+FiniteVolumeSpace<GV, r, rC, double> make_finite_volume_space(const GV& grid_view)
 {
-  return FvSpace<GV, R, r, 1>(grid_layer);
+  return FiniteVolumeSpace<GV, r, rC, double>(grid_view);
+}
+
+template <size_t r, class GV>
+FiniteVolumeSpace<GV, r, 1, double> make_finite_volume_space(const GV& grid_view)
+{
+  return FiniteVolumeSpace<GV, r, 1, double>(grid_view);
 }
 
 

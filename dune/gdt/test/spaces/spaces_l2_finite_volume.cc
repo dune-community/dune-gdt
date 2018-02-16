@@ -30,7 +30,7 @@ template <class GridViewType, size_t r>
 struct FiniteVolumeSpace : public ::testing::Test
 {
   using R = double;
-  using SpaceType = Dune::GDT::FvSpace<GridViewType, R, r>;
+  using SpaceType = Dune::GDT::FiniteVolumeSpace<GridViewType, r, 1, R>;
   using D = typename SpaceType::D;
   static const constexpr size_t d = SpaceType::d;
 
