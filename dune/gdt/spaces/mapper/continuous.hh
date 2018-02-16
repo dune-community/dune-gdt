@@ -55,10 +55,10 @@ class ContinuousMapper : public MapperInterface<GV>
   };
 
   using Implementation = MultipleCodimMultipleGeomTypeMapper<GV, GeometryTypeLayout>;
-  using D = typename GV::ctype;
-  static const constexpr size_t d = GV::dimension;
 
 public:
+  using typename BaseType::D;
+  using BaseType::d;
   using typename BaseType::GridViewType;
   using typename BaseType::ElementType;
 
@@ -115,7 +115,7 @@ public:
     return grid_view_;
   }
 
-  const LocalFiniteElementCoefficientsInterface&
+  const LocalFiniteElementCoefficientsInterface<D, d>&
   local_coefficients(const GeometryType& geometry_type) const override final
   {
     const auto finite_element_search_result = finite_elements_->find(geometry_type);

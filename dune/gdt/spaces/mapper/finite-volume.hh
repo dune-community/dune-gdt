@@ -31,9 +31,12 @@ class FiniteVolumeMapper : public MapperInterface<GV>
 {
   using ThisType = FiniteVolumeMapper<GV, r, rC>;
   using BaseType = MapperInterface<GV>;
-  using D = typename GV::ctype;
-  static const constexpr size_t d = GV::dimension;
 
+public:
+  using typename BaseType::D;
+  using BaseType::d;
+
+private:
   template <int>
   struct Codim0EntityFilter
   {
@@ -73,7 +76,7 @@ public:
     return grid_view_;
   }
 
-  const LocalFiniteElementCoefficientsInterface&
+  const LocalFiniteElementCoefficientsInterface<D, d>&
   local_coefficients(const GeometryType& geometry_type) const override final
   {
     if (r != 1 || rC != 1) // Requires vector-valued local Finite Element wrappers.

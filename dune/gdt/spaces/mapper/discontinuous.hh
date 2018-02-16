@@ -32,9 +32,12 @@ class DiscontinuousMapper : public MapperInterface<GV>
   static_assert(is_local_finite_element<FiniteElement>::value, "");
   using ThisType = DiscontinuousMapper<GV, FiniteElement>;
   using BaseType = MapperInterface<GV>;
-  using D = typename GV::ctype;
-  static const constexpr size_t d = GV::dimension;
 
+public:
+  using typename BaseType::D;
+  using BaseType::d;
+
+private:
   template <int>
   struct Codim0EntityFilter
   {
@@ -78,7 +81,7 @@ public:
     return grid_view_;
   }
 
-  const LocalFiniteElementCoefficientsInterface&
+  const LocalFiniteElementCoefficientsInterface<D, d>&
   local_coefficients(const GeometryType& geometry_type) const override final
   {
     return get_finite_element(geometry_type).coefficients();
