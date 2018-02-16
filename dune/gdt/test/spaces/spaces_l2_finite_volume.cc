@@ -23,7 +23,7 @@
 #include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
-#include <dune/gdt/spaces/fv/default.hh>
+#include <dune/gdt/spaces/l2/finite-volume.hh>
 
 
 template <class GridViewType, size_t r>

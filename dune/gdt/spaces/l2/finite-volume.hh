@@ -9,8 +9,8 @@
 //   Rene Milk       (2014, 2016 - 2017)
 //   Tobias Leibner  (2014, 2016)
 
-#ifndef DUNE_GDT_SPACES_FV_SPACE_HH
-#define DUNE_GDT_SPACES_FV_SPACE_HH
+#ifndef DUNE_GDT_SPACES_L2_FINITE_VOLUME_HH
+#define DUNE_GDT_SPACES_L2_FINITE_VOLUME_HH
 
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
@@ -151,4 +151,4 @@ FvSpace<GV, R, r, 1> make_fv_space(const GV& grid_layer)
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_FV_SPACE_HH
+#endif // DUNE_GDT_SPACES_L2_FINITE_VOLUME_HH
