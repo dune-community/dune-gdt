@@ -21,7 +21,7 @@
 #include <dune/gdt/local/finite-elements/interfaces.hh>
 #include <dune/gdt/spaces/basis/interface.hh>
 #include <dune/gdt/spaces/mapper/interfaces.hh>
-#include <dune/gdt/spaces/parallel.hh>
+#include <dune/gdt/spaces/parallel/communication.hh>
 #include <dune/gdt/type_traits.hh>
 
 namespace Dune {

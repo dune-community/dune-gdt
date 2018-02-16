@@ -9,8 +9,8 @@
 //   Rene Milk       (2014, 2016 - 2018)
 //   Tobias Leibner  (2014, 2016)
 
-#ifndef DUNE_GDT_SPACES_PARALLEL_HH
-#define DUNE_GDT_SPACES_PARALLEL_HH
+#ifndef DUNE_GDT_SPACES_PARALLEL_COMMUNICATION_HH
+#define DUNE_GDT_SPACES_PARALLEL_COMMUNICATION_HH
 
 #include <dune/common/parallel/communicator.hh>
 
@@ -20,9 +20,8 @@
 
 #include <dune/xt/la/container/istl.hh>
 #include <dune/xt/common/parallel/helper.hh>
-//#include <dune/xt/grid/layers.hh>
 
-#include <dune/gdt/spaces/parallel_helper.hh>
+#include "helper.hh"
 
 namespace Dune {
 namespace GDT {
@@ -85,4 +84,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_SPACES_PARALLEL_HH
+#endif // DUNE_GDT_SPACES_PARALLEL_COMMUNICATION_HH

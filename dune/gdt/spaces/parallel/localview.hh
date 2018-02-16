@@ -6,20 +6,17 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Rene Milk (2017 - 2018)
-//
-// Created by r_milk01 on 29.03.17.
 
-#ifndef DUNE_GDT_LOCALVIEW_HH
-#define DUNE_GDT_LOCALVIEW_HH
+#ifndef DUNE_GDT_SPACES_PARALLEL_LOCALVIEW_HH
+#define DUNE_GDT_SPACES_PARALLEL_LOCALVIEW_HH
+
+#include <boost/container/vector.hpp>
 
 #include <dune/xt/common/ranges.hh>
 #include <dune/xt/grid/entity.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/la/container/vector-interface.hh>
 
-#include <dune/gdt/spaces/mapper/interfaces.hh>
-
-#include <boost/container/vector.hpp>
 
 namespace Dune {
 namespace GDT {
@@ -110,4 +107,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_LOCALVIEW_HH
+#endif // DUNE_GDT_SPACES_PARALLEL_LOCALVIEW_HH

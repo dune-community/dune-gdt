@@ -7,10 +7,10 @@
 // Authors:
 //   Rene Milk (2017 - 2018)
 
-#ifndef DUNE_GDT_DATAHANDLES_HH
-#define DUNE_GDT_DATAHANDLES_HH
+#ifndef DUNE_GDT_SPACES_PARALLEL_DATAHANDLES_HH
+#define DUNE_GDT_SPACES_PARALLEL_DATAHANDLES_HH
 
-#include <dune/gdt/spaces/localview.hh>
+#include "localview.hh"
 
 namespace Dune {
 namespace GDT {
@@ -637,4 +637,4 @@ private:
 
 } // namespace GDT
 } // namespace Dune
-#endif // DUNE_GDT_DATAHANDLES_HH
+#endif // DUNE_GDT_SPACES_PARALLEL_DATAHANDLES_HH
