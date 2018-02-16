@@ -22,7 +22,7 @@
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
-#include <dune/gdt/spaces/rt/default.hh>
+#include <dune/gdt/spaces/hdiv/raviart-thomas.hh>
 
 
 template <class GridViewType, int p>
