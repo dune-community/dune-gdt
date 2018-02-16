@@ -23,18 +23,18 @@
 #include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
-#include <dune/gdt/spaces/fv.hh>
+#include <dune/gdt/spaces/fv/default.hh>
 
 
-template <class GridLayerType, size_t r>
+template <class GridViewType, size_t r>
 struct FiniteVolumeSpace : public ::testing::Test
 {
   using R = double;
-  using SpaceType = Dune::GDT::FvSpace<GridLayerType, R, r>;
-  using D = typename SpaceType::DomainFieldType;
-  static const constexpr size_t d = SpaceType::dimDomain;
+  using SpaceType = Dune::GDT::FvSpace<GridViewType, R, r>;
+  using D = typename SpaceType::D;
+  static const constexpr size_t d = SpaceType::d;
 
-  virtual std::shared_ptr<GridLayerType> grid_layer() = 0;
+  virtual std::shared_ptr<GridViewType> grid_view() = 0;
 
   std::shared_ptr<SpaceType> space;
 
@@ -42,8 +42,8 @@ struct FiniteVolumeSpace : public ::testing::Test
 
   void SetUp() override final
   {
-    ASSERT_NE(grid_layer(), nullptr);
-    space = std::shared_ptr<SpaceType>(new SpaceType(*grid_layer()));
+    ASSERT_NE(grid_view(), nullptr);
+    space = std::shared_ptr<SpaceType>(new SpaceType(*grid_view()));
   }
 
   void TearDown() override final
@@ -53,48 +53,48 @@ struct FiniteVolumeSpace : public ::testing::Test
 
   void basis_exists_on_each_element_with_correct_size()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_layer()))
+    for (auto&& element : elements(*grid_view()))
       EXPECT_EQ(1, space->basis().localize(element)->size());
   }
 
   void basis_exists_on_each_element_with_correct_order()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_layer()))
+    for (auto&& element : elements(*grid_view()))
       EXPECT_EQ(0, space->basis().localize(element)->order());
   }
 
   void mapper_reports_correct_num_DoFs_on_each_element()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_layer()))
+    for (auto&& element : elements(*grid_view()))
       EXPECT_EQ(r, space->mapper().local_size(element));
   }
 
   void mapper_reports_correct_max_num_DoFs()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
     size_t max_num_dofs = 0;
-    for (auto&& element : elements(*grid_layer()))
+    for (auto&& element : elements(*grid_view()))
       max_num_dofs = std::max(max_num_dofs, space->mapper().local_size(element));
     EXPECT_LE(max_num_dofs, space->mapper().max_local_size());
   }
 
   void mapper_maps_correctly()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
     // we want to check that the numbering is consecutive and that each global index exists only once
     std::set<size_t> global_indices;
     // we test both call variants
     std::set<size_t> map_to_global;
-    for (auto&& element : Dune::elements(*grid_layer())) {
-      for (const auto& global_index : space->mapper().global_indices(element))
+    for (auto&& element : Dune::elements(*grid_view())) {
+      for (auto&& global_index : space->mapper().global_indices(element))
         global_indices.insert(global_index);
       for (size_t ii = 0; ii < space->mapper().local_size(element); ++ii)
         map_to_global.insert(space->mapper().global_index(element, ii));
@@ -116,10 +116,10 @@ struct FiniteVolumeSpace : public ::testing::Test
 
   void basis_is_finite_volume_basis()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
     double tolerance = 1e-15;
-    for (auto&& element : elements(*grid_layer())) {
+    for (auto&& element : elements(*grid_view())) {
       const auto values = space->basis().localize(element)->evaluate(Dune::FieldVector<D, d>(0.));
       EXPECT_EQ(1, values.size());
       ASSERT_TRUE(Dune::XT::Common::FloatCmp::eq(values.at(0), Dune::FieldVector<R, r>(1), tolerance, tolerance));
@@ -128,10 +128,10 @@ struct FiniteVolumeSpace : public ::testing::Test
 
   void basis_jacobians_seem_to_be_correct()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
     double tolerance = 1e-15;
-    for (auto&& element : elements(*grid_layer())) {
+    for (auto&& element : elements(*grid_view())) {
       const auto grads = space->basis().localize(element)->jacobian(Dune::FieldVector<D, d>(0.));
       EXPECT_EQ(1, grads.size());
       ASSERT_TRUE(Dune::XT::Common::FloatCmp::eq(grads.at(0), decltype(grads[0])(0), tolerance, tolerance));
@@ -159,7 +159,7 @@ struct FiniteVolumeSpaceOnSimplicialLeafView
 
   ~FiniteVolumeSpaceOnSimplicialLeafView() = default;
 
-  std::shared_ptr<LeafGridViewType> grid_layer() override final
+  std::shared_ptr<LeafGridViewType> grid_view() override final
   {
     return leaf_view;
   }
@@ -247,7 +247,7 @@ struct FiniteVolumeSpaceOnCubicLeafView
 
   ~FiniteVolumeSpaceOnCubicLeafView() = default;
 
-  std::shared_ptr<LeafGridViewType> grid_layer() override final
+  std::shared_ptr<LeafGridViewType> grid_view() override final
   {
     return leaf_view;
   }
@@ -348,7 +348,7 @@ struct FiniteVolumeSpaceOnPrismLeafView
 
   ~FiniteVolumeSpaceOnPrismLeafView() = default;
 
-  std::shared_ptr<LeafGridViewType> grid_layer() override final
+  std::shared_ptr<LeafGridViewType> grid_view() override final
   {
     return leaf_view;
   }
@@ -433,7 +433,7 @@ struct FiniteVolumeSpaceOnPyramidLeafView
 
   ~FiniteVolumeSpaceOnPyramidLeafView() = default;
 
-  std::shared_ptr<LeafGridViewType> grid_layer() override final
+  std::shared_ptr<LeafGridViewType> grid_view() override final
   {
     return leaf_view;
   }
@@ -561,7 +561,7 @@ struct FiniteVolumeSpaceOnMixedLeafView
 
   ~FiniteVolumeSpaceOnMixedLeafView() = default;
 
-  std::shared_ptr<LeafGridViewType> grid_layer() override final
+  std::shared_ptr<LeafGridViewType> grid_view() override final
   {
     return leaf_view;
   }
