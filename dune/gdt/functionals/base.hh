@@ -142,13 +142,6 @@ public:
 
   using BaseAssemblerType::add;
 
-  template <class... Args>
-  DUNE_DEPRECATED_MSG("Use append() instead (since 11.01.2017)!")
-  ThisType& add(Args&&... args)
-  {
-    return append(std::forward<Args>(args)...);
-  }
-
   template <class S>
   FieldType apply(const XT::LA::VectorInterface<S>& source) const
   {

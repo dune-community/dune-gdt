@@ -16,9 +16,6 @@
 #include <type_traits>
 #include <memory>
 
-#include <dune/common/deprecated.hh>
-#include <dune/common/version.hh>
-
 #include <dune/xt/common/parallel/helper.hh>
 
 #include <dune/xt/grid/walker.hh>
@@ -182,106 +179,6 @@ public:
     return *this;
   } // ... append(...)
 
-#include <dune/xt/common/disable_warnings.hh>
-  template <class M, class R>
-  using LocalVolumeTwoFormAssemblerType =
-      LocalVolumeTwoFormAssembler<TestSpaceType, typename M::derived_type, AnsatzSpaceType>;
-#include <dune/xt/common/reenable_warnings.hh>
-  template <class M, class R>
-  ThisType& DUNE_DEPRECATED_MSG("Directly append the LocalVolumeTwoForm (13.05.2017)!")
-      append(const LocalVolumeTwoFormAssemblerType<M, R>& local_assembler,
-             XT::LA::MatrixInterface<M, R>& matrix,
-             const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
-  {
-    assert(matrix.rows() == test_space_->mapper().size());
-    assert(matrix.cols() == ansatz_space_->mapper().size());
-#include <dune/xt/common/disable_warnings.hh>
-    typedef internal::LocalVolumeTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
-    this->codim0_functors_.emplace_back(
-        new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
-    return *this;
-#include <dune/xt/common/reenable_warnings.hh>
-  } // ... append(...)
-
-#include <dune/xt/common/disable_warnings.hh>
-  template <class M, class R>
-  using LocalCouplingTwoFormAssemblerType = LocalCouplingTwoFormAssembler<TestSpaceType,
-                                                                          IntersectionType,
-                                                                          typename M::derived_type,
-                                                                          AnsatzSpaceType,
-                                                                          OuterTestSpaceType,
-                                                                          OuterAnsatzSpaceType>;
-#include <dune/xt/common/reenable_warnings.hh>
-  template <class M, class R>
-  ThisType& DUNE_DEPRECATED_MSG("Directly append the LocalCouplingTwoForm (13.05.2017)!")
-      append(const LocalCouplingTwoFormAssemblerType<M, R>& local_assembler,
-             XT::LA::MatrixInterface<M, R>& matrix,
-             const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
-  {
-    assert(matrix.rows() == test_space_->mapper().size());
-    assert(matrix.cols() == ansatz_space_->mapper().size());
-#include <dune/xt/common/disable_warnings.hh>
-    typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
-    this->codim1_functors_.emplace_back(
-        new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
-    return *this;
-#include <dune/xt/common/reenable_warnings.hh>
-  } // ... append(...)
-
-  template <class M, class R>
-  ThisType& DUNE_DEPRECATED_MSG("Directly append the LocalCouplingTwoForm (13.05.2017)!")
-      append(const LocalCouplingTwoFormAssemblerType<M, R>& local_assembler,
-             XT::LA::MatrixInterface<M, R>& matrix_in_in,
-             XT::LA::MatrixInterface<M, R>& matrix_out_out,
-             XT::LA::MatrixInterface<M, R>& matrix_in_out,
-             XT::LA::MatrixInterface<M, R>& matrix_out_in,
-             const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
-  {
-    assert(matrix_in_in.rows() == test_space_->mapper().size());
-    assert(matrix_in_in.cols() == ansatz_space_->mapper().size());
-    assert(matrix_out_out.rows() == outer_test_space_->mapper().size());
-    assert(matrix_out_out.cols() == outer_ansatz_space_->mapper().size());
-    assert(matrix_in_out.rows() == test_space_->mapper().size());
-    assert(matrix_in_out.cols() == outer_ansatz_space_->mapper().size());
-    assert(matrix_out_in.rows() == outer_test_space_->mapper().size());
-    assert(matrix_out_in.cols() == ansatz_space_->mapper().size());
-#include <dune/xt/common/disable_warnings.hh>
-    typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
-    this->codim1_functors_.emplace_back(new WrapperType(test_space_,
-                                                        ansatz_space_,
-                                                        outer_test_space_,
-                                                        outer_ansatz_space_,
-                                                        where,
-                                                        local_assembler,
-                                                        matrix_in_in.as_imp(),
-                                                        matrix_out_out.as_imp(),
-                                                        matrix_in_out.as_imp(),
-                                                        matrix_out_in.as_imp()));
-    return *this;
-#include <dune/xt/common/reenable_warnings.hh>
-  } // ... append(...)
-
-#include <dune/xt/common/disable_warnings.hh>
-  template <class M, class R>
-  using LocalBoundaryTwoFormAssemblerType =
-      LocalBoundaryTwoFormAssembler<TestSpaceType, IntersectionType, typename M::derived_type, AnsatzSpaceType>;
-#include <dune/xt/common/reenable_warnings.hh>
-  template <class M, class R>
-  ThisType& DUNE_DEPRECATED_MSG("Directly append the LocalBoundaryTwoForm (13.05.2017)!")
-      append(const LocalBoundaryTwoFormAssemblerType<M, R>& local_assembler,
-             XT::LA::MatrixInterface<M, R>& matrix,
-             const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
-  {
-    assert(matrix.rows() == test_space_->mapper().size());
-    assert(matrix.cols() == ansatz_space_->mapper().size());
-#include <dune/xt/common/disable_warnings.hh>
-    typedef internal::LocalBoundaryTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
-    this->codim1_functors_.emplace_back(
-        new WrapperType(test_space_, ansatz_space_, where, local_assembler, matrix.as_imp()));
-    return *this;
-#include <dune/xt/common/reenable_warnings.hh>
-  } // ... append(...)
-
   template <class M, class R>
   ThisType& append(const LocalVolumeTwoFormInterface<TestBaseType, AnsatzBaseType, R>& local_volume_two_form,
                    XT::LA::MatrixInterface<M, R>& matrix,
@@ -377,25 +274,6 @@ public:
         test_space_, ansatz_space_, where, local_boundary_two_form, matrix.as_imp()));
     return *this;
   } // ... append(...)
-
-#include <dune/xt/common/disable_warnings.hh>
-  template <class V, class R>
-  using LocalVolumeFunctionalAssemblerType = LocalVolumeFunctionalAssembler<TestSpaceType, typename V::derived_type>;
-#include <dune/xt/common/reenable_warnings.hh>
-  template <class V, class R>
-  ThisType& DUNE_DEPRECATED_MSG("Directly append the LocalFunctional (08.06.2017)!")
-      append(const LocalVolumeFunctionalAssemblerType<V, R>& local_assembler,
-             XT::LA::VectorInterface<V, R>& vector,
-             const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
-  {
-    assert(vector.size() == test_space_->mapper().size());
-#include <dune/xt/common/disable_warnings.hh>
-    typedef internal::LocalVolumeFunctionalVectorAssemblerWrapper<ThisType, typename V::derived_type> WrapperType;
-    this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
-    return *this;
-#include <dune/xt/common/reenable_warnings.hh>
-  } // ... append(...)
-
   template <class V, class R>
   ThisType& append(const LocalVolumeFunctionalInterface<TestBaseType, R>& local_volume_functional,
                    XT::LA::VectorInterface<V, R>& vector,
@@ -405,26 +283,6 @@ public:
         new LocalVolumeFunctionalAssemblerFunctor<TestSpaceType, typename V::derived_type, GridLayerType>(
             test_space_, where, local_volume_functional, vector.as_imp()));
     return *this;
-  } // ... append(...)
-
-
-#include <dune/xt/common/disable_warnings.hh>
-  template <class V, class R>
-  using LocalFaceFunctionalAssemblerType =
-      LocalFaceFunctionalAssembler<TestSpaceType, IntersectionType, typename V::derived_type>;
-#include <dune/xt/common/reenable_warnings.hh>
-  template <class V, class R>
-  ThisType& DUNE_DEPRECATED_MSG("Directly append the LocalFunctional (26.06.2017)!")
-      append(const LocalFaceFunctionalAssemblerType<V, R>& local_assembler,
-             XT::LA::VectorInterface<V, R>& vector,
-             const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
-  {
-    assert(vector.size() == test_space_->mapper().size());
-#include <dune/xt/common/disable_warnings.hh>
-    typedef internal::LocalFaceFunctionalVectorAssemblerWrapper<ThisType, typename V::derived_type> WrapperType;
-    this->codim1_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
-    return *this;
-#include <dune/xt/common/reenable_warnings.hh>
   } // ... append(...)
 
   template <class V, class R>

@@ -15,8 +15,6 @@
 #include <vector>
 #include <type_traits>
 
-#include <dune/common/deprecated.hh>
-
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/functions/interfaces.hh>
 

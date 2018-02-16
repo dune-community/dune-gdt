@@ -121,7 +121,7 @@ private:
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichEntity<GridLayerType>> where_;
   const LocalVolumeTwoFormType& local_volume_two_form_;
   MatrixType& matrix_;
-}; // class LocalVolumeTwoFormAssembler
+}; // class LocalVolumeTwoFormAssemblerFunctor
 
 
 /**

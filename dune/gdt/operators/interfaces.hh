@@ -14,7 +14,6 @@
 
 #include <type_traits>
 
-#include <dune/common/deprecated.hh>
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/fvector.hh>
 
