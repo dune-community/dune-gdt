@@ -40,7 +40,7 @@ class P0LagrangeFiniteElement : public LocalFiniteElementInterface<D, d, R, 1, 1
   using BasisWrapperType =
       LocalFiniteElementBasisWrapper<typename Implementation::Traits::LocalBasisType, D, d, R, 1, 1>;
   using CoefficientsWrapperType =
-      LocalFiniteElementCoefficientsWrapper<typename Implementation::Traits::LocalCoefficientsType>;
+      LocalFiniteElementCoefficientsWrapper<typename Implementation::Traits::LocalCoefficientsType, D, d>;
   using InterpolationWrapperType =
       LocalFiniteElementInterpolationWrapper<typename Implementation::Traits::LocalInterpolationType, D, d, R, 1, 1>;
 
@@ -52,18 +52,18 @@ public:
 
   P0LagrangeFiniteElement(Implementation*&& imp_ptr)
     : imp_(std::move(imp_ptr))
-    , basis_(imp_.access().localBasis())
-    , coefficients_(imp_.access().localCoefficients())
-    , interpolation_(imp_.access().localInterpolation())
+    , basis_(imp_.access().type(), imp_.access().localBasis())
+    , coefficients_(imp_.access().type(), imp_.access().localCoefficients())
+    , interpolation_(imp_.access().type(), imp_.access().localInterpolation())
     , lagrange_points_({ReferenceElements<D, d>::general(imp_.access().type()).position(0, 0)})
   {
   }
 
   P0LagrangeFiniteElement(const Implementation& imp)
     : imp_(imp)
-    , basis_(imp_.access().localBasis())
-    , coefficients_(imp_.access().localCoefficients())
-    , interpolation_(imp_.access().localInterpolation())
+    , basis_(imp_.access().type(), imp_.access().localBasis())
+    , coefficients_(imp_.access().type(), imp_.access().localCoefficients())
+    , interpolation_(imp_.access().type(), imp_.access().localInterpolation())
     , lagrange_points_({ReferenceElements<D, d>::general(imp_.access().type()).position(0, 0)})
   {
   }
@@ -71,16 +71,16 @@ public:
   template <class... Args>
   explicit P0LagrangeFiniteElement(Args&&... args)
     : imp_(new Implementation(std::forward<Args>(args)...))
-    , basis_(imp_.access().localBasis())
-    , coefficients_(imp_.access().localCoefficients())
-    , interpolation_(imp_.access().localInterpolation())
+    , basis_(imp_.access().type(), imp_.access().localBasis())
+    , coefficients_(imp_.access().type(), imp_.access().localCoefficients())
+    , interpolation_(imp_.access().type(), imp_.access().localInterpolation())
     , lagrange_points_({ReferenceElements<D, d>::general(imp_.access().type()).position(0, 0)})
   {
   }
 
-  GeometryType geometry_type() const
+  const GeometryType& geometry_type() const
   {
-    return imp_.access().type();
+    return basis_.geometry_type();
   }
 
   size_t size() const override final
@@ -127,7 +127,7 @@ std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1, 1>>
 make_lagrange_local_finite_element(const GeometryType& geometry_type, const int& polorder)
 {
   // special case
-  if (d > 0 && polorder == 0)
+  if (polorder == 0)
     return std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1, 1>>(
         new P0LagrangeFiniteElement<D, d, R>(geometry_type));
   // checks

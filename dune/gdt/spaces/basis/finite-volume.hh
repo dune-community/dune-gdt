@@ -53,8 +53,8 @@ public:
     : grid_view_(grd_vw)
     , shape_functions_(new std::map<GeometryType, ShapeFunctionSetImplementation>())
   {
-    for (auto&& geometry_type : grd_vw.indexSet().types(0))
-      shape_functions_->emplace(geometry_type, ShapeFunctionSetImplementation());
+    for (auto&& geometry_type : grid_view_.indexSet().types(0))
+      shape_functions_->emplace(geometry_type, geometry_type);
   }
 
   const GridViewType& grid_view() const

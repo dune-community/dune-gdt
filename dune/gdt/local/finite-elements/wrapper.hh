@@ -73,20 +73,28 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::JacobianRangeType;
 
-  LocalFiniteElementBasisWrapper(Implementation*&& imp_ptr)
+  LocalFiniteElementBasisWrapper(const GeometryType& gt, Implementation*&& imp_ptr)
     : imp_(std::move(imp_ptr))
+    , geometry_type_(gt)
   {
   }
 
-  LocalFiniteElementBasisWrapper(const Implementation& imp)
+  LocalFiniteElementBasisWrapper(const GeometryType& gt, const Implementation& imp)
     : imp_(imp)
+    , geometry_type_(gt)
   {
   }
 
   template <class... Args>
-  explicit LocalFiniteElementBasisWrapper(Args&&... args)
+  explicit LocalFiniteElementBasisWrapper(const GeometryType& gt, Args&&... args)
     : imp_(new Implementation(std::forward<Args>(args)...))
+    , geometry_type_(gt)
   {
+  }
+
+  const GeometryType& geometry_type() const override final
+  {
+    return geometry_type_;
   }
 
   int order() const override final
@@ -115,6 +123,7 @@ public:
 
 private:
   const XT::Common::ConstStorageProvider<Implementation> imp_;
+  const GeometryType geometry_type_;
 }; // class LocalFiniteElementBasisWrapper
 
 
@@ -154,20 +163,28 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
 
-  LocalFiniteElementInterpolationWrapper(Implementation*&& imp_ptr)
+  LocalFiniteElementInterpolationWrapper(const GeometryType& gt, Implementation*&& imp_ptr)
     : imp_(std::move(imp_ptr))
+    , geometry_type_(gt)
   {
   }
 
-  LocalFiniteElementInterpolationWrapper(const Implementation& imp)
+  LocalFiniteElementInterpolationWrapper(const GeometryType& gt, const Implementation& imp)
     : imp_(imp)
+    , geometry_type_(gt)
   {
   }
 
   template <class... Args>
-  explicit LocalFiniteElementInterpolationWrapper(Args&&... args)
+  explicit LocalFiniteElementInterpolationWrapper(const GeometryType& gt, Args&&... args)
     : imp_(new Implementation(std::forward<Args>(args)...))
+    , geometry_type_(gt)
   {
+  }
+
+  const GeometryType& geometry_type() const override final
+  {
+    return geometry_type_;
   }
 
   std::vector<R> interpolate(const std::function<RangeType(DomainType)>& local_function) const override final
@@ -179,29 +196,38 @@ public:
 
 private:
   const XT::Common::ConstStorageProvider<Implementation> imp_;
+  const GeometryType geometry_type_;
 }; // class LocalFiniteElementInterpolationWrapper
 
 
-template <class Implementation>
-class LocalFiniteElementCoefficientsWrapper : public LocalFiniteElementCoefficientsInterface
+template <class Implementation, class D, size_t d>
+class LocalFiniteElementCoefficientsWrapper : public LocalFiniteElementCoefficientsInterface<D, d>
 {
-  using ThisType = LocalFiniteElementCoefficientsWrapper;
+  using ThisType = LocalFiniteElementCoefficientsWrapper<Implementation, D, d>;
 
 public:
-  LocalFiniteElementCoefficientsWrapper(Implementation*&& imp_ptr)
+  LocalFiniteElementCoefficientsWrapper(const GeometryType& gt, Implementation*&& imp_ptr)
     : imp_(std::move(imp_ptr))
+    , geometry_type_(gt)
   {
   }
 
-  LocalFiniteElementCoefficientsWrapper(const Implementation& imp)
+  LocalFiniteElementCoefficientsWrapper(const GeometryType& gt, const Implementation& imp)
     : imp_(imp)
+    , geometry_type_(gt)
   {
   }
 
   template <class... Args>
-  explicit LocalFiniteElementCoefficientsWrapper(Args&&... args)
+  explicit LocalFiniteElementCoefficientsWrapper(const GeometryType& gt, Args&&... args)
     : imp_(new Implementation(std::forward<Args>(args)...))
+    , geometry_type_(gt)
   {
+  }
+
+  const GeometryType& geometry_type() const override final
+  {
+    return geometry_type_;
   }
 
   size_t size() const override final
@@ -218,6 +244,7 @@ public:
 
 private:
   const XT::Common::ConstStorageProvider<Implementation> imp_;
+  const GeometryType geometry_type_;
 }; // class LocalFiniteElementCoefficientsWrapper
 
 
@@ -230,7 +257,7 @@ class LocalFiniteElementWrapper : public LocalFiniteElementInterface<D, d, R, r,
   using BasisWrapperType =
       LocalFiniteElementBasisWrapper<std::decay_t<typename Implementation::Traits::LocalBasisType>, D, d, R, r, rC>;
   using CoefficientsWrapperType =
-      LocalFiniteElementCoefficientsWrapper<std::decay_t<typename Implementation::Traits::LocalCoefficientsType>>;
+      LocalFiniteElementCoefficientsWrapper<std::decay_t<typename Implementation::Traits::LocalCoefficientsType>, D, d>;
   using InterpolationWrapperType =
       LocalFiniteElementInterpolationWrapper<std::decay_t<typename Implementation::Traits::LocalInterpolationType>,
                                              D,
@@ -253,18 +280,20 @@ private:
 public:
   LocalFiniteElementWrapper(Implementation*&& imp_ptr)
     : imp_(std::move(imp_ptr))
-    , basis_(imp_.access().localBasis())
-    , coefficients_(imp_.access().localCoefficients())
-    , interpolation_(imp_.access().localInterpolation())
+    , geometry_type_(imp_.access().type())
+    , basis_(imp_.access().type(), imp_.access().localBasis())
+    , coefficients_(imp_.access().type(), imp_.access().localCoefficients())
+    , interpolation_(imp_.access().type(), imp_.access().localInterpolation())
     , lagrange_points_(LpAccessor::get(imp_.access().localInterpolation()))
   {
   }
 
   LocalFiniteElementWrapper(const Implementation& imp)
     : imp_(imp)
-    , basis_(imp_.access().localBasis())
-    , coefficients_(imp_.access().localCoefficients())
-    , interpolation_(imp_.access().localInterpolation())
+    , geometry_type_(imp_.access().type())
+    , basis_(imp_.access().type(), imp_.access().localBasis())
+    , coefficients_(imp_.access().type(), imp_.access().localCoefficients())
+    , interpolation_(imp_.access().type(), imp_.access().localInterpolation())
     , lagrange_points_(LpAccessor::get(imp_.access().localInterpolation()))
   {
   }
@@ -272,16 +301,17 @@ public:
   template <class... Args>
   explicit LocalFiniteElementWrapper(Args&&... args)
     : imp_(new Implementation(std::forward<Args>(args)...))
-    , basis_(imp_.access().localBasis())
-    , coefficients_(imp_.access().localCoefficients())
-    , interpolation_(imp_.access().localInterpolation())
+    , geometry_type_(imp_.access().type())
+    , basis_(imp_.access().type(), imp_.access().localBasis())
+    , coefficients_(imp_.access().type(), imp_.access().localCoefficients())
+    , interpolation_(imp_.access().type(), imp_.access().localInterpolation())
     , lagrange_points_(LpAccessor::get(imp_.access().localInterpolation()))
   {
   }
 
-  GeometryType geometry_type() const
+  const GeometryType& geometry_type() const override final
   {
-    return imp_.access().type();
+    return geometry_type_;
   }
 
   size_t size() const override final
@@ -318,6 +348,7 @@ public:
 
 private:
   const XT::Common::ConstStorageProvider<Implementation> imp_;
+  const GeometryType geometry_type_;
   const BasisWrapperType basis_;
   const CoefficientsWrapperType coefficients_;
   const InterpolationWrapperType interpolation_;
