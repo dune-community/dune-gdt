@@ -80,7 +80,7 @@ public:
   local_coefficients(const GeometryType& geometry_type) const override final
   {
     if (r != 1 || rC != 1) // Requires vector-valued local Finite Element wrappers.
-      DUNE_THROW(NotImplemented, "accessing local_coefficients is not yet supperted in the non scalar case!");
+      DUNE_THROW(Exceptions::mapper_error, "accessing local_coefficients is not yet supperted in the non scalar case!");
     const auto finite_element_search_result = finite_elements_->find(geometry_type);
     if (finite_element_search_result == finite_elements_->end())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
