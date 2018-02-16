@@ -20,21 +20,20 @@
 #include <dune/grid/common/rangegenerators.hh>
 
 #include <dune/xt/common/fvector.hh>
-#include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
 #include <dune/gdt/spaces/rt/default.hh>
 
 
-template <class GridLayerType, int p>
+template <class GridViewType, int p>
 struct RtSpace : public ::testing::Test
 {
   static_assert(p == 0, "The space cannot handle higher orders (yet)!");
-  using SpaceType = Dune::GDT::RaviartThomasSpace<GridLayerType, p>;
-  using D = typename SpaceType::DomainFieldType;
-  static const constexpr size_t d = SpaceType::dimDomain;
+  using SpaceType = Dune::GDT::RaviartThomasSpace<GridViewType, p>;
+  using D = typename SpaceType::D;
+  static const constexpr size_t d = SpaceType::d;
 
-  virtual std::shared_ptr<GridLayerType> grid_layer() = 0;
+  virtual std::shared_ptr<GridViewType> grid_view() = 0;
 
   std::shared_ptr<SpaceType> space;
 
@@ -42,8 +41,8 @@ struct RtSpace : public ::testing::Test
 
   void SetUp() override final
   {
-    ASSERT_NE(grid_layer(), nullptr);
-    space = std::shared_ptr<SpaceType>(new SpaceType(*grid_layer()));
+    ASSERT_NE(grid_view(), nullptr);
+    space = std::shared_ptr<SpaceType>(new SpaceType(*grid_view()));
   }
 
   void TearDown() override final
@@ -51,11 +50,24 @@ struct RtSpace : public ::testing::Test
     space.reset();
   }
 
+  void gives_correct_identification()
+  {
+    ASSERT_NE(grid_view(), nullptr);
+    ASSERT_NE(space, nullptr);
+    EXPECT_EQ(Dune::GDT::SpaceType::raviart_thomas, space->type());
+    EXPECT_EQ(p, space->min_polorder());
+    EXPECT_EQ(p, space->max_polorder());
+    for (int diff_order : {0, 1, 2, 3, 4, 5})
+      EXPECT_FALSE(space->continuous(diff_order));
+    EXPECT_TRUE(space->continuous_normal_components());
+    EXPECT_FALSE(space->is_lagrangian());
+  }
+
   void basis_exists_on_each_element_with_correct_size()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_layer())) {
+    for (auto&& element : elements(*grid_view())) {
       const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
       EXPECT_EQ(reference_element.size(1), space->basis().localize(element)->size());
     }
@@ -63,17 +75,17 @@ struct RtSpace : public ::testing::Test
 
   void basis_exists_on_each_element_with_correct_order()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_layer()))
+    for (auto&& element : elements(*grid_view()))
       EXPECT_EQ(1, space->basis().localize(element)->order());
   }
 
   void mapper_reports_correct_num_DoFs_on_each_element()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_layer())) {
+    for (auto&& element : elements(*grid_view())) {
       const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
       EXPECT_EQ(reference_element.size(1), space->mapper().local_size(element));
     }
@@ -81,10 +93,10 @@ struct RtSpace : public ::testing::Test
 
   void mapper_reports_correct_max_num_DoFs()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
     size_t max_num_dofs = 0;
-    for (auto&& element : elements(*grid_layer()))
+    for (auto&& element : elements(*grid_view()))
       max_num_dofs = std::max(max_num_dofs, space->mapper().local_size(element));
     EXPECT_LE(max_num_dofs, space->mapper().max_local_size());
   }
@@ -92,15 +104,15 @@ struct RtSpace : public ::testing::Test
   // this only works for conforming intersections!
   void mapper_maps_correctly()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
-    Dune::GDT::FiniteVolumeMapper<GridLayerType> entity_indices(*grid_layer());
+    Dune::GDT::FiniteVolumeMapper<GridViewType> entity_indices(*grid_view());
     // determine global numbering of intersections
     std::map<size_t, std::map<size_t, size_t>> element_and_local_intersection_index_to_global_intersection_index;
     size_t tmp_counter = 0;
-    for (auto&& element : elements(*grid_layer())) {
+    for (auto&& element : elements(*grid_view())) {
       const auto global_element_index = entity_indices.global_index(element, 0);
-      for (auto&& intersection : intersections(*grid_layer(), element)) {
+      for (auto&& intersection : intersections(*grid_view(), element)) {
         const auto element_local_intersection_index = intersection.indexInInside();
         if (!intersection.neighbor()
             || (entity_indices.global_index(element, 0) < entity_indices.global_index(intersection.outside(), 0))) {
@@ -124,14 +136,17 @@ struct RtSpace : public ::testing::Test
     }
     // collect all global ids that are associated with an intersection
     std::map<size_t, std::set<size_t>> global_intersection_index_to_global_indices_map;
-    for (auto&& element : elements(*grid_layer())) {
+    for (auto&& element : elements(*grid_view())) {
       const auto global_DoF_indices = space->mapper().global_indices(element);
       EXPECT_LE(space->mapper().local_size(element), global_DoF_indices.size());
-      const auto intersection_to_DoF_map = space->local_DoF_indices(element);
-      EXPECT_EQ(intersection_to_DoF_map.size(), space->mapper().local_size(element));
-      for (auto&& intersection : intersections(*grid_layer(), element)) {
+      const auto intersection_to_local_DoF_indices_map =
+          space->finite_element(element.geometry().type()).coefficients().local_key_indices(1);
+      EXPECT_EQ(intersection_to_local_DoF_indices_map.size(), space->mapper().local_size(element));
+      for (auto&& intersection : intersections(*grid_view(), element)) {
         const auto local_intersection_index = intersection.indexInInside();
-        const auto local_DoF_index = intersection_to_DoF_map[local_intersection_index];
+        const auto local_DoF_indices = intersection_to_local_DoF_indices_map[local_intersection_index];
+        EXPECT_EQ(1, local_DoF_indices.size());
+        const auto local_DoF_index = *local_DoF_indices.begin();
         const auto global_DoF_index = space->mapper().global_index(element, local_DoF_index);
         EXPECT_EQ(global_DoF_indices[local_DoF_index], global_DoF_index);
         const auto global_intersection_index = element_and_local_intersection_index_to_global_intersection_index
@@ -159,23 +174,28 @@ struct RtSpace : public ::testing::Test
 
   void local_DoF_indices_exist_on_each_element_with_correct_size()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_layer())) {
+    for (auto&& element : elements(*grid_view())) {
       const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
-      EXPECT_EQ(reference_element.size(1), space->local_DoF_indices(element).size());
+      const auto intersection_to_local_DoF_indices_map =
+          space->finite_element(element.geometry().type()).coefficients().local_key_indices(1);
+      EXPECT_EQ(reference_element.size(1), intersection_to_local_DoF_indices_map.size());
+      for (const auto& DoF_indices_per_intersection : intersection_to_local_DoF_indices_map)
+        EXPECT_EQ(1, DoF_indices_per_intersection.size());
     }
   }
 
   void basis_is_rt_basis()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
-    Dune::GDT::FiniteVolumeMapper<GridLayerType> entity_indices(*grid_layer());
-    for (auto&& element : elements(*grid_layer())) {
+    Dune::GDT::FiniteVolumeMapper<GridViewType> entity_indices(*grid_view());
+    for (auto&& element : elements(*grid_view())) {
       const auto basis = space->basis().localize(element);
-      const auto intersection_to_DoF_index_map = space->local_DoF_indices(element);
-      for (auto&& intersection : intersections(*grid_layer(), element)) {
+      const auto intersection_to_local_DoF_indices_map =
+          space->finite_element(element.geometry().type()).coefficients().local_key_indices(1);
+      for (auto&& intersection : intersections(*grid_view(), element)) {
         const auto xx_in_element_coordinates = intersection.geometry().center();
         const auto xx_in_reference_element_coordinates = element.geometry().local(xx_in_element_coordinates);
         const auto xx_in_reference_intersection_coordinates =
@@ -183,27 +203,28 @@ struct RtSpace : public ::testing::Test
         const auto normal = intersection.integrationOuterNormal(xx_in_reference_intersection_coordinates);
         const auto basis_values = basis->evaluate(xx_in_reference_element_coordinates);
         const auto intersection_index = intersection.indexInInside();
-        const auto DoF_index = intersection_to_DoF_index_map[intersection_index];
-        double switch_ = 1;
-        if (intersection.neighbor()
-            && entity_indices.global_index(element, 0) < entity_indices.global_index(intersection.outside(), 0))
-          switch_ *= -1.;
-        for (size_t ii = 0; ii < basis->size(); ++ii)
-          EXPECT_TRUE(Dune::XT::Common::FloatCmp::eq(
-              (ii == DoF_index ? 1. : 0.) * switch_, basis_values[ii] * normal, 1e-14, 1e-14))
-              << "ii = " << ii << "\nDoF_index = " << DoF_index << "\nii == DoF_index ? 1. : 0. "
-              << (ii == DoF_index ? 1. : 0.) << "\nswitch_ = " << switch_
-              << "\nbasis_values[ii] * normal = " << basis_values[ii] * normal;
+        for (const auto& DoF_index : intersection_to_local_DoF_indices_map[intersection_index]) {
+          double switch_ = 1;
+          if (intersection.neighbor()
+              && entity_indices.global_index(element, 0) < entity_indices.global_index(intersection.outside(), 0))
+            switch_ *= -1.;
+          for (size_t ii = 0; ii < basis->size(); ++ii)
+            EXPECT_TRUE(Dune::XT::Common::FloatCmp::eq(
+                (ii == DoF_index ? 1. : 0.) * switch_, basis_values[ii] * normal, 1e-14, 1e-14))
+                << "ii = " << ii << "\nDoF_index = " << DoF_index << "\nii == DoF_index ? 1. : 0. "
+                << (ii == DoF_index ? 1. : 0.) << "\nswitch_ = " << switch_
+                << "\nbasis_values[ii] * normal = " << basis_values[ii] * normal;
+        }
       }
     }
   } // ... basis_is_rt_basis(...)
 
   void basis_jacobians_seem_to_be_correct()
   {
-    ASSERT_NE(grid_layer(), nullptr);
+    ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
     ASSERT_TRUE(false) << "continue here";
-    //    for (auto&& element : elements(*grid_layer())) {
+    //    for (auto&& element : elements(*grid_view())) {
     //      const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
     //      const auto basis = space->base_function_set(element);
     //      const double h = 1e-6;
@@ -274,7 +295,7 @@ struct RtSpaceOnSimplicialLeafView : public RtSpace<typename Dune::XT::Grid::Gri
 
   ~RtSpaceOnSimplicialLeafView() = default;
 
-  std::shared_ptr<LeafGridViewType> grid_layer() override final
+  std::shared_ptr<LeafGridViewType> grid_view() override final
   {
     return leaf_view;
   }
@@ -307,6 +328,10 @@ using SimplicialGrids = ::testing::Types<ONED_1D,
 template <class G>
 using Order0SimplicialRtSpace = RtSpaceOnSimplicialLeafView<G, 0>;
 TYPED_TEST_CASE(Order0SimplicialRtSpace, SimplicialGrids);
+TYPED_TEST(Order0SimplicialRtSpace, gives_correct_identification)
+{
+  this->gives_correct_identification();
+}
 TYPED_TEST(Order0SimplicialRtSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
@@ -365,7 +390,7 @@ struct RtSpaceOnCubicLeafView : public RtSpace<typename Dune::XT::Grid::GridProv
 
   ~RtSpaceOnCubicLeafView() = default;
 
-  std::shared_ptr<LeafGridViewType> grid_layer() override final
+  std::shared_ptr<LeafGridViewType> grid_view() override final
   {
     return leaf_view;
   }
@@ -396,6 +421,10 @@ using CubicGrids = ::testing::Types<YASP_2D_EQUIDISTANT_OFFSET
 template <class G>
 using Order0CubicRtSpace = RtSpaceOnCubicLeafView<G, 0>;
 TYPED_TEST_CASE(Order0CubicRtSpace, CubicGrids);
+TYPED_TEST(Order0CubicRtSpace, gives_correct_identification)
+{
+  this->gives_correct_identification();
+}
 TYPED_TEST(Order0CubicRtSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
@@ -510,7 +539,7 @@ struct RtSpaceOnMixedLeafView : public RtSpace<typename Dune::XT::Grid::GridProv
 
   ~RtSpaceOnMixedLeafView() = default;
 
-  std::shared_ptr<LeafGridViewType> grid_layer() override final
+  std::shared_ptr<LeafGridViewType> grid_view() override final
   {
     return leaf_view;
   }
@@ -529,6 +558,10 @@ using MixedGrids = ::testing::Types<
 template <class G>
 using Order0MixedRtSpace = RtSpaceOnMixedLeafView<G, 0>;
 TYPED_TEST_CASE(Order0MixedRtSpace, MixedGrids);
+TYPED_TEST(Order0MixedRtSpace, gives_correct_identification)
+{
+  this->gives_correct_identification();
+}
 TYPED_TEST(Order0MixedRtSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();

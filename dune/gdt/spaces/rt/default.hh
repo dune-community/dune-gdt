@@ -34,45 +34,6 @@ namespace Dune {
 namespace GDT {
 
 
-// forwards, required for the traits
-template <class GL, int p, class R = double>
-class RaviartThomasSpace;
-
-
-namespace internal {
-
-
-template <class GL, int p, class R>
-class RaviartThomasSpaceTraits
-{
-  static_assert(XT::Grid::is_layer<GL>::value, "");
-  static_assert(p == 0, "Not implemented yet!");
-  using G = XT::Grid::extract_grid_t<GL>;
-
-public:
-  static const constexpr int polOrder = p;
-  static const constexpr size_t dimDomain = GL::dimension;
-  static const constexpr size_t dimRange = dimDomain;
-  static const constexpr size_t dimRangeCols = 1;
-
-  using derived_type = RaviartThomasSpace<GL, p, R>;
-  static const constexpr bool continuous = false;
-  using GridLayerType = GL;
-  using BackendType = double;
-  using RangeFieldType = R;
-  static const constexpr XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
-  static const constexpr Backends backend_type{Backends::gdt};
-  typedef DofCommunicationChooser<GridLayerType, false> DofCommunicationChooserType;
-  typedef typename DofCommunicationChooserType::Type DofCommunicatorType;
-
-private:
-  friend class RaviartThomasSpace<GL, p, R>;
-}; // class RaviartThomasSpaceTraits
-
-
-} // namespace internal
-
-
 /**
  * The following dimensions/orders/elements are tested to work:
  *
@@ -84,72 +45,41 @@ private:
  *
  * - 3d: mixed simplices and cubes (the mapper cannot handle non-conforming intersections/the switches are not corect)
  */
-template <class GL, int p, class R>
-class RaviartThomasSpace
-    : public SpaceInterface<internal::RaviartThomasSpaceTraits<GL, p, R>, GL::dimension, GL::dimension>
+template <class GV, int p, class R = double>
+class RaviartThomasSpace : public SpaceInterface<GV, GV::dimension, 1, R>
 {
-public:
-  using Traits = internal::RaviartThomasSpaceTraits<GL, p, R>;
-
-private:
-  using BaseType = SpaceInterface<internal::RaviartThomasSpaceTraits<GL, p, R>, GL::dimension, GL::dimension>;
-  using ThisType = RaviartThomasSpace<GL, p, R>;
-  using D = typename GL::ctype;
-  static const constexpr size_t d = BaseType::dimDomain;
+  static_assert(p == 0, "Higher orders are not tested yet!");
+  using ThisType = RaviartThomasSpace<GV, p, R>;
+  using BaseType = SpaceInterface<GV, GV::dimension, 1, R>;
 
 public:
-  using typename BaseType::FiniteElementType;
-  using typename BaseType::GridLayerType;
-  using typename BaseType::BackendType;
-  using typename BaseType::EntityType;
-  using typename BaseType::MapperType;
+  using typename BaseType::D;
+  using BaseType::d;
+  using typename BaseType::GridViewType;
   using typename BaseType::GlobalBasisType;
-  typedef typename Traits::DofCommunicatorType DofCommunicatorType;
+  using typename BaseType::MapperType;
+  using typename BaseType::FiniteElementType;
 
 private:
-  typedef typename Traits::DofCommunicationChooserType DofCommunicationChooserType;
-  using MapperImplementation = ContinuousMapper<GL, FiniteElementType>;
-  using GlobalBasisImplementation = RaviartThomasGlobalBasis<GL, R>;
+  using MapperImplementation = ContinuousMapper<GridViewType, FiniteElementType>;
+  using GlobalBasisImplementation = RaviartThomasGlobalBasis<GV, R>;
 
 public:
-  RaviartThomasSpace(GridLayerType grd_lr)
-    : grid_layer_(grd_lr)
-    , communicator_(DofCommunicationChooserType::create(grid_layer_))
-    , backend_(0)
+  RaviartThomasSpace(GridViewType grd_vw)
+    : grid_view_(grd_vw)
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
-    , geometry_to_local_DoF_indices_map_(new std::map<GeometryType, std::vector<size_t>>())
     , mapper_(nullptr)
     , basis_(nullptr)
-    , communicator_prepared_(false)
   {
     // create finite elements
-    for (auto&& geometry_type : grid_layer_.indexSet().types(0)) {
-      auto finite_element = make_raviart_thomas_local_finite_element<D, d, R>(geometry_type, p);
-      // this is only valid for p0 elements
-      geometry_to_local_DoF_indices_map_->insert(
-          std::make_pair(geometry_type, std::vector<size_t>(finite_element->size())));
-      finite_elements_->insert(std::make_pair(geometry_type, std::move(finite_element)));
-    }
+    for (auto&& geometry_type : grid_view_.indexSet().types(0))
+      finite_elements_->insert(
+          std::make_pair(geometry_type, make_raviart_thomas_local_finite_element<D, d, R>(geometry_type, p)));
     // check: the mapper does not work for non-conforming intersections
     if (d == 3 && finite_elements_->size() != 1)
       DUNE_THROW(Exceptions::space_error,
                  "when creating a RaviartThomasSpace: non-conforming intersections are not (yet) "
                  "supported, and more than one element type in 3d leads to non-conforming intersections!");
-    // compute local-key-to-intersection relationship
-    for (const auto& geometry_type_and_finite_element_ptr : *finite_elements_) {
-      const auto& geometry_type = geometry_type_and_finite_element_ptr.first;
-      const auto& finite_element = *geometry_type_and_finite_element_ptr.second;
-      const auto& coeffs = finite_element.coefficients();
-      auto& local_key_to_intersection_map = geometry_to_local_DoF_indices_map_->at(geometry_type);
-      for (size_t ii = 0; ii < coeffs.size(); ++ii) {
-        const auto& local_key = coeffs.local_key(ii);
-        if (local_key.index() != 0)
-          DUNE_THROW(XT::Common::Exceptions::internal_error, "This must not happen for p0!");
-        if (local_key.codim() != 1)
-          DUNE_THROW(XT::Common::Exceptions::internal_error, "This must not happen for p0!");
-        local_key_to_intersection_map[ii] = local_key.subEntity();
-      }
-    }
     // compute scaling to ensure basis*integrationElementNormal = 1
     std::map<GeometryType, std::vector<R>> geometry_to_scaling_factors_map;
     for (const auto& geometry_type_and_finite_element_ptr : *finite_elements_) {
@@ -159,27 +89,27 @@ public:
       const auto num_intersections = reference_element.size(1);
       geometry_to_scaling_factors_map.insert(std::make_pair(geometry_type, std::vector<R>(num_intersections, R(1.))));
       auto& scaling_factors = geometry_to_scaling_factors_map.at(geometry_type);
-      const auto& DoF_indices = geometry_to_local_DoF_indices_map_->at(geometry_type);
+      const auto intersection_to_local_DoF_indices_map = finite_element.coefficients().local_key_indices(1);
       for (auto&& intersection_index : XT::Common::value_range(num_intersections)) {
         const auto& normal = reference_element.integrationOuterNormal(intersection_index);
         const auto& intersection_center = reference_element.position(intersection_index, 1);
-        const auto DoF_index = DoF_indices[intersection_index];
         const auto shape_functions_evaluations = finite_element.basis().evaluate(intersection_center);
-        scaling_factors[intersection_index] /= shape_functions_evaluations[DoF_index] * normal;
+        for (auto&& local_DoF_index : intersection_to_local_DoF_indices_map[intersection_index])
+          scaling_factors[intersection_index] /= shape_functions_evaluations[local_DoF_index] * normal;
       }
     }
     // compute switches (as signs of the scaling factor) to ensure continuity of the normal component (therefore we need
     // unique indices for codim 0  entities, which cannot be achieved by the grid layers index set for mixed grids)
-    auto entity_indices = std::make_shared<FiniteVolumeMapper<GL>>(grid_layer_);
+    auto entity_indices = std::make_shared<FiniteVolumeMapper<GV>>(grid_view_);
     auto switches = std::make_shared<std::vector<std::vector<R>>>(entity_indices->size());
-    for (auto&& entity : elements(grid_layer_)) {
+    for (auto&& entity : elements(grid_view_)) {
       const auto geometry_type = entity.geometry().type();
       const auto& finite_element = *finite_elements_->at(geometry_type);
       const auto& coeffs = finite_element.coefficients();
       const auto entity_index = entity_indices->global_index(entity, 0);
       (*switches)[entity_index] = geometry_to_scaling_factors_map.at(geometry_type);
       auto& local_switches = switches->at(entity_index);
-      for (auto&& intersection : intersections(grid_layer_, entity)) {
+      for (auto&& intersection : intersections(grid_view_, entity)) {
         if (intersection.neighbor() && entity_index < entity_indices->global_index(intersection.outside(), 0)) {
           const auto intersection_index = XT::Common::numeric_cast<unsigned int>(intersection.indexInInside());
           for (size_t ii = 0; ii < coeffs.size(); ++ii) {
@@ -191,9 +121,10 @@ public:
         }
       }
     }
-    // create mapper and basis
-    mapper_ = std::make_shared<MapperImplementation>(grid_layer_, finite_elements_);
-    basis_ = std::make_shared<GlobalBasisImplementation>(grid_layer_, finite_elements_, entity_indices, switches);
+    // create mapper, basis and communicator
+    mapper_ = std::make_shared<MapperImplementation>(grid_view_, finite_elements_);
+    basis_ = std::make_shared<GlobalBasisImplementation>(grid_view_, finite_elements_, entity_indices, switches);
+    this->create_communicator();
   } // RaviartThomasSpace(...)
 
   RaviartThomasSpace(const ThisType&) = default;
@@ -202,55 +133,68 @@ public:
   ThisType& operator=(const ThisType&) = delete;
   ThisType& operator=(ThisType&&) = delete;
 
-  const GridLayerType& grid_layer() const
+  const GridViewType& grid_view() const override final
   {
-    return grid_layer_;
+    return grid_view_;
   }
 
-  const BackendType& backend() const
-  {
-    return backend_;
-  }
-
-  const MapperType& mapper() const
+  const MapperType& mapper() const override final
   {
     return *mapper_;
   }
 
-  const GlobalBasisType& basis() const
+  const GlobalBasisType& basis() const override final
   {
     return *basis_;
   }
 
-  DofCommunicatorType& dof_communicator() const
+  const FiniteElementType& finite_element(const GeometryType& geometry_type) const override final
   {
-    if (!communicator_prepared_) {
-      communicator_prepared_ = DofCommunicationChooserType::prepare(*this, *communicator_);
-    }
-    return *communicator_;
+    const auto finite_element_search_result = finite_elements_->find(geometry_type);
+    if (finite_element_search_result == finite_elements_->end())
+      DUNE_THROW(XT::Common::Exceptions::internal_error,
+                 "This must not happen, the grid layer did not report all geometry types!"
+                     << "\n   entity.geometry().type() = "
+                     << geometry_type);
+    return *finite_element_search_result->second;
   }
 
-  /// \note this makes sense only for for p0, once we export the local finite element, this should become obsolete!
-  std::vector<size_t> local_DoF_indices(const EntityType& entity) const
+  SpaceType type() const override final
   {
-    const auto search_result = geometry_to_local_DoF_indices_map_->find(entity.geometry().type());
-    if (search_result == geometry_to_local_DoF_indices_map_->end())
-      DUNE_THROW(XT::Common::Exceptions::internal_error,
-                 "This must not happen after the checks in the ctor, the grid layer did not report all geometry types!"
-                 "\n   entity.geometry().type() = "
-                     << entity.geometry().type());
-    return search_result->second;
-  } // ... local_DoF_indices(...)
+    return SpaceType::raviart_thomas;
+  }
+
+  int min_polorder() const override final
+  {
+    return p;
+  }
+
+  int max_polorder() const override final
+  {
+    return p;
+  }
+
+  bool continuous(const int /*diff_order*/) const override final
+  {
+    return false;
+  }
+
+  bool continuous_normal_components() const override final
+  {
+    return true;
+  }
+
+  bool is_lagrangian() const override final
+  {
+    return false;
+  }
+
 
 private:
-  const GridLayerType grid_layer_;
-  mutable std::shared_ptr<DofCommunicatorType> communicator_;
-  const double backend_;
+  const GridViewType grid_view_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
-  std::shared_ptr<std::map<GeometryType, std::vector<size_t>>> geometry_to_local_DoF_indices_map_;
   std::shared_ptr<MapperImplementation> mapper_;
   std::shared_ptr<GlobalBasisImplementation> basis_;
-  mutable bool communicator_prepared_;
 }; // class RaviartThomasSpace
 
 
