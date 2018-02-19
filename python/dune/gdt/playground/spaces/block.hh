@@ -25,7 +25,7 @@
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/projections.hh>
-#include <python/dune/gdt/spaces/bindings.hh>
+#include <python/dune/gdt/spaces/interface.hh>
 #include <dune/gdt/type_traits.hh>
 
 #include <dune/gdt/playground/spaces/block.hh>

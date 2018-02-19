@@ -80,16 +80,16 @@ PYBIND11_MODULE(__assembler, m)
   add_initialization(m, "dune.gdt.assembler");
   DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, G, leaf, view, "leaf");
   DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(G, leaf, view, istl_sparse);
-  DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, G, dd_subdomain, part, "dd_subdomain");
-  DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(G, dd_subdomain, part, istl_sparse);
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, part, fem, dg, leaf, 1, 1, fem, dg, leaf, 1, 1);
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, part, fem, dg, leaf, 2, 1, fem, dg, leaf, 2, 1);
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, part, fem, dg, leaf, 3, 1, fem, dg, leaf, 3, 1);
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, dd_subdomain, part, fem, dg, dd_subdomain, 1, 1, fem, dg, dd_subdomain, 1, 1);
+  DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, G, dd_subdomain, view, "dd_subdomain");
+  DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(G, dd_subdomain, view, istl_sparse);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, view, gdt, dg, leaf, 1, 1, gdt, dg, leaf, 1, 1);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, view, gdt, dg, leaf, 2, 1, gdt, dg, leaf, 2, 1);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, view, gdt, dg, leaf, 3, 1, gdt, dg, leaf, 3, 1);
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, dd_subdomain, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);
   DUNE_GDT_ASSEMBLER_SYSTEM_BIND(
-      m, G, dd_subdomain_boundary, part, fem, dg, dd_subdomain, 1, 1, fem, dg, dd_subdomain, 1, 1);
+      m, G, dd_subdomain_boundary, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);
   DUNE_GDT_ASSEMBLER_SYSTEM_BIND(
-      m, G, dd_subdomain_coupling, part, fem, dg, dd_subdomain, 1, 1, fem, dg, dd_subdomain, 1, 1);
+      m, G, dd_subdomain_coupling, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);
 }
 
 #endif // HAVE_DUNE_PYBINDXI

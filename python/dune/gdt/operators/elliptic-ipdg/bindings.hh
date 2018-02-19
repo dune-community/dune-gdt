@@ -18,7 +18,7 @@
 #include <dune/xt/grid/type_traits.hh>
 #include <python/dune/xt/la/container.bindings.hh>
 
-#include <python/dune/gdt/spaces/bindings.hh>
+#include <python/dune/gdt/spaces/interface.hh>
 #include <dune/gdt/type_traits.hh>
 
 #include <dune/gdt/operators/elliptic-ipdg.hh>

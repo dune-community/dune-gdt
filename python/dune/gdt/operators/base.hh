@@ -16,7 +16,7 @@
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/type_traits.hh>
-#include <dune/gdt/assembler/system.bindings.hh>
+#include <python/dune/gdt/assembler/system.hh>
 
 #include <dune/gdt/operators/base.hh>
 

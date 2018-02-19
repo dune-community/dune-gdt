@@ -18,7 +18,7 @@
 #include <python/dune/xt/la/container.bindings.hh>
 
 #include <dune/gdt/spaces.hh>
-#include <python/dune/gdt/spaces/bindings.hh>
+#include <python/dune/gdt/spaces/interface.hh>
 #include <dune/gdt/type_traits.hh>
 
 #include <python/dune/gdt/operators/base.hh>

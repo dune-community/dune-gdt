@@ -20,7 +20,7 @@
 #include <dune/xt/grid/dd/subdomains/grid.hh>
 
 #include <dune/gdt/spaces.hh>
-#include <python/dune/gdt/spaces/bindings.hh>
+#include <python/dune/gdt/spaces/interface.hh>
 #include <dune/gdt/type_traits.hh>
 
 #include <dune/gdt/local/integrands/elliptic-ipdg.hh>

@@ -20,7 +20,7 @@
 #include <dune/xt/la/type_traits.hh>
 #include <python/dune/xt/la/container.bindings.hh>
 
-#include <python/dune/gdt/spaces/bindings.hh>
+#include <python/dune/gdt/spaces/interface.hh>
 #include <dune/gdt/playground/spaces/block.hh>
 #include <dune/gdt/playground/spaces/restricted.hh>
 #include <dune/gdt/type_traits.hh>
@@ -238,8 +238,7 @@ public:
                                                    + "_"
                                                    + XT::Grid::bindings::backend_name<backend>::value());
   } // ... addbind_restricted(...)
-  addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain_boundary>(m, sp_name);
-  addbind_restricted<XT::Grid::Backends::view, XT::Grid::Layers::dd_subdomain_coupling>(m, sp_name);
+
 }; // class DiscreteFunction
 
 
@@ -248,6 +247,5 @@ public:
 } // namespace Dune
 
 
-_DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_ALL_GRIDS(_m, dd_subdomain, block_cg, gdt, 1, 1, 1);
 #endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BINDINGS_HH

@@ -13,14 +13,15 @@
 
 #include <dune/pybindxi/pybind11.h>
 
-#include <dune/xt/grid/grids.bindings.hh>
-#include <dune/xt/la/container.bindings.hh>
+#include <python/dune/xt/grid/grids.bindings.hh>
+#include <python/dune/xt/la/container.bindings.hh>
 
 #include <dune/gdt/spaces.hh>
-#include <dune/gdt/playground/spaces/block.bindings.hh>
+#include <dune/gdt/playground/spaces/block.hh>
+#include <python/dune/gdt/discretefunction/bindings.hh>
 #include <dune/gdt/type_traits.hh>
 
-#include "prolongations.hh"
+#include <dune/gdt/prolongations.hh>
 
 namespace Dune {
 namespace GDT {
@@ -41,9 +42,9 @@ public:
     using namespace pybind11::literals;
 
     m.def("prolong",
-          [](const ConstDiscreteFunction<SS, SV>& source,
-             DiscreteFunction<RS, RV>& range,
-             const size_t over_integrate) { GDT::prolong(source, range, over_integrate); },
+          [](const GDT::ConstDiscreteFunction<SS, SV>& source,
+             GDT::DiscreteFunction<RS, RV>& range,
+             const size_t over_integrate) { Dune::GDT::prolong(source, range, over_integrate); },
           "source"_a,
           "range"_a,
           "over_integrate"_a = 0);

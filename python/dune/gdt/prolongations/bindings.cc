@@ -13,16 +13,13 @@
 
 #include <dune/common/parallel/mpihelper.hh>
 
-#if HAVE_DUNE_FEM
-#include <dune/fem/misc/mpimanager.hh>
-#endif
-
 #include <dune/pybindxi/pybind11.h>
 #include <dune/pybindxi/stl.h>
 
 #include <python/dune/xt/common/bindings.hh>
 
-#include <dune/gdt/prolongations/prolongations.bindings.hh>
+#include <python/dune/gdt/prolongations/bindings.hh>
+#include <python/dune/gdt/shared.hh>
 
 
 #define DUNE_GDT_PROLONGATIONS_BIND(                                                                                   \
@@ -57,12 +54,12 @@ PYBIND11_MODULE(__prolongations, m)
 
   using G = ALU_2D_SIMPLEX_CONFORMING;
 
-  DUNE_GDT_PROLONGATIONS_BIND(m, G, leaf, fem, dg, 1, 1, istl_dense, G, leaf, fem, dg, 1, istl_dense);
-  DUNE_GDT_PROLONGATIONS_BIND(m, G, leaf, fem, dg, 1, 1, istl_dense, G, leaf, fem, dg, 2, istl_dense);
-  DUNE_GDT_PROLONGATIONS_BIND(m, G, leaf, fem, dg, 1, 1, istl_dense, G, leaf, fem, dg, 3, istl_dense);
-  DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, fem, block_dg, 1, 1, istl_dense, G, leaf, fem, dg, 1, istl_dense);
-  DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, fem, block_dg, 1, 1, istl_dense, G, leaf, fem, dg, 2, istl_dense);
-  DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, fem, block_dg, 1, 1, istl_dense, G, leaf, fem, dg, 3, istl_dense);
+  DUNE_GDT_PROLONGATIONS_BIND(m, G, leaf, gdt, dg, 1, 1, istl_dense, G, leaf, gdt, dg, 1, istl_dense);
+  //  DUNE_GDT_PROLONGATIONS_BIND(m, G, leaf, gdt, dg, 1, 1, istl_dense, G, leaf, gdt, dg, 2, istl_dense);
+  //  DUNE_GDT_PROLONGATIONS_BIND(m, G, leaf, gdt, dg, 1, 1, istl_dense, G, leaf, gdt, dg, 3, istl_dense);
+  //  DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_dense, G, leaf, gdt, dg, 1, istl_dense);
+  //  DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_dense, G, leaf, gdt, dg, 2, istl_dense);
+  //  DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_dense, G, leaf, gdt, dg, 3, istl_dense);
 }
 
 #endif // HAVE_DUNE_PYBINDXI

@@ -20,7 +20,7 @@
 #include <python/dune/xt/grid/layers.bindings.hh>
 #include <python/dune/xt/grid/walker.bindings.hh>
 
-#include <python/dune/gdt/spaces/bindings.hh>
+#include <python/dune/gdt/spaces/interface.hh>
 #include <python/dune/gdt/spaces/constraints.hh>
 #include <dune/gdt/type_traits.hh>
 

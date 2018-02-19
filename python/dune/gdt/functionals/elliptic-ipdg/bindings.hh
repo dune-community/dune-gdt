@@ -16,7 +16,7 @@
 #include <dune/xt/grid/type_traits.hh>
 #include <python/dune/xt/la/container.bindings.hh>
 
-#include <python/dune/gdt/spaces/bindings.hh>
+#include <python/dune/gdt/spaces/interface.hh>
 #include <dune/gdt/type_traits.hh>
 
 #include <dune/gdt/functionals/elliptic-ipdg.hh>
@@ -548,7 +548,7 @@ DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, level, view, cg
 // DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, leaf, view, cg, gdt, 1, istl_dense);
 // DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, level, view, cg, gdt, 1, istl_dense);
 // DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, dd_subdomain, part, cg, gdt, 1, istl_dense);
-//#endif
+#endif
 
 // end: this is what we need for the lib
 

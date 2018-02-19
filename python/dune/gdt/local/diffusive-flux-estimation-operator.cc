@@ -25,7 +25,7 @@
 #define DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(_G, _m)                                                 \
   Dune::GDT::bindings::LocalDiffusiveFluxEstimationOperator<_G>::bind(_m)
 
-PYBIND11_MODULE(__local_diffusive_flux_estimation_operator)
+PYBIND11_MODULE(__local_diffusive_flux_estimation_operator, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
