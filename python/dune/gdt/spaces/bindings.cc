@@ -19,7 +19,8 @@
 #include <python/dune/xt/common/bindings.hh>
 #include <dune/xt/grid/grids.hh>
 
-#include "bindings.hh"
+#include <python/dune/gdt/spaces/interface.hh>
+#include <python/dune/gdt/shared.hh>
 #include <dune/gdt/spaces.hh>
 
 
@@ -40,10 +41,10 @@ PYBIND11_MODULE(__spaces, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, gdt, 1, 1, 1, part);
-  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, gdt, 2, 1, 1, part);
-  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, gdt, 3, 1, 1, part);
-  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, dg, gdt, 1, 1, 1, part);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, gdt, 1, 1, 1, view);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, gdt, 2, 1, 1, view);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, dg, gdt, 3, 1, 1, view);
+  DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dd_subdomain, dg, gdt, 1, 1, 1, view);
   DUNE_GDT_SPACES_BIND(m, ALU_2D_SIMPLEX_CONFORMING, leaf, rt, gdt, 0, 2, 1, view);
   add_initialization(m, "dune.gdt.spaces");
 }

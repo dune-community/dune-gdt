@@ -16,7 +16,7 @@
 #include <python/dune/xt/grid/grids.bindings.hh>
 #include <python/dune/xt/la/container.bindings.hh>
 
-#include <python/dune/gdt/spaces/bindings.hh>
+#include <python/dune/gdt/spaces/interface.hh>
 #include <dune/gdt/type_traits.hh>
 
 #include <dune/gdt/projections/dirichlet.hh>

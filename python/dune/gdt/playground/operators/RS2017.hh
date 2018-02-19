@@ -801,7 +801,8 @@ void bind_neighborhood_discretization(pybind11::module& m)
   typedef XT::LA::IstlRowMajorSparseMatrix<R> M;
 
   try { // we might not be the first to add this SystemAssembler
-    GDT::bindings::SystemAssembler<SP, XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::view>::bind(m);
+    GDT::bindings::SystemAssembler<SP, XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::view, SP>::bind(
+        m);
   } catch (std::runtime_error&) {
   }
 
@@ -811,7 +812,7 @@ void bind_neighborhood_discretization(pybind11::module& m)
            const S& neighborhood_space) {
           return new GDT::SystemAssembler<S, NGL>(
               neighborhood_space,
-              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::view>(
+              dd_grid_provider.template layer<XT::Grid::Layers::dd_subdomain_oversampled, XT::Grid::Backends::view, SP>(
                   XT::Common::numeric_cast<size_t>(subdomain)));
         });
 

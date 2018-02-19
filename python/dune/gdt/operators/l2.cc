@@ -65,8 +65,8 @@ PYBIND11_MODULE(__operators_l2, m)
 #if HAVE_DUNE_ALUGRID
   using G = ALU_2D_SIMPLEX_CONFORMING;
 
-  bind_l2_localizable_product<G, Layers::dd_subdomain, XT::Grid::Backends::part>(m);
-  bind_l2_localizable_product<G, Layers::leaf, XT::Grid::Backends::part>(m);
+  bind_l2_localizable_product<G, Layers::dd_subdomain, XT::Grid::Backends::view>(m);
+  bind_l2_localizable_product<G, Layers::leaf, XT::Grid::Backends::view>(m);
   DUNE_GDT_OPERATORS_L2_BIND(m, G, leaf, gdt, dg, 1, 1, istl_sparse);
   DUNE_GDT_OPERATORS_L2_BIND(m, G, leaf, gdt, dg, 2, 1, istl_sparse);
   DUNE_GDT_OPERATORS_L2_BIND(m, G, leaf, gdt, dg, 3, 1, istl_sparse);
