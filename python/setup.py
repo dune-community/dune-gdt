@@ -11,7 +11,7 @@
 #   Rene Milk       (2016)
 
 import sys
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='dune.gdt',
       version='0.3-dev',
@@ -20,6 +20,8 @@ setup(name='dune.gdt',
       author='The dune-gdt devs',
       author_email='dune-gdt-dev@listserv.uni-muenster.de',
       url='https://github.com/dune-community/dune-gdt',
-      packages=['dune.gdt'],
+      packages = find_packages(),
+      zip_safe = 0,
+      package_data = {'': ['*.so']},
       install_requires=['jinja2', 'where'],
       )
