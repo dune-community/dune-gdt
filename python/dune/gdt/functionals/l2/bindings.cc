@@ -79,19 +79,21 @@ PYBIND11_MODULE(__functionals_l2, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
-
-  using G = ALU_2D_SIMPLEX_CONFORMING;
-  add_initialization(m, "dune.gdt.functionals.l2");
-  DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 2, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 3, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, dd_subdomain, view, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, leaf, view, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, level, view, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, dd_subdomain, view, dg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, leaf, view, cg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, level, view, cg, gdt, 1, istl_sparse);
-  DUNE_GDT_FUNCTIONALS_L2_BIND_YASP(m, dd_subdomain, view, cg, gdt, 1, istl_sparse);
+  {
+    using G = ALU_2D_SIMPLEX_CONFORMING;
+    add_initialization(m, "dune.gdt.functionals.l2");
+    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 1, istl_sparse);
+    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 2, istl_sparse);
+    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 3, istl_sparse);
+    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, dd_subdomain, view, dg, gdt, 1, istl_sparse);
+  }
+  {
+    using G = YASP_2D_EQUIDISTANT_OFFSET;
+    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 1, istl_sparse);
+    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 2, istl_sparse);
+    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 3, istl_sparse);
+    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, dd_subdomain, view, dg, gdt, 1, istl_sparse);
+  }
 }
 
 #endif // HAVE_DUNE_PYBINDXI

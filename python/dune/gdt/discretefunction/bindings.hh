@@ -246,8 +246,5 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_COMMON(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC);                  \
-  _DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND_EIGEN(_m, _G, _g_layer, _s_type, _s_backend, _p, _r, _rC);                   \
 #endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BINDINGS_HH
