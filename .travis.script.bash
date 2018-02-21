@@ -15,14 +15,6 @@ set -ex
 WAIT="${SUPERDIR}/scripts/bash/travis_wait_new.bash 45"
 source ${SUPERDIR}/scripts/bash/retry_command.bash
 
-${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
-${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make
-
-# this does nothing if all current tests are distributed already, but triggers full build if not
-# -> builder will timeout -> manually run refresh_test_timings -> push results
-${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja -v -j 1 refresh_test_timings
-
-free -h
 
 
 
