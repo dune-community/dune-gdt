@@ -25,7 +25,7 @@ namespace GDT {
 
 
 // forward, to allow for specialization
-template <class GV, size_t r, size_t rC = 1, class R = double>
+template <class GV, size_t r = 1, size_t rC = 1, class R = double>
 class FiniteVolumeSpace
 {
   static_assert(Dune::AlwaysFalse<GV>::value, "Untested for these dimensions!");
