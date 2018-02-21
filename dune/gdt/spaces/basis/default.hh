@@ -10,9 +10,10 @@
 #ifndef DUNE_GDT_SPACES_BASIS_DEFAULT_HH
 #define DUNE_GDT_SPACES_BASIS_DEFAULT_HH
 
-#include <dune/xt/common/numeric_cast.hh>
+#include <dune/xt/common/memory.hh>
 #include <dune/xt/functions/interfaces/local-functions.hh>
 
+#include <dune/gdt/exceptions.hh>
 #include <dune/gdt/local/finite-elements/interfaces.hh>
 
 #include "interface.hh"
@@ -70,26 +71,41 @@ public:
     return finite_element_search_result->second->basis();
   }
 
+  std::unique_ptr<LocalizedBasisType> localize() const override final
+  {
+    return std::make_unique<LocalizedDefaultGlobalBasis>(*this);
+  }
+
   std::unique_ptr<LocalizedBasisType> localize(const ElementType& element) const override final
   {
-    return std::make_unique<LocalizedDefaultGlobalBasis>(element, shape_functions(element.geometry().type()));
+    return std::make_unique<LocalizedDefaultGlobalBasis>(*this, element);
   }
 
 private:
-  class LocalizedDefaultGlobalBasis : public XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>
+  class LocalizedDefaultGlobalBasis : public XT::Functions::LocalFunctionSetInterface<E, r, rC, R>
   {
     using ThisType = LocalizedDefaultGlobalBasis;
-    using BaseType = XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>;
+    using BaseType = XT::Functions::LocalFunctionSetInterface<E, r, rC, R>;
 
   public:
+    using typename BaseType::EntityType;
     using typename BaseType::DomainType;
     using typename BaseType::RangeType;
-    using typename BaseType::JacobianRangeType;
+    using typename BaseType::DerivativeRangeType;
 
-    LocalizedDefaultGlobalBasis(const ElementType& elemnt, const ShapeFunctionsType& shape_funcs)
-      : BaseType(elemnt)
-      , shape_functions_(shape_funcs)
+    LocalizedDefaultGlobalBasis(const DefaultGlobalBasis<GV, r, rC, R>& self)
+      : BaseType()
+      , self_(self)
+      , shape_functions_(nullptr)
     {
+    }
+
+    LocalizedDefaultGlobalBasis(const DefaultGlobalBasis<GV, r, rC, R>& self, const EntityType& elemnt)
+      : BaseType(elemnt)
+      , self_(self)
+      , shape_functions_(nullptr)
+    {
+      post_bind(elemnt);
     }
 
     LocalizedDefaultGlobalBasis(const ThisType&) = default;
@@ -98,65 +114,55 @@ private:
     ThisType& operator=(const ThisType&) = delete;
     ThisType& operator=(ThisType&&) = delete;
 
-    size_t size() const override final
+  protected:
+    void post_bind(const EntityType& elemnt) override final
     {
-      return shape_functions_.size();
+      shape_functions_ = std::make_unique<XT::Common::ConstStorageProvider<ShapeFunctionsType>>(
+          self_.shape_functions(elemnt.geometry().type()));
     }
 
-    size_t order(const XT::Common::Parameter& /*param*/ = {}) const override final
+  public:
+    size_t size(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      return XT::Common::numeric_cast<size_t>(shape_functions_.order());
+      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_error, "");
+      return shape_functions_->access().size();
     }
 
-    void evaluate(const DomainType& xx,
-                  std::vector<RangeType>& ret,
+    int order(const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_error, "");
+      return shape_functions_->access().order();
+    }
+
+    void evaluate(const DomainType& point_in_reference_element,
+                  std::vector<RangeType>& result,
                   const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      assert(this->is_a_valid_point(xx));
-      ret = shape_functions_.evaluate(xx);
+      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_error, "");
+      this->assert_inside_reference_element(point_in_reference_element);
+      shape_functions_->access().evaluate(point_in_reference_element, result);
     }
 
-    std::vector<RangeType> evaluate(const DomainType& xx,
-                                    const XT::Common::Parameter& /*param*/ = {}) const override final
+    void jacobians(const DomainType& point_in_reference_element,
+                   std::vector<DerivativeRangeType>& result,
+                   const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      assert(this->is_a_valid_point(xx));
-      return shape_functions_.evaluate(xx);
-    }
-
-    void jacobian(const DomainType& xx,
-                  std::vector<JacobianRangeType>& ret,
-                  const XT::Common::Parameter& /*param*/ = {}) const override final
-    {
-      assert(this->is_a_valid_point(xx));
+      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_error, "");
+      this->assert_inside_reference_element(point_in_reference_element);
       // evaluate jacobian of shape functions
-      ret = shape_functions_.jacobian(xx);
+      shape_functions_->access().jacobian(point_in_reference_element, result);
       // apply transformation
-      const auto J_inv_T = this->entity().geometry().jacobianInverseTransposed(xx);
-      auto tmp_value = ret[0][0];
-      for (size_t ii = 0; ii < shape_functions_.size(); ++ii) {
-        J_inv_T.mv(ret[ii][0], tmp_value);
-        ret[ii][0] = tmp_value;
+      const auto J_inv_T = this->entity().geometry().jacobianInverseTransposed(point_in_reference_element);
+      auto tmp_value = result[0][0];
+      for (size_t ii = 0; ii < shape_functions_->access().size(); ++ii) {
+        J_inv_T.mv(result[ii][0], tmp_value);
+        result[ii][0] = tmp_value;
       }
-    } // ... jacobian(...)
-
-    std::vector<JacobianRangeType> jacobian(const DomainType& xx,
-                                            const XT::Common::Parameter& /*param*/ = {}) const override final
-    {
-      assert(this->is_a_valid_point(xx));
-      // evaluate jacobian of shape functions
-      auto ret = shape_functions_.jacobian(xx);
-      // apply transformation
-      const auto J_inv_T = this->entity().geometry().jacobianInverseTransposed(xx);
-      auto tmp_value = ret[0][0];
-      for (size_t ii = 0; ii < shape_functions_.size(); ++ii) {
-        J_inv_T.mv(ret[ii][0], tmp_value);
-        ret[ii][0] = tmp_value;
-      }
-      return ret;
     } // ... jacobian(...)
 
   private:
-    const ShapeFunctionsType& shape_functions_;
+    const DefaultGlobalBasis<GV, r, rC, R>& self_;
+    std::unique_ptr<XT::Common::ConstStorageProvider<ShapeFunctionsType>> shape_functions_;
   }; // class LocalizedDefaultGlobalBasis
 
   const GridViewType& grid_view_;

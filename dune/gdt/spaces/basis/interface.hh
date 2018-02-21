@@ -38,13 +38,15 @@ public:
 
   using ElementType = E;
   using ShapeFunctionsType = LocalFiniteElementBasisInterface<D, d, R, r, rC>;
-  using LocalizedBasisType = XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>;
+  using LocalizedBasisType = XT::Functions::LocalFunctionSetInterface<E, r, rC, R>;
 
   virtual ~GlobalBasisInterface() = default;
 
   virtual const GridViewType& grid_view() const = 0;
 
   virtual const ShapeFunctionsType& shape_functions(const GeometryType& geometry_type) const = 0;
+
+  virtual std::unique_ptr<LocalizedBasisType> localize() const = 0;
 
   virtual std::unique_ptr<LocalizedBasisType> localize(const ElementType& element) const = 0;
 }; // class GlobalBasisInterface

@@ -10,8 +10,10 @@
 #ifndef DUNE_GDT_SPACES_BASIS_RAVIART_THOMAS_HH
 #define DUNE_GDT_SPACES_BASIS_RAVIART_THOMAS_HH
 
+#include <dune/xt/common/memory.hh>
 #include <dune/xt/grid/type_traits.hh>
 
+#include <dune/gdt/exceptions.hh>
 #include <dune/gdt/local/finite-elements/interfaces.hh>
 #include <dune/gdt/spaces/mapper/finite-volume.hh>
 
@@ -59,7 +61,7 @@ public:
       const std::shared_ptr<std::vector<std::vector<R>>> switches)
     : grid_view_(grd_vw)
     , finite_elements_(finite_elements)
-    , entity_indices_(entity_indices)
+    , element_indices_(entity_indices)
     , switches_(switches)
   {
   }
@@ -80,35 +82,43 @@ public:
     return finite_element_search_result->second->basis();
   }
 
+  std::unique_ptr<LocalizedBasisType> localize() const override final
+  {
+    return std::make_unique<LocalizedRaviartThomasGlobalBasis>(*this);
+  }
+
   std::unique_ptr<LocalizedBasisType> localize(const ElementType& element) const override final
   {
-    return std::make_unique<LocalizedRaviartThomasGlobalBasis>(
-        element, shape_functions(element.geometry().type()), (*switches_)[entity_indices_->global_index(element, 0)]);
+    return std::make_unique<LocalizedRaviartThomasGlobalBasis>(*this, element);
   }
 
 private:
-  class LocalizedRaviartThomasGlobalBasis : public XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>
+  class LocalizedRaviartThomasGlobalBasis : public XT::Functions::LocalFunctionSetInterface<E, r, rC, R>
   {
     using ThisType = LocalizedRaviartThomasGlobalBasis;
-    using BaseType = XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>;
+    using BaseType = XT::Functions::LocalFunctionSetInterface<E, r, rC, R>;
 
   public:
     using typename BaseType::EntityType;
     using typename BaseType::DomainType;
     using typename BaseType::RangeType;
-    using typename BaseType::JacobianRangeType;
+    using typename BaseType::DerivativeRangeType;
 
-    LocalizedRaviartThomasGlobalBasis(const EntityType& elemnt,
-                                      const ShapeFunctionsType& shape_funcs,
-                                      const std::vector<R>& switches)
-      : BaseType(elemnt)
-      , shape_functions_(shape_funcs)
-      , switches_(switches)
+    LocalizedRaviartThomasGlobalBasis(const RaviartThomasGlobalBasis<GL, R>& self)
+      : BaseType()
+      , self_(self)
+      , shape_functions_(nullptr)
+      , element_index_(0)
     {
-      if (switches_.size() != shape_functions_.size())
-        DUNE_THROW(
-            Exceptions::basis_error,
-            "shape_functions_.size() = " << shape_functions_.size() << "\n   switches.size() = " << switches_.size());
+    }
+
+    LocalizedRaviartThomasGlobalBasis(const RaviartThomasGlobalBasis<GL, R>& self, const EntityType& elemnt)
+      : BaseType(elemnt)
+      , self_(self)
+      , shape_functions_(nullptr)
+      , element_index_(0)
+    {
+      post_bind(elemnt);
     }
 
     LocalizedRaviartThomasGlobalBasis(const ThisType&) = default;
@@ -117,77 +127,95 @@ private:
     ThisType& operator=(const ThisType&) = delete;
     ThisType& operator=(ThisType&&) = delete;
 
-    size_t size() const override final
+  protected:
+    void post_bind(const EntityType& elemnt) override final
     {
-      return shape_functions_.size();
+      shape_functions_ = std::make_unique<XT::Common::ConstStorageProvider<ShapeFunctionsType>>(
+          self_.shape_functions(elemnt.geometry().type()));
+      element_index_ = self_.element_indices_->global_index(elemnt, 0);
+      if ((*self_.switches_)[element_index_].size() != shape_functions_->access().size())
+        DUNE_THROW(Exceptions::basis_error,
+                   "shape_functions_->access().size() = " << shape_functions_->access().size()
+                                                          << "\n   switches.size() = "
+                                                          << (*self_.switches_)[element_index_].size());
     }
 
-    size_t order(const XT::Common::Parameter& /*param*/ = {}) const override final
+  public:
+    size_t size(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      return XT::Common::numeric_cast<size_t>(shape_functions_.order());
+      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_error, "");
+      return shape_functions_->access().size();
+    }
+
+    int order(const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_error, "");
+      return shape_functions_->access().order();
     }
 
     using BaseType::evaluate;
+    using BaseType::jacobians;
 
-    void evaluate(const DomainType& xx,
-                  std::vector<RangeType>& ret,
+    void evaluate(const DomainType& point_in_reference_element,
+                  std::vector<RangeType>& result,
                   const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      assert(this->is_a_valid_point(xx));
+      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_error, "");
+      this->assert_inside_reference_element(point_in_reference_element);
       // evaluate shape functions
-      ret = shape_functions_.evaluate(xx);
+      shape_functions_->access().evaluate(point_in_reference_element, result);
       // flip and scale shape functions to ensure
       // - continuity of normal component and
       // - basis*integrationElementNormal = 1
-      for (size_t ii = 0; ii < shape_functions_.size(); ++ii)
-        ret[ii] *= switches_[ii];
+      for (size_t ii = 0; ii < shape_functions_->access().size(); ++ii)
+        result[ii] *= (*self_.switches_)[element_index_][ii];
       // apply piola transformation
-      const auto J_T = this->entity().geometry().jacobianTransposed(xx);
+      const auto J_T = this->entity().geometry().jacobianTransposed(point_in_reference_element);
       const auto det_J_T = std::abs(J_T.determinant());
       RangeType tmp_value;
-      for (size_t ii = 0; ii < shape_functions_.size(); ++ii) {
-        J_T.mtv(ret[ii], tmp_value);
+      for (size_t ii = 0; ii < shape_functions_->access().size(); ++ii) {
+        J_T.mtv(result[ii], tmp_value);
         tmp_value /= det_J_T;
-        ret[ii] = tmp_value;
+        result[ii] = tmp_value;
       }
     }
 
-    using BaseType::jacobian;
-
-    void jacobian(const DomainType& xx,
-                  std::vector<JacobianRangeType>& ret,
-                  const XT::Common::Parameter& /*param*/ = {}) const override final
+    void jacobians(const DomainType& point_in_reference_element,
+                   std::vector<DerivativeRangeType>& result,
+                   const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      assert(this->is_a_valid_point(xx));
+      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_error, "");
+      this->assert_inside_reference_element(point_in_reference_element);
       // evaluate jacobian of shape functions
-      ret = shape_functions_.jacobian(xx);
+      shape_functions_->access().jacobian(point_in_reference_element, result);
       // flip and scale shape functions to ensure
       // - continuity of normal component and
       // - basis*integrationElementNormal = 1
-      for (size_t ii = 0; ii < shape_functions_.size(); ++ii)
-        ret[ii] *= switches_[ii];
+      for (size_t ii = 0; ii < shape_functions_->access().size(); ++ii)
+        result[ii] *= (*self_.switches_)[element_index_][ii];
       // apply piola transformation
-      const auto J_T = this->entity().geometry().jacobianTransposed(xx);
+      const auto J_T = this->entity().geometry().jacobianTransposed(point_in_reference_element);
       const auto det_J_T = std::abs(J_T.determinant());
-      const auto J_inv_T = this->entity().geometry().jacobianInverseTransposed(xx);
-      auto tmp_jacobian_row = ret[0][0];
-      for (size_t ii = 0; ii < shape_functions_.size(); ++ii) {
+      const auto J_inv_T = this->entity().geometry().jacobianInverseTransposed(point_in_reference_element);
+      auto tmp_jacobian_row = result[0][0];
+      for (size_t ii = 0; ii < shape_functions_->access().size(); ++ii) {
         for (size_t jj = 0; jj < d; ++jj) {
-          J_inv_T.mtv(ret[ii][jj], tmp_jacobian_row);
-          J_T.mtv(tmp_jacobian_row, ret[ii][jj]);
-          ret[ii][jj] /= det_J_T;
+          J_inv_T.mtv(result[ii][jj], tmp_jacobian_row);
+          J_T.mtv(tmp_jacobian_row, result[ii][jj]);
+          result[ii][jj] /= det_J_T;
         }
       }
     } // ... jacobian(...)
 
   private:
-    const ShapeFunctionsType& shape_functions_;
-    const std::vector<R>& switches_;
+    const RaviartThomasGlobalBasis<GL, R>& self_;
+    std::unique_ptr<XT::Common::ConstStorageProvider<ShapeFunctionsType>> shape_functions_;
+    size_t element_index_;
   }; // class LocalizedRaviartThomasGlobalBasis
 
   const GridViewType& grid_view_;
   const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
-  const std::shared_ptr<FiniteVolumeMapper<GL>> entity_indices_;
+  const std::shared_ptr<FiniteVolumeMapper<GL>> element_indices_;
   const std::shared_ptr<std::vector<std::vector<R>>> switches_;
 }; // class RaviartThomasGlobalBasis
 

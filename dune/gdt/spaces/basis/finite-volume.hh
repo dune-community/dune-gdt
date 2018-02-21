@@ -73,22 +73,37 @@ public:
     return search_result->second;
   }
 
+  std::unique_ptr<LocalizedBasisType> localize() const override final
+  {
+    return std::make_unique<LocalizedFiniteVolumeGlobalBasis>();
+  }
+
   std::unique_ptr<LocalizedBasisType> localize(const ElementType& element) const override final
   {
     return std::make_unique<LocalizedFiniteVolumeGlobalBasis>(element);
   }
 
 private:
-  class LocalizedFiniteVolumeGlobalBasis : public XT::Functions::LocalfunctionSetInterface<E, D, d, R, 1, 1>
+  class LocalizedFiniteVolumeGlobalBasis : public XT::Functions::LocalFunctionSetInterface<E, 1, 1, R>
   {
     using ThisType = LocalizedFiniteVolumeGlobalBasis;
-    using BaseType = XT::Functions::LocalfunctionSetInterface<E, D, d, R, 1, 1>;
+    using BaseType = XT::Functions::LocalFunctionSetInterface<E, 1, 1, R>;
 
   public:
     using typename BaseType::EntityType;
     using typename BaseType::DomainType;
+    using typename BaseType::RangeSelector;
+    using typename BaseType::DerivativeRangeSelector;
     using typename BaseType::RangeType;
-    using typename BaseType::JacobianRangeType;
+    using typename BaseType::DerivativeRangeType;
+    using typename BaseType::SingleDerivativeRangeType;
+    using typename BaseType::DynamicRangeType;
+    using typename BaseType::DynamicDerivativeRangeType;
+
+    LocalizedFiniteVolumeGlobalBasis()
+      : BaseType()
+    {
+    }
 
     LocalizedFiniteVolumeGlobalBasis(const EntityType& elemnt)
       : BaseType(elemnt)
@@ -101,41 +116,118 @@ private:
     ThisType& operator=(const ThisType&) = delete;
     ThisType& operator=(ThisType&&) = delete;
 
-    size_t size() const override final
+    size_t size(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
       return 1;
     }
 
-    size_t order(const XT::Common::Parameter& /*param*/ = {}) const override final
+    int order(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
       return 0;
     }
 
-    void evaluate(const DomainType& /*xx*/,
-                  std::vector<RangeType>& ret,
+    using BaseType::evaluate;
+    using BaseType::jacobians;
+    using BaseType::derivatives;
+
+    /**
+      * \name ``These methods are required by XT::Functions::LocalizableFunctionSetInterface.''
+      * \{
+      **/
+
+    void evaluate(const DomainType& /*point_in_reference_element*/,
+                  std::vector<RangeType>& result,
                   const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      ret[0] = 1;
+      if (result.size() < 1)
+        result.resize(1);
+      result[0] = 1;
     }
 
-    std::vector<RangeType> evaluate(const DomainType& /*xx*/,
-                                    const XT::Common::Parameter& /*param*/ = {}) const override final
+
+    void jacobians(const DomainType& /*point_in_reference_element*/,
+                   std::vector<DerivativeRangeType>& result,
+                   const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      return {1};
+      if (result.size() < 1)
+        result.resize(1);
+      result[0] *= 0;
     }
 
-    void jacobian(const DomainType& /*xx*/,
-                  std::vector<JacobianRangeType>& ret,
+    void derivatives(const std::array<size_t, d>& alpha,
+                     const DomainType& /*point_in_reference_element*/,
+                     std::vector<DerivativeRangeType>& result,
+                     const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      if (result.size() < 1)
+        result.resize(1);
+      for (size_t jj = 0; jj < d; ++jj)
+        if (alpha[jj] == 0)
+          for (size_t ii = 0; ii < r; ++ii)
+            result[0][jj] = 1;
+    } // ... derivatives(...)
+
+    /**
+      * \}
+      * \name ``These methods are default implemented in XT::Functions::LocalizableFunctionSetInterface and are
+      *         overridden for improved performance.''
+      * \{
+      **/
+
+    void evaluate(const DomainType& /*point_in_reference_element*/,
+                  std::vector<DynamicRangeType>& result,
                   const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      ret[0] *= 0;
+      if (result.size() < 1)
+        result.resize(1);
+      RangeSelector::ensure_size(result[0]);
+      for (size_t ii = 0; ii < r; ++ii)
+        result[ii] = 1;
     }
 
-    std::vector<JacobianRangeType> jacobian(const DomainType& /*xx*/,
-                                            const XT::Common::Parameter& /*param*/ = {}) const override final
+    void jacobians(const DomainType& /*point_in_reference_element*/,
+                   std::vector<DynamicDerivativeRangeType>& result,
+                   const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      return {0};
+      if (result.size() < 1)
+        result.resize(1);
+      DerivativeRangeSelector::ensure_size(result[0]);
+      result[0] *= 0;
     }
+
+    /**
+      * \}
+      * \name ``These methods (used to access an individual range dimension) are default implemented in
+      *         XT::Functions::LocalizableFunctionSetInterface and are implemented for improved performance.''
+      * \{
+      **/
+
+    void evaluate(const DomainType& /*point_in_reference_element*/,
+                  std::vector<R>& result,
+                  const size_t row,
+                  const size_t col = 0,
+                  const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      this->assert_correct_dims(row, col, "evaluate");
+      if (result.size() < 1)
+        result.resize(1);
+      result[0] = 1;
+    }
+
+    void jacobians(const DomainType& /*point_in_reference_element*/,
+                   std::vector<SingleDerivativeRangeType>& result,
+                   const size_t row,
+                   const size_t col = 0,
+                   const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      this->assert_correct_dims(row, col, "evaluate");
+      if (result.size() < 1)
+        result.resize(1);
+      result[0] *= 0;
+    }
+
+    /// \}
+
   }; // class LocalizedFiniteVolumeGlobalBasis
 
   const GridViewType& grid_view_;
