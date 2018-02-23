@@ -10,11 +10,9 @@
 
 # expectation targets
 dune_add_library(block_swipdg_expectations
-                 NO_EXPORT
                  SOURCES
                  block-swipdg-esv2007-2dyaspgrid.cxx)
 dune_add_library(cg_expectations
-                 NO_EXPORT
                  SOURCES
                  cg-ao2013-2dyaspgrid.cxx
                  cg-er2007-2dyaspgrid.cxx
@@ -27,7 +25,6 @@ dune_add_library(cg_expectations
                  cg-mixedboundary-2dalugrid.cxx
                  cg-spe10-2dalugrid.cxx)
 dune_add_library(swipdg_expectations
-                 NO_EXPORT
                  SOURCES
                  swipdg-ao2013-2dyaspgrid.cxx
                  swipdg-er2007-2dyaspgrid.cxx

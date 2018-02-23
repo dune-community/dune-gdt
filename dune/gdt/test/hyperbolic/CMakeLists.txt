@@ -11,7 +11,6 @@
 
 # expectation targets
 dune_add_library(expectations_hyperbolic_fv_discretizations_yaspgrid
-                 NO_EXPORT
                  SOURCES
                  eocexpectations-fv-sourcebeam-1dyaspgrid.cxx
                  eocexpectations-fv-boltzmanncheckerboard-2dyaspgrid.cxx
