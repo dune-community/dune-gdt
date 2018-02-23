@@ -59,9 +59,9 @@ public:
   typedef typename SpaceChooser<GridType, RangeFieldType, dimRange, dimRangeCols, backend_type>::Type Type;
   typedef Type type;
 
-  static Type create(GridLayerType grid_layer)
+  static Type create(GridLayerType grd_layer)
   {
-    return Type(grid_layer);
+    return Type(grd_layer);
   }
 
   template <class DdGridType>

@@ -235,7 +235,7 @@ public:
   {
     if (ret.size() != 1)
       ret.resize(1);
-    ret[0] = dimRange * (backend().index(entity)) + factor_index;
+    ret[0] = dimRange * backend().index(entity) + factor_index;
   }
 
   size_t mapToGlobal(const size_t factor_index,
@@ -244,7 +244,7 @@ public:
   {
     assert(local_index_in_factor == 0);
     assert(factor_index < numDofs(entity));
-    return dimRange * (backend().index(entity)) + factor_index;
+    return dimRange * backend().index(entity) + factor_index;
   }
 
   size_t mapToLocal(const size_t factor_index,

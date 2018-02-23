@@ -144,7 +144,7 @@ public:
 
   template <class RangeType, class SourceType>
   FieldType
-  apply2(const RangeType& /*range*/, const SourceType& /*source*/, const XT::Common::Parameter& param = {}) const
+  apply2(const RangeType& /*range*/, const SourceType& /*source*/, const XT::Common::Parameter& /*param*/ = {}) const
   {
     DUNE_THROW(NotImplemented, "Go ahead if you think this makes sense!");
   }
