@@ -25,6 +25,8 @@ class DiscreteFunctionDataHandle
 public:
   DiscreteFunctionDataHandle(DiscreteFunctionType& discrete_function, bool fixed_size = true)
     : discrete_function_(discrete_function)
+    , mapper_(discrete_function_.space().mapper())
+    , vector_(discrete_function_.vector())
     , fixed_size_(fixed_size)
   {
   }
@@ -72,10 +74,9 @@ public:
   template <class MessageBuffer, class EntityType>
   std::enable_if_t<EntityType::codimension == 0> gather(MessageBuffer& buff, const EntityType& entity) const
   {
-    const auto& mapper = discrete_function_.space().mapper();
-    const auto& vector = discrete_function_.vector();
-    for (size_t ii = 0; ii < mapper.numDofs(entity); ++ii)
-      buff.write(vector.get_entry(mapper.mapToGlobal(entity, ii)));
+    const auto global_indices = mapper_.globalIndices(entity);
+    for (const auto& index : global_indices)
+      buff.write(vector_.get_entry(index));
   }
 
   /*! unpack data from message buffer to user
@@ -90,19 +91,16 @@ public:
   template <class MessageBuffer, class EntityType>
   std::enable_if_t<EntityType::codimension == 0> scatter(MessageBuffer& buff, const EntityType& entity, size_t n)
   {
-    const auto& mapper = discrete_function_.space().mapper();
-    auto& vector = discrete_function_.vector();
-    assert(mapper.numDofs(entity) == n);
-    // we need this intermediate double because we cannot get a reference to an entry in vector
-    typename DiscreteFunctionType::SpaceType::RangeFieldType entry;
-    for (size_t ii = 0; ii < n; ++ii) {
-      buff.read(entry);
-      vector.set_entry(mapper.mapToGlobal(entity, ii), entry);
-    }
+    assert(mapper_.numDofs(entity) == n);
+    const auto global_indices = mapper_.globalIndices(entity);
+    for (const auto& index : global_indices)
+      buff.read(vector_[index]);
   }
 
 private:
   DiscreteFunctionType& discrete_function_;
+  const typename DiscreteFunctionType::SpaceType::MapperType& mapper_;
+  typename DiscreteFunctionType::VectorType& vector_;
   const bool fixed_size_;
 };
 
