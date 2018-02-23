@@ -177,7 +177,7 @@ private:
         if (XT::Common::FloatCmp::ne(eigval, 0.))
           rhs[permutations[index]] = A.entries()[kk] * eigval;
       } // kk
-      XT::LA::solve_upper_triangular(R, x, rhs);
+      XT::LA::solve_upper_triangular_transposed(R, x, rhs);
       F.start_column();
       for (size_t rr = 0; rr < dimRange; ++rr)
         if (XT::Common::FloatCmp::ne(x[rr], 0.))
