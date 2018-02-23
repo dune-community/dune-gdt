@@ -56,7 +56,6 @@ public:
   {
   }
 
-
   static std::string static_id()
   {
     return "planesourcepn";

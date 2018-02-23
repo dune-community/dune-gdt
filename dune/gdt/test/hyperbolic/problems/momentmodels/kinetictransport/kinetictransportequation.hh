@@ -11,10 +11,14 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_KINETICTRANSPORTEQUATION_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_KINETICTRANSPORTEQUATION_HH
 
+#include <dune/grid/common/partitionset.hh>
+
 #include <dune/xt/functions/affine.hh>
 #include <dune/xt/functions/checkerboard.hh>
 #include <dune/xt/functions/lambda/global-function.hh>
 #include <dune/xt/functions/lambda/global-flux-function.hh>
+
+#include <dune/xt/la/container/eye-matrix.hh>
 
 #include "../kineticequation.hh"
 
@@ -24,12 +28,16 @@ namespace Hyperbolic {
 namespace Problems {
 
 
-template <class BasisfunctionImp, class GridLayerImp, class U_, size_t quadratureDim = BasisfunctionImp::dimDomain>
-class KineticTransportEquation : public KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_>,
+template <class BasisfunctionImp,
+          class GridLayerImp,
+          class U_,
+          size_t quadratureDim = BasisfunctionImp::dimDomain,
+          const bool linear_ = false>
+class KineticTransportEquation : public KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_, linear_>,
                                  public XT::Common::ParametricInterface
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, quadratureDim> ThisType;
-  typedef KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, quadratureDim, linear_> ThisType;
+  typedef KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_, linear_> BaseType;
 
 public:
   using typename BaseType::BasisfunctionType;
@@ -63,7 +71,6 @@ public:
     std::vector<int> num_quad_cells = grid_cfg.get("num_quad_cells", std::vector<int>{2, 2, 2});
     int quad_order = grid_cfg.get("quad_order", 20);
     // quadrature that consists of a Gauss-Legendre quadrature on each cell of the velocity grid
-    QuadratureType quadrature;
     Dune::FieldVector<double, quadratureDim> lower_left(-1);
     Dune::FieldVector<double, quadratureDim> upper_right(1);
     std::array<int, quadratureDim> s;
@@ -72,14 +79,49 @@ public:
     typedef typename Dune::YaspGrid<quadratureDim, Dune::EquidistantOffsetCoordinates<double, quadratureDim>> GridType;
     GridType velocity_grid(lower_left, upper_right, s);
     const auto velocity_grid_view = velocity_grid.leafGridView();
-    for (const auto& entity : elements(velocity_grid_view)) {
+    // In an MPI parallel environment, each rank will only have parts of the velocity grid,
+    // but we need the full quadrature on each rank, so we need to communicate the missing parts
+    std::vector<double> coords;
+    std::vector<double> weights;
+    // first, collect the quadrature points on each rank
+    for (const auto& entity : elements(velocity_grid_view, Dune::Partitions::Interior())) {
       const auto local_quadrature = Dune::QuadratureRules<DomainFieldType, quadratureDim>::rule(
-          entity.type(), quad_order, Dune::QuadratureType::GaussLegendre);
+          entity.type(), quad_order, Dune::QuadratureType::GaussLobatto);
       for (const auto& quad_point : local_quadrature) {
-        quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, quadratureDim>(
-            entity.geometry().global(quad_point.position()),
-            quad_point.weight() * entity.geometry().integrationElement(quad_point.position())));
+        const auto pos = entity.geometry().global(quad_point.position());
+        for (size_t ii = 0; ii < quadratureDim; ++ii)
+          coords.push_back(pos[ii]);
+        weights.push_back(quad_point.weight() * entity.geometry().integrationElement(quad_point.position()));
       }
+    }
+    // communicate the quadrature points to all ranks
+    const auto& comm = velocity_grid.comm();
+    int coords_size = coords.size();
+    int weights_size = weights.size();
+    std::vector<int> coords_sizes(comm.size());
+    std::vector<int> weights_sizes(comm.size());
+    std::vector<int> coords_displacements(comm.size(), 0);
+    std::vector<int> weights_displacements(comm.size(), 0);
+    comm.allgather(&coords_size, 1, coords_sizes.data());
+    comm.allgather(&weights_size, 1, weights_sizes.data());
+    for (int ii = 1; ii < comm.size(); ++ii) {
+      coords_displacements[ii] = coords_displacements[ii - 1] + coords_sizes[ii - 1];
+      weights_displacements[ii] = weights_displacements[ii - 1] + weights_sizes[ii - 1];
+    }
+    auto all_coords_size = comm.sum(coords_size);
+    auto all_weights_size = comm.sum(weights_size);
+    std::vector<double> all_coords(all_coords_size);
+    std::vector<double> all_weights(all_weights_size);
+    comm.allgatherv(coords.data(), coords.size(), all_coords.data(), coords_sizes.data(), coords_displacements.data());
+    comm.allgatherv(
+        weights.data(), weights.size(), all_weights.data(), weights_sizes.data(), weights_displacements.data());
+    // now assemble the quadrature
+    QuadratureType quadrature;
+    for (size_t ii = 0; ii < all_weights.size(); ++ii) {
+      DomainType position;
+      for (size_t jj = 0; jj < quadratureDim; ++jj)
+        position[jj] = all_coords[ii * quadratureDim + jj];
+      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, quadratureDim>(position, all_weights[ii]));
     }
     return quadrature;
   }
@@ -100,6 +142,7 @@ public:
     , quadrature_(quadrature)
     , parameter_type_(parameter_type)
   {
+    // by default, initially num_segments has size 3. If dimDomain < 3 we thus need to resize
     num_segments_.resize(dimDomain);
     if (quadrature_.empty())
       quadrature_ = default_quadrature(grid_cfg);
@@ -134,8 +177,7 @@ public:
   {
     // calculate B row-wise by solving M^{T} A^T = B^T column-wise
     auto A = basis_functions_.mass_matrix_with_v();
-    auto M_T = basis_functions_.mass_matrix();
-    transpose_in_place(M_T);
+    const auto M_T = basis_functions_.mass_matrix(); // mass matrix is symmetric
     // solve
     DynamicVector<RangeFieldType> tmp_row(M_T.N(), 0.);
     for (size_t dd = 0; dd < dimDomain; ++dd) {
@@ -144,6 +186,12 @@ public:
         A[dd][ii] = tmp_row;
       }
     }
+    double nnz = 0;
+    for (size_t ii = 0; ii < A[0].rows(); ++ii)
+      for (size_t jj = 0; jj < A[0].cols(); ++jj)
+        nnz += A[0][ii][jj] > 1e-18 / A[0].cols();
+    double density = nnz / (A[0].rows() * A[0].cols());
+    std::cout << "density = " << XT::Common::to_string(density, 15) << std::endl;
     return new ActualFluxType(A, typename ActualFluxType::RangeType(0));
   }
 
@@ -154,9 +202,9 @@ public:
   {
     const auto param = parse_parameter(parameters());
     const size_t num_regions = get_num_regions(num_segments_);
-    auto sigma_a = param.get("sigma_a");
-    auto sigma_s = param.get("sigma_s");
-    auto Q = param.get("Q");
+    const auto sigma_a = param.get("sigma_a");
+    const auto sigma_s = param.get("sigma_s");
+    const auto Q = param.get("Q");
     assert(sigma_a.size() == sigma_s.size() && sigma_a.size() == Q.size() && sigma_a.size() == num_regions);
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
@@ -166,9 +214,8 @@ public:
     const RangeType basis_integrated = basis_functions_.integrated();
     std::cout << "basis_integrated = " << XT::Common::to_string(basis_integrated, 15) << std::endl;
     // calculate c = M^{-T} <b>
-    auto M_T = basis_functions_.mass_matrix();
-    // calculate c = M^{-T} <b>
-    transpose_in_place(M_T);
+    const auto M_T = basis_functions_.mass_matrix(); // mass matrix is symmetric
+    std::cout << "mass matrix = " << XT::Common::to_string(M_T, 15) << std::endl;
     RangeType c(0.);
     M_T.solve(c, basis_integrated);
     MatrixType I(dimRange, dimRange, 0.);
@@ -179,7 +226,6 @@ public:
       for (size_t cc = 0; cc < dimRange; ++cc)
         G[rr][cc] = basis_integrated[rr] * c[cc];
     const auto vol = unit_ball_volume();
-
     std::vector<RhsAffineFunctionType> affine_functions;
     for (size_t ii = 0; ii < num_regions; ++ii) {
       MatrixType G_scaled = G;
@@ -190,6 +236,7 @@ public:
       A -= I_scaled;
       RangeType b = basis_integrated;
       b *= Q[ii];
+      std::cout << "rhs = " << XT::Common::to_string(A, 15) << std::endl;
       affine_functions.emplace_back(A, b, true, "rhs");
     } // ii
     return new ActualRhsType(lower_left, upper_right, num_segments_, affine_functions);
@@ -201,8 +248,7 @@ public:
   {
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
-    RangeType value = basis_functions_.integrated();
-    value *= psi_vac_;
+    RangeType value = basis_functions_.integrated() * psi_vac_;
     std::vector<typename ActualInitialValueType::LocalizableFunctionType> initial_vals;
     const size_t num_regions = get_num_regions(num_segments_);
     for (size_t ii = 0; ii < num_regions; ++ii)
@@ -213,8 +259,7 @@ public:
   // Use a constant vacuum concentration basis_integrated * psi_vac as boundary value
   virtual BoundaryValueType* create_boundary_values() const override
   {
-    RangeType value = basis_functions_.integrated();
-    value *= psi_vac_;
+    RangeType value = basis_functions_.integrated() * psi_vac_;
     return new ActualBoundaryValueType([=](const DomainType&, const XT::Common::Parameter&) { return value; }, 0);
   } // ... create_boundary_values()
 
@@ -266,17 +311,6 @@ protected:
       DUNE_THROW(NotImplemented, "");
       return 0;
     }
-  }
-
-  template <class MatrixType>
-  void transpose_in_place(MatrixType& M) const
-  {
-    for (size_t rr = 0; rr < dimRange; ++rr)
-      for (size_t cc = 0; cc < rr; ++cc) {
-        auto tmp_val = M[cc][rr];
-        M[cc][rr] = M[rr][cc];
-        M[rr][cc] = tmp_val;
-      }
   }
 
   using BaseType::basis_functions_;
