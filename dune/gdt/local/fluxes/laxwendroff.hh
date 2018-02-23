@@ -21,10 +21,14 @@ namespace GDT {
 
 
 // forwards
-template <class AnalyticalFluxImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class LocalizableFunctionImp, class Traits>
 class LaxWendroffLocalNumericalCouplingFlux;
 
-template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp,
+          class BoundaryValueImp,
+          class BoundaryInfoImp,
+          class LocalizableFunctionImp,
+          class Traits>
 class LaxWendroffLocalDirichletNumericalBoundaryFlux;
 
 
@@ -35,18 +39,27 @@ template <class AnalyticalFluxImp, class LocalizableFunctionImp>
 class LaxWendroffLocalNumericalCouplingFluxTraits
     : public LaxFriedrichsLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp>
 {
+  typedef LaxWendroffLocalNumericalCouplingFluxTraits ThisType;
+
 public:
-  typedef LaxWendroffLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp> derived_type;
+  typedef LaxWendroffLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, ThisType> derived_type;
 }; // class LaxWendroffLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class BoundaryInfoImp, class LocalizableFunctionImp>
 class LaxWendroffLocalDirichletNumericalBoundaryFluxTraits
     : public LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                     BoundaryValueImp,
+                                                                    BoundaryInfoImp,
                                                                     LocalizableFunctionImp>
 {
+  typedef LaxWendroffLocalDirichletNumericalBoundaryFluxTraits ThisType;
+
 public:
-  typedef LaxWendroffLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>
+  typedef LaxWendroffLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
+                                                         BoundaryValueImp,
+                                                         BoundaryInfoImp,
+                                                         LocalizableFunctionImp,
+                                                         ThisType>
       derived_type;
 }; // class LaxWendroffLocalDirichletNumericalBoundaryFluxTraits
 
@@ -134,44 +147,13 @@ private:
 } // namespace internal
 
 
-/**
- *  \brief  Lax-Friedrichs flux evaluation for inner intersections and periodic boundary intersections.
- *
- *  The Lax-Friedrichs flux is an approximation to the integral
- *  \int_{S_{ij}} \mathbf{F}(\mathbf{u}) \cdot \mathbf{n}_{ij},
- *  where S_{ij} is the intersection between the entities i and j, \mathbf{F}(\mathbf{u}) is the analytical flux
- *  (evaluated at \mathbf{u}) and \mathbf{n}_{ij} is the unit outer normal of S_{ij}.
- *  The Lax-Friedrichs flux takes the form
- *  \mathbf{g}_{ij}^{LF}(\mathbf{u}_i, \mathbf{u}_j)
- *  = \int_{S_{ij}} \frac{1}{2}(\mathbf{F}(\mathbf{u}_i) + \mathbf{F}(\mathbf{u}_j) \cdot \mathbf{n}_{ij}
- *  - \frac{1}{\alpha_i \lambda_{ij}} (\mathbf{u}_j - \mathbf{u}_i),
- *  where \alpha_i is the number of neighbors (i.e. intersections) of the entity i and lambda_{ij} is a local
- *  constant fulfilling
- *  \lambda_{ij} \sup_{\mathbf{u}} (\mathbf{F}(\mathbf{u} \cdot \mathbf{n}_{ij})^\prime \leq 1.
- *  The integration is done numerically and implemented in the LocalCouplingFvOperator. This class implements
- *  the evaluation of the integrand. As we are restricting ourselves to axis-parallel cubic grids, only one component of
- *  \mathbf{n}_{ij} is non-zero, denote this component by k. Then the Lax-Friedrichs flux evaluation reduces to
- *  \frac{1}{2}(\mathbf{f}^k(\mathbf{u}_i) + \mathbf{f}^k(\mathbf{u}_j) n_{ij,k}
- *  - \frac{1}{\alpha_i \lambda_{ij}} (\mathbf{u}_j - \mathbf{u}_i),
- *  where \mathbf{f}^k is the k-th column of the analytical flux.
- *  For the classical Lax-Friedrichs flux, \lambda_{ij} is chosen as dt/dx_i, where dt is the current time
- *  step length and dx_i is the width of entity i. This fulfills the equation above as long as the CFL condition
- *  is fulfilled.
- *  The local Lax-Friedrichs flux can be chosen by setting \param use_local to true, here \lambda_{ij} is chosen
- *  as the inverse of the maximal eigenvalue of \mathbf{f}^k(\mathbf{u}_i) and \mathbf{f}^k(\mathbf{u}_j). In this
- *  case, you should also specify whether your analytical flux is linear by setting \param is_linear, which avoids
- *  recalculating the eigenvalues on every intersection in the linear case.
- *  You can also provide a user-defined \param lambda that is used as \lambda_{ij} on all intersections. You need to set
- *  use_local to false, otherwise lambda will not be used.
- */
-template <class AnalyticalFluxImp, class LocalizableFunctionImp>
-class LaxWendroffLocalNumericalCouplingFlux
-    : public LocalNumericalCouplingFluxInterface<internal::
-                                                     LaxWendroffLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
-                                                                                                 LocalizableFunctionImp>>
+template <class AnalyticalFluxImp,
+          class LocalizableFunctionImp,
+          class Traits =
+              internal::LaxWendroffLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp>>
+class LaxWendroffLocalNumericalCouplingFlux : public LocalNumericalCouplingFluxInterface<Traits>
 {
 public:
-  typedef internal::LaxWendroffLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, LocalizableFunctionImp> Traits;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
@@ -228,22 +210,21 @@ private:
   const internal::LaxWendroffFluxImplementation<Traits> implementation_;
 }; // class LaxWendroffLocalNumericalCouplingFlux
 
-/**
-*  \brief  Lax-Wendroff flux evaluation for Dirichlet boundary intersections.
-*  \see    LaxWendroffLocalNumericalCouplingFlux
-*/
-template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
-class LaxWendroffLocalDirichletNumericalBoundaryFlux
-    : public LocalNumericalBoundaryFluxInterface<internal::
-                                                     LaxWendroffLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                                                          BoundaryValueImp,
-                                                                                                          LocalizableFunctionImp>>
+template <class AnalyticalFluxImp,
+          class BoundaryValueImp,
+          class BoundaryInfoImp,
+          class LocalizableFunctionImp,
+          class Traits = internal::LaxWendroffLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
+                                                                                        BoundaryValueImp,
+                                                                                        BoundaryInfoImp,
+                                                                                        LocalizableFunctionImp>>
+class LaxWendroffLocalDirichletNumericalBoundaryFlux : public LocalNumericalBoundaryFluxInterface<Traits>
 {
+  typedef LocalNumericalBoundaryFluxInterface<Traits> InterfaceType;
+
 public:
-  typedef internal::
-      LaxWendroffLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>
-          Traits;
   typedef typename Traits::BoundaryValueType BoundaryValueType;
+  typedef typename Traits::BoundaryInfoType BoundaryInfoType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
@@ -257,11 +238,12 @@ public:
 
   explicit LaxWendroffLocalDirichletNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
                                                           const BoundaryValueType& boundary_values,
+                                                          const BoundaryInfoType& boundary_info,
                                                           const XT::Common::Parameter& param,
                                                           const LocalizableFunctionType& dx,
                                                           const bool is_linear = false,
                                                           const RangeFieldType alpha = dimDomain)
-    : boundary_values_(boundary_values)
+    : InterfaceType(boundary_values, boundary_info)
     , dx_(dx)
     , implementation_(analytical_flux, param, is_linear, alpha, true)
   {
@@ -283,23 +265,22 @@ public:
       const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_in_intersection_coords) const
 
   {
-    const auto x_in_inside_coords = intersection.geometryInInside().global(x_in_intersection_coords);
-    const RangeType u_i = local_source_entity.evaluate(x_in_inside_coords);
-    const RangeType u_j = std::get<2>(local_functions_tuple)->evaluate(x_in_inside_coords);
+    const auto values =
+        InterfaceType::get_values(local_functions_tuple, local_source_entity, intersection, x_in_intersection_coords);
     return implementation_.evaluate(local_functions_tuple,
                                     local_functions_tuple,
                                     intersection,
                                     x_in_intersection_coords,
-                                    x_in_inside_coords,
-                                    x_in_inside_coords,
-                                    u_i,
-                                    u_j);
+                                    std::get<2>(values),
+                                    std::get<2>(values),
+                                    std::get<0>(values),
+                                    std::get<1>(values));
   } // RangeType evaluate(...) const
 
 private:
-  const BoundaryValueType& boundary_values_;
   const LocalizableFunctionType& dx_;
   const internal::LaxWendroffFluxImplementation<Traits> implementation_;
+  using InterfaceType::boundary_values_;
 }; // class LaxWendroffLocalDirichletNumericalBoundaryFlux
 
 

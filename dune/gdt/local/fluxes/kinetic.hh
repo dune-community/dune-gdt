@@ -14,76 +14,77 @@
 #include <tuple>
 #include <memory>
 
-#include <dune/common/dynmatrix.hh>
-#include <dune/common/typetraits.hh>
-
-#include <dune/geometry/referenceelements.hh>
-
-#include <dune/grid/yaspgrid.hh>
-
-#include <dune/xt/common/fmatrix.hh>
 #include <dune/xt/common/parameter.hh>
-#include <dune/xt/functions/interfaces.hh>
-#include <dune/xt/functions/constant.hh>
-#include <dune/xt/la/container/eigen.hh>
 
+#include <dune/xt/functions/interfaces.hh>
+
+#include "base.hh"
 #include "interfaces.hh"
 #include "entropybased.hh"
-#include "godunov.hh"
 
 namespace Dune {
 namespace GDT {
 
 
 // forwards
-template <class AnalyticalFluxImp, class BasisfunctionImp, class GridLayerImp, size_t quadratureDim>
+template <class AnalyticalFluxImp, class BasisfunctionImp, class GridLayerImp, size_t quadratureDim, class Traits>
 class KineticLocalNumericalCouplingFlux;
 
 template <class AnalyticalFluxImp,
-          class BoundaryValueType,
+          class BoundaryValueImp,
+          class BoundaryInfoImp,
           class BasisfunctionImp,
           class GridLayerImp,
-          size_t quadratureDim>
-class KineticLocalNumericalBoundaryFlux;
+          size_t quadratureDim,
+          class Traits>
+class KineticLocalNumericalDirichletBoundaryFlux;
 
 
 namespace internal {
 
 
 template <class AnalyticalFluxImp, class BasisfunctionImp, class GridLayerImp, size_t quadratureDim>
-class KineticLocalNumericalCouplingFluxTraits : public GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp>
+class KineticLocalNumericalCouplingFluxTraits : public NumericalCouplingFluxTraitsBase<AnalyticalFluxImp>
 {
 public:
   typedef BasisfunctionImp BasisfunctionType;
   typedef GridLayerImp GridLayerType;
-  typedef std::tuple<> LocalfunctionTupleType;
   static const size_t dimQuadrature = quadratureDim;
-  typedef KineticLocalNumericalCouplingFlux<AnalyticalFluxImp, BasisfunctionImp, GridLayerImp, quadratureDim>
+  typedef std::tuple<> LocalfunctionTupleType;
+  typedef KineticLocalNumericalCouplingFlux<AnalyticalFluxImp,
+                                            BasisfunctionImp,
+                                            GridLayerImp,
+                                            quadratureDim,
+                                            KineticLocalNumericalCouplingFluxTraits>
       derived_type;
 }; // class KineticLocalNumericalCouplingFluxTraits
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
+          class BoundaryInfoImp,
           class BasisfunctionImp,
           class GridLayerImp,
           size_t quadratureDim>
-class KineticLocalNumericalBoundaryFluxTraits
-    : public KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, BasisfunctionImp, GridLayerImp, quadratureDim>
+class KineticLocalNumericalDirichletBoundaryFluxTraits
+    : public NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp, BoundaryInfoImp>
 {
-  typedef KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, BasisfunctionImp, GridLayerImp, quadratureDim>
-      BaseType;
+  typedef NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp, BoundaryInfoImp> BaseType;
 
 public:
-  typedef BoundaryValueImp BoundaryValueType;
-  typedef typename BoundaryValueType::LocalfunctionType BoundaryValueLocalfunctionType;
-  typedef KineticLocalNumericalBoundaryFlux<AnalyticalFluxImp,
-                                            BoundaryValueImp,
-                                            BasisfunctionImp,
-                                            GridLayerImp,
-                                            quadratureDim>
-      derived_type;
+  using typename BaseType::BoundaryValueLocalfunctionType;
+  typedef BasisfunctionImp BasisfunctionType;
+  typedef GridLayerImp GridLayerType;
+  static const size_t dimQuadrature = quadratureDim;
   typedef std::tuple<std::shared_ptr<BoundaryValueLocalfunctionType>> LocalfunctionTupleType;
-}; // class KineticLocalNumericalBoundaryFluxTraits
+  typedef KineticLocalNumericalDirichletBoundaryFlux<AnalyticalFluxImp,
+                                                     BoundaryValueImp,
+                                                     BoundaryInfoImp,
+                                                     BasisfunctionImp,
+                                                     GridLayerImp,
+                                                     quadratureDim,
+                                                     KineticLocalNumericalDirichletBoundaryFluxTraits>
+      derived_type;
+}; // class KineticLocalNumericalDirichletBoundaryFluxTraits
 
 
 template <class Traits>
@@ -103,7 +104,7 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
   static const size_t dimQuadrature = Traits::dimQuadrature;
-  typedef typename XT::LA::CommonSparseMatrix<RangeFieldType> SparseMatrixType;
+  typedef typename XT::LA::CommonSparseOrDenseMatrixCsr<RangeFieldType> SparseMatrixType;
   typedef EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, StateType, dimQuadrature> EntropyFluxType;
 
   explicit KineticFluxImplementation(const AnalyticalFluxType* analytical_flux,
@@ -132,7 +133,6 @@ public:
     // find direction of unit outer normal
     size_t direction = intersection.indexInInside() / 2;
     auto n_ij = intersection.unitOuterNormal(x_in_intersection_coords);
-
     if (dynamic_cast<const EntropyFluxType*>(analytical_flux_) != nullptr) {
       return dynamic_cast<const EntropyFluxType*>(analytical_flux_)
           ->evaluate_kinetic_flux(entity,
@@ -171,13 +171,6 @@ private:
     // calculate < v_i b b^T >_- M^{-1} and < v_i b b^T >_+ M^{-1}
     auto kinetic_flux_matrices = basis_functions.kinetic_flux_matrices();
     auto mass_matrix = basis_functions.mass_matrix();
-    // transpose
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      for (size_t jj = ii + 1; jj < dimRange; ++jj) {
-        RangeFieldType tmp_entry = mass_matrix[ii][jj];
-        mass_matrix[ii][jj] = mass_matrix[jj][ii];
-        mass_matrix[jj][ii] = tmp_entry;
-      }
     auto flux_matrices_dense = kinetic_flux_matrices;
     FieldVector<FieldVector<SparseMatrixType, 2>, dimDomain> flux_matrices(
         FieldVector<SparseMatrixType, 2>(SparseMatrixType(dimRange, dimRange, size_t(0))));
@@ -204,17 +197,15 @@ private:
 /**
  *  \brief  Kinetic flux evaluation for inner intersections and periodic boundary intersections.
  */
-template <class AnalyticalFluxImp, class BasisfunctionImp, class GridLayerImp, size_t quadratureDim>
-class KineticLocalNumericalCouplingFlux
-    : public LocalNumericalCouplingFluxInterface<internal::KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp,
-                                                                                                   BasisfunctionImp,
-                                                                                                   GridLayerImp,
-                                                                                                   quadratureDim>>
+template <class AnalyticalFluxImp,
+          class BasisfunctionImp,
+          class GridLayerImp,
+          size_t quadratureDim,
+          class Traits = internal::
+              KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, BasisfunctionImp, GridLayerImp, quadratureDim>>
+class KineticLocalNumericalCouplingFlux : public LocalNumericalCouplingFluxInterface<Traits>
 {
 public:
-  typedef internal::
-      KineticLocalNumericalCouplingFluxTraits<AnalyticalFluxImp, BasisfunctionImp, GridLayerImp, quadratureDim>
-          Traits;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
@@ -273,24 +264,23 @@ private:
 */
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
+          class BoundaryInfoImp,
           class BasisfunctionImp,
           class GridLayerImp,
-          size_t quadratureDim>
-class KineticLocalNumericalBoundaryFlux
-    : public LocalNumericalBoundaryFluxInterface<internal::KineticLocalNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                                                                   BoundaryValueImp,
-                                                                                                   BasisfunctionImp,
-                                                                                                   GridLayerImp,
-                                                                                                   quadratureDim>>
+          size_t quadratureDim,
+          class Traits = internal::KineticLocalNumericalDirichletBoundaryFluxTraits<AnalyticalFluxImp,
+                                                                                    BoundaryValueImp,
+                                                                                    BoundaryInfoImp,
+                                                                                    BasisfunctionImp,
+                                                                                    GridLayerImp,
+                                                                                    quadratureDim>>
+class KineticLocalNumericalDirichletBoundaryFlux : public LocalNumericalBoundaryFluxInterface<Traits>
 {
+  typedef LocalNumericalBoundaryFluxInterface<Traits> InterfaceType;
+
 public:
-  typedef internal::KineticLocalNumericalBoundaryFluxTraits<AnalyticalFluxImp,
-                                                            BoundaryValueImp,
-                                                            BasisfunctionImp,
-                                                            GridLayerImp,
-                                                            quadratureDim>
-      Traits;
   typedef typename Traits::BoundaryValueType BoundaryValueType;
+  typedef typename Traits::BoundaryInfoType BoundaryInfoType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
@@ -302,18 +292,19 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
 
-  explicit KineticLocalNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
-                                             const BoundaryValueType& boundary_values,
-                                             const XT::Common::Parameter param,
-                                             const BasisfunctionType& basis_functions)
-    : implementation_(&analytical_flux, param, basis_functions, true)
-    , boundary_values_(boundary_values)
+  explicit KineticLocalNumericalDirichletBoundaryFlux(const AnalyticalFluxType& analytical_flux,
+                                                      const BoundaryValueType& boundary_values,
+                                                      const BoundaryInfoType& boundary_info,
+                                                      const XT::Common::Parameter param,
+                                                      const BasisfunctionType& basis_functions)
+    : InterfaceType(boundary_values, boundary_info)
+    , implementation_(&analytical_flux, param, basis_functions, true)
   {
   }
 
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
-    return std::make_tuple(boundary_values_.local_function(entity));
+    return std::make_tuple(std::get<0>(boundary_values_)->local_function(entity));
   }
 
   template <class IntersectionType>
@@ -322,26 +313,24 @@ public:
       const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
           local_source_entity,
       const IntersectionType& intersection,
-      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_intersection) const
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_in_intersection_coords) const
   {
-    // get function values
-    const auto x_intersection_entity_coords = intersection.geometryInInside().global(x_intersection);
-    const RangeType u_i = local_source_entity.evaluate(x_intersection_entity_coords);
-    auto u_j = std::get<0>(local_functions_tuple)->evaluate(x_intersection_entity_coords);
+    const auto values = InterfaceType::template get_values<IntersectionType, 0>(
+        local_functions_tuple, local_source_entity, intersection, x_in_intersection_coords);
     return implementation_.evaluate(intersection,
                                     intersection.inside(),
                                     intersection.inside(),
-                                    x_intersection,
-                                    x_intersection_entity_coords,
-                                    x_intersection_entity_coords,
-                                    u_i,
-                                    u_j);
+                                    x_in_intersection_coords,
+                                    std::get<2>(values),
+                                    std::get<2>(values),
+                                    std::get<0>(values),
+                                    std::get<1>(values));
   } // RangeType evaluate(...) const
 
 private:
   const internal::KineticFluxImplementation<Traits> implementation_;
-  const BoundaryValueType& boundary_values_;
-}; // class KineticLocalNumericalBoundaryFlux
+  using InterfaceType::boundary_values_;
+}; // class KineticLocalNumericalDirichletBoundaryFlux
 
 
 } // namespace GDT

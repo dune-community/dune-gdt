@@ -85,7 +85,7 @@ public:
   }
 }; // class KineticEquation<...>
 
-template <class BasisfunctionImp, class GridLayerImp, class U_, bool linear_ = true>
+template <class BasisfunctionImp, class GridLayerImp, class U_, bool linear_ = false>
 class KineticEquationImplementation
 {
   typedef KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_, linear_> ThisType;
@@ -97,6 +97,7 @@ public:
   typedef typename GridLayerType::template Codim<0>::Entity EntityType;
   typedef typename BasisfunctionType::DomainFieldType DomainFieldType;
   typedef U_ StateType;
+  typedef typename U_::RangeType StateRangeType;
   typedef typename BasisfunctionType::RangeFieldType RangeFieldType;
   static const size_t dimDomain = BasisfunctionType::dimFlux;
   static const size_t dimRange = BasisfunctionType::dimRange;

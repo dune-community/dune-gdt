@@ -65,7 +65,7 @@ public:
                  const QuadratureType& quadrature = default_quadrature(),
                  const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                  const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, {7, 7, 7}, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, quadrature, {7, 7, 7}, grid_cfg, boundary_cfg, 1e-8 / (4 * M_PI))
   {
   }
 
@@ -97,14 +97,6 @@ public:
                                   std::make_pair("CFL", std::vector<double>{0.4}),
                                   std::make_pair("t_end", std::vector<double>{3.2})});
   }
-
-  // boundary value is 0
-  virtual BoundaryValueType* create_boundary_values() const override
-  {
-    return new ActualBoundaryValueType([=](const DomainType&, const XT::Common::Parameter&) { return RangeType(0); },
-                                       0);
-  } // ... create_boundary_values()
-
 
 protected:
   static std::vector<double> create_sigma_a()
@@ -155,7 +147,7 @@ protected:
 
   static bool is_absorbing(size_t plane, size_t row, size_t col)
   {
-    assert(plane < 7);
+    assert(plane < 7 && row < 7 && col < 7);
     if (plane == 0 || plane == 6)
       return false;
     if (plane == 2 || plane == 4)
