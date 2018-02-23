@@ -22,6 +22,7 @@ namespace GDT {
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
+          class BoundaryInfoImp,
           class BasisfunctionImp,
           class GridLayerImp,
           size_t quadratureDim,
@@ -37,6 +38,7 @@ namespace internal {
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
+          class BoundaryInfoImp,
           class BasisfunctionImp,
           class GridLayerImp,
           size_t quadratureDim,
@@ -45,12 +47,14 @@ template <class AnalyticalFluxImp,
           class RealizabilityLimiterImp>
 class AdvectionKineticOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp,
                                                                   BoundaryValueImp,
+                                                                  BoundaryInfoImp,
                                                                   reconstruction_order,
                                                                   slope_lim,
                                                                   RealizabilityLimiterImp>
 {
   typedef AdvectionTraitsBase<AnalyticalFluxImp,
                               BoundaryValueImp,
+                              BoundaryInfoImp,
                               reconstruction_order,
                               slope_lim,
                               RealizabilityLimiterImp>
@@ -60,14 +64,17 @@ public:
   typedef typename Dune::GDT::
       KineticLocalNumericalCouplingFlux<AnalyticalFluxImp, BasisfunctionImp, GridLayerImp, quadratureDim>
           NumericalCouplingFluxType;
-  typedef typename Dune::GDT::KineticLocalNumericalBoundaryFlux<AnalyticalFluxImp,
-                                                                BoundaryValueImp,
-                                                                BasisfunctionImp,
-                                                                GridLayerImp,
-                                                                quadratureDim>
+  typedef typename Dune::GDT::KineticLocalNumericalDirichletBoundaryFlux<AnalyticalFluxImp,
+                                                                         BoundaryValueImp,
+                                                                         BoundaryInfoImp,
+                                                                         BasisfunctionImp,
+                                                                         GridLayerImp,
+                                                                         quadratureDim>
       NumericalBoundaryFluxType;
+  typedef BoundaryInfoImp BoundaryInfoType;
   typedef AdvectionKineticOperator<AnalyticalFluxImp,
                                    BoundaryValueImp,
+                                   BoundaryInfoImp,
                                    BasisfunctionImp,
                                    GridLayerImp,
                                    quadratureDim,
@@ -84,6 +91,7 @@ public:
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
+          class BoundaryInfoImp,
           class BasisfunctionImp,
           class GridLayerImp,
           size_t quadratureDim = BasisfunctionImp::dimDomain,
@@ -92,6 +100,7 @@ template <class AnalyticalFluxImp,
           class RealizabilityLimiterImp = NonLimitingRealizabilityLimiter<typename AnalyticalFluxImp::EntityType>,
           class Traits = internal::AdvectionKineticOperatorTraits<AnalyticalFluxImp,
                                                                   BoundaryValueImp,
+                                                                  BoundaryInfoImp,
                                                                   BasisfunctionImp,
                                                                   GridLayerImp,
                                                                   quadratureDim,
@@ -105,30 +114,35 @@ class AdvectionKineticOperator : public Dune::GDT::OperatorInterface<Traits>, pu
 public:
   using typename BaseType::AnalyticalFluxType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::BoundaryInfoType;
   using typename BaseType::OnedQuadratureType;
 
   AdvectionKineticOperator(const AnalyticalFluxType& analytical_flux,
                            const BoundaryValueType& boundary_values,
+                           const BoundaryInfoType& boundary_info,
                            const BasisfunctionImp& basis_functions,
                            const bool is_linear = false)
-    : BaseType(analytical_flux, boundary_values, is_linear)
+    : BaseType(analytical_flux, boundary_values, boundary_info, is_linear)
     , basis_functions_(basis_functions)
   {
   }
 
   AdvectionKineticOperator(const AnalyticalFluxType& analytical_flux,
                            const BoundaryValueType& boundary_values,
+                           const BoundaryInfoType& boundary_info,
                            const BasisfunctionImp& basis_functions,
                            const OnedQuadratureType& quadrature_1d,
+                           const bool regularize,
                            const std::shared_ptr<RealizabilityLimiterImp>& realizability_limiter = nullptr,
                            const bool is_linear = false)
-    : BaseType(analytical_flux, boundary_values, is_linear, quadrature_1d, realizability_limiter)
+    : BaseType(
+          analytical_flux, boundary_values, boundary_info, is_linear, quadrature_1d, regularize, realizability_limiter)
     , basis_functions_(basis_functions)
   {
   }
 
   template <class SourceType, class RangeType>
-  void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
+  void apply(SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
   {
     BaseType::apply(source, range, param, basis_functions_);
   }

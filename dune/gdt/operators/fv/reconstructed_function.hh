@@ -72,9 +72,9 @@ private:
             BaseType;
 
   public:
-    ReconstructedLocalfunction(const EntityType& entity,
+    ReconstructedLocalfunction(const EntityType& ent,
                                const std::map<LocalCoordinateType, RangeType, XT::Common::FieldVectorLess>& values)
-      : BaseType(entity)
+      : BaseType(ent)
       , values_(values)
     {
     }
@@ -85,13 +85,19 @@ private:
       return 2;
     }
 
+    using BaseType::entity;
+
     virtual void evaluate(const DomainType& xx, RangeType& ret, const XT::Common::Parameter& /*param*/) const
     {
       try {
         ret = values_.at(xx);
-      } catch (const std::out_of_range& e) {
+      } catch (const std::out_of_range& /*e*/) {
         DUNE_THROW(Dune::RangeError,
-                   "There are no values for xx = " << XT::Common::to_string(xx) << " in this function!");
+                   "There are no values for local coord " << XT::Common::to_string(xx) << " (global coord "
+                                                          << XT::Common::to_string(entity().geometry().global(xx))
+                                                          << ") on entity "
+                                                          << XT::Common::to_string(entity().geometry().center())
+                                                          << " in this function!");
       }
     }
 

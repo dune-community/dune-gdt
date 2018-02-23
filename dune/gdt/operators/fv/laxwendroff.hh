@@ -22,6 +22,7 @@ namespace GDT {
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
+          class BoundaryInfoImp,
           class LocalizableFunctionImp,
           size_t polOrder,
           SlopeLimiters slope_lim,
@@ -35,12 +36,14 @@ namespace internal {
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
+          class BoundaryInfoImp,
           class LocalizableFunctionImp,
           size_t reconstruction_order,
           SlopeLimiters slope_lim,
           class RealizabilityLimiterImp>
 class AdvectionLaxWendroffOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp,
                                                                       BoundaryValueImp,
+                                                                      BoundaryInfoImp,
                                                                       reconstruction_order,
                                                                       slope_lim,
                                                                       RealizabilityLimiterImp>
@@ -50,6 +53,7 @@ class AdvectionLaxWendroffOperatorTraits : public AdvectionTraitsBase<Analytical
 
   typedef AdvectionTraitsBase<AnalyticalFluxImp,
                               BoundaryValueImp,
+                              BoundaryInfoImp,
                               reconstruction_order,
                               slope_lim,
                               RealizabilityLimiterImp>
@@ -59,11 +63,14 @@ public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
   typedef typename Dune::GDT::LaxWendroffLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionType>
       NumericalCouplingFluxType;
-  typedef typename Dune::GDT::
-      LaxWendroffLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionType>
-          NumericalBoundaryFluxType;
+  typedef typename Dune::GDT::LaxWendroffLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
+                                                                             BoundaryValueImp,
+                                                                             BoundaryInfoImp,
+                                                                             LocalizableFunctionType>
+      NumericalBoundaryFluxType;
   typedef AdvectionLaxWendroffOperator<AnalyticalFluxImp,
                                        BoundaryValueImp,
+                                       BoundaryInfoImp,
                                        LocalizableFunctionImp,
                                        reconstruction_order,
                                        slope_lim,
@@ -78,12 +85,14 @@ public:
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
+          class BoundaryInfoImp,
           class LocalizableFunctionImp,
           size_t polOrder = 0,
           SlopeLimiters slope_lim = SlopeLimiters::minmod,
           class RealizabilityLimiterImp = NonLimitingRealizabilityLimiter<typename AnalyticalFluxImp::EntityType>,
           class Traits = internal::AdvectionLaxWendroffOperatorTraits<AnalyticalFluxImp,
                                                                       BoundaryValueImp,
+                                                                      BoundaryInfoImp,
                                                                       LocalizableFunctionImp,
                                                                       polOrder,
                                                                       slope_lim,
@@ -95,6 +104,7 @@ class AdvectionLaxWendroffOperator : public Dune::GDT::OperatorInterface<Traits>
 public:
   using typename BaseType::AnalyticalFluxType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::BoundaryInfoType;
   using typename BaseType::DomainType;
   using typename BaseType::OnedQuadratureType;
   using typename BaseType::RangeFieldType;
@@ -102,10 +112,11 @@ public:
 
   AdvectionLaxWendroffOperator(const AnalyticalFluxType& analytical_flux,
                                const BoundaryValueType& boundary_values,
+                               const BoundaryInfoType& boundary_info,
                                const LocalizableFunctionType& dx,
                                const bool is_linear = false,
                                const RangeFieldType alpha = BoundaryValueImp::dimDomain)
-    : BaseType(analytical_flux, boundary_values, is_linear)
+    : BaseType(analytical_flux, boundary_values, boundary_info, is_linear)
     , dx_(dx)
     , is_linear_(is_linear)
     , alpha_(alpha)
@@ -114,12 +125,13 @@ public:
 
   AdvectionLaxWendroffOperator(const AnalyticalFluxType& analytical_flux,
                                const BoundaryValueType& boundary_values,
+                               const BoundaryInfoType& boundary_info,
                                const LocalizableFunctionType& dx,
                                const OnedQuadratureType& quadrature_1d,
                                const std::shared_ptr<RealizabilityLimiterImp>& realizability_limiter = nullptr,
                                const bool is_linear = false,
                                const RangeFieldType alpha = BoundaryValueImp::dimDomain)
-    : BaseType(analytical_flux, boundary_values, is_linear, quadrature_1d, realizability_limiter)
+    : BaseType(analytical_flux, boundary_values, boundary_info, is_linear, quadrature_1d, realizability_limiter)
     , dx_(dx)
     , is_linear_(is_linear)
     , alpha_(alpha)
