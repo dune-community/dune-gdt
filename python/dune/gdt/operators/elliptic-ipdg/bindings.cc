@@ -40,7 +40,7 @@ PYBIND11_MODULE(__local_elliptic_ipdg_operators, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
   using G = ALU_2D_SIMPLEX_CONFORMING;
-  add_initialization(m, "dune.gdt.operators.elliptic.ipdg");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic.ipdg");
   DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(m, G, leaf, view, true, swipdg_affine_factor, istl_sparse, gdt, dg, leaf, 1);
   DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(m, G, leaf, view, true, swipdg_affine_factor, istl_sparse, gdt, dg, leaf, 2);
   DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(m, G, leaf, view, true, swipdg_affine_factor, istl_sparse, gdt, dg, leaf, 3);

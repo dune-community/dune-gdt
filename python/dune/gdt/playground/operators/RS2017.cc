@@ -1928,7 +1928,7 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "kappa"_a,
         "over_integrate"_a = 2);
 
-  add_initialization(m, "dune.gdt.operators.elliptic");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 #endif // HAVE_DUNE_ALUGRID
 }
 

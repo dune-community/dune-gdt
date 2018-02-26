@@ -41,7 +41,7 @@ PYBIND11_MODULE(__functionals_elliptic_ipdg, m)
   DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_YASP(m, level, view, dg, gdt, 1, istl_dense);
   DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_YASP(m, dd_subdomain, view, dg, gdt, 1, istl_dense);
 #endif
-  add_initialization(m, "dune.gdt.functionals.elliptic-ipdg");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.functionals.elliptic-ipdg");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

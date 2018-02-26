@@ -86,7 +86,7 @@ PYBIND11_MODULE(__operators_l2, m)
                                                                        "istl_row_major_sparse_matrix_double");
 
 #endif // HAVE_DUNE_ALUGRID
-  add_initialization(m, "dune.gdt.operators.elliptic");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

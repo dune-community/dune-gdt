@@ -39,7 +39,7 @@ PYBIND11_MODULE(__spaces_block, m)
   using namespace pybind11::literals;
 
   DUNE_GDT_SPACES_BLOCK_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dg, gdt, 1);
-  add_initialization(m, "dune.gdt.spaces.block");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.spaces.block");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

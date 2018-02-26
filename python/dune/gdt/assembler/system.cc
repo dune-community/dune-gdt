@@ -77,7 +77,7 @@ PYBIND11_MODULE(__assembler, m)
       [](Dune::GDT::bindings::ResultStorage& self, const double& value) { self.result() = value; });
 
   using G = ALU_2D_SIMPLEX_CONFORMING;
-  add_initialization(m, "dune.gdt.assembler");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.assembler");
   DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, G, leaf, view, "leaf");
   DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(G, leaf, view, istl_sparse);
   DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, G, dd_subdomain, view, "dd_subdomain");

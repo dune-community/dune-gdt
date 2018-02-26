@@ -329,6 +329,5 @@ public:
 } // namespace Dune
 
 
-
 #endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_ASSEMBLER_SYSTEM_BINDINGS_HH

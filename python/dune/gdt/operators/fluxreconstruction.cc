@@ -41,7 +41,7 @@ PYBIND11_MODULE(__operators_fluxreconstruction, m)
                                                            2,
                                                            Dune::XT::LA::Backends::istl_dense>::bind(m);
 #endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
-  add_initialization(m, "dune.gdt.operators.elliptic");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

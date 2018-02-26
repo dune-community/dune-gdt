@@ -365,7 +365,7 @@ PYBIND11_MODULE(__operators_OS2015, m)
   // s.a.
   DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
 #endif
-  add_initialization(m, "dune.gdt.operators.elliptic");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

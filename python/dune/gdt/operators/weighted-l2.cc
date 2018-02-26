@@ -40,7 +40,7 @@ PYBIND11_MODULE(__operators_weighted_l2, m)
   Dune::GDT::bindings::WeightedL2LocalizableProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view>::
       bind(m);
 #endif // HAVE_DUNE_ALUGRID
-  add_initialization(m, "dune.gdt.operators.elliptic");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

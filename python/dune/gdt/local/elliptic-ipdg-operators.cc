@@ -29,7 +29,7 @@ PYBIND11_MODULE(__local_elliptic_ipdg_operators, m)
 
 
   DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND(m);
-  add_initialization(m, "dune.gdt.assembler");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.assembler");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

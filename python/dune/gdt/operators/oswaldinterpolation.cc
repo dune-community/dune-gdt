@@ -42,7 +42,7 @@ PYBIND11_MODULE(__operators_oswaldinterpolation, m)
                                                    Dune::XT::LA::Backends::istl_dense,
                                                    Dune::XT::Grid::Layers::dd_subdomain_oversampled>::bind(m);
 #endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
-  add_initialization(m, "dune.gdt.operators.elliptic");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 }
 
 #endif // HAVE_DUNE_PYBINDXI

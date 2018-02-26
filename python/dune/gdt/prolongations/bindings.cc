@@ -50,7 +50,7 @@ PYBIND11_MODULE(__prolongations, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  add_initialization(m, "dune.gdt.prolongations");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.prolongations");
 
   using G = ALU_2D_SIMPLEX_CONFORMING;
 

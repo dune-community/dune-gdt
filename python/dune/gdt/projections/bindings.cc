@@ -31,7 +31,7 @@ PYBIND11_MODULE(__projections, m)
 
   DUNE_GDT_PROJECTIONS_BIND(m);
   //  DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(m);
-  add_initialization(m, "dune.gdt.projections");
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.projections");
 }
 
 #endif // HAVE_DUNE_PYBINDXI
