@@ -155,6 +155,7 @@ public:
 }; // class LocalVolumeIntegrandInterface< Traits, 2 >
 
 
+#if 0
 /**
  *  \brief  Interface for local evaluations that depend on an intersection.
  *  \tparam numArguments  The number of local bases.
@@ -381,6 +382,7 @@ public:
                                                 neighborEntityRet));
   }
 }; // class LocalFaceIntegrandInterface< Traits, 4 >
+#endif // 0
 
 
 } // namespace GDT
