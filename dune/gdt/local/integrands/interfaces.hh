@@ -105,63 +105,103 @@ public:
 
 
 /**
- *  \brief  Interface for binary codim 0 evaluations.
- **/
-template <class Traits>
-class LocalVolumeIntegrandInterface<Traits, 2>
-    : public XT::CRTPInterface<LocalVolumeIntegrandInterface<Traits, 2>, Traits>
+ * Interface for integrands in integrals over grid elements, which depend on two arguments (usually the test and ansatz
+ * bases in an integral-based operator, aka two-form).
+ *
+ * \note Regarding SMP: the integrand is copied for each thread, so
+ *       - no shared mutable state between copies to be thread safe, but
+ *       - local mutable state is ok.
+ */
+template <class Element,
+          size_t test_range_dim = 1,
+          size_t test_range_dim_cols = 1,
+          class TestRangeField = double,
+          class Field = double,
+          size_t ansatz_range_dim = test_range_dim,
+          size_t ansatz_range_dim_cols = test_range_dim_cols,
+          class AnsatzRangeField = TestRangeField>
+class LocalBinaryElementIntegrandInterface : public XT::Common::ParametricInterface
 {
-public:
-  typedef typename Traits::derived_type derived_type;
-  typedef typename Traits::EntityType EntityType;
-  typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
-  typedef typename Traits::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = Traits::dimDomain;
+  static_assert(XT::Grid::is_entity<Element>::value, "");
 
-protected:
-  typedef EntityType E;
-  typedef DomainFieldType D;
-  static const size_t d = dimDomain;
+  using ThisType = LocalBinaryElementIntegrandInterface<Element,
+                                                        test_range_dim,
+                                                        test_range_dim_cols,
+                                                        TestRangeField,
+                                                        Field,
+                                                        ansatz_range_dim,
+                                                        ansatz_range_dim_cols,
+                                                        AnsatzRangeField>;
 
 public:
-  LocalfunctionTupleType localFunctions(const EntityType& entity) const
+  using E = Element;
+  using D = typename Element::Geometry::ctype;
+  static const constexpr size_t d = E::dimension;
+  using F = Field;
+
+  using TR = TestRangeField;
+  static const constexpr size_t t_r = test_range_dim;
+  static const constexpr size_t t_rC = test_range_dim_cols;
+
+  using AR = AnsatzRangeField;
+  static const constexpr size_t a_r = ansatz_range_dim;
+  static const constexpr size_t a_rC = ansatz_range_dim_cols;
+
+  using ElementType = E;
+  using DomainType = FieldVector<D, d>;
+  using LocalTestBasisType = XT::Functions::LocalFunctionSetInterface<E, t_r, t_rC, TR>;
+  using LocalAnsatzBasisType = XT::Functions::LocalFunctionSetInterface<E, a_r, a_rC, AR>;
+
+  LocalBinaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
   {
-    CHECK_CRTP(this->as_imp().localFunctions(entity));
-    return this->as_imp().localFunctions(entity);
   }
+
+  virtual ~LocalBinaryElementIntegrandInterface() = default;
+
+  virtual std::unique_ptr<ThisType> copy() const = 0;
 
   /**
-   *  \brief  Computes the needed integration order.
-   *  \tparam R       RangeFieldType
-   *  \tparam r{T,A}  dimRange of the {testBase,ansatzBase}
-   *  \tparam rC{T,A} dimRangeRows of the {testBase,ansatzBase}
+   * This method needs to be called on each grid element before calling order() or evalaute(). It is supposed to be a
+   * (nearly-)no-op if already bound to the element.
    */
-  template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  size_t order(const LocalfunctionTupleType& localFunctionsTuple,
-               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
-               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase) const
-  {
-    CHECK_CRTP(this->as_imp().order(localFunctionsTuple, testBase, ansatzBase));
-    return this->as_imp().order(localFunctionsTuple, testBase, ansatzBase);
-  }
+  virtual ThisType& bind(const ElementType& element) = 0;
 
   /**
-   *  \brief  Computes a binary codim 0 evaluation.
-   *  \tparam R         RangeFieldType
-   *  \tparam r{L,T,A}  dimRange of the {localFunction,testBase,ansatzBase}
-   *  \tparam rC{L,T,A} dimRangeRows of the {localFunction,testBase,ansatzBase}
-   *  \attention ret is assumed to be zero!
+   * Returns the polynomial order of the integrand, given the bases.
+   *
+   * \note Undefined behaviour if not bound!
    */
-  template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void evaluate(const LocalfunctionTupleType& localFunctionsTuple,
-                const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
-                const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase,
-                const Dune::FieldVector<DomainFieldType, dimDomain>& localPoint,
-                Dune::DynamicMatrix<R>& ret) const
+  virtual int order(const LocalTestBasisType& test_basis,
+                    const LocalAnsatzBasisType& ansatz_basis,
+                    const XT::Common::Parameter& param = {}) const = 0;
+
+  /**
+   * Computes the evaluation of this integrand at the given point for each combination of functions from the two bases.
+   *
+   * \note Undefined behaviour if not bound!
+   */
+  virtual void evaluate(const LocalTestBasisType& test_basis,
+                        const LocalAnsatzBasisType& ansatz_basis,
+                        const DomainType& point_in_reference_element,
+                        DynamicMatrix<F>& result,
+                        const XT::Common::Parameter& param = {}) const = 0;
+
+  /**
+    * This method is provided for convenience and should not be used within library code.
+   *
+   * \note Undefined behaviour if not bound!
+    */
+  virtual DynamicMatrix<F> evaluate(const LocalTestBasisType& test_basis,
+                                    const LocalAnsatzBasisType& ansatz_basis,
+                                    const DomainType& point_in_reference_element,
+                                    const XT::Common::Parameter& param = {}) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctionsTuple, testBase, ansatzBase, localPoint, ret));
+    DynamicMatrix<F> result(test_basis.size(param), ansatz_basis.size(param), 0);
+    evaluate(test_basis, ansatz_basis, point_in_reference_element, result, param);
+    return result;
   }
-}; // class LocalVolumeIntegrandInterface< Traits, 2 >
+}; // class LocalBinaryElementIntegrandInterface
 
 
 #if 0
