@@ -38,6 +38,7 @@ class LocalFiniteElementInterface;
 template <class GV, size_t r, size_t rC, class R>
 class SpaceInterface;
 
+#if 0
 template <class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols>
 class ProductSpaceInterface;
 
@@ -174,6 +175,7 @@ struct is_matrix_operator_helper
 
 
 } // namespace internal
+#endif // 0
 
 
 // actual structs
@@ -199,6 +201,7 @@ struct is_space<SpaceInterface<GV, r, rC, R>> : public std::true_type
 {
 };
 
+#if 0
 template <class S, bool candidate = internal::is_space_helper<S>::is_candidate>
 struct is_product_space
     : public std::is_base_of<ProductSpaceInterface<typename S::Traits, S::dimDomain, S::dimRange, S::dimRangeCols>, S>
@@ -366,6 +369,7 @@ template <class T>
 struct is_matrix_operator<T, false> : public std::false_type
 {
 };
+#endif // 0
 
 
 } // namespace GDT
