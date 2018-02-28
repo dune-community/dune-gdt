@@ -28,6 +28,7 @@ namespace Dune {
 namespace GDT {
 
 
+#if 0
 // //////////////////////////// //
 // WeightedL2LocalizableProduct //
 // //////////////////////////// //
@@ -100,6 +101,7 @@ typename std::
       make_unique<WeightedL2LocalizableProduct<WeightFunctionType, GridLayerType, RangeType, SourceType>>(
           over_integrate, weight, grid_layer, range, source, param);
 }
+#endif // 0
 
 
 // //////////////////////// //
@@ -296,6 +298,7 @@ make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
 }
 
 
+#if 0
 // ////////////////// //
 // WeightedL2Operator //
 // ////////////////// //
@@ -404,6 +407,7 @@ make_weighted_l2_operator(const GridLayerType& grid_layer,
       make_unique<WeightedL2Operator<WeightFunctionType, GridLayerType, typename WeightFunctionType::RangeFieldType>>(
           weight, grid_layer, over_integrate);
 }
+#endif // 0
 
 
 } // namespace GDT
