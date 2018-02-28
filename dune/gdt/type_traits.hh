@@ -30,6 +30,22 @@ enum class SpaceType
 };
 
 
+static std::ostream& operator<<(std::ostream& out, const SpaceType& space_type)
+{
+  if (space_type == SpaceType::continuous_lagrange)
+    out << "continuous_lagrange";
+  else if (space_type == SpaceType::discontinuous_lagrange)
+    out << "discontinuous_lagrange";
+  else if (space_type == SpaceType::finite_volume)
+    out << "finite_volume";
+  else if (space_type == SpaceType::raviart_thomas)
+    out << "finite_volume";
+  else
+    out << "SpaceType(" << int(space_type) << ")";
+  return out;
+}
+
+
 enum class Stencil
 {
   element,
