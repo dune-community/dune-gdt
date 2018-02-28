@@ -9,487 +9,735 @@
 //   Rene Milk       (2016 - 2018)
 //   Tobias Leibner  (2016 - 2017)
 
-#ifndef DUNE_GDT_OPERATORS_BASE_HH
-#define DUNE_GDT_OPERATORS_BASE_HH
+#ifndef DUNE_GDT_OPERATORS_MATRIX_BASED_OPERATOR_HH
+#define DUNE_GDT_OPERATORS_MATRIX_BASED_OPERATOR_HH
 
-#include <dune/xt/common/exceptions.hh>
-#include <dune/xt/common/parameter.hh>
-#include <dune/xt/grid/walker/apply-on.hh>
-#include <dune/xt/grid/walker.hh>
-#include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/common/memory.hh>
+#include <dune/xt/common/type_traits.hh>
+#include <dune/xt/la/container.hh>
+#include <dune/xt/la/container/matrix-interface.hh>
 #include <dune/xt/la/container/pattern.hh>
-#include <dune/xt/functions/interfaces.hh>
+#include <dune/xt/la/solver.hh>
+#include <dune/xt/grid/type_traits.hh>
 
-#include <dune/gdt/local/assembler.hh>
-#include <dune/gdt/assembler/wrapper.hh>
-#include <dune/gdt/assembler/system.hh>
+#include <dune/gdt/exceptions.hh>
 #include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/local/assembler/two-form-assemblers.hh>
 #include <dune/gdt/local/operators/interfaces.hh>
-#include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/operators/interfaces.hh>
+#include <dune/gdt/tools/sparsity-pattern.hh>
 #include <dune/gdt/type_traits.hh>
-
-#include "interfaces.hh"
 
 namespace Dune {
 namespace GDT {
 
 
-// forward, required for the traits
-template <class M,
-          class RS,
-          class GL = typename RS::GridLayerType,
-          class SS = RS,
-          class F = typename M::RealType,
-          ChoosePattern pt = ChoosePattern::face_and_volume,
-          class ORS = RS,
-          class OSS = SS>
-class MatrixOperatorBase;
-
-
-namespace internal {
-
-
-template <class MatrixImp,
-          class RangeSpaceImp,
-          class GridLayerImp,
-          class SourceSpaceImp,
-          class FieldImp,
-          ChoosePattern pt,
-          class OuterRangeSpaceImp,
-          class OuterSourceSpaceImp>
-class MatrixOperatorBaseTraits
-{
-  static_assert(XT::LA::is_matrix<MatrixImp>::value, "");
-  static_assert(is_space<RangeSpaceImp>::value, "");
-  static_assert(is_space<SourceSpaceImp>::value, "");
-  static_assert(is_space<OuterRangeSpaceImp>::value, "");
-  static_assert(is_space<OuterSourceSpaceImp>::value, "");
-  static_assert(std::is_same<XT::Grid::extract_entity_t<typename RangeSpaceImp::GridLayerType>,
-                             XT::Grid::extract_entity_t<GridLayerImp>>::value,
-                "RangeSpaceType and GridLayerType have to match!");
-  static_assert(std::is_same<XT::Grid::extract_entity_t<typename SourceSpaceImp::GridLayerType>,
-                             XT::Grid::extract_entity_t<GridLayerImp>>::value,
-                "SourceSpaceType and GridLayerType have to match!");
-  static_assert(std::is_same<XT::Grid::extract_entity_t<typename OuterRangeSpaceImp::GridLayerType>,
-                             XT::Grid::extract_entity_t<GridLayerImp>>::value,
-                "OuterRangeSpaceImp and GridLayerType have to match!");
-  static_assert(std::is_same<XT::Grid::extract_entity_t<typename OuterSourceSpaceImp::GridLayerType>,
-                             XT::Grid::extract_entity_t<GridLayerImp>>::value,
-                "OuterSourceSpaceImp and GridLayerType have to match!");
-
-public:
-  typedef MatrixOperatorBase<MatrixImp,
-                             RangeSpaceImp,
-                             GridLayerImp,
-                             SourceSpaceImp,
-                             FieldImp,
-                             pt,
-                             OuterRangeSpaceImp,
-                             OuterSourceSpaceImp>
-      derived_type;
-  typedef FieldImp FieldType;
-  typedef std::unique_ptr<derived_type> JacobianType;
-};
-
-
-} // namespace internal
-
-
 /**
- * \todo add static checks of dimensions
- * \note Does a const_cast in apply() and apply2(), not sure yet if this is fine.
- * \warning: only apply2(DiscreteFunction, DiscreteFunction) automagically sums over mpi processes
+ * \brief Base class for linear operators which are given by an assembled matrix.
+ *
+ * \note See OperatorInterface for a description of the template arguments.
+ *
+ * \sa OperatorInterface
+ * \sa MatrixBasedOperator
  */
-template <class MatrixImp,
-          class RangeSpaceImp,
-          class GridLayerImp,
-          class SourceSpaceImp,
-          class FieldImp,
-          ChoosePattern pt,
-          class OuterRangeSpaceImp,
-          class OuterSourceSpaceImp>
-class MatrixOperatorBase
-    : public OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp,
-                                                                  RangeSpaceImp,
-                                                                  GridLayerImp,
-                                                                  SourceSpaceImp,
-                                                                  FieldImp,
-                                                                  pt,
-                                                                  OuterRangeSpaceImp,
-                                                                  OuterSourceSpaceImp>>,
-      public SystemAssembler<RangeSpaceImp, GridLayerImp, SourceSpaceImp, OuterRangeSpaceImp, OuterSourceSpaceImp>
+template <class Matrix,
+          class SGV,
+          size_t s_r = 1,
+          size_t s_rC = 1,
+          class SF = double,
+          class F = double,
+          size_t r_r = s_r,
+          size_t r_rC = s_rC,
+          class RF = double,
+          class RGV = SGV,
+          class SourceVector = typename XT::LA::Container<typename Matrix::ScalarType, Matrix::vector_type>::VectorType,
+          class RangeVector = SourceVector>
+class ConstMatrixBasedOperator
+    : public OperatorInterface<SourceVector, SGV, s_r, s_rC, SF, F, r_r, r_rC, RF, RGV, RangeVector>
 {
-  typedef OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp,
-                                                               RangeSpaceImp,
-                                                               GridLayerImp,
-                                                               SourceSpaceImp,
-                                                               FieldImp,
-                                                               pt,
-                                                               OuterRangeSpaceImp,
-                                                               OuterSourceSpaceImp>>
-      BaseOperatorType;
-  typedef SystemAssembler<RangeSpaceImp, GridLayerImp, SourceSpaceImp, OuterRangeSpaceImp, OuterSourceSpaceImp>
-      BaseAssemblerType;
-  typedef MatrixOperatorBase<MatrixImp,
-                             RangeSpaceImp,
-                             GridLayerImp,
-                             SourceSpaceImp,
-                             FieldImp,
-                             pt,
-                             OuterRangeSpaceImp,
-                             OuterSourceSpaceImp>
-      ThisType;
+  static_assert(XT::LA::is_matrix<Matrix>::value, "");
+
+  using ThisType =
+      ConstMatrixBasedOperator<Matrix, SGV, s_r, s_rC, SF, F, r_r, r_rC, RF, RGV, SourceVector, RangeVector>;
+  using BaseType = OperatorInterface<SourceVector, SGV, s_r, s_rC, SF, F, r_r, r_rC, RF, RGV, RangeVector>;
 
 public:
-  typedef internal::MatrixOperatorBaseTraits<MatrixImp,
-                                             RangeSpaceImp,
-                                             GridLayerImp,
-                                             SourceSpaceImp,
-                                             FieldImp,
-                                             pt,
-                                             OuterRangeSpaceImp,
-                                             OuterSourceSpaceImp>
-      Traits;
-  typedef typename BaseAssemblerType::TestSpaceType RangeSpaceType;
-  typedef typename BaseAssemblerType::AnsatzSpaceType SourceSpaceType;
-  typedef typename BaseAssemblerType::OuterTestSpaceType OuterRangeSpaceType;
-  typedef typename BaseAssemblerType::OuterAnsatzSpaceType OuterSourceSpaceType;
-  typedef typename RangeSpaceType::BaseFunctionSetType RangeBaseType;
-  typedef typename SourceSpaceType::BaseFunctionSetType SourceBaseType;
-  typedef typename OuterRangeSpaceType::BaseFunctionSetType OuterRangeBaseType;
-  typedef typename OuterSourceSpaceType::BaseFunctionSetType OuterSourceBaseType;
-  typedef XT::LA::SparsityPatternDefault PatternType;
-  typedef MatrixImp MatrixType;
-  using typename BaseOperatorType::FieldType;
-  using typename BaseOperatorType::JacobianType;
-  using typename BaseOperatorType::derived_type;
-  using typename BaseAssemblerType::GridLayerType;
-  using typename BaseAssemblerType::IntersectionType;
-  static const constexpr ChoosePattern pattern_type = pt;
+  using MatrixType = Matrix;
+  using DofFieldType = typename MatrixType::ScalarType;
 
-private:
-  typedef XT::LA::Solver<MatrixType, typename SourceSpaceType::DofCommunicatorType> LinearSolverType;
+  using typename BaseType::SourceSpaceType;
+  using typename BaseType::RangeSpaceType;
 
-  template <ChoosePattern pp = ChoosePattern::face_and_volume, bool anything = true>
-  struct Compute
+  using typename BaseType::SV;
+  using typename BaseType::RV;
+
+  ConstMatrixBasedOperator(const SourceSpaceType& source_spc, const RangeSpaceType& range_spc, const MatrixType& mat)
+    : source_space_(source_spc)
+    , range_space_(range_spc)
+    , matrix_(mat)
+    , linear_solver_(matrix_, source_space_.dof_communicator())
   {
-    static PatternType
-    pattern(const RangeSpaceType& rng_spc, const SourceSpaceType& src_spc, const GridLayerType& grd_layr)
-    {
-      return rng_spc.compute_face_and_volume_pattern(grd_layr, src_spc);
-    }
-  };
+    DUNE_THROW_IF(matrix_.rows() != range_space_.mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "matrix_.rows() = " << matrix_.rows() << "\n   "
+                                      << "range_space_.mapper().size() = "
+                                      << range_space_.mapper().size());
+    DUNE_THROW_IF(matrix_.cols() != source_space_.mapper().size(),
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "matrix_.cols() = " << matrix_.cols() << "\n   "
+                                      << "source_space_.mapper().size() = "
+                                      << source_space_.mapper().size());
+  } // ConstMatrixBasedOperator(...)
 
-  template <bool anything>
-  struct Compute<ChoosePattern::volume, anything>
-  {
-    static PatternType
-    pattern(const RangeSpaceType& rng_spc, const SourceSpaceType& src_spc, const GridLayerType& grd_layr)
-    {
-      return rng_spc.compute_volume_pattern(grd_layr, src_spc);
-    }
-  };
-
-  template <bool anything>
-  struct Compute<ChoosePattern::face, anything>
-  {
-    static PatternType
-    pattern(const RangeSpaceType& rng_spc, const SourceSpaceType& src_spc, const GridLayerType& grd_layr)
-    {
-      return rng_spc.compute_face_pattern(grd_layr, src_spc);
-    }
-  };
-
-public:
-  static PatternType
-  pattern(const RangeSpaceType& rng_spc, const SourceSpaceType& src_spc, const GridLayerType& grd_layr)
-  {
-    return Compute<pt>::pattern(rng_spc, src_spc, grd_layr);
-  }
-
-  template <class R>
-  static typename std::enable_if<std::is_same<R, RangeSpaceType>::value && std::is_same<R, SourceSpaceType>::value
-                                     && std::is_same<typename R::GridLayerType, GridLayerType>::value,
-                                 PatternType>::type
-  pattern(const R& rng_spc)
-  {
-    return pattern(rng_spc, rng_spc);
-  }
-
-  template <class R, class S>
-  static typename std::enable_if<std::is_same<R, RangeSpaceType>::value && std::is_same<S, SourceSpaceType>::value
-                                     && std::is_same<typename R::GridLayerType, GridLayerType>::value,
-                                 PatternType>::type
-  pattern(const R& rng_spc, const S& src_spc)
-  {
-    return pattern(rng_spc, src_spc, rng_spc.grid_layer());
-  }
-
-  template <class R, class G>
-  static typename std::enable_if<std::is_same<R, RangeSpaceType>::value && std::is_same<R, SourceSpaceType>::value
-                                     && std::is_same<G, GridLayerType>::value,
-                                 PatternType>::type
-  pattern(const R& rng_spc, const G& grd_layr)
-  {
-    return pattern(rng_spc, rng_spc, grd_layr);
-  }
-
-  template <class... Args>
-  explicit MatrixOperatorBase(MatrixType& mtrx, Args&&... args)
-    : BaseAssemblerType(std::forward<Args>(args)...)
-    , matrix_in_in_(mtrx)
-    , matrix_out_out_(matrix_in_in_.access())
-    , matrix_in_out_(matrix_in_in_.access())
-    , matrix_out_in_(matrix_in_in_.access())
-  {
-    if (matrix_in_in_.access().rows() != this->range_space().mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "matrix.rows(): " << matrix_in_in_.access().rows() << "\n"
-                                   << "range_space().mapper().size(): "
-                                   << this->range_space().mapper().size());
-    if (matrix_in_in_.access().cols() != this->source_space().mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "matrix.cols(): " << matrix_in_in_.access().cols() << "\n"
-                                   << "source_space().mapper().size(): "
-                                   << this->source_space().mapper().size());
-  } // MatrixOperatorBase(...)
-
-  template <class... Args>
-  explicit MatrixOperatorBase(MatrixType& mtrx_in_in,
-                              MatrixType& mtrx_out_out,
-                              MatrixType& mtrx_in_out,
-                              MatrixType& mtrx_out_in,
-                              Args&&... args)
-    : BaseAssemblerType(std::forward<Args>(args)...)
-    , matrix_in_in_(mtrx_in_in)
-    , matrix_out_out_(mtrx_out_out)
-    , matrix_in_out_(mtrx_in_out)
-    , matrix_out_in_(mtrx_out_in)
-  {
-    if (matrix_in_in_.access().rows() != this->range_space().mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "matrix_in_in.rows(): " << matrix_in_in_.access().rows() << "\n"
-                                         << "range_space().mapper().size(): "
-                                         << this->range_space().mapper().size());
-    if (matrix_in_in_.access().cols() != this->source_space().mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "matrix_in_in.cols(): " << matrix_in_in_.access().cols() << "\n"
-                                         << "source_space().mapper().size(): "
-                                         << this->source_space().mapper().size());
-    if (matrix_out_out_.access().rows() != this->outer_range_space().mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "matrix_out_out.rows(): " << matrix_out_out_.access().rows() << "\n"
-                                           << "outer_range_space().mapper().size(): "
-                                           << this->outer_range_space().mapper().size());
-    if (matrix_out_out_.access().cols() != this->outer_source_space().mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "matrix_out_out.cols(): " << matrix_out_out_.access().cols() << "\n"
-                                           << "outer_source_space().mapper().size(): "
-                                           << this->outer_source_space().mapper().size());
-    if (matrix_in_out_.access().rows() != this->range_space().mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "matrix_in_out.rows(): " << matrix_in_out_.access().rows() << "\n"
-                                          << "range_space().mapper().size(): "
-                                          << this->range_space().mapper().size());
-    if (matrix_in_out_.access().cols() != this->outer_source_space().mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "matrix_in_out.cols(): " << matrix_in_out_.access().cols() << "\n"
-                                          << "outer_source_space().mapper().size(): "
-                                          << this->outer_source_space().mapper().size());
-    if (matrix_out_in_.access().rows() != this->outer_range_space().mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "matrix_out_in.rows(): " << matrix_out_in_.access().rows() << "\n"
-                                          << "outer_range_space().mapper().size(): "
-                                          << this->outer_range_space().mapper().size());
-    if (matrix_out_in_.access().cols() != this->source_space().mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "matrix_out_in.cols(): " << matrix_out_in_.access().cols() << "\n"
-                                          << "source_space().mapper().size(): "
-                                          << this->source_space().mapper().size());
-  } // MatrixOperatorBase(...)
-
-  /// \todo Guard against copy and move ctor (Args = ThisType)!
-  template <class... Args>
-  explicit MatrixOperatorBase(Args&&... args)
-    : BaseAssemblerType(std::forward<Args>(args)...)
-    , matrix_in_in_(new MatrixType(this->range_space().mapper().size(),
-                                   this->source_space().mapper().size(),
-                                   pattern(this->range_space(), this->source_space(), this->grid_layer())))
-    , matrix_out_out_(matrix_in_in_.access())
-    , matrix_in_out_(matrix_in_in_.access())
-    , matrix_out_in_(matrix_in_in_.access())
+  template <class RGV_,
+            size_t r_r_,
+            size_t r_rC_,
+            class RF_,
+            typename = /* Only enable this ctor, if */
+            typename std::enable_if</* the type of space is RangeSpaceType */ (
+                                        std::is_same<RGV_, RGV>::value && (r_r_ == r_r) && (r_rC_ == r_rC)
+                                        && std::is_same<RF_, RF>::value)
+                                    && /* and RangeSpaceType and SourceSpaceType coincide. */ (
+                                           std::is_same<SGV, RGV>::value && (s_r == r_r) && (s_rC == r_rC)
+                                           && std::is_same<SF, RF>::value)>::type>
+  ConstMatrixBasedOperator(const SpaceInterface<RGV_, r_r_, r_rC_, RF_>& space, const MatrixType& mat)
+    : ConstMatrixBasedOperator(space, space, mat)
   {
   }
 
-  /// \sa SystemAssembler
-  MatrixOperatorBase(const ThisType& other) = delete;
-  MatrixOperatorBase(ThisType&& source) = delete;
-  MatrixOperatorBase(ThisType& other) = delete; // <- b.c. of the too perfect forwarding ctor
+  bool linear() const override final
+  {
+    return true;
+  }
 
-  ThisType& operator=(const ThisType& other) = delete;
-  ThisType& operator=(ThisType&& source) = delete;
+  const SourceSpaceType& source_space() const override
+  {
+    return source_space_;
+  }
+
+  const RangeSpaceType& range_space() const override
+  {
+    return range_space_;
+  }
 
   const MatrixType& matrix() const
   {
-    return matrix_in_in_.access();
+    return matrix_;
   }
+
+  using BaseType::apply;
+
+  void apply(const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
+             DiscreteFunction<RV, RGV, r_r, r_rC, RF>& range,
+             const XT::Common::Parameter& /*param*/ = {}) const override
+  {
+    try {
+      matrix_.mv(source.dofs().vector(), range.dofs().vector());
+    } catch (const XT::Common::Exceptions::shapes_do_not_match& ee) {
+      DUNE_THROW(Exceptions::operator_error,
+                 "when applying matrix to source and range dofs!\n\nThis was the original error: " << ee.what());
+    }
+  } // ... apply(...)
+
+  std::vector<std::string> invert_options() const override
+  {
+    return linear_solver_.types();
+  }
+
+  XT::Common::Configuration invert_options(const std::string& type) const override
+  {
+    try {
+      return linear_solver_.options(type);
+    } catch (const XT::Common::Exceptions::configuration_error& ee) {
+      DUNE_THROW(Exceptions::operator_error,
+                 "when accessing linear solver options!\n\nThis was the original error: " << ee.what());
+    }
+  } // ... invert_options(...)
+
+  using BaseType::apply_inverse;
+
+  void apply_inverse(const ConstDiscreteFunction<RV, RGV, r_r, r_rC, RF>& range,
+                     DiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
+                     const XT::Common::Configuration& opts,
+                     const XT::Common::Parameter& /*param*/ = {}) const override
+  {
+    try {
+      linear_solver_.apply(range.dofs().vector(), source.dofs().vector(), opts);
+    } catch (const XT::LA::Exceptions::linear_solver_failed& ee) {
+      DUNE_THROW(Exceptions::operator_error,
+                 "when applying linear solver!\n\nThis was the original error: " << ee.what());
+    }
+  } // ... apply_inverse(...)
+
+  std::vector<std::string> jacobian_options() const override
+  {
+    return {"direct"};
+  }
+
+  XT::Common::Configuration jacobian_options(const std::string& type) const override
+  {
+    DUNE_THROW_IF(type != jacobian_options().at(0),
+                  Exceptions::operator_error,
+                  "requested jacobian type is not one of the available ones!\n\n"
+                      << "type = "
+                      << type
+                      << "\njacobian_options() = "
+                      << jacobian_options());
+    return {{"type", jacobian_options().at(0)}};
+  } // ... jacobian_options(...)
+
+  using BaseType::jacobian;
+
+  std::shared_ptr<BaseType> jacobian(const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& /*source*/,
+                                     const XT::Common::Configuration& opts,
+                                     const XT::Common::Parameter& /*param*/ = {}) const override
+  {
+    DUNE_THROW_IF(
+        !opts.has_key("type"), Exceptions::operator_error, "missing key 'type' in given opts!\n\nopts = " << opts);
+    const auto type = opts.get<std::string>("type");
+    DUNE_THROW_IF(type != jacobian_options().at(0),
+                  Exceptions::operator_error,
+                  "requested jacobian type is not one of the available ones!\n\n"
+                      << "type = "
+                      << type
+                      << "\njacobian_options() = "
+                      << jacobian_options());
+    return std::make_shared<ThisType>(source_space_, range_space_, matrix_);
+  } // ... jacobian(...)
+
+private:
+  const SourceSpaceType& source_space_;
+  const RangeSpaceType& range_space_;
+  const MatrixType& matrix_;
+  const XT::LA::Solver<MatrixType, typename SourceSpaceType::DofCommunicatorType> linear_solver_;
+}; // class ConstMatrixBasedOperator
+
+
+template <class SGV, size_t s_r, size_t s_rC, class SF, class RGV, size_t r_r, size_t r_rC, class RF, class M>
+ConstMatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type,
+                         SGV,
+                         s_r,
+                         s_rC,
+                         SF,
+                         typename XT::Common::multiplication_promotion<SF, RF>::type,
+                         r_r,
+                         r_rC,
+                         RF,
+                         RGV>
+make_matrix_operator(const SpaceInterface<SGV, s_r, s_rC, SF>& source_space,
+                     const SpaceInterface<RGV, r_r, r_rC, RF>& range_space,
+                     const XT::LA::MatrixInterface<M>& matrix)
+{
+  return ConstMatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type,
+                                  SGV,
+                                  s_r,
+                                  s_rC,
+                                  SF,
+                                  typename XT::Common::multiplication_promotion<SF, RF>::type,
+                                  r_r,
+                                  r_rC,
+                                  RF,
+                                  RGV>(source_space, range_space, matrix.as_imp());
+} // ... make_matrix_operator(...)
+
+
+template <class GV, size_t r, size_t rC, class F, class M>
+ConstMatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>
+make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::MatrixInterface<M>& matrix)
+{
+  return ConstMatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>(space,
+                                                                                                   matrix.as_imp());
+}
+
+
+/**
+ * \brief Base class for linear operators which are assembled into a matrix.
+ *
+ * Similar to the GlobalAssembler, we derive from the XT::Grid::Walker and povide custom append() methods to allow to
+ * add local element and intersection operators. In contrast to the GlobalAssembler we already hold the target matrix
+ * (or create one of appropriate size and given sparsity pattern), into which we want to assemble. The operator is
+ * assembled by walking over the
+ * given assembly_gid_view (which defaults to the one fom the given space). This allows to assemble an operator only on
+ * a smaller grid view than the one given from the space (similar functionality could be acchieved by appending this
+ * operator to another walker and by providing an appropriate filter).
+ *
+ * \note One could achieve similar functionality by deriving from GlobalAssembler directly, which would slightly
+ *       simplify the implementation of the append methods. However, we do not want to expose the other append methods
+ *       of GlobalAssembler here (it should not be possible to append a local functional to an operator), but want to
+ * expose the ones from the XT::Grid::Walker (it should be possible to append other element or
+ *       intersection operators or two-forms).
+ *
+ * \note See ConstMatrixBasedOperator and OperatorInterface for a description of the template arguments.
+ *
+ * \sa OperatorInterface
+ * \sa ConstMatrixBasedOperator
+ * \sa XT::Grid::Walker
+ * \sa GlobalAssembler
+ */
+template <class M,
+          class AssemblyGridView,
+          size_t s_r = 1,
+          size_t s_rC = 1,
+          class SF = double,
+          class SGV = AssemblyGridView,
+          class F = double,
+          size_t r_r = s_r,
+          size_t r_rC = s_rC,
+          class RF = double,
+          class RGV = SGV,
+          class SV = typename XT::LA::Container<typename M::ScalarType, M::vector_type>::VectorType,
+          class RV = SV>
+class MatrixBasedOperator : XT::Common::StorageProvider<M>,
+                            public ConstMatrixBasedOperator<M, SGV, s_r, s_rC, SF, F, r_r, r_rC, RF, RGV, SV, RV>,
+                            public XT::Grid::Walker<AssemblyGridView>
+{
+  static_assert(XT::Grid::is_view<AssemblyGridView>::value, "");
+
+  using ThisType = MatrixBasedOperator<M, AssemblyGridView, s_r, s_rC, SF, SGV, F, r_r, r_rC, RF, RGV, SV, RV>;
+  using MatrixStorage = XT::Common::StorageProvider<M>;
+  using OperatorBaseType = ConstMatrixBasedOperator<M, SGV, s_r, s_rC, SF, F, r_r, r_rC, RF, RGV, SV, RV>;
+  using WalkerBaseType = XT::Grid::Walker<AssemblyGridView>;
+
+public:
+  using AssemblyGridViewType = AssemblyGridView;
+
+  using typename OperatorBaseType::MatrixType;
+  using typename OperatorBaseType::SourceSpaceType;
+  using typename OperatorBaseType::RangeSpaceType;
+
+  using typename WalkerBaseType::ElementType;
+  using ElementFilterType = XT::Grid::ElementFilter<AssemblyGridViewType>;
+  using IntersectionFilterType = XT::Grid::IntersectionFilter<AssemblyGridViewType>;
+  using ApplyOnAllElements = XT::Grid::ApplyOn::AllElements<AssemblyGridViewType>;
+  using ApplyOnAllIntersection = XT::Grid::ApplyOn::AllIntersections<AssemblyGridViewType>;
+
+  using typename WalkerBaseType::E;
+
+  /**
+   * \name Ctors which accept an existing matrix into which to assemble.
+   * \{
+   */
+
+  MatrixBasedOperator(AssemblyGridViewType assembly_grid_view,
+                      const SourceSpaceType& source_spc,
+                      const RangeSpaceType& range_spc,
+                      MatrixType& mat)
+    : MatrixStorage(mat)
+    , OperatorBaseType(source_spc, range_spc, MatrixStorage::access())
+    , WalkerBaseType(assembly_grid_view)
+    , assembled_(false)
+  {
+    // to detect assembly
+    this->append([&](const auto&) { assembled_ = true; });
+  }
+
+  template <class RGV_,
+            size_t r_r_,
+            size_t r_rC_,
+            class RF_,
+            typename = /* Only enable this ctor, if */
+            typename std::enable_if</* the type of space is RangeSpaceType */ (
+                                        std::is_same<RGV_, RGV>::value && (r_r_ == r_r) && (r_rC_ == r_rC)
+                                        && std::is_same<RF_, RF>::value)
+                                    && /* and RangeSpaceType and SourceSpaceType coincide. */ (
+                                           std::is_same<SGV, RGV>::value && (s_r == r_r) && (s_rC == r_rC)
+                                           && std::is_same<SF, RF>::value)>::type>
+  MatrixBasedOperator(AssemblyGridViewType assembly_grid_view,
+                      const SpaceInterface<RGV_, r_r_, r_rC_, RF_>& space,
+                      MatrixType& mat)
+    : MatrixBasedOperator(assembly_grid_view, space, space, mat)
+  {
+  }
+
+  template <class RGV_,
+            size_t r_r_,
+            size_t r_rC_,
+            class RF_,
+            typename = /* Only enable this ctor, if */
+            typename std::enable_if</* the type of space is RangeSpaceType, */ (
+                                        std::is_same<RGV_, RGV>::value && (r_r_ == r_r) && (r_rC_ == r_rC)
+                                        && std::is_same<RF_, RF>::value)
+                                    && /* RangeSpaceType and SourceSpaceType coincide. */ (
+                                           std::is_same<SGV, RGV>::value && (s_r == r_r) && (s_rC == r_rC)
+                                           && std::is_same<SF, RF>::value)
+                                    && /* and AssemblyGridView and the grid view type of RangeSpaceType coincide */ (
+                                           std::is_same<RGV, AssemblyGridView>::value)>::type>
+  MatrixBasedOperator(const SpaceInterface<RGV_, r_r_, r_rC_, RF_>& space, MatrixType& mat)
+    : MatrixBasedOperator(space.grid_view(), space, mat)
+  {
+  }
+
+  /**
+   * \}
+   * \name Ctors which create an appropriate matrix into which to assemble from a given sparsity pattern.
+   * \{
+   */
+
+  MatrixBasedOperator(AssemblyGridViewType assembly_grid_view,
+                      const SourceSpaceType& source_spc,
+                      const RangeSpaceType& range_spc,
+                      const XT::LA::SparsityPatternDefault& pattern)
+    : MatrixStorage(new MatrixType(range_spc.mapper().size(), source_spc.mapper().size(), pattern))
+    , OperatorBaseType(source_spc, range_spc, MatrixStorage::access())
+    , WalkerBaseType(assembly_grid_view)
+    , assembled_(false)
+  {
+    // to detect assembly
+    this->append([&](const auto&) { assembled_ = true; });
+  }
+
+  template <class RGV_,
+            size_t r_r_,
+            size_t r_rC_,
+            class RF_,
+            typename = /* Only enable this ctor, if */
+            typename std::enable_if</* the type of space is RangeSpaceType */ (
+                                        std::is_same<RGV_, RGV>::value && (r_r_ == r_r) && (r_rC_ == r_rC)
+                                        && std::is_same<RF_, RF>::value)
+                                    && /* and RangeSpaceType and SourceSpaceType coincide. */ (
+                                           std::is_same<SGV, RGV>::value && (s_r == r_r) && (s_rC == r_rC)
+                                           && std::is_same<SF, RF>::value)>::type>
+  MatrixBasedOperator(AssemblyGridViewType assembly_grid_view,
+                      const SpaceInterface<RGV_, r_r_, r_rC_, RF_>& space,
+                      const XT::LA::SparsityPatternDefault& pattern)
+    : MatrixBasedOperator(assembly_grid_view, space, space, pattern)
+  {
+  }
+
+  template <class RGV_,
+            size_t r_r_,
+            size_t r_rC_,
+            class RF_,
+            typename = /* Only enable this ctor, if */
+            typename std::enable_if</* the type of space is RangeSpaceType, */ (
+                                        std::is_same<RGV_, RGV>::value && (r_r_ == r_r) && (r_rC_ == r_rC)
+                                        && std::is_same<RF_, RF>::value)
+                                    && /* RangeSpaceType and SourceSpaceType coincide. */ (
+                                           std::is_same<SGV, RGV>::value && (s_r == r_r) && (s_rC == r_rC)
+                                           && std::is_same<SF, RF>::value)
+                                    && /* and AssemblyGridView and the grid view type of RangeSpaceType coincide */ (
+                                           std::is_same<RGV, AssemblyGridView>::value)>::type>
+  MatrixBasedOperator(const SpaceInterface<RGV_, r_r_, r_rC_, RF_>& space,
+                      const XT::LA::SparsityPatternDefault& pattern)
+    : MatrixBasedOperator(space.grid_view(), space, pattern)
+  {
+  }
+
+  /**
+   * \}
+   * \name Ctors which create an appropriate matrix into which to assemble from a given stencil.
+   * \{
+   */
+
+  MatrixBasedOperator(AssemblyGridViewType assembly_grid_view,
+                      const SourceSpaceType& source_spc,
+                      const RangeSpaceType& range_spc,
+                      const Stencil stencil = Stencil::element_and_intersection)
+    : MatrixBasedOperator(assembly_grid_view,
+                          source_spc,
+                          range_spc,
+                          make_sparsity_pattern(range_spc, source_spc, assembly_grid_view, stencil))
+  {
+  }
+
+  template <class RGV_,
+            size_t r_r_,
+            size_t r_rC_,
+            class RF_,
+            typename = /* Only enable this ctor, if */
+            typename std::enable_if</* the type of space is RangeSpaceType */ (
+                                        std::is_same<RGV_, RGV>::value && (r_r_ == r_r) && (r_rC_ == r_rC)
+                                        && std::is_same<RF_, RF>::value)
+                                    && /* and RangeSpaceType and SourceSpaceType coincide. */ (
+                                           std::is_same<SGV, RGV>::value && (s_r == r_r) && (s_rC == r_rC)
+                                           && std::is_same<SF, RF>::value)>::type>
+  MatrixBasedOperator(AssemblyGridViewType assembly_grid_view,
+                      const SpaceInterface<RGV_, r_r_, r_rC_, RF_>& space,
+                      const Stencil stencil = Stencil::element_and_intersection)
+    : MatrixBasedOperator(assembly_grid_view, space, space, stencil)
+  {
+  }
+
+  template <class RGV_,
+            size_t r_r_,
+            size_t r_rC_,
+            class RF_,
+            typename = /* Only enable this ctor, if */
+            typename std::enable_if</* the type of space is RangeSpaceType, */ (
+                                        std::is_same<RGV_, RGV>::value && (r_r_ == r_r) && (r_rC_ == r_rC)
+                                        && std::is_same<RF_, RF>::value)
+                                    && /* RangeSpaceType and SourceSpaceType coincide. */ (
+                                           std::is_same<SGV, RGV>::value && (s_r == r_r) && (s_rC == r_rC)
+                                           && std::is_same<SF, RF>::value)
+                                    && /* and AssemblyGridView and the grid view type of RangeSpaceType coincide */ (
+                                           std::is_same<RGV, AssemblyGridView>::value)>::type>
+  MatrixBasedOperator(const SpaceInterface<RGV_, r_r_, r_rC_, RF_>& space,
+                      const Stencil stencil = Stencil::element_and_intersection)
+    : MatrixBasedOperator(space.grid_view(), space, stencil)
+  {
+  }
+
+  /// \}
+
+  using OperatorBaseType::matrix;
 
   MatrixType& matrix()
   {
-    return matrix_in_in_.access();
+    return MatrixStorage::access();
   }
 
-  const SourceSpaceType& source_space() const
-  {
-    return this->ansatz_space();
-  }
+  using WalkerBaseType::append;
 
-  const RangeSpaceType& range_space() const
+  ThisType& append(const LocalElementTwoFormInterface<E, r_r, r_rC, RF, F, s_r, s_rC, SF>& local_two_form,
+                   const XT::Common::Parameter& param = {},
+                   const ElementFilterType& filter = ApplyOnAllElements())
   {
-    return this->test_space();
-  }
-
-  const OuterSourceSpaceType& outer_source_space() const
-  {
-    return this->outer_ansatz_space();
-  }
-
-  const OuterRangeSpaceType& outer_range_space() const
-  {
-    return this->outer_test_space();
-  }
-
-  using BaseAssemblerType::append;
-
-  ThisType& append(
-      const LocalVolumeTwoFormInterface<RangeBaseType, SourceBaseType, FieldType>& local_volume_twoform,
-      const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
-  {
-    this->append(local_volume_twoform, matrix_in_in_.access(), where);
+    using LocalAssemblerType =
+        LocalElementTwoFormAssembler<MatrixType, AssemblyGridViewType, r_r, r_rC, RF, RGV, SGV, s_r, s_rC, SF>;
+    this->append(new LocalAssemblerType(
+                     this->range_space(), this->source_space(), local_two_form, MatrixStorage::access(), param),
+                 filter);
     return *this;
   }
 
-  ThisType& append(const LocalCouplingTwoFormInterface<RangeBaseType,
-                                                       IntersectionType,
-                                                       SourceBaseType,
-                                                       OuterRangeBaseType,
-                                                       OuterSourceBaseType,
-                                                       FieldType>& local_coupling_twoform,
-                   const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where =
-                       new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>())
+  // similar append for LocalIntersectionFunctionalInterface ...
+
+  void assemble(const bool use_tbb = false) override final
   {
-    this->append(local_coupling_twoform,
-                 matrix_in_in_.access(),
-                 matrix_out_out_.access(),
-                 matrix_in_out_.access(),
-                 matrix_out_in_.access(),
-                 where);
-    return *this;
+    if (assembled_)
+      return;
+    // This clears all appended operators, which is ok, since we are done after assembling once!
+    this->walk(use_tbb);
+    assembled_ = true;
   }
-
-  ThisType& append(const LocalBoundaryTwoFormInterface<RangeBaseType, IntersectionType, SourceBaseType, FieldType>&
-                       local_boundary_twoform,
-                   const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where =
-                       new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType>())
-  {
-    this->append(local_boundary_twoform, matrix_in_in_.access(), where);
-    return *this;
-  }
-
-  template <class S, class R>
-  void apply(const XT::LA::VectorInterface<S>& source,
-             XT::LA::VectorInterface<R>& range,
-             const Dune::XT::Common::Parameter& /*param*/ = {}) const
-  {
-    const_cast<ThisType&>(*this).assemble();
-    matrix().mv(source.as_imp(), range.as_imp());
-  }
-
-  template <class S, class R>
-  void apply(const ConstDiscreteFunction<SourceSpaceType, S>& source,
-             DiscreteFunction<RangeSpaceType, R>& range,
-             const Dune::XT::Common::Parameter& param = {}) const
-  {
-    apply(source.vector(), range.vector(), param);
-  }
-
-  template <class R, class S>
-  FieldType apply2(const XT::LA::VectorInterface<R>& range,
-                   const XT::LA::VectorInterface<S>& source,
-                   const Dune::XT::Common::Parameter& /*param*/ = {}) const
-  {
-    const_cast<ThisType&>(*this).assemble();
-    auto tmp = range.copy();
-    matrix().mv(source.as_imp(source), tmp);
-    return range.dot(tmp);
-  }
-
-  template <class R, class S>
-  FieldType apply2(const ConstDiscreteFunction<RangeSpaceType, R>& range,
-                   const ConstDiscreteFunction<SourceSpaceType, S>& source,
-                   const Dune::XT::Common::Parameter& param = {}) const
-  {
-    auto ret = apply2(range.vector(), source.vector(), param);
-    return range.space().grid_layer().grid().comm().sum(ret);
-  }
-
-  template <class SourceType>
-  JacobianType jacobian(const SourceType& /*source*/, const Dune::XT::Common::Parameter& /*param*/ = {}) const
-  {
-    return JacobianType(matrix(), range_space(), source_space());
-  }
-
-  template <class SourceType>
-  void
-  jacobian(const SourceType& /*source*/, JacobianType& jac, const Dune::XT::Common::Parameter& /*param*/ = {}) const
-  {
-    jac->matrix() = matrix();
-  }
-
-  using BaseOperatorType::apply_inverse;
-
-  template <class R, class S>
-  void apply_inverse(const XT::LA::VectorInterface<R>& range,
-                     XT::LA::VectorInterface<S>& source,
-                     const XT::Common::Configuration& opts,
-                     const Dune::XT::Common::Parameter& /*param*/ = {}) const
-  {
-    this->assemble();
-    LinearSolverType(matrix(), source_space().dof_communicator()).apply(range.as_imp(), source.as_imp(), opts);
-  }
-
-  template <class R, class S>
-  void apply_inverse(const ConstDiscreteFunction<RangeSpaceType, R>& range,
-                     ConstDiscreteFunction<SourceSpaceType, S>& source,
-                     const XT::Common::Configuration& opts,
-                     const Dune::XT::Common::Parameter& /*param*/ = {}) const
-  {
-    apply_inverse(range.vector(), source.vector(), opts);
-  }
-
-  std::vector<std::string> invert_options() const
-  {
-    return LinearSolverType::types();
-  }
-
-  XT::Common::Configuration invert_options(const std::string& type) const
-  {
-    return LinearSolverType::options(type);
-  }
-
-protected:
-  using BaseAssemblerType::codim0_functors_;
-  using BaseAssemblerType::codim1_functors_;
 
 private:
-  Dune::XT::Common::StorageProvider<MatrixType> matrix_in_in_;
-  Dune::XT::Common::StorageProvider<MatrixType> matrix_out_out_;
-  Dune::XT::Common::StorageProvider<MatrixType> matrix_in_out_;
-  Dune::XT::Common::StorageProvider<MatrixType> matrix_out_in_;
-}; // class MatrixOperatorBase
+  bool assembled_;
+}; // class MatrixBasedOperator
+
+
+/// \name Variants of make_matrix_operator for a given matrix.
+/// \{
+
+template <class AGV,
+          class SGV,
+          size_t s_r,
+          size_t s_rC,
+          class SF,
+          class RGV,
+          size_t r_r,
+          size_t r_rC,
+          class RF,
+          class M>
+MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type,
+                    GridView<AGV>,
+                    s_r,
+                    s_rC,
+                    SF,
+                    SGV,
+                    typename XT::Common::multiplication_promotion<SF, RF>::type,
+                    r_r,
+                    r_rC,
+                    RF,
+                    RGV>
+make_matrix_operator(GridView<AGV> assembly_grid_view,
+                     const SpaceInterface<SGV, s_r, s_rC, SF>& source_space,
+                     const SpaceInterface<RGV, r_r, r_rC, RF>& range_space,
+                     XT::LA::MatrixInterface<M>& matrix)
+{
+  return MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type,
+                             GridView<AGV>,
+                             s_r,
+                             s_rC,
+                             SF,
+                             SGV,
+                             typename XT::Common::multiplication_promotion<SF, RF>::type,
+                             r_r,
+                             r_rC,
+                             RF,
+                             RGV>(assembly_grid_view, source_space, range_space, matrix.as_imp());
+} // ... make_matrix_operator(...)
+
+template <class AGV, class GV, size_t r, size_t rC, class F, class M>
+MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GridView<AGV>, r, rC, F, GV>
+make_matrix_operator(GridView<AGV> assembly_grid_view,
+                     const SpaceInterface<GV, r, rC, F>& space,
+                     XT::LA::MatrixInterface<M>& matrix)
+{
+  return MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GridView<AGV>, r, rC, F, GV>(
+      assembly_grid_view, space, matrix.as_imp());
+}
+
+template <class GV, size_t r, size_t rC, class F, class M>
+MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>
+make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, XT::LA::MatrixInterface<M>& matrix)
+{
+  return MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>(space, matrix.as_imp());
+}
+
+/// \}
+/// \name Variants of make_matrix_operator, where an appropriate matrix is created from a given pattern
+/// \{
+
+/**
+ * \note Use as in
+\code
+auto op = make_matrix_operator<MatrixType>(assembly_grid_view, source_space, range_space, pattern);
+\endcode
+ */
+template <class MatrixType,
+          class AGV,
+          class SGV,
+          size_t s_r,
+          size_t s_rC,
+          class SF,
+          class RGV,
+          size_t r_r,
+          size_t r_rC,
+          class RF>
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value,
+                        MatrixBasedOperator<MatrixType,
+                                            GridView<AGV>,
+                                            s_r,
+                                            s_rC,
+                                            SF,
+                                            SGV,
+                                            typename XT::Common::multiplication_promotion<SF, RF>::type,
+                                            r_r,
+                                            r_rC,
+                                            RF,
+                                            RGV>>::type
+make_matrix_operator(GridView<AGV> assembly_grid_view,
+                     const SpaceInterface<SGV, s_r, s_rC, SF>& source_space,
+                     const SpaceInterface<RGV, r_r, r_rC, RF>& range_space,
+                     const XT::LA::SparsityPatternDefault& pattern)
+{
+  return MatrixBasedOperator<MatrixType,
+                             GridView<AGV>,
+                             s_r,
+                             s_rC,
+                             SF,
+                             SGV,
+                             typename XT::Common::multiplication_promotion<SF, RF>::type,
+                             r_r,
+                             r_rC,
+                             RF,
+                             RGV>(assembly_grid_view, source_space, range_space, pattern);
+} // ... make_matrix_operator(...)
+
+/**
+ * \note Use as in
+\code
+auto op = make_matrix_operator<MatrixType>(assembly_grid_view, space, pattern);
+\endcode
+ */
+template <class MatrixType, class AGV, class GV, size_t r, size_t rC, class F>
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value,
+                        MatrixBasedOperator<MatrixType, GridView<AGV>, r, rC, F, GV>>::type
+make_matrix_operator(GridView<AGV> assembly_grid_view,
+                     const SpaceInterface<GV, r, rC, F>& space,
+                     const XT::LA::SparsityPatternDefault& pattern)
+{
+  return MatrixBasedOperator<MatrixType, GridView<AGV>, r, rC, F, GV>(assembly_grid_view, space, pattern);
+}
+
+/**
+ * \note Use as in
+\code
+auto op = make_matrix_operator<MatrixType>(space, pattern);
+\endcode
+ */
+template <class MatrixType, class GV, size_t r, size_t rC, class F>
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixBasedOperator<MatrixType, GV, r, rC, F>>::type
+make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::SparsityPatternDefault& pattern)
+{
+  return MatrixBasedOperator<MatrixType, GV, r, rC, F>(space, pattern);
+}
+
+/// \}
+/// \name Variants of make_matrix_operator, where an appropriate matrix is created from given stencil
+/// \{
+
+/**
+ * \note Use as in
+\code
+auto op = make_matrix_operator<MatrixType>(source_space, range_space, stencil);
+\endcode
+ */
+template <class MatrixType,
+          class AGV,
+          class SGV,
+          size_t s_r,
+          size_t s_rC,
+          class SF,
+          class RGV,
+          size_t r_r,
+          size_t r_rC,
+          class RF>
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value,
+                        MatrixBasedOperator<MatrixType,
+                                            GridView<AGV>,
+                                            s_r,
+                                            s_rC,
+                                            SF,
+                                            SGV,
+                                            typename XT::Common::multiplication_promotion<SF, RF>::type,
+                                            r_r,
+                                            r_rC,
+                                            RF,
+                                            RGV>>::type
+make_matrix_operator(GridView<AGV> assembly_grid_view,
+                     const SpaceInterface<SGV, s_r, s_rC, SF>& source_space,
+                     const SpaceInterface<RGV, r_r, r_rC, RF>& range_space,
+                     const Stencil stencil = Stencil::element_and_intersection)
+{
+  return MatrixBasedOperator<MatrixType,
+                             GridView<AGV>,
+                             s_r,
+                             s_rC,
+                             SF,
+                             SGV,
+                             typename XT::Common::multiplication_promotion<SF, RF>::type,
+                             r_r,
+                             r_rC,
+                             RF,
+                             RGV>(assembly_grid_view, source_space, range_space, stencil);
+} // ... make_matrix_operator(...)
+
+/**
+ * \note Use as in
+\code
+auto op = make_matrix_operator<MatrixType>(assembly_grid_view, space, stencil);
+\endcode
+ */
+template <class MatrixType, class AGV, class GV, size_t r, size_t rC, class F>
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value,
+                        MatrixBasedOperator<MatrixType, GridView<AGV>, r, rC, F, GV>>::type
+make_matrix_operator(GridView<AGV> assembly_grid_view,
+                     const SpaceInterface<GV, r, rC, F>& space,
+                     const Stencil stencil = Stencil::element_and_intersection)
+{
+  return MatrixBasedOperator<MatrixType, GridView<AGV>, r, rC, F, GV>(assembly_grid_view, space, stencil);
+}
+
+/**
+ * \note Use as in
+\code
+auto op = make_matrix_operator<MatrixType>(space, stencil);
+\endcode
+ */
+template <class MatrixType, class GV, size_t r, size_t rC, class F>
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixBasedOperator<MatrixType, GV, r, rC, F>>::type
+make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
+                     const Stencil stencil = Stencil::element_and_intersection)
+{
+  return MatrixBasedOperator<MatrixType, GV, r, rC, F>(space, stencil);
+}
+
+/// \}
 
 
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_BASE_HH
+#endif // DUNE_GDT_OPERATORS_MATRIX_BASED_OPERATOR_HH
