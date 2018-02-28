@@ -12,87 +12,96 @@
 #ifndef DUNE_GDT_LOCAL_INTEGRANDS_INTERFACES_HH
 #define DUNE_GDT_LOCAL_INTEGRANDS_INTERFACES_HH
 
-#include <memory>
+#include <dune/common/dynvector.hh>
 
-#include <dune/common/dynmatrix.hh>
-#include <dune/common/fvector.hh>
+#include <dune/xt/common/parameter.hh>
+#include <dune/xt/grid/type_traits.hh>
 
-#include <dune/xt/common/crtp.hh>
-#include <dune/xt/common/type_traits.hh>
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/functions/interfaces/local-functions.hh>
 
 namespace Dune {
 namespace GDT {
 
 
 /**
- *  \brief  Interface for local evaluations that depend on a codim 0 entity.
- *  \tparam numArguments  The number of local bases.
- *  \note   All evaluations have to be copyable!
+ * Interface for integrands in integrals over grid elements, which depend on one argument only (usually the test basis
+ * in an integral-based functional).
+ *
+ * \note Regarding SMP: the integrand is copied for each thread, so
+ *       - no shared mutable state between copies to be thread safe, but
+ *       - local mutable state is ok.
  */
-template <class Traits, size_t numArguments>
-class LocalVolumeIntegrandInterface
+template <class Element,
+          size_t range_dim = 1,
+          size_t range_dim_cols = 1,
+          class RangeField = double,
+          class Field = double>
+class LocalUnaryElementIntegrandInterface : public XT::Common::ParametricInterface
 {
-  static_assert(AlwaysFalse<Traits>::value, "There is no interface for this numArguments!");
-};
+  static_assert(XT::Grid::is_entity<Element>::value, "");
 
-
-/**
- *  \brief  Interface for unary codim 0 evaluations.
- */
-template <class Traits>
-class LocalVolumeIntegrandInterface<Traits, 1>
-    : public XT::CRTPInterface<LocalVolumeIntegrandInterface<Traits, 1>, Traits>
-{
-public:
-  typedef typename Traits::derived_type derived_type;
-  typedef typename Traits::EntityType EntityType;
-  typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
-  typedef typename Traits::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = Traits::dimDomain;
-
-protected:
-  typedef EntityType E;
-  typedef DomainFieldType D;
-  static const size_t d = dimDomain;
+  using ThisType = LocalUnaryElementIntegrandInterface<Element, range_dim, range_dim_cols, RangeField, Field>;
 
 public:
-  LocalfunctionTupleType localFunctions(const EntityType& entity) const
+  using E = Element;
+  using D = typename Element::Geometry::ctype;
+  static const constexpr size_t d = E::dimension;
+  using F = Field;
+
+  using R = RangeField;
+  static const constexpr size_t r = range_dim;
+  static const constexpr size_t rC = range_dim_cols;
+
+  using ElementType = E;
+  using DomainType = FieldVector<D, d>;
+  using LocalBasisType = XT::Functions::LocalFunctionSetInterface<E, r, rC, R>;
+
+  LocalUnaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
   {
-    CHECK_CRTP(this->as_imp().localFunctions(entity));
-    return this->as_imp().localFunctions(entity);
   }
 
-  /**
-   *  \brief  Computes the needed integration order.
-   *  \tparam R   RangeFieldType
-   *  \tparam r   dimRange of the testBase
-   *  \tparam rC  dimRangeRows of the testBase
-   */
-  template <class R, size_t r, size_t rC>
-  size_t order(const LocalfunctionTupleType& localFunctionsTuple,
-               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase) const
-  {
-    CHECK_CRTP(this->as_imp().order(localFunctionsTuple, testBase));
-    return this->as_imp().order(localFunctionsTuple, testBase);
-  }
+  virtual ~LocalUnaryElementIntegrandInterface() = default;
+
+  virtual std::unique_ptr<ThisType> copy() const = 0;
 
   /**
-   *  \brief  Computes a unary codim 0 evaluation.
-   *  \tparam R   RangeFieldType
-   *  \tparam r   dimRange of the testBase
-   *  \tparam rC  dimRangeRows of the testBase
-   *  \attention ret is assumed to be zero!
+   * This method needs to be called on each grid element before calling order() or evalaute(). It is supposed to be a
+   * (nearly-)no-op if already bound to the element.
    */
-  template <class R, size_t r, size_t rC>
-  void evaluate(const LocalfunctionTupleType& localFunctionsTuple,
-                const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase,
-                const Dune::FieldVector<D, d>& localPoint,
-                Dune::DynamicVector<R>& ret) const
+  virtual ThisType& bind(const ElementType& element) = 0;
+
+  /**
+   * Returns the polynomial order of the integrand, given the basis.
+   *
+   * \note Undefined behaviour if not bound!
+   */
+  virtual int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const = 0;
+
+  /**
+   * Computes the evaluation of this integrand at the given point for each function in the basis.
+   *
+   * \note Undefined behaviour if not bound!
+   */
+  virtual void evaluate(const LocalBasisType& basis,
+                        const DomainType& point_in_reference_element,
+                        DynamicVector<F>& result,
+                        const XT::Common::Parameter& param = {}) const = 0;
+
+  /**
+    * This method is provided for convenience and should not be used within library code.
+   *
+   * \note Undefined behaviour if not bound!
+    */
+  virtual DynamicVector<F> evaluate(const LocalBasisType& basis,
+                                    const DomainType& point_in_reference_element,
+                                    const XT::Common::Parameter& param = {}) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctionsTuple, testBase, localPoint, ret));
+    DynamicVector<F> result(basis.size(param));
+    evaluate(basis, point_in_reference_element, result, param);
+    return result;
   }
-}; // class LocalVolumeIntegrandInterface< Traits, 1 >
+}; // class LocalUnaryElementIntegrandInterface
 
 
 /**
