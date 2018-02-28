@@ -11,126 +11,310 @@
 #ifndef DUNE_GDT_LOCAL_DOF_VECTOR_HH
 #define DUNE_GDT_LOCAL_DOF_VECTOR_HH
 
-#include <ostream>
-
+#include <dune/xt/common/vector.hh>
 #include <dune/xt/la/container/vector-interface.hh>
 
+#include <dune/gdt/exceptions.hh>
 #include <dune/gdt/spaces/mapper/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
+namespace internal {
 
 
-template <class VectorImp>
-class ConstLocalDoFVector
+// forward, required for the default in the declaration of ConstLocalDofVector
+template <class Vector, class GridView>
+class ConstLocalDofVectorTraits;
+
+
+} // namespace internal
+
+
+// forwards, required for the traits
+template <class Vector, class GridView, class Traits = internal::ConstLocalDofVectorTraits<Vector, GridView>>
+class ConstLocalDofVector;
+
+template <class Vector, class GridView>
+class LocalDofVector;
+
+
+namespace internal {
+
+
+template <class Vector, class GridView>
+class ConstLocalDofVectorTraits
 {
-  static_assert(
-      std::is_base_of<XT::LA::VectorInterface<typename VectorImp::Traits, typename VectorImp::Traits::ScalarType>,
-                      VectorImp>::value,
-      "VectorImp has to be derived from XT::LA::VectorInterface!");
+  static_assert(XT::LA::is_vector<Vector>::value, "");
 
 public:
-  typedef VectorImp VectorType;
-  typedef typename VectorType::ScalarType ScalarType;
+  using derived_type = ConstLocalDofVector<Vector, GridView>;
+  using ScalarType = typename Vector::ScalarType;
+};
 
-  template <class M, class EntityType>
-  ConstLocalDoFVector(const MapperInterface<M>& mapper, const EntityType& entity, const VectorType& vector)
-    : vector_(vector)
-    , indices_(mapper.numDofs(entity))
+
+template <class Vector, class GridView>
+class LocalDofVectorTraits
+{
+  static_assert(XT::LA::is_vector<Vector>::value, "");
+
+public:
+  using derived_type = LocalDofVector<Vector, GridView>;
+  using ScalarType = typename Vector::ScalarType;
+};
+
+
+} // namespace internal
+
+
+/**
+ * \note Since all implementations of XT::LA::VectorInterface are assumed to be thread safe, no special care needs to be
+ *       taken here.
+ */
+template <class Vector, class GridView, class Traits>
+class ConstLocalDofVector : public XT::LA::VectorInterface<Traits>
+{
+
+  using ThisType = ConstLocalDofVector<Vector, GridView, Traits>;
+  using BaseType = XT::LA::VectorInterface<Traits>;
+
+public:
+  using typename BaseType::ScalarType;
+  using VectorType = Vector;
+  using MapperType = MapperInterface<GridView>;
+  using ElementType = typename MapperType::ElementType;
+
+  ConstLocalDofVector(const MapperType& mapper, const VectorType& global_vector)
+    : mapper_(mapper)
+    , global_vector_(global_vector)
+    , global_DoF_indices_(mapper_.max_local_size())
+    , size_(0)
+    , element_(nullptr)
   {
-    mapper.globalIndices(entity, indices_);
   }
 
-  ~ConstLocalDoFVector()
+  // Cannot be defaulted due to element_.
+  ConstLocalDofVector(const MapperType& mapper, const VectorType& global_vector, const ElementType& element)
+    : mapper_(mapper)
+    , global_vector_(global_vector)
+    , global_DoF_indices_(mapper_.max_local_size())
+    , size_(0)
+    , element_(nullptr)
+  {
+    this->bind(element);
+  }
+
+  // Cannot be defaulted due to element_.
+  ConstLocalDofVector(const ThisType& other)
+    : mapper_(other.mapper_)
+    , global_vector_(other.global_vector_)
+    , global_DoF_indices_(other.global_DoF_indices_)
+    , size_(other.size_)
+    , element_(other.element_ ? std::make_unique<ElementType>(*other.element_) : nullptr)
   {
   }
+
+  ConstLocalDofVector(ThisType&& source)
+    : mapper_(source.mapper_)
+    , global_vector_(source.global_vector_)
+    , global_DoF_indices_(std::move(source.global_DoF_indices_))
+    , size_(std::move(source.size_))
+    , element_(std::move(source.element_))
+  {
+  }
+
+  ThisType& bind(const ElementType& new_element)
+  {
+    if (!element_ || new_element != *element_) {
+      element_ = std::make_unique<ElementType>(new_element);
+      mapper_.global_indices(*element_, global_DoF_indices_);
+      size_ = mapper_.local_size(*element_);
+      assert(global_DoF_indices_.size() >= size_ && "This must not happen, the mapper is broken!");
+    }
+    return *this;
+  } // ... bind(...)
 
   size_t size() const
   {
-    return indices_.size();
+    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    return size_;
   }
 
-  ScalarType get(const size_t ii) const
+  void add_to_entry(const size_t /*ii*/, const ScalarType& /*value*/)
   {
-    assert(ii < indices_.size());
-    return vector_.get_entry(indices_[ii]);
+    DUNE_THROW(Exceptions::dof_vector_error, "a ConstLocalDofVector is not mutable!");
   }
 
-private:
-  const VectorType& vector_;
+  void set_entry(const size_t /*ii*/, const ScalarType& /*value*/)
+  {
+    DUNE_THROW(Exceptions::dof_vector_error, "a ConstLocalDofVector is not mutable!");
+  }
+
+  ScalarType get_entry(const size_t ii) const
+  {
+    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    assert(ii < size_);
+    return global_vector_.get_entry(global_DoF_indices_[ii]);
+  }
 
 protected:
-  Dune::DynamicVector<size_t> indices_;
+  ScalarType& get_unchecked_ref(const size_t /*ii*/)
+  {
+    DUNE_THROW(Exceptions::dof_vector_error, "a ConstLocalDofVector is not mutable!");
+    return dummy_scalar_to_silence_the_warning_;
+  }
 
-private:
-  template <class V>
-  friend std::ostream& operator<<(std::ostream& /*out*/, const ConstLocalDoFVector<V>& /*vector*/);
-}; // class ConstLocalDoFVector
-
-
-template <class V>
-std::ostream& operator<<(std::ostream& out, const ConstLocalDoFVector<V>& vector)
-{
-  out << "[";
-  const size_t sz = vector.size();
-  if (sz > 0) {
-    out << vector.get(0);
-    for (size_t ii = 1; ii < sz; ++ii)
-      out << ", " << vector.get(ii);
-  } else
-    out << " ";
-  out << "]";
-  return out;
-} // ... operator<<(...)
-
-
-template <class VectorImp>
-class LocalDoFVector : public ConstLocalDoFVector<VectorImp>
-{
-  typedef ConstLocalDoFVector<VectorImp> BaseType;
+  const ScalarType& get_unchecked_ref(const size_t ii) const
+  {
+    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    assert(ii < size_);
+    // This is not optimal, but global_vector_.get_unchecked_ref is protected.
+    return global_vector_[global_DoF_indices_[ii]];
+  }
 
 public:
-  typedef typename BaseType::VectorType VectorType;
-  typedef typename BaseType::ScalarType ScalarType;
+  ScalarType& operator[](const size_t /*ii*/)
+  {
+    DUNE_THROW(Exceptions::dof_vector_error, "a ConstLocalDofVector is not mutable!");
+    return dummy_scalar_to_silence_the_warning_;
+  }
 
-  template <class M, class EntityType>
-  LocalDoFVector(const MapperInterface<M>& mapper, const EntityType& entity, VectorType& vector)
-    : BaseType(mapper, entity, vector)
-    , vector_(vector)
+  const ScalarType& operator[](const size_t ii) const
+  {
+    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    assert(ii < size_);
+    return global_vector_[global_DoF_indices_[ii]];
+  }
+
+protected:
+  friend BaseType; // To allow access to get_unchecked_ref().
+
+  const MapperType& mapper_;
+
+private:
+  const VectorType& global_vector_;
+
+protected:
+  DynamicVector<size_t> global_DoF_indices_;
+  size_t size_;
+  std::unique_ptr<ElementType> element_;
+
+private:
+  ScalarType dummy_scalar_to_silence_the_warning_;
+}; // class ConstLocalDofVector
+
+
+template <class Vector, class GridView>
+class LocalDofVector : public ConstLocalDofVector<Vector, GridView, internal::LocalDofVectorTraits<Vector, GridView>>
+{
+
+  using ThisType = LocalDofVector<Vector, GridView>;
+  using BaseType = ConstLocalDofVector<Vector, GridView, internal::LocalDofVectorTraits<Vector, GridView>>;
+
+public:
+  using typename BaseType::ScalarType;
+  using VectorType = Vector;
+  using MapperType = MapperInterface<GridView>;
+  using ElementType = typename MapperType::ElementType;
+
+  LocalDofVector(const MapperType& mapper, VectorType& global_vector)
+    : BaseType(mapper, global_vector)
+    , global_vector_(global_vector)
   {
   }
 
-  ~LocalDoFVector()
+  LocalDofVector(const MapperType& mapper, VectorType& global_vector, const ElementType& element)
+    : BaseType(mapper, global_vector, element)
+    , global_vector_(global_vector)
   {
   }
 
-  void set(const size_t ii, const ScalarType& val)
+  LocalDofVector(const ThisType&) = default;
+  LocalDofVector(ThisType&&) = default;
+
+  void add_to_entry(const size_t ii, const ScalarType& value)
   {
-    assert(ii < indices_.size());
-    vector_.set_entry(indices_[ii], val);
+    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    assert(ii < size_);
+    global_vector_.add_to_entry(global_DoF_indices_[ii], value);
   }
 
-  void add(const size_t ii, const ScalarType& val)
+  void set_entry(const size_t ii, const ScalarType& value)
   {
-    assert(ii < indices_.size());
-    vector_.add_to_entry(indices_[ii], val);
+    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    assert(ii < size_);
+    global_vector_.set_entry(global_DoF_indices_[ii], value);
   }
 
-  template <class OtherVectorImp>
-  void add(const OtherVectorImp& vector)
+  ScalarType get_entry(const size_t ii) const
   {
-    assert(vector.size() == indices_.size());
-    for (size_t ii = 0; ii < indices_.size(); ++ii)
-      add(ii, vector[ii]);
+    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    assert(ii < size_);
+    return global_vector_.get_entry(global_DoF_indices_[ii]);
+  }
+
+protected:
+  ScalarType& get_unchecked_ref(const size_t ii)
+  {
+    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    assert(ii < size_);
+    return global_vector_[global_DoF_indices_[ii]];
+  }
+
+  const ScalarType& get_unchecked_ref(const size_t ii) const
+  {
+    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    assert(ii < size_);
+    return global_vector_[global_DoF_indices_[ii]];
+  }
+
+public:
+  ScalarType& operator[](const size_t ii)
+  {
+    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    assert(ii < size_);
+    return global_vector_[global_DoF_indices_[ii]];
+  }
+
+  const ScalarType& operator[](const size_t ii) const
+  {
+    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    assert(ii < size_);
+    return global_vector_[global_DoF_indices_[ii]];
   }
 
 private:
-  using BaseType::indices_;
-  VectorType& vector_;
-}; // class LocalDoFVector
+  // To allow access to get_unchecked_ref().
+  friend XT::LA::VectorInterface<internal::LocalDofVectorTraits<Vector, GridView>>;
+
+  using BaseType::mapper_;
+  VectorType& global_vector_;
+  using BaseType::global_DoF_indices_;
+  using BaseType::size_;
+  using BaseType::element_;
+}; // class LocalDofVector
 
 
 } // namespace GDT
+namespace XT {
+namespace Common {
+
+
+template <class Vector, class GridView, class Traits>
+struct VectorAbstraction<GDT::ConstLocalDofVector<Vector, GridView, Traits>>
+    : public LA::internal::VectorAbstractionBase<GDT::ConstLocalDofVector<Vector, GridView, Traits>>
+{
+};
+
+
+template <class Vector, class GridView>
+struct VectorAbstraction<GDT::LocalDofVector<Vector, GridView>>
+    : public LA::internal::VectorAbstractionBase<GDT::LocalDofVector<Vector, GridView>>
+{
+};
+
+
+} // namespace Common
+} // namespace XT
 } // namespace Dune
 
 #endif // DUNE_GDT_LOCAL_DOF_VECTOR_HH
