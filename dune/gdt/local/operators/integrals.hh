@@ -118,6 +118,7 @@ private:
 }; // class LocalVolumeIntegralOperator
 
 
+#if 0
 template <class QuaternaryFaceIntegrandType,
           class TestBaseEntity,
           class Intersection,
@@ -387,6 +388,7 @@ private:
   const BinaryFaceIntegrandType integrand_;
   const size_t over_integrate_;
 }; // class LocalBoundaryIntegralOperator
+#endif // 0
 
 
 } // namespace GDT
