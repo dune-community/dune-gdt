@@ -92,6 +92,7 @@ private:
 }; // class LocalVolumeIntegralFunctional
 
 
+#if 0
 template <class UnaryEvaluationType,
           class TestBase,
           class Intersection,
@@ -169,6 +170,7 @@ private:
   const UnaryEvaluationType integrand_;
   const size_t over_integrate_;
 }; // class LocalFaceIntegralFunctional
+#endif // 0
 
 
 } // namespace GDT
