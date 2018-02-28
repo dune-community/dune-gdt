@@ -12,6 +12,7 @@
 #ifndef DUNE_GDT_TYPE_TRAITS_HH
 #define DUNE_GDT_TYPE_TRAITS_HH
 
+#include <ostream>
 #include <type_traits>
 
 #include <dune/xt/common/type_traits.hh>
@@ -27,6 +28,28 @@ enum class SpaceType
   finite_volume,
   raviart_thomas
 };
+
+
+enum class Stencil
+{
+  element,
+  intersection,
+  element_and_intersection
+};
+
+
+static std::ostream& operator<<(std::ostream& out, const Stencil& stencil)
+{
+  if (stencil == Stencil::element)
+    out << "element";
+  else if (stencil == Stencil::intersection)
+    out << "intersection";
+  else if (stencil == Stencil::element_and_intersection)
+    out << "element_and_intersection";
+  else
+    out << "Stencil(" << int(stencil) << ")";
+  return out;
+}
 
 
 // forwards
