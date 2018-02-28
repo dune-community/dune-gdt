@@ -116,6 +116,11 @@ private:
     ThisType& operator=(const ThisType&) = delete;
     ThisType& operator=(ThisType&&) = delete;
 
+    size_t max_size(const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      return 1;
+    }
+
     size_t size(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
       return 1;

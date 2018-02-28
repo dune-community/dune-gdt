@@ -63,7 +63,10 @@ public:
     , finite_elements_(finite_elements)
     , element_indices_(entity_indices)
     , switches_(switches)
+    , max_size_(0)
   {
+    for (const auto& geometry_and_fe_pair : *finite_elements_)
+      max_size_ = std::max(max_size_, geometry_and_fe_pair.second->basis().size());
   }
 
   const GridViewType& grid_view() const
@@ -126,6 +129,11 @@ private:
 
     ThisType& operator=(const ThisType&) = delete;
     ThisType& operator=(ThisType&&) = delete;
+
+    size_t max_size(const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      return self_.max_size_;
+    }
 
   protected:
     void post_bind(const EntityType& elemnt) override final
@@ -217,6 +225,7 @@ private:
   const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
   const std::shared_ptr<FiniteVolumeMapper<GL>> element_indices_;
   const std::shared_ptr<std::vector<std::vector<R>>> switches_;
+  size_t max_size_;
 }; // class RaviartThomasGlobalBasis
 
 } // namespace GDT

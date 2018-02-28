@@ -52,7 +52,10 @@ public:
                      const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements)
     : grid_view_(grd_vw)
     , finite_elements_(finite_elements)
+    , max_size_()
   {
+    for (const auto& geometry_and_fe_pair : *finite_elements_)
+      max_size_ = std::max(max_size_, geometry_and_fe_pair.second->basis().size());
   }
 
   const GridViewType& grid_view() const
@@ -114,6 +117,11 @@ private:
     ThisType& operator=(const ThisType&) = delete;
     ThisType& operator=(ThisType&&) = delete;
 
+    size_t max_size(const XT::Common::Parameter& /*param*/ = {}) const override final
+    {
+      return self_.max_size_;
+    }
+
   protected:
     void post_bind(const EntityType& elemnt) override final
     {
@@ -167,6 +175,7 @@ private:
 
   const GridViewType& grid_view_;
   const std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
+  size_t max_size_;
 }; // class DefaultGlobalBasis
 
 
