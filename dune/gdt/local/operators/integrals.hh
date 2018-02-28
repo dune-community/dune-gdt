@@ -11,19 +11,9 @@
 #ifndef DUNE_GDT_LOCAL_OPERATORS_INTEGRALS_HH
 #define DUNE_GDT_LOCAL_OPERATORS_INTEGRALS_HH
 
-#include <type_traits>
-
-#include <boost/numeric/conversion/cast.hpp>
-
-#include <dune/common/densematrix.hh>
-
 #include <dune/geometry/quadraturerules.hh>
 
-#include <dune/xt/functions/interfaces.hh>
-#include <dune/xt/common/matrix.hh>
-
 #include <dune/gdt/local/integrands/interfaces.hh>
-#include <dune/gdt/type_traits.hh>
 
 #include "interfaces.hh"
 
@@ -31,91 +21,91 @@ namespace Dune {
 namespace GDT {
 
 
-template <class BinaryEvaluationType,
-          class TestBase,
-          class AnsatzBase = TestBase,
-          class Field = typename TestBase::RangeFieldType>
-class LocalVolumeIntegralOperator : public LocalVolumeTwoFormInterface<TestBase, AnsatzBase, Field>
+/**
+ * For an explanation of the template arguments \sa LocalElementTwoFormInterface
+ */
+template <class E,
+          size_t t_r = 1,
+          size_t t_rC = 1,
+          class TR = double,
+          class F = double,
+          size_t a_r = t_r,
+          size_t a_rC = t_rC,
+          class AR = TR>
+class LocalElementIntegralOperator : public LocalElementTwoFormInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>
 {
-  static_assert(is_binary_volume_integrand<BinaryEvaluationType>::value, "");
-  static_assert(std::is_same<typename TestBase::EntityType, typename AnsatzBase::EntityType>::value, "");
-  static_assert(std::is_same<typename TestBase::DomainFieldType, typename AnsatzBase::DomainFieldType>::value, "");
-  static_assert(TestBase::dimDomain == AnsatzBase::dimDomain, "");
-
-  typedef LocalVolumeIntegralOperator<BinaryEvaluationType, TestBase, AnsatzBase, Field> ThisType;
-  typedef LocalVolumeTwoFormInterface<TestBase, AnsatzBase, Field> BaseType;
-
-  typedef typename TestBase::DomainFieldType D;
-  static const size_t d = TestBase::dimDomain;
+  using ThisType = LocalElementIntegralOperator<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
+  using BaseType = LocalElementTwoFormInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
 public:
-  using typename BaseType::TestBaseType;
-  using typename BaseType::AnsatzBaseType;
-  using typename BaseType::FieldType;
+  using typename BaseType::D;
+  using BaseType::d;
+  using typename BaseType::LocalTestBasisType;
+  using typename BaseType::LocalAnsatzBasisType;
 
-  template <class... Args>
-  explicit LocalVolumeIntegralOperator(Args&&... args)
-    : integrand_(std::forward<Args>(args)...)
-    , over_integrate_(0)
-  {
-  }
+  using IntegrandType = LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TR, F, a_r, a_rC, AR>;
 
-  template <class... Args>
-  explicit LocalVolumeIntegralOperator(const int over_integrate, Args&&... args)
-    : integrand_(std::forward<Args>(args)...)
-    , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
-  {
-  }
-
-  template <class... Args>
-  explicit LocalVolumeIntegralOperator(const size_t over_integrate, Args&&... args)
-    : integrand_(std::forward<Args>(args)...)
+  LocalElementIntegralOperator(const IntegrandType& integrand, const int over_integrate = 0)
+    : BaseType(integrand.parameter_type())
+    , integrand_(integrand.copy())
     , over_integrate_(over_integrate)
   {
   }
 
-  LocalVolumeIntegralOperator(const ThisType& other) = default;
-  LocalVolumeIntegralOperator(ThisType&& source) = default;
+  LocalElementIntegralOperator(const ThisType& other)
+    : BaseType(other.parameter_type())
+    , integrand_(other.integrand_->copy())
+    , over_integrate_(other.over_integrate_)
+  {
+  }
+
+  LocalElementIntegralOperator(ThisType&& source) = default;
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
 
   using BaseType::apply2;
 
-  void
-  apply2(const TestBaseType& test_base, const AnsatzBaseType& ansatz_base, DynamicMatrix<FieldType>& ret) const override
+  void apply2(const LocalTestBasisType& test_basis,
+              const LocalAnsatzBasisType& ansatz_basis,
+              DynamicMatrix<F>& result,
+              const XT::Common::Parameter& param = {}) const override
   {
-    const auto& entity = ansatz_base.entity();
-    const auto local_functions = integrand_.localFunctions(entity);
-    // create quadrature
-    const size_t integrand_order = integrand_.order(local_functions, test_base, ansatz_base) + over_integrate_;
-    const auto& quadrature = QuadratureRules<D, d>::rule(entity.type(), boost::numeric_cast<int>(integrand_order));
+    // prepare integand
+    const auto& element = ansatz_basis.entity();
+    assert(test_basis.entity() == element && "This must not happen!");
+    integrand_->bind(element);
     // prepare storage
-    const size_t rows = test_base.size();
-    const size_t cols = ansatz_base.size();
-    ret *= 0.0;
-    assert(ret.rows() >= rows);
-    assert(ret.cols() >= cols);
-    DynamicMatrix<FieldType> integrand_eval(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
+    const size_t rows = test_basis.size(param);
+    const size_t cols = ansatz_basis.size(param);
+    if (result.rows() < rows || result.cols() < cols)
+      result.resize(rows, cols);
+    result *= 0;
     // loop over all quadrature points
-    for (const auto& quadrature_point : quadrature) {
-      const auto xx = quadrature_point.position();
+    const size_t integrand_order = integrand_->order(test_basis, ansatz_basis) + over_integrate_;
+    for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element.type(), integrand_order)) {
+      const auto point_in_reference_element = quadrature_point.position();
       // integration factors
-      const auto integration_factor = entity.geometry().integrationElement(xx);
+      const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);
       const auto quadrature_weight = quadrature_point.weight();
       // evaluate the integrand
-      integrand_.evaluate(local_functions, test_base, ansatz_base, xx, integrand_eval);
+      integrand_->evaluate(test_basis, ansatz_basis, point_in_reference_element, integrand_values_, param);
+      assert(integrand_values_.rows() >= rows && "This must not happen!");
+      assert(integrand_values_.cols() >= cols && "This must not happen!");
       // compute integral
-      for (size_t ii = 0; ii < rows; ++ii) {
-        const auto& integrand_eval_row = integrand_eval[ii];
-        auto& ret_row = ret[ii];
+      for (size_t ii = 0; ii < rows; ++ii)
         for (size_t jj = 0; jj < cols; ++jj)
-          ret_row[jj] += integrand_eval_row[jj] * integration_factor * quadrature_weight;
-      } // compute integral
+          result[ii][jj] += integrand_values_[ii][jj] * integration_factor * quadrature_weight;
     } // loop over all quadrature points
   } // ... apply2(...)
 
 private:
-  const BinaryEvaluationType integrand_;
-  const size_t over_integrate_;
-}; // class LocalVolumeIntegralOperator
+  mutable std::unique_ptr<IntegrandType> integrand_;
+  const int over_integrate_;
+  mutable DynamicMatrix<F> integrand_values_;
+}; // class LocalElementIntegralOperator
 
 
 #if 0
