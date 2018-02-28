@@ -73,6 +73,11 @@ public:
     return search_result->second;
   }
 
+  size_t max_size() const override final
+  {
+    return 1;
+  }
+
   std::unique_ptr<LocalizedBasisType> localize() const override final
   {
     return std::make_unique<LocalizedFiniteVolumeGlobalBasis>();

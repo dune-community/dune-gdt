@@ -46,6 +46,11 @@ public:
 
   virtual const ShapeFunctionsType& shape_functions(const GeometryType& geometry_type) const = 0;
 
+  virtual size_t max_size() const
+  {
+    return this->localize()->max_size();
+  }
+
   virtual std::unique_ptr<LocalizedBasisType> localize() const = 0;
 
   virtual std::unique_ptr<LocalizedBasisType> localize(const ElementType& element) const = 0;

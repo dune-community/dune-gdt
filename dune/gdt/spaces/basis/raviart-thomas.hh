@@ -85,6 +85,11 @@ public:
     return finite_element_search_result->second->basis();
   }
 
+  size_t max_size() const override final
+  {
+    return max_size_;
+  }
+
   std::unique_ptr<LocalizedBasisType> localize() const override final
   {
     return std::make_unique<LocalizedRaviartThomasGlobalBasis>(*this);
