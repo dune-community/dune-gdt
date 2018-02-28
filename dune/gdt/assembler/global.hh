@@ -13,316 +13,235 @@
 #ifndef DUNE_GDT_ASSEMBLER_SYSTEM_HH
 #define DUNE_GDT_ASSEMBLER_SYSTEM_HH
 
-#include <type_traits>
 #include <memory>
+#include <type_traits>
 
-#include <dune/xt/common/parallel/helper.hh>
-
+#include <dune/xt/common/parameter.hh>
+#include <dune/xt/la/container/vector-interface.hh>
 #include <dune/xt/grid/walker.hh>
+#include <dune/xt/grid/type_traits.hh>
 
+#include <dune/gdt/local/assembler/functional-assemblers.hh>
+#include <dune/gdt/local/assembler/two-form-assemblers.hh>
+#include <dune/gdt/local/functionals/interfaces.hh>
+#include <dune/gdt/local/operators/interfaces.hh>
 #include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/spaces/constraints.hh>
 #include <dune/gdt/type_traits.hh>
-
-#include "local-accumulators.hh"
-#include "local-assemblers.hh"
-#include "wrapper.hh"
 
 namespace Dune {
 namespace GDT {
 
 
-template <class TestSpaceImp,
-          class GridLayerImp = typename TestSpaceImp::GridLayerType,
-          class AnsatzSpaceImp = TestSpaceImp,
-          class OuterTestSpaceImp = TestSpaceImp,
-          class OuterAnsatzSpaceImp = AnsatzSpaceImp>
-class SystemAssembler : public XT::Grid::Walker<GridLayerImp>
+template <class GridView,
+          size_t test_range_dim = 1,
+          size_t test_range_dim_cols = 1,
+          class RangeField = double,
+          class TestGridView = GridView,
+          class AnsatzGridView = GridView,
+          size_t ansatz_range_dim = test_range_dim,
+          size_t ansatz_range_dim_cols = test_range_dim_cols>
+class GlobalAssembler : public XT::Grid::Walker<GridView>
 {
-  static_assert(is_space<TestSpaceImp>::value, "");
-  static_assert(is_space<AnsatzSpaceImp>::value, "");
-  static_assert(is_space<OuterTestSpaceImp>::value, "");
-  static_assert(is_space<OuterAnsatzSpaceImp>::value, "");
-  static_assert(std::is_same<typename TestSpaceImp::EntityType, XT::Grid::extract_entity_t<GridLayerImp>>::value, "");
-  static_assert(std::is_same<typename AnsatzSpaceImp::EntityType, XT::Grid::extract_entity_t<GridLayerImp>>::value, "");
-  static_assert(std::is_same<typename OuterTestSpaceImp::EntityType, XT::Grid::extract_entity_t<GridLayerImp>>::value,
-                "");
-  static_assert(std::is_same<typename OuterAnsatzSpaceImp::EntityType, XT::Grid::extract_entity_t<GridLayerImp>>::value,
-                "");
-  typedef XT::Grid::Walker<GridLayerImp> BaseType;
-  typedef SystemAssembler<TestSpaceImp, GridLayerImp, AnsatzSpaceImp, OuterTestSpaceImp, OuterAnsatzSpaceImp> ThisType;
-  typedef typename TestSpaceImp::EntityType E;
-  typedef typename TestSpaceImp::DomainFieldType D;
-  static const constexpr size_t d = TestSpaceImp::dimDomain;
+  // no need to check the rest (is done in SpaceInterface)
+  static_assert(XT::Grid::is_view<GridView>::value, "");
+
+  using ThisType = GlobalAssembler<GridView,
+                                   test_range_dim,
+                                   test_range_dim_cols,
+                                   RangeField,
+                                   TestGridView,
+                                   AnsatzGridView,
+                                   ansatz_range_dim,
+                                   ansatz_range_dim_cols>;
+  using BaseType = XT::Grid::Walker<GridView>;
 
 public:
-  typedef TestSpaceImp TestSpaceType;
-  typedef AnsatzSpaceImp AnsatzSpaceType;
-  typedef OuterTestSpaceImp OuterTestSpaceType;
-  typedef OuterAnsatzSpaceImp OuterAnsatzSpaceType;
-  typedef typename TestSpaceType::BaseFunctionSetType TestBaseType;
-  typedef typename AnsatzSpaceType::BaseFunctionSetType AnsatzBaseType;
-  typedef typename OuterTestSpaceType::BaseFunctionSetType OuterTestBaseType;
-  typedef typename OuterAnsatzSpaceType::BaseFunctionSetType OuterAnsatzBaseType;
+  using typename BaseType::GridViewType;
+  using typename BaseType::ElementType;
+  using typename BaseType::IntersectionType;
+  using TestSpaceType = SpaceInterface<TestGridView, test_range_dim, test_range_dim_cols, RangeField>;
+  using AnsatzSpaceType = SpaceInterface<AnsatzGridView, ansatz_range_dim, ansatz_range_dim_cols, RangeField>;
 
-  typedef typename BaseType::GridLayerType GridLayerType;
-  typedef typename BaseType::EntityType EntityType;
-  typedef typename BaseType::IntersectionType IntersectionType;
+  using ElementFilterType = XT::Grid::ElementFilter<GridViewType>;
+  using ApplyOnAllElements = XT::Grid::ApplyOn::AllElements<GridViewType>;
 
-  typedef XT::Grid::ApplyOn::WhichEntity<GridLayerType> ApplyOnWhichEntity;
-  typedef XT::Grid::ApplyOn::WhichIntersection<GridLayerType> ApplyOnWhichIntersection;
+  using LocalElementFunctionalType =
+      LocalElementFunctionalInterface<ElementType, test_range_dim, test_range_dim_cols, RangeField>;
 
-  template <typename TestSpace,
-            typename AnsatzSpace,
-            typename = typename std::enable_if<std::is_same<OuterTestSpaceType, TestSpace>::value
-                                               && std::is_same<OuterAnsatzSpaceType, AnsatzSpace>::value>::type>
-  SystemAssembler(TestSpace test, AnsatzSpace ansatz, GridLayerType grd_layr)
-    : BaseType(grd_layr)
-    , test_space_(test)
-    , ansatz_space_(ansatz)
-    , outer_test_space_(test)
-    , outer_ansatz_space_(ansatz)
+  using LocalElementTwoFormType = LocalElementTwoFormInterface<ElementType,
+                                                               test_range_dim,
+                                                               test_range_dim_cols,
+                                                               RangeField,
+                                                               RangeField,
+                                                               ansatz_range_dim,
+                                                               ansatz_range_dim_cols,
+                                                               RangeField>;
+
+  GlobalAssembler(GridViewType grd_vw, const TestSpaceType& test_sp, const AnsatzSpaceType& ansatz_sp)
+    : BaseType(std::move(grd_vw))
+    , test_space_(test_sp)
+    , ansatz_space_(ansatz_sp)
   {
   }
 
-  template <typename TestSpace,
-            typename AnsatzSpace,
-            typename =
-                typename std::enable_if<std::is_same<OuterTestSpaceType, TestSpace>::value
-                                        && std::is_same<OuterAnsatzSpaceType, AnsatzSpace>::value
-                                        && std::is_same<typename TestSpace::GridLayerType, GridLayerType>::value>::type>
-  explicit SystemAssembler(TestSpace test, AnsatzSpace ansatz)
-    : BaseType(test.grid_layer())
-    , test_space_(test)
-    , ansatz_space_(ansatz)
-    , outer_test_space_(test)
-    , outer_ansatz_space_(ansatz)
+  template <class GV,
+            size_t r,
+            size_t rC,
+            class R, /* Only enable this ctor, iff */
+            typename = typename std::enable_if</* the type of space is TestSpaceType and */ (
+                                                   std::is_same<GV, TestGridView>::value && (r == test_range_dim)
+                                                   && (rC == test_range_dim_cols)
+                                                   && std::is_same<R, RangeField>::value)
+                                               && /* if ansatz and test space type coincide. */ std::
+                                                      is_same<AnsatzSpaceType, TestSpaceType>::value>::type>
+  GlobalAssembler(GridViewType grd_vw, const SpaceInterface<GV, r, rC, R>& space)
+    : GlobalAssembler(std::move(grd_vw), space, space)
   {
   }
 
-  template <typename TestSpace,
-            typename =
-                typename std::enable_if<std::is_same<AnsatzSpaceType, TestSpace>::value
-                                        && std::is_same<OuterTestSpaceType, TestSpace>::value
-                                        && std::is_same<OuterAnsatzSpaceType, TestSpace>::value
-                                        && std::is_same<typename TestSpace::GridLayerType, GridLayerType>::value>::type>
-  explicit SystemAssembler(TestSpace test)
-    : BaseType(test.grid_layer())
-    , test_space_(test)
-    , ansatz_space_(test)
-    , outer_test_space_(test)
-    , outer_ansatz_space_(test)
+  template <class GV,
+            size_t r,
+            size_t rC,
+            class R, /* Only enable this ctor, iff */
+            typename = typename std::enable_if</* the type of space is TestSpaceType, */ (
+                                                   std::is_same<GV, TestGridView>::value && (r == test_range_dim)
+                                                   && (rC == test_range_dim_cols)
+                                                   && std::is_same<R, RangeField>::value)
+                                               && /* ansatz and test space type coincide and */ std::
+                                                      is_same<AnsatzSpaceType, TestSpaceType>::value
+                                               && /* the grid view type of space and GridViewType coincide */
+                                               std::is_same<GV, GridViewType>::value>::type>
+  GlobalAssembler(const SpaceInterface<GV, r, rC, R>& space)
+    : GlobalAssembler(space.grid_view(), space, space)
   {
   }
 
-  template <typename TestSpace,
-            typename = typename std::enable_if<std::is_same<AnsatzSpaceType, TestSpace>::value
-                                               && std::is_same<OuterTestSpaceType, TestSpace>::value
-                                               && std::is_same<OuterAnsatzSpaceType, TestSpace>::value>::type>
-  explicit SystemAssembler(TestSpace test, GridLayerType grd_layr)
-    : BaseType(grd_layr)
-    , test_space_(test)
-    , ansatz_space_(test)
-    , outer_test_space_(test)
-    , outer_ansatz_space_(test)
-  {
-  }
+  GlobalAssembler(const ThisType& other) = delete;
+  GlobalAssembler(ThisType&& source) = default;
 
-  SystemAssembler(GridLayerType grd_layr,
-                  TestSpaceType inner_test,
-                  AnsatzSpaceType inner_ansatz,
-                  OuterTestSpaceType outer_test,
-                  OuterAnsatzSpaceType outer_ansatz)
-    : BaseType(grd_layr)
-    , test_space_(inner_test)
-    , ansatz_space_(inner_ansatz)
-    , outer_test_space_(outer_test)
-    , outer_ansatz_space_(outer_ansatz)
-  {
-  }
-
-  /// \sa https://github.com/dune-community/dune-gdt/issues/89
-  SystemAssembler(const ThisType& other) = delete; // all wrappers hold references to dead spaces after move!
-  SystemAssembler(ThisType&& source) = delete;
   ThisType& operator=(const ThisType& other) = delete;
   ThisType& operator=(ThisType&& source) = delete;
 
   const TestSpaceType& test_space() const
   {
-    return *test_space_;
+    return test_space_;
   }
 
   const AnsatzSpaceType& ansatz_space() const
   {
-    return *ansatz_space_;
-  }
-
-  const OuterTestSpaceType& outer_test_space() const
-  {
-    return *outer_test_space_;
-  }
-
-  const OuterAnsatzSpaceType& outer_ansatz_space() const
-  {
-    return *outer_ansatz_space_;
+    return ansatz_space_;
   }
 
   using BaseType::append;
 
-  template <class C>
-  ThisType& append(ConstraintsInterface<C>& constraints,
-                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
+  template <class V>
+  ThisType& append(const LocalElementFunctionalType& local_functional,
+                   XT::LA::VectorInterface<V>& global_vector,
+                   const XT::Common::Parameter& param = {},
+                   const ElementFilterType& filter = ApplyOnAllElements())
   {
-    typedef internal::ConstraintsWrapper<TestSpaceType, AnsatzSpaceType, GridLayerType, typename C::derived_type>
-        WrapperType;
-    this->codim0_functors_.emplace_back(new WrapperType(test_space_, ansatz_space_, where, constraints.as_imp()));
+    using LocalAssemblerType = LocalElementFunctionalAssembler<typename XT::LA::VectorInterface<V>::derived_type,
+                                                               GridViewType,
+                                                               test_range_dim,
+                                                               test_range_dim_cols,
+                                                               RangeField,
+                                                               TestGridView>;
+    this->append(new LocalAssemblerType(test_space_, local_functional, global_vector.as_imp(), param), filter);
     return *this;
-  } // ... append(...)
+  }
 
-  template <class M, class R>
-  ThisType& append(const LocalVolumeTwoFormInterface<TestBaseType, AnsatzBaseType, R>& local_volume_two_form,
-                   XT::LA::MatrixInterface<M, R>& matrix,
-                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
+  template <class M>
+  ThisType& append(const LocalElementTwoFormType& local_two_form,
+                   XT::LA::MatrixInterface<M>& global_matrix,
+                   const XT::Common::Parameter& param = {},
+                   const ElementFilterType& filter = ApplyOnAllElements())
   {
-    this->codim0_functors_.emplace_back(
-        new LocalVolumeTwoFormAssemblerFunctor<TestSpaceType, typename M::derived_type, GridLayerType, AnsatzSpaceType>(
-            test_space_, ansatz_space_, where, local_volume_two_form, matrix.as_imp()));
+    using LocalAssemblerType = LocalElementTwoFormAssembler<typename XT::LA::MatrixInterface<M>::derived_type,
+                                                            GridViewType,
+                                                            test_range_dim,
+                                                            test_range_dim_cols,
+                                                            RangeField,
+                                                            TestGridView,
+                                                            AnsatzGridView,
+                                                            ansatz_range_dim,
+                                                            ansatz_range_dim_cols>;
+    this->append(new LocalAssemblerType(test_space_, ansatz_space_, local_two_form, global_matrix.as_imp(), param),
+                 filter);
     return *this;
-  } // ... append(...)
+  }
 
-  template <class R, size_t r, size_t rC>
-  ThisType& append(const LocalVolumeTwoFormInterface<XT::Functions::LocalfunctionInterface<E, D, d, R, r, rC>,
-                                                     XT::Functions::LocalfunctionInterface<E, D, d, R, r, rC>,
-                                                     R>& local_volume_two_form,
-                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& test_function,
-                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& ansatz_function,
-                   R& final_result,
-                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
+  void assemble(const bool use_tbb = false, const bool clear_functors = true)
   {
-    this->codim0_return_functors_.emplace_back(
-        new LocalVolumeTwoFormAccumulatorFunctor<GridLayerType,
-                                                 XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>,
-                                                 XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>,
-                                                 R>(
-            this->grid_layer_, local_volume_two_form, test_function, ansatz_function, final_result, where->copy()));
-    BaseType::append(*codim0_return_functors_.back(), where);
-    return *this;
-  } // ... append(...)
-
-  template <class M, class R>
-  ThisType& append(const LocalCouplingTwoFormInterface<TestBaseType,
-                                                       IntersectionType,
-                                                       AnsatzBaseType,
-                                                       OuterTestBaseType,
-                                                       OuterAnsatzBaseType,
-                                                       R>& local_coupling_two_form,
-                   XT::LA::MatrixInterface<M, R>& matrix,
-                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
-  {
-    this->codim1_functors_.emplace_back(new LocalCouplingTwoFormAssemblerFunctor<TestSpaceType,
-                                                                                 typename M::derived_type,
-                                                                                 GridLayerType,
-                                                                                 AnsatzSpaceType,
-                                                                                 OuterTestSpaceType,
-                                                                                 OuterAnsatzSpaceType>(
-        test_space_, ansatz_space_, where, local_coupling_two_form, matrix.as_imp()));
-    return *this;
-  } // ... append(...)
-
-  template <class M, class R>
-  ThisType& append(const LocalCouplingTwoFormInterface<TestBaseType,
-                                                       IntersectionType,
-                                                       AnsatzBaseType,
-                                                       OuterTestBaseType,
-                                                       OuterAnsatzBaseType,
-                                                       R>& local_coupling_two_form,
-                   XT::LA::MatrixInterface<M, R>& matrix_in_in,
-                   XT::LA::MatrixInterface<M, R>& matrix_out_out,
-                   XT::LA::MatrixInterface<M, R>& matrix_in_out,
-                   XT::LA::MatrixInterface<M, R>& matrix_out_in,
-                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
-  {
-    this->codim1_functors_.emplace_back(
-        new LocalCouplingTwoFormAssemblerFunctor<TestSpaceType,
-                                                 typename M::derived_type,
-                                                 GridLayerType,
-                                                 AnsatzSpaceType,
-                                                 OuterTestSpaceType,
-                                                 OuterAnsatzSpaceType>(test_space_,
-                                                                       ansatz_space_,
-                                                                       outer_test_space_,
-                                                                       outer_ansatz_space_,
-                                                                       where,
-                                                                       local_coupling_two_form,
-                                                                       matrix_in_in.as_imp(),
-                                                                       matrix_out_out.as_imp(),
-                                                                       matrix_in_out.as_imp(),
-                                                                       matrix_out_in.as_imp()));
-    return *this;
-  } // ... append(...)
-
-  template <class M, class R>
-  ThisType& append(
-      const LocalBoundaryTwoFormInterface<TestBaseType, IntersectionType, AnsatzBaseType, R>& local_boundary_two_form,
-      XT::LA::MatrixInterface<M, R>& matrix,
-      const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
-  {
-    this->codim1_functors_.emplace_back(new LocalBoundaryTwoFormAssemblerFunctor<TestSpaceType,
-                                                                                 typename M::derived_type,
-                                                                                 GridLayerType,
-                                                                                 AnsatzSpaceType>(
-        test_space_, ansatz_space_, where, local_boundary_two_form, matrix.as_imp()));
-    return *this;
-  } // ... append(...)
-  template <class V, class R>
-  ThisType& append(const LocalVolumeFunctionalInterface<TestBaseType, R>& local_volume_functional,
-                   XT::LA::VectorInterface<V, R>& vector,
-                   const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
-  {
-    this->codim0_functors_.emplace_back(
-        new LocalVolumeFunctionalAssemblerFunctor<TestSpaceType, typename V::derived_type, GridLayerType>(
-            test_space_, where, local_volume_functional, vector.as_imp()));
-    return *this;
-  } // ... append(...)
-
-  template <class V, class R>
-  ThisType& append(const LocalFaceFunctionalInterface<TestBaseType, IntersectionType, R>& local_face_functional,
-                   XT::LA::VectorInterface<V, R>& vector,
-                   const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
-  {
-    assert(vector.size() == test_space_->mapper().size());
-    this->codim1_functors_.emplace_back(
-        new LocalFaceFunctionalAssemblerFunctor<TestSpaceType, typename V::derived_type, GridLayerType>(
-            test_space_, where, local_face_functional, vector.as_imp()));
-    return *this;
-  } // ... append(...)
-
-  void assemble(const bool use_tbb = false)
-  {
-    this->walk(use_tbb);
+    this->walk(use_tbb, clear_functors);
   }
 
   template <class Partitioning>
-  void assemble(const Partitioning& partitioning)
+  void assemble(Partitioning& partitioning, const bool clear_functors = true)
   {
-    this->walk(partitioning);
+    this->walk(partitioning, clear_functors);
   }
 
 protected:
-  const Dune::XT::Common::PerThreadValue<const TestSpaceType> test_space_;
-  const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType> ansatz_space_;
-  const Dune::XT::Common::PerThreadValue<const OuterTestSpaceType> outer_test_space_;
-  const Dune::XT::Common::PerThreadValue<const OuterAnsatzSpaceType> outer_ansatz_space_;
-  // this is a hack and should be removed after applying https://github.com/dune-community/dune-xt-grid/pull/28
-  std::vector<std::unique_ptr<XT::Grid::internal::Codim0ReturnObject<GridLayerType, double>>> codim0_return_functors_;
-}; // class SystemAssembler
+  const TestSpaceType& test_space_;
+  const AnsatzSpaceType& ansatz_space_;
+}; // class GlobalAssembler
+
+
+template <class GridView,
+          class TestGridView,
+          size_t t_r,
+          size_t t_rC,
+          class R,
+          class AnsatzGridView,
+          size_t a_r,
+          size_t a_rC>
+GlobalAssembler<GridView, t_r, t_rC, R, TestGridView, AnsatzGridView, a_r, a_rC>
+make_global_assembler(GridView grid_view,
+                      const SpaceInterface<TestGridView, t_r, t_rC, R>& test_space,
+                      const SpaceInterface<AnsatzGridView, a_r, a_rC, R>& ansatz_space,
+                      const SpaceInterface<TestGridView, t_r, t_rC, R>& outer_test_space,
+                      const SpaceInterface<AnsatzGridView, a_r, a_rC, R>& outer_ansatz_space)
+{
+  return GlobalAssembler<GridView, t_r, t_rC, R, TestGridView, AnsatzGridView, a_r, a_rC>(
+      grid_view, test_space, ansatz_space, outer_test_space, outer_ansatz_space);
+}
+
+
+template <class GridView,
+          class TestGridView,
+          size_t t_r,
+          size_t t_rC,
+          class R,
+          class AnsatzGridView,
+          size_t a_r,
+          size_t a_rC>
+GlobalAssembler<GridView, t_r, t_rC, R, TestGridView, AnsatzGridView, a_r, a_rC>
+make_global_assembler(GridView grid_view,
+                      const SpaceInterface<TestGridView, t_r, t_rC, R>& test_space,
+                      const SpaceInterface<AnsatzGridView, a_r, a_rC, R>& ansatz_space)
+{
+  return GlobalAssembler<GridView, t_r, t_rC, R, TestGridView, AnsatzGridView, a_r, a_rC>(
+      grid_view, test_space, ansatz_space);
+}
+
+
+template <class GridView, class SpaceGridView, size_t r, size_t rC, class R>
+GlobalAssembler<GridView, r, rC, R, SpaceGridView>
+make_global_assembler(GridView grid_view, const SpaceInterface<SpaceGridView, r, rC, R>& space)
+{
+  return GlobalAssembler<GridView, r, rC, R, SpaceGridView>(grid_view, space);
+}
+
+
+template <class GV, size_t r, size_t rC, class R>
+GlobalAssembler<GV, r, rC, R> make_global_assembler(const SpaceInterface<GV, r, rC, R>& space)
+{
+  return GlobalAssembler<GV, r, rC, R>(space);
+}
 
 
 } // namespace GDT
 } // namespace Dune
-
-
-#include "system.lib.hh"
 
 
 #endif // DUNE_GDT_ASSEMBLER_SYSTEM_HH
