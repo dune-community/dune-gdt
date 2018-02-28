@@ -1,4 +1,4 @@
-// This file is part of the dune-gdt project:
+﻿// This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
 // Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
@@ -9,20 +9,19 @@
 //   Rene Milk       (2016 - 2018)
 //   Tim Keil        (2017)
 
-#ifndef DUNE_GDT_FUNCTIONALS_BASE_HH
-#define DUNE_GDT_FUNCTIONALS_BASE_HH
+#ifndef DUNE_GDT_FUNCTIONALS_VECTOR_BASED_HH
+#define DUNE_GDT_FUNCTIONALS_VECTOR_BASED_HH
 
-#include <dune/xt/common/exceptions.hh>
-#include <dune/xt/grid/walker/apply-on.hh>
-#include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/common/memory.hh>
 #include <dune/xt/la/container/vector-interface.hh>
+#include <dune/xt/grid/functors/interfaces.hh>
+#include <dune/xt/grid/walker.hh>
+#include <dune/xt/grid/walker/filters.hh>
+#include <dune/xt/grid/type_traits.hh>
 
-#include <dune/gdt/assembler/wrapper.hh>
-#include <dune/gdt/assembler/system.hh>
-#include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/exceptions.hh>
+#include <dune/gdt/local/assembler/functional-assemblers.hh>
 #include <dune/gdt/local/functionals/interfaces.hh>
-#include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/type_traits.hh>
 
 #include "interfaces.hh"
 
@@ -30,137 +29,275 @@ namespace Dune {
 namespace GDT {
 
 
-// forward, required for the traits
-template <class V, class S, class GL = typename S::GridLayerType, class F = typename V::RealType>
-class VectorFunctionalBase;
-
-
-namespace internal {
-
-
-template <class VectorImp, class SpaceImp, class GridLayerImp, class FieldImp>
-class VectorFunctionalBaseTraits
+/**
+ * \brief Base class for linear functionals which are given by an assembled vector.
+ *
+ * \note See FunctionalInterface for a description of the template arguments.
+ *
+ * \sa FunctionalInterface
+ * \sa VectorBasedFunctional
+ */
+template <class V, class GV, size_t r = 1, size_t rC = 1, class F = double>
+class ConstVectorBasedFunctional : public FunctionalInterface<V, GV, r, rC, F>
 {
-  static_assert(XT::LA::is_vector<VectorImp>::value, "VectorType has to be derived from XT::LA::vectorInterface!");
-  static_assert(is_space<SpaceImp>::value, "SpaceType has to be derived from SpaceInterface!");
-  static_assert(std::is_same<XT::Grid::extract_entity_t<typename SpaceImp::GridLayerType>,
-                             XT::Grid::extract_entity_t<GridLayerImp>>::value,
-                "SpaceType and GridLayerType have to match!");
+  // All other types are checked elsewhere.
+  static_assert(XT::LA::is_vector<V>::value, "");
+
+  using ThisType = ConstVectorBasedFunctional<V, GV, r, rC, F>;
+  using FunctionalBaseType = FunctionalInterface<V, GV, r, rC, F>;
 
 public:
-  typedef VectorFunctionalBase<VectorImp, SpaceImp, GridLayerImp, FieldImp> derived_type;
-  typedef FieldImp FieldType;
-};
+  using DofFieldType = typename V::ScalarType;
+
+  using typename FunctionalBaseType::SourceSpaceType;
+  using typename FunctionalBaseType::SourceVectorType;
+  using typename FunctionalBaseType::SourceType;
+  using typename FunctionalBaseType::FieldType;
+
+  ConstVectorBasedFunctional(const SourceSpaceType& source_spc, const SourceVectorType& vec)
+    : source_space_(source_spc)
+    , vector_(vec)
+  {
+    if (vector_.size() != source_space_.mapper().size())
+      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
+                 "vector_.size() = " << vector_.size() << "\n"
+                                     << "source_space_.mapper().size() = "
+                                     << source_space_.mapper().size());
+  }
+
+  ConstVectorBasedFunctional(const ThisType&) = default;
+  ConstVectorBasedFunctional(ThisType&&) = default;
+
+  bool linear() const override
+  {
+    return true;
+  }
+
+  const SourceSpaceType& source_space() const override
+  {
+    return source_space_;
+  }
+
+  const SourceVectorType& vector() const
+  {
+    return vector_;
+  }
+
+  FieldType apply(const SourceType& source) const override
+  {
+    try {
+      return vector_.dot(source.dofs().vector());
+    } catch (const XT::Common::Exceptions::shapes_do_not_match& ee) {
+      DUNE_THROW(Exceptions::functional_error,
+                 "when applying vector to source dofs!\n\nThis was the original error: " << ee.what());
+    }
+  } // ... apply(...)
+
+private:
+  const SourceSpaceType& source_space_;
+  const SourceVectorType& vector_;
+}; // class ConstVectorBasedFunctional
 
 
-} // namespace internal
+template <class GV, size_t r, size_t rC, class F, class V>
+ConstVectorBasedFunctional<typename XT::LA::VectorInterface<V>::derived_type, GV, r, rC, F>
+make_vector_functional(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::VectorInterface<V>& vector)
+{
+  return ConstVectorBasedFunctional<typename XT::LA::VectorInterface<V>::derived_type, GV, r, rC, F>(space,
+                                                                                                     vector.as_imp());
+}
 
 
 /**
- * \note Does a const_cast in apply(), not sure yet if this is fine.
+ * \brief Base class for linear functionals which are assembled into a vector.
+ *
+ * Similar to the GlobalAssembler, we derive from the XT::Grid::Walker and povide custom append() methods to allow to
+ * add local element and intersection functionals. In contrast to the GlobalAssembler we already hold the target vector
+ * (or create one of appropriate size), into which we want to assemble. The functional is assembled by walking over the
+ * given assembly_gid_view (which defaults to the one fom the given space). This allows to assemble a functional only on
+ * a smaller grid view than the one given from the space (similar functionality could be acchieved by appending this
+ * functional to another walker and by providing an appropriate filter).
+ *
+ * \note One could achieve similar functionality by deriving from GlobalAssembler directly, which would slightly
+ *       simplify the implementation of the append methods. However, we do not want to expose the other append methods
+ *       of GlobalAssembler here (it should not be possible to append a local opeator or two-form to a functional), but
+ *       want to expose the ones from the XT::Grid::Walker (it should be possible to append other element or
+ *       intersection functors).
+ *
+ * \note For convenience, we use the same type of vector to assemble this functional into, that we use to model the
+ *       source (see the documentation in FunctionalInterface), although other choices are in general conceivable.
+ *
+ * \note See ConstVectorBasedFunctional and FunctionalInterface for a description of the template arguments.
+ *
+ * \sa ConstVectorBasedFunctional
+ * \sa FunctionalInterface
+ * \sa XT::Grid::Walker
+ * \sa GlobalAssembler
  */
-template <class VectorImp, class SpaceImp, class GridLayerImp, class FieldImp>
-class VectorFunctionalBase
-    : public FunctionalInterface<internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridLayerImp, FieldImp>>,
-      public SystemAssembler<SpaceImp, GridLayerImp>
+template <class V, class GV, size_t r = 1, size_t rC = 1, class F = double, class AssemblyGridView = GV>
+class VectorBasedFunctional : XT::Common::StorageProvider<V>,
+                              public ConstVectorBasedFunctional<V, GV, r, rC, F>,
+                              public XT::Grid::Walker<AssemblyGridView>
 {
-  typedef FunctionalInterface<internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridLayerImp, FieldImp>>
-      BaseFunctionalType;
-  typedef SystemAssembler<SpaceImp, GridLayerImp> BaseAssemblerType;
-  typedef VectorFunctionalBase<VectorImp, SpaceImp, GridLayerImp, FieldImp> ThisType;
+  // All other types are checked elsewhere.
+  static_assert(std::is_same<XT::Grid::extract_entity_t<GV>, XT::Grid::extract_entity_t<AssemblyGridView>>::value,
+                "We cannot handle different element types!");
+
+  using ThisType = VectorBasedFunctional<V, GV, r, rC, F, AssemblyGridView>;
+  using VectorStorage = XT::Common::StorageProvider<V>;
+  using FunctionalBaseType = ConstVectorBasedFunctional<V, GV, r, rC, F>;
+  using WalkerBaseType = XT::Grid::Walker<AssemblyGridView>;
 
 public:
-  typedef internal::VectorFunctionalBaseTraits<VectorImp, SpaceImp, GridLayerImp, FieldImp> Traits;
-  typedef typename BaseAssemblerType::AnsatzSpaceType SpaceType;
-  typedef typename SpaceType::BaseFunctionSetType TestBaseType;
-  using typename BaseAssemblerType::GridLayerType;
-  typedef VectorImp VectorType;
-  using typename BaseAssemblerType::IntersectionType;
-  using typename BaseFunctionalType::FieldType;
-  using typename BaseFunctionalType::derived_type;
+  using AssemblyGridViewType = AssemblyGridView;
+  using DofFieldType = typename V::ScalarType;
 
-  template <class... Args>
-  explicit VectorFunctionalBase(VectorType& vec, Args&&... args)
-    : BaseAssemblerType(std::forward<Args>(args)...)
-    , vector_(vec)
+  using typename FunctionalBaseType::SourceSpaceType;
+  using typename FunctionalBaseType::SourceVectorType;
+  using typename FunctionalBaseType::SourceType;
+  using typename FunctionalBaseType::FieldType;
+
+  using typename WalkerBaseType::ElementType;
+  using ElementFilterType = XT::Grid::ElementFilter<AssemblyGridViewType>;
+  using IntersectionFilterType = XT::Grid::IntersectionFilter<AssemblyGridViewType>;
+  using ApplyOnAllElements = XT::Grid::ApplyOn::AllElements<AssemblyGridViewType>;
+  using ApplyOnAllIntersection = XT::Grid::ApplyOn::AllIntersections<AssemblyGridViewType>;
+
+  /**
+   * \name Ctors which accept an existing vector into which to assemble.
+   * \{
+   */
+
+  VectorBasedFunctional(AssemblyGridViewType assembly_grid_view,
+                        const SourceSpaceType& source_spc,
+                        SourceVectorType& vec)
+    : VectorStorage(vec)
+    , FunctionalBaseType(source_spc, VectorStorage::access())
+    , WalkerBaseType(assembly_grid_view)
+    , assembled_(false)
   {
-    if (vector_.access().size() != this->test_space().mapper().size())
-      DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "vector.size(): " << vector_.access().size() << "\n"
-                                   << "space().mapper().size(): "
-                                   << this->space().mapper().size());
-  } // VectorFunctionalBase(...)
+    // to detect assembly
+    this->append([&](const auto&) { assembled_ = true; });
+  }
 
-  /// \todo Guard against copy and move ctor (Args = ThisType)!
-  template <class... Args>
-  explicit VectorFunctionalBase(Args&&... args)
-    : BaseAssemblerType(std::forward<Args>(args)...)
-    , vector_(new VectorType(this->test_space().mapper().size(), 0.0))
+  template <class GV_,
+            size_t r_,
+            size_t rC_,
+            class F_, /* Only enable this ctor, if */
+            typename = typename std::
+                enable_if</* the type of space is SourceSpaceType */ (
+                              std::is_same<GV_, GV>::value && (r_ == r) && (rC_ == rC_) && std::is_same<F_, F>::value)
+                          && /* and the grid view type of space and AssemblyGridViewType coincide. */ std::
+                                 is_same<GV_, AssemblyGridViewType>::value>::type>
+  VectorBasedFunctional(const SpaceInterface<GV_, r_, rC_, F_>& source_spc, SourceVectorType& vec)
+    : VectorBasedFunctional(source_spc.grid_view(), source_spc, vec)
   {
   }
 
-  /// \sa SystemAssembler
-  VectorFunctionalBase(const ThisType& other) = delete;
-  VectorFunctionalBase(ThisType&& source) = delete;
-  VectorFunctionalBase(ThisType& other) = delete; // <- b.c. of the too perfect forwarding ctor
+  /**
+   * \}
+   * \name Ctors which create an appropriate vector into which to assemble (which is accessible via vector()).
+   * \{
+   */
 
-  ThisType& operator=(const ThisType& other) = delete;
-  ThisType& operator=(ThisType&& source) = delete;
-
-  const VectorType& vector() const
+  VectorBasedFunctional(AssemblyGridViewType assembly_grid_view, const SourceSpaceType& source_spc)
+    : VectorStorage(new SourceVectorType(source_spc.mapper().size(), 0))
+    , FunctionalBaseType(source_spc, VectorStorage::access())
+    , WalkerBaseType(assembly_grid_view)
+    , assembled_(false)
   {
-    return vector_.access();
+    // to detect assembly
+    this->append([&](const auto&) { assembled_ = true; });
   }
 
-  VectorType& vector()
+  template <class GV_,
+            size_t r_,
+            size_t rC_,
+            class F_, /* Only enable this ctor, if */
+            typename = typename std::
+                enable_if</* the type of space is SourceSpaceType */ (
+                              std::is_same<GV_, GV>::value && (r_ == r) && (rC_ == rC_) && std::is_same<F_, F>::value)
+                          && /* and the grid view type of space and AssemblyGridViewType coincide. */ std::
+                                 is_same<GV_, AssemblyGridViewType>::value>::type>
+  VectorBasedFunctional(const SpaceInterface<GV_, r_, rC_, F_>& source_spc)
+    : VectorBasedFunctional(source_spc.grid_view(), source_spc)
   {
-    return vector_.access();
   }
 
-  const SpaceType& space() const
+  /// \}
+
+  VectorBasedFunctional(const ThisType&) = default;
+  VectorBasedFunctional(ThisType&&) = default;
+
+  using FunctionalBaseType::vector;
+
+  SourceVectorType& vector()
   {
-    return this->ansatz_space();
+    return VectorStorage::access();
   }
 
-  using BaseAssemblerType::append;
+  using WalkerBaseType::append;
 
-  ThisType& append(
-      const LocalVolumeFunctionalInterface<TestBaseType, FieldType>& local_volume_functional,
-      const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
+  ThisType& append(const LocalElementFunctionalInterface<ElementType, r, rC, F, DofFieldType>& local_functional,
+                   const XT::Common::Parameter& param = {},
+                   const ElementFilterType& filter = ApplyOnAllElements())
   {
-    this->append(local_volume_functional, vector_.access(), where);
+    LocalElementFunctionalAssembler<V, AssemblyGridViewType, r, rC, F, GV> tmp(
+        this->source_space(), local_functional, VectorStorage::access(), param);
+    this->append(tmp, filter);
     return *this;
   }
 
-  ThisType& append(const LocalFaceFunctionalInterface<TestBaseType, IntersectionType, FieldType>& local_face_functional,
-                   const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where =
-                       new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
+  ThisType& append(const LocalElementFunctionalInterface<ElementType, r, rC, F, DofFieldType>& local_functional,
+                   const XT::Common::Parameter& param,
+                   std::function<bool(const AssemblyGridViewType&, const ElementType&)> filter_lambda)
   {
-    this->append(local_face_functional, vector_.access(), where);
-    return *this;
+    return append(
+        local_functional, param, XT::Grid::ApplyOn::LambdaFilteredElements<AssemblyGridViewType>(filter_lambda));
   }
 
-  using BaseAssemblerType::add;
+  // similar append for LocalIntersectionFunctionalInterface ...
 
-  template <class S>
-  FieldType apply(const XT::LA::VectorInterface<S>& source) const
+  void assemble(const bool use_tbb = false) override final
   {
-    const_cast<ThisType&>(*this).assemble();
-    return vector().dot(source.as_imp());
+    if (assembled_)
+      return;
+    // This clears all appended functionals, which is ok, since we are done after assembling once!
+    this->walk(use_tbb);
+    assembled_ = true;
   }
 
-  template <class S>
-  FieldType apply(const ConstDiscreteFunction<SpaceType, S>& source) const
+  FieldType apply(const SourceType& source) const override final
   {
-    return apply(source.vector());
-  }
+    DUNE_THROW_IF(!assembled_,
+                  Exceptions::functional_error,
+                  "You have to call assemble() first, or append this "
+                  "functional to an existing XT::Grid::Walker or "
+                  "GlobalAssembler!");
+    return FunctionalBaseType::apply(source);
+  } // ... apply(...)
 
 private:
-  Dune::XT::Common::StorageProvider<VectorType> vector_;
-}; // class VectorFunctionalBase
+  bool assembled_;
+}; // class VectorBasedFunctional
+
+
+template <class GV, size_t r, size_t rC, class F, class V>
+VectorBasedFunctional<typename XT::LA::VectorInterface<V>::derived_type, GV, r, rC, F>
+make_vector_functional(const SpaceInterface<GV, r, rC, F>& space, XT::LA::VectorInterface<V>& vector)
+{
+  return VectorBasedFunctional<typename XT::LA::VectorInterface<V>::derived_type, GV, r, rC, F>(space, vector.as_imp());
+}
+
+template <class VectorType, class GV, size_t r, size_t rC, class F>
+typename std::enable_if<XT::LA::is_vector<VectorType>::value, VectorBasedFunctional<VectorType, GV, r, rC, F>>::type
+make_vector_functional(const SpaceInterface<GV, r, rC, F>& space)
+{
+  return VectorBasedFunctional<VectorType, GV, r, rC, F>(space);
+}
 
 
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_FUNCTIONALS_BASE_HH
+#endif // DUNE_GDT_FUNCTIONALS_VECTOR_BASED_HH
