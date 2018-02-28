@@ -11,8 +11,9 @@
 #ifndef DUNE_GDT_LOCAL_FUNCTIONALS_INTEGRALS_HH
 #define DUNE_GDT_LOCAL_FUNCTIONALS_INTEGRALS_HH
 
+#include <dune/geometry/quadraturerules.hh>
+
 #include <dune/gdt/local/integrands/interfaces.hh>
-#include <dune/gdt/type_traits.hh>
 
 #include "interfaces.hh"
 
@@ -20,76 +21,74 @@ namespace Dune {
 namespace GDT {
 
 
-template <class UnaryEvaluationType, class TestBase, class Field = typename TestBase::RangeFieldType>
-class LocalVolumeIntegralFunctional : public LocalVolumeFunctionalInterface<TestBase, Field>
+template <class E, size_t r = 1, size_t rC = 1, class R = double, class F = R>
+class LocalElementIntegralFunctional : public LocalElementFunctionalInterface<E, r, rC, R, F>
 {
-  static_assert(is_unary_volume_integrand<UnaryEvaluationType>::value, "");
-  typedef LocalVolumeIntegralFunctional<UnaryEvaluationType, TestBase, Field> ThisType;
-  typedef LocalVolumeFunctionalInterface<TestBase, Field> BaseType;
-
-  typedef typename TestBase::DomainFieldType D;
-  static const size_t d = TestBase::dimDomain;
+  using ThisType = LocalElementIntegralFunctional<E, r, rC, R, F>;
+  using BaseType = LocalElementFunctionalInterface<E, r, rC, R, F>;
 
 public:
-  using typename BaseType::TestBaseType;
-  using typename BaseType::FieldType;
+  using typename BaseType::D;
+  using BaseType::d;
+  using typename BaseType::LocalBasisType;
+  using IntegrandType = LocalUnaryElementIntegrandInterface<E, r, rC, R>;
 
-  template <class... Args>
-  explicit LocalVolumeIntegralFunctional(Args&&... args)
-    : integrand_(std::forward<Args>(args)...)
-    , over_integrate_(0)
-  {
-  }
-
-  template <class... Args>
-  explicit LocalVolumeIntegralFunctional(const int over_integrate, Args&&... args)
-    : integrand_(std::forward<Args>(args)...)
-    , over_integrate_(boost::numeric_cast<size_t>(over_integrate))
-  {
-  }
-
-  template <class... Args>
-  explicit LocalVolumeIntegralFunctional(const size_t over_integrate, Args&&... args)
-    : integrand_(std::forward<Args>(args)...)
+  LocalElementIntegralFunctional(const IntegrandType& integrand, const int over_integrate = 0)
+    : BaseType(integrand.parameter_type())
+    , integrand_(integrand.copy())
     , over_integrate_(over_integrate)
   {
   }
 
-  LocalVolumeIntegralFunctional(const ThisType& other) = default;
-  LocalVolumeIntegralFunctional(ThisType&& source) = default;
+  LocalElementIntegralFunctional(const ThisType& other)
+    : BaseType(other.parameter_type())
+    , integrand_(other.integrand_->copy())
+    , over_integrate_(other.over_integrate_)
+  {
+  }
+
+  LocalElementIntegralFunctional(ThisType&& source) = default;
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
 
   using BaseType::apply;
 
-  void apply(const TestBaseType& test_base, DynamicVector<FieldType>& ret) const override final
+  void apply(const LocalBasisType& basis,
+             DynamicVector<F>& result,
+             const XT::Common::Parameter& param = {}) const override final
   {
-    const auto& entity = test_base.entity();
-    const auto local_functions = integrand_.localFunctions(entity);
-    // create quadrature
-    const size_t integrand_order = integrand_.order(local_functions, test_base) + over_integrate_;
-    const auto& quadrature = QuadratureRules<D, d>::rule(entity.type(), boost::numeric_cast<int>(integrand_order));
+    // prepare integand
+    const auto& element = basis.entity();
+    integrand_->bind(element);
     // prepare storage
-    const size_t size = test_base.size();
-    ret *= 0.0;
-    assert(ret.size() >= size);
-    DynamicVector<FieldType> evaluation_result(size, 0.); // \todo: make mutable member, after SMP refactor
+    const auto size = basis.size(param);
+    if (result.size() < size)
+      result.resize(size);
+    result *= 0;
     // loop over all quadrature points
-    for (const auto& quadrature_point : quadrature) {
-      const auto xx = quadrature_point.position();
+    const auto integration_order = integrand_->order(basis, param) + over_integrate_;
+    for (auto&& quadrature_point : QuadratureRules<D, d>::rule(element.type(), integration_order)) {
+      const auto point_in_reference_element = quadrature_point.position();
       // integration factors
-      const auto integration_factor = entity.geometry().integrationElement(xx);
+      const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);
       const auto quadrature_weight = quadrature_point.weight();
       // evaluate the integrand
-      integrand_.evaluate(local_functions, test_base, xx, evaluation_result);
+      integrand_->evaluate(basis, point_in_reference_element, integrand_values_, param);
+      assert(integrand_values_.size() >= size && "This must not happen!");
       // compute integral
       for (size_t ii = 0; ii < size; ++ii)
-        ret[ii] += evaluation_result[ii] * integration_factor * quadrature_weight;
+        result[ii] += integrand_values_[ii] * integration_factor * quadrature_weight;
     } // loop over all quadrature points
   } // ... apply(...)
 
 private:
-  const UnaryEvaluationType integrand_;
-  const size_t over_integrate_;
-}; // class LocalVolumeIntegralFunctional
+  mutable std::unique_ptr<IntegrandType> integrand_;
+  const int over_integrate_;
+  mutable DynamicVector<F> integrand_values_;
+}; // class LocalElementIntegralFunctional
 
 
 #if 0
