@@ -21,7 +21,7 @@
 
 #include <dune/localfunctions/common/localkey.hh>
 
-#include <dune/xt/functions/interfaces/local-functions.hh>
+#include <dune/xt/functions/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
 
@@ -41,7 +41,7 @@ public:
 
   using DomainType = FieldVector<D, d>;
   using RangeType = typename XT::Functions::RangeTypeSelector<R, r, rC>::type;
-  using JacobianRangeType = typename XT::Functions::JacobianRangeTypeSelector<d, R, r, rC>::type;
+  using DerivativeRangeType = typename XT::Functions::DerivativeRangeTypeSelector<d, R, r, rC>::type;
 
   virtual ~LocalFiniteElementBasisInterface() = default;
 
@@ -51,9 +51,28 @@ public:
 
   virtual size_t size() const = 0;
 
-  virtual std::vector<RangeType> evaluate(const DomainType& /*xx*/) const = 0;
+  virtual void evaluate(const DomainType& /*point_in_reference_element*/, std::vector<RangeType>& /*result*/) const = 0;
 
-  virtual std::vector<JacobianRangeType> jacobian(const DomainType& /*xx*/) const = 0;
+  virtual void jacobian(const DomainType& /*point_in_reference_element*/,
+                        std::vector<DerivativeRangeType>& /*result*/) const = 0;
+
+  /**
+   * \name ``These methods are provided for convenience and should not be used within library code.''
+   */
+  virtual std::vector<RangeType> evaluate(const DomainType& point_in_reference_element) const
+  {
+    std::vector<RangeType> result(this->size());
+    this->evaluate(point_in_reference_element, result);
+    return result;
+  }
+
+  virtual std::vector<DerivativeRangeType> jacobian(const DomainType& point_in_reference_element) const
+  {
+    std::vector<DerivativeRangeType> result(this->size());
+    this->jacobian(point_in_reference_element, result);
+    return result;
+  }
+  /// \}
 }; // class LocalFiniteElementBasisInterface
 
 
@@ -74,7 +93,20 @@ public:
 
   virtual const GeometryType& geometry_type() const = 0;
 
-  virtual std::vector<R> interpolate(const std::function<RangeType(DomainType)>& local_function) const = 0;
+  virtual void interpolate(const std::function<RangeType(DomainType)>& local_function, std::vector<R>& dofs) const = 0;
+
+  /**
+   * \name ``These methods are provided for convenience and should not be used within library code.''
+   */
+
+  virtual std::vector<R> interpolate(const std::function<RangeType(DomainType)>& local_function) const
+  {
+    std::vector<R> result;
+    this->interpolate(local_function, result);
+    return result;
+  }
+
+  /// \}
 }; // class LocalFiniteElementInterpolationInterface
 
 

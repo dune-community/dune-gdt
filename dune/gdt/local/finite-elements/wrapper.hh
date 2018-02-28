@@ -71,7 +71,7 @@ class LocalFiniteElementBasisWrapper : public LocalFiniteElementBasisInterface<D
 public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
-  using typename BaseType::JacobianRangeType;
+  using typename BaseType::DerivativeRangeType;
 
   LocalFiniteElementBasisWrapper(const GeometryType& gt, Implementation*&& imp_ptr)
     : imp_(std::move(imp_ptr))
@@ -107,18 +107,19 @@ public:
     return XT::Common::numeric_cast<size_t>(imp_.access().size());
   }
 
-  std::vector<RangeType> evaluate(const DomainType& xx) const override final
+  using BaseType::evaluate;
+
+  void evaluate(const DomainType& point_in_reference_element, std::vector<RangeType>& result) const override final
   {
-    std::vector<RangeType> ret(size(), RangeType(0));
-    imp_.access().evaluateFunction(xx, ret);
-    return ret;
+    imp_.access().evaluateFunction(point_in_reference_element, result);
   }
 
-  std::vector<JacobianRangeType> jacobian(const DomainType& xx) const override final
+  using BaseType::jacobian;
+
+  void jacobian(const DomainType& point_in_reference_element,
+                std::vector<DerivativeRangeType>& result) const override final
   {
-    std::vector<JacobianRangeType> ret(size(), JacobianRangeType(0));
-    imp_.access().evaluateJacobian(xx, ret);
-    return ret;
+    imp_.access().evaluateJacobian(point_in_reference_element, result);
   }
 
 private:
@@ -133,6 +134,18 @@ class LocalFiniteElementInterpolationWrapper : public LocalFiniteElementInterpol
   using ThisType = LocalFiniteElementInterpolationWrapper<Implementation, D, d, R, r, rC>;
   using BaseType = LocalFiniteElementInterpolationInterface<D, d, R, r, rC>;
 
+  template <class R_ = R, size_t r_ = r, size_t rC_ = rC>
+  struct RangeTypeSelector
+  {
+    using type = FieldMatrix<R_, r_, rC_>;
+  };
+
+  template <class R_, size_t r_>
+  struct RangeTypeSelector<R_, r_, 1>
+  {
+    using type = FieldVector<R_, r_>;
+  };
+
   // This is what dune-localfunctions expects for interpolation.
   struct FunctionWrapper
   {
@@ -140,20 +153,20 @@ class LocalFiniteElementInterpolationWrapper : public LocalFiniteElementInterpol
     struct Traits
     {
       using DomainType = typename BaseType::DomainType;
-      using RangeType = typename BaseType::RangeType;
+      using RangeType = typename RangeTypeSelector<>::type;
     };
     // really!
     using DomainType = typename Traits::DomainType;
-    using RangeType = typename Traits::RangeType;
+    using RangeType = typename RangeTypeSelector<>::type;
 
     FunctionWrapper(const std::function<RangeType(DomainType)>& im)
       : imp(im)
     {
     }
 
-    void evaluate(const DomainType& xx, RangeType& ret) const
+    void evaluate(const DomainType& point_in_reference_element, RangeType& ret) const
     {
-      ret = imp(xx);
+      ret = imp(point_in_reference_element);
     }
 
     const std::function<RangeType(DomainType)>& imp;
@@ -187,11 +200,12 @@ public:
     return geometry_type_;
   }
 
-  std::vector<R> interpolate(const std::function<RangeType(DomainType)>& local_function) const override final
+  using BaseType::interpolate;
+
+  void interpolate(const std::function<RangeType(DomainType)>& local_function,
+                   std::vector<R>& result) const override final
   {
-    std::vector<R> ret;
-    imp_.access().interpolate(FunctionWrapper(local_function), ret);
-    return ret;
+    imp_.access().interpolate(FunctionWrapper(local_function), result);
   }
 
 private:
