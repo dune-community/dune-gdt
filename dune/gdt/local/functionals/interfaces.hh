@@ -12,39 +12,69 @@
 #ifndef DUNE_GDT_LOCAL_FUNCTIONALS_INTERFACES_HH
 #define DUNE_GDT_LOCAL_FUNCTIONALS_INTERFACES_HH
 
-#include <vector>
-
 #include <dune/common/dynvector.hh>
 
-#include <dune/xt/common/crtp.hh>
+#include <dune/xt/common/parameter.hh>
+#include <dune/xt/functions/interfaces/local-functions.hh>
 
-#include <dune/xt/functions/type_traits.hh>
-
-#include <dune/xt/grid/type_traits.hh>
-
-#include <dune/gdt/spaces/basefunctionset/interface.hh>
 
 namespace Dune {
 namespace GDT {
 
 
-template <class TestBase, class Field = typename TestBase::RangeFieldType>
-class LocalVolumeFunctionalInterface
+/**
+ * Interface for local functionals associated with grid elements.
+ *
+ * \note Regarding SMP: the functional is copied for each thread, so
+ *       - no shared mutable state between copies to be thread safe, but
+ *       - local mutable state is ok.
+ */
+template <class Element,
+          size_t range_dim = 1,
+          size_t range_dim_cols = 1,
+          class RangeField = double,
+          class Field = double>
+class LocalElementFunctionalInterface : public XT::Common::ParametricInterface
 {
-  static_assert(XT::Functions::is_localfunction_set<TestBase>::value, "");
+  static_assert(XT::Grid::is_entity<Element>::value, "");
+
+  using ThisType = LocalElementFunctionalInterface<Element, range_dim, range_dim_cols, RangeField>;
 
 public:
-  typedef TestBase TestBaseType;
-  typedef Field FieldType;
+  using E = Element;
+  using D = typename Element::Geometry::ctype;
+  static const constexpr size_t d = E::dimension;
+  using F = Field;
 
-  virtual ~LocalVolumeFunctionalInterface() = default;
+  using R = RangeField;
+  static const constexpr size_t r = range_dim;
+  static const constexpr size_t rC = range_dim_cols;
 
-  virtual void apply(const TestBaseType& test_basis, DynamicVector<FieldType>& ret) const = 0;
+  using ElementType = Element;
+  using LocalBasisType = XT::Functions::LocalFunctionSetInterface<E, r, rC, R>;
 
-  DynamicVector<FieldType> apply(const TestBaseType& test_basis) const
+  LocalElementFunctionalInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
   {
-    DynamicVector<FieldType> ret(test_basis.size(), 0.);
-    apply(test_basis, ret);
+  }
+
+  virtual ~LocalElementFunctionalInterface() = default;
+
+  virtual std::unique_ptr<ThisType> copy() const = 0;
+
+  /**
+   * Computes the application of this functional to each function of the basis.
+   */
+  virtual void
+  apply(const LocalBasisType& basis, DynamicVector<F>& result, const XT::Common::Parameter& param = {}) const = 0;
+
+  /**
+    * This method is provided for convenience and should not be used within library code.
+    */
+  virtual DynamicVector<F> apply(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const
+  {
+    DynamicVector<F> ret(basis.size(param));
+    this->apply(basis, ret, param);
     return ret;
   }
 }; // class LocalFunctionalInterface
