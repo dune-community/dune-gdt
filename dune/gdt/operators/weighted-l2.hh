@@ -12,17 +12,14 @@
 #ifndef DUNE_GDT_OPERATORS_WEIGHTED_L2_HH
 #define DUNE_GDT_OPERATORS_WEIGHTED_L2_HH
 
-#include <type_traits>
-
-#include <dune/xt/functions/interfaces.hh>
-#include <dune/xt/grid/layers.hh>
-#include <dune/xt/la/container.hh>
+#include <dune/xt/common/memory.hh>
+#include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/functions/interfaces/localizable-function.hh>
 
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/local/operators/integrals.hh>
-#include <dune/gdt/operators/base.hh>
-#include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/type_traits.hh>
+
+#include "matrix-based.hh"
 
 namespace Dune {
 namespace GDT {
@@ -104,198 +101,243 @@ typename std::
 #endif // 0
 
 
-// //////////////////////// //
-// WeightedL2MatrixOperator //
-// //////////////////////// //
+// ////////////////////////////// //
+// WeightedL2VolumeMatrixOperator //
+// ////////////////////////////// //
 
-template <class WeightFunctionType,
-          class RangeSpace,
-          class Matrix = typename XT::LA::Container<typename RangeSpace::RangeFieldType>::MatrixType,
-          class GridLayer = typename RangeSpace::GridLayerType,
-          class SourceSpace = RangeSpace,
-          class Field = typename Matrix::ScalarType>
-class WeightedL2MatrixOperator
-    : public MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::volume>
+
+/**
+ * \note See MatrixBasedOperator and OperatorInterface for a description of the template arguments.
+ *
+ * \note We only provide the most general ctors here and provide make_weighted_l2_matrix_operator for convenience.
+ *
+ * \sa OperatorInterface
+ * \sa MatrixBasedOperator
+ * \sa make_weighted_l2_matrix_operator
+ */
+template <class M,
+          class AGV,
+          size_t r = 1,
+          size_t rC = 1,
+          class SF = double,
+          class SGV = AGV,
+          class F = double,
+          class RF = double,
+          class RGV = SGV,
+          class SV = typename XT::LA::Container<typename M::ScalarType, M::vector_type>::VectorType,
+          class RV = SV>
+class WeightedL2VolumeMatrixOperator : public MatrixBasedOperator<M, AGV, r, rC, SF, SGV, F, r, rC, RF, RGV, SV, RV>
 {
-  typedef MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::volume> BaseType;
+  using ThisType = WeightedL2VolumeMatrixOperator<M, AGV, r, rC, SF, SGV, F, RF, RGV, SV, RV>;
+  using BaseType = MatrixBasedOperator<M, AGV, r, rC, SF, SGV, F, r, rC, RF, RGV, SV, RV>;
 
 public:
-  template <class... Args>
-  explicit WeightedL2MatrixOperator(const WeightFunctionType& weight, Args&&... args)
-    : BaseType(std::forward<Args>(args)...)
-    , local_weighted_l2_operator_(weight)
-  {
-    this->append(local_weighted_l2_operator_);
-  }
+  using typename BaseType::E;
 
-  template <class... Args>
-  explicit WeightedL2MatrixOperator(const size_t over_integrate, const WeightFunctionType& weight, Args&&... args)
-    : BaseType(std::forward<Args>(args)...)
-    , local_weighted_l2_operator_(over_integrate, weight)
-  {
-    this->append(local_weighted_l2_operator_);
-  }
+  using typename BaseType::DofFieldType;
+  using typename BaseType::MatrixType;
+  using typename BaseType::SourceSpaceType;
+  using typename BaseType::RangeSpaceType;
+  using typename BaseType::ElementFilterType;
+  using typename BaseType::ApplyOnAllElements;
+
+  using WeightFunctionType = XT::Functions::LocalizableFunctionInterface<E, 1, 1, F>;
 
 private:
-  const LocalVolumeIntegralOperator<LocalProductIntegrand<WeightFunctionType>,
-                                    typename RangeSpace::BaseFunctionSetType,
-                                    typename SourceSpace::BaseFunctionSetType,
-                                    Field>
-      local_weighted_l2_operator_;
-}; // class WeightedL2MatrixOperator
+  using LocalTwoFormType = LocalElementIntegralOperator<E, r, rC, RF, DofFieldType, r, rC, SF>;
+  using LocalIntegrandType = LocalElementProductIntegrand<E, r, rC, RF, DofFieldType, r, rC, SF>;
+
+public:
+  /// \name Ctors which accept an existing matrix into which to assemble.
+  /// \{
+
+  WeightedL2VolumeMatrixOperator(AGV assembly_grid_view,
+                                 const SourceSpaceType& source_spc,
+                                 const RangeSpaceType& range_spc,
+                                 MatrixType& mat,
+                                 const WeightFunctionType& weight_function,
+                                 const size_t over_integrate = 0,
+                                 const XT::Common::Parameter& param = {},
+                                 const ElementFilterType& filter = ApplyOnAllElements())
+    : BaseType(assembly_grid_view, source_spc, range_spc, mat)
+  {
+    this->append(LocalTwoFormType(LocalIntegrandType(weight_function), over_integrate), param, filter);
+  }
+
+  /// \}
+  /// \name Ctors which create an appropriate matrix into which to assemble.
+  /// \{
+
+  WeightedL2VolumeMatrixOperator(AGV assembly_grid_view,
+                                 const SourceSpaceType& source_spc,
+                                 const RangeSpaceType& range_spc,
+                                 const WeightFunctionType& weight_function,
+                                 const size_t over_integrate = 0,
+                                 const XT::Common::Parameter& param = {},
+                                 const ElementFilterType& filter = ApplyOnAllElements())
+    : BaseType(assembly_grid_view, source_spc, range_spc, Stencil::element)
+  {
+    this->append(LocalTwoFormType(LocalIntegrandType(weight_function), over_integrate), param, filter);
+  }
+
+  /// \}
+}; // class WeightedL2VolumeMatrixOperator
 
 
-// //////////////////////////////// //
-// make_weighted_l2_matrix_operator //
-// //////////////////////////////// //
+// /////////////////////////////////////// //
+// make_weighted_l2_volume_matrix_operator //
+// /////////////////////////////////////// //
 
-// without matrix
+/// \name Variants of make_weighted_l2_volume_matrix_operator for a given matrix.
+/// \{
 
-/**
- * \brief Creates a weighted L2 matrix operator (MatrixType has to be supllied, a matrix is created automatically,
- *        source and range space are given by space, grid_layer of the space is used).
- * \note  MatrixType has to be supplied, i.e., use like
-\code
-auto op = make_weighted_l2_matrix_operator< MatrixType >(weight, space);
-\endcode
- */
-template <class MatrixType, class WeightFunctionType, class SpaceType>
-typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
-                            && XT::Functions::is_localizable_function<WeightFunctionType>::value
-                            && is_space<SpaceType>::value,
-                        std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType>>>::type
-make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
-                                 const SpaceType& space,
-                                 const size_t over_integrate = 0)
+template <class AGV, class SGV, size_t r, size_t rC, class SF, class RGV, class RF, class M, class F>
+WeightedL2VolumeMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type,
+                               GridView<AGV>,
+                               r,
+                               rC,
+                               SF,
+                               SGV,
+                               F,
+                               RF,
+                               RGV>
+make_weighted_l2_volume_matrix_operator(
+    GridView<AGV> assembly_grid_view,
+    const SpaceInterface<SGV, r, rC, SF>& source_space,
+    const SpaceInterface<RGV, r, rC, RF>& range_space,
+    XT::LA::MatrixInterface<M>& matrix,
+    const XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GridView<AGV>>, 1, 1, F>&
+        weight_function,
+    const size_t over_integrate = 0,
+    const XT::Common::Parameter& param = {},
+    const XT::Grid::ElementFilter<GridView<AGV>>& filter = XT::Grid::ApplyOn::AllElements<GridView<AGV>>())
 {
-  return Dune::XT::Common::make_unique<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType>>(
-      over_integrate, weight, space);
+  return WeightedL2VolumeMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type,
+                                        GridView<AGV>,
+                                        r,
+                                        rC,
+                                        SF,
+                                        SGV,
+                                        F,
+                                        RF,
+                                        RGV>(
+      assembly_grid_view, source_space, range_space, matrix.as_imp(), weight_function, over_integrate, param, filter);
+} // ... make_weighted_l2_volume_matrix_operator(...)
+
+template <class AGV, class GV, size_t r, size_t rC, class SF, class M, class F>
+WeightedL2VolumeMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GridView<AGV>, r, rC, SF, GV, F>
+make_weighted_l2_volume_matrix_operator(
+    GridView<AGV> assembly_grid_view,
+    const SpaceInterface<GV, r, rC, SF>& space,
+    XT::LA::MatrixInterface<M>& matrix,
+    const XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GridView<AGV>>, 1, 1, F>&
+        weight_function,
+    const size_t over_integrate = 0,
+    const XT::Common::Parameter& param = {},
+    const XT::Grid::ElementFilter<GridView<AGV>>& filter = XT::Grid::ApplyOn::AllElements<GridView<AGV>>())
+{
+  return WeightedL2VolumeMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type,
+                                        GridView<AGV>,
+                                        r,
+                                        rC,
+                                        SF,
+                                        GV,
+                                        F>(
+      assembly_grid_view, space, space, matrix.as_imp(), weight_function, over_integrate, param, filter);
 }
 
-/**
- * \brief Creates a weighted L2 matrix operator (MatrixType has to be supllied, a matrix is created automatically,
- *        source and range space are given by space).
- * \note  MatrixType has to be supplied, i.e., use like
-\code
-auto op = make_weighted_l2_matrix_operator< MatrixType >(weight, space, grid_layer);
-\endcode
- */
-template <class MatrixType, class WeightFunctionType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::LA::is_matrix<MatrixType>::value && XT::Functions::is_localizable_function<WeightFunctionType>::value
-                  && is_space<SpaceType>::value
-                  && XT::Grid::is_layer<GridLayerType>::value,
-              std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridLayerType>>>::type
-    make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
-                                     const SpaceType& space,
-                                     const GridLayerType& grid_layer,
-                                     const size_t over_integrate = 0)
-{
-  return Dune::XT::Common::
-      make_unique<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridLayerType>>(
-          over_integrate, weight, space, grid_layer);
-}
+/// \todo Properly implement all the methods below by adding weight_function, over_integrate, param, filter. Do not
+/// forget to add these variants in test/operators/operators__weighted_l2_volume_operator.cc.
 
-/**
- * \brief Creates a weighted L2 matrix operator (MatrixType has to be supllied, a matrix is created automatically).
- * \note  MatrixType has to be supplied, i.e., use like
-\code
-auto op = make_weighted_l2_matrix_operator< MatrixType >(weight, range_space, source_space, grid_layer);
-\endcode
- */
-template <class MatrixType, class WeightFunctionType, class RangeSpaceType, class SourceSpaceType, class GridLayerType>
-typename std::enable_if<XT::LA::is_matrix<MatrixType>::value
-                            && XT::Functions::is_localizable_function<WeightFunctionType>::value
-                            && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
-                        std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType,
-                                                                 RangeSpaceType,
-                                                                 MatrixType,
-                                                                 GridLayerType,
-                                                                 SourceSpaceType>>>::type
-make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
-                                 const RangeSpaceType& range_space,
-                                 const SourceSpaceType& source_space,
-                                 const GridLayerType& grid_layer,
-                                 const size_t over_integrate = 0)
-{
-  return Dune::XT::Common::make_unique<WeightedL2MatrixOperator<WeightFunctionType,
-                                                                RangeSpaceType,
-                                                                MatrixType,
-                                                                GridLayerType,
-                                                                SourceSpaceType>>(
-      over_integrate, weight, range_space, source_space, grid_layer);
-}
 
-// with matrix
+// template <class GV, size_t r, size_t rC, class F, class M>
+// WeightedL2VolumeMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>
+// make_weighted_l2_volume_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, XT::LA::MatrixInterface<M>&
+// matrix)
+//{
+//  return WeightedL2VolumeMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>(
+//      space, matrix.as_imp());
+//}
 
-/**
- * \brief Creates a weighted L2 matrix operator (source and range space are given by space, grid_layer of the space is
- *        used).
- */
-template <class WeightFunctionType, class MatrixType, class SpaceType>
-typename std::enable_if<XT::Functions::is_localizable_function<WeightFunctionType>::value
-                            && XT::LA::is_matrix<MatrixType>::value
-                            && is_space<SpaceType>::value,
-                        std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType>>>::type
-make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
-                                 MatrixType& matrix,
-                                 const SpaceType& space,
-                                 const size_t over_integrate = 0)
-{
-  return Dune::XT::Common::make_unique<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType>>(
-      over_integrate, weight, matrix, space);
-}
+///// \}
+///// \name Variants of make_weighted_l2_volume_matrix_operator, where an appropriate matrix is created .
+///// \{
 
-/**
- * \brief Creates a weighted L2 matrix operator (source and range space are given by space).
- */
-template <class WeightFunctionType, class MatrixType, class SpaceType, class GridLayerType>
-typename std::
-    enable_if<XT::Functions::is_localizable_function<WeightFunctionType>::value && XT::LA::is_matrix<MatrixType>::value
-                  && is_space<SpaceType>::value
-                  && XT::Grid::is_layer<GridLayerType>::value,
-              std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridLayerType>>>::type
-    make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
-                                     MatrixType& matrix,
-                                     const SpaceType& space,
-                                     const GridLayerType& grid_layer,
-                                     const size_t over_integrate = 0)
-{
-  return Dune::XT::Common::
-      make_unique<WeightedL2MatrixOperator<WeightFunctionType, SpaceType, MatrixType, GridLayerType>>(
-          over_integrate, weight, matrix, space, grid_layer);
-}
+///**
+// * \note Use as in
+//\code
+// auto op = make_weighted_l2_volume_matrix_operator<MatrixType>(source_space, range_space);
+//\endcode
+// */
+// template <class MatrixType,
+//          class AGV,
+//          class SGV,
+//          size_t s_r,
+//          size_t s_rC,
+//          class SF,
+//          class RGV,
+//          size_t r_r,
+//          size_t r_rC,
+//          class RF>
+// typename std::enable_if<XT::LA::is_matrix<MatrixType>::value,
+//                        WeightedL2VolumeMatrixOperator<MatrixType,
+//                                                       GridView<AGV>,
+//                                                       s_r,
+//                                                       s_rC,
+//                                                       SF,
+//                                                       SGV,
+//                                                       typename XT::Common::multiplication_promotion<SF, RF>::type,
+//                                                       r_r,
+//                                                       r_rC,
+//                                                       RF,
+//                                                       RGV>>::type
+// make_weighted_l2_volume_matrix_operator(GridView<AGV> assembly_grid_view,
+//                                        const SpaceInterface<SGV, s_r, s_rC, SF>& source_space,
+//                                        const SpaceInterface<RGV, r_r, r_rC, RF>& range_space)
+//{
+//  return WeightedL2VolumeMatrixOperator<MatrixType,
+//                                        GridView<AGV>,
+//                                        s_r,
+//                                        s_rC,
+//                                        SF,
+//                                        SGV,
+//                                        typename XT::Common::multiplication_promotion<SF, RF>::type,
+//                                        r_r,
+//                                        r_rC,
+//                                        RF,
+//                                        RGV>(assembly_grid_view, source_space, range_space);
+//} // ... make_weighted_l2_volume_matrix_operator(...)
 
-/**
- * \brief Creates a weighted L2 matrix operator.
- */
-template <class WeightFunctionType, class MatrixType, class RangeSpaceType, class SourceSpaceType, class GridLayerType>
-typename std::enable_if<XT::Functions::is_localizable_function<WeightFunctionType>::value
-                            && XT::LA::is_matrix<MatrixType>::value
-                            && is_space<RangeSpaceType>::value
-                            && is_space<SourceSpaceType>::value
-                            && XT::Grid::is_layer<GridLayerType>::value,
-                        std::unique_ptr<WeightedL2MatrixOperator<WeightFunctionType,
-                                                                 RangeSpaceType,
-                                                                 MatrixType,
-                                                                 GridLayerType,
-                                                                 SourceSpaceType>>>::type
-make_weighted_l2_matrix_operator(const WeightFunctionType& weight,
-                                 MatrixType& matrix,
-                                 const RangeSpaceType& range_space,
-                                 const SourceSpaceType& source_space,
-                                 const GridLayerType& grid_layer,
-                                 const size_t over_integrate = 0)
-{
-  return Dune::XT::Common::make_unique<WeightedL2MatrixOperator<WeightFunctionType,
-                                                                RangeSpaceType,
-                                                                MatrixType,
-                                                                GridLayerType,
-                                                                SourceSpaceType>>(
-      over_integrate, weight, matrix, range_space, source_space, grid_layer);
-}
+///**
+// * \note Use as in
+//\code
+// auto op = make_weighted_l2_volume_matrix_operator<MatrixType>(assembly_grid_view, space);
+//\endcode
+// */
+// template <class MatrixType, class AGV, class GV, size_t r, size_t rC, class F>
+// typename std::enable_if<XT::LA::is_matrix<MatrixType>::value,
+//                        WeightedL2VolumeMatrixOperator<MatrixType, GridView<AGV>, r, rC, F, GV>>::type
+// make_weighted_l2_volume_matrix_operator(GridView<AGV> assembly_grid_view,
+//                                        const SpaceInterface<GV, r, rC, F>& space)
+//{
+//  return WeightedL2VolumeMatrixOperator<MatrixType, GridView<AGV>, r, rC, F, GV>(assembly_grid_view, space);
+//}
+
+///**
+// * \note Use as in
+//\code
+// auto op = make_weighted_l2_volume_matrix_operator<MatrixType>(space);
+//\endcode
+// */
+// template <class MatrixType, class GV, size_t r, size_t rC, class F>
+// typename std::enable_if<XT::LA::is_matrix<MatrixType>::value,
+//                        WeightedL2VolumeMatrixOperator<MatrixType, GV, r, rC, F>>::type
+// make_weighted_l2_volume_matrix_operator(const SpaceInterface<GV, r, rC, F>& space)
+//{
+//  return WeightedL2VolumeMatrixOperator<MatrixType, GV, r, rC, F>(space);
+//}
+
+/// \}
 
 
 #if 0
