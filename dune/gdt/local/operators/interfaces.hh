@@ -26,7 +26,7 @@
 
 namespace Dune {
 namespace GDT {
-
+#if 0
 namespace internal {
 
 /// \todo drop and implement the is_... properly
@@ -98,6 +98,7 @@ public:
     this->as_imp().apply(source, intersection, local_range_entity);
   }
 }; // class LocalBoundaryOperatorInterface
+#endif // 0
 
 
 template <class TestBase, class AnsatzBase = TestBase, class Field = typename TestBase::RangeFieldType>
@@ -125,6 +126,7 @@ public:
 }; // class LocalVolumeTwoFormInterface
 
 
+#if 0
 template <class TestBaseEntity,
           class Intersection,
           class AnsatzBaseEntity = TestBaseEntity,
@@ -212,6 +214,7 @@ template <class T>
 struct is_local_boundary_operator : public std::is_base_of<internal::IsLocalBoundaryOperator, T>
 {
 };
+#endif // 0
 
 
 } // namespace GDT
