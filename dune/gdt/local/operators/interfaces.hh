@@ -101,29 +101,81 @@ public:
 #endif // 0
 
 
-template <class TestBase, class AnsatzBase = TestBase, class Field = typename TestBase::RangeFieldType>
-class LocalVolumeTwoFormInterface
+/**
+ * Interface for local two-forms associated with grid elements.
+ *
+ * \note Regarding SMP: the two-form is copied for each thread, so
+ *       - no shared mutable state between copies to be thread safe, but
+ *       - local mutable state is ok.
+ */
+template <class Element,
+          size_t test_range_dim = 1,
+          size_t test_range_dim_cols = 1,
+          class TestRangeField = double,
+          class Field = double,
+          size_t ansatz_range_dim = test_range_dim,
+          size_t ansatz_range_dim_cols = test_range_dim_cols,
+          class AnsatzRangeField = TestRangeField>
+class LocalElementTwoFormInterface : public XT::Common::ParametricInterface
 {
-  static_assert(XT::Functions::is_localfunction_set<TestBase>::value, "");
-  static_assert(XT::Functions::is_localfunction_set<AnsatzBase>::value, "");
+  static_assert(XT::Grid::is_entity<Element>::value, "");
+
+  using ThisType = LocalElementTwoFormInterface<Element,
+                                                test_range_dim,
+                                                test_range_dim_cols,
+                                                TestRangeField,
+                                                Field,
+                                                ansatz_range_dim,
+                                                ansatz_range_dim_cols,
+                                                AnsatzRangeField>;
 
 public:
-  typedef TestBase TestBaseType;
-  typedef AnsatzBase AnsatzBaseType;
-  typedef Field FieldType;
+  using E = Element;
+  using D = typename Element::Geometry::ctype;
+  static const constexpr size_t d = E::dimension;
+  using F = Field;
 
-  virtual ~LocalVolumeTwoFormInterface() = default;
+  using TR = TestRangeField;
+  static const constexpr size_t t_r = test_range_dim;
+  static const constexpr size_t t_rC = test_range_dim_cols;
 
-  virtual void
-  apply2(const TestBaseType& test_base, const AnsatzBaseType& ansatz_base, DynamicMatrix<FieldType>& ret) const = 0;
+  using AR = AnsatzRangeField;
+  static const constexpr size_t a_r = ansatz_range_dim;
+  static const constexpr size_t a_rC = ansatz_range_dim_cols;
 
-  DynamicMatrix<FieldType> apply2(const TestBaseType& test_base, const AnsatzBaseType& ansatz_base) const
+  using ElementType = Element;
+  using LocalTestBasisType = XT::Functions::LocalFunctionSetInterface<E, t_r, t_rC, TR>;
+  using LocalAnsatzBasisType = XT::Functions::LocalFunctionSetInterface<E, a_r, a_rC, AR>;
+
+  LocalElementTwoFormInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
   {
-    DynamicMatrix<FieldType> ret(test_base.size(), ansatz_base.size(), 0.);
-    apply2(test_base, ansatz_base, ret);
-    return ret;
   }
-}; // class LocalVolumeTwoFormInterface
+
+  virtual ~LocalElementTwoFormInterface() = default;
+
+  virtual std::unique_ptr<ThisType> copy() const = 0;
+
+  /**
+   * Computes the application of this two-form for all combinations of functions from the bases.
+   */
+  virtual void apply2(const LocalTestBasisType& test_basis,
+                      const LocalAnsatzBasisType& ansatz_basis,
+                      DynamicMatrix<F>& result,
+                      const XT::Common::Parameter& param = {}) const = 0;
+
+  /**
+    * This method is provided for convenience and should not be used within library code.
+    */
+  virtual DynamicMatrix<F> apply2(const LocalTestBasisType& test_basis,
+                                  const LocalAnsatzBasisType& ansatz_basis,
+                                  const XT::Common::Parameter& param = {}) const
+  {
+    DynamicMatrix<F> result(test_basis.size(param), ansatz_basis.size(param), 0);
+    this->apply2(test_basis, ansatz_basis, result, param);
+    return result;
+  }
+}; // class LocalElementTwoFormInterface
 
 
 #if 0
