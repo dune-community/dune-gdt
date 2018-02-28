@@ -50,6 +50,7 @@ public:
 }; // class LocalFunctionalInterface
 
 
+#if 0
 template <class TestBase, class Intersection, class Field = typename TestBase::RangeFieldType>
 class LocalFaceFunctionalInterface
 {
@@ -73,6 +74,7 @@ public:
     return ret;
   }
 }; // class LocalFaceFunctionalInterface
+#endif // 0
 
 
 } // namespace GDT
