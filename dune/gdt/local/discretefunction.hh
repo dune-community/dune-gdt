@@ -12,201 +12,330 @@
 #ifndef DUNE_GDT_LOCAL_DISCRETEFUNCTION_HH
 #define DUNE_GDT_LOCAL_DISCRETEFUNCTION_HH
 
-#include <vector>
-#include <type_traits>
+#include <dune/xt/la/container/vector-interface.hh>
+#include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/functions/interfaces/local-functions.hh>
 
-#include <dune/xt/common/memory.hh>
-#include <dune/xt/functions/interfaces.hh>
-
-#include <dune/gdt/local/dof-vector.hh>
+#include <dune/gdt/discretefunction/dof-vector.hh>
+#include <dune/gdt/exceptions.hh>
 #include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/spaces/fv/interface.hh>
 
 namespace Dune {
 namespace GDT {
 
 
-template <class SpaceImp, class VectorImp>
-class ConstLocalDiscreteFunction : public XT::Functions::LocalfunctionInterface<typename SpaceImp::EntityType,
-                                                                                typename SpaceImp::DomainFieldType,
-                                                                                SpaceImp::dimDomain,
-                                                                                typename SpaceImp::RangeFieldType,
-                                                                                SpaceImp::dimRange,
-                                                                                SpaceImp::dimRangeCols>
+template <class Vector, class GridView, size_t range_dim = 1, size_t range_dim_cols = 1, class RangeField = double>
+class ConstLocalDiscreteFunction
+    : public XT::Functions::
+          LocalFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>
 {
-  static_assert(std::is_base_of<SpaceInterface<typename SpaceImp::Traits,
-                                               SpaceImp::dimDomain,
-                                               SpaceImp::dimRange,
-                                               SpaceImp::dimRangeCols>,
-                                SpaceImp>::value,
-                "SpaceImp has to be derived from SpaceInterface!");
-  static_assert(
-      std::is_base_of<Dune::XT::LA::VectorInterface<typename VectorImp::Traits, typename VectorImp::Traits::ScalarType>,
-                      VectorImp>::value,
-      "VectorImp has to be derived from XT::LA::VectorInterface!");
-  static_assert(std::is_same<typename SpaceImp::RangeFieldType, typename VectorImp::ScalarType>::value,
-                "Types do not match!");
-  typedef XT::Functions::LocalfunctionInterface<typename SpaceImp::EntityType,
-                                                typename SpaceImp::DomainFieldType,
-                                                SpaceImp::dimDomain,
-                                                typename SpaceImp::RangeFieldType,
-                                                SpaceImp::dimRange,
-                                                SpaceImp::dimRangeCols>
-      BaseType;
-  typedef ConstLocalDiscreteFunction<SpaceImp, VectorImp> ThisType;
+  // No need to check the rest, is done in SpaceInterface.
+  static_assert(XT::LA::is_vector<Vector>::value, "");
+  static_assert(range_dim_cols == 1, "The matrix-valued case requires updates to evaluate/jacobian/derivative!");
+
+  using ThisType = ConstLocalDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
+  using BaseType = XT::Functions::
+      LocalFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>;
 
 public:
-  typedef SpaceImp SpaceType;
-  typedef VectorImp VectorType;
-  typedef typename BaseType::EntityType EntityType;
+  using SpaceType = SpaceInterface<GridView, range_dim, range_dim_cols, RangeField>;
+  using ConstDofVectorType = ConstDofVector<Vector, GridView>;
+  using ConstLocalDofVectorType = typename ConstDofVectorType::ConstLocalDofVectorType;
+  using LocalBasisType = typename SpaceType::GlobalBasisType::LocalizedBasisType;
 
-  typedef typename BaseType::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = BaseType::dimDomain;
-  typedef typename BaseType::DomainType DomainType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeSelector;
+  using typename BaseType::DerivativeRangeSelector;
+  using typename BaseType::RangeType;
+  using typename BaseType::DerivativeRangeType;
+  using typename BaseType::SingleDerivativeRangeType;
+  using typename BaseType::RangeReturnType;
+  using typename BaseType::DerivativeRangeReturnType;
+  using typename BaseType::SingleDerivativeRangeReturnType;
+  using typename BaseType::DynamicRangeType;
+  using typename BaseType::DynamicDerivativeRangeType;
+  using BaseType::d;
+  using BaseType::r;
+  using BaseType::rC;
+  using typename BaseType::R;
 
-  typedef typename BaseType::RangeFieldType RangeFieldType;
-  static const size_t dimRangeRows = BaseType::dimRangeCols;
-  static const size_t dimRangeCols = BaseType::dimRangeCols;
-  typedef typename BaseType::RangeType RangeType;
-
-  typedef typename BaseType::JacobianRangeType JacobianRangeType;
-
-private:
-  typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
-
-public:
-  typedef ConstLocalDoFVector<VectorType> ConstLocalDoFVectorType;
-
-  ConstLocalDiscreteFunction(const SpaceType& sp, const VectorType& globalVector, const EntityType& ent)
-    : BaseType(ent)
-    , space_(sp)
-    , base_(new BaseFunctionSetType(space_.base_function_set(this->entity())))
-    , localVector_(new ConstLocalDoFVectorType(space_.mapper(), this->entity(), globalVector))
+  ConstLocalDiscreteFunction(const SpaceType& spc, const ConstDofVectorType& dof_vector)
+    : BaseType()
+    , space_(spc)
+    , dof_vector_(dof_vector.localize())
+    , basis_(nullptr)
+    , basis_values_(space_.mapper().max_local_size())
+    , dynamic_basis_values_(space_.mapper().max_local_size())
+    , basis_derivatives_(space_.mapper().max_local_size())
+    , dynamic_basis_derivatives_(space_.mapper().max_local_size())
   {
-    assert(localVector_->size() == base_->size());
   }
 
-  ConstLocalDiscreteFunction(ThisType&& source) = default;
+  ConstLocalDiscreteFunction(const SpaceType& spc, const ConstDofVectorType& dof_vector, const EntityType& ent)
+    : BaseType(ent)
+    , space_(spc)
+    , dof_vector_(dof_vector.localize(ent))
+    , basis_(space_.basis().localize(ent))
+    , basis_values_(space_.mapper().max_local_size())
+    , dynamic_basis_values_(space_.mapper().max_local_size())
+    , basis_derivatives_(space_.mapper().max_local_size())
+    , dynamic_basis_derivatives_(space_.mapper().max_local_size())
+  {
+  }
 
-  ConstLocalDiscreteFunction(const ThisType& other) = delete;
+protected:
+  void post_bind(const EntityType& ent) override
+  {
+    basis_ = space_.basis().localize(ent);
+    dof_vector_.bind(ent);
+  }
 
-  ThisType& operator=(const ThisType& other) = delete;
+public:
+  int order(const XT::Common::Parameter& /*param*/ = {}) const override final
+  {
+    DUNE_THROW_IF(!basis_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    return basis_->order();
+  }
 
   const SpaceType& space() const
   {
     return space_;
   }
 
-  const BaseFunctionSetType& basis() const
+  const LocalBasisType& basis() const
   {
-    return *base_;
+    DUNE_THROW_IF(!basis_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    return basis_;
   }
 
-  const ConstLocalDoFVectorType& vector() const
+  const ConstLocalDofVectorType& dofs() const
   {
-    return *localVector_;
+    DUNE_THROW_IF(!basis_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    return dof_vector_;
   }
-
-  virtual size_t order(const XT::Common::Parameter& mu = {}) const override final
-  {
-    return base_->order(mu);
-  }
-
-  void evaluate(const DomainType& xx, RangeType& ret, const XT::Common::Parameter& /*mu*/ = {}) const override final
-  {
-    assert(this->is_a_valid_point(xx));
-    if (!GDT::is_fv_space<SpaceType>::value) {
-      std::fill(ret.begin(), ret.end(), RangeFieldType(0));
-      std::vector<RangeType> tmpBaseValues(base_->size(), RangeType(0));
-      assert(localVector_->size() == tmpBaseValues.size());
-      base_->evaluate(xx, tmpBaseValues);
-      for (size_t ii = 0; ii < localVector_->size(); ++ii) {
-        ret.axpy(localVector_->get(ii), tmpBaseValues[ii]);
-      }
-    } else {
-      for (size_t ii = 0; ii < localVector_->size(); ++ii)
-        ret[ii] = localVector_->get(ii);
-    }
-  } // ... evaluate(...)
-
-  void
-  jacobian(const DomainType& xx, JacobianRangeType& ret, const XT::Common::Parameter& /*mu*/ = {}) const override final
-  {
-    assert(this->is_a_valid_point(xx));
-    if (!GDT::is_fv_space<SpaceType>::value) {
-      std::fill(ret.begin(), ret.end(), RangeFieldType(0));
-      std::vector<JacobianRangeType> tmpBaseJacobianValues(base_->size(), JacobianRangeType(0));
-      assert(localVector_->size() == tmpBaseJacobianValues.size());
-      base_->jacobian(xx, tmpBaseJacobianValues);
-      for (size_t ii = 0; ii < localVector_->size(); ++ii)
-        ret.axpy(localVector_->get(ii), tmpBaseJacobianValues[ii]);
-    } else {
-      ret = JacobianRangeType(0);
-    }
-  } // ... jacobian(...)
 
   using BaseType::evaluate;
   using BaseType::jacobian;
+  using BaseType::derivative;
 
-protected:
+  /**
+    * \name ``These methods are required by XT::Functions::LocalizableFunctionInterface.''
+    * \{
+    **/
+
+  RangeReturnType evaluate(const DomainType& point_in_reference_element,
+                           const XT::Common::Parameter& param = {}) const override final
+  {
+    RangeReturnType result(0);
+    if (space_.type() == GDT::SpaceType::finite_volume) {
+      for (size_t ii = 0; ii < r; ++ii)
+        result[ii] = dof_vector_[ii];
+    } else {
+      basis_->evaluate(point_in_reference_element, basis_values_, param);
+      for (size_t ii = 0; ii < basis_->size(); ++ii)
+        result.axpy(dof_vector_[ii], basis_values_[ii]);
+    }
+    return result;
+  } // ... evaluate(...)
+
+  DerivativeRangeReturnType jacobian(const DomainType& point_in_reference_element,
+                                     const XT::Common::Parameter& param = {}) const override final
+  {
+    DerivativeRangeReturnType result(0);
+    if (space_.type() == GDT::SpaceType::finite_volume) {
+      return result;
+    } else {
+      basis_->jacobians(point_in_reference_element, basis_derivatives_, param);
+      for (size_t ii = 0; ii < basis_->size(); ++ii)
+        result.axpy(dof_vector_[ii], basis_derivatives_[ii]);
+    }
+    return result;
+  } // ... jacobian(...)
+
+  DerivativeRangeReturnType derivative(const std::array<size_t, d>& alpha,
+                                       const DomainType& point_in_reference_element,
+                                       const XT::Common::Parameter& /*param*/ = {}) const override final
+  {
+    DerivativeRangeReturnType result(0);
+    if (space_.type() == GDT::SpaceType::finite_volume) {
+      for (size_t jj = 0; jj < d; ++jj)
+        if (alpha[jj] == 0)
+          for (size_t ii = 0; ii < r; ++ii)
+            result[ii][jj] = dof_vector_[ii];
+      return result;
+    } else {
+      DUNE_THROW(Exceptions::discrete_function_error,
+                 "arbitrary derivatives are not supported by the local finite elements!\n\n"
+                     << "alpha = "
+                     << alpha
+                     << "\n"
+                     << "point_in_reference_element = "
+                     << point_in_reference_element);
+    }
+    return result;
+  } // ... derivative(...)
+
+  /**
+    * \}
+    * \name ``These methods are default implemented in XT::Functions::LocalizableFunctionInterface and are overridden
+    *         for improved performance.''
+    * \{
+    **/
+
+  void evaluate(const DomainType& point_in_reference_element,
+                DynamicRangeType& result,
+                const XT::Common::Parameter& param = {}) const override final
+  {
+    RangeSelector::ensure_size(result);
+    result *= 0;
+    if (space_.type() == GDT::SpaceType::finite_volume) {
+      for (size_t ii = 0; ii < r; ++ii)
+        result[ii] = dof_vector_[ii];
+    } else {
+      basis_->evaluate(point_in_reference_element, dynamic_basis_values_, param);
+      for (size_t ii = 0; ii < basis_->size(); ++ii)
+        result.axpy(dof_vector_[ii], dynamic_basis_values_[ii]);
+    }
+  } // ... evaluate(...)
+
+  void jacobian(const DomainType& point_in_reference_element,
+                DynamicDerivativeRangeType& result,
+                const XT::Common::Parameter& param = {}) const override final
+  {
+    DerivativeRangeSelector::ensure_size(result);
+    result *= 0;
+    if (space_.type() == GDT::SpaceType::finite_volume) {
+      return;
+    } else {
+      basis_->jacobians(point_in_reference_element, dynamic_basis_derivatives_, param);
+      for (size_t ii = 0; ii < basis_->size(); ++ii)
+        result.axpy(dof_vector_[ii], dynamic_basis_derivatives_[ii]);
+    }
+  } // ... jacobian(...)
+
+  void derivative(const std::array<size_t, d>& alpha,
+                  const DomainType& point_in_reference_element,
+                  DynamicDerivativeRangeType& result,
+                  const XT::Common::Parameter& /*param*/ = {}) const override final
+  {
+    DerivativeRangeSelector::ensure_size(result);
+    result *= 0;
+    if (space_.type() == GDT::SpaceType::finite_volume) {
+      for (size_t jj = 0; jj < d; ++jj)
+        if (alpha[jj] == 0)
+          for (size_t ii = 0; ii < r; ++ii)
+            result[ii][jj] = dof_vector_[ii];
+    } else {
+      DUNE_THROW(Exceptions::discrete_function_error,
+                 "arbitrary derivatives are not supported by the local finite elements!\n\n"
+                     << "alpha = "
+                     << alpha
+                     << "\n"
+                     << "point_in_reference_element = "
+                     << point_in_reference_element);
+    }
+  } // ... derivative(...)
+
+  /**
+    * \}
+    * \name ``These methods (used to access an individual range dimension) are default implemented in
+    *         XT::Functions::LocalizableFunctionInterface and are implemented for improved performance.''
+    * \{
+    **/
+
+  R evaluate(const DomainType& point_in_reference_element,
+             const size_t row,
+             const size_t col = 0,
+             const XT::Common::Parameter& param = {}) const override final
+  {
+    this->assert_correct_dims(row, col, "evaluate");
+    if (space_.type() == GDT::SpaceType::finite_volume) {
+      return dof_vector_[row];
+    } else {
+      R result(0);
+      basis_->evaluate(point_in_reference_element, basis_values_, param);
+      for (size_t ii = 0; ii < basis_->size(); ++ii)
+        result += dof_vector_[ii] * basis_values_[ii][row];
+      return result;
+    }
+  } // ... evaluate(...)
+
+  SingleDerivativeRangeReturnType jacobian(const DomainType& point_in_reference_element,
+                                           const size_t row,
+                                           const size_t col = 0,
+                                           const XT::Common::Parameter& param = {}) const override final
+  {
+    this->assert_correct_dims(row, col, "jacobian");
+    if (space_.type() == GDT::SpaceType::finite_volume) {
+      return 0;
+    } else {
+      SingleDerivativeRangeReturnType result(0);
+      basis_->jacobians(point_in_reference_element, basis_derivatives_, param);
+      for (size_t ii = 0; ii < basis_->size(); ++ii)
+        result.axpy(dof_vector_[ii], basis_derivatives_[ii][row]);
+      return result;
+    }
+  } // ... jacobian(...)
+
+  /// \}
+
+private:
   const SpaceType& space_;
-  std::unique_ptr<const BaseFunctionSetType> base_;
-  std::unique_ptr<const ConstLocalDoFVectorType> localVector_;
+  ConstLocalDofVectorType dof_vector_;
+  std::unique_ptr<LocalBasisType> basis_;
+  mutable std::vector<RangeType> basis_values_;
+  mutable std::vector<DynamicRangeType> dynamic_basis_values_;
+  mutable std::vector<DerivativeRangeType> basis_derivatives_;
+  mutable std::vector<DynamicDerivativeRangeType> dynamic_basis_derivatives_;
 }; // class ConstLocalDiscreteFunction
 
 
-template <class SpaceImp, class VectorImp>
-class LocalDiscreteFunction : public ConstLocalDiscreteFunction<SpaceImp, VectorImp>
+template <class V, class GV, size_t r = 1, size_t rC = 1, class R = double>
+class LocalDiscreteFunction : public ConstLocalDiscreteFunction<V, GV, r, rC, R>
 {
-  typedef ConstLocalDiscreteFunction<SpaceImp, VectorImp> BaseType;
-  typedef LocalDiscreteFunction<SpaceImp, VectorImp> ThisType;
+  using ThisType = LocalDiscreteFunction<V, GV, r, rC, R>;
+  using BaseType = ConstLocalDiscreteFunction<V, GV, r, rC, R>;
 
 public:
-  typedef typename BaseType::SpaceType SpaceType;
-  typedef typename BaseType::VectorType VectorType;
-  typedef typename BaseType::EntityType EntityType;
+  using typename BaseType::SpaceType;
+  using typename BaseType::EntityType;
 
-  typedef typename BaseType::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = BaseType::dimDomain;
-  typedef typename BaseType::DomainType DomainType;
+  using DofVectorType = DofVector<V, GV>;
+  using LocalDofVectorType = typename DofVectorType::ConstLocalDofVectorType;
 
-  typedef typename BaseType::RangeFieldType RangeFieldType;
-  static const size_t dimRangeRows = BaseType::dimRangeCols;
-  static const size_t dimRangeCols = BaseType::dimRangeCols;
-  typedef typename BaseType::RangeType RangeType;
-
-  typedef typename BaseType::JacobianRangeType JacobianRangeType;
-
-private:
-  typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
-
-public:
-  typedef LocalDoFVector<VectorType> LocalDoFVectorType;
-
-  LocalDiscreteFunction(const SpaceType& sp, VectorType& globalVector, const EntityType& ent)
-    : BaseType(sp, globalVector, ent)
-    , localVector_(new LocalDoFVectorType(space_.mapper(), entity_, globalVector))
+  LocalDiscreteFunction(const SpaceType& spc, DofVectorType& dof_vector)
+    : BaseType(spc, dof_vector)
+    , dof_vector_(dof_vector.localize())
+    , bound_(false)
   {
-    assert(localVector_->size() == base_->size());
   }
 
-  //! previous comment questioned validity, defaulting this doesn't touch that question
-  LocalDiscreteFunction(ThisType&& source) = default;
-
-  LocalDiscreteFunction(const ThisType& other) = delete;
-
-  ThisType& operator=(const ThisType& other) = delete;
-
-  LocalDoFVectorType& vector()
+  LocalDiscreteFunction(const SpaceType& spc, DofVectorType& dof_vector, const EntityType& ent)
+    : BaseType(spc, dof_vector, ent)
+    , dof_vector_(dof_vector.localize(ent))
+    , bound_(true)
   {
-    return *localVector_;
+  }
+
+protected:
+  void post_bind(const EntityType& ent) override
+  {
+    BaseType::bind(ent);
+    dof_vector_.bind(ent);
+    bound_ = true;
+  }
+
+public:
+  LocalDofVectorType& dofs()
+  {
+    DUNE_THROW_IF(!bound_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    return dof_vector_;
   }
 
 private:
-  using BaseType::space_;
-  using BaseType::entity_;
-  using BaseType::base_;
-  std::unique_ptr<LocalDoFVectorType> localVector_;
+  LocalDofVectorType dof_vector_;
+  bool bound_;
 }; // class LocalDiscreteFunction
 
 
