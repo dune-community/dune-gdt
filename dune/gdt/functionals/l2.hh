@@ -140,6 +140,7 @@ typename std::
 }
 
 
+#if 0
 // ////////////////////// //
 // L2FaceVectorFunctional //
 // ////////////////////// //
@@ -384,6 +385,7 @@ typename std::
   return Dune::XT::Common::make_unique<L2FaceVectorFunctional<FunctionType, SpaceType, VectorType, GridLayerType>>(
       over_integrate, where, function, vector, space, grid_layer);
 }
+#endif // 0
 
 
 } // namespace GDT
