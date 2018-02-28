@@ -143,13 +143,13 @@ private:
   public:
     size_t size(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_error, "");
+      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
       return shape_functions_->access().size();
     }
 
     int order(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_error, "");
+      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
       return shape_functions_->access().order();
     }
 
@@ -160,7 +160,7 @@ private:
                   std::vector<RangeType>& result,
                   const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_error, "");
+      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
       this->assert_inside_reference_element(point_in_reference_element);
       // evaluate shape functions
       shape_functions_->access().evaluate(point_in_reference_element, result);
@@ -184,7 +184,7 @@ private:
                    std::vector<DerivativeRangeType>& result,
                    const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_error, "");
+      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
       this->assert_inside_reference_element(point_in_reference_element);
       // evaluate jacobian of shape functions
       shape_functions_->access().jacobian(point_in_reference_element, result);
