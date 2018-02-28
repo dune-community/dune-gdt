@@ -12,13 +12,28 @@
 #define DUNE_GDT_EXCEPTIONS_HH
 
 #include <dune/xt/common/exceptions.hh>
+#include <dune/xt/la/exceptions.hh>
+#include <dune/xt/grid/exceptions.hh>
+#include <dune/xt/functions/exceptions.hh>
 
 namespace Dune {
 namespace GDT {
 namespace Exceptions {
 
 
-class operator_error : public Dune::Exception
+class not_bound_to_an_element_yet : public XT::Grid::Exceptions::not_bound_to_an_element_yet
+{
+};
+
+class dof_vector_error : public Exception
+{
+};
+
+class functional_error : public Exception
+{
+};
+
+class operator_error : public Exception
 {
 };
 
@@ -47,6 +62,10 @@ class mapper_error : public space_error
 };
 
 class basis_error : public space_error
+{
+};
+
+class discrete_function_error : public Dune::Exception
 {
 };
 
