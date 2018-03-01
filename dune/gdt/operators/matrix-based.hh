@@ -89,22 +89,6 @@ public:
                                       << source_space_.mapper().size());
   } // ConstMatrixBasedOperator(...)
 
-  template <class RGV_,
-            size_t r_r_,
-            size_t r_rC_,
-            class RF_,
-            typename = /* Only enable this ctor, if */
-            typename std::enable_if</* the type of space is RangeSpaceType */ (
-                                        std::is_same<RGV_, RGV>::value && (r_r_ == r_r) && (r_rC_ == r_rC)
-                                        && std::is_same<RF_, RF>::value)
-                                    && /* and RangeSpaceType and SourceSpaceType coincide. */ (
-                                           std::is_same<SGV, RGV>::value && (s_r == r_r) && (s_rC == r_rC)
-                                           && std::is_same<SF, RF>::value)>::type>
-  ConstMatrixBasedOperator(const SpaceInterface<RGV_, r_r_, r_rC_, RF_>& space, const MatrixType& mat)
-    : ConstMatrixBasedOperator(space, space, mat)
-  {
-  }
-
   bool linear() const override final
   {
     return true;
@@ -245,8 +229,8 @@ template <class GV, size_t r, size_t rC, class F, class M>
 ConstMatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>
 make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::MatrixInterface<M>& matrix)
 {
-  return ConstMatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>(space,
-                                                                                                   matrix.as_imp());
+  return ConstMatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>(
+      space, space, matrix.as_imp());
 }
 
 
@@ -314,10 +298,8 @@ public:
   using typename WalkerBaseType::E;
 
   /**
-   * \name Ctors which accept an existing matrix into which to assemble.
-   * \{
+   * Ctor which accept an existing matrix into which to assemble.
    */
-
   MatrixBasedOperator(AssemblyGridViewType assembly_grid_view,
                       const SourceSpaceType& source_spc,
                       const RangeSpaceType& range_spc,
@@ -331,46 +313,8 @@ public:
     this->append([&](const auto&) { assembled_ = true; });
   }
 
-  template <class RGV_,
-            size_t r_r_,
-            size_t r_rC_,
-            class RF_,
-            typename = /* Only enable this ctor, if */
-            typename std::enable_if</* the type of space is RangeSpaceType */ (
-                                        std::is_same<RGV_, RGV>::value && (r_r_ == r_r) && (r_rC_ == r_rC)
-                                        && std::is_same<RF_, RF>::value)
-                                    && /* and RangeSpaceType and SourceSpaceType coincide. */ (
-                                           std::is_same<SGV, RGV>::value && (s_r == r_r) && (s_rC == r_rC)
-                                           && std::is_same<SF, RF>::value)>::type>
-  MatrixBasedOperator(AssemblyGridViewType assembly_grid_view,
-                      const SpaceInterface<RGV_, r_r_, r_rC_, RF_>& space,
-                      MatrixType& mat)
-    : MatrixBasedOperator(assembly_grid_view, space, space, mat)
-  {
-  }
-
-  template <class RGV_,
-            size_t r_r_,
-            size_t r_rC_,
-            class RF_,
-            typename = /* Only enable this ctor, if */
-            typename std::enable_if</* the type of space is RangeSpaceType, */ (
-                                        std::is_same<RGV_, RGV>::value && (r_r_ == r_r) && (r_rC_ == r_rC)
-                                        && std::is_same<RF_, RF>::value)
-                                    && /* RangeSpaceType and SourceSpaceType coincide. */ (
-                                           std::is_same<SGV, RGV>::value && (s_r == r_r) && (s_rC == r_rC)
-                                           && std::is_same<SF, RF>::value)
-                                    && /* and AssemblyGridView and the grid view type of RangeSpaceType coincide */ (
-                                           std::is_same<RGV, AssemblyGridView>::value)>::type>
-  MatrixBasedOperator(const SpaceInterface<RGV_, r_r_, r_rC_, RF_>& space, MatrixType& mat)
-    : MatrixBasedOperator(space.grid_view(), space, mat)
-  {
-  }
-
   /**
-   * \}
-   * \name Ctors which create an appropriate matrix into which to assemble from a given sparsity pattern.
-   * \{
+   * Ctor which create an appropriate matrix into which to assemble from a given sparsity pattern.
    */
 
   MatrixBasedOperator(AssemblyGridViewType assembly_grid_view,
@@ -385,99 +329,6 @@ public:
     // to detect assembly
     this->append([&](const auto&) { assembled_ = true; });
   }
-
-  template <class RGV_,
-            size_t r_r_,
-            size_t r_rC_,
-            class RF_,
-            typename = /* Only enable this ctor, if */
-            typename std::enable_if</* the type of space is RangeSpaceType */ (
-                                        std::is_same<RGV_, RGV>::value && (r_r_ == r_r) && (r_rC_ == r_rC)
-                                        && std::is_same<RF_, RF>::value)
-                                    && /* and RangeSpaceType and SourceSpaceType coincide. */ (
-                                           std::is_same<SGV, RGV>::value && (s_r == r_r) && (s_rC == r_rC)
-                                           && std::is_same<SF, RF>::value)>::type>
-  MatrixBasedOperator(AssemblyGridViewType assembly_grid_view,
-                      const SpaceInterface<RGV_, r_r_, r_rC_, RF_>& space,
-                      const XT::LA::SparsityPatternDefault& pattern)
-    : MatrixBasedOperator(assembly_grid_view, space, space, pattern)
-  {
-  }
-
-  template <class RGV_,
-            size_t r_r_,
-            size_t r_rC_,
-            class RF_,
-            typename = /* Only enable this ctor, if */
-            typename std::enable_if</* the type of space is RangeSpaceType, */ (
-                                        std::is_same<RGV_, RGV>::value && (r_r_ == r_r) && (r_rC_ == r_rC)
-                                        && std::is_same<RF_, RF>::value)
-                                    && /* RangeSpaceType and SourceSpaceType coincide. */ (
-                                           std::is_same<SGV, RGV>::value && (s_r == r_r) && (s_rC == r_rC)
-                                           && std::is_same<SF, RF>::value)
-                                    && /* and AssemblyGridView and the grid view type of RangeSpaceType coincide */ (
-                                           std::is_same<RGV, AssemblyGridView>::value)>::type>
-  MatrixBasedOperator(const SpaceInterface<RGV_, r_r_, r_rC_, RF_>& space,
-                      const XT::LA::SparsityPatternDefault& pattern)
-    : MatrixBasedOperator(space.grid_view(), space, pattern)
-  {
-  }
-
-  /**
-   * \}
-   * \name Ctors which create an appropriate matrix into which to assemble from a given stencil.
-   * \{
-   */
-
-  MatrixBasedOperator(AssemblyGridViewType assembly_grid_view,
-                      const SourceSpaceType& source_spc,
-                      const RangeSpaceType& range_spc,
-                      const Stencil stencil = Stencil::element_and_intersection)
-    : MatrixBasedOperator(assembly_grid_view,
-                          source_spc,
-                          range_spc,
-                          make_sparsity_pattern(range_spc, source_spc, assembly_grid_view, stencil))
-  {
-  }
-
-  template <class RGV_,
-            size_t r_r_,
-            size_t r_rC_,
-            class RF_,
-            typename = /* Only enable this ctor, if */
-            typename std::enable_if</* the type of space is RangeSpaceType */ (
-                                        std::is_same<RGV_, RGV>::value && (r_r_ == r_r) && (r_rC_ == r_rC)
-                                        && std::is_same<RF_, RF>::value)
-                                    && /* and RangeSpaceType and SourceSpaceType coincide. */ (
-                                           std::is_same<SGV, RGV>::value && (s_r == r_r) && (s_rC == r_rC)
-                                           && std::is_same<SF, RF>::value)>::type>
-  MatrixBasedOperator(AssemblyGridViewType assembly_grid_view,
-                      const SpaceInterface<RGV_, r_r_, r_rC_, RF_>& space,
-                      const Stencil stencil = Stencil::element_and_intersection)
-    : MatrixBasedOperator(assembly_grid_view, space, space, stencil)
-  {
-  }
-
-  template <class RGV_,
-            size_t r_r_,
-            size_t r_rC_,
-            class RF_,
-            typename = /* Only enable this ctor, if */
-            typename std::enable_if</* the type of space is RangeSpaceType, */ (
-                                        std::is_same<RGV_, RGV>::value && (r_r_ == r_r) && (r_rC_ == r_rC)
-                                        && std::is_same<RF_, RF>::value)
-                                    && /* RangeSpaceType and SourceSpaceType coincide. */ (
-                                           std::is_same<SGV, RGV>::value && (s_r == r_r) && (s_rC == r_rC)
-                                           && std::is_same<SF, RF>::value)
-                                    && /* and AssemblyGridView and the grid view type of RangeSpaceType coincide */ (
-                                           std::is_same<RGV, AssemblyGridView>::value)>::type>
-  MatrixBasedOperator(const SpaceInterface<RGV_, r_r_, r_rC_, RF_>& space,
-                      const Stencil stencil = Stencil::element_and_intersection)
-    : MatrixBasedOperator(space.grid_view(), space, stencil)
-  {
-  }
-
-  /// \}
 
   using OperatorBaseType::matrix;
 
@@ -565,14 +416,15 @@ make_matrix_operator(GridView<AGV> assembly_grid_view,
                      XT::LA::MatrixInterface<M>& matrix)
 {
   return MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GridView<AGV>, r, rC, F, GV>(
-      assembly_grid_view, space, matrix.as_imp());
+      assembly_grid_view, space, space, matrix.as_imp());
 }
 
 template <class GV, size_t r, size_t rC, class F, class M>
 MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>
 make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, XT::LA::MatrixInterface<M>& matrix)
 {
-  return MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>(space, matrix.as_imp());
+  return MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>(
+      space.grid_view(), space, space, matrix.as_imp());
 }
 
 /// \}
@@ -638,7 +490,7 @@ make_matrix_operator(GridView<AGV> assembly_grid_view,
                      const SpaceInterface<GV, r, rC, F>& space,
                      const XT::LA::SparsityPatternDefault& pattern)
 {
-  return MatrixBasedOperator<MatrixType, GridView<AGV>, r, rC, F, GV>(assembly_grid_view, space, pattern);
+  return MatrixBasedOperator<MatrixType, GridView<AGV>, r, rC, F, GV>(assembly_grid_view, space, space, pattern);
 }
 
 /**
@@ -651,7 +503,7 @@ template <class MatrixType, class GV, size_t r, size_t rC, class F>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixBasedOperator<MatrixType, GV, r, rC, F>>::type
 make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::SparsityPatternDefault& pattern)
 {
-  return MatrixBasedOperator<MatrixType, GV, r, rC, F>(space, pattern);
+  return MatrixBasedOperator<MatrixType, GV, r, rC, F>(space.grid_view(), space, space, pattern);
 }
 
 /// \}
@@ -701,7 +553,10 @@ make_matrix_operator(GridView<AGV> assembly_grid_view,
                              r_r,
                              r_rC,
                              RF,
-                             RGV>(assembly_grid_view, source_space, range_space, stencil);
+                             RGV>(assembly_grid_view,
+                                  source_space,
+                                  range_space,
+                                  make_sparsity_pattern(range_space, source_space, assembly_grid_view, stencil));
 } // ... make_matrix_operator(...)
 
 /**
@@ -717,7 +572,8 @@ make_matrix_operator(GridView<AGV> assembly_grid_view,
                      const SpaceInterface<GV, r, rC, F>& space,
                      const Stencil stencil = Stencil::element_and_intersection)
 {
-  return MatrixBasedOperator<MatrixType, GridView<AGV>, r, rC, F, GV>(assembly_grid_view, space, stencil);
+  return MatrixBasedOperator<MatrixType, GridView<AGV>, r, rC, F, GV>(
+      assembly_grid_view, space, space, make_sparsity_pattern(space, assembly_grid_view, stencil));
 }
 
 /**
@@ -731,7 +587,8 @@ typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixBasedOperato
 make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
                      const Stencil stencil = Stencil::element_and_intersection)
 {
-  return MatrixBasedOperator<MatrixType, GV, r, rC, F>(space, stencil);
+  return MatrixBasedOperator<MatrixType, GV, r, rC, F>(
+      space.grid_view(), space, space, make_sparsity_pattern(space, stencil));
 }
 
 /// \}
