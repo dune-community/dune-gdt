@@ -180,20 +180,6 @@ public:
     this->append([&](const auto&) { assembled_ = true; });
   }
 
-  template <class GV_,
-            size_t r_,
-            size_t rC_,
-            class F_, /* Only enable this ctor, if */
-            typename = typename std::
-                enable_if</* the type of space is SourceSpaceType */ (
-                              std::is_same<GV_, GV>::value && (r_ == r) && (rC_ == rC_) && std::is_same<F_, F>::value)
-                          && /* and the grid view type of space and AssemblyGridViewType coincide. */ std::
-                                 is_same<GV_, AssemblyGridViewType>::value>::type>
-  VectorBasedFunctional(const SpaceInterface<GV_, r_, rC_, F_>& source_spc, SourceVectorType& vec)
-    : VectorBasedFunctional(source_spc.grid_view(), source_spc, vec)
-  {
-  }
-
   /**
    * \}
    * \name Ctors which create an appropriate vector into which to assemble (which is accessible via vector()).
@@ -208,20 +194,6 @@ public:
   {
     // to detect assembly
     this->append([&](const auto&) { assembled_ = true; });
-  }
-
-  template <class GV_,
-            size_t r_,
-            size_t rC_,
-            class F_, /* Only enable this ctor, if */
-            typename = typename std::
-                enable_if</* the type of space is SourceSpaceType */ (
-                              std::is_same<GV_, GV>::value && (r_ == r) && (rC_ == rC_) && std::is_same<F_, F>::value)
-                          && /* and the grid view type of space and AssemblyGridViewType coincide. */ std::
-                                 is_same<GV_, AssemblyGridViewType>::value>::type>
-  VectorBasedFunctional(const SpaceInterface<GV_, r_, rC_, F_>& source_spc)
-    : VectorBasedFunctional(source_spc.grid_view(), source_spc)
-  {
   }
 
   /// \}
