@@ -25,7 +25,7 @@ template <class VectorTraits, class ScalarType, class SpaceType, class Descripto
 class LocalView
 {
   using VectorInterface = XT::LA::VectorInterface<VectorTraits, ScalarType>;
-  using EntityType = XT::Grid::extract_entity_t<typename SpaceType::GridLayerType>;
+  using EntityType = XT::Grid::extract_entity_t<typename SpaceType::GridViewType>;
 
 private:
   void resize(size_t size)
@@ -50,7 +50,7 @@ public:
   {
     const size_t size{descriptor_.size(space_, entity)};
     resize(size);
-    space_.mapper().globalIndices(entity, global_indices_);
+    space_.mapper().global_indices(entity, global_indices_);
     for (auto i : XT::Common::value_range(size)) {
       assert(i < global_indices_.size());
       const auto global = global_indices_[i];

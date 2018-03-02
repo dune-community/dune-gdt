@@ -12,14 +12,48 @@
 
 #include "localview.hh"
 
+#include <dune/gdt/type_traits.hh>
+#include <dune/xt/common/fixed_map.hh>
+#include <dune/gdt/spaces/mapper/interfaces.hh>
+
 namespace Dune {
 namespace GDT {
+
+template <class GridView, size_t r, size_t rC, class R>
+class SpaceInterface;
+
+//! We only ever communicate data on Elements, no matter what space
+template <class GV, size_t r, size_t rD, class R>
+static constexpr bool space_associates_data_with(const SpaceInterface<GV, r, rD, R>& /*space*/, int codim)
+{
+  return codim == 0;
+};
 
 //! Communication descriptor for sending one item of type E per DOF.
 //! used in Mindatahandle
 template <typename E>
 struct DofDataCommunicationDescriptor
 {
+private:
+  template <class GV, class Entity>
+  static const size_t local_size(const MapperInterface<GV>& mapper, const Entity& e, std::integral_constant<int, 0>)
+  {
+    return mapper.local_size(e);
+  }
+
+  template <class GV, class Entity>
+  static const size_t local_size(const MapperInterface<GV>& mapper, const Entity& e, std::integral_constant<int, 1>)
+  {
+    return 0;
+  }
+
+  template <class GV, class Entity>
+  static const size_t local_size(const MapperInterface<GV>& mapper, const Entity& e)
+  {
+    return local_size(mapper, e, std::integral_constant<int, Entity::codimension>());
+  }
+
+public:
   typedef E DataType;
 
   // Wrap the grid's communication buffer to enable sending leaf ordering sizes along with the data
@@ -28,23 +62,23 @@ struct DofDataCommunicationDescriptor
   // export original data type to fix up size information forwarded to standard gather / scatter functors
   typedef E OriginalDataType;
 
-  template <typename SpaceType>
-  bool contains(const SpaceType& space, int dim, int codim) const
+  template <class GV, size_t r, size_t rD, class R>
+  bool contains(const SpaceInterface<GV, r, rD, R>& space, int dim, int codim) const
   {
-    return SpaceType::associates_data_with(codim);
+    return space_associates_data_with(space, codim);
   }
 
-  template <typename SpaceType>
-  bool fixedSize(const SpaceType& /*space*/, int /*dim*/, int /*codim*/) const
+  template <class GV, size_t r, size_t rD, class R>
+  bool fixedSize(const SpaceInterface<GV, r, rD, R>& /*space*/, int /*dim*/, int /*codim*/) const
   {
     // we currently have no adaptive spaces
     return true;
   }
 
-  template <typename SpaceType, typename Entity>
-  std::size_t size(const SpaceType& space, const Entity& e) const
+  template <class GV, size_t r, size_t rD, class R, typename Entity>
+  std::size_t size(const SpaceInterface<GV, r, rD, R>& space, const Entity& e) const
   {
-    return space.grid_layer().indexSet().contains(e) ? space.mapper().numDofs(e) : 0u;
+    return space.grid_view().indexSet().contains(e) ? local_size(space.mapper(), e) : 0u;
   }
 };
 
@@ -58,23 +92,23 @@ struct EntityDataCommunicationDescriptor
   // grid's communication buffer
   static const bool wrap_buffer = false;
 
-  template <typename SpaceType>
-  bool contains(const SpaceType& /*space*/, int /*dim*/, int codim) const
+  template <class GV, size_t r, size_t rD, class R>
+  bool contains(const SpaceInterface<GV, r, rD, R>& space, int /*dim*/, int codim) const
   {
-    return SpaceType::associates_data_with(codim);
+    return space_associates_data_with(space, codim);
   }
 
-  template <typename SpaceType>
-  bool fixedSize(const SpaceType& /*space*/, int /*dim*/, int /*codim*/) const
+  template <class GV, size_t r, size_t rD, class R>
+  bool fixedSize(const SpaceInterface<GV, r, rD, R>& /*space*/, int /*dim*/, int /*codim*/) const
   {
     return true;
   }
 
-  template <typename SpaceType, typename Entity>
-  std::size_t size(const SpaceType& space, const Entity& e) const
+  template <class GV, size_t r, size_t rD, class R, typename Entity>
+  std::size_t size(const SpaceInterface<GV, r, rD, R>& space, const Entity& e) const
   {
-    return (SpaceType::associates_data_with(Entity::codimension) && space.grid_layer().indexSet().contains(e)) ? count_
-                                                                                                               : 0;
+    return (space_associates_data_with(space, Entity::codimension) && space.grid_view().indexSet().contains(e)) ? count_
+                                                                                                                : 0;
   }
 
   //! remove default value, force handles to use actual space provided values
@@ -88,20 +122,24 @@ private:
 };
 
 
-template <typename SpaceType,
+template <class GV,
+          size_t r,
+          size_t rD,
+          class R,
           typename VectorType,
           typename GatherScatter,
           typename CommunicationDescriptor = DofDataCommunicationDescriptor<typename VectorType::ScalarType>>
 class SpaceDataHandle
-    : public Dune::CommDataHandleIF<SpaceDataHandle<SpaceType, VectorType, GatherScatter, CommunicationDescriptor>,
+    : public Dune::CommDataHandleIF<SpaceDataHandle<GV, r, rD, R, VectorType, GatherScatter, CommunicationDescriptor>,
                                     typename CommunicationDescriptor::DataType>
 {
 
 public:
   using DataType = typename CommunicationDescriptor::DataType;
-  using Codim0EntityType = XT::Grid::extract_entity_t<typename SpaceType::GridLayerType>;
+  using Codim0EntityType = XT::Grid::extract_entity_t<GV>;
+  using SpaceType = const SpaceInterface<GV, r, rD, R>;
 
-  SpaceDataHandle(const SpaceType& space,
+  SpaceDataHandle(const SpaceInterface<GV, r, rD, R>& space,
                   VectorType& v,
                   CommunicationDescriptor communication_descriptor,
                   GatherScatter gather_scatter = GatherScatter())
@@ -167,7 +205,10 @@ private:
   //! has to be mutable because gather is const
   mutable GatherScatter gather_scatter_;
   CommunicationDescriptor communication_descriptor_;
-  mutable LocalView<typename VectorType::Traits, typename VectorType::ScalarType, SpaceType, CommunicationDescriptor>
+  mutable LocalView<typename VectorType::Traits,
+                    typename VectorType::ScalarType,
+                    SpaceInterface<GV, r, rD, R>,
+                    CommunicationDescriptor>
       local_view_;
 };
 
@@ -293,20 +334,26 @@ public:
   }
 };
 
-template <class SpaceType, class VectorType>
-class MinDataHandle : public SpaceDataHandle<SpaceType,
+template <class GV, size_t r, size_t rD, class R, class VectorType>
+class MinDataHandle : public SpaceDataHandle<GV,
+                                             r,
+                                             rD,
+                                             R,
                                              VectorType,
                                              DataGatherScatter<MinGatherScatter>,
                                              DofDataCommunicationDescriptor<typename VectorType::ScalarType>>
 {
-  typedef SpaceDataHandle<SpaceType,
+  typedef SpaceDataHandle<GV,
+                          r,
+                          rD,
+                          R,
                           VectorType,
                           DataGatherScatter<MinGatherScatter>,
                           DofDataCommunicationDescriptor<typename VectorType::ScalarType>>
       BaseType;
 
 public:
-  MinDataHandle(const SpaceType& space_, VectorType& v_)
+  MinDataHandle(const SpaceInterface<GV, r, rD, R>& space_, VectorType& v_)
     : BaseType(space_, v_, DofDataCommunicationDescriptor<typename VectorType::ScalarType>())
   {
   }
@@ -361,11 +408,12 @@ public:
  * \note In order to work correctly, the data handle must be communicated on the
  * Dune::InteriorBorder_All_Interface.
  */
-template <class SpaceType, class VectorType>
+template <class GV, size_t r, size_t rD, class R, class VectorType>
 class GhostDataHandle
-    : public SpaceDataHandle<SpaceType, VectorType, GhostGatherScatter, EntityDataCommunicationDescriptor<bool>>
+    : public SpaceDataHandle<GV, r, rD, R, VectorType, GhostGatherScatter, EntityDataCommunicationDescriptor<bool>>
 {
-  typedef SpaceDataHandle<SpaceType, VectorType, GhostGatherScatter, EntityDataCommunicationDescriptor<bool>> BaseType;
+  typedef SpaceDataHandle<GV, r, rD, R, VectorType, GhostGatherScatter, EntityDataCommunicationDescriptor<bool>>
+      BaseType;
 
   //  static_assert((std::is_same<typename VectorType::ScalarType, bool>::value),
   //                "GhostDataHandle expects a vector of bool values");
@@ -381,8 +429,8 @@ public:
    * \param v_           The result vector.
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
-  GhostDataHandle(const SpaceType& space_, VectorType& v_, bool init_vector = true)
-    : BaseType(space_, v_, EntityDataCommunicationDescriptor<bool>(space_.mapper().maxNumDofs()))
+  GhostDataHandle(const SpaceInterface<GV, r, rD, R>& space_, VectorType& v_, bool init_vector = true)
+    : BaseType(space_, v_, EntityDataCommunicationDescriptor<bool>(space_.mapper().max_local_size()))
   {
     if (init_vector)
       v_.set_all(false);
@@ -468,14 +516,20 @@ private:
  * \note In order to work correctly, the data handle must be communicated on the
  * Dune::InteriorBorder_All_Interface and the result vector must be initialized with the MPI rank value.
  */
-template <class SpaceType, class VectorType>
+template <class GV, size_t r, size_t rD, class R, class VectorType>
 class DisjointPartitioningDataHandle
-    : public SpaceDataHandle<SpaceType,
+    : public SpaceDataHandle<GV,
+                             r,
+                             rD,
+                             R,
                              VectorType,
                              DisjointPartitioningGatherScatter<typename VectorType::ScalarType>,
                              EntityDataCommunicationDescriptor<typename VectorType::ScalarType>>
 {
-  typedef SpaceDataHandle<SpaceType,
+  typedef SpaceDataHandle<GV,
+                          r,
+                          rD,
+                          R,
                           VectorType,
                           DisjointPartitioningGatherScatter<typename VectorType::ScalarType>,
                           EntityDataCommunicationDescriptor<typename VectorType::ScalarType>>
@@ -492,14 +546,14 @@ public:
    * \param v           The result vector.
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
-  DisjointPartitioningDataHandle(const SpaceType& space, VectorType& v, bool init_vector = true)
+  DisjointPartitioningDataHandle(const SpaceInterface<GV, r, rD, R>& space, VectorType& v, bool init_vector = true)
     : BaseType(space,
                v,
-               EntityDataCommunicationDescriptor<typename VectorType::ScalarType>(space.mapper().maxNumDofs()),
-               DisjointPartitioningGatherScatter<typename VectorType::ScalarType>(space.grid_layer().comm().rank()))
+               EntityDataCommunicationDescriptor<typename VectorType::ScalarType>(space.mapper().max_local_size()),
+               DisjointPartitioningGatherScatter<typename VectorType::ScalarType>(space.grid_view().comm().rank()))
   {
     if (init_vector)
-      v.set_all(space.grid_layer().comm().rank());
+      v.set_all(space.grid_view().comm().rank());
   }
 };
 
@@ -542,11 +596,11 @@ struct SharedDOFGatherScatter
  * \note In order to work correctly, the data handle must be communicated on the
  * Dune::All_All_Interface and the result vector must be initialized with false.
  */
-template <class SpaceType, class VectorType>
+template <class GV, size_t r, size_t rD, class R, class VectorType>
 class SharedDOFDataHandle
-    : public SpaceDataHandle<SpaceType, VectorType, SharedDOFGatherScatter, EntityDataCommunicationDescriptor<bool>>
+    : public SpaceDataHandle<GV, r, rD, R, VectorType, SharedDOFGatherScatter, EntityDataCommunicationDescriptor<bool>>
 {
-  typedef SpaceDataHandle<SpaceType, VectorType, SharedDOFGatherScatter, EntityDataCommunicationDescriptor<bool>>
+  typedef SpaceDataHandle<GV, r, rD, R, VectorType, SharedDOFGatherScatter, EntityDataCommunicationDescriptor<bool>>
       BaseType;
 
   //  static_assert((std::is_same<typename VectorType::ScalarType, bool>::value),
@@ -563,8 +617,8 @@ public:
    * \param v           The result vector.
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
-  SharedDOFDataHandle(const SpaceType& space, VectorType& v, bool init_vector = true)
-    : BaseType(space, v, EntityDataCommunicationDescriptor<bool>(space.mapper().maxNumDofs()))
+  SharedDOFDataHandle(const SpaceInterface<GV, r, rD, R>& space, VectorType& v, bool init_vector = true)
+    : BaseType(space, v, EntityDataCommunicationDescriptor<bool>(space.mapper().max_local_size()))
   {
     if (init_vector)
       v.set_all(false);
@@ -580,8 +634,9 @@ public:
  * \note In order to work correctly, the data handle must be communicated on the
  * Dune::All_All_Interface.
  */
-template <typename SpaceType, typename RankIndex>
-class SpaceNeighborDataHandle : public Dune::CommDataHandleIF<SpaceNeighborDataHandle<SpaceType, RankIndex>, RankIndex>
+template <class GV, size_t r, size_t rD, class R, typename RankIndex>
+class SpaceNeighborDataHandle
+    : public Dune::CommDataHandleIF<SpaceNeighborDataHandle<GV, r, rD, R, RankIndex>, RankIndex>
 {
 
   // We deliberately avoid using the SpaceDataHandle here, as we don't want to incur the
@@ -590,7 +645,7 @@ class SpaceNeighborDataHandle : public Dune::CommDataHandleIF<SpaceNeighborDataH
 public:
   typedef RankIndex DataType;
 
-  SpaceNeighborDataHandle(const SpaceType& space, RankIndex rank, std::set<RankIndex>& neighbors)
+  SpaceNeighborDataHandle(const SpaceInterface<GV, r, rD, R>& space, RankIndex rank, std::set<RankIndex>& neighbors)
     : space_(space)
     , rank_(rank)
     , neighbors_(neighbors)
@@ -599,7 +654,7 @@ public:
 
   bool contains(int dim, int codim) const
   {
-    return dim == SpaceType::dimDomain && codim == 0;
+    return dim == r && codim == 0;
   }
 
   bool fixedsize(int /*dim*/, int /*codim*/) const
@@ -629,7 +684,7 @@ public:
   }
 
 private:
-  const SpaceType& space_;
+  const SpaceInterface<GV, r, rD, R>& space_;
   const RankIndex rank_;
   std::set<RankIndex>& neighbors_;
 };

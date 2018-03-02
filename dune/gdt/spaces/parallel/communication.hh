@@ -69,10 +69,10 @@ public:
     return new Type(gridView.comm(), SolverCategory::overlapping);
   }
 
-  template <class Space>
-  static bool prepare(const Space& space, Type& communicator)
+  template <class GV, size_t r, size_t rD, class R>
+  static bool prepare(const SpaceInterface<GV, r, rD, R>& space, Type& communicator)
   {
-    GDT::GenericParallelHelper<Space>(space, 1).setup_parallel_indexset(communicator);
+    GDT::GenericParallelHelper<GV, r, rD, R>(space, 1).setup_parallel_indexset(communicator);
     return true;
   } // ... prepare(...)
 
