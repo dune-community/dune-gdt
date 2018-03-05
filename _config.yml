@@ -1,0 +1,8 @@
+title: dune-gdt
+description: Generic Discretization Toolbox for DUNE
+google_analytics:
+show_downloads: true
+theme: jekyll-theme-cayman
+
+plugins:
+  - jekyll-mentions
