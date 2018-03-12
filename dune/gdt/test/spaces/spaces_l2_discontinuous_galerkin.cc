@@ -26,7 +26,7 @@
 #include <dune/gdt/spaces/l2/discontinuous-galerkin.hh>
 
 
-template <class GridViewType, int p>
+template <class GridViewType, size_t /*r*/, int p>
 struct DiscontinuousLagrangeSpace : public ::testing::Test
 {
   using SpaceType = Dune::GDT::DiscontinuousLagrangeSpace<GridViewType, p>;
@@ -213,9 +213,9 @@ struct DiscontinuousLagrangeSpace : public ::testing::Test
 }; // struct DiscontinuousLagrangeSpace
 
 
-template <class G, int p>
+template <class G, size_t r, int p>
 struct DiscontinuousLagrangeSpaceOnSimplicialLeafView
-    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>
+    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r, p>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
@@ -263,131 +263,131 @@ using SimplicialGrids = ::testing::Types<ONED_1D,
 
 
 template <class G>
-using Order0SimplicialDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnSimplicialLeafView<G, 0>;
-TYPED_TEST_CASE(Order0SimplicialDiscontinuousLagrangeSpace, SimplicialGrids);
-TYPED_TEST(Order0SimplicialDiscontinuousLagrangeSpace, gives_correct_identification)
+using Order0ScalarSimplicialDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnSimplicialLeafView<G, 1, 0>;
+TYPED_TEST_CASE(Order0ScalarSimplicialDiscontinuousLagrangeSpace, SimplicialGrids);
+TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
-TYPED_TEST(Order0SimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
+TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order0SimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
+TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
   this->basis_exists_on_each_element_with_correct_order();
 }
-TYPED_TEST(Order0SimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
+TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
   this->mapper_reports_correct_num_DoFs_on_each_element();
 }
-TYPED_TEST(Order0SimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
+TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
   this->mapper_reports_correct_max_num_DoFs();
 }
-TYPED_TEST(Order0SimplicialDiscontinuousLagrangeSpace, mapper_maps_correctly)
+TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
   this->mapper_maps_correctly();
 }
-TYPED_TEST(Order0SimplicialDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
+TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
   this->lagrange_points_exist_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order0SimplicialDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
+TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 {
   this->basis_is_lagrange_basis();
 }
-TYPED_TEST(Order0SimplicialDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
+TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
 }
 
 
 template <class G>
-using Order1SimplicialDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnSimplicialLeafView<G, 1>;
-TYPED_TEST_CASE(Order1SimplicialDiscontinuousLagrangeSpace, SimplicialGrids);
-TYPED_TEST(Order1SimplicialDiscontinuousLagrangeSpace, gives_correct_identification)
+using Order1ScalarSimplicialDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnSimplicialLeafView<G, 1, 1>;
+TYPED_TEST_CASE(Order1ScalarSimplicialDiscontinuousLagrangeSpace, SimplicialGrids);
+TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
-TYPED_TEST(Order1SimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
+TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order1SimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
+TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
   this->basis_exists_on_each_element_with_correct_order();
 }
-TYPED_TEST(Order1SimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
+TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
   this->mapper_reports_correct_num_DoFs_on_each_element();
 }
-TYPED_TEST(Order1SimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
+TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
   this->mapper_reports_correct_max_num_DoFs();
 }
-TYPED_TEST(Order1SimplicialDiscontinuousLagrangeSpace, mapper_maps_correctly)
+TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
   this->mapper_maps_correctly();
 }
-TYPED_TEST(Order1SimplicialDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
+TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
   this->lagrange_points_exist_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order1SimplicialDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
+TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 {
   this->basis_is_lagrange_basis();
 }
-TYPED_TEST(Order1SimplicialDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
+TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
 }
 
 
 template <class G>
-using Order2SimplicialDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnSimplicialLeafView<G, 2>;
-TYPED_TEST_CASE(Order2SimplicialDiscontinuousLagrangeSpace, SimplicialGrids);
-TYPED_TEST(Order2SimplicialDiscontinuousLagrangeSpace, gives_correct_identification)
+using Order2ScalarSimplicialDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnSimplicialLeafView<G, 1, 2>;
+TYPED_TEST_CASE(Order2ScalarSimplicialDiscontinuousLagrangeSpace, SimplicialGrids);
+TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
-TYPED_TEST(Order2SimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
+TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order2SimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
+TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
   this->basis_exists_on_each_element_with_correct_order();
 }
-TYPED_TEST(Order2SimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
+TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
   this->mapper_reports_correct_num_DoFs_on_each_element();
 }
-TYPED_TEST(Order2SimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
+TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
   this->mapper_reports_correct_max_num_DoFs();
 }
-TYPED_TEST(Order2SimplicialDiscontinuousLagrangeSpace, mapper_maps_correctly)
+TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
   this->mapper_maps_correctly();
 }
-TYPED_TEST(Order2SimplicialDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
+TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
   this->lagrange_points_exist_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order2SimplicialDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
+TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 {
   this->basis_is_lagrange_basis();
 }
-TYPED_TEST(Order2SimplicialDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
+TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
 }
 
 
-template <class G, int p>
+template <class G, size_t r, int p>
 struct DiscontinuousLagrangeSpaceOnCubicLeafView
-    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>
+    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r, p>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
@@ -440,131 +440,131 @@ using CubicGrids = ::testing::Types<YASP_2D_EQUIDISTANT_OFFSET
 
 
 template <class G>
-using Order0CubicDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnCubicLeafView<G, 0>;
-TYPED_TEST_CASE(Order0CubicDiscontinuousLagrangeSpace, CubicGrids);
-TYPED_TEST(Order0CubicDiscontinuousLagrangeSpace, gives_correct_identification)
+using Order0ScalarCubicDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnCubicLeafView<G, 1, 0>;
+TYPED_TEST_CASE(Order0ScalarCubicDiscontinuousLagrangeSpace, CubicGrids);
+TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
-TYPED_TEST(Order0CubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
+TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order0CubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
+TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
   this->basis_exists_on_each_element_with_correct_order();
 }
-TYPED_TEST(Order0CubicDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
+TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
   this->mapper_reports_correct_num_DoFs_on_each_element();
 }
-TYPED_TEST(Order0CubicDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
+TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
   this->mapper_reports_correct_max_num_DoFs();
 }
-TYPED_TEST(Order0CubicDiscontinuousLagrangeSpace, mapper_maps_correctly)
+TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
   this->mapper_maps_correctly();
 }
-TYPED_TEST(Order0CubicDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
+TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
   this->lagrange_points_exist_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order0CubicDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
+TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 {
   this->basis_is_lagrange_basis();
 }
-TYPED_TEST(Order0CubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
+TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
 }
 
 
 template <class G>
-using Order1CubicDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnCubicLeafView<G, 1>;
-TYPED_TEST_CASE(Order1CubicDiscontinuousLagrangeSpace, CubicGrids);
-TYPED_TEST(Order1CubicDiscontinuousLagrangeSpace, gives_correct_identification)
+using Order1ScalarCubicDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnCubicLeafView<G, 1, 1>;
+TYPED_TEST_CASE(Order1ScalarCubicDiscontinuousLagrangeSpace, CubicGrids);
+TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
-TYPED_TEST(Order1CubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
+TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order1CubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
+TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
   this->basis_exists_on_each_element_with_correct_order();
 }
-TYPED_TEST(Order1CubicDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
+TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
   this->mapper_reports_correct_num_DoFs_on_each_element();
 }
-TYPED_TEST(Order1CubicDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
+TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
   this->mapper_reports_correct_max_num_DoFs();
 }
-TYPED_TEST(Order1CubicDiscontinuousLagrangeSpace, mapper_maps_correctly)
+TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
   this->mapper_maps_correctly();
 }
-TYPED_TEST(Order1CubicDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
+TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
   this->lagrange_points_exist_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order1CubicDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
+TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 {
   this->basis_is_lagrange_basis();
 }
-TYPED_TEST(Order1CubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
+TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
 }
 
 
 template <class G>
-using Order2CubicDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnCubicLeafView<G, 2>;
-TYPED_TEST_CASE(Order2CubicDiscontinuousLagrangeSpace, CubicGrids);
-TYPED_TEST(Order2CubicDiscontinuousLagrangeSpace, gives_correct_identification)
+using Order2ScalarCubicDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnCubicLeafView<G, 1, 2>;
+TYPED_TEST_CASE(Order2ScalarCubicDiscontinuousLagrangeSpace, CubicGrids);
+TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
-TYPED_TEST(Order2CubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
+TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order2CubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
+TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
   this->basis_exists_on_each_element_with_correct_order();
 }
-TYPED_TEST(Order2CubicDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
+TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
   this->mapper_reports_correct_num_DoFs_on_each_element();
 }
-TYPED_TEST(Order2CubicDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
+TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
   this->mapper_reports_correct_max_num_DoFs();
 }
-TYPED_TEST(Order2CubicDiscontinuousLagrangeSpace, mapper_maps_correctly)
+TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
   this->mapper_maps_correctly();
 }
-TYPED_TEST(Order2CubicDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
+TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
   this->lagrange_points_exist_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order2CubicDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
+TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 {
   this->basis_is_lagrange_basis();
 }
-TYPED_TEST(Order2CubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
+TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
 }
 
 
-template <class G, int p>
+template <class G, size_t r, int p>
 struct DiscontinuousLagrangeSpaceOnPrismLeafView
-    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>
+    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r, p>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
@@ -616,131 +616,131 @@ using PrismGrids = ::testing::Types<
 
 
 template <class G>
-using Order0PrismDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnPrismLeafView<G, 0>;
-TYPED_TEST_CASE(Order0PrismDiscontinuousLagrangeSpace, PrismGrids);
-TYPED_TEST(Order0PrismDiscontinuousLagrangeSpace, gives_correct_identification)
+using Order0ScalarPrismDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnPrismLeafView<G, 1, 0>;
+TYPED_TEST_CASE(Order0ScalarPrismDiscontinuousLagrangeSpace, PrismGrids);
+TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
-TYPED_TEST(Order0PrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
+TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order0PrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
+TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
   this->basis_exists_on_each_element_with_correct_order();
 }
-TYPED_TEST(Order0PrismDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
+TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
   this->mapper_reports_correct_num_DoFs_on_each_element();
 }
-TYPED_TEST(Order0PrismDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
+TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
   this->mapper_reports_correct_max_num_DoFs();
 }
-TYPED_TEST(Order0PrismDiscontinuousLagrangeSpace, mapper_maps_correctly)
+TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
   this->mapper_maps_correctly();
 }
-TYPED_TEST(Order0PrismDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
+TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
   this->lagrange_points_exist_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order0PrismDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
+TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 {
   this->basis_is_lagrange_basis();
 }
-TYPED_TEST(Order0PrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
+TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
 }
 
 
 template <class G>
-using Order1PrismDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnPrismLeafView<G, 1>;
-TYPED_TEST_CASE(Order1PrismDiscontinuousLagrangeSpace, PrismGrids);
-TYPED_TEST(Order1PrismDiscontinuousLagrangeSpace, gives_correct_identification)
+using Order1ScalarPrismDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnPrismLeafView<G, 1, 1>;
+TYPED_TEST_CASE(Order1ScalarPrismDiscontinuousLagrangeSpace, PrismGrids);
+TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
-TYPED_TEST(Order1PrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
+TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order1PrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
+TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
   this->basis_exists_on_each_element_with_correct_order();
 }
-TYPED_TEST(Order1PrismDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
+TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
   this->mapper_reports_correct_num_DoFs_on_each_element();
 }
-TYPED_TEST(Order1PrismDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
+TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
   this->mapper_reports_correct_max_num_DoFs();
 }
-TYPED_TEST(Order1PrismDiscontinuousLagrangeSpace, mapper_maps_correctly)
+TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
   this->mapper_maps_correctly();
 }
-TYPED_TEST(Order1PrismDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
+TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
   this->lagrange_points_exist_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order1PrismDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
+TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 {
   this->basis_is_lagrange_basis();
 }
-TYPED_TEST(Order1PrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
+TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
 }
 
 
 template <class G>
-using Order2PrismDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnPrismLeafView<G, 2>;
-TYPED_TEST_CASE(Order2PrismDiscontinuousLagrangeSpace, PrismGrids);
-TYPED_TEST(Order2PrismDiscontinuousLagrangeSpace, gives_correct_identification)
+using Order2ScalarPrismDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnPrismLeafView<G, 1, 2>;
+TYPED_TEST_CASE(Order2ScalarPrismDiscontinuousLagrangeSpace, PrismGrids);
+TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
-TYPED_TEST(Order2PrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
+TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order2PrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
+TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
   this->basis_exists_on_each_element_with_correct_order();
 }
-TYPED_TEST(Order2PrismDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
+TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
   this->mapper_reports_correct_num_DoFs_on_each_element();
 }
-TYPED_TEST(Order2PrismDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
+TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
   this->mapper_reports_correct_max_num_DoFs();
 }
-TYPED_TEST(Order2PrismDiscontinuousLagrangeSpace, mapper_maps_correctly)
+TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
   this->mapper_maps_correctly();
 }
-TYPED_TEST(Order2PrismDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
+TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
   this->lagrange_points_exist_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order2PrismDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
+TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 {
   this->basis_is_lagrange_basis();
 }
-TYPED_TEST(Order2PrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
+TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
 }
 
 
-template <class G, int p>
+template <class G, size_t r, int p>
 struct DiscontinuousLagrangeSpaceOnMixedLeafView
-    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>
+    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r, p>
 {
   using GridProviderType = Dune::XT::Grid::GridProvider<G>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
@@ -835,123 +835,123 @@ using MixedGrids = ::testing::Types<
 
 
 template <class G>
-using Order0MixedDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnMixedLeafView<G, 0>;
-TYPED_TEST_CASE(Order0MixedDiscontinuousLagrangeSpace, MixedGrids);
-TYPED_TEST(Order0MixedDiscontinuousLagrangeSpace, gives_correct_identification)
+using Order0ScalarMixedDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnMixedLeafView<G, 1, 0>;
+TYPED_TEST_CASE(Order0ScalarMixedDiscontinuousLagrangeSpace, MixedGrids);
+TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
-TYPED_TEST(Order0MixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
+TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order0MixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
+TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
   this->basis_exists_on_each_element_with_correct_order();
 }
-TYPED_TEST(Order0MixedDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
+TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
   this->mapper_reports_correct_num_DoFs_on_each_element();
 }
-TYPED_TEST(Order0MixedDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
+TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
   this->mapper_reports_correct_max_num_DoFs();
 }
-TYPED_TEST(Order0MixedDiscontinuousLagrangeSpace, mapper_maps_correctly)
+TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
   this->mapper_maps_correctly();
 }
-TYPED_TEST(Order0MixedDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
+TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
   this->lagrange_points_exist_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order0MixedDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
+TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 {
   this->basis_is_lagrange_basis();
 }
-TYPED_TEST(Order0MixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
+TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
 }
 
 
 template <class G>
-using Order1MixedDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnMixedLeafView<G, 1>;
-TYPED_TEST_CASE(Order1MixedDiscontinuousLagrangeSpace, MixedGrids);
-TYPED_TEST(Order1MixedDiscontinuousLagrangeSpace, gives_correct_identification)
+using Order1ScalarMixedDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnMixedLeafView<G, 1, 1>;
+TYPED_TEST_CASE(Order1ScalarMixedDiscontinuousLagrangeSpace, MixedGrids);
+TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
-TYPED_TEST(Order1MixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
+TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order1MixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
+TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
   this->basis_exists_on_each_element_with_correct_order();
 }
-TYPED_TEST(Order1MixedDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
+TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
   this->mapper_reports_correct_num_DoFs_on_each_element();
 }
-TYPED_TEST(Order1MixedDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
+TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
   this->mapper_reports_correct_max_num_DoFs();
 }
-TYPED_TEST(Order1MixedDiscontinuousLagrangeSpace, mapper_maps_correctly)
+TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
   this->mapper_maps_correctly();
 }
-TYPED_TEST(Order1MixedDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
+TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
   this->lagrange_points_exist_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order1MixedDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
+TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 {
   this->basis_is_lagrange_basis();
 }
-TYPED_TEST(Order1MixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
+TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
 }
 
 
 template <class G>
-using Order2MixedDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnMixedLeafView<G, 2>;
-TYPED_TEST_CASE(Order2MixedDiscontinuousLagrangeSpace, MixedGrids);
-TYPED_TEST(Order2MixedDiscontinuousLagrangeSpace, gives_correct_identification)
+using Order2ScalarMixedDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnMixedLeafView<G, 1, 2>;
+TYPED_TEST_CASE(Order2ScalarMixedDiscontinuousLagrangeSpace, MixedGrids);
+TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
-TYPED_TEST(Order2MixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
+TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
   this->basis_exists_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order2MixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
+TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
   this->basis_exists_on_each_element_with_correct_order();
 }
-TYPED_TEST(Order2MixedDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
+TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
   this->mapper_reports_correct_num_DoFs_on_each_element();
 }
-TYPED_TEST(Order2MixedDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
+TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
   this->mapper_reports_correct_max_num_DoFs();
 }
-TYPED_TEST(Order2MixedDiscontinuousLagrangeSpace, mapper_maps_correctly)
+TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
   this->mapper_maps_correctly();
 }
-TYPED_TEST(Order2MixedDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
+TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
   this->lagrange_points_exist_on_each_element_with_correct_size();
 }
-TYPED_TEST(Order2MixedDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
+TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 {
   this->basis_is_lagrange_basis();
 }
-TYPED_TEST(Order2MixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
+TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
 }
