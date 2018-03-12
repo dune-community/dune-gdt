@@ -153,11 +153,11 @@ struct ContinuousLagrangeSpace : public ::testing::Test
       const auto lagrange_points = space->finite_element(element.geometry().type()).lagrange_points();
       EXPECT_EQ(lagrange_points.size(), basis->size());
       for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
-        const auto values = basis->evaluate(lagrange_points[ii]);
+        const auto values = basis->evaluate_set(lagrange_points[ii]);
         for (size_t jj = 0; jj < basis->size(); ++jj) {
           EXPECT_TRUE(Dune::XT::Common::FloatCmp::eq(values[jj][0], ii == jj ? 1. : 0.))
               << "lagrange_points[" << ii << "] = " << lagrange_points[ii]
-              << "\nbasis->evaluate(lagrange_points[ii]) = " << values;
+              << "\nbasis->evaluate_set(lagrange_points[ii]) = " << values;
         }
       }
     }
@@ -175,9 +175,9 @@ struct ContinuousLagrangeSpace : public ::testing::Test
            Dune::QuadratureRules<D, d>::rule(element.geometry().type(), basis->order())) {
         const auto& xx = quadrature_point.position();
         const auto& J_inv_T = element.geometry().jacobianInverseTransposed(xx);
-        const auto jacobians = basis->jacobian(xx);
+        const auto jacobians = basis->jacobians_of_set(xx);
         EXPECT_EQ(basis->size(), jacobians.size());
-        const auto values_xx = basis->evaluate(xx);
+        const auto values_xx = basis->evaluate_set(xx);
         EXPECT_EQ(basis->size(), values_xx.size());
         auto approximate_jacobians = jacobians;
         // compute approximate partial derivatives
@@ -190,7 +190,7 @@ struct ContinuousLagrangeSpace : public ::testing::Test
           }
           ASSERT_TRUE(reference_element.checkInside(xx_plus_h)) << "xx_plus_h = " << xx_plus_h
                                                                 << " is not inside the reference element!";
-          const auto values_xx_plus_h = basis->evaluate(xx_plus_h);
+          const auto values_xx_plus_h = basis->evaluate_set(xx_plus_h);
           EXPECT_EQ(basis->size(), values_xx_plus_h.size());
           for (size_t ii = 0; ii < basis->size(); ++ii) {
             approximate_jacobians[ii][0][dd] = (values_xx_plus_h[ii] - values_xx[ii]) / (xx_plus_h[dd] - xx[dd]);

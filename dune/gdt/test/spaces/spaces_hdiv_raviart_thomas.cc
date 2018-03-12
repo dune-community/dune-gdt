@@ -201,7 +201,7 @@ struct RtSpace : public ::testing::Test
         const auto xx_in_reference_intersection_coordinates =
             intersection.geometryInInside().local(xx_in_reference_element_coordinates);
         const auto normal = intersection.integrationOuterNormal(xx_in_reference_intersection_coordinates);
-        const auto basis_values = basis->evaluate(xx_in_reference_element_coordinates);
+        const auto basis_values = basis->evaluate_set(xx_in_reference_element_coordinates);
         const auto intersection_index = intersection.indexInInside();
         for (const auto& DoF_index : intersection_to_local_DoF_indices_map[intersection_index]) {
           double switch_ = 1;
@@ -232,9 +232,9 @@ struct RtSpace : public ::testing::Test
     //      basis->order())) {
     //        const auto& xx = quadrature_point.position();
     //        const auto& J_inv_T = element.geometry().jacobianInverseTransposed(xx);
-    //        const auto jacobians = basis->jacobian(xx);
+    //        const auto jacobians = basis->jacobians_of_set(xx);
     //        EXPECT_EQ(basis->size(), jacobians.size());
-    //        const auto values_xx = basis->evaluate(xx);
+    //        const auto values_xx = basis->evaluate_set(xx);
     //        EXPECT_EQ(basis->size(), values_xx.size());
     //        auto approximate_jacobians = jacobians;
     //        // compute approximate partial derivatives
@@ -247,7 +247,7 @@ struct RtSpace : public ::testing::Test
     //          }
     //          ASSERT_TRUE(reference_element.checkInside(xx_plus_h)) << "xx_plus_h = " << xx_plus_h
     //                                                                << " is not inside the reference element!";
-    //          const auto values_xx_plus_h = basis->evaluate(xx_plus_h);
+    //          const auto values_xx_plus_h = basis->evaluate_set(xx_plus_h);
     //          EXPECT_EQ(basis->size(), values_xx_plus_h.size());
     //          for (size_t ii = 0; ii < basis->size(); ++ii) {
     //            approximate_jacobians[ii][0][dd] = (values_xx_plus_h[ii] - values_xx[ii]) / (xx_plus_h[dd] - xx[dd]);

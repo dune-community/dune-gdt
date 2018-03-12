@@ -120,7 +120,7 @@ struct FiniteVolumeSpace : public ::testing::Test
     ASSERT_NE(space, nullptr);
     double tolerance = 1e-15;
     for (auto&& element : elements(*grid_view())) {
-      const auto values = space->basis().localize(element)->evaluate(Dune::FieldVector<D, d>(0.));
+      const auto values = space->basis().localize(element)->evaluate_set(Dune::FieldVector<D, d>(0.));
       EXPECT_EQ(1, values.size());
       ASSERT_TRUE(Dune::XT::Common::FloatCmp::eq(values.at(0), Dune::FieldVector<R, r>(1), tolerance, tolerance));
     }
@@ -132,7 +132,7 @@ struct FiniteVolumeSpace : public ::testing::Test
     ASSERT_NE(space, nullptr);
     double tolerance = 1e-15;
     for (auto&& element : elements(*grid_view())) {
-      const auto grads = space->basis().localize(element)->jacobian(Dune::FieldVector<D, d>(0.));
+      const auto grads = space->basis().localize(element)->jacobians_of_set(Dune::FieldVector<D, d>(0.));
       EXPECT_EQ(1, grads.size());
       ASSERT_TRUE(Dune::XT::Common::FloatCmp::eq(grads.at(0), decltype(grads[0])(0), tolerance, tolerance));
     }
