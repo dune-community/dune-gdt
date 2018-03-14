@@ -40,7 +40,7 @@ namespace GDT {
  * - 3d: pyramids (jacobians seem to be incorrect)
  * - 3d: mixed simplices and cubes (intersections are non-conforming)
  *
- * \sa make_lagrange_local_finite_element
+ * \sa make_local_lagrange_finite_element
  */
 template <class GV, int p, class R = double>
 class ContinuousLagrangeSpace : public SpaceInterface<GV, 1, 1, R>
@@ -70,7 +70,7 @@ public:
     // create finite elements
     for (auto&& geometry_type : grid_view_.indexSet().types(0))
       finite_elements_->insert(
-          std::make_pair(geometry_type, make_lagrange_local_finite_element<D, d, R>(geometry_type, p)));
+          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R>(geometry_type, p)));
     // check
     if (d == 3 && finite_elements_->size() != 1)
       DUNE_THROW(Exceptions::space_error,

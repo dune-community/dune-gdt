@@ -52,7 +52,7 @@ namespace GDT {
  * - 3d: orders > 7 on cubes (basis matrix fails to invert)
  * - 3d: orders > 9 on prisms (basis matrix fails to invert)
  *
- * \sa make_lagrange_local_finite_element
+ * \sa make_local_lagrange_finite_element
  */
 template <class GV, int p, class R = double>
 class DiscontinuousLagrangeSpace : public SpaceInterface<GV, 1, 1, R>
@@ -82,7 +82,7 @@ public:
     // create finite elements
     for (auto&& geometry_type : grid_view_.indexSet().types(0))
       finite_elements_->insert(
-          std::make_pair(geometry_type, make_lagrange_local_finite_element<D, d, R>(geometry_type, p)));
+          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R>(geometry_type, p)));
     // create mapper, basis and communicator
     mapper_ = std::make_shared<MapperImplementation>(grid_view_, finite_elements_);
     basis_ = std::make_shared<GlobalBasisImplementation>(grid_view_, finite_elements_);
