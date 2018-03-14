@@ -93,16 +93,19 @@ public:
 
   virtual const GeometryType& geometry_type() const = 0;
 
-  virtual void interpolate(const std::function<RangeType(DomainType)>& local_function, std::vector<R>& dofs) const = 0;
+  virtual size_t size() const = 0;
 
-  /**
-   * \name ``These methods are provided for convenience and should not be used within library code.''
-   */
+  virtual void interpolate(const std::function<RangeType(DomainType)>& local_function,
+                           const int order,
+                           std::vector<R>& dofs) const = 0;
 
-  virtual std::vector<R> interpolate(const std::function<RangeType(DomainType)>& local_function) const
+  /// \name ``These methods are provided for convenience and should not be used within library code.''
+  /// \{
+
+  virtual std::vector<R> interpolate(const std::function<RangeType(DomainType)>& local_function, const int order) const
   {
-    std::vector<R> result;
-    this->interpolate(local_function, result);
+    std::vector<R> result(this->size());
+    this->interpolate(local_function, order, result);
     return result;
   }
 
