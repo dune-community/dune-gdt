@@ -62,7 +62,7 @@ public:
     if (r == 1 && rC == 1) // Requires vector-valued local Finite Element wrappers.
       for (auto&& geometry_type : grid_view_.indexSet().types(0))
         finite_elements_->insert(
-            std::make_pair(geometry_type, make_lagrange_local_finite_element<D, d, double>(geometry_type, 0)));
+            std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, double>(geometry_type, 0)));
   }
 
   FiniteVolumeMapper(const ThisType&) = default;
