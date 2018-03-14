@@ -32,6 +32,8 @@ namespace GDT {
 template <class DomainField, size_t domain_dim, class RangeField, size_t range_dim, size_t range_dim_columns = 1>
 class LocalFiniteElementBasisInterface
 {
+  using ThisType = LocalFiniteElementBasisInterface<DomainField, domain_dim, RangeField, range_dim, range_dim_columns>;
+
 public:
   using D = DomainField;
   static const constexpr size_t d = domain_dim;
@@ -44,6 +46,8 @@ public:
   using DerivativeRangeType = typename XT::Functions::DerivativeRangeTypeSelector<d, R, r, rC>::type;
 
   virtual ~LocalFiniteElementBasisInterface() = default;
+
+  virtual ThisType* copy() const = 0;
 
   virtual const GeometryType& geometry_type() const = 0;
 
@@ -79,6 +83,9 @@ public:
 template <class DomainField, size_t domain_dim, class RangeField, size_t range_dim, size_t range_dim_columns = 1>
 class LocalFiniteElementInterpolationInterface
 {
+  using ThisType =
+      LocalFiniteElementInterpolationInterface<DomainField, domain_dim, RangeField, range_dim, range_dim_columns>;
+
 public:
   using D = DomainField;
   static const constexpr size_t d = domain_dim;
@@ -90,6 +97,8 @@ public:
   using RangeType = typename XT::Functions::RangeTypeSelector<R, r, rC>::type;
 
   virtual ~LocalFiniteElementInterpolationInterface() = default;
+
+  virtual ThisType* copy() const = 0;
 
   virtual const GeometryType& geometry_type() const = 0;
 
@@ -116,11 +125,15 @@ public:
 template <class DomainField, size_t domain_dim>
 class LocalFiniteElementCoefficientsInterface
 {
+  using ThisType = LocalFiniteElementCoefficientsInterface<DomainField, domain_dim>;
+
 public:
   using D = DomainField;
   static const constexpr size_t d = domain_dim;
 
   virtual ~LocalFiniteElementCoefficientsInterface() = default;
+
+  virtual ThisType* copy() const = 0;
 
   virtual const GeometryType& geometry_type() const = 0;
 
