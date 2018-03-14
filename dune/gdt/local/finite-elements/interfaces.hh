@@ -210,6 +210,14 @@ public:
 
   virtual const GeometryType& geometry_type() const = 0;
 
+  /**
+   * \note This order does not have to coincide with basis().order()!
+   *
+   * E.g., for a local Raviart-Thomas finite element of order 0 on a simplex, the order of the finite element is 0, but
+   * the order of the basis (a.k.a, its polynomial degree) is 1.
+   */
+  virtual int order() const = 0;
+
   virtual size_t size() const = 0;
 
   virtual const BasisType& basis() const = 0;
