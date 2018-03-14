@@ -12,9 +12,7 @@
 #ifndef DUNE_GDT_SPACES_BASIS_FINITE_VOLUME_HH
 #define DUNE_GDT_SPACES_BASIS_FINITE_VOLUME_HH
 
-#include <dune/localfunctions/lagrange/p0/p0localbasis.hh>
-
-#include <dune/gdt/local/finite-elements/wrapper.hh>
+#include <dune/gdt/local/finite-elements/lagrange.hh>
 
 #include "interface.hh"
 
@@ -40,7 +38,7 @@ public:
   using typename BaseType::LocalizedBasisType;
 
 private:
-  using ShapeFunctionSetImplementation = LocalFiniteElementBasisWrapper<P0LocalBasis<D, R, d>, D, d, R, 1, 1>;
+  using FiniteElementType = LocalFiniteElementInterface<D, d, R, 1>;
 
 public:
   FiniteVolumeGlobalBasis(const ThisType&) = default;
@@ -51,10 +49,11 @@ public:
 
   FiniteVolumeGlobalBasis(const GridViewType& grd_vw)
     : grid_view_(grd_vw)
-    , shape_functions_(new std::map<GeometryType, ShapeFunctionSetImplementation>())
+    , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
   {
     for (auto&& geometry_type : grid_view_.indexSet().types(0))
-      shape_functions_->emplace(geometry_type, geometry_type);
+      finite_elements_->insert(
+          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R>(geometry_type, 0)));
   }
 
   const GridViewType& grid_view() const
@@ -64,13 +63,13 @@ public:
 
   const ShapeFunctionsType& shape_functions(const GeometryType& geometry_type) const override final
   {
-    const auto search_result = shape_functions_->find(geometry_type);
-    if (search_result == shape_functions_->end())
+    const auto search_result = finite_elements_->find(geometry_type);
+    if (search_result == finite_elements_->end())
       DUNE_THROW(XT::Common::Exceptions::internal_error,
                  "This must not happen, the grid layer did not report all geometry types!"
                      << "\n   geometry_type = "
                      << geometry_type);
-    return search_result->second;
+    return search_result->second->basis();
   }
 
   size_t max_size() const override final
@@ -241,7 +240,7 @@ private:
   }; // class LocalizedFiniteVolumeGlobalBasis
 
   const GridViewType& grid_view_;
-  std::shared_ptr<std::map<GeometryType, ShapeFunctionSetImplementation>> shape_functions_;
+  std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
 }; // class class FiniteVolumeGlobalBasis
 
 } // namespace GDT
