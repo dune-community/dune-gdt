@@ -74,7 +74,7 @@ public:
     // create finite elements
     for (auto&& geometry_type : grid_view_.indexSet().types(0))
       finite_elements_->insert(
-          std::make_pair(geometry_type, make_raviart_thomas_local_finite_element<D, d, R>(geometry_type, p)));
+          std::make_pair(geometry_type, make_local_raviart_thomas_finite_element<D, d, R>(geometry_type, p)));
     // check: the mapper does not work for non-conforming intersections
     if (d == 3 && finite_elements_->size() != 1)
       DUNE_THROW(Exceptions::space_error,
