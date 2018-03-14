@@ -19,6 +19,7 @@
 
 #include <dune/grid/common/rangegenerators.hh>
 
+#include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
 
@@ -274,6 +275,26 @@ struct RtSpace : public ::testing::Test
     //      }
     //    }
   } // ... basis_jacobians_seem_to_be_correct(...)
+
+  void local_interpolation_seems_to_be_correct()
+  {
+    ASSERT_NE(grid_view(), nullptr);
+    ASSERT_NE(space, nullptr);
+    for (const auto& geometry_type : grid_view()->indexSet().types(0)) {
+      const auto& finite_element = space->finite_element(geometry_type);
+      const auto& shape_functions = finite_element.basis();
+      ASSERT_EQ(finite_element.size(), shape_functions.size());
+      ASSERT_EQ(finite_element.size(), finite_element.interpolation().size());
+      for (size_t ii = 0; ii < shape_functions.size(); ++ii) {
+        const auto dofs =
+            finite_element.interpolation().interpolate([&](const auto& x) { return shape_functions.evaluate(x)[ii]; });
+        ASSERT_GE(dofs.size(), shape_functions.size());
+        for (size_t jj = 0; jj < shape_functions.size(); ++jj)
+          EXPECT_TRUE(Dune::XT::Common::FloatCmp::eq(ii == jj ? 1. : 0., dofs[jj]))
+              << "\nii == jj ? 1. : 0. = " << (ii == jj ? 1. : 0.) << "\ndofs[jj] = " << dofs[jj];
+      }
+    }
+  } // ... local_interpolation_seems_to_be_correct(...)
 }; // struct RtSpace
 
 
@@ -364,6 +385,10 @@ TYPED_TEST(Order0SimplicialRtSpace, basis_is_rt_basis)
 //{
 //  this->basis_jacobians_seem_to_be_correct();
 //}
+TYPED_TEST(Order0SimplicialRtSpace, DISABLED_local_interpolation_seems_to_be_correct)
+{
+  this->local_interpolation_seems_to_be_correct();
+}
 
 
 template <class G, int p>
@@ -457,6 +482,10 @@ TYPED_TEST(Order0CubicRtSpace, basis_is_rt_basis)
 //{
 //  this->basis_jacobians_seem_to_be_correct();
 //}
+TYPED_TEST(Order0CubicRtSpace, DISABLED_local_interpolation_seems_to_be_correct)
+{
+  this->local_interpolation_seems_to_be_correct();
+}
 
 
 template <class G, int p>
@@ -594,3 +623,7 @@ TYPED_TEST(Order0MixedRtSpace, basis_is_rt_basis)
 //{
 //  this->basis_jacobians_seem_to_be_correct();
 //}
+TYPED_TEST(Order0MixedRtSpace, DISABLED_local_interpolation_seems_to_be_correct)
+{
+  this->local_interpolation_seems_to_be_correct();
+}

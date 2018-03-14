@@ -19,6 +19,7 @@
 
 #include <dune/grid/common/rangegenerators.hh>
 
+#include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/numeric_cast.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
@@ -210,6 +211,26 @@ struct DiscontinuousLagrangeSpace : public ::testing::Test
       }
     }
   } // ... basis_jacobians_seem_to_be_correct(...)
+
+  void local_interpolation_seems_to_be_correct()
+  {
+    ASSERT_NE(grid_view(), nullptr);
+    ASSERT_NE(space, nullptr);
+    for (const auto& geometry_type : grid_view()->indexSet().types(0)) {
+      const auto& finite_element = space->finite_element(geometry_type);
+      const auto& shape_functions = finite_element.basis();
+      ASSERT_EQ(finite_element.size(), shape_functions.size());
+      ASSERT_EQ(finite_element.size(), finite_element.interpolation().size());
+      for (size_t ii = 0; ii < shape_functions.size(); ++ii) {
+        const auto dofs =
+            finite_element.interpolation().interpolate([&](const auto& x) { return shape_functions.evaluate(x)[ii]; });
+        ASSERT_GE(dofs.size(), shape_functions.size());
+        for (size_t jj = 0; jj < shape_functions.size(); ++jj)
+          EXPECT_TRUE(Dune::XT::Common::FloatCmp::eq(ii == jj ? 1. : 0., dofs[jj]))
+              << "\nii == jj ? 1. : 0. = " << (ii == jj ? 1. : 0.) << "\ndofs[jj] = " << dofs[jj];
+      }
+    }
+  } // ... local_interpolation_seems_to_be_correct(...)
 }; // struct DiscontinuousLagrangeSpace
 
 
@@ -301,6 +322,10 @@ TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, basis_jacobians_see
 {
   this->basis_jacobians_seem_to_be_correct();
 }
+TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
+{
+  this->local_interpolation_seems_to_be_correct();
+}
 
 
 template <class G>
@@ -342,6 +367,10 @@ TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, basis_jacobians_see
 {
   this->basis_jacobians_seem_to_be_correct();
 }
+TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
+{
+  this->local_interpolation_seems_to_be_correct();
+}
 
 
 template <class G>
@@ -382,6 +411,10 @@ TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, basis_is_lagrange_b
 TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
+}
+TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
+{
+  this->local_interpolation_seems_to_be_correct();
 }
 
 
@@ -478,6 +511,10 @@ TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_
 {
   this->basis_jacobians_seem_to_be_correct();
 }
+TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
+{
+  this->local_interpolation_seems_to_be_correct();
+}
 
 
 template <class G>
@@ -519,6 +556,10 @@ TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_
 {
   this->basis_jacobians_seem_to_be_correct();
 }
+TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
+{
+  this->local_interpolation_seems_to_be_correct();
+}
 
 
 template <class G>
@@ -559,6 +600,10 @@ TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
+}
+TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
+{
+  this->local_interpolation_seems_to_be_correct();
 }
 
 
@@ -654,6 +699,10 @@ TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_
 {
   this->basis_jacobians_seem_to_be_correct();
 }
+TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
+{
+  this->local_interpolation_seems_to_be_correct();
+}
 
 
 template <class G>
@@ -695,6 +744,10 @@ TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_
 {
   this->basis_jacobians_seem_to_be_correct();
 }
+TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
+{
+  this->local_interpolation_seems_to_be_correct();
+}
 
 
 template <class G>
@@ -735,6 +788,10 @@ TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
+}
+TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
+{
+  this->local_interpolation_seems_to_be_correct();
 }
 
 
@@ -873,6 +930,10 @@ TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_
 {
   this->basis_jacobians_seem_to_be_correct();
 }
+TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
+{
+  this->local_interpolation_seems_to_be_correct();
+}
 
 
 template <class G>
@@ -914,6 +975,10 @@ TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_
 {
   this->basis_jacobians_seem_to_be_correct();
 }
+TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
+{
+  this->local_interpolation_seems_to_be_correct();
+}
 
 
 template <class G>
@@ -954,4 +1019,8 @@ TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
   this->basis_jacobians_seem_to_be_correct();
+}
+TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
+{
+  this->local_interpolation_seems_to_be_correct();
 }
