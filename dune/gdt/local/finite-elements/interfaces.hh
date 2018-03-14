@@ -10,6 +10,7 @@
 #ifndef DUNE_GDT_LOCAL_FINITE_ELEMENTS_INTERFACES_HH
 #define DUNE_GDT_LOCAL_FINITE_ELEMENTS_INTERFACES_HH
 
+#include <algorithm>
 #include <functional>
 #include <set>
 #include <vector>
@@ -167,40 +168,56 @@ for (size_t codim = 0; codim < codim_to_subentity_index_to_key_indices_map.size(
    * \note It is guaranteed that access to map[codim][subentity_index] is valid for all 0 <= codim <= d and
    *       all 0 <= subentity_index < reference_element.size(codim).
    */
-  std::vector<std::vector<std::set<size_t>>> local_key_indices() const
+  std::vector<std::vector<std::vector<size_t>>> local_key_indices() const
   {
-    const auto& reference_element = ReferenceElements<D, d>::general(geometry_type());
     // pepare
-    std::vector<std::vector<std::set<size_t>>> codim_to_subentity_index_to_key_indices_map(d + 1);
+    const auto& reference_element = ReferenceElements<D, d>::general(geometry_type());
+    std::vector<std::vector<std::vector<size_t>>> codim_to_subentity_index_to_key_indices_map(d + 1);
     for (size_t codim = 0; codim <= d; ++codim)
-      codim_to_subentity_index_to_key_indices_map[codim] = std::vector<std::set<size_t>>(reference_element.size(codim));
+      codim_to_subentity_index_to_key_indices_map[codim] =
+          std::vector<std::vector<size_t>>(reference_element.size(codim));
     // fill
     for (size_t ii = 0; ii < size(); ++ii) {
       const auto& key = local_key(ii);
       auto& subentity_index_to_key_indices_map = codim_to_subentity_index_to_key_indices_map[key.codim()];
-      subentity_index_to_key_indices_map[key.subEntity()].insert(ii);
+      subentity_index_to_key_indices_map[key.subEntity()].push_back(ii);
     }
+    // sort
+    for (auto& subentity_index_to_key_indices_map : codim_to_subentity_index_to_key_indices_map)
+      for (auto& key_indices : subentity_index_to_key_indices_map) {
+        std::sort(key_indices.begin(), key_indices.end());
+        for (auto&& index : key_indices)
+          DUNE_THROW_IF(
+              std::count(key_indices.begin(), key_indices.end(), index) != 1, Exceptions::finite_element_error, "");
+      }
     return codim_to_subentity_index_to_key_indices_map;
   } // ... local_key_indices(...)
 
   /**
    * \sa local_key_indices
    */
-  std::vector<std::set<size_t>> local_key_indices(const size_t codim) const
+  std::vector<std::vector<size_t>> local_key_indices(const size_t codim) const
   {
-    const auto& reference_element = ReferenceElements<D, d>::general(geometry_type());
     if (codim > d)
       DUNE_THROW(Exceptions::finite_element_error,
                  "d = " << d << "\n"
                         << "codim = "
                         << codim);
     // pepare
-    std::vector<std::set<size_t>> subentity_index_to_key_indices_map(reference_element.size(codim));
+    const auto& reference_element = ReferenceElements<D, d>::general(geometry_type());
+    std::vector<std::vector<size_t>> subentity_index_to_key_indices_map(reference_element.size(codim));
     // fill
     for (size_t ii = 0; ii < size(); ++ii) {
       const auto& key = local_key(ii);
       if (key.codim() == codim)
-        subentity_index_to_key_indices_map[key.subEntity()].insert(ii);
+        subentity_index_to_key_indices_map[key.subEntity()].push_back(ii);
+    }
+    // sort
+    for (auto& key_indices : subentity_index_to_key_indices_map) {
+      std::sort(key_indices.begin(), key_indices.end());
+      for (auto&& index : key_indices)
+        DUNE_THROW_IF(
+            std::count(key_indices.begin(), key_indices.end(), index) != 1, Exceptions::finite_element_error, "");
     }
     return subentity_index_to_key_indices_map;
   } // ... local_key_indices(...)
