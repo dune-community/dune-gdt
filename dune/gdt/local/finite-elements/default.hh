@@ -45,11 +45,7 @@ public:
     , interpolation_(inter)
     , lagrange_points_(lps)
   {
-    DUNE_THROW_IF(coeffs.geometry_type() != geometry_type_, Exceptions::finite_element_error, "");
-    DUNE_THROW_IF(coeffs.size() != bas.size(), Exceptions::finite_element_error, "");
-    DUNE_THROW_IF(inter.geometry_type() != geometry_type_, Exceptions::finite_element_error, "");
-    DUNE_THROW_IF(inter.size() != bas.size(), Exceptions::finite_element_error, "");
-    DUNE_THROW_IF(!(lps.size() == bas.size() || lps.size() == 0), Exceptions::finite_element_error, "");
+    check_input();
   }
 
   /**
@@ -67,11 +63,7 @@ public:
     , interpolation_(std::move(inter_ptr))
     , lagrange_points_(lps)
   {
-    DUNE_THROW_IF(coeffs_ptr->geometry_type() != geometry_type_, Exceptions::finite_element_error, "");
-    DUNE_THROW_IF(coeffs_ptr->size() != bas_ptr->size(), Exceptions::finite_element_error, "");
-    DUNE_THROW_IF(inter_ptr->geometry_type() != geometry_type_, Exceptions::finite_element_error, "");
-    DUNE_THROW_IF(inter_ptr->size() != bas_ptr->size(), Exceptions::finite_element_error, "");
-    DUNE_THROW_IF(!(lps.size() == bas_ptr->size() || lps.size() == 0), Exceptions::finite_element_error, "");
+    check_input();
   }
 
   const GeometryType& geometry_type() const override
@@ -117,6 +109,34 @@ public:
   }
 
 private:
+  void check_input()
+  {
+    DUNE_THROW_IF(coefficients_.access().geometry_type() != geometry_type_,
+                  Exceptions::finite_element_error,
+                  "\n   coefficients_.access().geometry_type() = " << coefficients_.access().geometry_type()
+                                                                   << "\n   geometry_type_ = "
+                                                                   << geometry_type_);
+    DUNE_THROW_IF(coefficients_.access().size() != basis_.access().size(),
+                  Exceptions::finite_element_error,
+                  "\n   coefficients_.access().size() = " << coefficients_.access().size()
+                                                          << "\n   basis_.access().size() = "
+                                                          << basis_.access().size());
+    DUNE_THROW_IF(interpolation_.access().geometry_type() != geometry_type_,
+                  Exceptions::finite_element_error,
+                  "\n   interpolation_.access().geometry_type() = " << interpolation_.access().geometry_type()
+                                                                    << "\n   "
+                                                                    << geometry_type_);
+    DUNE_THROW_IF(interpolation_.access().size() != basis_.access().size(),
+                  Exceptions::finite_element_error,
+                  "\n   interpolation_.access().size() = " << interpolation_.access().size()
+                                                           << "\n   basis_.access().size() = "
+                                                           << basis_.access().size());
+    DUNE_THROW_IF(!(lagrange_points_.size() == basis_.access().size() || lagrange_points_.size() == 0),
+                  Exceptions::finite_element_error,
+                  "\n   lagrange_points_.size() = " << lagrange_points_.size() << "\n   basis_.access().size() = "
+                                                    << basis_.access().size());
+  } // ... check_input(...)
+
   const GeometryType geometry_type_;
   const int order_;
   const XT::Common::ConstStorageProvider<BasisType> basis_;
