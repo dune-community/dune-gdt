@@ -10,6 +10,8 @@
 #ifndef DUNE_GDT_LOCAL_FINITE_ELEMENTS_LAGRANGE_HH
 #define DUNE_GDT_LOCAL_FINITE_ELEMENTS_LAGRANGE_HH
 
+#include <memory>
+
 #include <dune/geometry/referenceelements.hh>
 #include <dune/geometry/type.hh>
 
@@ -20,213 +22,201 @@
 #include <dune/gdt/exceptions.hh>
 
 #include "interfaces.hh"
+#include "default.hh"
 #include "wrapper.hh"
+#include "0d.hh"
 
 namespace Dune {
 namespace GDT {
 
 
 /**
- * This is the P0LocalFiniteElement from dune-localfunctions with suitable Lagrange points (which is also all that
- * differs in the implementation with respect to LocalFiniteElementWrapper).
+ * Wraps the P0LocalFiniteElement from dune-localfunctions and adds Lagrange points.
  */
 template <class D, size_t d, class R>
-class P0LagrangeFiniteElement : public LocalFiniteElementInterface<D, d, R, 1, 1>
+class LocalZeroOrderLagrangeFiniteElement
+    : XT::Common::ConstStorageProvider<LocalFiniteElementWrapper<P0LocalFiniteElement<D, R, d>, D, d, R, 1>>,
+      public LocalFiniteElementDefault<D, d, R, 1>
 {
-  using ThisType = P0LagrangeFiniteElement<D, d, R>;
-  using BaseType = LocalFiniteElementInterface<D, d, R, 1, 1>;
-
+  using ThisType = LocalZeroOrderLagrangeFiniteElement<D, d, R>;
   using Implementation = P0LocalFiniteElement<D, R, d>;
-  using BasisWrapperType =
-      LocalFiniteElementBasisWrapper<typename Implementation::Traits::LocalBasisType, D, d, R, 1, 1>;
-  using CoefficientsWrapperType =
-      LocalFiniteElementCoefficientsWrapper<typename Implementation::Traits::LocalCoefficientsType, D, d>;
-  using InterpolationWrapperType =
-      LocalFiniteElementInterpolationWrapper<typename Implementation::Traits::LocalInterpolationType, D, d, R, 1, 1>;
+  using Wrapper = LocalFiniteElementWrapper<Implementation, D, d, R, 1>;
+  using Storage = XT::Common::ConstStorageProvider<Wrapper>;
+  using BaseType = LocalFiniteElementDefault<D, d, R, 1>;
 
 public:
-  using typename BaseType::DomainType;
-  using typename BaseType::BasisType;
-  using typename BaseType::CoefficientsType;
-  using typename BaseType::InterpolationType;
-
-  P0LagrangeFiniteElement(Implementation*&& imp_ptr)
-    : imp_(std::move(imp_ptr))
-    , basis_(imp_.access().type(), imp_.access().localBasis())
-    , coefficients_(imp_.access().type(), imp_.access().localCoefficients())
-    , interpolation_(imp_.access().type(), imp_.access().localInterpolation())
-    , lagrange_points_({ReferenceElements<D, d>::general(imp_.access().type()).position(0, 0)})
+  LocalZeroOrderLagrangeFiniteElement(Implementation*&& imp_ptr)
+    : XT::Common::ConstStorageProvider<Wrapper>(new Wrapper(0, std::move(imp_ptr)))
+    , BaseType(0,
+               Storage::access().basis().copy(),
+               Storage::access().coefficients().copy(),
+               Storage::access().interpolation().copy(),
+               {ReferenceElements<D, d>::general(Storage::access().geometry_type()).position(0, 0)})
   {
   }
 
-  P0LagrangeFiniteElement(const Implementation& imp)
-    : imp_(imp)
-    , basis_(imp_.access().type(), imp_.access().localBasis())
-    , coefficients_(imp_.access().type(), imp_.access().localCoefficients())
-    , interpolation_(imp_.access().type(), imp_.access().localInterpolation())
-    , lagrange_points_({ReferenceElements<D, d>::general(imp_.access().type()).position(0, 0)})
+  LocalZeroOrderLagrangeFiniteElement(const Implementation& imp)
+    : LocalZeroOrderLagrangeFiniteElement(new Implementation(imp))
   {
   }
 
   template <class... Args>
-  explicit P0LagrangeFiniteElement(Args&&... args)
-    : imp_(new Implementation(std::forward<Args>(args)...))
-    , basis_(imp_.access().type(), imp_.access().localBasis())
-    , coefficients_(imp_.access().type(), imp_.access().localCoefficients())
-    , interpolation_(imp_.access().type(), imp_.access().localInterpolation())
-    , lagrange_points_({ReferenceElements<D, d>::general(imp_.access().type()).position(0, 0)})
+  explicit LocalZeroOrderLagrangeFiniteElement(Args&&... args)
+    : LocalZeroOrderLagrangeFiniteElement(new Implementation(std::forward<Args>(args)...))
   {
   }
+}; // class LocalZeroOrderLagrangeFiniteElement
 
-  const GeometryType& geometry_type() const
+
+/**
+ * \note Update this class if anything changes in dune-localfunctions.
+ */
+template <class D, size_t d, class R>
+class LocalLagrangeFiniteElementFactory
+{
+  using LocalFiniteElementType = LocalFiniteElementInterface<D, d, R, 1>;
+
+  template <size_t d_ = d, bool anything = true>
+  struct helper
   {
-    return basis_.geometry_type();
-  }
+    static std::unique_ptr<LocalFiniteElementType> create(const GeometryType& geometry_type, const int& order)
+    {
+      // special case
+      if (order == 0)
+        return std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1>>(
+            new LocalZeroOrderLagrangeFiniteElement<D, d, R>(geometry_type));
+      // checks
+      if (d == 1) {
+        if (order > 18)
+          DUNE_THROW(
+              Exceptions::finite_element_error,
+              "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 1d "
+              "for polorder "
+                  << order
+                  << " (if you think it is working, update this check)!");
+      } else if (d == 2) {
+        if (geometry_type == GeometryType(GeometryType::simplex, 2)) {
+          if (order > 15)
+            DUNE_THROW(
+                Exceptions::finite_element_error,
+                "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 2d "
+                "on simplices for polorder "
+                    << order
+                    << " (if you think it is working, update this check)!");
+        } else if (geometry_type == GeometryType(GeometryType::cube, 2)) {
+          if (order > 10)
+            DUNE_THROW(
+                Exceptions::finite_element_error,
+                "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 2d "
+                "on cubes for polorder "
+                    << order
+                    << " (if you think it is working, update this check)!");
+        } else
+          DUNE_THROW(Exceptions::finite_element_error,
+                     "when creating a local Lagrange finite element: this is untested!\n"
+                         << "Please update this check if you believe that a suitable finite element is available for\n"
+                         << "- dimension: "
+                         << d
+                         << "\n"
+                         << "-n geometry_type: "
+                         << geometry_type
+                         << "\n"
+                         << "- polorder: "
+                         << order);
+      } else if (d == 3) {
+        if (geometry_type == GeometryType(GeometryType::simplex, 3)) {
+          if (order > 14)
+            DUNE_THROW(
+                Exceptions::finite_element_error,
+                "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
+                "on simplices for polorder "
+                    << order
+                    << " (if you think it is working, update this check)!");
+        } else if (geometry_type == GeometryType(GeometryType::cube, 3)) {
+          if (order > 7)
+            DUNE_THROW(
+                Exceptions::finite_element_error,
+                "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
+                "on cubes for polorder "
+                    << order
+                    << " (if you think it is working, update this check)!");
+        } else if (geometry_type == GeometryType(GeometryType::prism, 3)) {
+          if (order > 9)
+            DUNE_THROW(
+                Exceptions::finite_element_error,
+                "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
+                "on prisms for polorder "
+                    << order
+                    << " (if you think it is working, update this check)!");
+        } else if (geometry_type == GeometryType(GeometryType::pyramid, 3)) {
+          DUNE_THROW(
+              Exceptions::finite_element_error,
+              "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
+              "on pyramids for polorder "
+                  << order
+                  << " (if you think it is working, update this check)!");
+        } else
+          DUNE_THROW(Exceptions::finite_element_error,
+                     "when creating a local Lagrange finite element: this is untested!\n"
+                         << "Please update this check if you believe that a suitable finite element is available for\n"
+                         << "- dimension: "
+                         << d
+                         << "\n"
+                         << "-n geometry_type: "
+                         << geometry_type
+                         << "\n"
+                         << "- polorder: "
+                         << order);
+      } else {
+        // If these are available (a.k.a, this compiles for d > 3), they should most likely work for lower orders.
+        DUNE_THROW(Exceptions::finite_element_error,
+                   "when creating a local Lagrange finite element: this is untested!\n"
+                       << "Please update this check if you believe that a suitable finite element is available for\n"
+                       << "- dimension: "
+                       << d
+                       << "\n"
+                       << "-n geometry_type: "
+                       << geometry_type
+                       << "\n"
+                       << "- polorder: "
+                       << order);
+      }
+      // the actual finite element
+      return std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1>>(
+          new LocalFiniteElementWrapper<LagrangeLocalFiniteElement<EquidistantPointSet, d, D, R>, D, d, R, 1>(
+              order, geometry_type, order));
+    }
+  }; // helper<...>
 
-  size_t size() const override final
+  template <bool anything>
+  struct helper<0, anything>
   {
-    return XT::Common::numeric_cast<size_t>(imp_.access().size());
-  }
+    static std::unique_ptr<LocalFiniteElementType> create(const GeometryType& geometry_type, const int& /*order*/)
+    {
+      // If we need this, and geometry_type.dim() == 0, we must simply implement the corresponding ctors of the 0d FE!
+      DUNE_THROW_IF(
+          geometry_type.dim() != 0 || !geometry_type.isSimplex(),
+          Exceptions::finite_element_error,
+          "when creating a local 0d orthonomal finite element: not available for geometry_type = " << geometry_type);
+      return std::make_unique<Local0dFiniteElement<D, R>>();
+    }
+  }; // helper<...>
 
-  const BasisType& basis() const override final
+public:
+  static std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1>> create(const GeometryType& geometry_type,
+                                                                         const int& order)
   {
-    return basis_;
+    return helper<>::create(geometry_type, order);
   }
-
-  const CoefficientsType& coefficients() const override final
-  {
-    return coefficients_;
-  }
-
-  const InterpolationType& interpolation() const override final
-  {
-    return interpolation_;
-  }
-
-  bool is_lagrangian() const override final
-  {
-    return true;
-  }
-
-  const std::vector<DomainType>& lagrange_points() const override final
-  {
-    return lagrange_points_;
-  }
-
-private:
-  const XT::Common::ConstStorageProvider<Implementation> imp_;
-  const BasisWrapperType basis_;
-  const CoefficientsWrapperType coefficients_;
-  const InterpolationWrapperType interpolation_;
-  const std::vector<DomainType> lagrange_points_;
-}; // class P0LagrangeFiniteElement
+}; // class LocalLagrangeFiniteElementFactory
 
 
 template <class D, size_t d, class R>
-std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1, 1>>
-make_lagrange_local_finite_element(const GeometryType& geometry_type, const int& polorder)
+std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1>>
+make_local_lagrange_finite_element(const GeometryType& geometry_type, const int order)
 {
-  // special case
-  if (polorder == 0)
-    return std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1, 1>>(
-        new P0LagrangeFiniteElement<D, d, R>(geometry_type));
-  // checks
-  if (d == 1) {
-    if (polorder > 18)
-      DUNE_THROW(Exceptions::finite_element_error,
-                 "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 1d "
-                 "for polorder "
-                     << polorder
-                     << " (if you think it is working, update this check)!");
-  } else if (d == 2) {
-    if (geometry_type == GeometryType(GeometryType::simplex, 2)) {
-      if (polorder > 15)
-        DUNE_THROW(
-            Exceptions::finite_element_error,
-            "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 2d "
-            "on simplices for polorder "
-                << polorder
-                << " (if you think it is working, update this check)!");
-    } else if (geometry_type == GeometryType(GeometryType::cube, 2)) {
-      if (polorder > 10)
-        DUNE_THROW(
-            Exceptions::finite_element_error,
-            "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 2d "
-            "on cubes for polorder "
-                << polorder
-                << " (if you think it is working, update this check)!");
-    } else
-      DUNE_THROW(Exceptions::finite_element_error,
-                 "when creating a local Lagrange finite element: this is untested!\n"
-                     << "Please update this check if you believe that a suitable finite element is available for\n"
-                     << "- dimension: "
-                     << d
-                     << "\n"
-                     << "-n geometry_type: "
-                     << geometry_type
-                     << "\n"
-                     << "- polorder: "
-                     << polorder);
-  } else if (d == 3) {
-    if (geometry_type == GeometryType(GeometryType::simplex, 3)) {
-      if (polorder > 14)
-        DUNE_THROW(
-            Exceptions::finite_element_error,
-            "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
-            "on simplices for polorder "
-                << polorder
-                << " (if you think it is working, update this check)!");
-    } else if (geometry_type == GeometryType(GeometryType::cube, 3)) {
-      if (polorder > 7)
-        DUNE_THROW(
-            Exceptions::finite_element_error,
-            "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
-            "on cubes for polorder "
-                << polorder
-                << " (if you think it is working, update this check)!");
-    } else if (geometry_type == GeometryType(GeometryType::prism, 3)) {
-      if (polorder > 9)
-        DUNE_THROW(
-            Exceptions::finite_element_error,
-            "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
-            "on prisms for polorder "
-                << polorder
-                << " (if you think it is working, update this check)!");
-    } else if (geometry_type == GeometryType(GeometryType::pyramid, 3)) {
-      DUNE_THROW(Exceptions::finite_element_error,
-                 "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
-                 "on pyramids for polorder "
-                     << polorder
-                     << " (if you think it is working, update this check)!");
-    } else
-      DUNE_THROW(Exceptions::finite_element_error,
-                 "when creating a local Lagrange finite element: this is untested!\n"
-                     << "Please update this check if you believe that a suitable finite element is available for\n"
-                     << "- dimension: "
-                     << d
-                     << "\n"
-                     << "-n geometry_type: "
-                     << geometry_type
-                     << "\n"
-                     << "- polorder: "
-                     << polorder);
-  } else
-    DUNE_THROW(Exceptions::finite_element_error,
-               "when creating a local Lagrange finite element: this is untested!\n"
-                   << "Please update this check if you believe that a suitable finite element is available for\n"
-                   << "- dimension: "
-                   << d
-                   << "\n"
-                   << "-n geometry_type: "
-                   << geometry_type
-                   << "\n"
-                   << "- polorder: "
-                   << polorder);
-  // the actual finite element
-  return std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1, 1>>(
-      new LocalFiniteElementWrapper<LagrangeLocalFiniteElement<EquidistantPointSet, d, D, R>, D, d, R, 1>(geometry_type,
-                                                                                                          polorder));
-} // ... make_lagrange_local_finite_element(...)
+  return LocalLagrangeFiniteElementFactory<D, d, R>::create(geometry_type, order);
+}
 
 
 } // namespace GDT
