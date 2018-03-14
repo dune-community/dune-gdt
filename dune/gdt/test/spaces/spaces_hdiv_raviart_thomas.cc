@@ -385,7 +385,7 @@ TYPED_TEST(Order0SimplicialRtSpace, basis_is_rt_basis)
 //{
 //  this->basis_jacobians_seem_to_be_correct();
 //}
-TYPED_TEST(Order0SimplicialRtSpace, DISABLED_local_interpolation_seems_to_be_correct)
+TYPED_TEST(Order0SimplicialRtSpace, local_interpolation_seems_to_be_correct)
 {
   this->local_interpolation_seems_to_be_correct();
 }
@@ -482,7 +482,7 @@ TYPED_TEST(Order0CubicRtSpace, basis_is_rt_basis)
 //{
 //  this->basis_jacobians_seem_to_be_correct();
 //}
-TYPED_TEST(Order0CubicRtSpace, DISABLED_local_interpolation_seems_to_be_correct)
+TYPED_TEST(Order0CubicRtSpace, local_interpolation_seems_to_be_correct)
 {
   this->local_interpolation_seems_to_be_correct();
 }
@@ -623,7 +623,7 @@ TYPED_TEST(Order0MixedRtSpace, basis_is_rt_basis)
 //{
 //  this->basis_jacobians_seem_to_be_correct();
 //}
-TYPED_TEST(Order0MixedRtSpace, DISABLED_local_interpolation_seems_to_be_correct)
+TYPED_TEST(Order0MixedRtSpace, local_interpolation_seems_to_be_correct)
 {
   this->local_interpolation_seems_to_be_correct();
 }
