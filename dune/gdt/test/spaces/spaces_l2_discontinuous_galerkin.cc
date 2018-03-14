@@ -222,8 +222,8 @@ struct DiscontinuousLagrangeSpace : public ::testing::Test
       ASSERT_EQ(finite_element.size(), shape_functions.size());
       ASSERT_EQ(finite_element.size(), finite_element.interpolation().size());
       for (size_t ii = 0; ii < shape_functions.size(); ++ii) {
-        const auto dofs =
-            finite_element.interpolation().interpolate([&](const auto& x) { return shape_functions.evaluate(x)[ii]; });
+        const auto dofs = finite_element.interpolation().interpolate(
+            [&](const auto& x) { return shape_functions.evaluate(x)[ii]; }, shape_functions.order());
         ASSERT_GE(dofs.size(), shape_functions.size());
         for (size_t jj = 0; jj < shape_functions.size(); ++jj)
           EXPECT_TRUE(Dune::XT::Common::FloatCmp::eq(ii == jj ? 1. : 0., dofs[jj]))
