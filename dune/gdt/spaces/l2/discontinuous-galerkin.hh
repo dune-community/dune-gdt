@@ -54,11 +54,11 @@ namespace GDT {
  *
  * \sa make_local_lagrange_finite_element
  */
-template <class GV, int p, class R = double>
-class DiscontinuousLagrangeSpace : public SpaceInterface<GV, 1, 1, R>
+template <class GV, int p, size_t r = 1, class R = double>
+class DiscontinuousLagrangeSpace : public SpaceInterface<GV, r, 1, R>
 {
-  using ThisType = DiscontinuousLagrangeSpace<GV, p, R>;
-  using BaseType = SpaceInterface<GV, 1, 1, R>;
+  using ThisType = DiscontinuousLagrangeSpace<GV, p, r, R>;
+  using BaseType = SpaceInterface<GV, r, 1, R>;
 
 public:
   using typename BaseType::D;
@@ -70,7 +70,7 @@ public:
 
 private:
   using MapperImplementation = DiscontinuousMapper<GridViewType, FiniteElementType>;
-  using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, 1, 1, R>;
+  using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, r, 1, R>;
 
 public:
   DiscontinuousLagrangeSpace(GridViewType grd_vw)
@@ -82,7 +82,7 @@ public:
     // create finite elements
     for (auto&& geometry_type : grid_view_.indexSet().types(0))
       finite_elements_->insert(
-          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R>(geometry_type, p)));
+          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R, r>(geometry_type, p)));
     // create mapper, basis and communicator
     mapper_ = std::make_shared<MapperImplementation>(grid_view_, finite_elements_);
     basis_ = std::make_shared<GlobalBasisImplementation>(grid_view_, finite_elements_);
