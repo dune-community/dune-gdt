@@ -264,6 +264,42 @@ public:
     return false;
   }
 
+  /**
+   * \brief Lagrange points associated with this local finite element (in reference element coordinates).
+   *
+   * Lagrange points are defined as usual, only depending on the domain_dim and order() of the local finite element, not
+   * on its range_dim or range_dim_cols.
+   *
+   * Thus it always holds that
+   *
+\code
+assert(lagrange_points.size() == size() * r * rC);
+\endcode
+   *
+   * Regarding the relation between a Lagrange point and an element of the basis, we have the following: in the scalar
+   * case (r = rC = 1), it holds that
+   *
+\code
+for (size_t ii = 0; ii < lagrange_points.size(); ++ii)
+  for (size_t jj = 0; jj < basis().size(); ++jj)
+    assert(basis().evaluate(lagrange_points()[ii])[jj] == (ii = jj ? 1 : 0));
+\endcode
+   *
+   * while in the vector-valued case it holds that
+   *
+\code
+for (size_t ii = 0; ii < lagrange_points.size(); ++ii)
+  for (size_t rr = 0; rr < range_dim; ++rr)
+    for (size_t jj = 0; jj < basis().size(); ++jj)
+      assert(basis().evaluate(lagrange_points()[ii])[rr * lagrange_points.size() + jj][rr] == (ii = jj ? 1 : 0));
+\endcode
+   *
+   * whlie the matrix-valued case is not implemented yet.
+   *
+   * See also LocalPowerFiniteElement for the reasoning behind the mapping in the vector-valued case.
+   *
+   * \sa LocalPowerFiniteElement
+   */
   virtual const std::vector<DomainType>& lagrange_points() const
   {
     if (is_lagrangian())

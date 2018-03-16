@@ -131,10 +131,11 @@ private:
                   "\n   interpolation_.access().size() = " << interpolation_.access().size()
                                                            << "\n   basis_.access().size() = "
                                                            << basis_.access().size());
-    DUNE_THROW_IF(!(lagrange_points_.size() == basis_.access().size() || lagrange_points_.size() == 0),
+    DUNE_THROW_IF(!(lagrange_points_.size() == basis_.access().size() / (r * rC) || lagrange_points_.size() == 0),
                   Exceptions::finite_element_error,
-                  "\n   lagrange_points_.size() = " << lagrange_points_.size() << "\n   basis_.access().size() = "
-                                                    << basis_.access().size());
+                  "\n   lagrange_points_.size() = " << lagrange_points_.size()
+                                                    << "\n   basis_.access().size() / (r * rC) = "
+                                                    << basis_.access().size() / (r * rC));
   } // ... check_input(...)
 
   const GeometryType geometry_type_;
