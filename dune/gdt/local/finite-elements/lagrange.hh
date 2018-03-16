@@ -45,24 +45,13 @@ class LocalZeroOrderLagrangeFiniteElement
   using BaseType = LocalFiniteElementDefault<D, d, R, 1>;
 
 public:
-  LocalZeroOrderLagrangeFiniteElement(Implementation*&& imp_ptr)
-    : XT::Common::ConstStorageProvider<Wrapper>(new Wrapper(0, std::move(imp_ptr)))
+  LocalZeroOrderLagrangeFiniteElement(const GeometryType& geometry_type)
+    : XT::Common::ConstStorageProvider<Wrapper>(new Wrapper(0, geometry_type))
     , BaseType(0,
                Storage::access().basis().copy(),
                Storage::access().coefficients().copy(),
                Storage::access().interpolation().copy(),
-               {ReferenceElements<D, d>::general(Storage::access().geometry_type()).position(0, 0)})
-  {
-  }
-
-  LocalZeroOrderLagrangeFiniteElement(const Implementation& imp)
-    : LocalZeroOrderLagrangeFiniteElement(new Implementation(imp))
-  {
-  }
-
-  template <class... Args>
-  explicit LocalZeroOrderLagrangeFiniteElement(Args&&... args)
-    : LocalZeroOrderLagrangeFiniteElement(new Implementation(std::forward<Args>(args)...))
+               {ReferenceElements<D, d>::general(geometry_type).position(0, 0)})
   {
   }
 }; // class LocalZeroOrderLagrangeFiniteElement
