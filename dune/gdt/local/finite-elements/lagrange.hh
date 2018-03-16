@@ -23,6 +23,7 @@
 
 #include "interfaces.hh"
 #include "default.hh"
+#include "power.hh"
 #include "wrapper.hh"
 #include "0d.hh"
 
@@ -60,15 +61,18 @@ public:
 /**
  * \note Update this class if anything changes in dune-localfunctions.
  */
-template <class D, size_t d, class R>
+template <class D, size_t d, class R, size_t r = 1>
 class LocalLagrangeFiniteElementFactory
 {
-  using LocalFiniteElementType = LocalFiniteElementInterface<D, d, R, 1>;
+  using ScalarLocalFiniteElementType = LocalFiniteElementInterface<D, d, R, 1>;
+  using LocalFiniteElementType = LocalFiniteElementInterface<D, d, R, r>;
+
+  // Fist we create the scalar FE ...
 
   template <size_t d_ = d, bool anything = true>
-  struct helper
+  struct scalar_helper
   {
-    static std::unique_ptr<LocalFiniteElementType> create(const GeometryType& geometry_type, const int& order)
+    static std::unique_ptr<ScalarLocalFiniteElementType> create(const GeometryType& geometry_type, const int& order)
     {
       // special case
       if (order == 0)
@@ -178,9 +182,9 @@ class LocalLagrangeFiniteElementFactory
   }; // helper<...>
 
   template <bool anything>
-  struct helper<0, anything>
+  struct scalar_helper<0, anything>
   {
-    static std::unique_ptr<LocalFiniteElementType> create(const GeometryType& geometry_type, const int& /*order*/)
+    static std::unique_ptr<ScalarLocalFiniteElementType> create(const GeometryType& geometry_type, const int& /*order*/)
     {
       // If we need this, and geometry_type.dim() == 0, we must simply implement the corresponding ctors of the 0d FE!
       DUNE_THROW_IF(
@@ -191,8 +195,28 @@ class LocalLagrangeFiniteElementFactory
     }
   }; // helper<...>
 
+  // ... then we wrap this in a power FE, if required.
+
+  template <size_t d_ = d, size_t r_ = r>
+  struct helper // r != 1
+  {
+    static std::unique_ptr<LocalFiniteElementType> create(const GeometryType& geometry_type, const int& order)
+    {
+      return make_local_powered_finite_element<r>(*scalar_helper<>::create(geometry_type, order));
+    }
+  };
+
+  template <size_t d_>
+  struct helper<d_, 1>
+  {
+    static std::unique_ptr<LocalFiniteElementType> create(const GeometryType& geometry_type, const int& order)
+    {
+      return scalar_helper<>::create(geometry_type, order);
+    }
+  };
+
 public:
-  static std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1>> create(const GeometryType& geometry_type,
+  static std::unique_ptr<LocalFiniteElementInterface<D, d, R, r>> create(const GeometryType& geometry_type,
                                                                          const int& order)
   {
     return helper<>::create(geometry_type, order);
@@ -200,11 +224,11 @@ public:
 }; // class LocalLagrangeFiniteElementFactory
 
 
-template <class D, size_t d, class R>
-std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1>>
+template <class D, size_t d, class R, size_t r = 1>
+std::unique_ptr<LocalFiniteElementInterface<D, d, R, r>>
 make_local_lagrange_finite_element(const GeometryType& geometry_type, const int order)
 {
-  return LocalLagrangeFiniteElementFactory<D, d, R>::create(geometry_type, order);
+  return LocalLagrangeFiniteElementFactory<D, d, R, r>::create(geometry_type, order);
 }
 
 
