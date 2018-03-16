@@ -27,7 +27,8 @@ template <class GV, size_t r, size_t rD, class R>
 static constexpr bool space_associates_data_with(const SpaceInterface<GV, r, rD, R>& /*space*/, int codim)
 {
   return codim == 0;
-};
+}
+
 
 //! Communication descriptor for sending one item of type E per DOF.
 //! used in Mindatahandle
@@ -36,19 +37,19 @@ struct DofDataCommunicationDescriptor
 {
 private:
   template <class GV, class Entity>
-  static const size_t local_size(const MapperInterface<GV>& mapper, const Entity& e, std::integral_constant<int, 0>)
+  static size_t local_size(const MapperInterface<GV>& mapper, const Entity& e, std::integral_constant<int, 0>)
   {
     return mapper.local_size(e);
   }
 
   template <class GV, class Entity>
-  static const size_t local_size(const MapperInterface<GV>& mapper, const Entity& e, std::integral_constant<int, 1>)
+  static size_t local_size(const MapperInterface<GV>& mapper, const Entity& e, std::integral_constant<int, 1>)
   {
     return 0;
   }
 
   template <class GV, class Entity>
-  static const size_t local_size(const MapperInterface<GV>& mapper, const Entity& e)
+  static size_t local_size(const MapperInterface<GV>& mapper, const Entity& e)
   {
     return local_size(mapper, e, std::integral_constant<int, Entity::codimension>());
   }
