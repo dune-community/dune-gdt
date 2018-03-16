@@ -27,10 +27,11 @@
 #include <dune/gdt/spaces/l2/discontinuous-galerkin.hh>
 
 
-template <class GridViewType, size_t /*r*/, int p>
+/// \todo Implement basis_jacobians_seem_to_be_correct in the vector-valued case!
+template <class GridViewType, size_t r, int p>
 struct DiscontinuousLagrangeSpace : public ::testing::Test
 {
-  using SpaceType = Dune::GDT::DiscontinuousLagrangeSpace<GridViewType, p>;
+  using SpaceType = Dune::GDT::DiscontinuousLagrangeSpace<GridViewType, p, r>;
   using D = typename SpaceType::D;
   static const constexpr size_t d = SpaceType::d;
 
@@ -69,7 +70,7 @@ struct DiscontinuousLagrangeSpace : public ::testing::Test
     ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_view()))
-      EXPECT_EQ(Dune::numLagrangePoints(element.geometry().type().id(), d, p),
+      EXPECT_EQ(r * Dune::numLagrangePoints(element.geometry().type().id(), d, p),
                 space->basis().localize(element)->size());
   }
 
@@ -86,7 +87,7 @@ struct DiscontinuousLagrangeSpace : public ::testing::Test
     ASSERT_NE(grid_view(), nullptr);
     ASSERT_NE(space, nullptr);
     for (auto&& element : elements(*grid_view()))
-      EXPECT_EQ(Dune::numLagrangePoints(element.geometry().type().id(), d, p), space->mapper().local_size(element));
+      EXPECT_EQ(r * Dune::numLagrangePoints(element.geometry().type().id(), d, p), space->mapper().local_size(element));
   }
 
   void mapper_reports_correct_max_num_DoFs()
@@ -145,18 +146,24 @@ struct DiscontinuousLagrangeSpace : public ::testing::Test
     for (auto&& element : elements(*grid_view())) {
       const auto basis = space->basis().localize(element);
       const auto lagrange_points = space->finite_element(element.geometry().type()).lagrange_points();
-      EXPECT_EQ(lagrange_points.size(), basis->size());
+      EXPECT_EQ(lagrange_points.size(), basis->size() / r);
       for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
         const auto values = basis->evaluate_set(lagrange_points[ii]);
-        for (size_t jj = 0; jj < basis->size(); ++jj) {
-          ASSERT_TRUE(Dune::XT::Common::FloatCmp::eq(values[jj][0], ii == jj ? 1. : 0., tolerance, tolerance))
-              << "lagrange_points[" << ii << "] = " << lagrange_points[ii]
-              << "\nbasis->evaluate_set(lagrange_points[ii]) = " << values;
+        for (size_t rr = 0; rr < r; ++rr) {
+          for (size_t jj = 0; jj < lagrange_points.size(); ++jj) {
+            EXPECT_TRUE(Dune::XT::Common::FloatCmp::eq(
+                values[rr * lagrange_points.size() + jj][rr], ii == jj ? 1. : 0., tolerance, tolerance))
+                << "ii = " << ii << "\nrr = " << rr << "\njj = " << jj
+                << "\nlagrange_points[ii] = " << lagrange_points[ii]
+                << "\nbasis->evaluate_set(lagrange_points[ii])[jj] = " << values[jj];
+          }
         }
       }
     }
   } // ... basis_is_lagrange_basis(...)
 
+  // I am too lazy to implement this in the vector-valued case.
+  template <size_t r_ = r, typename = typename std::enable_if<r_ == r && r_ == 1, void>::type>
   void basis_jacobians_seem_to_be_correct()
   {
     ASSERT_NE(grid_view(), nullptr);
@@ -320,7 +327,7 @@ TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, basis_is_lagrange_b
 }
 TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->basis_jacobians_seem_to_be_correct();
+  this->template basis_jacobians_seem_to_be_correct<>();
 }
 TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -365,7 +372,7 @@ TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, basis_is_lagrange_b
 }
 TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->basis_jacobians_seem_to_be_correct();
+  this->template basis_jacobians_seem_to_be_correct<>();
 }
 TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -410,7 +417,7 @@ TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, basis_is_lagrange_b
 }
 TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->basis_jacobians_seem_to_be_correct();
+  this->template basis_jacobians_seem_to_be_correct<>();
 }
 TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -509,7 +516,7 @@ TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->basis_jacobians_seem_to_be_correct();
+  this->template basis_jacobians_seem_to_be_correct<>();
 }
 TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -554,7 +561,7 @@ TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->basis_jacobians_seem_to_be_correct();
+  this->template basis_jacobians_seem_to_be_correct<>();
 }
 TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -599,7 +606,7 @@ TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->basis_jacobians_seem_to_be_correct();
+  this->template basis_jacobians_seem_to_be_correct<>();
 }
 TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -697,7 +704,7 @@ TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->basis_jacobians_seem_to_be_correct();
+  this->template basis_jacobians_seem_to_be_correct<>();
 }
 TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -742,7 +749,7 @@ TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->basis_jacobians_seem_to_be_correct();
+  this->template basis_jacobians_seem_to_be_correct<>();
 }
 TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -787,7 +794,7 @@ TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->basis_jacobians_seem_to_be_correct();
+  this->template basis_jacobians_seem_to_be_correct<>();
 }
 TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -928,7 +935,7 @@ TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->basis_jacobians_seem_to_be_correct();
+  this->template basis_jacobians_seem_to_be_correct<>();
 }
 TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -973,7 +980,7 @@ TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->basis_jacobians_seem_to_be_correct();
+  this->template basis_jacobians_seem_to_be_correct<>();
 }
 TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -1018,7 +1025,7 @@ TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->basis_jacobians_seem_to_be_correct();
+  this->template basis_jacobians_seem_to_be_correct<>();
 }
 TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
