@@ -17,7 +17,7 @@ using namespace Dune::GDT;
 
 template <class G>
 using Order0ScalarSimplicialDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnSimplicialLeafViewTest<G, 1, 0>;
-TYPED_TEST_CASE(Order0ScalarSimplicialDiscontinuousLagrangeSpace, SimplicialGridsForSpaceTest);
+TYPED_TEST_CASE(Order0ScalarSimplicialDiscontinuousLagrangeSpace, SimplicialGrids);
 TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
@@ -62,7 +62,7 @@ TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, local_interpolation
 
 template <class G>
 using Order1ScalarSimplicialDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnSimplicialLeafViewTest<G, 1, 1>;
-TYPED_TEST_CASE(Order1ScalarSimplicialDiscontinuousLagrangeSpace, SimplicialGridsForSpaceTest);
+TYPED_TEST_CASE(Order1ScalarSimplicialDiscontinuousLagrangeSpace, SimplicialGrids);
 TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
@@ -107,7 +107,7 @@ TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, local_interpolation
 
 template <class G>
 using Order2ScalarSimplicialDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnSimplicialLeafViewTest<G, 1, 2>;
-TYPED_TEST_CASE(Order2ScalarSimplicialDiscontinuousLagrangeSpace, SimplicialGridsForSpaceTest);
+TYPED_TEST_CASE(Order2ScalarSimplicialDiscontinuousLagrangeSpace, SimplicialGrids);
 TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();

@@ -18,7 +18,7 @@ using namespace Dune::GDT;
 template <class G>
 using Order0VectorValuedCubicDiscontinuousLagrangeSpace =
     DiscontinuousLagrangeSpaceOnCubicLeafViewTest<G, G::dimension + 1, 0>;
-TYPED_TEST_CASE(Order0VectorValuedCubicDiscontinuousLagrangeSpace, CubicGridsForSpaceTest);
+TYPED_TEST_CASE(Order0VectorValuedCubicDiscontinuousLagrangeSpace, CubicGrids);
 TYPED_TEST(Order0VectorValuedCubicDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
@@ -64,7 +64,7 @@ TYPED_TEST(Order0VectorValuedCubicDiscontinuousLagrangeSpace, local_interpolatio
 template <class G>
 using Order1VectorValuedCubicDiscontinuousLagrangeSpace =
     DiscontinuousLagrangeSpaceOnCubicLeafViewTest<G, G::dimension + 1, 1>;
-TYPED_TEST_CASE(Order1VectorValuedCubicDiscontinuousLagrangeSpace, CubicGridsForSpaceTest);
+TYPED_TEST_CASE(Order1VectorValuedCubicDiscontinuousLagrangeSpace, CubicGrids);
 TYPED_TEST(Order1VectorValuedCubicDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
@@ -110,7 +110,7 @@ TYPED_TEST(Order1VectorValuedCubicDiscontinuousLagrangeSpace, local_interpolatio
 template <class G>
 using Order2VectorValuedCubicDiscontinuousLagrangeSpace =
     DiscontinuousLagrangeSpaceOnCubicLeafViewTest<G, G::dimension + 1, 2>;
-TYPED_TEST_CASE(Order2VectorValuedCubicDiscontinuousLagrangeSpace, CubicGridsForSpaceTest);
+TYPED_TEST_CASE(Order2VectorValuedCubicDiscontinuousLagrangeSpace, CubicGrids);
 TYPED_TEST(Order2VectorValuedCubicDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();

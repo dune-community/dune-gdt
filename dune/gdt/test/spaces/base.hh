@@ -18,12 +18,15 @@
 #include <dune/geometry/referenceelements.hh>
 #include <dune/geometry/quadraturerules.hh>
 
+#include <dune/grid/common/gridfactory.hh>
 #include <dune/grid/common/rangegenerators.hh>
+#include <dune/grid/utility/structuredgridfactory.hh>
 
 #include <dune/localfunctions/lagrange/equidistantpoints.hh>
 
 #include <dune/xt/common/test/gtest/gtest.h>
 #include <dune/xt/common/float_cmp.hh>
+#include <dune/xt/grid/gridprovider/cube.hh>
 #include <dune/xt/grid/grids.hh>
 
 #include <dune/gdt/type_traits.hh>
@@ -244,59 +247,160 @@ struct SpaceTestBase : public ::testing::Test
 }; // struct SpaceTestBase
 
 
-using SimplicialGridsForSpaceTest = ::testing::Types<ONED_1D,
-                                                     YASP_1D_EQUIDISTANT_OFFSET
-#if HAVE_DUNE_ALUGRID
-                                                     ,
-                                                     ALU_2D_SIMPLEX_CONFORMING,
-                                                     ALU_2D_SIMPLEX_NONCONFORMING
-#endif
-#if HAVE_DUNE_UGGRID || HAVE_UG
-                                                     ,
-                                                     UG_2D
-#endif
-#if HAVE_DUNE_ALUGRID
-                                                     ,
-                                                     ALU_3D_SIMPLEX_CONFORMING,
-                                                     ALU_3D_SIMPLEX_NONCONFORMING
-#endif
-#if HAVE_DUNE_UGGRID || HAVE_UG
-                                                     ,
-                                                     UG_3D
-#endif
-                                                     >;
+template <class G>
+XT::Grid::GridProvider<G> make_simplicial_grid()
+{ //                                                  (i) Negative coordinates and not the same as the reference element
+  auto grid = XT::Grid::make_cube_grid<G>(-1.5, -1, 3); // (ii) at least 3 elements to have fully inner ones,
+  grid.global_refine(1); //                              (iii) refine at least once to obtain all kinds of orientations.
+  return grid;
+}
 
 
-using CubicGridsForSpaceTest = ::testing::Types<YASP_2D_EQUIDISTANT_OFFSET
+using SimplicialGrids = ::testing::Types<ONED_1D,
+                                         YASP_1D_EQUIDISTANT_OFFSET
 #if HAVE_DUNE_ALUGRID
-                                                ,
-                                                ALU_2D_CUBE
+                                         ,
+                                         ALU_2D_SIMPLEX_CONFORMING,
+                                         ALU_2D_SIMPLEX_NONCONFORMING
 #endif
 #if HAVE_DUNE_UGGRID || HAVE_UG
-                                                ,
-                                                UG_2D
+                                         ,
+                                         UG_2D
 #endif
-                                                ,
-                                                YASP_3D_EQUIDISTANT_OFFSET
 #if HAVE_DUNE_ALUGRID
-                                                ,
-                                                ALU_3D_CUBE
+                                         ,
+                                         ALU_3D_SIMPLEX_CONFORMING,
+                                         ALU_3D_SIMPLEX_NONCONFORMING
 #endif
 #if HAVE_DUNE_UGGRID || HAVE_UG
-                                                ,
-                                                UG_3D
+                                         ,
+                                         UG_3D
 #endif
-                                                >;
+                                         >;
 
 
-using PrismGridsForSpaceTest = ::testing::Types<
+template <class G>
+XT::Grid::GridProvider<G> make_cubic_grid()
+{
+  using D = typename G::ctype;
+  static const constexpr size_t d = G::dimension;
+  FieldVector<D, d> lower_left(-1.5); //        (i) Negative coordinates and not the same as the reference element
+  FieldVector<D, d> upper_right(-1.);
+  std::array<unsigned int, d> num_elements; // (ii) at least 3 elements to have fully inner ones.
+  std::fill(num_elements.begin(), num_elements.end(), 3);
+  XT::Grid::GridProvider<G> grid(StructuredGridFactory<G>::createCubeGrid(lower_left, upper_right, num_elements));
+  return grid;
+} // ... make_cubic_grid(...)
+
+
+using CubicGrids = ::testing::Types<YASP_2D_EQUIDISTANT_OFFSET
+#if HAVE_DUNE_ALUGRID
+                                    ,
+                                    ALU_2D_CUBE
+#endif
+#if HAVE_DUNE_UGGRID || HAVE_UG
+                                    ,
+                                    UG_2D
+#endif
+                                    ,
+                                    YASP_3D_EQUIDISTANT_OFFSET
+#if HAVE_DUNE_ALUGRID
+                                    ,
+                                    ALU_3D_CUBE
+#endif
+#if HAVE_DUNE_UGGRID || HAVE_UG
+                                    ,
+                                    UG_3D
+#endif
+                                    ,
+                                    YASP_4D_EQUIDISTANT_OFFSET>;
+
+
+template <class G,
+          typename this_disables_dimensions_without_prisms =
+              typename std::enable_if<XT::Grid::is_grid<G>::value && G::dimension == 3, void>::type>
+XT::Grid::GridProvider<G> make_prism_grid()
+{
+  using D = typename G::ctype;
+  static const constexpr size_t d = G::dimension;
+  GridFactory<G> factory;
+  for (auto&& vertex : {XT::Common::FieldVector<D, d>({-1., -1.5, -1.5}),
+                        XT::Common::FieldVector<D, d>({-1., -1., -1.5}),
+                        XT::Common::FieldVector<D, d>({-1.5, -1.5, -1.5}),
+                        XT::Common::FieldVector<D, d>({-1., -1.5, -1.}),
+                        XT::Common::FieldVector<D, d>({-1., -1., -1.}),
+                        XT::Common::FieldVector<D, d>({-1.5, -1.5, -1.})}) {
+    factory.insertVertex(vertex);
+  }
+  factory.insertElement(GeometryType(GeometryType::prism, 3), {0, 1, 2, 3, 4, 5});
+  XT::Grid::GridProvider<G> grid(factory.createGrid());
+  grid.global_refine(1);
+  return grid;
+} // ... make_prism_grid(...)
+
+
+using PrismGrids = ::testing::Types<
 #if HAVE_DUNE_UGGRID || HAVE_UG
     UG_3D
 #endif
     >;
 
 
-using MixedGridsForSpaceTest = ::testing::Types<
+template <class G,
+          typename this_disables_dimensions_whithout_mixed_elements = typename std::
+              enable_if<XT::Grid::is_grid<G>::value && (G::dimension == 2 || G::dimension == 3), void>::type>
+XT::Grid::GridProvider<G> make_mixed_grid()
+{
+  using D = typename G::ctype;
+  static const constexpr size_t d = G::dimension;
+  if (d == 2) {
+    GridFactory<G> factory;
+    for (auto&& vertex : {XT::Common::FieldVector<D, d>({-1., -1.5}),
+                          XT::Common::FieldVector<D, d>({-1., -1.25}),
+                          XT::Common::FieldVector<D, d>({-1., -1.}),
+                          XT::Common::FieldVector<D, d>({-1.5, -1.5}),
+                          XT::Common::FieldVector<D, d>({-1.5, -1.25}),
+                          XT::Common::FieldVector<D, d>({-1.5, -1.}),
+                          XT::Common::FieldVector<D, d>({-1.75, -1.25})}) {
+      factory.insertVertex(vertex);
+    }
+    factory.insertElement(GeometryType(GeometryType::cube, 2), {3, 0, 4, 1});
+    factory.insertElement(GeometryType(GeometryType::cube, 2), {4, 1, 5, 2});
+    factory.insertElement(GeometryType(GeometryType::simplex, 2), {4, 6, 3});
+    factory.insertElement(GeometryType(GeometryType::simplex, 2), {4, 5, 6});
+    XT::Grid::GridProvider<G> grid(factory.createGrid());
+    grid.global_refine(1);
+    return grid;
+  } else if (d == 3) {
+    GridFactory<G> factory;
+    for (auto&& vertex : {XT::Common::FieldVector<D, d>({-1., -1.5, -1.}),
+                          XT::Common::FieldVector<D, d>({-1., -1.25, -1.}),
+                          XT::Common::FieldVector<D, d>({-1., -1., -1.}),
+                          XT::Common::FieldVector<D, d>({-1.5, -1.5, -1.}),
+                          XT::Common::FieldVector<D, d>({-1.5, -1.25, -1.}),
+                          XT::Common::FieldVector<D, d>({-1.5, -1., -1.}),
+                          XT::Common::FieldVector<D, d>({-1., -1.5, -1.5}),
+                          XT::Common::FieldVector<D, d>({-1., -1.25, -1.5}),
+                          XT::Common::FieldVector<D, d>({-1., -1., -1.5}),
+                          XT::Common::FieldVector<D, d>({-1.5, -1.5, -1.5}),
+                          XT::Common::FieldVector<D, d>({-1.5, -1.25, -1.5}),
+                          XT::Common::FieldVector<D, d>({-1.5, -1., -1.5}),
+                          XT::Common::FieldVector<D, d>({-1.75, -1.25, -1.})}) {
+      factory.insertVertex(vertex);
+    }
+    factory.insertElement(GeometryType(GeometryType::cube, 3), {3, 0, 4, 1, 9, 6, 10, 7});
+    factory.insertElement(GeometryType(GeometryType::cube, 3), {4, 1, 5, 2, 10, 7, 11, 8});
+    factory.insertElement(GeometryType(GeometryType::simplex, 3), {4, 12, 3, 10});
+    factory.insertElement(GeometryType(GeometryType::simplex, 3), {4, 5, 12, 10});
+    XT::Grid::GridProvider<G> grid(factory.createGrid());
+    grid.global_refine(1);
+    return grid;
+  } else
+    DUNE_THROW(InvalidStateException, "");
+} // ... make_mixed_grid(...)
+
+
+using MixedGrids = ::testing::Types<
 #if HAVE_DUNE_UGGRID || HAVE_UG
     UG_2D,
     UG_3D
