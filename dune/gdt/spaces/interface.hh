@@ -35,6 +35,7 @@ class SpaceInterface
 
 public:
   using GridViewType = GridView;
+  using GV = GridViewType;
   using D = typename GridViewType::ctype;
   static const constexpr size_t d = GridViewType::dimension;
   using R = RangeField;
