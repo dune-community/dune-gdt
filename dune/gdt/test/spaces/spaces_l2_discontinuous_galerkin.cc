@@ -9,305 +9,30 @@
 
 #include <dune/xt/common/test/main.hxx> // <- this one has to come first (includes the config.h)!
 
-#include <algorithm>
-#include <memory>
-#include <tuple>
+#include "l2_discontinuous_galerkin.hh"
 
-#include <dune/geometry/quadraturerules.hh>
-#include <dune/geometry/referenceelements.hh>
-#include <dune/geometry/refinement.hh>
-
-#include <dune/grid/common/rangegenerators.hh>
-
-#include <dune/xt/common/float_cmp.hh>
-#include <dune/xt/common/fvector.hh>
-#include <dune/xt/common/numeric_cast.hh>
-#include <dune/xt/grid/gridprovider/cube.hh>
-
-#include <dune/gdt/spaces/l2/discontinuous-galerkin.hh>
-
-
-/// \todo Implement basis_jacobians_seem_to_be_correct in the vector-valued case!
-template <class GridViewType, size_t r, int p>
-struct DiscontinuousLagrangeSpace : public ::testing::Test
-{
-  using SpaceType = Dune::GDT::DiscontinuousLagrangeSpace<GridViewType, p, r>;
-  using D = typename SpaceType::D;
-  static const constexpr size_t d = SpaceType::d;
-
-  virtual std::shared_ptr<GridViewType> grid_view() = 0;
-
-  std::shared_ptr<SpaceType> space;
-
-  ~DiscontinuousLagrangeSpace() = default;
-
-  void SetUp() override final
-  {
-    ASSERT_NE(grid_view(), nullptr);
-    space = std::shared_ptr<SpaceType>(new SpaceType(*grid_view()));
-  }
-
-  void TearDown() override final
-  {
-    space.reset();
-  }
-
-  void gives_correct_identification()
-  {
-    ASSERT_NE(grid_view(), nullptr);
-    ASSERT_NE(space, nullptr);
-    EXPECT_EQ(Dune::GDT::SpaceType::discontinuous_lagrange, space->type());
-    EXPECT_EQ(p, space->min_polorder());
-    EXPECT_EQ(p, space->max_polorder());
-    for (int diff_order : {0, 1, 2, 3, 4, 5})
-      EXPECT_FALSE(space->continuous(diff_order));
-    EXPECT_FALSE(space->continuous_normal_components());
-    EXPECT_TRUE(space->is_lagrangian());
-  }
-
-  void basis_exists_on_each_element_with_correct_size()
-  {
-    ASSERT_NE(grid_view(), nullptr);
-    ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_view()))
-      EXPECT_EQ(r * Dune::numLagrangePoints(element.geometry().type().id(), d, p),
-                space->basis().localize(element)->size());
-  }
-
-  void basis_exists_on_each_element_with_correct_order()
-  {
-    ASSERT_NE(grid_view(), nullptr);
-    ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_view()))
-      EXPECT_EQ(p, space->basis().localize(element)->order());
-  }
-
-  void mapper_reports_correct_num_DoFs_on_each_element()
-  {
-    ASSERT_NE(grid_view(), nullptr);
-    ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_view()))
-      EXPECT_EQ(r * Dune::numLagrangePoints(element.geometry().type().id(), d, p), space->mapper().local_size(element));
-  }
-
-  void mapper_reports_correct_max_num_DoFs()
-  {
-    ASSERT_NE(grid_view(), nullptr);
-    ASSERT_NE(space, nullptr);
-    size_t max_num_dofs = 0;
-    for (auto&& element : elements(*grid_view()))
-      max_num_dofs = std::max(max_num_dofs, space->mapper().local_size(element));
-    EXPECT_LE(max_num_dofs, space->mapper().max_local_size());
-  }
-
-  void mapper_maps_correctly()
-  {
-    ASSERT_NE(grid_view(), nullptr);
-    ASSERT_NE(space, nullptr);
-    // we want to check that the numbering is consecutive and that each global index exists only once
-    std::set<size_t> global_indices;
-    // we test both call variants
-    std::set<size_t> map_to_global;
-    for (auto&& element : Dune::elements(*grid_view())) {
-      for (const auto& global_index : space->mapper().global_indices(element))
-        global_indices.insert(global_index);
-      for (size_t ii = 0; ii < space->mapper().local_size(element); ++ii)
-        map_to_global.insert(space->mapper().global_index(element, ii));
-    }
-    // check for consecutive numbering
-    EXPECT_EQ(0, *global_indices.begin());
-    EXPECT_EQ(global_indices.size() - 1, *global_indices.rbegin());
-    EXPECT_EQ(0, *map_to_global.begin());
-    EXPECT_EQ(map_to_global.size() - 1, *map_to_global.rbegin());
-    // check that the mapper is of the same opinion
-    EXPECT_EQ(space->mapper().size(), global_indices.size());
-    EXPECT_EQ(space->mapper().size(), map_to_global.size());
-    // check that each global index is unique
-    for (const auto& global_index : global_indices)
-      EXPECT_EQ(1, global_indices.count(global_index));
-    for (const auto& global_index : map_to_global)
-      EXPECT_EQ(1, map_to_global.count(global_index));
-  } // ... mapper_maps_correctly(...)
-
-  void lagrange_points_exist_on_each_element_with_correct_size()
-  {
-    ASSERT_NE(grid_view(), nullptr);
-    ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_view()))
-      EXPECT_EQ(Dune::numLagrangePoints(element.geometry().type().id(), d, p),
-                space->finite_element(element.geometry().type()).lagrange_points().size());
-  }
-
-  void basis_is_lagrange_basis()
-  {
-    ASSERT_NE(grid_view(), nullptr);
-    ASSERT_NE(space, nullptr);
-    double tolerance = 1e-15;
-    for (auto&& element : elements(*grid_view())) {
-      const auto basis = space->basis().localize(element);
-      const auto lagrange_points = space->finite_element(element.geometry().type()).lagrange_points();
-      EXPECT_EQ(lagrange_points.size(), basis->size() / r);
-      for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
-        const auto values = basis->evaluate_set(lagrange_points[ii]);
-        for (size_t rr = 0; rr < r; ++rr) {
-          for (size_t jj = 0; jj < lagrange_points.size(); ++jj) {
-            EXPECT_TRUE(Dune::XT::Common::FloatCmp::eq(
-                values[rr * lagrange_points.size() + jj][rr], ii == jj ? 1. : 0., tolerance, tolerance))
-                << "ii = " << ii << "\nrr = " << rr << "\njj = " << jj
-                << "\nlagrange_points[ii] = " << lagrange_points[ii]
-                << "\nbasis->evaluate_set(lagrange_points[ii])[jj] = " << values[jj];
-          }
-        }
-      }
-    }
-  } // ... basis_is_lagrange_basis(...)
-
-  // I am too lazy to implement this in the vector-valued case.
-  template <size_t r_ = r, typename = typename std::enable_if<r_ == r && r_ == 1, void>::type>
-  void basis_jacobians_seem_to_be_correct()
-  {
-    ASSERT_NE(grid_view(), nullptr);
-    ASSERT_NE(space, nullptr);
-    for (auto&& element : elements(*grid_view())) {
-      const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
-      const auto basis = space->basis().localize(element);
-      const double h = 1e-6;
-      for (const auto& quadrature_point :
-           Dune::QuadratureRules<D, d>::rule(element.geometry().type(), basis->order())) {
-        const auto& xx = quadrature_point.position();
-        const auto& J_inv_T = element.geometry().jacobianInverseTransposed(xx);
-        const auto jacobians = basis->jacobians_of_set(xx);
-        EXPECT_EQ(basis->size(), jacobians.size());
-        const auto values_xx = basis->evaluate_set(xx);
-        EXPECT_EQ(basis->size(), values_xx.size());
-        auto approximate_jacobians = jacobians;
-        // compute approximate partial derivatives
-        for (size_t dd = 0; dd < d; ++dd) {
-          // try to find a suitable x + h
-          auto xx_plus_h = xx;
-          xx_plus_h[dd] += h;
-          if (!reference_element.checkInside(xx_plus_h)) {
-            xx_plus_h[dd] -= 2. * h;
-          }
-          ASSERT_TRUE(reference_element.checkInside(xx_plus_h)) << "xx_plus_h = " << xx_plus_h
-                                                                << " is not inside the reference element!";
-          const auto values_xx_plus_h = basis->evaluate_set(xx_plus_h);
-          EXPECT_EQ(basis->size(), values_xx_plus_h.size());
-          for (size_t ii = 0; ii < basis->size(); ++ii) {
-            approximate_jacobians[ii][0][dd] = (values_xx_plus_h[ii] - values_xx[ii]) / (xx_plus_h[dd] - xx[dd]);
-            if (xx_plus_h[dd] - xx[dd] < 0)
-              approximate_jacobians[ii][0][dd] *= -1.;
-          }
-        }
-        // transform
-        auto tmp_jac = approximate_jacobians[0][0];
-        for (size_t ii = 0; ii < basis->size(); ++ii) {
-          J_inv_T.mv(approximate_jacobians[ii][0], tmp_jac);
-          approximate_jacobians[ii][0] = tmp_jac;
-        }
-        // check
-        double tolerance = 1e-4;
-        for (size_t ii = 0; ii < basis->size(); ++ii)
-          EXPECT_TRUE(
-              Dune::XT::Common::FloatCmp::eq(jacobians[ii][0], approximate_jacobians[ii][0], tolerance, tolerance))
-              << "ii = " << ii << "\njacobians[ii][0] = " << jacobians[ii][0] << "\n"
-              << "approximate_jacobians[ii][0] = " << approximate_jacobians[ii][0] << "\n"
-              << "absolue L_infty error: " << (jacobians[ii][0] - approximate_jacobians[ii][0]).infinity_norm() << "\n"
-              << "relative L_infty error: "
-              << (jacobians[ii][0] - approximate_jacobians[ii][0]).infinity_norm() / jacobians[ii][0].infinity_norm();
-      }
-    }
-  } // ... basis_jacobians_seem_to_be_correct(...)
-
-  void local_interpolation_seems_to_be_correct()
-  {
-    ASSERT_NE(grid_view(), nullptr);
-    ASSERT_NE(space, nullptr);
-    for (const auto& geometry_type : grid_view()->indexSet().types(0)) {
-      const auto& finite_element = space->finite_element(geometry_type);
-      const auto& shape_functions = finite_element.basis();
-      ASSERT_EQ(finite_element.size(), shape_functions.size());
-      ASSERT_EQ(finite_element.size(), finite_element.interpolation().size());
-      for (size_t ii = 0; ii < shape_functions.size(); ++ii) {
-        const auto dofs = finite_element.interpolation().interpolate(
-            [&](const auto& x) { return shape_functions.evaluate(x)[ii]; }, shape_functions.order());
-        ASSERT_GE(dofs.size(), shape_functions.size());
-        for (size_t jj = 0; jj < shape_functions.size(); ++jj)
-          EXPECT_TRUE(Dune::XT::Common::FloatCmp::eq(ii == jj ? 1. : 0., dofs[jj]))
-              << "\nii == jj ? 1. : 0. = " << (ii == jj ? 1. : 0.) << "\ndofs[jj] = " << dofs[jj];
-      }
-    }
-  } // ... local_interpolation_seems_to_be_correct(...)
-}; // struct DiscontinuousLagrangeSpace
-
-
-template <class G, size_t r, int p>
-struct DiscontinuousLagrangeSpaceOnSimplicialLeafView
-    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r, p>
-{
-  using GridProviderType = Dune::XT::Grid::GridProvider<G>;
-  using LeafGridViewType = typename GridProviderType::LeafGridViewType;
-
-  GridProviderType grid_provider;
-  std::shared_ptr<LeafGridViewType> leaf_view;
-
-  DiscontinuousLagrangeSpaceOnSimplicialLeafView() //     (i) negative coordinates and not the same as the reference
-      : grid_provider(Dune::XT::Grid::make_cube_grid<G>(-1.5, -1, 3).grid_ptr()) //                          element,
-  { //                                                   (ii) at least 3 elements to have fully inner ones,
-    grid_provider.global_refine(1); //                  (iii) refine at least once to obtain all kinds of orientations
-    leaf_view = std::make_shared<LeafGridViewType>(grid_provider.leaf_view());
-  }
-
-  ~DiscontinuousLagrangeSpaceOnSimplicialLeafView() = default;
-
-  std::shared_ptr<LeafGridViewType> grid_view() override final
-  {
-    return leaf_view;
-  }
-}; // struct DiscontinuousLagrangeSpaceOnSimplicialLeafView
-
-
-using SimplicialGrids = ::testing::Types<ONED_1D,
-                                         YASP_1D_EQUIDISTANT_OFFSET
-#if HAVE_DUNE_ALUGRID
-                                         ,
-                                         ALU_2D_SIMPLEX_CONFORMING,
-                                         ALU_2D_SIMPLEX_NONCONFORMING
-#endif
-#if HAVE_DUNE_UGGRID || HAVE_UG
-                                         ,
-                                         UG_2D
-#endif
-#if HAVE_DUNE_ALUGRID
-                                         ,
-                                         ALU_3D_SIMPLEX_CONFORMING,
-                                         ALU_3D_SIMPLEX_NONCONFORMING
-#endif
-#if HAVE_DUNE_UGGRID || HAVE_UG
-                                         ,
-                                         UG_3D
-#endif
-                                         >;
+using namespace Dune;
+using namespace Dune::GDT;
 
 
 template <class G>
-using Order0ScalarSimplicialDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnSimplicialLeafView<G, 1, 0>;
-TYPED_TEST_CASE(Order0ScalarSimplicialDiscontinuousLagrangeSpace, SimplicialGrids);
+using Order0ScalarSimplicialDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnSimplicialLeafViewTest<G, 1, 0>;
+TYPED_TEST_CASE(Order0ScalarSimplicialDiscontinuousLagrangeSpace, SimplicialGridsForSpaceTest);
 TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
 TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
-  this->basis_exists_on_each_element_with_correct_size();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_size();
 }
 TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
-  this->basis_exists_on_each_element_with_correct_order();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_order();
 }
 TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
-  this->mapper_reports_correct_num_DoFs_on_each_element();
+  this->mapper_reports_correct_num_DoFs_of_lagrange_space_on_each_element();
 }
 TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
@@ -315,7 +40,7 @@ TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, mapper_reports_corr
 }
 TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
-  this->mapper_maps_correctly();
+  this->mapper_of_discontinuous_space_maps_correctly();
 }
 TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
@@ -327,7 +52,7 @@ TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, basis_is_lagrange_b
 }
 TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->template basis_jacobians_seem_to_be_correct<>();
+  this->template basis_jacobians_of_lagrange_space_seem_to_be_correct<>();
 }
 TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -336,23 +61,23 @@ TYPED_TEST(Order0ScalarSimplicialDiscontinuousLagrangeSpace, local_interpolation
 
 
 template <class G>
-using Order1ScalarSimplicialDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnSimplicialLeafView<G, 1, 1>;
-TYPED_TEST_CASE(Order1ScalarSimplicialDiscontinuousLagrangeSpace, SimplicialGrids);
+using Order1ScalarSimplicialDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnSimplicialLeafViewTest<G, 1, 1>;
+TYPED_TEST_CASE(Order1ScalarSimplicialDiscontinuousLagrangeSpace, SimplicialGridsForSpaceTest);
 TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
 TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
-  this->basis_exists_on_each_element_with_correct_size();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_size();
 }
 TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
-  this->basis_exists_on_each_element_with_correct_order();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_order();
 }
 TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
-  this->mapper_reports_correct_num_DoFs_on_each_element();
+  this->mapper_reports_correct_num_DoFs_of_lagrange_space_on_each_element();
 }
 TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
@@ -360,7 +85,7 @@ TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, mapper_reports_corr
 }
 TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
-  this->mapper_maps_correctly();
+  this->mapper_of_discontinuous_space_maps_correctly();
 }
 TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
@@ -372,7 +97,7 @@ TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, basis_is_lagrange_b
 }
 TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->template basis_jacobians_seem_to_be_correct<>();
+  this->template basis_jacobians_of_lagrange_space_seem_to_be_correct<>();
 }
 TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -381,23 +106,23 @@ TYPED_TEST(Order1ScalarSimplicialDiscontinuousLagrangeSpace, local_interpolation
 
 
 template <class G>
-using Order2ScalarSimplicialDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnSimplicialLeafView<G, 1, 2>;
-TYPED_TEST_CASE(Order2ScalarSimplicialDiscontinuousLagrangeSpace, SimplicialGrids);
+using Order2ScalarSimplicialDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnSimplicialLeafViewTest<G, 1, 2>;
+TYPED_TEST_CASE(Order2ScalarSimplicialDiscontinuousLagrangeSpace, SimplicialGridsForSpaceTest);
 TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
 TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
-  this->basis_exists_on_each_element_with_correct_size();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_size();
 }
 TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
-  this->basis_exists_on_each_element_with_correct_order();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_order();
 }
 TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
-  this->mapper_reports_correct_num_DoFs_on_each_element();
+  this->mapper_reports_correct_num_DoFs_of_lagrange_space_on_each_element();
 }
 TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
@@ -405,7 +130,7 @@ TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, mapper_reports_corr
 }
 TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
-  this->mapper_maps_correctly();
+  this->mapper_of_discontinuous_space_maps_correctly();
 }
 TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
@@ -417,7 +142,7 @@ TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, basis_is_lagrange_b
 }
 TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->template basis_jacobians_seem_to_be_correct<>();
+  this->template basis_jacobians_of_lagrange_space_seem_to_be_correct<>();
 }
 TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -425,78 +150,24 @@ TYPED_TEST(Order2ScalarSimplicialDiscontinuousLagrangeSpace, local_interpolation
 }
 
 
-template <class G, size_t r, int p>
-struct DiscontinuousLagrangeSpaceOnCubicLeafView
-    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r, p>
-{
-  using GridProviderType = Dune::XT::Grid::GridProvider<G>;
-  using LeafGridViewType = typename GridProviderType::LeafGridViewType;
-
-  std::shared_ptr<GridProviderType> grid_provider;
-  std::shared_ptr<LeafGridViewType> leaf_view;
-
-  DiscontinuousLagrangeSpaceOnCubicLeafView()
-  {
-    using D = typename G::ctype;
-    static const constexpr size_t d = G::dimension;
-    Dune::FieldVector<D, d> lower_left(-1.5); //  (i) negative coordinates and not the same as the reference element
-    Dune::FieldVector<D, d> upper_right(-1.);
-    std::array<unsigned int, d> num_elements; // (ii) at least 3 elements to have fully inner ones
-    std::fill(num_elements.begin(), num_elements.end(), 3);
-    grid_provider = std::make_shared<GridProviderType>(
-        Dune::StructuredGridFactory<G>::createCubeGrid(lower_left, upper_right, num_elements));
-    leaf_view = std::make_shared<LeafGridViewType>(grid_provider->leaf_view());
-  }
-
-  ~DiscontinuousLagrangeSpaceOnCubicLeafView() = default;
-
-  std::shared_ptr<LeafGridViewType> grid_view() override final
-  {
-    return leaf_view;
-  }
-}; // struct DiscontinuousLagrangeSpaceOnCubicLeafView
-
-
-using CubicGrids = ::testing::Types<YASP_2D_EQUIDISTANT_OFFSET
-#if HAVE_DUNE_ALUGRID
-                                    ,
-                                    ALU_2D_CUBE
-#endif
-#if HAVE_DUNE_UGGRID || HAVE_UG
-                                    ,
-                                    UG_2D
-#endif
-                                    ,
-                                    YASP_3D_EQUIDISTANT_OFFSET
-#if HAVE_DUNE_ALUGRID
-                                    ,
-                                    ALU_3D_CUBE
-#endif
-#if HAVE_DUNE_UGGRID || HAVE_UG
-                                    ,
-                                    UG_3D
-#endif
-                                    >;
-
-
 template <class G>
-using Order0ScalarCubicDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnCubicLeafView<G, 1, 0>;
-TYPED_TEST_CASE(Order0ScalarCubicDiscontinuousLagrangeSpace, CubicGrids);
+using Order0ScalarCubicDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnCubicLeafViewTest<G, 1, 0>;
+TYPED_TEST_CASE(Order0ScalarCubicDiscontinuousLagrangeSpace, CubicGridsForSpaceTest);
 TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
 TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
-  this->basis_exists_on_each_element_with_correct_size();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_size();
 }
 TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
-  this->basis_exists_on_each_element_with_correct_order();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_order();
 }
 TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
-  this->mapper_reports_correct_num_DoFs_on_each_element();
+  this->mapper_reports_correct_num_DoFs_of_lagrange_space_on_each_element();
 }
 TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
@@ -504,7 +175,7 @@ TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, mapper_reports_correct_m
 }
 TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
-  this->mapper_maps_correctly();
+  this->mapper_of_discontinuous_space_maps_correctly();
 }
 TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
@@ -516,7 +187,7 @@ TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->template basis_jacobians_seem_to_be_correct<>();
+  this->template basis_jacobians_of_lagrange_space_seem_to_be_correct<>();
 }
 TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -525,23 +196,23 @@ TYPED_TEST(Order0ScalarCubicDiscontinuousLagrangeSpace, local_interpolation_seem
 
 
 template <class G>
-using Order1ScalarCubicDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnCubicLeafView<G, 1, 1>;
-TYPED_TEST_CASE(Order1ScalarCubicDiscontinuousLagrangeSpace, CubicGrids);
+using Order1ScalarCubicDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnCubicLeafViewTest<G, 1, 1>;
+TYPED_TEST_CASE(Order1ScalarCubicDiscontinuousLagrangeSpace, CubicGridsForSpaceTest);
 TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
 TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
-  this->basis_exists_on_each_element_with_correct_size();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_size();
 }
 TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
-  this->basis_exists_on_each_element_with_correct_order();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_order();
 }
 TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
-  this->mapper_reports_correct_num_DoFs_on_each_element();
+  this->mapper_reports_correct_num_DoFs_of_lagrange_space_on_each_element();
 }
 TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
@@ -549,7 +220,7 @@ TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, mapper_reports_correct_m
 }
 TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
-  this->mapper_maps_correctly();
+  this->mapper_of_discontinuous_space_maps_correctly();
 }
 TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
@@ -561,7 +232,7 @@ TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->template basis_jacobians_seem_to_be_correct<>();
+  this->template basis_jacobians_of_lagrange_space_seem_to_be_correct<>();
 }
 TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -570,23 +241,23 @@ TYPED_TEST(Order1ScalarCubicDiscontinuousLagrangeSpace, local_interpolation_seem
 
 
 template <class G>
-using Order2ScalarCubicDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnCubicLeafView<G, 1, 2>;
-TYPED_TEST_CASE(Order2ScalarCubicDiscontinuousLagrangeSpace, CubicGrids);
+using Order2ScalarCubicDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnCubicLeafViewTest<G, 1, 2>;
+TYPED_TEST_CASE(Order2ScalarCubicDiscontinuousLagrangeSpace, CubicGridsForSpaceTest);
 TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
 TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
-  this->basis_exists_on_each_element_with_correct_size();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_size();
 }
 TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
-  this->basis_exists_on_each_element_with_correct_order();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_order();
 }
 TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
-  this->mapper_reports_correct_num_DoFs_on_each_element();
+  this->mapper_reports_correct_num_DoFs_of_lagrange_space_on_each_element();
 }
 TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
@@ -594,7 +265,7 @@ TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, mapper_reports_correct_m
 }
 TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
-  this->mapper_maps_correctly();
+  this->mapper_of_discontinuous_space_maps_correctly();
 }
 TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
@@ -606,7 +277,7 @@ TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->template basis_jacobians_seem_to_be_correct<>();
+  this->template basis_jacobians_of_lagrange_space_seem_to_be_correct<>();
 }
 TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -614,77 +285,24 @@ TYPED_TEST(Order2ScalarCubicDiscontinuousLagrangeSpace, local_interpolation_seem
 }
 
 
-template <class G, size_t r, int p>
-struct DiscontinuousLagrangeSpaceOnPrismLeafView
-    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r, p>
-{
-  using GridProviderType = Dune::XT::Grid::GridProvider<G>;
-  using LeafGridViewType = typename GridProviderType::LeafGridViewType;
-
-  std::shared_ptr<GridProviderType> grid_provider;
-  std::shared_ptr<LeafGridViewType> leaf_view;
-
-  DiscontinuousLagrangeSpaceOnPrismLeafView()
-  {
-    using D = typename G::ctype;
-    static const constexpr size_t d = G::dimension;
-    if (d == 3) {
-      Dune::GridFactory<G> factory;
-      for (auto&& vertex : {Dune::XT::Common::FieldVector<D, d>({-1., -1.5, -1.5}),
-                            Dune::XT::Common::FieldVector<D, d>({-1., -1., -1.5}),
-                            Dune::XT::Common::FieldVector<D, d>({-1.5, -1.5, -1.5}),
-                            Dune::XT::Common::FieldVector<D, d>({-1., -1.5, -1.}),
-                            Dune::XT::Common::FieldVector<D, d>({-1., -1., -1.}),
-                            Dune::XT::Common::FieldVector<D, d>({-1.5, -1.5, -1.})}) {
-        factory.insertVertex(vertex);
-      }
-      factory.insertElement(Dune::GeometryType(Dune::GeometryType::prism, 3), {0, 1, 2, 3, 4, 5});
-      grid_provider = std::make_shared<GridProviderType>(factory.createGrid());
-      grid_provider->global_refine(1);
-      leaf_view = std::make_shared<LeafGridViewType>(grid_provider->leaf_view());
-    } else {
-      // cannot use ASSERT_... in a ctor
-      EXPECT_TRUE(false) << "Does not make sense in " << d << "d!\n"
-                         << "=> ALL OTHER TESTS WILL FAIL FOR THIS GRID!!!";
-      grid_provider = nullptr;
-      leaf_view = nullptr;
-    }
-  } // DiscontinuousLagrangeSpaceOnPrismLeafView(...)
-
-  ~DiscontinuousLagrangeSpaceOnPrismLeafView() = default;
-
-  std::shared_ptr<LeafGridViewType> grid_view() override final
-  {
-    return leaf_view;
-  }
-}; // struct DiscontinuousLagrangeSpaceOnPrismLeafView
-
-
-using PrismGrids = ::testing::Types<
-#if HAVE_DUNE_UGGRID || HAVE_UG
-    UG_3D
-#endif
-    >;
-
-
 template <class G>
-using Order0ScalarPrismDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnPrismLeafView<G, 1, 0>;
-TYPED_TEST_CASE(Order0ScalarPrismDiscontinuousLagrangeSpace, PrismGrids);
+using Order0ScalarPrismDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnPrismLeafViewTest<G, 1, 0>;
+TYPED_TEST_CASE(Order0ScalarPrismDiscontinuousLagrangeSpace, PrismGridsForSpaceTest);
 TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
 TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
-  this->basis_exists_on_each_element_with_correct_size();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_size();
 }
 TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
-  this->basis_exists_on_each_element_with_correct_order();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_order();
 }
 TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
-  this->mapper_reports_correct_num_DoFs_on_each_element();
+  this->mapper_reports_correct_num_DoFs_of_lagrange_space_on_each_element();
 }
 TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
@@ -692,7 +310,7 @@ TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, mapper_reports_correct_m
 }
 TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
-  this->mapper_maps_correctly();
+  this->mapper_of_discontinuous_space_maps_correctly();
 }
 TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
@@ -704,7 +322,7 @@ TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->template basis_jacobians_seem_to_be_correct<>();
+  this->template basis_jacobians_of_lagrange_space_seem_to_be_correct<>();
 }
 TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -713,23 +331,23 @@ TYPED_TEST(Order0ScalarPrismDiscontinuousLagrangeSpace, local_interpolation_seem
 
 
 template <class G>
-using Order1ScalarPrismDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnPrismLeafView<G, 1, 1>;
-TYPED_TEST_CASE(Order1ScalarPrismDiscontinuousLagrangeSpace, PrismGrids);
+using Order1ScalarPrismDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnPrismLeafViewTest<G, 1, 1>;
+TYPED_TEST_CASE(Order1ScalarPrismDiscontinuousLagrangeSpace, PrismGridsForSpaceTest);
 TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
 TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
-  this->basis_exists_on_each_element_with_correct_size();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_size();
 }
 TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
-  this->basis_exists_on_each_element_with_correct_order();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_order();
 }
 TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
-  this->mapper_reports_correct_num_DoFs_on_each_element();
+  this->mapper_reports_correct_num_DoFs_of_lagrange_space_on_each_element();
 }
 TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
@@ -737,7 +355,7 @@ TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, mapper_reports_correct_m
 }
 TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
-  this->mapper_maps_correctly();
+  this->mapper_of_discontinuous_space_maps_correctly();
 }
 TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
@@ -749,7 +367,7 @@ TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->template basis_jacobians_seem_to_be_correct<>();
+  this->template basis_jacobians_of_lagrange_space_seem_to_be_correct<>();
 }
 TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -758,23 +376,23 @@ TYPED_TEST(Order1ScalarPrismDiscontinuousLagrangeSpace, local_interpolation_seem
 
 
 template <class G>
-using Order2ScalarPrismDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnPrismLeafView<G, 1, 2>;
-TYPED_TEST_CASE(Order2ScalarPrismDiscontinuousLagrangeSpace, PrismGrids);
+using Order2ScalarPrismDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnPrismLeafViewTest<G, 1, 2>;
+TYPED_TEST_CASE(Order2ScalarPrismDiscontinuousLagrangeSpace, PrismGridsForSpaceTest);
 TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
 TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
-  this->basis_exists_on_each_element_with_correct_size();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_size();
 }
 TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
-  this->basis_exists_on_each_element_with_correct_order();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_order();
 }
 TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
-  this->mapper_reports_correct_num_DoFs_on_each_element();
+  this->mapper_reports_correct_num_DoFs_of_lagrange_space_on_each_element();
 }
 TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
@@ -782,7 +400,7 @@ TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, mapper_reports_correct_m
 }
 TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
-  this->mapper_maps_correctly();
+  this->mapper_of_discontinuous_space_maps_correctly();
 }
 TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
@@ -794,7 +412,7 @@ TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->template basis_jacobians_seem_to_be_correct<>();
+  this->template basis_jacobians_of_lagrange_space_seem_to_be_correct<>();
 }
 TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -802,120 +420,24 @@ TYPED_TEST(Order2ScalarPrismDiscontinuousLagrangeSpace, local_interpolation_seem
 }
 
 
-template <class G, size_t r, int p>
-struct DiscontinuousLagrangeSpaceOnMixedLeafView
-    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, r, p>
-{
-  using GridProviderType = Dune::XT::Grid::GridProvider<G>;
-  using LeafGridViewType = typename GridProviderType::LeafGridViewType;
-
-  std::shared_ptr<GridProviderType> grid_provider;
-  std::shared_ptr<LeafGridViewType> leaf_view;
-
-  DiscontinuousLagrangeSpaceOnMixedLeafView()
-  {
-    using D = typename G::ctype;
-    static const constexpr size_t d = G::dimension;
-    switch (d) {
-      case 1: {
-        // cannot use ASSERT_... in a ctor
-        EXPECT_TRUE(false) << "Does not make sense in 1d (all cubes are simplices)!\n"
-                           << "=> ALL OTHER TESTS WILL FAIL FOR THIS GRID!!!";
-        grid_provider = nullptr;
-        leaf_view = nullptr;
-        break;
-      }
-      case 2: {
-        Dune::GridFactory<G> factory;
-        for (auto&& vertex : {Dune::XT::Common::FieldVector<D, d>({-1., -1.5}),
-                              Dune::XT::Common::FieldVector<D, d>({-1., -1.25}),
-                              Dune::XT::Common::FieldVector<D, d>({-1., -1.}),
-                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.5}),
-                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.25}),
-                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.}),
-                              Dune::XT::Common::FieldVector<D, d>({-1.75, -1.25})}) {
-          factory.insertVertex(vertex);
-        }
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 2), {3, 0, 4, 1});
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 2), {4, 1, 5, 2});
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 2), {4, 6, 3});
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 2), {4, 5, 6});
-        grid_provider = std::make_shared<GridProviderType>(factory.createGrid());
-        grid_provider->global_refine(1);
-        leaf_view = std::make_shared<LeafGridViewType>(grid_provider->leaf_view());
-        break;
-      }
-      case 3: {
-        Dune::GridFactory<G> factory;
-        for (auto&& vertex : {Dune::XT::Common::FieldVector<D, d>({-1., -1.5, -1.}),
-                              Dune::XT::Common::FieldVector<D, d>({-1., -1.25, -1.}),
-                              Dune::XT::Common::FieldVector<D, d>({-1., -1., -1.}),
-                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.5, -1.}),
-                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.25, -1.}),
-                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1., -1.}),
-                              Dune::XT::Common::FieldVector<D, d>({-1., -1.5, -1.5}),
-                              Dune::XT::Common::FieldVector<D, d>({-1., -1.25, -1.5}),
-                              Dune::XT::Common::FieldVector<D, d>({-1., -1., -1.5}),
-                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.5, -1.5}),
-                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1.25, -1.5}),
-                              Dune::XT::Common::FieldVector<D, d>({-1.5, -1., -1.5}),
-                              Dune::XT::Common::FieldVector<D, d>({-1.75, -1.25, -1.})}) {
-          factory.insertVertex(vertex);
-        }
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 3), {3, 0, 4, 1, 9, 6, 10, 7});
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::cube, 3), {4, 1, 5, 2, 10, 7, 11, 8});
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 3), {4, 12, 3, 10});
-        factory.insertElement(Dune::GeometryType(Dune::GeometryType::simplex, 3), {4, 5, 12, 10});
-        grid_provider = std::make_shared<GridProviderType>(factory.createGrid());
-        grid_provider->global_refine(1);
-        leaf_view = std::make_shared<LeafGridViewType>(grid_provider->leaf_view());
-        break;
-      }
-      default: {
-        // cannot use ASSERT_... in a ctor
-        EXPECT_TRUE(false) << "Not implemented yet for dimension " << d << "!\n"
-                           << "=> ALL OTHER TESTS WILL FAIL FOR THIS GRID!!!";
-        grid_provider = nullptr;
-        leaf_view = nullptr;
-      }
-    }
-  } // DiscontinuousLagrangeSpaceOnMixedLeafView(...)
-
-  ~DiscontinuousLagrangeSpaceOnMixedLeafView() = default;
-
-  std::shared_ptr<LeafGridViewType> grid_view() override final
-  {
-    return leaf_view;
-  }
-}; // struct DiscontinuousLagrangeSpaceOnMixedLeafView
-
-
-using MixedGrids = ::testing::Types<
-#if HAVE_DUNE_UGGRID || HAVE_UG
-    UG_2D,
-    UG_3D
-#endif
-    >;
-
-
 template <class G>
-using Order0ScalarMixedDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnMixedLeafView<G, 1, 0>;
-TYPED_TEST_CASE(Order0ScalarMixedDiscontinuousLagrangeSpace, MixedGrids);
+using Order0ScalarMixedDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnMixedLeafViewTest<G, 1, 0>;
+TYPED_TEST_CASE(Order0ScalarMixedDiscontinuousLagrangeSpace, MixedGridsForSpaceTest);
 TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
 TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
-  this->basis_exists_on_each_element_with_correct_size();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_size();
 }
 TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
-  this->basis_exists_on_each_element_with_correct_order();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_order();
 }
 TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
-  this->mapper_reports_correct_num_DoFs_on_each_element();
+  this->mapper_reports_correct_num_DoFs_of_lagrange_space_on_each_element();
 }
 TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
@@ -923,7 +445,7 @@ TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, mapper_reports_correct_m
 }
 TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
-  this->mapper_maps_correctly();
+  this->mapper_of_discontinuous_space_maps_correctly();
 }
 TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
@@ -935,7 +457,7 @@ TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->template basis_jacobians_seem_to_be_correct<>();
+  this->template basis_jacobians_of_lagrange_space_seem_to_be_correct<>();
 }
 TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -944,23 +466,23 @@ TYPED_TEST(Order0ScalarMixedDiscontinuousLagrangeSpace, local_interpolation_seem
 
 
 template <class G>
-using Order1ScalarMixedDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnMixedLeafView<G, 1, 1>;
-TYPED_TEST_CASE(Order1ScalarMixedDiscontinuousLagrangeSpace, MixedGrids);
+using Order1ScalarMixedDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnMixedLeafViewTest<G, 1, 1>;
+TYPED_TEST_CASE(Order1ScalarMixedDiscontinuousLagrangeSpace, MixedGridsForSpaceTest);
 TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
 TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
-  this->basis_exists_on_each_element_with_correct_size();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_size();
 }
 TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
-  this->basis_exists_on_each_element_with_correct_order();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_order();
 }
 TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
-  this->mapper_reports_correct_num_DoFs_on_each_element();
+  this->mapper_reports_correct_num_DoFs_of_lagrange_space_on_each_element();
 }
 TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
@@ -968,7 +490,7 @@ TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, mapper_reports_correct_m
 }
 TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
-  this->mapper_maps_correctly();
+  this->mapper_of_discontinuous_space_maps_correctly();
 }
 TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
@@ -980,7 +502,7 @@ TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->template basis_jacobians_seem_to_be_correct<>();
+  this->template basis_jacobians_of_lagrange_space_seem_to_be_correct<>();
 }
 TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {
@@ -989,23 +511,23 @@ TYPED_TEST(Order1ScalarMixedDiscontinuousLagrangeSpace, local_interpolation_seem
 
 
 template <class G>
-using Order2ScalarMixedDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnMixedLeafView<G, 1, 2>;
-TYPED_TEST_CASE(Order2ScalarMixedDiscontinuousLagrangeSpace, MixedGrids);
+using Order2ScalarMixedDiscontinuousLagrangeSpace = DiscontinuousLagrangeSpaceOnMixedLeafViewTest<G, 1, 2>;
+TYPED_TEST_CASE(Order2ScalarMixedDiscontinuousLagrangeSpace, MixedGridsForSpaceTest);
 TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, gives_correct_identification)
 {
   this->gives_correct_identification();
 }
 TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_size)
 {
-  this->basis_exists_on_each_element_with_correct_size();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_size();
 }
 TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, basis_exists_on_each_element_with_correct_order)
 {
-  this->basis_exists_on_each_element_with_correct_order();
+  this->basis_of_lagrange_space_exists_on_each_element_with_correct_order();
 }
 TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, mapper_reports_correct_num_DoFs_on_each_element)
 {
-  this->mapper_reports_correct_num_DoFs_on_each_element();
+  this->mapper_reports_correct_num_DoFs_of_lagrange_space_on_each_element();
 }
 TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, mapper_reports_correct_max_num_DoFs)
 {
@@ -1013,7 +535,7 @@ TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, mapper_reports_correct_m
 }
 TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, mapper_maps_correctly)
 {
-  this->mapper_maps_correctly();
+  this->mapper_of_discontinuous_space_maps_correctly();
 }
 TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, lagrange_points_exist_on_each_element_with_correct_size)
 {
@@ -1025,7 +547,7 @@ TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, basis_is_lagrange_basis)
 }
 TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_correct)
 {
-  this->template basis_jacobians_seem_to_be_correct<>();
+  this->template basis_jacobians_of_lagrange_space_seem_to_be_correct<>();
 }
 TYPED_TEST(Order2ScalarMixedDiscontinuousLagrangeSpace, local_interpolation_seems_to_be_correct)
 {

@@ -12,389 +12,299 @@
 #ifndef DUNE_GDT_TEST_SPACES_BASE_HH
 #define DUNE_GDT_TEST_SPACES_BASE_HH
 
+#include <memory>
 #include <type_traits>
 
-#include <boost/numeric/conversion/cast.hpp>
+#include <dune/geometry/referenceelements.hh>
+#include <dune/geometry/quadraturerules.hh>
 
-#include <dune/xt/grid/gridprovider/cube.hh>
-#include <dune/xt/grid/layers.hh>
+#include <dune/grid/common/rangegenerators.hh>
+
+#include <dune/localfunctions/lagrange/equidistantpoints.hh>
+
 #include <dune/xt/common/test/gtest/gtest.h>
+#include <dune/xt/common/float_cmp.hh>
+#include <dune/xt/grid/grids.hh>
 
-#include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/spaces/mapper/interfaces.hh>
-#include <dune/gdt/spaces/basefunctionset/interface.hh>
 #include <dune/gdt/type_traits.hh>
 
-#include <dune/gdt/test/grids.hh>
+namespace Dune {
+namespace GDT {
 
 
-// these two should trigger a segfault if copying fails, i.e. the one fixed in 6b3ff6d
-template <class Space>
-class BaseHolder
+/// \todo Implement lagrange_basis_jacobians_seem_to_be_correct in the vector-valued case!
+template <class Space, int p>
+struct SpaceTestBase : public ::testing::Test
 {
-public:
-  BaseHolder(Space s)
-    : s_(s)
+  static_assert(is_space<Space>::value, "");
+  using SpaceType = Space;
+
+  using GridViewType = typename SpaceType::GridViewType;
+  using D = typename SpaceType::D;
+  static const constexpr size_t d = SpaceType::d;
+  using R = typename SpaceType::R;
+  static const constexpr size_t r = SpaceType::r;
+  static const constexpr size_t rC = SpaceType::rC;
+
+  using GlobalBasisType = typename SpaceType::GlobalBasisType;
+  using MapperType = typename SpaceType::MapperType;
+  using FiniteElementType = typename SpaceType::FiniteElementType;
+
+  std::shared_ptr<GridViewType> grid_view;
+  std::shared_ptr<SpaceType> space;
+
+  ~SpaceTestBase() = default;
+
+  void SetUp() override final
   {
+    ASSERT_NE(grid_view, nullptr) << "Any derived test has to create the grid_view on construction!";
+    space = std::shared_ptr<SpaceType>(new SpaceType(*grid_view));
   }
 
-  const Space& space()
+  void TearDown() override final
   {
-    return s_;
+    space.reset();
   }
 
-private:
-  const Space s_;
-};
-
-
-template <class Space, class Provider>
-class DerivedHolder : public BaseHolder<Space>
-{
-  typedef BaseHolder<Space> BaseType;
-
-public:
-  DerivedHolder(Provider& p)
-    : BaseType(Space(p.template layer<Dune::XT::Grid::Layers::leaf, Space::layer_backend>()))
+  void basis_of_lagrange_space_exists_on_each_element_with_correct_size()
   {
-  }
-};
-
-
-/**
-  * \brief Checks any space derived from SpaceInterface for it's interface compliance, especially concerning CRTP.
-  */
-template <class SpaceType>
-class SpaceBase : public ::testing::Test
-{
-  using GridType = Dune::XT::Grid::extract_grid_t<typename SpaceType::GridLayerType>;
-  typedef Dune::XT::Grid::GridProvider<GridType> ProviderType;
-
-public:
-  SpaceBase()
-    : grid_provider_(Dune::XT::Grid::make_cube_grid<GridType>(0.0, 1.0, 3u))
-    , space_(grid_provider_.template layer<Dune::XT::Grid::Layers::leaf, SpaceType::layer_backend>())
-  {
+    ASSERT_NE(grid_view, nullptr);
+    ASSERT_NE(space, nullptr);
+    ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
+    for (auto&& element : elements(*grid_view))
+      EXPECT_EQ(r * numLagrangePoints(element.geometry().type().id(), d, p), space->basis().localize(element)->size());
   }
 
-  virtual ~SpaceBase()
+  void basis_of_lagrange_space_exists_on_each_element_with_correct_order()
   {
+    ASSERT_NE(grid_view, nullptr);
+    ASSERT_NE(space, nullptr);
+    ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
+    for (auto&& element : elements(*grid_view))
+      EXPECT_EQ(p, space->basis().localize(element)->order());
   }
 
-  /**
-    * \brief Checks the space for it's interface compliance.
-    */
-  void fulfills_interface() const
+  void lagrange_points_exist_on_each_element_with_correct_size()
   {
-    static_assert(Dune::GDT::is_space<SpaceType>::value, "");
-    using namespace Dune::GDT;
-    // static checks
-    // * as the derived type
-    typedef typename SpaceType::Traits Traits;
-    typedef typename SpaceType::GridLayerType D_GridLayerType;
-    typedef typename SpaceType::DomainFieldType D_DomainFieldType;
-    static const size_t d_dimDomain = SpaceType::dimDomain;
-    typedef typename SpaceType::RangeFieldType D_RangeFieldType;
-    static const int d_polOrder = SpaceType::polOrder;
-    static const size_t d_dimRange = SpaceType::dimRange;
-    static const size_t d_dimRangeCols = SpaceType::dimRangeCols;
-    typedef typename SpaceType::BackendType D_BackendType;
-    typedef typename SpaceType::MapperType D_MapperType;
-    typedef typename SpaceType::BaseFunctionSetType D_BaseFunctionSetType;
-    typedef typename SpaceType::EntityType D_EntityType;
-    typedef typename SpaceType::PatternType D_PatternType;
-    typedef typename SpaceType::DofCommunicatorType D_DofCommunicatorType;
-    static const auto d_layer_backend = SpaceType::layer_backend;
-    // * as the interface
-    typedef SpaceInterface<Traits, d_dimDomain, d_dimRange, d_dimRangeCols> InterfaceType;
-    typedef typename InterfaceType::derived_type derived_type;
-    typedef typename InterfaceType::GridLayerType I_GridLayerType;
-    typedef typename InterfaceType::DomainFieldType I_DomainFieldType;
-    static const size_t i_dimDomain = InterfaceType::dimDomain;
-    typedef typename InterfaceType::RangeFieldType I_RangeFieldType;
-    static const int i_polOrder = InterfaceType::polOrder;
-    static const size_t i_dimRange = InterfaceType::dimRange;
-    static const size_t i_dimRangeCols = InterfaceType::dimRangeCols;
-    typedef typename InterfaceType::BackendType I_BackendType;
-    typedef typename InterfaceType::MapperType I_MapperType;
-    typedef typename InterfaceType::BaseFunctionSetType I_BaseFunctionSetType;
-    typedef typename InterfaceType::EntityType I_EntityType;
-    typedef typename InterfaceType::PatternType I_PatternType;
-    typedef typename InterfaceType::DofCommunicatorType I_DofCommunicatorType;
-    static const auto i_layer_backend = InterfaceType::layer_backend;
-    static_assert(std::is_base_of<InterfaceType, SpaceType>::value, "SpaceType has to be derived from SpaceInterface!");
-    static_assert(std::is_same<derived_type, SpaceType>::value, "Types do not match!");
-    static_assert(std::is_same<I_GridLayerType, D_GridLayerType>::value, "Types do not match!");
-    static_assert(std::is_same<I_DomainFieldType, D_DomainFieldType>::value, "Types do not match!");
-    static_assert(std::is_same<I_RangeFieldType, D_RangeFieldType>::value, "Types do not match!");
-    static_assert(std::is_same<I_BackendType, D_BackendType>::value, "Types do not match!");
-    static_assert(std::is_same<I_MapperType, D_MapperType>::value, "Types do not match!");
-    static_assert(std::is_same<I_BaseFunctionSetType, D_BaseFunctionSetType>::value, "Types do not match!");
-    static_assert(std::is_same<I_EntityType, D_EntityType>::value, "Types do not match!");
-    static_assert(std::is_same<I_PatternType, D_PatternType>::value, "Types do not match!");
-    static_assert(std::is_same<I_DofCommunicatorType, D_DofCommunicatorType>::value, "Types do not match!");
-    static_assert(std::is_move_constructible<SpaceType>::value, "SpaceType isn't move constructible");
-    static_assert(std::is_copy_constructible<SpaceType>::value, "SpaceType isn't copy constructible");
-    static_assert(i_dimDomain == d_dimDomain, "Dimensions do not match!");
-    static_assert(i_dimRange == d_dimRange, "Dimensions do not match!");
-    static_assert(i_dimRangeCols == d_dimRangeCols, "Dimensions do not match!");
-    static_assert(i_polOrder == d_polOrder, "Polynomial orders do not match!");
-    static_assert(d_layer_backend == i_layer_backend, "Information do not match!");
-    // dynamic checks
-    // * as the derived_type
-    const D_BackendType& d_backend = space_.backend();
-    const D_MapperType& d_mapper = space_.mapper();
-    const D_GridLayerType& d_grid_layer = space_.grid_layer();
-    D_DofCommunicatorType& d_comm = space_.dof_communicator();
-    D_PatternType d_pattern = space_.compute_pattern();
-    D_PatternType d_pattern_view = space_.compute_pattern(d_grid_layer);
-    D_PatternType d_pattern_other = space_.compute_pattern(space_);
-    D_PatternType d_pattern_view_other = space_.compute_pattern(d_grid_layer, space_);
-    D_PatternType d_pattern_volume = space_.compute_volume_pattern();
-    D_PatternType d_pattern_volume_view = space_.compute_volume_pattern(d_grid_layer);
-    D_PatternType d_pattern_volume_other = space_.compute_volume_pattern(space_);
-    D_PatternType d_pattern_volume_view_other = space_.compute_volume_pattern(d_grid_layer, space_);
-    D_PatternType d_pattern_face_volume = space_.compute_face_and_volume_pattern();
-    D_PatternType d_pattern_face_volume_view = space_.compute_face_and_volume_pattern(d_grid_layer);
-    D_PatternType d_pattern_face_volume_other = space_.compute_face_and_volume_pattern(space_);
-    D_PatternType d_pattern_face_volume_view_other = space_.compute_face_and_volume_pattern(d_grid_layer, space_);
-    D_PatternType d_pattern_face = space_.compute_face_pattern();
-    D_PatternType d_pattern_face_view = space_.compute_face_pattern(d_grid_layer);
-    D_PatternType d_pattern_face_other = space_.compute_face_pattern(space_);
-    D_PatternType d_pattern_face_view_other = space_.compute_face_pattern(d_grid_layer, space_);
-    EXPECT_EQ(d_pattern, d_pattern_other);
-    EXPECT_EQ(d_pattern, d_pattern_view);
-    EXPECT_EQ(d_pattern, d_pattern_view_other);
-    EXPECT_EQ(d_pattern_volume, d_pattern_volume_other);
-    EXPECT_EQ(d_pattern_volume, d_pattern_volume_view);
-    EXPECT_EQ(d_pattern_volume, d_pattern_volume_view_other);
-    EXPECT_EQ(d_pattern_face_volume, d_pattern_face_volume_view);
-    EXPECT_EQ(d_pattern_face_volume, d_pattern_face_volume_other);
-    EXPECT_EQ(d_pattern_face_volume, d_pattern_face_volume_view_other);
-    EXPECT_EQ(d_pattern_face, d_pattern_face_other);
-    EXPECT_EQ(d_pattern_face, d_pattern_face_view);
-    EXPECT_EQ(d_pattern_face, d_pattern_face_view_other);
-    // * as the interface
-    const InterfaceType& i_space = static_cast<const InterfaceType&>(space_);
-    const I_BackendType& i_backend = i_space.backend();
-    const I_MapperType& i_mapper = i_space.mapper();
-    const I_GridLayerType& i_grid_layer = i_space.grid_layer();
-    I_DofCommunicatorType& i_comm = i_space.dof_communicator();
-    I_PatternType i_pattern = i_space.compute_pattern();
-    I_PatternType i_pattern_view = i_space.compute_pattern(i_grid_layer);
-    I_PatternType i_pattern_other = i_space.compute_pattern(i_space);
-    I_PatternType i_pattern_view_other = i_space.compute_pattern(i_grid_layer, i_space);
-    I_PatternType i_pattern_volume = i_space.compute_volume_pattern();
-    I_PatternType i_pattern_volume_view = i_space.compute_volume_pattern(i_grid_layer);
-    I_PatternType i_pattern_volume_other = i_space.compute_volume_pattern(i_space);
-    I_PatternType i_pattern_volume_view_other = i_space.compute_volume_pattern(i_grid_layer, i_space);
-    I_PatternType i_pattern_face_volume = i_space.compute_face_and_volume_pattern();
-    I_PatternType i_pattern_face_volume_view = i_space.compute_face_and_volume_pattern(i_grid_layer);
-    I_PatternType i_pattern_face_volume_other = i_space.compute_face_and_volume_pattern(i_space);
-    I_PatternType i_pattern_face_volume_view_other = i_space.compute_face_and_volume_pattern(i_grid_layer, i_space);
-    I_PatternType i_pattern_face = i_space.compute_face_pattern();
-    I_PatternType i_pattern_face_view = i_space.compute_face_pattern(i_grid_layer);
-    I_PatternType i_pattern_face_other = i_space.compute_face_pattern(i_space);
-    I_PatternType i_pattern_face_view_other = i_space.compute_face_pattern(i_grid_layer, i_space);
-    EXPECT_EQ(&i_backend, &d_backend);
-    EXPECT_EQ(&i_mapper, &d_mapper);
-    EXPECT_EQ(&i_grid_layer, &d_grid_layer);
-    EXPECT_EQ(&i_comm, &d_comm);
-    EXPECT_EQ(i_pattern, d_pattern);
-    EXPECT_EQ(i_pattern_other, d_pattern_other);
-    EXPECT_EQ(i_pattern_view, d_pattern_view);
-    EXPECT_EQ(i_pattern_view_other, d_pattern_view_other);
-    EXPECT_EQ(i_pattern_volume, d_pattern_volume);
-    EXPECT_EQ(i_pattern_volume_other, d_pattern_volume_other);
-    EXPECT_EQ(i_pattern_volume_view, d_pattern_volume_view);
-    EXPECT_EQ(i_pattern_volume_view_other, d_pattern_volume_view_other);
-    EXPECT_EQ(i_pattern_face_volume, d_pattern_face_volume);
-    EXPECT_EQ(i_pattern_face_volume_other, d_pattern_face_volume_other);
-    EXPECT_EQ(i_pattern_face_volume_view, d_pattern_face_volume_view);
-    EXPECT_EQ(i_pattern_face_volume_view_other, d_pattern_face_volume_view_other);
-    EXPECT_EQ(i_pattern_face, d_pattern_face);
-    EXPECT_EQ(i_pattern_face_other, d_pattern_face_other);
-    EXPECT_EQ(i_pattern_face_view, d_pattern_face_view);
-    EXPECT_EQ(i_pattern_face_view_other, d_pattern_face_view_other);
-    // walk the grid
-    const auto entity_it_end = d_grid_layer.template end<0>();
-    for (auto entity_it = d_grid_layer.template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const D_EntityType& entity = *entity_it;
-      // * as the derived type
-      D_BaseFunctionSetType d_base_function_set = space_.base_function_set(entity);
-      size_t d_bfs_size = d_base_function_set.size();
-      EXPECT_EQ(d_bfs_size, d_mapper.numDofs(entity));
-      // * as the interface type
-      I_BaseFunctionSetType i_base_function_set = i_space.base_function_set(entity);
-      size_t i_bfs_size = i_base_function_set.size();
-      EXPECT_EQ(d_bfs_size, i_bfs_size);
-      // make sure backend_type is defined
-      constexpr auto backend_type = SpaceType::backend_type;
-    } // walk the grid
-  } // ... fulfills_interface()
+    ASSERT_NE(grid_view, nullptr);
+    ASSERT_NE(space, nullptr);
+    ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
+    for (auto&& geometry_type : grid_view->indexSet().types(0))
+      EXPECT_EQ(numLagrangePoints(geometry_type.id(), d, p),
+                space->finite_element(geometry_type).lagrange_points().size());
+  }
 
-  void check_for_correct_copy()
+  void basis_is_lagrange_basis(const double& tolerance = 1e-15)
   {
-    SpaceType foop(space_);
-    auto aa DUNE_UNUSED = foop.mapper().size();
-    SpaceType cp = DerivedHolder<SpaceType, ProviderType>(grid_provider_).space();
-    auto bb DUNE_UNUSED = cp.mapper().size();
-  } // ... check_for_correct_copy()
-
-  /**
-    * \brief Checks the spaces mapper for it's interface compliance.
-    */
-  void mapper_fulfills_interface() const
-  {
-    using namespace Dune;
-    using namespace Dune::GDT;
-    // static checks
-    // * as the derived type
-    typedef typename SpaceType::MapperType MapperType;
-    typedef typename MapperType::Traits Traits;
-    typedef typename MapperType::BackendType D_BackendType;
-    // * as the interface
-    typedef MapperInterface<Traits> InterfaceType;
-    typedef typename InterfaceType::derived_type derived_type;
-    typedef typename InterfaceType::BackendType I_BackendType;
-    static_assert(std::is_base_of<InterfaceType, MapperType>::value,
-                  "MapperType has to be derived from MapperInterface!");
-    static_assert(std::is_same<derived_type, MapperType>::value, "Types do not match!");
-    static_assert(std::is_same<I_BackendType, D_BackendType>::value, "Types do not match!");
-    // dynamic checks
-    // * as the derived type
-    const MapperType& d_mapper = space_.mapper();
-    const D_BackendType& d_backend = d_mapper.backend();
-    size_t d_size = d_mapper.size();
-    size_t d_maxNumDofs = d_mapper.maxNumDofs();
-    // * as the interface type
-    const InterfaceType& i_mapper = static_cast<const InterfaceType&>(d_mapper);
-    const D_BackendType& i_backend = i_mapper.backend();
-    size_t i_size = i_mapper.size();
-    size_t i_maxNumDofs = i_mapper.maxNumDofs();
-    EXPECT_EQ(&i_backend, &d_backend);
-    EXPECT_EQ(i_size, d_size);
-    EXPECT_EQ(i_maxNumDofs, d_maxNumDofs);
-    //   walk the grid
-    const auto entity_it_end = space_.grid_layer().template end<0>();
-    for (auto entity_it = space_.grid_layer().template begin<0>(); entity_it != entity_it_end; ++entity_it) {
-      const auto& entity = *entity_it;
-      // * as the derived type
-      size_t d_numDofs = d_mapper.numDofs(entity);
-      DynamicVector<size_t> d_globalIndices(d_numDofs, 0);
-      d_mapper.globalIndices(entity, d_globalIndices);
-      if (d_globalIndices.size() > d_numDofs)
-        DUNE_THROW(XT::Common::Exceptions::index_out_of_range, d_globalIndices.size() << " vs. " << d_numDofs);
-      DynamicVector<size_t> d_globalIndices_return = d_mapper.globalIndices(entity);
-      EXPECT_EQ(d_globalIndices_return, d_globalIndices);
-      // * as the interface
-      size_t i_numDofs = i_mapper.numDofs(entity);
-      DynamicVector<size_t> i_globalIndices(i_numDofs, 0);
-      i_mapper.globalIndices(entity, i_globalIndices);
-      DynamicVector<size_t> i_globalIndices_return = i_mapper.globalIndices(entity);
-      EXPECT_EQ(i_numDofs, d_numDofs);
-      EXPECT_EQ(i_globalIndices, d_globalIndices);
-      EXPECT_EQ(i_globalIndices_return, d_globalIndices_return);
-      //   walk the local DoFs
-      for (size_t ii = 0; ii < d_numDofs; ++ii) {
-        // * as the derived type
-        size_t d_mapToGlobal = d_mapper.mapToGlobal(entity, ii);
-        EXPECT_EQ(d_mapToGlobal, d_globalIndices[ii]);
-        // * as the interface
-        size_t i_mapToGlobal = i_mapper.mapToGlobal(entity, ii);
-        EXPECT_EQ(i_mapToGlobal, d_mapToGlobal);
-      } //   walk the local DoFs
-    } //   walk the grid
-  } // ... mapper_fulfills_interface()
-
-  /**
-    * \brief  Checks the spaces basefunctionsets for their interface compliance.
-    * \note   We do not check for the functionality enforced by LocalfuntionSetInterface at the moment!
-    */
-  void basefunctionset_fulfills_interface(bool special_case_rt_check = false) const
-  {
-    using namespace Dune;
-    using namespace Dune::GDT;
-    // static checks
-    // * as the derived type
-    typedef typename SpaceType::BaseFunctionSetType BaseFunctionSetType;
-    typedef typename BaseFunctionSetType::Traits Traits;
-    typedef typename BaseFunctionSetType::BackendType D_BackendType;
-    typedef typename BaseFunctionSetType::EntityType D_EntityType;
-    typedef typename BaseFunctionSetType::DomainFieldType D_DomainFieldType;
-    static const size_t d_dimDomain = BaseFunctionSetType::dimDomain;
-    typedef typename BaseFunctionSetType::DomainType D_DomainType;
-    typedef typename BaseFunctionSetType::RangeFieldType D_RangeFieldType;
-    static const size_t d_dimRange = BaseFunctionSetType::dimRange;
-    static const size_t d_dimRangeCols = BaseFunctionSetType::dimRangeCols;
-    typedef typename BaseFunctionSetType::RangeType D_RangeType;
-    typedef typename BaseFunctionSetType::JacobianRangeType D_JacobianRangeType;
-    static_assert(std::is_same<D_EntityType, typename SpaceType::EntityType>::value, "Types do not match!");
-    static_assert(std::is_same<D_DomainFieldType, typename SpaceType::DomainFieldType>::value, "Types do not match!");
-    static_assert(std::is_same<D_DomainType, typename SpaceType::DomainType>::value, "Types do not match!");
-    static_assert(std::is_same<D_RangeFieldType, typename SpaceType::RangeFieldType>::value, "Types do not match!");
-    static_assert(d_dimDomain == SpaceType::dimDomain, "Dimensions do not match!");
-    static_assert(d_dimRange == SpaceType::dimRange, "Dimensions do not match!");
-    static_assert(d_dimRangeCols == SpaceType::dimRangeCols, "Dimensions do not match!");
-    // * as the interface type
-    typedef BaseFunctionSetInterface<Traits,
-                                     D_DomainFieldType,
-                                     d_dimDomain,
-                                     D_RangeFieldType,
-                                     d_dimRange,
-                                     d_dimRangeCols>
-        InterfaceType;
-    typedef typename InterfaceType::derived_type derived_type;
-    typedef typename InterfaceType::BackendType I_BackendType;
-    typedef typename InterfaceType::EntityType I_EntityType;
-    typedef typename InterfaceType::DomainFieldType I_DomainFieldType;
-    static const size_t i_dimDomain = InterfaceType::dimDomain;
-    typedef typename InterfaceType::DomainType I_DomainType;
-    typedef typename InterfaceType::RangeFieldType I_RangeFieldType;
-    static const size_t i_dimRange = InterfaceType::dimRange;
-    static const size_t i_dimRangeCols = InterfaceType::dimRangeCols;
-    typedef typename InterfaceType::RangeType I_RangeType;
-    typedef typename InterfaceType::JacobianRangeType I_JacobianRangeType;
-    //! TODO no longer true for new spaces?
-    //    static_assert(std::is_same<derived_type, BaseFunctionSetType>::value, "Types do not match!");
-    static_assert(std::is_same<I_BackendType, D_BackendType>::value, "Types do not match!");
-    static_assert(std::is_same<I_EntityType, D_EntityType>::value, "Types do not match!");
-    static_assert(std::is_same<I_DomainFieldType, D_DomainFieldType>::value, "Types do not match!");
-    static_assert(std::is_same<I_DomainType, D_DomainType>::value, "Types do not match!");
-    static_assert(std::is_same<I_RangeFieldType, D_RangeFieldType>::value, "Types do not match!");
-    static_assert(std::is_same<I_RangeType, D_RangeType>::value, "Types do not match!");
-    static_assert(std::is_same<I_JacobianRangeType, D_JacobianRangeType>::value, "Types do not match!");
-    static_assert(i_dimDomain == d_dimDomain, "Dimensions do not match!");
-    static_assert(i_dimRange == d_dimRange, "Dimensions do not match!");
-    static_assert(i_dimRangeCols == d_dimRangeCols, "Dimensions do not match!");
-    // dynamic checks
-    // walk the grid
-    const auto entity_end_it = space_.grid_layer().template end<0>();
-    for (auto entity_it = space_.grid_layer().template begin<0>(); entity_it != entity_end_it; ++entity_it) {
-      const auto& entity = *entity_it;
-      // * as the derived type
-      BaseFunctionSetType d_base_function_set = space_.base_function_set(entity);
-      const D_BackendType& d_backend = d_base_function_set.backend();
-      size_t d_order = d_base_function_set.order();
-      if (!special_case_rt_check) {
-        EXPECT_GE(d_order,
-                  boost::numeric_cast<size_t>(SpaceType::polOrder)); // <- normaly we would expect equality here,
-      } else {
-        // but the raviart
-        //    thomas space of order 0 reports order 1 here
-        EXPECT_EQ(d_order, boost::numeric_cast<size_t>(SpaceType::polOrder));
+    ASSERT_NE(grid_view, nullptr);
+    ASSERT_NE(space, nullptr);
+    ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
+    for (auto&& element : elements(*grid_view)) {
+      const auto basis = space->basis().localize(element);
+      const auto lagrange_points = space->finite_element(element.geometry().type()).lagrange_points();
+      EXPECT_EQ(lagrange_points.size(), basis->size() / r);
+      for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
+        const auto values = basis->evaluate_set(lagrange_points[ii]);
+        for (size_t rr = 0; rr < r; ++rr) {
+          for (size_t jj = 0; jj < lagrange_points.size(); ++jj) {
+            EXPECT_TRUE(XT::Common::FloatCmp::eq(
+                values[rr * lagrange_points.size() + jj][rr], ii == jj ? 1. : 0., tolerance, tolerance))
+                << "ii = " << ii << "\nrr = " << rr << "\njj = " << jj
+                << "\nlagrange_points[ii] = " << lagrange_points[ii]
+                << "\nbasis->evaluate_set(lagrange_points[ii])[jj] = " << values[jj];
+          }
+        }
       }
-      //   the size has already been checked in fulfills_interface() above
-      // * as the interface
-      InterfaceType& i_base_function_set = static_cast<InterfaceType&>(d_base_function_set);
-      size_t i_order = i_base_function_set.order();
-      EXPECT_EQ(i_order, d_order);
-    } // walk the grid
-  } // ... basefunctionset_fulfills_interface()
+    }
+  } // ... basis_is_lagrange_basis(...)
 
-protected:
-  ProviderType grid_provider_;
-  SpaceType space_;
-}; // struct SpaceBase
+  // I am too lazy to implement this in the vector-valued case.
+  template <size_t r_ = r, typename = typename std::enable_if<r_ == r && r_ == 1, void>::type>
+  void basis_jacobians_of_lagrange_space_seem_to_be_correct()
+  {
+    ASSERT_NE(grid_view, nullptr);
+    ASSERT_NE(space, nullptr);
+    ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
+    for (auto&& element : elements(*grid_view)) {
+      const auto& reference_element = ReferenceElements<D, d>::general(element.geometry().type());
+      const auto basis = space->basis().localize(element);
+      const double h = 1e-6;
+      for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element.geometry().type(), basis->order())) {
+        const auto& xx = quadrature_point.position();
+        const auto& J_inv_T = element.geometry().jacobianInverseTransposed(xx);
+        const auto jacobians = basis->jacobians_of_set(xx);
+        EXPECT_EQ(basis->size(), jacobians.size());
+        const auto values_xx = basis->evaluate_set(xx);
+        EXPECT_EQ(basis->size(), values_xx.size());
+        auto approximate_jacobians = jacobians;
+        // compute approximate partial derivatives
+        for (size_t dd = 0; dd < d; ++dd) {
+          // try to find a suitable x + h
+          auto xx_plus_h = xx;
+          xx_plus_h[dd] += h;
+          if (!reference_element.checkInside(xx_plus_h)) {
+            xx_plus_h[dd] -= 2. * h;
+          }
+          ASSERT_TRUE(reference_element.checkInside(xx_plus_h)) << "xx_plus_h = " << xx_plus_h
+                                                                << " is not inside the reference element!";
+          const auto values_xx_plus_h = basis->evaluate_set(xx_plus_h);
+          EXPECT_EQ(basis->size(), values_xx_plus_h.size());
+          for (size_t ii = 0; ii < basis->size(); ++ii) {
+            approximate_jacobians[ii][0][dd] = (values_xx_plus_h[ii] - values_xx[ii]) / (xx_plus_h[dd] - xx[dd]);
+            if (xx_plus_h[dd] - xx[dd] < 0)
+              approximate_jacobians[ii][0][dd] *= -1.;
+          }
+        }
+        // transform
+        auto tmp_jac = approximate_jacobians[0][0];
+        for (size_t ii = 0; ii < basis->size(); ++ii) {
+          J_inv_T.mv(approximate_jacobians[ii][0], tmp_jac);
+          approximate_jacobians[ii][0] = tmp_jac;
+        }
+        // check
+        double tolerance = 1e-4;
+        for (size_t ii = 0; ii < basis->size(); ++ii)
+          EXPECT_TRUE(XT::Common::FloatCmp::eq(jacobians[ii][0], approximate_jacobians[ii][0], tolerance, tolerance))
+              << "ii = " << ii << "\njacobians[ii][0] = " << jacobians[ii][0] << "\n"
+              << "approximate_jacobians[ii][0] = " << approximate_jacobians[ii][0] << "\n"
+              << "absolue L_infty error: " << (jacobians[ii][0] - approximate_jacobians[ii][0]).infinity_norm() << "\n"
+              << "relative L_infty error: "
+              << (jacobians[ii][0] - approximate_jacobians[ii][0]).infinity_norm() / jacobians[ii][0].infinity_norm();
+      }
+    }
+  } // ... basis_jacobians_of_lagrange_space_seem_to_be_correct(...)
+
+  void mapper_reports_correct_num_DoFs_of_lagrange_space_on_each_element()
+  {
+    ASSERT_NE(grid_view, nullptr);
+    ASSERT_NE(space, nullptr);
+    ASSERT_TRUE(space->is_lagrangian()) << "Do not call this test otherwise!";
+    for (auto&& element : elements(*grid_view))
+      EXPECT_EQ(r * numLagrangePoints(element.geometry().type().id(), d, p), space->mapper().local_size(element));
+  }
+
+  void mapper_reports_correct_max_num_DoFs()
+  {
+    ASSERT_NE(grid_view, nullptr);
+    ASSERT_NE(space, nullptr);
+    size_t max_num_dofs = 0;
+    for (auto&& element : elements(*grid_view))
+      max_num_dofs = std::max(max_num_dofs, space->mapper().local_size(element));
+    EXPECT_LE(max_num_dofs, space->mapper().max_local_size());
+  }
+
+  void mapper_of_discontinuous_space_maps_correctly()
+  {
+    ASSERT_NE(grid_view, nullptr);
+    ASSERT_NE(space, nullptr);
+    // we want to check that the numbering is consecutive and that each global index exists only once
+    std::set<size_t> global_indices;
+    // we test both call variants
+    std::set<size_t> map_to_global;
+    for (auto&& element : elements(*grid_view)) {
+      for (const auto& global_index : space->mapper().global_indices(element))
+        global_indices.insert(global_index);
+      for (size_t ii = 0; ii < space->mapper().local_size(element); ++ii)
+        map_to_global.insert(space->mapper().global_index(element, ii));
+    }
+    // check for consecutive numbering
+    EXPECT_EQ(0, *global_indices.begin());
+    EXPECT_EQ(global_indices.size() - 1, *global_indices.rbegin());
+    EXPECT_EQ(0, *map_to_global.begin());
+    EXPECT_EQ(map_to_global.size() - 1, *map_to_global.rbegin());
+    // check that the mapper is of the same opinion
+    EXPECT_EQ(space->mapper().size(), global_indices.size());
+    EXPECT_EQ(space->mapper().size(), map_to_global.size());
+    // check that each global index is unique
+    for (const auto& global_index : global_indices)
+      EXPECT_EQ(1, global_indices.count(global_index));
+    for (const auto& global_index : map_to_global)
+      EXPECT_EQ(1, map_to_global.count(global_index));
+  } // ... mapper_of_discontinuous_space_maps_correctly(...)
+
+  void local_interpolation_seems_to_be_correct()
+  {
+    ASSERT_NE(grid_view, nullptr);
+    ASSERT_NE(space, nullptr);
+    for (const auto& geometry_type : grid_view->indexSet().types(0)) {
+      const auto& finite_element = space->finite_element(geometry_type);
+      const auto& shape_functions = finite_element.basis();
+      ASSERT_EQ(finite_element.size(), shape_functions.size());
+      ASSERT_EQ(finite_element.size(), finite_element.interpolation().size());
+      for (size_t ii = 0; ii < shape_functions.size(); ++ii) {
+        const auto dofs = finite_element.interpolation().interpolate(
+            [&](const auto& x) { return shape_functions.evaluate(x)[ii]; }, shape_functions.order());
+        ASSERT_GE(dofs.size(), shape_functions.size());
+        for (size_t jj = 0; jj < shape_functions.size(); ++jj)
+          EXPECT_TRUE(XT::Common::FloatCmp::eq(ii == jj ? 1. : 0., dofs[jj]))
+              << "\nii == jj ? 1. : 0. = " << (ii == jj ? 1. : 0.) << "\ndofs[jj] = " << dofs[jj];
+      }
+    }
+  } // ... local_interpolation_seems_to_be_correct(...)
+}; // struct SpaceTestBase
+
+
+using SimplicialGridsForSpaceTest = ::testing::Types<ONED_1D,
+                                                     YASP_1D_EQUIDISTANT_OFFSET
+#if HAVE_DUNE_ALUGRID
+                                                     ,
+                                                     ALU_2D_SIMPLEX_CONFORMING,
+                                                     ALU_2D_SIMPLEX_NONCONFORMING
+#endif
+#if HAVE_DUNE_UGGRID || HAVE_UG
+                                                     ,
+                                                     UG_2D
+#endif
+#if HAVE_DUNE_ALUGRID
+                                                     ,
+                                                     ALU_3D_SIMPLEX_CONFORMING,
+                                                     ALU_3D_SIMPLEX_NONCONFORMING
+#endif
+#if HAVE_DUNE_UGGRID || HAVE_UG
+                                                     ,
+                                                     UG_3D
+#endif
+                                                     >;
+
+
+using CubicGridsForSpaceTest = ::testing::Types<YASP_2D_EQUIDISTANT_OFFSET
+#if HAVE_DUNE_ALUGRID
+                                                ,
+                                                ALU_2D_CUBE
+#endif
+#if HAVE_DUNE_UGGRID || HAVE_UG
+                                                ,
+                                                UG_2D
+#endif
+                                                ,
+                                                YASP_3D_EQUIDISTANT_OFFSET
+#if HAVE_DUNE_ALUGRID
+                                                ,
+                                                ALU_3D_CUBE
+#endif
+#if HAVE_DUNE_UGGRID || HAVE_UG
+                                                ,
+                                                UG_3D
+#endif
+                                                >;
+
+
+using PrismGridsForSpaceTest = ::testing::Types<
+#if HAVE_DUNE_UGGRID || HAVE_UG
+    UG_3D
+#endif
+    >;
+
+
+using MixedGridsForSpaceTest = ::testing::Types<
+#if HAVE_DUNE_UGGRID || HAVE_UG
+    UG_2D,
+    UG_3D
+#endif
+    >;
+
+
+} // namespace GDT
+} // namespace Dune
 
 #endif // DUNE_GDT_TEST_SPACES_BASE_HH
