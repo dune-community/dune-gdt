@@ -113,12 +113,29 @@ class LocalizableProductBase;
 
 template <class GridLayerImp, class SourceImp, class RangeImp>
 class LocalizableOperatorBase;
-
+#endif // 0
 
 namespace internal {
 
 
 // helper structs
+
+// from #include <dune/gdt/spaces/interface.hh>
+
+template <class S>
+struct is_space_helper
+{
+  DXTC_has_typedef_initialize_once(GV);
+  DXTC_has_static_member_initialize_once(r);
+  DXTC_has_static_member_initialize_once(rC);
+  DXTC_has_typedef_initialize_once(R);
+
+  static const constexpr bool is_candidate = DXTC_has_typedef(GV)<S>::value && DXTC_has_static_member(r)<S>::value
+                                             && DXTC_has_static_member(rC)<S>::value && DXTC_has_typedef(R)<S>::value;
+};
+
+
+#if 0
 // from #include <dune/gdt/playground/spaces/restricted.hh>
 template <class S>
 struct is_restricted_space_helper
@@ -211,10 +228,10 @@ struct is_matrix_operator_helper
       && DXTC_has_typedef(FieldType)<Tt>::value && DXTC_has_static_member(pattern_type)<Tt>::value
       && DXTC_has_typedef(OuterRangeSpaceType)<Tt>::value && DXTC_has_typedef(OuterSourceSpaceType)<Tt>::value;
 };
+#endif // 0
 
 
 } // namespace internal
-#endif // 0
 
 
 // actual structs
@@ -229,16 +246,18 @@ struct is_local_finite_element<LocalFiniteElementInterface<D, d, R, r, rC>> : pu
 {
 };
 
+
 // from #include <dune/gdt/spaces/interface.hh>
-template <class S>
+template <class S, bool is_candidate = internal::is_space_helper<S>::is_candidate>
 struct is_space : public std::false_type
 {
 };
 
-template <class GV, size_t r, size_t rC, class R>
-struct is_space<SpaceInterface<GV, r, rC, R>> : public std::true_type
+template <class S>
+struct is_space<S, true> : public std::is_base_of<SpaceInterface<typename S::GV, S::r, S::rC, typename S::R>, S>
 {
 };
+
 
 #if 0
 template <class S, bool candidate = internal::is_space_helper<S>::is_candidate>
