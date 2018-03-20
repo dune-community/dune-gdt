@@ -11,6 +11,7 @@
 #define DUNE_GDT_LOCAL_FINITE_ELEMENTS_LAGRANGE_HH
 
 #include <memory>
+#include <sstream>
 
 #include <dune/geometry/referenceelements.hh>
 #include <dune/geometry/type.hh>
@@ -67,6 +68,24 @@ class LocalLagrangeFiniteElementFactory
   using ScalarLocalFiniteElementType = LocalFiniteElementInterface<D, d, R, 1>;
   using LocalFiniteElementType = LocalFiniteElementInterface<D, d, R, r>;
 
+  static std::string order_error(const GeometryType& geometry_type, const int order)
+  {
+    std::stringstream ss;
+    ss << "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in " << d
+       << "d on a " << geometry_type << " reference element for order " << order
+       << " (if you think it is working, update this check)!";
+    return ss.str();
+  }
+
+  static std::string geometry_error(const GeometryType& geometry_type, const int order)
+  {
+    std::stringstream ss;
+    ss << "when creating a local Lagrange finite element: this is untested!\n"
+       << "Please update this check if you believe that LagrangeLocalFiniteElement is available for\n- dimension: " << d
+       << "\n- geometry_type: " << geometry_type << "\n- order: " << order;
+    return ss.str();
+  }
+
   // Fist we create the scalar FE ...
 
   template <size_t d_ = d, bool anything = true>
@@ -74,106 +93,46 @@ class LocalLagrangeFiniteElementFactory
   {
     static std::unique_ptr<ScalarLocalFiniteElementType> create(const GeometryType& geometry_type, const int& order)
     {
+      DUNE_THROW_IF(geometry_type.dim() != d,
+                    Exceptions::finite_element_error,
+                    "geometry_type = " << geometry_type << "\nd = " << d);
       // special case
       if (order == 0)
         return std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1>>(
             new LocalZeroOrderLagrangeFiniteElement<D, d, R>(geometry_type));
       // checks
-      if (d == 1) {
-        if (order > 18)
-          DUNE_THROW(
-              Exceptions::finite_element_error,
-              "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 1d "
-              "for polorder "
-                  << order
-                  << " (if you think it is working, update this check)!");
-      } else if (d == 2) {
-        if (geometry_type == GeometryType(GeometryType::simplex, 2)) {
-          if (order > 15)
-            DUNE_THROW(
-                Exceptions::finite_element_error,
-                "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 2d "
-                "on simplices for polorder "
-                    << order
-                    << " (if you think it is working, update this check)!");
-        } else if (geometry_type == GeometryType(GeometryType::cube, 2)) {
-          if (order > 10)
-            DUNE_THROW(
-                Exceptions::finite_element_error,
-                "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 2d "
-                "on cubes for polorder "
-                    << order
-                    << " (if you think it is working, update this check)!");
-        } else
-          DUNE_THROW(Exceptions::finite_element_error,
-                     "when creating a local Lagrange finite element: this is untested!\n"
-                         << "Please update this check if you believe that a suitable finite element is available for\n"
-                         << "- dimension: "
-                         << d
-                         << "\n"
-                         << "-n geometry_type: "
-                         << geometry_type
-                         << "\n"
-                         << "- polorder: "
-                         << order);
+      if (d == 1)
+        DUNE_THROW_IF(order > 18, Exceptions::finite_element_error, order_error(geometry_type, order));
+      else if (d == 2) {
+        if (geometry_type == GeometryType(GeometryType::simplex, 2))
+          DUNE_THROW_IF(order > 15, Exceptions::finite_element_error, order_error(geometry_type, order));
+        else if (geometry_type == GeometryType(GeometryType::cube, 2))
+          DUNE_THROW_IF(order > 10, Exceptions::finite_element_error, order_error(geometry_type, order));
+        else
+          DUNE_THROW(Exceptions::finite_element_error, geometry_error(geometry_type, order));
       } else if (d == 3) {
-        if (geometry_type == GeometryType(GeometryType::simplex, 3)) {
-          if (order > 14)
-            DUNE_THROW(
-                Exceptions::finite_element_error,
-                "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
-                "on simplices for polorder "
-                    << order
-                    << " (if you think it is working, update this check)!");
-        } else if (geometry_type == GeometryType(GeometryType::cube, 3)) {
-          if (order > 7)
-            DUNE_THROW(
-                Exceptions::finite_element_error,
-                "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
-                "on cubes for polorder "
-                    << order
-                    << " (if you think it is working, update this check)!");
-        } else if (geometry_type == GeometryType(GeometryType::prism, 3)) {
-          if (order > 9)
-            DUNE_THROW(
-                Exceptions::finite_element_error,
-                "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
-                "on prisms for polorder "
-                    << order
-                    << " (if you think it is working, update this check)!");
-        } else if (geometry_type == GeometryType(GeometryType::pyramid, 3)) {
+        if (geometry_type == GeometryType(GeometryType::simplex, 3))
+          DUNE_THROW_IF(order > 14, Exceptions::finite_element_error, order_error(geometry_type, order));
+        else if (geometry_type == GeometryType(GeometryType::cube, 3))
+          DUNE_THROW_IF(order > 7, Exceptions::finite_element_error, order_error(geometry_type, order));
+        else if (geometry_type == GeometryType(GeometryType::prism, 3))
+          DUNE_THROW_IF(order > 9, Exceptions::finite_element_error, order_error(geometry_type, order));
+        else if (geometry_type == GeometryType(GeometryType::pyramid, 3))
           DUNE_THROW(
               Exceptions::finite_element_error,
-              "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail in 3d "
-              "on pyramids for polorder "
-                  << order
-                  << " (if you think it is working, update this check)!");
-        } else
-          DUNE_THROW(Exceptions::finite_element_error,
-                     "when creating a local Lagrange finite element: this is untested!\n"
-                         << "Please update this check if you believe that a suitable finite element is available for\n"
-                         << "- dimension: "
-                         << d
-                         << "\n"
-                         << "-n geometry_type: "
-                         << geometry_type
-                         << "\n"
-                         << "- polorder: "
-                         << order);
-      } else {
-        // If these are available (a.k.a, this compiles for d > 3), they should most likely work for lower orders.
-        DUNE_THROW(Exceptions::finite_element_error,
-                   "when creating a local Lagrange finite element: this is untested!\n"
-                       << "Please update this check if you believe that a suitable finite element is available for\n"
-                       << "- dimension: "
-                       << d
-                       << "\n"
-                       << "-n geometry_type: "
-                       << geometry_type
-                       << "\n"
-                       << "- polorder: "
-                       << order);
-      }
+              "when creating a local Lagrange finite element: the LagrangeLocalFiniteElement is known to fail on "
+              "pyramids (if you think it is working, update this check)!");
+        else
+          DUNE_THROW(Exceptions::finite_element_error, geometry_error(geometry_type, order));
+      } else if (d == 4) {
+        if (geometry_type == GeometryType(GeometryType::simplex, 4))
+          DUNE_THROW_IF(order > 13, Exceptions::finite_element_error, order_error(geometry_type, order));
+        else if (geometry_type == GeometryType(GeometryType::cube, 4))
+          DUNE_THROW_IF(order > 5, Exceptions::finite_element_error, order_error(geometry_type, order));
+        else
+          DUNE_THROW(Exceptions::finite_element_error, geometry_error(geometry_type, order));
+      } else
+        DUNE_THROW(Exceptions::finite_element_error, geometry_error(geometry_type, order));
       // the actual finite element
       return std::unique_ptr<LocalFiniteElementInterface<D, d, R, 1>>(
           new LocalFiniteElementWrapper<LagrangeLocalFiniteElement<EquidistantPointSet, d, D, R>, D, d, R, 1>(
