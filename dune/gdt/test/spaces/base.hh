@@ -408,6 +408,13 @@ using MixedGrids = ::testing::Types<
     >;
 
 
+using MixedGridsWithConformingIntersections = ::testing::Types<
+#if HAVE_DUNE_UGGRID || HAVE_UG
+    UG_2D
+#endif
+    >;
+
+
 } // namespace GDT
 } // namespace Dune
 
