@@ -10,7 +10,7 @@
 #ifndef DUNE_GDT_TEST_SPACES_L2_DISCONTINUOUS_GALERKIN_HH
 #define DUNE_GDT_TEST_SPACES_L2_DISCONTINUOUS_GALERKIN_HH
 
-#include <dune/gdt/spaces/l2/discontinuous-galerkin.hh>
+#include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
 
 #include "base.hh"
 

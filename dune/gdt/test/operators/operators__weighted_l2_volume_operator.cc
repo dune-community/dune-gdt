@@ -17,7 +17,7 @@
 #include <dune/xt/functions/constant.hh>
 
 #include <dune/gdt/operators/weighted-l2.hh>
-#include <dune/gdt/spaces/l2/discontinuous-galerkin.hh>
+#include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
 #include <dune/gdt/spaces/hdiv/raviart-thomas.hh>

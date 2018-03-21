@@ -16,7 +16,7 @@
 #include <dune/xt/grid/grids.hh>
 
 #include <dune/gdt/operators/matrix-based.hh>
-#include <dune/gdt/spaces/l2/discontinuous-galerkin.hh>
+#include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
 #include <dune/gdt/spaces/h1/continuous-lagrange.hh>
 #include <dune/gdt/spaces/hdiv/raviart-thomas.hh>
