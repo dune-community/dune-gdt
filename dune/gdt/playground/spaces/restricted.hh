@@ -55,7 +55,7 @@ class RestrictedSpaceTraits
   template <class G>
   struct layer_backend_helper<G, false, true>
   {
-    static const XT::Grid::Backends value = XT::Grid::Backends::part;
+    static const XT::Grid::Backends value = XT::Grid::Backends::view;
   };
 
 public:
