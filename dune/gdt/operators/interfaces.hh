@@ -47,7 +47,7 @@ class NoJacobian
  *       switch (to a lot of methods). Either this gets merged with the new Parameter or we need a different paradigm.
  */
 template <class Traits>
-class OperatorInterface : public XT::CRTPInterface<OperatorInterface<Traits>, Traits>,
+class OperatorInterface : public XT::Common::CRTPInterface<OperatorInterface<Traits>, Traits>,
                           public XT::Common::ParametricInterface
 {
 public:

@@ -109,7 +109,8 @@ struct layer_from_backend<Backends::gdt>
 
 
 template <class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
-class SpaceInterface : public XT::CRTPInterface<SpaceInterface<Traits, domainDim, rangeDim, rangeDimCols>, Traits>
+class SpaceInterface
+    : public XT::Common::CRTPInterface<SpaceInterface<Traits, domainDim, rangeDim, rangeDimCols>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;

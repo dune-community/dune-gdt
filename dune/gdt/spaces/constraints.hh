@@ -39,7 +39,7 @@ class ConstraintsWrapper;
  *        We need this interface for template matching in the SystemAssembler.
  */
 template <class Traits>
-class ConstraintsInterface : public XT::CRTPInterface<ConstraintsInterface<Traits>, Traits>
+class ConstraintsInterface : public XT::Common::CRTPInterface<ConstraintsInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;

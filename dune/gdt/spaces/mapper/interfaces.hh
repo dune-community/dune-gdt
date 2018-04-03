@@ -26,7 +26,7 @@ namespace GDT {
  * \todo Add note that each implementation has to document which of globalIndices or mapToGlobal is more efficient!
  */
 template <class Traits>
-class MapperInterface : public XT::CRTPInterface<MapperInterface<Traits>, Traits>
+class MapperInterface : public XT::Common::CRTPInterface<MapperInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;

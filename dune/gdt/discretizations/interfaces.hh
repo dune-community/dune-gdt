@@ -27,9 +27,10 @@ namespace GDT {
 
 
 template <class Traits>
-class StationaryDiscretizationInterface : public XT::CRTPInterface<StationaryDiscretizationInterface<Traits>, Traits>
+class StationaryDiscretizationInterface
+    : public XT::Common::CRTPInterface<StationaryDiscretizationInterface<Traits>, Traits>
 {
-  typedef XT::CRTPInterface<StationaryDiscretizationInterface<Traits>, Traits> BaseType;
+  typedef XT::Common::CRTPInterface<StationaryDiscretizationInterface<Traits>, Traits> BaseType;
 
 public:
   using typename BaseType::derived_type;
@@ -220,9 +221,9 @@ public:
 
 
 template <class Traits>
-class FvDiscretizationInterface : public XT::CRTPInterface<FvDiscretizationInterface<Traits>, Traits>
+class FvDiscretizationInterface : public XT::Common::CRTPInterface<FvDiscretizationInterface<Traits>, Traits>
 {
-  typedef XT::CRTPInterface<FvDiscretizationInterface<Traits>, Traits> BaseType;
+  typedef XT::Common::CRTPInterface<FvDiscretizationInterface<Traits>, Traits> BaseType;
 
 public:
   using typename BaseType::derived_type;

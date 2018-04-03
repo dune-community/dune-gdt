@@ -44,7 +44,7 @@ class IsRHSEvaluation
 
 template <class Traits>
 class LocalNumericalCouplingFluxInterface
-    : public XT::CRTPInterface<LocalNumericalCouplingFluxInterface<Traits>, Traits>,
+    : public XT::Common::CRTPInterface<LocalNumericalCouplingFluxInterface<Traits>, Traits>,
       internal::IsNumericalCouplingFlux
 {
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
@@ -84,7 +84,7 @@ public:
 
 template <class Traits>
 class LocalNumericalBoundaryFluxInterface
-    : public XT::CRTPInterface<LocalNumericalBoundaryFluxInterface<Traits>, Traits>,
+    : public XT::Common::CRTPInterface<LocalNumericalBoundaryFluxInterface<Traits>, Traits>,
       internal::IsNumericalBoundaryFlux
 {
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
