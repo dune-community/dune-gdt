@@ -15,6 +15,9 @@
 #include <dune/grid/yaspgrid.hh>
 
 #include <dune/xt/common/crtp.hh>
+
+#include <dune/xt/grid/boundaryinfo/types.hh>
+
 #include <dune/xt/functions/interfaces.hh>
 
 namespace Dune {
@@ -89,8 +92,22 @@ class LocalNumericalBoundaryFluxInterface
 {
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
+  typedef typename Traits::BoundaryValueType BoundaryValueType;
+  typedef typename Traits::DomainFieldType DomainFieldType;
+  typedef typename Traits::RangeFieldType RangeFieldType;
+  typedef typename Traits::AnalyticalFluxType AnalyticalFluxType;
+  typedef typename Traits::RangeType RangeType;
+  typedef typename Traits::DomainType DomainType;
+  static const size_t dimDomain = Traits::dimDomain;
+  static const size_t dimRange = Traits::dimRange;
+
 
 public:
+  LocalNumericalBoundaryFluxInterface(const BoundaryValueType& boundary_values)
+    : boundary_values_(boundary_values)
+  {
+  }
+
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
     CHECK_CRTP(this->as_imp().local_functions(entity));
@@ -107,7 +124,30 @@ public:
     CHECK_CRTP(this->as_imp().evaluate(local_functions_tuple, local_source_entity, intersection, x_intersection))
     return this->as_imp().evaluate(local_functions_tuple, local_source_entity, intersection, x_intersection);
   }
+
+protected:
+  // returns u_i, u_j and x_in_inside_coords
+  template <class IntersectionType, size_t boundary_value_pos>
+  std::tuple<RangeType, RangeType, DomainType> get_values(
+      const LocalfunctionTupleType& local_functions_tuple,
+      const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>&
+          local_source_entity,
+      const IntersectionType& intersection,
+      const Dune::FieldVector<DomainFieldType, dimDomain - 1>& x_in_intersection_coords) const
+  {
+    std::tuple<RangeType, RangeType, DomainType> ret;
+    auto& u_i = std::get<0>(ret);
+    auto& u_j = std::get<1>(ret);
+    auto& x_in_inside_coords = std::get<2>(ret);
+    x_in_inside_coords = intersection.geometryInInside().global(x_in_intersection_coords);
+    u_i = local_source_entity.evaluate(x_in_inside_coords);
+    u_j = std::get<boundary_value_pos>(local_functions_tuple)->evaluate(intersection, x_in_inside_coords, u_i);
+    return ret;
+  }
+
+  const BoundaryValueType& boundary_values_;
 }; // class LocalNumericalBoundaryFluxInterface
+
 
 template <class T>
 struct is_local_numerical_coupling_flux : std::is_base_of<internal::IsNumericalCouplingFlux, T>

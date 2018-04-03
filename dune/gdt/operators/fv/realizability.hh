@@ -14,78 +14,336 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/xt/common/fvector.hh>
+#include <dune/xt/common/parameter.hh>
 
-#include <dune/xt/grid/walker/functors.hh>
+#include <dune/xt/grid/walker.hh>
 
 #if HAVE_QHULL
+#include <dune/xt/common/disable_warnings.hh>
 #include <libqhullcpp/Qhull.h>
 #include <libqhullcpp/QhullFacetList.h>
+#include <dune/xt/common/reenable_warnings.hh>
 #endif // HAVE_QHULL
 
 #if HAVE_LPSOLVE
+#include <dune/xt/common/disable_warnings.hh>
 namespace lpsolve {
 #include <lpsolve/lp_lib.h>
 }
+#include <dune/xt/common/reenable_warnings.hh>
 #endif // HAVE_LPSOLVE
+
+#include <dune/gdt/operators/interfaces.hh>
 
 namespace Dune {
 namespace GDT {
 
 
-template <class EntityType>
-class NonLimitingRealizabilityLimiter : public std::function<void(const EntityType&)>
-{
-  typedef std::function<void(const EntityType&)> BaseType;
-
-public:
-  NonLimitingRealizabilityLimiter()
-    : BaseType([](const EntityType&) {})
-  {
-  }
-
-  template <class BasisFunctionType, class QuadratureType, class RangeFieldType = double>
-  NonLimitingRealizabilityLimiter(const BasisFunctionType& /*basis_functions*/,
-                                  const QuadratureType& /*quadrature*/,
-                                  const RangeFieldType /*epsilon*/ = 1e-14)
-    : BaseType([](const EntityType&) {})
-  {
-  }
-
-  template <class DiscreteFunctionType>
-  void set_source(const DiscreteFunctionType*)
-  {
-  }
-
-  template <class ReconstructedValuesType>
-  void set_reconstructed_values(const ReconstructedValuesType*)
-  {
-  }
-}; // class NonLimitingRealizabilityLimiter
-
-
-#if HAVE_QHULL
-
-template <class DiscreteFunctionType, class BasisFunctionType, size_t dimDomain, size_t dimRange>
-class ConvexHullLocalRealizabilityLimiter
+template <class DiscreteFunctionType, class BasisfunctionType>
+class LocalRealizabilityLimiterBase
     : public XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType>
 {
+public:
   typedef typename DiscreteFunctionType::SpaceType::GridLayerType GridLayerType;
   typedef typename DiscreteFunctionType::EntityType EntityType;
   typedef typename GridLayerType::template Codim<0>::Geometry::LocalCoordinate DomainType;
   typedef typename DiscreteFunctionType::RangeType RangeType;
   typedef typename GridLayerType::IndexSet IndexSetType;
   typedef typename DiscreteFunctionType::RangeFieldType RangeFieldType;
+  static const size_t dimDomain = DiscreteFunctionType::dimDomain;
+  static const size_t dimRange = DiscreteFunctionType::dimRange;
   typedef typename Dune::QuadratureRule<RangeFieldType, dimDomain> QuadratureType;
-  typedef typename std::vector<std::pair<RangeType, RangeFieldType>> PlaneCoefficientsType;
+  using ReconstructedValuesType = std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>;
 
-public:
-  // cell averages includes left and right boundary values as the two last indices in each dimension
-  explicit ConvexHullLocalRealizabilityLimiter(const BasisFunctionType& basis_functions,
-                                               const QuadratureType& quadrature,
-                                               RangeFieldType epsilon = 1e-14)
-    : basis_functions_(basis_functions)
+  explicit LocalRealizabilityLimiterBase(const DiscreteFunctionType& source,
+                                         const ReconstructedValuesType& reconstructed_values,
+                                         const BasisfunctionType& basis_functions,
+                                         const QuadratureType& quadrature,
+                                         const RangeFieldType epsilon,
+                                         const std::vector<RangeType>& basis_values)
+    : source_(source)
+    , reconstructed_values_(reconstructed_values)
+    , basis_functions_(basis_functions)
     , quadrature_(quadrature)
     , epsilon_(epsilon)
+    , basis_values_(basis_values)
+  {
+  }
+
+protected:
+  const DiscreteFunctionType& source_;
+  ReconstructedValuesType& reconstructed_values_;
+  const BasisfunctionType& basis_functions_;
+  const QuadratureType& quadrature_;
+  const RangeFieldType epsilon_;
+  const std::vector<RangeType>& basis_values_;
+};
+
+template <class DiscreteFunctionType, class BasisfunctionType = int>
+class NonLimitingLocalRealizabilityLimiter
+    : public LocalRealizabilityLimiterBase<DiscreteFunctionType, BasisfunctionType>
+{
+  typedef LocalRealizabilityLimiterBase<DiscreteFunctionType, BasisfunctionType> BaseType;
+
+public:
+  using typename BaseType::EntityType;
+  using typename BaseType::QuadratureType;
+  using typename BaseType::RangeFieldType;
+
+  explicit NonLimitingLocalRealizabilityLimiter(const BasisfunctionType& basis_functions,
+                                                const QuadratureType& quadrature,
+                                                RangeFieldType epsilon)
+    : BaseType(basis_functions, quadrature, epsilon)
+  {
+  }
+
+  void apply_local(const EntityType& /*entity*/)
+  {
+  }
+}; // class NonLimitingLocalRealizabilityLimiter
+
+template <class DiscreteFunctionType, class BasisfunctionType>
+class RelativePositivityLocalRealizabilityLimiter
+    : public LocalRealizabilityLimiterBase<DiscreteFunctionType, BasisfunctionType>
+{
+  typedef LocalRealizabilityLimiterBase<DiscreteFunctionType, BasisfunctionType> BaseType;
+
+public:
+  using typename BaseType::GridLayerType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::QuadratureType;
+  static const size_t dimDomain = BaseType::dimDomain;
+  static const size_t dimRange = BaseType::dimRange;
+
+  // cell averages includes left and right boundary values as the two last indices in each dimension
+  explicit RelativePositivityLocalRealizabilityLimiter(const BasisfunctionType& basis_functions,
+                                                       const QuadratureType& quadrature,
+                                                       RangeFieldType epsilon)
+    : BaseType(basis_functions, quadrature, epsilon)
+  {
+  }
+
+  void apply_local(const EntityType& entity)
+  {
+    const auto entity_index = index_set_->index(entity);
+    auto& local_reconstructed_values = (*reconstructed_values_)[entity_index];
+
+    // get cell average
+    const RangeType& u_bar = (*source_values_)[entity_index];
+
+    // vector to store thetas for each local reconstructed value
+    std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), 0.);
+
+    size_t ll = -1;
+    for (const auto& pair : local_reconstructed_values) {
+      ++ll;
+      const auto& u_l = pair.second;
+      for (size_t ii = 0; ii < u_l.size(); ++ii)
+        if (XT::Common::FloatCmp::ne(u_l[ii], u_bar[ii])) {
+          auto theta_ii = u_l[ii] / (u_l[ii] - u_bar[ii]) + epsilon_;
+          if (XT::Common::FloatCmp::le(theta_ii, 1.))
+            thetas[ll] = std::max(thetas[ll], theta_ii);
+        }
+    } // ll
+    for (auto& theta : thetas)
+      theta = std::min(theta, 1.);
+
+    auto theta_entity_it = std::max_element(thetas.begin(), thetas.end());
+    auto theta_entity = theta_entity_it == thetas.end() ? 0. : *theta_entity_it;
+    if (theta_entity > 0.) {
+      for (auto& pair : local_reconstructed_values) {
+        auto& u = pair.second;
+        auto u_scaled = u;
+        u_scaled *= (1 - theta_entity);
+        auto u_bar_scaled = u_bar;
+        u_bar_scaled *= theta_entity;
+        u = u_scaled + u_bar_scaled;
+      }
+    }
+  } // void apply_local(...)
+
+private:
+  using BaseType::source_values_;
+  using BaseType::index_set_;
+  using BaseType::reconstructed_values_;
+  using BaseType::epsilon_;
+}; // class RelativePositivityLocalRealizabilityLimiter
+
+template <class DiscreteFunctionType, class BasisfunctionType>
+class PositivityLocalRealizabilityLimiter
+    : public LocalRealizabilityLimiterBase<DiscreteFunctionType, BasisfunctionType>
+{
+  typedef LocalRealizabilityLimiterBase<DiscreteFunctionType, BasisfunctionType> BaseType;
+
+public:
+  using typename BaseType::GridLayerType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::QuadratureType;
+  static const size_t dimDomain = BaseType::dimDomain;
+  static const size_t dimRange = BaseType::dimRange;
+
+  // cell averages includes left and right boundary values as the two last indices in each dimension
+  explicit PositivityLocalRealizabilityLimiter(const BasisfunctionType& basis_functions,
+                                               const QuadratureType& quadrature,
+                                               RangeFieldType epsilon)
+    : BaseType(basis_functions, quadrature, epsilon)
+  {
+  }
+
+  void apply_local(const EntityType& entity)
+  {
+    const auto entity_index = index_set_->index(entity);
+    auto& local_reconstructed_values = (*reconstructed_values_)[entity_index];
+
+    // get cell average
+    const RangeType& u_bar = (*source_values_)[entity_index];
+
+    // vector to store thetas for each local reconstructed value
+    std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), 0.);
+
+    size_t ll = -1;
+    for (const auto& pair : local_reconstructed_values) {
+      ++ll;
+      const auto& u_l = pair.second;
+      for (size_t ii = 0; ii < u_l.size(); ++ii)
+        if (u_l[ii] < epsilon_ && u_bar[ii] > epsilon_)
+          thetas[ll] = std::max(thetas[ll], (epsilon_ - u_l[ii]) / (u_bar[ii] - u_l[ii]));
+    } // ll
+    for (auto& theta : thetas)
+      theta = std::min(theta, 1.);
+
+    auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
+    if (theta_entity > 0.) {
+      for (auto& pair : local_reconstructed_values) {
+        auto& u = pair.second;
+        auto u_scaled = u;
+        u_scaled *= (1 - theta_entity);
+        auto u_bar_scaled = u_bar;
+        u_bar_scaled *= theta_entity;
+        u = u_scaled + u_bar_scaled;
+      }
+    }
+  } // void apply_local(...)
+
+private:
+  using BaseType::source_values_;
+  using BaseType::index_set_;
+  using BaseType::reconstructed_values_;
+  using BaseType::epsilon_;
+}; // class PositivityLocalRealizabilityLimiter
+
+template <class DiscreteFunctionType, class BasisfunctionType>
+class DgLocalRealizabilityLimiter : public LocalRealizabilityLimiterBase<DiscreteFunctionType, BasisfunctionType>
+{
+  typedef LocalRealizabilityLimiterBase<DiscreteFunctionType, BasisfunctionType> BaseType;
+
+public:
+  using typename BaseType::GridLayerType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::QuadratureType;
+  static const size_t dimDomain = BaseType::dimDomain;
+  static const size_t dimRange = BaseType::dimRange;
+
+  // cell averages includes left and right boundary values as the two last indices in each dimension
+  explicit DgLocalRealizabilityLimiter(const BasisfunctionType& basis_functions,
+                                       const QuadratureType& quadrature,
+                                       RangeFieldType epsilon)
+    : BaseType(basis_functions, quadrature, epsilon)
+    , triangulation_(basis_functions.triangulation())
+  {
+  }
+
+  void apply_local(const EntityType& entity)
+  {
+    const auto entity_index = index_set_->index(entity);
+    auto& local_reconstructed_values = (*reconstructed_values_)[entity_index];
+
+    // get cell average
+    const RangeType u_bar = (*source_values_)[entity_index];
+
+    // vector to store thetas for each local reconstructed value
+    std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), -epsilon_);
+
+    size_t ll = -1;
+    for (const auto& pair : local_reconstructed_values) {
+      ++ll;
+      const auto& u_l = pair.second;
+      FieldVector<RangeFieldType, dimRange / 2> local_thetas(-epsilon_);
+      for (size_t ii = 0; ii < dimRange / 2; ++ii) {
+        const auto& u0 = u_l[2 * ii];
+        const auto& u1 = u_l[2 * ii + 1];
+        const auto& ubar0 = u_bar[2 * ii];
+        const auto& ubar1 = u_bar[2 * ii + 1];
+        const auto& vj = triangulation_[ii];
+        const auto& vjplus1 = triangulation_[ii];
+        FieldVector<RangeFieldType, 3> thetas_ii;
+        thetas_ii[0] = u0 / (ubar0 - u0);
+        thetas_ii[1] = (u0 * vj - u1) / ((ubar1 - u1) - (ubar0 - u0) * vj);
+        thetas_ii[2] = (u0 * vjplus1 - u1) / ((ubar1 - u1) - (ubar0 - u0) * vjplus1);
+        for (size_t kk = 0; kk < 3; ++kk) {
+          if (thetas_ii[kk] < -epsilon_ || thetas_ii[kk] > 1.)
+            thetas_ii[kk] = -epsilon_;
+          local_thetas[ii] = std::max(local_thetas[ii], thetas_ii[kk]);
+        } // kk
+      } // ii
+      thetas[ll] = *std::max_element(local_thetas.begin(), local_thetas.end());
+    } // ll
+    auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
+    theta_entity = std::min(theta_entity + epsilon_, 1.);
+    if (theta_entity > 0.) {
+      std::cout << "Realizability limiter applied, theta = " << theta_entity << std::endl;
+      for (auto& pair : local_reconstructed_values) {
+        auto& u = pair.second;
+        auto u_scaled = u;
+        u_scaled *= (1 - theta_entity);
+        auto u_bar_scaled = u_bar;
+        u_bar_scaled *= theta_entity;
+        u = u_scaled + u_bar_scaled;
+      }
+    }
+  } // void apply_local(...)
+
+private:
+  using BaseType::source_values_;
+  using BaseType::index_set_;
+  using BaseType::reconstructed_values_;
+  using BaseType::epsilon_;
+  typename BasisfunctionType::TriangulationType triangulation_;
+}; // class DgLocalRealizabilityLimiter
+
+#if HAVE_QHULL
+
+template <class DiscreteFunctionType, class BasisfunctionType>
+class ConvexHullLocalRealizabilityLimiter
+    : public LocalRealizabilityLimiterBase<DiscreteFunctionType, BasisfunctionType>
+{
+  typedef LocalRealizabilityLimiterBase<DiscreteFunctionType, BasisfunctionType> BaseType;
+
+public:
+  using typename BaseType::GridLayerType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::QuadratureType;
+  static const size_t dimDomain = BaseType::dimDomain;
+  static const size_t dimRange = BaseType::dimRange;
+  typedef typename std::vector<std::pair<RangeType, RangeFieldType>> PlaneCoefficientsType;
+
+  // cell averages includes left and right boundary values as the two last indices in each dimension
+  explicit ConvexHullLocalRealizabilityLimiter(const BasisfunctionType& basis_functions,
+                                               const QuadratureType& quadrature,
+                                               RangeFieldType epsilon)
+    : BaseType(basis_functions, quadrature, epsilon)
   {
     if (is_instantiated_)
       DUNE_THROW(InvalidStateException,
@@ -94,7 +352,7 @@ public:
                  "behavior!");
     is_instantiated_ = true;
     if (!plane_coefficients_)
-      plane_coefficients_ = calculate_plane_coefficients();
+      calculate_plane_coefficients();
   }
 
   ~ConvexHullLocalRealizabilityLimiter()
@@ -102,25 +360,13 @@ public:
     is_instantiated_ = false;
   }
 
-  void set_source(const DiscreteFunctionType* source)
-  {
-    source_ = source;
-    index_set_ = &(source_->space().grid_layer().indexSet());
-  }
-
-  void set_reconstructed_values(
-      std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>* reconstructed_values)
-  {
-    reconstructed_values_ = reconstructed_values;
-  }
-
   void apply_local(const EntityType& entity)
   {
-    auto& local_reconstructed_values = (*reconstructed_values_)[index_set_->index(entity)];
+    auto entity_index = index_set_->index(entity);
+    auto& local_reconstructed_values = (*reconstructed_values_)[entity_index];
 
     // get cell average
-    const RangeType& u_bar =
-        source_->local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center()));
+    const RangeType& u_bar = (*source_values_)[entity_index];
 
     // vector to store thetas for each local reconstructed value
     std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), -epsilon_);
@@ -139,7 +385,7 @@ public:
         const RangeType& a = coeffs.first;
         const RangeFieldType& b = coeffs.second;
         RangeFieldType theta_li = (b - a * u_l) / (a * u_bar_minus_u_l);
-        if (XT::Common::FloatCmp::ge(theta_li, -epsilon_) && XT::Common::FloatCmp::le(theta_li, 1.))
+        if (XT::Common::FloatCmp::le(theta_li, 1.))
           thetas[ll] = std::max(thetas[ll], theta_li);
       } // coeffs
     } // ll
@@ -147,7 +393,7 @@ public:
       theta = std::min(epsilon_ + theta, 1.);
 
     auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
-    if (XT::Common::FloatCmp::ne(theta_entity, 0.)) {
+    if (theta_entity > 0.) {
       for (auto& pair : local_reconstructed_values) {
         auto& u = pair.second;
         auto u_scaled = u;
@@ -161,7 +407,7 @@ public:
 
 private:
   // calculate half space representation of realizable set
-  std::shared_ptr<const PlaneCoefficientsType> calculate_plane_coefficients()
+  void calculate_plane_coefficients()
   {
     using orgQhull::Qhull;
     Qhull qhull;
@@ -171,45 +417,203 @@ private:
     for (const auto& quad_point : quadrature_)
       points[ii++] = basis_functions_.evaluate(quad_point.position());
 
+    std::cout << "Starting qhull..." << std::endl;
     qhull.runQhull("Realizable set", int(dimRange), int(points.size()), &(points[0][0]), "Qt T1");
+    std::cout << "qhull done" << std::endl;
     //    qhull.outputQhull("n");
     const auto facet_end = qhull.endFacet();
-    std::vector<std::pair<RangeType, RangeFieldType>> plane_coefficients(qhull.facetList().count());
+    plane_coefficients_ = std::make_shared<PlaneCoefficientsType>(qhull.facetList().count());
     ii = 0;
     for (auto facet = qhull.beginFacet(); facet != facet_end; facet = facet.next(), ++ii) {
       for (size_t jj = 0; jj < dimRange; ++jj)
-        plane_coefficients[ii].first[jj] = *(facet.hyperplane().coordinates() + jj);
-      plane_coefficients[ii].second = -facet.hyperplane().offset();
+        (*plane_coefficients_)[ii].first[jj] = *(facet.hyperplane().coordinates() + jj);
+      (*plane_coefficients_)[ii].second = -facet.hyperplane().offset();
     }
-    return std::make_shared<const PlaneCoefficientsType>(plane_coefficients);
   }
 
-  const DiscreteFunctionType* source_;
-  const IndexSetType* index_set_;
-  std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>* reconstructed_values_;
-  const BasisFunctionType& basis_functions_;
-  const QuadratureType& quadrature_;
-  const RangeFieldType epsilon_;
+  using BaseType::basis_functions_;
+  using BaseType::source_values_;
+  using BaseType::index_set_;
+  using BaseType::reconstructed_values_;
+  using BaseType::quadrature_;
+  using BaseType::epsilon_;
   static bool is_instantiated_;
-  static std::shared_ptr<const PlaneCoefficientsType> plane_coefficients_;
+  static std::shared_ptr<PlaneCoefficientsType> plane_coefficients_;
 }; // class ConvexHullLocalRealizabilityLimiter
 
-template <class DiscreteFunctionType, class BasisFunctionType, size_t dimDomain, size_t dimRange>
-bool ConvexHullLocalRealizabilityLimiter<DiscreteFunctionType, BasisFunctionType, dimDomain, dimRange>::
-    is_instantiated_ = false;
+template <class DiscreteFunctionType, class BasisfunctionType>
+bool ConvexHullLocalRealizabilityLimiter<DiscreteFunctionType, BasisfunctionType>::is_instantiated_ = false;
 
-template <class DiscreteFunctionType, class BasisFunctionType, size_t dimDomain, size_t dimRange>
-std::shared_ptr<const typename ConvexHullLocalRealizabilityLimiter<DiscreteFunctionType,
-                                                                   BasisFunctionType,
-                                                                   dimDomain,
-                                                                   dimRange>::PlaneCoefficientsType>
-    ConvexHullLocalRealizabilityLimiter<DiscreteFunctionType, BasisFunctionType, dimDomain, dimRange>::
-        plane_coefficients_;
+template <class DiscreteFunctionType, class BasisfunctionType>
+std::shared_ptr<
+    typename ConvexHullLocalRealizabilityLimiter<DiscreteFunctionType, BasisfunctionType>::PlaneCoefficientsType>
+    ConvexHullLocalRealizabilityLimiter<DiscreteFunctionType, BasisfunctionType>::plane_coefficients_;
+
+template <class DiscreteFunctionType, class BasisfunctionType>
+class DgConvexHullLocalRealizabilityLimiter
+    : public LocalRealizabilityLimiterBase<DiscreteFunctionType, BasisfunctionType>
+{
+  typedef LocalRealizabilityLimiterBase<DiscreteFunctionType, BasisfunctionType> BaseType;
+
+public:
+  using typename BaseType::GridLayerType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::QuadratureType;
+  static const size_t dimDomain = BaseType::dimDomain;
+  static const size_t dimRange = BaseType::dimRange;
+  static const size_t block_size = (dimDomain == 1) ? 2 : 4;
+  static const size_t num_blocks = dimRange / block_size;
+  typedef FieldVector<RangeFieldType, block_size> BlockRangeType;
+  typedef typename std::vector<std::pair<BlockRangeType, RangeFieldType>> BlockPlaneCoefficientsType;
+  typedef FieldVector<BlockPlaneCoefficientsType, num_blocks> PlaneCoefficientsType;
+
+  explicit DgConvexHullLocalRealizabilityLimiter(const BasisfunctionType& basis_functions,
+                                                 const QuadratureType& quadrature,
+                                                 RangeFieldType epsilon)
+    : BaseType(basis_functions, quadrature, epsilon)
+  {
+    if (is_instantiated_)
+      DUNE_THROW(InvalidStateException,
+                 "This class uses several static variables to save its state between time "
+                 "steps, so using several instances at the same time may result in undefined "
+                 "behavior!");
+    is_instantiated_ = true;
+    if (!plane_coefficients_)
+      calculate_plane_coefficients();
+  }
+
+public:
+  ~DgConvexHullLocalRealizabilityLimiter()
+  {
+    is_instantiated_ = false;
+  }
+
+  void apply_local(const EntityType& entity)
+  {
+    const auto entity_index = index_set_->index(entity);
+    auto& local_reconstructed_values = (*reconstructed_values_)[entity_index];
+    const RangeType& u_bar = (*source_values_)[entity_index];
+
+    // vector to store thetas for each local reconstructed value
+    std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), -epsilon_);
+
+    size_t ll = -1;
+    for (const auto& pair : local_reconstructed_values) {
+      ++ll;
+      // rescale u_l, u_bar
+      auto u_l = pair.second;
+      if (XT::Common::FloatCmp::eq(u_l, u_bar))
+        continue;
+      auto u_bar_minus_u_l = u_bar - u_l;
+      const auto factor = basis_functions_.realizability_limiter_max(u_l, u_bar);
+      u_l /= factor;
+      u_bar_minus_u_l /= factor;
+
+      for (size_t jj = 0; jj < num_blocks; ++jj) {
+        const size_t offset = jj * block_size;
+        for (const auto& coeffs : (*plane_coefficients_)[jj]) {
+          const BlockRangeType& a = coeffs.first;
+          const RangeFieldType& b = coeffs.second;
+          RangeFieldType a_dot_u_l_block(0);
+          RangeFieldType a_dot_u_bar_minus_u_l_block(0);
+          for (size_t mm = 0; mm < block_size; ++mm) {
+            const size_t index = offset + mm;
+            a_dot_u_l_block += u_l[index] * a[mm];
+            a_dot_u_bar_minus_u_l_block += u_bar_minus_u_l[index] * a[mm];
+          }
+          RangeFieldType theta_li = (b - a_dot_u_l_block) / a_dot_u_bar_minus_u_l_block;
+          if (XT::Common::FloatCmp::le(theta_li, 1.))
+            thetas[ll] = std::max(thetas[ll], theta_li);
+        } // coeffs
+      } // jj
+    } // ll
+    for (auto& theta : thetas)
+      theta = std::min(epsilon_ + theta, 1.);
+
+    auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
+    if (theta_entity > 0.) {
+      std::cout << "realizability limited with theta = " << theta_entity << std::endl;
+      for (auto& pair : local_reconstructed_values) {
+        auto& u = pair.second;
+        auto u_scaled = u;
+        u_scaled *= (1 - theta_entity);
+        auto u_bar_scaled = u_bar;
+        u_bar_scaled *= theta_entity;
+        u = u_scaled + u_bar_scaled;
+      }
+    }
+  } // void apply_local(...)
+
+private:
+  // calculate half space representation of realizable set
+  void calculate_plane_coefficients()
+  {
+    plane_coefficients_ = std::make_shared<PlaneCoefficientsType>();
+    using orgQhull::Qhull;
+    FieldVector<std::vector<FieldVector<RangeFieldType, block_size>>, num_blocks> points;
+    FieldVector<QuadratureType, num_blocks> blocked_quadrature;
+    for (const auto& quad_point : quadrature_) {
+      const auto face_indices = basis_functions_.get_face_indices(quad_point.position());
+      const size_t num_adjacent_faces = face_indices.size();
+      for (const auto& kk : face_indices)
+        blocked_quadrature[kk].emplace_back(quad_point.position(), quad_point.weight() / num_adjacent_faces);
+    } // ii
+    size_t num_faces;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      points[jj].resize(blocked_quadrature[jj].size() + 1);
+      for (size_t ii = 0; ii < blocked_quadrature[jj].size(); ++ii) {
+        const auto val = basis_functions_.evaluate(blocked_quadrature[jj][ii].position(), false, num_faces);
+        for (size_t ll = 0; ll < block_size; ++ll)
+          points[jj][ii][ll] = val[block_size * jj + ll];
+      } // ii
+      points[jj][blocked_quadrature[jj].size()] = FieldVector<RangeFieldType, block_size>(0.);
+      Qhull qhull;
+      std::cout << "Starting qhull..." << std::endl;
+      qhull.runQhull("Realizable set", int(block_size), int(points[jj].size()), &(points[jj][0][0]), "Qt T1");
+      std::cout << "qhull done" << std::endl;
+      const auto facet_end = qhull.endFacet();
+      BlockPlaneCoefficientsType block_plane_coefficients(qhull.facetList().count());
+      size_t ii = 0;
+      for (auto facet = qhull.beginFacet(); facet != facet_end; facet = facet.next(), ++ii) {
+        for (size_t ll = 0; ll < block_size; ++ll)
+          block_plane_coefficients[ii].first[ll] = *(facet.hyperplane().coordinates() + ll);
+        block_plane_coefficients[ii].second = -facet.hyperplane().offset();
+      }
+      (*plane_coefficients_)[jj] = block_plane_coefficients;
+    } // jj
+  }
+
+  using BaseType::basis_functions_;
+  using BaseType::source_values_;
+  using BaseType::index_set_;
+  using BaseType::reconstructed_values_;
+  using BaseType::quadrature_;
+  using BaseType::epsilon_;
+  static bool is_instantiated_;
+  static std::shared_ptr<PlaneCoefficientsType> plane_coefficients_;
+}; // class ConvexHullLocalRealizabilityLimiter
+
+template <class DiscreteFunctionType, class BasisfunctionType>
+bool DgConvexHullLocalRealizabilityLimiter<DiscreteFunctionType, BasisfunctionType>::is_instantiated_ = false;
+
+template <class DiscreteFunctionType, class BasisfunctionType>
+std::shared_ptr<
+    typename DgConvexHullLocalRealizabilityLimiter<DiscreteFunctionType, BasisfunctionType>::PlaneCoefficientsType>
+    DgConvexHullLocalRealizabilityLimiter<DiscreteFunctionType, BasisfunctionType>::plane_coefficients_;
 
 #else // HAVE_QHULL
 
-template <class DiscreteFunctionType, class BasisFunctionType, size_t dimDomain, size_t dimRange>
+template <class DiscreteFunctionType, class BasisfunctionType>
 class ConvexHullLocalRealizabilityLimiter
+{
+  static_assert(Dune::AlwaysFalse<DiscreteFunctionType>::value, "You are missing Qhull!");
+};
+
+template <class DiscreteFunctionType, class BasisfunctionType>
+class DgConvexHullLocalRealizabilityLimiter
 {
   static_assert(Dune::AlwaysFalse<DiscreteFunctionType>::value, "You are missing Qhull!");
 };
@@ -218,53 +622,35 @@ class ConvexHullLocalRealizabilityLimiter
 
 #if HAVE_LPSOLVE
 
-template <class DiscreteFunctionType, class BasisFunctionType, size_t dimDomain, size_t dimRange>
-class LPLocalRealizabilityLimiter
-    : public XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType>
+template <class DiscreteFunctionType, class BasisfunctionType>
+class LPLocalRealizabilityLimiter : public LocalRealizabilityLimiterBase<DiscreteFunctionType, BasisfunctionType>
 {
-  typedef typename DiscreteFunctionType::SpaceType::GridLayerType GridLayerType;
-  typedef typename DiscreteFunctionType::EntityType EntityType;
-  typedef typename GridLayerType::template Codim<0>::Geometry::LocalCoordinate DomainType;
-  typedef typename DiscreteFunctionType::RangeType RangeType;
-  typedef typename GridLayerType::IndexSet IndexSetType;
-  typedef typename DiscreteFunctionType::RangeFieldType RangeFieldType;
-  typedef typename Dune::QuadratureRule<RangeFieldType, dimDomain> QuadratureType;
-  using BasisValuesMatrixType = std::vector<RangeType>;
+  typedef LocalRealizabilityLimiterBase<DiscreteFunctionType, BasisfunctionType> BaseType;
 
 public:
-  // cell averages includes left and right boundary values as the two last indices in each dimension
-  explicit LPLocalRealizabilityLimiter(const BasisFunctionType& basis_functions,
+  using typename BaseType::GridLayerType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::QuadratureType;
+  static const size_t dimDomain = BaseType::dimDomain;
+  static const size_t dimRange = BaseType::dimRange;
+
+  explicit LPLocalRealizabilityLimiter(const BasisfunctionType& basis_functions,
                                        const QuadratureType& quadrature,
-                                       RangeFieldType epsilon = 1e-14)
-    : basis_functions_(basis_functions)
-    , quadrature_(quadrature)
-    , num_quad_points_(quadrature_.size())
-    , epsilon_(epsilon)
-    , M_(quadrature_.size())
+                                       RangeFieldType epsilon)
+    : BaseType(basis_functions, quadrature, epsilon)
   {
-    for (size_t ii = 0; ii < quadrature_.size(); ++ii)
-      M_[ii] = basis_functions_.evaluate(quadrature_[ii].position());
-  }
-
-  void set_source(const DiscreteFunctionType* source)
-  {
-    source_ = source;
-    index_set_ = &(source_->space().grid_layer().indexSet());
-  }
-
-  void set_reconstructed_values(
-      std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>* reconstructed_values)
-  {
-    reconstructed_values_ = reconstructed_values;
   }
 
   void apply_local(const EntityType& entity)
   {
-    auto& local_reconstructed_values = (*reconstructed_values_)[index_set_->index(entity)];
+    const auto entity_index = index_set_->index(entity);
+    auto& local_reconstructed_values = (*reconstructed_values_)[entity_index];
 
     // get cell average
-    const RangeType& u_bar =
-        source_->local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center()));
+    const RangeType& u_bar = (*source_values_)[entity_index];
 
     // vector to store thetas for each local reconstructed value
     std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), -epsilon_);
@@ -272,7 +658,8 @@ public:
     size_t ll = -1;
     for (const auto& pair : local_reconstructed_values) {
       ++ll;
-      auto u_l = pair.second;
+      const auto& u_l = pair.second;
+      // if (XT::Common::FloatCmp::eq(u_bar, u_l) || basis_functions_.obviously_realizable(u_l)) {
       if (XT::Common::FloatCmp::eq(u_bar, u_l)) {
         thetas[ll] = 0.;
         continue;
@@ -283,34 +670,59 @@ public:
       // (\sum x_i v_i) + \theta (u - \bar{u}) = u
       // x_i, \theta >= 0
       auto theta = solve_linear_program(u_bar, u_l);
-      if (theta > -epsilon_)
-        theta = theta + epsilon_;
+      theta = theta + epsilon_;
       if (theta > 1.)
         theta = 1.;
-      else if (theta < 0)
-        theta = 0.;
       thetas[ll] = theta;
     } // ll
 
     auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
-    if (XT::Common::FloatCmp::ne(theta_entity, 0.)) {
-      for (auto& pair : local_reconstructed_values) {
-        auto& u = pair.second;
-        auto u_scaled = u;
-        u_scaled *= 1 - theta_entity;
-        auto u_bar_scaled = u_bar;
-        u_bar_scaled *= theta_entity;
-        u = u_scaled + u_bar_scaled;
-      }
-    }
+    if (theta_entity > 0.)
+      limit_realizability(local_reconstructed_values, u_bar, theta_entity);
   } // void apply_local(...)
 
 private:
+  void limit_realizability(std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& values,
+                           const RangeType& u_bar,
+                           const RangeFieldType theta)
+  {
+    for (auto& pair : values) {
+      auto& u = pair.second;
+      u = convex_combination(u, u_bar, theta);
+    }
+  }
+
+  RangeType convex_combination(const RangeType& u, const RangeType& u_bar, const RangeFieldType& theta)
+  {
+    if (XT::Common::FloatCmp::eq(theta, 0.))
+      return u;
+    else {
+      RangeType u_scaled = u;
+      u_scaled *= 1 - theta;
+      RangeType u_bar_scaled = u_bar;
+      u_bar_scaled *= theta;
+      return u_scaled + u_bar_scaled;
+    }
+  }
+
+  //  RangeFieldType solve_linear_program(const RangeType& u_bar, const RangeType& u_l, const size_t index)
   RangeFieldType solve_linear_program(const RangeType& u_bar, const RangeType& u_l)
   {
+    //        auto& regularization_parameter = regularization_parameters_[index];
+    //        auto& regularization_time = regularization_times_[index];
+    //        if (XT::Common::FloatCmp::ne(regularization_time, t)) {
+    //            regularization_time_ = t;
+    //            regularization_parameter_ = 0.;
+    //        }
+    RangeFieldType theta;
+
+    //    const auto r_max = r_sequence_.back();
+    //    for (const auto& r : r_sequence_) {
+    //        regularization_parameter = std::max(regularization_parameter, r);
+
     typename lpsolve::lprec* lp;
 
-    auto u_l_minus_u_bar = u_l - u_bar;
+    const auto u_l_minus_u_bar = u_l - u_bar;
 
     // We start with creating a model with dimRange+1 rows and num_quad_points+1 columns */
     constexpr int num_rows = int(dimRange);
@@ -320,19 +732,17 @@ private:
       DUNE_THROW(Dune::MathError, "Couldn't construct linear program");
 
     /* let us name our variables. Not required, but can be useful for debugging */
-    std::vector<char> name(5);
     for (int ii = 1; ii <= num_cols - 1; ++ii) {
       std::string ii_string = XT::Common::to_string(ii);
       std::string name_string = "x";
       for (size_t jj = 5 - ii_string.size(); jj > 0; --jj)
         name_string += "0";
       name_string += ii_string;
-      std::copy(name_string.begin(), name_string.end(), name.begin());
-      lpsolve::set_col_name(lp, ii, name.data());
+      lpsolve::set_col_name(lp, ii, &name_string[0]);
     }
 
-    name = {'t', 'h', 'e', 't', 'a', ' '};
-    lpsolve::set_col_name(lp, num_cols, name.data());
+    std::string name_string = "theta ";
+    lpsolve::set_col_name(lp, num_cols, &name_string[0]);
 
     // In the call to set_column, the first entry (row 0) is the value of the objective function
     // (c_i in the objective function c^T x), the other entries are the entries of the i-th column
@@ -348,8 +758,8 @@ private:
 
     // set columns for quadrature points
     column[0] = 0.;
-    for (int ii = 0; ii < int(M_.size()); ++ii) {
-      const auto& v_i = M_[ii];
+    for (int ii = 0; ii < int(basis_values_.size()); ++ii) {
+      const auto& v_i = basis_values_[ii];
       std::copy(v_i.begin(), v_i.end(), column.begin() + 1);
       lpsolve::set_column(lp, ii + 1, column.data());
     }
@@ -376,43 +786,105 @@ private:
 
     /* Now let lpsolve calculate a solution */
     const auto solve_status = lpsolve::solve(lp);
-    RangeFieldType theta = lpsolve::get_objective(lp);
-    if (theta > -0.09) {
-      lpsolve::write_LP(lp, stdout);
-      static size_t counter = 0;
-      std::cout << counter++ << ": theta: " << XT::Common::to_string(theta, 15) << std::endl;
-    }
+    theta = lpsolve::get_objective(lp);
     if (solve_status != OPTIMAL) {
+      lpsolve::write_LP(lp, stdout);
       std::cout << solve_status << std::endl;
+      //            if (r == r_max)
       DUNE_THROW(Dune::MathError, "An unexpected error occured while solving the linear program");
+      //            break;
     }
 
     /* free allocated memory */
     if (lp)
       lpsolve::delete_lp(lp);
+    //        }
 
     return theta;
   }
 
-  const DiscreteFunctionType* source_;
-  const IndexSetType* index_set_;
-  std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>* reconstructed_values_;
-  const BasisFunctionType& basis_functions_;
-  const QuadratureType& quadrature_;
-  const size_t num_quad_points_;
-  const RangeFieldType epsilon_;
-  BasisValuesMatrixType M_;
+  using BaseType::source_values_;
+  using BaseType::index_set_;
+  using BaseType::reconstructed_values_;
+  using BaseType::quadrature_;
+  using BaseType::epsilon_;
+  using BaseType::basis_values_;
 }; // class LPLocalRealizabilityLimiter
 
 #else // HAVE_LPSOLVE
 
-template <class DiscreteFunctionType, class BasisFunctionType, size_t dimDomain, size_t dimRange>
+template <class DiscreteFunctionType, class BasisfunctionType>
 class LPLocalRealizabilityLimiter
 {
   static_assert(Dune::AlwaysFalse<DiscreteFunctionType>::value, "You are missing LPSolve!");
 };
 
 #endif // HAVE_LPSOLVE
+
+
+template <class LocalRealizabilityLimiterImp, class Traits>
+class RealizabilityLimiter;
+
+
+namespace internal {
+
+
+template <class LocalRealizabilityLimiterImp>
+struct RealizabilityLimiterTraits
+{
+  using LocalRealizabilityLimiterType = LocalRealizabilityLimiterImp;
+  using BasisfunctionType = typename LocalRealizabilityLimiterImp::BasisfunctionType;
+  using QuadratureType = typename LocalRealizabilityLimiterImp::QuadratureType;
+  using RangeFieldType = typename LocalRealizabilityLimiterImp::RangeFieldType;
+  using RangeType = typename LocalRealizabilityLimiterImp::RangeType;
+  using ReconstructedFunctionType = typename LocalRealizabilityLimiterImp::ReconstructedFunctionType;
+  using derived_type = RealizabilityLimiter<LocalRealizabilityLimiterType, RealizabilityLimiterTraits>;
+};
+
+
+} // namespace internal
+
+
+template <class LocalRealizabilityLimiterImp,
+          class Traits = internal::RealizabilityLimiterTraits<LocalRealizabilityLimiterImp>>
+class RealizabilityLimiter : public OperatorInterface<Traits>
+{
+public:
+  using LocalRealizabilityLimiterType = typename Traits::LocalRealizabilityLimiterType;
+  using BasisfunctionType = typename Traits::BasisfunctionType;
+  using QuadratureType = typename Traits::QuadratureType;
+  using RangeFieldType = typename Traits::RangeFieldType;
+  using RangeType = typename Traits::RangeType;
+  using ReconstructedFunctionType = typename Traits::ReconstructedFunctionType;
+
+  RealizabilityLimiter(const BasisfunctionType& basis_functions,
+                       const QuadratureType& quadrature,
+                       const RangeFieldType epsilon)
+    : basis_functions_(basis_functions)
+    , quadrature_(quadrature)
+    , epsilon_(epsilon)
+    , basis_values_(quadrature_.size())
+  {
+    for (size_t ii = 0; ii < quadrature_.size(); ++ii)
+      basis_values_[ii] = basis_functions_.evaluate(quadrature_[ii].position());
+  }
+
+  template <class SourceType>
+  void apply(const SourceType& source, ReconstructedFunctionType& range, const XT::Common::Parameter& /*param*/) const
+  {
+    LocalRealizabilityLimiterType local_realizability_limiter(
+        source, range, basis_functions_, quadrature_, epsilon_, basis_values_);
+    auto walker = XT::Grid::Walker<typename SourceType::SpaceType::GridLayerType>(source.space().grid_layer());
+    walker.append(local_realizability_limiter);
+    walker.walk(true);
+  } // void apply(...)
+
+private:
+  const BasisfunctionType& basis_functions_;
+  const QuadratureType& quadrature_;
+  const RangeFieldType& epsilon_;
+  std::vector<RangeType> basis_values_;
+}; // class RealizabilityLimiter<...>
 
 
 } // namespace GDT

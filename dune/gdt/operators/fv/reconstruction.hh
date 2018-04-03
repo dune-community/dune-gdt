@@ -24,22 +24,22 @@
 #include <dune/xt/la/algorithms/qr.hh>
 #include <dune/xt/la/eigen-solver.hh>
 
+#include <dune/gdt/operators/interfaces.hh>
+
+#include "reconstructed_function.hh"
 #include "slopelimiters.hh"
 
 namespace Dune {
 namespace GDT {
 
 
-template <class GridLayerType,
-          class AnalyticalFluxType,
-          class BoundaryValueType,
-          size_t polOrder,
-          SlopeLimiters slope_limiter>
+template <class AnalyticalFluxType, class BoundaryValueType, class GridLayerType, SlopeLimiters slope_limiter>
 class LocalReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayerType>
 {
   // stencil is (i-r, i+r) in all dimensions, where r = polOrder + 1
-  static constexpr size_t dimDomain = BoundaryValueType::dimDomain;
+  static constexpr size_t dimDomain = GridLayerType::ctype;
   static constexpr size_t dimRange = BoundaryValueType::dimRange;
+  static constexpr size_t polOrder = 1;
   static constexpr size_t stencil_size = 2 * polOrder + 1;
   static constexpr std::array<size_t, 3> stencil = {
       {2 * polOrder + 1, dimDomain > 1 ? 2 * polOrder + 1 : 1, dimDomain > 2 ? 2 * polOrder + 1 : 1}};
@@ -50,16 +50,20 @@ class LocalReconstructionFvOperator : public XT::Grid::Functor::Codim0<GridLayer
   typedef typename BoundaryValueType::RangeType RangeType;
   typedef typename BoundaryValueType::RangeFieldType RangeFieldType;
   typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
-  typedef typename XT::LA::CommonSparseMatrixCsr<RangeFieldType> SparseMatrixType;
-  typedef typename XT::LA::CommonSparseMatrixCsc<RangeFieldType> CscSparseMatrixType;
+  typedef typename XT::LA::CommonSparseOrDenseMatrixCsr<RangeFieldType> SparseMatrixType;
+  typedef typename XT::LA::CommonSparseOrDenseMatrixCsc<RangeFieldType> CscSparseMatrixType;
   typedef typename XT::LA::EigenSolver<MatrixType> EigenSolverType;
-  typedef Dune::QuadratureRule<DomainFieldType, 1> QuadratureType;
-  typedef FieldVector<typename GridLayerType::Intersection, 2 * dimDomain> IntersectionVectorType;
+  typedef typename XT::LA::EigenSolverOptions<MatrixType> EigenSolverOptionsType;
+  typedef typename XT::LA::MatrixInverterOptions<MatrixType> MatrixInverterOptionsType;
+  typedef Dune::QuadratureRule<DomainFieldType, 1> Quadrature1dType;
+  typedef typename GridLayerType::Intersection IntersectionType;
+  typedef FieldVector<IntersectionType, 2 * dimDomain> IntersectionVectorType;
   typedef FieldVector<FieldVector<FieldVector<RangeType, stencil[2]>, stencil[1]>, stencil[0]> ValuesType;
   typedef typename GridLayerType::Intersection::Geometry::LocalCoordinate IntersectionLocalCoordType;
   typedef typename AnalyticalFluxType::LocalfunctionType AnalyticalFluxLocalfunctionType;
   typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
   typedef typename Dune::FieldVector<Dune::FieldMatrix<double, dimRange, dimRange>, dimDomain> JacobianRangeType;
+  typedef typename XT::Grid::BoundaryInfo<IntersectionType> BoundaryInfoType;
 
 public:
   explicit LocalReconstructionFvOperator(
@@ -68,16 +72,14 @@ public:
       const BoundaryValueType& boundary_values,
       const GridLayerType& grid_layer,
       const XT::Common::Parameter& param,
-      const bool is_linear,
-      const QuadratureType& quadrature,
+      const Quadrature1dType& quadrature_1d,
       std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values)
     : source_values_(source_values)
     , analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , grid_layer_(grid_layer)
     , param_(param)
-    , is_linear_(is_linear)
-    , quadrature_(quadrature)
+    , quadrature_1d_(quadrature_1d)
     , reconstructed_values_(reconstructed_values)
   {
     if (is_instantiated_)
@@ -98,7 +100,7 @@ public:
   {
     // get cell averages on stencil
     FieldVector<int, 3> offsets(0);
-    const RangeType nan{std::numeric_limits<double>::quiet_NaN()};
+    const RangeType nan(std::numeric_limits<double>::quiet_NaN());
     ValuesType values(
         (FieldVector<FieldVector<RangeType, stencil[2]>, stencil[1]>(FieldVector<RangeType, stencil[2]>(nan))));
     StencilIterator::apply(source_values_, boundary_values_, values, entity, grid_layer_, -1, offsets);
@@ -110,29 +112,34 @@ public:
     const auto& entity_index = grid_layer_.indexSet().index(entity);
     auto& reconstructed_values_map = reconstructed_values_[entity_index];
     if (local_initialization_count_ != initialization_count_) {
-      if (!jacobian_)
-        jacobian_ = XT::Common::make_unique<JacobianRangeType>();
-      if (!eigenvectors_) {
-        eigenvectors_ = XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>();
-        Q_ = XT::Common::make_unique<FieldVector<CscSparseMatrixType, dimDomain>>(
+      if (!jacobian())
+        jacobian() = XT::Common::make_unique<JacobianRangeType>();
+      if (!eigenvectors()) {
+        eigenvectors() = XT::Common::make_unique<FieldVector<SparseMatrixType, dimDomain>>();
+        Q() = XT::Common::make_unique<FieldVector<CscSparseMatrixType, dimDomain>>(
             CscSparseMatrixType(dimRange, dimRange));
-        R_ = XT::Common::make_unique<FieldVector<CscSparseMatrixType, dimDomain>>(
+        R() = XT::Common::make_unique<FieldVector<CscSparseMatrixType, dimDomain>>(
             CscSparseMatrixType(dimRange, dimRange));
       }
       const auto& u_entity = values[stencil[0] / 2][stencil[1] / 2][stencil[2] / 2];
-      const auto flux_local_func = analytical_flux_.local_function(entity);
-      helper<dimDomain>::get_jacobian(
-          flux_local_func, entity.geometry().local(entity.geometry().center()), u_entity, *jacobian_, param_);
-      helper<dimDomain>::get_eigenvectors(*jacobian_, *eigenvectors_, *Q_, *R_, permutations_);
+      helper<dimDomain>::get_jacobian(analytical_flux_, u_entity, *(jacobian()), param_, entity);
+      helper<dimDomain>::get_eigenvectors(*(jacobian()), *(eigenvectors()), *(Q()), *(R()), permutations());
       if (is_linear_) {
-        jacobian_ = nullptr;
+        jacobian() = nullptr;
         ++local_initialization_count_;
       }
     }
 
     for (size_t dd = 0; dd < dimDomain; ++dd)
-      helper<dimDomain>::reconstruct(
-          dd, values, *eigenvectors_, *Q_, *R_, permutations_, quadrature_, reconstructed_values_map, intersections);
+      helper<dimDomain>::reconstruct(dd,
+                                     values,
+                                     *(eigenvectors()),
+                                     *(Q()),
+                                     *(R()),
+                                     permutations(),
+                                     quadrature_1d_,
+                                     reconstructed_values_map,
+                                     intersections);
   } // void apply_local(...)
 
   static void reset()
@@ -187,12 +194,14 @@ private:
       } // ii
     } // static void reconstruct(...)
 
-    static void get_jacobian(const std::unique_ptr<AnalyticalFluxLocalfunctionType>& local_func,
-                             const DomainType& x_in_inside_coords,
+    static void get_jacobian(const AnalyticalFluxType& analytical_flux,
                              const StateRangeType& u,
                              JacobianRangeType& ret,
-                             const XT::Common::Parameter& param)
+                             const XT::Common::Parameter& param,
+                             const EntityType& entity)
     {
+      const DomainType x_in_inside_coords = entity.geometry().local(entity.geometry().center());
+      const auto local_func = analytical_flux.local_function(entity);
       local_func->partial_u(x_in_inside_coords, u, ret[0], param);
     }
 
@@ -202,18 +211,30 @@ private:
                                  FieldVector<CscSparseMatrixType, dimDomain>& R,
                                  FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations)
     {
-      static XT::Common::Configuration eigensolver_options(
-          {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
-          {EigenSolverType::types()[0].c_str(), "1", "1", "0", "1"});
-      const auto eigensolver = EigenSolverType(jacobian);
-      auto eigenvectors_dense = eigensolver.real_eigenvectors_as_matrix(eigensolver_options);
+      static XT::Common::Configuration eigensolver_options = create_eigensolver_options();
+      const auto eigensolver = EigenSolverType(jacobian, eigensolver_options);
+      thread_local auto eigenvectors_dense = XT::Common::make_unique<MatrixType>(eigensolver.real_eigenvectors());
+      *eigenvectors_dense = eigensolver.real_eigenvectors();
       eigenvectors[0] = SparseMatrixType(*eigenvectors_dense, true);
-      thread_local MatrixType Qdense(0);
-      XT::LA::qr_decomposition(*eigenvectors_dense, permutations[0], Qdense);
+      thread_local std::unique_ptr<MatrixType> Qdense = XT::Common::make_unique<MatrixType>(0.);
+      XT::LA::qr_decomposition(*eigenvectors_dense, permutations[0], *Qdense);
       R[0] = CscSparseMatrixType(*eigenvectors_dense, true, size_t(0));
-      Q[0] = CscSparseMatrixType(Qdense, true, size_t(0));
+      Q[0] = CscSparseMatrixType(*Qdense, true, size_t(0));
     } // ... get_eigenvectors(...)
   }; // struct helper<1,...
+
+  static XT::Common::Configuration create_eigensolver_options()
+  {
+    XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options(EigenSolverOptionsType::types()[0]);
+    eigensolver_options["assert_eigendecomposition"] = "1e-6";
+    eigensolver_options["assert_real_eigendecomposition"] = "1e-6";
+    XT::Common::Configuration matrix_inverter_options = MatrixInverterOptionsType::options();
+    matrix_inverter_options["post_check_is_left_inverse"] = "1e-6";
+    matrix_inverter_options["post_check_is_right_inverse"] = "1e-6";
+    eigensolver_options.add(matrix_inverter_options, "matrix-inverter");
+    return eigensolver_options;
+  } // ... create_eigensolver_options()
+
 
   template <class anything>
   struct helper<2, anything>
@@ -291,13 +312,13 @@ private:
       } // ii
     } // static void reconstruct(...)
 
-    static void get_jacobian(const std::unique_ptr<AnalyticalFluxLocalfunctionType>& local_func,
-                             const DomainType& x_in_inside_coords,
+    static void get_jacobian(const AnalyticalFluxType& analytical_flux,
                              const StateRangeType& u,
                              JacobianRangeType& ret,
-                             const XT::Common::Parameter& param)
+                             const XT::Common::Parameter& param,
+                             const EntityType& entity)
     {
-      helper<3, anything>::get_jacobian(local_func, x_in_inside_coords, u, ret, param);
+      helper<3, anything>::get_jacobian(analytical_flux, u, ret, param, entity);
     }
 
     static void get_eigenvectors(const JacobianRangeType& jacobian,
@@ -430,12 +451,14 @@ private:
       } // ii
     } // static void reconstruct(...)
 
-    static void get_jacobian(const std::unique_ptr<AnalyticalFluxLocalfunctionType>& local_func,
-                             const DomainType& x_in_inside_coords,
+    static void get_jacobian(const AnalyticalFluxType& analytical_flux,
                              const StateRangeType& u,
                              JacobianRangeType& ret,
-                             const XT::Common::Parameter& param)
+                             const XT::Common::Parameter& param,
+                             const EntityType& entity)
     {
+      const DomainType x_in_inside_coords = entity.geometry().local(entity.geometry().center());
+      const auto local_func = analytical_flux.local_function(entity);
       local_func->partial_u(x_in_inside_coords, u, ret, param);
     }
 
@@ -445,21 +468,22 @@ private:
                                  FieldVector<CscSparseMatrixType, dimDomain>& R,
                                  FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations)
     {
-      static XT::Common::Configuration eigensolver_options(
-          {"type", "check_for_inf_nan", "check_evs_are_real", "check_evs_are_positive", "check_eigenvectors_are_real"},
-          {EigenSolverType::types()[0], "1", "1", "0", "1"});
+      static XT::Common::Configuration eigensolver_options = create_eigensolver_options();
+
+
       for (size_t ii = 0; ii < dimDomain; ++ii) {
-        const auto eigensolver = EigenSolverType(jacobian[ii]);
-        auto eigenvectors_dense = eigensolver.real_eigenvectors_as_matrix(eigensolver_options);
+        const auto eigensolver = EigenSolverType(jacobian[ii], eigensolver_options);
+        thread_local auto eigenvectors_dense = XT::Common::make_unique<MatrixType>(eigensolver.real_eigenvectors());
+        *eigenvectors_dense = eigensolver.real_eigenvectors();
         eigenvectors[ii] = SparseMatrixType(*eigenvectors_dense, true);
-        thread_local MatrixType Qdense(0);
-        XT::LA::qr_decomposition(*eigenvectors_dense, permutations[ii], Qdense);
+        thread_local std::unique_ptr<MatrixType> Qdense = XT::Common::make_unique<MatrixType>(0.);
+        XT::LA::qr_decomposition(*eigenvectors_dense, permutations[ii], *Qdense);
         R[ii] = CscSparseMatrixType(*eigenvectors_dense, true, size_t(0));
-        Q[ii] = CscSparseMatrixType(Qdense, true, size_t(0));
+        Q[ii] = CscSparseMatrixType(*Qdense, true, size_t(0));
       } // ii
     } // ... get_eigenvectors(...)
-  }; // struct helper<3, ...
 
+  }; // struct helper<3, ...
 
   // Calculate A^{-1} x, where we have a QR decomposition with column pivoting A = QRP^T.
   // A^{-1} x = (QRP^T)^{-1} x = P R^{-1} Q^T x
@@ -489,6 +513,7 @@ private:
 
     static void apply(const std::vector<RangeType>& source_values,
                       const BoundaryValueType& boundary_values,
+                      const BoundaryInfoType& boundary_info,
                       FieldVector<FieldVector<FieldVector<RangeType, stencil_z>, stencil_y>, stencil_x>& values,
                       const EntityType& entity,
                       const GridLayerType& grid_layer,
@@ -505,8 +530,15 @@ private:
           auto new_offsets = offsets;
           if (intersection.boundary() && !intersection.neighbor()) {
             boundary_dirs.push_back(intersection_index);
-            const auto& boundary_value = boundary_values.local_function(entity)->evaluate(
-                entity.geometry().local(intersection.geometry().center()));
+            RangeType boundary_value;
+            const auto& boundary_type = boundary_info.type(intersection);
+            if (boundary_type == dirichlet_boundary_) {
+              boundary_value = std::get<0>(boundary_values)
+                                   ->local_function(entity)
+                                   ->evaluate(entity.geometry().local(intersection.geometry().center()));
+            } else if (boundary_type == reflecting_boundary_) {
+              boundary_value = std::get<1>(boundary_values).evaluate(intersection, source_values[entity_index]);
+            }
             while (!end_of_stencil(intersection_index, new_offsets)) {
               walk(intersection_index, new_offsets);
               values[stencil_x / 2 + new_offsets[0]][stencil_y / 2 + new_offsets[1]][stencil_z / 2 + new_offsets[2]] =
@@ -515,8 +547,14 @@ private:
           } else if (intersection.neighbor() && direction_allowed(direction, intersection_index)) {
             const auto& outside = intersection.outside();
             walk(intersection_index, new_offsets);
-            StencilIterator::apply(
-                source_values, boundary_values, values, outside, grid_layer, intersection_index, new_offsets);
+            StencilIterator::apply(source_values,
+                                   boundary_values,
+                                   boundary_info,
+                                   values,
+                                   outside,
+                                   grid_layer,
+                                   intersection_index,
+                                   new_offsets);
           }
         } // if (!end_of_stencil(...))
       } // intersections
@@ -597,14 +635,40 @@ private:
   const BoundaryValueType& boundary_values_;
   const GridLayerType& grid_layer_;
   XT::Common::Parameter param_;
-  const bool is_linear_;
-  const QuadratureType quadrature_;
+  const Quadrature1dType quadrature_1d_;
   std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values_;
-  static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
-  static thread_local std::unique_ptr<FieldVector<SparseMatrixType, dimDomain>> eigenvectors_;
-  static thread_local std::unique_ptr<FieldVector<CscSparseMatrixType, dimDomain>> Q_;
-  static thread_local std::unique_ptr<FieldVector<CscSparseMatrixType, dimDomain>> R_;
-  static thread_local FieldVector<FieldVector<size_t, dimRange>, dimDomain> permutations_;
+
+  // work around gcc bug 66944
+  static std::unique_ptr<JacobianRangeType>& jacobian()
+  {
+    static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
+    return jacobian_;
+  }
+
+  static std::unique_ptr<FieldVector<SparseMatrixType, dimDomain>>& eigenvectors()
+  {
+    static thread_local std::unique_ptr<FieldVector<SparseMatrixType, dimDomain>> eigenvectors_;
+    return eigenvectors_;
+  }
+
+  static std::unique_ptr<FieldVector<CscSparseMatrixType, dimDomain>>& Q()
+  {
+    static thread_local std::unique_ptr<FieldVector<CscSparseMatrixType, dimDomain>> Q_;
+    return Q_;
+  }
+
+  static thread_local std::unique_ptr<FieldVector<CscSparseMatrixType, dimDomain>>& R()
+  {
+    static thread_local std::unique_ptr<FieldVector<CscSparseMatrixType, dimDomain>> R_;
+    return R_;
+  }
+
+  static thread_local FieldVector<FieldVector<size_t, dimRange>, dimDomain>& permutations()
+  {
+    static thread_local FieldVector<FieldVector<size_t, dimRange>, dimDomain> permutations_;
+    return permutations_;
+  }
+
   static std::atomic<size_t> initialization_count_;
   static thread_local size_t local_initialization_count_;
   static bool is_instantiated_;
@@ -618,84 +682,6 @@ template <class GridLayerType,
 constexpr std::array<size_t, 3>
     LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
         stencil;
-
-template <class GridLayerType,
-          class AnalyticalFluxType,
-          class BoundaryValueType,
-          size_t polOrder,
-          SlopeLimiters slope_limiter>
-thread_local std::unique_ptr<FieldVector<
-    typename LocalReconstructionFvOperator<GridLayerType,
-                                           AnalyticalFluxType,
-                                           BoundaryValueType,
-                                           polOrder,
-                                           slope_limiter>::SparseMatrixType,
-    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
-        dimDomain>>
-    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
-        eigenvectors_;
-
-template <class GridLayerType,
-          class AnalyticalFluxType,
-          class BoundaryValueType,
-          size_t polOrder,
-          SlopeLimiters slope_limiter>
-thread_local std::unique_ptr<FieldVector<
-    typename LocalReconstructionFvOperator<GridLayerType,
-                                           AnalyticalFluxType,
-                                           BoundaryValueType,
-                                           polOrder,
-                                           slope_limiter>::CscSparseMatrixType,
-    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
-        dimDomain>>
-    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::Q_;
-
-template <class GridLayerType,
-          class AnalyticalFluxType,
-          class BoundaryValueType,
-          size_t polOrder,
-          SlopeLimiters slope_limiter>
-thread_local std::unique_ptr<FieldVector<
-    typename LocalReconstructionFvOperator<GridLayerType,
-                                           AnalyticalFluxType,
-                                           BoundaryValueType,
-                                           polOrder,
-                                           slope_limiter>::CscSparseMatrixType,
-    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
-        dimDomain>>
-    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::R_;
-
-template <class GridLayerType,
-          class AnalyticalFluxType,
-          class BoundaryValueType,
-          size_t polOrder,
-          SlopeLimiters slope_limiter>
-thread_local FieldVector<FieldVector<size_t,
-                                     LocalReconstructionFvOperator<GridLayerType,
-                                                                   AnalyticalFluxType,
-                                                                   BoundaryValueType,
-                                                                   polOrder,
-                                                                   slope_limiter>::dimRange>,
-                         LocalReconstructionFvOperator<GridLayerType,
-                                                       AnalyticalFluxType,
-                                                       BoundaryValueType,
-                                                       polOrder,
-                                                       slope_limiter>::dimDomain>
-    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
-        permutations_;
-
-template <class GridLayerType,
-          class AnalyticalFluxType,
-          class BoundaryValueType,
-          size_t polOrder,
-          SlopeLimiters slope_limiter>
-thread_local std::unique_ptr<typename LocalReconstructionFvOperator<GridLayerType,
-                                                                    AnalyticalFluxType,
-                                                                    BoundaryValueType,
-                                                                    polOrder,
-                                                                    slope_limiter>::JacobianRangeType>
-    LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
-        jacobian_;
 
 template <class GridLayerType,
           class AnalyticalFluxType,
@@ -722,6 +708,207 @@ template <class GridLayerType,
           SlopeLimiters slope_limiter>
 bool LocalReconstructionFvOperator<GridLayerType, AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>::
     is_instantiated_(false);
+
+
+namespace internal {
+
+
+template <class AnalyticalFluxImp, class BoundaryValueImp, SlopeLimiters slope_lim = SlopeLimiters::minmod>
+struct LinearReconstructionOperatorTraits
+{
+  using AnalyticalFluxType = AnalyticalFluxImp;
+  using BoundaryValueType = BoundaryValueImp;
+  static const SlopeLimiters slope_limiter = slope_lim;
+  using DomainFieldType = typename BoundaryValueType::DomainFieldType;
+  static constexpr size_t dimDomain = BoundaryValueType::dimDomain;
+  using ProductQuadratureType = QuadratureRule<DomainFieldType, dimDomain - 1>;
+  using Quadrature1dType = Dune::QuadratureRule<DomainFieldType, 1>;
+  using derived_type = LinearReconstructionOperator<AnalyticalFluxType,
+                                                    BoundaryValueType,
+                                                    slope_limiter,
+                                                    LinearReconstructionOperatorTraits>;
+};
+
+
+} // namespace internal
+
+
+template <class AnalyticalFluxImp,
+          class BoundaryValueImp,
+          SlopeLimiters slope_limiter = SlopeLimiters::minmod,
+          class Traits =
+              internal::LinearReconstructionOperatorTraits<AnalyticalFluxImp, BoundaryValueImp, slope_limiter>>
+class LinearReconstructionOperator : public OperatorInterface<Traits>
+{
+public:
+  using ReconstructedFunctionType = typename Traits::ReconstructedFunctionType;
+  using AnalyticalFluxType = typename Traits::AnalyticalFluxType;
+  using BoundaryValueType = typename Traits::BoundaryValueType;
+  using Quadrature1dType = typename Traits::Quadrature1dType;
+  using ProductQuadratureType = typename Traits::ProductQuadratureType;
+
+  LinearReconstructionOperator(const AnalyticalFluxType& analytical_flux,
+                               const BoundaryValueType& boundary_values,
+                               const Quadrature1dType quadrature_1d = default_1d_quadrature())
+    : analytical_flux_(analytical_flux)
+    , boundary_values_(boundary_values)
+    , quadrature_1d_(quadrature_1d)
+    , product_quadrature_(quadrature_helper<>::get(quadrature_1d))
+  {
+  }
+
+  template <class SourceType>
+  void apply(const SourceType& source, ReconstructedFunctionType& range, const XT::Common::Parameter& param) const
+  {
+    // evaluate cell averages
+    const auto& grid_layer = source.space().grid_layer();
+    const auto& index_set = grid_layer.indexSet();
+    std::vector<typename SourceType::RangeType> source_values(index_set.size(0));
+    for (const auto& entity : Dune::elements(grid_layer)) {
+      const auto& entity_index = index_set.index(entity);
+      const auto& local_source = source.local_function(entity);
+      source_values[entity_index] = local_source->evaluate(entity.geometry().local(entity.geometry().center()));
+    }
+
+    // do reconstruction
+    range.resize(grid_layer.size(0));
+    auto local_reconstruction_operator =
+        LocalReconstructionFvOperator<AnalyticalFluxType, BoundaryValueType, polOrder, slope_limiter>(
+            source_values, analytical_flux_, boundary_values_, param, quadrature_1d_, range);
+    auto walker = XT::Grid::Walker<GridLayerType>(grid_layer);
+    walker.append(local_reconstruction_operator);
+    walker.walk(true);
+  } // void apply(...)
+
+private:
+  template <size_t reconstructionOrder = polOrder, class anything = void>
+  struct default_quadrature_helper
+  {
+    static Quadrature1dType get()
+    {
+      return Dune::QuadratureRules<DomainFieldType, 1>::rule(Dune::GeometryType(Dune::GeometryType::BasicType::cube, 1),
+                                                             2 * polOrder);
+    }
+  };
+
+  template <class anything>
+  struct default_quadrature_helper<1, anything>
+  {
+    static Quadrature1dType get()
+    {
+      Quadrature1dType quadrature;
+      quadrature_1d_.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5, 1.));
+      //      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5 * (1. - 1. / std::sqrt(3)), 0.5));
+      //      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5 * (1. + 1. / std::sqrt(3)), 0.5));
+      return quadrature;
+    }
+  };
+
+  template <size_t domainDim = dimDomain, class anything = void>
+  struct quadrature_helper;
+
+  template <class anything>
+  struct quadrature_helper<1, anything>
+  {
+    static ProductQuadratureType get(const Quadrature1dType& /*quadrature_1d*/)
+    {
+      ProductQuadratureType ret;
+      ret.push_back(Dune::QuadraturePoint<DomainFieldType, 0>(FieldVector<DomainFieldType, 0>(0), 1));
+      return ret;
+    }
+  };
+
+  template <class anything>
+  struct quadrature_helper<2, anything>
+  {
+    static ProductQuadratureType get(const Quadrature1dType& quadrature_1d)
+    {
+      return quadrature_1d;
+    }
+  };
+
+  template <class anything>
+  struct quadrature_helper<3, anything>
+  {
+    static ProductQuadratureType get(const Quadrature1dType& quadrature_1d)
+    {
+      ProductQuadratureType ret;
+      for (size_t ii = 0; ii < quadrature_1d.size(); ++ii)
+        for (size_t jj = 0; jj < quadrature_1d.size(); ++jj)
+          ret.push_back(Dune::QuadraturePoint<DomainFieldType, dimDomain - 1>(
+              {quadrature_1d[ii].position()[0], quadrature_1d[jj].position()[0]},
+              quadrature_1d[ii].weight() * quadrature_1d[jj].weight()));
+      return ret;
+    }
+  };
+
+  const AnalyticalFluxType& analytical_flux_;
+  const BoundaryValueType& boundary_values_;
+  Quadrature1dType quadrature_1d_;
+  ProductQuadratureType product_quadrature_;
+}; // class LinearReconstructionOperator<...>
+
+
+template <class AdvectionOperatorImp, class ReconstructionOperatorImp, class Traits>
+class AdvectionWithReconstructionOperator;
+
+
+namespace internal {
+
+
+template <class AdvectionOperatorImp, class ReconstructionOperatorImp>
+class AdvectionWithReconstructionOperatorTraits
+{
+public:
+  using AdvectionOperatorType = AdvectionOperatorImp;
+  using ReconstructionOperatorType = ReconstructionOperatorImp;
+  using derived_type = AdvectionWithReconstructionOperator<AdvectionOperatorImp,
+                                                           ReconstructionOperatorImp,
+                                                           AdvectionWithReconstructionOperatorTraits>;
+}; // class AdvectionWithReconstructionOperatorTraits
+
+
+} // namespace internal
+
+
+template <class AdvectionOperatorImp,
+          class ReconstructionOperatorImp,
+          class Traits =
+              internal::AdvectionWithReconstructionOperatorTraits<AdvectionOperatorImp, ReconstructionOperatorImp>>
+class AdvectionWithReconstructionOperator : public OperatorInterface<Traits>
+{
+public:
+  using AdvectionOperatorType = typename Traits::AdvectionOperatorType;
+  using ReconstructionOperatorType = typename Traits::ReconstructionOperatorType;
+
+  AdvectionWithReconstructionOperator(const AdvectionOperatorType& advection_operator,
+                                      const ReconstructionOperatorType reconstruction_operator)
+    : advection_operator_(advection_operator)
+    , reconstruction_operator_(reconstruction_operator)
+  {
+  }
+
+  template <class SourceType, class RangeType>
+  void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
+  {
+    using ReconstructedFunctionType = ReconstructedLocalizableFunction<typename SourceType::GridLayerType,
+                                                                       typename SourceType::DomainFieldType,
+                                                                       SourceType::dimDomain,
+                                                                       typename SourceType::RangeFieldType,
+                                                                       SourceType::dimRange,
+                                                                       SourceType::dimRangeCols>;
+
+    // do reconstruction
+    ReconstructedFunctionType reconstructed_function(source.space().grid_layer());
+    reconstruction_operator_.apply(source, reconstructed_function, param);
+
+    // apply advection operator
+    advection_operator_.apply(reconstructed_function, range, param);
+  }
+
+  const AdvectionOperatorType& advection_operator_;
+  const ReconstructionOperatorType& reconstruction_operator_;
+}; // class AdvectionWithReconstructionOperator<...>
 
 
 } // namespace GDT

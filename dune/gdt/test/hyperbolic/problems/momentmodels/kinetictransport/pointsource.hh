@@ -30,9 +30,10 @@ namespace KineticTransport {
 
 
 template <class BasisfunctionImp, class GridLayerImp, class U_, bool linear = true>
-class PointSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, linear>
+class PointSourcePn
+    : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, BasisfunctionImp::dimDomain, linear>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, linear> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, BasisfunctionImp::dimDomain, linear> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -55,7 +56,7 @@ public:
                 const QuadratureType& quadrature = default_quadrature(),
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, {1, 1, 1}, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, quadrature, {1, 1, 1}, grid_cfg, boundary_cfg, 1e-4 / (4 * M_PI))
   {
   }
 

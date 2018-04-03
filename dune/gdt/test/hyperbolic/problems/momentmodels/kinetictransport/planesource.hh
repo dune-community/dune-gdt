@@ -28,10 +28,10 @@ namespace Problems {
 namespace KineticTransport {
 
 
-template <class BasisfunctionImp, class GridLayerImp, class U_>
-class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
+template <class BasisfunctionImp, class GridLayerImp, class U_, const bool linear_ = true>
+class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, 1, linear_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, 1, linear_> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -71,8 +71,8 @@ public:
     grid_config["upper_right"] = "[1.2]";
     grid_config["num_elements"] = "[240]";
     grid_config["overlap_size"] = "[1]";
-    grid_config["num_quad_cells"] = "[100]";
-    grid_config["quad_order"] = "20";
+    grid_config["num_quad_cells"] = "[25]";
+    grid_config["quad_order"] = "30";
     return grid_config;
   }
 
@@ -88,11 +88,12 @@ public:
 
   // Initial value of the kinetic equation is psi_vac + delta(x).
   // Thus the initial value for the n-th moment is base_integrated_n * (psi_vac + delta(x))
-  virtual InitialValueType* create_initial_values() const
+  virtual InitialValueType* create_initial_values() const override
   {
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
-    const size_t num_elements = grid_layer_.size(0);
+    size_t num_elements = grid_layer_.size(0) - grid_layer_.overlapSize(0);
+    num_elements = grid_layer_.comm().sum(num_elements);
     if (num_elements % 2)
       DUNE_THROW(Dune::NotImplemented, "An even number of grid cells is needed for this test!");
     const RangeFieldType len_domain = upper_right[0] - lower_left[0];
@@ -124,9 +125,9 @@ protected:
 }; // class PlaneSourcePn<...>
 
 template <class BasisfunctionType, class GridLayerImp, class U_>
-class PlaneSourceMn : public PlaneSourcePn<BasisfunctionType, GridLayerImp, U_>
+class PlaneSourceMn : public PlaneSourcePn<BasisfunctionType, GridLayerImp, U_, false>
 {
-  typedef PlaneSourcePn<BasisfunctionType, GridLayerImp, U_> BaseType;
+  typedef PlaneSourcePn<BasisfunctionType, GridLayerImp, U_, false> BaseType;
   typedef PlaneSourceMn ThisType;
 
 public:

@@ -143,7 +143,7 @@ void component_visualizer(const DiscreteFunctionType& u_n,
 {
   auto u_n_comp = get_factor_discrete_function<component, DiscreteFunctionType>(u_n);
   u_n_comp.vector() *= factor;
-  u_n_comp.visualize(filename_prefix, Dune::XT::Common::to_string(ii));
+  u_n_comp.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(ii));
 }
 
 // see https://en.wikipedia.org/wiki/Tridiagonal_matrix#Inversion
@@ -191,6 +191,12 @@ Dune::DynamicMatrix<FieldType> tridiagonal_matrix_inverse(const DynamicMatrix<Fi
       }
     } // jj
   } // ii
+#ifndef NDEBUG
+  for (size_t ii = 0; ii < rows; ++ii)
+    for (size_t jj = 0; jj < cols; ++jj)
+      if (std::isnan(ret[ii][jj]) || std::isinf(ret[ii][jj]))
+        DUNE_THROW(Dune::MathError, "Inversion of triangular matrix failed!");
+#endif
   return ret;
 } // ... tridiagonal_matrix_inverse(...)
 
@@ -254,12 +260,13 @@ public:
   static const size_t dimRangeCols = rangeDimCols;
   static const size_t dimFlux = fluxDim;
   typedef DomainFieldImp DomainFieldType;
-  typedef FieldVector<DomainFieldType, dimDomain> DomainType;
+  typedef XT::Common::FieldVector<DomainFieldType, dimDomain> DomainType;
   typedef RangeFieldImp RangeFieldType;
   typedef DynamicMatrix<RangeFieldType> MatrixType;
   typedef typename XT::Functions::RangeTypeSelector<RangeFieldType, dimRange, dimRangeCols>::type RangeType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename std::function<void(const DiscreteFunctionType&, const std::string&, const size_t)>;
+  using StringifierType = std::function<std::string(const RangeType&)>;
   typedef typename Dune::QuadratureRule<RangeFieldType, dimDomain> QuadratureType;
 
   virtual ~BasisfunctionsInterface(){};
@@ -273,6 +280,13 @@ public:
   virtual MatrixType mass_matrix_inverse() const = 0;
 
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const = 0;
+
+  static QuadratureRule<RangeFieldType, 2> barycentre_rule()
+  {
+    Dune::QuadratureRule<RangeFieldType, 2> ret;
+    ret.push_back(Dune::QuadraturePoint<RangeFieldType, 2>({1. / 3., 1. / 3.}, 0.5));
+    return ret;
+  }
 
 protected:
   std::vector<std::vector<size_t>> create_decomposition(const size_t num_threads, const size_t size) const
@@ -289,7 +303,10 @@ protected:
     return decomposition;
   }
 
-  virtual void parallel_quadrature(const QuadratureType& quadrature, MatrixType& matrix, const size_t v_index) const
+  virtual void parallel_quadrature(const QuadratureType& quadrature,
+                                   MatrixType& matrix,
+                                   const size_t v_index,
+                                   const bool reflecting = false) const
   {
     size_t num_threads = std::min(XT::Common::threadManager().max_threads(), quadrature.size());
     auto decomposition = create_decomposition(num_threads, quadrature.size());
@@ -302,7 +319,8 @@ protected:
                                 std::cref(quadrature),
                                 std::ref(local_matrices[ii]),
                                 v_index,
-                                std::cref(decomposition[ii]));
+                                std::cref(decomposition[ii]),
+                                reflecting);
     // Join the threads with the main thread
     for (size_t ii = 0; ii < num_threads; ++ii)
       threads[ii].join();
@@ -315,17 +333,23 @@ protected:
   virtual void calculate_in_thread(const QuadratureType& quadrature,
                                    MatrixType& local_matrix,
                                    const size_t v_index,
-                                   const std::vector<size_t>& indices) const
+                                   const std::vector<size_t>& indices,
+                                   const bool reflecting) const
   {
     for (const auto& jj : indices) {
       const auto& quad_point = quadrature[jj];
       const auto& v = quad_point.position();
+      auto v_reflected = v;
+      if (reflecting)
+        v_reflected[v_index] *= -1.;
       const auto basis_evaluated = evaluate(v);
+      const auto basis_reflected = evaluate(v_reflected);
       const auto& weight = quad_point.weight();
-      const auto factor = (v_index == size_t(-1)) ? 1. : v[v_index];
+      const auto factor = (reflecting || v_index == size_t(-1)) ? 1. : v[v_index];
       for (size_t nn = 0; nn < local_matrix.N(); ++nn)
         for (size_t mm = 0; mm < local_matrix.M(); ++mm)
-          local_matrix[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * factor * weight;
+          local_matrix[nn][mm] +=
+              basis_evaluated[nn] * (reflecting ? basis_reflected[mm] : basis_evaluated[mm]) * factor * weight;
     } // ii
   } // void calculate_in_thread(...)
 

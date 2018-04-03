@@ -21,6 +21,7 @@ namespace GDT {
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
+          class BoundaryInfoImp,
           class LocalizableFunctionImp,
           size_t polOrder,
           SlopeLimiters slope_lim,
@@ -34,12 +35,14 @@ namespace internal {
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
+          class BoundaryInfoImp,
           class LocalizableFunctionImp,
           size_t reconstruction_order,
           SlopeLimiters slope_lim,
           class RealizabilityLimiterImp>
 class AdvectionLaxFriedrichsOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp,
                                                                         BoundaryValueImp,
+                                                                        BoundaryInfoImp,
                                                                         reconstruction_order,
                                                                         slope_lim,
                                                                         RealizabilityLimiterImp>
@@ -49,6 +52,7 @@ class AdvectionLaxFriedrichsOperatorTraits : public AdvectionTraitsBase<Analytic
 
   typedef AdvectionTraitsBase<AnalyticalFluxImp,
                               BoundaryValueImp,
+                              BoundaryInfoImp,
                               reconstruction_order,
                               slope_lim,
                               RealizabilityLimiterImp>
@@ -56,15 +60,16 @@ class AdvectionLaxFriedrichsOperatorTraits : public AdvectionTraitsBase<Analytic
 
 public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
-  using typename BaseType::AnalyticalFluxType;
-  using typename BaseType::BoundaryValueType;
-  typedef typename Dune::GDT::LaxFriedrichsLocalNumericalCouplingFlux<AnalyticalFluxType, LocalizableFunctionType>
+  typedef typename Dune::GDT::LaxFriedrichsLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionType>
       NumericalCouplingFluxType;
-  typedef typename Dune::GDT::
-      LaxFriedrichsLocalDirichletNumericalBoundaryFlux<AnalyticalFluxType, BoundaryValueType, LocalizableFunctionType>
-          NumericalBoundaryFluxType;
+  typedef typename Dune::GDT::LaxFriedrichsLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
+                                                                               BoundaryValueImp,
+                                                                               BoundaryInfoImp,
+                                                                               LocalizableFunctionType>
+      NumericalBoundaryFluxType;
   typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxImp,
                                          BoundaryValueImp,
+                                         BoundaryInfoImp,
                                          LocalizableFunctionImp,
                                          reconstruction_order,
                                          slope_lim,
@@ -78,12 +83,14 @@ public:
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
+          class BoundaryInfoImp,
           class LocalizableFunctionImp,
           size_t polOrder = 0,
           SlopeLimiters slope_lim = SlopeLimiters::minmod,
           class RealizabilityLimiterImp = NonLimitingRealizabilityLimiter<typename AnalyticalFluxImp::EntityType>,
           class Traits = internal::AdvectionLaxFriedrichsOperatorTraits<AnalyticalFluxImp,
                                                                         BoundaryValueImp,
+                                                                        BoundaryInfoImp,
                                                                         LocalizableFunctionImp,
                                                                         polOrder,
                                                                         slope_lim,
@@ -95,19 +102,22 @@ class AdvectionLaxFriedrichsOperator : public Dune::GDT::OperatorInterface<Trait
 public:
   using typename BaseType::AnalyticalFluxType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::BoundaryInfoType;
   using typename BaseType::DomainType;
   using typename BaseType::OnedQuadratureType;
   using typename BaseType::RangeFieldType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
+  static const size_t dimDomain = BaseType::dimDomain;
 
   AdvectionLaxFriedrichsOperator(const AnalyticalFluxType& analytical_flux,
                                  const BoundaryValueType& boundary_values,
+                                 const BoundaryInfoType& boundary_info,
                                  const LocalizableFunctionType& dx,
                                  const bool use_local_laxfriedrichs_flux = false,
                                  const bool is_linear = false,
-                                 const RangeFieldType alpha = BoundaryValueImp::dimDomain,
+                                 const RangeFieldType alpha = dimDomain,
                                  const DomainType lambda = DomainType(0))
-    : BaseType(analytical_flux, boundary_values, is_linear)
+    : BaseType(analytical_flux, boundary_values, boundary_info, is_linear)
     , dx_(dx)
     , use_local_laxfriedrichs_flux_(use_local_laxfriedrichs_flux)
     , is_linear_(is_linear)
@@ -118,14 +128,17 @@ public:
 
   AdvectionLaxFriedrichsOperator(const AnalyticalFluxType& analytical_flux,
                                  const BoundaryValueType& boundary_values,
+                                 const BoundaryInfoType& boundary_info,
                                  const LocalizableFunctionType& dx,
                                  const OnedQuadratureType& quadrature_1d,
+                                 const bool regularize,
                                  const std::shared_ptr<RealizabilityLimiterImp>& realizability_limiter = nullptr,
                                  const bool use_local_laxfriedrichs_flux = false,
                                  const bool is_linear = false,
-                                 const RangeFieldType alpha = BoundaryValueImp::dimDomain,
+                                 const RangeFieldType alpha = dimDomain,
                                  const DomainType lambda = DomainType(0))
-    : BaseType(analytical_flux, boundary_values, is_linear, quadrature_1d, realizability_limiter)
+    : BaseType(
+          analytical_flux, boundary_values, boundary_info, is_linear, quadrature_1d, regularize, realizability_limiter)
     , dx_(dx)
     , use_local_laxfriedrichs_flux_(use_local_laxfriedrichs_flux)
     , is_linear_(is_linear)
@@ -135,7 +148,7 @@ public:
   }
 
   template <class SourceType, class RangeType>
-  void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
+  void apply(SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
   {
     BaseType::apply(source, range, param, dx_, use_local_laxfriedrichs_flux_, is_linear_, alpha_, lambda_);
   }
