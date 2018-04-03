@@ -58,6 +58,17 @@ class OperatorInterface;
 template <class M, class RS, class GL, class SS, class F, ChoosePattern pt, class ORS, class OSS>
 class MatrixOperatorBase;
 
+// from #include <dune/gdt/discretefunction/default.hh>
+template <class SpaceImp, class VectorImp>
+class ConstDiscreteFunction;
+
+template <class SpaceImp, class VectorImp>
+class DiscreteFunction;
+
+// from #include <dune/gdt/operators/fv/boundary.hh>
+template <class GridLayerImp, class RangeImp>
+class LocalizableBoundaryValueInterface;
+
 template <class GridLayerImp, class RangeImp, class SourceImp, class FieldImp>
 class LocalizableProductBase;
 
@@ -175,6 +186,26 @@ struct is_matrix_operator_helper
       && DXTC_has_typedef(GridLayerType)<Tt>::value && DXTC_has_typedef(SourceSpaceType)<Tt>::value
       && DXTC_has_typedef(FieldType)<Tt>::value && DXTC_has_static_member(pattern_type)<Tt>::value
       && DXTC_has_typedef(OuterRangeSpaceType)<Tt>::value && DXTC_has_typedef(OuterSourceSpaceType)<Tt>::value;
+};
+
+
+template <class Tt>
+struct is_const_discrete_function_helper
+{
+  DXTC_has_typedef_initialize_once(SpaceType);
+  DXTC_has_typedef_initialize_once(VectorType);
+
+  static const bool is_candidate = DXTC_has_typedef(SpaceType)<Tt>::value && DXTC_has_typedef(VectorType)<Tt>::value;
+};
+
+
+template <class Tt>
+struct is_localizable_boundary_value_helper
+{
+  DXTC_has_typedef_initialize_once(GridLayerType);
+  DXTC_has_typedef_initialize_once(RangeType);
+
+  static const bool is_candidate = DXTC_has_typedef(GridLayerType)<Tt>::value && DXTC_has_typedef(RangeType)<Tt>::value;
 };
 
 
@@ -359,6 +390,43 @@ struct is_matrix_operator : public std::is_base_of<MatrixOperatorBase<typename T
 
 template <class T>
 struct is_matrix_operator<T, false> : public std::false_type
+{
+};
+
+
+// from #include <dune/gdt/discretefunction/default.hh>
+template <class T, bool candidate = internal::is_const_discrete_function_helper<T>::is_candidate>
+struct is_const_discrete_function
+    : public std::is_base_of<ConstDiscreteFunction<typename T::SpaceType, typename T::VectorType>, T>
+{
+};
+
+template <class T>
+struct is_const_discrete_function<T, false> : public std::false_type
+{
+};
+
+
+template <class T, bool candidate = internal::is_const_discrete_function_helper<T>::is_candidate>
+struct is_discrete_function : public std::is_base_of<DiscreteFunction<typename T::SpaceType, typename T::VectorType>, T>
+{
+};
+
+template <class T>
+struct is_discrete_function<T, false> : public std::false_type
+{
+};
+
+
+// from #include <dune/gdt/operators/fv/boundary.hh>
+template <class T, bool candidate = internal::is_localizable_boundary_value_helper<T>::is_candidate>
+struct is_localizable_boundary_value
+    : public std::is_base_of<LocalizableBoundaryValueInterface<typename T::GridLayerType, typename T::RangeType>, T>
+{
+};
+
+template <class T>
+struct is_localizable_boundary_value<T, false> : public std::false_type
 {
 };
 
