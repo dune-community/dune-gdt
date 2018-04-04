@@ -5,7 +5,8 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Tobias Leibner (2018)
+//   Rene Milk      (2017 - 2018)
+//   Tobias Leibner (2017)
 
 #ifndef DUNE_GDT_OPERATORS_FV_ENTROPYBASED_HH
 #define DUNE_GDT_OPERATORS_FV_ENTROPYBASED_HH
@@ -14,7 +15,9 @@
 
 #include <dune/gdt/operators/interfaces.hh>
 
-#include "reconstructed_function.hh"
+#include "entropybased/realizability.hh"
+#include "entropybased/regularization.hh"
+#include "reconstruction/reconstructed_function.hh"
 
 namespace Dune {
 namespace GDT {
@@ -25,7 +28,7 @@ template <class AdvectionOperatorImp,
           class RealizabilityLimiterImp,
           class RegularizationOperatorImp,
           class Traits>
-class EntropyBasedMomentAdvectionOperator;
+class EntropyBasedMomentFvOperator;
 
 
 namespace internal {
@@ -35,7 +38,7 @@ template <class AdvectionOperatorImp,
           class ReconstructionOperatorImp,
           class RealizabilityLimiterImp,
           class RegularizationOperatorImp>
-class EntropyBasedMomentAdvectionOperatorTraits
+class EntropyBasedMomentFvOperatorTraits
 {
 public:
   using AdvectionOperatorType = AdvectionOperatorImp;
@@ -45,12 +48,12 @@ public:
   using FieldType = typename AdvectionOperatorType::DomainFieldType;
   using JacobianType = NoJacobian;
 
-  using derived_type = EntropyBasedMomentAdvectionOperator<AdvectionOperatorImp,
-                                                           ReconstructionOperatorImp,
-                                                           RealizabilityLimiterImp,
-                                                           RegularizationOperatorImp,
-                                                           EntropyBasedMomentAdvectionOperatorTraits>;
-}; // class EntropyBasedMomentAdvectionOperatorTraits
+  using derived_type = EntropyBasedMomentFvOperator<AdvectionOperatorImp,
+                                                    ReconstructionOperatorImp,
+                                                    RealizabilityLimiterImp,
+                                                    RegularizationOperatorImp,
+                                                    EntropyBasedMomentFvOperatorTraits>;
+}; // class EntropyBasedMomentFvOperatorTraits
 
 
 } // namespace internal
@@ -60,11 +63,11 @@ template <class AdvectionOperatorImp,
           class ReconstructionOperatorImp,
           class RealizabilityLimiterImp,
           class RegularizationOperatorImp,
-          class Traits = internal::EntropyBasedMomentAdvectionOperatorTraits<AdvectionOperatorImp,
-                                                                             ReconstructionOperatorImp,
-                                                                             RealizabilityLimiterImp,
-                                                                             RegularizationOperatorImp>>
-class EntropyBasedMomentAdvectionOperator : public OperatorInterface<Traits>
+          class Traits = internal::EntropyBasedMomentFvOperatorTraits<AdvectionOperatorImp,
+                                                                      ReconstructionOperatorImp,
+                                                                      RealizabilityLimiterImp,
+                                                                      RegularizationOperatorImp>>
+class EntropyBasedMomentFvOperator : public OperatorInterface<Traits>
 {
 public:
   using AdvectionOperatorType = typename Traits::AdvectionOperatorType;
@@ -72,10 +75,10 @@ public:
   using ReconstructionOperatorType = typename Traits::ReconstructionOperatorType;
   using RealizabilityLimiterType = typename Traits::RealizabilityLimiterType;
 
-  EntropyBasedMomentAdvectionOperator(const AdvectionOperatorType& advection_operator,
-                                      const ReconstructionOperatorType& reconstruction_operator,
-                                      const RegularizationOperatorType& regularization_operator,
-                                      const RealizabilityLimiterType& realizability_limiter)
+  EntropyBasedMomentFvOperator(const AdvectionOperatorType& advection_operator,
+                               const ReconstructionOperatorType& reconstruction_operator,
+                               const RegularizationOperatorType& regularization_operator,
+                               const RealizabilityLimiterType& realizability_limiter)
     : advection_operator_(advection_operator)
     , reconstruction_operator_(reconstruction_operator)
     , regularization_operator_(regularization_operator)
@@ -112,7 +115,7 @@ public:
   const ReconstructionOperatorType& reconstruction_operator_;
   const RegularizationOperatorType& regularization_operator_;
   const RealizabilityLimiterType& realizability_limiter_;
-}; // class EntropyBasedMomentAdvectionOperator<...>
+}; // class EntropyBasedMomentFvOperator<...>
 
 
 } // namespace GDT

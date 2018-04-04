@@ -11,19 +11,17 @@
 #ifndef DUNE_GDT_OPERATORS_FV_BASE_HH
 #define DUNE_GDT_OPERATORS_FV_BASE_HH
 
-#include <type_traits>
+#include <utility> // for std::forward
 
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/xt/grid/walker/apply-on.hh>
 
-#include <dune/gdt/local/fluxes/interfaces.hh>
 #include <dune/gdt/local/operators/fv.hh>
 #include <dune/gdt/operators/base.hh>
+#include <dune/gdt/operators/fv/boundary.hh>
+#include <dune/gdt/operators/fv/quadrature.hh>
 #include <dune/gdt/type_traits.hh>
-
-#include "boundary.hh"
-#include "quadrature.hh"
 
 namespace Dune {
 namespace GDT {
@@ -34,7 +32,7 @@ template <class AnalyticalFluxImp, class BoundaryValueImp>
 class AdvectionTraitsBase
 {
   static_assert(XT::Functions::is_localizable_flux_function<AnalyticalFluxImp>::value,
-                "AnalyticalFluxImp has to be derived from LocalNumericalCouplingFluxInterface!");
+                "AnalyticalFluxImp has to be derived from LocalizableFluxFunctionInterface!");
   static_assert(is_localizable_boundary_value<BoundaryValueImp>::value,
                 "BoundaryValueImp has to be derived from LocalizableBoundaryValueInterface!");
 

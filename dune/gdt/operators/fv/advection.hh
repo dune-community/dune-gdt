@@ -5,17 +5,17 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2016 - 2017)
-//   Rene Milk       (2016 - 2018)
-//   Tobias Leibner  (2016 - 2017)
+//   Rene Milk      (2017 - 2018)
+//   Tobias Leibner (2017)
 
-#ifndef DUNE_GDT_OPERATORS_FV_HH
-#define DUNE_GDT_OPERATORS_FV_HH
+#ifndef DUNE_GDT_OPERATORS_FV_ADVECTION_HH
+#define DUNE_GDT_OPERATORS_FV_ADVECTION_HH
 
-#include "fv/advection.hh"
-#include "fv/boundary.hh"
-#include "fv/entropybased.hh"
-#include "fv/reconstruction.hh"
-#include "fv/rhs.hh"
+//#include "advection/force.hh"
+//#include "advection/godunov.hh"
+#include "advection/kinetic.hh"
+//#include "advection/laxfriedrichs.hh"
+//#include "advection/laxwendroff.hh"
+//#include "advection/musta.hh"
 
-#endif // DUNE_GDT_OPERATORS_FV_HH
+#endif // DUNE_GDT_OPERATORS_FV_ADVECTION_HH

@@ -14,7 +14,6 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/xt/common/fvector.hh>
-#include <dune/xt/common/parameter.hh>
 
 #include <dune/xt/grid/walker.hh>
 
@@ -33,9 +32,8 @@ namespace lpsolve {
 #include <dune/xt/common/reenable_warnings.hh>
 #endif // HAVE_LPSOLVE
 
+#include <dune/gdt/operators/fv/reconstruction/reconstructed_function.hh>
 #include <dune/gdt/operators/interfaces.hh>
-
-#include "reconstructed_function.hh"
 
 namespace Dune {
 namespace GDT {
