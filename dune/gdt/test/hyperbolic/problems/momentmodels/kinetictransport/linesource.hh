@@ -23,7 +23,7 @@
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
 
 #include "../lebedevquadrature.hh"
-#include "kinetictransportequation.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {

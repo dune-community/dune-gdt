@@ -8,12 +8,12 @@
 //   Rene Milk      (2018)
 //   Tobias Leibner (2017)
 
-#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCKEQUATION_HH
-#define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCKEQUATION_HH
+#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_BASE_HH
+#define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_BASE_HH
 
 #include <dune/xt/common/parameter.hh>
 
-#include "../kinetictransport/kinetictransportequation.hh"
+#include "../kinetictransport/base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -153,4 +153,4 @@ protected:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCKEQUATION_HH
+#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FOKKERPLANCK_BASE_HH

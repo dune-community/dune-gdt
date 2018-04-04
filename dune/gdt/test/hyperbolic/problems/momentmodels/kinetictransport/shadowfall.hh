@@ -17,7 +17,7 @@
 #include <dune/gdt/test/instationary-testcase.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
 
-#include "kinetictransportequation.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -123,7 +123,7 @@ protected:
 template <class BasisfunctionType, class GridLayerType, class U_>
 class ShadowFallMn : public ShadowFallPn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef ShadowFallPn<BasisfunctionType, GridLayerType, U_, false> BaseType;
+  typedef ShadowFallPn<BasisfunctionType, GridLayerType, U_> BaseType;
   typedef ShadowFallMn ThisType;
 
 public:

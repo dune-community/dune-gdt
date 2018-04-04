@@ -20,7 +20,7 @@
 #include <dune/gdt/test/instationary-testcase.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
 
-#include "kinetictransportequation.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {

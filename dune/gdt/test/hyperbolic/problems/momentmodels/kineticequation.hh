@@ -84,10 +84,11 @@ public:
   }
 }; // class KineticEquation<...>
 
+
 template <class BasisfunctionImp, class GridLayerImp, class U_>
-class KineticEquationImplementation
+class KineticEquationImplementationInterface
 {
-  typedef KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_> ThisType;
+  typedef KineticEquationImplementationInterface<BasisfunctionImp, GridLayerImp, U_> ThisType;
 
 public:
   typedef BasisfunctionImp BasisfunctionType;
@@ -132,13 +133,13 @@ public:
   typedef typename RhsAffineFunctionType::DomainType DomainType;
   typedef typename RhsAffineFunctionType::RangeType RangeType;
 
-  KineticEquationImplementation(const BasisfunctionType& basis_functions, const GridLayerType& grid_layer)
+  KineticEquationImplementationInterface(const BasisfunctionType& basis_functions, const GridLayerType& grid_layer)
     : basis_functions_(basis_functions)
     , grid_layer_(grid_layer)
   {
   }
 
-  virtual ~KineticEquationImplementation()
+  virtual ~KineticEquationImplementationInterface()
   {
   }
 
@@ -178,13 +179,13 @@ public:
 
   static std::string static_id()
   {
-    return "kineticequationimplementation";
+    return "kineticequationimplementationinterface";
   }
 
 protected:
   const BasisfunctionType& basis_functions_;
   const GridLayerType& grid_layer_;
-}; // class KineticEquationImplementation<...>
+}; // class KineticEquationImplementationInterface<...>
 
 
 } // namespace Problems

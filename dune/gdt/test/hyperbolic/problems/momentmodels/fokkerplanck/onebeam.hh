@@ -17,9 +17,7 @@
 #include <vector>
 #include <string>
 
-#include <dune/xt/common/string.hh>
-
-#include "fokkerplanckequation.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
