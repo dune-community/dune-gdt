@@ -24,5 +24,7 @@
 #include "fv/reconstruction.hh"
 #include "fv/rhs.hh"
 #include "fv/boundary.hh"
+#include "fv/entropybased.hh"
+#include "fv/regularization.hh"
 
 #endif // DUNE_GDT_OPERATORS_FV_HH

@@ -23,6 +23,7 @@
 #include <dune/gdt/type_traits.hh>
 
 #include "boundary.hh"
+#include "quadrature.hh"
 
 namespace Dune {
 namespace GDT {
@@ -73,7 +74,8 @@ class AdvectionLocalizableDefault
                 "NumericalBoundaryFluxImp has to be derived from LocalNumericalBoundaryFluxInterface!");
   static_assert(is_localizable_boundary_value<BoundaryValueImp>::value,
                 "BoundaryValueImp has to be derived from LocalizableBoundaryValueInterface!");
-  static_assert(is_discrete_function<SourceImp>::value, "SourceImp has to be derived from DiscreteFunction!");
+  static_assert(XT::Functions::is_localizable_function<SourceImp>::value,
+                "SourceImp has to be derived from LocalizableFunctionInterface!");
   static_assert(is_discrete_function<RangeImp>::value, "RangeImp has to be derived from DiscreteFunction!");
 
 public:
@@ -137,9 +139,10 @@ public:
   typedef Dune::QuadratureRule<DomainFieldType, dimDomain - 1> IntersectionQuadratureType;
 
 public:
-  AdvectionOperatorBase(const AnalyticalFluxType& analytical_flux,
-                        const BoundaryValueType& boundary_values,
-                        const IntersectionQuadratureType& intersection_quadrature = midpoint_quadrature())
+  AdvectionOperatorBase(
+      const AnalyticalFluxType& analytical_flux,
+      const BoundaryValueType& boundary_values,
+      const IntersectionQuadratureType& intersection_quadrature = midpoint_quadrature<DomainFieldType, dimDomain>())
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , intersection_quadrature_(intersection_quadrature)
@@ -168,87 +171,10 @@ public:
     localizable_operator.apply(true);
   }
 
-  static const Quadrature1dType& default_1d_quadrature()
-  {
-    return midpoint_quadrature();
-  }
-
-  //  const AnalyticalFluxType& analytical_flux() const
-  //  {
-  //    return analytical_flux_;
-  //  }
-
 private:
-  static const IntersectionQuadratureType& midpoint_quadrature()
-  {
-    static auto midpoint_quadrature_ = product_quadrature_helper<>::get(quadrature_helper_1d<>::get());
-    return midpoint_quadrature_;
-  }
-
-  template <size_t reconstructionOrder = 0, class anything = void>
-  struct quadrature_helper_1d
-  {
-    static Quadrature1dType get()
-    {
-      return Dune::QuadratureRules<DomainFieldType, 1>::rule(Dune::GeometryType(Dune::GeometryType::BasicType::cube, 1),
-                                                             2 * reconstructionOrder);
-    }
-  };
-
-  template <class anything>
-  struct quadrature_helper_1d<1, anything>
-  {
-    static Quadrature1dType get()
-    {
-      Quadrature1dType quadrature;
-      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5, 1.));
-      //      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5 * (1. - 1. / std::sqrt(3)), 0.5));
-      //      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0.5 * (1. + 1. / std::sqrt(3)), 0.5));
-      return quadrature;
-    }
-  };
-
-  template <size_t domainDim = dimDomain, class anything = void>
-  struct product_quadrature_helper;
-
-  template <class anything>
-  struct product_quadrature_helper<1, anything>
-  {
-    static Dune::QuadratureRule<DomainFieldType, dimDomain - 1> get(const Quadrature1dType& /*quadrature_1d*/)
-    {
-      Dune::QuadratureRule<DomainFieldType, dimDomain - 1> ret;
-      ret.push_back(Dune::QuadraturePoint<DomainFieldType, 0>({0}, 1));
-      return ret;
-    }
-  };
-
-  template <class anything>
-  struct product_quadrature_helper<2, anything>
-  {
-    static Dune::QuadratureRule<DomainFieldType, dimDomain - 1> get(const Quadrature1dType& quadrature_1d)
-    {
-      return quadrature_1d;
-    }
-  };
-
-  template <class anything>
-  struct product_quadrature_helper<3, anything>
-  {
-    static Dune::QuadratureRule<DomainFieldType, dimDomain - 1> get(const Quadrature1dType& quadrature_1d)
-    {
-      Dune::QuadratureRule<DomainFieldType, dimDomain - 1> ret;
-      for (size_t ii = 0; ii < quadrature_1d.size(); ++ii)
-        for (size_t jj = 0; jj < quadrature_1d.size(); ++jj)
-          ret.push_back(Dune::QuadraturePoint<DomainFieldType, dimDomain - 1>(
-              {quadrature_1d[ii].position()[0], quadrature_1d[jj].position()[0]},
-              quadrature_1d[ii].weight() * quadrature_1d[jj].weight()));
-      return ret;
-    }
-  };
-
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueType& boundary_values_;
-  const IntersectionQuadratureType& intersection_quadrature_;
+  const IntersectionQuadratureType intersection_quadrature_;
 }; // class AdvectionOperatorBase<...>
 
 
