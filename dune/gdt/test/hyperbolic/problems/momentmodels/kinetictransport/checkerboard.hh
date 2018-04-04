@@ -168,7 +168,6 @@ class CheckerboardMn : public CheckerboardPn<BasisfunctionType, GridLayerType, U
   typedef CheckerboardPn<BasisfunctionType, GridLayerType, U_> BaseType;
 
 public:
-  static const bool linear = false;
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
   typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;

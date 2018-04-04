@@ -28,16 +28,12 @@ namespace Hyperbolic {
 namespace Problems {
 
 
-template <class BasisfunctionImp,
-          class GridLayerImp,
-          class U_,
-          size_t quadratureDim = BasisfunctionImp::dimDomain,
-          const bool linear_ = false>
-class KineticTransportEquation : public KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_, linear_>,
+template <class BasisfunctionImp, class GridLayerImp, class U_, size_t quadratureDim = BasisfunctionImp::dimDomain>
+class KineticTransportEquation : public KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_>,
                                  public XT::Common::ParametricInterface
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, quadratureDim, linear_> ThisType;
-  typedef KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_, linear_> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, quadratureDim> ThisType;
+  typedef KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
   using typename BaseType::BasisfunctionType;
@@ -96,8 +92,9 @@ public:
     }
     // communicate the quadrature points to all ranks
     const auto& comm = velocity_grid.comm();
-    int coords_size = coords.size();
-    int weights_size = weights.size();
+    assert(coords.size() < std::numeric_limits<int>::max() && weights.size() < std::numeric_limits<int>::max());
+    int coords_size = static_cast<int>(coords.size());
+    int weights_size = static_cast<int>(weights.size());
     std::vector<int> coords_sizes(comm.size());
     std::vector<int> weights_sizes(comm.size());
     std::vector<int> coords_displacements(comm.size(), 0);
@@ -112,9 +109,9 @@ public:
     auto all_weights_size = comm.sum(weights_size);
     std::vector<double> all_coords(all_coords_size);
     std::vector<double> all_weights(all_weights_size);
-    comm.allgatherv(coords.data(), coords.size(), all_coords.data(), coords_sizes.data(), coords_displacements.data());
+    comm.allgatherv(coords.data(), coords_size, all_coords.data(), coords_sizes.data(), coords_displacements.data());
     comm.allgatherv(
-        weights.data(), weights.size(), all_weights.data(), weights_sizes.data(), weights_displacements.data());
+        weights.data(), weights_size, all_weights.data(), weights_sizes.data(), weights_displacements.data());
     // now assemble the quadrature
     QuadratureType quadrature;
     for (size_t ii = 0; ii < all_weights.size(); ++ii) {
@@ -320,6 +317,154 @@ protected:
   const RangeFieldType psi_vac_;
   QuadratureType quadrature_;
   XT::Common::ParameterType parameter_type_;
+}; // class KineticTransportEquation<...>
+
+template <class BasisfunctionImp, class GridLayerImp, class U_, size_t quadratureDim = BasisfunctionImp::dimDomain>
+class KineticTransportEquationCharacteristic
+    : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, quadratureDim>
+{
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, quadratureDim> BaseType;
+  typedef KineticTransportEquationCharacteristic<BasisfunctionImp, GridLayerImp, U_, quadratureDim> ThisType;
+
+public:
+  using typename BaseType::BasisfunctionType;
+  using typename BaseType::GridLayerType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::StateType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::MatrixType;
+  using typename BaseType::StateRangeType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+
+  using typename BaseType::FluxType;
+  using typename BaseType::RhsType;
+  using typename BaseType::InitialValueType;
+  using typename BaseType::BoundaryValueType;
+  using typename BaseType::ActualFluxType;
+  using typename BaseType::ActualRhsType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::RhsAffineFunctionType;
+  using typename BaseType::QuadratureType;
+
+  typedef Dune::XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> FieldMatrixType;
+  typedef typename XT::LA::EigenSolver<FieldMatrixType> EigenSolverType;
+  typedef typename XT::LA::EigenSolverOptions<FieldMatrixType> EigenSolverOptionsType;
+  typedef typename XT::LA::MatrixInverterOptions<FieldMatrixType> MatrixInverterOptionsType;
+
+  using BaseType::default_grid_cfg;
+  using BaseType::default_boundary_cfg;
+
+  static XT::Common::Configuration create_eigensolver_options()
+  {
+    XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options(EigenSolverOptionsType::types()[0]);
+    // XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options("shifted_qr");
+    eigensolver_options["assert_eigendecomposition"] = "1e-6";
+    eigensolver_options["assert_real_eigendecomposition"] = "1e-6";
+    XT::Common::Configuration matrix_inverter_options = MatrixInverterOptionsType::options();
+    matrix_inverter_options["post_check_is_left_inverse"] = "1e-6";
+    matrix_inverter_options["post_check_is_right_inverse"] = "1e-6";
+    eigensolver_options.add(matrix_inverter_options, "matrix-inverter");
+    return eigensolver_options;
+  } // ... create_eigensolver_options()
+
+  KineticTransportEquationCharacteristic(const BasisfunctionType& basis_functions,
+                                         const GridLayerType& grid_layer,
+                                         const QuadratureType quadrature = QuadratureType(),
+                                         DynamicVector<size_t> num_segments = {1, 1, 1},
+                                         const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
+                                         const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
+                                         const RangeFieldType psi_vac = 5e-9,
+                                         const XT::Common::ParameterType& parameter_type = XT::Common::ParameterType())
+    : BaseType(basis_functions, grid_layer, quadrature, num_segments, grid_cfg, boundary_cfg, psi_vac, parameter_type)
+  {
+    static XT::Common::Configuration eigensolver_options = create_eigensolver_options();
+    const auto matrix =
+        static_cast<ActualFluxType*>(BaseType::create_flux())->partial_u(DomainType(), StateRangeType());
+    const auto eigensolver = EigenSolverType(matrix, eigensolver_options, true);
+    eigenvalues_ = eigensolver.real_eigenvalues();
+    eigenvectors_ = eigensolver.real_eigenvectors();
+    eigenvectors_inverse_ = eigenvectors_;
+    eigenvectors_inverse_.invert();
+    std::cout << "mat = " << XT::Common::to_string(matrix, 15) << std::endl;
+    std::cout << "eigvals = " << XT::Common::to_string(eigenvalues_, 15) << std::endl;
+    std::cout << "eigvecs = " << XT::Common::to_string(eigenvectors_, 15) << std::endl;
+    std::cout << "eigvecs_inverse = " << XT::Common::to_string(eigenvectors_inverse_, 15) << std::endl;
+  }
+
+  virtual ~KineticTransportEquationCharacteristic()
+  {
+  }
+
+  using BaseType::parse_parameter;
+
+  const FieldMatrixType& eigenvectors() const
+  {
+    return eigenvectors_;
+  }
+
+  // In characteristic variables, the flux matrix is just the diagonal eigenvalue matrix
+  virtual FluxType* create_flux() const override
+  {
+    MatrixType A(dimRange, dimRange, 0.);
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      A[ii][ii] = eigenvalues_[ii];
+    return new ActualFluxType(A, typename ActualFluxType::RangeType(0));
+  }
+
+  virtual RhsType* create_rhs() const override
+  {
+    auto rhs_noncharacteristic = std::unique_ptr<ActualRhsType>(static_cast<ActualRhsType*>(BaseType::create_rhs()));
+    auto affine_functions_old = rhs_noncharacteristic->values();
+    std::vector<RhsAffineFunctionType> affine_functions;
+    for (size_t ii = 0; ii < affine_functions_old.size(); ++ii) {
+      const auto& affine_function = affine_functions_old[ii];
+      auto A = affine_function->partial_u(DomainType(), StateRangeType());
+      auto b = affine_function->evaluate(DomainType(0), StateRangeType(0));
+      A.rightmultiply(eigenvectors_);
+      A.leftmultiply(eigenvectors_inverse_);
+      auto b_new = b;
+      eigenvectors_inverse_.mv(b, b_new);
+      affine_functions.emplace_back(A, b_new, true, "rhs");
+    }
+    return new ActualRhsType(
+        rhs_noncharacteristic->lower_left(), rhs_noncharacteristic->upper_right(), num_segments_, affine_functions);
+  } // ... create_rhs(...)
+
+  virtual InitialValueType* create_initial_values() const override
+  {
+    const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
+    const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
+    RangeType old_value = basis_functions_.integrated() * psi_vac_;
+    RangeType value;
+    eigenvectors_inverse_.mv(old_value, value);
+    std::vector<typename ActualInitialValueType::LocalizableFunctionType> initial_vals;
+    const size_t num_regions = this->get_num_regions(num_segments_);
+    for (size_t ii = 0; ii < num_regions; ++ii)
+      initial_vals.emplace_back([=](const DomainType&, const XT::Common::Parameter&) { return value; }, 0);
+    return new ActualInitialValueType(lower_left, upper_right, num_segments_, initial_vals, "initial_values");
+  } // ... create_initial_values()
+
+  // Use a constant vacuum concentration basis_integrated * psi_vac as boundary value
+  virtual BoundaryValueType* create_boundary_values() const override
+  {
+    RangeType old_value = basis_functions_.integrated() * psi_vac_;
+    RangeType value;
+    eigenvectors_inverse_.mv(old_value, value);
+    return new ActualBoundaryValueType([=](const DomainType&, const XT::Common::Parameter&) { return value; }, 0);
+  } // ... create_boundary_values()
+
+protected:
+  using BaseType::basis_functions_;
+  using BaseType::num_segments_;
+  using BaseType::psi_vac_;
+  using BaseType::grid_cfg_;
+  std::vector<RangeFieldType> eigenvalues_;
+  FieldMatrixType eigenvectors_;
+  FieldMatrixType eigenvectors_inverse_;
 }; // class KineticTransportEquation<...>
 
 

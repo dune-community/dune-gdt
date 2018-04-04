@@ -167,7 +167,7 @@ public:
   using typename BaseType::DomainFieldType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
-  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_, dimDomain + 1> ActualFluxType;
+  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
   using typename BaseType::QuadratureType;
 
   using BaseType::default_grid_cfg;

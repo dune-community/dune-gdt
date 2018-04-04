@@ -44,7 +44,6 @@ protected:
 
 public:
   using typename BaseType::RangeFieldType;
-  static constexpr bool linear = ImplementationType::linear;
 
   KineticEquation(const ImplementationType& implementation)
     : BaseType(implementation.create_flux(),
@@ -85,13 +84,12 @@ public:
   }
 }; // class KineticEquation<...>
 
-template <class BasisfunctionImp, class GridLayerImp, class U_, bool linear_ = false>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
 class KineticEquationImplementation
 {
-  typedef KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_, linear_> ThisType;
+  typedef KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_> ThisType;
 
 public:
-  static constexpr bool linear = linear_;
   typedef BasisfunctionImp BasisfunctionType;
   typedef GridLayerImp GridLayerType;
   typedef typename GridLayerType::template Codim<0>::Entity EntityType;

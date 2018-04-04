@@ -26,11 +26,10 @@ namespace Problems {
 namespace KineticTransport {
 
 
-template <class BasisfunctionImp, class GridLayerImp, class U_, bool linear = true>
-class ShadowFallPn
-    : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, BasisfunctionImp::dimDomain, linear>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
+class ShadowFallPn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, BasisfunctionImp::dimDomain>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, BasisfunctionImp::dimDomain, linear> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, BasisfunctionImp::dimDomain> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -122,7 +121,7 @@ protected:
 }; // class ShadowFallPn<...>
 
 template <class BasisfunctionType, class GridLayerType, class U_>
-class ShadowFallMn : public ShadowFallPn<BasisfunctionType, GridLayerType, U_, false /*nonlinear*/>
+class ShadowFallMn : public ShadowFallPn<BasisfunctionType, GridLayerType, U_>
 {
   typedef ShadowFallPn<BasisfunctionType, GridLayerType, U_, false> BaseType;
   typedef ShadowFallMn ThisType;

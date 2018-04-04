@@ -29,11 +29,10 @@ namespace Problems {
 namespace KineticTransport {
 
 
-template <class BasisfunctionImp, class GridLayerImp, class U_, bool linear = true>
-class PointSourcePn
-    : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, BasisfunctionImp::dimDomain, linear>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
+class PointSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, BasisfunctionImp::dimDomain>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, BasisfunctionImp::dimDomain, linear> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, BasisfunctionImp::dimDomain> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -130,9 +129,9 @@ protected:
 }; // class PointSourcePn<...>
 
 template <class BasisfunctionType, class GridLayerType, class U_>
-class PointSourceMn : public PointSourcePn<BasisfunctionType, GridLayerType, U_, false /*nonlinear*/>
+class PointSourceMn : public PointSourcePn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef PointSourcePn<BasisfunctionType, GridLayerType, U_, false> BaseType;
+  typedef PointSourcePn<BasisfunctionType, GridLayerType, U_> BaseType;
   typedef PointSourceMn ThisType;
 
 public:

@@ -32,10 +32,10 @@ namespace Problems {
 namespace KineticTransport {
 
 
-template <class BasisfunctionImp, class GridLayerImp, class U_, const bool linear_ = true>
-class SourceBeamPn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, 1, linear_>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
+class SourceBeamPn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, 1>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, 1, linear_> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, 1> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -225,13 +225,12 @@ protected:
 }; // class SourceBeamPn<...>
 
 template <class BasisfunctionType, class GridLayerType, class U_>
-class SourceBeamMn : public SourceBeamPn<BasisfunctionType, GridLayerType, U_, false>
+class SourceBeamMn : public SourceBeamPn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef SourceBeamPn<BasisfunctionType, GridLayerType, U_, false> BaseType;
+  typedef SourceBeamPn<BasisfunctionType, GridLayerType, U_> BaseType;
   typedef SourceBeamMn ThisType;
 
 public:
-  static const bool linear = false;
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
   typedef EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
