@@ -246,14 +246,6 @@ public:
 
     using LocalfunctionType::entity;
 
-    RangeFieldType calculate_alpha(const DomainType& x_local,
-                                   const StateRangeType& u,
-                                   const XT::Common::Parameter& param,
-                                   const bool regularize = true)
-    {
-      return get_alpha(x_local, u, param, regularize).second;
-    }
-
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
                               const StateRangeType& u,
                               const XT::Common::Parameter& param,
@@ -685,11 +677,6 @@ public:
     return basis_functions_;
   }
 
-  virtual StateRangeType get_isotropic_moment(const StateRangeType& u) const override
-  {
-    return basis_functions_.calculate_isotropic_distribution(u).first;
-  }
-
 private:
   const typename GridLayerType::IndexSet& index_set_;
   const BasisfunctionType& basis_functions_;
@@ -953,14 +940,6 @@ public:
         } // jj
       ret += "]";
       return ret;
-    }
-
-    virtual RangeFieldType calculate_alpha(const DomainType& x_local,
-                                           const StateRangeType& u,
-                                           const XT::Common::Parameter& param,
-                                           const bool regularize = true) const override
-    {
-      return get_alpha(x_local, u, param, regularize).second;
     }
 
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
@@ -1493,11 +1472,6 @@ public:
     return basis_functions_;
   }
 
-  virtual StateRangeType get_isotropic_moment(const StateRangeType& u) const override
-  {
-    return basis_functions_.calculate_isotropic_distribution(u).first;
-  }
-
 private:
   const typename GridLayerType::IndexSet& index_set_;
   const BasisfunctionType& basis_functions_;
@@ -1969,14 +1943,6 @@ public:
     }
 
     using LocalfunctionType::entity;
-
-    RangeFieldType calculate_alpha(const DomainType& x_local,
-                                   const StateRangeType& u,
-                                   const XT::Common::Parameter& param,
-                                   const bool regularize = true)
-    {
-      return get_alpha(x_local, u, param, regularize).second;
-    }
 
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
                               const StateRangeType& u,
@@ -2513,11 +2479,6 @@ public:
     return basis_functions_;
   }
 
-  virtual StateRangeType get_isotropic_moment(const StateRangeType& u) const override
-  {
-    return basis_functions_.calculate_isotropic_distribution(u).first;
-  }
-
 private:
   const typename GridLayerType::IndexSet& index_set_;
   const BasisfunctionType& basis_functions_;
@@ -2693,14 +2654,6 @@ public:
     }
 
     using LocalfunctionType::entity;
-
-    RangeFieldType calculate_alpha(const DomainType& x_local,
-                                   const StateRangeType& u,
-                                   const XT::Common::Parameter& param,
-                                   const bool regularize = true)
-    {
-      return get_alpha(x_local, u, param, regularize).second;
-    }
 
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
                               const StateRangeType& u,
@@ -3651,11 +3604,6 @@ public:
   const BasisfunctionType& basis_functions() const
   {
     return basis_functions_;
-  }
-
-  virtual StateRangeType get_isotropic_moment(const StateRangeType& u) const override
-  {
-    return basis_functions_.calculate_isotropic_distribution(u).first;
   }
 
 private:
