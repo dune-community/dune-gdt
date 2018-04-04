@@ -35,7 +35,7 @@
                                                   Dune::XT::Grid::Layers::_s_layer,                                    \
                                                   _s_p>::bind(_m)
 
-PYBIND11_MODULE(__local_elliptic_ipdg_operators, m)
+PYBIND11_MODULE(__operators_elliptic_ipdg, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
