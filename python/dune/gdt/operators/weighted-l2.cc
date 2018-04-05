@@ -11,8 +11,6 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_PYBINDXI
-
 #include <dune/common/parallel/mpihelper.hh>
 
 #include <dune/pybindxi/pybind11.h>
@@ -42,5 +40,3 @@ PYBIND11_MODULE(__operators_weighted_l2, m)
 #endif // HAVE_DUNE_ALUGRID
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 }
-
-#endif // HAVE_DUNE_PYBINDXI

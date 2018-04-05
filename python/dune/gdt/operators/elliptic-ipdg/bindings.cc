@@ -9,8 +9,6 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_PYBINDXI
-
 #include <dune/common/parallel/mpihelper.hh>
 
 #include <dune/pybindxi/pybind11.h>
@@ -47,5 +45,3 @@ PYBIND11_MODULE(__operators_elliptic_ipdg, m)
   DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_BIND(
       m, G, dd_subdomain, view, true, swipdg_affine_factor, istl_sparse, gdt, dg, dd_subdomain, 1);
 }
-
-#endif // HAVE_DUNE_PYBINDXI

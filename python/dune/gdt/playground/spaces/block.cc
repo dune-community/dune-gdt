@@ -9,8 +9,6 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_PYBINDXI
-
 #include <dune/common/parallel/mpihelper.hh>
 
 #include <dune/pybindxi/pybind11.h>
@@ -41,5 +39,3 @@ PYBIND11_MODULE(__spaces_block, m)
   DUNE_GDT_SPACES_BLOCK_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dg, gdt, 1);
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.spaces.block");
 }
-
-#endif // HAVE_DUNE_PYBINDXI

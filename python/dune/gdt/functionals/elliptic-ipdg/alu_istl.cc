@@ -9,8 +9,6 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_PYBINDXI
-
 #include <python/dune/gdt/functionals/elliptic-ipdg/bindings.hh>
 
 
@@ -19,6 +17,3 @@ DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(template, leaf, view, dg, gdt, 1
 DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(template, level, view, dg, gdt, 1, istl_sparse);
 DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(template, dd_subdomain, view, dg, gdt, 1, istl_sparse);
 #endif
-
-
-#endif // HAVE_DUNE_PYBINDXI

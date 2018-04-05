@@ -9,7 +9,6 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/common/parallel/mpihelper.hh>
 
@@ -31,5 +30,3 @@ PYBIND11_MODULE(__local_elliptic_ipdg_operators, m)
   DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND(m);
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.assembler");
 }
-
-#endif // HAVE_DUNE_PYBINDXI

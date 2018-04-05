@@ -9,8 +9,6 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_PYBINDXI
-
 #include <dune/common/parallel/mpihelper.hh>
 
 #include <dune/pybindxi/pybind11.h>
@@ -43,5 +41,3 @@ PYBIND11_MODULE(__functionals_elliptic_ipdg, m)
 #endif
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.functionals.elliptic-ipdg");
 }
-
-#endif // HAVE_DUNE_PYBINDXI

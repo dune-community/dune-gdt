@@ -9,8 +9,6 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_PYBINDXI
-
 #include <dune/common/parallel/mpihelper.hh>
 
 #include <dune/pybindxi/pybind11.h>
@@ -96,5 +94,3 @@ PYBIND11_MODULE(__functionals_l2, m)
     DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, dd_subdomain, view, dg, gdt, 1, istl_sparse);
   }
 }
-
-#endif // HAVE_DUNE_PYBINDXI
