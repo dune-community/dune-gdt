@@ -23,7 +23,6 @@
 #include <python/dune/xt/common/bindings.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
 #include <python/dune/xt/grid/layers.bindings.hh>
-#include <python/dune/gdt/playground/operators/RS2017.hh>
 #include <python/dune/gdt/operators/base.hh>
 #include <python/dune/gdt/assembler/system.hh>
 #include <python/dune/gdt/shared.hh>
