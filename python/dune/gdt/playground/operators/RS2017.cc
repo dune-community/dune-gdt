@@ -1420,7 +1420,7 @@ void bind_neighborhood_reconstruction(py::module& m)
                                                      GDT::DiscreteFunction<NeighborhoodRtSpaceType, VectorType>,
                                                      GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>
           LocalizableDiffusiveFluxReconstructionOperatorForRestrictedSpaceType;
-
+  // for u in restricted space
   m.def("RS2017_apply_diffusive_flux_reconstruction_in_neighborhood",
         [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
            const ssize_t subdomain,
@@ -1454,7 +1454,7 @@ void bind_neighborhood_reconstruction(py::module& m)
                                                      GDT::DiscreteFunction<RtSpaceType, VectorType>,
                                                      GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>
           LocalizableDiffusiveFluxReconstructionOperatorForLeafSpaceType;
-
+  // for u in leaf space
   m.def("RS2017_apply_diffusive_flux_reconstruction_in_neighborhood",
         [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
            const ssize_t subdomain,
