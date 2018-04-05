@@ -1503,15 +1503,7 @@ void bind_neighborhood_discretization(py::module& m)
   typedef XT::LA::IstlDenseVector<R> V;
   typedef XT::LA::IstlRowMajorSparseMatrix<R> M;
 
-  try { // we might not be the first to add this SystemAssembler
-    GDT::bindings::internal::SystemAssembler<S, NGL>::bind(
-        m,
-        GDT::bindings::space_name<SP>::value(),
-        GDT::bindings::space_name<SP>::value(),
-        XT::Grid::bindings::layer_name<Layers::dd_subdomain_oversampled>::value() + "_"
-            + XT::Grid::bindings::backend_name<Backends::view>::value());
-  } catch (std::runtime_error&) {
-  }
+  pybind11::module::import("dune.gdt.__assembler");
 
   m.def("RS2017_make_neighborhood_system_assembler",
         [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
