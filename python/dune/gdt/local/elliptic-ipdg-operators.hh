@@ -9,7 +9,6 @@
 
 #ifndef PYTHON_DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BINDINGS_HH
 #define PYTHON_DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -735,5 +734,4 @@ public:
 
 // end: this is what we need for the .so
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BINDINGS_HH

@@ -9,8 +9,6 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_PYBINDXI
-
 #include <dune/common/parallel/mpihelper.hh>
 
 #include <dune/pybindxi/pybind11.h>
@@ -33,5 +31,3 @@ PYBIND11_MODULE(__local_diffusive_flux_estimation_operator, m)
   DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(ALU_2D_SIMPLEX_CONFORMING, m);
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.assembler");
 }
-
-#endif // HAVE_DUNE_PYBINDXI

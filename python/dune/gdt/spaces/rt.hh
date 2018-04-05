@@ -9,7 +9,6 @@
 
 #ifndef PYTHON_DUNE_GDT_SPACES_RT_BINDINGS_HH
 #define PYTHON_DUNE_GDT_SPACES_RT_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <python/dune/xt/grid/grids.bindings.hh>
 
@@ -42,5 +41,4 @@
 // end: this is what we need for the .so
 
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_SPACES_RT_BINDINGS_HH

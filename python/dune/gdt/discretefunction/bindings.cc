@@ -9,8 +9,6 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_PYBINDXI
-
 #include <dune/common/parallel/mpihelper.hh>
 
 #include <dune/pybindxi/pybind11.h>
@@ -46,5 +44,3 @@ PYBIND11_MODULE(__discretefunction, m)
   DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_dense);
   DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, gdt, rt, 0, 2, istl_dense);
 }
-
-#endif // HAVE_DUNE_PYBINDXI

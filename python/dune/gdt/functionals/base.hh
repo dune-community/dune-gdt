@@ -9,7 +9,6 @@
 
 #ifndef PYTHON_DUNE_GDT_FUNCTIONALS_BASE_BINDINGS_H
 #define PYTHON_DUNE_GDT_FUNCTIONALS_BASE_BINDINGS_H
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -58,5 +57,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_FUNCTIONALS_BASE_BINDINGS_H

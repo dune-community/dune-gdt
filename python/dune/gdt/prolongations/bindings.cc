@@ -9,8 +9,6 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_PYBINDXI
-
 #include <dune/common/parallel/mpihelper.hh>
 
 #include <dune/pybindxi/pybind11.h>
@@ -61,5 +59,3 @@ PYBIND11_MODULE(__prolongations, m)
   //  DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_dense, G, leaf, gdt, dg, 2, istl_dense);
   //  DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_dense, G, leaf, gdt, dg, 3, istl_dense);
 }
-
-#endif // HAVE_DUNE_PYBINDXI

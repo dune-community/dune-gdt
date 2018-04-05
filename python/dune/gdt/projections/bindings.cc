@@ -9,8 +9,6 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_PYBINDXI
-
 #include <dune/common/parallel/mpihelper.hh>
 
 #include <dune/pybindxi/pybind11.h>
@@ -33,5 +31,3 @@ PYBIND11_MODULE(__projections, m)
   //  DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(m);
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.projections");
 }
-
-#endif // HAVE_DUNE_PYBINDXI

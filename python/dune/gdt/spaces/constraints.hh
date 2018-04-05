@@ -9,7 +9,6 @@
 
 #ifndef PYTHON_DUNE_GDT_SPACES_CONSTRAINTS_BINDINGS_HH
 #define PYTHON_DUNE_GDT_SPACES_CONSTRAINTS_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <boost/numeric/conversion/cast.hpp>
 
@@ -147,5 +146,4 @@ public:
 } // namespace Dune
 
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_SPACES_CONSTRAINTS_BINDINGS_HH

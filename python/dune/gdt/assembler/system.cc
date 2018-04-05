@@ -9,8 +9,6 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_PYBINDXI
-
 #include <dune/common/parallel/mpihelper.hh>
 
 #include <dune/pybindxi/pybind11.h>
@@ -109,5 +107,3 @@ PYBIND11_MODULE(__assembler, m)
         m, G, dd_subdomain_coupling, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);
   }
 }
-
-#endif // HAVE_DUNE_PYBINDXI

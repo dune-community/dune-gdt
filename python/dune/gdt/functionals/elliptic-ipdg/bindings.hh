@@ -9,7 +9,6 @@
 
 #ifndef PYTHON_DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BINDINGS_HH
 #define PYTHON_DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -865,5 +864,4 @@ DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, level, view, cg
 
 // end: this is what we need for the .so
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BINDINGS_HH

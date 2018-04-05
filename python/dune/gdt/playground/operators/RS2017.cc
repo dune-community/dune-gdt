@@ -9,8 +9,6 @@
 
 #include "config.h"
 
-#if HAVE_DUNE_PYBINDXI
-
 #include <memory>
 
 #include <dune/common/parallel/mpihelper.hh>
@@ -1930,5 +1928,3 @@ PYBIND11_MODULE(__operators_RS2017, m)
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 #endif // HAVE_DUNE_ALUGRID
 }
-
-#endif // HAVE_DUNE_PYBINDXI
