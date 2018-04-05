@@ -18,6 +18,8 @@
 #include <dune/gdt/assembler/system.hh>
 #include <dune/gdt/discretefunction/default.hh>
 
+#include <python/dune/gdt/assembler/system.hh>
+
 namespace Dune {
 namespace GDT {
 namespace bindings {
@@ -26,12 +28,16 @@ namespace bindings {
 template <class FunctionalType>
 class VectorFunctionalBase
 {
+  using SpaceType = typename FunctionalType::SpaceType;
+  using LayerType = typename FunctionalType::GridLayerType;
+
 public:
   typedef FunctionalType type;
-  typedef GDT::SystemAssembler<typename FunctionalType::SpaceType, typename FunctionalType::GridLayerType> BaseType;
+  typedef GDT::SystemAssembler<SpaceType, LayerType> BaseType;
   typedef pybind11::class_<type, BaseType> bound_type;
 
-  static bound_type bind(pybind11::module& m, const std::string& class_id)
+  static bound_type
+  bind(pybind11::module& m, const std::string& class_id, std::string grid_layer_name, std::string space_name)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -39,6 +45,11 @@ public:
     typedef typename type::SpaceType S;
     typedef typename type::VectorType V;
 
+    try { //  we might not be the first to add this
+      internal::SystemAssembler<SpaceType, typename FunctionalType::GridLayerType>::bind(
+          m, space_name, space_name, grid_layer_name);
+    } catch (const std::runtime_error&) {
+    }
     bound_type c(m, std::string(class_id).c_str(), std::string(class_id).c_str());
 
     c.def("vector", [](type& self) { return self.vector(); });
