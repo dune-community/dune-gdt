@@ -95,13 +95,9 @@ public:
 
   void apply_local(const EntityType& entity)
   {
-    // get cell averages on stencil
-    FieldVector<int, 3> offsets(0);
-    ValuesType values((FieldVector<FieldVector<RangeType, stencil[2]>, stencil[1]>(
-        FieldVector<RangeType, stencil[2]>(RangeType(std::numeric_limits<double>::quiet_NaN())))));
-    // In a MPI parallel run, if entity is in the last row of overlap, we need to skip reconstruction
-    auto okay = StencilIterator::apply(source_values_, boundary_values_, values, entity, grid_layer_, -1, offsets);
-    if (!okay)
+    const Stencil stencil(source_values_, stencil_sizes_, grid_layer_, boundary_values_, entity);
+    // In a MPI parallel run, if entity is in overlap, we do not have to reconstruct
+    if (!stencil.valid())
       return;
     // get intersections
     FieldVector<typename GridLayerType::Intersection, 2 * dimDomain> intersections;
@@ -118,7 +114,7 @@ public:
         eigenvectors() = XT::Common::make_unique<FieldVector<MatrixType, dimDomain>>();
         QR() = XT::Common::make_unique<FieldVector<MatrixType, dimDomain>>();
       }
-      const auto& u_entity = values[stencil[0] / 2][stencil[1] / 2][stencil[2] / 2];
+      const auto& u_entity = source_values_[entity_index];
       helper<dimDomain>::get_jacobian(analytical_flux_, u_entity, *(jacobian()), param_, entity);
       helper<dimDomain>::get_eigenvectors(*(jacobian()), *(eigenvectors()), *(QR()), tau_, permutations());
       if (analytical_flux_.is_affine()) {
@@ -390,91 +386,6 @@ private:
     RangeType work;
     XT::LA::solve_qr_factorized(QR, tau, permutations, ret, x, &work);
   }
-
-  class StencilIterator
-  {
-  public:
-    static constexpr size_t stencil_x = stencil[0];
-    static constexpr size_t stencil_y = stencil[1];
-    static constexpr size_t stencil_z = stencil[2];
-
-    static bool apply(const std::vector<RangeType>& source_values,
-                      const BoundaryValueType& boundary_values,
-                      FieldVector<FieldVector<FieldVector<RangeType, stencil_z>, stencil_y>, stencil_x>& values,
-                      const EntityType& entity,
-                      const GridLayerType& grid_layer,
-                      const int direction,
-                      FieldVector<int, 3> offsets)
-    {
-      bool ret = true;
-      const auto& entity_index = grid_layer.indexSet().index(entity);
-      values[stencil_x / 2 + offsets[0]][stencil_y / 2 + offsets[1]][stencil_z / 2 + offsets[2]] =
-          source_values[entity_index];
-      std::vector<int> boundary_dirs;
-      for (const auto& intersection : Dune::intersections(grid_layer, entity)) {
-        const auto& intersection_index = intersection.indexInInside();
-        if (!end_of_stencil(intersection_index, offsets)) {
-          auto new_offsets = offsets;
-          if (intersection.boundary() && !intersection.neighbor()) { // boundary intersections
-            boundary_dirs.push_back(intersection_index);
-            RangeType boundary_value = boundary_values.local_function(entity)->evaluate(
-                intersection, entity.geometry().local(intersection.geometry().center()), source_values[entity_index]);
-            while (!end_of_stencil(intersection_index, new_offsets)) {
-              walk(intersection_index, new_offsets);
-              values[stencil_x / 2 + new_offsets[0]][stencil_y / 2 + new_offsets[1]][stencil_z / 2 + new_offsets[2]] =
-                  boundary_value;
-            }
-          } else if (intersection.neighbor()
-                     && direction_allowed(direction, intersection_index)) { // inner and periodic intersections
-            const auto& outside = intersection.outside();
-            walk(intersection_index, new_offsets);
-            ret = ret
-                  && StencilIterator::apply(
-                         source_values, boundary_values, values, outside, grid_layer, intersection_index, new_offsets);
-          } else if (direction_allowed(direction, intersection_index) && !intersection.neighbor()
-                     && !intersection.boundary()) { // processor boundary
-            return false;
-          }
-        } // if (!end_of_stencil(...))
-      } // intersections
-
-      // TODO: improve multiple boundary handling, currently everything is filled with the boundary value in the first
-      // direction, do not use NaNs
-      assert(boundary_dirs.size() <= 3);
-      if (boundary_dirs.size() > 1) {
-        walk(boundary_dirs[0], offsets);
-        const auto& boundary_value =
-            values[stencil_x / 2 + offsets[0]][stencil_y / 2 + offsets[1]][stencil_z / 2 + offsets[2]];
-        for (auto& values_yz : values)
-          for (auto& values_z : values_yz)
-            for (auto& value : values_z)
-              if (std::isnan(value[0]))
-                value = boundary_value;
-      }
-      return ret;
-    } // static bool apply(...)
-
-  private:
-    static void walk(const int dir, FieldVector<int, 3>& offsets)
-    {
-      dir % 2 ? offsets[dir / 2]++ : offsets[dir / 2]--;
-    }
-
-    // Direction is allowed if end of stencil is not reached and direction is not visited by another iterator.
-    // Iterators never change direction, they may only spawn new iterators in the directions that have a higher
-    // index (i.e. iterators that walk in x direction will spawn iterators going in y and z direction,
-    // iterators going in y direction will only spawn iterators in z-direction and z iterators only walk
-    // without emitting new iterators).
-    static bool direction_allowed(const int dir, const int new_dir)
-    {
-      return (polOrder > 0 && dir == -1) || new_dir == dir || new_dir / 2 > dir / 2;
-    }
-
-    static bool end_of_stencil(const int dir, const FieldVector<int, 3>& offsets)
-    {
-      return (polOrder == 0 || (dir != -1 && size_t(std::abs(offsets[dir / 2])) >= stencil[dir / 2] / 2));
-    }
-  }; // class StencilIterator<...
 
   static void slope_reconstruction(const FieldVector<RangeType, stencil_size>& cell_values,
                                    std::vector<RangeType>& result,
@@ -1540,7 +1451,7 @@ private:
   struct helper<3, anything>
   {
     static void reconstruct(size_t dd,
-                            const ValuesType& values,
+                            const StencilType& stencil,
                             FieldVector<MatrixType, dimDomain>& eigenvectors,
                             FieldVector<MatrixType, dimDomain>& QR,
                             FieldVector<FieldVector<LocalRangeType, num_blocks>, dimDomain>& tau,
@@ -1549,32 +1460,52 @@ private:
                             std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
                             const IntersectionVectorType& intersections)
     {
-      // We always treat dd as the x-direction and set y- and z-direction accordingly. For that purpose, define new
-      // coordinates x', y', z'. First reorder x, y, z to x', y', z' and convert to x'-characteristic variables.
-      // Reordering is done such that the indices in char_values are in the order z', y', x'
-      size_t curr_dir = dd;
-      FieldVector<FieldVector<FieldVector<RangeType, stencil_size>, stencil_size>, stencil_size> char_values;
-      for (size_t ii = 0; ii < stencil_size; ++ii) {
-        for (size_t jj = 0; jj < stencil_size; ++jj) {
-          for (size_t kk = 0; kk < stencil_size; ++kk) {
-            if (dd == 0)
-              apply_inverse_eigenvectors(
-                  QR[curr_dir], tau[curr_dir], permutations[curr_dir], values[ii][jj][kk], char_values[kk][jj][ii]);
-            else if (dd == 1)
-              apply_inverse_eigenvectors(
-                  QR[curr_dir], tau[curr_dir], permutations[curr_dir], values[ii][jj][kk], char_values[ii][kk][jj]);
-            else if (dd == 2)
-              apply_inverse_eigenvectors(
-                  QR[curr_dir], tau[curr_dir], permutations[curr_dir], values[ii][jj][kk], char_values[jj][ii][kk]);
+      FieldVector<size_t, dimDomain> sizes = stencil_sizes_;
+
+      // Transform values on stencil to characteristic variables of the first coordinate direction dd
+      std::vector<RangeType> reconstructed_values(stencil.num_values());
+      for (size_t ii = 0; ii < stencil.num_values(); ++ii)
+        apply_inverse_eigenvectors(dd, *(stencil.values()[ii]), reconstructed_values[ii]);
+
+      size_t curr_dir, last_dir;
+      RangeType tmp_value;
+      for (size_t dir = 0; dir < dimDomain; ++dir) {
+        curr_dir = (dd + dir) % dimDomain;
+        // Transform to characteristic variables of the current reconstruction direction.
+        if (dir > 0) {
+          for (auto& value : reconstructed_values) {
+            apply_eigenvectors(last_dir, value, tmp_value);
+            apply_inverse_eigenvectors(curr_dir, tmp_value, value);
           }
-        }
+        } // if (dir > 0)
+        // perform the actual reconstruction
+        const auto& curr_quadrature = dir > 0 ? quadrature_[curr_dir] : left_right_quadrature();
+        slope_reconstruction(curr_dir, curr_quadrature, reconstructed_values);
+        sizes[curr_dir] = curr_quadrature.size();
+        last_dir = curr_dir;
+      }
+      // convert back to non-characteristic variables
+      for (auto& value : reconstructed_values) {
+        tmp_value = value;
+        apply_eigenvectors(last_dir, tmp_value, value);
       }
 
+      // Convert coordinates on face to local entity coordinates and store reconstructed values
+      for (size_t ii = 0; ii < 2; ++ii) {
+        for (size_t jj = 0; jj < num_quad_points; ++jj) {
+          for (size_t kk = 0; kk < num_quad_points; ++kk) {
+            // convert back to non-characteristic variables
+            IntersectionLocalCoordType quadrature_point = {quadrature[jj].position(), quadrature[kk].position()};
+            reconstructed_values_map.insert(
+                std::make_pair(intersections[2 * dd + ii].geometryInInside().global(quadrature_point), tmp_vec));
+          } // kk
+        } // jj
+      } // ii
+
       // reconstruction in x' direction
-      // first index: z' direction
-      // second index: dimension 2 for left/right interface
-      // third index: y' direction
-      FieldVector<FieldVector<FieldVector<RangeType, stencil_size>, 2>, stencil_size> x_reconstructed_values;
+      // calculate values on left and right intersection in x' direction
+      size_t remaining_size = stencil.num_values() / stencil_sizes[curr_dir];
+      std::vector<RangeType> x_reconstructed_values(2 * remaining_size);
       std::vector<RangeType> result(2);
       const auto left_and_right_boundary_point = left_right_quadrature();
       for (size_t kk = 0; kk < stencil_size; ++kk) {
@@ -1585,75 +1516,7 @@ private:
         }
       }
 
-      // convert from x'-characteristic variables to y'-characteristic variables
-      size_t next_dir = (dd + 1) % 3;
-      RangeType tmp_vec;
-      for (size_t kk = 0; kk < stencil_size; ++kk) {
-        for (size_t ii = 0; ii < 2; ++ii) {
-          for (size_t jj = 0; jj < stencil_size; ++jj) {
-            tmp_vec = x_reconstructed_values[kk][ii][jj];
-            mv(eigenvectors[curr_dir], tmp_vec, x_reconstructed_values[kk][ii][jj]);
-            tmp_vec = x_reconstructed_values[kk][ii][jj];
-            apply_inverse_eigenvectors(
-                QR[next_dir], tau[next_dir], permutations[next_dir], tmp_vec, x_reconstructed_values[kk][ii][jj]);
-          }
-        }
-      }
-
-      // reconstruction in y' direction
-      // first index: left/right interface
-      // second index: quadrature_points in y' direction
-      // third index: z' direction
-      const auto& num_quad_points = quadrature.size();
-      FieldVector<std::vector<FieldVector<RangeType, stencil_size>>, 2> y_reconstructed_values(
-          (std::vector<FieldVector<RangeType, stencil_size>>(num_quad_points)));
-      result.resize(num_quad_points);
-      for (size_t kk = 0; kk < stencil_size; ++kk) {
-        for (size_t ii = 0; ii < 2; ++ii) {
-          slope_reconstruction(x_reconstructed_values[kk][ii], result, quadrature);
-          for (size_t jj = 0; jj < num_quad_points; ++jj)
-            y_reconstructed_values[ii][jj][kk] = result[jj];
-        } // ii
-      } // kk
-
-      // convert from y'-characteristic variables to z'-characteristic variables
-      curr_dir = next_dir;
-      next_dir = (dd + 2) % 3;
-      for (size_t ii = 0; ii < 2; ++ii) {
-        for (size_t jj = 0; jj < num_quad_points; ++jj) {
-          for (size_t kk = 0; kk < stencil_size; ++kk) {
-            tmp_vec = y_reconstructed_values[ii][jj][kk];
-            mv(eigenvectors[curr_dir], tmp_vec, y_reconstructed_values[ii][jj][kk]);
-            tmp_vec = y_reconstructed_values[ii][jj][kk];
-            apply_inverse_eigenvectors(
-                QR[next_dir], tau[next_dir], permutations[next_dir], tmp_vec, y_reconstructed_values[ii][jj][kk]);
-          }
-        }
-      }
-
-      // reconstruction in z' direction
-      // first index: left/right interface
-      // second index: quadrature_points in y' direction
-      // third index: quadrature_points in z' direction
-      FieldVector<std::vector<std::vector<RangeType>>, 2> reconstructed_values(
-          std::vector<std::vector<RangeType>>(num_quad_points, std::vector<RangeType>(num_quad_points)));
-      for (size_t ii = 0; ii < 2; ++ii)
-        for (size_t jj = 0; jj < num_quad_points; ++jj)
-          slope_reconstruction(y_reconstructed_values[ii][jj], reconstructed_values[ii][jj], quadrature);
-
-      // convert coordinates on face to local entity coordinates and store
-      for (size_t ii = 0; ii < 2; ++ii) {
-        for (size_t jj = 0; jj < num_quad_points; ++jj) {
-          for (size_t kk = 0; kk < num_quad_points; ++kk) {
-            // convert back to non-characteristic variables
-            mv(eigenvectors[next_dir], reconstructed_values[ii][jj][kk], tmp_vec);
-            IntersectionLocalCoordType quadrature_point = {quadrature[jj].position(), quadrature[kk].position()};
-            reconstructed_values_map.insert(
-                std::make_pair(intersections[2 * dd + ii].geometryInInside().global(quadrature_point), tmp_vec));
-          } // kk
-        } // jj
-      } // ii
-    } // static void reconstruct(...)
+    } // reconstruct
 
     static void get_jacobian(const AnalyticalFluxType& analytical_flux,
                              const StateRangeType& u,
