@@ -21,13 +21,14 @@
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/math.hh>
 
-#include <dune/xt/la/algorithms.hh>
+#include <dune/xt/la/algorithms/cholesky.hh>
+#include <dune/xt/la/algorithms/solve_sym_tridiag_posdef.hh>
 #include <dune/xt/la/container/common.hh>
 #include <dune/xt/la/container/eye-matrix.hh>
-#include <dune/xt/la/algorithms/solve_sym_tridiag_posdef.hh>
-#include <dune/xt/la/algorithms/cholesky.hh>
+#include <dune/xt/la/container/pattern.hh>
 
-#include <dune/gdt/local/fluxes/interfaces.hh>
+#include <dune/xt/functions/interfaces/localizable-flux-function.hh>
+
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/hatfunctions.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/piecewise_monomials.hh>
 
@@ -180,7 +181,7 @@ public:
       const size_t k_max = 200,
       const RangeFieldType epsilon = std::pow(2, -52),
       const MatrixType& T_minus_one = XT::LA::eye_matrix<MatrixType>(dimRange,
-                                                                     XT::Common::dense_pattern(dimRange, dimRange)),
+                                                                     XT::LA::dense_pattern(dimRange, dimRange)),
       const std::string name = static_id())
     : index_set_(grid_layer.indexSet())
     , basis_functions_(basis_functions)
@@ -815,8 +816,9 @@ public:
       const size_t k_max = 200,
       const RangeFieldType epsilon = std::pow(2, -52),
       const FieldMatrix<RangeFieldType, block_size, block_size>& T_minus_one =
-          XT::LA::eye_matrix<FieldMatrix<RangeFieldType, block_size, block_size>>(
-              block_size, XT::Common::dense_pattern(block_size, block_size)),
+          XT::LA::eye_matrix<FieldMatrix<RangeFieldType, block_size, block_size>>(block_size,
+                                                                                  XT::LA::dense_pattern(block_size,
+                                                                                                        block_size)),
       const std::string name = static_id())
     : index_set_(grid_layer.indexSet())
     , basis_functions_(basis_functions)
