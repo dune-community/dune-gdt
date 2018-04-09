@@ -206,10 +206,7 @@ private:
   //! has to be mutable because gather is const
   mutable GatherScatter gather_scatter_;
   CommunicationDescriptor communication_descriptor_;
-  mutable LocalView<typename VectorType::Traits,
-                    typename VectorType::ScalarType,
-                    SpaceInterface<GV, r, rD, R>,
-                    CommunicationDescriptor>
+  mutable LocalView<VectorType, typename VectorType::ScalarType, SpaceInterface<GV, r, rD, R>, CommunicationDescriptor>
       local_view_;
 };
 

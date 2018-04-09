@@ -21,10 +21,11 @@
 namespace Dune {
 namespace GDT {
 
-template <class VectorTraits, class ScalarType, class SpaceType, class Descriptor>
+
+template <class VectorType, class ScalarType, class SpaceType, class Descriptor>
 class LocalView
 {
-  using VectorInterface = XT::LA::VectorInterface<VectorTraits, ScalarType>;
+  static_assert(XT::LA::is_vector<VectorType>::value, "");
   using EntityType = XT::Grid::extract_entity_t<typename SpaceType::GridViewType>;
 
 private:
@@ -37,7 +38,7 @@ private:
 public:
   using value_type = ScalarType;
 
-  LocalView(VectorInterface& vector, const SpaceType& space, const Descriptor& descriptor)
+  LocalView(VectorType& vector, const SpaceType& space, const Descriptor& descriptor)
     : vector_(vector)
     , space_(space)
     , global_indices_(0)
@@ -95,7 +96,7 @@ public:
   }
 
 private:
-  VectorInterface& vector_;
+  VectorType& vector_;
   const SpaceType& space_;
   Dune::DynamicVector<size_t> global_indices_;
   //! must use something that doesn't have specialized data storage for bool
