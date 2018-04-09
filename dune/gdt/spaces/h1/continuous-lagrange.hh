@@ -17,6 +17,8 @@
 
 #include <dune/geometry/type.hh>
 
+#include <dune/grid/common/gridview.hh>
+
 #include <dune/xt/common/exceptions.hh>
 
 #include <dune/gdt/local/finite-elements/lagrange.hh>
@@ -150,6 +152,16 @@ private:
   std::shared_ptr<MapperImplementation> mapper_;
   std::shared_ptr<GlobalBasisImplementation> basis_;
 }; // class ContinuousLagrangeSpace
+
+
+/**
+ * \sa ContinuousLagrangeSpace
+ */
+template <int p, class GV, class R = double>
+ContinuousLagrangeSpace<GridView<GV>, p, R> make_continuous_lagrange_space(GridView<GV> grid_view)
+{
+  return ContinuousLagrangeSpace<GridView<GV>, p, R>(grid_view);
+}
 
 
 } // namespace GDT
