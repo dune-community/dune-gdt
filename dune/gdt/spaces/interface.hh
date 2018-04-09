@@ -28,7 +28,7 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridView, size_t range_dim, size_t range_dim_columns = 1, class RangeField = double>
+template <class GridView, size_t range_dim = 1, size_t range_dim_columns = 1, class RangeField = double>
 class SpaceInterface
 {
   static_assert(XT::Grid::is_view<GridView>::value, "");
