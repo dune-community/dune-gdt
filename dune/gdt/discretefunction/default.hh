@@ -170,6 +170,13 @@ public:
   {
   }
 
+  DiscreteFunction(const SpaceType& spc, VectorType&& vector, const std::string nm = "dune.gdt.discretefunction")
+    : VectorStorage(new VectorType(std::move(vector)))
+    , BaseType(spc, VectorStorage::access(), nm)
+    , dofs_(space_.mapper(), VectorStorage::access())
+  {
+  }
+
   DiscreteFunction(const SpaceType& spc, const std::string nm = "dune.gdt.discretefunction")
     : VectorStorage(new VectorType(spc.mapper().size(), 0))
     , BaseType(spc, VectorStorage::access(), nm)
@@ -229,6 +236,17 @@ make_discrete_function(const SpaceInterface<GV, r, rC, R>& space,
                        const std::string nm = "dune.gdt.discretefunction")
 {
   return DiscreteFunction<typename XT::LA::VectorInterface<V>::derived_type, GV, r, rC, R>(space, vector.as_imp(), nm);
+}
+
+
+template <class V, class GV, size_t r, size_t rC, class R>
+DiscreteFunction<typename XT::LA::VectorInterface<V>::derived_type, GV, r, rC, R>
+make_discrete_function(const SpaceInterface<GV, r, rC, R>& space,
+                       XT::LA::VectorInterface<V>&& vector,
+                       const std::string nm = "dune.gdt.discretefunction")
+{
+  return DiscreteFunction<typename XT::LA::VectorInterface<V>::derived_type, GV, r, rC, R>(
+      space, std::move(vector.as_imp()), nm);
 }
 
 
