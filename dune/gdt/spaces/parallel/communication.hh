@@ -18,7 +18,6 @@
 #include <dune/istl/owneroverlapcopy.hh>
 #endif
 
-#include <dune/xt/la/container/istl.hh>
 #include <dune/xt/common/parallel/helper.hh>
 
 #include "helper.hh"

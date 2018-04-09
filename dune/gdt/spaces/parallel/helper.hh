@@ -18,14 +18,13 @@
 
 #include <dune/istl/owneroverlapcopy.hh>
 
-#include <dune/xt/la/container/vector-interface.hh>
-#include <dune/xt/la/container/common.hh>
 #include <dune/xt/la/container/istl.hh>
 
 #include "datahandles.hh"
 
 namespace Dune {
 namespace GDT {
+
 
 template <class GV, size_t r, size_t rD, class R>
 class GenericParallelHelper
