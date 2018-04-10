@@ -12,64 +12,118 @@
 #ifndef DUNE_GDT_PROLONGATIONS_HH
 #define DUNE_GDT_PROLONGATIONS_HH
 
-#include <dune/xt/grid/layers.hh>
+#include <dune/xt/functions/reinterpret.hh>
+#include <dune/xt/la/container/vector-interface.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
+#include <dune/gdt/discretefunction/reinterpret.hh>
+#include <dune/gdt/interpolations.hh>
 #include <dune/gdt/spaces/interface.hh>
-#include <dune/gdt/spaces/cg/interface.hh>
-
-#include "prolongations/l2.hh"
-#include "prolongations/lagrange.hh"
 
 namespace Dune {
 namespace GDT {
 
 
-template <class GridLayerType,
-          class SourceSpaceType,
-          class SourceVectorType,
-          class RangeSpaceType,
-          class RangeVectorType>
-typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value && is_cg_space<RangeSpaceType>::value, void>::type
-prolong(const GridLayerType& grid_layer,
-        const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
-        DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
-        const size_t /*over_integrate*/ = 0)
+/**
+ * \brief Prolongs a DiscreteFunction from one (usually coarser) GridView onto another (usually finer) one [most general
+ *        variant].
+ *
+ * \note This does not clear target.dofs().vector(). Thus, if prolongation_grid_view only covers a part of the domain of
+ *       target.space().grid_view(), other contributions in target remain (which is on purpose).
+ */
+template <class SV, class SGV, size_t r, size_t rC, class SR, class TV, class TGV, class TR, class PGV>
+std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<TGV>, typename PGV::Grid::template Codim<0>::Entity>::value,
+                 void>
+prolong(const DiscreteFunction<SV, SGV, r, rC, SR>& source,
+        DiscreteFunction<TV, TGV, r, rC, TR>& target,
+        const GridView<PGV>& prolongation_grid_view)
 {
-  prolong_lagrange(grid_layer, source, range);
-}
-
-template <class GridLayerType,
-          class SourceSpaceType,
-          class SourceVectorType,
-          class RangeSpaceType,
-          class RangeVectorType>
-typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value && !is_cg_space<RangeSpaceType>::value, void>::type
-prolong(const GridLayerType& grid_layer,
-        const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
-        DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
-        const size_t over_integrate = 0)
-{
-  prolong_l2(grid_layer, source, range, over_integrate);
+  interpolate(reinterpret(source, prolongation_grid_view), target, prolongation_grid_view);
 }
 
 
-template <class SourceSpaceType, class SourceVectorType, class RangeSpaceType, class RangeVectorType>
-typename std::enable_if<is_cg_space<RangeSpaceType>::value, void>::type
-prolong(const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
-        DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
-        const size_t /*over_integrate*/ = 0)
+/**
+ * \brief Prolongs a DiscreteFunction from one (usually coarser) GridView onto another (usually finer) one [uses
+ *        target.space().grid_view() as prolongation_grid_view].
+ */
+template <class SV, class SGV, size_t r, size_t rC, class SR, class TV, class TGV, class TR>
+void prolong(const DiscreteFunction<SV, SGV, r, rC, SR>& source, DiscreteFunction<TV, TGV, r, rC, TR>& target)
 {
-  prolong_lagrange(source, range);
+  prolong(source, target, target.space().grid_view());
 }
 
-template <class SourceSpaceType, class SourceVectorType, class RangeSpaceType, class RangeVectorType>
-typename std::enable_if<!is_cg_space<RangeSpaceType>::value, void>::type
-prolong(const ConstDiscreteFunction<SourceSpaceType, SourceVectorType>& source,
-        DiscreteFunction<RangeSpaceType, RangeVectorType>& range,
-        const size_t over_integrate = 0)
+
+/**
+ * \brief Prolongs a DiscreteFunction from one (usually coarser) GridView onto another (usually finer) one [creates
+ *        suitable target_function, TargetVectorType has to be provided].
+ *
+ * Use as in
+\code
+auto target_function = prolong<TargetVectorType>(source, target_space, prolongation_grid_view);
+\endcode
+ */
+template <class TargetVectorType, class SV, class SGV, size_t r, size_t rC, class SR, class TGV, class TR, class PGV>
+std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<TGV>, typename PGV::Grid::template Codim<0>::Entity>::value,
+                 DiscreteFunction<TargetVectorType, TGV, r, rC, TR>>
+prolong(const DiscreteFunction<SV, SGV, r, rC, SR>& source,
+        const SpaceInterface<TGV, r, rC, TR>& target_space,
+        const GridView<PGV>& prolongation_grid_view)
 {
-  prolong_l2(source, range, over_integrate);
+  auto target_function = make_discrete_function<TargetVectorType>(target_space);
+  prolong(source, target_function, prolongation_grid_view);
+  return target_function;
+}
+
+
+/**
+ * \brief Prolongs a DiscreteFunction from one (usually coarser) GridView onto another (usually finer) one [creates
+ *        suitable target_function, TargetVectorType has to be provided, uses target.space().grid_view() as
+ *        prolongation_grid_view].
+ *
+ * Use as in
+\code
+auto target_function = prolong<TargetVectorType>(source, target_space);
+\endcode
+ */
+template <class TargetVectorType, class SV, class SGV, size_t r, size_t rC, class SR, class TGV, class TR>
+DiscreteFunction<TargetVectorType, TGV, r, rC, TR> prolong(const DiscreteFunction<SV, SGV, r, rC, SR>& source,
+                                                           const SpaceInterface<TGV, r, rC, TR>& target_space)
+{
+  auto target_function = make_discrete_function<TargetVectorType>(target_space);
+  prolong(source, target_function);
+  return target_function;
+}
+
+
+/**
+ * \brief Prolongs a DiscreteFunction from one (usually coarser) GridView onto another (usually finer) one [creates
+ *        suitable target_function with same VectorType as source].
+ */
+template <class V, class SGV, size_t r, size_t rC, class SR, class TGV, class TR, class PGV>
+std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<TGV>, typename PGV::Grid::template Codim<0>::Entity>::value,
+                 DiscreteFunction<V, TGV, r, rC, TR>>
+prolong(const DiscreteFunction<V, SGV, r, rC, SR>& source,
+        const SpaceInterface<TGV, r, rC, TR>& target_space,
+        const GridView<PGV>& prolongation_grid_view)
+{
+  auto target_function = make_discrete_function<V>(target_space);
+  prolong(source, target_function, prolongation_grid_view);
+  return target_function;
+}
+
+
+/**
+ * \brief Prolongs a DiscreteFunction from one (usually coarser) GridView onto another (usually finer) one [creates
+ *        suitable target_function with same VectorType as source, uses target.space().grid_view() as
+ *        prolongation_grid_view].
+ */
+template <class V, class SGV, size_t r, size_t rC, class SR, class TGV, class TR>
+DiscreteFunction<V, TGV, r, rC, TR> prolong(const DiscreteFunction<V, SGV, r, rC, SR>& source,
+                                            const SpaceInterface<TGV, r, rC, TR>& target_space)
+{
+  auto target_function = make_discrete_function<V>(target_space);
+  prolong(source, target_function);
+  return target_function;
 }
 
 
