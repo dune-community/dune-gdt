@@ -25,23 +25,30 @@ namespace GDT {
 
 
 /**
- * \brief Interpolates a localizable function within the space of a given discrete function.
+ * \brief Interpolates a localizable function within a given space [most general variant].
  *
  * Simply uses the interpolation() of the target spaces finite_element().
+ *
+ *
+ * \note This does not clear target.dofs().vector(). Thus, if interpolation_grid_view only covers a part of the domain
+ *       of target.space().grid_view(), other contributions in target remain (which is on purpose).
  *
  * \note This might not be optimal for all spaces. For instance, the polynomial order of source is not taken into
  *       account for local L^2-projection based interpolation. This is a limitation in dune-localfunctions and we need
  *       to completely replace the interpolation of the respective local finite element.
  */
-template <class GV, size_t r, size_t rC, class R, class V>
-void interpolate(const XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
-                 DiscreteFunction<V, GV, r, rC, R>& target)
+template <class GV, size_t r, size_t rC, class R, class V, class IGV>
+std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
+                 void>
+interpolate(const XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
+            DiscreteFunction<V, GV, r, rC, R>& target,
+            const GridView<IGV>& interpolation_grid_view)
 {
   target.dofs().vector().set_all(0);
   auto local_dof_vector = target.dofs().localize();
   auto local_source = source.local_function();
   std::vector<R> local_dofs(target.space().mapper().max_local_size());
-  for (auto&& element : elements(target.space().grid_view())) {
+  for (auto&& element : elements(interpolation_grid_view)) {
     local_source->bind(element);
     local_dof_vector.bind(element);
     const auto& fe = target.space().finite_element(element.geometry().type());
@@ -53,6 +60,40 @@ void interpolate(const XT::Functions::LocalizableFunctionInterface<XT::Grid::ext
 } // ... interpolate(...)
 
 
+/**
+ * \brief Interpolates a localizable function within a given space [uses target.space().grid_view() as
+ *        interpolation_grid_view].
+ **/
+template <class GV, size_t r, size_t rC, class R, class V>
+void interpolate(const XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
+                 DiscreteFunction<V, GV, r, rC, R>& target)
+{
+  interpolate(source, target, target.space().grid_view());
+}
+
+
+/**
+ * \brief Interpolates a localizable function within a given space [creates a suitable target function].
+ **/
+template <class VectorType, class GV, size_t r, size_t rC, class R, class IGV>
+std::enable_if_t<XT::LA::is_vector<VectorType>::value
+                     && std::is_same<XT::Grid::extract_entity_t<GV>,
+                                     typename IGV::Grid::template Codim<0>::Entity>::value,
+                 DiscreteFunction<VectorType, GV, r, rC, R>>
+interpolate(const XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
+            const SpaceInterface<GV, r, rC, R>& target_space,
+            const GridView<IGV>& interpolation_grid_view)
+{
+  auto target_function = make_discrete_function<VectorType>(target_space);
+  interpolate(source, target_function, interpolation_grid_view);
+  return target_function;
+}
+
+
+/**
+ * \brief Interpolates a localizable function within a given space [creates a suitable target function, uses
+ *        target_space.grid_view() as interpolation_grid_view].
+ **/
 template <class VectorType, class GV, size_t r, size_t rC, class R>
 std::enable_if_t<XT::LA::is_vector<VectorType>::value, DiscreteFunction<VectorType, GV, r, rC, R>>
 interpolate(const XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, R>& source,
