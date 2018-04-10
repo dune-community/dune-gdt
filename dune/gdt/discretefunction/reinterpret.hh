@@ -11,6 +11,7 @@
 #ifndef DUNE_GDT_DISCRETEFUNCTION_REINTERPRET_HH
 #define DUNE_GDT_DISCRETEFUNCTION_REINTERPRET_HH
 
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/reinterpret.hh>
 
 #include "default.hh"
@@ -19,22 +20,32 @@ namespace Dune {
 namespace GDT {
 
 
-template <class DiscreteFunctionType>
-class ReinterpretDiscreteFunction
-    : public XT::Functions::ReinterpretFunction<DiscreteFunctionType,
-                                                typename DiscreteFunctionType::SpaceType::GridLayerType>
+/**
+ * \sa XT::Functions::ReinterpretLocalizableFunction
+ * \sa XT::Functions::reinterpret
+ */
+template <class TargetElement, class SGV, size_t r, size_t rC, class R, class V>
+XT::Functions::ReinterpretLocalizableFunction<SGV, TargetElement, r, rC, R>
+reinterpret(const DiscreteFunction<V, SGV, r, rC, R>& source)
 {
-  static_assert(is_const_discrete_function<DiscreteFunctionType>::value, "");
-  typedef XT::Functions::ReinterpretFunction<DiscreteFunctionType,
-                                             typename DiscreteFunctionType::SpaceType::GridLayerType>
-      BaseType;
+  return XT::Functions::ReinterpretLocalizableFunction<SGV, TargetElement, r, rC, R>(source,
+                                                                                     source.space().grid_view());
+}
 
-public:
-  ReinterpretDiscreteFunction(const DiscreteFunctionType& source)
-    : BaseType(source, source.space().grid_layer())
-  {
-  }
-}; // class ReinterpretDiscreteFunction
+
+/**
+ * \sa XT::Functions::ReinterpretLocalizableFunction
+ * \sa XT::Functions::reinterpret
+ */
+template <class SGV, size_t r, size_t rC, class R, class V, class TargetGridView>
+std::enable_if_t<XT::Grid::is_layer<TargetGridView>::value,
+                 XT::Functions::
+                     ReinterpretLocalizableFunction<SGV, XT::Grid::extract_entity_t<TargetGridView>, r, rC, R>>
+reinterpret(const DiscreteFunction<V, SGV, r, rC, R>& source, const TargetGridView& /*target_grid_view*/)
+{
+  return XT::Functions::ReinterpretLocalizableFunction<SGV, XT::Grid::extract_entity_t<TargetGridView>, r, rC, R>(
+      source, source.space().grid_view());
+}
 
 
 } // namespace GDT
