@@ -29,7 +29,7 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryT
 #if DXT_DISABLE_LARGE_TESTS
     return {1.21e-02, 2.58e-03};
 #else
-    return {5.00e-02, 1.26e-02, 3.06e-03, 6.16e-04};
+    return {5.00e-02, 1.25e-02, 3.06e-03, 6.57e-04};
 #endif
   } else if (type == "H1_semi" || type == "energy") {
 #if DXT_DISABLE_LARGE_TESTS

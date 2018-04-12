@@ -29,13 +29,13 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryT
 #if DXT_DISABLE_LARGE_TESTS
     return {1.19e-02, 2.64e-03};
 #else
-    return {7.56e-02, 2.06e-02, 5.56e-03, 1.36e-03};
+    return {4.68e-02, 1.24e-02, 3.11e-03, 6.85e-04};
 #endif
   } else if (type == "H1_semi" || type == "energy") {
 #if DXT_DISABLE_LARGE_TESTS
     return {1.35e-01, 6.47e-02};
 #else
-    return {3.76e-01, 1.95e-01, 9.89e-02, 4.67e-02};
+    return {2.67e-01, 1.37e-01, 6.99e-02, 3.37e-02};
 #endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
@@ -54,13 +54,13 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryT
 #if DXT_DISABLE_LARGE_TESTS
     return {7.66e-04, 2.12e-04};
 #else
-    return {8.82e-03, 2.02e-03, 5.24e-04, 1.42e-04};
+    return {2.82e-03, 7.62e-04, 2.08e-04, 5.66e-05};
 #endif
   } else if (type == "H1_semi" || type == "energy") {
 #if DXT_DISABLE_LARGE_TESTS
     return {2.54e-02, 1.47e-02};
 #else
-    return {6.61e-02, 3.27e-02, 1.81e-02, 1.03e-02};
+    return {4.29e-02, 2.45e-02, 1.39e-02, 7.91e-03};
 #endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;

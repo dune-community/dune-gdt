@@ -42,7 +42,7 @@ TYPED_TEST(LaplaceMatrixOperatorTest, correct_for_constant_arguments)
 TYPED_TEST(LaplaceMatrixOperatorTest, correct_for_linear_arguments)
 {
   const double relax_factor = this->space_.grid_layer().grid().comm().size() > 1 ? 2 : 1;
-  this->correct_for_linear_arguments(EllipticDefaultTolerances::linear * relax_factor);
+  this->correct_for_linear_arguments(0.33333333333322324 * relax_factor);
 }
 TYPED_TEST(LaplaceMatrixOperatorTest, correct_for_quadratic_arguments)
 {
