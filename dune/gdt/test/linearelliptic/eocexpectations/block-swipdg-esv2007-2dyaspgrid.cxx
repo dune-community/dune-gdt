@@ -33,13 +33,13 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ESV2007DdSubdo
 #if DXT_DISABLE_LARGE_TESTS
     return {4.62e-02, 1.13e-02};
 #else
-    return {1.13e-02, 4.53e-03, 1.12e-03, 2.78e-04};
+    return {1.13e-02, 2.90e-03, 7.41e-04, 1.88e-04};
 #endif
   } else if (type == "H1_semi" || type == "energy") {
 #if DXT_DISABLE_LARGE_TESTS
     return {2.56e-01, 1.25e-01};
 #else
-    return {1.25e-01, 7.28e-02, 3.62e-02, 1.80e-02};
+    return {1.25e-01, 6.25e-02, 3.14e-02, 1.58e-02};
 #endif
   } else
     EXPECT_TRUE(false) << "test results missing for type: " << type;
