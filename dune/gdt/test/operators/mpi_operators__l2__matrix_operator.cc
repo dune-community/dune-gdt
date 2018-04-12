@@ -42,9 +42,11 @@ TYPED_TEST(L2MatrixOperatorTest, correct_for_constant_arguments)
 }
 TYPED_TEST(L2MatrixOperatorTest, correct_for_linear_arguments)
 {
-  this->correct_for_linear_arguments();
+  const double rel_tol = this->space_.grid_layer().grid().comm().size() > 1 ? 1.5e-14 : 1.5e-13;
+  this->correct_for_linear_arguments(rel_tol);
 }
 TYPED_TEST(L2MatrixOperatorTest, correct_for_quadratic_arguments)
 {
-  this->correct_for_quadratic_arguments();
+  const double rel_tol = this->space_.grid_layer().grid().comm().size() > 1 ? 1.5e-14 : 1.5e-13;
+  this->correct_for_quadratic_arguments(rel_tol);
 }
