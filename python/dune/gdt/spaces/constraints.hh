@@ -48,10 +48,11 @@ public:
     const auto ClassName = XT::Common::to_camel_case("DirichletConstraints_" + layer_name + "_" + grid_name);
 
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    c.def("__init__",
-          [](type& self, const XT::Grid::BoundaryInfo<I>& boundary_info, const ssize_t size, const bool set) {
+    //! TODO did keep alive change when replacing placement new?
+    c.def(py::init([](const XT::Grid::BoundaryInfo<I>& boundary_info, const ssize_t size, const bool set) {
+            size_t ss{0};
             try {
-              new (&self) type(boundary_info, boost::numeric_cast<size_t>(size), set);
+              ss = boost::numeric_cast<size_t>(size);
             } catch (boost::bad_numeric_cast& ee) {
               DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                          "Given size has to be positive!\n\n The error in boost while converting '"
@@ -61,7 +62,8 @@ public:
                              << "' was: "
                              << ee.what());
             }
-          },
+            return new type(boundary_info, ss, set);
+          }),
           "boundary_info"_a,
           "size"_a,
           "set_diagonal_entries"_a = true,

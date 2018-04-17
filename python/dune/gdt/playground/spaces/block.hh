@@ -283,19 +283,14 @@ public:
 
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
 
-    c.def("__init__",
-          [](type& self, XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider) {
-            const auto& dd_grid = dd_grid_provider.dd_grid();
+    c.def(py::init([](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider) {
+            const XT::Grid::DD::SubdomainGrid<G>& dd_grid = dd_grid_provider.dd_grid();
             std::vector<std::shared_ptr<const S>> local_spaces(dd_grid.size());
-            for (size_t ss = 0; ss < dd_grid.size(); ++ss)
+            for (size_t ss = 0; ss < dd_grid.size(); ++ss) {
               local_spaces[ss] = std::make_shared<S>(SP::create(dd_grid_provider, boost::numeric_cast<int>(ss)));
-            try {
-              new (&self) type(dd_grid, local_spaces);
-            } catch (...) {
-              self.~type();
-              throw;
             }
-          },
+            return new type(dd_grid, local_spaces);
+          }),
           "dd_grid"_a,
           py::keep_alive<1, 2>());
     c.def_property_readonly("dimDomain", [](const type& /*self*/) { return S::dimDomain; });
