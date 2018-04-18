@@ -41,7 +41,8 @@ _gdt_modules = ['spaces',
                 'operators_OS2015',
                 'operators_RS2017',
                 'operators_l2',
-                'operators_weighted_l2']
+                'operators_weighted_l2',
+                'usercode']
 
 for module_name in _gdt_modules:
     mod = import_module('.__{}'.format(module_name), 'dune.gdt')
