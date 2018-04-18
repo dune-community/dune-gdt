@@ -16,6 +16,7 @@
 #include <dune/xt/la/container.hh>
 
 #include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/spaces.hh>
 
 #include "fluxreconstruction.hh"
 
