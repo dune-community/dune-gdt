@@ -214,7 +214,7 @@ public:
 
   template <int cd, class GridImp, template <int, int, class> class EntityImp>
   typename std::enable_if<cd != EntityType::codimension, size_t>::type
-  numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& entity) const
+  numDofs(const Entity<cd, EntityType::dimension, GridImp, EntityImp>& /*entity*/) const
   {
     return 0;
   }
