@@ -29,8 +29,7 @@ PYBIND11_MODULE(__operators_fluxreconstruction, m)
   using namespace pybind11::literals;
 
 
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
-  Dune::GDT::bindings::DiffusiveFluxReconstructionOperator<ALU_2D_SIMPLEX_CONFORMING,
+  Dune::GDT::bindings::DiffusiveFluxReconstructionOperator<GDT_BINDINGS_GRID,
                                                            Dune::GDT::SpaceType::rt,
                                                            Dune::GDT::Backends::gdt,
                                                            Dune::XT::Grid::Layers::leaf,
@@ -38,6 +37,5 @@ PYBIND11_MODULE(__operators_fluxreconstruction, m)
                                                            double,
                                                            2,
                                                            Dune::XT::LA::Backends::istl_dense>::bind(m);
-#endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 }

@@ -657,68 +657,11 @@ public:
                                                   _layer_name,                                                         \
                                                   swipdg_affine_tensor)
 
-#if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_ALU(                                                              \
-    _m, _g_layer, _g_backend, _s_type, _s_backend, _i_layer_type, _p, _R, _r, _rC, _layer_name)                        \
-  _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_METHODS_DD(_m,                                                          \
-                                                          ALU_2D_SIMPLEX_CONFORMING,                                   \
-                                                          2,                                                           \
-                                                          _g_layer,                                                    \
-                                                          _g_backend,                                                  \
-                                                          _s_type,                                                     \
-                                                          _s_backend,                                                  \
-                                                          _i_layer_type,                                               \
-                                                          _p,                                                          \
-                                                          _R,                                                          \
-                                                          _r,                                                          \
-                                                          _rC,                                                         \
-                                                          _layer_name)
-#else
-#define _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_ALU(                                                              \
-    _m, _g_layer, _g_backend, _s_type, _s_backend, _i_layer_type, _p, _R, _r, _rC, _layer_name)
-#endif
 
-#define _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_YASP(                                                             \
-    _m, _g_layer, _g_backend, _s_type, _s_backend, _i_layer_type, _p, _R, _r, _rC, _layer_name)                        \
-  _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_METHODS_1D(_m,                                                          \
-                                                          YASP_1D_EQUIDISTANT_OFFSET,                                  \
-                                                          1,                                                           \
-                                                          _g_layer,                                                    \
-                                                          _g_backend,                                                  \
-                                                          _s_type,                                                     \
-                                                          _s_backend,                                                  \
-                                                          _i_layer_type,                                               \
-                                                          _p,                                                          \
-                                                          _R,                                                          \
-                                                          _r,                                                          \
-                                                          _rC,                                                         \
-                                                          _layer_name);                                                \
-  _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_METHODS_DD(_m,                                                          \
-                                                          YASP_2D_EQUIDISTANT_OFFSET,                                  \
-                                                          2,                                                           \
-                                                          _g_layer,                                                    \
-                                                          _g_backend,                                                  \
-                                                          _s_type,                                                     \
-                                                          _s_backend,                                                  \
-                                                          _i_layer_type,                                               \
-                                                          _p,                                                          \
-                                                          _R,                                                          \
-                                                          _r,                                                          \
-                                                          _rC,                                                         \
-                                                          _layer_name);                                                \
-  _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_METHODS_DD(_m,                                                          \
-                                                          YASP_3D_EQUIDISTANT_OFFSET,                                  \
-                                                          3,                                                           \
-                                                          _g_layer,                                                    \
-                                                          _g_backend,                                                  \
-                                                          _s_type,                                                     \
-                                                          _s_backend,                                                  \
-                                                          _i_layer_type,                                               \
-                                                          _p,                                                          \
-                                                          _R,                                                          \
-                                                          _r,                                                          \
-                                                          _rC,                                                         \
-                                                          _layer_name)
+#define __DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND(                                                                 \
+    _m, _G, _g_layer, _g_backend, _s_type, _s_backend, _i_layer_type, _p, _R, _r, _rC, _layer_name)                    \
+  _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_METHODS_DD(                                                             \
+      _m, _G, 2, _g_layer, _g_backend, _s_type, _s_backend, _i_layer_type, _p, _R, _r, _rC, _layer_name)
 
 //_DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_ALU(                                                                    \
 //    _m, leaf, part, _s_type, _s_backend, leaf, _p, _R, _r, _rC, "_leaf_");                                           \
@@ -729,8 +672,8 @@ public:
 //    _m, dd_subdomain, part, _s_type, _s_backend, dd_subdomain_coupling, _p, _R, _r, _rC, "_dd_subdomain_")
 
 #define DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND(_m)                                                                \
-  _DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND_ALU(                                                                    \
-      _m, dd_subdomain, view, dg, gdt, dd_subdomain_coupling, 1, double, 1, 1, "_dd_subdomain_")
+  __DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND(                                                                       \
+      _m, GDT_BINDINGS_GRID, dd_subdomain, view, dg, gdt, dd_subdomain_coupling, 1, double, 1, 1, "_dd_subdomain_")
 
 // end: this is what we need for the .so
 

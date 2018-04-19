@@ -26,7 +26,6 @@ PYBIND11_MODULE(__local_elliptic_ipdg_operators, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-
   DUNE_GDT_LOCAL_ELLIPTIC_IPDG_OPERATORS_BIND(m);
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.assembler");
 }

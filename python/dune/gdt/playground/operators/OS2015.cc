@@ -352,16 +352,13 @@ PYBIND11_MODULE(__operators_OS2015, m)
 {
   using namespace pybind11::literals;
 
-
-#if HAVE_DUNE_ALUGRID
   // This is not efficient: we reconstruct on the whole leaf instead of only the neighborhood, but the rt space
   //                        on a dd_subdomain_oversampled grid view (which is a wrapped part) is broken, if based on
   //                        a 2d simplex alugrid.
-  ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
-  DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
-  DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
+  ResidualProduct<GDT_BINDINGS_GRID, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
+  DiffusiveFluxProduct<GDT_BINDINGS_GRID, Layers::leaf, Backends::view>::bind(m);
+  DiffusiveFluxProduct<GDT_BINDINGS_GRID, Layers::leaf, Backends::view>::bind(m);
   // s.a.
-  DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
-#endif
+  DiffusiveFluxProduct<GDT_BINDINGS_GRID, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 }

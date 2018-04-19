@@ -28,6 +28,6 @@ PYBIND11_MODULE(__local_diffusive_flux_estimation_operator, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(ALU_2D_SIMPLEX_CONFORMING, m);
+  DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BIND(GDT_BINDINGS_GRID, m);
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.assembler");
 }

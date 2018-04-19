@@ -71,70 +71,28 @@ public:
                                typename Dune::XT::LA::Container<double,                                                \
                                                                 Dune::XT::LA::Backends::_la>::VectorType>::bind(_m)
 
-// for each grid
-
-//#if HAVE_ALBERTA
-//  ...
-//#else
-#define _DUNE_GDT_PROJECTIONS_BIND_ALBERTA(_m, _g_layer, _s_backend, _s_type, _p, _la)
-//#endif
-
-#if HAVE_DUNE_ALUGRID
-#define _DUNE_GDT_PROJECTIONS_BIND_ALU(_m, _g_layer, _s_backend, _s_type, _p, _la)                                     \
-  _DUNE_GDT_PROJECTIONS_BIND(_m, ALU_2D_SIMPLEX_CONFORMING, _g_layer, _s_backend, _s_type, _p, _la)
-#else
-#define _DUNE_GDT_PROJECTIONS_BIND_ALU(_m, _g_layer, _s_backend, _s_type, _p, _la)
-#endif
-
-//#if HAVE_DUNE_UGGRID || HAVE_UG
-//  ...
-//#else
-#define _DUNE_GDT_PROJECTIONS_BIND_UG(_m, _g_layer, _s_backend, _s_type, _p, _la)
-//#endif
-
-#define _DUNE_GDT_PROJECTIONS_BIND_YASP(_m, _g_layer, _s_backend, _s_type, _p, _la)
-//  _DUNE_GDT_PROJECTIONS_BIND(_m, YASP_1D_EQUIDISTANT_OFFSET, _g_layer, _s_backend, _s_type, _p, _la);                \
-//  _DUNE_GDT_PROJECTIONS_BIND(_m, YASP_2D_EQUIDISTANT_OFFSET, _g_layer, _s_backend, _s_type, _p, _la)
-
-#define _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, _g_layer, _s_backend, _s_type, _p, _la)                               \
-  _DUNE_GDT_PROJECTIONS_BIND_ALBERTA(_m, _g_layer, _s_backend, _s_type, _p, _la);                                      \
-  _DUNE_GDT_PROJECTIONS_BIND_ALU(_m, _g_layer, _s_backend, _s_type, _p, _la);                                          \
-  _DUNE_GDT_PROJECTIONS_BIND_UG(_m, _g_layer, _s_backend, _s_type, _p, _la);                                           \
-  _DUNE_GDT_PROJECTIONS_BIND_YASP(_m, _g_layer, _s_backend, _s_type, _p, _la)
-
 // for each space backend
 
 #define _DUNE_GDT_PROJECTIONS_BIND_DEFAULT(_m, _la)                                                                    \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, gdt, fv, 0, _la);                                                    \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, gdt, dg, 1, _la);                                             \
-  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, gdt, block_cg, 1, _la);
-//  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, gdt, fv, 0, _la);                                                   \
-//  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, gdt, fv, 0, _la)
-//_DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, fem, cg, 1, _la);                                                     \
-//_DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, fem, cg, 1, _la);                                                    \
-//_DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, cg, 1, _la);                                             \
-//_DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, block_cg, 1, _la);                                       \
-
+  _DUNE_GDT_PROJECTIONS_BIND(_m, GDT_BINDINGS_GRID, level, gdt, fv, 0, _la);                                           \
+  _DUNE_GDT_PROJECTIONS_BIND(_m, GDT_BINDINGS_GRID, dd_subdomain, gdt, dg, 1, _la);                                    \
+  _DUNE_GDT_PROJECTIONS_BIND(_m, GDT_BINDINGS_GRID, dd_subdomain, gdt, block_cg, 1, _la);                              \
+  _DUNE_GDT_PROJECTIONS_BIND(_m, GDT_BINDINGS_GRID, leaf, gdt, fv, 0, _la);
 
 
 #define _DUNE_GDT_PROJECTIONS_BIND_ALL_SPACES(_m, _la) _DUNE_GDT_PROJECTIONS_BIND_DEFAULT(_m, _la);
 
 // for each la backend
 
-//#define _DUNE_GDT_PROJECTIONS_BIND_COMMON(_m) _DUNE_GDT_PROJECTIONS_BIND_ALL_SPACES(_m, common_dense)
-#define _DUNE_GDT_PROJECTIONS_BIND_COMMON(_m)
+#define _DUNE_GDT_PROJECTIONS_BIND_COMMON(_m) _DUNE_GDT_PROJECTIONS_BIND_ALL_SPACES(_m, common_dense)
 
-//#if HAVE_EIGEN
-//#define _DUNE_GDT_PROJECTIONS_BIND_EIGEN(_m) _DUNE_GDT_PROJECTIONS_BIND_ALL_SPACES(_m, eigen_dense)
-//#else
-#define _DUNE_GDT_PROJECTIONS_BIND_EIGEN(_m)
-//#endif
-
-#if HAVE_DUNE_ISTL
-#define _DUNE_GDT_PROJECTIONS_BIND_ISTL(_m) _DUNE_GDT_PROJECTIONS_BIND_ALL_SPACES(_m, istl_dense)
+#if HAVE_EIGEN
+#define _DUNE_GDT_PROJECTIONS_BIND_EIGEN(_m) _DUNE_GDT_PROJECTIONS_BIND_ALL_SPACES(_m, eigen_dense)
 #else
-#define _DUNE_GDT_PROJECTIONS_BIND_ISTL(_m)
+#define _DUNE_GDT_PROJECTIONS_BIND_EIGEN(_m)
 #endif
+
+#define _DUNE_GDT_PROJECTIONS_BIND_ISTL(_m) _DUNE_GDT_PROJECTIONS_BIND_ALL_SPACES(_m, istl_dense)
 
 #define DUNE_GDT_PROJECTIONS_BIND(_m) _DUNE_GDT_PROJECTIONS_BIND_ISTL(_m)
 //  _DUNE_GDT_PROJECTIONS_BIND_COMMON(_m);                                                                             \

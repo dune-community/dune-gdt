@@ -511,49 +511,10 @@ public:
   _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_D(                                                                      \
       _prefix, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, swipdg_affine_tensor)
 
-//#if HAVE_ALBERTA
-//#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALBERTA(_prefix, _layer, _g_backend, _s_type, _s_backend, _p, _la) \
-//  _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_METHODS_D(                                                                \
-//      _prefix, 2, ALBERTA_2D, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-//#else
-#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALBERTA(_prefix, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-//#endif
 
-#if HAVE_DUNE_ALUGRID
-#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(_prefix, _layer, _g_backend, _s_type, _s_backend, _p, _la)     \
+#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB(_prefix, _G, _layer, _g_backend, _s_type, _s_backend, _p, _la)     \
   _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_METHODS_D(                                                              \
-      _prefix, 2, ALU_2D_SIMPLEX_CONFORMING, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-#else
-#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(_prefix, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-#endif
-
-//#if HAVE_DUNE_UGGRID || HAVE_UG
-//#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_UG(_prefix, _layer, _g_backend, _s_type, _s_backend, _p, _la)      \
-//  _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_METHODS_D(                                                                \
-//      _prefix, 2, UG_2D, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-//#else
-#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_UG(_prefix, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-//#endif
-
-#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(_prefix, _layer, _g_backend, _s_type, _s_backend, _p, _la)    \
-  _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_METHODS_1D(                                                             \
-      _prefix, YASP_1D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la);                          \
-  _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_METHODS_D(                                                              \
-      _prefix, 2, YASP_2D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-
-// alu_istl.cc
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
-DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, leaf, view, cg, gdt, 1, istl_dense);
-DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, level, view, cg, gdt, 1, istl_dense);
-// DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, dd_subdomain, part, cg, gdt, 1, istl_dense);
-#endif
-
-// yasp_istl.cc
-#if HAVE_DUNE_ISTL
-// DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, leaf, view, cg, gdt, 1, istl_dense);
-// DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, level, view, cg, gdt, 1, istl_dense);
-// DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_YASP(extern template, dd_subdomain, part, cg, gdt, 1, istl_dense);
-#endif
+      _prefix, 2, G, _layer, _g_backend, _s_type, _s_backend, _p, _la)
 
 // end: this is what we need for the lib
 
@@ -843,34 +804,6 @@ DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, level, view, cg
 //_DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, swipdg); \
 //_DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(                                                                          \
 //    _m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, swipdg_affine_tensor)
-
-//#if HAVE_ALBERTA
-//#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_ALBERTA(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)          \
-//  _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_METHODS_D(_m, 2, ALBERTA_2D, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-//#else
-#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_ALBERTA(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-//#endif
-
-#if HAVE_DUNE_ALUGRID
-#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_ALU(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)              \
-  _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_METHODS_D(                                                                  \
-      _m, 2, ALU_2D_SIMPLEX_CONFORMING, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-#else
-#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_ALU(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-#endif
-
-//#if HAVE_DUNE_UGGRID || HAVE_UG
-//#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_UG(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)               \
-//  _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_METHODS_D(_m, 2, UG_2D, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-//#else
-#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_UG(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)
-//#endif
-
-#define DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_YASP(_m, _layer, _g_backend, _s_type, _s_backend, _p, _la)             \
-  _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_METHODS_1D(                                                                 \
-      _m, YASP_1D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la);                               \
-  _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_METHODS_D(                                                                  \
-      _m, 2, YASP_2D_EQUIDISTANT_OFFSET, _layer, _g_backend, _s_type, _s_backend, _p, _la)
 
 
 // end: this is what we need for the .so

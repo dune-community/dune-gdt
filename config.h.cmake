@@ -27,5 +27,8 @@
 #if HAVE_LPSOLVE && HAVE_ALBERTA
 #undef HAVE_LPSOLVE
 #endif
+
+//! TODO make this a cmake cache var
+#define GDT_BINDINGS_GRID YASP_2D_EQUIDISTANT_OFFSET
 /* end dune-gdt */
 // NEVER delete/alter above comment, dune's cmake relies on it

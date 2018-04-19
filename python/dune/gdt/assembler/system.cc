@@ -74,9 +74,10 @@
   DUNE_GDT_ASSEMBLER_SYSTEM_BIND(                                                                                      \
       m, G, dd_subdomain_boundary, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);                    \
   DUNE_GDT_ASSEMBLER_SYSTEM_BIND(                                                                                      \
-      m, G, dd_subdomain_coupling, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);                    \
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(                                                                                      \
-      m, G, dd_subdomain_oversampled, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);
+      m, G, dd_subdomain_coupling, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);
+
+//  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(
+//      m, G, dd_subdomain_oversampled, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);
 
 PYBIND11_MODULE(__assembler, m)
 {
@@ -91,6 +92,5 @@ PYBIND11_MODULE(__assembler, m)
       [](Dune::GDT::bindings::ResultStorage& self, const double& value) { self.result() = value; });
 
 
-  BIND_GRID(ALU_2D_SIMPLEX_CONFORMING)
-  BIND_GRID(YASP_2D_EQUIDISTANT_OFFSET)
+  BIND_GRID(GDT_BINDINGS_GRID)
 }
