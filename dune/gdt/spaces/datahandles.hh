@@ -29,7 +29,7 @@ struct DofDataCommunicationDescriptor
   typedef E OriginalDataType;
 
   template <typename SpaceType>
-  bool contains(const SpaceType& space, int dim, int codim) const
+  bool contains(const SpaceType& /*space*/, int /*dim*/, int codim) const
   {
     return SpaceType::associates_data_with(codim);
   }
@@ -180,7 +180,7 @@ public:
   typedef std::size_t size_t;
 
   template <typename MessageBuffer, typename Entity, typename LocalView>
-  bool gather(MessageBuffer& buff, const Entity& e, const LocalView& local_view) const
+  bool gather(MessageBuffer& buff, const Entity& /*e*/, const LocalView& local_view) const
   {
     for (std::size_t i = 0; i < local_view.size(); ++i)
       _gather_scatter.gather(buff, local_view[i]);
@@ -306,8 +306,8 @@ class MinDataHandle : public SpaceDataHandle<SpaceType,
       BaseType;
 
 public:
-  MinDataHandle(const SpaceType& space_, VectorType& v_)
-    : BaseType(space_, v_, DofDataCommunicationDescriptor<typename VectorType::ScalarType>())
+  MinDataHandle(const SpaceType& space_in, VectorType& v_)
+    : BaseType(space_in, v_, DofDataCommunicationDescriptor<typename VectorType::ScalarType>())
   {
   }
 };
@@ -324,7 +324,7 @@ class GhostGatherScatter
 {
 public:
   template <typename MessageBuffer, typename Entity, typename LocalView>
-  bool gather(MessageBuffer& buff, const Entity& e, LocalView& local_view) const
+  bool gather(MessageBuffer& buff, const Entity& e, LocalView& /*local_view*/) const
   {
     // Figure out where we are...
     const bool ghost = e.partitionType() != Dune::InteriorEntity && e.partitionType() != Dune::BorderEntity;
@@ -336,7 +336,7 @@ public:
   }
 
   template <typename MessageBuffer, typename Entity, typename LocalView>
-  bool scatter(MessageBuffer& buff, std::size_t n, const Entity& e, LocalView& local_view) const
+  bool scatter(MessageBuffer& buff, std::size_t /*n*/, const Entity& e, LocalView& local_view) const
   {
     // Figure out where we are - we have to do this again on the receiving side due to the asymmetric
     // communication interface!
@@ -381,8 +381,8 @@ public:
    * \param v_           The result vector.
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
-  GhostDataHandle(const SpaceType& space_, VectorType& v_, bool init_vector = true)
-    : BaseType(space_, v_, EntityDataCommunicationDescriptor<bool>(space_.mapper().maxNumDofs()))
+  GhostDataHandle(const SpaceType& space_in, VectorType& v_, bool init_vector = true)
+    : BaseType(space_in, v_, EntityDataCommunicationDescriptor<bool>(space_in.mapper().maxNumDofs()))
   {
     if (init_vector)
       v_.set_all(false);
@@ -405,7 +405,7 @@ class DisjointPartitioningGatherScatter
 
 public:
   template <typename MessageBuffer, typename Entity, typename LocalView>
-  bool gather(MessageBuffer& buff, const Entity& e, LocalView& local_view) const
+  bool gather(MessageBuffer& buff, const Entity& /*e*/, LocalView& /*local_view*/) const
   {
     // We only gather from interior and border entities, so we can throw in our ownership
     // claim without any further checks.
@@ -415,7 +415,7 @@ public:
   }
 
   template <typename MessageBuffer, typename Entity, typename LocalView>
-  bool scatter(MessageBuffer& buff, std::size_t n, const Entity& e, LocalView& local_view) const
+  bool scatter(MessageBuffer& buff, std::size_t /*n*/, const Entity& e, LocalView& local_view) const
   {
     // Value used for DOFs with currently unknown rank.
     const RankIndex unknown_rank = std::numeric_limits<RankIndex>::max();
@@ -515,14 +515,14 @@ struct SharedDOFGatherScatter
 {
 
   template <typename MessageBuffer, typename Entity, typename LocalView>
-  bool gather(MessageBuffer& buff, const Entity& e, LocalView& local_view) const
+  bool gather(MessageBuffer& buff, const Entity& /*e*/, LocalView& local_view) const
   {
     buff.write(local_view.size() > 0);
     return false;
   }
 
   template <typename MessageBuffer, typename Entity, typename LocalView>
-  bool scatter(MessageBuffer& buff, std::size_t n, const Entity& e, LocalView& local_view) const
+  bool scatter(MessageBuffer& buff, std::size_t /*n*/, const Entity& /*e*/, LocalView& local_view) const
   {
     bool remote_entity_has_dofs;
     buff.read(remote_entity_has_dofs);
@@ -621,7 +621,7 @@ public:
   }
 
   template <typename MessageBuffer, typename Entity>
-  void scatter(MessageBuffer& buff, const Entity& e, size_t n)
+  void scatter(MessageBuffer& buff, const Entity& /*e*/, size_t /*n*/)
   {
     RankIndex rank;
     buff.read(rank);
