@@ -1624,30 +1624,25 @@ PYBIND11_MODULE(__operators_RS2017, m)
 {
   using namespace pybind11::literals;
 
-#if HAVE_DUNE_ALUGRID
-  SwipdgPenaltySubdomainProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
-  SwipdgPenaltyNeighborhoodProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
-  SubdomainDivergenceMatrixOperator<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
-  HdivSemiProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
-  DiffusiveFluxAaProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
-  DiffusiveFluxAbProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
-  DiffusiveFluxBbProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
-  ResidualPartFunctional<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
+  SwipdgPenaltySubdomainProduct<GDT_BINDINGS_GRID>::bind(m);
+  SwipdgPenaltyNeighborhoodProduct<GDT_BINDINGS_GRID>::bind(m);
+  SubdomainDivergenceMatrixOperator<GDT_BINDINGS_GRID>::bind(m);
+  HdivSemiProduct<GDT_BINDINGS_GRID>::bind(m);
+  DiffusiveFluxAaProduct<GDT_BINDINGS_GRID>::bind(m);
+  DiffusiveFluxAbProduct<GDT_BINDINGS_GRID>::bind(m);
+  DiffusiveFluxBbProduct<GDT_BINDINGS_GRID>::bind(m);
+  ResidualPartFunctional<GDT_BINDINGS_GRID>::bind(m);
 
-  bind_neighborhood_reconstruction<ALU_2D_SIMPLEX_CONFORMING>(m);
-  bind_neighborhood_discretization<ALU_2D_SIMPLEX_CONFORMING>(m);
+  bind_neighborhood_reconstruction<GDT_BINDINGS_GRID>(m);
+  bind_neighborhood_discretization<GDT_BINDINGS_GRID>(m);
 
-  typedef typename ALU_2D_SIMPLEX_CONFORMING::template Codim<0>::Entity E;
+  typedef typename GDT_BINDINGS_GRID::template Codim<0>::Entity E;
   typedef double D;
   static const constexpr size_t d = 2;
   typedef double R;
 
-  typedef XT::LA::IstlDenseVector<R> V;
-  typedef XT::LA::IstlRowMajorSparseMatrix<R> M;
-
   m.def("RS2017_residual_indicator_min_diffusion_eigenvalue",
-        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
-               dd_grid_provider,
+        [](XT::Grid::GridProvider<GDT_BINDINGS_GRID, XT::Grid::DD::SubdomainGrid<GDT_BINDINGS_GRID>>& dd_grid_provider,
            const ssize_t subdomain,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
@@ -1689,8 +1684,7 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "kappa"_a,
         "over_integrate"_a = 2);
   m.def("RS2017_residual_indicator_subdomain_diameter",
-        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
-               dd_grid_provider,
+        [](XT::Grid::GridProvider<GDT_BINDINGS_GRID, XT::Grid::DD::SubdomainGrid<GDT_BINDINGS_GRID>>& dd_grid_provider,
            const ssize_t subdomain) {
           py::gil_scoped_release DUNE_UNUSED(release);
           auto subdomain_layer = dd_grid_provider.template layer<Layers::dd_subdomain, Backends::view>(
@@ -1712,8 +1706,7 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "dd_grid_provider"_a,
         "subdomain"_a);
   m.def("RS2017_apply_l2_product",
-        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
-               dd_grid_provider,
+        [](XT::Grid::GridProvider<GDT_BINDINGS_GRID, XT::Grid::DD::SubdomainGrid<GDT_BINDINGS_GRID>>& dd_grid_provider,
            const ssize_t subdomain,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& u,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& v,
@@ -1730,8 +1723,7 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "v"_a,
         "over_integrate"_a = 2);
   m.def("RS2017_diffusive_flux_indicator_apply_aa_product",
-        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
-               dd_grid_provider,
+        [](XT::Grid::GridProvider<GDT_BINDINGS_GRID, XT::Grid::DD::SubdomainGrid<GDT_BINDINGS_GRID>>& dd_grid_provider,
            const ssize_t subdomain,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda_hat,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda_u,
@@ -1787,8 +1779,7 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "v"_a,
         "over_integrate"_a = 2);
   m.def("RS2017_diffusive_flux_indicator_apply_ab_product",
-        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
-               dd_grid_provider,
+        [](XT::Grid::GridProvider<GDT_BINDINGS_GRID, XT::Grid::DD::SubdomainGrid<GDT_BINDINGS_GRID>>& dd_grid_provider,
            const ssize_t subdomain,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda_hat,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda_u,
@@ -1838,8 +1829,7 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "reconstructed_v"_a,
         "over_integrate"_a = 2);
   m.def("RS2017_diffusive_flux_indicator_apply_bb_product",
-        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
-               dd_grid_provider,
+        [](XT::Grid::GridProvider<GDT_BINDINGS_GRID, XT::Grid::DD::SubdomainGrid<GDT_BINDINGS_GRID>>& dd_grid_provider,
            const ssize_t subdomain,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda_hat,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
@@ -1882,19 +1872,19 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "reconstructed_v"_a,
         "over_integrate"_a = 2);
 
-  typedef GDT::EllipticMatrixOperator<XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
-                                      XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>,
-                                      typename GDT::SpaceProvider<ALU_2D_SIMPLEX_CONFORMING,
-                                                                  Layers::dd_subdomain,
-                                                                  GDT::SpaceType::dg,
-                                                                  GDT::Backends::gdt,
-                                                                  1,
-                                                                  double,
-                                                                  1>::type,
-                                      XT::LA::IstlRowMajorSparseMatrix<double>,
-                                      typename XT::Grid::
-                                          Layer<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view>::type>
-      EllipticMatrixOperatorType;
+  typedef GDT::
+      EllipticMatrixOperator<XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
+                             XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>,
+                             typename GDT::SpaceProvider<GDT_BINDINGS_GRID,
+                                                         Layers::dd_subdomain,
+                                                         GDT::SpaceType::dg,
+                                                         GDT::Backends::gdt,
+                                                         1,
+                                                         double,
+                                                         1>::type,
+                             XT::LA::IstlRowMajorSparseMatrix<double>,
+                             typename XT::Grid::Layer<GDT_BINDINGS_GRID, Layers::dd_subdomain, Backends::view>::type>
+          EllipticMatrixOperatorType;
   try { // we might not be the first to add this
     py::class_<EllipticMatrixOperatorType,
                GDT::SystemAssembler<typename EllipticMatrixOperatorType::SourceSpaceType,
@@ -1904,8 +1894,7 @@ PYBIND11_MODULE(__operators_RS2017, m)
   } catch (std::runtime_error&) {
   }
   m.def("RS2017_make_elliptic_matrix_operator_on_subdomain",
-        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
-               dd_grid_provider,
+        [](XT::Grid::GridProvider<GDT_BINDINGS_GRID, XT::Grid::DD::SubdomainGrid<GDT_BINDINGS_GRID>>& dd_grid_provider,
            const ssize_t subdomain,
            const typename EllipticMatrixOperatorType::SourceSpaceType& space,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
@@ -1926,5 +1915,4 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "over_integrate"_a = 2);
 
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
-#endif // HAVE_DUNE_ALUGRID
 }

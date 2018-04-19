@@ -60,8 +60,7 @@ void bind_l2_localizable_product(py::module& m)
 PYBIND11_MODULE(__operators_l2, m)
 {
 
-#if HAVE_DUNE_ALUGRID
-  using G = ALU_2D_SIMPLEX_CONFORMING;
+  using G = GDT_BINDINGS_GRID;
 
   bind_l2_localizable_product<G, Layers::dd_subdomain, XT::Grid::Backends::view>(m);
   bind_l2_localizable_product<G, Layers::leaf, XT::Grid::Backends::view>(m);
@@ -83,6 +82,5 @@ PYBIND11_MODULE(__operators_l2, m)
                                                                        "RtAlu2dSimplexLeafRestrictedSubdomainPartSpace",
                                                                        "istl_row_major_sparse_matrix_double");
 
-#endif // HAVE_DUNE_ALUGRID
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 }

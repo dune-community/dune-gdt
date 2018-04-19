@@ -36,7 +36,7 @@ PYBIND11_MODULE(__discretefunction, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  using G = ALU_2D_SIMPLEX_CONFORMING;
+  using G = GDT_BINDINGS_GRID;
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.discretefunction");
   DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, gdt, dg, 1, 1, istl_dense);
   DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, gdt, dg, 2, 1, istl_dense);

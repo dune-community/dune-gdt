@@ -50,7 +50,7 @@ PYBIND11_MODULE(__prolongations, m)
 
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.prolongations");
 
-  using G = ALU_2D_SIMPLEX_CONFORMING;
+  using G = GDT_BINDINGS_GRID;
 
   DUNE_GDT_PROLONGATIONS_BIND(m, G, leaf, gdt, dg, 1, 1, istl_dense, G, leaf, gdt, dg, 1, istl_dense);
   //  DUNE_GDT_PROLONGATIONS_BIND(m, G, leaf, gdt, dg, 1, 1, istl_dense, G, leaf, gdt, dg, 2, istl_dense);
