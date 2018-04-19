@@ -306,8 +306,8 @@ class MinDataHandle : public SpaceDataHandle<SpaceType,
       BaseType;
 
 public:
-  MinDataHandle(const SpaceType& space, VectorType& v)
-    : BaseType(space, v, DofDataCommunicationDescriptor<typename VectorType::ScalarType>())
+  MinDataHandle(const SpaceType& space_in, VectorType& v_)
+    : BaseType(space_in, v_, DofDataCommunicationDescriptor<typename VectorType::ScalarType>())
   {
   }
 };
@@ -381,11 +381,11 @@ public:
    * \param v_           The result vector.
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
-  GhostDataHandle(const SpaceType& space, VectorType& v, bool init_vector = true)
-    : BaseType(space, v, EntityDataCommunicationDescriptor<bool>(space.mapper().maxNumDofs()))
+  GhostDataHandle(const SpaceType& space_in, VectorType& v_, bool init_vector = true)
+    : BaseType(space_in, v_, EntityDataCommunicationDescriptor<bool>(space_in.mapper().maxNumDofs()))
   {
     if (init_vector)
-      v.set_all(false);
+      v_.set_all(false);
   }
 };
 
