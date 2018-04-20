@@ -15,6 +15,7 @@
 #include <vector>
 #include <string>
 
+#include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/string.hh>
 
 #include "base.hh"

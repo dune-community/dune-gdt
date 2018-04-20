@@ -18,8 +18,8 @@
 #include <memory>
 #include <queue>
 
-#include <dune/xt/common/memory.hh>
 #include <dune/xt/common/math.hh>
+#include <dune/xt/common/memory.hh>
 
 #include <dune/xt/la/algorithms/cholesky.hh>
 #include <dune/xt/la/algorithms/solve_sym_tridiag_posdef.hh>
@@ -271,7 +271,7 @@ public:
 
         // define further variables
         VectorType g_k, beta_in, beta_out;
-        beta_in = cache_iterator != cache_.end() ? cache_iterator->second : alpha_iso;
+        beta_in = cache_iterator != cache_.end() ? cache_iterator->second.first : alpha_iso;
         static thread_local std::unique_ptr<MatrixType> T_k = XT::Common::make_unique<MatrixType>();
 
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
@@ -1577,16 +1577,16 @@ class EntropyBasedLocalFlux<Hyperbolic::Problems::HatFunctions<typename U::Domai
                                                              U::dimRange,
                                                              GridLayerImp::dimension>
 {
-  typedef typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
-                                                                   typename U::DomainFieldType,
-                                                                   GridLayerImp::dimension,
-                                                                   U,
-                                                                   0,
-                                                                   typename U::RangeFieldType,
-                                                                   U::dimRange,
-                                                                   GridLayerImp::dimension>
-      BaseType;
-  typedef EntropyBasedLocalFlux ThisType;
+  using BaseType =
+      typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                               typename U::DomainFieldType,
+                                                               GridLayerImp::dimension,
+                                                               U,
+                                                               0,
+                                                               typename U::RangeFieldType,
+                                                               U::dimRange,
+                                                               GridLayerImp::dimension>;
+  using ThisType = EntropyBasedLocalFlux;
 
 public:
   typedef GridLayerImp GridLayerType;
@@ -1623,6 +1623,8 @@ public:
   typedef FieldVector<std::vector<std::vector<FieldMatrix<DynamicVector<FieldVector<RangeFieldType, 3>>, 3, 3>>>, 3>
       P5Type;
   using AlphaReturnType = typename std::pair<StateRangeType, RangeFieldType>;
+  using LocalCacheType = EntropyLocalCache<StateRangeType, AlphaReturnType>;
+  static constexpr size_t cache_size = 2 * dimRange + 2;
 
 private:
   class PowCache
@@ -1758,7 +1760,7 @@ public:
     , p4_(max_order_ + 1)
     , p5_(std::vector<std::vector<FieldMatrix<DynamicVector<FieldVector<RangeFieldType, 3>>, 3, 3>>>(max_order_ + 1))
     , k_(std::vector<size_t>(num_blocks_, 0))
-    , alpha_cache_(2 * index_set_.size(0))
+    , cache_(index_set_.size(0), LocalCacheType(cache_size))
     , mutexes_(index_set_.size(0))
   {
     std::vector<BasisValuesMatrixType> M(num_blocks_);
@@ -1912,8 +1914,7 @@ public:
                   const P4Type& p4,
                   const P5Type& p5,
                   const FieldVector<std::vector<size_t>, 3>& k,
-                  std::unique_ptr<std::pair<StateRangeType, AlphaReturnType>>& alpha_cache,
-                  std::unique_ptr<std::pair<StateRangeType, AlphaReturnType>>& alpha_cache_boundary,
+                  LocalCacheType& cache,
                   BlockedPowCache& blocked_pow_cache,
                   std::mutex& mutex)
       : LocalfunctionType(e)
@@ -1937,8 +1938,7 @@ public:
       , p4_(p4)
       , p5_(p5)
       , k_(k)
-      , alpha_cache_(alpha_cache)
-      , alpha_cache_boundary_(alpha_cache_boundary)
+      , cache_(cache)
       , blocked_pow_cache_(blocked_pow_cache)
       , mutex_(mutex)
     {
@@ -1953,14 +1953,13 @@ public:
     {
       const bool boundary = bool(param.get("boundary")[0]);
       AlphaReturnType ret;
+      if (boundary)
+        cache_.increase_capacity(2 * cache_size);
 
       mutex_.lock();
-      if (!boundary && alpha_cache_ && XT::Common::FloatCmp::eq(alpha_cache_->first, u)) {
-        ret = alpha_cache_->second;
-        mutex_.unlock();
-        return ret;
-      } else if (boundary && alpha_cache_boundary_ && XT::Common::FloatCmp::eq(alpha_cache_boundary_->first, u)) {
-        ret = alpha_cache_boundary_->second;
+      auto cache_iterator = cache_.lower_bound(u);
+      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u)) {
+        ret = cache_iterator->second;
         mutex_.unlock();
         return ret;
       } else {
@@ -1970,16 +1969,15 @@ public:
         // calculate moment vector for isotropic distribution
         StateRangeType u_iso, alpha_iso;
         std::tie(u_iso, alpha_iso) = basis_functions_.calculate_isotropic_distribution(u);
+        StateRangeType alpha_k = cache_iterator != cache_.end() ? cache_iterator->second.first : alpha_iso;
 
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
         const auto r_max = r_sequence.back();
         for (const auto& r : r_sequence) {
           // get initial alpha
-          StateRangeType alpha_k =
-              r > 0. ? alpha_iso
-                     : ((alpha_cache_ && !boundary)
-                            ? alpha_cache_->second
-                            : ((alpha_cache_boundary_ && boundary) ? alpha_cache_boundary_->second : alpha_iso));
+          if (r > 0)
+            alpha_k = alpha_iso;
+
           // normalize u
           StateRangeType r_times_u_iso(u_iso);
           r_times_u_iso *= r;
@@ -2044,23 +2042,7 @@ public:
         DUNE_THROW(MathError, "Failed to converge");
 
       outside_all_loops:
-        // store values as initial conditions for next time step on this entity
-        if (!boundary) {
-          if (!alpha_cache_) {
-            alpha_cache_ = std::make_unique<std::pair<StateRangeType, AlphaReturnType>>(std::make_pair(u, ret));
-          } else {
-            alpha_cache_->first = u;
-            alpha_cache_->second = ret;
-          }
-        } else {
-          if (!alpha_cache_boundary_) {
-            alpha_cache_boundary_ =
-                std::make_unique<std::pair<StateRangeType, AlphaReturnType>>(std::make_pair(u, ret));
-          } else {
-            alpha_cache_boundary_->first = u;
-            alpha_cache_boundary_->second = ret;
-          }
-        } // else (!boundary)
+        cache_.insert(u, ret);
         mutex_.unlock();
       } // else ( value has not been calculated before )
 
@@ -2092,7 +2074,7 @@ public:
                               const XT::Common::Parameter& param) const override
     {
       std::fill(ret.begin(), ret.end(), 0.);
-      const auto alpha = get_alpha(x_local, u, param);
+      const auto alpha = get_alpha(x_local, u, param).first;
       const auto& qqs = blocked_pow_cache_.update(alpha, num_blocks_, k_);
       DynamicVector<RangeFieldType> exp_alpha3(num_blocks_);
       for (size_t kk = 0; kk < num_blocks_; ++kk)
@@ -2130,7 +2112,7 @@ public:
                            PartialURangeType& ret,
                            const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param);
+      const auto alpha = get_alpha(x_local, u, param).first;
       thread_local std::unique_ptr<MatrixType> H = XT::Common::make_unique<MatrixType>();
       calculate_hessian(alpha, *H);
       for (size_t dd = 0; dd < dimDomain; ++dd) {
@@ -2145,7 +2127,7 @@ public:
                                ColPartialURangeType& ret,
                                const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param);
+      const auto alpha = get_alpha(x_local, u, param).first;
       thread_local std::unique_ptr<MatrixType> H = XT::Common::make_unique<MatrixType>();
       calculate_hessian(alpha, *H);
       calculate_J(alpha, ret, col);
@@ -2312,7 +2294,7 @@ public:
     } // void calculate_J(...)
 
     // calculates A = A B^{-1}. B is assumed to be symmetric positive definite.
-    static void calculate_A_Binv(MatrixType& A, const MatrixType& B, bool L_calculated = false)
+    static void calculate_A_Binv(MatrixType& A, MatrixType& B, bool L_calculated = false)
     {
       // if B = LL^T, then we have to calculate ret = A (L^T)^{-1} L^{-1} = C L^{-1}
       // calculate B = LL^T
@@ -2349,8 +2331,7 @@ public:
     const P5Type& p5_;
     const FieldVector<std::vector<size_t>, 3>& k_;
     const std::string name_;
-    std::unique_ptr<std::pair<StateRangeType, AlphaReturnType>>& alpha_cache_;
-    std::unique_ptr<std::pair<StateRangeType, AlphaReturnType>>& alpha_cache_boundary_;
+    LocalCacheType& cache_;
     BlockedPowCache& blocked_pow_cache_;
     std::mutex& mutex_;
   }; // class Localfunction>
@@ -2389,8 +2370,7 @@ public:
                                            p4_,
                                            p5_,
                                            k_,
-                                           alpha_cache_[index],
-                                           alpha_cache_[index_set_.size(0) + index],
+                                           cache_[index],
                                            blocked_pow_cache_,
                                            mutexes_[index]);
   }
@@ -2413,10 +2393,10 @@ public:
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto local_function_entity = derived_local_function(entity);
     const auto local_function_neighbor = derived_local_function(neighbor);
-    const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param, false);
+    const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param, false).first;
     thread_local BlockedPowCache pow_cache_i;
     pow_cache_i = blocked_pow_cache_;
-    const auto alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, false);
+    const auto alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, false).first;
     auto& pow_cache_j = blocked_pow_cache_;
     StateRangeType ret(0);
     auto& pow_cache_pos = n_ij[dd] > 0 ? pow_cache_i : pow_cache_j;
@@ -2505,10 +2485,7 @@ private:
   P5Type p5_;
   // contains the three basis function indices k_1, k_2, k_3 for each face k
   FieldVector<std::vector<size_t>, 3> k_;
-  // Use unique_ptr in the vectors to avoid the memory cost for storing twice as many matrices or vectors as needed
-  // (see
-  // constructor)
-  mutable std::vector<std::unique_ptr<std::pair<StateRangeType, StateRangeType>>> alpha_cache_;
+  mutable std::vector<LocalCacheType> cache_;
   mutable std::vector<std::mutex> mutexes_;
   static thread_local BlockedPowCache blocked_pow_cache_;
 };
@@ -2683,7 +2660,7 @@ public:
         // calculate moment vector for isotropic distribution
         RangeType u_iso, alpha_iso;
         std::tie(u_iso, alpha_iso) = basis_functions_.calculate_isotropic_distribution(u);
-        RangeType alpha_k = cache_iterator != cache_.end() ? cache_iterator->second : alpha_iso;
+        RangeType alpha_k = cache_iterator != cache_.end() ? cache_iterator->second.first : alpha_iso;
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
         const auto r_max = r_sequence.back();
         for (const auto& r : r_sequence_) {

@@ -63,11 +63,15 @@ class AdvectionKineticOperator : public Dune::GDT::OperatorInterface<Traits>, pu
 public:
   using typename BaseType::AnalyticalFluxType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::IntersectionQuadratureType;
 
   AdvectionKineticOperator(const AnalyticalFluxType& analytical_flux,
                            const BoundaryValueType& boundary_values,
-                           const BasisfunctionImp& basis_functions)
-    : BaseType(analytical_flux, boundary_values)
+                           const BasisfunctionImp& basis_functions,
+                           const IntersectionQuadratureType& intersection_quadrature =
+                               midpoint_quadrature<DomainFieldType, BaseType::dimDomain>())
+    : BaseType(analytical_flux, boundary_values, intersection_quadrature)
     , basis_functions_(basis_functions)
   {
   }

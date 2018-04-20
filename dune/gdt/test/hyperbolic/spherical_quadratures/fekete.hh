@@ -10,8 +10,6 @@
 #ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FEKETEQUADRATURE_HH
 #define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_FEKETEQUADRATURE_HH
 
-#include <config.h>
-
 #include <vector>
 
 #include <dune/common/fvector.hh>
