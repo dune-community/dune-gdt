@@ -107,7 +107,6 @@ public:
   using typename BaseType::DiscreteFunctionType;
 
 private:
-  static const bool linear = ProblemType::linear;
   static const size_t dimDomain = ProblemType::dimDomain;
   typedef typename ProblemType::FluxType AnalyticalFluxType;
   typedef typename ProblemType::RhsType RhsType;
@@ -120,20 +119,15 @@ private:
           ConstantFunctionType;
   typedef typename Dune::GDT::AdvectionRhsOperator<RhsType> RhsOperatorType;
 
-  typedef internal::AdvectionOperatorCreator<AnalyticalFluxType,
-                                             BoundaryValueType,
-                                             ConstantFunctionType,
-                                             numerical_flux,
-                                             reconstruction_order,
-                                             slope_limiter>
-      AdvectionOperatorCreatorType;
+  typedef internal::
+      AdvectionOperatorCreator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType, numerical_flux>
+          AdvectionOperatorCreatorType;
   typedef typename AdvectionOperatorCreatorType::type AdvectionOperatorType;
   typedef typename AdvectionOperatorType::NumericalCouplingFluxType NumericalCouplingFluxType;
   typedef typename AdvectionOperatorType::NumericalBoundaryFluxType NumericalBoundaryFluxType;
   typedef LocalReconstructionFvOperator<typename SpaceType::GridLayerType,
                                         AnalyticalFluxType,
                                         BoundaryValueType,
-                                        reconstruction_order,
                                         slope_limiter>
       ReconstructionOperatorType;
 
@@ -208,7 +202,7 @@ public:
       // create operators
       const ConstantFunctionType dx_function(dx);
       std::unique_ptr<AdvectionOperatorType> advection_operator =
-          AdvectionOperatorCreatorType::create(analytical_flux, boundary_values, dx_function, linear);
+          AdvectionOperatorCreatorType::create(analytical_flux, boundary_values, dx_function);
 
       RhsOperatorType rhs_operator(rhs);
 
@@ -243,14 +237,6 @@ public:
   }
 
 private:
-  // demand reinitialization of static variables like jacobians in the numerical fluxes
-  void reset_static_variables() const
-  {
-    NumericalCouplingFluxType::reset();
-    NumericalBoundaryFluxType::reset();
-    ReconstructionOperatorType::reset();
-  }
-
   const TestCaseType& test_case_;
   const std::shared_ptr<const SpaceType> fv_space_;
 }; // class HyperbolicFvDefaultDiscretization

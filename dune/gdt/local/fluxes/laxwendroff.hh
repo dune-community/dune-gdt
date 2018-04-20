@@ -24,11 +24,7 @@ namespace GDT {
 template <class AnalyticalFluxImp, class LocalizableFunctionImp, class Traits>
 class LaxWendroffLocalNumericalCouplingFlux;
 
-template <class AnalyticalFluxImp,
-          class BoundaryValueImp,
-          class BoundaryInfoImp,
-          class LocalizableFunctionImp,
-          class Traits>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp, class Traits>
 class LaxWendroffLocalDirichletNumericalBoundaryFlux;
 
 
@@ -45,11 +41,10 @@ public:
   typedef LaxWendroffLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, ThisType> derived_type;
 }; // class LaxWendroffLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalFluxImp, class BoundaryValueImp, class BoundaryInfoImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
 class LaxWendroffLocalDirichletNumericalBoundaryFluxTraits
     : public LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                     BoundaryValueImp,
-                                                                    BoundaryInfoImp,
                                                                     LocalizableFunctionImp>
 {
   typedef LaxWendroffLocalDirichletNumericalBoundaryFluxTraits ThisType;
@@ -57,7 +52,6 @@ class LaxWendroffLocalDirichletNumericalBoundaryFluxTraits
 public:
   typedef LaxWendroffLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
                                                          BoundaryValueImp,
-                                                         BoundaryInfoImp,
                                                          LocalizableFunctionImp,
                                                          ThisType>
       derived_type;
@@ -83,14 +77,12 @@ public:
 
   explicit LaxWendroffFluxImplementation(const AnalyticalFluxType& analytical_flux,
                                          XT::Common::Parameter param,
-                                         const bool is_linear = false,
                                          const RangeFieldType alpha = dimDomain,
                                          const bool boundary = false)
     : analytical_flux_(analytical_flux)
     , param_inside_(param)
     , param_outside_(param)
     , dt_(param.get("dt")[0])
-    , is_linear_(is_linear)
     , alpha_(alpha)
   {
     param_inside_.set("boundary", {0.}, true);
@@ -139,7 +131,6 @@ private:
   XT::Common::Parameter param_inside_;
   XT::Common::Parameter param_outside_;
   const double dt_;
-  const bool is_linear_;
   const RangeFieldType alpha_;
 }; // class LaxWendroffFluxImplementation<...>
 
@@ -168,10 +159,9 @@ public:
   explicit LaxWendroffLocalNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
                                                  const XT::Common::Parameter& param,
                                                  const LocalizableFunctionType& dx,
-                                                 const bool is_linear = false,
                                                  const RangeFieldType alpha = dimDomain)
     : dx_(dx)
-    , implementation_(analytical_flux, param, is_linear, alpha, false)
+    , implementation_(analytical_flux, param, alpha, false)
   {
   }
 
@@ -212,11 +202,9 @@ private:
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
-          class BoundaryInfoImp,
           class LocalizableFunctionImp,
           class Traits = internal::LaxWendroffLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                                         BoundaryValueImp,
-                                                                                        BoundaryInfoImp,
                                                                                         LocalizableFunctionImp>>
 class LaxWendroffLocalDirichletNumericalBoundaryFlux : public LocalNumericalBoundaryFluxInterface<Traits>
 {
@@ -224,7 +212,6 @@ class LaxWendroffLocalDirichletNumericalBoundaryFlux : public LocalNumericalBoun
 
 public:
   typedef typename Traits::BoundaryValueType BoundaryValueType;
-  typedef typename Traits::BoundaryInfoType BoundaryInfoType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
@@ -238,14 +225,12 @@ public:
 
   explicit LaxWendroffLocalDirichletNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
                                                           const BoundaryValueType& boundary_values,
-                                                          const BoundaryInfoType& boundary_info,
                                                           const XT::Common::Parameter& param,
                                                           const LocalizableFunctionType& dx,
-                                                          const bool is_linear = false,
                                                           const RangeFieldType alpha = dimDomain)
-    : InterfaceType(boundary_values, boundary_info)
+    : InterfaceType(boundary_values)
     , dx_(dx)
-    , implementation_(analytical_flux, param, is_linear, alpha, true)
+    , implementation_(analytical_flux, param, alpha, true)
   {
   }
 

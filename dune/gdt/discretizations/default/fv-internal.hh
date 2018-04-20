@@ -20,244 +20,118 @@ namespace GDT {
 namespace internal {
 
 
-template <class AnalyticalFluxType,
-          class BoundaryValueType,
-          class ConstantFunctionType,
-          NumericalFluxes numerical_flux,
-          size_t reconstruction_order,
-          SlopeLimiters slope_limiter = SlopeLimiters::minmod,
-          class RealizabilityLimiterType = NonLimitingRealizabilityLimiter<typename AnalyticalFluxType::EntityType>>
+template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType, NumericalFluxes numerical_flux>
 struct AdvectionOperatorCreator
 {
-  typedef AdvectionGodunovOperator<AnalyticalFluxType,
-                                   BoundaryValueType,
-                                   reconstruction_order,
-                                   slope_limiter,
-                                   RealizabilityLimiterType>
-      type;
+  typedef AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType> type;
   typedef typename type::OnedQuadratureType OnedQuadratureType;
 
   static std::unique_ptr<type> create(const AnalyticalFluxType& analytical_flux,
                                       const BoundaryValueType& boundary_values,
-                                      const ConstantFunctionType& /*dx_function*/,
-                                      const bool is_linear,
-                                      const OnedQuadratureType& quadrature_1d = type::default_1d_quadrature(),
-                                      const std::shared_ptr<RealizabilityLimiterType>& realizability_limiter = nullptr)
+                                      const ConstantFunctionType& /*dx_function*/)
   {
-    return XT::Common::make_unique<type>(
-        analytical_flux, boundary_values, quadrature_1d, realizability_limiter, is_linear);
+    return XT::Common::make_unique<type>(analytical_flux, boundary_values);
   }
 }; // struct AdvectionOperatorCreator<..., godunov, ...>
 
-template <class AnalyticalFluxType,
-          class BoundaryValueType,
-          class ConstantFunctionType,
-          size_t reconstruction_order,
-          SlopeLimiters slope_limiter,
-          class RealizabilityLimiterType>
+template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType>
 struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 BoundaryValueType,
                                 ConstantFunctionType,
-                                NumericalFluxes::laxfriedrichs,
-                                reconstruction_order,
-                                slope_limiter,
-                                RealizabilityLimiterType>
+                                NumericalFluxes::laxfriedrichs>
 {
-  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
-                                         BoundaryValueType,
-                                         ConstantFunctionType,
-                                         reconstruction_order,
-                                         slope_limiter,
-                                         RealizabilityLimiterType>
-      type;
+  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType> type;
   typedef typename type::OnedQuadratureType OnedQuadratureType;
 
   static std::unique_ptr<type> create(const AnalyticalFluxType& analytical_flux,
                                       const BoundaryValueType& boundary_values,
-                                      const ConstantFunctionType& dx_function,
-                                      const bool is_linear,
-                                      const OnedQuadratureType& quadrature_1d = type::default_1d_quadrature(),
-                                      const std::shared_ptr<RealizabilityLimiterType>& realizability_limiter = nullptr)
+                                      const ConstantFunctionType& dx_function)
   {
-    return XT::Common::make_unique<type>(
-        analytical_flux, boundary_values, dx_function, quadrature_1d, realizability_limiter, false, is_linear);
+    return XT::Common::make_unique<type>(analytical_flux, boundary_values, dx_function);
   }
 }; // struct AdvectionOperatorCreator<..., laxfriedrichs, ...>
 
-template <class AnalyticalFluxType,
-          class BoundaryValueType,
-          class ConstantFunctionType,
-          size_t reconstruction_order,
-          SlopeLimiters slope_limiter,
-          class RealizabilityLimiterType>
+template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType>
 struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 BoundaryValueType,
                                 ConstantFunctionType,
-                                NumericalFluxes::local_laxfriedrichs,
-                                reconstruction_order,
-                                slope_limiter,
-                                RealizabilityLimiterType>
+                                NumericalFluxes::local_laxfriedrichs>
 {
-  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType,
-                                         BoundaryValueType,
-                                         ConstantFunctionType,
-                                         reconstruction_order,
-                                         slope_limiter,
-                                         RealizabilityLimiterType>
-      type;
+  typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType> type;
   typedef typename type::OnedQuadratureType OnedQuadratureType;
 
   static std::unique_ptr<type> create(const AnalyticalFluxType& analytical_flux,
                                       const BoundaryValueType& boundary_values,
-                                      const ConstantFunctionType& dx_function,
-                                      const bool is_linear,
-                                      const OnedQuadratureType& quadrature_1d = type::default_1d_quadrature(),
-                                      const std::shared_ptr<RealizabilityLimiterType>& realizability_limiter = nullptr)
+                                      const ConstantFunctionType& dx_function)
   {
-    return XT::Common::make_unique<type>(
-        analytical_flux, boundary_values, dx_function, quadrature_1d, realizability_limiter, true, is_linear);
+    return XT::Common::make_unique<type>(analytical_flux, boundary_values, dx_function, true);
   }
 }; // struct AdvectionOperatorCreator<..., local_laxfriedrichs, ...>
 
-template <class AnalyticalFluxType,
-          class BoundaryValueType,
-          class ConstantFunctionType,
-          size_t reconstruction_order,
-          SlopeLimiters slope_limiter,
-          class RealizabilityLimiterType>
-struct AdvectionOperatorCreator<AnalyticalFluxType,
-                                BoundaryValueType,
-                                ConstantFunctionType,
-                                NumericalFluxes::force,
-                                reconstruction_order,
-                                slope_limiter,
-                                RealizabilityLimiterType>
+template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType>
+struct AdvectionOperatorCreator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType, NumericalFluxes::force>
 {
-  typedef AdvectionForceOperator<AnalyticalFluxType,
-                                 BoundaryValueType,
-                                 ConstantFunctionType,
-                                 reconstruction_order,
-                                 slope_limiter,
-                                 RealizabilityLimiterType>
-      type;
+  typedef AdvectionForceOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType> type;
   typedef typename type::OnedQuadratureType OnedQuadratureType;
 
   static std::unique_ptr<type> create(const AnalyticalFluxType& analytical_flux,
                                       const BoundaryValueType& boundary_values,
-                                      const ConstantFunctionType& dx_function,
-                                      const bool is_linear,
-                                      const OnedQuadratureType& quadrature_1d = type::default_1d_quadrature(),
-                                      const std::shared_ptr<RealizabilityLimiterType>& realizability_limiter = nullptr)
+                                      const ConstantFunctionType& dx_function)
   {
-    return XT::Common::make_unique<type>(
-        analytical_flux, boundary_values, dx_function, quadrature_1d, realizability_limiter, is_linear);
+    return XT::Common::make_unique<type>(analytical_flux, boundary_values, dx_function);
   }
 }; // struct AdvectionOperatorCreator<..., force, ...>
 
 
-template <class AnalyticalFluxType,
-          class BoundaryValueType,
-          class ConstantFunctionType,
-          size_t reconstruction_order,
-          SlopeLimiters slope_limiter,
-          class RealizabilityLimiterType>
-struct AdvectionOperatorCreator<AnalyticalFluxType,
-                                BoundaryValueType,
-                                ConstantFunctionType,
-                                NumericalFluxes::musta,
-                                reconstruction_order,
-                                slope_limiter,
-                                RealizabilityLimiterType>
+template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType>
+struct AdvectionOperatorCreator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType, NumericalFluxes::musta>
 {
-  typedef AdvectionMustaOperator<AnalyticalFluxType,
-                                 BoundaryValueType,
-                                 ConstantFunctionType,
-                                 reconstruction_order,
-                                 slope_limiter,
-                                 RealizabilityLimiterType>
-      type;
+  typedef AdvectionMustaOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType> type;
   typedef typename type::OnedQuadratureType OnedQuadratureType;
 
   static std::unique_ptr<type> create(const AnalyticalFluxType& analytical_flux,
                                       const BoundaryValueType& boundary_values,
-                                      const ConstantFunctionType& dx_function,
-                                      const bool is_linear,
-                                      const OnedQuadratureType& quadrature_1d = type::default_1d_quadrature(),
-                                      const std::shared_ptr<RealizabilityLimiterType>& realizability_limiter = nullptr)
+                                      const ConstantFunctionType& dx_function)
   {
-    return XT::Common::make_unique<type>(
-        analytical_flux, boundary_values, dx_function, quadrature_1d, realizability_limiter, is_linear);
+    return XT::Common::make_unique<type>(analytical_flux, boundary_values, dx_function);
   }
 }; // struct AdvectionOperatorCreator<..., musta, ...>
 
 
-template <class AnalyticalFluxType,
-          class BoundaryValueType,
-          class ConstantFunctionType,
-          size_t reconstruction_order,
-          SlopeLimiters slope_limiter,
-          class RealizabilityLimiterType>
+template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunctionType>
 struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 BoundaryValueType,
                                 ConstantFunctionType,
-                                NumericalFluxes::laxwendroff,
-                                reconstruction_order,
-                                slope_limiter,
-                                RealizabilityLimiterType>
+                                NumericalFluxes::laxwendroff>
 {
-  typedef AdvectionLaxWendroffOperator<AnalyticalFluxType,
-                                       BoundaryValueType,
-                                       ConstantFunctionType,
-                                       reconstruction_order,
-                                       slope_limiter,
-                                       RealizabilityLimiterType>
-      type;
+  typedef AdvectionLaxWendroffOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType> type;
   typedef typename type::OnedQuadratureType OnedQuadratureType;
 
   static std::unique_ptr<type> create(const AnalyticalFluxType& analytical_flux,
                                       const BoundaryValueType& boundary_values,
-                                      const ConstantFunctionType& dx_function,
-                                      const bool is_linear,
-                                      const OnedQuadratureType& quadrature_1d = type::default_1d_quadrature(),
-                                      const std::shared_ptr<RealizabilityLimiterType>& realizability_limiter = nullptr)
+                                      const ConstantFunctionType& dx_function)
   {
-    return XT::Common::make_unique<type>(
-        analytical_flux, boundary_values, dx_function, quadrature_1d, realizability_limiter, is_linear);
+    return XT::Common::make_unique<type>(analytical_flux, boundary_values, dx_function);
   }
 }; // struct AdvectionOperatorCreator<..., laxwendroff, ...>
 
 #if 0
 template <class AnalyticalFluxType,
           class BoundaryValueType,
-          class ConstantFunctionType,
-          size_t reconstruction_order,
-          SlopeLimiters slope_limiter,
-          class RealizabilityLimiterType>
+          class ConstantFunctionType>
 struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 BoundaryValueType,
                                 ConstantFunctionType,
-                                NumericalFluxes::kinetic,
-                                reconstruction_order,
-                                slope_limiter,
-                                RealizabilityLimiterType>
+                                NumericalFluxes::kinetic>
 {
   typedef AdvectionKineticOperator<AnalyticalFluxType,
-                                   BoundaryValueType,
-                                   reconstruction_order,
-                                   slope_limiter,
-                                   RealizabilityLimiterType>
-      type;
-  typedef typename type::OnedQuadratureType OnedQuadratureType;
+                                   BoundaryValueType>
+      type; typedef typename type::OnedQuadratureType OnedQuadratureType;
 
   static std::unique_ptr<type> create(const AnalyticalFluxType& analytical_flux,
-                                      const BoundaryValueType& boundary_values,
-                                      const ConstantFunctionType& dx_function,
-                                      const bool is_linear,
-                                      const OnedQuadratureType& quadrature_1d = type::default_1d_quadrature(),
-                                      const std::shared_ptr<RealizabilityLimiterType>& realizability_limiter = nullptr)
+                                      const BoundaryValueType& boundary_values, const ConstantFunctionType& dx_function)
   {
-    return XT::Common::make_unique<type>(
-        analytical_flux, boundary_values, quadrature_1d, realizability_limiter, is_linear);
+    return XT::Common::make_unique<type>( analytical_flux, boundary_values);
   }
 }; // struct AdvectionOperatorCreator<..., kinetic, ...>
 #endif

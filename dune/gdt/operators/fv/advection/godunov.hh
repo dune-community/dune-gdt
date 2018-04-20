@@ -20,53 +20,23 @@ namespace Dune {
 namespace GDT {
 
 
-template <class AnalyticalFluxImp,
-          class BoundaryValueImp,
-          class BoundaryInfoImp,
-          size_t polOrder,
-          SlopeLimiters slope_lim,
-          class RealizabilityLimiterImp,
-          class Traits>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class Traits>
 class AdvectionGodunovOperator;
 
 
 namespace internal {
 
 
-template <class AnalyticalFluxImp,
-          class BoundaryValueImp,
-          class BoundaryInfoImp,
-          size_t reconstruction_order,
-          SlopeLimiters slope_lim,
-          class RealizabilityLimiterImp>
-class AdvectionGodunovOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp,
-                                                                  BoundaryValueImp,
-                                                                  BoundaryInfoImp,
-                                                                  reconstruction_order,
-                                                                  slope_lim,
-                                                                  RealizabilityLimiterImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp>
+class AdvectionGodunovOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp, BoundaryValueImp>
 {
-  typedef AdvectionTraitsBase<AnalyticalFluxImp,
-                              BoundaryValueImp,
-                              BoundaryInfoImp,
-                              reconstruction_order,
-                              slope_lim,
-                              RealizabilityLimiterImp>
-      BaseType;
+  typedef AdvectionTraitsBase<AnalyticalFluxImp, BoundaryValueImp> BaseType;
 
 public:
   typedef typename Dune::GDT::GodunovLocalNumericalCouplingFlux<AnalyticalFluxImp> NumericalCouplingFluxType;
-  typedef typename Dune::GDT::
-      GodunovLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp, BoundaryInfoImp>
-          NumericalBoundaryFluxType;
-  typedef AdvectionGodunovOperator<AnalyticalFluxImp,
-                                   BoundaryValueImp,
-                                   BoundaryInfoImp,
-                                   reconstruction_order,
-                                   slope_lim,
-                                   RealizabilityLimiterImp,
-                                   AdvectionGodunovOperatorTraits>
-      derived_type;
+  typedef typename Dune::GDT::GodunovLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp>
+      NumericalBoundaryFluxType;
+  typedef AdvectionGodunovOperator<AnalyticalFluxImp, BoundaryValueImp, AdvectionGodunovOperatorTraits> derived_type;
 }; // class AdvectionGodunovOperatorTraits
 
 
@@ -75,16 +45,7 @@ public:
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
-          class BoundaryInfoImp,
-          size_t polOrder = 0,
-          SlopeLimiters slope_lim = SlopeLimiters::minmod,
-          class RealizabilityLimiterImp = NonLimitingRealizabilityLimiter<typename AnalyticalFluxImp::EntityType>,
-          class Traits = internal::AdvectionGodunovOperatorTraits<AnalyticalFluxImp,
-                                                                  BoundaryValueImp,
-                                                                  BoundaryInfoImp,
-                                                                  polOrder,
-                                                                  slope_lim,
-                                                                  RealizabilityLimiterImp>>
+          class Traits = internal::AdvectionGodunovOperatorTraits<AnalyticalFluxImp, BoundaryValueImp>>
 class AdvectionGodunovOperator : public Dune::GDT::OperatorInterface<Traits>, public AdvectionOperatorBase<Traits>
 {
   typedef AdvectionOperatorBase<Traits> BaseType;
@@ -92,39 +53,25 @@ class AdvectionGodunovOperator : public Dune::GDT::OperatorInterface<Traits>, pu
 public:
   using typename BaseType::AnalyticalFluxType;
   using typename BaseType::BoundaryValueType;
-  using typename BaseType::BoundaryInfoType;
   using typename BaseType::OnedQuadratureType;
 
-  AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux,
-                           const BoundaryValueType& boundary_values,
-                           const BoundaryInfoType& boundary_info,
-                           const bool is_linear = false)
-    : BaseType(analytical_flux, boundary_values, boundary_info, is_linear)
-    , is_linear_(is_linear)
+  AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux, const BoundaryValueType& boundary_values)
+    : BaseType(analytical_flux, boundary_values)
   {
   }
 
   AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux,
                            const BoundaryValueType& boundary_values,
-                           const BoundaryInfoType& boundary_info,
-                           const OnedQuadratureType& quadrature_1d,
-                           const bool regularize,
-                           const std::shared_ptr<RealizabilityLimiterImp>& realizability_limiter = nullptr,
-                           const bool is_linear = false)
-    : BaseType(
-          analytical_flux, boundary_values, boundary_info, is_linear, quadrature_1d, regularize, realizability_limiter)
-    , is_linear_(is_linear)
+                           const OnedQuadratureType& quadrature_1d)
+    : BaseType(analytical_flux, boundary_values, quadrature_1d)
   {
   }
 
   template <class SourceType, class RangeType>
   void apply(SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
   {
-    BaseType::apply(source, range, param, is_linear_);
+    BaseType::apply(source, range, param);
   }
-
-private:
-  const bool is_linear_;
 }; // class AdvectionGodunovOperator
 
 

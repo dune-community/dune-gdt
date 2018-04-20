@@ -33,7 +33,7 @@ namespace GDT {
 template <class AnalyticalFluxImp, class Traits>
 class GodunovLocalNumericalCouplingFlux;
 
-template <class AnalyticalFluxImp, class BoundaryValueType, class BoundaryInfoType, class Traits>
+template <class AnalyticalFluxImp, class BoundaryValueType, class Traits>
 class GodunovLocalDirichletNumericalBoundaryFlux;
 
 
@@ -51,21 +51,20 @@ public:
   typedef std::tuple<std::shared_ptr<AnalyticalFluxLocalfunctionType>> LocalfunctionTupleType;
 }; // class GodunovLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalFluxImp, class BoundaryValueImp, class BoundaryInfoImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp>
 class GodunovLocalDirichletNumericalBoundaryFluxTraits
-    : public NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp, BoundaryInfoImp>
+    : public NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp>
 {
-  typedef NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp, BoundaryInfoImp> BaseType;
+  typedef NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp> BaseType;
 
 public:
   typedef GodunovLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
                                                      BoundaryValueImp,
-                                                     BoundaryInfoImp,
                                                      GodunovLocalDirichletNumericalBoundaryFluxTraits>
       derived_type;
   using typename BaseType::AnalyticalFluxLocalfunctionType;
-  using typename BaseType::BoundaryValueLocalfunctionType;
-  typedef std::tuple<std::shared_ptr<AnalyticalFluxLocalfunctionType>, std::shared_ptr<BoundaryValueLocalfunctionType>>
+  using typename BaseType::LocalBoundaryValueType;
+  typedef std::tuple<std::unique_ptr<AnalyticalFluxLocalfunctionType>, std::unique_ptr<LocalBoundaryValueType>>
       LocalfunctionTupleType;
 }; // class GodunovLocalDirichletNumericalBoundaryFluxTraits
 
@@ -96,12 +95,10 @@ public:
 
   explicit GodunovFluxImplementation(const AnalyticalFluxType& analytical_flux,
                                      XT::Common::Parameter param,
-                                     const bool is_linear = false,
                                      const bool boundary = false)
     : analytical_flux_(analytical_flux)
     , param_inside_(param)
     , param_outside_(param)
-    , is_linear_(is_linear)
   {
     param_inside_.set("boundary", {0.}, true);
     param_outside_.set("boundary", {double(boundary)}, true);
@@ -238,7 +235,7 @@ private:
       FieldVector<int, dimRange> permutations;
       XT::LA::qr(*eigenvectors_dense, tau, permutations);
       static auto upper_triangular_pattern =
-          XT::Common::triangular_pattern(dimRange, dimRange, XT::Common::MatrixPattern::upper_triangular);
+          XT::LA::triangular_pattern(dimRange, dimRange, XT::Common::MatrixPattern::upper_triangular);
       thread_local SparseMatrixType R(dimRange, dimRange, size_t(0));
       R.assign(*eigenvectors_dense, upper_triangular_pattern);
       XT::LA::calculate_q_from_qr(*eigenvectors_dense, tau);
@@ -259,7 +256,7 @@ private:
       auto& F_pos = F_neg;
       solve_upper_triangular_transposed(F_pos, R, inverse_permutations, eigvals_pos, eigenvectors);
       jacobian_pos()[direction].rightmultiply(F_pos);
-      if (is_linear_) {
+      if (analytical_flux_.is_affine()) {
         jacobian = nullptr;
         ++local_initialization_counts_[direction];
       }
@@ -315,7 +312,6 @@ private:
   //  static thread_local JacobiansType jacobian_neg_;
   //  static thread_local JacobiansType jacobian_pos_;
 
-  const bool is_linear_;
   static bool is_instantiated_;
   static std::atomic<size_t> initialization_count_;
   static thread_local FieldVector<size_t, dimDomain> local_initialization_counts_;
@@ -343,10 +339,12 @@ thread_local FieldVector<size_t, GodunovFluxImplementation<Traits>::dimDomain>
 } // namespace internal
 
 
-template <class AnalyticalFluxImp, class Traits = internal::GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp>>
-class GodunovLocalNumericalCouplingFlux : public LocalNumericalCouplingFluxInterface<Traits>
+template <class AnalyticalFluxImp,
+          class TraitsImp = internal::GodunovLocalNumericalCouplingFluxTraits<AnalyticalFluxImp>>
+class GodunovLocalNumericalCouplingFlux : public LocalNumericalCouplingFluxInterface<TraitsImp>
 {
 public:
+  using Traits = TraitsImp;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
@@ -357,9 +355,8 @@ public:
   static const size_t dimRange = Traits::dimRange;
 
   explicit GodunovLocalNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
-                                             const XT::Common::Parameter& param,
-                                             const bool is_linear = false)
-    : implementation_(analytical_flux, param, is_linear, false)
+                                             const XT::Common::Parameter& param)
+    : implementation_(analytical_flux, param, false)
   {
   }
 
@@ -408,16 +405,14 @@ private:
 */
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
-          class BoundaryInfoImp,
-          class Traits = internal::
-              GodunovLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp, BoundaryValueImp, BoundaryInfoImp>>
+          class Traits =
+              internal::GodunovLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp, BoundaryValueImp>>
 class GodunovLocalDirichletNumericalBoundaryFlux : public LocalNumericalBoundaryFluxInterface<Traits>
 {
   typedef LocalNumericalBoundaryFluxInterface<Traits> InterfaceType;
 
 public:
   typedef typename Traits::BoundaryValueType BoundaryValueType;
-  typedef typename Traits::BoundaryInfoType BoundaryInfoType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
   typedef typename Traits::DomainFieldType DomainFieldType;
@@ -430,11 +425,9 @@ public:
 
   explicit GodunovLocalDirichletNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
                                                       const BoundaryValueType& boundary_values,
-                                                      const BoundaryInfoType& boundary_info,
-                                                      const XT::Common::Parameter& param,
-                                                      const bool is_linear = false)
-    : InterfaceType(boundary_values, boundary_info)
-    , implementation_(analytical_flux, param, is_linear, true)
+                                                      const XT::Common::Parameter& param)
+    : InterfaceType(boundary_values)
+    , implementation_(analytical_flux, param, true)
   {
   }
 

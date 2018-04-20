@@ -43,6 +43,13 @@ class CgSpaceInterface;
 template <class ImpTraits, size_t domainDim, size_t rangeDim, size_t rangeDimCols>
 class RtSpaceInterface;
 
+// from #include <dune/gdt/local/fluxes/interfaces.hh>
+template <class Traits>
+class LocalNumericalCouplingFluxInterface;
+
+template <class Traits>
+class LocalNumericalBoundaryFluxInterface;
+
 // from #include <dune/gdt/local/integrands/interfaces.hh>
 template <class Traits, size_t numArguments>
 class LocalVolumeIntegrandInterface;
@@ -380,6 +387,17 @@ struct is_operator : public std::is_base_of<OperatorInterface<typename T::Traits
 
 template <class T>
 struct is_operator<T, false> : public std::false_type
+{
+};
+
+// from #include <dune/gdt/local/fluxes/interfaces.hh>
+template <class T, bool candidate = internal::is_operator_helper<T>::is_candidate>
+struct is_local_numerical_coupling_flux : std::is_base_of<LocalNumericalCouplingFluxInterface<typename T::Traits>, T>
+{
+};
+
+template <class T, bool candidate = internal::is_operator_helper<T>::is_candidate>
+struct is_local_numerical_boundary_flux : std::is_base_of<LocalNumericalBoundaryFluxInterface<typename T::Traits>, T>
 {
 };
 

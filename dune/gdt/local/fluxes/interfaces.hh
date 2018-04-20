@@ -22,33 +22,11 @@
 
 namespace Dune {
 namespace GDT {
-namespace internal {
-
-
-class IsNumericalCouplingFlux
-{
-};
-
-class IsNumericalBoundaryFlux
-{
-};
-
-class IsAnalyticalFlux
-{
-};
-
-class IsRHSEvaluation
-{
-};
-
-
-} // namespace internal
 
 
 template <class Traits>
 class LocalNumericalCouplingFluxInterface
-    : public XT::CRTPInterface<LocalNumericalCouplingFluxInterface<Traits>, Traits>,
-      internal::IsNumericalCouplingFlux
+    : public XT::CRTPInterface<LocalNumericalCouplingFluxInterface<Traits>, Traits>
 {
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
@@ -87,8 +65,7 @@ public:
 
 template <class Traits>
 class LocalNumericalBoundaryFluxInterface
-    : public XT::CRTPInterface<LocalNumericalBoundaryFluxInterface<Traits>, Traits>,
-      internal::IsNumericalBoundaryFlux
+    : public XT::CRTPInterface<LocalNumericalBoundaryFluxInterface<Traits>, Traits>
 {
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
@@ -147,17 +124,6 @@ protected:
 
   const BoundaryValueType& boundary_values_;
 }; // class LocalNumericalBoundaryFluxInterface
-
-
-template <class T>
-struct is_local_numerical_coupling_flux : std::is_base_of<internal::IsNumericalCouplingFlux, T>
-{
-};
-
-template <class T>
-struct is_local_numerical_boundary_flux : std::is_base_of<internal::IsNumericalBoundaryFlux, T>
-{
-};
 
 
 } // namespace GDT

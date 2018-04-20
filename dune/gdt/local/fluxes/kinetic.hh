@@ -200,7 +200,7 @@ public:
   static const size_t dimRange = Traits::dimRange;
 
   explicit KineticLocalNumericalCouplingFlux(const AnalyticalFluxType& analytical_flux,
-                                             const XT::Common::Parameter param,
+                                             const XT::Common::Parameter& param,
                                              const BasisfunctionType& basis_functions)
     : implementation_(&analytical_flux, param, basis_functions, false)
   {
@@ -271,7 +271,7 @@ public:
 
   explicit KineticLocalNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
                                              const BoundaryValueType& boundary_values,
-                                             const XT::Common::Parameter param,
+                                             const XT::Common::Parameter& param,
                                              const BasisfunctionType& basis_functions)
     : InterfaceType(boundary_values)
     , implementation_(&analytical_flux, param, basis_functions, true)

@@ -14,15 +14,12 @@
 
 #include <dune/common/parallel/communicator.hh>
 
-#if HAVE_DUNE_ISTL
 #include <dune/istl/owneroverlapcopy.hh>
-#endif
 
 #include <dune/xt/la/container/istl.hh>
 #include <dune/xt/common/parallel/helper.hh>
 //#include <dune/xt/grid/layers.hh>
 
-#include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/parallel_helper.hh>
 
 namespace Dune {
@@ -49,7 +46,7 @@ struct DofCommunicationChooser
 }; // struct DofCommunicationChooser
 
 
-#if HAVE_MPI && HAVE_DUNE_ISTL
+#if HAVE_MPI
 
 
 template <class ViewImp>
@@ -81,7 +78,7 @@ public:
 }; // struct DofCommunicationChooser< ..., true >
 
 
-#endif // HAVE_MPI && HAVE_DUNE_ISTL
+#endif // HAVE_MPI
 
 } // namespace GDT
 } // namespace Dune

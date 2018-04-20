@@ -25,11 +25,7 @@ namespace GDT {
 template <class AnalyticalFluxImp, class LocalizableFunctionImp, class Traits>
 class ForceLocalNumericalCouplingFlux;
 
-template <class AnalyticalFluxImp,
-          class BoundaryValueImp,
-          class BoundaryInfoImp,
-          class LocalizableFunctionImp,
-          class Traits>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp, class Traits>
 class ForceLocalDirichletNumericalBoundaryFlux;
 
 
@@ -46,11 +42,10 @@ public:
   typedef ForceLocalNumericalCouplingFlux<AnalyticalFluxImp, LocalizableFunctionImp, ThisType> derived_type;
 }; // class ForceLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalFluxImp, class BoundaryValueImp, class BoundaryInfoImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
 class ForceLocalDirichletNumericalBoundaryFluxTraits
     : public LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                     BoundaryValueImp,
-                                                                    BoundaryInfoImp,
                                                                     LocalizableFunctionImp>
 {
   typedef ForceLocalDirichletNumericalBoundaryFluxTraits ThisType;
@@ -58,7 +53,6 @@ class ForceLocalDirichletNumericalBoundaryFluxTraits
 public:
   typedef ForceLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
                                                    BoundaryValueImp,
-                                                   BoundaryInfoImp,
                                                    LocalizableFunctionImp,
                                                    ThisType>
       derived_type;
@@ -137,23 +131,15 @@ private:
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
-          class BoundaryInfoImp,
           class LocalizableFunctionImp,
           class Traits = internal::ForceLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                                   BoundaryValueImp,
-                                                                                  BoundaryInfoImp,
                                                                                   LocalizableFunctionImp>>
 class ForceLocalDirichletNumericalBoundaryFlux : public LocalNumericalBoundaryFluxInterface<Traits>
 {
-  typedef LaxFriedrichsLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
-                                                           BoundaryValueImp,
-                                                           BoundaryInfoImp,
-                                                           LocalizableFunctionImp>
+  typedef LaxFriedrichsLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>
       LaxFriedrichsLocalFluxType;
-  typedef LaxWendroffLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
-                                                         BoundaryValueImp,
-                                                         BoundaryInfoImp,
-                                                         LocalizableFunctionImp>
+  typedef LaxWendroffLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>
       LaxWendroffLocalFluxType;
 
 public:

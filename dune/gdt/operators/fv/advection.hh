@@ -11,11 +11,11 @@
 #ifndef DUNE_GDT_OPERATORS_FV_ADVECTION_HH
 #define DUNE_GDT_OPERATORS_FV_ADVECTION_HH
 
-//#include "advection/force.hh"
-//#include "advection/godunov.hh"
+#include "advection/force.hh"
+#include "advection/godunov.hh"
 #include "advection/kinetic.hh"
-//#include "advection/laxfriedrichs.hh"
-//#include "advection/laxwendroff.hh"
-//#include "advection/musta.hh"
+#include "advection/laxfriedrichs.hh"
+#include "advection/laxwendroff.hh"
+#include "advection/musta.hh"
 
 #endif // DUNE_GDT_OPERATORS_FV_ADVECTION_HH

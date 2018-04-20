@@ -31,11 +31,7 @@ namespace GDT {
 template <class AnalyticalFluxImp, class LocalizableFunctionImp, class Traits>
 class LaxFriedrichsLocalNumericalCouplingFlux;
 
-template <class AnalyticalFluxImp,
-          class BoundaryValueImp,
-          class BoundaryInfoImp,
-          class LocalizableFunctionImp,
-          class Traits>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp, class Traits>
 class LaxFriedrichsLocalDirichletNumericalBoundaryFlux;
 
 
@@ -62,11 +58,11 @@ public:
       derived_type;
 }; // class LaxFriedrichsLocalNumericalCouplingFluxTraits
 
-template <class AnalyticalFluxImp, class BoundaryValueImp, class BoundaryInfoImp, class LocalizableFunctionImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
 class LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits
-    : public NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp, BoundaryInfoImp>
+    : public NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp>
 {
-  typedef NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp, BoundaryInfoImp> BaseType;
+  typedef NumericalBoundaryFluxTraitsBase<AnalyticalFluxImp, BoundaryValueImp> BaseType;
 
 public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
@@ -79,7 +75,6 @@ public:
       LocalfunctionTupleType;
   typedef LaxFriedrichsLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
                                                            BoundaryValueImp,
-                                                           BoundaryInfoImp,
                                                            LocalizableFunctionImp,
                                                            LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits>
       derived_type;
@@ -111,7 +106,6 @@ public:
   explicit LaxFriedrichsFluxImplementation(const AnalyticalFluxType& analytical_flux,
                                            XT::Common::Parameter param,
                                            const bool use_local,
-                                           const bool is_linear,
                                            const RangeFieldType alpha,
                                            const DomainType lambda,
                                            const bool boundary)
@@ -120,7 +114,6 @@ public:
     , param_outside_(param)
     , dt_(param.get("dt")[0])
     , use_local_(use_local)
-    , is_linear_(is_linear)
     , alpha_(alpha)
     , lambda_(lambda)
     , lambda_provided_(XT::Common::FloatCmp::ne(lambda_, DomainType(0)))
@@ -162,7 +155,7 @@ public:
     auto n_ij = intersection.unitOuterNormal(x_in_intersection_coords);
 
     if (use_local_) {
-      if (!is_linear_ || !(max_derivative_calculated()[direction])) {
+      if (!analytical_flux_.is_affine() || !(max_derivative_calculated()[direction])) {
         if (!jacobian_inside()) {
           jacobian_inside() = XT::Common::make_unique<JacobianRangeType>();
           jacobian_outside() = XT::Common::make_unique<JacobianRangeType>();
@@ -182,7 +175,7 @@ public:
           max_derivative =
               std::max({std::abs(eigenvalues_inside[jj]), std::abs(eigenvalues_outside[jj]), max_derivative});
         lambda_ij()[direction] = 1. / max_derivative;
-        if (is_linear_) {
+        if (analytical_flux_.is_affine()) {
           jacobian_inside() = nullptr;
           jacobian_outside() = nullptr;
         }
@@ -259,7 +252,6 @@ private:
   XT::Common::Parameter param_outside_;
   const double dt_;
   const bool use_local_;
-  const bool is_linear_;
   const RangeFieldType alpha_;
   const DomainType lambda_;
   const bool lambda_provided_;
@@ -338,9 +330,7 @@ bool LaxFriedrichsFluxImplementation<Traits>::is_instantiated_(false);
  *  step length and dx_i is the width of entity i. This fulfills the equation above as long as the CFL condition
  *  is fulfilled.
  *  The local Lax-Friedrichs flux can be chosen by setting \param use_local to true, here \lambda_{ij} is chosen
- *  as the inverse of the maximal eigenvalue of \mathbf{f}^k(\mathbf{u}_i) and \mathbf{f}^k(\mathbf{u}_j). In this
- *  case, you should also specify whether your analytical flux is linear by setting \param is_linear, which avoids
- *  recalculating the eigenvalues on every intersection in the linear case.
+ *  as the inverse of the maximal eigenvalue of \mathbf{f}^k(\mathbf{u}_i) and \mathbf{f}^k(\mathbf{u}_j).
  *  You can also provide a user-defined \param lambda that is used as \lambda_{ij} on all intersections. You need to set
  *  use_local to false, otherwise lambda will not be used.
  */
@@ -366,11 +356,10 @@ public:
                                                    const XT::Common::Parameter& param,
                                                    const LocalizableFunctionType& dx,
                                                    const bool use_local = false,
-                                                   const bool is_linear = false,
                                                    const RangeFieldType alpha = dimDomain,
                                                    const DomainType lambda = DomainType(0))
     : dx_(dx)
-    , implementation_(analytical_flux, param, use_local, is_linear, alpha, lambda, false)
+    , implementation_(analytical_flux, param, use_local, alpha, lambda, false)
   {
   }
 
@@ -420,11 +409,9 @@ private:
 */
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
-          class BoundaryInfoImp,
           class LocalizableFunctionImp,
           class Traits = internal::LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits<AnalyticalFluxImp,
                                                                                           BoundaryValueImp,
-                                                                                          BoundaryInfoImp,
                                                                                           LocalizableFunctionImp>>
 class LaxFriedrichsLocalDirichletNumericalBoundaryFlux : public LocalNumericalBoundaryFluxInterface<Traits>
 {
@@ -432,7 +419,6 @@ class LaxFriedrichsLocalDirichletNumericalBoundaryFlux : public LocalNumericalBo
 
 public:
   typedef typename Traits::BoundaryValueType BoundaryValueType;
-  typedef typename Traits::BoundaryInfoType BoundaryInfoType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
@@ -446,16 +432,14 @@ public:
 
   explicit LaxFriedrichsLocalDirichletNumericalBoundaryFlux(const AnalyticalFluxType& analytical_flux,
                                                             const BoundaryValueType& boundary_values,
-                                                            const BoundaryInfoType& boundary_info,
                                                             const XT::Common::Parameter& param,
                                                             const LocalizableFunctionType& dx,
                                                             const bool use_local = false,
-                                                            const bool is_linear = false,
                                                             const RangeFieldType alpha = dimDomain,
                                                             const DomainType lambda = DomainType(0))
-    : InterfaceType(boundary_values, boundary_info)
+    : InterfaceType(boundary_values)
     , dx_(dx)
-    , implementation_(analytical_flux, param, use_local, is_linear, alpha, lambda, true)
+    , implementation_(analytical_flux, param, use_local, alpha, lambda, true)
   {
   }
 

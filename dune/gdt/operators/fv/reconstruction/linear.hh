@@ -18,7 +18,7 @@
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
 
-#include <dune/xt/grid/walker/functors.hh>
+#include <dune/xt/grid/walker.hh>
 
 #include <dune/xt/la/algorithms/triangular_solves.hh>
 #include <dune/xt/la/algorithms/qr.hh>
@@ -29,7 +29,6 @@
 #include "../quadrature.hh"
 #include "reconstructed_function.hh"
 #include "slopelimiters.hh"
-#include "stencil.hh"
 
 namespace Dune {
 namespace GDT {
@@ -538,8 +537,9 @@ private:
 
   static XT::Common::Configuration create_eigensolver_options()
   {
-    XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options(EigenSolverOptionsType::types()[0]);
-    // XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options("shifted_qr");
+    //    XT::Common::Configuration eigensolver_options =
+    //    EigenSolverOptionsType::options(EigenSolverOptionsType::types()[0]);
+    XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options("shifted_qr");
     eigensolver_options["assert_eigendecomposition"] = "1e-6";
     eigensolver_options["assert_real_eigendecomposition"] = "1e-6";
     eigensolver_options["disable_checks"] = "true";
@@ -963,7 +963,7 @@ public:
 
   LinearReconstructionOperator(const AnalyticalFluxType& analytical_flux,
                                const BoundaryValueType& boundary_values,
-                               const Quadrature1dType& quadrature_1d = default_1d_quadrature<DomainFieldType>(2))
+                               const Quadrature1dType& quadrature_1d = default_1d_quadrature<DomainFieldType>(1))
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
     , quadrature_1d_(quadrature_1d)
