@@ -127,6 +127,7 @@ public:
   RangeReturnType evaluate(const DomainType& point_in_reference_element,
                            const XT::Common::Parameter& param = {}) const override final
   {
+    DUNE_THROW_IF(!basis_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
     RangeReturnType result(0);
     if (space_.type() == GDT::SpaceType::finite_volume) {
       for (size_t ii = 0; ii < r; ++ii)
@@ -142,6 +143,7 @@ public:
   DerivativeRangeReturnType jacobian(const DomainType& point_in_reference_element,
                                      const XT::Common::Parameter& param = {}) const override final
   {
+    DUNE_THROW_IF(!basis_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
     DerivativeRangeReturnType result(0);
     if (space_.type() == GDT::SpaceType::finite_volume) {
       return result;
@@ -157,6 +159,7 @@ public:
                                        const DomainType& point_in_reference_element,
                                        const XT::Common::Parameter& /*param*/ = {}) const override final
   {
+    DUNE_THROW_IF(!basis_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
     DerivativeRangeReturnType result(0);
     if (space_.type() == GDT::SpaceType::finite_volume) {
       for (size_t jj = 0; jj < d; ++jj)
