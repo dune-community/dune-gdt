@@ -9,8 +9,8 @@
 //   Rene Milk       (2016 - 2018)
 //   Tobias Leibner  (2016 - 2017)
 
-#ifndef DUNE_GDT_OPERATORS_LOCALIZABLE_OPERATORS_HH
-#define DUNE_GDT_OPERATORS_LOCALIZABLE_OPERATORS_HH
+#ifndef DUNE_GDT_OPERATORS_LOCALIZABLE_OPERATOR_HH
+#define DUNE_GDT_OPERATORS_LOCALIZABLE_OPERATOR_HH
 
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/common/parameter.hh>
@@ -161,4 +161,4 @@ protected:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_LOCALIZABLE_OPERATORS_HH
+#endif // DUNE_GDT_OPERATORS_LOCALIZABLE_OPERATOR_HH
