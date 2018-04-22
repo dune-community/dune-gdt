@@ -240,16 +240,15 @@ make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::Ma
  * Similar to the GlobalAssembler, we derive from the XT::Grid::Walker and povide custom append() methods to allow to
  * add local element and intersection operators. In contrast to the GlobalAssembler we already hold the target matrix
  * (or create one of appropriate size and given sparsity pattern), into which we want to assemble. The operator is
- * assembled by walking over the
- * given assembly_gid_view (which defaults to the one fom the given space). This allows to assemble an operator only on
- * a smaller grid view than the one given from the space (similar functionality could be acchieved by appending this
- * operator to another walker and by providing an appropriate filter).
+ * assembled by walking over the given assembly_gid_view (which defaults to the one fom the given space). This allows to
+ * assemble an operator only on a smaller grid view than the one given from the space (similar functionality could be
+ * acchieved by appending this operator to another walker and by providing an appropriate filter).
  *
  * \note One could achieve similar functionality by deriving from GlobalAssembler directly, which would slightly
  *       simplify the implementation of the append methods. However, we do not want to expose the other append methods
  *       of GlobalAssembler here (it should not be possible to append a local functional to an operator), but want to
- * expose the ones from the XT::Grid::Walker (it should be possible to append other element or
- *       intersection operators or two-forms).
+ *       expose the ones from the XT::Grid::Walker (it should be possible to append other element or intersection
+ *       operators or two-forms).
  *
  * \note See ConstMatrixBasedOperator and OperatorInterface for a description of the template arguments.
  *
