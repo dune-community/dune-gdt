@@ -1,4 +1,3 @@
-// This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
 // Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
@@ -24,13 +23,7 @@
 #include <dune/xt/common/reenable_warnings.hh>
 #endif // HAVE_QHULL
 
-#if HAVE_LPSOLVE
-#include <dune/xt/common/disable_warnings.hh>
-namespace lpsolve {
-#include <lpsolve/lp_lib.h>
-}
-#include <dune/xt/common/reenable_warnings.hh>
-#endif // HAVE_LPSOLVE
+#include <dune/xt/common/lpsolve.hh>
 
 #include <dune/gdt/operators/fv/reconstruction/reconstructed_function.hh>
 #include <dune/gdt/operators/interfaces.hh>
@@ -622,8 +615,6 @@ class DgConvexHullLocalRealizabilityLimiter
 
 #endif // HAVE_QHULL
 
-#if HAVE_LPSOLVE
-
 template <class DiscreteFunctionImp, class BasisfunctionImp>
 class LPLocalRealizabilityLimiter : public LocalRealizabilityLimiterBase<DiscreteFunctionImp, BasisfunctionImp>
 {
@@ -710,28 +701,13 @@ private:
   //  RangeFieldType solve_linear_program(const RangeType& u_bar, const RangeType& u_l, const size_t index)
   RangeFieldType solve_linear_program(const RangeType& u_bar, const RangeType& u_l)
   {
-    //        auto& regularization_parameter = regularization_parameters_[index];
-    //        auto& regularization_time = regularization_times_[index];
-    //        if (XT::Common::FloatCmp::ne(regularization_time, t)) {
-    //            regularization_time_ = t;
-    //            regularization_parameter_ = 0.;
-    //        }
     RangeFieldType theta;
-
-    //    const auto r_max = r_sequence_.back();
-    //    for (const auto& r : r_sequence_) {
-    //        regularization_parameter = std::max(regularization_parameter, r);
-
-    typename lpsolve::lprec* lp;
-
     const auto u_l_minus_u_bar = u_l - u_bar;
 
     // We start with creating a model with dimRange+1 rows and num_quad_points+1 columns */
     constexpr int num_rows = int(dimRange);
     int num_cols = int(quadrature_.size() + 1); /* variables are x_1, ..., x_{num_quad_points}, theta */
-    lp = lpsolve::make_lp(num_rows, num_cols);
-    if (!lp)
-      DUNE_THROW(Dune::MathError, "Couldn't construct linear program");
+    auto lp = XT::Common::lp_solve::make_lp(num_rows, num_cols);
 
     /* let us name our variables. Not required, but can be useful for debugging */
     for (int ii = 1; ii <= num_cols - 1; ++ii) {
@@ -740,67 +716,59 @@ private:
       for (size_t jj = 5 - ii_string.size(); jj > 0; --jj)
         name_string += "0";
       name_string += ii_string;
-      lpsolve::set_col_name(lp, ii, &name_string[0]);
+      XT::Common::lp_solve::set_col_name(*lp, ii, name_string);
     }
 
     std::string name_string = "theta ";
-    lpsolve::set_col_name(lp, num_cols, &name_string[0]);
+    XT::Common::lp_solve::set_col_name(*lp, num_cols, name_string);
 
     // In the call to set_column, the first entry (row 0) is the value of the objective function
     // (c_i in the objective function c^T x), the other entries are the entries of the i-th column
     // in the constraints matrix. The 0-th column is the rhs vector. The entry (0, 0) corresponds
     // to the initial value of the objective function.
-    std::array<REAL, num_rows + 1> column;
+    std::array<double, num_rows + 1> column;
 
     // set rhs (column 0)
     column[0] = 0.;
     std::copy(u_l.begin(), u_l.end(), column.begin() + 1);
-    lpsolve::set_rh_vec(lp, column.data());
-    lpsolve::set_rh(lp, 0, column[0]);
+    XT::Common::lp_solve::set_rh_vec(*lp, column.data());
+    XT::Common::lp_solve::set_rh(*lp, 0, column[0]);
 
     // set columns for quadrature points
     column[0] = 0.;
     for (int ii = 0; ii < int(basis_values_.size()); ++ii) {
       const auto& v_i = basis_values_[ii];
       std::copy(v_i.begin(), v_i.end(), column.begin() + 1);
-      lpsolve::set_column(lp, ii + 1, column.data());
+      XT::Common::lp_solve::set_column(*lp, ii + 1, column.data());
     }
 
     // set theta column
     column[0] = 1.;
     std::copy(u_l_minus_u_bar.begin(), u_l_minus_u_bar.end(), column.begin() + 1);
-    lpsolve::set_column(lp, num_cols, column.data());
+    XT::Common::lp_solve::set_column(*lp, num_cols, column.data());
 
     // set all contraints to equality constraints
     for (int ii = 1; ii <= num_rows; ++ii)
-      lpsolve::set_constr_type(lp, ii, EQ);
+      XT::Common::lp_solve::set_constr_type(*lp, ii, XT::Common::lp_solve::eq());
 
     // Set bounds for variables. 0 <= x <= inf is the default for all variables.
     // The bounds for theta should be [0,1], but we allow allow theta to be -0.1
     // so we can check if u_l is on the boundary and if so, move it a little away
     // from the boundary
-    lpsolve::set_bounds(lp, num_cols, -0.1, 1.);
+    XT::Common::lp_solve::set_bounds(*lp, num_cols, -0.1, 1.);
 
-    default_basis(lp);
+    // XT::Common::lp_solve::default_basis(lp);
 
     /* I only want to see important messages on screen while solving */
-    lpsolve::set_verbose(lp, IMPORTANT);
+    XT::Common::lp_solve::set_verbose(*lp, XT::Common::lp_solve::important());
 
     /* Now let lpsolve calculate a solution */
-    const auto solve_status = lpsolve::solve(lp);
-    theta = lpsolve::get_objective(lp);
-    if (solve_status != OPTIMAL) {
-      lpsolve::write_LP(lp, stdout);
-      std::cout << solve_status << std::endl;
-      //            if (r == r_max)
+    const auto solve_status = XT::Common::lp_solve::solve(*lp);
+    theta = XT::Common::lp_solve::get_objective(*lp);
+    if (solve_status != XT::Common::lp_solve::optimal()) {
+      XT::Common::lp_solve::write_LP(*lp, stdout);
       DUNE_THROW(Dune::MathError, "An unexpected error occured while solving the linear program");
-      //            break;
     }
-
-    /* free allocated memory */
-    if (lp)
-      lpsolve::delete_lp(lp);
-    //        }
 
     return theta;
   }
@@ -811,16 +779,6 @@ private:
   using BaseType::epsilon_;
   using BaseType::basis_values_;
 }; // class LPLocalRealizabilityLimiter
-
-#else // HAVE_LPSOLVE
-
-template <class DiscreteFunctionImp, class BasisfunctionImp>
-class LPLocalRealizabilityLimiter
-{
-  static_assert(Dune::AlwaysFalse<DiscreteFunctionImp>::value, "You are missing LPSolve!");
-};
-
-#endif // HAVE_LPSOLVE
 
 
 template <class LocalRealizabilityLimiterImp, class Traits>

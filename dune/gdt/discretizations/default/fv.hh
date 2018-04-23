@@ -125,11 +125,11 @@ private:
   typedef typename AdvectionOperatorCreatorType::type AdvectionOperatorType;
   typedef typename AdvectionOperatorType::NumericalCouplingFluxType NumericalCouplingFluxType;
   typedef typename AdvectionOperatorType::NumericalBoundaryFluxType NumericalBoundaryFluxType;
-  typedef LocalReconstructionFvOperator<typename SpaceType::GridLayerType,
-                                        AnalyticalFluxType,
-                                        BoundaryValueType,
-                                        slope_limiter>
-      ReconstructionOperatorType;
+  //  typedef LocalReconstructionFvOperator<typename SpaceType::GridLayerType,
+  //                                        AnalyticalFluxType,
+  //                                        BoundaryValueType,
+  //                                        slope_limiter>
+  //      ReconstructionOperatorType;
 
   typedef typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, time_stepper_method>::TimeStepperType
       OperatorTimeStepperType;
@@ -172,8 +172,6 @@ public:
   void solve(DiscreteSolutionType& solution) const
   {
     try {
-      reset_static_variables();
-
       const auto& problem = test_case_.problem();
       // get analytical flux, initial and boundary values
       const AnalyticalFluxType& analytical_flux = problem.flux();

@@ -11,9 +11,10 @@
 #ifndef DUNE_GDT_OPERATORS_FV_BOUNDARY_HH
 #define DUNE_GDT_OPERATORS_FV_BOUNDARY_HH
 
-#include <dune/common/fvector.hh>
-
+#include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/parameter.hh>
+
+#include <dune/xt/la/container/common/matrix/sparse.hh>
 
 #include <dune/xt/grid/boundaryinfo.hh>
 
@@ -160,7 +161,7 @@ public:
 
   LocalMomentModelBoundaryValue(
       const BoundaryInfoType& boundary_info,
-      const Dune::FieldVector<MatrixType, 2 * dimDomain>& reflection_matrices,
+      const XT::Common::FieldVector<MatrixType, 2 * dimDomain>& reflection_matrices,
       std::unique_ptr<typename LocalizableFunctionType::LocalfunctionType>&& local_dirichlet_boundary_values)
     : BaseType(boundary_info)
     , reflection_matrices_(reflection_matrices)
