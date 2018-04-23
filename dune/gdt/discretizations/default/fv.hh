@@ -125,23 +125,11 @@ private:
   typedef typename AdvectionOperatorCreatorType::type AdvectionOperatorType;
   typedef typename AdvectionOperatorType::NumericalCouplingFluxType NumericalCouplingFluxType;
   typedef typename AdvectionOperatorType::NumericalBoundaryFluxType NumericalBoundaryFluxType;
-  //  typedef LocalReconstructionFvOperator<typename SpaceType::GridLayerType,
-  //                                        AnalyticalFluxType,
-  //                                        BoundaryValueType,
-  //                                        slope_limiter>
-  //      ReconstructionOperatorType;
 
   typedef typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, time_stepper_method>::TimeStepperType
       OperatorTimeStepperType;
   typedef typename TimeStepperFactory<RhsOperatorType, DiscreteFunctionType, rhs_time_stepper_method>::TimeStepperType
       RhsOperatorTimeStepperType;
-
-  //  typedef
-  //      typename Dune::GDT::TimeStepperSplittingFactory<RhsOperatorTimeStepperType,
-  //                                                      OperatorTimeStepperType,
-  //                                                      time_stepper_splitting_method>::TimeStepperType
-  //                                                      TimeStepperType;
-
   typedef
       typename Dune::GDT::TimeStepperSplittingFactory<OperatorTimeStepperType,
                                                       RhsOperatorTimeStepperType,
