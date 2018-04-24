@@ -150,6 +150,10 @@ public:
   ThisType& operator=(const ThisType& other) = delete;
   ThisType& operator=(ThisType&& source) = delete;
 
+  virtual ~SystemAssembler()
+  {
+  }
+
   const TestSpaceType& test_space() const
   {
     return *test_space_;
