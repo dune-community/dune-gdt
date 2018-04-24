@@ -507,10 +507,10 @@ private:
 
     typedef GDT::RestrictedSpace<S, typename XT::Grid::Layer<G, layer, backend>::type> RestrictedSpaceType;
 
-    try { // we might not be the first to add this RestrictedSpace
+    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
       const auto restricted_space_name = sp_name + "_restricted_to_" + XT::Grid::bindings::layer_name<layer>::value()
                                          + "_" + XT::Grid::bindings::backend_name<backend>::value();
-      auto restricted_space = SpaceInterfaceWoFactory<RestrictedSpaceType>::bind(m, restricted_space_name);
+      auto restricted_space = SpaceInterfaceWoFactory<RestrictedSpaceType>::bind(mod, restricted_space_name);
       restricted_space.def("restrict",
                            [](RestrictedSpaceType& self, const XT::LA::IstlDenseVector<double>& unrestricted_vector) {
                              return self.mapper().restrict(unrestricted_vector);
@@ -521,8 +521,7 @@ private:
                              return self.mapper().extend(restricted_vector);
                            },
                            "restricted_vector"_a);
-    } catch (std::runtime_error&) {
-    }
+    });
 
     restriction_methods<backend, layer>::addbind(c);
   } // ... addbind_restricted(...)

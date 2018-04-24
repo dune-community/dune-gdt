@@ -271,11 +271,7 @@ private:
 public:
   static bound_type bind(pybind11::module& m)
   {
-    try {
-      BlockMapper<SP>::bind(m);
-    } catch (const std::runtime_error&) {
-      // already exists
-    }
+    XT::Common::bindings::try_register(m, [](pybind11::module& mod) { BlockMapper<SP>::bind(mod); });
 
     namespace py = pybind11;
     using namespace pybind11::literals;

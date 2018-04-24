@@ -1885,14 +1885,13 @@ PYBIND11_MODULE(__operators_RS2017, m)
                              XT::LA::IstlRowMajorSparseMatrix<double>,
                              typename XT::Grid::Layer<GDT_BINDINGS_GRID, Layers::dd_subdomain, Backends::view>::type>
           EllipticMatrixOperatorType;
-  try { // we might not be the first to add this
+  XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
     py::class_<EllipticMatrixOperatorType,
                GDT::SystemAssembler<typename EllipticMatrixOperatorType::SourceSpaceType,
                                     typename EllipticMatrixOperatorType::GridLayerType>>
-        elliptic_matrix_operator(m, "EllipticMatrixOperatorNeighborhood");
+        elliptic_matrix_operator(mod, "EllipticMatrixOperatorNeighborhood");
     elliptic_matrix_operator.def("matrix", [](EllipticMatrixOperatorType& self) { return self.matrix(); });
-  } catch (std::runtime_error&) {
-  }
+  });
   m.def("RS2017_make_elliptic_matrix_operator_on_subdomain",
         [](XT::Grid::GridProvider<GDT_BINDINGS_GRID, XT::Grid::DD::SubdomainGrid<GDT_BINDINGS_GRID>>& dd_grid_provider,
            const ssize_t subdomain,
