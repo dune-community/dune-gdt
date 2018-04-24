@@ -53,7 +53,7 @@ public:
                                const XT::Common::Parameter& param = {})
     : test_space_(test_space)
     , ansatz_space_(ansatz_space)
-    , local_two_form_(local_two_form)
+    , local_two_form_(local_two_form.copy())
     , global_matrix_(global_matrix)
     , param_(param)
     , local_matrix_(test_space_.mapper().max_local_size(), ansatz_space_.mapper().max_local_size())
@@ -85,7 +85,7 @@ public:
     // apply two-form
     const auto test_basis = test_space_.basis().localize(element);
     const auto ansatz_basis = ansatz_space_.basis().localize(element);
-    local_two_form_.apply2(*test_basis, *ansatz_basis, local_matrix_, param_);
+    local_two_form_->apply2(*test_basis, *ansatz_basis, local_matrix_, param_);
     // copy local vector to global
     test_space_.mapper().global_indices(element, global_test_indices_);
     ansatz_space_.mapper().global_indices(element, global_ansatz_indices_);
@@ -97,7 +97,7 @@ public:
 private:
   const TestSpaceType& test_space_;
   const AnsatzSpaceType& ansatz_space_;
-  const LocalTwoFormType& local_two_form_;
+  const std::unique_ptr<LocalTwoFormType> local_two_form_;
   MatrixType& global_matrix_;
   XT::Common::Parameter param_;
   DynamicMatrix<FieldType> local_matrix_;
