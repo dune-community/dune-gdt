@@ -229,7 +229,7 @@ public:
       size_t i_bfs_size = i_base_function_set.size();
       EXPECT_EQ(d_bfs_size, i_bfs_size);
       // make sure backend_type is defined
-      constexpr auto backend_type = SpaceType::backend_type;
+      constexpr auto backend_type DUNE_UNUSED = SpaceType::backend_type;
     } // walk the grid
   } // ... fulfills_interface()
 
@@ -374,7 +374,7 @@ public:
       const auto& entity = *entity_it;
       // * as the derived type
       BaseFunctionSetType d_base_function_set = space_.base_function_set(entity);
-      const D_BackendType& d_backend = d_base_function_set.backend();
+      const D_BackendType& d_backend DUNE_UNUSED = d_base_function_set.backend();
       size_t d_order = d_base_function_set.order();
       if (!special_case_rt_check) {
         EXPECT_GE(d_order,

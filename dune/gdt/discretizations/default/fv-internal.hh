@@ -24,7 +24,6 @@ template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunct
 struct AdvectionOperatorCreator
 {
   typedef AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType> type;
-  typedef typename type::OnedQuadratureType OnedQuadratureType;
 
   static std::unique_ptr<type> create(const AnalyticalFluxType& analytical_flux,
                                       const BoundaryValueType& boundary_values,
@@ -41,7 +40,6 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 NumericalFluxes::laxfriedrichs>
 {
   typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType> type;
-  typedef typename type::OnedQuadratureType OnedQuadratureType;
 
   static std::unique_ptr<type> create(const AnalyticalFluxType& analytical_flux,
                                       const BoundaryValueType& boundary_values,
@@ -58,7 +56,6 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 NumericalFluxes::local_laxfriedrichs>
 {
   typedef AdvectionLaxFriedrichsOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType> type;
-  typedef typename type::OnedQuadratureType OnedQuadratureType;
 
   static std::unique_ptr<type> create(const AnalyticalFluxType& analytical_flux,
                                       const BoundaryValueType& boundary_values,
@@ -72,7 +69,6 @@ template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunct
 struct AdvectionOperatorCreator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType, NumericalFluxes::force>
 {
   typedef AdvectionForceOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType> type;
-  typedef typename type::OnedQuadratureType OnedQuadratureType;
 
   static std::unique_ptr<type> create(const AnalyticalFluxType& analytical_flux,
                                       const BoundaryValueType& boundary_values,
@@ -87,7 +83,6 @@ template <class AnalyticalFluxType, class BoundaryValueType, class ConstantFunct
 struct AdvectionOperatorCreator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType, NumericalFluxes::musta>
 {
   typedef AdvectionMustaOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType> type;
-  typedef typename type::OnedQuadratureType OnedQuadratureType;
 
   static std::unique_ptr<type> create(const AnalyticalFluxType& analytical_flux,
                                       const BoundaryValueType& boundary_values,
@@ -105,7 +100,6 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
                                 NumericalFluxes::laxwendroff>
 {
   typedef AdvectionLaxWendroffOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType> type;
-  typedef typename type::OnedQuadratureType OnedQuadratureType;
 
   static std::unique_ptr<type> create(const AnalyticalFluxType& analytical_flux,
                                       const BoundaryValueType& boundary_values,
@@ -126,7 +120,6 @@ struct AdvectionOperatorCreator<AnalyticalFluxType,
 {
   typedef AdvectionKineticOperator<AnalyticalFluxType,
                                    BoundaryValueType>
-      type; typedef typename type::OnedQuadratureType OnedQuadratureType;
 
   static std::unique_ptr<type> create(const AnalyticalFluxType& analytical_flux,
                                       const BoundaryValueType& boundary_values, const ConstantFunctionType& dx_function)

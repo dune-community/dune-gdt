@@ -99,8 +99,10 @@ public:
   {
   }
 
-  virtual RangeType
-  evaluate(const IntersectionType& intersection, const DomainType& x, const RangeType& /*u*/) const override
+  virtual RangeType evaluate(const IntersectionType& intersection,
+                             const DomainType& x,
+                             const RangeType& /*u*/,
+                             const XT::Common::Parameter& /*param*/ = {}) const override
   {
     if (boundary_info_.type(intersection) != XT::Grid::dirichlet_boundary)
       DUNE_THROW(Dune::NotImplemented, "This class can't handle boundary types other than Dirichlet!");
@@ -135,7 +137,7 @@ public:
 
   virtual std::unique_ptr<LocalBoundaryValueInterfaceType> local_function(const EntityType& entity) const override
   {
-    return LocalBoundaryValueType(boundary_info_, boundary_values_->local_function(entity));
+    return std::make_unique<LocalBoundaryValueType>(boundary_info_, boundary_values_.local_function(entity));
   }
 
 private:

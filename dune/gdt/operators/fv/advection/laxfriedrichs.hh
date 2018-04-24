@@ -64,7 +64,6 @@ public:
   using typename BaseType::AnalyticalFluxType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::DomainType;
-  using typename BaseType::OnedQuadratureType;
   using typename BaseType::RangeFieldType;
   typedef typename Traits::LocalizableFunctionType LocalizableFunctionType;
   static const size_t dimDomain = BaseType::dimDomain;
@@ -83,23 +82,8 @@ public:
   {
   }
 
-  AdvectionLaxFriedrichsOperator(const AnalyticalFluxType& analytical_flux,
-                                 const BoundaryValueType& boundary_values,
-                                 const LocalizableFunctionType& dx,
-                                 const OnedQuadratureType& quadrature_1d,
-                                 const bool use_local_laxfriedrichs_flux = false,
-                                 const RangeFieldType alpha = dimDomain,
-                                 const DomainType lambda = DomainType(0))
-    : BaseType(analytical_flux, boundary_values, quadrature_1d)
-    , dx_(dx)
-    , use_local_laxfriedrichs_flux_(use_local_laxfriedrichs_flux)
-    , alpha_(alpha)
-    , lambda_(lambda)
-  {
-  }
-
   template <class SourceType, class RangeType>
-  void apply(SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
+  void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
   {
     BaseType::apply(source, range, param, dx_, use_local_laxfriedrichs_flux_, alpha_, lambda_);
   }

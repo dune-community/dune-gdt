@@ -107,11 +107,15 @@ public:
   using typename BaseType::DiscreteFunctionType;
 
 private:
+  using GridLayerType = typename SpaceType::GridLayerType;
+  using IntersectionType = typename GridLayerType::Intersection;
+
   static const size_t dimDomain = ProblemType::dimDomain;
   typedef typename ProblemType::FluxType AnalyticalFluxType;
   typedef typename ProblemType::RhsType RhsType;
   typedef typename ProblemType::InitialValueType InitialValueType;
-  typedef typename ProblemType::BoundaryValueType BoundaryValueType;
+  using BoundaryValueType =
+      LocalizableFunctionBasedLocalizableDirichletBoundaryValue<GridLayerType, typename ProblemType::BoundaryValueType>;
   typedef typename ProblemType::DomainFieldType DomainFieldType;
   typedef typename ProblemType::RangeFieldType RangeFieldType;
   typedef typename Dune::XT::Functions::
@@ -164,7 +168,9 @@ public:
       // get analytical flux, initial and boundary values
       const AnalyticalFluxType& analytical_flux = problem.flux();
       const InitialValueType& initial_values = problem.initial_values();
-      const BoundaryValueType& boundary_values = problem.boundary_values();
+      const auto& dirichlet_boundary_values = problem.boundary_values();
+      const auto boundary_info = XT::Grid::AllDirichletBoundaryInfo<IntersectionType>();
+      const BoundaryValueType boundary_values(boundary_info, dirichlet_boundary_values);
       const RhsType& rhs = problem.rhs();
 
       // create a discrete function for the solution
@@ -201,7 +207,6 @@ public:
       if (problem.has_non_zero_rhs()) {
         // use fractional step method
         RhsOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
-        //        TimeStepperType timestepper(timestepper_rhs, timestepper_op);
         TimeStepperType timestepper(timestepper_op, timestepper_rhs);
         timestepper.solve(t_end, dt, num_save_steps, solution);
       } else {

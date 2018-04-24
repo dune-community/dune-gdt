@@ -306,8 +306,8 @@ class MinDataHandle : public SpaceDataHandle<SpaceType,
       BaseType;
 
 public:
-  MinDataHandle(const SpaceType& space_, VectorType& v_)
-    : BaseType(space_, v_, DofDataCommunicationDescriptor<typename VectorType::ScalarType>())
+  MinDataHandle(const SpaceType& space, VectorType& v)
+    : BaseType(space, v, DofDataCommunicationDescriptor<typename VectorType::ScalarType>())
   {
   }
 };
@@ -377,15 +377,15 @@ public:
    * with the correct value of false. If you have already done that externally,
    * you can skip the initialization.
    *
-   * \param space_         The GridFunctionSpace to operate on.
+   * \param space         The GridFunctionSpace to operate on.
    * \param v_           The result vector.
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */
-  GhostDataHandle(const SpaceType& space_, VectorType& v_, bool init_vector = true)
-    : BaseType(space_, v_, EntityDataCommunicationDescriptor<bool>(space_.mapper().maxNumDofs()))
+  GhostDataHandle(const SpaceType& space, VectorType& v, bool init_vector = true)
+    : BaseType(space, v, EntityDataCommunicationDescriptor<bool>(space.mapper().maxNumDofs()))
   {
     if (init_vector)
-      v_.set_all(false);
+      v.set_all(false);
   }
 };
 

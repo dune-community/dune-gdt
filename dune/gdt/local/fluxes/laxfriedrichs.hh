@@ -49,7 +49,7 @@ public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
   typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
   using typename BaseType::AnalyticalFluxLocalfunctionType;
-  typedef std::tuple<std::shared_ptr<AnalyticalFluxLocalfunctionType>, std::shared_ptr<LocalfunctionType>>
+  typedef std::tuple<std::unique_ptr<AnalyticalFluxLocalfunctionType>, std::unique_ptr<LocalfunctionType>>
       LocalfunctionTupleType;
   static_assert(LocalizableFunctionType::dimRangeCols == 1, "Not implemented for dimRangeCols > 1!");
   typedef LaxFriedrichsLocalNumericalCouplingFlux<AnalyticalFluxImp,
@@ -67,11 +67,11 @@ class LaxFriedrichsLocalDirichletNumericalBoundaryFluxTraits
 public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
   typedef typename LocalizableFunctionType::LocalfunctionType LocalfunctionType;
-  using typename BaseType::BoundaryValueLocalfunctionType;
+  using typename BaseType::LocalBoundaryValueType;
   using typename BaseType::AnalyticalFluxLocalfunctionType;
-  typedef std::tuple<std::shared_ptr<AnalyticalFluxLocalfunctionType>,
-                     std::shared_ptr<LocalfunctionType>,
-                     std::shared_ptr<BoundaryValueLocalfunctionType>>
+  typedef std::tuple<std::unique_ptr<AnalyticalFluxLocalfunctionType>,
+                     std::unique_ptr<LocalfunctionType>,
+                     std::unique_ptr<LocalBoundaryValueType>>
       LocalfunctionTupleType;
   typedef LaxFriedrichsLocalDirichletNumericalBoundaryFlux<AnalyticalFluxImp,
                                                            BoundaryValueImp,
@@ -162,13 +162,13 @@ public:
         }
         DomainFieldType max_derivative(0);
         helper<dimDomain>::get_jacobian(
-            direction, local_flux_inside, x_in_inside_coords, u_i, *jacobian_inside(), param_inside_);
+            direction, *local_flux_inside, x_in_inside_coords, u_i, *jacobian_inside(), param_inside_);
         helper<dimDomain>::get_jacobian(
-            direction, local_flux_outside, x_in_outside_coords, u_j, *jacobian_outside(), param_outside_);
+            direction, *local_flux_outside, x_in_outside_coords, u_j, *jacobian_outside(), param_outside_);
 
         static XT::Common::Configuration eigensolver_options = create_eigensolver_options();
-        const auto eigen_solver_inside = EigenSolverType((*jacobian_inside())[direction], eigensolver_options, true);
-        const auto eigen_solver_outside = EigenSolverType((*jacobian_outside())[direction], eigensolver_options, true);
+        const auto eigen_solver_inside = EigenSolverType((*jacobian_inside())[direction], eigensolver_options);
+        const auto eigen_solver_outside = EigenSolverType((*jacobian_outside())[direction], eigensolver_options);
         const auto& eigenvalues_inside = eigen_solver_inside.real_eigenvalues();
         const auto& eigenvalues_outside = eigen_solver_outside.real_eigenvalues();
         for (size_t jj = 0; jj < dimRange; ++jj)
@@ -215,13 +215,13 @@ private:
   struct helper
   {
     static void get_jacobian(const size_t direction,
-                             const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
+                             const AnalyticalFluxLocalfunctionType& local_func,
                              const DomainType& x_in_inside_coords,
                              const StateRangeType& u,
                              JacobianRangeType& ret,
                              const XT::Common::Parameter& param)
     {
-      local_func->partial_u_col(direction, x_in_inside_coords, u, ret[direction], param);
+      local_func.partial_u_col(direction, x_in_inside_coords, u, ret[direction], param);
     }
   };
 
@@ -229,14 +229,14 @@ private:
   struct helper<1, anything>
   {
     static void get_jacobian(const size_t direction,
-                             const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
+                             const AnalyticalFluxLocalfunctionType& local_func,
                              const DomainType& x_in_inside_coords,
                              const StateRangeType& u,
                              JacobianRangeType& ret,
                              const XT::Common::Parameter& param)
     {
       assert(direction == 0);
-      local_func->partial_u(x_in_inside_coords, u, ret[direction], param);
+      local_func.partial_u(x_in_inside_coords, u, ret[direction], param);
     }
   };
 
@@ -447,7 +447,7 @@ public:
   {
     return std::make_tuple(implementation_.analytical_flux().local_function(entity),
                            dx_.local_function(entity),
-                           std::get<0>(boundary_values_)->local_function(entity));
+                           boundary_values_.local_function(entity));
   }
 
   template <class IntersectionType>

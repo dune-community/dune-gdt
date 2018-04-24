@@ -108,7 +108,7 @@ public:
     // now assemble the quadrature
     QuadratureType quadrature;
     for (size_t ii = 0; ii < all_weights.size(); ++ii) {
-      DomainType position;
+      XT::Common::FieldVector<DomainFieldType, quadratureDim> position;
       for (size_t jj = 0; jj < quadratureDim; ++jj)
         position[jj] = all_coords[ii * quadratureDim + jj];
       quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, quadratureDim>(position, all_weights[ii]));

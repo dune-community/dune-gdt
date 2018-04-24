@@ -48,7 +48,7 @@ class GodunovLocalNumericalCouplingFluxTraits : public NumericalCouplingFluxTrai
 public:
   using typename BaseType::AnalyticalFluxLocalfunctionType;
   typedef GodunovLocalNumericalCouplingFlux<AnalyticalFluxImp, GodunovLocalNumericalCouplingFluxTraits> derived_type;
-  typedef std::tuple<std::shared_ptr<AnalyticalFluxLocalfunctionType>> LocalfunctionTupleType;
+  typedef std::tuple<std::unique_ptr<AnalyticalFluxLocalfunctionType>> LocalfunctionTupleType;
 }; // class GodunovLocalNumericalCouplingFluxTraits
 
 template <class AnalyticalFluxImp, class BoundaryValueImp>
@@ -214,7 +214,7 @@ private:
       if (!jacobian) {
         jacobian = XT::Common::make_unique<MatrixType>();
       }
-      helper<dimDomain>::get_jacobian(direction, local_flux, x_local, u_mean, *jacobian, param_inside_);
+      helper<dimDomain>::get_jacobian(direction, *local_flux, x_local, u_mean, *jacobian, param_inside_);
       // get matrix of eigenvectors A and eigenvalues
       static auto eigensolver_options = create_eigensolver_options();
       const auto eigen_solver = EigenSolverType(*jacobian, eigensolver_options);
@@ -233,13 +233,17 @@ private:
       eigenvectors = *eigenvectors_dense;
       // calculate QR decomposition with column pivoting A = QRP^T
       FieldVector<int, dimRange> permutations;
+      std::cout << "eigvecs = " << XT::Common::to_string(*eigenvectors_dense) << std::endl;
       XT::LA::qr(*eigenvectors_dense, tau, permutations);
       static auto upper_triangular_pattern =
           XT::LA::triangular_pattern(dimRange, dimRange, XT::Common::MatrixPattern::upper_triangular);
       thread_local SparseMatrixType R(dimRange, dimRange, size_t(0));
       R.assign(*eigenvectors_dense, upper_triangular_pattern);
-      XT::LA::calculate_q_from_qr(*eigenvectors_dense, tau);
-      const auto& Q = *eigenvectors_dense;
+      std::cout << "R = " << XT::Common::to_string(R) << std::endl;
+      const auto Q = XT::LA::calculate_q_from_qr(*eigenvectors_dense, tau);
+      std::cout << "Q = " << XT::Common::to_string(Q) << std::endl;
+      std::cout << "tau = " << XT::Common::to_string(tau) << std::endl;
+      std::cout << "permutations = " << XT::Common::to_string(permutations) << std::endl;
       FieldVector<int, dimRange> inverse_permutations;
       for (size_t ii = 0; ii < dimRange; ++ii)
         inverse_permutations[permutations[ii]] = ii;
@@ -267,13 +271,13 @@ private:
   struct helper
   {
     static void get_jacobian(const size_t direction,
-                             const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
+                             const AnalyticalFluxLocalfunctionType& local_func,
                              const DomainType& x_in_inside_coords,
                              const StateRangeType& u,
                              MatrixType& ret,
                              const XT::Common::Parameter& param)
     {
-      local_func->partial_u_col(direction, x_in_inside_coords, u, ret, param);
+      local_func.partial_u_col(direction, x_in_inside_coords, u, ret, param);
     }
   };
 
@@ -281,14 +285,14 @@ private:
   struct helper<1, anything>
   {
     static void get_jacobian(const size_t direction,
-                             const std::shared_ptr<AnalyticalFluxLocalfunctionType>& local_func,
+                             const AnalyticalFluxLocalfunctionType& local_func,
                              const DomainType& x_in_inside_coords,
                              const StateRangeType& u,
                              MatrixType& ret,
                              const XT::Common::Parameter& param)
     {
       assert(direction == 0);
-      local_func->partial_u(x_in_inside_coords, u, ret, param);
+      local_func.partial_u(x_in_inside_coords, u, ret, param);
     }
   };
 
@@ -434,7 +438,7 @@ public:
   LocalfunctionTupleType local_functions(const EntityType& entity) const
   {
     return std::make_tuple(implementation_.analytical_flux().local_function(entity),
-                           std::get<0>(boundary_values_)->local_function(entity));
+                           boundary_values_.local_function(entity));
   }
 
   template <class IntersectionType>

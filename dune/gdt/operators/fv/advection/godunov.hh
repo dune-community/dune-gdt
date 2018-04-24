@@ -53,22 +53,14 @@ class AdvectionGodunovOperator : public Dune::GDT::OperatorInterface<Traits>, pu
 public:
   using typename BaseType::AnalyticalFluxType;
   using typename BaseType::BoundaryValueType;
-  using typename BaseType::OnedQuadratureType;
 
   AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux, const BoundaryValueType& boundary_values)
     : BaseType(analytical_flux, boundary_values)
   {
   }
 
-  AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux,
-                           const BoundaryValueType& boundary_values,
-                           const OnedQuadratureType& quadrature_1d)
-    : BaseType(analytical_flux, boundary_values, quadrature_1d)
-  {
-  }
-
   template <class SourceType, class RangeType>
-  void apply(SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
+  void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
   {
     BaseType::apply(source, range, param);
   }
