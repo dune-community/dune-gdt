@@ -19,8 +19,11 @@
 
 #include <dune/geometry/quadraturerules.hh>
 
-#include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/common/matrix.hh>
+
+#include <dune/xt/functions/interfaces.hh>
+
+#include <dune/xt/la/container/common/matrix/dense.hh>
 
 #include <dune/gdt/local/integrands/interfaces.hh>
 #include <dune/gdt/type_traits.hh>
@@ -78,6 +81,37 @@ public:
   LocalVolumeIntegralOperator(ThisType&& source) = default;
 
   using BaseType::apply2;
+
+  // copied from apply2 below
+  // TODO: fix properly (use CommonDenseMatrix instead of DynamicMatrix everywhere in dune-gdt?)
+  void apply2(const TestBaseType& test_base,
+              const AnsatzBaseType& ansatz_base,
+              XT::LA::CommonDenseMatrix<FieldType>& ret) const
+  {
+    const auto& entity = ansatz_base.entity();
+    const auto local_functions = integrand_.localFunctions(entity);
+    // create quadrature
+    const size_t integrand_order = integrand_.order(local_functions, test_base, ansatz_base) + over_integrate_;
+    const auto& quadrature = QuadratureRules<D, d>::rule(entity.type(), boost::numeric_cast<int>(integrand_order));
+    // prepare storage
+    const size_t rows = test_base.size();
+    const size_t cols = ansatz_base.size();
+    ret *= 0.0;
+    assert(ret.rows() >= rows);
+    assert(ret.cols() >= cols);
+    DynamicMatrix<FieldType> integrand_eval(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
+    // loop over all quadrature points
+    for (const auto& quadrature_point : quadrature) {
+      const auto xx = quadrature_point.position();
+      // integration factors
+      const auto integration_factor = entity.geometry().integrationElement(xx);
+      const auto quadrature_weight = quadrature_point.weight();
+      // evaluate the integrand
+      integrand_.evaluate(local_functions, test_base, ansatz_base, xx, integrand_eval);
+      // compute integral
+      ret.axpy(integration_factor * quadrature_weight, integrand_eval);
+    } // loop over all quadrature points
+  } // ... apply2(...)
 
   void
   apply2(const TestBaseType& test_base, const AnsatzBaseType& ansatz_base, DynamicMatrix<FieldType>& ret) const override
