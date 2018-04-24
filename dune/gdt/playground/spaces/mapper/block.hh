@@ -6,7 +6,7 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2014 - 2017)
-//   Rene Milk       (2014, 2016 - 2017)
+//   Rene Milk       (2014, 2016 - 2018)
 //   Tobias Leibner  (2014)
 
 #ifndef DUNE_GDT_PLAYGROUND_SPACES_MAPPER_BLOCK_HH

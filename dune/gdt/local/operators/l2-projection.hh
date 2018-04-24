@@ -7,7 +7,7 @@
 // Authors:
 //   Felix Schindler (2015 - 2017)
 //   Rene Milk       (2016 - 2018)
-//   Tobias Leibner  (2016 - 2017)
+//   Tobias Leibner  (2016 - 2018)
 
 #ifndef DUNE_GDT_LOCAL_OPERATORS_L2_PROJECTION_HH
 #define DUNE_GDT_LOCAL_OPERATORS_L2_PROJECTION_HH

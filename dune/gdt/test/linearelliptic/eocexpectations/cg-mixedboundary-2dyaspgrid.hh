@@ -6,7 +6,7 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2017)
-//   Rene Milk       (2016 - 2017)
+//   Rene Milk       (2016 - 2018)
 //   Tobias Leibner  (2016)
 
 #ifndef DUNE_GDT_TEST_LINEARELLIPTIC_EOCEXPECTATIONS_CG_MIXEDBOUNDARY_2DYASPGRID_HH

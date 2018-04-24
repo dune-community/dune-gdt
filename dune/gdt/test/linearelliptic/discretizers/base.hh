@@ -6,6 +6,7 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2015 - 2017)
+//   Rene Milk       (2018)
 
 #ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_DISCRETIZERS_BASE_HH
 #define DUNE_GDT_TESTS_LINEARELLIPTIC_DISCRETIZERS_BASE_HH

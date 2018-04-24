@@ -7,7 +7,7 @@
 // Authors:
 //   Felix Schindler (2013 - 2017)
 //   Kirsten Weber   (2013)
-//   Rene Milk       (2014, 2016)
+//   Rene Milk       (2014, 2016, 2018)
 //   Tobias Leibner  (2014)
 
 #ifndef DUNE_GDT_SPACES_BASEFUNCTIONSET_INTERFACE_HH
