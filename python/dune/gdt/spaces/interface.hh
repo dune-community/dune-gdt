@@ -430,7 +430,9 @@ class SpaceInterface
       const std::string factory_method_name = "make_" + space_name<SP>::value_wo_grid();
 
       m.def(factory_method_name.c_str(),
-            [](XT::Grid::GridProvider<G>& grid_provider, int level) { return SP::create(grid_provider, level); },
+            [](XT::Grid::GridProvider<G, XT::Grid::none_t>& grid_provider, int level) {
+              return SP::create(grid_provider, level);
+            },
             "grid_provider"_a,
             "level"_a = 0,
             py::keep_alive<0, 1>());
