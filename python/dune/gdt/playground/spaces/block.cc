@@ -6,6 +6,7 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2017)
+//   Rene Milk       (2018)
 
 #include "config.h"
 
