@@ -20,7 +20,6 @@
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/la/container/vector-interface.hh>
 
-#include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/spaces/interface.hh>
 
@@ -52,12 +51,17 @@ namespace GDT {
  * physical domain to a (possibly vector- or matrix-valued) vector space RF^{r_r \times r_rC} (modelled by RangeField,
  * range_dim and range_dim_cols).
  *
- * The functions v_h \in V_h (and w_h \in W_h), to which the operator can be applied to, are modelled by
- * ConstDiscreteFunction or DiscreteFunciton with an appropriate vector type derived from XT::LA::VectorInterface
- * modelled by SourceVector (RangeVector).
+ * The functions v_h \in V_h (and w_h \in W_h), to which the operator can be applied to, are represented by their DoF
+ * vectors (an appropriate vector type derived from XT::LA::VectorInterface modelled by SourceVector (RangeVector)),
+ * which are then interpreted as discrete functions in the respective source_space or range_space.
  *
  * The field K of the interpretation of the operator as a two-form (see for instance the default implementation of
  * apply2()) is modelled by Field.
+ *
+ * \note It would be nice to support variants of the methods below which act on ConstDiscreteFunction and
+ *       DiscreteFunction. However, this would require a means to check if the arguments spaces coincide with the spaces
+ *       of the operator (and thus an equality check on SpaceInterface), which at the end would require a means to
+ *       compare two GridView instances for equality, which is not (yet) supported by dune-grid.
  */
 template <class SourceVector,
           class SourceGridView,
@@ -122,30 +126,28 @@ public:
   {
   }
 
-  /// \name These methods should be implemented.
+  /// \name These methods should be implemented and define the functionality of the operator.
   /// \{
 
-  /**
-   * \note Should raise an operator_error if this operator is only a two-form.
-   **/
-  virtual void apply(const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& /*source*/,
-                     DiscreteFunction<RV, RGV, r_r, r_rC, RF>& /*range*/,
+  virtual void apply(const SourceVectorType& /*source*/,
+                     RangeVectorType& /*range*/,
                      const XT::Common::Parameter& /*param*/ = {}) const
   {
-    DUNE_THROW(Exceptions::operator_error,
-               "Either this two-form is not an operator or the implementor forgot to override apply!");
+    DUNE_THROW(Exceptions::operator_error, "This operator cannot be applied!");
   }
+
+  /// \}
+  /// \name These methods should be implemented and define the functionality of the operators inverse.
+  /// \{
 
   /**
    * Returns a list of string identifiers for different inversion algorithms, in decending order based on
    * what-we-think-best-ness.
-   *
-   * \note Should raise an operator_error if this operator is not invertible, as opposed to an empty list.
    */
   virtual std::vector<std::string> invert_options() const
   {
-    DUNE_THROW(Exceptions::operator_error,
-               "Either this operator is not invertible or the implementor forgot to override invert_options!");
+    DUNE_THROW(Exceptions::operator_error, "This operator is not invertible!");
+    return std::vector<std::string>();
   }
 
   /**
@@ -158,21 +160,21 @@ invert_options(some_type).get<std::string>("type") == some_type
    */
   virtual XT::Common::Configuration invert_options(const std::string& /*type*/) const
   {
-    DUNE_THROW(Exceptions::operator_error,
-               "Either this operator is not invertible or the implementor forgot to override invert_options!");
+    DUNE_THROW(Exceptions::operator_error, "This operator is not invertible!");
+    return XT::Common::Configuration();
   }
 
-  /**
-   * Should raise an operator_error if this operator is not invertible.
-   **/
-  virtual void apply_inverse(const ConstDiscreteFunction<RV, RGV, r_r, r_rC, RF>& /*range*/,
-                             DiscreteFunction<SV, SGV, s_r, s_rC, SF>& /*source*/,
+  virtual void apply_inverse(const RangeVectorType& /*range*/,
+                             SourceVectorType& /*source*/,
                              const XT::Common::Configuration& /*opts*/,
                              const XT::Common::Parameter& /*param*/ = {}) const
   {
-    DUNE_THROW(Exceptions::operator_error,
-               "Either this operator is not invertible or the implementor forgot to override apply_inverse!");
+    DUNE_THROW(Exceptions::operator_error, "This operator is not invertible!");
   }
+
+  /// \}
+  /// \name These methods should be implemented and define the functionality of the operators jacobian.
+  /// \{
 
   /**
    * Same as invert_options(), but concerning the application of the jacobian.
@@ -181,9 +183,8 @@ invert_options(some_type).get<std::string>("type") == some_type
    */
   virtual std::vector<std::string> jacobian_options() const
   {
-    DUNE_THROW(
-        Exceptions::operator_error,
-        "Either this operator does not provide a jacobian or the implementor forgot to override jacobian_options!");
+    DUNE_THROW(Exceptions::operator_error, "This operator does not provide a jacobian!");
+    return std::vector<std::string>();
   }
 
   /**
@@ -193,117 +194,114 @@ invert_options(some_type).get<std::string>("type") == some_type
    */
   virtual XT::Common::Configuration jacobian_options(const std::string& /*type*/) const
   {
-    DUNE_THROW(
-        Exceptions::operator_error,
-        "Either this operator does not provide a jacobian or the implementor forgot to override jacobian_options!");
+    DUNE_THROW(Exceptions::operator_error, "This operator does not provide a jacobian!");
+    return XT::Common::Configuration();
   }
 
-  /**
-   * Should raise an operator_error if this operator does not provide a jacobian.
-   **/
-  virtual std::shared_ptr<ThisType> jacobian(const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& /*source*/,
+  virtual std::shared_ptr<ThisType> jacobian(const SourceVectorType& /*source*/,
                                              const XT::Common::Configuration& /*opts*/,
                                              const XT::Common::Parameter& /*param*/ = {}) const
   {
-    DUNE_THROW(Exceptions::operator_error,
-               "Either this operator does not provide a jacobian or the implementor forgot to override jacobian!");
+    DUNE_THROW(Exceptions::operator_error, "This operator does not provide a jacobian!");
+    return nullptr;
   }
 
   /// \}
-  /// \name These methods are provided for convenience.
+  /// \name These apply variants are provided for convenience.
   /// \{
 
-  virtual DiscreteFunction<RV, RGV, r_r, r_rC, RF> apply(const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
-                                                         const XT::Common::Parameter& param = {}) const
+  virtual RangeVectorType apply(const SourceVectorType& source, const XT::Common::Parameter& param = {}) const
   {
-    DiscreteFunction<RV, RGV, r_r, r_rC, RF> range(this->range_space());
+    RangeVectorType range(this->range_space().mapper().size(), 0);
     this->apply(source, range, param);
     return range;
   }
 
-  virtual FieldType apply2(const ConstDiscreteFunction<RV, RGV, r_r, r_rC, RF>& range,
-                           const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
-                           const XT::Common::Parameter& param = {}) const
+  /// \}
+  /// \name These apply2 variants are provided for convenience.
+  /// \{
+
+  virtual FieldType
+  apply2(const SourceVectorType& range, const RangeVectorType& source, const XT::Common::Parameter& param = {}) const
   {
-    return range.dofs().vector().dot(this->apply(source, param).dofs().vector());
+    return range.dot(this->apply(source, param));
   }
 
-  virtual void apply_inverse(const ConstDiscreteFunction<RV, RGV, r_r, r_rC, RF>& range,
-                             DiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
+  /// \}
+  /// \name These apply_invers variants are provided for convenience.
+  /// \{
+
+  virtual void apply_inverse(const RangeVectorType& range,
+                             SourceVectorType& source,
                              const std::string& type,
                              const XT::Common::Parameter& param = {}) const
   {
     this->apply_inverse(range, source, this->invert_options(type), param);
   }
 
-  virtual void apply_inverse(const ConstDiscreteFunction<RV, RGV, r_r, r_rC, RF>& range,
-                             DiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
-                             const XT::Common::Parameter& param = {}) const
+  virtual void
+  apply_inverse(const RangeVectorType& range, SourceVectorType& source, const XT::Common::Parameter& param = {}) const
   {
     this->apply_inverse(range, source, this->invert_options().at(0), param);
   }
 
-  virtual DiscreteFunction<SV, SGV, s_r, s_rC, SF>
-  apply_inverse(const ConstDiscreteFunction<RV, RGV, r_r, r_rC, RF>& range,
-                const XT::Common::Configuration& opts,
-                const XT::Common::Parameter& param = {}) const
+  virtual SourceVectorType apply_inverse(const RangeVectorType& range,
+                                         const XT::Common::Configuration& opts,
+                                         const XT::Common::Parameter& param = {}) const
   {
-    DiscreteFunction<SV, SGV, s_r, s_rC, SF> source(this->source_space());
+    SourceVectorType source(this->source_space().mapper().size());
     this->apply_inverse(range, source, opts, param);
     return source;
   }
 
-  virtual DiscreteFunction<SV, SGV, s_r, s_rC, SF>
-  apply_inverse(const ConstDiscreteFunction<RV, RGV, r_r, r_rC, RF>& range,
-                const std::string& type,
-                const XT::Common::Parameter& param = {}) const
+  virtual SourceVectorType
+  apply_inverse(const RangeVectorType& range, const std::string& type, const XT::Common::Parameter& param = {}) const
   {
-    DiscreteFunction<SV, SGV, s_r, s_rC, SF> source(this->source_space());
+    SourceVectorType source(this->source_space().mapper().size());
     this->apply_inverse(range, source, type, param);
     return source;
   }
 
-  virtual DiscreteFunction<SV, SGV, s_r, s_rC, SF>
-  apply_inverse(const ConstDiscreteFunction<RV, RGV, r_r, r_rC, RF>& range,
-                const XT::Common::Parameter& param = {}) const
+  virtual SourceVectorType apply_inverse(const RangeVectorType& range, const XT::Common::Parameter& param = {}) const
   {
-    DiscreteFunction<SV, SGV, s_r, s_rC, SF> source(this->source_space());
+    SourceVectorType source(this->source_space().mapper().size());
     this->apply_inverse(range, source, param);
     return source;
   }
 
-  virtual std::shared_ptr<ThisType> jacobian(const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
-                                             const std::string& type,
-                                             const XT::Common::Parameter& param = {}) const
+  /// \}
+  /// \name These jacobian variants are provided for convenience.
+  /// \{
+
+  virtual std::shared_ptr<ThisType>
+  jacobian(const SourceVectorType& source, const std::string& type, const XT::Common::Parameter& param = {}) const
   {
     return this->jacobian(source, this->jacobian_options(type), param);
   }
 
-  virtual std::shared_ptr<ThisType> jacobian(const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
+  virtual std::shared_ptr<ThisType> jacobian(const SourceVectorType& source,
                                              const XT::Common::Parameter& param = {}) const
   {
     return this->jacobian(source, this->jacobian_options().at(0), param);
   }
 
-  template <class RV_,
-            class RGV_,
-            size_t r_r_,
-            size_t r_rC_,
-            class RF_,
+  /// \}
+  /// \name These induced_norm variants are provided for convenience.
+  /// \{
+
+  template <class RangeVectorType_,
             typename = /* Only enable this method, if */
             typename std::enable_if</* range is in the vector space defined by RangeSpaceType/RangeVectorType */ (
-                                        std::is_same<RV_, RV>::value&& std::is_same<RGV_, RGV>::value && (r_r_ == r_r)
-                                        && (r_rC_ == r_rC)
-                                        && std::is_same<RF_, RF>::value)
+                                        std::is_same<RangeVectorType_, RangeVectorType>::value)
                                     && /* and the vector spaces defined by SourceSpaceType/SourceVectorType and */
                                     /* RangeSpaceType/RangeVectorType coincide. */ (
                                         std::is_same<SV, RV>::value&& std::is_same<SGV, RGV>::value && (s_r == r_r)
                                         && (s_rC == r_rC)
                                         && std::is_same<SF, RF>::value)>::type>
-  FieldType induced_norm(const ConstDiscreteFunction<RV, RGV, r_r, r_rC, RF>& range,
-                         const XT::Common::Parameter& param = {}) const
+  FieldType induced_norm(const RangeVectorType_& range, const XT::Common::Parameter& param = {}) const
   {
-    return std::sqrt(this->apply2(range, range, param));
+    using std::sqrt;
+    return sqrt(this->apply2(range, range, param));
   }
 
   /// \}
