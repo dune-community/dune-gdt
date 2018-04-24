@@ -67,50 +67,46 @@ private:
       const auto method_name =
           "make_elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value() + "_matrix_operator";
 
-      m.def(
-          std::string(method_name + "_" + XT::LA::bindings::container_name<M>::value()).c_str(),
-          [](const DF& diffusion_factor,
-             const DT& diffusion_tensor,
-             const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename R::GridLayerType>>& boundary_info,
-             const R& space,
-             const size_t over_integrate) {
-            return make_elliptic_ipdg_matrix_operator<M, method>(
-                       diffusion_factor, diffusion_tensor, boundary_info, space, over_integrate)
-                .release(); //         <- b.c. EllipticIpdgMatrixOperator is not movable, returning the raw pointer lets
-          }, //                                                                     pybind11 correctly manage the memory
-          "diffusion_factor"_a,
-          "diffusion_tensor"_a,
-          "boundary_info"_a,
-          "space"_a,
-          "over_integrate"_a = 0,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>(),
-          py::keep_alive<0, 3>(),
-          py::keep_alive<0, 4>());
+      m.def(std::string(method_name + "_" + XT::LA::bindings::container_name<M>::value()).c_str(),
+            [](const DF& diffusion_factor,
+               const DT& diffusion_tensor,
+               const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename R::GridLayerType>>& boundary_info,
+               const R& space,
+               const size_t over_integrate) {
+              return new type(over_integrate, boundary_info, diffusion_factor, diffusion_tensor, space);
+            },
+            "diffusion_factor"_a,
+            "diffusion_tensor"_a,
+            "boundary_info"_a,
+            "space"_a,
+            "over_integrate"_a = 0,
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>(),
+            py::keep_alive<0, 3>(),
+            py::keep_alive<0, 4>(),
+            py::return_value_policy::take_ownership);
 
-      m.def(
-          method_name.c_str(),
-          [](const DF& diffusion_factor,
-             const DT& diffusion_tensor,
-             const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename R::GridLayerType>>& boundary_info,
-             M& matrix,
-             const R& space,
-             const size_t over_integrate) {
-            return make_elliptic_ipdg_matrix_operator<method>(
-                       diffusion_factor, diffusion_tensor, boundary_info, matrix, space, over_integrate)
-                .release(); //                                                                     <- s.a. for release()
-          },
-          "diffusion_factor"_a,
-          "diffusion_tensor"_a,
-          "boundary_info"_a,
-          "matrix"_a,
-          "space"_a,
-          "over_integrate"_a = 0,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>(),
-          py::keep_alive<0, 3>(),
-          py::keep_alive<0, 4>(),
-          py::keep_alive<0, 5>());
+      m.def(method_name.c_str(),
+            [](const DF& diffusion_factor,
+               const DT& diffusion_tensor,
+               const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename R::GridLayerType>>& boundary_info,
+               M& matrix,
+               const R& space,
+               const size_t over_integrate) {
+              return new type(over_integrate, boundary_info, diffusion_factor, diffusion_tensor, matrix, space);
+            },
+            "diffusion_factor"_a,
+            "diffusion_tensor"_a,
+            "boundary_info"_a,
+            "matrix"_a,
+            "space"_a,
+            "over_integrate"_a = 0,
+            py::keep_alive<0, 1>(),
+            py::keep_alive<0, 2>(),
+            py::keep_alive<0, 3>(),
+            py::keep_alive<0, 4>(),
+            py::keep_alive<0, 5>(),
+            py::return_value_policy::take_ownership);
     } // ... addbind_factory_methods(...)
 
   }; // struct diffusion_switch
