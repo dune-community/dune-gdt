@@ -96,7 +96,7 @@ public:
     XT::LA::CommonDenseMatrix<R> local_matrix(size, size);
     XT::LA::CommonDenseVector<R> local_vector(size);
     // assemble
-    local_l2_operator.apply2(local_basis, local_basis, local_matrix.backend());
+    local_l2_operator.apply2(local_basis, local_basis, local_matrix);
     local_l2_functional.apply(local_basis, local_vector.backend());
     // solve
     XT::LA::CommonDenseVector<R> local_solution(size);
