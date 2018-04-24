@@ -21,7 +21,6 @@
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
-#include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/assembler/two-form-assemblers.hh>
 #include <dune/gdt/local/operators/interfaces.hh>
 #include <dune/gdt/operators/interfaces.hh>
@@ -68,8 +67,8 @@ public:
   using typename BaseType::SourceSpaceType;
   using typename BaseType::RangeSpaceType;
 
-  using typename BaseType::SV;
-  using typename BaseType::RV;
+  using typename BaseType::SourceVectorType;
+  using typename BaseType::RangeVectorType;
 
   ConstMatrixBasedOperator(const SourceSpaceType& source_spc, const RangeSpaceType& range_spc, const MatrixType& mat)
     : source_space_(source_spc)
@@ -79,13 +78,11 @@ public:
   {
     DUNE_THROW_IF(matrix_.rows() != range_space_.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
-                  "matrix_.rows() = " << matrix_.rows() << "\n   "
-                                      << "range_space_.mapper().size() = "
+                  "matrix_.rows() = " << matrix_.rows() << "\n   range_space_.mapper().size() = "
                                       << range_space_.mapper().size());
     DUNE_THROW_IF(matrix_.cols() != source_space_.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
-                  "matrix_.cols() = " << matrix_.cols() << "\n   "
-                                      << "source_space_.mapper().size() = "
+                  "matrix_.cols() = " << matrix_.cols() << "\n   source_space_.mapper().size() = "
                                       << source_space_.mapper().size());
   } // ConstMatrixBasedOperator(...)
 
@@ -111,8 +108,8 @@ public:
 
   using BaseType::apply;
 
-  void apply(const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
-             DiscreteFunction<RV, RGV, r_r, r_rC, RF>& range,
+  void apply(const SourceVectorType& source,
+             RangeVectorType& range,
              const XT::Common::Parameter& /*param*/ = {}) const override
   {
     try {
@@ -140,13 +137,13 @@ public:
 
   using BaseType::apply_inverse;
 
-  void apply_inverse(const ConstDiscreteFunction<RV, RGV, r_r, r_rC, RF>& range,
-                     DiscreteFunction<SV, SGV, s_r, s_rC, SF>& source,
+  void apply_inverse(const RangeVectorType& range,
+                     SourceVectorType& source,
                      const XT::Common::Configuration& opts,
                      const XT::Common::Parameter& /*param*/ = {}) const override
   {
     try {
-      linear_solver_.apply(range.dofs().vector(), source.dofs().vector(), opts);
+      linear_solver_.apply(range, source, opts);
     } catch (const XT::LA::Exceptions::linear_solver_failed& ee) {
       DUNE_THROW(Exceptions::operator_error,
                  "when applying linear solver!\n\nThis was the original error: " << ee.what());
@@ -172,7 +169,7 @@ public:
 
   using BaseType::jacobian;
 
-  std::shared_ptr<BaseType> jacobian(const ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>& /*source*/,
+  std::shared_ptr<BaseType> jacobian(const SourceVectorType& /*source*/,
                                      const XT::Common::Configuration& opts,
                                      const XT::Common::Parameter& /*param*/ = {}) const override
   {
