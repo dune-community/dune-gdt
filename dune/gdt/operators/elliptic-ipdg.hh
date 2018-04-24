@@ -70,6 +70,10 @@ public:
   /// \sa The Ctors of EllipticLocalizableProduct.
   /// \{
 
+  virtual ~EllipticIpdgMatrixOperator()
+  {
+  }
+
   template <typename DiffusionImp,
             typename = typename std::enable_if<(std::is_same<DiffusionTensorType, void>::value)
                                                && (std::is_same<DiffusionImp, DiffusionFactorType>::value)

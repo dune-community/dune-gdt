@@ -283,6 +283,10 @@ public:
   using typename BaseAssemblerType::IntersectionType;
   static const constexpr ChoosePattern pattern_type = pt;
 
+  virtual ~MatrixOperatorBase()
+  {
+  }
+
 private:
   typedef XT::LA::Solver<MatrixType, typename SourceSpaceType::DofCommunicatorType> LinearSolverType;
 

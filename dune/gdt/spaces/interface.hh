@@ -407,6 +407,8 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     return pattern;
   } // ... compute_face_pattern(...)
 
+  virtual ~SpaceInterface() = default;
+
 private:
   template <class GV>
   class BasisVisualization : public Dune::VTKFunction<GV>
