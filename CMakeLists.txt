@@ -60,6 +60,8 @@ include(DuneXTInstallPythonPackage)
 # thereby making the compiled extensions directly usable from the venv
 dune_xt_install_python_package(PATH python)
 include_dependent_binary_python_dirs()
+dxt_add_make_dependent_bindings(dune-xt-common dune-xt-la dune-xt-grid dune-xt-functions)
+
 # do not change order here
 if(dune-pybindxi_FOUND)
   add_subdirectory(python)
