@@ -783,7 +783,7 @@ public:
                                 local_vec[ii] = div * test_vals[ii];
                             });
 
-        local_l2_operator.apply2(dg_range_basis, dg_range_basis, local_matrix.backend());
+        local_l2_operator.apply2(dg_range_basis, dg_range_basis, local_matrix);
         local_l2_functional.apply(dg_range_basis, local_vector.backend());
 
         // solve
