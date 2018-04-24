@@ -91,7 +91,7 @@ public:
   typedef XT::Grid::DD::SubdomainGrid<typename XT::Grid::extract_grid<GridLayerType>::type> DdSubdomainsGridType;
   static const constexpr Backends backend_type{Backends::gdt};
 
-  BlockSpace(const DdSubdomainsGridType& grid, const std::vector<std::shared_ptr<const LocalSpaceType>>& spaces)
+  BlockSpace(const DdSubdomainsGridType& grid, std::vector<std::shared_ptr<const LocalSpaceType>> spaces)
     : dd_grid_(grid)
     , entity_to_subdomain_map_(dd_grid_.entityToSubdomainMap())
     , global_grid_part_(new GridLayerType(dd_grid_.global_grid_view()))
