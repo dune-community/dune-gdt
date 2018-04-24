@@ -182,16 +182,15 @@ struct ResidualProduct
   {
     using namespace pybind11::literals;
 
-    try { // we might not be the first ones to add this type
-      bound_type c(m,
+    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
+      bound_type c(mod,
                    XT::Common::to_camel_case(class_name() + "_" + XT::Grid::bindings::grid_name<G>::value() + "_"
                                              + layer_suffix())
                        .c_str(),
                    "OS2015::ResidualProduct");
       c.def("apply2", [](type& self) { return self.apply2(); });
       c.def("result", [](type& self) { return self.apply2(); });
-    } catch (std::runtime_error& ee) {
-    }
+    });
 
     factory_method<>::addbind(m);
   } // ... bind(...)

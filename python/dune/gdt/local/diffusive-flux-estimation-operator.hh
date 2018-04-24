@@ -54,13 +54,11 @@ public:
     using namespace pybind11::literals;
     using XT::Common::to_string;
 
-    // bind interface, guard since we might not be the first to do so for this combination
-    try {
+    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
       const auto InterfaceName = XT::Common::to_camel_case(
           "local_volume_two_form_interface_" + XT::Grid::bindings::grid_name<G>::value() + "_to_1x1");
-      py::class_<InterfaceType>(m, InterfaceName.c_str(), "LocalVolumeTwoFormInterface");
-    } catch (std::runtime_error&) {
-    }
+      py::class_<InterfaceType>(mod, InterfaceName.c_str(), "LocalVolumeTwoFormInterface");
+    });
 
     const std::string class_name = "local_diffusive_flux_estimation_esv2007_operator";
     const auto ClassName =

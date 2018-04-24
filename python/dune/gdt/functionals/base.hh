@@ -45,11 +45,10 @@ public:
     typedef typename type::SpaceType S;
     typedef typename type::VectorType V;
 
-    try { //  we might not be the first to add this
+    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
       internal::SystemAssembler<SpaceType, typename FunctionalType::GridLayerType>::bind(
-          m, space_name, space_name, grid_layer_name);
-    } catch (const std::runtime_error&) {
-    }
+          mod, space_name, space_name, grid_layer_name);
+    });
     bound_type c(m, std::string(class_id).c_str(), std::string(class_id).c_str());
 
     c.def("vector", [](type& self) { return self.vector(); });

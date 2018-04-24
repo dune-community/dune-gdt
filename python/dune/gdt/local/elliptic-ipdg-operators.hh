@@ -151,8 +151,7 @@ public:
     using namespace pybind11::literals;
     using XT::Common::to_string;
 
-    // bind interface, guard since we might not be the first to do so for this intersection
-    try {
+    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
       const auto InterfaceName = XT::Common::to_camel_case(
           "local_coupling_two_form_interface_" + XT::Grid::bindings::grid_name<G>::value() + layer_name + "_to_"
           + to_string(size_t(S::dimRange))
@@ -166,9 +165,8 @@ public:
           + backend_name<SP::space_backend>::value()
           + "_space"
           + intersection_postfix<>::value());
-      py::class_<InterfaceType>(m, InterfaceName.c_str(), InterfaceName.c_str());
-    } catch (std::runtime_error&) {
-    }
+      py::class_<InterfaceType>(mod, InterfaceName.c_str(), InterfaceName.c_str());
+    });
 
     const auto ClassName =
         XT::Common::to_camel_case("local_elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value() + "_"
@@ -318,8 +316,7 @@ public:
     using namespace pybind11::literals;
     using XT::Common::to_string;
 
-    // bind interface, guard since we might not be the first to do so for this intersection
-    try {
+    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
       const auto InterfaceName = XT::Common::to_camel_case(
           "local_boundary_two_form_interface_" + XT::Grid::bindings::grid_name<G>::value() + layer_name + "_to_"
           + to_string(size_t(S::dimRange))
@@ -333,9 +330,8 @@ public:
           + backend_name<SP::space_backend>::value()
           + "_space"
           + intersection_postfix<>::value());
-      py::class_<InterfaceType>(m, InterfaceName.c_str(), InterfaceName.c_str());
-    } catch (std::runtime_error&) {
-    }
+      py::class_<InterfaceType>(mod, InterfaceName.c_str(), InterfaceName.c_str());
+    });
 
     const auto ClassName =
         XT::Common::to_camel_case("local_elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value() + "_"

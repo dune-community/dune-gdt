@@ -220,12 +220,7 @@ public:
                          const std::string& ansatz_space_name,
                          const std::string& grid_layer_name)
   {
-    try {
-      XT::Grid::bindings::internal::Walker<GL>::bind(m,
-                                                     XT::Grid::bindings::grid_name<G>::value() + "_" + grid_layer_name);
-    } catch (std::runtime_error&) {
-      // no problem, someone added this walker already
-    }
+    pybind11::module::import("dune.xt.grid");
 
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -236,6 +231,11 @@ public:
     if (ansatz_space_name != test_space_name)
       class_name += "_and_" + ansatz_space_name;
     class_name += "_on_" + grid_layer_name;
+
+    XT::Common::bindings::try_register(m, [&grid_layer_name](pybind11::module& mod) {
+      XT::Grid::bindings::internal::Walker<GL>::bind(mod, grid_layer_name);
+    });
+
     bound_type c(m, XT::Common::to_camel_case(class_name).c_str(), XT::Common::to_camel_case(class_name).c_str());
     // add ctor
     addbind_switch<>::ctors(c);

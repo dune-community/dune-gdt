@@ -107,10 +107,9 @@ public:
                          const std::string& ansatz_space_name,
                          const std::string& grid_layer_name)
   {
-    try { //  we might not be the first to add this
-      internal::SystemAssembler<R, GL, S>::bind(m, test_space_name, ansatz_space_name, grid_layer_name);
-    } catch (const std::runtime_error&) {
-    }
+    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
+      internal::SystemAssembler<R, GL, S>::bind(mod, test_space_name, ansatz_space_name, grid_layer_name);
+    });
 
     namespace py = pybind11;
     using namespace pybind11::literals;

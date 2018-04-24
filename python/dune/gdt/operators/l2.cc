@@ -51,10 +51,10 @@ template <class G,
           size_t source_rC = range_rC>
 void bind_l2_localizable_product(py::module& m)
 {
-  try {
-    GDT::bindings::L2LocalizableProduct<G, layer_type, layer_backend, range_r, range_rC, source_r, source_rC>::bind(m);
-  } catch (std::runtime_error&) {
-  }
+  XT::Common::bindings::try_register(m, [](pybind11::module& mod) {
+    GDT::bindings::L2LocalizableProduct<G, layer_type, layer_backend, range_r, range_rC, source_r, source_rC>::bind(
+        mod);
+  });
 }
 
 
