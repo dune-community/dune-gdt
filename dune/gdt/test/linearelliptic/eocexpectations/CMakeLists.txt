@@ -12,9 +12,7 @@
 # ~~~
 
 # expectation targets
-dune_add_library(block_swipdg_expectations
-                 SOURCES
-                 block-swipdg-esv2007-2dyaspgrid.cxx)
+dune_add_library(block_swipdg_expectations SOURCES block-swipdg-esv2007-2dyaspgrid.cxx)
 dune_add_library(cg_expectations
                  SOURCES
                  cg-ao2013-2dyaspgrid.cxx

@@ -11,7 +11,5 @@
 #          with "runtime exception" (http://www.dune-project.org/license.html)
 # ~~~
 
-set(modules 
-  DuneGdtMacros.cmake
-)
+set(modules DuneGdtMacros.cmake)
 install(FILES "${modules}" DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/cmake/modules)
