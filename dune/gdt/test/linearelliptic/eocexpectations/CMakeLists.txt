@@ -1,3 +1,4 @@
+# ~~~
 # This file is part of the dune-gdt project:
 #   https://github.com/dune-community/dune-gdt
 # Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
@@ -7,6 +8,7 @@
 # Authors:
 #   Felix Schindler (2015 - 2017)
 #   Rene Milk       (2016, 2018)
+# ~~~
 
 # expectation targets
 dune_add_library(block_swipdg_expectations

@@ -1,3 +1,4 @@
+# ~~~
 # This file is part of the dune-gdt project:
 #   https://github.com/dune-community/dune-gdt
 # Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
@@ -7,6 +8,7 @@
 # Authors:
 #   Felix Schindler (2012 - 2013)
 #   Rene Milk       (2018)
+# ~~~
 
 macro(cleanup_target_name arg)
     string(REPLACE ${PROJECT_SOURCE_DIR} "" targname ${arg})
