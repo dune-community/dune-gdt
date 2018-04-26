@@ -11,20 +11,18 @@
 # ~~~
 
 macro(cleanup_target_name arg)
-    string(REPLACE ${PROJECT_SOURCE_DIR} "" targname ${arg})
-    string(REPLACE ".cc" "" targname ${targname})
-    string(REGEX REPLACE "/" "__" targname ${targname})
-    string(REGEX REPLACE "^__" "" targname ${targname})
+  string(REPLACE ${PROJECT_SOURCE_DIR} "" targname ${arg})
+  string(REPLACE ".cc" "" targname ${targname})
+  string(REGEX REPLACE "/" "__" targname ${targname})
+  string(REGEX REPLACE "^__" "" targname ${targname})
 endmacro(cleanup_target_name)
 
-
-file( GLOB_RECURSE example_sources "${CMAKE_CURRENT_SOURCE_DIR}/*.cc" )
-foreach(source ${example_sources})
-        #do some name conversion
-        set(targname ${source})
-        cleanup_target_name(${targname})
-        add_executable(${targname} ${source})
-        list(APPEND examples_targets ${targname})
+file(GLOB_RECURSE example_sources "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
+foreach(source ${example_sources}) # do some name conversion
+  set(targname ${source})
+  cleanup_target_name(${targname})
+  add_executable(${targname} ${source})
+  list(APPEND examples_targets ${targname})
 endforeach(source ${example_sources})
 
 add_custom_target(examples)
