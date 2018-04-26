@@ -209,7 +209,7 @@ private:
       auto eigenvectors_dense = eigensolver.real_eigenvectors_as_matrix(eigensolver_options);
       eigenvectors[0] = SparseMatrixType(*eigenvectors_dense, true);
       thread_local MatrixType Qdense(0);
-      XT::LA::qr_decomposition(*eigenvectors_dense, permutations[0], Qdense);
+      //      XT::LA::qr(*eigenvectors_dense, permutations[0], Qdense);
       R[0] = CscSparseMatrixType(*eigenvectors_dense, true, size_t(0));
       Q[0] = CscSparseMatrixType(Qdense, true, size_t(0));
     } // ... get_eigenvectors(...)
@@ -453,7 +453,7 @@ private:
         auto eigenvectors_dense = eigensolver.real_eigenvectors_as_matrix(eigensolver_options);
         eigenvectors[ii] = SparseMatrixType(*eigenvectors_dense, true);
         thread_local MatrixType Qdense(0);
-        XT::LA::qr_decomposition(*eigenvectors_dense, permutations[ii], Qdense);
+        //        XT::LA::qr_decomposition(*eigenvectors_dense, permutations[ii], Qdense);
         R[ii] = CscSparseMatrixType(*eigenvectors_dense, true, size_t(0));
         Q[ii] = CscSparseMatrixType(Qdense, true, size_t(0));
       } // ii

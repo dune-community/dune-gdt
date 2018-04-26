@@ -25,7 +25,7 @@
 
 #include <dune/xt/la/algorithms.hh>
 #include <dune/xt/la/container/common.hh>
-#include <dune/xt/la/container/unit_matrices.hh>
+#include <dune/xt/la/container/eye-matrix.hh>
 
 #include <dune/gdt/local/fluxes/interfaces.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/hatfunctions.hh>
@@ -35,7 +35,8 @@ namespace GDT {
 
 
 template <class MatrixType, size_t size>
-static const std::unique_ptr<const MatrixType> unit_matrix = XT::LA::UnitMatrix<MatrixType>::get(size, 0);
+static const std::unique_ptr<const MatrixType>
+    unit_matrix = std::make_unique<MatrixType>(XT::LA::eye_matrix<MatrixType>(size, size));
 
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * for the notation see
@@ -480,7 +481,7 @@ public:
       static thread_local MatrixType L(dimRange, dimRange, size_t(0));
       if (!reuse_L) {
         // calculate B = LL^T
-        bool chol_flag = XT::LA::cholesky_L(B, L);
+        bool chol_flag = false; // XT::LA::cholesky(B, L);
         if (!chol_flag)
           DUNE_THROW(Dune::MathError, "B has to be symmetric positive definite!");
       }
@@ -559,7 +560,7 @@ public:
       thread_local MatrixType L(dimRange, dimRange, size_t(0));
 
       calculate_hessian(beta_in, P_k, *H);
-      chol_flag = XT::LA::cholesky_L(*H, L);
+      //      chol_flag = XT::LA::cholesky_L(*H, L);
       if (chol_flag == false)
         return;
       static thread_local VectorType Linv_P(dimRange, size_t(0));
