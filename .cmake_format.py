@@ -1,0 +1,1 @@
+.vcsetup/.cmake_format.py
