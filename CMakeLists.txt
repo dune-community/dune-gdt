@@ -1,3 +1,4 @@
+# ~~~
 # This file is part of the dune-gdt project:
 #   https://github.com/dune-community/dune-gdt
 # Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
@@ -9,6 +10,7 @@
 #   Rene Milk       (2014, 2016 - 2018)
 #   Sven Kaulmann   (2013)
 #   Tobias Leibner  (2016)
+# ~~~
 
 # set up project
 project("dune-gdt" CXX)
