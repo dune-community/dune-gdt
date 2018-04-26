@@ -52,12 +52,6 @@ class RestrictedSpaceTraits
     static const XT::Grid::Backends value = XT::Grid::Backends::view;
   };
 
-  template <class G>
-  struct layer_backend_helper<G, false, true>
-  {
-    static const XT::Grid::Backends value = XT::Grid::Backends::part;
-  };
-
 public:
   typedef RestrictedSpace<UnrestrictedSpace, RestrictionGridLayer> derived_type;
   static const int polOrder = UnrestrictedSpace::polOrder;

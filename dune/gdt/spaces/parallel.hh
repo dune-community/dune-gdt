@@ -22,7 +22,6 @@
 #include <dune/xt/common/parallel/helper.hh>
 //#include <dune/xt/grid/layers.hh>
 
-#include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/parallel_helper.hh>
 
 namespace Dune {

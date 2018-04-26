@@ -19,7 +19,6 @@
 #include <dune/xt/la/container/vector-interface.hh>
 #include <dune/xt/la/container/istl.hh>
 
-#include <dune/gdt/spaces/interface.hh>
 #include <dune/gdt/spaces/datahandles.hh>
 #include <dune/istl/owneroverlapcopy.hh>
 #include <dune/xt/la/container/common.hh>

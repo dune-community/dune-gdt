@@ -1,3 +1,4 @@
+# ~~~
 # This file is part of the dune-gdt project:
 #   https://github.com/dune-community/dune-gdt
 # Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
@@ -9,28 +10,24 @@
 #   Rene Milk       (2014, 2016 - 2018)
 #   Sven Kaulmann   (2013)
 #   Tobias Leibner  (2016)
+# ~~~
 
 # set up project
 project("dune-gdt" CXX)
 
 cmake_minimum_required(VERSION 3.1)
 
-if(NOT (dune-common_DIR OR dune-common_ROOT OR
-      "${CMAKE_PREFIX_PATH}" MATCHES ".*dune-common.*"))
-    string(REPLACE  ${CMAKE_PROJECT_NAME} dune-common dune-common_DIR
-      ${PROJECT_BINARY_DIR})
+if(NOT (dune-common_DIR OR dune-common_ROOT OR "${CMAKE_PREFIX_PATH}" MATCHES ".*dune-common.*"))
+  string(REPLACE ${CMAKE_PROJECT_NAME} dune-common dune-common_DIR ${PROJECT_BINARY_DIR})
 endif()
 
 # dune-common
 find_package(dune-common REQUIRED)
-list(APPEND CMAKE_MODULE_PATH
-     "${PROJECT_SOURCE_DIR}/cmake/modules"
-     "${dune-common_MODULE_PATH}")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules" "${dune-common_MODULE_PATH}")
 include(DuneMacros)
 
 find_package(dune-xt-common REQUIRED)
-list(APPEND CMAKE_MODULE_PATH
-     "${dune-xt-common_MODULE_PATH}")
+list(APPEND CMAKE_MODULE_PATH "${dune-xt-common_MODULE_PATH}")
 include(DuneUtils)
 
 # start a dune project with information from dune.module
@@ -39,16 +36,15 @@ dune_enable_all_packages(INCLUDE_DIRS ${dune-gdt_SOURCE_DIR}/dune)
 
 add_header_listing()
 make_dependent_modules_sys_included()
-if (EIGEN3_FOUND)
+if(EIGEN3_FOUND)
   add_definitions("-isystem ${EIGEN3_INCLUDE_DIR}")
-endif (EIGEN3_FOUND)
+endif(EIGEN3_FOUND)
 
 # search for spe10 data files
 find_file(SPE10MODEL1DATA
           NAMES perm_case1.dat
           PATHS "${dune-gdt_SOURCE_DIR}/../local/src/spe10/model1"
-          DOC "Location of perm_case1.dat"
-          NO_DEFAULT_PATH)
+          DOC "Location of perm_case1.dat" NO_DEFAULT_PATH)
 
 add_subdirectory(doc)
 add_subdirectory(dune)
@@ -56,8 +52,8 @@ add_subdirectory(cmake/modules)
 add_subdirectory(examples EXCLUDE_FROM_ALL)
 
 include(DuneXTInstallPythonPackage)
-# this symlinks all files in python/ to the binary dir and install into the virtualenv from there
-# thereby making the compiled extensions directly usable from the venv
+# this symlinks all files in python/ to the binary dir and install into the virtualenv from there thereby making the
+# compiled extensions directly usable from the venv
 dune_xt_install_python_package(PATH python)
 include_dependent_binary_python_dirs()
 # do not change order here

@@ -237,7 +237,7 @@ private:
       eigenvectors = *eigenvectors_dense;
       // calculate QR decomposition with column pivoting A = QRP^T
       FieldVector<size_t, dimRange> permutations;
-      XT::LA::qr_decomposition(*eigenvectors_dense, permutations, *Qdense);
+      //      XT::LA::qr_decomposition(*eigenvectors_dense, permutations, *Qdense);
       FieldVector<size_t, dimRange> inverse_permutations;
       for (size_t ii = 0; ii < dimRange; ++ii)
         inverse_permutations[permutations[ii]] = ii;
