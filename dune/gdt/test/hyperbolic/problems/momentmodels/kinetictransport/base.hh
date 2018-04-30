@@ -181,7 +181,6 @@ public:
       for (size_t jj = 0; jj < A[0].cols(); ++jj)
         nnz += A[0][ii][jj] > 1e-18 / A[0].cols();
     double density = nnz / (A[0].rows() * A[0].cols());
-    std::cout << "density = " << XT::Common::to_string(density, 15) << std::endl;
     return new ActualFluxType(A, typename ActualFluxType::RangeType(0));
   }
 
@@ -202,10 +201,8 @@ public:
     for (size_t ii = 0; ii < num_regions; ++ii)
       sigma_t[ii] += sigma_s[ii];
     const RangeType basis_integrated = basis_functions_.integrated();
-    std::cout << "basis_integrated = " << XT::Common::to_string(basis_integrated, 15) << std::endl;
     // calculate c = M^{-T} <b>
     const auto M_T = basis_functions_.mass_matrix(); // mass matrix is symmetric
-    std::cout << "mass matrix = " << XT::Common::to_string(M_T, 15) << std::endl;
     RangeType c(0.);
     M_T.solve(c, basis_integrated);
     MatrixType I(dimRange, dimRange, 0.);
@@ -226,7 +223,6 @@ public:
       A -= I_scaled;
       RangeType b = basis_integrated;
       b *= Q[ii];
-      std::cout << "rhs = " << XT::Common::to_string(A, 15) << std::endl;
       affine_functions.emplace_back(A, b, true, "rhs");
     } // ii
     return new ActualRhsType(lower_left, upper_right, num_segments_, affine_functions);

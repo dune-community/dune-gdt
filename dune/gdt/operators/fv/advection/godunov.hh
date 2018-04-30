@@ -53,6 +53,11 @@ class AdvectionGodunovOperator : public Dune::GDT::OperatorInterface<Traits>, pu
 public:
   using typename BaseType::AnalyticalFluxType;
   using typename BaseType::BoundaryValueType;
+  static const size_t dimDomain = BaseType::dimDomain;
+  static const size_t dimRange = BaseType::dimRange;
+  using MatrixType = FieldMatrix<typename AnalyticalFluxType::DomainFieldType, dimRange, dimRange>;
+  using VectorType = std::vector<typename AnalyticalFluxType::RangeFieldType>;
+  using JacobianWrapperType = internal::GodunovJacobianWrapper<MatrixType, VectorType, dimRange, dimDomain>;
 
   AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux, const BoundaryValueType& boundary_values)
     : BaseType(analytical_flux, boundary_values)
@@ -62,8 +67,11 @@ public:
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
   {
-    BaseType::apply(source, range, param);
+    BaseType::apply(source, range, param, jacobian_wrapper_);
   }
+
+private:
+  mutable XT::Common::PerThreadValue<JacobianWrapperType> jacobian_wrapper_;
 }; // class AdvectionGodunovOperator
 
 

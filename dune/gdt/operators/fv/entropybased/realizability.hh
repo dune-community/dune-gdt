@@ -52,12 +52,12 @@ public:
   using ReconstructedFunctionType =
       ReconstructedLocalizableFunction<GridLayerType, DomainFieldType, dimDomain, RangeFieldType, dimRange>;
 
-  explicit LocalRealizabilityLimiterBase(const DiscreteFunctionType& source,
-                                         ReconstructedFunctionType& reconstructed_function,
-                                         const BasisfunctionType& basis_functions,
-                                         const QuadratureType& quadrature,
-                                         const RangeFieldType epsilon,
-                                         const std::vector<RangeType>& basis_values)
+  LocalRealizabilityLimiterBase(const DiscreteFunctionType& source,
+                                ReconstructedFunctionType& reconstructed_function,
+                                const BasisfunctionType& basis_functions,
+                                const QuadratureType& quadrature,
+                                const RangeFieldType epsilon,
+                                const std::vector<RangeType>& basis_values)
     : source_(source)
     , reconstructed_function_(reconstructed_function)
     , basis_functions_(basis_functions)
@@ -83,13 +83,10 @@ class NonLimitingLocalRealizabilityLimiter : public LocalRealizabilityLimiterBas
 
 public:
   using typename BaseType::EntityType;
-  using typename BaseType::QuadratureType;
-  using typename BaseType::RangeFieldType;
 
-  explicit NonLimitingLocalRealizabilityLimiter(const BasisfunctionImp& basis_functions,
-                                                const QuadratureType& quadrature,
-                                                RangeFieldType epsilon)
-    : BaseType(basis_functions, quadrature, epsilon)
+  template <class... Args>
+  NonLimitingLocalRealizabilityLimiter(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
   {
   }
 
@@ -114,11 +111,9 @@ public:
   static const size_t dimDomain = BaseType::dimDomain;
   static const size_t dimRange = BaseType::dimRange;
 
-  // cell averages includes left and right boundary values as the two last indices in each dimension
-  explicit RelativePositivityLocalRealizabilityLimiter(const BasisfunctionImp& basis_functions,
-                                                       const QuadratureType& quadrature,
-                                                       RangeFieldType epsilon)
-    : BaseType(basis_functions, quadrature, epsilon)
+  template <class... Args>
+  RelativePositivityLocalRealizabilityLimiter(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
   {
   }
 
@@ -182,11 +177,9 @@ public:
   static const size_t dimDomain = BaseType::dimDomain;
   static const size_t dimRange = BaseType::dimRange;
 
-  // cell averages includes left and right boundary values as the two last indices in each dimension
-  explicit PositivityLocalRealizabilityLimiter(const BasisfunctionImp& basis_functions,
-                                               const QuadratureType& quadrature,
-                                               RangeFieldType epsilon)
-    : BaseType(basis_functions, quadrature, epsilon)
+  template <class... Args>
+  PositivityLocalRealizabilityLimiter(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
   {
   }
 
@@ -248,12 +241,12 @@ public:
   static const size_t dimDomain = BaseType::dimDomain;
   static const size_t dimRange = BaseType::dimRange;
 
-  explicit DgLocalRealizabilityLimiter(const DiscreteFunctionType& source,
-                                       ReconstructedFunctionType& reconstructed_function,
-                                       const BasisfunctionType& basis_functions,
-                                       const QuadratureType& quadrature,
-                                       const RangeFieldType epsilon,
-                                       const std::vector<RangeType>& basis_values)
+  DgLocalRealizabilityLimiter(const DiscreteFunctionType& source,
+                              ReconstructedFunctionType& reconstructed_function,
+                              const BasisfunctionType& basis_functions,
+                              const QuadratureType& quadrature,
+                              const RangeFieldType epsilon,
+                              const std::vector<RangeType>& basis_values)
     : BaseType(source, reconstructed_function, basis_functions, quadrature, epsilon, basis_values)
     , triangulation_(basis_functions.triangulation())
   {
@@ -330,15 +323,19 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::QuadratureType;
+  using typename BaseType::ReconstructedFunctionType;
+  using typename BaseType::BasisfunctionType;
   static const size_t dimDomain = BaseType::dimDomain;
   static const size_t dimRange = BaseType::dimRange;
   typedef typename std::vector<std::pair<RangeType, RangeFieldType>> PlaneCoefficientsType;
 
-  // cell averages includes left and right boundary values as the two last indices in each dimension
-  explicit ConvexHullLocalRealizabilityLimiter(const BasisfunctionImp& basis_functions,
-                                               const QuadratureType& quadrature,
-                                               RangeFieldType epsilon)
-    : BaseType(basis_functions, quadrature, epsilon)
+  ConvexHullLocalRealizabilityLimiter(const DiscreteFunctionImp& source,
+                                      ReconstructedFunctionType& reconstructed_function,
+                                      const BasisfunctionType& basis_functions,
+                                      const QuadratureType& quadrature,
+                                      const RangeFieldType epsilon,
+                                      const std::vector<RangeType>& basis_values)
+    : BaseType(source, reconstructed_function, basis_functions, quadrature, epsilon, basis_values)
   {
     if (is_instantiated_)
       DUNE_THROW(InvalidStateException,
@@ -456,6 +453,8 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::QuadratureType;
+  using typename BaseType::ReconstructedFunctionType;
+  using typename BaseType::BasisfunctionType;
   static const size_t dimDomain = BaseType::dimDomain;
   static const size_t dimRange = BaseType::dimRange;
   static const size_t block_size = (dimDomain == 1) ? 2 : 4;
@@ -464,10 +463,14 @@ public:
   typedef typename std::vector<std::pair<BlockRangeType, RangeFieldType>> BlockPlaneCoefficientsType;
   typedef FieldVector<BlockPlaneCoefficientsType, num_blocks> PlaneCoefficientsType;
 
-  explicit DgConvexHullLocalRealizabilityLimiter(const BasisfunctionImp& basis_functions,
-                                                 const QuadratureType& quadrature,
-                                                 RangeFieldType epsilon)
-    : BaseType(basis_functions, quadrature, epsilon)
+public:
+  DgConvexHullLocalRealizabilityLimiter(const DiscreteFunctionImp& source,
+                                        ReconstructedFunctionType& reconstructed_function,
+                                        const BasisfunctionType& basis_functions,
+                                        const QuadratureType& quadrature,
+                                        const RangeFieldType epsilon,
+                                        const std::vector<RangeType>& basis_values)
+    : BaseType(source, reconstructed_function, basis_functions, quadrature, epsilon, basis_values)
   {
     if (is_instantiated_)
       DUNE_THROW(InvalidStateException,
@@ -479,7 +482,6 @@ public:
       calculate_plane_coefficients();
   }
 
-public:
   ~DgConvexHullLocalRealizabilityLimiter()
   {
     is_instantiated_ = false;
@@ -630,12 +632,12 @@ public:
   static const size_t dimDomain = BaseType::dimDomain;
   static const size_t dimRange = BaseType::dimRange;
 
-  explicit LPLocalRealizabilityLimiter(const BasisfunctionImp& basis_functions,
-                                       const QuadratureType& quadrature,
-                                       RangeFieldType epsilon)
-    : BaseType(basis_functions, quadrature, epsilon)
+  template <class... Args>
+  LPLocalRealizabilityLimiter(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
   {
   }
+
 
   void apply_local(const EntityType& entity)
   {

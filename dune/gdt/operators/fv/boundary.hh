@@ -64,6 +64,8 @@ public:
   using DomainType = typename LocalBoundaryValueInterfaceType::DomainType;
   using EntityType = typename GridLayerType::template Codim<0>::Entity;
   using RangeFieldType = typename LocalBoundaryValueInterfaceType::RangeFieldType;
+  static const size_t dimDomain = GridLayerType::dimension;
+  static const size_t dimRange = RangeType::dimension;
 
   LocalizableBoundaryValueInterface(const BoundaryInfoType& boundary_info)
     : boundary_info_(boundary_info)

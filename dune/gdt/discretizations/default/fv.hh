@@ -95,6 +95,7 @@ template <class TestCaseImp,
                                                                            slope_limiter>>
 class HyperbolicFvDefaultDiscretization : public FvDiscretizationInterface<Traits>
 {
+  static_assert(reconstruction_order <= 1, "Not yet implemented for higher reconstruction orders!");
   typedef FvDiscretizationInterface<Traits> BaseType;
   typedef HyperbolicFvDefaultDiscretization ThisType;
 
@@ -129,6 +130,11 @@ private:
   typedef typename AdvectionOperatorCreatorType::type AdvectionOperatorType;
   typedef typename AdvectionOperatorType::NumericalCouplingFluxType NumericalCouplingFluxType;
   typedef typename AdvectionOperatorType::NumericalBoundaryFluxType NumericalBoundaryFluxType;
+  using ReconstructionOperatorType = LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType>;
+  using AdvectionWithReconstructionOperatorType =
+      AdvectionWithReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
+  using FvOperatorType =
+      std::conditional_t<reconstruction_order == 0, AdvectionOperatorType, AdvectionWithReconstructionOperatorType>;
 
   typedef typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, time_stepper_method>::TimeStepperType
       OperatorTimeStepperType;
@@ -193,20 +199,26 @@ public:
 
       // create operators
       const ConstantFunctionType dx_function(dx);
-      std::unique_ptr<AdvectionOperatorType> advection_operator =
+      std::unique_ptr<AdvectionOperatorType> advection_op =
           AdvectionOperatorCreatorType::create(analytical_flux, boundary_values, dx_function);
 
-      RhsOperatorType rhs_operator(rhs);
+      ReconstructionOperatorType reconstruction_op(analytical_flux, boundary_values);
+
+      AdvectionWithReconstructionOperatorType advection_with_reconstruction_op(*advection_op, reconstruction_op);
+
+      const auto& fv_op = choose_fv_operator(*advection_op, advection_with_reconstruction_op);
+
+      RhsOperatorType rhs_op(rhs);
 
       // create timestepper
-      OperatorTimeStepperType timestepper_op(*advection_operator, u, -1.0);
+      OperatorTimeStepperType timestepper_op(fv_op, u, -1.0);
 
       // do the time steps
       const size_t num_save_steps = 100;
       solution.clear();
       if (problem.has_non_zero_rhs()) {
         // use fractional step method
-        RhsOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
+        RhsOperatorTimeStepperType timestepper_rhs(rhs_op, u);
         TimeStepperType timestepper(timestepper_op, timestepper_rhs);
         timestepper.solve(t_end, dt, num_save_steps, solution);
       } else {
@@ -228,6 +240,22 @@ public:
   }
 
 private:
+  template <size_t order = reconstruction_order>
+  static std::enable_if_t<order == 1, const FvOperatorType&>
+  choose_fv_operator(const AdvectionOperatorType& /*advection_op*/,
+                     const AdvectionWithReconstructionOperatorType& advection_with_reconstruction_op)
+  {
+    return advection_with_reconstruction_op;
+  }
+
+  template <size_t order = reconstruction_order>
+  static std::enable_if_t<order == 0, const FvOperatorType&>
+  choose_fv_operator(const AdvectionOperatorType& advection_op,
+                     const AdvectionWithReconstructionOperatorType& /*advection_with_reconstruction_op*/)
+  {
+    return advection_op;
+  }
+
   const TestCaseType& test_case_;
   const std::shared_ptr<const SpaceType> fv_space_;
 }; // class HyperbolicFvDefaultDiscretization
