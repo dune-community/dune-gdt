@@ -56,8 +56,8 @@ public:
   static const size_t dimDomain = BaseType::dimDomain;
   static const size_t dimRange = BaseType::dimRange;
   using MatrixType = FieldMatrix<typename AnalyticalFluxType::DomainFieldType, dimRange, dimRange>;
-  using VectorType = std::vector<typename AnalyticalFluxType::RangeFieldType>;
-  using JacobianWrapperType = internal::GodunovJacobianWrapper<MatrixType, VectorType, dimRange, dimDomain>;
+  using VectorType = FieldVector<typename AnalyticalFluxType::RangeFieldType, dimRange>;
+  using JacobianWrapperType = internal::GodunovJacobianWrapper<AnalyticalFluxType, MatrixType, VectorType>;
 
   AdvectionGodunovOperator(const AnalyticalFluxType& analytical_flux, const BoundaryValueType& boundary_values)
     : BaseType(analytical_flux, boundary_values)

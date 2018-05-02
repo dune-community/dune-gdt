@@ -136,7 +136,7 @@ private:
   using FvOperatorType =
       std::conditional_t<reconstruction_order == 0, AdvectionOperatorType, AdvectionWithReconstructionOperatorType>;
 
-  typedef typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, time_stepper_method>::TimeStepperType
+  typedef typename TimeStepperFactory<FvOperatorType, DiscreteFunctionType, time_stepper_method>::TimeStepperType
       OperatorTimeStepperType;
   typedef typename TimeStepperFactory<RhsOperatorType, DiscreteFunctionType, rhs_time_stepper_method>::TimeStepperType
       RhsOperatorTimeStepperType;

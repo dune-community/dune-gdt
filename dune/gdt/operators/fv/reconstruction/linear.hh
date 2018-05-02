@@ -34,96 +34,93 @@ namespace Dune {
 namespace GDT {
 namespace internal {
 
-
-template <class MatrixType, class VectorType, size_t dimRange, size_t num_jacobians>
-class JacobianWrapper
+template <class AnalyticalFluxType, class MatrixImp, class VectorImp>
+class JacobianWrapperBase
 {
-protected:
-  using M = XT::Common::MatrixAbstraction<MatrixType>;
-  using V = XT::Common::VectorAbstraction<VectorType>;
-  using EigenSolverType = typename XT::LA::EigenSolver<MatrixType>;
-  using EigenSolverOptionsType = typename XT::LA::EigenSolverOptions<MatrixType>;
-  using MatrixInverterOptionsType = typename XT::LA::MatrixInverterOptions<MatrixType>;
-
 public:
-  using JacobianType = typename XT::Common::FieldVector<MatrixType, num_jacobians>;
+  using MatrixType = MatrixImp;
+  using VectorType = VectorImp;
+  static constexpr size_t dimDomain = AnalyticalFluxType::dimDomain;
+  static constexpr size_t dimRange = AnalyticalFluxType::dimRange;
+  using DomainType = typename AnalyticalFluxType::DomainType;
+  using RangeFieldType = typename AnalyticalFluxType::RangeFieldType;
+  using EntityType = typename AnalyticalFluxType::EntityType;
+  using JacobianType = FieldVector<MatrixType, dimDomain>;
+  using StateRangeType = typename AnalyticalFluxType::StateRangeType;
 
-  JacobianWrapper()
-    : eigenvectors_(M::create(dimRange, dimRange))
-    , eigenvalues_(V::create(dimRange))
-    , QR_(M::create(dimRange, dimRange))
-    , tau_(V::create(dimRange))
-    , jacobian_(std::make_unique<JacobianType>(eigenvectors_))
-    , computed_(false)
+  JacobianWrapperBase()
+    : computed_(false)
   {
   }
 
-  void compute(const size_t dd)
+  virtual ~JacobianWrapperBase()
   {
-    static auto eigensolver_options = create_eigensolver_options();
-    const auto eigensolver = EigenSolverType((*jacobian_)[dd], eigensolver_options);
-    eigenvectors_[dd] = eigensolver.real_eigenvectors();
-    eigenvalues_[dd] = eigensolver.real_eigenvalues();
-    QR_[dd] = eigenvectors_[dd];
-    XT::LA::qr(QR_[dd], tau_[dd], permutations_[dd]);
-    computed_[dd] = true;
   }
 
-  void compute()
+  virtual void get_jacobian(const size_t dd,
+                            const EntityType& entity,
+                            const AnalyticalFluxType& analytical_flux,
+                            const DomainType& x_in_inside_coords,
+                            const StateRangeType& u,
+                            const XT::Common::Parameter& param) = 0;
+
+  virtual void get_jacobian(const EntityType& entity,
+                            const AnalyticalFluxType& analytical_flux,
+                            const DomainType& x_in_inside_coords,
+                            const StateRangeType& u,
+                            const XT::Common::Parameter& param) = 0;
+
+  virtual void compute(const size_t dd) = 0;
+
+  virtual void compute()
   {
-    for (size_t dd = 0; dd < num_jacobians; ++dd)
+    for (size_t dd = 0; dd < dimDomain; ++dd)
       compute(dd);
   }
 
-  bool computed(const size_t dd) const
+  virtual bool computed(const size_t dd) const
   {
     return computed_[dd];
   }
 
-  bool computed() const
+  virtual bool computed() const
   {
-    for (size_t dd = 0; dd < num_jacobians; ++dd)
+    for (size_t dd = 0; dd < dimDomain; ++dd)
       if (!computed(dd))
         return false;
     return true;
   }
 
-  std::unique_ptr<JacobianType>& jacobian()
+  virtual std::unique_ptr<JacobianType>& jacobian()
   {
     return jacobian_;
   }
 
-  const std::unique_ptr<JacobianType>& jacobian() const
+  virtual const std::unique_ptr<JacobianType>& jacobian() const
   {
     return jacobian_;
   }
 
-  MatrixType& jacobian(const size_t dd)
+  virtual MatrixType& jacobian(const size_t dd)
   {
     return (*jacobian_)[dd];
   }
 
-  const MatrixType& jacobian(const size_t dd) const
+  virtual const MatrixType& jacobian(const size_t dd) const
   {
     return (*jacobian_)[dd];
   }
 
-  template <class VecType>
-  void apply_eigenvectors(const size_t dd, const VecType& x, VecType& ret) const
-  {
-    eigenvectors_[dd].mv(x, ret);
-  }
+  virtual void apply_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const = 0;
 
-  template <class VecType>
-  void apply_inverse_eigenvectors(const size_t dd, const VecType& x, VecType& ret) const
-  {
-    VecType work = XT::Common::VectorAbstraction<VecType>::create(dimRange);
-    XT::LA::solve_qr_factorized(QR_[dd], tau_[dd], permutations_[dd], ret, x, &work);
-  }
+  virtual void apply_inverse_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const = 0;
 
 protected:
-  static XT::Common::Configuration create_eigensolver_options()
+  template <class MatImp>
+  static XT::Common::Configuration create_eigensolver_opts()
   {
+    using EigenSolverOptionsType = typename XT::LA::EigenSolverOptions<MatImp>;
+    using MatrixInverterOptionsType = typename XT::LA::MatrixInverterOptions<MatImp>;
     XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options(EigenSolverOptionsType::types()[0]);
     //    XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options("shifted_qr");
     eigensolver_options["assert_eigendecomposition"] = "1e-6";
@@ -139,16 +136,216 @@ protected:
     matrix_inverter_options["post_check_is_right_inverse"] = "1e-6";
     eigensolver_options.add(matrix_inverter_options, "matrix-inverter");
     return eigensolver_options;
-  } // ... create_eigensolver_options()
+  } // ... create_eigensolver_opts()
 
-  FieldVector<MatrixType, num_jacobians> eigenvectors_;
-  FieldVector<VectorType, num_jacobians> eigenvalues_;
-  FieldVector<MatrixType, num_jacobians> QR_;
-  FieldVector<VectorType, num_jacobians> tau_;
-  FieldVector<FieldVector<int, dimRange>, num_jacobians> permutations_;
   std::unique_ptr<JacobianType> jacobian_;
-  FieldVector<bool, num_jacobians> computed_;
-};
+  FieldVector<bool, dimDomain> computed_;
+}; // class JacobianWrapperBase<...>
+
+
+template <class AnalyticalFluxType,
+          class MatrixType = FieldMatrix<typename AnalyticalFluxType::RangeFieldType,
+                                         AnalyticalFluxType::dimRange,
+                                         AnalyticalFluxType::dimRange>,
+          class VectorType = FieldVector<typename AnalyticalFluxType::RangeFieldType, AnalyticalFluxType::dimRange>>
+class JacobianWrapper : public JacobianWrapperBase<AnalyticalFluxType, MatrixType, VectorType>
+{
+  using BaseType = JacobianWrapperBase<AnalyticalFluxType, MatrixType, VectorType>;
+
+protected:
+  using V = XT::Common::VectorAbstraction<VectorType>;
+  using EigenSolverType = typename XT::LA::EigenSolver<MatrixType>;
+  using typename BaseType::RangeFieldType;
+
+public:
+  static constexpr size_t dimDomain = AnalyticalFluxType::dimDomain;
+  static constexpr size_t dimRange = AnalyticalFluxType::dimRange;
+  using typename BaseType::JacobianType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainType;
+  using typename BaseType::StateRangeType;
+
+  using BaseType::jacobian;
+
+  JacobianWrapper()
+    : tau_(V::create(dimRange))
+  {
+    jacobian() = std::make_unique<JacobianType>(eigenvectors_);
+  }
+
+  virtual void get_jacobian(const size_t dd,
+                            const EntityType& entity,
+                            const AnalyticalFluxType& analytical_flux,
+                            const DomainType& x_in_inside_coords,
+                            const StateRangeType& u,
+                            const XT::Common::Parameter& param) override
+  {
+    analytical_flux.local_function(entity)->partial_u_col(dd, x_in_inside_coords, u, jacobian(dd), param);
+  }
+
+  virtual void get_jacobian(const EntityType& entity,
+                            const AnalyticalFluxType& analytical_flux,
+                            const DomainType& x_in_inside_coords,
+                            const StateRangeType& u,
+                            const XT::Common::Parameter& param) override
+  {
+    analytical_flux.local_function(entity)->partial_u(x_in_inside_coords, u, *jacobian(), param);
+  }
+
+  using BaseType::compute;
+
+  virtual void compute(const size_t dd) override
+  {
+    static auto eigensolver_options = BaseType::template create_eigensolver_opts<MatrixType>();
+    const auto eigensolver = EigenSolverType(jacobian(dd), &eigensolver_options);
+    eigenvectors_[dd] = eigensolver.real_eigenvectors();
+    eigenvalues_[dd] = eigensolver.real_eigenvalues();
+    QR_[dd] = eigenvectors_[dd];
+    XT::LA::qr(QR_[dd], tau_[dd], permutations_[dd]);
+    computed_[dd] = true;
+  }
+
+  virtual void apply_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const override
+  {
+    eigenvectors_[dd].mv(x, ret);
+  }
+
+  virtual void apply_inverse_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const override
+  {
+    VectorType work = V::create(dimRange);
+    XT::LA::solve_qr_factorized(QR_[dd], tau_[dd], permutations_[dd], ret, x, &work);
+  }
+
+protected:
+  using BaseType::computed_;
+  JacobianType eigenvectors_;
+  FieldVector<std::vector<RangeFieldType>, dimDomain> eigenvalues_;
+  JacobianType QR_;
+  FieldVector<VectorType, dimDomain> tau_;
+  FieldVector<FieldVector<int, dimRange>, dimDomain> permutations_;
+}; // class JacobianWrapper<...>
+
+
+template <class AnalyticalFluxType, size_t block_size = (AnalyticalFluxType::dimDomain == 1) ? 2 : 4>
+class BlockedJacobianWrapper
+    : public JacobianWrapperBase<AnalyticalFluxType,
+                                 FieldVector<FieldMatrix<typename AnalyticalFluxType::RangeFieldType,
+                                                         block_size,
+                                                         block_size>,
+                                             AnalyticalFluxType::dimRange / block_size>,
+                                 typename AnalyticalFluxType::StateRangeType>
+{
+  using BaseType =
+      JacobianWrapperBase<AnalyticalFluxType,
+                          FieldVector<FieldMatrix<typename AnalyticalFluxType::RangeFieldType, block_size, block_size>,
+                                      AnalyticalFluxType::dimRange / block_size>,
+                          typename AnalyticalFluxType::StateRangeType>;
+
+public:
+  using typename BaseType::RangeFieldType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  static constexpr size_t num_blocks = dimRange / block_size;
+  static_assert(dimRange % block_size == 0, "dimRange has to be a multiple of block_size");
+  using LocalRangeType = FieldVector<RangeFieldType, block_size>;
+  using LocalMatrixType = FieldMatrix<RangeFieldType, block_size, block_size>;
+  using MatrixType = FieldVector<LocalMatrixType, num_blocks>;
+  using EigenSolverType = typename XT::LA::EigenSolver<LocalMatrixType>;
+  using typename BaseType::DomainType;
+  using typename BaseType::EntityType;
+  using typename BaseType::JacobianType;
+  using typename BaseType::StateRangeType;
+  using typename BaseType::VectorType;
+
+  BlockedJacobianWrapper()
+  {
+    jacobian() = std::make_unique<JacobianType>();
+  }
+
+  using BaseType::jacobian;
+  using BaseType::compute;
+
+  virtual void compute(const size_t dd) override
+  {
+    static XT::Common::Configuration eigensolver_options =
+        BaseType::template create_eigensolver_opts<LocalMatrixType>();
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      const auto eigensolver = EigenSolverType(jacobian(dd)[jj], &eigensolver_options);
+      eigenvectors_[dd][jj] = eigensolver.real_eigenvectors();
+      QR_[dd][jj] = eigenvectors_[dd][jj];
+      XT::LA::qr(QR_[dd][jj], tau_[dd][jj], permutations_[dd][jj]);
+      computed_[dd] = true;
+    }
+  }
+
+  virtual void apply_eigenvectors(const size_t dd, const StateRangeType& x, StateRangeType& ret) const override
+  {
+    std::fill(ret.begin(), ret.end(), 0.);
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      const auto offset = block_size * jj;
+      for (size_t ll = 0; ll < block_size; ++ll)
+        for (size_t mm = 0; mm < block_size; ++mm)
+          ret[offset + ll] += eigenvectors_[dd][jj][ll][mm] * x[offset + mm];
+    } // jj
+  }
+
+  virtual void get_jacobian(const size_t dd,
+                            const EntityType& entity,
+                            const AnalyticalFluxType& analytical_flux,
+                            const DomainType& x_in_inside_coords,
+                            const StateRangeType& u,
+                            const XT::Common::Parameter& param) override
+  {
+    thread_local auto jac = std::make_unique<FieldMatrix<RangeFieldType, dimRange, dimRange>>();
+    const auto local_func = analytical_flux.local_function(entity);
+    local_func->partial_u_col(dd, x_in_inside_coords, u, *jac, param);
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      const auto offset = jj * block_size;
+      for (size_t ll = 0; ll < block_size; ++ll)
+        for (size_t mm = 0; mm < block_size; ++mm)
+          jacobian(dd)[jj][ll][mm] = (*jac)[offset + ll][offset + mm];
+    } // jj
+  }
+
+  virtual void get_jacobian(const EntityType& entity,
+                            const AnalyticalFluxType& analytical_flux,
+                            const DomainType& x_in_inside_coords,
+                            const StateRangeType& u,
+                            const XT::Common::Parameter& param) override
+  {
+    thread_local auto jac = std::make_unique<FieldVector<FieldMatrix<RangeFieldType, dimRange, dimRange>, dimDomain>>();
+    const auto local_func = analytical_flux.local_function(entity);
+    local_func->partial_u(x_in_inside_coords, u, *jac, param);
+    for (size_t dd = 0; dd < dimDomain; ++dd) {
+      for (size_t jj = 0; jj < num_blocks; ++jj) {
+        const auto offset = jj * block_size;
+        for (size_t ll = 0; ll < block_size; ++ll)
+          for (size_t mm = 0; mm < block_size; ++mm)
+            jacobian(dd)[jj][ll][mm] = (*jac)[dd][offset + ll][offset + mm];
+      } // jj
+    } // dd
+  }
+
+  virtual void apply_inverse_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const override
+  {
+    LocalRangeType work;
+    LocalRangeType tmp_ret, tmp_x;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      for (size_t ll = 0; ll < block_size; ++ll)
+        tmp_x[ll] = x[jj * block_size + ll];
+      XT::LA::solve_qr_factorized(QR_[dd][jj], tau_[dd][jj], permutations_[dd][jj], tmp_ret, tmp_x, &work);
+      for (size_t ll = 0; ll < block_size; ++ll)
+        ret[jj * block_size + ll] = tmp_ret[ll];
+    }
+  }
+
+protected:
+  using BaseType::computed_;
+  FieldVector<MatrixType, dimDomain> eigenvectors_;
+  FieldVector<MatrixType, dimDomain> QR_;
+  FieldVector<FieldVector<LocalRangeType, num_blocks>, dimDomain> tau_;
+  FieldVector<FieldVector<FieldVector<int, block_size>, num_blocks>, dimDomain> permutations_;
+}; // BlockedJacobianWrapper<...>
 
 
 } // namespace internal
@@ -187,8 +384,12 @@ public:
         break;
       indices_[ii] = 0;
     }
-    if (ii == array_dim)
-      std::copy_n(multi_array_.shape(), array_dim, indices_.begin());
+    if (ii == array_dim) {
+      if (dim == 0)
+        indices_[0] = 1;
+      else
+        std::copy_n(multi_array_.shape(), array_dim, indices_.begin());
+    }
     return *this;
   } // ... operator++()
 
@@ -238,8 +439,11 @@ public:
 
   IteratorType end()
   {
-    IndicesType indices{1}; // for dimension 0, the end iterator has index 1
-    std::copy_n(multi_array_.shape(), MultiArrayType::dimensionality, indices.begin());
+    IndicesType indices;
+    if (MultiArrayType::dimensionality == 0)
+      indices[0] = 1; // for dimension 0, the end iterator has index 1
+    else
+      std::copy_n(multi_array_.shape(), MultiArrayType::dimensionality, indices.begin());
     return IteratorType(multi_array_, indices);
   }
 
@@ -292,7 +496,11 @@ private:
   RangeType value_;
 };
 
-template <class AnalyticalFluxType, class BoundaryValueType, class GridLayerType, SlopeLimiters slope_limiter>
+template <class AnalyticalFluxType,
+          class BoundaryValueType,
+          class GridLayerType,
+          SlopeLimiters slope_limiter,
+          class JacobianWrapperType>
 class LocalLinearReconstructionOperator : public XT::Grid::Functor::Codim0<GridLayerType>
 {
   // stencil is (i-r, i+r) in all dimensions, where r = polOrder + 1
@@ -305,9 +513,6 @@ class LocalLinearReconstructionOperator : public XT::Grid::Functor::Codim0<GridL
   typedef typename BoundaryValueType::DomainFieldType DomainFieldType;
   typedef typename BoundaryValueType::RangeType RangeType;
   typedef typename BoundaryValueType::RangeFieldType RangeFieldType;
-  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
-  typedef typename XT::LA::EigenSolver<MatrixType> EigenSolverType;
-  typedef typename XT::LA::EigenSolverOptions<MatrixType> EigenSolverOptionsType;
   typedef Dune::QuadratureRule<DomainFieldType, 1> Quadrature1dType;
   typedef typename GridLayerType::Intersection IntersectionType;
   typedef FieldVector<IntersectionType, 2 * dimDomain> IntersectionVectorType;
@@ -321,7 +526,6 @@ class LocalLinearReconstructionOperator : public XT::Grid::Functor::Codim0<GridL
   using MultiArrayType = boost::multi_array<RangeType, dimDomain>;
   using SliceType = Slice<RangeType, dimDomain>;
   using CoordsType = std::array<size_t, dimDomain>;
-  using JacobianWrapperType = internal::JacobianWrapper<MatrixType, std::vector<RangeFieldType>, dimRange, dimDomain>;
 
 public:
   explicit LocalLinearReconstructionOperator(const std::vector<RangeType>& source_values,
@@ -349,7 +553,8 @@ public:
     auto& jac = *jacobian_wrapper_;
     static const CoordsType stencil_sizes = []() {
       CoordsType ret;
-      ret.fill(axis_size);
+      const auto ax_size = axis_size; // avoid linker error
+      ret.fill(ax_size);
       return ret;
     }();
     thread_local StencilType stencil(stencil_sizes);
@@ -368,7 +573,7 @@ public:
     if (!jac.computed() || !analytical_flux_.is_affine()) {
       const auto& u_entity = source_values_[entity_index];
       const DomainType x_in_inside_coords = entity.geometry().local(entity.geometry().center());
-      analytical_flux_.local_function(entity)->partial_u(x_in_inside_coords, u_entity, *jac.jacobian(), param_);
+      jac.get_jacobian(entity, analytical_flux_, x_in_inside_coords, u_entity, param_);
       jac.compute();
       if (analytical_flux_.is_affine())
         jac.jacobian() = nullptr;
@@ -593,350 +798,24 @@ private:
 }; // class LocalLinearReconstructionOperator
 
 
-#if 0
-template <class SourceType,
-          class AnalyticalFluxType,
-          class BoundaryValueType,
-          size_t polOrder,
-          SlopeLimiters slope_limiter>
-class LocalReconstructionFvOperatorBlocked
-    : public XT::Grid::Functor::Codim0<typename SourceType::SpaceType::GridLayerType>
-{
-  // stencil is (i-r, i+r) in all dimensions, where r = polOrder + 1
-  typedef typename SourceType::SpaceType SpaceType;
-  typedef typename SpaceType::GridLayerType GridLayerType;
-  static constexpr size_t dimDomain = BoundaryValueType::dimDomain;
-  static constexpr size_t dimRange = BoundaryValueType::dimRange;
-  static constexpr size_t block_size = (dimDomain == 1) ? 2 : 4;
-  static constexpr size_t num_blocks = dimRange / block_size;
-  static constexpr size_t stencil_size = 2 * polOrder + 1;
-  static constexpr std::array<size_t, 3> stencil = {
-      {2 * polOrder + 1, dimDomain > 1 ? 2 * polOrder + 1 : 1, dimDomain > 2 ? 2 * polOrder + 1 : 1}};
-  typedef typename GridLayerType::template Codim<0>::Entity EntityType;
-  typedef typename GridLayerType::IndexSet IndexSetType;
-  typedef typename BoundaryValueType::DomainType DomainType;
-  typedef typename BoundaryValueType::DomainFieldType DomainFieldType;
-  typedef typename BoundaryValueType::RangeType RangeType;
-  typedef typename BoundaryValueType::RangeFieldType RangeFieldType;
-  typedef FieldVector<RangeFieldType, block_size> LocalRangeType;
-  typedef FieldMatrix<RangeFieldType, block_size, block_size> LocalMatrixType;
-  typedef FieldVector<LocalMatrixType, num_blocks> MatrixType;
-  typedef typename XT::LA::EigenSolver<LocalMatrixType> EigenSolverType;
-  typedef typename XT::LA::EigenSolverOptions<LocalMatrixType> EigenSolverOptionsType;
-  typedef typename XT::LA::MatrixInverterOptions<LocalMatrixType> MatrixInverterOptionsType;
-  typedef Dune::QuadratureRule<DomainFieldType, 1> QuadratureType;
-  typedef typename GridLayerType::Intersection IntersectionType;
-  typedef FieldVector<IntersectionType, 2 * dimDomain> IntersectionVectorType;
-  typedef typename GridLayerType::Intersection::Geometry::LocalCoordinate IntersectionLocalCoordType;
-  typedef typename AnalyticalFluxType::LocalfunctionType AnalyticalFluxLocalfunctionType;
-  typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
-  typedef typename Dune::FieldVector<Dune::FieldMatrix<RangeFieldType, dimRange, dimRange>, dimDomain>
-      JacobianRangeType;
-  typedef typename XT::Grid::BoundaryInfo<IntersectionType> BoundaryInfoType;
-
-public:
-  explicit LocalReconstructionFvOperatorBlocked(
-      SourceType& source,
-      const std::vector<RangeType>& source_values,
-      const AnalyticalFluxType& analytical_flux,
-      const BoundaryValueType& boundary_values,
-      const XT::Common::Parameter& param,
-      const bool is_linear,
-      const QuadratureType& quadrature,
-      std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values)
-    : source_values_(source_values)
-    , analytical_flux_(analytical_flux)
-    , boundary_values_(boundary_values)
-    , grid_layer_(source.space().grid_layer())
-    , param_(param)
-    , is_linear_(is_linear)
-    , quadrature_(quadrature)
-    , reconstructed_values_(reconstructed_values)
-  {
-    if (is_instantiated_)
-      DUNE_THROW(InvalidStateException,
-                 "This class uses several static variables to save its state between time "
-                 "steps, so using several instances at the same time may result in undefined "
-                 "behavior!");
-    param_.set("boundary", {0.});
-    is_instantiated_ = true;
-  }
-
-  ~LocalReconstructionFvOperatorBlocked()
-  {
-    is_instantiated_ = false;
-  }
-
-  void apply_local(const EntityType& entity)
-  {
-    // get cell averages on stencil
-    FieldVector<int, 3> offsets(0);
-    ValuesType values((FieldVector<FieldVector<RangeType, stencil[2]>, stencil[1]>(
-        FieldVector<RangeType, stencil[2]>(RangeType(std::numeric_limits<double>::quiet_NaN())))));
-    StencilIterator::apply(source_values_, boundary_values_, values, entity, grid_layer_, -1, offsets);
-    // get intersections
-    FieldVector<typename GridLayerType::Intersection, 2 * dimDomain> intersections;
-    for (const auto& intersection : Dune::intersections(grid_layer_, entity))
-      intersections[intersection.indexInInside()] = intersection;
-    // get jacobians
-    const auto& entity_index = grid_layer_.indexSet().index(entity);
-    auto& reconstructed_values_map = reconstructed_values_[entity_index];
-    static thread_local FieldVector<FieldVector<LocalRangeType, num_blocks>, dimDomain> tau_;
-    if (local_initialization_count_ != initialization_count_) {
-      if (!jacobian())
-        jacobian() = XT::Common::make_unique<FieldVector<MatrixType, dimDomain>>();
-      if (!eigenvectors()) {
-        eigenvectors() = XT::Common::make_unique<FieldVector<MatrixType, dimDomain>>();
-        QR() = XT::Common::make_unique<FieldVector<MatrixType, dimDomain>>();
-      }
-      const auto& u_entity = values[stencil[0] / 2][stencil[1] / 2][stencil[2] / 2];
-      helper<dimDomain>::get_jacobian(analytical_flux_, u_entity, *(jacobian()), param_, entity);
-      get_eigenvectors(*(jacobian()), *(eigenvectors()), *(QR()), tau_, permutations());
-      if (is_linear_) {
-        jacobian() = nullptr;
-        ++local_initialization_count_;
-      }
-    }
-
-    for (size_t dd = 0; dd < dimDomain; ++dd)
-      helper<dimDomain>::reconstruct(dd,
-                                     values,
-                                     *(eigenvectors()),
-                                     *(QR()),
-                                     tau_,
-                                     permutations(),
-                                     quadrature_,
-                                     reconstructed_values_map,
-                                     intersections);
-  } // void apply_local(...)
-
-  static void reset()
-  {
-    ++initialization_count_;
-  }
-
-private:
-  // quadrature rule containing left and right interface points
-  static QuadratureType left_right_quadrature()
-  {
-    QuadratureType ret;
-    ret.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(0., 0.5));
-    ret.push_back(Dune::QuadraturePoint<DomainFieldType, 1>(1., 0.5));
-    return ret;
-  }
-
-  template <size_t domainDim = dimDomain, class anything = void>
-  struct helper;
-
-  static void mv(const MatrixType& Q, const RangeType& x, RangeType& ret)
-  {
-    std::fill(ret.begin(), ret.end(), 0.);
-    for (size_t jj = 0; jj < num_blocks; ++jj) {
-      const auto offset = block_size * jj;
-      for (size_t ll = 0; ll < block_size; ++ll)
-        for (size_t mm = 0; mm < block_size; ++mm)
-          ret[offset + ll] += Q[jj][ll][mm] * x[offset + mm];
-    } // jj
-  }
-
-  static void mtv(const MatrixType& Q, const RangeType& x, RangeType& ret)
-  {
-    std::fill(ret.begin(), ret.end(), 0.);
-    for (size_t jj = 0; jj < num_blocks; ++jj) {
-      const auto offset = block_size * jj;
-      for (size_t ll = 0; ll < block_size; ++ll)
-        for (size_t mm = 0; mm < block_size; ++mm)
-          ret[offset + ll] += Q[jj][mm][ll] * x[offset + mm];
-    } // jj
-  }
-
-  template <class anything>
-  struct helper<1, anything>
-  {
-    static void reconstruct(size_t /*dd*/,
-                            const ValuesType& values,
-                            FieldVector<MatrixType, dimDomain>& eigenvectors,
-                            FieldVector<MatrixType, dimDomain>& QR,
-                            FieldVector<FieldVector<LocalRangeType, num_blocks>, dimDomain>& tau,
-                            FieldVector<FieldVector<FieldVector<int, block_size>, num_blocks>, dimDomain>& permutations,
-                            const QuadratureType& /*quadrature*/,
-                            std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& reconstructed_values_map,
-                            const IntersectionVectorType& intersections)
-    {
-      FieldVector<RangeType, stencil_size> char_values;
-      for (size_t ii = 0; ii < stencil_size; ++ii)
-        apply_inverse_eigenvectors(QR[0], tau[0], permutations[0], values[ii][0][0], char_values[ii]);
-
-      // reconstruction in x direction
-      FieldVector<RangeType, 2> reconstructed_values;
-      // quadrature rule containing left and right interface points
-      const auto left_and_right_boundary_point = get_left_right_quadrature();
-      slope_reconstruction(char_values, reconstructed_values, left_and_right_boundary_point);
-
-      // convert coordinates on face to local entity coordinates and store
-      RangeType value;
-      for (size_t ii = 0; ii < 2; ++ii) {
-        // convert back to non-characteristic variables
-        mv(eigenvectors[0], reconstructed_values[ii], value);
-        auto quadrature_point = FieldVector<DomainFieldType, dimDomain - 1>();
-        reconstructed_values_map.insert(
-            std::make_pair(intersections[ii].geometryInInside().global(quadrature_point), value));
-      } // ii
-    } // static void reconstruct(...)
-
-    static void get_jacobian(const AnalyticalFluxType& analytical_flux,
-                             const StateRangeType& u,
-                             FieldVector<MatrixType, dimDomain>& ret,
-                             const XT::Common::Parameter& param,
-                             const EntityType& entity)
-    {
-      thread_local auto jac = std::make_unique<FieldMatrix<RangeFieldType, dimRange, dimRange>>();
-      const DomainType x_in_inside_coords = entity.geometry().local(entity.geometry().center());
-      const auto local_func = analytical_flux.local_function(entity);
-      local_func->partial_u(x_in_inside_coords, u, *jac, param);
-      for (size_t jj = 0; jj < num_blocks; ++jj) {
-        const auto offset = jj * block_size;
-        for (size_t ll = 0; ll < block_size; ++ll)
-          for (size_t mm = 0; mm < block_size; ++mm)
-            ret[0][jj][ll][mm] = (*jac)[offset + ll][offset + mm];
-      } // jj
-    } // static void get_jacobian(...)
-  }; // struct helper<1,...>
-
-    static void get_jacobian(const AnalyticalFluxType& analytical_flux,
-                             const StateRangeType& u,
-                             FieldVector<MatrixType, dimDomain>& ret,
-                             const XT::Common::Parameter& param,
-                             const EntityType& entity)
-    {
-      thread_local auto jac =
-          std::make_unique<FieldVector<FieldMatrix<RangeFieldType, dimRange, dimRange>, dimDomain>>();
-      const DomainType x_in_inside_coords = entity.geometry().local(entity.geometry().center());
-      const auto local_func = analytical_flux.local_function(entity);
-      local_func->partial_u(x_in_inside_coords, u, *jac, param);
-      for (size_t dd = 0; dd < dimDomain; ++dd) {
-        for (size_t jj = 0; jj < num_blocks; ++jj) {
-          const auto offset = jj * block_size;
-          for (size_t ll = 0; ll < block_size; ++ll)
-            for (size_t mm = 0; mm < block_size; ++mm)
-              ret[dd][jj][ll][mm] = (*jac)[dd][offset + ll][offset + mm];
-        } // jj
-      } // dd
-    } // static void get_jacobian(...)
-  }; // struct helper<3,...>
-
-  static void
-  get_eigenvectors(const FieldVector<MatrixType, dimDomain>& jacobian,
-                   FieldVector<MatrixType, dimDomain>& eigenvectors,
-                   FieldVector<MatrixType, dimDomain>& QR,
-                   FieldVector<FieldVector<LocalRangeType, num_blocks>, dimDomain>& tau,
-                   FieldVector<FieldVector<FieldVector<int, block_size>, num_blocks>, dimDomain>& permutations)
-  {
-    for (size_t dd = 0; dd < dimDomain; ++dd) {
-      for (size_t jj = 0; jj < num_blocks; ++jj) {
-        static XT::Common::Configuration eigensolver_options = create_eigensolver_options();
-        const auto eigensolver = EigenSolverType(jacobian[dd][jj], &eigensolver_options);
-        eigenvectors[dd][jj] = eigensolver.real_eigenvectors();
-        QR[dd][jj] = eigenvectors[dd][jj];
-        XT::LA::qr(QR[dd][jj], tau[dd][jj], permutations[dd][jj]);
-      } // jj
-    } // dd
-  } // ... get_eigenvectors(...)
-
-  static XT::Common::Configuration create_eigensolver_options()
-  {
-    XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options(EigenSolverOptionsType::types()[0]);
-    // XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options("shifted_qr");
-    eigensolver_options["assert_eigendecomposition"] = "1e-6";
-    eigensolver_options["assert_real_eigendecomposition"] = "1e-6";
-    eigensolver_options["disable_checks"] = "true";
-    XT::Common::Configuration matrix_inverter_options = MatrixInverterOptionsType::options();
-    matrix_inverter_options["post_check_is_left_inverse"] = "1e-6";
-    matrix_inverter_options["post_check_is_right_inverse"] = "1e-6";
-    eigensolver_options.add(matrix_inverter_options, "matrix-inverter");
-    return eigensolver_options;
-  } // ... create_eigensolver_options()
-
-
-  // Calculate A^{-1} x, where we have a QR decomposition with column pivoting A = QRP^T.
-  // A^{-1} x = (QRP^T)^{-1} x = P R^{-1} Q^T x
-  static void apply_inverse_eigenvectors(const MatrixType& QR,
-                                         const FieldVector<LocalRangeType, num_blocks>& tau,
-                                         const FieldVector<FieldVector<int, block_size>, num_blocks>& permutations,
-                                         const RangeType& x,
-                                         RangeType& ret)
-  {
-    LocalRangeType work;
-    LocalRangeType tmp_ret, tmp_x;
-    for (size_t jj = 0; jj < num_blocks; ++jj) {
-      for (size_t ll = 0; ll < block_size; ++ll)
-        tmp_x[ll] = x[jj * block_size + ll];
-      XT::LA::solve_qr_factorized(QR[jj], tau[jj], permutations[jj], tmp_ret, tmp_x, &work);
-      for (size_t ll = 0; ll < block_size; ++ll)
-        ret[jj * block_size + ll] = tmp_ret[ll];
-    }
-  }
-
-  const std::vector<RangeType>& source_values_;
-  const AnalyticalFluxType& analytical_flux_;
-  const BoundaryValueType& boundary_values_;
-  const GridLayerType& grid_layer_;
-  XT::Common::Parameter param_;
-  const bool is_linear_;
-  const QuadratureType quadrature_;
-  std::vector<std::map<DomainType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values_;
-  //  static thread_local std::unique_ptr<JacobianRangeType> jacobian_;
-  //  static thread_local std::unique_ptr<FieldVector<SparseMatrixType, dimDomain>> eigenvectors_;
-  //  static thread_local std::unique_ptr<FieldVector<CscSparseMatrixType, dimDomain>> Q_;
-  //  static thread_local std::unique_ptr<FieldVector<CscSparseMatrixType, dimDomain>> R_;
-  //  static thread_local FieldVector<FieldVector<size_t, dimRange>, dimDomain> permutations_;
-
-  // work around gcc bug 66944
-  static std::unique_ptr<FieldVector<MatrixType, dimDomain>>& jacobian()
-  {
-    static thread_local std::unique_ptr<FieldVector<MatrixType, dimDomain>> jacobian_;
-    return jacobian_;
-  }
-
-  static std::unique_ptr<FieldVector<MatrixType, dimDomain>>& eigenvectors()
-  {
-    static thread_local std::unique_ptr<FieldVector<MatrixType, dimDomain>> eigenvectors_;
-    return eigenvectors_;
-  }
-
-  static std::unique_ptr<FieldVector<MatrixType, dimDomain>>& QR()
-  {
-    static thread_local std::unique_ptr<FieldVector<MatrixType, dimDomain>> QR_;
-    return QR_;
-  }
-
-  static FieldVector<FieldVector<FieldVector<int, block_size>, num_blocks>, dimDomain>& permutations()
-  {
-    static thread_local FieldVector<FieldVector<FieldVector<int, block_size>, num_blocks>, dimDomain> permutations_;
-    return permutations_;
-  }
-
-  static std::atomic<size_t> initialization_count_;
-  static thread_local size_t local_initialization_count_;
-  static bool is_instantiated_;
-
-}; // class LocalReconstructionFvOperatorBlocked
-#endif
-
-
-template <class AnalyticalFluxImp, class BoundaryValueImp, SlopeLimiters slope_limiter, class Traits>
+template <class AnalyticalFluxImp,
+          class BoundaryValueImp,
+          SlopeLimiters slope_limiter,
+          class JacobianWrapperImp,
+          class Traits>
 class LinearReconstructionOperator;
 
 
 namespace internal {
 
 
-template <class AnalyticalFluxImp, class BoundaryValueImp, SlopeLimiters slope_lim = SlopeLimiters::minmod>
+template <class AnalyticalFluxImp, class BoundaryValueImp, SlopeLimiters slope_lim, class JacobianWrapperImp>
 struct LinearReconstructionOperatorTraits
 {
   using AnalyticalFluxType = AnalyticalFluxImp;
   using BoundaryValueType = BoundaryValueImp;
   static const SlopeLimiters slope_limiter = slope_lim;
+  using JacobianWrapperType = JacobianWrapperImp;
   using DomainFieldType = typename BoundaryValueType::DomainFieldType;
   using RangeFieldType = typename BoundaryValueType::DomainFieldType;
   using FieldType = DomainFieldType;
@@ -948,6 +827,7 @@ struct LinearReconstructionOperatorTraits
   using derived_type = LinearReconstructionOperator<AnalyticalFluxType,
                                                     BoundaryValueType,
                                                     slope_limiter,
+                                                    JacobianWrapperType,
                                                     LinearReconstructionOperatorTraits>;
 };
 
@@ -958,23 +838,28 @@ struct LinearReconstructionOperatorTraits
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           SlopeLimiters slope_limiter = SlopeLimiters::minmod,
-          class Traits =
-              internal::LinearReconstructionOperatorTraits<AnalyticalFluxImp, BoundaryValueImp, slope_limiter>>
+          class JacobianWrapperImp = internal::JacobianWrapper<AnalyticalFluxImp,
+                                                               FieldMatrix<typename BoundaryValueImp::RangeFieldType,
+                                                                           BoundaryValueImp::dimRange,
+                                                                           BoundaryValueImp::dimRange>,
+                                                               FieldVector<typename BoundaryValueImp::RangeFieldType,
+                                                                           BoundaryValueImp::dimRange>>,
+          class Traits = internal::LinearReconstructionOperatorTraits<AnalyticalFluxImp,
+                                                                      BoundaryValueImp,
+                                                                      slope_limiter,
+                                                                      JacobianWrapperImp>>
 class LinearReconstructionOperator : public OperatorInterface<Traits>
 {
 public:
   using AnalyticalFluxType = typename Traits::AnalyticalFluxType;
   using BoundaryValueType = typename Traits::BoundaryValueType;
+  using JacobianWrapperType = typename Traits::JacobianWrapperType;
   using Quadrature1dType = typename Traits::Quadrature1dType;
   using ProductQuadratureType = typename Traits::ProductQuadratureType;
   using DomainFieldType = typename Traits::DomainFieldType;
   using RangeFieldType = typename Traits::RangeFieldType;
   static constexpr size_t dimDomain = Traits::dimDomain;
   static constexpr size_t dimRange = Traits::dimRange;
-
-  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
-  using VectorType = std::vector<RangeFieldType>;
-  using JacobianWrapperType = internal::JacobianWrapper<MatrixType, VectorType, dimRange, dimDomain>;
 
   LinearReconstructionOperator(const AnalyticalFluxType& analytical_flux,
                                const BoundaryValueType& boundary_values,
@@ -1011,14 +896,15 @@ public:
         LocalLinearReconstructionOperator<AnalyticalFluxType,
                                           BoundaryValueType,
                                           typename SourceType::SpaceType::GridLayerType,
-                                          slope_limiter>(source_values,
-                                                         analytical_flux_,
-                                                         boundary_values_,
-                                                         grid_layer,
-                                                         param,
-                                                         quadrature_1d_,
-                                                         range,
-                                                         jacobian_wrapper_);
+                                          slope_limiter,
+                                          JacobianWrapperType>(source_values,
+                                                               analytical_flux_,
+                                                               boundary_values_,
+                                                               grid_layer,
+                                                               param,
+                                                               quadrature_1d_,
+                                                               range,
+                                                               jacobian_wrapper_);
     auto walker = XT::Grid::Walker<typename SourceType::SpaceType::GridLayerType>(grid_layer);
     walker.append(local_reconstruction_operator);
     walker.walk(true);

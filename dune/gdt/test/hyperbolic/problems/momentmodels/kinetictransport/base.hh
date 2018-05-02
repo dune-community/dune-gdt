@@ -176,11 +176,6 @@ public:
         A[dd][ii] = tmp_row;
       }
     }
-    double nnz = 0;
-    for (size_t ii = 0; ii < A[0].rows(); ++ii)
-      for (size_t jj = 0; jj < A[0].cols(); ++jj)
-        nnz += A[0][ii][jj] > 1e-18 / A[0].cols();
-    double density = nnz / (A[0].rows() * A[0].cols());
     return new ActualFluxType(A, typename ActualFluxType::RangeType(0));
   }
 

@@ -372,9 +372,9 @@ public:
     : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
   {
     typedef TransportInitialValues<E, D, d, R, r, 1> LocalizableInitialValueType;
-    const LocalizableInitialValueType initial_values;
     exact_solution_ = std::make_shared<const TransportSolution<LocalizableInitialValueType, LevelGridViewType>>(
-        initial_values, Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>("[1.0 2.0 3.0]"));
+        LocalizableInitialValueType{},
+        Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>("[1.0 2.0 3.0]"));
   }
 
   virtual const ProblemType& problem() const override final

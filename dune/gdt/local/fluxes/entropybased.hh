@@ -835,7 +835,6 @@ public:
     , cache_(index_set_.size(0), LocalCacheType(cache_size))
     , mutexes_(index_set_.size(0))
   {
-    std::cout << "Korrekte Spezialisierung 3d" << std::endl;
     for (size_t ii = 0; ii < quadrature.size(); ++ii) {
       const auto face_indices = basis_functions_.get_face_indices(quadrature[ii].position());
       const size_t num_adjacent_faces = face_indices.size();

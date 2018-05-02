@@ -119,9 +119,9 @@ public:
       for (size_t mm = 0; mm <= N; ++mm) {
         if ((nn + mm) % 2) { // nn and mm have different parity
           if (nn % 2) // n odd
-            mass_matrix_pos[nn][mm] = fmn(mm, nn);
+            mass_matrix_pos[nn][mm] = fmn(static_cast<int>(mm), static_cast<int>(nn));
           else // n even
-            mass_matrix_pos[nn][mm] = fmn(nn, mm);
+            mass_matrix_pos[nn][mm] = fmn(static_cast<int>(nn), static_cast<int>(mm));
         } else { // nn and mm are both odd or both even
           mass_matrix_pos[nn][mm] = (nn == mm) ? 1. / (2. * nn + 1.) : 0.;
         }

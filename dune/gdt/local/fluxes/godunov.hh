@@ -42,26 +42,23 @@ class GodunovLocalDirichletNumericalBoundaryFlux;
 namespace internal {
 
 
-template <class MatrixType, class VectorType, size_t dimRange, size_t num_jacobians>
-class GodunovJacobianWrapper : public JacobianWrapper<MatrixType, VectorType, dimRange, num_jacobians>
+template <class AnalyticalFluxType, class MatrixType, class VectorType>
+class GodunovJacobianWrapper : public JacobianWrapper<AnalyticalFluxType, MatrixType, VectorType>
 {
-  using BaseType = JacobianWrapper<MatrixType, VectorType, dimRange, num_jacobians>;
+  using BaseType = JacobianWrapper<AnalyticalFluxType, MatrixType, VectorType>;
   using typename BaseType::V;
 
 public:
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+
   GodunovJacobianWrapper()
     : eigvals_neg_(V::create(dimRange))
     , eigvals_pos_(V::create(dimRange))
   {
   }
 
-  void compute()
-  {
-    for (size_t dd = 0; dd < num_jacobians; ++dd)
-      compute(dd);
-  }
-
-  void compute(const size_t dd)
+  virtual void compute(const size_t dd) override
   {
     BaseType::compute(dd);
     std::fill(eigvals_neg_[dd].begin(), eigvals_neg_[dd].end(), 0.);
@@ -83,8 +80,8 @@ public:
 protected:
   using BaseType::eigenvalues_;
   using BaseType::computed_;
-  FieldVector<VectorType, num_jacobians> eigvals_neg_;
-  FieldVector<VectorType, num_jacobians> eigvals_pos_;
+  FieldVector<VectorType, dimDomain> eigvals_neg_;
+  FieldVector<VectorType, dimDomain> eigvals_pos_;
 };
 
 
@@ -130,8 +127,8 @@ public:
   static constexpr size_t dimDomain = Traits::dimDomain;
   static const size_t dimRange = Traits::dimRange;
   using MatrixType = FieldMatrix<DomainFieldType, dimRange, dimRange>;
-  using VectorType = std::vector<RangeFieldType>;
-  using JacobianWrapperType = GodunovJacobianWrapper<MatrixType, VectorType, dimRange, dimDomain>;
+  using VectorType = FieldVector<RangeFieldType, dimRange>;
+  using JacobianWrapperType = GodunovJacobianWrapper<AnalyticalFluxType, MatrixType, VectorType>;
 
   explicit GodunovFluxImplementation(const AnalyticalFluxType& analytical_flux,
                                      XT::Common::Parameter param,
