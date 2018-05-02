@@ -156,7 +156,7 @@ public:
       // loop over all keys of this finite element
       const auto& reference_element = ReferenceElements<D, d>::general(geometry_type);
       const auto& coeffs = finite_element.localCoefficients();
-      for (size_t ii = 0; ii < coeffs.size(); ++ii) {
+      for (unsigned int ii = 0; ii < coeffs.size(); ++ii) {
         const auto& local_key = coeffs.localKey(ii);
         if (local_key.index() != 0) // Would require twisting of DoFs and possibly more knowledge from the FE
           DUNE_THROW(mapper_error, "This case is not covered yet, when we have more than one DoF per (sub)entity!");
@@ -234,7 +234,7 @@ public:
     const auto local_size = local_coefficients.size();
     if (ret.size() < local_size)
       ret.resize(local_size, 0);
-    for (size_t ii = 0; ii < local_size; ++ii) {
+    for (unsigned int ii = 0; ii < local_size; ++ii) {
       const auto& local_key = local_coefficients.localKey(ii);
       // No need to assert local_key.index() == 0, has been checked in the ctor!
       ret[ii] = mapper_->subIndex(entity, local_key.subEntity(), local_key.codim());
@@ -255,7 +255,8 @@ public:
       DUNE_THROW(Exception,
                  "finite_element.localCoefficients().size() = " << local_coefficients.size() << "\n   local_index = "
                                                                 << local_index);
-    const auto& local_key = local_coefficients.localKey(local_index);
+    assert(local_index <= std::numeric_limits<unsigned int>::max());
+    const auto& local_key = local_coefficients.localKey(static_cast<unsigned int>(local_index));
     // No need to assert local_key.index() == 0, has been checked in the ctor!
     return mapper_->subIndex(entity, local_key.subEntity(), local_key.codim());
   } // ... mapToGlobal(...)

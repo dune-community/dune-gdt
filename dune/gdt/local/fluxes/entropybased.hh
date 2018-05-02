@@ -1512,9 +1512,10 @@ FieldVector<FieldType, size> multiply_componentwise(const FieldVector<FieldType,
   return ret;
 }
 
-template <class FieldType>
-FieldVector<DynamicVector<FieldType>, 3> multiply_componentwise(const FieldVector<DynamicVector<FieldType>, 3>& first,
-                                                                const FieldVector<DynamicVector<FieldType>, 3>& second)
+template <class FieldType, int size>
+FieldVector<DynamicVector<FieldType>, size>
+multiply_componentwise(const FieldVector<DynamicVector<FieldType>, size>& first,
+                       const FieldVector<DynamicVector<FieldType>, size>& second)
 {
   auto ret = first;
   for (int ii = 0; ii < 3; ++ii)
@@ -1615,11 +1616,13 @@ public:
   // index1: dimension d, index2 :order l, index3: l1, index4: j \in \{k_1, k_2, k_3}, index5: k, index6: qq
   typedef FieldVector<std::vector<std::vector<FieldVector<DynamicVector<FieldVector<RangeFieldType, 3>>, 3>>>, 3>
       P3Type;
-  // index1 :order l, index2: l1, index3: j \in \{k_1, k_2, k_3}, index4: m \in \{k_1, k_2, k_3}, index5: k, index6: qq
-  typedef std::vector<std::vector<FieldMatrix<DynamicVector<FieldVector<RangeFieldType, 3>>, 3, 3>>> P4Type;
+  // index1: order l, index2: l1, index3: j \in \{k_1, k_2, k_3}, index4: m \in \{k_1, k_2, k_3}, index5: k, index6: qq
+  typedef std::vector<std::vector<std::array<std::array<DynamicVector<FieldVector<RangeFieldType, 3>>, 3>, 3>>> P4Type;
   // index1: dimension d, index2 :order l, index3: l1, index4: j \in \{k_1, k_2, k_3}, index5: m \in \{k_1, k_2, k_3},
   // index6: k, index7: qq
-  typedef FieldVector<std::vector<std::vector<FieldMatrix<DynamicVector<FieldVector<RangeFieldType, 3>>, 3, 3>>>, 3>
+  typedef FieldVector<std::vector<std::vector<std::array<std::array<DynamicVector<FieldVector<RangeFieldType, 3>>, 3>,
+                                                         3>>>,
+                      3>
       P5Type;
   using AlphaReturnType = typename std::pair<StateRangeType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<StateRangeType, AlphaReturnType>;
@@ -1710,8 +1713,8 @@ private:
     return false;
   } // bool not_equal(..)
 
-  static bool not_equal(const FieldMatrix<DynamicVector<RangeFieldType>, 3, 3>& first,
-                        const FieldMatrix<DynamicVector<RangeFieldType>, 3, 3>& second,
+  static bool not_equal(const std::array<std::array<DynamicVector<RangeFieldType>, 3>, 3>& first,
+                        const std::array<std::array<DynamicVector<RangeFieldType>, 3>, 3>& second,
                         const RangeFieldType tol)
   {
     for (size_t ii = 0; ii < 3; ++ii)
@@ -1757,7 +1760,8 @@ public:
     , p3_minus_(std::vector<std::vector<FieldVector<DynamicVector<FieldVector<RangeFieldType, 3>>, 3>>>(max_order_ + 1))
     , p3_plus_(p3_minus_)
     , p4_(max_order_ + 1)
-    , p5_(std::vector<std::vector<FieldMatrix<DynamicVector<FieldVector<RangeFieldType, 3>>, 3, 3>>>(max_order_ + 1))
+    , p5_(std::vector<std::vector<std::array<std::array<DynamicVector<FieldVector<RangeFieldType, 3>>, 3>, 3>>>(
+          max_order_ + 1))
     , k_(std::vector<size_t>(num_blocks_, 0))
     , cache_(index_set_.size(0), LocalCacheType(cache_size))
     , mutexes_(index_set_.size(0))
@@ -1830,11 +1834,10 @@ public:
                       DynamicVector<FieldVector<RangeFieldType, 3>>(num_blocks_, FieldVector<RangeFieldType, 3>(0.))));
               p4_[ll].resize(l1_size);
               for (size_t l1 = 0; l1 <= ll; ++l1)
-                std::fill(p4_[ll][l1].begin(),
-                          p4_[ll][l1].end(),
-                          FieldVector<DynamicVector<FieldVector<RangeFieldType, 3>>, 3>(
-                              DynamicVector<FieldVector<RangeFieldType, 3>>(num_blocks_,
-                                                                            FieldVector<RangeFieldType, 3>(0.))));
+                std::fill_n(
+                    p4_[ll][l1][0].data(),
+                    9,
+                    DynamicVector<FieldVector<RangeFieldType, 3>>(num_blocks_, FieldVector<RangeFieldType, 3>(0.)));
               for (size_t dd = 0; dd < dimDomain; ++dd) {
                 p3_minus_[dd][ll].resize(l1_size,
                                          FieldVector<DynamicVector<FieldVector<RangeFieldType, 3>>, 3>(
@@ -1846,11 +1849,10 @@ public:
                                                 num_blocks_, FieldVector<RangeFieldType, 3>(0.))));
                 p5_[dd][ll].resize(l1_size);
                 for (size_t l1 = 0; l1 <= ll; ++l1)
-                  std::fill(p5_[dd][ll][l1].begin(),
-                            p5_[dd][ll][l1].end(),
-                            FieldVector<DynamicVector<FieldVector<RangeFieldType, 3>>, 3>(
-                                DynamicVector<FieldVector<RangeFieldType, 3>>(num_blocks_,
-                                                                              FieldVector<RangeFieldType, 3>(0.))));
+                  std::fill_n(
+                      p5_[dd][ll][l1][0].data(),
+                      9,
+                      DynamicVector<FieldVector<RangeFieldType, 3>>(num_blocks_, FieldVector<RangeFieldType, 3>(0.)));
               }
             } // if (!resized)
             for (size_t l1 = 0; l1 <= ll; ++l1) {
@@ -2215,10 +2217,8 @@ public:
       DynamicVector<RangeFieldType> exp_alpha3(num_blocks_);
       for (size_t kk = 0; kk < num_blocks_; ++kk)
         exp_alpha3[kk] = std::exp(alpha[k_[qqs[kk]][kk]]);
-      FieldMatrix<DynamicVector<RangeFieldType>, 3, 3> update_vecs;
-      std::fill(update_vecs.begin(),
-                update_vecs.end(),
-                FieldVector<DynamicVector<RangeFieldType>, 3>(DynamicVector<RangeFieldType>(num_blocks_, 0.)));
+      std::array<std::array<DynamicVector<RangeFieldType>, 3>, 3> update_vecs;
+      std::fill_n(update_vecs[0].data(), 9, DynamicVector<RangeFieldType>(num_blocks_, 0.));
       auto tmp_update_vecs = update_vecs;
       DynamicVector<RangeFieldType> tmp_vec(num_blocks_);
       static const auto zero_update_vecs = update_vecs;
@@ -2257,10 +2257,8 @@ public:
       DynamicVector<RangeFieldType> exp_alpha3(num_blocks_);
       for (size_t kk = 0; kk < num_blocks_; ++kk)
         exp_alpha3[kk] = std::exp(alpha[k_[qqs[kk]][kk]]);
-      FieldMatrix<DynamicVector<RangeFieldType>, 3, 3> update_vecs;
-      std::fill(update_vecs.begin(),
-                update_vecs.end(),
-                FieldVector<DynamicVector<RangeFieldType>, 3>(DynamicVector<RangeFieldType>(num_blocks_, 0.)));
+      std::array<std::array<DynamicVector<RangeFieldType>, 3>, 3> update_vecs;
+      std::fill_n(update_vecs[0].data(), 9, DynamicVector<RangeFieldType>(num_blocks_, 0.));
       auto tmp_update_vecs = update_vecs;
       DynamicVector<RangeFieldType> tmp_vec(num_blocks_);
       static const auto zero_update_vecs = update_vecs;

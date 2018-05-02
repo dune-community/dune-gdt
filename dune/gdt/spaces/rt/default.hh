@@ -334,7 +334,7 @@ public:
       const auto& finite_element = *geometry_type_and_finite_element_ptr.second;
       const auto& coeffs = finite_element.localCoefficients();
       auto& local_key_to_intersection_map = geometry_to_local_DoF_indices_map_->at(geometry_type);
-      for (size_t ii = 0; ii < coeffs.size(); ++ii) {
+      for (unsigned int ii = 0; ii < coeffs.size(); ++ii) {
         const auto& local_key = coeffs.localKey(ii);
         if (local_key.index() != 0)
           DUNE_THROW(XT::Common::Exceptions::internal_error, "This must not happen for p0!");
@@ -374,7 +374,7 @@ public:
       for (auto&& intersection : intersections(grid_layer_, entity)) {
         if (intersection.neighbor() && entity_index < entity_indices_->mapToGlobal(intersection.outside(), 0)) {
           const auto intersection_index = XT::Common::numeric_cast<unsigned int>(intersection.indexInInside());
-          for (size_t ii = 0; ii < coeffs.size(); ++ii) {
+          for (unsigned int ii = 0; ii < coeffs.size(); ++ii) {
             const auto& local_key = coeffs.localKey(ii);
             const auto DoF_subentity_index = local_key.subEntity();
             if (local_key.codim() == 1 && DoF_subentity_index == intersection_index)
