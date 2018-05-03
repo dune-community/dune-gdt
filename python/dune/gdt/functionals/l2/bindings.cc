@@ -45,8 +45,8 @@
                                                         double,                                                        \
                                                         1,                                                             \
                                                         1>,                                                            \
-                               typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType,      \
-                               Dune::XT::Grid::Layers::_layer>::bind(_m);                                              \
+                               typename Dune::XT::LA::Container<double,                                                \
+                                                                Dune::XT::LA::Backends::_la>::VectorType>::bind(_m);   \
   Dune::GDT::bindings::                                                                                                \
       L2FaceVectorFunctional<Dune::XT::Functions::                                                                     \
                                  LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<                        \
@@ -73,8 +73,7 @@
                              typename Dune::XT::Grid::Layer<_GRID,                                                     \
                                                             Dune::XT::Grid::Layers::_layer,                            \
                                                             Dune::XT::Grid::Backends::_g_backend,                      \
-                                                            Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type,           \
-                             Dune::XT::Grid::Layers::_layer>::bind(_m)
+                                                            Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>::bind(_m)
 
 PYBIND11_MODULE(__functionals_l2, m)
 {

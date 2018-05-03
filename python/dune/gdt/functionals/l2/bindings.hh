@@ -27,12 +27,9 @@ namespace GDT {
 namespace bindings {
 
 
-template <class F,
-          class SP,
-          class V /*= typename XT::LA::Container<typename SP::type::RangeFieldType>::VectorType,
+template <class F, class SP, class V /*= typename XT::LA::Container<typename SP::type::RangeFieldType>::VectorType,
           class GridView = typename Space::GridLayerType,
-          class Field = typename Space::RangeFieldType*/,
-          Dune::XT::Grid::Layers grid_layer>
+          class Field = typename Space::RangeFieldType*/>
 class L2VolumeVectorFunctional
 {
   typedef typename SP::type S;
@@ -47,11 +44,10 @@ public:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    const std::string space_name = bindings::space_name<SP>::value();
-    const auto ClassName = XT::Common::to_camel_case("l2_volume_vector_functional_" + space_name + "_"
+    const auto ClassName = XT::Common::to_camel_case("l2_volume_vector_functional_" + space_name<SP>::value() + "_"
                                                      + XT::LA::bindings::container_name<V>::value());
-    const std::string layer_name = XT::Grid::bindings::layer_name<grid_layer>::value() + "view";
-    auto c = VectorFunctionalBase<type>::bind(m, ClassName, layer_name, space_name);
+
+    auto c = VectorFunctionalBase<type>::bind(m, ClassName);
 
     m.def(std::string("make_l2_volume_vector_functional_" + XT::LA::bindings::container_name<V>::value()).c_str(),
           [](const F& function, const S& space, const size_t over_integrate) {
@@ -84,9 +80,7 @@ template <class F,
           class SP,
           class V /*= typename XT::LA::Container<typename SP::type::RangeFieldType>::VectorType*/,
           class GL /*= typename SP::type::GridLayerType,
-          class Field = typename SP::type::RangeFieldType*/
-          ,
-          Dune::XT::Grid::Layers grid_layer>
+          class Field = typename SP::type::RangeFieldType*/>
 class L2FaceVectorFunctional
 {
   typedef typename SP::type S;
@@ -101,13 +95,11 @@ public:
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    const std::string space_name = bindings::space_name<SP>::value();
     const std::string class_name = "l2_face_vector_functional";
-    const auto ClassName =
-        XT::Common::to_camel_case(class_name + "_" + space_name + "_" + XT::LA::bindings::container_name<V>::value());
+    const auto ClassName = XT::Common::to_camel_case(class_name + "_" + space_name<SP>::value() + "_"
+                                                     + XT::LA::bindings::container_name<V>::value());
 
-    const std::string layer_name = XT::Grid::bindings::layer_name<grid_layer>::value() + "view";
-    auto c = VectorFunctionalBase<type>::bind(m, ClassName, layer_name, space_name);
+    auto c = VectorFunctionalBase<type>::bind(m, ClassName);
 
     m.def(std::string("make_" + class_name + "_" + XT::LA::bindings::container_name<V>::value()).c_str(),
           [](const F& function, const S& space, const size_t over_integrate) {

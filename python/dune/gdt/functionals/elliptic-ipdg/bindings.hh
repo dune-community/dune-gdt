@@ -34,8 +34,7 @@ template <class DI,
           LocalEllipticIpdgIntegrands::Method method,
           class V /* = typename XT::LA::Container<typename R::RangeFieldType>::VectorType,
           class GL = typename RP::type::GridLayerType,
-          class F = typename RP::type::RangeFieldType*/,
-          Dune::XT::Grid::Layers grid_layer>
+          class F = typename RP::type::RangeFieldType*/>
 class EllipticIpdgDirichletVectorFunctional
 {
   typedef typename SP::type S;
@@ -208,8 +207,7 @@ public:
         + "_"
         + diffusion_switch<>::suffix());
 
-    const std::string layer_name = XT::Grid::bindings::layer_name<grid_layer>::value() + "view";
-    auto c = VectorFunctionalBase<type>::bind(m, ClassName.c_str(), layer_name, space_name<SP>::value());
+    auto c = VectorFunctionalBase<type>::bind(m, ClassName.c_str());
 
     diffusion_switch<>::template addbind_factory_methods<type>(m);
 
@@ -285,9 +283,8 @@ public:
                                                                      1,                                                \
                                                                      1>,                                               \
                                             Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double,                                   \
-                                                                             Dune::XT::LA::Backends::_la>::VectorType, \
-                                            Dune::XT::Grid::Layers::_layer>;                                           \
+                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
+                                                VectorType>;                                                           \
   _prefix class Dune::GDT::bindings::                                                                                  \
       EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
                                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
@@ -394,9 +391,8 @@ public:
                                                                      1,                                                \
                                                                      1>,                                               \
                                             Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double,                                   \
-                                                                             Dune::XT::LA::Backends::_la>::VectorType, \
-                                            Dune::XT::Grid::Layers::_layer>;                                           \
+                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
+                                                VectorType>;                                                           \
   _prefix class Dune::GDT::bindings::                                                                                  \
       EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
                                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
@@ -440,9 +436,8 @@ public:
                                                                      1,                                                \
                                                                      1>,                                               \
                                             Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double,                                   \
-                                                                             Dune::XT::LA::Backends::_la>::VectorType, \
-                                            Dune::XT::Grid::Layers::_layer>;                                           \
+                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
+                                                VectorType>;                                                           \
   _prefix class Dune::GDT::bindings::                                                                                  \
       EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
                                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
@@ -487,8 +482,7 @@ public:
                                                                      1>,                                               \
                                             Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
                                             typename Dune::XT::LA::Container<double,                                   \
-                                                                             Dune::XT::LA::Backends::_la>::VectorType, \
-                                            Dune::XT::Grid::Layers::_layer>
+                                                                             Dune::XT::LA::Backends::_la>::VectorType>
 
 #define _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_METHODS_1D(                                                       \
     _prefix, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)                                                  \
@@ -621,9 +615,8 @@ DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, level, view, cg
                                                                      1,                                                \
                                                                      1>,                                               \
                                             Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double,                                   \
-                                                                             Dune::XT::LA::Backends::_la>::VectorType, \
-                                            Dune::XT::Grid::Layers::_layer>::bind(_m);                                 \
+                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
+                                                VectorType>::bind(_m);                                                 \
   Dune::GDT::bindings::                                                                                                \
       EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
                                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
@@ -667,9 +660,8 @@ DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, level, view, cg
                                                                      1,                                                \
                                                                      1>,                                               \
                                             Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double,                                   \
-                                                                             Dune::XT::LA::Backends::_la>::VectorType, \
-                                            Dune::XT::Grid::Layers::_layer>::bind(_m)
+                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
+                                                VectorType>::bind(_m)
 
 #define _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(                                                                    \
     _m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, _method)                                          \
@@ -731,9 +723,8 @@ DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, level, view, cg
                                                                      1,                                                \
                                                                      1>,                                               \
                                             Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double,                                   \
-                                                                             Dune::XT::LA::Backends::_la>::VectorType, \
-                                            Dune::XT::Grid::Layers::_layer>::bind(_m);                                 \
+                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
+                                                VectorType>::bind(_m);                                                 \
   Dune::GDT::bindings::                                                                                                \
       EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
                                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
@@ -777,9 +768,8 @@ DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, level, view, cg
                                                                      1,                                                \
                                                                      1>,                                               \
                                             Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double,                                   \
-                                                                             Dune::XT::LA::Backends::_la>::VectorType, \
-                                            Dune::XT::Grid::Layers::_layer>::bind(_m);                                 \
+                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
+                                                VectorType>::bind(_m);                                                 \
   Dune::GDT::bindings::                                                                                                \
       EllipticIpdgDirichletVectorFunctional<Dune::XT::Functions::                                                      \
                                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<         \
@@ -823,9 +813,8 @@ DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(extern template, level, view, cg
                                                                      1,                                                \
                                                                      1>,                                               \
                                             Dune::GDT::LocalEllipticIpdgIntegrands::Method::_method,                   \
-                                            typename Dune::XT::LA::Container<double,                                   \
-                                                                             Dune::XT::LA::Backends::_la>::VectorType, \
-                                            Dune::XT::Grid::Layers::_layer>::bind(_m)
+                                            typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::    \
+                                                VectorType>::bind(_m)
 
 #define _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_METHODS_1D(                                                           \
     _m, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)                                                       \
