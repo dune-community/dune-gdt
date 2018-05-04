@@ -42,7 +42,7 @@ class EllipticIpdgDirichletVectorFunctional
 
 public:
   typedef GDT::EllipticIpdgDirichletVectorFunctional<DI, DF, DT, S, method, V /*, GL, F*/> type;
-  typedef pybind11::class_<type> bound_type;
+  using bound_type = typename VectorFunctionalBase<type>::bound_type;
 
 private:
   template <bool single_diffusion = std::is_same<DT, void>::value,
@@ -207,7 +207,7 @@ public:
         + "_"
         + diffusion_switch<>::suffix());
 
-    auto c = VectorFunctionalBase<type>::bind(m, ClassName.c_str());
+    bound_type c = VectorFunctionalBase<type>::bind(m, ClassName.c_str());
 
     diffusion_switch<>::template addbind_factory_methods<type>(m);
 

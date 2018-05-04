@@ -28,8 +28,8 @@ PYBIND11_MODULE(__functionals_elliptic_ipdg, m)
 
   _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_METHODS_D(
       m, GDT_BINDINGS_GRID::dimension, GDT_BINDINGS_GRID, leaf, view, dg, gdt, 1, istl_dense);
-  _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_METHODS_D(
-      m, GDT_BINDINGS_GRID::dimension, GDT_BINDINGS_GRID, level, view, dg, gdt, 1, istl_dense);
+  //  _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_METHODS_D(
+  //      m, GDT_BINDINGS_GRID::dimension, GDT_BINDINGS_GRID, level, view, dg, gdt, 1, istl_dense);
   _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_METHODS_D(
       m, GDT_BINDINGS_GRID::dimension, GDT_BINDINGS_GRID, dd_subdomain, view, dg, gdt, 1, istl_dense);
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.functionals.elliptic-ipdg");
