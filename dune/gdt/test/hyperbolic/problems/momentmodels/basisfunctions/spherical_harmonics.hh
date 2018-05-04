@@ -60,8 +60,9 @@ public:
     const DomainFieldType phi = coords[1];
     RangeType ret(0);
     // TODO: use complex arithmetic, remove real() call
-    for (size_t ll = 0; ll <= order; ++ll)
-      for (int mm = only_positive ? 0 : -int(ll); mm <= int(ll); ++mm)
+    assert(order <= std::numeric_limits<int>::max());
+    for (unsigned int ll = 0; ll <= static_cast<unsigned int>(order); ++ll)
+      for (int mm = only_positive ? 0 : -static_cast<int>(ll); mm <= static_cast<int>(ll); ++mm)
         ret[helper<only_positive>::pos(ll, mm)] = boost::math::spherical_harmonic(ll, mm, theta, phi).real();
     return ret;
   } // ... evaluate(...)

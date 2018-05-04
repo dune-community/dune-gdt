@@ -624,9 +624,9 @@ public:
         for (size_t ii = 0; ii < dimDomain; ++ii)
           if (ii != dd)
             quadrature_point[ii < dd ? ii : ii - 1] = quadrature_[multi_index[ii]].position();
-        reconstructed_values_map.insert(
-            std::make_pair(intersections[2 * dd + multi_index[dd]].geometryInInside().global(quadrature_point),
-                           reconstructed_values(multi_index)));
+        reconstructed_values_map.emplace(
+            intersections[2 * dd + multi_index[dd]].geometryInInside().global(quadrature_point),
+            reconstructed_values(multi_index));
       } // multi_indices
     } // dd
   } // void apply_local(...)

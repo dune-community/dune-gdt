@@ -272,7 +272,7 @@ public:
         // define further variables
         VectorType g_k, beta_in, beta_out;
         beta_in = cache_iterator != cache_.end() ? cache_iterator->second.first : alpha_iso;
-        static thread_local std::unique_ptr<MatrixType> T_k = XT::Common::make_unique<MatrixType>();
+        static thread_local auto T_k = XT::Common::make_unique<MatrixType>();
 
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
         const auto r_max = r_sequence.back();
@@ -408,7 +408,7 @@ public:
                            const XT::Common::Parameter& param) const override
     {
       const auto alpha = get_alpha(x_local, u, param).first;
-      thread_local std::unique_ptr<MatrixType> H = XT::Common::make_unique<MatrixType>();
+      thread_local auto H = XT::Common::make_unique<MatrixType>();
       calculate_hessian(alpha, M_, *H);
       helper<dimDomain>::partial_u(alpha, M_, *H, ret, this);
     }
@@ -420,7 +420,7 @@ public:
                                const XT::Common::Parameter& param) const override
     {
       const auto alpha = get_alpha(x_local, u, param).first;
-      thread_local std::unique_ptr<MatrixType> H = XT::Common::make_unique<MatrixType>();
+      thread_local auto H = XT::Common::make_unique<MatrixType>();
       calculate_hessian(alpha, M_, *H);
       helper<dimDomain>::partial_u_col(col, alpha, M_, *H, ret, this);
     }
@@ -575,7 +575,7 @@ public:
         P_k[ll] = Linv_P;
       }
       T_k.rightmultiply(L);
-      L->mtv(beta_in, beta_out);
+      L.mtv(beta_in, beta_out);
 
       VectorType v_k_tmp;
       XT::LA::solve_lower_triangular(L, v_k_tmp, v_k);
@@ -2747,7 +2747,7 @@ public:
                           RangeType& ret,
                           const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param);
+      const auto alpha = get_alpha(x_local, u, param).first;
 
       std::fill(ret.begin(), ret.end(), 0.);
       // calculate < \mu m G_\alpha(u) >
@@ -2854,7 +2854,7 @@ public:
                            PartialURangeType& ret,
                            const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param);
+      const auto alpha = get_alpha(x_local, u, param).first;
       RangeType H_diag, J_diag;
       FieldVector<RangeFieldType, dimRange - 1> H_subdiag, J_subdiag;
       calculate_hessian(alpha, H_diag, H_subdiag);
@@ -3320,8 +3320,8 @@ public:
     // calculate < \mu m G_\alpha(u) > * n_ij
     const auto local_function_entity = derived_local_function(entity);
     const auto local_function_neighbor = derived_local_function(neighbor);
-    const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param, false);
-    const auto alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, false);
+    const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param, false).first;
+    const auto alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, false).first;
     RangeType ret(0);
     for (size_t nn = 0; nn < dimRange; ++nn) {
       if (nn > 0) {
