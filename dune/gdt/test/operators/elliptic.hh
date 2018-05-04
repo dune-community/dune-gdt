@@ -25,7 +25,18 @@ namespace Dune {
 namespace GDT {
 namespace Test {
 
-
+struct EllipticDefaultTolerances
+{
+#ifndef NDEBUG
+  static constexpr const double constant = 5.05e-13;
+  static constexpr const double linear = 1.728e-13;
+  static constexpr const double quadratic = 9.83e-13;
+#else
+  static constexpr const double constant = 6.54e-13;
+  static constexpr const double linear = 2.65e-13;
+  static constexpr const double quadratic = 9.83e-13;
+#endif // #ifndef NDEBUG
+};
 /**
  * \note The values in correct_for_constant_arguments(), etc., are valid for the d-dimendional unit cube.
  */
@@ -181,7 +192,6 @@ struct EllipticLocalizableProductTest : public EllipticProductBase<SpaceType>, p
     this->localizable_product_test(*product);
   }
 }; // struct EllipticLocalizableProductTest
-
 
 /**
  * \note Assumes that Operators::Projection does the right thing!
@@ -509,20 +519,10 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
     return result;
   } // ... compute(...)
 
-  void correct_for_constant_arguments() const
-  {
-#ifndef NDEBUG
-    const double tolerance = 5.05e-13;
-#else
-    const double tolerance = 6.54e-13;
-#endif
-    correct_for_constant_arguments(tolerance);
-  }
-
   /**
    * \note we can not use the base variant bc. of the projection in compute()
    */
-  void correct_for_constant_arguments(const double tolerance) const
+  void correct_for_constant_arguments(const double tolerance = EllipticDefaultTolerances::constant) const
   {
     const ExpressionFunctionType constant_gradient("x", "x[0]", 1, "constant gradient", {{"1.0", "0.0", "0.0"}});
     this->check(compute(constant_gradient), factor_value_ * 1.0, tolerance);
@@ -531,26 +531,22 @@ struct EllipticMatrixOperatorTest : public EllipticProductBase<SpaceType>, publi
   /**
    * \note we can not use the base variant bc. of the projection in compute()
    */
-  void correct_for_linear_arguments() const
+  void correct_for_linear_arguments(const double tolerance = EllipticDefaultTolerances::linear) const
   {
     const ExpressionFunctionType linear_gradient(
         "x", "0.5 * x[0] * x[0] - x[0]", 2, "affine gradient", {{"x[0] - 1.0", "0.0", "0.0"}});
-#ifndef NDEBUG
-    const double tolerance = 1.75e-13;
-#else
-    const double tolerance = 2.65e-13;
-#endif
+
     this->check(compute(linear_gradient), factor_value_ * 1.0 / 3.0, tolerance);
   }
 
   /**
    * \note we can not use the base variant bc. of the projection in compute()
    */
-  void correct_for_quadratic_arguments() const
+  void correct_for_quadratic_arguments(const double tolerance = EllipticDefaultTolerances::constant) const
   {
     const ExpressionFunctionType quadratic_gradient(
         "x", "(1.0/3.0) * x[0] * x[0] * x[0]", 3, ", quadratic gradient", {{"x[0]*x[0]", "0.0", "0.0"}});
-    this->check(compute(quadratic_gradient), factor_value_ * 1.0 / 5.0, 5.33e-13);
+    this->check(compute(quadratic_gradient), factor_value_ * 1.0 / 5.0, tolerance);
   }
 
   void is_matrix_operator()

@@ -71,8 +71,10 @@ public:
     return std::string("gdt.linearelliptic.discretization.cg.order_") + Dune::XT::Common::to_string(int(polOrder));
   }
 
-  static DiscretizationType
-  discretize(XT::Grid::GridProvider<GridType>& grid_provider, const ProblemType& problem, const int level = 0)
+  template <class SubdomainGridType = XT::Grid::none_t>
+  static DiscretizationType discretize(XT::Grid::GridProvider<GridType, SubdomainGridType>& grid_provider,
+                                       const ProblemType& problem,
+                                       const int level = 0)
   {
     auto logger = XT::Common::TimedLogger().get(static_id());
     logger.info() << "Creating space... " << std::endl;

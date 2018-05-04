@@ -36,13 +36,16 @@ TYPED_TEST(LaplaceMatrixOperatorTest, is_matrix_operator)
 }
 TYPED_TEST(LaplaceMatrixOperatorTest, correct_for_constant_arguments)
 {
-  this->correct_for_constant_arguments();
+  const double relax_factor = this->space_.grid_layer().grid().comm().size() > 1 ? 2 : 1;
+  this->correct_for_constant_arguments(EllipticDefaultTolerances::constant * relax_factor);
 }
 TYPED_TEST(LaplaceMatrixOperatorTest, correct_for_linear_arguments)
 {
-  this->correct_for_linear_arguments();
+  const double relax_factor = this->space_.grid_layer().grid().comm().size() > 1 ? 2 : 1;
+  this->correct_for_linear_arguments(0.33333333333322324 * relax_factor);
 }
 TYPED_TEST(LaplaceMatrixOperatorTest, correct_for_quadratic_arguments)
 {
-  this->correct_for_quadratic_arguments();
+  const double relax_factor = this->space_.grid_layer().grid().comm().size() > 1 ? 2 : 1;
+  this->correct_for_quadratic_arguments(EllipticDefaultTolerances::quadratic * relax_factor);
 }

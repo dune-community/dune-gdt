@@ -99,8 +99,8 @@ public:
     return std::string("gdt.linearelliptic.discretization.swipdg.order_") + Dune::XT::Common::to_string(int(polOrder));
   }
 
-  template <class DdGridType>
-  static DiscretizationType discretize(XT::Grid::GridProvider<GridType, DdGridType>& grid_provider,
+  template <class SubdomainGridType = XT::Grid::none_t>
+  static DiscretizationType discretize(XT::Grid::GridProvider<GridType, SubdomainGridType>& grid_provider,
                                        const ProblemType& problem,
                                        const int level = 0)
   {
