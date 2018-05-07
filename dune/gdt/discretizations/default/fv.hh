@@ -185,7 +185,7 @@ public:
       // project initial values
       project_l2(initial_values, u);
 
-      RangeFieldType t_end = problem.t_end();
+      RangeFieldType t_end = test_case_.t_end();
       const RangeFieldType CFL = problem.CFL();
 
       // calculate dx and choose initial dt
