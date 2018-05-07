@@ -185,6 +185,14 @@ public:
     };
   }
 
+  RangeFieldType calculate_psi_from_moments(const RangeType& val) const
+  {
+    RangeFieldType psi(0);
+    for (size_t rr = 0; rr < dimRange; ++rr)
+      psi += val[rr];
+    return psi;
+  }
+
   static StringifierType stringifier()
   {
     return [](const RangeType& val) {

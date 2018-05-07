@@ -224,6 +224,14 @@ public:
     };
   }
 
+  RangeFieldType calculate_psi_from_moments(const RangeType& val) const
+  {
+    RangeFieldType psi(0);
+    for (const auto& entry : val)
+      psi += entry;
+    return psi;
+  }
+
   static StringifierType stringifier()
   {
     return [](const RangeType& val) {
@@ -424,6 +432,14 @@ public:
     return [](const DiscreteFunctionType& u_n, const std::string& filename_prefix, const size_t ii) {
       sum_visualizer<DiscreteFunctionType, dimRange>(u_n, filename_prefix, ii);
     };
+  }
+
+  RangeFieldType calculate_psi_from_moments(const RangeType& val) const
+  {
+    RangeFieldType psi(0);
+    for (const auto& entry : val)
+      psi += entry;
+    return psi;
   }
 
   static StringifierType stringifier()
