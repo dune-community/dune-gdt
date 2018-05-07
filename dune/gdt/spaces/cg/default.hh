@@ -56,7 +56,7 @@ public:
   static const constexpr size_t dimDomain = GL::dimension;
   static const constexpr size_t dimRange = 1;
   static const constexpr size_t dimRangeCols = 1;
-  static const constexpr bool continuous = false;
+  static const constexpr bool continuous = true;
   using GridLayerType = GL;
   using LocalFiniteElement = LagrangeLocalFiniteElement<EquidistantPointSet, dimDomain, typename GL::ctype, R>;
   using BaseFunctionSetType = ScalarBasefunctionSet<LocalFiniteElement, XT::Grid::extract_entity_t<GL>, R>;
