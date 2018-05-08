@@ -184,17 +184,6 @@ class L2MatrixOperator
                                                                            Field,
                                                                            1>>
       FunctionProvider;
-  typedef WeightedL2MatrixOperator<XT::Functions::ConstantFunction<XT::Grid::extract_entity_t<GridLayer>,
-                                                                   typename GridLayer::ctype,
-                                                                   GridLayer::dimension,
-                                                                   Field,
-                                                                   1>,
-                                   RangeSpace,
-                                   Matrix,
-                                   GridLayer,
-                                   SourceSpace,
-                                   Field>
-      BaseType;
   typedef L2MatrixOperator<RangeSpace, Matrix, GridLayer, SourceSpace, Field> ThisType;
 
   // We suffer from the same problem as in L2LocalizableProduct, see above for an explanation.
@@ -221,6 +210,18 @@ class L2MatrixOperator
   }
 
 public:
+  typedef WeightedL2MatrixOperator<XT::Functions::ConstantFunction<XT::Grid::extract_entity_t<GridLayer>,
+                                                                   typename GridLayer::ctype,
+                                                                   GridLayer::dimension,
+                                                                   Field,
+                                                                   1>,
+                                   RangeSpace,
+                                   Matrix,
+                                   GridLayer,
+                                   SourceSpace,
+                                   Field>
+      BaseType;
+
   /**
    * \brief Creates a matrix-based L2 operator.
    *

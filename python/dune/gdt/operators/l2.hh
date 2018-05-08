@@ -35,16 +35,23 @@ class L2MatrixOperator
 {
 public:
   typedef GDT::L2MatrixOperator<R, M> type;
-  typedef pybind11::class_<type, XT::Grid::Walker<typename R::GridLayerType>> bound_type;
+  using bound_type = pybind11::class_<type, typename bindings::MatrixOperatorBase<type>::BaseType>;
 
 public:
-  static bound_type bind(pybind11::module& m, const std::string& space_name, const std::string& container_name)
+  static bound_type bind(pybind11::module& m,
+                         const std::string& space_name,
+                         const std::string& container_name,
+                         const std::string& grid_layer_name)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
 
     const std::string class_name = "l2_matrix_operator";
     const auto ClassName = XT::Common::to_camel_case(class_name + "_" + space_name + "_" + container_name);
+
+    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
+      MatrixOperatorBase<type>::bind(mod, ClassName, space_name, space_name, grid_layer_name);
+    });
 
     bound_type c(m, ClassName.c_str());
     c.def("assemble", [](type& self) { self.assemble(); });
@@ -99,7 +106,9 @@ public:
 public:
   static bound_type bind(pybind11::module& m)
   {
-    return binder::bind(m, space_name<RP>::value(), XT::LA::bindings::container_name<M>::value());
+    const auto grid_layer_name = XT::Grid::bindings::layer_name<layer_type>::value()
+                                 + XT::Grid::bindings::backend_name<XT::Grid::Backends::view>::value();
+    return binder::bind(m, space_name<RP>::value(), XT::LA::bindings::container_name<M>::value(), grid_layer_name);
   }
 }; // class L2MatrixOperator
 

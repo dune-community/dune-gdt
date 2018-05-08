@@ -74,15 +74,15 @@ class DiffusiveFluxAaProduct
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
   typedef typename GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1> SP;
+  typedef DiffusiveFluxAaProduct<G> ThisType;
+
+public:
   typedef GDT::
       MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
                          typename SP::type,
                          typename XT::Grid::
                              Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
           BaseType;
-  typedef DiffusiveFluxAaProduct<G> ThisType;
-
-public:
   using typename BaseType::GridLayerType;
   using typename BaseType::RangeSpaceType;
 
@@ -99,15 +99,20 @@ public:
   {
     using namespace pybind11::literals;
 
-    GDT::bindings::MatrixOperatorBase<ThisType>::bind(
-        m,
-        XT::Common::to_camel_case("RS2017_diffusive_flux_aa_product_matrix_operator_subdomain_"
-                                  + XT::Grid::bindings::grid_name<G>::value())
-            .c_str(),
-        GDT::bindings::space_name<SP>::value(),
-        GDT::bindings::space_name<SP>::value(),
-        XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
-            + XT::Grid::bindings::backend_name<Backends::view>::value());
+    const std::string classname = XT::Common::to_camel_case(
+        "RS2017_diffusive_flux_aa_product_matrix_operator_subdomain_" + XT::Grid::bindings::grid_name<G>::value());
+    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
+      GDT::bindings::MatrixOperatorBase<ThisType>::bind(
+          mod,
+          classname.c_str(),
+          GDT::bindings::space_name<SP>::value(),
+          GDT::bindings::space_name<SP>::value(),
+          XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
+              + XT::Grid::bindings::backend_name<Backends::view>::value());
+
+    });
+    py::class_<ThisType, typename GDT::bindings::MatrixOperatorBase<ThisType>::BaseType> c(
+        m, classname.c_str(), classname.c_str());
 
     m.def("RS2017_make_diffusive_flux_aa_product_matrix_operator_on_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
@@ -282,6 +287,7 @@ public:
   {
     using namespace pybind11::literals;
 
+    //! TODO not a proper base
     py::class_<ThisType, XT::Grid::Walker<GridLayerType>> c(
         m,
         XT::Common::to_camel_case("RS2017_diffusive_flux_ab_product_matrix_operator_subdomain_"
@@ -448,6 +454,7 @@ public:
   {
     using namespace pybind11::literals;
 
+    //! TODO not a proper base
     py::class_<ThisType, XT::Grid::Walker<GridLayerType>> c(
         m,
         XT::Common::to_camel_case("RS2017_diffusive_flux_bb_product_matrix_operator_subdomain_"
@@ -593,6 +600,7 @@ public:
   {
     using namespace pybind11::literals;
 
+    //! TODO not a proper base
     py::class_<ThisType, XT::Grid::Walker<GridLayerType>> c(
         m,
         XT::Common::to_camel_case("RS2017_Hdiv_semi_product_matrix_operator_subdomain_"
@@ -723,6 +731,7 @@ public:
   {
     using namespace pybind11::literals;
 
+    //! TODO not a proper base
     py::class_<ThisType, XT::Grid::Walker<GridLayerType>> c(
         m,
         XT::Common::to_camel_case("RS2017_divergence_matrix_operator_subdomain_"
@@ -860,6 +869,7 @@ public:
   {
     using namespace pybind11::literals;
 
+    //! TODO not a proper base
     py::class_<ThisType, XT::Grid::Walker<GridLayerType>> c(
         m,
         XT::Common::to_camel_case("RS2017_residual_part_vector_functional_subdomain_"
@@ -941,12 +951,16 @@ class SwipdgPenaltySubdomainProduct
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
   typedef GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1> SP;
+
+public:
   typedef GDT::
       MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
                          typename SP::type,
                          typename XT::Grid::
                              Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
           BaseType;
+
+private:
   typedef SwipdgPenaltySubdomainProduct<G> ThisType;
 
 public:
@@ -966,15 +980,20 @@ public:
   {
     using namespace pybind11::literals;
 
-    GDT::bindings::MatrixOperatorBase<ThisType>::bind(
-        m,
-        XT::Common::to_camel_case("RS2017_penalty_product_matrix_operator_subdomain_"
-                                  + XT::Grid::bindings::grid_name<G>::value())
-            .c_str(),
-        GDT::bindings::space_name<SP>::value(),
-        GDT::bindings::space_name<SP>::value(),
-        XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
-            + XT::Grid::bindings::backend_name<Backends::view>::value());
+    const std::string classname = XT::Common::to_camel_case("RS2017_penalty_product_matrix_operator_subdomain_"
+                                                            + XT::Grid::bindings::grid_name<G>::value());
+    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
+      GDT::bindings::MatrixOperatorBase<ThisType>::bind(
+          mod,
+          classname.c_str(),
+          GDT::bindings::space_name<SP>::value(),
+          GDT::bindings::space_name<SP>::value(),
+          XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
+              + XT::Grid::bindings::backend_name<Backends::view>::value());
+
+    });
+    py::class_<ThisType, typename GDT::bindings::MatrixOperatorBase<ThisType>::BaseType> c(
+        m, classname.c_str(), classname.c_str());
 
     m.def("RS2017_make_penalty_product_matrix_operator_on_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
@@ -1176,15 +1195,15 @@ class SwipdgPenaltyNeighborhoodProduct
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
   typedef GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::block_dg, GDT::Backends::gdt, 1, double, 1> SP;
+  typedef SwipdgPenaltyNeighborhoodProduct<G> ThisType;
+
+public:
   typedef GDT::
       MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
                          typename SP::type,
                          typename XT::Grid::
                              Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
           BaseType;
-  typedef SwipdgPenaltyNeighborhoodProduct<G> ThisType;
-
-public:
   using typename BaseType::GridLayerType;
   using typename BaseType::RangeSpaceType;
 
@@ -1205,14 +1224,20 @@ public:
     const auto grid_layer_name = XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
                                  + XT::Grid::bindings::backend_name<Backends::view>::value();
 
-    GDT::bindings::MatrixOperatorBase<ThisType>::bind(
-        m,
-        XT::Common::to_camel_case("RS2017_penalty_product_matrix_operator_oversampled_subdomain_"
-                                  + XT::Grid::bindings::grid_name<G>::value())
-            .c_str(),
-        space_name,
-        space_name,
-        grid_layer_name);
+    const std::string classname = XT::Common::to_camel_case(
+        "RS2017_penalty_product_matrix_operator_oversampled_subdomain_" + XT::Grid::bindings::grid_name<G>::value());
+    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
+      GDT::bindings::MatrixOperatorBase<ThisType>::bind(
+          mod,
+          classname.c_str(),
+          GDT::bindings::space_name<SP>::value(),
+          GDT::bindings::space_name<SP>::value(),
+          XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
+              + XT::Grid::bindings::backend_name<Backends::view>::value());
+
+    });
+    py::class_<ThisType, typename GDT::bindings::MatrixOperatorBase<ThisType>::BaseType> c(
+        m, classname.c_str(), classname.c_str());
 
     m.def("RS2017_make_penalty_product_matrix_operator_on_oversampled_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,

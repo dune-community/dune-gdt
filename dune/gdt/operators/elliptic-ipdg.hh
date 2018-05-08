@@ -42,8 +42,11 @@ template <class DiffusionFactorType,
 class EllipticIpdgMatrixOperator
     : public MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::face_and_volume>
 {
+public:
   typedef MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::face_and_volume>
       BaseType;
+
+private:
   typedef EllipticIpdgMatrixOperator<DiffusionFactorType,
                                      DiffusionTensorType,
                                      RangeSpace,

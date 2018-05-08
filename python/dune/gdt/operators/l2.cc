@@ -70,18 +70,21 @@ PYBIND11_MODULE(__operators_l2, m)
   DUNE_GDT_OPERATORS_L2_BIND(m, G, leaf, gdt, dg, 3, 1, istl_sparse);
   DUNE_GDT_OPERATORS_L2_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_sparse);
   DUNE_GDT_OPERATORS_L2_BIND(m, G, dd_subdomain, gdt, dg, 1, 1, istl_sparse);
+  using LayerType =
+      typename XT::Grid::Layer<G, Layers::dd_subdomain, XT::Grid::Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type;
+
+  const auto layer_name = XT::Grid::bindings::layer_name<Layers::leaf>::value()
+                          + XT::Grid::bindings::backend_name<XT::Grid::Backends::view>::value();
   Dune::GDT::bindings::internal::
       L2MatrixOperator<GDT::RestrictedSpace<
                            typename GDT::
                                SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, 2>::
                                    type,
-                           typename XT::Grid::Layer<G,
-                                                    Layers::dd_subdomain,
-                                                    XT::Grid::Backends::view,
-                                                    XT::Grid::DD::SubdomainGrid<G>>::type>,
+                           LayerType>,
                        XT::LA::IstlRowMajorSparseMatrix<double>>::bind(m,
                                                                        "RtAlu2dSimplexLeafRestrictedSubdomainPartSpace",
-                                                                       "istl_row_major_sparse_matrix_double");
+                                                                       "istl_row_major_sparse_matrix_double",
+                                                                       layer_name);
 
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 }
