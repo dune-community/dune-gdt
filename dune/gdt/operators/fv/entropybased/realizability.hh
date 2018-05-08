@@ -32,11 +32,12 @@ namespace Dune {
 namespace GDT {
 
 
-template <class DiscreteFunctionImp, class BasisfunctionImp>
+template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
 class LocalRealizabilityLimiterBase
     : public XT::Grid::Functor::Codim0<typename DiscreteFunctionImp::SpaceType::GridLayerType>
 {
 public:
+  using AnalyticalFluxType = AnalyticalFluxImp;
   using DiscreteFunctionType = DiscreteFunctionImp;
   using BasisfunctionType = BasisfunctionImp;
   typedef typename DiscreteFunctionType::SpaceType::GridLayerType GridLayerType;
@@ -51,35 +52,90 @@ public:
   typedef typename Dune::QuadratureRule<RangeFieldType, dimDomain> QuadratureType;
   using ReconstructedFunctionType =
       ReconstructedLocalizableFunction<GridLayerType, DomainFieldType, dimDomain, RangeFieldType, dimRange>;
+  using EntropyFluxType = EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, DiscreteFunctionType>;
 
-  LocalRealizabilityLimiterBase(const DiscreteFunctionType& source,
+  LocalRealizabilityLimiterBase(const AnalyticalFluxType& analytical_flux,
+                                const DiscreteFunctionType& source,
                                 ReconstructedFunctionType& reconstructed_function,
                                 const BasisfunctionType& basis_functions,
                                 const QuadratureType& quadrature,
-                                const RangeFieldType epsilon,
-                                const std::vector<RangeType>& basis_values)
-    : source_(source)
+                                const std::vector<RangeFieldType>& epsilon_sequence,
+                                const std::vector<RangeType>& basis_values,
+                                const XT::Common::Parameter& param)
+    : analytical_flux_(analytical_flux)
+    , source_(source)
     , reconstructed_function_(reconstructed_function)
     , basis_functions_(basis_functions)
     , quadrature_(quadrature)
-    , epsilon_(epsilon)
+    , epsilon_sequence_(epsilon_sequence)
     , basis_values_(basis_values)
+    , param_(param)
+  {
+    param_.set("boundary", {0.});
+  }
+
+  virtual ~LocalRealizabilityLimiterBase()
   {
   }
 
+  void apply_limiter(const typename AnalyticalFluxType::EntityType& entity,
+                     const RangeFieldType theta_entity,
+                     std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& local_reconstructed_values,
+                     const RangeType& u_bar)
+  {
+    assert(dynamic_cast<const EntropyFluxType*>(&analytical_flux_) != nullptr
+           && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
+    for (const auto& epsilon : epsilon_sequence_) {
+      if (theta_entity + epsilon > 0.) {
+        //        std::cout << "limited with theta: " << theta_entity << " and epsilon " << epsilon << std::endl;
+        auto theta = theta_entity + epsilon;
+        if (theta > 1.)
+          theta = 1.;
+        for (auto& pair : local_reconstructed_values) {
+          auto& u = pair.second;
+          u = convex_combination(u, u_bar, theta);
+        }
+      }
+      try {
+        // solve optimization problem
+        for (auto& pair : local_reconstructed_values) {
+          const auto x_in_inside_coords = entity.geometry().local(pair.first);
+          const auto& u = pair.second;
+          dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
+              ->derived_local_function(entity)
+              ->get_alpha(x_in_inside_coords, u, param_, false);
+        }
+        return;
+      } catch (const Dune::MathError&) {
+      }
+    } // epsilon
+  }
+
 protected:
+  RangeType convex_combination(const RangeType& u, const RangeType& u_bar, const RangeFieldType& theta)
+  {
+    RangeType u_scaled = u;
+    u_scaled *= 1 - theta;
+    RangeType u_bar_scaled = u_bar;
+    u_bar_scaled *= theta;
+    return u_scaled + u_bar_scaled;
+  }
+
+  const AnalyticalFluxType& analytical_flux_;
   const DiscreteFunctionType& source_;
   ReconstructedFunctionType& reconstructed_function_;
   const BasisfunctionType& basis_functions_;
   const QuadratureType& quadrature_;
-  const RangeFieldType epsilon_;
+  const std::vector<RangeFieldType>& epsilon_sequence_;
   const std::vector<RangeType>& basis_values_;
+  XT::Common::Parameter param_;
 };
 
-template <class DiscreteFunctionImp, class BasisfunctionImp = int>
-class NonLimitingLocalRealizabilityLimiter : public LocalRealizabilityLimiterBase<DiscreteFunctionImp, BasisfunctionImp>
+template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp = int>
+class NonLimitingLocalRealizabilityLimiter
+    : public LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>
 {
-  typedef LocalRealizabilityLimiterBase<DiscreteFunctionImp, BasisfunctionImp> BaseType;
+  using BaseType = LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>;
 
 public:
   using typename BaseType::EntityType;
@@ -95,77 +151,12 @@ public:
   }
 }; // class NonLimitingLocalRealizabilityLimiter
 
-template <class DiscreteFunctionImp, class BasisfunctionImp>
-class RelativePositivityLocalRealizabilityLimiter
-    : public LocalRealizabilityLimiterBase<DiscreteFunctionImp, BasisfunctionImp>
+
+template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
+class PositivityLocalRealizabilityLimiter
+    : public LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>
 {
-  typedef LocalRealizabilityLimiterBase<DiscreteFunctionImp, BasisfunctionImp> BaseType;
-
-public:
-  using typename BaseType::GridLayerType;
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::QuadratureType;
-  static const size_t dimDomain = BaseType::dimDomain;
-  static const size_t dimRange = BaseType::dimRange;
-
-  template <class... Args>
-  RelativePositivityLocalRealizabilityLimiter(Args&&... args)
-    : BaseType(std::forward<Args>(args)...)
-  {
-  }
-
-  void apply_local(const EntityType& entity)
-  {
-    auto& local_reconstructed_values = reconstructed_function_.local_values(entity);
-
-    // get cell average
-    const RangeType u_bar =
-        source_.local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center()));
-
-    // vector to store thetas for each local reconstructed value
-    std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), 0.);
-
-    size_t ll = -1;
-    for (const auto& pair : local_reconstructed_values) {
-      ++ll;
-      const auto& u_l = pair.second;
-      for (size_t ii = 0; ii < u_l.size(); ++ii)
-        if (XT::Common::FloatCmp::ne(u_l[ii], u_bar[ii])) {
-          auto theta_ii = u_l[ii] / (u_l[ii] - u_bar[ii]) + epsilon_;
-          if (XT::Common::FloatCmp::le(theta_ii, 1.))
-            thetas[ll] = std::max(thetas[ll], theta_ii);
-        }
-    } // ll
-    for (auto& theta : thetas)
-      theta = std::min(theta, 1.);
-
-    auto theta_entity_it = std::max_element(thetas.begin(), thetas.end());
-    auto theta_entity = theta_entity_it == thetas.end() ? 0. : *theta_entity_it;
-    if (theta_entity > 0.) {
-      for (auto& pair : local_reconstructed_values) {
-        auto& u = pair.second;
-        auto u_scaled = u;
-        u_scaled *= (1 - theta_entity);
-        auto u_bar_scaled = u_bar;
-        u_bar_scaled *= theta_entity;
-        u = u_scaled + u_bar_scaled;
-      }
-    }
-  } // void apply_local(...)
-
-private:
-  using BaseType::source_;
-  using BaseType::reconstructed_function_;
-  using BaseType::epsilon_;
-}; // class RelativePositivityLocalRealizabilityLimiter
-
-template <class DiscreteFunctionImp, class BasisfunctionImp>
-class PositivityLocalRealizabilityLimiter : public LocalRealizabilityLimiterBase<DiscreteFunctionImp, BasisfunctionImp>
-{
-  typedef LocalRealizabilityLimiterBase<DiscreteFunctionImp, BasisfunctionImp> BaseType;
+  using BaseType = LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>;
 
 public:
   using typename BaseType::GridLayerType;
@@ -192,44 +183,37 @@ public:
         source_.local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center()));
 
     // vector to store thetas for each local reconstructed value
-    std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), 0.);
+    thread_local std::vector<RangeFieldType> thetas(local_reconstructed_values.size());
+    std::fill(thetas.begin(), thetas.end(), -epsilon_sequence_[0]);
 
     size_t ll = -1;
     for (const auto& pair : local_reconstructed_values) {
       ++ll;
       const auto& u_l = pair.second;
-      for (size_t ii = 0; ii < u_l.size(); ++ii)
-        if (u_l[ii] < epsilon_ && u_bar[ii] > epsilon_)
-          thetas[ll] = std::max(thetas[ll], (epsilon_ - u_l[ii]) / (u_bar[ii] - u_l[ii]));
-    } // ll
-    for (auto& theta : thetas)
-      theta = std::min(theta, 1.);
-
-    auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
-    if (theta_entity > 0.) {
-      for (auto& pair : local_reconstructed_values) {
-        auto& u = pair.second;
-        auto u_scaled = u;
-        u_scaled *= (1 - theta_entity);
-        auto u_bar_scaled = u_bar;
-        u_bar_scaled *= theta_entity;
-        u = u_scaled + u_bar_scaled;
+      for (size_t ii = 0; ii < u_l.size(); ++ii) {
+        if (u_l[ii] >= u_bar[ii])
+          continue;
+        thetas[ll] = std::max(thetas[ll], u_l[ii] / (u_l[ii] - u_bar[ii]));
       }
-    }
+    } // ll
+    auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
+    BaseType::apply_limiter(entity, theta_entity, local_reconstructed_values, u_bar);
   } // void apply_local(...)
 
 private:
   using BaseType::source_;
   using BaseType::reconstructed_function_;
-  using BaseType::epsilon_;
+  using BaseType::epsilon_sequence_;
 }; // class PositivityLocalRealizabilityLimiter
 
-template <class DiscreteFunctionImp, class BasisfunctionImp>
-class DgLocalRealizabilityLimiter : public LocalRealizabilityLimiterBase<DiscreteFunctionImp, BasisfunctionImp>
+template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
+class DgLocalRealizabilityLimiter
+    : public LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>
 {
-  typedef LocalRealizabilityLimiterBase<DiscreteFunctionImp, BasisfunctionImp> BaseType;
+  using BaseType = LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>;
 
 public:
+  using typename BaseType::AnalyticalFluxType;
   using typename BaseType::DiscreteFunctionType;
   using typename BaseType::EntityType;
   using typename BaseType::GridLayerType;
@@ -241,14 +225,10 @@ public:
   static const size_t dimDomain = BaseType::dimDomain;
   static const size_t dimRange = BaseType::dimRange;
 
-  DgLocalRealizabilityLimiter(const DiscreteFunctionType& source,
-                              ReconstructedFunctionType& reconstructed_function,
-                              const BasisfunctionType& basis_functions,
-                              const QuadratureType& quadrature,
-                              const RangeFieldType epsilon,
-                              const std::vector<RangeType>& basis_values)
-    : BaseType(source, reconstructed_function, basis_functions, quadrature, epsilon, basis_values)
-    , triangulation_(basis_functions.triangulation())
+  template <class... Args>
+  DgLocalRealizabilityLimiter(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
+    , triangulation_(basis_functions_.triangulation())
   {
   }
 
@@ -305,16 +285,18 @@ public:
 private:
   using BaseType::source_;
   using BaseType::reconstructed_function_;
+  using BaseType::basis_functions_;
   using BaseType::epsilon_;
   typename BasisfunctionImp::TriangulationType triangulation_;
 }; // class DgLocalRealizabilityLimiter
 
 #if HAVE_QHULL
 
-template <class DiscreteFunctionImp, class BasisfunctionImp>
-class ConvexHullLocalRealizabilityLimiter : public LocalRealizabilityLimiterBase<DiscreteFunctionImp, BasisfunctionImp>
+template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
+class ConvexHullLocalRealizabilityLimiter
+    : public LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>
 {
-  typedef LocalRealizabilityLimiterBase<DiscreteFunctionImp, BasisfunctionImp> BaseType;
+  using BaseType = LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>;
 
 public:
   using typename BaseType::GridLayerType;
@@ -329,13 +311,9 @@ public:
   static const size_t dimRange = BaseType::dimRange;
   typedef typename std::vector<std::pair<RangeType, RangeFieldType>> PlaneCoefficientsType;
 
-  ConvexHullLocalRealizabilityLimiter(const DiscreteFunctionImp& source,
-                                      ReconstructedFunctionType& reconstructed_function,
-                                      const BasisfunctionType& basis_functions,
-                                      const QuadratureType& quadrature,
-                                      const RangeFieldType epsilon,
-                                      const std::vector<RangeType>& basis_values)
-    : BaseType(source, reconstructed_function, basis_functions, quadrature, epsilon, basis_values)
+  template <class... Args>
+  ConvexHullLocalRealizabilityLimiter(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
   {
     if (is_instantiated_)
       DUNE_THROW(InvalidStateException,
@@ -432,19 +410,20 @@ private:
   static std::shared_ptr<PlaneCoefficientsType> plane_coefficients_;
 }; // class ConvexHullLocalRealizabilityLimiter
 
-template <class DiscreteFunctionImp, class BasisfunctionImp>
-bool ConvexHullLocalRealizabilityLimiter<DiscreteFunctionImp, BasisfunctionImp>::is_instantiated_ = false;
+template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
+bool ConvexHullLocalRealizabilityLimiter<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>::is_instantiated_ =
+    false;
 
-template <class DiscreteFunctionImp, class BasisfunctionImp>
-std::shared_ptr<
-    typename ConvexHullLocalRealizabilityLimiter<DiscreteFunctionImp, BasisfunctionImp>::PlaneCoefficientsType>
-    ConvexHullLocalRealizabilityLimiter<DiscreteFunctionImp, BasisfunctionImp>::plane_coefficients_;
+template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
+std::shared_ptr<typename ConvexHullLocalRealizabilityLimiter<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>::
+                    PlaneCoefficientsType>
+    ConvexHullLocalRealizabilityLimiter<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>::plane_coefficients_;
 
-template <class DiscreteFunctionImp, class BasisfunctionImp>
+template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
 class DgConvexHullLocalRealizabilityLimiter
-    : public LocalRealizabilityLimiterBase<DiscreteFunctionImp, BasisfunctionImp>
+    : public LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>
 {
-  typedef LocalRealizabilityLimiterBase<DiscreteFunctionImp, BasisfunctionImp> BaseType;
+  using BaseType = LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>;
 
 public:
   using typename BaseType::GridLayerType;
@@ -464,13 +443,9 @@ public:
   typedef FieldVector<BlockPlaneCoefficientsType, num_blocks> PlaneCoefficientsType;
 
 public:
-  DgConvexHullLocalRealizabilityLimiter(const DiscreteFunctionImp& source,
-                                        ReconstructedFunctionType& reconstructed_function,
-                                        const BasisfunctionType& basis_functions,
-                                        const QuadratureType& quadrature,
-                                        const RangeFieldType epsilon,
-                                        const std::vector<RangeType>& basis_values)
-    : BaseType(source, reconstructed_function, basis_functions, quadrature, epsilon, basis_values)
+  template <class... Args>
+  DgConvexHullLocalRealizabilityLimiter(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
   {
     if (is_instantiated_)
       DUNE_THROW(InvalidStateException,
@@ -593,23 +568,25 @@ private:
   static std::shared_ptr<PlaneCoefficientsType> plane_coefficients_;
 }; // class ConvexHullLocalRealizabilityLimiter
 
-template <class DiscreteFunctionImp, class BasisfunctionImp>
-bool DgConvexHullLocalRealizabilityLimiter<DiscreteFunctionImp, BasisfunctionImp>::is_instantiated_ = false;
+template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
+bool DgConvexHullLocalRealizabilityLimiter<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>::is_instantiated_ =
+    false;
 
-template <class DiscreteFunctionImp, class BasisfunctionImp>
-std::shared_ptr<
-    typename DgConvexHullLocalRealizabilityLimiter<DiscreteFunctionImp, BasisfunctionImp>::PlaneCoefficientsType>
-    DgConvexHullLocalRealizabilityLimiter<DiscreteFunctionImp, BasisfunctionImp>::plane_coefficients_;
+template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
+std::shared_ptr<typename DgConvexHullLocalRealizabilityLimiter<AnalyticalFluxImp,
+                                                               DiscreteFunctionImp,
+                                                               BasisfunctionImp>::PlaneCoefficientsType>
+    DgConvexHullLocalRealizabilityLimiter<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>::
+        plane_coefficients_;
 
 #else // HAVE_QHULL
 
-template <class DiscreteFunctionImp, class BasisfunctionImp>
 class ConvexHullLocalRealizabilityLimiter
 {
   static_assert(Dune::AlwaysFalse<DiscreteFunctionImp>::value, "You are missing Qhull!");
 };
 
-template <class DiscreteFunctionImp, class BasisfunctionImp>
+template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
 class DgConvexHullLocalRealizabilityLimiter
 {
   static_assert(Dune::AlwaysFalse<DiscreteFunctionImp>::value, "You are missing Qhull!");
@@ -617,10 +594,11 @@ class DgConvexHullLocalRealizabilityLimiter
 
 #endif // HAVE_QHULL
 
-template <class DiscreteFunctionImp, class BasisfunctionImp>
-class LPLocalRealizabilityLimiter : public LocalRealizabilityLimiterBase<DiscreteFunctionImp, BasisfunctionImp>
+template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
+class LPLocalRealizabilityLimiter
+    : public LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>
 {
-  typedef LocalRealizabilityLimiterBase<DiscreteFunctionImp, BasisfunctionImp> BaseType;
+  using BaseType = LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>;
 
 public:
   using typename BaseType::GridLayerType;
@@ -638,7 +616,6 @@ public:
   {
   }
 
-
   void apply_local(const EntityType& entity)
   {
     auto& local_reconstructed_values = reconstructed_function_.local_values(entity);
@@ -648,7 +625,7 @@ public:
         source_.local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center()));
 
     // vector to store thetas for each local reconstructed value
-    std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), -epsilon_);
+    std::vector<RangeFieldType> thetas(local_reconstructed_values.size());
 
     size_t ll = -1;
     for (const auto& pair : local_reconstructed_values) {
@@ -656,7 +633,7 @@ public:
       const auto& u_l = pair.second;
       // if (XT::Common::FloatCmp::eq(u_bar, u_l) || basis_functions_.obviously_realizable(u_l)) {
       if (XT::Common::FloatCmp::eq(u_bar, u_l)) {
-        thetas[ll] = 0.;
+        thetas[ll] = -epsilon_sequence_[0];
         continue;
       }
 
@@ -665,41 +642,14 @@ public:
       // (\sum x_i v_i) + \theta (u - \bar{u}) = u
       // x_i, \theta >= 0
       auto theta = solve_linear_program(u_bar, u_l);
-      theta = theta + epsilon_;
-      if (theta > 1.)
-        theta = 1.;
       thetas[ll] = theta;
     } // ll
 
     auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
-    if (theta_entity > 0.)
-      limit_realizability(local_reconstructed_values, u_bar, theta_entity);
+    BaseType::apply_limiter(entity, theta_entity, local_reconstructed_values, u_bar);
   } // void apply_local(...)
 
 private:
-  void limit_realizability(std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& values,
-                           const RangeType& u_bar,
-                           const RangeFieldType theta)
-  {
-    for (auto& pair : values) {
-      auto& u = pair.second;
-      u = convex_combination(u, u_bar, theta);
-    }
-  }
-
-  RangeType convex_combination(const RangeType& u, const RangeType& u_bar, const RangeFieldType& theta)
-  {
-    if (XT::Common::FloatCmp::eq(theta, 0.))
-      return u;
-    else {
-      RangeType u_scaled = u;
-      u_scaled *= 1 - theta;
-      RangeType u_bar_scaled = u_bar;
-      u_bar_scaled *= theta;
-      return u_scaled + u_bar_scaled;
-    }
-  }
-
   //  RangeFieldType solve_linear_program(const RangeType& u_bar, const RangeType& u_l, const size_t index)
   RangeFieldType solve_linear_program(const RangeType& u_bar, const RangeType& u_l)
   {
@@ -778,7 +728,7 @@ private:
   using BaseType::source_;
   using BaseType::reconstructed_function_;
   using BaseType::quadrature_;
-  using BaseType::epsilon_;
+  using BaseType::epsilon_sequence_;
   using BaseType::basis_values_;
 }; // class LPLocalRealizabilityLimiter
 
@@ -794,6 +744,7 @@ template <class LocalRealizabilityLimiterImp>
 struct RealizabilityLimiterTraits
 {
   using LocalRealizabilityLimiterType = LocalRealizabilityLimiterImp;
+  using AnalyticalFluxType = typename LocalRealizabilityLimiterImp::AnalyticalFluxType;
   using BasisfunctionType = typename LocalRealizabilityLimiterImp::BasisfunctionType;
   using QuadratureType = typename LocalRealizabilityLimiterImp::QuadratureType;
   using RangeFieldType = typename LocalRealizabilityLimiterImp::RangeFieldType;
@@ -814,18 +765,22 @@ class RealizabilityLimiter : public OperatorInterface<Traits>
 {
 public:
   using LocalRealizabilityLimiterType = typename Traits::LocalRealizabilityLimiterType;
+  using AnalyticalFluxType = typename Traits::AnalyticalFluxType;
   using BasisfunctionType = typename Traits::BasisfunctionType;
   using QuadratureType = typename Traits::QuadratureType;
   using RangeFieldType = typename Traits::RangeFieldType;
   using RangeType = typename Traits::RangeType;
   using ReconstructedFunctionType = typename Traits::ReconstructedFunctionType;
 
-  RealizabilityLimiter(const BasisfunctionType& basis_functions,
-                       const QuadratureType& quadrature,
-                       const RangeFieldType epsilon)
-    : basis_functions_(basis_functions)
+  RealizabilityLimiter(
+      const AnalyticalFluxType& analytical_flux,
+      const BasisfunctionType& basis_functions,
+      const QuadratureType& quadrature,
+      const std::vector<RangeFieldType>& epsilon_sequence = {1e-10, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1})
+    : analytical_flux_(analytical_flux)
+    , basis_functions_(basis_functions)
     , quadrature_(quadrature)
-    , epsilon_(epsilon)
+    , epsilon_sequence_(epsilon_sequence)
     , basis_values_(quadrature_.size())
   {
     for (size_t ii = 0; ii < quadrature_.size(); ++ii)
@@ -833,21 +788,22 @@ public:
   }
 
   template <class SourceType>
-  void apply(const SourceType& source, ReconstructedFunctionType& range, const XT::Common::Parameter& /*param*/) const
+  void apply(const SourceType& source, ReconstructedFunctionType& range, const XT::Common::Parameter& param) const
   {
     static_assert(is_discrete_function<SourceType>::value,
                   "SourceType has to be derived from DiscreteFunction (use the non-reconstructed values!)");
     LocalRealizabilityLimiterType local_realizability_limiter(
-        source, range, basis_functions_, quadrature_, epsilon_, basis_values_);
+        analytical_flux_, source, range, basis_functions_, quadrature_, epsilon_sequence_, basis_values_, param);
     auto walker = XT::Grid::Walker<typename SourceType::SpaceType::GridLayerType>(source.space().grid_layer());
     walker.append(local_realizability_limiter);
     walker.walk(true);
   } // void apply(...)
 
 private:
+  const AnalyticalFluxType& analytical_flux_;
   const BasisfunctionType& basis_functions_;
   const QuadratureType& quadrature_;
-  const RangeFieldType epsilon_;
+  const std::vector<RangeFieldType> epsilon_sequence_;
   std::vector<RangeType> basis_values_;
 }; // class RealizabilityLimiter<...>
 

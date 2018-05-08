@@ -368,6 +368,11 @@ public:
     };
   }
 
+  RangeFieldType calculate_psi_from_moments(const RangeType& val) const
+  {
+    return val[0] * std::sqrt(4 * M_PI);
+  }
+
   static StringifierType stringifier()
   {
     return [](const RangeType& val) { return XT::Common::to_string(val[0] * std::sqrt(4 * M_PI), 15); };
