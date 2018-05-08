@@ -75,6 +75,7 @@ public:
     reconstruction_operator_.apply(source, reconstructed_function, param);
 
     // apply advection operator
+    std::fill(range.vector().begin(), range.vector().end(), 0.);
     advection_operator_.apply(reconstructed_function, range, param);
   }
 

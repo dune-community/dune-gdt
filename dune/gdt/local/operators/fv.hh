@@ -127,10 +127,6 @@ public:
     const auto entity = intersection.inside();
     const auto local_source_entity = source.local_function(entity);
     const auto local_functions_tuple = numerical_flux_.local_functions(entity);
-    typedef
-        typename Dune::XT::Common::FieldVector<typename LocalDiscreteFunction<SpaceType, VectorType>::DomainFieldType,
-                                               LocalDiscreteFunction<SpaceType, VectorType>::dimRange>
-            ResultType;
     ResultType result(0);
     for (const auto& quad_point : quadrature_) {
       result += ResultType(numerical_flux_.evaluate(

@@ -251,7 +251,6 @@ public:
     auto& u_n = current_solution();
     // calculate stages
     for (size_t ii = 0; ii < num_stages_; ++ii) {
-      stages_k_[ii].vector() *= RangeFieldType(0);
       u_i_.vector() = u_n.vector();
       for (size_t jj = 0; jj < ii; ++jj)
         u_i_.vector() += stages_k_[jj].vector() * (actual_dt * r_ * (A_[ii][jj]));
