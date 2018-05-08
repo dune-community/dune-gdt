@@ -240,21 +240,14 @@ public:
     // add ctor
     addbind_switch<>::ctors(c);
     // add rest
+    c.def("append", [](type& self, type& other) { self.append(other); }, "system_assembler"_a, py::keep_alive<1, 2>());
+
     c.def("append",
           [](type& self, type& other, const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
             self.append(other, which_intersections.copy());
           },
           "system_assembler"_a,
-          "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
-          py::keep_alive<1, 2>());
-    c.def("append",
-          [](type& self,
-             XT::Grid::Walker<GridLayerType>& other,
-             const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
-            self.append(other, which_intersections.copy());
-          },
-          "grid_walker"_a,
-          "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+          "which_intersections"_a,
           py::keep_alive<1, 2>());
     c.def("assemble",
           [](type& self, const bool use_tbb) {
