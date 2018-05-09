@@ -89,7 +89,7 @@ class WeightedL2LocalizableProduct
             [](const F& weight,
                const F& range,
                const F& source,
-               const XT::Grid::GridProvider<G>& grid,
+               const XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>& grid,
                const int level,
                const size_t over_integrate) {
               return GDT::WeightedL2LocalizableProduct<F, GL, F, F>(

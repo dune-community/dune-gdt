@@ -138,7 +138,7 @@ struct ResidualProduct
       using namespace pybind11::literals;
 
       m.def(std::string("make_" + class_name() + "_" + layer_suffix()).c_str(),
-            [](XT::Grid::GridProvider<G>& grid_provider,
+            [](XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>& grid_provider,
                const ssize_t layer_level,
                const ssize_t reconstruction_layer_level,
                const typename type::ScalarFunctionType& lambda,
@@ -294,7 +294,7 @@ struct DiffusiveFluxProduct
       using namespace pybind11::literals;
 
       m.def(std::string("make_" + class_name() + "_" + layer_suffix()).c_str(),
-            [](XT::Grid::GridProvider<G>& grid_provider,
+            [](XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>& grid_provider,
                const ssize_t layer_level,
                const ssize_t reconstruction_layer_level,
                const typename type::ScalarFunctionType& lambda,

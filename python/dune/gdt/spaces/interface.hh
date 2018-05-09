@@ -492,7 +492,7 @@ private:
       c.def(std::string("restrict_to_" + XT::Grid::bindings::layer_name<layer>::value() + "_"
                         + XT::Grid::bindings::backend_name<backend>::value())
                 .c_str(),
-            [](type& self, XT::Grid::GridProvider<G>& grid_provider, const int level = -1) {
+            [](type& self, XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>& grid_provider, const int level = -1) {
               return RestrictedSpaceType(self, grid_provider.template layer<layer, backend>(level));
             },
             "grid_provider"_a,

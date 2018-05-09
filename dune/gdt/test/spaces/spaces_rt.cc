@@ -225,9 +225,10 @@ struct RtSpace : public ::testing::Test
 
 
 template <class G, int p>
-struct RtSpaceOnSimplicialLeafView : public RtSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>
+struct RtSpaceOnSimplicialLeafView
+    : public RtSpace<typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType, p>
 {
-  using GridProviderType = Dune::XT::Grid::GridProvider<G>;
+  using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
 
   GridProviderType grid_provider;
@@ -312,9 +313,10 @@ TYPED_TEST(Order0SimplicialRtSpace, basis_is_rt_basis)
 
 
 template <class G, int p>
-struct RtSpaceOnCubicLeafView : public RtSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>
+struct RtSpaceOnCubicLeafView
+    : public RtSpace<typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType, p>
 {
-  using GridProviderType = Dune::XT::Grid::GridProvider<G>;
+  using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
 
   std::shared_ptr<GridProviderType> grid_provider;
@@ -404,9 +406,10 @@ TYPED_TEST(Order0CubicRtSpace, basis_is_rt_basis)
 
 //// The space cannot handle mixed views (yet)!
 // template <class G, int p>
-// struct RtSpaceOnMixedLeafView : public RtSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>
+// struct RtSpaceOnMixedLeafView : public RtSpace<typename Dune::XT::Grid::GridProvider<G,
+// Dune::XT::Grid::none_t>::LeafGridViewType, p>
 //{
-//  using GridProviderType = Dune::XT::Grid::GridProvider<G>;
+//  using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
 //  using LeafGridViewType = typename GridProviderType::LeafGridViewType;
 
 //  std::shared_ptr<GridProviderType> grid_provider;

@@ -81,7 +81,7 @@ public:
     // these two are copied from <dune/xt/functions/interfaces.pbh>, would be nicer to inherit them
     c.def("visualize",
           [](const type& self,
-             const XT::Grid::GridProvider<G>& grid_provider,
+             const XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>& grid_provider,
              const std::string& layer,
              const ssize_t lvl,
              const std::string& path,

@@ -68,7 +68,7 @@ template <class SpaceType>
 class SpaceBase : public ::testing::Test
 {
   using GridType = Dune::XT::Grid::extract_grid_t<typename SpaceType::GridLayerType>;
-  typedef Dune::XT::Grid::GridProvider<GridType> ProviderType;
+  typedef Dune::XT::Grid::GridProvider<GridType, Dune::XT::Grid::none_t> ProviderType;
 
 public:
   SpaceBase()

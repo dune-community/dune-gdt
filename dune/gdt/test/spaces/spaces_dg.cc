@@ -200,9 +200,11 @@ struct DiscontinuousLagrangeSpace : public ::testing::Test
 
 template <class G, int p>
 struct DiscontinuousLagrangeSpaceOnSimplicialLeafView
-    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>
+    : public DiscontinuousLagrangeSpace<
+          typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
+          p>
 {
-  using GridProviderType = Dune::XT::Grid::GridProvider<G>;
+  using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
 
   GridProviderType grid_provider;
@@ -360,9 +362,11 @@ TYPED_TEST(Order2SimplicialDiscontinuousLagrangeSpace, basis_jacobians_seem_to_b
 
 template <class G, int p>
 struct DiscontinuousLagrangeSpaceOnCubicLeafView
-    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>
+    : public DiscontinuousLagrangeSpace<
+          typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
+          p>
 {
-  using GridProviderType = Dune::XT::Grid::GridProvider<G>;
+  using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
 
   std::shared_ptr<GridProviderType> grid_provider;
@@ -525,9 +529,11 @@ TYPED_TEST(Order2CubicDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_cor
 
 template <class G, int p>
 struct DiscontinuousLagrangeSpaceOnPrismLeafView
-    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>
+    : public DiscontinuousLagrangeSpace<
+          typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
+          p>
 {
-  using GridProviderType = Dune::XT::Grid::GridProvider<G>;
+  using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
 
   std::shared_ptr<GridProviderType> grid_provider;
@@ -689,9 +695,11 @@ TYPED_TEST(Order2PrismDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_cor
 
 template <class G, int p>
 struct DiscontinuousLagrangeSpaceOnMixedLeafView
-    : public DiscontinuousLagrangeSpace<typename Dune::XT::Grid::GridProvider<G>::LeafGridViewType, p>
+    : public DiscontinuousLagrangeSpace<
+          typename Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>::LeafGridViewType,
+          p>
 {
-  using GridProviderType = Dune::XT::Grid::GridProvider<G>;
+  using GridProviderType = Dune::XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>;
   using LeafGridViewType = typename GridProviderType::LeafGridViewType;
 
   std::shared_ptr<GridProviderType> grid_provider;

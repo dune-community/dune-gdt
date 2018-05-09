@@ -204,7 +204,7 @@ private:
       using namespace pybind11::literals;
 
       m.def(std::string("make_" + class_name()).c_str(),
-            [](XT::Grid::GridProvider<G>& grid_provider,
+            [](XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>& grid_provider,
                const int level,
                const R& range,
                const S& source,
