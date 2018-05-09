@@ -96,8 +96,10 @@ public:
     return c;
   } // ... bind(...)
 
-  template <XT::LA::Backends la_backend, class R = double>
-  static void addbind(bound_type& c)
+  template <XT::LA::Backends la_backend = XT::LA::Backends::istl_sparse,
+            class R = double,
+            class addbind_type = bound_type>
+  static void addbind(addbind_type& c)
   {
     typedef typename XT::LA::Container<R, la_backend>::MatrixType M;
     typedef typename XT::LA::Container<R, la_backend>::VectorType V;

@@ -255,11 +255,12 @@ public:
             self.assemble(use_tbb);
           },
           "use_tbb"_a = false);
-    // add constraints
-    bindings::DirichletConstraints<XT::Grid::extract_intersection_t<typename type::GridLayerType>,
-                                   XT::Grid::extract_grid_t<typename type::GridLayerType>>::addbind(c);
 
-#if HAVE_DUNE_ISTL
+
+#if HAVE_DUNE_ISTL // add constraints
+    using G = XT::Grid::extract_grid_t<typename type::GridLayerType>;
+    using I = XT::Grid::extract_intersection_t<typename type::GridLayerType>;
+    bindings::DirichletConstraints<I, G>::addbind(c);
     addaddbind_matrixatrix<XT::LA::Backends::istl_sparse>(c);
 #endif
 
