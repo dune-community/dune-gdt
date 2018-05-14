@@ -170,13 +170,13 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::BackendType;
 
-  DefaultProductMapper(const GridLayerType& grd_layr, const MapperTypes&... mappers)
+  DefaultProductMapper(GridLayerType grd_layr, const MapperTypes&... mappers)
     : mappers_(std::make_tuple(mappers...))
     , grid_layer_(grd_layr)
   {
   }
 
-  DefaultProductMapper(const GridLayerType& grd_layr, const std::tuple<MapperTypes...>& mappers)
+  DefaultProductMapper(GridLayerType grd_layr, const std::tuple<MapperTypes...>& mappers)
     : mappers_(mappers)
     , grid_layer_(grd_layr)
   {
@@ -288,7 +288,7 @@ public:
 
 private:
   const std::tuple<MapperTypes...> mappers_;
-  const GridLayerType& grid_layer_;
+  GridLayerType grid_layer_;
 }; // class DefaultProductMapper
 
 

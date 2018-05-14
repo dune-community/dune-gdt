@@ -92,7 +92,7 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  FvMapper(const GridLayerType& grd_layr)
+  FvMapper(GridLayerType grd_layr)
     : mapper_(new BackendType(grd_layr))
   {
   }

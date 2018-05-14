@@ -154,7 +154,7 @@ private:
   GridLayerType grid_layer_;
   const MapperType mapper_;
   const std::unique_ptr<DofCommunicatorType> communicator_;
-}; // class FvSpace< ..., 1, 1 >
+}; // class FvSpace< ..., 1 >
 
 
 template <class R, size_t r, size_t rC, class GL>
