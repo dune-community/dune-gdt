@@ -581,6 +581,7 @@ std::shared_ptr<typename DgConvexHullLocalRealizabilityLimiter<AnalyticalFluxImp
 
 #else // HAVE_QHULL
 
+template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
 class ConvexHullLocalRealizabilityLimiter
 {
   static_assert(Dune::AlwaysFalse<DiscreteFunctionImp>::value, "You are missing Qhull!");
