@@ -92,7 +92,7 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  FvMapper(GridLayerType grd_layr)
+  FvMapper(const GridLayerType& grd_layr)
     : mapper_(new BackendType(grd_layr))
   {
   }
@@ -206,7 +206,7 @@ class FvProductMapper<GridLayerImp, rangeDim, 1>
     : public ProductMapperInterface<internal::FvProductMapperTraits<GridLayerImp, rangeDim, 1>>
 {
   typedef ProductMapperInterface<internal::FvProductMapperTraits<GridLayerImp, rangeDim, 1>> BaseType;
-  typedef FvMapper<GridLayerImp, rangeDim, 1> FvMapperMapperType;
+  typedef FvMapper<GridLayerImp, rangeDim, 1> FvMapperType;
 
 public:
   typedef internal::FvProductMapperTraits<GridLayerImp, rangeDim, 1> Traits;
@@ -290,7 +290,7 @@ public:
   }
 
 private:
-  const FvMapperMapperType fv_mapper_;
+  const FvMapperType fv_mapper_;
 }; // class FvProductMapper< ..., rangeDim, 1 >
 
 
