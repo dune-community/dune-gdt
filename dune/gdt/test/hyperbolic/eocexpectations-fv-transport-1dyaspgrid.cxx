@@ -40,7 +40,7 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
       if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0))
         return {3.33e-01, 2.95e-01};
       else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
-        return {5.02e-02, 3.51e-02};
+        return {5.21e-02, 3.71e-02};
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     else
@@ -70,7 +70,7 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
       if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0))
         return {3.36e-01, 3.05e-01};
       else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
-        return {5.03e-02, 3.55e-02};
+        return {5.23e-02, 3.74e-02};
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     else
@@ -100,7 +100,7 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
       if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0))
         return {3.46e-01, 3.35e-01};
       else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
-        return {5.69e-02, 4.67e-02};
+        return {5.91e-02, 4.77e-02};
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     } else {
@@ -132,7 +132,7 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
       if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0))
         return {4.75e-01, 2.81e-01};
       else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
-        return {4.75e-02, 2.81e-02};
+        return {4.86e-02, 2.86e-02};
       else
         EXPECT_TRUE(false) << "test results missing for type: " << type;
     } else {

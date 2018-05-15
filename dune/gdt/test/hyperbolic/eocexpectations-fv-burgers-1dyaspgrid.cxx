@@ -36,7 +36,7 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1,
       if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0))
         return {8.96e-02, 3.87e-02};
       else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
-        return {1.33e-02, 6.34e-03};
+        return {1.35e-02, 6.37e-03};
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     } else {
@@ -66,7 +66,7 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1,
       if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0))
         return {8.64e-02, 3.72e-02};
       else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
-        return {1.33e-02, 6.33e-03};
+        return {1.35e-02, 6.36e-03};
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     } else {
@@ -96,7 +96,7 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp1,
       if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0))
         return {1.03e-01, 5.58e-02};
       else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
-        return {1.71e-02, 7.63e-03};
+        return {1.73e-02, 7.67e-03};
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     else
