@@ -87,7 +87,7 @@ public:
            && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
     for (const auto& epsilon : epsilon_sequence_) {
       if (theta_entity + epsilon > 0.) {
-        //        std::cout << "limited with theta: " << theta_entity << " and epsilon " << epsilon << std::endl;
+        std::cout << "limited with theta: " << theta_entity << " and epsilon " << epsilon << std::endl;
         auto theta = theta_entity + epsilon;
         if (theta > 1.)
           theta = 1.;
@@ -106,7 +106,9 @@ public:
               ->get_alpha(x_in_inside_coords, u, param_, false);
         }
         return;
-      } catch (const Dune::MathError&) {
+      } catch (const Dune::MathError& e) {
+        if (epsilon == epsilon_sequence_.back())
+          DUNE_THROW(Dune::MathError, e.what());
       }
     } // epsilon
   }
@@ -241,13 +243,14 @@ public:
         source_.local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center()));
 
     // vector to store thetas for each local reconstructed value
-    std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), -epsilon_);
+    const auto epsilon = epsilon_sequence_[0];
+    std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), -epsilon);
 
     size_t ll = -1;
     for (const auto& pair : local_reconstructed_values) {
       ++ll;
       const auto& u_l = pair.second;
-      FieldVector<RangeFieldType, dimRange / 2> local_thetas(-epsilon_);
+      FieldVector<RangeFieldType, dimRange / 2> local_thetas(-epsilon);
       for (size_t ii = 0; ii < dimRange / 2; ++ii) {
         const auto& u0 = u_l[2 * ii];
         const auto& u1 = u_l[2 * ii + 1];
@@ -260,33 +263,22 @@ public:
         thetas_ii[1] = (u0 * vj - u1) / ((ubar1 - u1) - (ubar0 - u0) * vj);
         thetas_ii[2] = (u0 * vjplus1 - u1) / ((ubar1 - u1) - (ubar0 - u0) * vjplus1);
         for (size_t kk = 0; kk < 3; ++kk) {
-          if (thetas_ii[kk] < -epsilon_ || thetas_ii[kk] > 1.)
-            thetas_ii[kk] = -epsilon_;
+          if (thetas_ii[kk] < -epsilon || thetas_ii[kk] > 1.)
+            thetas_ii[kk] = -epsilon;
           local_thetas[ii] = std::max(local_thetas[ii], thetas_ii[kk]);
         } // kk
       } // ii
       thetas[ll] = *std::max_element(local_thetas.begin(), local_thetas.end());
     } // ll
     auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
-    theta_entity = std::min(theta_entity + epsilon_, 1.);
-    if (theta_entity > 0.) {
-      std::cout << "Realizability limiter applied, theta = " << theta_entity << std::endl;
-      for (auto& pair : local_reconstructed_values) {
-        auto& u = pair.second;
-        auto u_scaled = u;
-        u_scaled *= (1 - theta_entity);
-        auto u_bar_scaled = u_bar;
-        u_bar_scaled *= theta_entity;
-        u = u_scaled + u_bar_scaled;
-      }
-    }
+    BaseType::apply_limiter(entity, theta_entity, local_reconstructed_values, u_bar);
   } // void apply_local(...)
 
 private:
   using BaseType::source_;
   using BaseType::reconstructed_function_;
   using BaseType::basis_functions_;
-  using BaseType::epsilon_;
+  using BaseType::epsilon_sequence_;
   typename BasisfunctionImp::TriangulationType triangulation_;
 }; // class DgLocalRealizabilityLimiter
 
@@ -773,11 +765,11 @@ public:
   using RangeType = typename Traits::RangeType;
   using ReconstructedFunctionType = typename Traits::ReconstructedFunctionType;
 
-  RealizabilityLimiter(
-      const AnalyticalFluxType& analytical_flux,
-      const BasisfunctionType& basis_functions,
-      const QuadratureType& quadrature,
-      const std::vector<RangeFieldType>& epsilon_sequence = {1e-10, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1})
+  RealizabilityLimiter(const AnalyticalFluxType& analytical_flux,
+                       const BasisfunctionType& basis_functions,
+                       const QuadratureType& quadrature,
+                       const std::vector<RangeFieldType>& epsilon_sequence =
+                           {1e-10, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.2, 0.5, 1.})
     : analytical_flux_(analytical_flux)
     , basis_functions_(basis_functions)
     , quadrature_(quadrature)
