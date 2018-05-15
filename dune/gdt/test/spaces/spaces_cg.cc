@@ -232,20 +232,20 @@ struct ContinuousLagrangeSpaceOnSimplicialLeafView
 
 using SimplicialGrids = ::testing::Types<ONED_1D,
                                          YASP_1D_EQUIDISTANT_OFFSET
-#if HAVE_DUNE_ALUGRID
-                                         ,
-                                         ALU_2D_SIMPLEX_CONFORMING,
-                                         ALU_2D_SIMPLEX_NONCONFORMING
-#endif
+//#if HAVE_DUNE_ALUGRID
+//                                         ,
+//                                         ALU_2D_SIMPLEX_CONFORMING,
+//                                         ALU_2D_SIMPLEX_NONCONFORMING
+//#endif
 #if HAVE_DUNE_UGGRID || HAVE_UG
                                          ,
                                          UG_2D
 #endif
-#if HAVE_DUNE_ALUGRID
-                                         ,
-                                         ALU_3D_SIMPLEX_CONFORMING,
-                                         ALU_3D_SIMPLEX_NONCONFORMING
-#endif
+//#if HAVE_DUNE_ALUGRID
+//                                         ,
+//                                         ALU_3D_SIMPLEX_CONFORMING,
+//                                         ALU_3D_SIMPLEX_NONCONFORMING
+//#endif
 #if HAVE_DUNE_UGGRID || HAVE_UG
                                          ,
                                          UG_3D
