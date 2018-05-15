@@ -113,7 +113,12 @@ public:
   {
   }
 
-  FvSpace(ThisType&& source) = default;
+  FvSpace(ThisType&& source)
+    : grid_layer_(std::move(source.grid_layer_))
+    , mapper_(std::move(source.mapper_))
+    , communicator_(DofCommunicationChooserType::create(grid_layer_))
+  {
+  }
 
   ThisType& operator=(const ThisType& other) = delete;
 
