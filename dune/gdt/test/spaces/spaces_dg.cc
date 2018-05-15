@@ -779,8 +779,8 @@ struct DiscontinuousLagrangeSpaceOnMixedLeafView
 
 using MixedGrids = ::testing::Types<
 #if HAVE_DUNE_UGGRID || HAVE_UG
-    UG_2D,
-    UG_3D
+    UG_2D
+//  , UG_3D
 #endif
     >;
 
