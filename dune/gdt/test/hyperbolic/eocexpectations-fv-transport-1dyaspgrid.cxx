@@ -40,7 +40,7 @@ std::vector<double> Dune::GDT::Test::HyperbolicEocExpectations<Hyperbolic::Trans
       if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0))
         return {3.33e-01, 2.95e-01};
       else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
-        return {5.21e-02, 3.71e-02};
+        return {5.21e-02, 3.70e-02};
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     else
