@@ -153,6 +153,7 @@ public:
              const XT::Common::Parameter& param,
              LocalOperatorArgs&&... local_operator_args) const
   {
+    std::fill(range.vector().begin(), range.vector().end(), 0.);
     AdvectionLocalizableDefault<AnalyticalFluxType,
                                 NumericalCouplingFluxType,
                                 NumericalBoundaryFluxType,
