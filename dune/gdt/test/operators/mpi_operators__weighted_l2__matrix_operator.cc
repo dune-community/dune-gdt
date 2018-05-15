@@ -47,7 +47,7 @@ TYPED_TEST(WeightedL2MatrixOperatorTest, correct_for_constant_arguments)
 TYPED_TEST(WeightedL2MatrixOperatorTest, correct_for_linear_arguments)
 {
 #ifndef NDEBUG
-  const double tolerance = 1e-15;
+  const double tolerance = 1.51e-15;
 #else
   const double tolerance = 1.25e-14;
 #endif
