@@ -55,7 +55,7 @@ public:
   static const constexpr size_t dimDomain = GL::dimension;
   static const constexpr size_t dimRange = 1;
   static const constexpr size_t dimRangeCols = 1;
-  static const constexpr bool continuous = false;
+  static const constexpr bool continuous = true;
   using GridLayerType = GL;
   using LocalFiniteElement = LagrangeLocalFiniteElement<EquidistantPointSet, dimDomain, typename GL::ctype, R>;
   using BaseFunctionSetType = ScalarBasefunctionSet<LocalFiniteElement, XT::Grid::extract_entity_t<GL>, R>;
@@ -122,7 +122,7 @@ public:
       auto fe = std::make_shared<FiniteElementType>(geometry_type, p);
       const auto& lp = fe->localInterpolation().lagrangePoints();
       std::vector<DomainType> lagrange_points(lp.size());
-      for (size_t ii = 0; ii < lp.size(); ++ii)
+      for (unsigned int ii = 0; ii < lp.size(); ++ii)
         lagrange_points[ii] = lp[ii].point();
       lagrange_points_->insert(std::make_pair(geometry_type, std::move(lagrange_points)));
       finite_elements_->insert(std::make_pair(geometry_type, std::move(fe)));

@@ -44,7 +44,6 @@ protected:
 
 public:
   using typename BaseType::RangeFieldType;
-  static constexpr bool linear = ImplementationType::linear;
 
   KineticEquation(const ImplementationType& implementation)
     : BaseType(implementation.create_flux(),
@@ -85,18 +84,19 @@ public:
   }
 }; // class KineticEquation<...>
 
-template <class BasisfunctionImp, class GridLayerImp, class U_, bool linear_ = true>
-class KineticEquationImplementation
+
+template <class BasisfunctionImp, class GridLayerImp, class U_>
+class KineticEquationImplementationInterface
 {
-  typedef KineticEquationImplementation<BasisfunctionImp, GridLayerImp, U_, linear_> ThisType;
+  typedef KineticEquationImplementationInterface<BasisfunctionImp, GridLayerImp, U_> ThisType;
 
 public:
-  static constexpr bool linear = linear_;
   typedef BasisfunctionImp BasisfunctionType;
   typedef GridLayerImp GridLayerType;
   typedef typename GridLayerType::template Codim<0>::Entity EntityType;
   typedef typename BasisfunctionType::DomainFieldType DomainFieldType;
   typedef U_ StateType;
+  typedef typename U_::RangeType StateRangeType;
   typedef typename BasisfunctionType::RangeFieldType RangeFieldType;
   static const size_t dimDomain = BasisfunctionType::dimFlux;
   static const size_t dimRange = BasisfunctionType::dimRange;
@@ -133,13 +133,13 @@ public:
   typedef typename RhsAffineFunctionType::DomainType DomainType;
   typedef typename RhsAffineFunctionType::RangeType RangeType;
 
-  KineticEquationImplementation(const BasisfunctionType& basis_functions, const GridLayerType& grid_layer)
+  KineticEquationImplementationInterface(const BasisfunctionType& basis_functions, const GridLayerType& grid_layer)
     : basis_functions_(basis_functions)
     , grid_layer_(grid_layer)
   {
   }
 
-  virtual ~KineticEquationImplementation()
+  virtual ~KineticEquationImplementationInterface()
   {
   }
 
@@ -179,13 +179,13 @@ public:
 
   static std::string static_id()
   {
-    return "kineticequationimplementation";
+    return "kineticequationimplementationinterface";
   }
 
 protected:
   const BasisfunctionType& basis_functions_;
   const GridLayerType& grid_layer_;
-}; // class KineticEquationImplementation<...>
+}; // class KineticEquationImplementationInterface<...>
 
 
 } // namespace Problems

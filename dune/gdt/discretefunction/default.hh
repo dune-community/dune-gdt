@@ -413,47 +413,6 @@ DiscreteFunction<SpaceType, VectorType> make_discrete_function(const SpaceType& 
 }
 
 
-namespace internal {
-
-
-template <class D>
-struct is_const_discrete_function_helper
-{
-  DXTC_has_typedef_initialize_once(SpaceType);
-  DXTC_has_typedef_initialize_once(VectorType);
-
-  static const bool is_candidate = DXTC_has_typedef(SpaceType)<D>::value && DXTC_has_typedef(VectorType)<D>::value;
-};
-
-
-} // namespace internal
-
-
-template <class D, bool candidate = internal::is_const_discrete_function_helper<D>::is_candidate>
-struct is_const_discrete_function
-    : public std::is_base_of<ConstDiscreteFunction<typename D::SpaceType, typename D::VectorType>, D>
-{
-};
-
-
-template <class D>
-struct is_const_discrete_function<D, false> : public std::false_type
-{
-};
-
-
-template <class D, bool candidate = internal::is_const_discrete_function_helper<D>::is_candidate>
-struct is_discrete_function : public std::is_base_of<DiscreteFunction<typename D::SpaceType, typename D::VectorType>, D>
-{
-};
-
-
-template <class D>
-struct is_discrete_function<D, false> : public std::false_type
-{
-};
-
-
 } // namespace GDT
 } // namespace Dune
 

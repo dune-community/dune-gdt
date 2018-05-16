@@ -93,10 +93,10 @@ public:
                                              typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::   \
                                                  VectorType>::bind(_m)
 
-//#if HAVE_ALBERTA
-//#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALBERTA(_m, _layer, _backend, _la)                                      \
-//  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, ALBERTA_2D, _layer, _backend, 1, 1, _la)
-//#else
+/*#if HAVE_ALBERTA
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALBERTA(_m, _layer, _backend, _la)                                      \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, ALBERTA_2D, _layer, _backend, 1, 1, _la)
+#else*/
 #define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALBERTA(_m, _layer, _backend, _la)
 //#endif
 
@@ -107,10 +107,10 @@ public:
 #define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_ALU(_m, _layer, _backend, _la)
 #endif
 
-//#if HAVE_DUNE_UGGRID || HAVE_UG
-//#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, _layer, _backend, _la)                                           \
-//  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, UG_2D, _layer, _backend, 1, 1, _la)
-//#else
+/*#if HAVE_DUNE_UGGRID || HAVE_UG
+#define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, _layer, _backend, _la)                                           \
+  _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND(_m, UG_2D, _layer, _backend, 1, 1, _la)
+#else*/
 #define _DUNE_GDT_PROJECTIONS_DIRICHLET_BIND_UG(_m, _layer, _backend, _la)
 //#endif
 

@@ -109,13 +109,13 @@ public:
   _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, gdt, fv, 0, _la);                                                    \
   _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, gdt, dg, 1, _la);                                             \
   _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, gdt, block_cg, 1, _la);
-//  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, gdt, fv, 0, _la);                                                   \
-//  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, gdt, fv, 0, _la)
-//_DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, fem, cg, 1, _la);                                                     \
-//_DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, fem, cg, 1, _la);                                                    \
-//_DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, cg, 1, _la);                                             \
-//_DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, block_cg, 1, _la);                                       \
-
+/*  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, gdt, fv, 0, _la);                                                 \
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, gdt, fv, 0, _la);                                                  \
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, leaf, fem, cg, 1, _la);                                                   \
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, level, fem, cg, 1, _la);                                                  \
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, cg, 1, _la);                                           \
+  _DUNE_GDT_PROJECTIONS_BIND_ALL_GRIDS(_m, dd_subdomain, fem, block_cg, 1, _la);                                     \
+  */
 
 
 #define _DUNE_GDT_PROJECTIONS_BIND_ALL_SPACES(_m, _la) _DUNE_GDT_PROJECTIONS_BIND_DEFAULT(_m, _la);

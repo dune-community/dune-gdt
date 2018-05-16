@@ -20,7 +20,7 @@
 #include <dune/gdt/test/instationary-testcase.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
 
-#include "kinetictransportequation.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -29,10 +29,10 @@ namespace Problems {
 namespace KineticTransport {
 
 
-template <class BasisfunctionImp, class GridLayerImp, class U_, bool linear = true>
-class PointSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, linear>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
+class PointSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, BasisfunctionImp::dimDomain>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, linear> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, BasisfunctionImp::dimDomain> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -55,7 +55,7 @@ public:
                 const QuadratureType& quadrature = default_quadrature(),
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, {1, 1, 1}, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, quadrature, {1, 1, 1}, grid_cfg, boundary_cfg, 1e-4 / (4 * M_PI))
   {
   }
 
@@ -129,9 +129,9 @@ protected:
 }; // class PointSourcePn<...>
 
 template <class BasisfunctionType, class GridLayerType, class U_>
-class PointSourceMn : public PointSourcePn<BasisfunctionType, GridLayerType, U_, false /*nonlinear*/>
+class PointSourceMn : public PointSourcePn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef PointSourcePn<BasisfunctionType, GridLayerType, U_, false> BaseType;
+  typedef PointSourcePn<BasisfunctionType, GridLayerType, U_> BaseType;
   typedef PointSourceMn ThisType;
 
 public:

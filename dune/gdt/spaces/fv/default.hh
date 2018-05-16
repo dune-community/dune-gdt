@@ -113,7 +113,12 @@ public:
   {
   }
 
-  FvSpace(ThisType&& source) = default;
+  FvSpace(ThisType&& source)
+    : grid_layer_(std::move(source.grid_layer_))
+    , mapper_(std::move(source.mapper_))
+    , communicator_(DofCommunicationChooserType::create(grid_layer_))
+  {
+  }
 
   ThisType& operator=(const ThisType& other) = delete;
 
@@ -154,7 +159,7 @@ private:
   GridLayerType grid_layer_;
   const MapperType mapper_;
   const std::unique_ptr<DofCommunicatorType> communicator_;
-}; // class FvSpace< ..., 1, 1 >
+}; // class FvSpace< ..., 1 >
 
 
 template <class R, size_t r, size_t rC, class GL>

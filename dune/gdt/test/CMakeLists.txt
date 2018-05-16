@@ -79,6 +79,7 @@ foreach(test_target ${dxt_test_binaries})
                           ${Qhull_LIBRARIES}
                           ${LAPACKE_LIBRARIES}
                           ${MATEXP_LIBRARIES}
+                          ${FEKETE_LIBRARIES}
                           ${LEBEDEVDATA_LIBRARIES})
   endif()
 endforeach()

@@ -54,10 +54,12 @@ public:
 
   typedef typename DiscreteFunctionType::DomainFieldType DomainFieldType;
   typedef typename DiscreteFunctionType::RangeFieldType RangeFieldType;
+  typedef typename DiscreteFunctionType::RangeType RangeType;
   typedef typename std::map<RangeFieldType, DiscreteFunctionType, typename internal::FloatCmpLt> SolutionType;
   typedef typename SolutionType::value_type TimeAndDiscreteFunctionPairType;
   typedef DiscreteFunctionDataHandle<DiscreteFunctionType> DataHandleType;
   typedef std::function<void(const DiscreteFunctionType&, const std::string&, const size_t)> VisualizerType;
+  typedef std::function<std::string(const RangeType&)> StringifierType;
 
 private:
   typedef typename Dune::XT::Common::StorageProvider<DiscreteFunctionImp> CurrentSolutionStorageProviderType;
@@ -156,9 +158,11 @@ public:
                                const bool save_solution,
                                const bool output_progress,
                                const bool visualize,
+                               const bool write_to_file,
                                const std::string filename_prefix,
                                SolutionType& sol,
-                               const VisualizerType& visualizer)
+                               const VisualizerType& visualizer,
+                               const StringifierType& stringifier)
   {
     RangeFieldType dt = initial_dt;
     RangeFieldType t = current_time();
@@ -174,6 +178,8 @@ public:
       sol.insert(std::make_pair(t, current_solution()));
     if (visualize)
       visualizer(current_solution(), filename_prefix, 0);
+    if (write_to_file)
+      write_to_textfile(current_solution(), filename_prefix, 0, stringifier);
 
     while (Dune::XT::Common::FloatCmp::lt(t, t_end)) {
       RangeFieldType max_dt = dt;
@@ -196,6 +202,8 @@ public:
           sol.insert(sol.end(), std::make_pair(t, current_solution()));
         if (visualize)
           visualizer(current_solution(), filename_prefix, save_step_counter);
+        if (write_to_file)
+          write_to_textfile(current_solution(), filename_prefix, save_step_counter, stringifier);
         if (output_progress)
           std::cout << "time step " << time_step_counter << " done, time =" << t << ", current dt= " << dt << std::endl;
         next_save_time += save_interval;
@@ -213,7 +221,8 @@ public:
                                const bool output_progress = false,
                                const bool visualize = false,
                                const std::string filename_prefix = "solution",
-                               const VisualizerType& visualizer = all_components_visualizer())
+                               const VisualizerType& visualizer = all_components_visualizer(),
+                               const StringifierType& stringifier = vector_stringifier())
   {
     return solve(t_end,
                  initial_dt,
@@ -221,15 +230,52 @@ public:
                  save_solution,
                  output_progress,
                  visualize,
+                 false,
                  filename_prefix,
                  *solution_,
-                 visualizer);
+                 visualizer,
+                 stringifier);
   }
+
+  virtual RangeFieldType solve(const RangeFieldType t_end,
+                               const RangeFieldType initial_dt,
+                               const size_t num_save_steps,
+                               const bool save_solution,
+                               const bool output_progress,
+                               const bool visualize,
+                               const bool write_to_file,
+                               const std::string filename_prefix = "solution",
+                               const VisualizerType& visualizer = all_components_visualizer(),
+                               const StringifierType& stringifier = vector_stringifier())
+  {
+    return solve(t_end,
+                 initial_dt,
+                 num_save_steps,
+                 save_solution,
+                 output_progress,
+                 visualize,
+                 write_to_file,
+                 filename_prefix,
+                 *solution_,
+                 visualizer,
+                 stringifier);
+  }
+
 
   virtual RangeFieldType
   solve(const RangeFieldType t_end, const RangeFieldType initial_dt, const size_t num_save_steps, SolutionType& sol)
   {
-    return solve(t_end, initial_dt, num_save_steps, true, false, false, "", sol, 0);
+    return solve(t_end,
+                 initial_dt,
+                 num_save_steps,
+                 true,
+                 false,
+                 false,
+                 false,
+                 "",
+                 sol,
+                 all_components_visualizer(),
+                 vector_stringifier());
   }
 
   /**
@@ -285,6 +331,45 @@ public:
       u_n.visualize(filename_prefix, Dune::XT::Common::to_string(step));
     };
   }
+
+  static StringifierType vector_stringifier()
+  {
+    return [](const RangeType& val) { return XT::Common::to_string(val, 15); };
+  } // ... vector_stringifier()
+
+  void write_to_textfile(const DiscreteFunctionType& u_n,
+                         const std::string& filename_prefix,
+                         const size_t step,
+                         const StringifierType& stringifier)
+  {
+    const auto& grid_layer = u_n.space().grid_layer();
+    std::ofstream valuesfile(filename_prefix + "_values_rank_" + XT::Common::to_string(grid_layer.comm().rank()) + "_"
+                             + XT::Common::to_string(step)
+                             + ".txt");
+    for (const auto& entity : elements(grid_layer, Dune::Partitions::interiorBorder)) {
+      const auto local_func = u_n.local_function(entity);
+      const auto entity_center = entity.geometry().center();
+      const auto val = local_func->evaluate(entity.geometry().local(entity_center));
+      for (size_t ii = 0; ii < entity_center.size(); ++ii)
+        valuesfile << XT::Common::to_string(entity_center[ii], 15) << " ";
+      valuesfile << stringifier(val) << std::endl;
+    }
+    valuesfile.close();
+    grid_layer.comm().barrier();
+    if (grid_layer.comm().rank() == 0) {
+      std::remove((filename_prefix + "_values_" + XT::Common::to_string(step) + ".txt").c_str());
+      std::ofstream merged_valuesfile(filename_prefix + "_values_" + XT::Common::to_string(step) + ".txt",
+                                      std::ios_base::binary | std::ios_base::app);
+      for (int ii = 0; ii < grid_layer.comm().size(); ++ii) {
+        std::ifstream valuefile_rank(
+            filename_prefix + "_values_rank_" + XT::Common::to_string(ii) + "_" + XT::Common::to_string(step) + ".txt",
+            std::ios_base::binary);
+        merged_valuesfile << valuefile_rank.rdbuf();
+        valuefile_rank.close();
+      } // ii
+      merged_valuesfile.close();
+    } // if (rank == 0)
+  } // void write_to_textfile()
 
 private:
   RangeFieldType t_;

@@ -12,6 +12,8 @@
 #ifndef DUNE_GDT_PROLONGATIONS_L2_GLOBAL_HH
 #define DUNE_GDT_PROLONGATIONS_L2_GLOBAL_HH
 
+#include <dune/xt/functions/exceptions.hh>
+
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
@@ -83,7 +85,7 @@ public:
   {
     try {
       BaseOperatorType::apply();
-    } catch (XT::Common::Exceptions::reinterpretation_error& ee) {
+    } catch (XT::Functions::Exceptions::reinterpretation_error& ee) {
       DUNE_THROW(prolongation_error,
                  "This prolongation (using a global L2 projection) failed, because the source could not be "
                      << "reinterpreted on the given grid layer!\n"

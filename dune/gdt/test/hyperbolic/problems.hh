@@ -9,14 +9,13 @@
 //   Rene Milk       (2016 - 2018)
 //   Tobias Leibner  (2016 - 2017)
 
-#include <dune/gdt/test/hyperbolic/eocexpectations.hh>
 #include <dune/gdt/test/grids.hh>
+#include <dune/gdt/test/hyperbolic/eocexpectations.hh>
 #include <dune/gdt/test/hyperbolic/problems/burgers.hh>
 #include <dune/gdt/test/hyperbolic/problems/transport.hh>
 #include <dune/gdt/test/hyperbolic/problems/shallowwater.hh>
 #include <dune/gdt/test/hyperbolic/problems/sodshocktube.hh>
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/checkerboard.hh>
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/fokkerplanck/sourcebeam.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels.hh>
 
 using Yasp1 = Yasp1Grid;
 using Yasp2 = Yasp2Grid;

@@ -25,21 +25,21 @@ namespace GDT {
 /**
  * \brief Wrapper for the map of reconstructed values that fulfills the XT::Functions::LocalizableFunctionInterface
  */
-template <class GridViewImp,
+template <class GridLayerImp,
           class DomainFieldImp,
           size_t domainDim,
           class RangeFieldImp,
           size_t rangeDim,
           size_t rangeDimCols = 1>
 class ReconstructedLocalizableFunction
-    : public XT::Functions::LocalizableFunctionInterface<typename GridViewImp::template Codim<0>::Entity,
+    : public XT::Functions::LocalizableFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
                                                          DomainFieldImp,
                                                          domainDim,
                                                          RangeFieldImp,
                                                          rangeDim,
                                                          rangeDimCols>
 {
-  typedef XT::Functions::LocalizableFunctionInterface<typename GridViewImp::template Codim<0>::Entity,
+  typedef XT::Functions::LocalizableFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
                                                       DomainFieldImp,
                                                       domainDim,
                                                       RangeFieldImp,
@@ -52,7 +52,7 @@ public:
   static const constexpr size_t dimRange = BaseType::dimRange;
   static const constexpr size_t dimRangeCols = BaseType::dimRangeCols;
 
-  typedef GridViewImp GridLayerType;
+  typedef GridLayerImp GridLayerType;
   typedef typename GridLayerType::IndexSet IndexSetType;
   typedef typename BaseType::EntityType EntityType;
   typedef typename BaseType::DomainFieldType DomainFieldType;
@@ -67,57 +67,63 @@ private:
       : public XT::Functions::
             LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
   {
-    typedef typename XT::Functions::
-        LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
-            BaseType;
+    using BaseType = typename XT::Functions::
+        LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>;
 
   public:
-    ReconstructedLocalfunction(const EntityType& entity,
-                               const std::map<LocalCoordinateType, RangeType, XT::Common::FieldVectorLess>& values)
-      : BaseType(entity)
+    using LocalReconstructedValuesType = std::map<LocalCoordinateType, RangeType, XT::Common::FieldVectorLess>;
+
+    ReconstructedLocalfunction(const EntityType& ent, const LocalReconstructedValuesType& values)
+      : BaseType(ent)
       , values_(values)
     {
     }
 
-    virtual size_t order(const XT::Common::Parameter& /*mu*/ = {}) const
+    virtual size_t order(const XT::Common::Parameter& /*mu*/ = {}) const override
     {
       DUNE_THROW(Dune::InvalidStateException, "This function can't be integrated!");
       return 2;
     }
 
-    virtual void evaluate(const DomainType& xx, RangeType& ret, const XT::Common::Parameter& /*param*/) const
+    using BaseType::entity;
+
+    virtual void evaluate(const DomainType& xx, RangeType& ret, const XT::Common::Parameter& /*param*/) const override
     {
       try {
         ret = values_.at(xx);
-      } catch (const std::out_of_range& e) {
+      } catch (const std::out_of_range& /*e*/) {
         DUNE_THROW(Dune::RangeError,
-                   "There are no values for xx = " << XT::Common::to_string(xx) << " in this function!");
+                   "There are no values for local coord " << XT::Common::to_string(xx) << " (global coord "
+                                                          << XT::Common::to_string(entity().geometry().global(xx))
+                                                          << ") on entity "
+                                                          << XT::Common::to_string(entity().geometry().center())
+                                                          << " in this function!");
       }
     }
 
-    virtual void
-    jacobian(const DomainType& /*xx*/, JacobianRangeType& /*ret*/, const XT::Common::Parameter& /*param*/) const
+    virtual void jacobian(const DomainType& /*xx*/,
+                          JacobianRangeType& /*ret*/,
+                          const XT::Common::Parameter& /*param*/) const override
     {
       DUNE_THROW(Dune::NotImplemented, "");
     }
 
   private:
-    const std::map<LocalCoordinateType, RangeType, XT::Common::FieldVectorLess>& values_;
+    const LocalReconstructedValuesType& values_;
   };
 
 public:
-  typedef ReconstructedLocalfunction LocalfunctionType;
-  typedef XT::Functions::
-      LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>
-          LocalfunctionInterfaceType;
+  using LocalfunctionType = ReconstructedLocalfunction;
+  using LocalfunctionInterfaceType = XT::Functions::
+      LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols>;
+  using LocalReconstructedValuesType = typename LocalfunctionType::LocalReconstructedValuesType;
+  using ReconstructedValuesType = typename std::vector<LocalReconstructedValuesType>;
 
   static const bool available = true;
 
-  ReconstructedLocalizableFunction(
-      const GridLayerType& grid_layer,
-      const std::vector<std::map<LocalCoordinateType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values)
+  ReconstructedLocalizableFunction(const GridLayerType& grid_layer)
     : index_set_(grid_layer.indexSet())
-    , reconstructed_values_(reconstructed_values)
+    , reconstructed_values_(grid_layer.size(0))
   {
   }
 
@@ -141,9 +147,29 @@ public:
     return "reconstructed localizable function";
   }
 
+  ReconstructedValuesType& values()
+  {
+    return reconstructed_values_;
+  }
+
+  const ReconstructedValuesType& values() const
+  {
+    return reconstructed_values_;
+  }
+
+  LocalReconstructedValuesType& local_values(const EntityType& entity)
+  {
+    return reconstructed_values_[index_set_.index(entity)];
+  }
+
+  const LocalReconstructedValuesType& local_values(const EntityType& entity) const
+  {
+    return reconstructed_values_[index_set_.index(entity)];
+  }
+
 private:
   const IndexSetType& index_set_;
-  const std::vector<std::map<LocalCoordinateType, RangeType, XT::Common::FieldVectorLess>>& reconstructed_values_;
+  ReconstructedValuesType reconstructed_values_;
 }; // class ReconstructedLocalizableFunction
 
 

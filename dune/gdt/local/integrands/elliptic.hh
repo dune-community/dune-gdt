@@ -267,8 +267,8 @@ public:
     ret *= 0.0;
     // evaluate local functions
     const auto diffusion_factor_value = local_diffusion_factor.evaluate(localPoint, param_);
-    const TensorType diffusion_tensor_value = local_diffusion_tensor.evaluate(localPoint, param_);
-    const auto diffusion_value = diffusion_tensor_value * diffusion_factor_value;
+    TensorType diffusion_value = local_diffusion_tensor.evaluate(localPoint, param_);
+    diffusion_value *= diffusion_factor_value;
     // evaluate bases
     const auto testGradients = test_base.jacobian(localPoint, param_);
     const auto ansatzGradients = ansatz_base.jacobian(localPoint, param_);

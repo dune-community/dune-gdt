@@ -37,13 +37,18 @@ TYPED_TEST(EllipticMatrixOperatorTest, is_matrix_operator)
 
 TYPED_TEST(EllipticMatrixOperatorTest, correct_for_constant_arguments)
 {
-  this->correct_for_constant_arguments(6.90e-13);
+  const double relax_factor = this->space_.grid_layer().grid().comm().size() > 1 ? 2 : 1;
+  this->correct_for_quadratic_arguments(6.90e-13 * relax_factor);
 }
+
 TYPED_TEST(EllipticMatrixOperatorTest, correct_for_linear_arguments)
 {
-  this->correct_for_linear_arguments();
+  const double relax_factor = this->space_.grid_layer().grid().comm().size() > 1 ? 2 : 1;
+  this->correct_for_linear_arguments(EllipticDefaultTolerances::linear * relax_factor);
 }
+
 TYPED_TEST(EllipticMatrixOperatorTest, correct_for_quadratic_arguments)
 {
-  this->correct_for_quadratic_arguments();
+  const double relax_factor = this->space_.grid_layer().grid().comm().size() > 1 ? 2 : 1;
+  this->correct_for_quadratic_arguments(EllipticDefaultTolerances::quadratic * relax_factor);
 }

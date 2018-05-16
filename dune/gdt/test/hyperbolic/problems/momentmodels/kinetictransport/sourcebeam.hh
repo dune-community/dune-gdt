@@ -23,7 +23,7 @@
 #include <dune/gdt/local/fluxes/entropybased.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
 
-#include "kinetictransportequation.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -33,9 +33,9 @@ namespace KineticTransport {
 
 
 template <class BasisfunctionImp, class GridLayerImp, class U_>
-class SourceBeamPn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
+class SourceBeamPn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, 1>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, 1> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -77,41 +77,38 @@ public:
     grid_config["upper_right"] = "[3.0]";
     grid_config["num_elements"] = "[300]";
     grid_config["overlap_size"] = "[1]";
-    grid_config["num_quad_cells"] = "[50]";
-    grid_config["quad_order"] = "50";
+    grid_config["num_quad_cells"] = "[48]";
+    grid_config["quad_order"] = "31";
     return grid_config;
   }
 
   // sigma_a = 1 if x <= 2, 0 else
   // sigma_s = 0 if x <= 1, 2 if 1 < x <= 2, 10 else
-  // Q = 1 if 1 <= x <= 1.5, 0 else
+  // Q = 0.5 if 1 <= x <= 1.5, 0 else
   virtual XT::Common::Parameter parameters() const override
   {
     return XT::Common::Parameter({std::make_pair("sigma_a", std::vector<double>{1, 1, 1, 1, 0, 0}),
                                   std::make_pair("sigma_s", std::vector<double>{0, 0, 2, 2, 10, 10}),
-                                  std::make_pair("Q", std::vector<double>{0, 0, 1, 0, 0, 0}),
+                                  std::make_pair("Q", std::vector<double>{0, 0, 0.5, 0, 0, 0}),
                                   std::make_pair("CFL", std::vector<double>{0.4}),
                                   std::make_pair("t_end", std::vector<double>{4.0})});
   }
 
   // Boundary value of kinetic equation is \frac{g}{<g>} at x = 0 and
   // \psi_{vac} = 0.5*10^(-8) at x = 3, with g(v) = exp(-10^5(v-1)^2), so n-th component of boundary value has to be
-  // \frac{<base_n(v)*exp(-10^5(v-1)^2)>}{<exp(-10^5(v-1)^2)>} at x = 0 and \psi_{vac}*base_integrated_n
+  // \frac{<base_n(v)*g(v)>}{<g>} at x = 0 and \psi_{vac}*base_integrated_n
   // at x = 3.
-  // Simulate with linear interpolating function left_boundary_vals * (1-x/3) + base_integrated*psi_vac * x/3
   virtual BoundaryValueType* create_boundary_values() const override
   {
-    const RangeType basis_integrated = basis_functions_.integrated();
-    const RangeType left_boundary_values =
-        helper<BasisfunctionType>::get_left_boundary_values(quadrature_, basis_functions_);
     return new ActualBoundaryValueType(
-        [=](const DomainType& x, const XT::Common::Parameter&) {
-          RangeType ret = left_boundary_values;
-          ret *= 1 - x[0] / 3.;
-          RangeType summand2 = basis_integrated;
-          summand2 *= psi_vac_ * x[0] / 3.;
-          ret += summand2;
-          return ret;
+        [&](const DomainType& x, const XT::Common::Parameter&) {
+          if (x[0] < 1.5)
+            return helper<BasisfunctionType>::get_left_boundary_values(quadrature_, basis_functions_, psi_vac_);
+          else {
+            auto ret = basis_functions_.integrated();
+            ret *= psi_vac_;
+            return ret;
+          }
         },
         1);
   } // ... create_boundary_values()
@@ -151,7 +148,9 @@ protected:
     using helper_base::numerator;
     using helper_base::denominator;
 
-    static RangeType get_left_boundary_values(const QuadratureType& quadrature, const BasisfunctionImp& basis_functions)
+    static RangeType get_left_boundary_values(const QuadratureType& quadrature,
+                                              const BasisfunctionImp& basis_functions,
+                                              const RangeFieldType& psi_vac)
     {
       RangeType ret(0);
       for (const auto& quad_point : quadrature) {
@@ -161,6 +160,8 @@ protected:
         ret += summand;
       }
       ret /= denominator();
+      // add small vacuum concentration move away from realizable boundary
+      ret += basis_functions.integrated() * psi_vac;
       return ret;
     }
   };
@@ -173,7 +174,8 @@ protected:
     using helper_base::integral_1;
 
     static RangeType get_left_boundary_values(const QuadratureType& /*quadrature*/,
-                                              const BasisfunctionImp& basis_functions)
+                                              const BasisfunctionImp& basis_functions,
+                                              const RangeFieldType psi_vac)
     {
       RangeType ret(0);
       for (size_t nn = 0; nn < dimRange; ++nn) {
@@ -188,6 +190,8 @@ protected:
           ret[nn] += 1. / ((vn - vnm) * denominator())
                      * ((1 - vnm) * integral_1(vnm, vn) - 1. / 2e5 * (numerator(vn) - numerator(vnm)));
       }
+      // add small vacuum concentration move away from realizable boundary
+      ret += basis_functions.integrated() * psi_vac;
       return ret;
     }
   };
@@ -200,7 +204,8 @@ protected:
     using helper_base::integral_2;
 
     static RangeType get_left_boundary_values(const QuadratureType& /*quadrature*/,
-                                              const BasisfunctionImp& basis_functions)
+                                              const BasisfunctionImp& basis_functions,
+                                              const RangeFieldType psi_vac)
     {
       const auto& triangulation = basis_functions.triangulation();
       RangeType ret(0);
@@ -208,6 +213,8 @@ protected:
         ret[2 * ii] = integral_1(triangulation[ii], triangulation[ii + 1]) / denominator();
         ret[2 * ii + 1] = integral_2(triangulation[ii], triangulation[ii + 1]) / denominator();
       }
+      // add small vacuum concentration move away from realizable boundary
+      ret += basis_functions.integrated() * psi_vac;
       return ret;
     }
   };

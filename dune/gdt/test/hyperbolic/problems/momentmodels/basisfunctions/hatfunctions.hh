@@ -52,9 +52,15 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
+  using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
   typedef RangeType TriangulationType;
+
+  static std::string static_id()
+  {
+    return "hatfunctions";
+  }
 
   HatFunctions(const TriangulationType triangulation = create_triangulation(),
                const QuadratureType& /*quadrature*/ = QuadratureType())
@@ -153,32 +159,60 @@ public:
     auto& ret_pos = ret[0][1];
     size_t N = dimRange;
     for (size_t nn = 0; nn < N; ++nn) {
-      for (size_t mm = 0; mm < N; ++mm) {
-        if (nn < N / 2 || mm < N / 2)
-          ret_neg[nn][mm] = mm_with_v[0][nn][mm];
-        else if (nn > N / 2 || mm > N / 2)
-          ret_pos[nn][mm] = mm_with_v[0][nn][mm];
-        else if (nn == N / 2 && mm == N / 2) {
-          if (N % 2) {
+      for (size_t mm = (nn > 0 ? nn - 1 : 0); mm <= (nn < N - 1 ? nn + 1 : nn); ++mm) {
+        if (N % 2) {
+          if (nn < N / 2 || mm < N / 2)
+            ret_neg[nn][mm] = mm_with_v[0][nn][mm];
+          else if (nn > N / 2 || mm > N / 2)
+            ret_pos[nn][mm] = mm_with_v[0][nn][mm];
+          else { // nn == mm == N/2
             ret_neg[nn][mm] = -std::pow(triangulation_[mm - 1], 2) / 12.;
             ret_pos[nn][mm] = std::pow(triangulation_[mm + 1], 2) / 12.;
-          } else {
+          }
+        } else {
+          if (nn < N / 2 - 1 || mm < N / 2 - 1)
+            ret_neg[nn][mm] = mm_with_v[0][nn][mm];
+          else if (nn > N / 2 || mm > N / 2)
+            ret_pos[nn][mm] = mm_with_v[0][nn][mm];
+          else if (nn == N / 2 && mm == nn) {
             ret_neg[nn][mm] = -std::pow(triangulation_[mm], 2) / 48.;
             ret_pos[nn][mm] = (5 * std::pow(triangulation_[mm], 2) + 8 * triangulation_[mm] * triangulation_[mm + 1]
                                + 4 * std::pow(triangulation_[mm + 1], 2))
                               / 48.;
+          } else if (nn == N / 2 - 1 && mm == nn) {
+            ret_neg[nn][mm] = (-5 * std::pow(triangulation_[mm], 2) - 8 * triangulation_[mm] * triangulation_[mm - 1]
+                               - 4 * std::pow(triangulation_[mm - 1], 2))
+                              / 48.;
+            ret_pos[nn][mm] = std::pow(triangulation_[mm], 2) / 48.;
+          } else { // (((mm == N / 2 && nn == N / 2 - 1) || (mm == N / 2 - 1 && nn == N / 2))) {
+            ret_neg[nn][mm] = -std::pow(triangulation_[mm], 2) / 16.;
+            ret_pos[nn][mm] = std::pow(triangulation_[mm], 2) / 16.;
           }
-        } else if (!(N % 2) && mm == N / 2 - 1 && nn == N / 2 - 1) {
-          ret_neg[nn][mm] = (-3 * std::pow(triangulation_[mm], 2) - 8 * triangulation_[mm] * triangulation_[mm - 1]
-                             - 4 * std::pow(triangulation_[mm - 1], 2))
-                            / 48.;
-          ret_pos[nn][mm] = std::pow(triangulation_[mm], 2) / 48.;
-        } else if (!(N % 2) && ((mm == N / 2 && nn == N / 2 - 1) || (mm == N / 2 - 1 && nn == N / 2))) {
-          ret_neg[nn][mm] = -std::pow(triangulation_[mm], 2) / 16.;
-          ret_pos[nn][mm] = std::pow(triangulation_[mm], 2) / 16.;
-        }
+        } // else (N % 2)
       } // mm
     } // nn
+    return ret;
+  }
+
+  virtual MatrixType reflection_matrix(const DomainType& n) const
+  {
+    MatrixType ret(dimRange, dimRange, 0);
+    for (size_t ii = 0; ii < dimDomain; ++ii)
+      if (XT::Common::FloatCmp::ne(n[ii], 0.))
+        if (XT::Common::FloatCmp::ne(std::abs(n[ii]), 1.))
+          DUNE_THROW(NotImplemented, "Implemented only for +-e_i where e_i is the i-th canonical basis vector!");
+    const auto mass_mat = mass_matrix();
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      for (size_t jj = 0; jj < dimRange; ++jj)
+        ret[ii][jj] = mass_mat[ii][dimRange - 1 - jj];
+    ret.rightmultiply(mass_matrix_inverse());
+#ifndef NDEBUG
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      for (size_t jj = 0; jj < dimRange; ++jj)
+        if (std::isnan(ret[ii][jj]) || std::isinf(ret[ii][jj]))
+          DUNE_THROW(Dune::MathError,
+                     "Calculation of reflection matrix failed for normal n = " + XT::Common::to_string(n));
+#endif
     return ret;
   }
 
@@ -190,15 +224,33 @@ public:
     };
   }
 
+  RangeFieldType calculate_psi_from_moments(const RangeType& val) const
+  {
+    RangeFieldType psi(0);
+    for (const auto& entry : val)
+      psi += entry;
+    return psi;
+  }
+
+  static StringifierType stringifier()
+  {
+    return [](const RangeType& val) {
+      RangeFieldType psi(0);
+      for (const auto& entry : val)
+        psi += entry;
+      return XT::Common::to_string(psi, 15);
+    };
+  } // ... stringifier()
+
   std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
   {
     RangeFieldType psi_iso(0);
     for (size_t ii = 0; ii < dimRange; ++ii)
       psi_iso += u[ii];
     psi_iso /= 2.;
-    RangeType alpha_iso(std::log(psi_iso)), u_iso;
-    u_iso = integrated();
-    u_iso *= psi_iso / 2.;
+    RangeType alpha_iso(std::log(psi_iso));
+    auto u_iso = integrated();
+    u_iso *= psi_iso;
     return std::make_pair(u_iso, alpha_iso);
   }
 
@@ -211,6 +263,17 @@ public:
   {
     return 2 * std::max(std::accumulate(u.begin(), u.end(), RangeFieldType(0)),
                         std::accumulate(u_bar.begin(), u_bar.end(), RangeFieldType(0)));
+  }
+
+  // get indices of all faces that contain point v
+  std::vector<size_t> get_face_indices(const DomainType& v) const
+  {
+    std::vector<size_t> face_indices;
+    for (size_t jj = 0; jj < triangulation_.size() - 1; ++jj)
+      if (XT::Common::FloatCmp::ge(v[0], triangulation_[jj]) && XT::Common::FloatCmp::le(v[0], triangulation_[jj + 1]))
+        face_indices.push_back(jj);
+    assert(face_indices.size());
+    return face_indices;
   }
 
 private:
@@ -236,8 +299,11 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
+  using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
+
+  using BaseType::barycentre_rule;
 
   HatFunctions(const TriangulationType& triangulation, const QuadratureType& quadrature)
     : triangulation_(triangulation)
@@ -248,10 +314,21 @@ public:
 
   HatFunctions(const size_t refinements = 0,
                const size_t quadrature_refinements = 4,
+               const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule = barycentre_rule(),
+               std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points =
+                   {{1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
+    : triangulation_(initial_points, refinements, reference_quadrature_rule)
+    , quadrature_(triangulation_.quadrature_rule(quadrature_refinements))
+  {
+    assert(triangulation_.vertices().size() == dimRange);
+  }
+
+  HatFunctions(const size_t refinements,
+               const QuadratureType& quadrature,
                std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points =
                    {{1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
     : triangulation_(initial_points, refinements)
-    , quadrature_(triangulation_.quadrature_rule(quadrature_refinements))
+    , quadrature_(quadrature)
   {
     assert(triangulation_.vertices().size() == dimRange);
   }
@@ -304,6 +381,7 @@ public:
     return B;
   } // ... mass_matrix_with_v()
 
+  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
   virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const
   {
     FieldVector<FieldVector<MatrixType, 2>, dimFlux> B_kinetic(
@@ -332,6 +410,22 @@ public:
     return B_kinetic;
   } // ... kinetic_flux_matrices()
 
+  virtual MatrixType reflection_matrix(const DomainType& n) const
+  {
+    MatrixType ret(dimRange, dimRange, 0);
+    size_t direction;
+    for (size_t ii = 0; ii < dimDomain; ++ii) {
+      if (XT::Common::FloatCmp::ne(n[ii], 0.)) {
+        direction = ii;
+        if (XT::Common::FloatCmp::ne(std::abs(n[ii]), 1.))
+          DUNE_THROW(NotImplemented, "Implemented only for +-e_i where e_i is the i-th canonical basis vector!");
+      }
+    }
+    parallel_quadrature(quadrature_, ret, direction, true);
+    ret.rightmultiply(mass_matrix_inverse());
+    return ret;
+  }
+
   template <class DiscreteFunctionType>
   VisualizerType<DiscreteFunctionType> visualizer() const
   {
@@ -339,6 +433,24 @@ public:
       sum_visualizer<DiscreteFunctionType, dimRange>(u_n, filename_prefix, ii);
     };
   }
+
+  RangeFieldType calculate_psi_from_moments(const RangeType& val) const
+  {
+    RangeFieldType psi(0);
+    for (const auto& entry : val)
+      psi += entry;
+    return psi;
+  }
+
+  static StringifierType stringifier()
+  {
+    return [](const RangeType& val) {
+      RangeFieldType psi(0);
+      for (const auto& entry : val)
+        psi += entry;
+      return XT::Common::to_string(psi, 15);
+    };
+  } // ... stringifier()
 
   std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
   {
@@ -352,15 +464,32 @@ public:
     return std::make_pair(u_iso, alpha_iso);
   }
 
+  const TriangulationType& triangulation() const
+  {
+    return triangulation_;
+  }
+
   RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
   {
     return 2 * std::max(std::accumulate(u.begin(), u.end(), RangeFieldType(0)),
                         std::accumulate(u_bar.begin(), u_bar.end(), RangeFieldType(0)));
   }
 
+  // get indices of all faces that contain point v
+  std::vector<size_t> get_face_indices(const DomainType& v) const
+  {
+    return triangulation_.get_face_indices(v);
+  }
+
   const QuadratureType& quadrature() const
   {
     return quadrature_;
+  }
+
+  // calculates <b(v) dirac(v-dirac_position)>
+  RangeType integrate_dirac_at(const DomainType& dirac_position) const
+  {
+    return evaluate(dirac_position);
   }
 
 protected:

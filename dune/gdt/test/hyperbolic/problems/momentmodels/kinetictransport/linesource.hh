@@ -21,9 +21,9 @@
 #include <dune/gdt/local/fluxes/entropybased.hh>
 #include <dune/gdt/test/instationary-testcase.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
+#include <dune/gdt/test/hyperbolic/spherical_quadratures/lebedev.hh>
 
-#include "../lebedevquadrature.hh"
-#include "kinetictransportequation.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -167,7 +167,7 @@ public:
   using typename BaseType::DomainFieldType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
-  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_, dimDomain + 1> ActualFluxType;
+  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
   using typename BaseType::QuadratureType;
 
   using BaseType::default_grid_cfg;

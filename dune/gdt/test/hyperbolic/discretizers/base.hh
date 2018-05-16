@@ -11,7 +11,6 @@
 #ifndef DUNE_GDT_TESTS_HYPERBOLIC_DISCRETIZERS_BASE_HH
 #define DUNE_GDT_TESTS_HYPERBOLIC_DISCRETIZERS_BASE_HH
 
-
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {

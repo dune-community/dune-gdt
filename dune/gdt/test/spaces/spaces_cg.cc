@@ -156,7 +156,9 @@ struct ContinuousLagrangeSpace : public ::testing::Test
       const auto& reference_element = Dune::ReferenceElements<D, d>::general(element.geometry().type());
       const auto basis = space->base_function_set(element);
       const double h = 1e-6;
-      for (const auto& quadrature_point : Dune::QuadratureRules<D, d>::rule(element.geometry().type(), basis.order())) {
+      assert(basis.order() <= std::numeric_limits<int>::max());
+      for (const auto& quadrature_point :
+           Dune::QuadratureRules<D, d>::rule(element.geometry().type(), static_cast<int>(basis.order()))) {
         const auto& xx = quadrature_point.position();
         const auto& J_inv_T = element.geometry().jacobianInverseTransposed(xx);
         const auto jacobians = basis.jacobian(xx);
@@ -230,20 +232,20 @@ struct ContinuousLagrangeSpaceOnSimplicialLeafView
 
 using SimplicialGrids = ::testing::Types<ONED_1D,
                                          YASP_1D_EQUIDISTANT_OFFSET
-#if HAVE_DUNE_ALUGRID
-                                         ,
-                                         ALU_2D_SIMPLEX_CONFORMING,
-                                         ALU_2D_SIMPLEX_NONCONFORMING
-#endif
+//#if HAVE_DUNE_ALUGRID
+//                                         ,
+//                                         ALU_2D_SIMPLEX_CONFORMING,
+//                                         ALU_2D_SIMPLEX_NONCONFORMING
+//#endif
 #if HAVE_DUNE_UGGRID || HAVE_UG
                                          ,
                                          UG_2D
 #endif
-#if HAVE_DUNE_ALUGRID
-                                         ,
-                                         ALU_3D_SIMPLEX_CONFORMING,
-                                         ALU_3D_SIMPLEX_NONCONFORMING
-#endif
+//#if HAVE_DUNE_ALUGRID
+//                                         ,
+//                                         ALU_3D_SIMPLEX_CONFORMING,
+//                                         ALU_3D_SIMPLEX_NONCONFORMING
+//#endif
 #if HAVE_DUNE_UGGRID || HAVE_UG
                                          ,
                                          UG_3D

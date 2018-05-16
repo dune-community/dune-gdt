@@ -7,8 +7,8 @@
 // Authors:
 //   Rene Milk (2017 - 2018)
 
-#ifndef DUNE_GDT_PARALLEL_HELPER_HH
-#define DUNE_GDT_PARALLEL_HELPER_HH
+#ifndef DUNE_GDT_SPACES_PARALLEL_HELPER_HH
+#define DUNE_GDT_SPACES_PARALLEL_HELPER_HH
 
 #include <limits>
 
@@ -16,12 +16,13 @@
 #include <dune/common/stdstreams.hh>
 #include <dune/common/typetraits.hh>
 
-#include <dune/xt/la/container/vector-interface.hh>
+#include <dune/istl/owneroverlapcopy.hh>
+
+#include <dune/xt/la/container/common.hh>
 #include <dune/xt/la/container/istl.hh>
+#include <dune/xt/la/container/vector-interface.hh>
 
 #include <dune/gdt/spaces/datahandles.hh>
-#include <dune/istl/owneroverlapcopy.hh>
-#include <dune/xt/la/container/common.hh>
 
 namespace Dune {
 namespace GDT {
@@ -207,4 +208,4 @@ void GenericParallelHelper<SpaceType>::setup_parallel_indexset(DofCommunicatorTy
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_PARALLEL_HELPER_HH
+#endif // DUNE_GDT_SPACES_PARALLEL_HELPER_HH

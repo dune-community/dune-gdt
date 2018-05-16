@@ -19,7 +19,7 @@
 
 #include <dune/gdt/local/fluxes/entropybased.hh>
 
-#include "kinetictransportequation.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
