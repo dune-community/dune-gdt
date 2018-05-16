@@ -60,7 +60,7 @@ public:
                                 ReconstructedFunctionType& reconstructed_function,
                                 const BasisfunctionType& basis_functions,
                                 const QuadratureType& quadrature,
-                                const std::vector<RangeFieldType>& epsilon_sequence,
+                                const RangeFieldType epsilon,
                                 const std::vector<RangeType>& basis_values,
                                 const XT::Common::Parameter& param)
     : analytical_flux_(analytical_flux)
@@ -68,7 +68,7 @@ public:
     , reconstructed_function_(reconstructed_function)
     , basis_functions_(basis_functions)
     , quadrature_(quadrature)
-    , epsilon_sequence_(epsilon_sequence)
+    , epsilon_(epsilon)
     , basis_values_(basis_values)
     , param_(param)
   {
@@ -86,33 +86,38 @@ public:
   {
     assert(dynamic_cast<const EntropyFluxType*>(&analytical_flux_) != nullptr
            && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
-    for (const auto& epsilon : epsilon_sequence_) {
-      if (theta_entity + epsilon > 0.) {
-        std::cout << "limited with theta: " << theta_entity << " and epsilon " << epsilon << std::endl;
-        auto theta = theta_entity + epsilon;
-        if (theta > 1.)
-          theta = 1.;
-        for (auto& pair : local_reconstructed_values) {
-          auto& u = pair.second;
-          u = convex_combination(u, u_bar, theta);
-        }
+    if (theta_entity + epsilon_ > 0.) {
+      std::cout << "limited with theta: " << theta_entity << " and epsilon " << epsilon_ << std::endl;
+      auto theta = theta_entity + epsilon_;
+      if (theta > 1.)
+        theta = 1.;
+      for (auto& pair : local_reconstructed_values) {
+        auto& u = pair.second;
+        u = convex_combination(u, u_bar, theta);
       }
-      try {
-        // solve optimization problem
-        for (auto& pair : local_reconstructed_values) {
-          const auto x_in_inside_coords = entity.geometry().local(pair.first);
-          const auto& u = pair.second;
-          dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
-              ->derived_local_function(entity)
-              ->get_alpha(x_in_inside_coords, u, param_, false);
-        }
-        return;
-      } catch (const Dune::MathError& e) {
-        if (epsilon == epsilon_sequence_.back())
-          DUNE_THROW(Dune::MathError, e.what());
-      }
-    } // epsilon
-  }
+    }
+    // solve optimization problem
+    for (auto& pair : local_reconstructed_values) {
+      const auto x_in_inside_coords = entity.geometry().local(pair.first);
+      auto& u = pair.second;
+      const auto s = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
+                         ->derived_local_function(entity)
+                         ->get_alpha(x_in_inside_coords, u, param_)
+                         .second;
+
+      // if regularization was needed, we also need to replace u_n in that cell by its regularized version
+      if (s > 0.) {
+        std::cout << "regularization in limiter: time: " << param_.get("t")[0]
+                  << ", entitycenter: " << XT::Common::to_string(entity.geometry().center())
+                  << ", s: " << XT::Common::to_string(s, 15) << std::endl;
+        const auto u_iso = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
+                               ->basis_functions()
+                               .calculate_isotropic_distribution(u)
+                               .first;
+        u = convex_combination(u, u_iso, s);
+      } // if (s > 0)
+    } // local_reconstructed_values
+  } // void apply_limiter(...)
 
 protected:
   RangeType convex_combination(const RangeType& u, const RangeType& u_bar, const RangeFieldType& theta)
@@ -129,7 +134,7 @@ protected:
   ReconstructedFunctionType& reconstructed_function_;
   const BasisfunctionType& basis_functions_;
   const QuadratureType& quadrature_;
-  const std::vector<RangeFieldType>& epsilon_sequence_;
+  const RangeFieldType epsilon_;
   const std::vector<RangeType>& basis_values_;
   XT::Common::Parameter param_;
 };
@@ -187,7 +192,7 @@ public:
 
     // vector to store thetas for each local reconstructed value
     thread_local std::vector<RangeFieldType> thetas(local_reconstructed_values.size());
-    std::fill(thetas.begin(), thetas.end(), -epsilon_sequence_[0]);
+    std::fill(thetas.begin(), thetas.end(), -epsilon_);
 
     size_t ll = -1;
     for (const auto& pair : local_reconstructed_values) {
@@ -206,7 +211,7 @@ public:
 private:
   using BaseType::source_;
   using BaseType::reconstructed_function_;
-  using BaseType::epsilon_sequence_;
+  using BaseType::epsilon_;
 }; // class PositivityLocalRealizabilityLimiter
 
 template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
@@ -244,14 +249,13 @@ public:
         source_.local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center()));
 
     // vector to store thetas for each local reconstructed value
-    const auto epsilon = epsilon_sequence_[0];
-    std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), -epsilon);
+    std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), -epsilon_);
 
     size_t ll = -1;
     for (const auto& pair : local_reconstructed_values) {
       ++ll;
       const auto& u_l = pair.second;
-      FieldVector<RangeFieldType, dimRange / 2> local_thetas(-epsilon);
+      FieldVector<RangeFieldType, dimRange / 2> local_thetas(-epsilon_);
       for (size_t ii = 0; ii < dimRange / 2; ++ii) {
         const auto& u0 = u_l[2 * ii];
         const auto& u1 = u_l[2 * ii + 1];
@@ -264,8 +268,8 @@ public:
         thetas_ii[1] = (u0 * vj - u1) / ((ubar1 - u1) - (ubar0 - u0) * vj);
         thetas_ii[2] = (u0 * vjplus1 - u1) / ((ubar1 - u1) - (ubar0 - u0) * vjplus1);
         for (size_t kk = 0; kk < 3; ++kk) {
-          if (thetas_ii[kk] < -epsilon || thetas_ii[kk] > 1.)
-            thetas_ii[kk] = -epsilon;
+          if (thetas_ii[kk] < -epsilon_ || thetas_ii[kk] > 1.)
+            thetas_ii[kk] = -epsilon_;
           local_thetas[ii] = std::max(local_thetas[ii], thetas_ii[kk]);
         } // kk
       } // ii
@@ -279,7 +283,7 @@ private:
   using BaseType::source_;
   using BaseType::reconstructed_function_;
   using BaseType::basis_functions_;
-  using BaseType::epsilon_sequence_;
+  using BaseType::epsilon_;
   typename BasisfunctionImp::TriangulationType triangulation_;
 }; // class DgLocalRealizabilityLimiter
 
@@ -608,7 +612,6 @@ public:
   LPLocalRealizabilityLimiter(Args&&... args)
     : BaseType(std::forward<Args>(args)...)
   {
-    setup_linear_program();
   }
 
   void apply_local(const EntityType& entity)
@@ -628,7 +631,7 @@ public:
       const auto& u_l = pair.second;
       // if (XT::Common::FloatCmp::eq(u_bar, u_l) || basis_functions_.obviously_realizable(u_l)) {
       if (XT::Common::FloatCmp::eq(u_bar, u_l)) {
-        thetas[ll] = -epsilon_sequence_[0];
+        thetas[ll] = -epsilon_;
         continue;
       }
 
@@ -647,57 +650,60 @@ public:
 private:
   void setup_linear_program()
   {
-    // We start with creating a model with dimRange rows and num_quad_points+1 columns */
-    constexpr int num_rows = static_cast<int>(dimRange);
-    assert(quadrature_.size() < std::numeric_limits<int>::max());
-    int num_cols = static_cast<int>(quadrature_.size() + 1); /* variables are x_1, ..., x_{num_quad_points}, theta */
-    lp_ = XT::Common::lp_solve::make_lp(num_rows, num_cols);
+    if (!lp_->data()) {
+      // We start with creating a model with dimRange rows and num_quad_points+1 columns */
+      constexpr int num_rows = static_cast<int>(dimRange);
+      assert(quadrature_.size() < std::numeric_limits<int>::max());
+      int num_cols = static_cast<int>(quadrature_.size() + 1); /* variables are x_1, ..., x_{num_quad_points}, theta */
+      lp_.get_pointer() = XT::Common::lp_solve::make_lp(num_rows, num_cols);
 
-    /* let us name our variables. Not required, but can be useful for debugging */
-    for (int ii = 1; ii <= num_cols - 1; ++ii) {
-      std::string ii_string = XT::Common::to_string(ii);
-      std::string name_string = "x";
-      for (size_t jj = 5 - ii_string.size(); jj > 0; --jj)
-        name_string += "0";
-      name_string += ii_string;
-      XT::Common::lp_solve::set_col_name(*lp_, ii, name_string);
-    }
+      /* let us name our variables. Not required, but can be useful for debugging */
+      for (int ii = 1; ii <= num_cols - 1; ++ii) {
+        std::string ii_string = XT::Common::to_string(ii);
+        std::string name_string = "x";
+        for (size_t jj = 5 - ii_string.size(); jj > 0; --jj)
+          name_string += "0";
+        name_string += ii_string;
+        XT::Common::lp_solve::set_col_name(*lp_, ii, name_string);
+      }
 
-    std::string name_string = "theta ";
-    XT::Common::lp_solve::set_col_name(*lp_, num_cols, name_string);
+      std::string name_string = "theta ";
+      XT::Common::lp_solve::set_col_name(*lp_, num_cols, name_string);
 
-    // In the call to set_column, the first entry (row 0) is the value of the objective function
-    // (c_i in the objective function c^T x), the other entries are the entries of the i-th column
-    // in the constraints matrix. The 0-th column is the rhs vector. The entry (0, 0) corresponds
-    // to the initial value of the objective function.
-    std::array<double, num_rows + 1> column;
+      // In the call to set_column, the first entry (row 0) is the value of the objective function
+      // (c_i in the objective function c^T x), the other entries are the entries of the i-th column
+      // in the constraints matrix. The 0-th column is the rhs vector. The entry (0, 0) corresponds
+      // to the initial value of the objective function.
+      std::array<double, num_rows + 1> column;
 
-    // set columns for quadrature points
-    column[0] = 0.;
-    assert(int(basis_values_.size()) == num_cols - 1);
-    for (int ii = 0; ii < int(basis_values_.size()); ++ii) {
-      const auto& v_i = basis_values_[ii];
-      std::copy(v_i.begin(), v_i.end(), column.begin() + 1);
-      XT::Common::lp_solve::set_column(*lp_, ii + 1, column.data());
-    }
+      // set columns for quadrature points
+      column[0] = 0.;
+      assert(int(basis_values_.size()) == num_cols - 1);
+      for (int ii = 0; ii < int(basis_values_.size()); ++ii) {
+        const auto& v_i = basis_values_[ii];
+        std::copy(v_i.begin(), v_i.end(), column.begin() + 1);
+        XT::Common::lp_solve::set_column(*lp_, ii + 1, column.data());
+      }
 
-    // set all contraints to equality constraints
-    for (int ii = 1; ii <= num_rows; ++ii)
-      XT::Common::lp_solve::set_constr_type(*lp_, ii, XT::Common::lp_solve::eq());
+      // set all contraints to equality constraints
+      for (int ii = 1; ii <= num_rows; ++ii)
+        XT::Common::lp_solve::set_constr_type(*lp_, ii, XT::Common::lp_solve::eq());
 
-    // Set bounds for variables. 0 <= x <= inf is the default for all variables.
-    // The bounds for theta should be [0,1], but we allow allow theta to be slightly
-    // negative so we can check if u_l is on the boundary and if so, move it a little
-    // away from the boundary
-    XT::Common::lp_solve::set_bounds(*lp_, num_cols, -epsilon_sequence_[0], 1.);
+      // Set bounds for variables. 0 <= x <= inf is the default for all variables.
+      // The bounds for theta should be [0,1], but we allow allow theta to be slightly
+      // negative so we can check if u_l is on the boundary and if so, move it a little
+      // away from the boundary
+      XT::Common::lp_solve::set_bounds(*lp_, num_cols, -epsilon_, 1.);
 
-    /* I only want to see important messages on screen while solving */
-    XT::Common::lp_solve::set_verbose(*lp_, XT::Common::lp_solve::important());
+      /* I only want to see important messages on screen while solving */
+      XT::Common::lp_solve::set_verbose(*lp_, XT::Common::lp_solve::important());
+    } // if (!lp_)
   }
 
   //  RangeFieldType solve_linear_program(const RangeType& u_bar, const RangeType& u_l, const size_t index)
   RangeFieldType solve_linear_program(const RangeType& u_bar, const RangeType& u_l)
   {
+    setup_linear_program();
     constexpr int num_rows = static_cast<int>(dimRange);
     int num_cols = static_cast<int>(quadrature_.size() + 1); /* variables are x_1, ..., x_{num_quad_points}, theta */
     RangeFieldType theta;
@@ -720,7 +726,7 @@ private:
     theta = XT::Common::lp_solve::get_objective(*lp_);
     if (solve_status != XT::Common::lp_solve::optimal()) {
       XT::Common::lp_solve::write_LP(*lp_, stdout);
-      DUNE_THROW(Dune::MathError, "An unexpected error occured while solving the linear program");
+      theta = 1.;
     }
 
     return theta;
@@ -729,9 +735,9 @@ private:
   using BaseType::source_;
   using BaseType::reconstructed_function_;
   using BaseType::quadrature_;
-  using BaseType::epsilon_sequence_;
+  using BaseType::epsilon_;
   using BaseType::basis_values_;
-  std::unique_ptr<typename XT::Common::lp_solve::LinearProgram> lp_;
+  XT::Common::PerThreadValue<typename XT::Common::lp_solve::LinearProgram> lp_;
 }; // class LPLocalRealizabilityLimiter
 
 
@@ -777,12 +783,11 @@ public:
   RealizabilityLimiter(const AnalyticalFluxType& analytical_flux,
                        const BasisfunctionType& basis_functions,
                        const QuadratureType& quadrature,
-                       const std::vector<RangeFieldType>& epsilon_sequence =
-                           {1e-10, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.2, 0.5, 1.})
+                       const RangeFieldType epsilon = 1e-10)
     : analytical_flux_(analytical_flux)
     , basis_functions_(basis_functions)
     , quadrature_(quadrature)
-    , epsilon_sequence_(epsilon_sequence)
+    , epsilon_(epsilon)
     , basis_values_(quadrature_.size())
   {
     for (size_t ii = 0; ii < quadrature_.size(); ++ii)
@@ -795,7 +800,7 @@ public:
     static_assert(is_discrete_function<SourceType>::value,
                   "SourceType has to be derived from DiscreteFunction (use the non-reconstructed values!)");
     LocalRealizabilityLimiterType local_realizability_limiter(
-        analytical_flux_, source, range, basis_functions_, quadrature_, epsilon_sequence_, basis_values_, param);
+        analytical_flux_, source, range, basis_functions_, quadrature_, epsilon_, basis_values_, param);
     auto walker = XT::Grid::Walker<typename SourceType::SpaceType::GridLayerType>(source.space().grid_layer());
     walker.append(local_realizability_limiter);
     walker.walk(true);
@@ -805,7 +810,7 @@ private:
   const AnalyticalFluxType& analytical_flux_;
   const BasisfunctionType& basis_functions_;
   const QuadratureType& quadrature_;
-  const std::vector<RangeFieldType> epsilon_sequence_;
+  const RangeFieldType epsilon_;
   std::vector<RangeType> basis_values_;
 }; // class RealizabilityLimiter<...>
 
