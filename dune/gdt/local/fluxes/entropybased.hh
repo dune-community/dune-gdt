@@ -270,7 +270,7 @@ public:
         std::tie(u_iso, alpha_iso) = basis_functions_.calculate_isotropic_distribution(u);
 
         // define further variables
-        VectorType g_k, beta_in, beta_out;
+        VectorType g_k, beta_in, beta_out, v;
         beta_in = cache_iterator != cache_.end() ? cache_iterator->second.first : alpha_iso;
         static thread_local auto T_k = XT::Common::make_unique<MatrixType>();
 
@@ -280,7 +280,7 @@ public:
           // regularize u
           VectorType r_times_u_iso = u_iso;
           r_times_u_iso *= r;
-          VectorType v = u;
+          v = u;
           v *= 1 - r;
           v += r_times_u_iso;
           if (r > 0)
@@ -355,7 +355,7 @@ public:
 
       outside_all_loops:
         // store values as initial conditions for next time step on this entity
-        cache_.insert(u, ret);
+        cache_.insert(v, ret);
         mutex_.unlock();
       } // else ( value has not been calculated before )
 
@@ -580,7 +580,7 @@ public:
       VectorType v_k_tmp;
       XT::LA::solve_lower_triangular(L, v_k_tmp, v_k);
       v_k = v_k_tmp;
-      g_k *= 0.;
+      std::fill(g_k.begin(), g_k.end(), 0.);
       for (size_t ll = 0; ll < quadrature_.size(); ++ll) {
         auto contribution = P_k[ll];
         contribution *= std::exp(beta_out * P_k[ll]) * quadrature_[ll].weight();
@@ -953,7 +953,7 @@ public:
         cache_.increase_capacity(2 * cache_size);
       // get initial multiplier and basis matrix from last time step
       AlphaReturnType ret;
-      StateRangeType u_out;
+      StateRangeType u_out, v_in;
 
       // if value has already been calculated for these values, skip computation
       mutex_.lock();
@@ -965,18 +965,13 @@ public:
       } else {
         StateRangeType u_iso_in, alpha_iso_in;
         std::tie(u_iso_in, alpha_iso_in) = basis_functions_.calculate_isotropic_distribution(u_in);
-        VectorType u, u_iso, alpha_iso;
-        for (size_t jj = 0; jj < num_blocks; ++jj) {
-          const auto offset = jj * block_size;
-          for (size_t ii = 0; ii < block_size; ++ii) {
-            u[jj][ii] = u_in[offset + ii];
-            u_iso[jj][ii] = u_iso_in[offset + ii];
-            alpha_iso[jj][ii] = alpha_iso_in[offset + ii];
-          } // ii
-        } // jj
+        VectorType alpha_iso;
+        for (size_t jj = 0; jj < num_blocks; ++jj)
+          for (size_t ii = 0; ii < block_size; ++ii)
+            alpha_iso[jj][ii] = alpha_iso_in[jj * block_size + ii];
 
         // define further variables
-        VectorType g_k, beta_in, beta_out;
+        VectorType g_k, beta_in, beta_out, v;
         thread_local auto T_k = XT::Common::make_unique<MatrixType>();
         beta_in = cache_iterator != cache_.end() ? cache_iterator->second.first : alpha_iso;
 
@@ -984,11 +979,14 @@ public:
         const auto r_max = r_sequence.back();
         for (const auto& r : r_sequence) {
           // normalize u
-          VectorType r_times_u_iso = u_iso;
+          StateRangeType r_times_u_iso = u_iso_in;
           r_times_u_iso *= r;
-          VectorType v = u;
-          v *= 1 - r;
-          v += r_times_u_iso;
+          v_in = u_in;
+          v_in *= 1 - r;
+          v_in += r_times_u_iso;
+          for (size_t jj = 0; jj < num_blocks; ++jj)
+            for (size_t ii = 0; ii < block_size; ++ii)
+              v[jj][ii] = v_in[jj * block_size + ii];
           if (r > 0)
             beta_in = alpha_iso;
           *T_k = T_minus_one_;
@@ -1072,7 +1070,7 @@ public:
 
       outside_all_loops:
         // store values as initial conditions for next time step on this entity
-        cache_.insert(u_in, ret);
+        cache_.insert(v_in, ret);
         mutex_.unlock();
       } // else ( value has not been calculated before )
       return ret;
@@ -1362,7 +1360,7 @@ public:
       for (size_t jj = 0; jj < num_blocks; ++jj)
         XT::LA::cholesky((*H)[jj]);
       const auto& L = *H;
-      g_k *= 0.;
+      std::fill(g_k.begin(), g_k.end(), 0.);
       FieldVector<RangeFieldType, block_size> tmp_vec;
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         T_k[jj].rightmultiply(L[jj]);
@@ -1968,7 +1966,7 @@ public:
         thread_local std::unique_ptr<MatrixType> H_k = XT::Common::make_unique<MatrixType>();
 
         // calculate moment vector for isotropic distribution
-        StateRangeType u_iso, alpha_iso;
+        StateRangeType u_iso, alpha_iso, v;
         std::tie(u_iso, alpha_iso) = basis_functions_.calculate_isotropic_distribution(u);
         StateRangeType alpha_k = cache_iterator != cache_.end() ? cache_iterator->second.first : alpha_iso;
 
@@ -1982,7 +1980,7 @@ public:
           // normalize u
           StateRangeType r_times_u_iso(u_iso);
           r_times_u_iso *= r;
-          StateRangeType v = u;
+          v = u;
           v *= 1 - r;
           v += r_times_u_iso;
 
@@ -2043,7 +2041,7 @@ public:
         DUNE_THROW(MathError, "Failed to converge");
 
       outside_all_loops:
-        cache_.insert(u, ret);
+        cache_.insert(v, ret);
         mutex_.unlock();
       } // else ( value has not been calculated before )
 
@@ -2655,7 +2653,7 @@ public:
         FieldVector<RangeFieldType, dimRange - 1> H_subdiag;
 
         // calculate moment vector for isotropic distribution
-        RangeType u_iso, alpha_iso;
+        RangeType u_iso, alpha_iso, v;
         std::tie(u_iso, alpha_iso) = basis_functions_.calculate_isotropic_distribution(u);
         RangeType alpha_k = cache_iterator != cache_.end() ? cache_iterator->second.first : alpha_iso;
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
@@ -2664,7 +2662,7 @@ public:
           // regularize u
           RangeType r_times_u_iso(u_iso);
           r_times_u_iso *= r;
-          RangeType v = u;
+          v = u;
           v *= 1 - r;
           v += r_times_u_iso;
 
@@ -2730,7 +2728,7 @@ public:
 
       outside_all_loops:
         // store values as initial conditions for next time step on this entity
-        cache_.insert(u, ret);
+        cache_.insert(v, ret);
         mutex_.unlock();
       } // else ( value has not been calculated before )
 

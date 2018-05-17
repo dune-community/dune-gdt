@@ -617,6 +617,7 @@ public:
   void apply_local(const EntityType& entity)
   {
     auto& local_reconstructed_values = reconstructed_function_.local_values(entity);
+    assert(local_reconstructed_values.size() == 2 * dimDomain);
 
     // get cell average
     const RangeType u_bar =
@@ -693,7 +694,7 @@ private:
       // The bounds for theta should be [0,1], but we allow allow theta to be slightly
       // negative so we can check if u_l is on the boundary and if so, move it a little
       // away from the boundary
-      XT::Common::lp_solve::set_bounds(*lp_, num_cols, -epsilon_, 1.);
+      XT::Common::lp_solve::set_bounds(*lp_, num_cols, -0.1, 1.);
 
       /* I only want to see important messages on screen while solving */
       XT::Common::lp_solve::set_verbose(*lp_, XT::Common::lp_solve::important());
