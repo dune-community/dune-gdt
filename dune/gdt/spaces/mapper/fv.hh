@@ -156,7 +156,7 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  FvMapper(GridLayerType grd_layr)
+  FvMapper(const GridLayerType& grd_layr)
     : mapper_(new BackendType(grd_layr))
   {
   }
@@ -215,7 +215,7 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::BackendType;
 
-  FvProductMapper(GridLayerType grd_layr)
+  FvProductMapper(const GridLayerType& grd_layr)
     : fv_mapper_(grd_layr)
   {
   }

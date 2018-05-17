@@ -92,8 +92,8 @@ public:
     } // write local matrix to global
   } // ... assemble(...)
 
-  LocalVolumeTwoFormAssemblerFunctor(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-                                     const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+  LocalVolumeTwoFormAssemblerFunctor(const TestSpaceType& test_space,
+                                     const AnsatzSpaceType& ansatz_space,
                                      const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where,
                                      const LocalVolumeTwoFormType& local_volume_two_form,
                                      MatrixType& matrix)
@@ -112,12 +112,12 @@ public:
 
   void apply_local(const EntityType& entity) override final
   {
-    assemble(*test_space_, *ansatz_space_, local_volume_two_form_, entity, matrix_);
+    assemble(test_space_, ansatz_space_, local_volume_two_form_, entity, matrix_);
   }
 
 private:
-  const XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
-  const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const TestSpaceType& test_space_;
+  const AnsatzSpaceType& ansatz_space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichEntity<GridLayerType>> where_;
   const LocalVolumeTwoFormType& local_volume_two_form_;
   MatrixType& matrix_;
@@ -297,8 +297,8 @@ public:
                                                && (std::is_same<AnsatzSpace, OuterAnsatzSpaceType>::value)
                                                && sizeof(TestSpace)
                                                && sizeof(AnsatzSpace)>::type>
-  LocalCouplingTwoFormAssemblerFunctor(const XT::Common::PerThreadValue<const TestSpace>& test_space,
-                                       const XT::Common::PerThreadValue<const AnsatzSpace>& ansatz_space,
+  LocalCouplingTwoFormAssemblerFunctor(const TestSpace& test_space,
+                                       const AnsatzSpace& ansatz_space,
                                        const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                                        const LocalCouplingTwoFormType& local_coupling_two_form,
                                        MatrixType& in_in_matrix,
@@ -324,8 +324,8 @@ public:
                                                && (std::is_same<AnsatzSpace, OuterAnsatzSpaceType>::value)
                                                && sizeof(TestSpace)
                                                && sizeof(AnsatzSpace)>::type>
-  LocalCouplingTwoFormAssemblerFunctor(const XT::Common::PerThreadValue<const TestSpace>& test_space,
-                                       const XT::Common::PerThreadValue<const AnsatzSpace>& ansatz_space,
+  LocalCouplingTwoFormAssemblerFunctor(const TestSpace& test_space,
+                                       const AnsatzSpace& ansatz_space,
                                        const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                                        const LocalCouplingTwoFormType& local_coupling_two_form,
                                        MatrixType& matrix)
@@ -342,10 +342,10 @@ public:
   {
   }
 
-  LocalCouplingTwoFormAssemblerFunctor(const XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space,
-                                       const XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space,
-                                       const XT::Common::PerThreadValue<const OuterTestSpaceType>& outer_test_space,
-                                       const XT::Common::PerThreadValue<const OuterAnsatzSpaceType>& outer_ansatz_space,
+  LocalCouplingTwoFormAssemblerFunctor(const TestSpaceType& inner_test_space,
+                                       const AnsatzSpaceType& inner_ansatz_space,
+                                       const OuterTestSpaceType& outer_test_space,
+                                       const OuterAnsatzSpaceType& outer_ansatz_space,
                                        const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                                        const LocalCouplingTwoFormType& local_coupling_two_form,
                                        MatrixType& in_in_matrix,
@@ -365,10 +365,10 @@ public:
   {
   }
 
-  LocalCouplingTwoFormAssemblerFunctor(const XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space,
-                                       const XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space,
-                                       const XT::Common::PerThreadValue<const OuterTestSpaceType>& outer_test_space,
-                                       const XT::Common::PerThreadValue<const OuterAnsatzSpaceType>& outer_ansatz_space,
+  LocalCouplingTwoFormAssemblerFunctor(const TestSpaceType& inner_test_space,
+                                       const AnsatzSpaceType& inner_ansatz_space,
+                                       const OuterTestSpaceType& outer_test_space,
+                                       const OuterAnsatzSpaceType& outer_ansatz_space,
                                        const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                                        const LocalCouplingTwoFormType& local_coupling_two_form,
                                        MatrixType& matrix)
@@ -407,10 +407,10 @@ public:
   } // ... apply_local(...)
 
 private:
-  const XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space_;
-  const XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space_;
-  const XT::Common::PerThreadValue<const OuterTestSpaceType>& outer_test_space_;
-  const XT::Common::PerThreadValue<const OuterAnsatzSpaceType>& outer_ansatz_space_;
+  const TestSpaceType& inner_test_space_;
+  const AnsatzSpaceType& inner_ansatz_space_;
+  const OuterTestSpaceType& outer_test_space_;
+  const OuterAnsatzSpaceType& outer_ansatz_space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>> where_;
   const LocalCouplingTwoFormType& local_coupling_two_form_;
   MatrixType& in_in_matrix_;
@@ -486,8 +486,8 @@ public:
     } // write local matrix to global
   } // ... assemble(...)
 
-  LocalBoundaryTwoFormAssemblerFunctor(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-                                       const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+  LocalBoundaryTwoFormAssemblerFunctor(const TestSpaceType& test_space,
+                                       const AnsatzSpaceType& ansatz_space,
                                        const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                                        const LocalBoundaryTwoFormType& local_boundary_two_form,
                                        MatrixType& matrix)
@@ -512,8 +512,8 @@ public:
   }
 
 private:
-  const XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
-  const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const TestSpaceType& test_space_;
+  const AnsatzSpaceType& ansatz_space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>> where_;
   const LocalBoundaryTwoFormType& local_boundary_two_form_;
   MatrixType& matrix_;
@@ -563,7 +563,7 @@ public:
       global_vector.add_to_entry(global_indices[jj], local_vector[jj]);
   } // ... assemble(...)
 
-  LocalVolumeFunctionalAssemblerFunctor(const XT::Common::PerThreadValue<const TestSpaceType>& space,
+  LocalVolumeFunctionalAssemblerFunctor(const TestSpaceType& space,
                                         const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where,
                                         const LocalVolumeFunctionalType& local_volume_functional,
                                         VectorType& vector)
@@ -585,7 +585,7 @@ public:
   }
 
 private:
-  const XT::Common::PerThreadValue<const TestSpaceType>& space_;
+  const TestSpaceType& space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichEntity<GridLayerType>> where_;
   const LocalVolumeFunctionalType& local_volume_functional_;
   VectorType& vector_;
@@ -633,7 +633,7 @@ public:
       global_vector.add_to_entry(global_indices[jj], local_vector[jj]);
   } // ... assemble(...)
 
-  LocalFaceFunctionalAssemblerFunctor(const XT::Common::PerThreadValue<const TestSpaceType>& space,
+  LocalFaceFunctionalAssemblerFunctor(const TestSpaceType& space,
                                       const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                                       const LocalFaceFunctionalType& local_face_functional,
                                       VectorType& vector)
@@ -657,7 +657,7 @@ public:
   }
 
 private:
-  const XT::Common::PerThreadValue<const TestSpaceType>& space_;
+  const TestSpaceType& space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>> where_;
   const LocalFaceFunctionalType& local_face_functional_;
   VectorType& vector_;

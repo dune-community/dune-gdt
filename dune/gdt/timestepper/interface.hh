@@ -60,6 +60,7 @@ public:
   typedef DiscreteFunctionDataHandle<DiscreteFunctionType> DataHandleType;
   typedef std::function<void(const DiscreteFunctionType&, const std::string&, const size_t)> VisualizerType;
   typedef std::function<std::string(const RangeType&)> StringifierType;
+  using ThisType = TimeStepperInterface;
 
 private:
   typedef typename Dune::XT::Common::StorageProvider<DiscreteFunctionImp> CurrentSolutionStorageProviderType;
@@ -78,6 +79,11 @@ protected:
   }
 
 public:
+  TimeStepperInterface(const ThisType& other) = delete;
+  TimeStepperInterface(ThisType&& source) = delete;
+  ThisType& operator=(const ThisType& other) = delete;
+  ThisType& operator=(ThisType&& source) = delete;
+
   virtual ~TimeStepperInterface() = default;
 
   /**
