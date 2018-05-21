@@ -69,7 +69,7 @@ public:
     , ansatz_space_(ansatz_space)
     , where_(where)
     , constraints_(constraints)
-    , thread_local_constraints_(constraints_.boundary_info(), constraints_.size())
+    , thread_local_constraints_(ConstraintsType(constraints_.boundary_info(), constraints_.size()))
   {
   }
 
