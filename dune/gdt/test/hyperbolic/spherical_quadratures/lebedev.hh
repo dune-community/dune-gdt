@@ -18,7 +18,8 @@
 
 #include <dune/geometry/quadraturerules.hh>
 
-#include <dune/xt/common/math.hh>
+#include <dune/xt/common/coordinates.hh>
+
 
 #if HAVE_LEBEDEVDATA
 #include "lebedev_data.hh"

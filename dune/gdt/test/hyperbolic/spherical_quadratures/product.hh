@@ -15,7 +15,7 @@
 #include <dune/grid/yaspgrid.hh>
 
 #include <dune/xt/common/configuration.hh>
-#include <dune/xt/common/math.hh>
+#include <dune/xt/common/coordinates.hh>
 #include <dune/xt/common/string.hh>
 
 #include <dune/xt/grid/gridprovider.hh>

@@ -14,6 +14,8 @@
 #include <boost/math/special_functions/legendre.hpp>
 #include <boost/math/special_functions/spherical_harmonic.hpp>
 
+#include <dune/xt/common/coordinates.hh>
+
 #include "base.hh"
 
 namespace Dune {
