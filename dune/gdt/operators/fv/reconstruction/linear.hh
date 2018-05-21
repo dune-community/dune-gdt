@@ -550,7 +550,6 @@ public:
 
   void apply_local(const EntityType& entity)
   {
-    assert(jacobian_wrapper_.get_pointer() != nullptr);
     auto& jac = *jacobian_wrapper_;
     static const CoordsType stencil_sizes = []() {
       CoordsType ret;
