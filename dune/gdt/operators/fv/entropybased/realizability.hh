@@ -23,6 +23,10 @@
 #include <dune/xt/common/reenable_warnings.hh>
 #endif // HAVE_QHULL
 
+#if HAVE_CLP
+#include <coin/ClpSimplex.hpp>
+#endif HAVE_CLP
+
 #include <dune/xt/common/lpsolve.hh>
 
 #include <dune/gdt/operators/fv/reconstruction/reconstructed_function.hh>
@@ -593,6 +597,148 @@ class DgConvexHullLocalRealizabilityLimiter
 #endif // HAVE_QHULL
 
 template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
+class ClpLocalRealizabilityLimiter
+    : public LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>
+{
+  using BaseType = LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>;
+
+public:
+  using typename BaseType::GridLayerType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainType;
+  using typename BaseType::RangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::QuadratureType;
+  static const size_t dimDomain = BaseType::dimDomain;
+  static const size_t dimRange = BaseType::dimRange;
+
+  template <class... Args>
+  ClpLocalRealizabilityLimiter(Args&&... args)
+    : BaseType(std::forward<Args>(args)...)
+  {
+  }
+
+  void apply_local(const EntityType& entity)
+  {
+    auto& local_reconstructed_values = reconstructed_function_.local_values(entity);
+    assert(local_reconstructed_values.size() == 2 * dimDomain);
+
+    // get cell average
+    const RangeType u_bar =
+        source_.local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center()));
+
+    // vector to store thetas for each local reconstructed value
+    std::vector<RangeFieldType> thetas(local_reconstructed_values.size());
+
+    size_t ll = -1;
+    for (const auto& pair : local_reconstructed_values) {
+      ++ll;
+      const auto& u_l = pair.second;
+      // if (XT::Common::FloatCmp::eq(u_bar, u_l) || basis_functions_.obviously_realizable(u_l)) {
+      if (XT::Common::FloatCmp::eq(u_bar, u_l)) {
+        thetas[ll] = -epsilon_;
+        continue;
+      }
+
+      // solve LP:
+      // min \theta s.t.
+      // (\sum x_i v_i) + \theta (u - \bar{u}) = u
+      // x_i, \theta >= 0
+      auto theta = solve_linear_program(u_bar, u_l);
+      thetas[ll] = theta;
+    } // ll
+
+    auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
+    BaseType::apply_limiter(entity, theta_entity, local_reconstructed_values, u_bar);
+  } // void apply_local(...)
+
+private:
+  void setup_linear_program()
+  {
+    if (!*lp_) {
+      // We start with creating a model with dimRange rows and num_quad_points+1 columns */
+      constexpr int num_rows = static_cast<int>(dimRange);
+      assert(quadrature_.size() < std::numeric_limits<int>::max());
+      int num_cols = static_cast<int>(quadrature_.size() + 1); /* variables are x_1, ..., x_{num_quad_points}, theta */
+      *lp_ = std::make_unique<ClpSimplex>(false);
+      auto& lp = **lp_;
+      // set number of rows
+      lp.resize(num_rows, 0);
+
+      // Clp wants the row indices that are non-zero in each column. We have a dense matrix, so provide all indices
+      // 0..num_rows
+      std::array<int, num_rows> row_indices;
+      for (size_t ii = 0; ii < num_rows; ++ii)
+        row_indices[ii] = ii;
+
+      // set columns for quadrature points
+      assert(int(basis_values_.size()) == num_cols - 1);
+      for (int ii = 0; ii < int(basis_values_.size()); ++ii) {
+        const auto& v_i = basis_values_[ii];
+        // First argument: number of elements in column
+        // Second/Third argument: indices/values of column entries
+        // Fourth/Fifth argument: lower/upper column bound, i.e. lower/upper bound for x_i. As all x_i should be
+        // positive, set to 0/inf, which is the default.
+        // Sixth argument: Prefactor in objective for x_i, this is 0 for all x_i, which is also the default;
+        lp.addColumn(num_rows, row_indices.data(), &(v_i[0]));
+      }
+
+      // add theta column (set to random values, will be set correctly in solve_linear_program)
+      // The bounds for theta should be [0,1], but we allow allow theta to be slightly
+      // negative so we can check if u_l is on the boundary and if so, move it a little
+      // away from the boundary
+      // Also sets the prefactor in the objective to 1 for theta.
+      lp.addColumn(num_rows, row_indices.data(), &(basis_values_[0][0]), -0.1, 1., 1.);
+      lp.setLogLevel(0);
+    } // if (!lp_)
+  }
+
+  //  RangeFieldType solve_linear_program(const RangeType& u_bar, const RangeType& u_l, const size_t index)
+  RangeFieldType solve_linear_program(const RangeType& u_bar, const RangeType& u_l)
+  {
+    setup_linear_program();
+    auto& lp = **lp_;
+    constexpr int num_rows = static_cast<int>(dimRange);
+    int num_cols = static_cast<int>(quadrature_.size() + 1); /* variables are x_1, ..., x_{num_quad_points}, theta */
+    RangeFieldType theta;
+    const auto u_l_minus_u_bar = u_l - u_bar;
+
+    // set rhs (equality constraints, so set both bounds equal
+    for (size_t ii = 0; ii < num_rows; ++ii) {
+      lp.setRowLower(ii, u_l[ii]);
+      lp.setRowUpper(ii, u_l[ii]);
+    }
+
+    // Clp wants the row indices that are non-zero in each column. We have a dense matrix, so provide all indices
+    // 0..num_rows
+    std::array<int, num_rows> row_indices;
+    for (size_t ii = 0; ii < num_rows; ++ii)
+      row_indices[ii] = ii;
+
+    // delete and reset theta column
+    const int last_col = num_cols - 1;
+    lp.deleteColumns(1, &last_col);
+    lp.addColumn(num_rows, row_indices.data(), &(u_l_minus_u_bar[0]), -0.1, 1., 1.);
+
+    // Now solve
+    lp.primal();
+    theta = lp.objectiveValue();
+    if (!lp.isProvenOptimal())
+      theta = 1.;
+
+    return theta;
+  }
+
+  using BaseType::source_;
+  using BaseType::reconstructed_function_;
+  using BaseType::quadrature_;
+  using BaseType::epsilon_;
+  using BaseType::basis_values_;
+  XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>> lp_;
+}; // class LPLocalRealizabilityLimiter
+
+
+template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
 class LPLocalRealizabilityLimiter
     : public LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>
 {
@@ -728,7 +874,7 @@ private:
     const auto solve_status = XT::Common::lp_solve::solve(lp);
     theta = XT::Common::lp_solve::get_objective(lp);
     if (solve_status != XT::Common::lp_solve::optimal()) {
-      XT::Common::lp_solve::write_LP(lp, stdout);
+      //      XT::Common::lp_solve::write_LP(lp, stdout);
       theta = 1.;
     }
 
