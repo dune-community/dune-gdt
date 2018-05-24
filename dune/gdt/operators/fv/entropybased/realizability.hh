@@ -25,7 +25,7 @@
 
 #if HAVE_CLP
 #include <coin/ClpSimplex.hpp>
-#endif HAVE_CLP
+#endif // HAVE_CLP
 
 #include <dune/xt/common/lpsolve.hh>
 
@@ -596,6 +596,7 @@ class DgConvexHullLocalRealizabilityLimiter
 
 #endif // HAVE_QHULL
 
+#if HAVE_CLP
 template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
 class ClpLocalRealizabilityLimiter
     : public LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>
@@ -735,8 +736,17 @@ private:
   using BaseType::epsilon_;
   using BaseType::basis_values_;
   XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>> lp_;
-}; // class LPLocalRealizabilityLimiter
+}; // class ClpLocalRealizabilityLimiter
 
+#else // HAVE_CLP
+
+template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
+class ClpLocalRealizabilityLimiter
+{
+  static_assert(Dune::AlwaysFalse<DiscreteFunctionImp>::value, "You are missing Clp!");
+};
+
+#endif // HAVE_CLP
 
 template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
 class LPLocalRealizabilityLimiter
