@@ -580,56 +580,97 @@ public:
     }
 
     for (size_t dd = 0; dd < dimDomain; ++dd) {
-      // Transform values on stencil to characteristic variables of the current coordinate direction dd
-      thread_local MultiArrayType reconstructed_values(stencil_sizes);
-      thread_local auto tmp_multiarray = reconstructed_values;
-      tmp_multiarray.resize(stencil_sizes);
-      for (size_t ii = 0; ii < stencil.num_elements(); ++ii)
-        jac.apply_inverse_eigenvectors(dd, *stencil.data()[ii], tmp_multiarray.data()[ii]);
-
-      size_t curr_dir = dd;
-      size_t last_dir = curr_dir;
-      RangeType tmp_value;
-      CoordsType current_sizes;
-      for (size_t dir = 0; dir < dimDomain; ++dir) {
-        curr_dir = (dd + dir) % dimDomain;
-        // Transform to characteristic variables of the current reconstruction direction.
-        if (dir > 0) {
-          std::copy_n(reconstructed_values.shape(), dimDomain, current_sizes.begin());
-          tmp_multiarray.resize(current_sizes);
-          tmp_multiarray = reconstructed_values;
-          std::for_each(
-              tmp_multiarray.data(), tmp_multiarray.data() + tmp_multiarray.num_elements(), [&](RangeType& value) {
-                jac.apply_eigenvectors(last_dir, value, tmp_value);
-                jac.apply_inverse_eigenvectors(curr_dir, tmp_value, value);
-              });
-        } // if (dir > 0)
+      if (quadrature_.size() == 1) {
+        // no need to reconstruct in all directions, as we are only regarding the center of the face, which will always
+        // have the same value assigned, independent of the slope in the other directions
+        std::array<size_t, dimDomain> indices;
+        indices.fill(1);
+        FieldVector<RangeType, axis_size> stencil_1d;
+        FieldVector<RangeType, 2> reconstructed_values;
+        for (size_t ii = 0; ii < axis_size; ++ii) { // transform to characteristic variables
+          indices[dd] = ii;
+          jac.apply_inverse_eigenvectors(dd, *stencil(indices), stencil_1d[ii]);
+        }
         // perform the actual reconstruction
-        const auto& curr_quadrature = dir > 0 ? quadrature_ : get_left_right_quadrature();
-        linear_reconstruction(curr_dir, curr_quadrature, tmp_multiarray, reconstructed_values);
-        last_dir = curr_dir;
-      } // dir
-      // convert back to non-characteristic variables
-      std::for_each(reconstructed_values.data(),
-                    reconstructed_values.data() + reconstructed_values.num_elements(),
-                    [&](RangeType& value) {
-                      tmp_value = value;
-                      jac.apply_eigenvectors(last_dir, tmp_value, value);
-                    });
+        linear_reconstruction_1d(stencil_1d, reconstructed_values);
+        // convert back to non-characteristic variables
+        auto tmp_value = reconstructed_values[0];
+        jac.apply_eigenvectors(dd, tmp_value, reconstructed_values[0]);
+        tmp_value = reconstructed_values[1];
+        jac.apply_eigenvectors(dd, tmp_value, reconstructed_values[1]);
 
-      // Convert coordinates on face to local entity coordinates and store reconstructed values
-      MultiIndexProvider<MultiArrayType> multi_indices(reconstructed_values);
-      for (const auto& multi_index : multi_indices) {
-        IntersectionLocalCoordType quadrature_point;
-        for (size_t ii = 0; ii < dimDomain; ++ii)
-          if (ii != dd)
-            quadrature_point[ii < dd ? ii : ii - 1] = quadrature_[multi_index[ii]].position();
-        reconstructed_values_map.emplace(
-            intersections[2 * dd + multi_index[dd]].geometryInInside().global(quadrature_point),
-            reconstructed_values(multi_index));
-      } // multi_indices
+        // store reconstructed values
+        reconstructed_values_map.emplace(intersections[2 * dd].geometryInInside().center(), reconstructed_values[0]);
+        reconstructed_values_map.emplace(intersections[2 * dd + 1].geometryInInside().center(),
+                                         reconstructed_values[1]);
+      } else {
+        thread_local MultiArrayType reconstructed_values(stencil_sizes);
+        thread_local auto tmp_multiarray = reconstructed_values;
+        tmp_multiarray.resize(stencil_sizes);
+
+        // Transform values on stencil to characteristic variables of the current coordinate direction dd
+        for (size_t ii = 0; ii < stencil.num_elements(); ++ii)
+          jac.apply_inverse_eigenvectors(dd, *stencil.data()[ii], tmp_multiarray.data()[ii]);
+
+        size_t curr_dir = dd;
+        size_t last_dir = curr_dir;
+        RangeType tmp_value;
+        CoordsType current_sizes;
+        for (size_t dir = 0; dir < dimDomain; ++dir) {
+          curr_dir = (dd + dir) % dimDomain;
+          // Transform to characteristic variables of the current reconstruction direction.
+          if (dir > 0) {
+            std::copy_n(reconstructed_values.shape(), dimDomain, current_sizes.begin());
+            tmp_multiarray.resize(current_sizes);
+            tmp_multiarray = reconstructed_values;
+            std::for_each(
+                tmp_multiarray.data(), tmp_multiarray.data() + tmp_multiarray.num_elements(), [&](RangeType& value) {
+                  jac.apply_eigenvectors(last_dir, value, tmp_value);
+                  jac.apply_inverse_eigenvectors(curr_dir, tmp_value, value);
+                });
+          } // if (dir > 0)
+          // perform the actual reconstruction
+          const auto& curr_quadrature = dir > 0 ? quadrature_ : get_left_right_quadrature();
+          linear_reconstruction(curr_dir, curr_quadrature, tmp_multiarray, reconstructed_values);
+          last_dir = curr_dir;
+        } // dir
+        // convert back to non-characteristic variables
+        std::for_each(reconstructed_values.data(),
+                      reconstructed_values.data() + reconstructed_values.num_elements(),
+                      [&](RangeType& value) {
+                        tmp_value = value;
+                        jac.apply_eigenvectors(last_dir, tmp_value, value);
+                      });
+
+        // Convert coordinates on face to local entity coordinates and store reconstructed values
+        MultiIndexProvider<MultiArrayType> multi_indices(reconstructed_values);
+        for (const auto& multi_index : multi_indices) {
+          IntersectionLocalCoordType quadrature_point;
+          for (size_t ii = 0; ii < dimDomain; ++ii)
+            if (ii != dd)
+              quadrature_point[ii < dd ? ii : ii - 1] = quadrature_[multi_index[ii]].position();
+          reconstructed_values_map.emplace(
+              intersections[2 * dd + multi_index[dd]].geometryInInside().global(quadrature_point),
+              reconstructed_values(multi_index));
+        } // multi_indices
+      }
     } // dd
   } // void apply_local(...)
+
+  static void linear_reconstruction_1d(const FieldVector<RangeType, axis_size>& stencil,
+                                       FieldVector<RangeType, 2>& reconstructed_values)
+  {
+    const auto& u_left = stencil[0];
+    const auto& u_entity = stencil[1];
+    const auto& u_right = stencil[2];
+    const auto slope_left = u_entity - u_left;
+    const auto slope_center = 0.5 * (u_right - u_left);
+    const auto slope_right = u_right - u_entity;
+    auto slope = internal::ChooseLimiter<slope_limiter>::limit(slope_left, slope_right, slope_center);
+    slope *= 0.5;
+    reconstructed_values[0] = u_entity - slope;
+    reconstructed_values[1] = u_entity + slope;
+  } // static void linear_reconstruction(...)
 
   static void linear_reconstruction(const size_t dir,
                                     const Quadrature1dType& quadrature,
