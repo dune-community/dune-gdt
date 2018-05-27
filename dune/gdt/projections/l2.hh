@@ -205,7 +205,7 @@ private:
     {
       L2LocalProjectionLocalizableOperator<GridLayerType, SourceType, RangeType>(
           over_integrate, grd_vw, src, rng, param)
-          .apply();
+          .apply(true);
     }
   };
 

@@ -191,7 +191,7 @@ public:
     typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
     L2LocalProjectionLocalizableOperator<GridLayerType, SourceType, DiscreteFunction<S, V>> op(
         over_integrate_, grid_layer_, source, range, param);
-    op.apply();
+    op.apply(true);
   }
 
   template <class RangeType, class SourceType>
