@@ -442,7 +442,7 @@ public:
 
       static void partial_u(const VectorType& alpha,
                             const BasisValuesMatrixType& M,
-                            const MatrixType& H,
+                            MatrixType& H,
                             PartialURangeType& ret,
                             const Localfunction* entropy_flux)
       {
@@ -455,7 +455,7 @@ public:
       static void partial_u_col(const size_t col,
                                 const VectorType& alpha,
                                 const BasisValuesMatrixType& M,
-                                const MatrixType& H,
+                                MatrixType& H,
                                 ColPartialURangeType& ret,
                                 const Localfunction* entropy_flux)
       {
