@@ -14,6 +14,8 @@
 #include <vector>
 #include <string>
 
+#include <dune/xt/common/fmatrix.hh>
+
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/triangulation.hh>
 
 #include "base.hh"
@@ -499,6 +501,8 @@ protected:
   template <class VertexVectorType>
   bool calculate_barycentric_coordinates(const DomainType& v, const VertexVectorType& vertices, DomainType& ret) const
   {
+    if (XT::Common::FloatCmp::ne(v.two_norm2(), 1.))
+      DUNE_THROW(Dune::MathError, "Wrong input given!");
     Dune::FieldMatrix<RangeFieldType, 3, 3> gradients(0);
     for (size_t ii = 0; ii < 3; ++ii) {
       // copy vertices to gradients
@@ -508,15 +512,20 @@ protected:
       // assumes the triangulation is fine enough that vertices[ii]*vertices[jj] >= 0 for all triangles
       if (XT::Common::FloatCmp::lt(scalar_prod, 0.))
         return false;
-      else if (XT::Common::FloatCmp::eq(scalar_prod, 1.)) {
+      else if (XT::Common::FloatCmp::ge(scalar_prod, 1.)) {
         ret *= 0.;
         ret[ii] = 1.;
+        return true;
       }
       auto v_scaled = v;
       v_scaled *= scalar_prod;
       gradients[ii] -= v_scaled;
       // scale with factor
       auto denominator = std::sqrt(1. - std::pow(scalar_prod, 2));
+      if (std::isnan(denominator))
+        DUNE_THROW(Dune::MathError, "NaN in evaluation!");
+      if (std::isnan(std::acos(scalar_prod)))
+        DUNE_THROW(Dune::MathError, "wrong value of scalar_prod!");
       gradients[ii] *= XT::Common::FloatCmp::eq(denominator, 0.) ? 0. : std::acos(scalar_prod) / denominator;
     } // ii
     // Calculate barycentric coordinates for 0 w.r.t to the points g_i = gradients[i]
@@ -524,9 +533,9 @@ protected:
     // for the matrix A = (g_0-g_2 g_1-g_2) and the right-hand side b = -g_2.
     // The solution is (A^T A)^{-1} A^T b.
     // The third coordinate is calculated from the condition h0+h1+h2=1.
-    Dune::FieldMatrix<RangeFieldType, 3, 2> A;
-    Dune::FieldMatrix<RangeFieldType, 2, 3> AT;
-    Dune::FieldVector<RangeFieldType, 2> solution;
+    Dune::XT::Common::FieldMatrix<RangeFieldType, 3, 2> A;
+    Dune::XT::Common::FieldMatrix<RangeFieldType, 2, 3> AT;
+    Dune::XT::Common::FieldVector<RangeFieldType, 2> solution;
     AT[0] = gradients[0];
     AT[1] = gradients[1];
     AT[0] -= gradients[2];
@@ -534,9 +543,9 @@ protected:
     for (size_t ii = 0; ii < 3; ++ii)
       for (size_t jj = 0; jj < 2; ++jj)
         A[ii][jj] = AT[jj][ii];
-    Dune::FieldMatrix<RangeFieldType, 2, 2> AT_A = AT.rightmultiplyany(A);
+    Dune::XT::Common::FieldMatrix<RangeFieldType, 2, 2> AT_A = AT.rightmultiplyany(A);
     gradients[2] *= -1;
-    FieldVector<RangeFieldType, 2> AT_b;
+    Dune::XT::Common::FieldVector<RangeFieldType, 2> AT_b;
     AT.mv(gradients[2], AT_b);
     AT_A.solve(solution, AT_b);
     ret[0] = solution[0];
