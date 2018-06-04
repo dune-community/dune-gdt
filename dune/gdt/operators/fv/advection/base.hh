@@ -15,6 +15,8 @@
 
 #include <dune/geometry/quadraturerules.hh>
 
+#include <dune/grid/common/partitionset.hh>
+
 #include <dune/xt/grid/walker/apply-on.hh>
 
 #include <dune/gdt/local/operators/fv.hh>
@@ -108,9 +110,13 @@ public:
   {
     this->append(
         local_operator_,
-        new XT::Grid::ApplyOn::PartitionSetInnerIntersectionsPrimally<GridLayerType, Dune::Partitions::Interior>());
-    this->append(local_operator_, new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GridLayerType>());
-    this->append(local_boundary_operator_, new XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GridLayerType>());
+        new XT::Grid::ApplyOn::InnerIntersectionsPrimally<GridLayerType, typename Dune::Partitions::InteriorBorder>());
+    this->append(local_operator_,
+                 new XT::Grid::ApplyOn::PeriodicIntersectionsPrimally<GridLayerType,
+                                                                      typename Dune::Partitions::InteriorBorder>());
+    this->append(local_boundary_operator_,
+                 new XT::Grid::ApplyOn::NonPeriodicBoundaryIntersections<GridLayerType,
+                                                                         typename Dune::Partitions::InteriorBorder>());
   }
 
 private:
