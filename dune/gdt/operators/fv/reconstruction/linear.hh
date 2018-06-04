@@ -559,7 +559,7 @@ public:
     }();
     thread_local StencilType stencil(stencil_sizes);
     bool valid = fill_stencil(stencil, entity);
-    // In a MPI parallel run, if entity is in overlap, we do not have to reconstruct
+    // In a MPI parallel run, if entity is on boundary of overlap, we do not have to reconstruct
     if (!valid)
       return;
     // get intersections
@@ -754,7 +754,7 @@ private:
     std::vector<int> boundary_dirs;
     for (const auto& intersection : Dune::intersections(grid_layer_, entity)) {
       const auto new_dir = intersection.indexInInside();
-      if (!end_of_stencil(stencil, new_dir, coords)) {
+      if (direction_allowed(dir, new_dir) && !end_of_stencil(stencil, new_dir, coords)) {
         auto new_coords = coords;
         if (intersection.boundary() && !intersection.neighbor()) { // boundary intersections
           boundary_dirs.push_back(new_dir);
@@ -764,12 +764,11 @@ private:
             next_coords_in_dir(new_dir, new_coords);
             stencil(new_coords) = boundary_value;
           }
-        } else if (intersection.neighbor() && direction_allowed(dir, new_dir)) { // inner and periodic intersections
+        } else if (intersection.neighbor()) { // inner and periodic intersections
           const auto& outside = intersection.outside();
           next_coords_in_dir(new_dir, new_coords);
           ret = ret && fill_impl(stencil, outside, new_dir, new_coords);
-        } else if (direction_allowed(dir, new_dir) && !intersection.neighbor()
-                   && !intersection.boundary()) { // processor boundary
+        } else if (!intersection.neighbor() && !intersection.boundary()) { // processor boundary
           return false;
         }
       } // if (!end_of_stencil(...))
