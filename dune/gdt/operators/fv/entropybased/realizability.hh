@@ -10,6 +10,8 @@
 #ifndef DUNE_GDT_OPERATORS_FV_REALIZABILITY_HH
 #define DUNE_GDT_OPERATORS_FV_REALIZABILITY_HH
 
+#include "config.h"
+
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/xt/common/fvector.hh>
@@ -424,6 +426,7 @@ template <class AnalyticalFluxImp, class DiscreteFunctionImp, class Basisfunctio
 class DgConvexHullLocalRealizabilityLimiter
     : public LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>
 {
+  using ThisType = DgConvexHullLocalRealizabilityLimiter;
   using BaseType = LocalRealizabilityLimiterBase<AnalyticalFluxImp, DiscreteFunctionImp, BasisfunctionImp>;
 
 public:
@@ -504,21 +507,9 @@ public:
         } // coeffs
       } // jj
     } // ll
-    for (auto& theta : thetas)
-      theta = std::min(epsilon_ + theta, 1.);
 
     auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
-    if (theta_entity > 0.) {
-      std::cout << "realizability limited with theta = " << theta_entity << std::endl;
-      for (auto& pair : local_reconstructed_values) {
-        auto& u = pair.second;
-        auto u_scaled = u;
-        u_scaled *= (1 - theta_entity);
-        auto u_bar_scaled = u_bar;
-        u_bar_scaled *= theta_entity;
-        u = u_scaled + u_bar_scaled;
-      }
-    }
+    BaseType::apply_limiter(entity, theta_entity, local_reconstructed_values, u_bar);
   } // void apply_local(...)
 
 private:
@@ -526,7 +517,6 @@ private:
   void calculate_plane_coefficients()
   {
     plane_coefficients_ = std::make_shared<PlaneCoefficientsType>();
-    using orgQhull::Qhull;
     FieldVector<std::vector<FieldVector<RangeFieldType, block_size>>, num_blocks> points;
     FieldVector<QuadratureType, num_blocks> blocked_quadrature;
     for (const auto& quad_point : quadrature_) {
@@ -544,21 +534,31 @@ private:
           points[jj][ii][ll] = val[block_size * jj + ll];
       } // ii
       points[jj][blocked_quadrature[jj].size()] = FieldVector<RangeFieldType, block_size>(0.);
-      Qhull qhull;
-      std::cout << "Starting qhull..." << std::endl;
-      qhull.runQhull("Realizable set", int(block_size), int(points[jj].size()), &(points[jj][0][0]), "Qt T1");
-      std::cout << "qhull done" << std::endl;
-      const auto facet_end = qhull.endFacet();
-      BlockPlaneCoefficientsType block_plane_coefficients(qhull.facetList().count());
-      size_t ii = 0;
-      for (auto facet = qhull.beginFacet(); facet != facet_end; facet = facet.next(), ++ii) {
-        for (size_t ll = 0; ll < block_size; ++ll)
-          block_plane_coefficients[ii].first[ll] = *(facet.hyperplane().coordinates() + ll);
-        block_plane_coefficients[ii].second = -facet.hyperplane().offset();
-      }
-      (*plane_coefficients_)[jj] = block_plane_coefficients;
-    } // jj
+    }
+    std::vector<std::thread> threads(num_blocks);
+    // Launch a group of threads
+    for (size_t jj = 0; jj < num_blocks; ++jj)
+      threads[jj] = std::thread(&ThisType::calculate_plane_coefficient_block, this, std::ref(points[jj]), jj);
+    // Join the threads with the main thread
+    for (size_t jj = 0; jj < num_blocks; ++jj)
+      threads[jj].join();
   }
+
+  void calculate_plane_coefficient_block(std::vector<FieldVector<RangeFieldType, block_size>>& points, size_t jj)
+  {
+    orgQhull::Qhull qhull;
+    qhull.runQhull("Realizable set", int(block_size), int(points.size()), &(points[0][0]), "Qt T1");
+    const auto facet_end = qhull.endFacet();
+    BlockPlaneCoefficientsType block_plane_coefficients(qhull.facetList().count());
+    size_t ii = 0;
+    for (auto facet = qhull.beginFacet(); facet != facet_end; facet = facet.next(), ++ii) {
+      for (size_t ll = 0; ll < block_size; ++ll)
+        block_plane_coefficients[ii].first[ll] = *(facet.hyperplane().coordinates() + ll);
+      block_plane_coefficients[ii].second = -facet.hyperplane().offset();
+    }
+    (*plane_coefficients_)[jj] = block_plane_coefficients;
+  }
+
 
   using BaseType::basis_functions_;
   using BaseType::source_;
