@@ -1003,7 +1003,7 @@ public:
           f_k -= beta_in * v_k;
 
           for (size_t kk = 0; kk < k_max_; ++kk) {
-            // exit inner for loop to increase r if to many iterations are used or cholesky decomposition fails
+            // exit inner for loop to increase r if too many iterations are used or cholesky decomposition fails
             if (kk > k_0_ && r < r_max && r_max > 0)
               break;
             try {
@@ -1016,12 +1016,24 @@ public:
             }
             // calculate current error
             VectorType error(FieldVector<RangeFieldType, block_size>(0.));
-            FieldVector<RangeFieldType, block_size> tmp_vec;
+            thread_local auto tmp_mat = M_;
+            tmp_mat = M_;
             for (size_t jj = 0; jj < num_blocks; ++jj) {
+              XT::Common::Blas::dtrsm(XT::Common::Blas::row_major(),
+                                      XT::Common::Blas::right(),
+                                      XT::Common::Blas::lower(),
+                                      XT::Common::Blas::trans(),
+                                      XT::Common::Blas::non_unit(),
+                                      tmp_mat[jj].size(),
+                                      block_size,
+                                      1.,
+                                      &((*T_k)[jj][0][0]),
+                                      block_size,
+                                      &(tmp_mat[jj][0][0]),
+                                      block_size);
               for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
-                XT::LA::solve_lower_triangular((*T_k)[jj], tmp_vec, M_[jj][ll]);
                 auto m_times_factor = M_[jj][ll];
-                m_times_factor *= std::exp(beta_out[jj] * tmp_vec) * quadrature_[jj][ll].weight();
+                m_times_factor *= std::exp(beta_out[jj] * tmp_mat[jj][ll]) * quadrature_[jj][ll].weight();
                 error[jj] += m_times_factor;
               } // ll
               error[jj] -= v[jj];
@@ -1270,10 +1282,10 @@ public:
                            MatrixType& H) const
     {
       std::fill(H.begin(), H.end(), 0.);
+      M_scaled = M;
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
           const auto& m = M[jj][ll];
-          M_scaled[jj][ll] = m;
           M_scaled[jj][ll] *= std::exp(alpha[jj] * m) * quadrature_[jj][ll].weight();
           // add m m^T * factor
           // matrix is symmetric, we only use lower triangular part
@@ -1291,51 +1303,21 @@ public:
     // the derivative is the vector of matrices (df_1/dalpha, df_2/dalpha, ...)
     // this function returns the dd-th matrix df_dd/dalpha of J
     void calculate_J(const BasisValuesMatrixType& M,
-                     BasisValuesMatrixType& M_scaled,
-                     Dune::FieldMatrix<RangeFieldType, dimRange, StateType::dimRange>& J_dd,
-                     const size_t dd) const
-    {
-      assert(dd == 0);
-      std::fill(J_dd.begin(), J_dd.end(), 0);
-      for (size_t jj = 0; jj < num_blocks; ++jj) {
-        const auto offset = block_size * jj;
-        for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
-          const auto& m = M[jj][ll];
-          const auto& v = quadrature_[jj][ll].position();
-          M_scaled[jj][ll] *= v[dd];
-          // add m m^T * factor
-          J_dd[offset][offset] += m[0] * M_scaled[jj][ll][0];
-          J_dd[offset + 1][offset] += m[0] * M_scaled[jj][ll][1];
-          J_dd[offset + 1][offset + 1] += m[1] * M_scaled[jj][ll][1];
-        } // quadrature points for loop
-      } // jj
-      // symmetric update for upper triangular part of J
-      for (size_t jj = 0; jj < num_blocks; ++jj) {
-        const auto offset = block_size * jj;
-        J_dd[offset][offset + 1] = J_dd[offset + 1][offset];
-      }
-    } // void calculate_J(...)
-
-    // version for 3D flux where we need to copy M_scaled
-    void calculate_J(const BasisValuesMatrixType& M,
                      const BasisValuesMatrixType& M_scaled,
                      Dune::FieldMatrix<RangeFieldType, dimRange, StateType::dimRange>& J_dd,
                      const size_t dd) const
     {
       assert(dd < dimRangeCols);
-      thread_local auto M_scaled_copy = M_scaled;
-      M_scaled_copy = M_scaled;
       std::fill(J_dd.begin(), J_dd.end(), 0);
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         const auto offset = jj * block_size;
         for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
           const auto& m = M[jj][ll];
           const auto& v = quadrature_[jj][ll].position();
-          M_scaled_copy[jj][ll] *= v[dd];
           // add m m^T * factor
           for (size_t mm = 0; mm < block_size; ++mm)
             for (size_t nn = 0; nn <= mm; ++nn)
-              J_dd[offset + mm][offset + nn] += m[mm] * M_scaled_copy[jj][ll][nn];
+              J_dd[offset + mm][offset + nn] += m[mm] * M_scaled[jj][ll][nn] * v[dd];
         } // quadrature points for loop
       } // jj
       // symmetric update for upper triangular part of J
@@ -1367,9 +1349,20 @@ public:
         L[jj].mtv(beta_in[jj], beta_out[jj]);
         XT::LA::solve_lower_triangular(L[jj], tmp_vec, v_k[jj]);
         v_k[jj] = tmp_vec;
+        XT::Common::Blas::dtrsm(XT::Common::Blas::row_major(),
+                                XT::Common::Blas::right(),
+                                XT::Common::Blas::lower(),
+                                XT::Common::Blas::trans(),
+                                XT::Common::Blas::non_unit(),
+                                P_k[jj].size(),
+                                block_size,
+                                1.,
+                                &(L[jj][0][0]),
+                                block_size,
+                                &(P_k[jj][0][0]),
+                                block_size);
         for (size_t ll = 0; ll < P_k[jj].size(); ++ll) {
-          XT::LA::solve_lower_triangular(L[jj], tmp_vec, P_k[jj][ll]);
-          P_k[jj][ll] = tmp_vec;
+          tmp_vec = P_k[jj][ll];
           tmp_vec *= std::exp(beta_out[jj] * P_k[jj][ll]) * quadrature_[jj][ll].weight();
           g_k[jj] += tmp_vec;
         } // ll
