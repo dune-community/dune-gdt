@@ -520,8 +520,14 @@ private:
   // http://www.tandfonline.com/doi/full/10.1080/00411450.2014.910226?src=recsys&, Section 4.1
   RangeFieldType N_lm(const int l, const int m) const
   {
+    static constexpr auto frac_4pi = 1. / (4. * M_PI);
     assert(l >= 0 && m >= 0 && m <= l);
-    return std::sqrt((2. * l + 1.) * XT::Common::factorial(l - m) / (XT::Common::factorial(l + m) * 4. * M_PI));
+    // return std::sqrt((2. * l + 1.) * XT::Common::factorial(l - m) / (XT::Common::factorial(l + m) * 4. * M_PI));
+    auto factor = 1.;
+    for (int ii = l - m + 1; ii <= l + m; ++ii)
+      factor *= ii;
+    factor = 1. / factor;
+    return std::sqrt((2. * l + 1.) * factor * frac_4pi);
   }
 
   RangeFieldType evaluate_lm(const DomainFieldType theta, const DomainFieldType phi, const int l, const int m) const
