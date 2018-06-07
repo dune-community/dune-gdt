@@ -442,7 +442,7 @@ public:
   static const size_t dimRange = BaseType::dimRange;
   static const size_t block_size = (dimDomain == 1) ? 2 : 4;
   static const size_t num_blocks = dimRange / block_size;
-  typedef FieldVector<RangeFieldType, block_size> BlockRangeType;
+  typedef FieldVector<RangeFieldType, block_size - 1> BlockRangeType;
   typedef typename std::vector<std::pair<BlockRangeType, RangeFieldType>> BlockPlaneCoefficientsType;
   typedef FieldVector<BlockPlaneCoefficientsType, num_blocks> PlaneCoefficientsType;
 
@@ -484,25 +484,28 @@ public:
       auto u_l = pair.second;
       if (XT::Common::FloatCmp::eq(u_l, u_bar))
         continue;
-      auto u_bar_minus_u_l = u_bar - u_l;
       const auto factor = basis_functions_.realizability_limiter_max(u_l, u_bar);
       u_l /= factor;
-      u_bar_minus_u_l /= factor;
-
+      auto u_bar_scaled = u_bar;
+      u_bar_scaled /= factor;
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         const size_t offset = jj * block_size;
+        if (u_l[offset] >= u_bar_scaled[offset])
+          continue;
+        thetas[ll] = std::max(thetas[ll], u_l[offset] / (u_l[offset] - u_bar_scaled[offset]));
+      }
+      for (size_t jj = 0; jj < num_blocks; ++jj) {
+        const size_t offset = jj * block_size;
+        BlockRangeType q_k, q_bar_k;
+        for (size_t mm = 0; mm < block_size - 1; ++mm) {
+          q_k[mm] = u_l[offset + mm + 1] / u_l[offset];
+          q_bar_k[mm] = u_bar_scaled[offset + mm + 1] / u_bar_scaled[offset];
+        }
         for (const auto& coeffs : (*plane_coefficients_)[jj]) {
           const BlockRangeType& a = coeffs.first;
           const RangeFieldType& b = coeffs.second;
-          RangeFieldType a_dot_u_l_block(0);
-          RangeFieldType a_dot_u_bar_minus_u_l_block(0);
-          for (size_t mm = 0; mm < block_size; ++mm) {
-            const size_t index = offset + mm;
-            a_dot_u_l_block += u_l[index] * a[mm];
-            a_dot_u_bar_minus_u_l_block += u_bar_minus_u_l[index] * a[mm];
-          }
-          RangeFieldType theta_li = (b - a_dot_u_l_block) / a_dot_u_bar_minus_u_l_block;
-          if (XT::Common::FloatCmp::le(theta_li, 1.))
+          RangeFieldType theta_li = (b - a * q_k) / (a * (q_bar_k - q_k));
+          if (!(theta_li > 1.))
             thetas[ll] = std::max(thetas[ll], theta_li);
         } // coeffs
       } // jj
@@ -517,7 +520,7 @@ private:
   void calculate_plane_coefficients()
   {
     plane_coefficients_ = std::make_shared<PlaneCoefficientsType>();
-    FieldVector<std::vector<FieldVector<RangeFieldType, block_size>>, num_blocks> points;
+    FieldVector<std::vector<FieldVector<RangeFieldType, block_size - 1>>, num_blocks> points;
     FieldVector<QuadratureType, num_blocks> blocked_quadrature;
     for (const auto& quad_point : quadrature_) {
       const auto face_indices = basis_functions_.get_face_indices(quad_point.position());
@@ -530,10 +533,10 @@ private:
       points[jj].resize(blocked_quadrature[jj].size() + 1);
       for (size_t ii = 0; ii < blocked_quadrature[jj].size(); ++ii) {
         const auto val = basis_functions_.evaluate(blocked_quadrature[jj][ii].position(), false, num_faces);
-        for (size_t ll = 0; ll < block_size; ++ll)
-          points[jj][ii][ll] = val[block_size * jj + ll];
+        for (size_t ll = 0; ll < block_size - 1; ++ll)
+          points[jj][ii][ll] = val[block_size * jj + 1 + ll];
       } // ii
-      points[jj][blocked_quadrature[jj].size()] = FieldVector<RangeFieldType, block_size>(0.);
+      points[jj][blocked_quadrature[jj].size()] = FieldVector<RangeFieldType, block_size - 1>(0.);
     }
     std::vector<std::thread> threads(num_blocks);
     // Launch a group of threads
@@ -544,18 +547,19 @@ private:
       threads[jj].join();
   }
 
-  void calculate_plane_coefficient_block(std::vector<FieldVector<RangeFieldType, block_size>>& points, size_t jj)
+  void calculate_plane_coefficient_block(std::vector<FieldVector<RangeFieldType, block_size - 1>>& points, size_t jj)
   {
     orgQhull::Qhull qhull;
-    qhull.runQhull("Realizable set", int(block_size), int(points.size()), &(points[0][0]), "Qt T1");
+    qhull.runQhull("Realizable set", int(block_size) - 1, int(points.size()), &(points[0][0]), "Qt T1");
     const auto facet_end = qhull.endFacet();
     BlockPlaneCoefficientsType block_plane_coefficients(qhull.facetList().count());
+    std::cout << "num_vertices: " << qhull.vertexList().count() << std::endl;
     size_t ii = 0;
     for (auto facet = qhull.beginFacet(); facet != facet_end; facet = facet.next(), ++ii) {
-      for (size_t ll = 0; ll < block_size; ++ll)
+      for (size_t ll = 0; ll < block_size - 1; ++ll)
         block_plane_coefficients[ii].first[ll] = *(facet.hyperplane().coordinates() + ll);
       block_plane_coefficients[ii].second = -facet.hyperplane().offset();
-    }
+    } // ii
     (*plane_coefficients_)[jj] = block_plane_coefficients;
   }
 

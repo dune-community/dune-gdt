@@ -479,7 +479,6 @@ public:
       u_bar_sum += u_bar[ii];
     }
     return 2 * std::max(u_sum, u_bar_sum);
-    //    return 2 * std::max(u[0], u_bar[0]);
   }
 
   std::vector<size_t> get_face_indices(const DomainType& v) const
