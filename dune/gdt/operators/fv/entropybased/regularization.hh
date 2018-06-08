@@ -51,7 +51,7 @@ public:
            && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
     const auto s = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
                        ->derived_local_function(entity)
-                       ->get_alpha(x_in_inside_coords, u, param_)
+                       ->get_alpha(x_in_inside_coords, u, param_, true)
                        .second;
 
     const auto& vector_indices = source_.space().mapper().globalIndices(entity);

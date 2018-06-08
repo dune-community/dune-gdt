@@ -278,13 +278,14 @@ public:
         const auto r_max = r_sequence.back();
         for (const auto& r : r_sequence) {
           // regularize u
-          VectorType r_times_u_iso = u_iso;
-          r_times_u_iso *= r;
           v = u;
-          v *= 1 - r;
-          v += r_times_u_iso;
-          if (r > 0)
+          if (r > 0) {
             beta_in = alpha_iso;
+            VectorType r_times_u_iso = u_iso;
+            r_times_u_iso *= r;
+            v *= 1 - r;
+            v += r_times_u_iso;
+          }
           *T_k = T_minus_one_;
           // calculate T_k u
           VectorType v_k = v;
@@ -793,14 +794,15 @@ public:
   using BaseType::dimRangeCols;
   static const size_t block_size = (dimDomain == 1) ? 2 : 4;
   static const size_t num_blocks = dimRange / block_size;
-  using MatrixType = FieldVector<FieldMatrix<RangeFieldType, block_size, block_size>, num_blocks>;
-  typedef FieldVector<FieldVector<RangeFieldType, block_size>, num_blocks> VectorType;
-  using BasisValuesMatrixType = FieldVector<std::vector<FieldVector<RangeFieldType, block_size>>, num_blocks>;
+  using BlockMatrixType = FieldVector<FieldMatrix<RangeFieldType, block_size, block_size>, num_blocks>;
+  typedef FieldVector<FieldVector<RangeFieldType, block_size>, num_blocks> BlockVectorType;
+  using BasisValuesMatrixType = FieldVector<FieldVector<std::vector<RangeFieldType>, block_size>, num_blocks>;
   typedef Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
   typedef Hyperbolic::Problems::PiecewiseMonomials<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimDomain>
       BasisfunctionType;
-  typedef std::pair<VectorType, RangeFieldType> AlphaReturnType;
+  typedef std::pair<BlockVectorType, RangeFieldType> AlphaReturnType;
   typedef EntropyLocalCache<StateRangeType, AlphaReturnType> LocalCacheType;
+  using TemporaryVectorType = FieldVector<std::vector<RangeFieldType>, num_blocks>;
   static const size_t cache_size = 2 * dimRange + 2;
 
   explicit EntropyBasedLocalFlux(
@@ -843,12 +845,13 @@ public:
     } // ii
     size_t num_faces;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
-      M_[jj].resize(quadrature_[jj].size());
-      for (size_t ii = 0; ii < quadrature_[jj].size(); ++ii) {
-        const auto val = basis_functions_.evaluate(quadrature_[jj][ii].position(), false, num_faces);
-        for (size_t ll = 0; ll < block_size; ++ll)
-          M_[jj][ii][ll] = val[block_size * jj + ll];
-      }
+      for (size_t ii = 0; ii < block_size; ++ii)
+        M_[jj][ii].resize(quadrature_[jj].size());
+      for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
+        const auto val = basis_functions_.evaluate(quadrature_[jj][ll].position(), false, num_faces);
+        for (size_t ii = 0; ii < block_size; ++ii)
+          M_[jj][ii][ll] = val[block_size * jj + ii];
+      } // ii
     } // jj
   }
 
@@ -872,7 +875,7 @@ public:
                   const size_t k_0,
                   const size_t k_max,
                   const RangeFieldType epsilon,
-                  const MatrixType& T_minus_one,
+                  const BlockMatrixType& T_minus_one,
                   LocalCacheType& cache,
                   std::mutex& mutex)
       : LocalfunctionType(e)
@@ -895,7 +898,16 @@ public:
 
     using LocalfunctionType::entity;
 
-    RangeFieldType one_norm(const VectorType& vec) const
+    // temporary vectors to store inner products and exponentials
+    TemporaryVectorType& working_storage() const
+    {
+      thread_local TemporaryVectorType work_vecs;
+      for (size_t jj = 0; jj < num_blocks; ++jj)
+        work_vecs[jj].resize(quadrature_[jj].size());
+      return work_vecs;
+    }
+
+    RangeFieldType one_norm(const BlockVectorType& vec) const
     {
       RangeFieldType ret(0);
       for (size_t jj = 0; jj < num_blocks; ++jj)
@@ -904,7 +916,7 @@ public:
       return ret;
     }
 
-    RangeFieldType two_norm(const VectorType& vec) const
+    RangeFieldType two_norm(const BlockVectorType& vec) const
     {
       RangeFieldType ret(0);
       for (size_t jj = 0; jj < num_blocks; ++jj)
@@ -914,46 +926,95 @@ public:
       return ret;
     }
 
-    std::string block_vector_to_string(const VectorType& vec) const
+    void vector_to_block_vector(const StateRangeType& vec, BlockVectorType& block_vec) const
     {
-      std::string ret = "[";
-      for (size_t ii = 0; ii < vec.size(); ++ii)
-        for (size_t jj = 0; jj < block_size; ++jj)
-          ret += XT::Common::to_string(vec[ii][jj], 15) + " ";
-      ret += "]";
+      for (size_t jj = 0; jj < num_blocks; ++jj)
+        for (size_t ii = 0; ii < block_size; ++ii)
+          block_vec[jj][ii] = vec[jj * block_size + ii];
+    }
+
+    void block_vector_to_vector(const BlockVectorType& block_vec, StateRangeType& vec) const
+    {
+      for (size_t jj = 0; jj < num_blocks; ++jj)
+        for (size_t ii = 0; ii < block_size; ++ii)
+          vec[jj * block_size + ii] = block_vec[jj][ii];
+    }
+
+    void calculate_scalar_products(const BlockVectorType& beta_in,
+                                   const BasisValuesMatrixType& M,
+                                   TemporaryVectorType& scalar_products) const
+    {
+      for (size_t jj = 0; jj < num_blocks; ++jj) {
+        std::fill(scalar_products[jj].begin(), scalar_products[jj].end(), 0.);
+        for (size_t ii = 0; ii < block_size; ++ii)
+          for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll)
+            scalar_products[jj][ll] += M[jj][ii][ll] * beta_in[jj][ii];
+      }
+    }
+
+    void apply_exponential(TemporaryVectorType& values) const
+    {
+      for (auto& block_values : values)
+        std::for_each(block_values.begin(), block_values.end(), [](RangeFieldType& val) { val = std::exp(val); });
+    }
+
+    // calculate ret = \int (exp(beta_in * m))
+    RangeFieldType calculate_scalar_integral(const BlockVectorType& beta_in, const BasisValuesMatrixType& M) const
+    {
+      auto& work_vecs = working_storage();
+      calculate_scalar_products(beta_in, M, work_vecs);
+      apply_exponential(work_vecs);
+      RangeFieldType ret(0.);
+      for (size_t jj = 0; jj < num_blocks; ++jj)
+        for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll)
+          ret += quadrature_[jj][ll].weight() * work_vecs[jj][ll];
       return ret;
     }
 
-    std::string block_matrix_to_string(const MatrixType& matrix) const
+    // calculate ret = \int (m1 exp(beta_in * m2))
+    void calculate_vector_integral(const BlockVectorType& beta_in,
+                                   const BasisValuesMatrixType& M1,
+                                   const BasisValuesMatrixType& M2,
+                                   BlockVectorType& ret) const
     {
-      size_t dim = matrix.size() * block_size;
-      std::string ret = "[";
-      for (size_t ii = 0; ii < matrix.size(); ++ii)
-        for (size_t jj = 0; jj < block_size; ++jj) {
-          for (size_t kk = 0; kk < ii * block_size; ++kk)
-            ret += "0 ";
-          for (size_t kk = 0; kk < block_size; ++kk)
-            ret += XT::Common::to_string(matrix[ii][jj][kk], 15) + " ";
-          for (size_t kk = (ii + 1) * block_size; kk < dim; ++kk)
-            ret += "0 ";
-          if (ii < matrix.size() - 1 || jj < block_size - 1)
-            ret += "; ";
-        } // jj
-      ret += "]";
-      return ret;
+      auto& work_vecs = working_storage();
+      calculate_scalar_products(beta_in, M2, work_vecs);
+      apply_exponential(work_vecs);
+      std::fill(ret.begin(), ret.end(), 0.);
+      for (size_t jj = 0; jj < num_blocks; ++jj)
+        for (size_t ii = 0; ii < block_size; ++ii)
+          for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll)
+            ret[jj][ii] += M1[jj][ii][ll] * work_vecs[jj][ll] * quadrature_[jj][ll].weight();
+    }
+
+    void apply_inverse_matrix(const BlockMatrixType& T_k, BasisValuesMatrixType& M) const
+    {
+      for (size_t jj = 0; jj < num_blocks; ++jj)
+        XT::Common::Blas::dtrsm(XT::Common::Blas::row_major(),
+                                XT::Common::Blas::left(),
+                                XT::Common::Blas::lower(),
+                                XT::Common::Blas::no_trans(),
+                                XT::Common::Blas::non_unit(),
+                                block_size,
+                                M[jj].size(),
+                                1.,
+                                &(T_k[jj][0][0]),
+                                block_size,
+                                &(M[jj][0][0]),
+                                M[jj].size());
     }
 
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
                               const StateRangeType& u_in,
                               const XT::Common::Parameter& param,
-                              const bool regularize = true) const
+                              const bool regularize) const
     {
       const bool boundary = bool(param.get("boundary")[0]);
       if (boundary)
         cache_.increase_capacity(2 * cache_size);
       // get initial multiplier and basis matrix from last time step
       AlphaReturnType ret;
-      StateRangeType u_out, v_in;
+      StateRangeType v_in;
 
       // if value has already been calculated for these values, skip computation
       mutex_.lock();
@@ -965,41 +1026,35 @@ public:
       } else {
         StateRangeType u_iso_in, alpha_iso_in;
         std::tie(u_iso_in, alpha_iso_in) = basis_functions_.calculate_isotropic_distribution(u_in);
-        VectorType alpha_iso;
-        for (size_t jj = 0; jj < num_blocks; ++jj)
-          for (size_t ii = 0; ii < block_size; ++ii)
-            alpha_iso[jj][ii] = alpha_iso_in[jj * block_size + ii];
+        BlockVectorType alpha_iso;
+        vector_to_block_vector(alpha_iso_in, alpha_iso);
 
         // define further variables
-        VectorType g_k, beta_in, beta_out, v;
-        thread_local auto T_k = XT::Common::make_unique<MatrixType>();
+        BlockVectorType g_k, beta_in, beta_out, v;
+        thread_local auto T_k = XT::Common::make_unique<BlockMatrixType>();
         beta_in = cache_iterator != cache_.end() ? cache_iterator->second.first : alpha_iso;
 
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
         const auto r_max = r_sequence.back();
         for (const auto& r : r_sequence) {
           // normalize u
-          StateRangeType r_times_u_iso = u_iso_in;
-          r_times_u_iso *= r;
           v_in = u_in;
-          v_in *= 1 - r;
-          v_in += r_times_u_iso;
-          for (size_t jj = 0; jj < num_blocks; ++jj)
-            for (size_t ii = 0; ii < block_size; ++ii)
-              v[jj][ii] = v_in[jj * block_size + ii];
-          if (r > 0)
+          if (r > 0.) {
             beta_in = alpha_iso;
+            StateRangeType r_times_u_iso = u_iso_in;
+            r_times_u_iso *= r;
+            v_in *= 1 - r;
+            v_in += r_times_u_iso;
+          }
+          vector_to_block_vector(v_in, v);
           *T_k = T_minus_one_;
           // calculate T_k u
-          VectorType v_k = v;
+          BlockVectorType v_k = v;
           // calculate values of basis p = S_k m
           static thread_local BasisValuesMatrixType P_k(M_);
           P_k = M_;
           // calculate f_0
-          RangeFieldType f_k(0);
-          for (size_t jj = 0; jj < num_blocks; ++jj)
-            for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll)
-              f_k += quadrature_[jj][ll].weight() * std::exp(beta_in[jj] * P_k[jj][ll]);
+          RangeFieldType f_k = calculate_scalar_integral(beta_in, P_k);
           f_k -= beta_in * v_k;
 
           for (size_t kk = 0; kk < k_max_; ++kk) {
@@ -1015,41 +1070,23 @@ public:
               DUNE_THROW(Dune::MathError, "Failure to converge!");
             }
             // calculate current error
-            VectorType error(FieldVector<RangeFieldType, block_size>(0.));
+            BlockVectorType error_vec(FieldVector<RangeFieldType, block_size>(0.));
             thread_local auto tmp_mat = M_;
-            tmp_mat = M_;
-            for (size_t jj = 0; jj < num_blocks; ++jj) {
-              XT::Common::Blas::dtrsm(XT::Common::Blas::row_major(),
-                                      XT::Common::Blas::right(),
-                                      XT::Common::Blas::lower(),
-                                      XT::Common::Blas::trans(),
-                                      XT::Common::Blas::non_unit(),
-                                      tmp_mat[jj].size(),
-                                      block_size,
-                                      1.,
-                                      &((*T_k)[jj][0][0]),
-                                      block_size,
-                                      &(tmp_mat[jj][0][0]),
-                                      block_size);
-              for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
-                auto m_times_factor = M_[jj][ll];
-                m_times_factor *= std::exp(beta_out[jj] * tmp_mat[jj][ll]) * quadrature_[jj][ll].weight();
-                error[jj] += m_times_factor;
-              } // ll
-              error[jj] -= v[jj];
-            } // jj
+            // calculate vector of errors e = \int { m exp(beta_out * T_k^{-1}m) } - v
+            tmp_mat = M_; // calculate T_k^{-1} M_ and store in tmp_mat
+            apply_inverse_matrix(*T_k, tmp_mat);
+            calculate_vector_integral(beta_out, M_, tmp_mat, error_vec);
+            error_vec -= v;
+
             // calculate descent direction d_k;
-            VectorType d_k = g_k;
+            BlockVectorType d_k = g_k;
             d_k *= -1.;
-            VectorType T_k_inv_transp_d_k;
+            BlockVectorType T_k_inv_transp_d_k;
             for (size_t jj = 0; jj < num_blocks; ++jj)
               XT::LA::solve_lower_triangular_transposed((*T_k)[jj], T_k_inv_transp_d_k[jj], d_k[jj]);
-            if (two_norm(error) < tau_ && std::exp(5 * one_norm(T_k_inv_transp_d_k)) < 1 + epsilon_gamma_) {
+            if (two_norm(error_vec) < tau_ && std::exp(5 * one_norm(T_k_inv_transp_d_k)) < 1 + epsilon_gamma_) {
               for (size_t jj = 0; jj < num_blocks; ++jj)
                 XT::LA::solve_lower_triangular_transposed((*T_k)[jj], ret.first[jj], beta_out[jj]);
-              for (size_t jj = 0; jj < num_blocks; ++jj)
-                for (size_t ii = 0; ii < block_size; ++ii)
-                  u_out[jj * block_size + ii] = v[jj][ii];
               ret.second = r;
               goto outside_all_loops;
             } else {
@@ -1057,15 +1094,11 @@ public:
               beta_in = beta_out;
               // backtracking line search
               while (zeta_k > epsilon_ * two_norm(beta_out) / two_norm(d_k)) {
-                RangeFieldType f(0);
-                VectorType beta_new = d_k;
+                BlockVectorType beta_new = d_k;
                 beta_new *= zeta_k;
                 beta_new += beta_out;
-                for (size_t jj = 0; jj < num_blocks; ++jj) {
-                  for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll)
-                    f += quadrature_[jj][ll].weight() * std::exp(beta_new[jj] * P_k[jj][ll]);
-                  f -= beta_new[jj] * v_k[jj];
-                }
+                RangeFieldType f = calculate_scalar_integral(beta_new, P_k);
+                f -= beta_new * v_k;
                 if (XT::Common::FloatCmp::le(f, f_k + xi_ * zeta_k * (g_k * d_k))) {
                   beta_in = beta_new;
                   f_k = f;
@@ -1098,16 +1131,19 @@ public:
                           RangeType& ret,
                           const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param).first;
+      std::fill(ret.begin(), ret.end(), 0.);
+      const auto alpha = get_alpha(x_local, u, param, true).first;
+      auto& work_vecs = working_storage();
+      calculate_scalar_products(alpha, M_, work_vecs);
+      apply_exponential(work_vecs);
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         const auto offset = block_size * jj;
         for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
           const auto& position = quadrature_[jj][ll].position();
-          const auto& weight = quadrature_[jj][ll].weight();
-          const auto factor = std::exp(alpha[jj] * M_[jj][ll]) * weight;
+          const auto factor = work_vecs[jj][ll] * quadrature_[jj][ll].weight();
           for (size_t ii = 0; ii < block_size; ++ii)
             for (size_t dd = 0; dd < dimDomain; ++dd)
-              helper<dimDomain>::get_ref(ret, offset + ii, dd) += M_[jj][ll][ii] * position[dd] * factor;
+              helper<dimDomain>::get_ref(ret, offset + ii, dd) += M_[jj][ii][ll] * position[dd] * factor;
         } // ll
       } // jj
     } // void evaluate(...)
@@ -1118,18 +1154,18 @@ public:
                               ColRangeType& ret,
                               const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param).first;
+      std::fill(ret.begin(), ret.end(), 0.);
+      const auto alpha = get_alpha(x_local, u, param, true).first;
+      auto& work_vecs = working_storage();
+      calculate_scalar_products(alpha, M_, work_vecs);
+      apply_exponential(work_vecs);
       // calculate ret[ii] = < omega[ii] m G_\alpha(u) >
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         const auto offset = block_size * jj;
         for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
-          auto m_times_factor = M_[jj][ll];
-          const auto& position = quadrature_[jj][ll].position();
-          const auto& weight = quadrature_[jj][ll].weight();
-          const auto factor = std::exp(alpha[jj] * M_[jj][ll]) * weight * position[col];
-          m_times_factor *= factor;
+          const auto factor = work_vecs[jj][ll] * quadrature_[jj][ll].weight() * quadrature_[jj][ll].position()[col];
           for (size_t ii = 0; ii < block_size; ++ii)
-            ret[offset + ii] += m_times_factor[ii];
+            ret[offset + ii] += M_[jj][ii][ll] * factor;
         } // ll
       } // jj
     } // void evaluate_col(...)
@@ -1139,12 +1175,10 @@ public:
                            PartialURangeType& ret,
                            const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param).first;
-      thread_local BasisValuesMatrixType M_scaled;
-      M_scaled = M_;
-      auto H = XT::Common::make_unique<MatrixType>();
-      calculate_hessian(alpha, M_, M_scaled, *H);
-      helper<dimDomain>::partial_u(M_, M_scaled, *H, ret, this);
+      const auto alpha = get_alpha(x_local, u, param, true).first;
+      thread_local auto H = XT::Common::make_unique<BlockMatrixType>();
+      calculate_hessian(alpha, M_, *H);
+      helper<dimDomain>::partial_u(M_, *H, ret, this);
     }
 
     virtual void partial_u_col(const size_t col,
@@ -1153,12 +1187,10 @@ public:
                                ColPartialURangeType& ret,
                                const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param).first;
-      thread_local BasisValuesMatrixType M_scaled;
-      M_scaled = M_;
-      auto H = XT::Common::make_unique<MatrixType>();
-      calculate_hessian(alpha, M_, M_scaled, *H);
-      helper<dimDomain>::partial_u_col(col, M_, M_scaled, *H, ret, this);
+      const auto alpha = get_alpha(x_local, u, param, true).first;
+      thread_local auto H = XT::Common::make_unique<BlockMatrixType>();
+      calculate_hessian(alpha, M_, *H);
+      helper<dimDomain>::partial_u_col(col, M_, *H, ret, this);
     }
 
     static std::string static_id()
@@ -1173,24 +1205,22 @@ public:
     struct helper<1, anything>
     {
       static void partial_u(const BasisValuesMatrixType& M,
-                            BasisValuesMatrixType& M_scaled,
-                            MatrixType& H,
+                            BlockMatrixType& H,
                             PartialURangeType& ret,
                             const Localfunction* entropy_flux)
       {
-        entropy_flux->calculate_J(M, M_scaled, ret, 0);
+        entropy_flux->calculate_J(M, ret, 0);
         entropy_flux->calculate_A_Binv(ret, H);
       } // void partial_u(...)
 
       static void partial_u_col(const size_t col,
                                 const BasisValuesMatrixType& M,
-                                BasisValuesMatrixType& M_scaled,
-                                MatrixType& H,
+                                BlockMatrixType& H,
                                 ColPartialURangeType& ret,
                                 const Localfunction* entropy_flux)
       {
         assert(col == 0);
-        partial_u(M, M_scaled, H, ret, entropy_flux);
+        partial_u(M, H, ret, entropy_flux);
       } // void partial_u(...)
 
       static RangeFieldType& get_ref(RangeType& ret, const size_t rr, const size_t cc)
@@ -1204,25 +1234,23 @@ public:
     struct helper<3, anything>
     {
       static void partial_u(const BasisValuesMatrixType& M,
-                            const BasisValuesMatrixType& M_scaled,
-                            MatrixType& H,
+                            BlockMatrixType& H,
                             PartialURangeType& ret,
                             const Localfunction* entropy_flux)
       {
         for (size_t dd = 0; dd < dimDomain; ++dd) {
-          entropy_flux->calculate_J(M, M_scaled, ret[dd], dd);
+          entropy_flux->calculate_J(M, ret[dd], dd);
           entropy_flux->calculate_A_Binv(ret[dd], H, dd > 0);
         }
       } // void partial_u(...)
 
       static void partial_u_col(const size_t col,
                                 const BasisValuesMatrixType& M,
-                                const BasisValuesMatrixType& M_scaled,
-                                MatrixType& H,
+                                BlockMatrixType& H,
                                 ColPartialURangeType& ret,
                                 const Localfunction* entropy_flux)
       {
-        entropy_flux->calculate_J(M, M_scaled, ret, col);
+        entropy_flux->calculate_J(M, ret, col);
         entropy_flux->calculate_A_Binv(ret, H);
       } // void partial_u(...)
 
@@ -1234,7 +1262,7 @@ public:
 
     // calculates A = A B^{-1}. B is assumed to be symmetric positive definite.
     static void
-    calculate_A_Binv(FieldMatrix<RangeFieldType, dimRange, dimRange>& A, MatrixType& B, bool L_calculated = false)
+    calculate_A_Binv(FieldMatrix<RangeFieldType, dimRange, dimRange>& A, BlockMatrixType& B, bool L_calculated = false)
     {
       // if B = LL^T, then we have to calculate ret = A (L^T)^{-1} L^{-1} = C L^{-1}
       // calculate B = LL^T first
@@ -1259,41 +1287,18 @@ public:
       } // jj
     } // void calculate_A_Binv(...)
 
-    void calculate_hessian(const VectorType& alpha, const BasisValuesMatrixType& M, MatrixType& H) const
+    void calculate_hessian(const BlockVectorType& alpha, const BasisValuesMatrixType& M, BlockMatrixType& H) const
     {
       std::fill(H.begin(), H.end(), 0.);
-      for (size_t jj = 0; jj < num_blocks; ++jj) {
-        for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
-          const auto& m = M[jj][ll];
-          auto m_scaled = m;
-          m_scaled *= std::exp(alpha[jj] * m) * quadrature_[jj][ll].weight();
-          // add m m^T * factor
-          // matrix is symmetric, we only use lower triangular part
-          for (size_t ii = 0; ii < block_size; ++ii)
-            for (size_t kk = 0; kk <= ii; ++kk)
-              H[jj][ii][kk] += m[ii] * m_scaled[kk];
-        } // quadrature points for loop
-      } // jj
-    } // void calculate_hessian(...)
-
-    void calculate_hessian(const VectorType& alpha,
-                           const BasisValuesMatrixType& M,
-                           BasisValuesMatrixType& M_scaled,
-                           MatrixType& H) const
-    {
-      std::fill(H.begin(), H.end(), 0.);
-      M_scaled = M;
-      for (size_t jj = 0; jj < num_blocks; ++jj) {
-        for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
-          const auto& m = M[jj][ll];
-          M_scaled[jj][ll] *= std::exp(alpha[jj] * m) * quadrature_[jj][ll].weight();
-          // add m m^T * factor
-          // matrix is symmetric, we only use lower triangular part
-          for (size_t ii = 0; ii < block_size; ++ii)
-            for (size_t kk = 0; kk <= ii; ++kk)
-              H[jj][ii][kk] += m[ii] * M_scaled[jj][ll][kk];
-        } // quadrature points for loop
-      } // jj
+      auto& work_vecs = working_storage();
+      calculate_scalar_products(alpha, M, work_vecs);
+      apply_exponential(work_vecs);
+      // matrix is symmetric, we only use lower triangular part
+      for (size_t jj = 0; jj < num_blocks; ++jj)
+        for (size_t ii = 0; ii < block_size; ++ii)
+          for (size_t kk = 0; kk <= ii; ++kk)
+            for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll)
+              H[jj][ii][kk] += M[jj][ii][ll] * M[jj][kk][ll] * work_vecs[jj][ll] * quadrature_[jj][ll].weight();
     } // void calculate_hessian(...)
 
     // J = df/dalpha is the derivative of the flux with respect to alpha.
@@ -1302,24 +1307,22 @@ public:
     // vector-valued),
     // the derivative is the vector of matrices (df_1/dalpha, df_2/dalpha, ...)
     // this function returns the dd-th matrix df_dd/dalpha of J
+    // assumes work_vecs already contains the needed exp(alpha * m) values
     void calculate_J(const BasisValuesMatrixType& M,
-                     const BasisValuesMatrixType& M_scaled,
                      Dune::FieldMatrix<RangeFieldType, dimRange, StateType::dimRange>& J_dd,
                      const size_t dd) const
     {
       assert(dd < dimRangeCols);
+      const auto& work_vecs = working_storage();
       std::fill(J_dd.begin(), J_dd.end(), 0);
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         const auto offset = jj * block_size;
-        for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
-          const auto& m = M[jj][ll];
-          const auto& v = quadrature_[jj][ll].position();
-          // add m m^T * factor
-          for (size_t mm = 0; mm < block_size; ++mm)
-            for (size_t nn = 0; nn <= mm; ++nn)
-              J_dd[offset + mm][offset + nn] += m[mm] * M_scaled[jj][ll][nn] * v[dd];
-        } // quadrature points for loop
-      } // jj
+        for (size_t ii = 0; ii < block_size; ++ii)
+          for (size_t kk = 0; kk <= ii; ++kk)
+            for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll)
+              J_dd[offset + ii][offset + kk] += M[jj][ii][ll] * M[jj][kk][ll] * work_vecs[jj][ll]
+                                                * quadrature_[jj][ll].position()[dd] * quadrature_[jj][ll].weight();
+      }
       // symmetric update for upper triangular part of J
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         const auto offset = block_size * jj;
@@ -1329,45 +1332,28 @@ public:
       }
     } // void calculate_J(...)
 
-    void change_basis(const VectorType& beta_in,
-                      VectorType& v_k,
+    void change_basis(const BlockVectorType& beta_in,
+                      BlockVectorType& v_k,
                       BasisValuesMatrixType& P_k,
-                      MatrixType& T_k,
-                      VectorType& g_k,
-                      VectorType& beta_out) const
+                      BlockMatrixType& T_k,
+                      BlockVectorType& g_k,
+                      BlockVectorType& beta_out) const
     {
-      thread_local auto H = XT::Common::make_unique<MatrixType>(0.);
-      std::fill(H->begin(), H->end(), FieldMatrix<RangeFieldType, block_size, block_size>(0.));
+      thread_local auto H = XT::Common::make_unique<BlockMatrixType>(0.);
       calculate_hessian(beta_in, P_k, *H);
       for (size_t jj = 0; jj < num_blocks; ++jj)
         XT::LA::cholesky((*H)[jj]);
       const auto& L = *H;
-      std::fill(g_k.begin(), g_k.end(), 0.);
       FieldVector<RangeFieldType, block_size> tmp_vec;
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         T_k[jj].rightmultiply(L[jj]);
         L[jj].mtv(beta_in[jj], beta_out[jj]);
         XT::LA::solve_lower_triangular(L[jj], tmp_vec, v_k[jj]);
         v_k[jj] = tmp_vec;
-        XT::Common::Blas::dtrsm(XT::Common::Blas::row_major(),
-                                XT::Common::Blas::right(),
-                                XT::Common::Blas::lower(),
-                                XT::Common::Blas::trans(),
-                                XT::Common::Blas::non_unit(),
-                                P_k[jj].size(),
-                                block_size,
-                                1.,
-                                &(L[jj][0][0]),
-                                block_size,
-                                &(P_k[jj][0][0]),
-                                block_size);
-        for (size_t ll = 0; ll < P_k[jj].size(); ++ll) {
-          tmp_vec = P_k[jj][ll];
-          tmp_vec *= std::exp(beta_out[jj] * P_k[jj][ll]) * quadrature_[jj][ll].weight();
-          g_k[jj] += tmp_vec;
-        } // ll
-        g_k[jj] -= v_k[jj];
       } // jj
+      apply_inverse_matrix(L, P_k);
+      calculate_vector_integral(beta_out, P_k, P_k, g_k);
+      g_k -= v_k;
     } // void change_basis(...)
 
     const BasisfunctionType& basis_functions_;
@@ -1381,7 +1367,7 @@ public:
     const size_t k_0_;
     const size_t k_max_;
     const RangeFieldType epsilon_;
-    const MatrixType& T_minus_one_;
+    const BlockMatrixType& T_minus_one_;
     const std::string name_;
     // constructor)
     LocalCacheType& cache_;
@@ -1440,19 +1426,23 @@ public:
     const auto local_function_neighbor = derived_local_function(neighbor);
     const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param, false).first;
     const auto alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, false).first;
+    thread_local FieldVector<TemporaryVectorType, 2> work_vecs;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      work_vecs[0][jj].resize(quadrature_[jj].size());
+      work_vecs[1][jj].resize(quadrature_[jj].size());
+    }
+    local_function_entity->calculate_scalar_products(alpha_i, M_, work_vecs[0]);
+    local_function_entity->calculate_scalar_products(alpha_j, M_, work_vecs[1]);
     StateRangeType ret(0);
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       const auto offset = block_size * jj;
       for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
-        const auto& position = quadrature_[jj][ll].position();
-        const auto& weight = quadrature_[jj][ll].weight();
-        const auto& m = M_[jj][ll];
+        const auto position = quadrature_[jj][ll].position()[dd];
         RangeFieldType factor =
-            position[dd] * n_ij[dd] > 0. ? std::exp(alpha_i[jj] * m) * weight : std::exp(alpha_j[jj] * m) * weight;
-        auto contribution = m;
-        contribution *= position[dd] * factor;
+            position * n_ij[dd] > 0. ? std::exp(work_vecs[0][jj][ll]) : std::exp(work_vecs[1][jj][ll]);
+        factor *= quadrature_[jj][ll].weight() * position;
         for (size_t ii = 0; ii < block_size; ++ii)
-          ret[offset + ii] += contribution[ii];
+          ret[offset + ii] += M_[jj][ii][ll] * factor;
       } // ll
     } // jj
     ret *= n_ij[dd];
@@ -1477,7 +1467,7 @@ private:
   const size_t k_0_;
   const size_t k_max_;
   const RangeFieldType epsilon_;
-  const MatrixType T_minus_one_;
+  const BlockMatrixType T_minus_one_;
   const std::string name_;
   mutable std::vector<LocalCacheType> cache_;
   mutable std::vector<std::mutex> mutexes_;

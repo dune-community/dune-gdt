@@ -108,7 +108,7 @@ public:
       auto& u = pair.second;
       const auto s = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
                          ->derived_local_function(entity)
-                         ->get_alpha(x_in_inside_coords, u, param_)
+                         ->get_alpha(x_in_inside_coords, u, param_, true)
                          .second;
 
       // if regularization was needed, we also need to replace u_n in that cell by its regularized version
