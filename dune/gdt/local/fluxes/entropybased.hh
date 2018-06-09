@@ -290,8 +290,8 @@ public:
           // calculate T_k u
           VectorType v_k = v;
           // calculate values of basis p = S_k m
-          static thread_local BasisValuesMatrixType P_k(M_.size());
-          P_k = M_;
+          static thread_local BasisValuesMatrixType P_k = M_;
+          copy_basis_matrix(M_, P_k);
           // calculate f_0
           RangeFieldType f_k(0);
           for (size_t ll = 0; ll < quadrature_.size(); ++ll)
@@ -796,8 +796,10 @@ public:
   static const size_t num_blocks = dimRange / block_size;
   using BlockMatrixType = FieldVector<FieldMatrix<RangeFieldType, block_size, block_size>, num_blocks>;
   typedef FieldVector<FieldVector<RangeFieldType, block_size>, num_blocks> BlockVectorType;
-  using BasisValuesMatrixType = FieldVector<FieldVector<std::vector<RangeFieldType>, block_size>, num_blocks>;
+  using BasisValuesMatrixType = FieldVector<XT::LA::CommonDenseMatrix<RangeFieldType>, num_blocks>;
   typedef Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
+  using QuadraturePointsType = FieldVector<std::vector<FieldVector<RangeFieldType, dimDomain>>, num_blocks>;
+  using QuadratureWeightsType = FieldVector<std::vector<RangeFieldType>, num_blocks>;
   typedef Hyperbolic::Problems::PiecewiseMonomials<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimDomain>
       BasisfunctionType;
   typedef std::pair<BlockVectorType, RangeFieldType> AlphaReturnType;
@@ -840,17 +842,18 @@ public:
     for (size_t ii = 0; ii < quadrature.size(); ++ii) {
       const auto face_indices = basis_functions_.get_face_indices(quadrature[ii].position());
       const size_t num_adjacent_faces = face_indices.size();
-      for (const auto& kk : face_indices)
-        quadrature_[kk].emplace_back(quadrature[ii].position(), quadrature[ii].weight() / num_adjacent_faces);
+      for (const auto& kk : face_indices) {
+        quad_points_[kk].emplace_back(quadrature[ii].position());
+        quad_weights_[kk].emplace_back(quadrature[ii].weight() / num_adjacent_faces);
+      }
     } // ii
     size_t num_faces;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
-      for (size_t ii = 0; ii < block_size; ++ii)
-        M_[jj][ii].resize(quadrature_[jj].size());
-      for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
-        const auto val = basis_functions_.evaluate(quadrature_[jj][ll].position(), false, num_faces);
+      M_[jj] = XT::LA::CommonDenseMatrix<RangeFieldType>(block_size, quad_points_[jj].size(), 0., 0);
+      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
+        const auto val = basis_functions_.evaluate(quad_points_[jj][ll], false, num_faces);
         for (size_t ii = 0; ii < block_size; ++ii)
-          M_[jj][ii][ll] = val[block_size * jj + ii];
+          M_[jj].set_entry(ii, ll, val[block_size * jj + ii]);
       } // ii
     } // jj
   }
@@ -865,7 +868,8 @@ public:
 
     Localfunction(const EntityType& e,
                   const BasisfunctionType& basis_functions,
-                  const FieldVector<QuadratureRuleType, num_blocks>& quadrature,
+                  const QuadraturePointsType& quad_points,
+                  const QuadratureWeightsType& quad_weights,
                   const BasisValuesMatrixType& M,
                   const RangeFieldType tau,
                   const RangeFieldType epsilon_gamma,
@@ -880,7 +884,8 @@ public:
                   std::mutex& mutex)
       : LocalfunctionType(e)
       , basis_functions_(basis_functions)
-      , quadrature_(quadrature)
+      , quad_points_(quad_points)
+      , quad_weights_(quad_weights)
       , M_(M)
       , tau_(tau)
       , epsilon_gamma_(epsilon_gamma)
@@ -903,7 +908,7 @@ public:
     {
       thread_local TemporaryVectorType work_vecs;
       for (size_t jj = 0; jj < num_blocks; ++jj)
-        work_vecs[jj].resize(quadrature_[jj].size());
+        work_vecs[jj].resize(quad_points_[jj].size());
       return work_vecs;
     }
 
@@ -940,6 +945,12 @@ public:
           vec[jj * block_size + ii] = block_vec[jj][ii];
     }
 
+    void copy_basis_matrix(const BasisValuesMatrixType& source_mat, BasisValuesMatrixType& range_mat) const
+    {
+      for (size_t jj = 0; jj < num_blocks; ++jj)
+        range_mat[jj].copy_backend(source_mat[jj]);
+    }
+
     void calculate_scalar_products(const BlockVectorType& beta_in,
                                    const BasisValuesMatrixType& M,
                                    TemporaryVectorType& scalar_products) const
@@ -947,15 +958,16 @@ public:
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         std::fill(scalar_products[jj].begin(), scalar_products[jj].end(), 0.);
         for (size_t ii = 0; ii < block_size; ++ii)
-          for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll)
-            scalar_products[jj][ll] += M[jj][ii][ll] * beta_in[jj][ii];
+          for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
+            scalar_products[jj][ll] += M[jj].get_entry(ii, ll) * beta_in[jj][ii];
       }
     }
 
     void apply_exponential(TemporaryVectorType& values) const
     {
       for (auto& block_values : values)
-        std::for_each(block_values.begin(), block_values.end(), [](RangeFieldType& val) { val = std::exp(val); });
+        for (auto& val : block_values)
+          val = std::exp(val);
     }
 
     // calculate ret = \int (exp(beta_in * m))
@@ -966,8 +978,8 @@ public:
       apply_exponential(work_vecs);
       RangeFieldType ret(0.);
       for (size_t jj = 0; jj < num_blocks; ++jj)
-        for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll)
-          ret += quadrature_[jj][ll].weight() * work_vecs[jj][ll];
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
+          ret += quad_weights_[jj][ll] * work_vecs[jj][ll];
       return ret;
     }
 
@@ -983,8 +995,8 @@ public:
       std::fill(ret.begin(), ret.end(), 0.);
       for (size_t jj = 0; jj < num_blocks; ++jj)
         for (size_t ii = 0; ii < block_size; ++ii)
-          for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll)
-            ret[jj][ii] += M1[jj][ii][ll] * work_vecs[jj][ll] * quadrature_[jj][ll].weight();
+          for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
+            ret[jj][ii] += M1[jj].get_entry(ii, ll) * work_vecs[jj][ll] * quad_weights_[jj][ll];
     }
 
     void apply_inverse_matrix(const BlockMatrixType& T_k, BasisValuesMatrixType& M) const
@@ -996,12 +1008,12 @@ public:
                                 XT::Common::Blas::no_trans(),
                                 XT::Common::Blas::non_unit(),
                                 block_size,
-                                M[jj].size(),
+                                quad_points_[jj].size(),
                                 1.,
                                 &(T_k[jj][0][0]),
                                 block_size,
-                                &(M[jj][0][0]),
-                                M[jj].size());
+                                M[jj].data(),
+                                quad_points_[jj].size());
     }
 
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
@@ -1051,7 +1063,7 @@ public:
           // calculate T_k u
           BlockVectorType v_k = v;
           // calculate values of basis p = S_k m
-          static thread_local BasisValuesMatrixType P_k(M_);
+          static thread_local BasisValuesMatrixType P_k = M_;
           P_k = M_;
           // calculate f_0
           RangeFieldType f_k = calculate_scalar_integral(beta_in, P_k);
@@ -1071,9 +1083,9 @@ public:
             }
             // calculate current error
             BlockVectorType error_vec(FieldVector<RangeFieldType, block_size>(0.));
-            thread_local auto tmp_mat = M_;
+            thread_local BasisValuesMatrixType tmp_mat = M_;
             // calculate vector of errors e = \int { m exp(beta_out * T_k^{-1}m) } - v
-            tmp_mat = M_; // calculate T_k^{-1} M_ and store in tmp_mat
+            copy_basis_matrix(M_, tmp_mat); // calculate T_k^{-1} M_ and store in tmp_mat
             apply_inverse_matrix(*T_k, tmp_mat);
             calculate_vector_integral(beta_out, M_, tmp_mat, error_vec);
             error_vec -= v;
@@ -1138,12 +1150,12 @@ public:
       apply_exponential(work_vecs);
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         const auto offset = block_size * jj;
-        for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
-          const auto& position = quadrature_[jj][ll].position();
-          const auto factor = work_vecs[jj][ll] * quadrature_[jj][ll].weight();
+        for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
+          const auto& position = quad_points_[jj][ll];
+          const auto factor = work_vecs[jj][ll] * quad_weights_[jj][ll];
           for (size_t ii = 0; ii < block_size; ++ii)
             for (size_t dd = 0; dd < dimDomain; ++dd)
-              helper<dimDomain>::get_ref(ret, offset + ii, dd) += M_[jj][ii][ll] * position[dd] * factor;
+              helper<dimDomain>::get_ref(ret, offset + ii, dd) += M_[jj].get_entry(ii, ll) * position[dd] * factor;
         } // ll
       } // jj
     } // void evaluate(...)
@@ -1162,10 +1174,10 @@ public:
       // calculate ret[ii] = < omega[ii] m G_\alpha(u) >
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         const auto offset = block_size * jj;
-        for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
-          const auto factor = work_vecs[jj][ll] * quadrature_[jj][ll].weight() * quadrature_[jj][ll].position()[col];
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll) {
+          const auto factor = work_vecs[jj][ll] * quad_weights_[jj][ll] * quad_points_[jj][ll][col];
           for (size_t ii = 0; ii < block_size; ++ii)
-            ret[offset + ii] += M_[jj][ii][ll] * factor;
+            ret[offset + ii] += M_[jj].get_entry(ii, ll) * factor;
         } // ll
       } // jj
     } // void evaluate_col(...)
@@ -1293,12 +1305,15 @@ public:
       auto& work_vecs = working_storage();
       calculate_scalar_products(alpha, M, work_vecs);
       apply_exponential(work_vecs);
+      for (size_t jj = 0; jj < num_blocks; ++jj)
+        for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
+          work_vecs[jj][ll] *= quad_weights_[jj][ll];
       // matrix is symmetric, we only use lower triangular part
       for (size_t jj = 0; jj < num_blocks; ++jj)
         for (size_t ii = 0; ii < block_size; ++ii)
           for (size_t kk = 0; kk <= ii; ++kk)
-            for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll)
-              H[jj][ii][kk] += M[jj][ii][ll] * M[jj][kk][ll] * work_vecs[jj][ll] * quadrature_[jj][ll].weight();
+            for (size_t ll = 0; ll < quad_weights_[jj].size(); ++ll)
+              H[jj][ii][kk] += M[jj].get_entry(ii, ll) * M[jj].get_entry(kk, ll) * work_vecs[jj][ll];
     } // void calculate_hessian(...)
 
     // J = df/dalpha is the derivative of the flux with respect to alpha.
@@ -1307,7 +1322,7 @@ public:
     // vector-valued),
     // the derivative is the vector of matrices (df_1/dalpha, df_2/dalpha, ...)
     // this function returns the dd-th matrix df_dd/dalpha of J
-    // assumes work_vecs already contains the needed exp(alpha * m) values
+    // assumes work_vecs already contains the needed exp(alpha * m) * quad_weights values
     void calculate_J(const BasisValuesMatrixType& M,
                      Dune::FieldMatrix<RangeFieldType, dimRange, StateType::dimRange>& J_dd,
                      const size_t dd) const
@@ -1319,9 +1334,9 @@ public:
         const auto offset = jj * block_size;
         for (size_t ii = 0; ii < block_size; ++ii)
           for (size_t kk = 0; kk <= ii; ++kk)
-            for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll)
-              J_dd[offset + ii][offset + kk] += M[jj][ii][ll] * M[jj][kk][ll] * work_vecs[jj][ll]
-                                                * quadrature_[jj][ll].position()[dd] * quadrature_[jj][ll].weight();
+            for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll)
+              J_dd[offset + ii][offset + kk] +=
+                  M[jj].get_entry(ii, ll) * M[jj].get_entry(kk, ll) * work_vecs[jj][ll] * quad_points_[jj][ll][dd];
       }
       // symmetric update for upper triangular part of J
       for (size_t jj = 0; jj < num_blocks; ++jj) {
@@ -1357,7 +1372,8 @@ public:
     } // void change_basis(...)
 
     const BasisfunctionType& basis_functions_;
-    const FieldVector<QuadratureRuleType, num_blocks>& quadrature_;
+    const QuadraturePointsType& quad_points_;
+    const QuadratureWeightsType& quad_weights_;
     const BasisValuesMatrixType& M_;
     const RangeFieldType tau_;
     const RangeFieldType epsilon_gamma_;
@@ -1389,7 +1405,8 @@ public:
     const auto& index = index_set_.index(entity);
     return std::make_unique<Localfunction>(entity,
                                            basis_functions_,
-                                           quadrature_,
+                                           quad_points_,
+                                           quad_weights_,
                                            M_,
                                            tau_,
                                            epsilon_gamma_,
@@ -1428,21 +1445,21 @@ public:
     const auto alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, false).first;
     thread_local FieldVector<TemporaryVectorType, 2> work_vecs;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
-      work_vecs[0][jj].resize(quadrature_[jj].size());
-      work_vecs[1][jj].resize(quadrature_[jj].size());
+      work_vecs[0][jj].resize(quad_points_[jj].size());
+      work_vecs[1][jj].resize(quad_points_[jj].size());
     }
     local_function_entity->calculate_scalar_products(alpha_i, M_, work_vecs[0]);
     local_function_entity->calculate_scalar_products(alpha_j, M_, work_vecs[1]);
     StateRangeType ret(0);
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       const auto offset = block_size * jj;
-      for (size_t ll = 0; ll < quadrature_[jj].size(); ++ll) {
-        const auto position = quadrature_[jj][ll].position()[dd];
+      for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
+        const auto position = quad_points_[jj][ll][dd];
         RangeFieldType factor =
             position * n_ij[dd] > 0. ? std::exp(work_vecs[0][jj][ll]) : std::exp(work_vecs[1][jj][ll]);
-        factor *= quadrature_[jj][ll].weight() * position;
+        factor *= quad_weights_[jj][ll] * position;
         for (size_t ii = 0; ii < block_size; ++ii)
-          ret[offset + ii] += M_[jj][ii][ll] * factor;
+          ret[offset + ii] += M_[jj].get_entry(ii, ll) * factor;
       } // ll
     } // jj
     ret *= n_ij[dd];
@@ -1457,7 +1474,8 @@ public:
 private:
   const typename GridLayerType::IndexSet& index_set_;
   const BasisfunctionType& basis_functions_;
-  FieldVector<QuadratureRuleType, num_blocks> quadrature_;
+  QuadraturePointsType quad_points_;
+  QuadratureWeightsType quad_weights_;
   BasisValuesMatrixType M_;
   const RangeFieldType tau_;
   const RangeFieldType epsilon_gamma_;
