@@ -30,6 +30,9 @@ namespace GDT {
  *
  * \note This does not clear target.dofs().vector(). Thus, if prolongation_grid_view only covers a part of the domain of
  *       target.space().grid_view(), other contributions in target remain (which is on purpose).
+ *
+ * \sa interpolate
+ * \sa reinterpret
  */
 template <class SV, class SGV, size_t r, size_t rC, class SR, class TV, class TGV, class TR, class PGV>
 std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<TGV>, typename PGV::Grid::template Codim<0>::Entity>::value,
