@@ -12,6 +12,9 @@
 
 #include "config.h"
 
+#include <boost/iostreams/stream.hpp>
+#include <boost/iostreams/device/null.hpp>
+
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/xt/common/fvector.hh>
@@ -550,10 +553,13 @@ private:
   void calculate_plane_coefficient_block(std::vector<FieldVector<RangeFieldType, block_size - 1>>& points, size_t jj)
   {
     orgQhull::Qhull qhull;
+    boost::iostreams::stream<boost::iostreams::null_sink> null_ostream((boost::iostreams::null_sink()));
+    qhull.setOutputStream(&null_ostream);
+    qhull.setErrorStream(&null_ostream);
     qhull.runQhull("Realizable set", int(block_size) - 1, int(points.size()), &(points[0][0]), "Qt T1");
     const auto facet_end = qhull.endFacet();
     BlockPlaneCoefficientsType block_plane_coefficients(qhull.facetList().count());
-    std::cout << "num_vertices: " << qhull.vertexList().count() << std::endl;
+    //    std::cout << "num_vertices: " << qhull.vertexList().count() << std::endl;
     size_t ii = 0;
     for (auto facet = qhull.beginFacet(); facet != facet_end; facet = facet.next(), ++ii) {
       for (size_t ll = 0; ll < block_size - 1; ++ll)
