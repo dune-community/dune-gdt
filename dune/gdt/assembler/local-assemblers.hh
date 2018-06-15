@@ -394,10 +394,10 @@ public:
                    const EntityType& /*inside_entity*/,
                    const EntityType& /*outside_entity*/) override final
   {
-    assemble(*inner_test_space_,
-             *inner_ansatz_space_,
-             *outer_test_space_,
-             *outer_ansatz_space_,
+    assemble(inner_test_space_,
+             inner_ansatz_space_,
+             outer_test_space_,
+             outer_ansatz_space_,
              intersection,
              local_coupling_two_form_,
              in_in_matrix_,
@@ -508,7 +508,7 @@ public:
                    const EntityType& /*inside_entity*/,
                    const EntityType& /*outside_entity*/) override final
   {
-    assemble(*test_space_, *ansatz_space_, intersection, local_boundary_two_form_, matrix_);
+    assemble(test_space_, ansatz_space_, intersection, local_boundary_two_form_, matrix_);
   }
 
 private:
@@ -581,7 +581,7 @@ public:
 
   void apply_local(const EntityType& entity) override final
   {
-    assemble(*space_, local_volume_functional_, entity, vector_);
+    assemble(space_, local_volume_functional_, entity, vector_);
   }
 
 private:
@@ -653,7 +653,7 @@ public:
                    const EntityType& /*inside_entity*/,
                    const EntityType& /*outside_entity*/) override final
   {
-    assemble(*space_, intersection, local_face_functional_, vector_);
+    assemble(space_, intersection, local_face_functional_, vector_);
   }
 
 private:

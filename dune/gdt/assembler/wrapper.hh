@@ -552,7 +552,7 @@ public:
 
   void apply_local(const EntityType& entity) override final
   {
-    local_assembler_.assemble(*space_, entity, vector_);
+    local_assembler_.assemble(space_, entity, vector_);
   }
 
 private:
@@ -651,7 +651,7 @@ public:
                    const EntityType& /*inside_entity*/,
                    const EntityType& /*outside_entity*/) override final
   {
-    local_assembler_.assemble(*space_, intersection, vector_);
+    local_assembler_.assemble(space_, intersection, vector_);
   }
 
 private:
