@@ -491,12 +491,14 @@ public:
       u_l /= factor;
       auto u_bar_scaled = u_bar;
       u_bar_scaled /= factor;
+      // check positivity of first moment on each spherical triangle
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         const size_t offset = jj * block_size;
         if (u_l[offset] >= u_bar_scaled[offset])
           continue;
         thetas[ll] = std::max(thetas[ll], u_l[offset] / (u_l[offset] - u_bar_scaled[offset]));
       }
+      // check convex hull property of other moments
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         const size_t offset = jj * block_size;
         BlockRangeType q_k, q_bar_k;
@@ -684,7 +686,7 @@ private:
 
       // set columns for quadrature points
       assert(int(basis_values_.size()) == num_cols - 1);
-      for (int ii = 0; ii < int(basis_values_.size()); ++ii) {
+      for (int ii = 0; ii < num_cols - 1; ++ii) {
         const auto& v_i = basis_values_[ii];
         // First argument: number of elements in column
         // Second/Third argument: indices/values of column entries

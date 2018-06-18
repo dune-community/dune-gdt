@@ -16,6 +16,7 @@
 #include <dune/geometry/quadraturerules.hh>
 
 #include <dune/xt/common/fvector.hh>
+#include <dune/xt/common/lapacke.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
 
 #include <dune/xt/grid/walker.hh>
@@ -258,8 +259,30 @@ public:
   using typename BaseType::VectorType;
 
   BlockedJacobianWrapper()
+    : work_(1)
   {
     jacobian() = std::make_unique<JacobianType>();
+    nonblocked_jacobians_ = std::make_unique<FieldVector<FieldMatrix<RangeFieldType, dimRange, dimRange>, dimDomain>>();
+#if HAVE_MKL || HAVE_LAPACKE
+    // get optimal working size in work[0] (requested by lwork = -1)
+    int info = XT::Common::Lapacke::dgeev_work(XT::Common::Lapacke::row_major(),
+                                               /*do_not_compute_left_eigenvectors: */ 'N',
+                                               /*compute_right_eigenvectors: */ 'V',
+                                               static_cast<int>(block_size),
+                                               &(jacobian(0)[0][0][0]),
+                                               static_cast<int>(block_size),
+                                               &(eigenvalues_[0][0][0]),
+                                               &(dummy_complex_eigenvalues_[0]),
+                                               nullptr,
+                                               static_cast<int>(block_size),
+                                               &(jacobian(0)[0][0][0]),
+                                               static_cast<int>(block_size),
+                                               work_.data(),
+                                               -1);
+    if (info != 0)
+      DUNE_THROW(Dune::XT::LA::Exceptions::eigen_solver_failed, "The lapack backend reported '" << info << "'!");
+    work_.resize(work_[0]);
+#endif
   }
 
   using BaseType::jacobian;
@@ -267,15 +290,36 @@ public:
 
   virtual void compute(const size_t dd) override
   {
+#if HAVE_MKL || HAVE_LAPACKE
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      int info = XT::Common::Lapacke::dgeev_work(XT::Common::Lapacke::row_major(),
+                                                 /*do_not_compute_left_eigenvectors: */ 'N',
+                                                 /*compute_right_eigenvectors: */ 'V',
+                                                 static_cast<int>(block_size),
+                                                 &(jacobian(dd)[jj][0][0]),
+                                                 static_cast<int>(block_size),
+                                                 &(eigenvalues_[jj][0][0]),
+                                                 &(dummy_complex_eigenvalues_[0]),
+                                                 nullptr,
+
+                                                 static_cast<int>(block_size),
+                                                 &(eigenvectors_[dd][jj][0][0]),
+                                                 static_cast<int>(block_size),
+                                                 work_.data(),
+                                                 static_cast<int>(work_.size()));
+      if (info != 0)
+        DUNE_THROW(Dune::XT::LA::Exceptions::eigen_solver_failed, "The lapack backend reported '" << info << "'!");
+#else // HAVE_MKL || HAVE_LAPACKE
     static XT::Common::Configuration eigensolver_options =
         BaseType::template create_eigensolver_opts<LocalMatrixType>();
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       const auto eigensolver = EigenSolverType(jacobian(dd)[jj], &eigensolver_options);
       eigenvectors_[dd][jj] = eigensolver.real_eigenvectors();
+#endif // HAVE_MKL || HAVE_LAPACKE
       QR_[dd][jj] = eigenvectors_[dd][jj];
       XT::LA::qr(QR_[dd][jj], tau_[dd][jj], permutations_[dd][jj]);
       computed_[dd] = true;
-    }
+    } // jj
   }
 
   virtual void apply_eigenvectors(const size_t dd, const StateRangeType& x, StateRangeType& ret) const override
@@ -296,14 +340,13 @@ public:
                             const StateRangeType& u,
                             const XT::Common::Parameter& param) override
   {
-    thread_local auto jac = std::make_unique<FieldMatrix<RangeFieldType, dimRange, dimRange>>();
     const auto local_func = analytical_flux.local_function(entity);
-    local_func->partial_u_col(dd, x_in_inside_coords, u, *jac, param);
+    local_func->partial_u_col(dd, x_in_inside_coords, u, (*nonblocked_jacobians_)[dd], param);
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       const auto offset = jj * block_size;
       for (size_t ll = 0; ll < block_size; ++ll)
         for (size_t mm = 0; mm < block_size; ++mm)
-          jacobian(dd)[jj][ll][mm] = (*jac)[offset + ll][offset + mm];
+          jacobian(dd)[jj][ll][mm] = (*nonblocked_jacobians_)[dd][offset + ll][offset + mm];
     } // jj
   }
 
@@ -313,15 +356,14 @@ public:
                             const StateRangeType& u,
                             const XT::Common::Parameter& param) override
   {
-    thread_local auto jac = std::make_unique<FieldVector<FieldMatrix<RangeFieldType, dimRange, dimRange>, dimDomain>>();
     const auto local_func = analytical_flux.local_function(entity);
-    local_func->partial_u(x_in_inside_coords, u, *jac, param);
+    local_func->partial_u(x_in_inside_coords, u, *nonblocked_jacobians_, param);
     for (size_t dd = 0; dd < dimDomain; ++dd) {
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         const auto offset = jj * block_size;
         for (size_t ll = 0; ll < block_size; ++ll)
           for (size_t mm = 0; mm < block_size; ++mm)
-            jacobian(dd)[jj][ll][mm] = (*jac)[dd][offset + ll][offset + mm];
+            jacobian(dd)[jj][ll][mm] = (*nonblocked_jacobians_)[dd][offset + ll][offset + mm];
       } // jj
     } // dd
   }
@@ -340,7 +382,11 @@ public:
   }
 
 protected:
+  std::vector<RangeFieldType> work_;
+  std::unique_ptr<FieldVector<FieldMatrix<RangeFieldType, dimRange, dimRange>, dimDomain>> nonblocked_jacobians_;
   using BaseType::computed_;
+  FieldVector<FieldVector<FieldVector<RangeFieldType, block_size>, num_blocks>, dimDomain> eigenvalues_;
+  FieldVector<RangeFieldType, dimRange> dummy_complex_eigenvalues_;
   FieldVector<MatrixType, dimDomain> eigenvectors_;
   FieldVector<MatrixType, dimDomain> QR_;
   FieldVector<FieldVector<LocalRangeType, num_blocks>, dimDomain> tau_;
@@ -429,12 +475,12 @@ public:
 
   IteratorType begin()
   {
-    static const IndicesType indices = []() {
+    static const IndicesType zero_indices = []() {
       IndicesType ret;
       ret.fill(0);
       return ret;
     }();
-    return IteratorType(multi_array_, indices);
+    return IteratorType(multi_array_, zero_indices);
   }
 
   IteratorType end()
@@ -567,7 +613,7 @@ public:
     for (const auto& intersection : Dune::intersections(grid_layer_, entity))
       intersections[intersection.indexInInside()] = intersection;
     const auto entity_index = grid_layer_.indexSet().index(entity);
-    auto& reconstructed_values_map = reconstructed_function_.values()[entity_index];
+    auto& reconstructed_values_map = reconstructed_function_.local_values(entity);
 
     // get jacobian
     if (!jac.computed() || !analytical_flux_.is_affine()) {
@@ -749,7 +795,7 @@ private:
   bool fill_impl(StencilType& stencil, const EntityType& entity, const int dir, const CoordsType& coords)
   {
     bool ret = true;
-    const auto& entity_index = grid_layer_.indexSet().index(entity);
+    const auto entity_index = grid_layer_.indexSet().index(entity);
     stencil(coords) = source_values_[entity_index];
     std::vector<int> boundary_dirs;
     for (const auto& intersection : Dune::intersections(grid_layer_, entity)) {
@@ -815,7 +861,7 @@ private:
   // quadrature rule containing left and right interface points
   static const Quadrature1dType& get_left_right_quadrature()
   {
-    static Quadrature1dType ret = left_right_quadrature();
+    static const Quadrature1dType ret = left_right_quadrature();
     return ret;
   }
 

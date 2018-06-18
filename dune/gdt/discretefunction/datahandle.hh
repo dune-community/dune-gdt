@@ -89,7 +89,8 @@ public:
   }
 
   template <class MessageBuffer, class EntityType>
-  std::enable_if_t<EntityType::codimension == 0> scatter(MessageBuffer& buff, const EntityType& entity, size_t n)
+  std::enable_if_t<EntityType::codimension == 0>
+  scatter(MessageBuffer& buff, const EntityType& entity, size_t DXTC_DEBUG_ONLY(n))
   {
     assert(mapper_.numDofs(entity) == n);
     const auto global_indices = mapper_.globalIndices(entity);

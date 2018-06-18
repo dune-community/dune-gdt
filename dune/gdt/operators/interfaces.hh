@@ -62,6 +62,7 @@ public:
   void apply(const SourceType& source, RangeType& range, const Dune::XT::Common::Parameter& param = {}) const
   {
     CHECK_CRTP(this->as_imp().apply(source, range, param));
+    return this->as_imp().apply(source, range, param);
   }
 
   template <class RangeType, class SourceType>
@@ -83,6 +84,7 @@ public:
   void jacobian(const SourceType& source, JacobianType& jac, const Dune::XT::Common::Parameter& param = {}) const
   {
     CHECK_CRTP(this->as_imp().jacobian(source, jac, param));
+    this->as_imp().jacobian(source, jac, param);
   }
 
   template <class RangeType, class SourceType>
@@ -92,6 +94,7 @@ public:
                      const Dune::XT::Common::Parameter& param = {}) const
   {
     CHECK_AND_CALL_CRTP(this->as_imp().apply_inverse(range, source, opts, param));
+    this->as_imp().apply_inverse(range, source, opts, param);
   }
 
   std::vector<std::string> invert_options() const

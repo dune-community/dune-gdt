@@ -471,7 +471,8 @@ public:
     template <class anything>
     struct helper<1, anything>
     {
-      static void axpy(const size_t dd, RangeType& ret, const RangeFieldType& factor, const VectorType& m)
+      static void
+      axpy(const size_t DXTC_DEBUG_ONLY(dd), RangeType& ret, const RangeFieldType& factor, const VectorType& m)
       {
         assert(dd == 0);
         ret.axpy(factor, m);
@@ -488,7 +489,7 @@ public:
       } // void partial_u(...)
 
 
-      static void partial_u_col(const size_t col,
+      static void partial_u_col(const size_t DXTC_DEBUG_ONLY(col),
                                 const VectorType& alpha,
                                 const BasisValuesMatrixType& M,
                                 MatrixType& H,
@@ -822,8 +823,8 @@ public:
       const RangeFieldType chi = 0.5,
       const RangeFieldType xi = 1e-3,
       const std::vector<RangeFieldType> r_sequence = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1},
-      const size_t k_0 = 50,
-      const size_t k_max = 200,
+      const size_t k_0 = 500,
+      const size_t k_max = 1000,
       const RangeFieldType epsilon = std::pow(2, -52),
       const FieldMatrix<RangeFieldType, block_size, block_size>& T_minus_one =
           XT::LA::eye_matrix<FieldMatrix<RangeFieldType, block_size, block_size>>(block_size,
@@ -832,6 +833,7 @@ public:
       const std::string name = static_id())
     : index_set_(grid_layer.indexSet())
     , basis_functions_(basis_functions)
+    , M_(XT::LA::CommonDenseMatrix<RangeFieldType>())
     , tau_(tau)
     , epsilon_gamma_(epsilon_gamma)
     , chi_(chi)
@@ -1024,19 +1026,21 @@ public:
 
     void apply_inverse_matrix(const BlockMatrixType& T_k, BasisValuesMatrixType& M) const
     {
-      for (size_t jj = 0; jj < num_blocks; ++jj)
+      for (size_t jj = 0; jj < num_blocks; ++jj) {
+        assert(quad_points_[jj].size() < std::numeric_limits<int>::max());
         XT::Common::Blas::dtrsm(XT::Common::Blas::row_major(),
                                 XT::Common::Blas::left(),
                                 XT::Common::Blas::lower(),
                                 XT::Common::Blas::no_trans(),
                                 XT::Common::Blas::non_unit(),
                                 block_size,
-                                quad_points_[jj].size(),
+                                static_cast<int>(quad_points_[jj].size()),
                                 1.,
                                 &(T_k[jj][0][0]),
                                 block_size,
                                 M[jj].data(),
-                                quad_points_[jj].size());
+                                static_cast<int>(quad_points_[jj].size()));
+      } // jj
     }
 
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
@@ -1044,7 +1048,7 @@ public:
                               const XT::Common::Parameter& param,
                               const bool regularize) const
     {
-      const bool boundary = bool(param.get("boundary")[0]);
+      const bool boundary = static_cast<bool>(param.get("boundary")[0]);
       if (boundary)
         cache_.increase_capacity(2 * cache_size);
       // get initial multiplier and basis matrix from last time step
@@ -1086,8 +1090,9 @@ public:
           // calculate T_k u
           BlockVectorType v_k = v;
           // calculate values of basis p = S_k m
-          static thread_local BasisValuesMatrixType P_k = M_;
-          copy_basis_matrix(M_, P_k);
+          thread_local BasisValuesMatrixType P_k(XT::LA::CommonDenseMatrix<RangeFieldType>(0, 0, 0., 0));
+          P_k = M_;
+          //          copy_basis_matrix(M_, P_k);
           // calculate f_0
           RangeFieldType f_k = calculate_scalar_integral(beta_in, P_k);
           f_k -= beta_in * v_k;
@@ -1107,9 +1112,10 @@ public:
             }
             // calculate current error
             BlockVectorType error_vec(FieldVector<RangeFieldType, block_size>(0.));
-            thread_local BasisValuesMatrixType tmp_mat = M_;
+            thread_local BasisValuesMatrixType tmp_mat(XT::LA::CommonDenseMatrix<RangeFieldType>(0, 0, 0., 0));
             // calculate vector of errors e = \int { m exp(beta_out * T_k^{-1}m) } - v
-            copy_basis_matrix(M_, tmp_mat); // calculate T_k^{-1} M_ and store in tmp_mat
+            tmp_mat = M_;
+            //            copy_basis_matrix(M_, tmp_mat); // calculate T_k^{-1} M_ and store in tmp_mat
             apply_inverse_matrix(*T_k, tmp_mat);
             calculate_vector_integral(beta_out, M_, tmp_mat, error_vec);
             error_vec -= v;
@@ -1251,7 +1257,7 @@ public:
         entropy_flux->calculate_A_Binv(ret, H);
       } // void partial_u(...)
 
-      static void partial_u_col(const size_t col,
+      static void partial_u_col(const size_t DXTC_DEBUG_ONLY(col),
                                 const BasisValuesMatrixType& M,
                                 BlockMatrixType& H,
                                 ColPartialURangeType& ret,
@@ -1261,7 +1267,7 @@ public:
         partial_u(M, H, ret, entropy_flux);
       } // void partial_u(...)
 
-      static RangeFieldType& get_ref(RangeType& ret, const size_t rr, const size_t cc)
+      static RangeFieldType& get_ref(RangeType& ret, const size_t rr, const size_t DXTC_DEBUG_ONLY(cc))
       {
         assert(cc == 0);
         return ret[rr];
@@ -1441,7 +1447,7 @@ public:
 
   std::unique_ptr<Localfunction> derived_local_function(const EntityType& entity) const
   {
-    const auto& index = index_set_.index(entity);
+    const auto index = index_set_.index(entity);
     return std::make_unique<Localfunction>(entity,
                                            basis_functions_,
                                            quad_points_,
@@ -2843,7 +2849,7 @@ public:
       } // nn
     } // void evaluate(...)
 
-    virtual void evaluate_col(const size_t col,
+    virtual void evaluate_col(const size_t DXTC_DEBUG_ONLY(col),
                               const DomainType& x_local,
                               const StateRangeType& u,
                               ColRangeType& ret,
@@ -2866,7 +2872,7 @@ public:
       calculate_J_Hinv(ret, J_diag, J_subdiag, H_diag, H_subdiag);
     }
 
-    virtual void partial_u_col(const size_t col,
+    virtual void partial_u_col(const size_t DXTC_DEBUG_ONLY(col),
                                const DomainType& x_local,
                                const StateRangeType& u,
                                ColPartialURangeType& ret,
@@ -3211,7 +3217,7 @@ public:
                                        const DomainType& x_local_neighbor,
                                        const StateRangeType u_j,
                                        const DomainType& n_ij,
-                                       const size_t dd,
+                                       const size_t DXTC_DEBUG_ONLY(dd),
                                        const XT::Common::Parameter& param,
                                        const XT::Common::Parameter& param_neighbor) const
   {
