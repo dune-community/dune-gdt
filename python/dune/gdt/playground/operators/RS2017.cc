@@ -101,19 +101,9 @@ public:
 
     const std::string classname = XT::Common::to_camel_case(
         "RS2017_diffusive_flux_aa_product_matrix_operator_subdomain_" + XT::Grid::bindings::grid_name<G>::value());
-    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
-      GDT::bindings::MatrixOperatorBase<ThisType>::bind(
-          mod,
-          classname.c_str(),
-          GDT::bindings::space_name<SP>::value(),
-          GDT::bindings::space_name<SP>::value(),
-          XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
-              + XT::Grid::bindings::backend_name<Backends::view>::value());
 
-    });
-    py::class_<ThisType, typename GDT::bindings::MatrixOperatorBase<ThisType>::BaseType> c(
-        m, classname.c_str(), classname.c_str());
-
+    py::class_<ThisType> c(m, classname.c_str(), classname.c_str());
+    GDT::bindings::MatrixOperatorBase<ThisType>::bind(c);
     m.def("RS2017_make_diffusive_flux_aa_product_matrix_operator_on_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
              const ssize_t subdomain,
@@ -982,18 +972,8 @@ public:
 
     const std::string classname = XT::Common::to_camel_case("RS2017_penalty_product_matrix_operator_subdomain_"
                                                             + XT::Grid::bindings::grid_name<G>::value());
-    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
-      GDT::bindings::MatrixOperatorBase<ThisType>::bind(
-          mod,
-          classname.c_str(),
-          GDT::bindings::space_name<SP>::value(),
-          GDT::bindings::space_name<SP>::value(),
-          XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
-              + XT::Grid::bindings::backend_name<Backends::view>::value());
-
-    });
-    py::class_<ThisType, typename GDT::bindings::MatrixOperatorBase<ThisType>::BaseType> c(
-        m, classname.c_str(), classname.c_str());
+    py::class_<ThisType> c(m, classname.c_str(), classname.c_str());
+    GDT::bindings::MatrixOperatorBase<ThisType>::bind(c);
 
     m.def("RS2017_make_penalty_product_matrix_operator_on_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
@@ -1226,19 +1206,8 @@ public:
 
     const std::string classname = XT::Common::to_camel_case(
         "RS2017_penalty_product_matrix_operator_oversampled_subdomain_" + XT::Grid::bindings::grid_name<G>::value());
-    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
-      GDT::bindings::MatrixOperatorBase<ThisType>::bind(
-          mod,
-          classname.c_str(),
-          GDT::bindings::space_name<SP>::value(),
-          GDT::bindings::space_name<SP>::value(),
-          XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
-              + XT::Grid::bindings::backend_name<Backends::view>::value());
-
-    });
-    py::class_<ThisType, typename GDT::bindings::MatrixOperatorBase<ThisType>::BaseType> c(
-        m, classname.c_str(), classname.c_str());
-
+    py::class_<ThisType> c(m, classname.c_str(), classname.c_str());
+    GDT::bindings::MatrixOperatorBase<ThisType>::bind(c);
     m.def("RS2017_make_penalty_product_matrix_operator_on_oversampled_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
              const ssize_t subdomain,

@@ -43,7 +43,7 @@ class EllipticMatrixOperator
 
 public:
   typedef GDT::EllipticMatrixOperator<DF, DT, R, M, GL /*, S, F*/> type;
-  using bound_type = pybind11::class_<type, typename bindings::MatrixOperatorBase<type>::BaseType>;
+  using bound_type = pybind11::class_<type>;
 
 private:
   template <bool single_diffusion = std::is_same<DT, void>::value,
@@ -162,11 +162,8 @@ public:
         "elliptic_matrix_operator_" + space_name + "_" + XT::LA::bindings::container_name<M>::value() + "_"
         + diffusion_switch<>::suffix());
 
-    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
-      MatrixOperatorBase<type>::bind(mod, ClassName, space_name, space_name, grid_layer_name);
-    });
-
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
+    MatrixOperatorBase<type>::bind(c);
     diffusion_switch<>::template addbind_factory_methods<type>(m);
 
     return c;

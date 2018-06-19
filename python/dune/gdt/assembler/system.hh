@@ -63,6 +63,128 @@ private:
 namespace internal {
 
 
+template <XT::LA::Backends la, class type>
+static void addaddbind_matrixatrix(pybind11::class_<type>& c)
+{
+  namespace py = pybind11;
+  using namespace pybind11::literals;
+  using T = typename type::TestSpaceType;
+  using GL = typename type::GridLayerType;
+
+  typedef typename XT::LA::Container<typename T::RangeFieldType, la>::MatrixType M;
+
+  c.def("append",
+        [](type& self,
+           const GDT::LocalBoundaryTwoFormInterface<typename T::BaseFunctionSetType,
+                                                    XT::Grid::extract_intersection_t<GL>>& local_boundary_two_form,
+           M& matrix,
+           const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+          self.append(local_boundary_two_form, matrix, which_intersections.copy());
+        },
+        "local_boundary_two_form"_a,
+        "matrix"_a,
+        "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>());
+  c.def("append",
+        [](type& self,
+           const GDT::LocalCouplingTwoFormInterface<typename T::BaseFunctionSetType,
+                                                    XT::Grid::extract_intersection_t<GL>>& local_coupling_two_form,
+           M& matrix,
+           const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+          self.append(local_coupling_two_form, matrix, which_intersections.copy());
+        },
+        "local_coupling_two_form"_a,
+        "matrix"_a,
+        "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>());
+  c.def("append",
+        [](type& self,
+           const GDT::LocalCouplingTwoFormInterface<typename T::BaseFunctionSetType,
+                                                    XT::Grid::extract_intersection_t<GL>>& local_coupling_two_form,
+           M& matrix_in_in,
+           M& matrix_out_out,
+           M& matrix_in_out,
+           M& matrix_out_in,
+           const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+          self.append(local_coupling_two_form,
+                      matrix_in_in,
+                      matrix_out_out,
+                      matrix_in_out,
+                      matrix_out_in,
+                      which_intersections.copy());
+        },
+        "local_coupling_two_form"_a,
+        "matrix_in_in"_a,
+        "matrix_out_out"_a,
+        "matrix_in_out"_a,
+        "matrix_out_in"_a,
+        "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::keep_alive<0, 3>(),
+        py::keep_alive<0, 4>(),
+        py::keep_alive<0, 5>());
+} // ... addaddbind_matrixatrix(...)
+
+
+template <class AssemblerOrDerivedType>
+static void bind_system_assembler_functions(pybind11::class_<AssemblerOrDerivedType>& c)
+{
+  namespace py = pybind11;
+  using namespace pybind11::literals;
+
+  using type = AssemblerOrDerivedType;
+  using GL = typename type::GridLayerType;
+  XT::Grid::bindings::internal::bind_walker_functions(c);
+
+  // add rest
+  c.def("append", [](type& self, type& other) { self.append(other); }, "system_assembler"_a, py::keep_alive<1, 2>());
+
+  c.def("append",
+        [](type& self, type& other, const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+          self.append(other, which_intersections.copy());
+        },
+        "system_assembler"_a,
+        "which_intersections"_a,
+        py::keep_alive<1, 2>());
+  c.def("assemble",
+        [](type& self, const bool use_tbb) {
+          py::gil_scoped_release DUNE_UNUSED(release);
+          self.assemble(use_tbb);
+        },
+        "use_tbb"_a = false);
+
+  using G = XT::Grid::extract_grid_t<GL>;
+  using I = XT::Grid::extract_intersection_t<GL>;
+  typedef XT::Grid::extract_entity_t<GL> E;
+  typedef typename G::ctype D;
+  static const constexpr size_t d = G::dimension;
+  bindings::DirichletConstraints<I, G>::addbind(c);
+  addaddbind_matrixatrix<XT::LA::Backends::istl_sparse>(c);
+
+  c.def("append",
+        [](type& self,
+           const GDT::LocalVolumeTwoFormInterface<XT::Functions::LocalfunctionInterface<E, D, d, double, 1>,
+                                                  XT::Functions::LocalfunctionInterface<E, D, d, double, 1>,
+                                                  double>& local_volume_two_form,
+           const XT::Functions::LocalizableFunctionInterface<E, D, d, double, 1>& test_function,
+           const XT::Functions::LocalizableFunctionInterface<E, D, d, double, 1>& ansatz_function,
+           ResultStorage& result /*,
+             const XT::Grid::ApplyOn::WhichEntity<GL>& where*/) {
+          self.append(local_volume_two_form, test_function, ansatz_function, result.result() /*, where.copy()*/);
+        },
+        "local_volume_two_form"_a,
+        "test_function"_a,
+        "ansatz_function"_a,
+        "result"_a /*,
+          "where"_a = XT::Grid::ApplyOn::AllEntities<GL>()*/,
+        py::keep_alive<0, 1>(),
+        py::keep_alive<0, 2>(),
+        py::keep_alive<0, 3>());
+}
+
 template <class T, class GL = typename T::GridLayerType, class A = T>
 class SystemAssembler
 {
@@ -76,7 +198,7 @@ class SystemAssembler
 
 public:
   typedef GDT::SystemAssembler<T, GL, A> type;
-  typedef pybind11::class_<type, XT::Grid::Walker<GL>> bound_type;
+  typedef pybind11::class_<type> bound_type;
 
 private:
   typedef typename type::TestSpaceType TestSpaceType;
@@ -151,77 +273,12 @@ private:
     }
   }; // struct factory_methods<false, true, ...>
 
-  template <XT::LA::Backends la>
-  static void addaddbind_matrixatrix(bound_type& c)
-  {
-    namespace py = pybind11;
-    using namespace pybind11::literals;
-
-    typedef typename XT::LA::Container<typename T::RangeFieldType, la>::MatrixType M;
-
-    c.def("append",
-          [](type& self,
-             const GDT::LocalBoundaryTwoFormInterface<typename T::BaseFunctionSetType,
-                                                      XT::Grid::extract_intersection_t<GL>>& local_boundary_two_form,
-             M& matrix,
-             const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
-            self.append(local_boundary_two_form, matrix, which_intersections.copy());
-          },
-          "local_boundary_two_form"_a,
-          "matrix"_a,
-          "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    c.def("append",
-          [](type& self,
-             const GDT::LocalCouplingTwoFormInterface<typename T::BaseFunctionSetType,
-                                                      XT::Grid::extract_intersection_t<GL>>& local_coupling_two_form,
-             M& matrix,
-             const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
-            self.append(local_coupling_two_form, matrix, which_intersections.copy());
-          },
-          "local_coupling_two_form"_a,
-          "matrix"_a,
-          "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>());
-    c.def("append",
-          [](type& self,
-             const GDT::LocalCouplingTwoFormInterface<typename T::BaseFunctionSetType,
-                                                      XT::Grid::extract_intersection_t<GL>>& local_coupling_two_form,
-             M& matrix_in_in,
-             M& matrix_out_out,
-             M& matrix_in_out,
-             M& matrix_out_in,
-             const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
-            self.append(local_coupling_two_form,
-                        matrix_in_in,
-                        matrix_out_out,
-                        matrix_in_out,
-                        matrix_out_in,
-                        which_intersections.copy());
-          },
-          "local_coupling_two_form"_a,
-          "matrix_in_in"_a,
-          "matrix_out_out"_a,
-          "matrix_in_out"_a,
-          "matrix_out_in"_a,
-          "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>(),
-          py::keep_alive<0, 3>(),
-          py::keep_alive<0, 4>(),
-          py::keep_alive<0, 5>());
-  } // ... addaddbind_matrixatrix(...)
-
 public:
   static bound_type bind(pybind11::module& m,
                          const std::string& test_space_name,
                          const std::string& ansatz_space_name,
                          const std::string& grid_layer_name)
   {
-    pybind11::module::import("dune.xt.grid");
-
     namespace py = pybind11;
     using namespace pybind11::literals;
 
@@ -232,57 +289,10 @@ public:
       class_name += "_and_" + ansatz_space_name;
     class_name += "_on_" + grid_layer_name;
 
-    XT::Common::bindings::try_register(m, [&grid_layer_name](pybind11::module& mod) {
-      XT::Grid::bindings::internal::Walker<GL>::bind(mod, grid_layer_name);
-    });
-
     bound_type c(m, XT::Common::to_camel_case(class_name).c_str(), XT::Common::to_camel_case(class_name).c_str());
+    bind_system_assembler_functions(c);
     // add ctor
     addbind_switch<>::ctors(c);
-    // add rest
-    c.def("append", [](type& self, type& other) { self.append(other); }, "system_assembler"_a, py::keep_alive<1, 2>());
-
-    c.def("append",
-          [](type& self, type& other, const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
-            self.append(other, which_intersections.copy());
-          },
-          "system_assembler"_a,
-          "which_intersections"_a,
-          py::keep_alive<1, 2>());
-    c.def("assemble",
-          [](type& self, const bool use_tbb) {
-            py::gil_scoped_release DUNE_UNUSED(release);
-            self.assemble(use_tbb);
-          },
-          "use_tbb"_a = false);
-
-
-#if HAVE_DUNE_ISTL // add constraints
-    using G = XT::Grid::extract_grid_t<typename type::GridLayerType>;
-    using I = XT::Grid::extract_intersection_t<typename type::GridLayerType>;
-    bindings::DirichletConstraints<I, G>::addbind(c);
-    addaddbind_matrixatrix<XT::LA::Backends::istl_sparse>(c);
-#endif
-
-    c.def("append",
-          [](type& self,
-             const GDT::LocalVolumeTwoFormInterface<XT::Functions::LocalfunctionInterface<E, D, d, double, 1>,
-                                                    XT::Functions::LocalfunctionInterface<E, D, d, double, 1>,
-                                                    double>& local_volume_two_form,
-             const XT::Functions::LocalizableFunctionInterface<E, D, d, double, 1>& test_function,
-             const XT::Functions::LocalizableFunctionInterface<E, D, d, double, 1>& ansatz_function,
-             ResultStorage& result /*,
-             const XT::Grid::ApplyOn::WhichEntity<GL>& where*/) {
-            self.append(local_volume_two_form, test_function, ansatz_function, result.result() /*, where.copy()*/);
-          },
-          "local_volume_two_form"_a,
-          "test_function"_a,
-          "ansatz_function"_a,
-          "result"_a /*,
-          "where"_a = XT::Grid::ApplyOn::AllEntities<GL>()*/,
-          py::keep_alive<0, 1>(),
-          py::keep_alive<0, 2>(),
-          py::keep_alive<0, 3>());
     // add factory methods
     addbind_switch<>::factory_methods(m);
     // finished
@@ -307,7 +317,7 @@ class SystemAssembler
 
 public:
   using type = typename binder::type;
-  using bound_type = typename binder::bound_type;
+  using bound_type = typename pybind11::class_<type>;
 
   static bound_type bind(pybind11::module& m)
   {

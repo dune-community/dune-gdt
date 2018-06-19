@@ -37,7 +37,7 @@ public:
   using GL = typename OperatorType::GridLayerType;
 
   using BaseType = typename type::BaseType;
-  using bound_base = pybind11::class_<BaseType, GDT::SystemAssembler<R, GL, S>>;
+  using bound_type = pybind11::class_<OperatorType>;
 
 
 private:
@@ -49,11 +49,11 @@ private:
             bool anything = true>
   struct addbind_switch
   {
-    static void induced_norm(bound_base& /*c*/)
+    static void induced_norm(bound_type& /*c*/)
     {
     }
 
-    static void pattern(bound_base& /*c*/)
+    static void pattern(bound_type& /*c*/)
     {
     }
   };
@@ -61,7 +61,7 @@ private:
   template <bool anything>
   struct addbind_switch<true, true, anything>
   {
-    static void induced_norm(bound_base& c)
+    static void induced_norm(bound_type& c)
     {
       namespace py = pybind11;
       using namespace pybind11::literals;
@@ -80,7 +80,7 @@ private:
             "range"_a);
     } // ... induced_norm(...)
 
-    static void pattern(bound_base& c)
+    static void pattern(bound_type& c)
     {
       c.def_static("pattern", [](const R& space) { return type::pattern(space); });
       addbind_switch<false, true>::induced_norm(c);
@@ -90,11 +90,11 @@ private:
   template <bool anything>
   struct addbind_switch<false, true, anything>
   {
-    static void induced_norm(bound_base& /*c*/)
+    static void induced_norm(bound_type& /*c*/)
     {
     }
 
-    static void pattern(bound_base& c)
+    static void pattern(bound_type& c)
     {
       c.def_static("pattern", [](const R& range_space, const S& source_space) {
         return type::pattern(range_space, source_space);
@@ -103,21 +103,16 @@ private:
   }; // struct addbind_switch<true, true, ...>
 
 public:
-  static void bind(pybind11::module& m,
-                   const std::string& class_id,
-                   const std::string& test_space_name,
-                   const std::string& ansatz_space_name,
-                   const std::string& grid_layer_name)
+  static void bind(bound_type& c)
   {
-    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
-      internal::SystemAssembler<R, GL, S>::bind(mod, test_space_name, ansatz_space_name, grid_layer_name);
-    });
+
+    internal::bind_system_assembler_functions(c);
 
     namespace py = pybind11;
     using namespace pybind11::literals;
 
     std::string classname = XT::Common::Typename<BaseType>::value(true);
-    bound_base c(m, classname.c_str(), classname.c_str());
+
     // from MatrixOperatorBase
     addbind_switch<>::pattern(c);
     c.def("self_pattern",
