@@ -45,7 +45,7 @@ struct DarcyOperatorTest : public ::testing::Test
 
   typedef typename RangeSpaceType::GridLayerType GridLayerType;
   typedef XT::Grid::extract_grid_t<GridLayerType> GridType;
-  typedef XT::Grid::GridProvider<GridType> GridProviderType;
+  typedef XT::Grid::GridProvider<GridType, XT::Grid::none_t> GridProviderType;
   using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
   typedef typename GridLayerType::ctype DomainFieldType;
   static const size_t dimDomain = SourceSpaceType::dimDomain;
