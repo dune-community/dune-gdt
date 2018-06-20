@@ -15,7 +15,7 @@ from importlib import import_module
 
 import numpy as np
 
-from dune.xt.common import DEBUG # inits MPI via mpi4py
+from dune.xt.common import * # inits MPI via mpi4py
 import dune.xt.la
 import dune.xt.grid
 import dune.xt.functions
@@ -50,9 +50,6 @@ for module_name in _gdt_modules:
     mod = import_module('.__{}'.format(module_name), 'dune.gdt')
     to_import = [name for name in mod.__dict__ if not name.startswith('_')]
     globals().update({name: mod.__dict__[name] for name in to_import})
-    _init_logger_methods.append(mod.__dict__['_init_logger'])
-    _test_logger_methods.append(mod.__dict__['_test_logger'])
-    _init_mpi_methods.append(mod.__dict__['_init_mpi'])
 
 del _gdt_modules
 
