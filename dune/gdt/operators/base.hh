@@ -235,6 +235,7 @@ class MatrixOperatorBase
                                                                   OuterSourceSpaceImp>>,
       public SystemAssembler<RangeSpaceImp, GridLayerImp, SourceSpaceImp, OuterRangeSpaceImp, OuterSourceSpaceImp>
 {
+public:
   typedef OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp,
                                                                RangeSpaceImp,
                                                                GridLayerImp,
