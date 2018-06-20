@@ -63,8 +63,8 @@ private:
 namespace internal {
 
 
-template <XT::LA::Backends la, class type>
-static void addaddbind_matrixatrix(pybind11::class_<type>& c)
+template <XT::LA::Backends la, class type, class... Bases>
+static void addaddbind_matrixatrix(pybind11::class_<type, Bases...>& c)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
@@ -126,11 +126,17 @@ static void addaddbind_matrixatrix(pybind11::class_<type>& c)
         py::keep_alive<0, 3>(),
         py::keep_alive<0, 4>(),
         py::keep_alive<0, 5>());
+
+  // add constraints
+  bindings::DirichletConstraints<XT::Grid::extract_intersection_t<typename type::GridLayerType>,
+                                 XT::Grid::extract_grid_t<typename type::GridLayerType>>::addbind(c);
+
+
 } // ... addaddbind_matrixatrix(...)
 
 
-template <class AssemblerOrDerivedType>
-static void bind_system_assembler_functions(pybind11::class_<AssemblerOrDerivedType>& c)
+template <class AssemblerOrDerivedType, class... Bases>
+static void bind_system_assembler_functions(pybind11::class_<AssemblerOrDerivedType, Bases...>& c)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
@@ -198,7 +204,7 @@ class SystemAssembler
 
 public:
   typedef GDT::SystemAssembler<T, GL, A> type;
-  typedef pybind11::class_<type> bound_type;
+  typedef pybind11::class_<type, XT::Grid::Walker<GL>> bound_type;
 
 private:
   typedef typename type::TestSpaceType TestSpaceType;

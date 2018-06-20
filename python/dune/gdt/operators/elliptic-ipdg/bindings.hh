@@ -45,9 +45,8 @@ class EllipticIpdgMatrixOperator
 
 public:
   typedef GDT::EllipticIpdgMatrixOperator<DF, DT, R, method, M, GL /*, S, F*/> type;
-  using bound_type = pybind11::class_<type>;
+  using bound_type = typename MatrixOperatorBase<type>::bound_type;
 
-private:
   template <bool single_diffusion = std::is_same<DT, void>::value,
             bool scalar = (DF::dimRange == 1 && DF::dimRangeCols == 1),
             bool anything = false>
@@ -70,7 +69,7 @@ private:
       m.def(std::string(method_name + "_" + XT::LA::bindings::container_name<M>::value()).c_str(),
             [](const DF& diffusion_factor,
                const DT& diffusion_tensor,
-               const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename R::GridLayerType>>& boundary_info,
+               const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GL>>& boundary_info,
                const R& space,
                const size_t over_integrate) {
               return new type(over_integrate, boundary_info, diffusion_factor, diffusion_tensor, space);
@@ -89,7 +88,7 @@ private:
       m.def(method_name.c_str(),
             [](const DF& diffusion_factor,
                const DT& diffusion_tensor,
-               const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename R::GridLayerType>>& boundary_info,
+               const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GL>>& boundary_info,
                M& matrix,
                const R& space,
                const size_t over_integrate) {
@@ -125,7 +124,7 @@ private:
       m.def(
           std::string(method_name + "_" + XT::LA::bindings::container_name<M>::value()).c_str(),
           [](const DF& diffusion,
-             const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename R::GridLayerType>>& boundary_info,
+             const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GL>>& boundary_info,
              const R& space,
              const size_t over_integrate) {
             return make_elliptic_ipdg_matrix_operator<M, method>(diffusion, boundary_info, space, over_integrate)
@@ -142,7 +141,7 @@ private:
       m.def(
           method_name.c_str(),
           [](const DF& diffusion,
-             const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<typename R::GridLayerType>>& boundary_info,
+             const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<GL>>& boundary_info,
              M& matrix,
              const R& space,
              const size_t over_integrate) {
@@ -180,20 +179,29 @@ private:
   };
 
 public:
-  static bound_type bind(pybind11::module& m, const std::string& space_name, const std::string& grid_layer_name)
+  static bound_type bind(pybind11::module& m, std::string class_name)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
+    MatrixOperatorBase<type>::bind_bases(m);
 
-    const auto ClassName = XT::Common::to_camel_case(
-        "elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value() + "_matrix_operator_" + space_name + "_"
-        + XT::LA::bindings::container_name<M>::value()
-        + "_"
-        + diffusion_switch<>::suffix());
-
-    bound_type c(m, ClassName.c_str(), ClassName.c_str());
+    bound_type c(m, class_name.c_str(), class_name.c_str());
     MatrixOperatorBase<type>::bind(c);
     diffusion_switch<>::template addbind_factory_methods<type>(m);
+
+    c.def("assemble", [](type* self) { self->assemble(false); });
+    return c;
+  } // ... bind(...)
+
+  //! this is only needed for RS2017 op which cannot call some ctor variant in the fac bindings
+  static bound_type bind_no_factories(pybind11::module& m, std::string class_name)
+  {
+    namespace py = pybind11;
+    using namespace pybind11::literals;
+    MatrixOperatorBase<type>::bind_bases(m);
+
+    bound_type c(m, class_name.c_str(), class_name.c_str());
+    MatrixOperatorBase<type>::bind(c);
 
     c.def("assemble", [](type* self) { self->assemble(false); });
     return c;
@@ -234,10 +242,22 @@ public:
 
   static bound_type bind(pybind11::module& m)
   {
-    return binder::bind(m,
-                        space_name<SP>::value(),
-                        XT::Grid::bindings::layer_name<gl>::value()
-                            + XT::Grid::bindings::backend_name<gl_backend>::value());
+    using df = typename binder::
+        template diffusion_switch<std::is_same<DT, void>::value, (DF::dimRange == 1 && DF::dimRangeCols == 1), false>;
+    const std::string class_name = XT::Common::to_camel_case(
+        "elliptic_" + LocalEllipticIpdgIntegrands::method_name<method>::value() + "_matrix_operator_"
+        + space_name<SP>::value()
+        + "_"
+        + XT::LA::bindings::container_name<M>::value()
+        + "_"
+        + df::suffix());
+
+    return bind(m, class_name);
+  }
+
+  static bound_type bind(pybind11::module& m, std::string name)
+  {
+    return binder::bind(m, name);
   }
 }; // class EllipticIpdgMatrixOperator
 

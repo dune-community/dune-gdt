@@ -37,7 +37,7 @@ public:
   using GL = typename OperatorType::GridLayerType;
 
   using BaseType = typename type::BaseType;
-  using bound_type = pybind11::class_<OperatorType>;
+  using bound_type = pybind11::class_<OperatorType, typename type::BaseOperatorType, typename type::BaseAssemblerType>;
 
 
 private:
@@ -103,9 +103,20 @@ private:
   }; // struct addbind_switch<true, true, ...>
 
 public:
+  static void bind_bases(pybind11::module& m)
+  {
+    using Op = typename type::BaseOperatorType;
+    XT::Common::bindings::try_register(
+        m, [](pybind11::module& mod) { pybind11::class_<Op> c(mod, XT::Common::Typename<Op>::value().c_str()); });
+    using Sys = typename type::BaseAssemblerType;
+    XT::Common::bindings::try_register(m, [](pybind11::module& mod) {
+      pybind11::class_<Sys, XT::Grid::Walker<GL>> c(mod, XT::Common::Typename<Sys>::value().c_str());
+      internal::bind_system_assembler_functions(c);
+    });
+  }
+
   static void bind(bound_type& c)
   {
-
     internal::bind_system_assembler_functions(c);
 
     namespace py = pybind11;

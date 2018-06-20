@@ -22,6 +22,7 @@
 #include <python/dune/xt/grid/grids.bindings.hh>
 #include <python/dune/xt/grid/layers.bindings.hh>
 #include <python/dune/gdt/operators/base.hh>
+#include <python/dune/gdt/operators/elliptic-ipdg/bindings.hh>
 #include <python/dune/gdt/assembler/system.hh>
 #include <python/dune/gdt/shared.hh>
 
@@ -97,12 +98,13 @@ public:
 
   static void bind(py::module& m)
   {
+    GDT::bindings::MatrixOperatorBase<ThisType>::bind_bases(m);
     using namespace pybind11::literals;
 
     const std::string classname = XT::Common::to_camel_case(
         "RS2017_diffusive_flux_aa_product_matrix_operator_subdomain_" + XT::Grid::bindings::grid_name<G>::value());
 
-    py::class_<ThisType> c(m, classname.c_str(), classname.c_str());
+    typename GDT::bindings::MatrixOperatorBase<ThisType>::bound_type c(m, classname.c_str(), classname.c_str());
     GDT::bindings::MatrixOperatorBase<ThisType>::bind(c);
     m.def("RS2017_make_diffusive_flux_aa_product_matrix_operator_on_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
@@ -968,11 +970,12 @@ public:
 
   static void bind(py::module& m)
   {
+    GDT::bindings::MatrixOperatorBase<ThisType>::bind_bases(m);
     using namespace pybind11::literals;
 
     const std::string classname = XT::Common::to_camel_case("RS2017_penalty_product_matrix_operator_subdomain_"
                                                             + XT::Grid::bindings::grid_name<G>::value());
-    py::class_<ThisType> c(m, classname.c_str(), classname.c_str());
+    typename GDT::bindings::MatrixOperatorBase<ThisType>::bound_type c(m, classname.c_str(), classname.c_str());
     GDT::bindings::MatrixOperatorBase<ThisType>::bind(c);
 
     m.def("RS2017_make_penalty_product_matrix_operator_on_subdomain",
@@ -1198,6 +1201,7 @@ public:
 
   static void bind(py::module& m)
   {
+    GDT::bindings::MatrixOperatorBase<ThisType>::bind_bases(m);
     using namespace pybind11::literals;
 
     const auto space_name = GDT::bindings::space_name<SP>::value();
@@ -1206,7 +1210,7 @@ public:
 
     const std::string classname = XT::Common::to_camel_case(
         "RS2017_penalty_product_matrix_operator_oversampled_subdomain_" + XT::Grid::bindings::grid_name<G>::value());
-    py::class_<ThisType> c(m, classname.c_str(), classname.c_str());
+    typename GDT::bindings::MatrixOperatorBase<ThisType>::bound_type c(m, classname.c_str(), classname.c_str());
     GDT::bindings::MatrixOperatorBase<ThisType>::bind(c);
     m.def("RS2017_make_penalty_product_matrix_operator_on_oversampled_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
@@ -1517,17 +1521,16 @@ void bind_neighborhood_discretization(py::module& m)
                   XT::Common::numeric_cast<size_t>(subdomain)));
         });
 
-  typedef GDT::
-      EllipticIpdgMatrixOperator<DF, DT, S, GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor, M, NGL>
-          DgMatrixOperator;
-  py::class_<DgMatrixOperator, GDT::SystemAssembler<S, NGL>> dg_matrix_operator(
-      m, "EllipticIpdgMatrixOperatorNeighborhood");
+  using binder = GDT::bindings::internal::
+      EllipticIpdgMatrixOperator<DF, DT, S, GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor, M, NGL>;
+  using DgMatrixOperator = typename binder::type;
+  auto dg_matrix_operator = binder::bind_no_factories(m, "EllipticIpdgMatrixOperatorNeighborhood");
   dg_matrix_operator.def("matrix", [](DgMatrixOperator& self) { return self.matrix(); });
 
   m.def("RS2017_make_elliptic_swipdg_matrix_operator_on_neighborhood",
         [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
            const ssize_t subdomain,
-           XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<NGL>>& boundary_info,
+           const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<NGL>>& boundary_info,
            const S& neighborhood_space,
            const DF& lambda,
            const DT& kappa,

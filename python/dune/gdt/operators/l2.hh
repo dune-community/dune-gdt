@@ -35,7 +35,7 @@ class L2MatrixOperator
 {
 public:
   typedef GDT::L2MatrixOperator<R, M> type;
-  using bound_type = pybind11::class_<type>;
+  using bound_type = typename MatrixOperatorBase<type>::bound_type;
 
 public:
   static bound_type bind(pybind11::module& m,
@@ -45,6 +45,7 @@ public:
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
+    MatrixOperatorBase<type>::bind_bases(m);
 
     const std::string class_name = "l2_matrix_operator";
     const auto ClassName = XT::Common::to_camel_case(class_name + "_" + space_name + "_" + container_name);
