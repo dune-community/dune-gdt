@@ -145,6 +145,15 @@ static void bind_system_assembler_functions(pybind11::class_<AssemblerOrDerivedT
   using GL = typename type::GridLayerType;
   XT::Grid::bindings::internal::bind_walker_functions(c);
 
+  c.def(
+      "append",
+      [](type& self, XT::Grid::Walker<GL>& other, const XT::Grid::ApplyOn::WhichIntersection<GL>& which_intersections) {
+        self.append(other, which_intersections.copy());
+      },
+      "grid_walker"_a,
+      "which_intersections"_a = XT::Grid::ApplyOn::AllIntersections<GL>(),
+      py::keep_alive<0, 1>(),
+      py::keep_alive<0, 2>());
   // add rest
   c.def("append", [](type& self, type& other) { self.append(other); }, "system_assembler"_a, py::keep_alive<1, 2>());
 
