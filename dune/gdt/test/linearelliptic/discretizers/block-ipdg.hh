@@ -98,14 +98,14 @@ public:
                       XT::Common::Configuration(),
                       XT::Grid::allneumann_boundaryinfo_default_config());
     std::vector<LocalDiscretizationType> local_discretizations;
-    for (size_t ss = 0; ss < dd_grid.size(); ++ss)
-      local_discretizations.emplace_back(
-          LocalDiscretizer::discretize(grid_provider, local_problem, XT::Common::numeric_cast<int>(ss)));
 
     logger.info() << "Creating space... " << std::endl;
     std::vector<std::shared_ptr<const LocalSpaceType>> local_spaces(dd_grid.size());
-    for (size_t ss = 0; ss < dd_grid.size(); ++ss)
-      local_spaces[ss] = std::make_shared<const LocalSpaceType>(local_discretizations[ss].test_space());
+    for (size_t ss = 0; ss < dd_grid.size(); ++ss) {
+      local_spaces[ss] = std::make_shared<const LocalSpaceType>(dd_grid.local_grid_view(ss));
+      local_discretizations.emplace_back(
+          LocalDiscretizer::discretize_for_block(grid_provider, local_problem, *local_spaces[ss]));
+    }
     SpaceType space(dd_grid, local_spaces);
 
     logger.info() << "Preparing container..." << std::endl;
