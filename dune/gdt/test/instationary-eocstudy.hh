@@ -258,7 +258,7 @@ protected:
         const double time = reference_solution_it->first;
         const auto inserted_it = discrete_exact_solution_->emplace_hint(
             discrete_exact_solution_->end(), time, reference_solution_it->second);
-        project_l2(*exact_solution, inserted_it->second, 0, {"t", time});
+        project_l2(*exact_solution, inserted_it->second, 0, {"t", time}, true);
       }
       if (!visualize_prefix_.empty()) {
         size_t counter = 0;

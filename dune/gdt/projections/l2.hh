@@ -133,15 +133,17 @@ private:
   static const size_t d = GridLayerType::dimension;
 
 public:
-  L2ProjectionOperator(const size_t over_integrate, GridLayerType grid_layer)
+  L2ProjectionOperator(const size_t over_integrate, GridLayerType grid_layer, const bool use_tbb = false)
     : grid_layer_(grid_layer)
     , over_integrate_(over_integrate)
+    , use_tbb_(use_tbb)
   {
   }
 
-  L2ProjectionOperator(GridLayerType grid_layer)
+  L2ProjectionOperator(GridLayerType grid_layer, const bool use_tbb = false)
     : grid_layer_(grid_layer)
     , over_integrate_(0)
+    , use_tbb_(use_tbb)
   {
   }
 
@@ -150,7 +152,7 @@ public:
              DiscreteFunction<S, V>& range,
              const XT::Common::Parameter& param = {}) const
   {
-    redirect<S::continuous>::apply(grid_layer_, source, range, over_integrate_, param);
+    redirect<S::continuous>::apply(grid_layer_, source, range, over_integrate_, param, use_tbb_);
   }
 
   template <class RangeType, class SourceType>
@@ -185,11 +187,12 @@ private:
                       const SourceType& src,
                       RangeType& rng,
                       const size_t over_integrate,
-                      const XT::Common::Parameter& param = {})
+                      const XT::Common::Parameter& param = {},
+                      const bool /*use_tbb*/ = false)
     {
       L2GlobalProjectionLocalizableOperator<GridLayerType, SourceType, RangeType>(
           over_integrate, grd_vw, src, rng, param)
-          .apply();
+          .apply(/*use_tbb*/);
     }
   };
 
@@ -201,25 +204,29 @@ private:
                       const SourceType& src,
                       RangeType& rng,
                       const size_t over_integrate,
-                      const XT::Common::Parameter& param = {})
+                      const XT::Common::Parameter& param = {},
+                      const bool use_tbb = false)
     {
       L2LocalProjectionLocalizableOperator<GridLayerType, SourceType, RangeType>(
           over_integrate, grd_vw, src, rng, param)
-          .apply(true);
+          .apply(use_tbb);
     }
   };
 
   GridLayerType grid_layer_;
   const size_t over_integrate_;
+  const bool use_tbb_;
 }; // class L2ProjectionOperator
 
 
 template <class GridLayerType>
 typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<L2ProjectionOperator<GridLayerType>>>::type
-make_l2_projection_operator(const GridLayerType& grid_layer, const size_t over_integrate = 0)
+make_l2_projection_operator(const GridLayerType& grid_layer,
+                            const size_t over_integrate = 0,
+                            const bool use_tbb = false)
 {
-  return Dune::XT::Common::make_unique<L2ProjectionOperator<GridLayerType>>(over_integrate, grid_layer);
+  return Dune::XT::Common::make_unique<L2ProjectionOperator<GridLayerType>>(over_integrate, grid_layer, use_tbb);
 }
 
 
@@ -233,9 +240,10 @@ project_l2(const GridLayerType& grid_layer,
            const SourceType& source,
            DiscreteFunction<SpaceType, VectorType>& range,
            const size_t over_integrate = 0,
-           const XT::Common::Parameter& param = {})
+           const XT::Common::Parameter& param = {},
+           const bool use_tbb = false)
 {
-  make_l2_projection_operator(grid_layer, over_integrate)->apply(source, range, param);
+  make_l2_projection_operator(grid_layer, over_integrate, use_tbb)->apply(source, range, param);
 }
 
 
@@ -246,9 +254,10 @@ typename std::enable_if<XT::Functions::is_localizable_function<SourceType>::valu
 project_l2(const SourceType& source,
            DiscreteFunction<SpaceType, VectorType>& range,
            const size_t over_integrate = 0,
-           const XT::Common::Parameter& param = {})
+           const XT::Common::Parameter& param = {},
+           const bool use_tbb = false)
 {
-  make_l2_projection_operator(range.space().grid_layer(), over_integrate)->apply(source, range, param);
+  make_l2_projection_operator(range.space().grid_layer(), over_integrate, use_tbb)->apply(source, range, param);
 }
 
 
