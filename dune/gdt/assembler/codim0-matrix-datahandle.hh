@@ -15,6 +15,8 @@
 
 #include <dune/grid/common/datahandleif.hh>
 
+#include <dune/xt/common/unused.hh>
+
 namespace Dune {
 namespace GDT {
 
