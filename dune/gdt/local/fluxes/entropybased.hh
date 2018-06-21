@@ -13,13 +13,14 @@
 #ifndef DUNE_GDT_LOCAL_FLUXES_ENTROPYBASED_HH
 #define DUNE_GDT_LOCAL_FLUXES_ENTROPYBASED_HH
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
+#include <list>
 #include <memory>
-#include <queue>
 
 #include <boost/align/aligned_allocator.hpp>
 
+#include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/lapacke.hh>
 #include <dune/xt/common/math.hh>
 #include <dune/xt/common/memory.hh>
@@ -39,17 +40,6 @@ namespace Dune {
 namespace GDT {
 
 
-template <class FieldType, int size>
-FieldType operator*(const FieldVector<FieldType, size>& first, const XT::LA::CommonSparseVector<FieldType>& second)
-{
-  const auto& indices = second.indices();
-  const auto& entries = second.entries();
-  FieldType ret(0.);
-  for (size_t kk = 0; kk < indices.size(); ++kk)
-    ret += first[indices[kk]] * entries[kk];
-  return ret;
-}
-
 template <class StateRangeType, class VectorType>
 class EntropyLocalCache
 {
@@ -66,11 +56,17 @@ public:
   void insert(const StateRangeType& u, const VectorType& alpha)
   {
     cache_.insert(std::make_pair(u, alpha));
-    keys_.push(u);
+    keys_.push_back(u);
     if (cache_.size() > capacity_) {
       cache_.erase(keys_.front());
-      keys_.pop();
+      keys_.pop_front();
     }
+  }
+
+  void keep(const IteratorType& it)
+  {
+    keys_.remove(it->first);
+    keys_.push_back(it->first);
   }
 
   IteratorType lower_bound(const StateRangeType& u)
@@ -117,7 +113,7 @@ public:
 private:
   std::size_t capacity_;
   MapType cache_;
-  std::queue<StateRangeType> keys_;
+  std::list<StateRangeType> keys_;
 };
 
 #if 1
@@ -169,7 +165,7 @@ public:
   typedef Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
   typedef std::pair<VectorType, RangeFieldType> AlphaReturnType;
   typedef EntropyLocalCache<StateRangeType, AlphaReturnType> LocalCacheType;
-  static const size_t cache_size = 2 * dimRange + 2;
+  static const size_t cache_size = 2 * dimDomain + 2;
 
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
@@ -411,7 +407,7 @@ public:
                            PartialURangeType& ret,
                            const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param).first;
+      const auto alpha = get_alpha(x_local, u, param, false, true).first;
       thread_local auto H = XT::Common::make_unique<MatrixType>();
       calculate_hessian(alpha, M_, *H);
       helper<dimDomain>::partial_u(alpha, M_, *H, ret, this);
@@ -423,7 +419,7 @@ public:
                                ColPartialURangeType& ret,
                                const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param).first;
+      const auto alpha = get_alpha(x_local, u, param, false, true).first;
       thread_local auto H = XT::Common::make_unique<MatrixType>();
       calculate_hessian(alpha, M_, *H);
       helper<dimDomain>::partial_u_col(col, alpha, M_, *H, ret, this);
@@ -708,49 +704,6 @@ private:
 
 #if 1
 
-template <class VectorType>
-typename std::enable_if_t<XT::Common::VectorAbstraction<VectorType>::is_vector
-                              && std::is_arithmetic<typename VectorType::value_type::value_type>::value,
-                          VectorType>&
-operator*=(VectorType& vec, const typename VectorType::value_type::value_type& val)
-{
-  for (auto& inner : vec)
-    inner *= val;
-  return vec;
-}
-
-template <class VectorType>
-typename std::enable_if_t<XT::Common::VectorAbstraction<VectorType>::is_vector
-                              && std::is_arithmetic<typename VectorType::value_type::value_type>::value,
-                          typename VectorType::value_type::value_type>
-operator*(const VectorType& vec1, const VectorType& vec2)
-{
-  typename VectorType::value_type::value_type ret(0);
-  for (size_t ii = 0; ii < vec1.size(); ++ii)
-    ret += vec1[ii] * vec2[ii];
-  return ret;
-}
-
-// explicit specialization for 4, 4 because dune-common's operator+= does not compile if the two sizes are equal
-template <class FieldType>
-FieldVector<FieldVector<FieldType, 4>, 4>& operator+=(FieldVector<FieldVector<FieldType, 4>, 4>& vec1,
-                                                      const FieldVector<FieldVector<FieldType, 4>, 4>& vec2)
-{
-  for (size_t ii = 0; ii < vec1.size(); ++ii)
-    vec1[ii] += vec2[ii];
-  return vec1;
-}
-
-// explicit specialization for 2, 2 because dune-common's operator+= does not compile if the two sizes are equal
-template <class FieldType>
-FieldVector<FieldVector<FieldType, 2>, 2>& operator+=(FieldVector<FieldVector<FieldType, 2>, 2>& vec1,
-                                                      const FieldVector<FieldVector<FieldType, 2>, 2>& vec2)
-{
-  for (size_t ii = 0; ii < vec1.size(); ++ii)
-    vec1[ii] += vec2[ii];
-  return vec1;
-}
-
 /**
  * Specialization for DG basis
  */
@@ -809,10 +762,10 @@ public:
   typedef Hyperbolic::Problems::PiecewiseMonomials<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimDomain>
       BasisfunctionType;
   typedef std::pair<BlockVectorType, RangeFieldType> AlphaReturnType;
-  typedef EntropyLocalCache<StateRangeType, AlphaReturnType> LocalCacheType;
+  typedef EntropyLocalCache<StateRangeType, BlockVectorType> LocalCacheType;
   using TemporaryVectorType =
       FieldVector<std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>, num_blocks>;
-  static const size_t cache_size = 2 * dimRange + 2;
+  static const size_t cache_size = 2 * dimDomain + 2;
 
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
@@ -960,7 +913,7 @@ public:
     void copy_basis_matrix(const BasisValuesMatrixType& source_mat, BasisValuesMatrixType& range_mat) const
     {
       for (size_t jj = 0; jj < num_blocks; ++jj)
-        range_mat[jj].copy_backend(source_mat[jj]);
+        range_mat[jj].backend() = source_mat[jj].backend();
     }
 
     void calculate_scalar_products(const BlockVectorType& beta_in,
@@ -1046,22 +999,27 @@ public:
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
                               const StateRangeType& u_in,
                               const XT::Common::Parameter& param,
-                              const bool regularize) const
+                              const bool regularize,
+                              const bool only_cache = false) const
     {
       const bool boundary = static_cast<bool>(param.get("boundary")[0]);
-      if (boundary)
-        cache_.increase_capacity(2 * cache_size);
       // get initial multiplier and basis matrix from last time step
       AlphaReturnType ret;
       StateRangeType v_in;
 
       // if value has already been calculated for these values, skip computation
       mutex_.lock();
+      if (boundary)
+        cache_.increase_capacity(2 * cache_size);
       auto cache_iterator = cache_.lower_bound(u_in);
-      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_in)) {
-        ret = cache_iterator->second;
+      if (cache_iterator != cache_.end() && cache_iterator->first == u_in) {
+        ret.first = cache_iterator->second;
+        ret.second = 0.;
+        cache_.keep(cache_iterator);
         mutex_.unlock();
         return ret;
+      } else if (only_cache) {
+        DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
         StateRangeType u_iso_in, alpha_iso_in;
         std::tie(u_iso_in, alpha_iso_in) = basis_functions_.calculate_isotropic_distribution(u_in);
@@ -1071,7 +1029,8 @@ public:
         // define further variables
         BlockVectorType g_k, beta_in, beta_out, v;
         thread_local auto T_k = XT::Common::make_unique<BlockMatrixType>();
-        beta_in = cache_iterator != cache_.end() ? cache_iterator->second.first : alpha_iso;
+        //                beta_in = cache_iterator != cache_.end() ? cache_iterator->second : alpha_iso;
+        beta_in = alpha_iso;
 
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
         const auto r_max = r_sequence.back();
@@ -1091,8 +1050,7 @@ public:
           BlockVectorType v_k = v;
           // calculate values of basis p = S_k m
           thread_local BasisValuesMatrixType P_k(XT::LA::CommonDenseMatrix<RangeFieldType>(0, 0, 0., 0));
-          P_k = M_;
-          //          copy_basis_matrix(M_, P_k);
+          copy_basis_matrix(M_, P_k);
           // calculate f_0
           RangeFieldType f_k = calculate_scalar_integral(beta_in, P_k);
           f_k -= beta_in * v_k;
@@ -1110,12 +1068,10 @@ public:
               mutex_.unlock();
               DUNE_THROW(Dune::MathError, "Failure to converge!");
             }
-            // calculate current error
+            // calculate vector of errors e = \int { m exp(beta_out * T_k^{-1}m) } - v
             BlockVectorType error_vec(FieldVector<RangeFieldType, block_size>(0.));
             thread_local BasisValuesMatrixType tmp_mat(XT::LA::CommonDenseMatrix<RangeFieldType>(0, 0, 0., 0));
-            // calculate vector of errors e = \int { m exp(beta_out * T_k^{-1}m) } - v
-            tmp_mat = M_;
-            //            copy_basis_matrix(M_, tmp_mat); // calculate T_k^{-1} M_ and store in tmp_mat
+            copy_basis_matrix(M_, tmp_mat); // calculate T_k^{-1} M_ and store in tmp_mat
             apply_inverse_matrix(*T_k, tmp_mat);
             calculate_vector_integral(beta_out, M_, tmp_mat, error_vec);
             error_vec -= v;
@@ -1130,6 +1086,8 @@ public:
               for (size_t jj = 0; jj < num_blocks; ++jj)
                 XT::LA::solve_lower_triangular_transposed((*T_k)[jj], ret.first[jj], beta_out[jj]);
               ret.second = r;
+              if (kk > 40)
+                std::cout << XT::Common::to_string(kk) << std::endl;
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
@@ -1159,7 +1117,7 @@ public:
 
       outside_all_loops:
         // store values as initial conditions for next time step on this entity
-        cache_.insert(v_in, ret);
+        cache_.insert(v_in, ret.first);
         mutex_.unlock();
       } // else ( value has not been calculated before )
       return ret;
@@ -1219,7 +1177,7 @@ public:
                            PartialURangeType& ret,
                            const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param, true).first;
+      const auto alpha = get_alpha(x_local, u, param, false, true).first;
       thread_local auto H = XT::Common::make_unique<BlockMatrixType>();
       calculate_hessian(alpha, M_, *H);
       helper<dimDomain>::partial_u(M_, *H, ret, this);
@@ -1231,7 +1189,7 @@ public:
                                ColPartialURangeType& ret,
                                const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param, true).first;
+      const auto alpha = get_alpha(x_local, u, param, false, true).first;
       thread_local auto H = XT::Common::make_unique<BlockMatrixType>();
       calculate_hessian(alpha, M_, *H);
       helper<dimDomain>::partial_u_col(col, M_, *H, ret, this);
@@ -1368,7 +1326,7 @@ public:
     {
       assert(dd < dimRangeCols);
       const auto& work_vecs = working_storage();
-      std::fill(J_dd.begin(), J_dd.end(), 0);
+      std::fill(J_dd.begin(), J_dd.end(), 0.);
       for (size_t jj = 0; jj < num_blocks; ++jj) {
         const auto offset = jj * block_size;
         const auto& M_backend = M[jj].backend();
@@ -1486,8 +1444,11 @@ public:
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto local_function_entity = derived_local_function(entity);
     const auto local_function_neighbor = derived_local_function(neighbor);
-    const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param, false).first;
-    const auto alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, false).first;
+    const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param, false, true).first;
+    const auto alpha_j =
+        local_function_neighbor
+            ->get_alpha(x_local_neighbor, u_j, param_neighbor, false, !static_cast<bool>(param.get("boundary")[0]))
+            .first;
     thread_local FieldVector<TemporaryVectorType, 2> work_vecs;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       work_vecs[0][jj].resize(quad_points_[jj].size());
@@ -1670,7 +1631,7 @@ public:
       P5Type;
   using AlphaReturnType = typename std::pair<StateRangeType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<StateRangeType, AlphaReturnType>;
-  static constexpr size_t cache_size = 2 * dimRange + 2;
+  static constexpr size_t cache_size = 2 * dimDomain + 2;
 
 private:
   class PowCache
@@ -2597,7 +2558,7 @@ public:
   typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
   using AlphaReturnType = typename std::pair<StateRangeType, RangeFieldType>;
   typedef EntropyLocalCache<StateRangeType, AlphaReturnType> LocalCacheType;
-  static const size_t cache_size = 2 * dimRange + 2;
+  static const size_t cache_size = 2 * dimDomain + 2;
 
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,

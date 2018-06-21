@@ -54,7 +54,8 @@ public:
                        ->get_alpha(x_in_inside_coords, u, param_, true)
                        .second;
 
-    const auto& vector_indices = source_.space().mapper().globalIndices(entity);
+    thread_local auto vector_indices = source_.space().mapper().globalIndices(entity);
+    source_.space().mapper().globalIndices(entity, vector_indices);
 
     // if regularization was needed, we also need to replace u_n in that cell by its regularized version
     if (s > 0.) {
@@ -69,8 +70,8 @@ public:
         range_.vector().set_entry(vector_indices[ii],
                                   (1 - s) * source_.vector().get_entry(vector_indices[ii]) + s * u_iso[ii]);
     } else {
-      for (size_t ii = 0; ii < vector_indices.size(); ++ii)
-        range_.vector().set_entry(vector_indices[ii], source_.vector().get_entry(vector_indices[ii]));
+      for (const auto& index : vector_indices)
+        range_.vector().set_entry(index, source_.vector().get_entry(index));
     }
   } // void apply_local(...)
 

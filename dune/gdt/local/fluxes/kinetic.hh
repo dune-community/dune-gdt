@@ -129,7 +129,7 @@ public:
                                   param_inside_,
                                   param_outside_);
     } else {
-      static auto flux_matrices = initialize_flux_matrices(basis_functions_);
+      static const auto flux_matrices = initialize_flux_matrices(basis_functions_);
       RangeType ret(0);
       auto tmp_vec = ret;
       const auto& inner_flux_matrix = flux_matrices[direction][n_ij[direction] > 0 ? 1 : 0];

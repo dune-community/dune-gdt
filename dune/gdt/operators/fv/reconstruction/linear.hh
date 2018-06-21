@@ -18,10 +18,10 @@
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/lapacke.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
+#include <dune/xt/common/parameter.hh>
 
 #include <dune/xt/grid/walker.hh>
 
-#include <dune/xt/la/algorithms/triangular_solves.hh>
 #include <dune/xt/la/algorithms/qr.hh>
 #include <dune/xt/la/eigen-solver.hh>
 
@@ -301,7 +301,6 @@ public:
                                                  &(eigenvalues_[jj][0][0]),
                                                  &(dummy_complex_eigenvalues_[0]),
                                                  nullptr,
-
                                                  static_cast<int>(block_size),
                                                  &(eigenvectors_[dd][jj][0][0]),
                                                  static_cast<int>(block_size),
@@ -318,8 +317,8 @@ public:
 #endif // HAVE_MKL || HAVE_LAPACKE
       QR_[dd][jj] = eigenvectors_[dd][jj];
       XT::LA::qr(QR_[dd][jj], tau_[dd][jj], permutations_[dd][jj]);
-      computed_[dd] = true;
     } // jj
+    computed_[dd] = true;
   }
 
   virtual void apply_eigenvectors(const size_t dd, const StateRangeType& x, StateRangeType& ret) const override
@@ -594,9 +593,8 @@ public:
     param_.set("boundary", {0.});
   }
 
-  void apply_local(const EntityType& entity)
+  virtual void apply_local(const EntityType& entity) override final
   {
-    auto& jac = *jacobian_wrapper_;
     static const CoordsType stencil_sizes = []() {
       CoordsType ret;
       const auto ax_size = axis_size; // avoid linker error
@@ -613,9 +611,10 @@ public:
     for (const auto& intersection : Dune::intersections(grid_layer_, entity))
       intersections[intersection.indexInInside()] = intersection;
     const auto entity_index = grid_layer_.indexSet().index(entity);
-    auto& reconstructed_values_map = reconstructed_function_.local_values(entity);
+    auto& reconstructed_values_map = reconstructed_function_.values()[entity_index];
 
     // get jacobian
+    auto& jac = *jacobian_wrapper_;
     if (!jac.computed() || !analytical_flux_.is_affine()) {
       const auto& u_entity = source_values_[entity_index];
       const DomainType x_in_inside_coords = entity.geometry().local(entity.geometry().center());
@@ -878,7 +877,7 @@ private:
   const BoundaryValueType& boundary_values_;
   const GridLayerType& grid_layer_;
   XT::Common::Parameter param_;
-  const Quadrature1dType quadrature_;
+  const Quadrature1dType& quadrature_;
   ReconstructedFunctionType& reconstructed_function_;
   XT::Common::PerThreadValue<JacobianWrapperType>& jacobian_wrapper_;
 }; // class LocalLinearReconstructionOperator
@@ -972,8 +971,8 @@ public:
     const auto& index_set = grid_layer.indexSet();
     std::vector<typename SourceType::RangeType> source_values(index_set.size(0));
     for (const auto& entity : Dune::elements(grid_layer)) {
-      const auto& entity_index = index_set.index(entity);
-      const auto& local_source = source.local_function(entity);
+      const auto entity_index = index_set.index(entity);
+      const auto local_source = source.local_function(entity);
       source_values[entity_index] = local_source->evaluate(entity.geometry().local(entity.geometry().center()));
     }
 

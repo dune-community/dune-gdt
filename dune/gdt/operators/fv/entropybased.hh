@@ -23,6 +23,9 @@ namespace Dune {
 namespace GDT {
 
 
+template <class AdvectionOperatorImp, class RegularizationOperatorImp, class Traits>
+class EntropyBasedMomentFvOperatorNoReconstruction;
+
 template <class AdvectionOperatorImp,
           class ReconstructionOperatorImp,
           class RealizabilityLimiterImp,
@@ -32,6 +35,21 @@ class EntropyBasedMomentFvOperator;
 
 
 namespace internal {
+
+
+template <class AdvectionOperatorImp, class RegularizationOperatorImp>
+class EntropyBasedMomentFvOperatorNoReconstructionTraits
+{
+public:
+  using AdvectionOperatorType = AdvectionOperatorImp;
+  using RegularizationOperatorType = RegularizationOperatorImp;
+  using FieldType = typename AdvectionOperatorType::DomainFieldType;
+  using JacobianType = NoJacobian;
+
+  using derived_type = EntropyBasedMomentFvOperatorNoReconstruction<AdvectionOperatorImp,
+                                                                    RegularizationOperatorImp,
+                                                                    EntropyBasedMomentFvOperatorNoReconstructionTraits>;
+}; // class EntropyBasedMomentFvOperatorNoReconstructionTraits
 
 
 template <class AdvectionOperatorImp,
@@ -57,6 +75,42 @@ public:
 
 
 } // namespace internal
+
+
+template <class AdvectionOperatorImp,
+          class RegularizationOperatorImp,
+          class Traits = internal::EntropyBasedMomentFvOperatorNoReconstructionTraits<AdvectionOperatorImp,
+                                                                                      RegularizationOperatorImp>>
+class EntropyBasedMomentFvOperatorNoReconstruction : public OperatorInterface<Traits>
+{
+public:
+  using AdvectionOperatorType = typename Traits::AdvectionOperatorType;
+  using RegularizationOperatorType = typename Traits::RegularizationOperatorType;
+
+  EntropyBasedMomentFvOperatorNoReconstruction(const AdvectionOperatorType& advection_operator,
+                                               const RegularizationOperatorType& regularization_operator)
+    : advection_operator_(advection_operator)
+    , regularization_operator_(regularization_operator)
+  {
+  }
+
+  template <class SourceType, class RangeType>
+  void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
+  {
+    static_assert(is_discrete_function<SourceType>::value || is_const_discrete_function<SourceType>::value,
+                  "SourceType has to be derived from (Const)DiscreteFunction!");
+    static_assert(is_discrete_function<RangeType>::value, "RangeType has to be derived from DiscreteFunction!");
+    // solve optimization problems and regularize if necessary
+    RangeType regularized = range;
+    regularization_operator_.apply(source, regularized, param);
+
+    std::fill(range.vector().begin(), range.vector().end(), 0.);
+    advection_operator_.apply(regularized, range, param);
+  }
+
+  const AdvectionOperatorType& advection_operator_;
+  const RegularizationOperatorType& regularization_operator_;
+}; // class EntropyBasedMomentFvOperatorNoReconstruction<...>
 
 
 template <class AdvectionOperatorImp,
