@@ -54,9 +54,9 @@ PYBIND11_MODULE(__prolongations, m)
   using G = GDT_BINDINGS_GRID;
 
   DUNE_GDT_PROLONGATIONS_BIND(m, G, leaf, gdt, dg, 1, 1, istl_dense, G, leaf, gdt, dg, 1, istl_dense);
-  //  DUNE_GDT_PROLONGATIONS_BIND(m, G, leaf, gdt, dg, 1, 1, istl_dense, G, leaf, gdt, dg, 2, istl_dense);
-  //  DUNE_GDT_PROLONGATIONS_BIND(m, G, leaf, gdt, dg, 1, 1, istl_dense, G, leaf, gdt, dg, 3, istl_dense);
-  //  DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_dense, G, leaf, gdt, dg, 1, istl_dense);
-  //  DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_dense, G, leaf, gdt, dg, 2, istl_dense);
-  //  DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_dense, G, leaf, gdt, dg, 3, istl_dense);
+  DUNE_GDT_PROLONGATIONS_BIND(m, G, leaf, gdt, dg, 1, 1, istl_dense, G, leaf, gdt, dg, 2, istl_dense);
+  DUNE_GDT_PROLONGATIONS_BIND(m, G, leaf, gdt, dg, 1, 1, istl_dense, G, leaf, gdt, dg, 3, istl_dense);
+  DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_dense, G, leaf, gdt, dg, 1, istl_dense);
+  DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_dense, G, leaf, gdt, dg, 2, istl_dense);
+  DUNE_GDT_PROLONGATIONS_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_dense, G, leaf, gdt, dg, 3, istl_dense);
 }
