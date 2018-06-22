@@ -179,19 +179,19 @@ public:
   typedef ConstLocalDiscreteFunction<SpaceType, VectorType> ConstLocalDiscreteFunctionType;
 
   ConstDiscreteFunction(const SpaceType& sp, const VectorType& vec, const std::string nm = "gdt.constdiscretefunction")
-    : space_(new XT::Common::PerThreadValue<SpaceType>(sp))
+    : space_(sp)
     , vector_(new VectorStorageProvider(vec))
     , name_(nm)
   {
-    if (vector().size() != (*space_)->mapper().size())
+    if (vector().size() != space_.mapper().size())
       DUNE_THROW(XT::Common::Exceptions::shapes_do_not_match,
-                 "space.mapper().size(): " << (*space_)->mapper().size() << "\n   "
+                 "space.mapper().size(): " << space_.mapper().size() << "\n   "
                                            << "vector.size(): "
                                            << vector_->access().size());
   }
 
   ConstDiscreteFunction(const ThisType& other)
-    : space_(new XT::Common::PerThreadValue<SpaceType>(other.space()))
+    : space_(other.space_)
     , vector_(new VectorStorageProvider(other.vector()))
     , name_(other.name_)
   {
@@ -210,7 +210,7 @@ public:
 
   const SpaceType& space() const
   {
-    return *(*space_);
+    return space_;
   }
 
   const VectorType& vector() const
@@ -220,8 +220,8 @@ public:
 
   std::unique_ptr<ConstLocalDiscreteFunctionType> local_discrete_function(const EntityType& entity) const
   {
-    assert((*space_)->grid_layer().indexSet().contains(entity));
-    return Dune::XT::Common::make_unique<ConstLocalDiscreteFunctionType>(*(*space_), vector_->access(), entity);
+    assert(space_.grid_layer().indexSet().contains(entity));
+    return Dune::XT::Common::make_unique<ConstLocalDiscreteFunctionType>(space_, vector_->access(), entity);
   }
 
   std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const override final
@@ -303,7 +303,7 @@ protected:
     }
   };
 
-  std::unique_ptr<XT::Common::PerThreadValue<SpaceType>> space_;
+  const SpaceType& space_;
 
 private:
   std::unique_ptr<VectorStorageProvider> vector_;
@@ -366,8 +366,8 @@ public:
 
   std::unique_ptr<LocalDiscreteFunctionType> local_discrete_function(const EntityType& entity)
   {
-    assert((*space_)->grid_layer().indexSet().contains(entity));
-    return Dune::XT::Common::make_unique<LocalDiscreteFunctionType>(*(*space_), this->access(), entity);
+    assert(space_.grid_layer().indexSet().contains(entity));
+    return Dune::XT::Common::make_unique<LocalDiscreteFunctionType>(space_, this->access(), entity);
   }
 
 private:

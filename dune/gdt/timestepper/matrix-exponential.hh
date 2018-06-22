@@ -287,6 +287,7 @@ private:
 template <class OperatorImp, class DiscreteFunctionImp>
 class MatrixExponentialTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
 {
+  virtual ~MatrixExponentialTimeStepper() = default; // silence warning
   static_assert(AlwaysFalse<OperatorImp>::value, "You are missing the matrix_exponential library!");
 };
 

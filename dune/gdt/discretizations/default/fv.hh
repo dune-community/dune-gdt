@@ -183,7 +183,7 @@ public:
       DiscreteFunctionType u(*fv_space_, "solution");
 
       // project initial values
-      project_l2(initial_values, u);
+      project_l2(initial_values, u, true);
 
       RangeFieldType t_end = test_case_.t_end();
       const RangeFieldType CFL = problem.CFL();
