@@ -42,7 +42,7 @@ struct ProjectionOperatorBase : public OperatorBase<SpaceType>
     DXTC_EXPECT_FLOAT_LE(l2_error, expected_error);
   }
 
-  static const constexpr double default_tolerance = 6.5e-12;
+  static const constexpr double default_tolerance = 1.35e-10;
   static const constexpr double alugrid_tolerance = 3.8e-11;
 }; // struct ProjectionOperatorBase
 
