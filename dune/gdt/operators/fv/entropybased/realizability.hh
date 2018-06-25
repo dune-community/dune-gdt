@@ -956,7 +956,7 @@ public:
   RealizabilityLimiter(const AnalyticalFluxType& analytical_flux,
                        const BasisfunctionType& basis_functions,
                        const QuadratureType& quadrature,
-                       const RangeFieldType epsilon = 1e-10)
+                       const RangeFieldType epsilon = 1e-8)
     : analytical_flux_(analytical_flux)
     , basis_functions_(basis_functions)
     , quadrature_(quadrature)
