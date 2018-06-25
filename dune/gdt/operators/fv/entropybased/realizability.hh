@@ -96,7 +96,7 @@ public:
     assert(dynamic_cast<const EntropyFluxType*>(&analytical_flux_) != nullptr
            && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
     if (theta_entity + epsilon_ > 0.) {
-      std::cout << "limited with theta: " << theta_entity << " and epsilon " << epsilon_ << std::endl;
+      //      std::cout << "limited with theta: " << theta_entity << " and epsilon " << epsilon_ << std::endl;
       auto theta = theta_entity + epsilon_;
       if (theta > 1.)
         theta = 1.;
@@ -111,7 +111,7 @@ public:
       auto& u = pair.second;
       const auto s = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
                          ->derived_local_function(entity)
-                         ->get_alpha(x_in_inside_coords, u, param_, true)
+                         ->get_alpha(x_in_inside_coords, u, param_, true, false)
                          .second;
 
       // if regularization was needed, we also need to replace u_n in that cell by its regularized version
@@ -503,13 +503,15 @@ public:
         const size_t offset = jj * block_size;
         BlockRangeType q_k, q_bar_k;
         for (size_t mm = 0; mm < block_size - 1; ++mm) {
-          q_k[mm] = u_l[offset + mm + 1] / u_l[offset];
-          q_bar_k[mm] = u_bar_scaled[offset + mm + 1] / u_bar_scaled[offset];
+          q_k[mm] = u_l[offset + mm + 1];
+          q_bar_k[mm] = u_bar_scaled[offset + mm + 1];
         }
         for (const auto& coeffs : (*plane_coefficients_)[jj]) {
           const BlockRangeType& a = coeffs.first;
           const RangeFieldType& b = coeffs.second;
-          RangeFieldType theta_li = (b - a * q_k) / (a * (q_bar_k - q_k));
+          const auto u0 = u_l[offset];
+          const auto ubar0 = u_bar_scaled[offset];
+          RangeFieldType theta_li = (b * u0 - a * q_k) / (a * (q_bar_k - q_k) - b * (ubar0 - u0));
           if (!(theta_li > 1.))
             thetas[ll] = std::max(thetas[ll], theta_li);
         } // coeffs
