@@ -411,7 +411,7 @@ public:
               RangeFieldType zeta_k = 1;
               beta_in = beta_out;
               // backtracking line search
-              while (zeta_k > epsilon_ * beta_out.two_norm() / d_k.two_norm() * 100.) {
+              while (pure_newton >= 2 || zeta_k > epsilon_ * beta_out.two_norm() / d_k.two_norm() * 100.) {
                 VectorType beta_new = d_k;
                 beta_new *= zeta_k;
                 beta_new += beta_out;
@@ -715,7 +715,11 @@ public:
     const auto local_function_entity = derived_local_function(entity);
     const auto local_function_neighbor = derived_local_function(neighbor);
     const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param, false, true).first;
-    const auto alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, false, true).first;
+    const auto alpha_j =
+        local_function_neighbor
+            ->get_alpha(
+                x_local_neighbor, u_j, param_neighbor, false, !static_cast<bool>(param_neighbor.get("boundary")[0]))
+            .first;
     thread_local FieldVector<std::vector<RangeFieldType>, 2> work_vecs;
     work_vecs[0].resize(quad_points_.size());
     work_vecs[1].resize(quad_points_.size());
@@ -1152,7 +1156,7 @@ public:
               RangeFieldType zeta_k = 1;
               beta_in = beta_out;
               // backtracking line search
-              while (zeta_k > epsilon_ * two_norm(beta_out) / two_norm(d_k) * 100.) {
+              while (pure_newton >= 2 || zeta_k > epsilon_ * two_norm(beta_out) / two_norm(d_k) * 100.) {
                 BlockVectorType beta_new = d_k;
                 beta_new *= zeta_k;
                 beta_new += beta_out;
@@ -2614,7 +2618,7 @@ public:
   typedef Dune::QuadratureRule<DomainFieldType, 1> QuadratureRuleType;
   typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
   using AlphaReturnType = typename std::pair<StateRangeType, RangeFieldType>;
-  typedef EntropyLocalCache<StateRangeType, AlphaReturnType> LocalCacheType;
+  typedef EntropyLocalCache<StateRangeType, StateRangeType> LocalCacheType;
   static const size_t cache_size = 2 * dimDomain + 2;
 
   explicit EntropyBasedLocalFlux(
@@ -2626,8 +2630,8 @@ public:
       const RangeFieldType chi = 0.5,
       const RangeFieldType xi = 1e-3,
       const std::vector<RangeFieldType> r_sequence = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1},
-      const size_t k_0 = 50,
-      const size_t k_max = 200,
+      const size_t k_0 = 500,
+      const size_t k_max = 1000,
       const RangeFieldType epsilon = std::pow(2, -52),
       const RangeFieldType taylor_tol = 0.1,
       const size_t max_taylor_order = 200,
@@ -2696,7 +2700,8 @@ public:
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
                               const StateRangeType& u,
                               const XT::Common::Parameter& param,
-                              const bool regularize = true) const
+                              const bool regularize,
+                              const bool only_cache) const
     {
       const bool boundary = bool(param.get("boundary")[0]);
       AlphaReturnType ret;
@@ -2705,11 +2710,17 @@ public:
 
       // if value has already been calculated for these values, skip computation
       mutex_.lock();
+
+
       auto cache_iterator = cache_.lower_bound(u);
-      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u)) {
-        ret = cache_iterator->second;
+      if (cache_iterator != cache_.end() && cache_iterator->first == u) {
+        ret.first = cache_iterator->second;
+        ret.second = 0.;
+        cache_.keep(cache_iterator);
         mutex_.unlock();
         return ret;
+      } else if (only_cache) {
+        DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
         // The hessian H is always symmetric and tridiagonal, so we only need to store the diagonal and subdiagonal
         // elements
@@ -2719,7 +2730,7 @@ public:
         // calculate moment vector for isotropic distribution
         RangeType u_iso, alpha_iso, v;
         std::tie(u_iso, alpha_iso) = basis_functions_.calculate_isotropic_distribution(u);
-        RangeType alpha_k = cache_iterator != cache_.end() ? cache_iterator->second.first : alpha_iso;
+        RangeType alpha_k = cache_iterator != cache_.end() ? cache_iterator->second : alpha_iso;
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
         const auto r_max = r_sequence.back();
         for (const auto& r : r_sequence_) {
@@ -2737,11 +2748,15 @@ public:
           // calculate f_0
           RangeFieldType f_k = calculate_f(alpha_k, v);
 
+          int pure_newton = 0;
           for (size_t kk = 0; kk < k_max_; ++kk) {
             // exit inner for loop to increase r if too many iterations are used
             if (kk > k_0_ && r < r_max && r_max > 0)
               break;
-
+            if (kk > 100) {
+              volatile int dings = 0;
+              std::cout << kk << " " << dings << std::endl;
+            }
             // calculate gradient g
             RangeType g_k = calculate_gradient(alpha_k, v);
             // calculate Hessian H
@@ -2767,22 +2782,23 @@ public:
             } else {
               RangeFieldType zeta_k = 1;
               // backtracking line search
-              while (zeta_k > epsilon_ * alpha_k.two_norm() / d_k.two_norm()) {
-
+              while (pure_newton >= 2 || zeta_k > epsilon_ * alpha_k.two_norm() / d_k.two_norm() * 100.) {
                 // calculate alpha_new = alpha_k + zeta_k d_k
                 auto alpha_new = d_k;
                 alpha_new *= zeta_k;
                 alpha_new += alpha_k;
-
                 // calculate f(alpha_new)
                 RangeFieldType f_new = calculate_f(alpha_new, v);
-                if (XT::Common::FloatCmp::le(f_new, f_k + xi_ * zeta_k * (g_k * d_k))) {
+                if (pure_newton >= 2 || XT::Common::FloatCmp::le(f_new, f_k + xi_ * zeta_k * (g_k * d_k))) {
                   alpha_k = alpha_new;
                   f_k = f_new;
+                  pure_newton = 0.;
                   break;
                 }
                 zeta_k = chi_ * zeta_k;
               } // backtracking linesearch while
+              if (zeta_k <= epsilon_ * alpha_k.two_norm() / d_k.two_norm() * 100.)
+                ++pure_newton;
             } // else (stopping conditions)
           } // k loop (Newton iterations)
         } // r loop (Regularization parameter)
@@ -2792,7 +2808,7 @@ public:
 
       outside_all_loops:
         // store values as initial conditions for next time step on this entity
-        cache_.insert(v, ret);
+        cache_.insert(v, ret.first);
         mutex_.unlock();
       } // else ( value has not been calculated before )
 
@@ -2809,7 +2825,7 @@ public:
                           RangeType& ret,
                           const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param).first;
+      const auto alpha = get_alpha(x_local, u, param, true, false).first;
 
       std::fill(ret.begin(), ret.end(), 0.);
       // calculate < \mu m G_\alpha(u) >
@@ -2882,7 +2898,7 @@ public:
                            PartialURangeType& ret,
                            const XT::Common::Parameter& param) const override
     {
-      const auto alpha = get_alpha(x_local, u, param).first;
+      const auto alpha = get_alpha(x_local, u, param, false, true).first;
       RangeType H_diag, J_diag;
       FieldVector<RangeFieldType, dimRange - 1> H_subdiag, J_subdiag;
       calculate_hessian(alpha, H_diag, H_subdiag);
@@ -3243,8 +3259,12 @@ public:
     // calculate < \mu m G_\alpha(u) > * n_ij
     const auto local_function_entity = derived_local_function(entity);
     const auto local_function_neighbor = derived_local_function(neighbor);
-    const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param, false).first;
-    const auto alpha_j = local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, false).first;
+    const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param, false, true).first;
+    const auto alpha_j =
+        local_function_neighbor
+            ->get_alpha(
+                x_local_neighbor, u_j, param_neighbor, false, !static_cast<bool>(param_neighbor.get("boundary")[0]))
+            .first;
     RangeType ret(0);
     for (size_t nn = 0; nn < dimRange; ++nn) {
       if (nn > 0) {
