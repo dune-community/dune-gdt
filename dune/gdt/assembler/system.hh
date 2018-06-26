@@ -79,7 +79,7 @@ public:
             typename AnsatzSpace,
             typename = typename std::enable_if<std::is_same<OuterTestSpaceType, TestSpace>::value
                                                && std::is_same<OuterAnsatzSpaceType, AnsatzSpace>::value>::type>
-  SystemAssembler(TestSpace test, AnsatzSpace ansatz, GridLayerType grd_layr)
+  SystemAssembler(const TestSpace& test, const AnsatzSpace& ansatz, const GridLayerType& grd_layr)
     : BaseType(grd_layr)
     , test_space_(test)
     , ansatz_space_(ansatz)
@@ -94,7 +94,7 @@ public:
                 typename std::enable_if<std::is_same<OuterTestSpaceType, TestSpace>::value
                                         && std::is_same<OuterAnsatzSpaceType, AnsatzSpace>::value
                                         && std::is_same<typename TestSpace::GridLayerType, GridLayerType>::value>::type>
-  explicit SystemAssembler(TestSpace test, AnsatzSpace ansatz)
+  explicit SystemAssembler(const TestSpace& test, const AnsatzSpace& ansatz)
     : BaseType(test.grid_layer())
     , test_space_(test)
     , ansatz_space_(ansatz)
@@ -109,7 +109,7 @@ public:
                                         && std::is_same<OuterTestSpaceType, TestSpace>::value
                                         && std::is_same<OuterAnsatzSpaceType, TestSpace>::value
                                         && std::is_same<typename TestSpace::GridLayerType, GridLayerType>::value>::type>
-  explicit SystemAssembler(TestSpace test)
+  explicit SystemAssembler(const TestSpace& test)
     : BaseType(test.grid_layer())
     , test_space_(test)
     , ansatz_space_(test)
@@ -122,7 +122,7 @@ public:
             typename = typename std::enable_if<std::is_same<AnsatzSpaceType, TestSpace>::value
                                                && std::is_same<OuterTestSpaceType, TestSpace>::value
                                                && std::is_same<OuterAnsatzSpaceType, TestSpace>::value>::type>
-  explicit SystemAssembler(TestSpace test, GridLayerType grd_layr)
+  explicit SystemAssembler(const TestSpace& test, const GridLayerType& grd_layr)
     : BaseType(grd_layr)
     , test_space_(test)
     , ansatz_space_(test)
@@ -131,11 +131,11 @@ public:
   {
   }
 
-  SystemAssembler(GridLayerType grd_layr,
-                  TestSpaceType inner_test,
-                  AnsatzSpaceType inner_ansatz,
-                  OuterTestSpaceType outer_test,
-                  OuterAnsatzSpaceType outer_ansatz)
+  SystemAssembler(const GridLayerType& grd_layr,
+                  const TestSpaceType& inner_test,
+                  const AnsatzSpaceType& inner_ansatz,
+                  const OuterTestSpaceType& outer_test,
+                  const OuterAnsatzSpaceType& outer_ansatz)
     : BaseType(grd_layr)
     , test_space_(inner_test)
     , ansatz_space_(inner_ansatz)
@@ -156,22 +156,22 @@ public:
 
   const TestSpaceType& test_space() const
   {
-    return *test_space_;
+    return test_space_;
   }
 
   const AnsatzSpaceType& ansatz_space() const
   {
-    return *ansatz_space_;
+    return ansatz_space_;
   }
 
   const OuterTestSpaceType& outer_test_space() const
   {
-    return *outer_test_space_;
+    return outer_test_space_;
   }
 
   const OuterAnsatzSpaceType& outer_ansatz_space() const
   {
-    return *outer_ansatz_space_;
+    return outer_ansatz_space_;
   }
 
   using BaseType::append;
@@ -197,8 +197,8 @@ public:
              XT::LA::MatrixInterface<M, R>& matrix,
              const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
-    assert(matrix.rows() == test_space_->mapper().size());
-    assert(matrix.cols() == ansatz_space_->mapper().size());
+    assert(matrix.rows() == test_space_.mapper().size());
+    assert(matrix.cols() == ansatz_space_.mapper().size());
 #include <dune/xt/common/disable_warnings.hh>
     typedef internal::LocalVolumeTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim0_functors_.emplace_back(
@@ -222,8 +222,8 @@ public:
              XT::LA::MatrixInterface<M, R>& matrix,
              const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
-    assert(matrix.rows() == test_space_->mapper().size());
-    assert(matrix.cols() == ansatz_space_->mapper().size());
+    assert(matrix.rows() == test_space_.mapper().size());
+    assert(matrix.cols() == ansatz_space_.mapper().size());
 #include <dune/xt/common/disable_warnings.hh>
     typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(
@@ -241,14 +241,14 @@ public:
              XT::LA::MatrixInterface<M, R>& matrix_out_in,
              const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
-    assert(matrix_in_in.rows() == test_space_->mapper().size());
-    assert(matrix_in_in.cols() == ansatz_space_->mapper().size());
-    assert(matrix_out_out.rows() == outer_test_space_->mapper().size());
-    assert(matrix_out_out.cols() == outer_ansatz_space_->mapper().size());
-    assert(matrix_in_out.rows() == test_space_->mapper().size());
-    assert(matrix_in_out.cols() == outer_ansatz_space_->mapper().size());
-    assert(matrix_out_in.rows() == outer_test_space_->mapper().size());
-    assert(matrix_out_in.cols() == ansatz_space_->mapper().size());
+    assert(matrix_in_in.rows() == test_space_.mapper().size());
+    assert(matrix_in_in.cols() == ansatz_space_.mapper().size());
+    assert(matrix_out_out.rows() == outer_test_space_.mapper().size());
+    assert(matrix_out_out.cols() == outer_ansatz_space_.mapper().size());
+    assert(matrix_in_out.rows() == test_space_.mapper().size());
+    assert(matrix_in_out.cols() == outer_ansatz_space_.mapper().size());
+    assert(matrix_out_in.rows() == outer_test_space_.mapper().size());
+    assert(matrix_out_in.cols() == ansatz_space_.mapper().size());
 #include <dune/xt/common/disable_warnings.hh>
     typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(test_space_,
@@ -276,8 +276,8 @@ public:
              XT::LA::MatrixInterface<M, R>& matrix,
              const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
-    assert(matrix.rows() == test_space_->mapper().size());
-    assert(matrix.cols() == ansatz_space_->mapper().size());
+    assert(matrix.rows() == test_space_.mapper().size());
+    assert(matrix.cols() == ansatz_space_.mapper().size());
 #include <dune/xt/common/disable_warnings.hh>
     typedef internal::LocalBoundaryTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(
@@ -392,7 +392,7 @@ public:
              XT::LA::VectorInterface<V, R>& vector,
              const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
-    assert(vector.size() == test_space_->mapper().size());
+    assert(vector.size() == test_space_.mapper().size());
 #include <dune/xt/common/disable_warnings.hh>
     typedef internal::LocalVolumeFunctionalVectorAssemblerWrapper<ThisType, typename V::derived_type> WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
@@ -423,7 +423,7 @@ public:
              XT::LA::VectorInterface<V, R>& vector,
              const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
-    assert(vector.size() == test_space_->mapper().size());
+    assert(vector.size() == test_space_.mapper().size());
 #include <dune/xt/common/disable_warnings.hh>
     typedef internal::LocalFaceFunctionalVectorAssemblerWrapper<ThisType, typename V::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
@@ -436,7 +436,7 @@ public:
                    XT::LA::VectorInterface<V, R>& vector,
                    const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
-    assert(vector.size() == test_space_->mapper().size());
+    assert(vector.size() == test_space_.mapper().size());
     this->codim1_functors_.emplace_back(
         new LocalFaceFunctionalAssemblerFunctor<TestSpaceType, typename V::derived_type, GridLayerType>(
             test_space_, where, local_face_functional, vector.as_imp()));
@@ -455,10 +455,10 @@ public:
   }
 
 protected:
-  const Dune::XT::Common::PerThreadValue<const TestSpaceType> test_space_;
-  const Dune::XT::Common::PerThreadValue<const AnsatzSpaceType> ansatz_space_;
-  const Dune::XT::Common::PerThreadValue<const OuterTestSpaceType> outer_test_space_;
-  const Dune::XT::Common::PerThreadValue<const OuterAnsatzSpaceType> outer_ansatz_space_;
+  const TestSpaceType& test_space_;
+  const AnsatzSpaceType& ansatz_space_;
+  const OuterTestSpaceType& outer_test_space_;
+  const OuterAnsatzSpaceType& outer_ansatz_space_;
   // this is a hack and should be removed after applying https://github.com/dune-community/dune-xt-grid/pull/28
   std::vector<std::unique_ptr<XT::Grid::internal::Codim0ReturnObject<GridLayerType, double>>> codim0_return_functors_;
 }; // class SystemAssembler

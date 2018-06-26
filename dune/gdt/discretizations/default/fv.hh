@@ -95,6 +95,7 @@ template <class TestCaseImp,
                                                                            slope_limiter>>
 class HyperbolicFvDefaultDiscretization : public FvDiscretizationInterface<Traits>
 {
+  static_assert(reconstruction_order <= 1, "Not yet implemented for higher reconstruction orders!");
   typedef FvDiscretizationInterface<Traits> BaseType;
   typedef HyperbolicFvDefaultDiscretization ThisType;
 
@@ -107,12 +108,15 @@ public:
   using typename BaseType::DiscreteFunctionType;
 
 private:
-  static const bool linear = ProblemType::linear;
+  using GridLayerType = typename SpaceType::GridLayerType;
+  using IntersectionType = typename GridLayerType::Intersection;
+
   static const size_t dimDomain = ProblemType::dimDomain;
   typedef typename ProblemType::FluxType AnalyticalFluxType;
   typedef typename ProblemType::RhsType RhsType;
   typedef typename ProblemType::InitialValueType InitialValueType;
-  typedef typename ProblemType::BoundaryValueType BoundaryValueType;
+  using BoundaryValueType =
+      LocalizableFunctionBasedLocalizableDirichletBoundaryValue<GridLayerType, typename ProblemType::BoundaryValueType>;
   typedef typename ProblemType::DomainFieldType DomainFieldType;
   typedef typename ProblemType::RangeFieldType RangeFieldType;
   typedef typename Dune::XT::Functions::
@@ -120,34 +124,22 @@ private:
           ConstantFunctionType;
   typedef typename Dune::GDT::AdvectionRhsOperator<RhsType> RhsOperatorType;
 
-  typedef internal::AdvectionOperatorCreator<AnalyticalFluxType,
-                                             BoundaryValueType,
-                                             ConstantFunctionType,
-                                             numerical_flux,
-                                             reconstruction_order,
-                                             slope_limiter>
-      AdvectionOperatorCreatorType;
+  typedef internal::
+      AdvectionOperatorCreator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType, numerical_flux>
+          AdvectionOperatorCreatorType;
   typedef typename AdvectionOperatorCreatorType::type AdvectionOperatorType;
   typedef typename AdvectionOperatorType::NumericalCouplingFluxType NumericalCouplingFluxType;
   typedef typename AdvectionOperatorType::NumericalBoundaryFluxType NumericalBoundaryFluxType;
-  typedef LocalReconstructionFvOperator<typename SpaceType::GridLayerType,
-                                        AnalyticalFluxType,
-                                        BoundaryValueType,
-                                        reconstruction_order,
-                                        slope_limiter>
-      ReconstructionOperatorType;
+  using ReconstructionOperatorType = LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType>;
+  using AdvectionWithReconstructionOperatorType =
+      AdvectionWithReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
+  using FvOperatorType =
+      std::conditional_t<reconstruction_order == 0, AdvectionOperatorType, AdvectionWithReconstructionOperatorType>;
 
-  typedef typename TimeStepperFactory<AdvectionOperatorType, DiscreteFunctionType, time_stepper_method>::TimeStepperType
+  typedef typename TimeStepperFactory<FvOperatorType, DiscreteFunctionType, time_stepper_method>::TimeStepperType
       OperatorTimeStepperType;
   typedef typename TimeStepperFactory<RhsOperatorType, DiscreteFunctionType, rhs_time_stepper_method>::TimeStepperType
       RhsOperatorTimeStepperType;
-
-  //  typedef
-  //      typename Dune::GDT::TimeStepperSplittingFactory<RhsOperatorTimeStepperType,
-  //                                                      OperatorTimeStepperType,
-  //                                                      time_stepper_splitting_method>::TimeStepperType
-  //                                                      TimeStepperType;
-
   typedef
       typename Dune::GDT::TimeStepperSplittingFactory<OperatorTimeStepperType,
                                                       RhsOperatorTimeStepperType,
@@ -178,22 +170,22 @@ public:
   void solve(DiscreteSolutionType& solution) const
   {
     try {
-      reset_static_variables();
-
       const auto& problem = test_case_.problem();
       // get analytical flux, initial and boundary values
       const AnalyticalFluxType& analytical_flux = problem.flux();
       const InitialValueType& initial_values = problem.initial_values();
-      const BoundaryValueType& boundary_values = problem.boundary_values();
+      const auto& dirichlet_boundary_values = problem.boundary_values();
+      const auto boundary_info = XT::Grid::AllDirichletBoundaryInfo<IntersectionType>();
+      const BoundaryValueType boundary_values(boundary_info, dirichlet_boundary_values);
       const RhsType& rhs = problem.rhs();
 
       // create a discrete function for the solution
       DiscreteFunctionType u(*fv_space_, "solution");
 
       // project initial values
-      project_l2(initial_values, u);
+      project_l2(initial_values, u, true);
 
-      RangeFieldType t_end = problem.t_end();
+      RangeFieldType t_end = test_case_.t_end();
       const RangeFieldType CFL = problem.CFL();
 
       // calculate dx and choose initial dt
@@ -207,21 +199,26 @@ public:
 
       // create operators
       const ConstantFunctionType dx_function(dx);
-      std::unique_ptr<AdvectionOperatorType> advection_operator =
-          AdvectionOperatorCreatorType::create(analytical_flux, boundary_values, dx_function, linear);
+      std::unique_ptr<AdvectionOperatorType> advection_op =
+          AdvectionOperatorCreatorType::create(analytical_flux, boundary_values, dx_function);
 
-      RhsOperatorType rhs_operator(rhs);
+      ReconstructionOperatorType reconstruction_op(analytical_flux, boundary_values);
+
+      AdvectionWithReconstructionOperatorType advection_with_reconstruction_op(*advection_op, reconstruction_op);
+
+      const auto& fv_op = choose_fv_operator(*advection_op, advection_with_reconstruction_op);
+
+      RhsOperatorType rhs_op(rhs);
 
       // create timestepper
-      OperatorTimeStepperType timestepper_op(*advection_operator, u, -1.0);
+      OperatorTimeStepperType timestepper_op(fv_op, u, -1.0);
 
       // do the time steps
       const size_t num_save_steps = 100;
       solution.clear();
       if (problem.has_non_zero_rhs()) {
         // use fractional step method
-        RhsOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
-        //        TimeStepperType timestepper(timestepper_rhs, timestepper_op);
+        RhsOperatorTimeStepperType timestepper_rhs(rhs_op, u);
         TimeStepperType timestepper(timestepper_op, timestepper_rhs);
         timestepper.solve(t_end, dt, num_save_steps, solution);
       } else {
@@ -243,12 +240,20 @@ public:
   }
 
 private:
-  // demand reinitialization of static variables like jacobians in the numerical fluxes
-  void reset_static_variables() const
+  template <size_t order = reconstruction_order>
+  static std::enable_if_t<order == 1, const FvOperatorType&>
+  choose_fv_operator(const AdvectionOperatorType& /*advection_op*/,
+                     const AdvectionWithReconstructionOperatorType& advection_with_reconstruction_op)
   {
-    NumericalCouplingFluxType::reset();
-    NumericalBoundaryFluxType::reset();
-    ReconstructionOperatorType::reset();
+    return advection_with_reconstruction_op;
+  }
+
+  template <size_t order = reconstruction_order>
+  static std::enable_if_t<order == 0, const FvOperatorType&>
+  choose_fv_operator(const AdvectionOperatorType& advection_op,
+                     const AdvectionWithReconstructionOperatorType& /*advection_with_reconstruction_op*/)
+  {
+    return advection_op;
   }
 
   const TestCaseType& test_case_;

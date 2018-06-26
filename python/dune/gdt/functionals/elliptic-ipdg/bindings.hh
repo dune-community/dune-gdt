@@ -790,11 +790,12 @@ public:
     _m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)                                                   \
   _DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(                                                                          \
       _m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, swipdg_affine_factor)
-//_DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, sipdg);  \
-//_DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, swipdg); \
-//_DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(                                                                          \
-//    _m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, swipdg_affine_tensor)
+/*_DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, sipdg);  \
+_DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, swipdg); \
+_DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_D(                                                                          \
+    _m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la, swipdg_affine_tensor)*/
 
+#else* /
 
 // end: this is what we need for the .so
 

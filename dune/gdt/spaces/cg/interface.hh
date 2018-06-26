@@ -59,7 +59,6 @@ public:
   using typename BaseType::PatternType;
 
 private:
-  typedef Dune::XT::Common::FieldVector<DomainFieldType, dimDomain> StuffDomainType;
   static const constexpr RangeFieldType compare_tolerance_ = 1e-13;
 
 public:

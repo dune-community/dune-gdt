@@ -171,15 +171,17 @@ private:
   static const size_t d = GridLayerType::dimension;
 
 public:
-  L2LocalProjectionOperator(const size_t over_integrate, GridLayerType grid_layer)
+  L2LocalProjectionOperator(const size_t over_integrate, GridLayerType grid_layer, const bool use_tbb = false)
     : grid_layer_(grid_layer)
     , over_integrate_(over_integrate)
+    , use_tbb_(use_tbb)
   {
   }
 
-  L2LocalProjectionOperator(GridLayerType grid_layer)
+  L2LocalProjectionOperator(GridLayerType grid_layer, const bool use_tbb = false)
     : grid_layer_(grid_layer)
     , over_integrate_(0)
+    , use_tbb_(use_tbb)
   {
   }
 
@@ -191,7 +193,7 @@ public:
     typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
     L2LocalProjectionLocalizableOperator<GridLayerType, SourceType, DiscreteFunction<S, V>> op(
         over_integrate_, grid_layer_, source, range, param);
-    op.apply();
+    op.apply(use_tbb_);
   }
 
   template <class RangeType, class SourceType>
@@ -221,15 +223,18 @@ public:
 private:
   GridLayerType grid_layer_;
   const size_t over_integrate_;
+  const bool use_tbb_;
 }; // class L2LocalProjectionOperator
 
 
 template <class GridLayerType>
 typename std::enable_if<XT::Grid::is_layer<GridLayerType>::value,
                         std::unique_ptr<L2LocalProjectionOperator<GridLayerType>>>::type
-make_local_l2_projection_operator(const GridLayerType& grid_layer, const size_t over_integrate = 0)
+make_local_l2_projection_operator(const GridLayerType& grid_layer,
+                                  const size_t over_integrate = 0,
+                                  const bool use_tbb = false)
 {
-  return Dune::XT::Common::make_unique<L2LocalProjectionOperator<GridLayerType>>(over_integrate, grid_layer);
+  return Dune::XT::Common::make_unique<L2LocalProjectionOperator<GridLayerType>>(over_integrate, grid_layer, use_tbb);
 }
 
 

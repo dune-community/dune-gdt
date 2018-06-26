@@ -38,7 +38,7 @@ add_custom_target(test_binaries_builder_1
                     test_linearelliptic__swipdg_discretization
                     test_operators__darcy)
 set_tests_properties(test_linearelliptic__swipdg_discretization PROPERTIES LABELS "builder_1")
-set_tests_properties(test_operators__darcy PROPERTIES LABELS "builder_1")
+set_tests_properties(test_mpi_operators__l2__operator PROPERTIES LABELS "builder_1")
 add_custom_target(test_binaries_builder_2
                   DEPENDS headercheck__dune_gdt_assembler_system.lib.hh
                           headercheck__dune_gdt_local_operators_dirichlet-projection.hh
@@ -64,8 +64,8 @@ add_custom_target(test_binaries_builder_2
                           headercheck__python_dune_gdt_spaces_fv.hh
                           test_mpi_linearelliptic__block_swipdg_discretization
                           test_mpi_operators__l2__operator)
-set_tests_properties(test_mpi_linearelliptic__block_swipdg_discretization PROPERTIES LABELS "builder_2")
-set_tests_properties(test_mpi_operators__l2__operator PROPERTIES LABELS "builder_2")
+set_tests_properties(test_mpi_operators__l2__matrix_operator PROPERTIES LABELS "builder_8")
+set_tests_properties(test_mpi_projections_part_2_a PROPERTIES LABELS "builder_8")
 add_custom_target(
   test_binaries_builder_3
   DEPENDS headercheck__dune_gdt_local_assembler.hh
@@ -95,8 +95,6 @@ add_custom_target(
           headercheck__python_dune_gdt_spaces_dg.hh
           test_mpi_operators__l2__localizable_product
           test_mpi_prolongations_cg_dg)
-set_tests_properties(test_mpi_operators__l2__localizable_product PROPERTIES LABELS "builder_3")
-set_tests_properties(test_mpi_prolongations_cg_dg PROPERTIES LABELS "builder_3")
 add_custom_target(test_binaries_builder_4
                   DEPENDS
                     headercheck__dune_gdt_discretefunction_reinterpret.hh
@@ -122,8 +120,6 @@ add_custom_target(test_binaries_builder_4
                     headercheck__python_dune_gdt_spaces_cg.hh
                     test_linearelliptic__swipdg_estimators
                     test_mpi_operators__weighted_l2__localizable_product)
-set_tests_properties(test_linearelliptic__swipdg_estimators PROPERTIES LABELS "builder_4")
-set_tests_properties(test_mpi_operators__weighted_l2__localizable_product PROPERTIES LABELS "builder_4")
 add_custom_target(test_binaries_builder_5
                   DEPENDS headercheck__dune_gdt_discretefunction_default.hh
                           headercheck__dune_gdt_local_integrands_sipdg.hh
@@ -152,9 +148,6 @@ add_custom_target(test_binaries_builder_5
                           test_linearelliptic__cg_discretization
                           test_mpi_operators__elliptic__matrix_operator
                           test_mpi_operators__laplace__localizable_product)
-set_tests_properties(test_linearelliptic__cg_discretization PROPERTIES LABELS "builder_5")
-set_tests_properties(test_mpi_operators__elliptic__matrix_operator PROPERTIES LABELS "builder_5")
-set_tests_properties(test_mpi_operators__laplace__localizable_product PROPERTIES LABELS "builder_5")
 add_custom_target(test_binaries_builder_6
                   DEPENDS headercheck__dune_gdt_local_dof-vector.hh
                           headercheck__dune_gdt_local_fluxes_force.hh
@@ -181,9 +174,6 @@ add_custom_target(test_binaries_builder_6
                           test_mpi_operators__weighted_l2__operator
                           test_mpi_projections_part_1_a
                           test_spaces_dg)
-set_tests_properties(test_mpi_operators__weighted_l2__operator PROPERTIES LABELS "builder_6")
-set_tests_properties(test_mpi_projections_part_1_a PROPERTIES LABELS "builder_6")
-set_tests_properties(test_spaces_dg PROPERTIES LABELS "builder_6")
 add_custom_target(test_binaries_builder_7
                   DEPENDS
                     headercheck__dune_gdt_local_operators_interfaces.hh
@@ -211,10 +201,6 @@ add_custom_target(test_binaries_builder_7
                     test_mpi_operators__elliptic__operator
                     test_mpi_projections_part_2_a
                     test_spaces_rt)
-set_tests_properties(test_empty PROPERTIES LABELS "builder_7")
-set_tests_properties(test_mpi_operators__elliptic__operator PROPERTIES LABELS "builder_7")
-set_tests_properties(test_mpi_projections_part_2_a PROPERTIES LABELS "builder_7")
-set_tests_properties(test_spaces_rt PROPERTIES LABELS "builder_7")
 add_custom_target(test_binaries_builder_8
                   DEPENDS headercheck__dune_gdt_assembler_local-accumulators.hh
                           headercheck__dune_gdt_discretefunction_datahandle.hh
@@ -243,10 +229,6 @@ add_custom_target(test_binaries_builder_8
                           test_mpi_operators__laplace__matrix_operator
                           test_mpi_operators__laplace__operator
                           test_mpi_prolongations__local)
-set_tests_properties(test_mpi_operators__elliptic__localizable_product PROPERTIES LABELS "builder_8")
-set_tests_properties(test_mpi_operators__laplace__matrix_operator PROPERTIES LABELS "builder_8")
-set_tests_properties(test_mpi_operators__laplace__operator PROPERTIES LABELS "builder_8")
-set_tests_properties(test_mpi_prolongations__local PROPERTIES LABELS "builder_8")
 add_custom_target(test_binaries_builder_9
                   DEPENDS headercheck__dune_gdt_assembler_codim0-matrix-datahandle.hh
                           headercheck__dune_gdt_assembler_local-assemblers.hh
@@ -276,9 +258,6 @@ add_custom_target(test_binaries_builder_9
                           test_mpi_operators__weighted_l2__matrix_operator
                           test_mpi_projections__lagrange_and_global
                           test_prolongations_rt_fv)
-set_tests_properties(test_mpi_operators__weighted_l2__matrix_operator PROPERTIES LABELS "builder_9")
-set_tests_properties(test_mpi_projections__lagrange_and_global PROPERTIES LABELS "builder_9")
-set_tests_properties(test_prolongations_rt_fv PROPERTIES LABELS "builder_9")
 add_custom_target(test_binaries_builder_10
                   DEPENDS headercheck__dune_gdt_local_integrands_elliptic-ipdg.hh
                           headercheck__dune_gdt_operators_fv_realizability.hh
@@ -304,9 +283,6 @@ add_custom_target(test_binaries_builder_10
                           test_mpi_operators__l2__matrix_operator
                           test_mpi_projections_part_0_a
                           test_mpi_prolongations__lagrange_and_global)
-set_tests_properties(test_mpi_operators__l2__matrix_operator PROPERTIES LABELS "builder_10")
-set_tests_properties(test_mpi_projections_part_0_a PROPERTIES LABELS "builder_10")
-set_tests_properties(test_mpi_prolongations__lagrange_and_global PROPERTIES LABELS "builder_10")
 add_custom_target(test_binaries_builder_11
                   DEPENDS headercheck__dune_gdt_discretizations_default_stationary-containerbased.hh
                           headercheck__dune_gdt_functionals_elliptic-ipdg.hh
@@ -334,8 +310,6 @@ add_custom_target(test_binaries_builder_11
                           headercheck__dune_gdt_timestepper_interface.hh
                           test_mpi_projections_part_0_b
                           test_mpi_projections_part_1_b)
-set_tests_properties(test_mpi_projections_part_0_b PROPERTIES LABELS "builder_11")
-set_tests_properties(test_mpi_projections_part_1_b PROPERTIES LABELS "builder_11")
 add_custom_target(test_binaries_builder_12
                   DEPENDS headercheck__dune_gdt_discretizations_default_fv.hh
                           headercheck__dune_gdt_local_fluxes_entropybased.hh
@@ -361,6 +335,5 @@ add_custom_target(test_binaries_builder_12
                           test_mpi_projections__local
                           test_mpi_projections_part_2_b
                           test_spaces_cg)
-set_tests_properties(test_mpi_projections__local PROPERTIES LABELS "builder_12")
 set_tests_properties(test_mpi_projections_part_2_b PROPERTIES LABELS "builder_12")
 set_tests_properties(test_spaces_cg PROPERTIES LABELS "builder_12")

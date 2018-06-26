@@ -189,48 +189,6 @@ public:
     assembler.assemble(true);
   }
 
-  //  // assembles jacobian (jacobian is assumed to be zero initially)
-  //  template <class SourceType, class MatrixType>
-  //  void assemble_newton_matrix(std::vector<MatrixType>& newton_matrices,
-  //                              const SourceType& source,
-  //                              const XT::Common::Parameter& param) const
-  //  {
-  //    typedef LocalVolumeIntegralOperator<LocalFvRhsNewtonIntegrand<RhsEvaluationType, SourceType>> LocalOperatorType;
-  //    LocalOperatorType local_operator(rhs_evaluation_, source, param);
-  //    LocalVolumeTwoFormAssembler<LocalOperatorType> local_assembler(local_operator);
-  //    SystemAssembler<typename SourceType::SpaceType> assembler(source.space());
-  //    assembler.append(local_assembler, newton_matrices);
-  //    assembler.assemble(false);
-  //  }
-
-  //  // solves with local jacobian on each entity
-  //  template <class SourceType, class RangeType, class MatrixType>
-  //  void solve(const std::vector<MatrixType>& newton_matrices,
-  //             const SourceType& rhs,
-  //             RangeType& solution,
-  //             const XT::Common::Parameter& /*param*/ = {}) const
-  //  {
-  //    MatrixSolveFunctor<typename SourceType::SpaceType::GridLayerType, MatrixType, SourceType> functor(
-  //        newton_matrices, rhs, solution);
-  //    SystemAssembler<typename SourceType::SpaceType> assembler(rhs.space());
-  //    assembler.append(functor);
-  //    assembler.assemble(false);
-  //  }
-
-  //  // applies local jacobian on each entity
-  //  template <class SourceType, class RangeType, class MatrixType>
-  //  void mv(const std::vector<MatrixType>& newton_matrices,
-  //          const SourceType& vector,
-  //          RangeType& result,
-  //          const XT::Common::Parameter& /*param*/ = {}) const
-  //  {
-  //    MatrixApplyFunctor<typename SourceType::SpaceType::GridLayerType, MatrixType, SourceType> functor(
-  //        newton_matrices, vector, result);
-  //    SystemAssembler<typename SourceType::SpaceType> assembler(vector.space());
-  //    assembler.append(functor);
-  //    assembler.assemble(false);
-  //  }
-
 private:
   const RhsEvaluationType& rhs_evaluation_;
 }; // class AdvectionRhsOperator

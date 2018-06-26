@@ -46,6 +46,7 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
+  using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
 
@@ -61,8 +62,9 @@ public:
     const DomainFieldType phi = coords[1];
     RangeType ret(0);
     // TODO: use complex arithmetic, remove real() call
-    for (size_t ll = 0; ll <= order; ++ll)
-      for (int mm = only_positive ? 0 : -int(ll); mm <= int(ll); ++mm)
+    assert(order <= std::numeric_limits<int>::max());
+    for (unsigned int ll = 0; ll <= static_cast<unsigned int>(order); ++ll)
+      for (int mm = only_positive ? 0 : -static_cast<int>(ll); mm <= static_cast<int>(ll); ++mm)
         ret[helper<only_positive>::pos(ll, mm)] = boost::math::spherical_harmonic(ll, mm, theta, phi).real();
     return ret;
   } // ... evaluate(...)
@@ -104,6 +106,11 @@ public:
       component_visualizer<DiscreteFunctionType, dimRange, 0>(u_n, filename_prefix, ii, std::sqrt(4 * M_PI));
     };
   }
+
+  static StringifierType stringifier()
+  {
+    return [](const RangeType& val) { return XT::Common::to_string(val[0] * std::sqrt(4 * M_PI), 15); };
+  } // ... stringifier()
 
   std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
   {
@@ -243,8 +250,14 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
+  using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
+
+  RealSphericalHarmonics(const QuadratureType& quadrature)
+    : quadrature_(quadrature)
+  {
+  }
 
   virtual RangeType evaluate(const DomainType& v) const override
   {
@@ -294,6 +307,53 @@ public:
     return ret;
   } // ... mass_matrix_with_v()
 
+  using BaseType::parallel_quadrature;
+
+  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
+  virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const
+  {
+    FieldVector<FieldVector<MatrixType, 2>, dimFlux> B_kinetic(
+        FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
+    QuadratureType neg_quadrature;
+    QuadratureType pos_quadrature;
+    neg_quadrature.reserve(quadrature_.size());
+    pos_quadrature.reserve(quadrature_.size());
+    for (size_t dd = 0; dd < dimFlux; ++dd) {
+      neg_quadrature.clear();
+      pos_quadrature.clear();
+      for (const auto& quad_point : quadrature_) {
+        const auto& v = quad_point.position();
+        const auto& weight = quad_point.weight();
+        if (XT::Common::FloatCmp::eq(v[dd], 0.)) {
+          neg_quadrature.emplace_back(v, weight / 2.);
+          pos_quadrature.emplace_back(v, weight / 2.);
+        } else if (v[dd] > 0.)
+          pos_quadrature.emplace_back(v, weight);
+        else
+          neg_quadrature.emplace_back(v, weight);
+      }
+      parallel_quadrature(neg_quadrature, B_kinetic[dd][0], dd);
+      parallel_quadrature(pos_quadrature, B_kinetic[dd][1], dd);
+    }
+    return B_kinetic;
+  } // ... kinetic_flux_matrices()
+
+  virtual MatrixType reflection_matrix(const DomainType& n) const
+  {
+    MatrixType ret(dimRange, dimRange, 0);
+    size_t direction;
+    for (size_t ii = 0; ii < dimDomain; ++ii) {
+      if (XT::Common::FloatCmp::ne(n[ii], 0.)) {
+        direction = ii;
+        if (XT::Common::FloatCmp::ne(std::abs(n[ii]), 1.))
+          DUNE_THROW(NotImplemented, "Implemented only for +-e_i where e_i is the i-th canonical basis vector!");
+      }
+    }
+    parallel_quadrature(quadrature_, ret, direction, true);
+    ret.rightmultiply(mass_matrix_inverse());
+    return ret;
+  }
+
   std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
   {
     RangeType u_iso(0), alpha_iso(0);
@@ -309,6 +369,16 @@ public:
       component_visualizer<DiscreteFunctionType, dimRange, 0>(u_n, filename_prefix, ii, std::sqrt(4 * M_PI));
     };
   }
+
+  RangeFieldType calculate_psi_from_moments(const RangeType& val) const
+  {
+    return val[0] * std::sqrt(4 * M_PI);
+  }
+
+  static StringifierType stringifier()
+  {
+    return [](const RangeType& val) { return XT::Common::to_string(val[0] * std::sqrt(4 * M_PI), 15); };
+  } // ... stringifier()
 
   RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
   {
@@ -450,8 +520,14 @@ private:
   // http://www.tandfonline.com/doi/full/10.1080/00411450.2014.910226?src=recsys&, Section 4.1
   RangeFieldType N_lm(const int l, const int m) const
   {
+    static constexpr auto frac_4pi = 1. / (4. * M_PI);
     assert(l >= 0 && m >= 0 && m <= l);
-    return std::sqrt((2. * l + 1.) * XT::Common::factorial(l - m) / (XT::Common::factorial(l + m) * 4. * M_PI));
+    // return std::sqrt((2. * l + 1.) * XT::Common::factorial(l - m) / (XT::Common::factorial(l + m) * 4. * M_PI));
+    auto factor = 1.;
+    for (int ii = l - m + 1; ii <= l + m; ++ii)
+      factor *= ii;
+    factor = 1. / factor;
+    return std::sqrt((2. * l + 1.) * factor * frac_4pi);
   }
 
   RangeFieldType evaluate_lm(const DomainFieldType theta, const DomainFieldType phi, const int l, const int m) const
@@ -465,6 +541,8 @@ private:
     else
       return std::sqrt(2) * N_lm(l, m) * boost::math::legendre_p(l, m, cos_theta) * std::cos(m * phi);
   }
+
+  const QuadratureType& quadrature_;
 }; // class RealSphericalHarmonics<DomainFieldType, 3, ...>
 
 

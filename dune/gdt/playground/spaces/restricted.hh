@@ -40,24 +40,6 @@ class RestrictedSpaceTraits
   static_assert(XT::Grid::is_layer<RestrictionGridLayer>::value, "");
   static_assert(is_space<UnrestrictedSpace>::value, "");
 
-  template <class G = RestrictionGridLayer, bool v = XT::Grid::is_view<G>::value, bool p = XT::Grid::is_part<G>::value>
-  struct layer_backend_helper
-  {
-    static_assert(AlwaysFalse<G>::value, "");
-  };
-
-  template <class G>
-  struct layer_backend_helper<G, true, false>
-  {
-    static const XT::Grid::Backends value = XT::Grid::Backends::view;
-  };
-
-  template <class G>
-  struct layer_backend_helper<G, false, true>
-  {
-    static const XT::Grid::Backends value = XT::Grid::Backends::view;
-  };
-
 public:
   typedef RestrictedSpace<UnrestrictedSpace, RestrictionGridLayer> derived_type;
   static const int polOrder = UnrestrictedSpace::polOrder;
@@ -68,7 +50,7 @@ public:
   typedef typename UnrestrictedSpace::DofCommunicatorType DofCommunicatorType;
   typedef RestrictionGridLayer GridLayerType;
   typedef typename UnrestrictedSpace::RangeFieldType RangeFieldType;
-  static const XT::Grid::Backends layer_backend = layer_backend_helper<>::value;
+  static const XT::Grid::Backends layer_backend = XT::Grid::Backends::view;
   static constexpr const GDT::Backends backend_type{UnrestrictedSpace::backend_type};
 }; // class RestrictedSpaceTraits
 

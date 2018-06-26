@@ -36,7 +36,7 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::ShallowWaterTestCase<Y
       if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 3.0))
         return {3.02e+00, 1.59e+00};
       else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 3.0 / 5.0))
-        return {5.03e-01, 2.31e-01};
+        return {5.04e-01, 2.31e-01};
       else
         EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
     } else {

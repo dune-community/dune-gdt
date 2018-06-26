@@ -61,8 +61,8 @@ class ConstraintsWrapper<TestSpaceType,
 public:
   using typename BaseType::EntityType;
 
-  ConstraintsWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-                     const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+  ConstraintsWrapper(const TestSpaceType& test_space,
+                     const AnsatzSpaceType& ansatz_space,
                      const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where,
                      ConstraintsType& constraints)
     : test_space_(test_space)
@@ -80,7 +80,7 @@ public:
 
   void apply_local(const EntityType& entity) override final
   {
-    test_space_->local_constraints(*ansatz_space_, entity, *thread_local_constraints_);
+    test_space_.local_constraints(ansatz_space_, entity, *thread_local_constraints_);
   }
 
   void finalize() override final
@@ -91,8 +91,8 @@ public:
   }
 
 private:
-  const XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
-  const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const TestSpaceType& test_space_;
+  const AnsatzSpaceType& ansatz_space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichEntity<GridLayerType>> where_;
   ConstraintsType& constraints_;
   XT::Common::PerThreadValue<ConstraintsType> thread_local_constraints_;
@@ -124,8 +124,8 @@ public:
 #include <dune/xt/common/reenable_warnings.hh>
 
 
-  LocalVolumeTwoFormMatrixAssemblerWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-                                           const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+  LocalVolumeTwoFormMatrixAssemblerWrapper(const TestSpaceType& test_space,
+                                           const AnsatzSpaceType& ansatz_space,
                                            const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where,
                                            const LocalVolumeTwoFormAssemblerType& local_assembler,
                                            MatrixType& matrix)
@@ -148,8 +148,8 @@ public:
   }
 
 private:
-  const XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
-  const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const TestSpaceType& test_space_;
+  const AnsatzSpaceType& ansatz_space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichEntity<GridLayerType>> where_;
   const LocalVolumeTwoFormAssemblerType& local_assembler_;
   MatrixType& matrix_;
@@ -192,8 +192,8 @@ public:
                                       typename MatrixType::ScalarType>
       LocalVolumeTwoFormType;
 
-  LocalVolumeTwoFormWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-                            const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+  LocalVolumeTwoFormWrapper(const TestSpaceType& test_space,
+                            const AnsatzSpaceType& ansatz_space,
                             const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where,
                             const LocalVolumeTwoFormType& local_twoform,
                             MatrixType& matrix)
@@ -245,8 +245,8 @@ public:
                                                && (std::is_same<AnsatzSpace, OuterAnsatzSpaceType>::value)
                                                && sizeof(TestSpace)
                                                && sizeof(AnsatzSpace)>::type>
-  LocalCouplingTwoFormMatrixAssemblerWrapper(const XT::Common::PerThreadValue<const TestSpace>& test_space,
-                                             const XT::Common::PerThreadValue<const AnsatzSpace>& ansatz_space,
+  LocalCouplingTwoFormMatrixAssemblerWrapper(const TestSpace& test_space,
+                                             const AnsatzSpace& ansatz_space,
                                              const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                                              const LocalCouplingTwoFormAssemblerType& local_assembler,
                                              MatrixType& matrix)
@@ -263,17 +263,16 @@ public:
   {
   }
 
-  LocalCouplingTwoFormMatrixAssemblerWrapper(
-      const XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space,
-      const XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space,
-      const XT::Common::PerThreadValue<const OuterTestSpaceType>& outer_test_space,
-      const XT::Common::PerThreadValue<const OuterAnsatzSpaceType>& outer_ansatz_space,
-      const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
-      const LocalCouplingTwoFormAssemblerType& local_assembler,
-      MatrixType& in_in_matrix,
-      MatrixType& out_out_matrix,
-      MatrixType& in_out_matrix,
-      MatrixType& out_in_matrix)
+  LocalCouplingTwoFormMatrixAssemblerWrapper(const TestSpaceType& inner_test_space,
+                                             const AnsatzSpaceType& inner_ansatz_space,
+                                             const OuterTestSpaceType& outer_test_space,
+                                             const OuterAnsatzSpaceType& outer_ansatz_space,
+                                             const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
+                                             const LocalCouplingTwoFormAssemblerType& local_assembler,
+                                             MatrixType& in_in_matrix,
+                                             MatrixType& out_out_matrix,
+                                             MatrixType& in_out_matrix,
+                                             MatrixType& out_in_matrix)
     : inner_test_space_(inner_test_space)
     , inner_ansatz_space_(inner_ansatz_space)
     , outer_test_space_(outer_test_space)
@@ -308,10 +307,10 @@ public:
   } // ... apply_local(...)
 
 private:
-  const XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space_;
-  const XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space_;
-  const XT::Common::PerThreadValue<const OuterTestSpaceType>& outer_test_space_;
-  const XT::Common::PerThreadValue<const OuterAnsatzSpaceType>& outer_ansatz_space_;
+  const TestSpaceType& inner_test_space_;
+  const AnsatzSpaceType& inner_ansatz_space_;
+  const OuterTestSpaceType& outer_test_space_;
+  const OuterAnsatzSpaceType& outer_ansatz_space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>> where_;
   const LocalCouplingTwoFormAssemblerType& local_assembler_;
   MatrixType& in_in_matrix_;
@@ -370,8 +369,8 @@ public:
                                                && (std::is_same<AnsatzSpace, OuterAnsatzSpaceType>::value)
                                                && sizeof(TestSpace)
                                                && sizeof(AnsatzSpace)>::type>
-  LocalCouplingTwoFormWrapper(const XT::Common::PerThreadValue<const TestSpace>& test_space,
-                              const XT::Common::PerThreadValue<const AnsatzSpace>& ansatz_space,
+  LocalCouplingTwoFormWrapper(const TestSpace& test_space,
+                              const AnsatzSpace& ansatz_space,
                               const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                               const LocalCouplingTwoFormType& local_twoform,
                               MatrixType& matrix)
@@ -380,10 +379,10 @@ public:
   {
   }
 
-  LocalCouplingTwoFormWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& inner_test_space,
-                              const XT::Common::PerThreadValue<const AnsatzSpaceType>& inner_ansatz_space,
-                              const XT::Common::PerThreadValue<const OuterTestSpaceType>& outer_test_space,
-                              const XT::Common::PerThreadValue<const OuterAnsatzSpaceType>& outer_ansatz_space,
+  LocalCouplingTwoFormWrapper(const TestSpaceType& inner_test_space,
+                              const AnsatzSpaceType& inner_ansatz_space,
+                              const OuterTestSpaceType& outer_test_space,
+                              const OuterAnsatzSpaceType& outer_ansatz_space,
                               const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                               const LocalCouplingTwoFormType& local_twoform,
                               MatrixType& matrix_in_in,
@@ -431,8 +430,8 @@ public:
       LocalBoundaryTwoFormAssemblerType;
 #include <dune/xt/common/reenable_warnings.hh>
 
-  LocalBoundaryTwoFormMatrixAssemblerWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-                                             const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+  LocalBoundaryTwoFormMatrixAssemblerWrapper(const TestSpaceType& test_space,
+                                             const AnsatzSpaceType& ansatz_space,
                                              const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                                              const LocalBoundaryTwoFormAssemblerType& local_assembler,
                                              MatrixType& matrix)
@@ -457,8 +456,8 @@ public:
   } // ... apply_local(...)
 
 private:
-  const XT::Common::PerThreadValue<const TestSpaceType>& test_space_;
-  const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space_;
+  const TestSpaceType& test_space_;
+  const AnsatzSpaceType& ansatz_space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>> where_;
   const LocalBoundaryTwoFormAssemblerType& local_assembler_;
   MatrixType& matrix_;
@@ -502,8 +501,8 @@ public:
                                         typename MatrixType::ScalarType>
       LocalBoundaryTwoFormType;
 
-  LocalBoundaryTwoFormWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
-                              const XT::Common::PerThreadValue<const AnsatzSpaceType>& ansatz_space,
+  LocalBoundaryTwoFormWrapper(const TestSpaceType& test_space,
+                              const AnsatzSpaceType& ansatz_space,
                               const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                               const LocalBoundaryTwoFormType& local_twoform,
                               MatrixType& matrix)
@@ -535,7 +534,7 @@ public:
   typedef LocalVolumeFunctionalAssembler<TestSpaceType, VectorType> LocalVolumeFunctionalAssemblerType;
 #include <dune/xt/common/reenable_warnings.hh>
 
-  LocalVolumeFunctionalVectorAssemblerWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& space,
+  LocalVolumeFunctionalVectorAssemblerWrapper(const TestSpaceType& space,
                                               const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where,
                                               const LocalVolumeFunctionalAssemblerType& local_assembler,
                                               VectorType& vector)
@@ -553,11 +552,11 @@ public:
 
   void apply_local(const EntityType& entity) override final
   {
-    local_assembler_.assemble(*space_, entity, vector_);
+    local_assembler_.assemble(space_, entity, vector_);
   }
 
 private:
-  const XT::Common::PerThreadValue<const TestSpaceType>& space_;
+  const TestSpaceType& space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichEntity<GridLayerType>> where_;
   const LocalVolumeFunctionalAssemblerType& local_assembler_;
   VectorType& vector_;
@@ -597,7 +596,7 @@ public:
   typedef LocalVolumeFunctionalInterface<typename TestSpaceType::BaseFunctionSetType, typename VectorType::ScalarType>
       LocalVolumeFunctionalType;
 
-  LocalVolumeFunctionalWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+  LocalVolumeFunctionalWrapper(const TestSpaceType& test_space,
                                const XT::Grid::ApplyOn::WhichEntity<GridLayerType>* where,
                                const LocalVolumeFunctionalType& local_functional,
                                VectorType& vector)
@@ -632,7 +631,7 @@ public:
   typedef LocalFaceFunctionalAssembler<TestSpaceType, IntersectionType, VectorType> LocalFaceFunctionalAssemblerType;
 #include <dune/xt/common/reenable_warnings.hh>
 
-  LocalFaceFunctionalVectorAssemblerWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& space,
+  LocalFaceFunctionalVectorAssemblerWrapper(const TestSpaceType& space,
                                             const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                                             const LocalFaceFunctionalAssemblerType& local_assembler,
                                             VectorType& vector)
@@ -652,11 +651,11 @@ public:
                    const EntityType& /*inside_entity*/,
                    const EntityType& /*outside_entity*/) override final
   {
-    local_assembler_.assemble(*space_, intersection, vector_);
+    local_assembler_.assemble(space_, intersection, vector_);
   }
 
 private:
-  const XT::Common::PerThreadValue<const TestSpaceType>& space_;
+  const TestSpaceType& space_;
   const std::unique_ptr<const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>> where_;
   const LocalFaceFunctionalAssemblerType& local_assembler_;
   VectorType& vector_;
@@ -700,7 +699,7 @@ public:
   typedef LocalFaceFunctionalInterface<typename TestSpaceType::BaseFunctionSetType, IntersectionType, FieldType>
       LocalFaceFunctionalType;
 
-  LocalFaceFunctionalWrapper(const XT::Common::PerThreadValue<const TestSpaceType>& test_space,
+  LocalFaceFunctionalWrapper(const TestSpaceType& test_space,
                              const XT::Grid::ApplyOn::WhichIntersection<GridLayerType>* where,
                              const LocalFaceFunctionalType& local_face_functional,
                              VectorType& vector)

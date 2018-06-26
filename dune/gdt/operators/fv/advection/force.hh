@@ -20,40 +20,20 @@ namespace Dune {
 namespace GDT {
 
 
-template <class AnalyticalFluxImp,
-          class BoundaryValueImp,
-          class LocalizableFunctionImp,
-          size_t polOrder,
-          SlopeLimiters slope_lim,
-          class RealizabilityLimiterImp,
-          class Traits>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp, class Traits>
 class AdvectionForceOperator;
 
 
 namespace internal {
 
 
-template <class AnalyticalFluxImp,
-          class BoundaryValueImp,
-          class LocalizableFunctionImp,
-          size_t reconstruction_order,
-          SlopeLimiters slope_lim,
-          class RealizabilityLimiterImp>
-class AdvectionForceOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp,
-                                                                BoundaryValueImp,
-                                                                reconstruction_order,
-                                                                slope_lim,
-                                                                RealizabilityLimiterImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class LocalizableFunctionImp>
+class AdvectionForceOperatorTraits : public AdvectionTraitsBase<AnalyticalFluxImp, BoundaryValueImp>
 {
   static_assert(XT::Functions::is_localizable_function<LocalizableFunctionImp>::value,
                 "LocalizableFunctionImp has to be derived from XT::Functions::LocalizableFunctionInterface!");
 
-  typedef AdvectionTraitsBase<AnalyticalFluxImp,
-                              BoundaryValueImp,
-                              reconstruction_order,
-                              slope_lim,
-                              RealizabilityLimiterImp>
-      BaseType;
+  typedef AdvectionTraitsBase<AnalyticalFluxImp, BoundaryValueImp> BaseType;
 
 public:
   typedef LocalizableFunctionImp LocalizableFunctionType;
@@ -65,9 +45,6 @@ public:
   typedef AdvectionForceOperator<AnalyticalFluxImp,
                                  BoundaryValueImp,
                                  LocalizableFunctionImp,
-                                 reconstruction_order,
-                                 slope_lim,
-                                 RealizabilityLimiterImp,
                                  AdvectionForceOperatorTraits>
       derived_type;
 }; // class AdvectionForceOperatorTraits
@@ -79,15 +56,8 @@ public:
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
           class LocalizableFunctionImp,
-          size_t polOrder = 0,
-          SlopeLimiters slope_lim = SlopeLimiters::minmod,
-          class RealizabilityLimiterImp = NonLimitingRealizabilityLimiter<typename AnalyticalFluxImp::EntityType>,
-          class Traits = internal::AdvectionForceOperatorTraits<AnalyticalFluxImp,
-                                                                BoundaryValueImp,
-                                                                LocalizableFunctionImp,
-                                                                polOrder,
-                                                                slope_lim,
-                                                                RealizabilityLimiterImp>>
+          class Traits =
+              internal::AdvectionForceOperatorTraits<AnalyticalFluxImp, BoundaryValueImp, LocalizableFunctionImp>>
 class AdvectionForceOperator : public Dune::GDT::OperatorInterface<Traits>, public AdvectionOperatorBase<Traits>
 {
   typedef AdvectionOperatorBase<Traits> BaseType;
@@ -102,11 +72,9 @@ public:
 
   AdvectionForceOperator(const AnalyticalFluxType& analytical_flux,
                          const BoundaryValueType& boundary_values,
-                         const LocalizableFunctionType& dx,
-                         const bool is_linear = false)
-    : BaseType(analytical_flux, boundary_values, is_linear)
+                         const LocalizableFunctionType& dx)
+    : BaseType(analytical_flux, boundary_values)
     , dx_(dx)
-    , is_linear_(is_linear)
   {
   }
 
@@ -114,12 +82,9 @@ public:
                          const BoundaryValueType& boundary_values,
                          const LocalizableFunctionType& dx,
                          const OnedQuadratureType& quadrature_1d,
-                         const std::shared_ptr<RealizabilityLimiterImp>& realizability_limiter = nullptr,
-                         const bool is_linear = false,
                          const RangeFieldType alpha = BoundaryValueImp::dimDomain)
-    : BaseType(analytical_flux, boundary_values, is_linear, quadrature_1d, realizability_limiter)
+    : BaseType(analytical_flux, boundary_values, quadrature_1d)
     , dx_(dx)
-    , is_linear_(is_linear)
     , alpha_(alpha)
   {
   }
@@ -128,12 +93,11 @@ public:
   template <class SourceType, class RangeType>
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
   {
-    BaseType::apply(source, range, param, dx_, is_linear_, alpha_);
+    BaseType::apply(source, range, param, dx_, alpha_);
   }
 
 private:
   const LocalizableFunctionType& dx_;
-  const bool is_linear_;
   const RangeFieldType alpha_;
 }; // class AdvectionForceOperator
 

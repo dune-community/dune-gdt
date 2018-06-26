@@ -33,17 +33,17 @@ namespace GDT {
 
 #if HAVE_MATEXP
 
-template <class DiscreteFunctionType, class RhsEvaluationType>
+template <class DiscreteFunctionType, class RhsEvaluationType, class MatrixType>
 class MatrixExponentialFunctor
     : public XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType>
 {
   typedef typename XT::Grid::Functor::Codim0<typename DiscreteFunctionType::SpaceType::GridLayerType> BaseType;
   typedef typename RhsEvaluationType::RangeFieldType FieldType;
+  typedef typename RhsEvaluationType::RangeType RangeType;
   static const size_t dimRange = RhsEvaluationType::dimRange;
 
 public:
   using typename BaseType::EntityType;
-  typedef FieldMatrix<FieldType, dimRange, dimRange> MatrixType;
 
   MatrixExponentialFunctor(DiscreteFunctionType& solution,
                            const double t,
@@ -57,8 +57,12 @@ public:
     , dt_(dt)
     , rhs_evaluation_(rhs_evaluation)
     , matrix_exponentials_(matrix_exponentials)
-    , matrix_exponential_integrals_(matrix_exponential_integrals)
+    , int_exp_mAdt_b_(matrix_exponential_integrals.size())
   {
+    for (size_t ii = 0; ii < matrix_exponential_integrals.size(); ++ii) {
+      const auto& b = rhs_evaluation_.values()[ii]->b();
+      matrix_exponential_integrals[ii].mv(b, int_exp_mAdt_b_[ii]);
+    }
   }
 
   // Solves d_t u(t) = A u(t) + b locally on each entity
@@ -76,14 +80,11 @@ public:
     const auto u0 = solution_local->evaluate(center);
 
     const size_t subdomain = rhs_evaluation_.subdomain(entity);
-    const auto& b = rhs_evaluation_.values()[subdomain]->b();
     const auto& exp_Adt = matrix_exponentials_[subdomain];
-    const auto& int_exp_mAdt = matrix_exponential_integrals_[subdomain];
 
     // calculate solution u = exp(A dt) (u0 + int_exp_mAdt b)
-    FieldVector<FieldType, dimRange> u(0), ret;
-    int_exp_mAdt.mv(b, u);
-    u += u0;
+    FieldVector<FieldType, dimRange> ret;
+    const auto u = int_exp_mAdt_b_[subdomain] + u0;
     exp_Adt.mv(u, ret);
 
     // write to return vector
@@ -98,7 +99,7 @@ private:
   const double dt_;
   const RhsEvaluationType& rhs_evaluation_;
   const std::vector<MatrixType>& matrix_exponentials_;
-  const std::vector<MatrixType>& matrix_exponential_integrals_;
+  std::vector<RangeType> int_exp_mAdt_b_;
 };
 
 
@@ -121,7 +122,9 @@ public:
   typedef typename OperatorType::RhsEvaluationType EvaluationType;
   static const size_t dimDomain = DiscreteFunctionType::dimDomain;
   static const size_t dimRange = DiscreteFunctionType::dimRange;
-  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+  typedef Dune::FieldMatrix<RangeFieldType, dimRange, dimRange> FieldMatrixType;
+  typedef XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> DenseMatrixType;
+  typedef XT::LA::CommonSparseOrDenseMatrixCsr<RangeFieldType> SparseMatrixType;
 
   typedef typename XT::Functions::AffineFluxFunction<typename DiscreteFunctionType::EntityType,
                                                      DomainFieldType,
@@ -151,8 +154,8 @@ public:
     , op_(op)
     , evaluation_(static_cast<const AffineCheckerboardType&>(op_.evaluation()))
     , num_subdomains_(evaluation_.subdomains())
-    , matrix_exponentials_(num_subdomains_)
-    , matrix_exponential_integrals_(num_subdomains_)
+    , matrix_exponentials_(num_subdomains_, SparseMatrixType(dimRange, dimRange))
+    , matrix_exponential_integrals_(num_subdomains_, SparseMatrixType(dimRange, dimRange))
     , last_dt_(0)
   {
   }
@@ -163,7 +166,7 @@ public:
     auto& t = current_time();
     auto& u_n = current_solution();
     calculate_matrix_exponentials(actual_dt);
-    MatrixExponentialFunctor<DiscreteFunctionType, AffineCheckerboardType> functor(
+    MatrixExponentialFunctor<DiscreteFunctionType, AffineCheckerboardType, SparseMatrixType> functor(
         u_n, t, actual_dt, evaluation_, matrix_exponentials_, matrix_exponential_integrals_);
     SystemAssembler<typename DiscreteFunctionType::SpaceType> assembler(u_n.space());
     assembler.append(functor);
@@ -205,25 +208,48 @@ private:
   {
     const auto& affine_function = *(evaluation_.values()[index]);
     assert(affine_function.A().size() == 1 && "Not implemented for dimRangeCols > 1!");
-    auto A = affine_function.A()[0].operator std::unique_ptr<MatrixType>();
+    auto A = affine_function.A()[0].operator std::unique_ptr<FieldMatrixType>();
 
     // calculate matrix exponential exp(A*dt)
-    auto Adt = XT::Common::make_unique<MatrixType>(*A);
+    auto Adt = XT::Common::make_unique<DenseMatrixType>(*A);
     *Adt *= dt;
     // get pointer to the underlying array of the FieldMatrix
     RangeFieldType* Adt_array = &((*Adt)[0][0]);
     const double* exp_Adt_array = r8mat_expm1(dimRange, Adt_array);
-    auto& exp_Adt = matrix_exponentials_[index];
+    auto& exp_Adt = *Adt; // we do not need Adt anymore, use it as storage for exp_Adt
     std::copy_n(exp_Adt_array, dimRange * dimRange, &(exp_Adt[0][0]));
     delete[] exp_Adt_array;
+    matrix_exponentials_[index] = SparseMatrixType(exp_Adt, true);
 
     // calculate \int_0^{dt} exp(-At) dt
     // see https://math.stackexchange.com/questions/658276/integral-of-matrix-exponential
     // if A is invertible, the integral is -A^{-1}(exp(-Adt)-I)
     // in general, it is the power series dt*(I + (-Adt)/(2!) + (-Adt)^2/(3!) + ... + (-Adt)^{n-1}/(n!) + ...)
-    auto& int_exp_mAdt = matrix_exponential_integrals_[index];
-    auto A_inverse = XT::Common::make_unique<MatrixType>(*A);
+    auto A_inverse = XT::Common::make_unique<DenseMatrixType>(*A);
+    auto& int_exp_mAdt = *Adt; // use Adt's storage again
     try {
+      // For 1x1, 2x2 and 3x3 matrices, dune-common only checks whether the matrix is actually invertible if
+      // DUNE_FMatrix_WITH_CHECKING is set. We always want to check to
+      // be able to catch the error, so we have to copy the checks over from dune/common/fmatrix.hh.
+      if (dimRange == 1) {
+        if (fvmeta::absreal((*A)[0][0]) < FMatrixPrecision<>::absolute_limit())
+          DUNE_THROW(FMatrixError, "matrix is singular");
+      } else if (dimRange == 2) {
+        RangeFieldType det = (*A)[0][0] * (*A)[1][1] - (*A)[0][1] * (*A)[1][0];
+        if (fvmeta::absreal(det) < FMatrixPrecision<>::absolute_limit())
+          DUNE_THROW(FMatrixError, "matrix is singular");
+      } else if (dimRange == 3) {
+        RangeFieldType t4 = (*A)[0][0] * (*A)[1][1];
+        RangeFieldType t6 = (*A)[0][0] * (*A)[1][2];
+        RangeFieldType t8 = (*A)[0][1] * (*A)[1][0];
+        RangeFieldType t10 = (*A)[0][2] * (*A)[1][0];
+        RangeFieldType t12 = (*A)[0][1] * (*A)[2][0];
+        RangeFieldType t14 = (*A)[0][2] * (*A)[2][0];
+        RangeFieldType det = (t4 * (*A)[2][2] - t6 * (*A)[2][1] - t8 * (*A)[2][2] + t10 * (*A)[2][1] + t12 * (*A)[1][2]
+                              - t14 * (*A)[1][1]);
+        if (fvmeta::absreal(det) < FMatrixPrecision<>::absolute_limit())
+          DUNE_THROW(FMatrixError, "matrix is singular");
+      }
       A_inverse->invert();
       *A_inverse *= -1.;
 
@@ -235,7 +261,6 @@ private:
       const double* exp_mAdt_array = r8mat_expm1(dimRange, mAdt_array);
       std::copy_n(exp_mAdt_array, dimRange * dimRange, &(int_exp_mAdt[0][0]));
       delete[] exp_mAdt_array;
-
       for (size_t ii = 0; ii < dimRange; ++ii)
         int_exp_mAdt[ii][ii] -= 1.;
       int_exp_mAdt.leftmultiply(*A_inverse);
@@ -246,13 +271,14 @@ private:
       std::copy_n(int_exp_mAdt_array, dimRange * dimRange, &(int_exp_mAdt[0][0]));
       delete[] int_exp_mAdt_array;
     } // catch(...)
+    matrix_exponential_integrals_[index] = SparseMatrixType(int_exp_mAdt, true);
   } // void get_matrix_exponential(...)
 
   const OperatorType& op_;
   const AffineCheckerboardType& evaluation_;
   size_t num_subdomains_;
-  std::vector<MatrixType> matrix_exponentials_;
-  std::vector<MatrixType> matrix_exponential_integrals_;
+  std::vector<SparseMatrixType> matrix_exponentials_;
+  std::vector<SparseMatrixType> matrix_exponential_integrals_;
   RangeFieldType last_dt_;
 };
 
@@ -261,6 +287,7 @@ private:
 template <class OperatorImp, class DiscreteFunctionImp>
 class MatrixExponentialTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
 {
+  virtual ~MatrixExponentialTimeStepper() = default; // silence warning
   static_assert(AlwaysFalse<OperatorImp>::value, "You are missing the matrix_exponential library!");
 };
 

@@ -15,6 +15,8 @@
 
 #include <dune/grid/common/datahandleif.hh>
 
+#include <dune/xt/common/unused.hh>
+
 namespace Dune {
 namespace GDT {
 
@@ -92,7 +94,8 @@ public:
   }
 
   template <class MessageBuffer, class EntityType>
-  std::enable_if_t<EntityType::codimension == 0> scatter(MessageBuffer& buff, const EntityType& entity, size_t n)
+  std::enable_if_t<EntityType::codimension == 0>
+  scatter(MessageBuffer& buff, const EntityType& entity, size_t DXTC_DEBUG_ONLY(n))
   {
     const auto& mapper = space_.mapper();
     const auto& num_local_dofs = mapper.numDofs(entity);

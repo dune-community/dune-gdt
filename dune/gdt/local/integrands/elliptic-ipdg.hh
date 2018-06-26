@@ -945,8 +945,10 @@ public:
     const TensorType local_diffusion_tensor_value_en = local_diffusion_tensor_en.evaluate(local_point_en);
     const auto local_diffusion_factor_value_ne = local_diffusion_factor_ne.evaluate(local_point_ne);
     const TensorType local_diffusion_tensor_value_ne = local_diffusion_tensor_ne.evaluate(local_point_ne);
-    const auto diffusion_value_en = local_diffusion_tensor_value_en * local_diffusion_factor_value_en;
-    const auto diffusion_value_ne = local_diffusion_tensor_value_ne * local_diffusion_factor_value_ne;
+    auto diffusion_value_en = local_diffusion_tensor_value_en;
+    diffusion_value_en *= local_diffusion_factor_value_en;
+    auto diffusion_value_ne = local_diffusion_tensor_value_ne;
+    diffusion_value_ne *= local_diffusion_factor_value_ne;
     // compute penalty factor (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(
         test_base_en.order(), std::max(ansatz_base_en.order(), std::max(test_base_ne.order(), ansatz_base_ne.order())));
@@ -1365,8 +1367,8 @@ public:
     const auto normal = intersection.unitOuterNormal(local_point);
     // evaluate local function
     const auto diffusion_factor_value = local_diffusion_factor.evaluate(local_point_entity);
-    const TensorType diffusion_tensor_value = local_diffusion_tensor.evaluate(local_point_entity);
-    const auto diffusion_value = diffusion_tensor_value * diffusion_factor_value;
+    TensorType diffusion_value = local_diffusion_tensor.evaluate(local_point_entity);
+    diffusion_value *= diffusion_factor_value;
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t max_polorder = std::max(test_base.order(), ansatz_base.order());
     const R sigma = internal::boundary_sigma(max_polorder);
@@ -1619,8 +1621,8 @@ public:
     // evaluate local functions
     const auto dirichlet_value = local_dirichlet.evaluate(local_point_entity);
     const auto diffusion_factor_value = local_diffusion_factor.evaluate(local_point_entity);
-    const TensorType diffusion_tensor_value = local_diffusion_tensor.evaluate(local_point_entity);
-    const auto diffusion_value = diffusion_tensor_value * diffusion_factor_value;
+    TensorType diffusion_value = local_diffusion_tensor.evaluate(local_point_entity);
+    diffusion_value *= diffusion_factor_value;
     // compute penalty (see Epshteyn, Riviere, 2007)
     const size_t polorder = test_base.order();
     const R sigma = internal::boundary_sigma(polorder);

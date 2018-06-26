@@ -35,7 +35,7 @@ std::vector<double> HyperbolicEocExpectations<Hyperbolic::BurgersTestCase<Yasp2,
     if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0))
       return {1.83e-03, 8.49e-04};
     else if (Dune::XT::Common::FloatCmp::eq(test_case.t_end(), 1.0 / 5.0))
-      return {3.60e-04, 1.70e-04};
+      return {3.63e-04, 1.69e-04};
     else
       EXPECT_TRUE(false) << "test results missing for t_end = " << Dune::XT::Common::to_string(test_case.t_end());
   } else {

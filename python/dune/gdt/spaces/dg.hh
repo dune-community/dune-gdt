@@ -27,14 +27,14 @@
                                                                  _r,                                                   \
                                                                  _rC>>::bind(_m)
 
-//#if HAVE_ALBERTA
-//#define _DUNE_GDT_SPACES_DG_BIND_ALBERTA_LAYER(_m, _layer)                                                       \
-//  _DUNE_GDT_SPACES_DG_BIND(_m, ALBERTA_2D, _layer, 1, 1)
-//#define _DUNE_GDT_SPACES_DG_BIND_ALBERTA(_m)                                                                     \
-//  _DUNE_GDT_SPACES_DG_BIND_ALBERTA_LAYER(_m, dd_subdomain);                                                      \
-//  _DUNE_GDT_SPACES_DG_BIND_ALBERTA_LAYER(_m, leaf);                                                              \
-//  _DUNE_GDT_SPACES_DG_BIND_ALBERTA_LAYER(_m, level)
-//#else
+/*#if HAVE_ALBERTA
+#define _DUNE_GDT_SPACES_DG_BIND_ALBERTA_LAYER(_m, _layer)                                                       \
+  _DUNE_GDT_SPACES_DG_BIND(_m, ALBERTA_2D, _layer, 1, 1)
+#define _DUNE_GDT_SPACES_DG_BIND_ALBERTA(_m)                                                                     \
+  _DUNE_GDT_SPACES_DG_BIND_ALBERTA_LAYER(_m, dd_subdomain);                                                      \
+  _DUNE_GDT_SPACES_DG_BIND_ALBERTA_LAYER(_m, leaf);                                                              \
+  _DUNE_GDT_SPACES_DG_BIND_ALBERTA_LAYER(_m, level)
+#else*/
 #define _DUNE_GDT_SPACES_DG_BIND_ALBERTA(_m)
 //#endif
 

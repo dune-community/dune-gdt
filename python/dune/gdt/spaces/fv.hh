@@ -27,13 +27,13 @@
                                                                  _r,                                                   \
                                                                  _rC>>::bind(_m)
 
-//#if HAVE_ALBERTA
-//#define _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA_LAYER(_m, _layer)                                                       \
-//  _DUNE_GDT_SPACES_FV_BIND_GDT(_m, ALBERTA_2D, _layer, 1, 1)
-//#define _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA(_m)                                                                     \
-//  _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA_LAYER(_m, leaf);                                                              \
-//  _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA_LAYER(_m, level)
-//#else
+/*#if HAVE_ALBERTA
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA_LAYER(_m, _layer)                                                       \
+  _DUNE_GDT_SPACES_FV_BIND_GDT(_m, ALBERTA_2D, _layer, 1, 1)
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA(_m)                                                                     \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA_LAYER(_m, leaf);                                                              \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA_LAYER(_m, level)
+#else*/
 #define _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA(_m)
 //#endif
 
@@ -47,12 +47,12 @@
 #define _DUNE_GDT_SPACES_FV_BIND_GDT_ALU(_m)
 #endif
 
-//#if HAVE_DUNE_UGGRID || HAVE_UG
-//#define _DUNE_GDT_SPACES_FV_BIND_GDT_UG_LAYER(_m, _layer) _DUNE_GDT_SPACES_FV_BIND_GDT(_m, UG_2D, _layer, 1, 1)
-//#define _DUNE_GDT_SPACES_FV_BIND_GDT_UG(_m)                                                                          \
-//  _DUNE_GDT_SPACES_FV_BIND_GDT_UG_LAYER(_m, leaf);                                                                   \
-//  _DUNE_GDT_SPACES_FV_BIND_GDT_UG_LAYER(_m, level)
-//#else
+/*#if HAVE_DUNE_UGGRID || HAVE_UG
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_UG_LAYER(_m, _layer) _DUNE_GDT_SPACES_FV_BIND_GDT(_m, UG_2D, _layer, 1, 1)
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_UG(_m)                                                                          \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_UG_LAYER(_m, leaf);                                                                   \
+  _DUNE_GDT_SPACES_FV_BIND_GDT_UG_LAYER(_m, level)
+#else*/
 #define _DUNE_GDT_SPACES_FV_BIND_GDT_UG(_m)
 //#endif
 

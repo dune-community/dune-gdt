@@ -123,7 +123,7 @@ public:
       auto fe = std::make_shared<FiniteElementType>(geometry_type, p);
       const auto& lp = fe->localInterpolation().lagrangePoints();
       std::vector<DomainType> lagrange_points(lp.size());
-      for (size_t ii = 0; ii < lp.size(); ++ii)
+      for (unsigned int ii = 0; ii < lp.size(); ++ii)
         lagrange_points[ii] = lp[ii].point();
       lagrange_points_->insert(std::make_pair(geometry_type, std::move(lagrange_points)));
       finite_elements_->insert(std::make_pair(geometry_type, std::move(fe)));

@@ -29,7 +29,7 @@ struct EllipticDefaultTolerances
 {
 #ifndef NDEBUG
   static constexpr const double constant = 5.05e-13;
-  static constexpr const double linear = 1.728e-13;
+  static constexpr const double linear = 1.75e-13;
   static constexpr const double quadratic = 9.83e-13;
 #else
   static constexpr const double constant = 6.54e-13;

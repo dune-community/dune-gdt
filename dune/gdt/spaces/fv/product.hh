@@ -84,7 +84,7 @@ public:
 
   FvProductSpace(GridLayerType grd_layr)
     : default_fv_space_(grd_layr)
-    , product_fv_mapper_(grd_layr)
+    , product_fv_mapper_(default_fv_space_.grid_layer())
     , factor_space_(grd_layr)
   {
   }

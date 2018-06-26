@@ -14,10 +14,13 @@
 
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/common/parameter.hh>
+
+#include <dune/xt/functions/exceptions.hh>
+
 #include <dune/xt/grid/type_traits.hh>
 
-#include <dune/gdt/exceptions.hh>
 #include <dune/gdt/discretefunction/reinterpret.hh>
+#include <dune/gdt/exceptions.hh>
 #include <dune/gdt/operators/base.hh>
 #include <dune/gdt/projections/lagrange.hh>
 
@@ -83,7 +86,7 @@ public:
   {
     try {
       BaseOperatorType::apply();
-    } catch (XT::Common::Exceptions::reinterpretation_error& ee) {
+    } catch (XT::Functions::Exceptions::reinterpretation_error& ee) {
       DUNE_THROW(prolongation_error,
                  "This prolongation (using a lagrange projection) failed, because the source could not be reinterpreted"
                      << " on the given grid layer!\n"

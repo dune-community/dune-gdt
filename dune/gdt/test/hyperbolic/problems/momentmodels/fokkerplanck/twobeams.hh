@@ -19,7 +19,7 @@
 
 #include <dune/gdt/local/fluxes/entropybased.hh>
 
-#include "fokkerplanckequation.hh"
+#include "base.hh"
 
 namespace Dune {
 namespace GDT {
@@ -44,7 +44,6 @@ public:
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
   using typename BaseType::QuadratureType;
-  static const bool linear = true;
 
   using BaseType::default_boundary_cfg;
   using BaseType::default_quadrature;

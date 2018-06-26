@@ -13,6 +13,8 @@
 
 #include "base.hh"
 
+#include <dune/xt/common/fvector.hh>
+
 namespace Dune {
 namespace GDT {
 namespace Hyperbolic {
@@ -50,8 +52,14 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
+  using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
+
+  static std::string static_id()
+  {
+    return "pcw";
+  }
 
   PiecewiseMonomials(const TriangulationType& triangulation = create_triangulation(),
                      const QuadratureType& /*quadrature*/ = QuadratureType())
@@ -69,14 +77,27 @@ public:
 
   virtual RangeType evaluate(const DomainType& v) const override final
   {
+    size_t dummy;
+    return evaluate(v, false, dummy);
+  } // ... evaluate(...)
+
+  virtual RangeType evaluate(const DomainType& v, bool split_boundary, size_t& /*num_faces*/) const
+  {
     RangeType ret(0);
+    bool boundary = false;
     for (size_t ii = 0; ii < dimRange / 2; ++ii) {
+      if (XT::Common::FloatCmp::eq(v[0], triangulation_[ii]))
+        boundary = true;
       if (XT::Common::FloatCmp::ge(v[0], triangulation_[ii])
-          && XT::Common::FloatCmp::lt(v[0], triangulation_[ii + 1])) {
+          && XT::Common::FloatCmp::le(v[0], triangulation_[ii + 1])) {
         ret[2 * ii] = 1;
         ret[2 * ii + 1] = v[0];
       }
     }
+    if (XT::Common::FloatCmp::eq(v[0], triangulation_[dimRange / 2]))
+      boundary = true;
+    if (split_boundary && boundary)
+      ret /= 2.;
     return ret;
   } // ... evaluate(...)
 
@@ -165,6 +186,24 @@ public:
     return ret;
   }
 
+  virtual MatrixType reflection_matrix(const DomainType& n) const
+  {
+    MatrixType ret(dimRange, dimRange, 0);
+    for (size_t ii = 0; ii < dimDomain; ++ii)
+      if (XT::Common::FloatCmp::ne(n[ii], 0.))
+        if (XT::Common::FloatCmp::ne(std::abs(n[ii]), 1.))
+          DUNE_THROW(NotImplemented, "Implemented only for +-e_i where e_i is the i-th canonical basis vector!");
+    const auto mass_mat = mass_matrix();
+    for (size_t ii = 0; ii < dimRange; ++ii) {
+      for (size_t jj = 0; jj < dimRange / 2; ++jj) {
+        ret[ii][2 * jj] = mass_mat[ii][dimRange - 1 - (2 * jj + 1)];
+        ret[ii][2 * jj + 1] = -mass_mat[ii][dimRange - 1 - 2 * jj];
+      }
+    }
+    ret.rightmultiply(mass_matrix_inverse());
+    return ret;
+  }
+
   template <class DiscreteFunctionType>
   VisualizerType<DiscreteFunctionType> visualizer() const
   {
@@ -172,6 +211,24 @@ public:
       sum_divisible_by_visualizer<DiscreteFunctionType, dimRange>(u_n, filename_prefix, ii, 2);
     };
   }
+
+  RangeFieldType calculate_psi_from_moments(const RangeType& val) const
+  {
+    RangeFieldType psi(0);
+    for (size_t rr = 0; rr < dimRange; rr += 2)
+      psi += val[rr];
+    return psi;
+  }
+
+  static StringifierType stringifier()
+  {
+    return [](const RangeType& val) {
+      RangeFieldType psi(0);
+      for (size_t ii = 0; ii < dimRange; ii += 2)
+        psi += val[ii];
+      return XT::Common::to_string(psi, 15);
+    };
+  } // ... stringifier()
 
   std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
   {
@@ -195,13 +252,25 @@ public:
 
   RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
   {
-    RangeFieldType u_sum;
-    auto u_bar_sum = u_sum;
-    for (size_t ii = 0; ii < u.size(); ii += 4) {
+    RangeFieldType u_sum(0.);
+    RangeFieldType u_bar_sum(0.);
+    for (size_t ii = 0; ii < u.size(); ii += 2) {
       u_sum += u[ii];
       u_bar_sum += u_bar[ii];
     }
     return 2 * std::max(u_sum, u_bar_sum);
+    //    return 2 * std::max(u[0], u_bar[0]);
+  }
+
+  // get indices of all faces that contain point
+  std::vector<size_t> get_face_indices(const DomainType& v) const
+  {
+    std::vector<size_t> face_indices;
+    for (size_t jj = 0; jj < triangulation_.size() - 1; ++jj)
+      if (XT::Common::FloatCmp::ge(v[0], triangulation_[jj]) && XT::Common::FloatCmp::le(v[0], triangulation_[jj + 1]))
+        face_indices.push_back(jj);
+    assert(face_indices.size());
+    return face_indices;
   }
 
 private:
@@ -226,24 +295,30 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
+  using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
+
+  using BaseType::barycentre_rule;
 
   PiecewiseMonomials(const TriangulationType& triangulation, const QuadratureType& quadrature)
     : triangulation_(triangulation)
     , quadrature_(quadrature)
   {
     assert(4 * triangulation_.faces().size() == dimRange);
+    calculate_plane_equations();
   }
 
   PiecewiseMonomials(const size_t refinements = 0,
                      const size_t quadrature_refinements = 4,
+                     const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule = barycentre_rule(),
                      std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points =
                          {{1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
-    : triangulation_(initial_points, refinements)
+    : triangulation_(initial_points, refinements, reference_quadrature_rule)
     , quadrature_(triangulation_.quadrature_rule(quadrature_refinements))
   {
     assert(4 * triangulation_.faces().size() == dimRange);
+    calculate_plane_equations();
   }
 
   PiecewiseMonomials(const size_t refinements,
@@ -254,6 +329,7 @@ public:
     , quadrature_(quadrature)
   {
     assert(4 * triangulation_.faces().size() == dimRange);
+    calculate_plane_equations();
   }
 
   virtual RangeType evaluate(const DomainType& v) const override final
@@ -265,66 +341,18 @@ public:
   virtual RangeType evaluate(const DomainType& v, bool split_boundary, size_t& num_faces) const
   {
     RangeType ret(0);
-    FieldMatrix<RangeFieldType, 3, 3> vertices_matrix;
-    FieldMatrix<RangeFieldType, 3, 3> determinant_matrix;
-    bool success = false;
-    size_t num_adjacent_faces = 0;
-    for (const auto& face : triangulation_.faces()) {
-      bool v_in_this_facet = true;
-      bool second_check = true;
-      const auto& vertices = face->vertices();
-      for (size_t ii = 0; ii < 3; ++ii) {
-        // if v is not on the same octant of the sphere as the vertices, return false
-        // assumes the triangulation is fine enough that vertices[ii]*vertices[jj] >= 0 for all triangles
-        const auto scalar_prod = v * vertices[ii]->position();
-        if (XT::Common::FloatCmp::lt(scalar_prod, 0.)) {
-          v_in_this_facet = false;
-          second_check = false;
-          break;
-        } else if (XT::Common::FloatCmp::eq(scalar_prod, 1.)) {
-          ++num_adjacent_faces;
-          second_check = false;
-          break;
-        }
-        vertices_matrix[ii] = vertices[ii]->position();
-      } // ii
-
-      if (second_check) {
-        // Vertices are ordered counterclockwise, so if the point is inside the spherical triangle,
-        // the coordinate system formed by two adjacent vertices and v is always right-handed, i.e.
-        // the triple product is positive.
-        // The triple products that need to be positive are the determinants of the matrices (v1, v2, v), (v2, v3, v),
-        // (v3, v1, v), where vi is the ith vertex. Swapping two columns changes the sign of det, the matrices used
-        // below all have an even number of column swaps.
-        // As we have checked before that v is in the same octant as the vertices, the determinant is 0 iff v is on
-        // an edge of the facet. In that case, assign half of the basis function to this edge.
-        for (size_t ii = 0; ii < 3; ++ii) {
-          determinant_matrix = vertices_matrix;
-          determinant_matrix[ii] = v;
-          auto det = determinant_matrix.determinant();
-          if (XT::Common::FloatCmp::eq(det, 0.)) {
-            ++num_adjacent_faces;
-            break;
-          } else if (det < 0.) {
-            v_in_this_facet = false;
-            break;
-          }
-        } // ii
-      } // if (second_check)
-      if (v_in_this_facet) {
-        const auto face_index = face->index();
-        ret[4 * face_index] = 1.;
-        for (size_t ii = 1; ii < 4; ++ii) {
-          assert(4 * face_index + ii < ret.size());
-          ret[4 * face_index + ii] = v[ii - 1];
-        }
-        success = true;
+    const auto face_indices = triangulation_.get_face_indices(v);
+    num_faces = face_indices.size();
+    assert(num_faces);
+    for (const auto& face_index : face_indices) {
+      ret[4 * face_index] = 1.;
+      for (size_t ii = 1; ii < 4; ++ii) {
+        assert(4 * face_index + ii < ret.size());
+        ret[4 * face_index + ii] = v[ii - 1];
       }
-    } // faces
-    if (split_boundary && num_adjacent_faces > 0)
-      ret /= RangeFieldType(num_adjacent_faces);
-    num_faces = num_adjacent_faces > 0 ? num_adjacent_faces : 1;
-    assert(success);
+    } // face_indices
+    if (split_boundary)
+      ret /= RangeFieldType(num_faces);
     return ret;
   } // ... evaluate(...)
 
@@ -385,6 +413,22 @@ public:
     return B_kinetic;
   } // ... kinetic_flux_matrices()
 
+  virtual MatrixType reflection_matrix(const DomainType& n) const
+  {
+    MatrixType ret(dimRange, dimRange, 0);
+    size_t direction;
+    for (size_t ii = 0; ii < dimDomain; ++ii) {
+      if (XT::Common::FloatCmp::ne(n[ii], 0.)) {
+        direction = ii;
+        if (XT::Common::FloatCmp::ne(std::abs(n[ii]), 1.))
+          DUNE_THROW(NotImplemented, "Implemented only for +-e_i where e_i is the i-th canonical basis vector!");
+      }
+    }
+    parallel_quadrature(quadrature_, ret, direction, true);
+    ret.rightmultiply(mass_matrix_inverse());
+    return ret;
+  }
+
   template <class DiscreteFunctionType>
   VisualizerType<DiscreteFunctionType> visualizer() const
   {
@@ -392,6 +436,24 @@ public:
       sum_divisible_by_visualizer<DiscreteFunctionType, dimRange>(u_n, filename_prefix, ii, 4);
     };
   }
+
+  RangeFieldType calculate_psi_from_moments(const RangeType& val) const
+  {
+    RangeFieldType psi(0);
+    for (size_t rr = 0; rr < dimRange; rr += 4)
+      psi += val[rr];
+    return psi;
+  }
+
+  static StringifierType stringifier()
+  {
+    return [](const RangeType& val) {
+      RangeFieldType psi(0);
+      for (size_t ii = 0; ii < dimRange; ii += 4)
+        psi += val[ii];
+      return XT::Common::to_string(psi, 15);
+    };
+  } // ... stringifier()
 
   std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
   {
@@ -410,13 +472,18 @@ public:
 
   RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
   {
-    RangeFieldType u_sum(0);
-    auto u_bar_sum = u_sum;
+    RangeFieldType u_sum(0.);
+    RangeFieldType u_bar_sum(0.);
     for (size_t ii = 0; ii < u.size(); ii += 4) {
       u_sum += u[ii];
       u_bar_sum += u_bar[ii];
     }
     return 2 * std::max(u_sum, u_bar_sum);
+  }
+
+  std::vector<size_t> get_face_indices(const DomainType& v) const
+  {
+    return triangulation_.get_face_indices(v);
   }
 
   const TriangulationType& triangulation() const
@@ -429,32 +496,80 @@ public:
     return quadrature_;
   }
 
+  // calculates <b(v) dirac(v-dirac_position)>
+  RangeType integrate_dirac_at(const DomainType& dirac_position) const
+  {
+    size_t dummy;
+    return evaluate(dirac_position, true, dummy);
+  }
+
+  bool obviously_realizable(const RangeType& u) const
+  {
+    static const RangeFieldType tol = 1e-6;
+    for (size_t jj = 0; jj < dimRange / 4; ++jj) {
+      const size_t offset = 4 * jj;
+      const auto& u0 = u[offset];
+      if (u0 < tol)
+        return false;
+      FieldVector<RangeFieldType, 3> u_norm{u[offset + 1], u[offset + 2], u[offset + 3]};
+      u_norm /= u0;
+      if ((n_[jj] * u_norm < d_[jj] + tol) || (u_norm.two_norm() > 1 - tol))
+        return false;
+    } // jj
+    return true;
+  }
+
 protected:
   using BaseType::parallel_quadrature;
 
   virtual void calculate_in_thread(const QuadratureType& quadrature,
                                    MatrixType& local_matrix,
                                    const size_t v_index,
-                                   const std::vector<size_t>& indices) const override
+                                   const std::vector<size_t>& indices,
+                                   const bool reflecting = false) const override
   {
     for (const auto& jj : indices) {
       const auto& quad_point = quadrature[jj];
       const auto& v = quad_point.position();
+      auto v_reflected = v;
+      if (reflecting)
+        v_reflected[v_index] *= -1.;
       size_t num_adjacent_faces;
       const auto basis_evaluated = evaluate(v, false, num_adjacent_faces);
+      const auto basis_reflected = evaluate(v_reflected);
       const auto& weight = quad_point.weight();
-      const auto factor = (v_index == size_t(-1)) ? 1. : v[v_index];
+      const auto factor = (reflecting || v_index == size_t(-1)) ? 1. : v[v_index];
       for (size_t kk = 0; kk < local_matrix.N(); kk += 4)
         for (size_t nn = kk; nn < kk + 4; ++nn)
           for (size_t mm = kk; mm < kk + 4; ++mm)
-            local_matrix[nn][mm] += basis_evaluated[nn] * basis_evaluated[mm] * factor * weight / num_adjacent_faces;
+            local_matrix[nn][mm] += basis_evaluated[nn] * (reflecting ? basis_reflected[mm] : basis_evaluated[mm])
+                                    * factor * weight / num_adjacent_faces;
     } // ii
   } // void calculate_in_thread(...)
+
+  void calculate_plane_equations()
+  {
+    for (const auto& face : triangulation_.faces()) {
+      const auto& vertices = face->vertices();
+      const auto index = face->index();
+      // calculate plane equation defined by three points
+      const DomainType v0v1 = vertices[1]->position() - vertices[0]->position();
+      const DomainType v0v2 = vertices[2]->position() - vertices[0]->position();
+      auto& n = n_[index];
+      n = XT::Common::cross_product(v0v1, v0v2);
+      if (n * vertices[0]->position() < 0.)
+        n *= -1.;
+      n /= n.two_norm();
+      d_[index] = n * vertices[0]->position();
+    }
+  }
 
   using BaseType::integrated_initializer;
 
   const TriangulationType triangulation_;
   const QuadratureType quadrature_;
+  FieldVector<FieldVector<DomainFieldType, 3>, dimRange / 4> n_;
+  FieldVector<DomainFieldType, dimRange / 4> d_;
 }; // class PiecewiseMonomials<DomainFieldType, 3, ...>
 
 

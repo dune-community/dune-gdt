@@ -461,7 +461,8 @@ public:
   void
   evaluate(const XT::Functions::LocalfunctionInterface<EntityType, DomainFieldType, dimDomain, R, 1, 1>& localFunction,
            const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& testBase,
-           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>& ansatzBase,
+           const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, r, 1>&
+               DXTC_DEBUG_ONLY(ansatzBase),
            const IntersectionType& intersection,
            const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
            Dune::DynamicMatrix<R>& ret) const

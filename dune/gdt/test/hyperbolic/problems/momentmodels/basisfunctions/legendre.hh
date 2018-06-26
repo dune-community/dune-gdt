@@ -34,18 +34,37 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
+  using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
+  typedef FieldVector<DomainFieldType, dimRange / 2 + 1> TriangulationType;
+
+  LegendrePolynomials()
+    : triangulation_(create_triangulation())
+  {
+  }
+
+  static TriangulationType create_triangulation()
+  {
+    TriangulationType ret;
+    for (size_t ii = 0; ii < dimRange / 2 + 1; ++ii)
+      ret[ii] = -1. + (4. * ii) / dimRange;
+    return ret;
+  }
+
+  static std::string static_id()
+  {
+    return "legendre";
+  }
 
   virtual RangeType evaluate(const DomainType& v) const override
   {
-    RangeType ret(0);
-    for (size_t ii = 0; ii < dimRange; ++ii) {
-      for (size_t kk = 0; kk <= ii; ++kk)
-        ret[ii] += std::pow(-v, kk) * XT::Common::binomial_coefficient(ii, kk)
-                   * XT::Common::binomial_coefficient((ii + kk - 1) / 2., ii);
-      ret[ii] *= std::pow(-1, ii) * (1 << ii); // (-2)^ii
-    }
+    RangeType ret;
+    ret[0] = 1.;
+    if (dimRange > 1)
+      ret[1] = v[0];
+    for (size_t ii = 2; ii < dimRange; ++ii)
+      ret[ii] = ((2. * ii - 1.) * v[0] * ret[ii - 1] - (ii - 1.) * ret[ii - 2]) / ii;
     return ret;
   } // ... evaluate(...)
 
@@ -78,12 +97,60 @@ public:
     for (size_t rr = 0; rr < dimRange; ++rr) {
       for (size_t cc = 0; cc < dimRange; ++cc) {
         if (cc == rr - 1)
-          B[rr][cc] = 2 * rr / (4. * rr * rr - 1.);
+          B[rr][cc] = 2. * rr / (4. * rr * rr - 1.);
         else if (cc == rr + 1)
-          B[rr][cc] = (2 * rr + 2.) / ((2. * rr + 1.) * (2. * rr + 3));
+          B[rr][cc] = (2. * rr + 2.) / ((2. * rr + 1.) * (2. * rr + 3));
       }
     }
     return B;
+  }
+
+  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
+  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const
+  {
+    FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
+    auto mm_with_v = mass_matrix_with_v();
+    auto& ret_neg = ret[0][0];
+    auto& ret_pos = ret[0][1];
+    MatrixType mass_matrix_pos(dimRange + 1, dimRange + 1, 0.); // we need to calculate up to P_N
+    size_t N = dimRange;
+    // calculate <P_n P_m>_+ first
+    for (size_t nn = 0; nn <= N; ++nn) {
+      for (size_t mm = 0; mm <= N; ++mm) {
+        if ((nn + mm) % 2) { // nn and mm have different parity
+          if (nn % 2) // n odd
+            mass_matrix_pos[nn][mm] = fmn(static_cast<int>(mm), static_cast<int>(nn));
+          else // n even
+            mass_matrix_pos[nn][mm] = fmn(static_cast<int>(nn), static_cast<int>(mm));
+        } else { // nn and mm are both odd or both even
+          mass_matrix_pos[nn][mm] = (nn == mm) ? 1. / (2. * nn + 1.) : 0.;
+        }
+      } // mm
+    } // nn
+    // now calculate <v P_n P_m>_+ and <v P_n P_m>_-
+    for (size_t nn = 0; nn < N; ++nn) {
+      for (size_t mm = 0; mm < N; ++mm) {
+        ret_pos[nn][mm] = (nn + 1.) / (2. * nn + 1.) * mass_matrix_pos[nn + 1][mm]
+                          + ((nn > 0) ? nn / (2. * nn + 1.) * mass_matrix_pos[nn - 1][mm] : 0.);
+        ret_neg[nn][mm] = mm_with_v[0][nn][mm] - ret_pos[nn][mm];
+      } // mm
+    } // nn
+    return ret;
+  }
+
+  virtual MatrixType reflection_matrix(const DomainType& n) const
+  {
+    MatrixType ret(dimRange, dimRange, 0);
+    for (size_t ii = 0; ii < dimDomain; ++ii)
+      if (XT::Common::FloatCmp::ne(n[ii], 0.))
+        if (XT::Common::FloatCmp::ne(std::abs(n[ii]), 1.))
+          DUNE_THROW(NotImplemented, "Implemented only for +-e_i where e_i is the i-th canonical basis vector!");
+    const auto mass_mat = mass_matrix();
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      for (size_t jj = 0; jj < dimRange; ++jj)
+        ret[ii][jj] = std::pow(-1, ii) * mass_mat[ii][jj];
+    ret.rightmultiply(mass_matrix_inverse());
+    return ret;
   }
 
   MatrixType S() const
@@ -102,6 +169,16 @@ public:
     };
   }
 
+  RangeFieldType calculate_psi_from_moments(const RangeType& val) const
+  {
+    return val[0];
+  }
+
+  static StringifierType stringifier()
+  {
+    return [](const RangeType& val) { return XT::Common::to_string(val[0], 15); };
+  } // ... stringifier()
+
   std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
   {
     RangeType u_iso(0), alpha_iso(0);
@@ -114,6 +191,42 @@ public:
   {
     return 2 * std::max(u[0], u_bar[0]);
   }
+
+  const TriangulationType& triangulation() const
+  {
+    return triangulation_;
+  }
+
+private:
+  static RangeFieldType fmn(const int m, const int n)
+  {
+    assert(!(m % 2));
+    assert(n % 2);
+    // The factorials overflow for large m or n, so do it more complicated
+    // return (std::pow(-1., (m + n + 1) / 2) * XT::Common::factorial(m) * XT::Common::factorial(n))
+    //       / (std::pow(2., m + n - 1) * (m - n) * (m + n + 1) * std::pow(XT::Common::factorial(m / 2), 2)
+    //          * std::pow(XT::Common::factorial((n - 1) / 2), 2));
+
+    RangeFieldType ret = 1;
+    int m_factor = m;
+    int n_factor = n;
+    int m_divisor = m / 2;
+    int n_divisor = (n - 1) / 2;
+    FieldVector<std::vector<RangeFieldType>, 4> factors(std::vector<RangeFieldType>(std::max(m, n)));
+    for (int ii = 0; ii < std::max(m, n); ++ii) {
+      factors[0][ii] = m_factor > 0 ? m_factor-- : 1.;
+      factors[1][ii] = n_factor > 0 ? n_factor-- : 1.;
+      factors[2][ii] = m_divisor > 0 ? 1. / std::pow(m_divisor--, 2) : 1.;
+      factors[3][ii] = n_divisor > 0 ? 1. / std::pow(n_divisor--, 2) : 1.;
+    }
+    for (int ii = 0; ii < std::max(m, n); ++ii) {
+      ret *= factors[0][ii] * factors[1][ii] * factors[2][ii] * factors[3][ii] / 2.;
+    }
+    ret *= std::pow(-1., (m + n + 1) / 2) / ((m - n) * (m + n + 1) * std::pow(2., m + n - 1 - std::max(m, n)));
+    return ret;
+  } // ... fmn(...)
+
+  const TriangulationType triangulation_;
 }; // class LegendrePolynomials<DomainFieldType, 1, ...>
 
 

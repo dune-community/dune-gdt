@@ -92,7 +92,7 @@ public:
   typedef typename Traits::BackendType BackendType;
   typedef typename Traits::EntityType EntityType;
 
-  FvMapper(const GridLayerType& grd_layr)
+  FvMapper(GridLayerType grd_layr)
     : mapper_(new BackendType(grd_layr))
   {
   }
@@ -206,7 +206,7 @@ class FvProductMapper<GridLayerImp, rangeDim, 1>
     : public ProductMapperInterface<internal::FvProductMapperTraits<GridLayerImp, rangeDim, 1>>
 {
   typedef ProductMapperInterface<internal::FvProductMapperTraits<GridLayerImp, rangeDim, 1>> BaseType;
-  typedef FvMapper<GridLayerImp, rangeDim, 1> FvMapperMapperType;
+  typedef FvMapper<GridLayerImp, rangeDim, 1> FvMapperType;
 
 public:
   typedef internal::FvProductMapperTraits<GridLayerImp, rangeDim, 1> Traits;
@@ -235,7 +235,7 @@ public:
   {
     if (ret.size() != 1)
       ret.resize(1);
-    ret[0] = dimRange * (backend().index(entity)) + factor_index;
+    ret[0] = dimRange * backend().index(entity) + factor_index;
   }
 
   size_t mapToGlobal(const size_t factor_index,
@@ -244,7 +244,7 @@ public:
   {
     assert(local_index_in_factor == 0);
     assert(factor_index < numDofs(entity));
-    return dimRange * (backend().index(entity)) + factor_index;
+    return dimRange * backend().index(entity) + factor_index;
   }
 
   size_t mapToLocal(const size_t factor_index,
@@ -290,7 +290,7 @@ public:
   }
 
 private:
-  const FvMapperMapperType fv_mapper_;
+  const FvMapperType fv_mapper_;
 }; // class FvProductMapper< ..., rangeDim, 1 >
 
 
