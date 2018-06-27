@@ -38,10 +38,7 @@ public:
   using bound_type = typename MatrixOperatorBase<type>::bound_type;
 
 public:
-  static bound_type bind(pybind11::module& m,
-                         const std::string& space_name,
-                         const std::string& container_name,
-                         const std::string& grid_layer_name)
+  static bound_type bind(pybind11::module& m, const std::string& space_name, const std::string& container_name)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -104,9 +101,7 @@ public:
 public:
   static bound_type bind(pybind11::module& m)
   {
-    const auto grid_layer_name = XT::Grid::bindings::layer_name<layer_type>::value()
-                                 + XT::Grid::bindings::backend_name<XT::Grid::Backends::view>::value();
-    return binder::bind(m, space_name<RP>::value(), XT::LA::bindings::container_name<M>::value(), grid_layer_name);
+    return binder::bind(m, space_name<RP>::value(), XT::LA::bindings::container_name<M>::value());
   }
 }; // class L2MatrixOperator
 

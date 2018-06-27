@@ -153,7 +153,7 @@ private:
   };
 
 public:
-  static bound_type bind(pybind11::module& m, const std::string& space_name, const std::string& grid_layer_name)
+  static bound_type bind(pybind11::module& m, const std::string& space_name)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -205,10 +205,7 @@ public:
 
   static bound_type bind(pybind11::module& m)
   {
-    return binder::bind(m,
-                        space_name<SP>::value(),
-                        XT::Grid::bindings::layer_name<gl>::value()
-                            + XT::Grid::bindings::backend_name<gl_backend>::value());
+    return binder::bind(m, space_name<SP>::value());
   }
 }; // class EllipticMatrixOperator
 
