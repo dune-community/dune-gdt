@@ -335,13 +335,12 @@ public:
                               const bool only_cache) const
     {
       const bool boundary = bool(param.get("boundary")[0]);
-      if (boundary)
-        cache_.increase_capacity(2 * cache_size);
       // get initial multiplier and basis matrix from last time step
       AlphaReturnType ret;
-
-      // if value has already been calculated for these values, skip computation
       mutex_.lock();
+      if (boundary)
+        cache_.increase_capacity(2 * cache_size);
+      // if value has already been calculated for these values, skip computation
       auto cache_iterator = cache_.lower_bound(u);
       if (cache_iterator != cache_.end() && cache_iterator->first == u) {
         ret.first = cache_iterator->second;
@@ -1070,11 +1069,10 @@ public:
       // get initial multiplier and basis matrix from last time step
       AlphaReturnType ret;
       StateRangeType v_in;
-
-      // if value has already been calculated for these values, skip computation
       mutex_.lock();
       if (boundary)
         cache_.increase_capacity(2 * cache_size);
+      // if value has already been calculated for these values, skip computation
       auto cache_iterator = cache_.lower_bound(u_in);
       if (cache_iterator != cache_.end() && cache_iterator->first == u_in) {
         ret.first = cache_iterator->second;
@@ -1802,8 +1800,8 @@ public:
       const RangeFieldType chi = 0.5,
       const RangeFieldType xi = 1e-3,
       const std::vector<RangeFieldType> r_sequence = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1},
-      const size_t k_0 = 50,
-      const size_t k_max = 200,
+      const size_t k_0 = 500,
+      const size_t k_max = 1000,
       const RangeFieldType epsilon = std::pow(2, -52),
       const std::string name = static_id())
     : index_set_(grid_layer.indexSet())
@@ -2020,10 +2018,9 @@ public:
     {
       const bool boundary = bool(param.get("boundary")[0]);
       AlphaReturnType ret;
+      mutex_.lock();
       if (boundary)
         cache_.increase_capacity(2 * cache_size);
-
-      mutex_.lock();
       auto cache_iterator = cache_.lower_bound(u);
       if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u)) {
         ret = cache_iterator->second;
@@ -2042,15 +2039,14 @@ public:
         const auto r_max = r_sequence.back();
         for (const auto& r : r_sequence) {
           // get initial alpha
-          if (r > 0)
-            alpha_k = alpha_iso;
-
-          // normalize u
-          StateRangeType r_times_u_iso(u_iso);
-          r_times_u_iso *= r;
           v = u;
-          v *= 1 - r;
-          v += r_times_u_iso;
+          if (r > 0) {
+            alpha_k = alpha_iso;
+            StateRangeType r_times_u_iso = u_iso;
+            r_times_u_iso *= r;
+            v *= 1 - r;
+            v += r_times_u_iso;
+          }
 
           // calculate f_0
           RangeFieldType f_k = calculate_f(alpha_k, v);
@@ -2705,13 +2701,10 @@ public:
     {
       const bool boundary = bool(param.get("boundary")[0]);
       AlphaReturnType ret;
+      mutex_.lock();
       if (boundary)
         cache_.increase_capacity(2 * cache_size);
-
       // if value has already been calculated for these values, skip computation
-      mutex_.lock();
-
-
       auto cache_iterator = cache_.lower_bound(u);
       if (cache_iterator != cache_.end() && cache_iterator->first == u) {
         ret.first = cache_iterator->second;
