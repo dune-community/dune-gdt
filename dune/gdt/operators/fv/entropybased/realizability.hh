@@ -71,7 +71,8 @@ public:
                                 const QuadratureType& quadrature,
                                 const RangeFieldType epsilon,
                                 const std::vector<RangeType>& basis_values,
-                                const XT::Common::Parameter& param)
+                                const XT::Common::Parameter& param,
+                                const std::string filename)
     : analytical_flux_(analytical_flux)
     , source_(source)
     , reconstructed_function_(reconstructed_function)
@@ -80,6 +81,7 @@ public:
     , epsilon_(epsilon)
     , basis_values_(basis_values)
     , param_(param)
+    , filename_(filename)
   {
     param_.set("boundary", {0.});
   }
@@ -116,9 +118,16 @@ public:
 
       // if regularization was needed, we also need to replace u_n in that cell by its regularized version
       if (s > 0.) {
-        std::cout << "regularization in limiter: time: " << param_.get("t")[0]
-                  << ", entitycenter: " << XT::Common::to_string(entity.geometry().center())
-                  << ", s: " << XT::Common::to_string(s, 15) << std::endl;
+        if (!filename_.empty()) {
+          static std::mutex outfile_lock;
+          outfile_lock.lock();
+          std::ofstream outfile(filename_, std::ios_base::app);
+          outfile << param_.get("t")[0];
+          for (size_t ii = 0; ii < dimDomain; ++ii)
+            outfile << " " << entity.geometry().center()[ii];
+          outfile << " " << s << " 1" << std::endl;
+          outfile_lock.unlock();
+        }
         const auto u_iso = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
                                ->basis_functions()
                                .calculate_isotropic_distribution(u)
@@ -146,6 +155,7 @@ protected:
   const RangeFieldType epsilon_;
   const std::vector<RangeType>& basis_values_;
   XT::Common::Parameter param_;
+  const std::string filename_;
 };
 
 template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp = int>
@@ -956,12 +966,14 @@ public:
   RealizabilityLimiter(const AnalyticalFluxType& analytical_flux,
                        const BasisfunctionType& basis_functions,
                        const QuadratureType& quadrature,
-                       const RangeFieldType epsilon = 1e-8)
+                       const RangeFieldType epsilon = 1e-8,
+                       const std::string filename = "")
     : analytical_flux_(analytical_flux)
     , basis_functions_(basis_functions)
     , quadrature_(quadrature)
     , epsilon_(epsilon)
     , basis_values_(quadrature_.size())
+    , filename_(filename)
   {
     for (size_t ii = 0; ii < quadrature_.size(); ++ii)
       basis_values_[ii] = basis_functions_.evaluate(quadrature_[ii].position());
@@ -973,7 +985,7 @@ public:
     static_assert(is_discrete_function<SourceType>::value,
                   "SourceType has to be derived from DiscreteFunction (use the non-reconstructed values!)");
     LocalRealizabilityLimiterType local_realizability_limiter(
-        analytical_flux_, source, range, basis_functions_, quadrature_, epsilon_, basis_values_, param);
+        analytical_flux_, source, range, basis_functions_, quadrature_, epsilon_, basis_values_, param, filename_);
     auto walker = XT::Grid::Walker<typename SourceType::SpaceType::GridLayerType>(source.space().grid_layer());
     walker.append(local_realizability_limiter);
     walker.walk(true);
@@ -985,6 +997,7 @@ private:
   const QuadratureType& quadrature_;
   const RangeFieldType epsilon_;
   std::vector<RangeType> basis_values_;
+  const std::string filename_;
 }; // class RealizabilityLimiter<...>
 
 
