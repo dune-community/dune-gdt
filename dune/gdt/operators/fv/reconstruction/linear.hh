@@ -290,31 +290,58 @@ public:
 
   virtual void compute(const size_t dd) override
   {
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      if (block_size == 2) {
+        const auto& jac = jacobian(dd)[jj];
+        const auto trace = jac[0][0] + jac[1][1];
+        const auto det = jac[0][0] * jac[1][1] - jac[0][1] * jac[1][0];
+        const auto sqrt_val = std::sqrt(0.25 * trace * trace - det);
+        const auto eigval1 = 0.5 * trace + sqrt_val;
+        const auto eigval2 = 0.5 * trace - sqrt_val;
+        if (std::abs(jac[1][0]) > std::abs(jac[0][1])) {
+          if (XT::Common::FloatCmp::ne(jac[1][0], 0.)) {
+            eigenvectors_[dd][jj][0][0] = eigval1 - jac[1][1];
+            eigenvectors_[dd][jj][0][1] = eigval2 - jac[1][1];
+            eigenvectors_[dd][jj][1][0] = eigenvectors_[dd][jj][1][1] = jac[1][0];
+          } else {
+            eigenvectors_[dd][jj][0][0] = eigenvectors_[dd][jj][1][1] = 1.;
+            eigenvectors_[dd][jj][0][1] = eigenvectors_[dd][jj][1][0] = 0.;
+          }
+        } else {
+          if (XT::Common::FloatCmp::ne(jac[0][1], 0.)) {
+            eigenvectors_[dd][jj][1][0] = eigval1 - jac[0][0];
+            eigenvectors_[dd][jj][1][1] = eigval2 - jac[0][0];
+            eigenvectors_[dd][jj][0][0] = eigenvectors_[dd][jj][0][1] = jac[0][1];
+          } else {
+            eigenvectors_[dd][jj][0][0] = eigenvectors_[dd][jj][1][1] = 1.;
+            eigenvectors_[dd][jj][0][1] = eigenvectors_[dd][jj][1][0] = 0.;
+          }
+        }
+      } else {
 #if HAVE_MKL || HAVE_LAPACKE
-    for (size_t jj = 0; jj < num_blocks; ++jj) {
-      int info = XT::Common::Lapacke::dgeev_work(XT::Common::Lapacke::row_major(),
-                                                 /*do_not_compute_left_eigenvectors: */ 'N',
-                                                 /*compute_right_eigenvectors: */ 'V',
-                                                 static_cast<int>(block_size),
-                                                 &(jacobian(dd)[jj][0][0]),
-                                                 static_cast<int>(block_size),
-                                                 &(eigenvalues_[jj][0][0]),
-                                                 &(dummy_complex_eigenvalues_[0]),
-                                                 nullptr,
-                                                 static_cast<int>(block_size),
-                                                 &(eigenvectors_[dd][jj][0][0]),
-                                                 static_cast<int>(block_size),
-                                                 work_.data(),
-                                                 static_cast<int>(work_.size()));
-      if (info != 0)
-        DUNE_THROW(Dune::XT::LA::Exceptions::eigen_solver_failed, "The lapack backend reported '" << info << "'!");
+        int info = XT::Common::Lapacke::dgeev_work(XT::Common::Lapacke::row_major(),
+                                                   /*do_not_compute_left_eigenvectors: */ 'N',
+                                                   /*compute_right_eigenvectors: */ 'V',
+                                                   static_cast<int>(block_size),
+                                                   &(jacobian(dd)[jj][0][0]),
+                                                   static_cast<int>(block_size),
+                                                   &(eigenvalues_[jj][0][0]),
+                                                   &(dummy_complex_eigenvalues_[0]),
+                                                   nullptr,
+                                                   static_cast<int>(block_size),
+                                                   &(eigenvectors_[dd][jj][0][0]),
+                                                   static_cast<int>(block_size),
+                                                   work_.data(),
+                                                   static_cast<int>(work_.size()));
+        if (info != 0)
+          DUNE_THROW(Dune::XT::LA::Exceptions::eigen_solver_failed, "The lapack backend reported '" << info << "'!");
 #else // HAVE_MKL || HAVE_LAPACKE
-    static XT::Common::Configuration eigensolver_options =
-        BaseType::template create_eigensolver_opts<LocalMatrixType>();
-    for (size_t jj = 0; jj < num_blocks; ++jj) {
-      const auto eigensolver = EigenSolverType(jacobian(dd)[jj], &eigensolver_options);
-      eigenvectors_[dd][jj] = eigensolver.real_eigenvectors();
+        static XT::Common::Configuration eigensolver_options =
+            BaseType::template create_eigensolver_opts<LocalMatrixType>();
+        const auto eigensolver = EigenSolverType(jacobian(dd)[jj], &eigensolver_options);
+        eigenvectors_[dd][jj] = eigensolver.real_eigenvectors();
 #endif // HAVE_MKL || HAVE_LAPACKE
+      } // else (block_size == 2)
       QR_[dd][jj] = eigenvectors_[dd][jj];
       XT::LA::qr(QR_[dd][jj], tau_[dd][jj], permutations_[dd][jj]);
     } // jj
