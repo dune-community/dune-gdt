@@ -255,7 +255,7 @@ private:
       using namespace pybind11::literals;
 
       m.def("make_system_assembler",
-            [](const TestSpaceType& space) { return new type(space); },
+            [](TestSpaceType space) { return new type(space); },
             "space"_a,
             "Uses space as test and ansatz space, and its grid layer as grid layer",
             py::keep_alive<0, 1>());
