@@ -767,6 +767,44 @@ private:
 
 #if 1
 
+// explicit specialization for 4, 4 because dune-common's operator+/-= do not compile if the two sizes are equal
+template <class FieldType>
+FieldVector<FieldVector<FieldType, 4>, 4>& operator-=(FieldVector<FieldVector<FieldType, 4>, 4>& vec1,
+                                                      const FieldVector<FieldVector<FieldType, 4>, 4>& vec2)
+{
+  for (size_t ii = 0; ii < vec1.size(); ++ii)
+    vec1[ii] -= vec2[ii];
+  return vec1;
+}
+
+template <class FieldType>
+FieldVector<FieldVector<FieldType, 4>, 4>& operator+=(FieldVector<FieldVector<FieldType, 4>, 4>& vec1,
+                                                      const FieldVector<FieldVector<FieldType, 4>, 4>& vec2)
+{
+  for (size_t ii = 0; ii < vec1.size(); ++ii)
+    vec1[ii] += vec2[ii];
+  return vec1;
+}
+
+// explicit specialization for 2, 2 because dune-common's operator+/-= do not compile if the two sizes are equal
+template <class FieldType>
+FieldVector<FieldVector<FieldType, 2>, 2>& operator-=(FieldVector<FieldVector<FieldType, 2>, 2>& vec1,
+                                                      const FieldVector<FieldVector<FieldType, 2>, 2>& vec2)
+{
+  for (size_t ii = 0; ii < vec1.size(); ++ii)
+    vec1[ii] -= vec2[ii];
+  return vec1;
+}
+
+template <class FieldType>
+FieldVector<FieldVector<FieldType, 2>, 2>& operator+=(FieldVector<FieldVector<FieldType, 2>, 2>& vec1,
+                                                      const FieldVector<FieldVector<FieldType, 2>, 2>& vec2)
+{
+  for (size_t ii = 0; ii < vec1.size(); ++ii)
+    vec1[ii] += vec2[ii];
+  return vec1;
+}
+
 /**
  * Specialization for DG basis
  */
