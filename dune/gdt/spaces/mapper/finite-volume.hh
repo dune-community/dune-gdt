@@ -29,6 +29,8 @@ namespace GDT {
 template <class GV, size_t r = 1, size_t rC = 1>
 class FiniteVolumeMapper : public MapperInterface<GV>
 {
+  static_assert(rC == 1, "The FiniteVolumeMapper is not yet available for rC > 1!");
+
   using ThisType = FiniteVolumeMapper<GV, r, rC>;
   using BaseType = MapperInterface<GV>;
 
@@ -59,10 +61,9 @@ public:
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElement>>())
   {
     // create finite elements (we only need the coefficients)
-    if (r == 1 && rC == 1) // Requires vector-valued local Finite Element wrappers.
-      for (auto&& geometry_type : grid_view_.indexSet().types(0))
-        finite_elements_->insert(
-            std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, double>(geometry_type, 0)));
+    for (auto&& geometry_type : grid_view_.indexSet().types(0))
+      finite_elements_->insert(
+          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, double, r>(geometry_type, 0)));
   }
 
   FiniteVolumeMapper(const ThisType&) = default;
@@ -79,8 +80,6 @@ public:
   const LocalFiniteElementCoefficientsInterface<D, d>&
   local_coefficients(const GeometryType& geometry_type) const override final
   {
-    if (r != 1 || rC != 1) // Requires vector-valued local Finite Element wrappers.
-      DUNE_THROW(Exceptions::mapper_error, "accessing local_coefficients is not yet supperted in the non scalar case!");
     const auto finite_element_search_result = finite_elements_->find(geometry_type);
     if (finite_element_search_result == finite_elements_->end())
       DUNE_THROW(XT::Common::Exceptions::internal_error,

@@ -20,17 +20,16 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GV, class R = double>
-class FiniteVolumeGlobalBasis : public GlobalBasisInterface<GV, 1, 1, R>
+template <class GV, size_t r = 1, class R = double>
+class FiniteVolumeGlobalBasis : public GlobalBasisInterface<GV, r, 1, R>
 {
-  using ThisType = FiniteVolumeGlobalBasis<GV, R>;
-  using BaseType = GlobalBasisInterface<GV, 1, 1, R>;
+  using ThisType = FiniteVolumeGlobalBasis<GV, r, R>;
+  using BaseType = GlobalBasisInterface<GV, r, 1, R>;
 
 public:
   using typename BaseType::E;
   using typename BaseType::D;
   using BaseType::d;
-  using BaseType::r;
   using BaseType::rC;
   using typename BaseType::GridViewType;
   using typename BaseType::ElementType;
@@ -38,7 +37,7 @@ public:
   using typename BaseType::LocalizedBasisType;
 
 private:
-  using FiniteElementType = LocalFiniteElementInterface<D, d, R, 1>;
+  using FiniteElementType = LocalFiniteElementInterface<D, d, R, r>;
 
 public:
   FiniteVolumeGlobalBasis(const ThisType&) = default;
@@ -53,7 +52,7 @@ public:
   {
     for (auto&& geometry_type : grid_view_.indexSet().types(0))
       finite_elements_->insert(
-          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R>(geometry_type, 0)));
+          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R, r>(geometry_type, 0)));
   }
 
   const GridViewType& grid_view() const
@@ -88,10 +87,10 @@ public:
   }
 
 private:
-  class LocalizedFiniteVolumeGlobalBasis : public XT::Functions::LocalFunctionSetInterface<E, 1, 1, R>
+  class LocalizedFiniteVolumeGlobalBasis : public XT::Functions::LocalFunctionSetInterface<E, r, 1, R>
   {
     using ThisType = LocalizedFiniteVolumeGlobalBasis;
-    using BaseType = XT::Functions::LocalFunctionSetInterface<E, 1, 1, R>;
+    using BaseType = XT::Functions::LocalFunctionSetInterface<E, r, 1, R>;
 
   public:
     using typename BaseType::EntityType;
@@ -122,12 +121,12 @@ private:
 
     size_t max_size(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      return 1;
+      return r;
     }
 
     size_t size(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      return 1;
+      return r;
     }
 
     int order(const XT::Common::Parameter& /*param*/ = {}) const override final

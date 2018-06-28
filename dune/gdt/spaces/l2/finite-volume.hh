@@ -32,11 +32,11 @@ class FiniteVolumeSpace
 };
 
 
-template <class GV, class R>
-class FiniteVolumeSpace<GV, 1, 1, R> : public SpaceInterface<GV, 1, 1, R>
+template <class GV, size_t r, class R>
+class FiniteVolumeSpace<GV, r, 1, R> : public SpaceInterface<GV, r, 1, R>
 {
-  using ThisType = FiniteVolumeSpace<GV, 1, 1, R>;
-  using BaseType = SpaceInterface<GV, 1, 1, R>;
+  using ThisType = FiniteVolumeSpace<GV, r, 1, R>;
+  using BaseType = SpaceInterface<GV, r, 1, R>;
 
 public:
   using typename BaseType::D;
@@ -47,8 +47,8 @@ public:
   using typename BaseType::FiniteElementType;
 
 private:
-  using MapperImplementation = FiniteVolumeMapper<GridViewType, 1, 1>;
-  using GlobalBasisImplementation = FiniteVolumeGlobalBasis<GridViewType, R>;
+  using MapperImplementation = FiniteVolumeMapper<GridViewType, r, 1>;
+  using GlobalBasisImplementation = FiniteVolumeGlobalBasis<GridViewType, r, R>;
 
 public:
   FiniteVolumeSpace(GridViewType grd_vw)
@@ -60,7 +60,7 @@ public:
     // create finite elements
     for (auto&& geometry_type : grid_view_.indexSet().types(0))
       finite_elements_->insert(
-          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R>(geometry_type, 0)));
+          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R, r>(geometry_type, 0)));
     // create communicator
     this->create_communicator();
   }
@@ -132,7 +132,7 @@ private:
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
   const std::shared_ptr<MapperImplementation> mapper_;
   const std::shared_ptr<GlobalBasisImplementation> basis_;
-}; // class FiniteVolumeSpace< ..., 1, 1 >
+}; // class FiniteVolumeSpace< ..., r, 1 >
 
 
 template <size_t r, size_t rC, class R, class GV>
