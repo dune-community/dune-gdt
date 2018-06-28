@@ -15,6 +15,7 @@
 
 #include <dune/geometry/type.hh>
 
+#include <dune/xt/la/container/vector-interface.hh>
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
@@ -26,6 +27,11 @@
 
 namespace Dune {
 namespace GDT {
+
+
+// forward
+template <class V, class GV, size_t r, size_t rC, class R>
+class ConstDiscreteFunction;
 
 
 template <class GridView, size_t range_dim = 1, size_t range_dim_columns = 1, class RangeField = double>
@@ -55,12 +61,10 @@ public:
 
   virtual ~SpaceInterface() = default;
 
-  virtual const GridViewType& grid_view() const = 0;
+  /// \name These methods provide the actual functionality, they have to be implemented.
+  /// \{
 
-  /**
-   * \name These methods provide the actual functionality, they have to be implemented.
-   * \{
-   **/
+  virtual const GridViewType& grid_view() const = 0;
 
   virtual const MapperType& mapper() const = 0;
 
@@ -69,11 +73,8 @@ public:
   virtual const FiniteElementType& finite_element(const GeometryType& geometry_type) const = 0;
 
   /// \}
-
-  /**
-   * \name These methods help to identify the space, they have to be implemented.
-   * \{
-   **/
+  /// \name These methods help to identify the space, they have to be implemented.
+  /// \{
 
   virtual SpaceType type() const = 0;
 
@@ -94,11 +95,8 @@ public:
   virtual bool is_lagrangian() const = 0;
 
   /// \}
-
-  /**
-   * \name These methods are required for MPI communication, they are provided.
-   * \{
-   */
+  /// \name These methods are required for MPI communication, they are provided.
+  /// \{
 
   virtual const DofCommunicatorType& dof_communicator() const
   {
@@ -107,6 +105,35 @@ public:
                  "The actual space has to either implement its own dof_communicator() or call "
                  "create_communicator() in the ctor!");
     return *dof_communicator_;
+  }
+
+  /// \}
+  /// \name These methods are provided for convenience.
+  /// \{
+
+  template <class V>
+  bool contains(const XT::LA::VectorInterface<V>& vector) const
+  {
+    return vector.size() == this->mapper().size();
+  }
+
+  /**
+   * \note A return value of true cannot be ultimately trusted yet.
+   *
+   * \sa https://github.com/dune-community/dune-gdt/issues/123
+   */
+  template <class V>
+  bool contains(const ConstDiscreteFunction<V, GV, r, rC, R>& function) const
+  {
+    // this is the only case where we are sure^^
+    if (&function.space() == this)
+      return true;
+    if (function.space().type() != this->type())
+      return false;
+    if (function.space().mapper().size() != this->mapper().size())
+      return false;
+    // the spaces might still differ (different grid views of same size), but we have no means to check this
+    return true;
   }
 
   /// \}
@@ -126,7 +153,19 @@ private:
 }; // class SpaceInterface
 
 
+template <class GV, size_t r, size_t rC, class R>
+std::ostream& operator<<(std::ostream& out, const SpaceInterface<GV, r, rC, R>& space)
+{
+  out << "Space(" << space.type() << ", " << space.mapper().size() << " DoFs)";
+  return out;
+}
+
+
 } // namespace GDT
 } // namespace Dune
+
+
+#include <dune/gdt/discretefunction/default.hh>
+
 
 #endif // DUNE_GDT_SPACES_INTERFACE_HH
