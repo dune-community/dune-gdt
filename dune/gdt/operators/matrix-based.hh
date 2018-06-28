@@ -239,7 +239,7 @@ make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::Ma
  * (or create one of appropriate size and given sparsity pattern), into which we want to assemble. The operator is
  * assembled by walking over the given assembly_gid_view (which defaults to the one fom the given space). This allows to
  * assemble an operator only on a smaller grid view than the one given from the space (similar functionality could be
- * acchieved by appending this operator to another walker and by providing an appropriate filter).
+ * achieved by appending this operator to another walker and by providing an appropriate filter).
  *
  * \note One could achieve similar functionality by deriving from GlobalAssembler directly, which would slightly
  *       simplify the implementation of the append methods. However, we do not want to expose the other append methods
@@ -310,7 +310,7 @@ public:
   }
 
   /**
-   * Ctor which create an appropriate matrix into which to assemble from a given sparsity pattern.
+   * Ctor which creates an appropriate matrix into which to assemble from a given sparsity pattern.
    */
 
   MatrixBasedOperator(AssemblyGridViewType assembly_grid_view,
