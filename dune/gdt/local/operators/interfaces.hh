@@ -12,6 +12,7 @@
 #ifndef DUNE_GDT_LOCAL_OPERATORS_INTERFACES_HH
 #define DUNE_GDT_LOCAL_OPERATORS_INTERFACES_HH
 
+#include <memory>
 #include <vector>
 
 #include <dune/common/dynmatrix.hh>
@@ -19,86 +20,128 @@
 #include <dune/xt/common/crtp.hh>
 #include <dune/xt/common/parameter.hh>
 #include <dune/xt/common/type_traits.hh>
+#include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces.hh>
 #include <dune/xt/functions/type_traits.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
+#include <dune/gdt/discretefunction/default.hh>
 
 namespace Dune {
 namespace GDT {
-#if 0
-namespace internal {
 
-/// \todo drop and implement the is_... properly
-class IsLocalOperator
+
+template <class SourceVector,
+          class SourceGridView,
+          size_t source_range_dim = 1,
+          size_t source_range_dim_cols = 1,
+          class SourceField = double,
+          size_t range_range_dim = source_range_dim,
+          size_t range_range_dim_cols = source_range_dim_cols,
+          class RangeField = SourceField,
+          class RangeGridView = SourceGridView,
+          class RangeVector = SourceVector>
+class LocalElementOperatorInterface : public XT::Common::ParametricInterface
 {
-};
+  static_assert(
+      std::is_same<XT::Grid::extract_entity_t<SourceGridView>, XT::Grid::extract_entity_t<RangeGridView>>::value, "");
 
-/// \todo drop and implement the is_... properly
-class IsLocalCouplingOperator
-{
-};
-
-/// \todo drop and implement the is_... properly
-class IsLocalBoundaryOperator
-{
-};
-
-
-} // namespace internal
-
-
-template <class Traits>
-class LocalOperatorInterface : public XT::CRTPInterface<LocalOperatorInterface<Traits>, Traits>,
-                               internal::IsLocalOperator
-{
 public:
-  typedef typename Traits::derived_type derived_type;
+  using SV = SourceVector;
+  using SGV = SourceGridView;
+  static const constexpr size_t s_r = source_range_dim;
+  static const constexpr size_t s_rC = source_range_dim_cols;
+  using SR = SourceField;
+  using SourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SR>;
+
+  using RV = RangeVector;
+  using RGV = RangeGridView;
+  static const constexpr size_t r_r = range_range_dim;
+  static const constexpr size_t r_rC = range_range_dim_cols;
+  using RR = RangeField;
+  using LocalRangeType = LocalDiscreteFunction<RV, RGV, r_r, r_rC, RR>;
+
+  using ThisType = LocalElementOperatorInterface<SV, SGV, s_r, s_rC, SR, r_r, r_rC, RR, RGV, RV>;
+
+  LocalElementOperatorInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+  {
+  }
+
+  virtual ~LocalElementOperatorInterface() = default;
+
+  virtual std::unique_ptr<ThisType> copy() const = 0;
+
+  virtual void
+  apply(const SourceType& source, LocalRangeType& local_range, const XT::Common::Parameter& param = {}) const = 0;
+}; // class LocalElementOperatorInterface
+
+
+template <class Intersection,
+          class SourceVector,
+          class SourceGridView,
+          size_t source_range_dim = 1,
+          size_t source_range_dim_cols = 1,
+          class SourceField = double,
+          size_t range_range_dim = source_range_dim,
+          size_t range_range_dim_cols = source_range_dim_cols,
+          class RangeField = SourceField,
+          class InsideRangeGridView = SourceGridView,
+          class InsideRangeVector = SourceVector,
+          class OutsideRangeGridView = InsideRangeGridView,
+          class OutsideRangeVector = InsideRangeVector>
+class LocalIntersectionOperatorInterface : public XT::Common::ParametricInterface
+{
+  static_assert(XT::Grid::is_intersection<Intersection>::value, "");
+  static_assert(std::is_same<typename Intersection::Entity, XT::Grid::extract_entity_t<InsideRangeGridView>>::value,
+                "");
+  static_assert(std::is_same<typename Intersection::Entity, XT::Grid::extract_entity_t<OutsideRangeGridView>>::value,
+                "");
+
+public:
+  static const constexpr size_t d = Intersection::dimension;
+  using I = Intersection;
+  using IntersectionType = Intersection;
+
+  using SV = SourceVector;
+  using SGV = SourceGridView;
+  static const constexpr size_t s_r = source_range_dim;
+  static const constexpr size_t s_rC = source_range_dim_cols;
+  using SF = SourceField;
+  using SourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>;
+
+  using IRV = InsideRangeVector;
+  using IRGV = InsideRangeGridView;
+  static const constexpr size_t r_r = range_range_dim;
+  static const constexpr size_t r_rC = range_range_dim_cols;
+  using RF = RangeField;
+  using LocalInsideRangeType = LocalDiscreteFunction<IRV, IRGV, r_r, r_rC, RF>;
+
+  using ORV = OutsideRangeVector;
+  using ORGV = OutsideRangeGridView;
+  using LocalOutsideRangeType = LocalDiscreteFunction<ORV, ORGV, r_r, r_rC, RF>;
+
+  using ThisType = LocalIntersectionOperatorInterface<I, SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, IRGV, IRV, ORGV, ORV>;
+
+  LocalIntersectionOperatorInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+  {
+  }
+
+  virtual ~LocalIntersectionOperatorInterface() = default;
+
+  virtual std::unique_ptr<ThisType> copy() const = 0;
 
   /**
-   * \brief Applies the local operator.
-   * \param source Should be a XT::Functions::LocalizableFunctionInterface or a ConstDiscreteFunction.
-   */
-  template <class SourceType, class RangeSpaceType, class VectorType>
-  void apply(const SourceType& source, LocalDiscreteFunction<RangeSpaceType, VectorType>& local_range) const
-  {
-    CHECK_AND_CALL_CRTP(this->as_imp().apply(source, local_range));
-  }
-}; // class LocalOperatorInterface
-
-
-template <class Traits>
-class LocalCouplingOperatorInterface : public XT::CRTPInterface<LocalCouplingOperatorInterface<Traits>, Traits>,
-                                       public XT::Common::ParametricInterface,
-                                       internal::IsLocalCouplingOperator
-{
-public:
-  template <class SourceType, class IntersectionType, class SpaceType, class VectorType>
-  void apply(const SourceType& source,
-             const IntersectionType& intersection,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range_neighbor,
-             const XT::Common::Parameter& mu = {}) const
-  {
-    this->as_imp().apply(source, intersection, local_range_entity, local_range_neighbor, mu);
-  }
-}; // class LocalCouplingOperatorInterface
-
-
-template <class Traits>
-class LocalBoundaryOperatorInterface : public XT::CRTPInterface<LocalBoundaryOperatorInterface<Traits>, Traits>,
-                                       internal::IsLocalBoundaryOperator
-{
-public:
-  template <class SourceType, class IntersectionType, class SpaceType, class VectorType>
-  void apply(const SourceType& source,
-             const IntersectionType& intersection,
-             LocalDiscreteFunction<SpaceType, VectorType>& local_range_entity) const
-  {
-    this->as_imp().apply(source, intersection, local_range_entity);
-  }
-}; // class LocalBoundaryOperatorInterface
-#endif // 0
+    * \note Presumes that local_range_inside is already bound to intersection.inside() and local_range_outside is
+    *       already bound to intersection.outside()!
+    **/
+  virtual void apply(const SourceType& source,
+                     const IntersectionType& intersection,
+                     LocalInsideRangeType& local_range_inside,
+                     LocalOutsideRangeType& local_range_outside,
+                     const XT::Common::Parameter& param = {}) const = 0;
+}; // class LocalIntersectionOperatorInterface
 
 
 /**
@@ -247,25 +290,6 @@ public:
     return ret;
   }
 }; // class LocalBoundaryTwoFormInterface
-
-
-/// \todo move to type_traits.hh
-template <class T>
-struct is_local_operator : public std::is_base_of<internal::IsLocalOperator, T>
-{
-};
-
-/// \todo move to type_traits.hh
-template <class T>
-struct is_local_coupling_operator : public std::is_base_of<internal::IsLocalCouplingOperator, T>
-{
-};
-
-/// \todo move to type_traits.hh
-template <class T>
-struct is_local_boundary_operator : public std::is_base_of<internal::IsLocalBoundaryOperator, T>
-{
-};
 #endif // 0
 
 
