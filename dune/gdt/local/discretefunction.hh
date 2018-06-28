@@ -305,7 +305,7 @@ public:
   using typename BaseType::EntityType;
 
   using DofVectorType = DofVector<V, GV>;
-  using LocalDofVectorType = typename DofVectorType::ConstLocalDofVectorType;
+  using LocalDofVectorType = typename DofVectorType::LocalDofVectorType;
 
   LocalDiscreteFunction(const SpaceType& spc, DofVectorType& dof_vector)
     : BaseType(spc, dof_vector)
