@@ -87,10 +87,10 @@ public:
   }
 
 private:
-  class LocalizedFiniteVolumeGlobalBasis : public XT::Functions::LocalFunctionSetInterface<E, r, 1, R>
+  class LocalizedFiniteVolumeGlobalBasis : public XT::Functions::ElementFunctionSetInterface<E, r, 1, R>
   {
     using ThisType = LocalizedFiniteVolumeGlobalBasis;
-    using BaseType = XT::Functions::LocalFunctionSetInterface<E, r, 1, R>;
+    using BaseType = XT::Functions::ElementFunctionSetInterface<E, r, 1, R>;
 
   public:
     using typename BaseType::EntityType;

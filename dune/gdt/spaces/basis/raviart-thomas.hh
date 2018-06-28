@@ -101,10 +101,10 @@ public:
   }
 
 private:
-  class LocalizedRaviartThomasGlobalBasis : public XT::Functions::LocalFunctionSetInterface<E, r, rC, R>
+  class LocalizedRaviartThomasGlobalBasis : public XT::Functions::ElementFunctionSetInterface<E, r, rC, R>
   {
     using ThisType = LocalizedRaviartThomasGlobalBasis;
-    using BaseType = XT::Functions::LocalFunctionSetInterface<E, r, rC, R>;
+    using BaseType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
 
   public:
     using typename BaseType::EntityType;

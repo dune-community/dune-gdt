@@ -17,7 +17,7 @@
 #include <dune/xt/common/parameter.hh>
 #include <dune/xt/grid/type_traits.hh>
 
-#include <dune/xt/functions/interfaces/local-functions.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 namespace Dune {
 namespace GDT {
@@ -54,7 +54,7 @@ public:
 
   using ElementType = E;
   using DomainType = FieldVector<D, d>;
-  using LocalBasisType = XT::Functions::LocalFunctionSetInterface<E, r, rC, R>;
+  using LocalBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
 
   LocalUnaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
@@ -149,8 +149,8 @@ public:
 
   using ElementType = E;
   using DomainType = FieldVector<D, d>;
-  using LocalTestBasisType = XT::Functions::LocalFunctionSetInterface<E, t_r, t_rC, TR>;
-  using LocalAnsatzBasisType = XT::Functions::LocalFunctionSetInterface<E, a_r, a_rC, AR>;
+  using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
+  using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
 
   LocalBinaryElementIntegrandInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)

@@ -14,7 +14,7 @@
 
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/local/operators/integrals.hh>
@@ -141,7 +141,7 @@ public:
   using typename BaseType::ElementFilterType;
   using typename BaseType::ApplyOnAllElements;
 
-  using WeightFunctionType = XT::Functions::LocalizableFunctionInterface<E, 1, 1, F>;
+  using WeightFunctionType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
 
 private:
   using LocalTwoFormType = LocalElementIntegralOperator<E, r, rC, RF, DofFieldType, r, rC, SF>;
@@ -206,8 +206,7 @@ make_weighted_l2_volume_matrix_operator(
     const SpaceInterface<SGV, r, rC, SF>& source_space,
     const SpaceInterface<RGV, r, rC, RF>& range_space,
     XT::LA::MatrixInterface<M>& matrix,
-    const XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GridView<AGV>>, 1, 1, F>&
-        weight_function,
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridView<AGV>>, 1, 1, F>& weight_function,
     const size_t over_integrate = 0,
     const XT::Common::Parameter& param = {},
     const XT::Grid::ElementFilter<GridView<AGV>>& filter = XT::Grid::ApplyOn::AllElements<GridView<AGV>>())
@@ -230,8 +229,7 @@ make_weighted_l2_volume_matrix_operator(
     GridView<AGV> assembly_grid_view,
     const SpaceInterface<GV, r, rC, SF>& space,
     XT::LA::MatrixInterface<M>& matrix,
-    const XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GridView<AGV>>, 1, 1, F>&
-        weight_function,
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridView<AGV>>, 1, 1, F>& weight_function,
     const size_t over_integrate = 0,
     const XT::Common::Parameter& param = {},
     const XT::Grid::ElementFilter<GridView<AGV>>& filter = XT::Grid::ApplyOn::AllElements<GridView<AGV>>())
@@ -396,8 +394,8 @@ public:
   }
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
-  FieldType apply2(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& range,
-                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+  FieldType apply2(const XT::Functions::GridFunctionInterface<E, D, d, R, r, rC>& range,
+                   const XT::Functions::GridFunctionInterface<E, D, d, R, r, rC>& source,
                    const XT::Common::Parameter& param = {}) const
   {
     auto product = make_weighted_l2_localizable_product(weight_, grid_layer_, range, source, over_integrate_, param);

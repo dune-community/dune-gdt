@@ -14,7 +14,7 @@
 
 #include <dune/xt/common/exceptions.hh>
 #include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include "interfaces.hh"
 

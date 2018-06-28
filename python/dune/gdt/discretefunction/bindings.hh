@@ -44,12 +44,12 @@ public:
   typedef GDT::ConstDiscreteFunction<S, V> type;
 
 private:
-  typedef XT::Functions::LocalizableFunctionInterface<typename S::EntityType,
-                                                      typename S::DomainFieldType,
-                                                      S::dimDomain,
-                                                      typename S::RangeFieldType,
-                                                      S::dimRange,
-                                                      S::dimRangeCols>
+  typedef XT::Functions::GridFunctionInterface<typename S::EntityType,
+                                               typename S::DomainFieldType,
+                                               S::dimDomain,
+                                               typename S::RangeFieldType,
+                                               S::dimRange,
+                                               S::dimRangeCols>
       BaseType;
 
 public:

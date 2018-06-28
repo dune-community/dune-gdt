@@ -66,7 +66,7 @@ public:
    */
   template <class E, class D, size_t d, class R, class RangeSpaceType, class VectorType>
   typename std::enable_if<StaticCheck<E, D, d, R, 1, 1, RangeSpaceType, VectorType>::value, void>::type
-  apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1, 1>& source,
+  apply(const XT::Functions::GridFunctionInterface<E, D, d, R, 1, 1>& source,
         LocalDiscreteFunction<RangeSpaceType, VectorType>& local_range) const
   {
     const auto& entity = local_range.entity();
@@ -86,7 +86,7 @@ public:
    */
   template <class E, class D, size_t d, class R, size_t r, class RangeSpaceType, class VectorType>
   typename std::enable_if<StaticCheck<E, D, d, R, r, 1, RangeSpaceType, VectorType>::value, void>::type
-  apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, 1>& source,
+  apply(const XT::Functions::GridFunctionInterface<E, D, d, R, r, 1>& source,
         LocalDiscreteFunction<RangeSpaceType, VectorType>& local_range) const
   {
     DUNE_THROW(NotImplemented, "Think about this!"); // For vector valued functions, the code below has an implicit

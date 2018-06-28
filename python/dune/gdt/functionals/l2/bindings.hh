@@ -169,18 +169,18 @@ public:
 #define _DUNE_GDT_FUNCTIONALS_L2_BIND_LIB(_prefix, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)        \
   _prefix class Dune::GDT::bindings::                                                                                  \
       L2VolumeVectorFunctional<Dune::XT::Functions::                                                                   \
-                                   LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<                      \
-                                                                    typename Dune::XT::Grid::                          \
-                                                                        Layer<_GRID,                                   \
-                                                                              Dune::XT::Grid::Layers::_layer,          \
-                                                                              Dune::XT::Grid::Backends::_g_backend,    \
-                                                                              Dune::XT::Grid::DD::                     \
-                                                                                  SubdomainGrid<_GRID>>::type>,        \
-                                                                double,                                                \
-                                                                _d,                                                    \
-                                                                double,                                                \
-                                                                1,                                                     \
-                                                                1>,                                                    \
+                                   GridFunctionInterface<Dune::XT::Grid::extract_entity_t<                             \
+                                                             typename Dune::XT::Grid::                                 \
+                                                                 Layer<_GRID,                                          \
+                                                                       Dune::XT::Grid::Layers::_layer,                 \
+                                                                       Dune::XT::Grid::Backends::_g_backend,           \
+                                                                       Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::     \
+                                                                     type>,                                            \
+                                                         double,                                                       \
+                                                         _d,                                                           \
+                                                         double,                                                       \
+                                                         1,                                                            \
+                                                         1>,                                                           \
                                Dune::GDT::SpaceProvider<_GRID,                                                         \
                                                         Dune::XT::Grid::Layers::_layer,                                \
                                                         Dune::GDT::SpaceType::_s_type,                                 \
@@ -192,18 +192,17 @@ public:
                                typename Dune::XT::LA::Container<double, Dune::XT::LA::Backends::_la>::VectorType>;     \
   _prefix class Dune::GDT::bindings::                                                                                  \
       L2FaceVectorFunctional<Dune::XT::Functions::                                                                     \
-                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<                        \
-                                                                  typename Dune::XT::Grid::                            \
-                                                                      Layer<_GRID,                                     \
-                                                                            Dune::XT::Grid::Layers::_layer,            \
-                                                                            Dune::XT::Grid::Backends::_g_backend,      \
-                                                                            Dune::XT::Grid::DD::                       \
-                                                                                SubdomainGrid<_GRID>>::type>,          \
-                                                              double,                                                  \
-                                                              _d,                                                      \
-                                                              double,                                                  \
-                                                              1,                                                       \
-                                                              1>,                                                      \
+                                 GridFunctionInterface<Dune::XT::Grid::extract_entity_t<                               \
+                                                           typename Dune::XT::Grid::                                   \
+                                                               Layer<_GRID,                                            \
+                                                                     Dune::XT::Grid::Layers::_layer,                   \
+                                                                     Dune::XT::Grid::Backends::_g_backend,             \
+                                                                     Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>, \
+                                                       double,                                                         \
+                                                       _d,                                                             \
+                                                       double,                                                         \
+                                                       1,                                                              \
+                                                       1>,                                                             \
                              Dune::GDT::SpaceProvider<_GRID,                                                           \
                                                       Dune::XT::Grid::Layers::_layer,                                  \
                                                       Dune::GDT::SpaceType::_s_type,                                   \
@@ -255,18 +254,18 @@ DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(extern template, dd_subdomain, view, cg, g
 #define _DUNE_GDT_FUNCTIONALS_L2_BIND(_m, _d, _GRID, _layer, _g_backend, _s_type, _s_backend, _p, _la)                 \
   Dune::GDT::bindings::                                                                                                \
       L2VolumeVectorFunctional<Dune::XT::Functions::                                                                   \
-                                   LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<                      \
-                                                                    typename Dune::XT::Grid::                          \
-                                                                        Layer<_GRID,                                   \
-                                                                              Dune::XT::Grid::Layers::_layer,          \
-                                                                              Dune::XT::Grid::Backends::_g_backend,    \
-                                                                              Dune::XT::Grid::DD::                     \
-                                                                                  SubdomainGrid<_GRID>>::type>,        \
-                                                                double,                                                \
-                                                                _d,                                                    \
-                                                                double,                                                \
-                                                                1,                                                     \
-                                                                1>,                                                    \
+                                   GridFunctionInterface<Dune::XT::Grid::extract_entity_t<                             \
+                                                             typename Dune::XT::Grid::                                 \
+                                                                 Layer<_GRID,                                          \
+                                                                       Dune::XT::Grid::Layers::_layer,                 \
+                                                                       Dune::XT::Grid::Backends::_g_backend,           \
+                                                                       Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::     \
+                                                                     type>,                                            \
+                                                         double,                                                       \
+                                                         _d,                                                           \
+                                                         double,                                                       \
+                                                         1,                                                            \
+                                                         1>,                                                           \
                                Dune::GDT::SpaceProvider<_GRID,                                                         \
                                                         Dune::XT::Grid::Layers::_layer,                                \
                                                         Dune::GDT::SpaceType::_s_type,                                 \
@@ -279,18 +278,17 @@ DUNE_GDT_FUNCTIONALS_L2_BIND_LIB_YASP(extern template, dd_subdomain, view, cg, g
                                                                 Dune::XT::LA::Backends::_la>::VectorType>::bind(_m);   \
   Dune::GDT::bindings::                                                                                                \
       L2FaceVectorFunctional<Dune::XT::Functions::                                                                     \
-                                 LocalizableFunctionInterface<Dune::XT::Grid::extract_entity_t<                        \
-                                                                  typename Dune::XT::Grid::                            \
-                                                                      Layer<_GRID,                                     \
-                                                                            Dune::XT::Grid::Layers::_layer,            \
-                                                                            Dune::XT::Grid::Backends::_g_backend,      \
-                                                                            Dune::XT::Grid::DD::                       \
-                                                                                SubdomainGrid<_GRID>>::type>,          \
-                                                              double,                                                  \
-                                                              _d,                                                      \
-                                                              double,                                                  \
-                                                              1,                                                       \
-                                                              1>,                                                      \
+                                 GridFunctionInterface<Dune::XT::Grid::extract_entity_t<                               \
+                                                           typename Dune::XT::Grid::                                   \
+                                                               Layer<_GRID,                                            \
+                                                                     Dune::XT::Grid::Layers::_layer,                   \
+                                                                     Dune::XT::Grid::Backends::_g_backend,             \
+                                                                     Dune::XT::Grid::DD::SubdomainGrid<_GRID>>::type>, \
+                                                       double,                                                         \
+                                                       _d,                                                             \
+                                                       double,                                                         \
+                                                       1,                                                              \
+                                                       1>,                                                             \
                              Dune::GDT::SpaceProvider<_GRID,                                                           \
                                                       Dune::XT::Grid::Layers::_layer,                                  \
                                                       Dune::GDT::SpaceType::_s_type,                                   \

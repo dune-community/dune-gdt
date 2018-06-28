@@ -14,7 +14,7 @@
 
 #include <dune/xt/la/container/vector-interface.hh>
 #include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/functions/interfaces/local-functions.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include <dune/gdt/discretefunction/dof-vector.hh>
 #include <dune/gdt/exceptions.hh>
@@ -120,7 +120,7 @@ public:
   using BaseType::derivative;
 
   /**
-    * \name ``These methods are required by XT::Functions::LocalizableFunctionInterface.''
+    * \name ``These methods are required by XT::Functions::GridFunctionInterface.''
     * \{
     **/
 
@@ -181,7 +181,7 @@ public:
 
   /**
     * \}
-    * \name ``These methods are default implemented in XT::Functions::LocalizableFunctionInterface and are overridden
+    * \name ``These methods are default implemented in XT::Functions::GridFunctionInterface and are overridden
     *         for improved performance.''
     * \{
     **/
@@ -243,7 +243,7 @@ public:
   /**
     * \}
     * \name ``These methods (used to access an individual range dimension) are default implemented in
-    *         XT::Functions::LocalizableFunctionInterface and are implemented for improved performance.''
+    *         XT::Functions::GridFunctionInterface and are implemented for improved performance.''
     * \{
     **/
 

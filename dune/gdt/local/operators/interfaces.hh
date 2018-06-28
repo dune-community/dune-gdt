@@ -187,8 +187,8 @@ public:
   static const constexpr size_t a_rC = ansatz_range_dim_cols;
 
   using ElementType = Element;
-  using LocalTestBasisType = XT::Functions::LocalFunctionSetInterface<E, t_r, t_rC, TR>;
-  using LocalAnsatzBasisType = XT::Functions::LocalFunctionSetInterface<E, a_r, a_rC, AR>;
+  using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
+  using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
 
   LocalElementTwoFormInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)

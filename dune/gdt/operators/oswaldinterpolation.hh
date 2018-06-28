@@ -25,7 +25,7 @@
 #include <dune/xt/grid/boundaryinfo/types.hh>
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/spaces/dg/default.hh>
@@ -84,14 +84,14 @@ public:
   }
 
   template <class GL, class V>
-  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, FieldType, 1>& source,
+  void apply(const XT::Functions::GridFunctionInterface<E, D, d, FieldType, 1>& source,
              DiscreteFunction<DiscontinuousLagrangeSpace<GL, 1, FieldType>, V>& range) const
   {
     apply_p1_dg(source, range);
   }
 
   template <class GL, class V>
-  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, FieldType, 1>& source,
+  void apply(const XT::Functions::GridFunctionInterface<E, D, d, FieldType, 1>& source,
              DiscreteFunction<BlockSpace<DiscontinuousLagrangeSpace<GL, 1, FieldType>>, V>& range) const
   {
     apply_p1_dg(source, range);

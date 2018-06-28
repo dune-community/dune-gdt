@@ -222,11 +222,11 @@ public:
   }
 
   template <class R, size_t r, size_t rC, class S, class V>
-  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+  void apply(const XT::Functions::GridFunctionInterface<E, D, d, R, r, rC>& source,
              DiscreteFunction<S, V>& range,
              const XT::Common::Parameter& param = {}) const
   {
-    typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
+    typedef XT::Functions::GridFunctionInterface<E, D, d, R, r, rC> SourceType;
     L2GlobalProjectionLocalizableOperator<GridLayerType, SourceType, DiscreteFunction<S, V>> op(
         over_integrate_, grid_layer_, source, range, param);
     op.apply();

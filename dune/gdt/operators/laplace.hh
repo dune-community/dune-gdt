@@ -405,8 +405,8 @@ public:
   }
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
-  FieldType apply2(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& range,
-                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+  FieldType apply2(const XT::Functions::GridFunctionInterface<E, D, d, R, r, rC>& range,
+                   const XT::Functions::GridFunctionInterface<E, D, d, R, r, rC>& source,
                    const XT::Common::Parameter& param = {}) const
   {
     auto product = make_laplace_localizable_product(grid_layer_, range, source, over_integrate_, param);

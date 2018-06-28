@@ -46,7 +46,7 @@ class AdvectionLaxWendroffOperatorTraits : public AdvectionTraitsBase<Analytical
                                                                       RealizabilityLimiterImp>
 {
   static_assert(XT::Functions::is_localizable_function<LocalizableFunctionImp>::value,
-                "LocalizableFunctionImp has to be derived from XT::Functions::LocalizableFunctionInterface!");
+                "LocalizableFunctionImp has to be derived from XT::Functions::GridFunctionInterface!");
 
   typedef AdvectionTraitsBase<AnalyticalFluxImp,
                               BoundaryValueImp,

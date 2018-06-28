@@ -16,14 +16,14 @@
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/string.hh>
 
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 namespace Dune {
 namespace GDT {
 
 
 /**
- * \brief Wrapper for the map of reconstructed values that fulfills the XT::Functions::LocalizableFunctionInterface
+ * \brief Wrapper for the map of reconstructed values that fulfills the XT::Functions::GridFunctionInterface
  */
 template <class GridViewImp,
           class DomainFieldImp,
@@ -32,19 +32,19 @@ template <class GridViewImp,
           size_t rangeDim,
           size_t rangeDimCols = 1>
 class ReconstructedLocalizableFunction
-    : public XT::Functions::LocalizableFunctionInterface<typename GridViewImp::template Codim<0>::Entity,
-                                                         DomainFieldImp,
-                                                         domainDim,
-                                                         RangeFieldImp,
-                                                         rangeDim,
-                                                         rangeDimCols>
+    : public XT::Functions::GridFunctionInterface<typename GridViewImp::template Codim<0>::Entity,
+                                                  DomainFieldImp,
+                                                  domainDim,
+                                                  RangeFieldImp,
+                                                  rangeDim,
+                                                  rangeDimCols>
 {
-  typedef XT::Functions::LocalizableFunctionInterface<typename GridViewImp::template Codim<0>::Entity,
-                                                      DomainFieldImp,
-                                                      domainDim,
-                                                      RangeFieldImp,
-                                                      rangeDim,
-                                                      rangeDimCols>
+  typedef XT::Functions::GridFunctionInterface<typename GridViewImp::template Codim<0>::Entity,
+                                               DomainFieldImp,
+                                               domainDim,
+                                               RangeFieldImp,
+                                               rangeDim,
+                                               rangeDimCols>
       BaseType;
 
 public:

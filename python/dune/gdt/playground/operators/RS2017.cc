@@ -65,8 +65,8 @@ PYBIND11_MODULE(__operators_RS2017, m)
         [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
                dd_grid_provider,
            const ssize_t subdomain,
-           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
-           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
+           const XT::Functions::GridFunctionInterface<E, D, d, R, 1>& lambda,
+           const XT::Functions::GridFunctionInterface<E, D, d, R, d, d>& kappa,
            const ssize_t over_int) {
           py::gil_scoped_release DUNE_UNUSED(release);
           const auto over_integrate = XT::Common::numeric_cast<size_t>(over_int);
@@ -139,8 +139,8 @@ PYBIND11_MODULE(__operators_RS2017, m)
         [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
                dd_grid_provider,
            const ssize_t subdomain,
-           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& u,
-           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& v,
+           const XT::Functions::GridFunctionInterface<E, D, d, R, 1>& u,
+           const XT::Functions::GridFunctionInterface<E, D, d, R, 1>& v,
            const ssize_t over_integrate) {
           py::gil_scoped_release DUNE_UNUSED(release);
           return GDT::make_l2_operator(dd_grid_provider.template layer<Layers::dd_subdomain, Backends::view>(
@@ -154,8 +154,8 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "v"_a,
         "over_integrate"_a = 2);
 
-  typedef GDT::EllipticMatrixOperator<XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
-                                      XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>,
+  typedef GDT::EllipticMatrixOperator<XT::Functions::GridFunctionInterface<E, D, d, R, 1>,
+                                      XT::Functions::GridFunctionInterface<E, D, d, R, d, d>,
                                       typename GDT::SpaceProvider<ALU_2D_SIMPLEX_CONFORMING,
                                                                   Layers::dd_subdomain,
                                                                   GDT::SpaceType::dg,
@@ -180,8 +180,8 @@ PYBIND11_MODULE(__operators_RS2017, m)
                dd_grid_provider,
            const ssize_t subdomain,
            const typename EllipticMatrixOperatorType::SourceSpaceType& space,
-           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
-           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
+           const XT::Functions::GridFunctionInterface<E, D, d, R, 1>& lambda,
+           const XT::Functions::GridFunctionInterface<E, D, d, R, d, d>& kappa,
            const ssize_t over_integrate) {
           return new EllipticMatrixOperatorType(XT::Common::numeric_cast<ssize_t>(over_integrate),
                                                 lambda,

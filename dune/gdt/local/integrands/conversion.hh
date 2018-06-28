@@ -10,7 +10,7 @@
 #ifndef DUNE_GDT_LOCAL_INTEGRANDS_CONVERSION_HH
 #define DUNE_GDT_LOCAL_INTEGRANDS_CONVERSION_HH
 
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include "interfaces.hh"
 
@@ -26,7 +26,7 @@ namespace GDT {
  * \sa local_binary_to_unary_element_integrand
  * \sa LocalUnaryElementIntegrandInterface
  * \sa LocalBinaryElementIntegrandInterface
- * \sa XT::Functions::LocalizableFunctionInterface
+ * \sa XT::Functions::GridFunctionInterface
  */
 template <class E,
           size_t t_r = 1,
@@ -46,7 +46,7 @@ public:
   using typename BaseType::ElementType;
   using typename BaseType::LocalBasisType;
 
-  using LocalizableFunctionType = XT::Functions::LocalizableFunctionInterface<E, t_r, t_rC, TF>;
+  using LocalizableFunctionType = XT::Functions::GridFunctionInterface<E, t_r, t_rC, TF>;
   using LocalBinaryElementIntegrandType = LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>;
 
   LocalBinaryToUnaryElementIntegrand(const LocalizableFunctionType& inducing_function_as_test_basis,
@@ -113,7 +113,7 @@ private:
  */
 template <class E, size_t t_r, size_t t_rC, class TF, class F, size_t a_r, size_t a_rC, class AF>
 LocalBinaryToUnaryElementIntegrand<E, t_r, t_rC, TF, F, a_r, a_rC, AF> local_binary_to_unary_element_integrand(
-    const XT::Functions::LocalizableFunctionInterface<E, t_r, t_rC, TF>& inducing_function_as_test_basis,
+    const XT::Functions::GridFunctionInterface<E, t_r, t_rC, TF>& inducing_function_as_test_basis,
     const LocalBinaryElementIntegrandInterface<E, t_r, t_rC, TF, F, a_r, a_rC, AF>& local_binary_element_integrand)
 {
   return LocalBinaryToUnaryElementIntegrand<E, t_r, t_rC, TF, F, a_r, a_rC, AF>(inducing_function_as_test_basis,

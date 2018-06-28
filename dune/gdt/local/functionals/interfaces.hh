@@ -15,7 +15,7 @@
 #include <dune/common/dynvector.hh>
 
 #include <dune/xt/common/parameter.hh>
-#include <dune/xt/functions/interfaces/local-functions.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 
 namespace Dune {
@@ -51,7 +51,7 @@ public:
   static const constexpr size_t rC = range_dim_cols;
 
   using ElementType = Element;
-  using LocalBasisType = XT::Functions::LocalFunctionSetInterface<E, r, rC, R>;
+  using LocalBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
 
   LocalElementFunctionalInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)

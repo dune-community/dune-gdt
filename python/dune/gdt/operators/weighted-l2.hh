@@ -16,7 +16,7 @@
 #include <dune/xt/grid/dd/subdomains/grid.hh>
 #include <dune/xt/grid/gridprovider/provider.hh>
 #include <python/dune/xt/grid/layers.bindings.hh>
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include <dune/gdt/spaces/interface.hh>
 
@@ -36,7 +36,7 @@ class WeightedL2LocalizableProduct
   typedef XT::Grid::extract_entity_t<GL> E;
   typedef typename G::ctype D;
   static const size_t d = G::dimension;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, double, 1, 1> F;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, double, 1, 1> F;
 
   template <bool is_dd_subdomain = (layer_type == XT::Grid::Layers::dd_subdomain)
                                    || (layer_type == XT::Grid::Layers::dd_subdomain_boundary)

@@ -44,12 +44,10 @@ public:
   typedef XT::Functions::
       LocalizableFluxFunctionInterface<EntityType, DomainFieldType, dimDomain, U_, 0, RangeFieldType, dimRange, 1>
           RhsType;
-  typedef XT::Functions::
-      LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>
-          InitialValueType;
-  typedef XT::Functions::
-      LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>
-          BoundaryValueType;
+  typedef XT::Functions::GridFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>
+      InitialValueType;
+  typedef XT::Functions::GridFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>
+      BoundaryValueType;
   typedef BoundaryValueType SolutionType;
 
   typedef typename InitialValueType::DomainType DomainType;

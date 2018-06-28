@@ -73,7 +73,7 @@ public:
   typename std::enable_if<StaticCheck<E, D, d, R, r, rC, RangeSpaceType, VectorType>::value
                               && !is_fv_space<RangeSpaceType>::value,
                           void>::type
-  apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+  apply(const XT::Functions::GridFunctionInterface<E, D, d, R, r, rC>& source,
         LocalDiscreteFunction<RangeSpaceType, VectorType>& local_range) const
   {
     // create local L2 operator
@@ -85,7 +85,7 @@ public:
                                       R>
         local_l2_operator(over_integrate_, one, param_);
     // and functional
-    typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
+    typedef XT::Functions::GridFunctionInterface<E, D, d, R, r, rC> SourceType;
     const LocalVolumeIntegralFunctional<LocalProductIntegrand<SourceType>,
                                         typename RangeSpaceType::BaseFunctionSetType,
                                         R>
@@ -119,11 +119,11 @@ public:
   typename std::enable_if<StaticCheck<E, D, d, R, r, rC, RangeSpaceType, VectorType>::value
                               && is_fv_space<RangeSpaceType>::value,
                           void>::type
-  apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+  apply(const XT::Functions::GridFunctionInterface<E, D, d, R, r, rC>& source,
         LocalDiscreteFunction<RangeSpaceType, VectorType>& local_range) const
   {
     // create local L2 volume integral functional
-    typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC> SourceType;
+    typedef XT::Functions::GridFunctionInterface<E, D, d, R, r, rC> SourceType;
     const LocalVolumeIntegralFunctional<LocalFVProductIntegrand<SourceType>,
                                         typename RangeSpaceType::BaseFunctionSetType,
                                         R>

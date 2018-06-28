@@ -11,7 +11,7 @@
 #define DUNE_GDT_SPACES_BASIS_DEFAULT_HH
 
 #include <dune/xt/common/memory.hh>
-#include <dune/xt/functions/interfaces/local-functions.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/local/finite-elements/interfaces.hh>
@@ -90,10 +90,10 @@ public:
   }
 
 private:
-  class LocalizedDefaultGlobalBasis : public XT::Functions::LocalFunctionSetInterface<E, r, rC, R>
+  class LocalizedDefaultGlobalBasis : public XT::Functions::ElementFunctionSetInterface<E, r, rC, R>
   {
     using ThisType = LocalizedDefaultGlobalBasis;
-    using BaseType = XT::Functions::LocalFunctionSetInterface<E, r, rC, R>;
+    using BaseType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
 
   public:
     using typename BaseType::EntityType;

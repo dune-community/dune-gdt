@@ -135,8 +135,8 @@ class L2LocalizableProduct
   typedef XT::Grid::extract_entity_t<GL> E;
   typedef typename G::ctype D;
   static const size_t d = G::dimension;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, double, range_r, range_rC> R;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, double, source_r, source_rC> S;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, double, range_r, range_rC> R;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, double, source_r, source_rC> S;
 
 public:
   typedef GDT::L2LocalizableProduct<GL, R, S> type;

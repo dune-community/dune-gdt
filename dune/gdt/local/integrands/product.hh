@@ -15,7 +15,7 @@
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/functions/constant.hh>
 #include <dune/xt/functions/base/smooth-localizable-function.hh>
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include "interfaces.hh"
 
@@ -50,7 +50,7 @@ public:
   using typename BaseType::LocalTestBasisType;
   using typename BaseType::LocalAnsatzBasisType;
 
-  using LocalizableFunctionType = XT::Functions::LocalizableFunctionInterface<E, 1, 1, F>;
+  using LocalizableFunctionType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
 
   LocalElementProductIntegrand(const F& inducing_value = F(1))
     : BaseType()
@@ -62,7 +62,7 @@ public:
   {
   }
 
-  LocalElementProductIntegrand(const XT::Functions::SmoothFunctionInterface<d, 1, 1, F>& inducing_function)
+  LocalElementProductIntegrand(const XT::Functions::FunctionInterface<d, 1, 1, F>& inducing_function)
     : BaseType()
     , inducing_function_(new XT::Functions::SmoothFunctionAsLocalizableWrapper<E, 1, 1, F>(inducing_function))
     , local_function_(inducing_function_.access().local_function())

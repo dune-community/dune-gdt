@@ -38,12 +38,12 @@ public:
   typedef RangeFieldImp RangeFieldType;
   static const size_t dimRange = rangeDim;
 
-  typedef XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
+  typedef XT::Functions::GridFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
       DiffusionFactorType;
   typedef XT::Functions::
-      LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain>
+      GridFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimDomain, dimDomain>
           DiffusionTensorType;
-  typedef XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
+  typedef XT::Functions::GridFunctionInterface<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange>
       FunctionType;
 
   virtual ~ProblemInterface()

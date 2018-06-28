@@ -13,7 +13,7 @@
 #define DUNE_GDT_OPERATORS_PROJECTIONS_HH
 
 #include <dune/xt/grid/layers.hh>
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include <dune/gdt/type_traits.hh>
 

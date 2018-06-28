@@ -16,7 +16,7 @@
 #include <dune/common/dynmatrix.hh>
 #include <dune/common/dynvector.hh>
 
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 #include <dune/xt/grid/walker/apply-on.hh>
 #include <dune/xt/grid/walker/wrapper.hh>
 #include <dune/xt/la/container/interfaces.hh>
@@ -38,7 +38,7 @@ class LocalOperatorApplicator : public XT::Grid::internal::Codim0Object<GridLaye
   static_assert(is_local_operator<LocalOperatorType>::value,
                 "LocalOperatorType has to be derived from LocalOperatorInterface!");
   static_assert(XT::Functions::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
+                "SourceType has to be derived from XT::Functions::GridFunctionInterface!");
   static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
   typedef XT::Grid::internal::Codim0Object<GridLayerType> BaseType;
 
@@ -83,7 +83,7 @@ class LocalOperatorJacobianAssembler : public XT::Grid::internal::Codim0Object<G
   static_assert(is_local_operator<LocalOperatorType>::value,
                 "LocalOperatorType has to be derived from LocalOperatorInterface!");
   static_assert(XT::Functions::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
+                "SourceType has to be derived from XT::Functions::GridFunctionInterface!");
   static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
   typedef XT::Grid::internal::Codim0Object<GridViewType> BaseType;
 
@@ -131,7 +131,7 @@ class LocalCouplingOperatorApplicator : public XT::Grid::internal::Codim1Object<
   static_assert(is_local_coupling_operator<LocalOperatorType>::value,
                 "LocalOperatorType has to be derived from LocalCouplingOperatorInterface!");
   static_assert(XT::Functions::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
+                "SourceType has to be derived from XT::Functions::GridFunctionInterface!");
   static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
   typedef XT::Grid::internal::Codim1Object<GridLayerType> BaseType;
 
@@ -185,7 +185,7 @@ class LocalBoundaryOperatorApplicator : public XT::Grid::internal::Codim1Object<
   static_assert(is_local_boundary_operator<LocalOperatorType>::value,
                 "LocalOperatorType has to be derived from LocalCouplingOperatorInterface!");
   static_assert(XT::Functions::is_localizable_function<SourceType>::value,
-                "SourceType has to be derived from XT::Functions::LocalizableFunctionInterface!");
+                "SourceType has to be derived from XT::Functions::GridFunctionInterface!");
   static_assert(is_discrete_function<RangeType>::value, "RangeType has to be a DiscreteFunctionDefault!");
   typedef XT::Grid::internal::Codim1Object<GridLayerType> BaseType;
 

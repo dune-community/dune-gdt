@@ -56,8 +56,8 @@ class LocalizableDiffusiveFluxReconstructionOperator : public LocalizableOperato
   static const constexpr size_t d = GridLayer::dimension;
   typedef double D;
   typedef double R;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
   typedef LocalizableOperatorBase<GridLayer, Source, Range> BaseType;
 
 public:
@@ -272,9 +272,8 @@ public:
   }
 
   template <class GL, class V>
-  void
-  apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
-        DiscreteFunction<RaviartThomasSpace<GL, 0, FieldType>, V>& range) const
+  void apply(const XT::Functions::GridFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
+             DiscreteFunction<RaviartThomasSpace<GL, 0, FieldType>, V>& range) const
   {
     apply_rt0_simplex(source, range);
   }
@@ -469,9 +468,8 @@ public:
   }
 
   template <class GL, class V>
-  void
-  apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
-        DiscreteFunction<RaviartThomasSpace<GL, 0, FieldType>, V>& range) const
+  void apply(const XT::Functions::GridFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
+             DiscreteFunction<RaviartThomasSpace<GL, 0, FieldType>, V>& range) const
   {
     const auto& rtn0_space = range.space();
     auto& range_vector = range.vector();

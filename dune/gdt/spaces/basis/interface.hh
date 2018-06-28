@@ -14,7 +14,7 @@
 #define DUNE_GDT_SPACES_BASIS_INTERFACE_HH
 
 #include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/functions/interfaces/local-functions.hh>
+#include <dune/xt/functions/interfaces/element-functions.hh>
 
 #include <dune/gdt/local/finite-elements/interfaces.hh>
 
@@ -38,7 +38,7 @@ public:
 
   using ElementType = E;
   using ShapeFunctionsType = LocalFiniteElementBasisInterface<D, d, R, r, rC>;
-  using LocalizedBasisType = XT::Functions::LocalFunctionSetInterface<E, r, rC, R>;
+  using LocalizedBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
 
   virtual ~GlobalBasisInterface() = default;
 

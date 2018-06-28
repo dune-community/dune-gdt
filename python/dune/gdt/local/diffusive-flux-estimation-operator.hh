@@ -13,7 +13,7 @@
 
 #include <dune/pybindxi/pybind11.h>
 
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
 #include <dune/xt/grid/type_traits.hh>
 
@@ -34,9 +34,9 @@ class LocalDiffusiveFluxEstimationOperator
   static const constexpr size_t d = G::dimension;
   typedef double R;
 
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunction;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d> VectorFunction;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunction;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, 1> ScalarFunction;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, d> VectorFunction;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, d, d> TensorFunction;
   typedef typename ScalarFunction::LocalfunctionType ScalarLocalFunctionType;
   typedef GDT::LocalVolumeTwoFormInterface<ScalarLocalFunctionType> InterfaceType;
 

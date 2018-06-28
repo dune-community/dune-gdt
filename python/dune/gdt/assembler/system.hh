@@ -256,8 +256,8 @@ public:
              const GDT::LocalVolumeTwoFormInterface<XT::Functions::LocalfunctionInterface<E, D, d, double, 1>,
                                                     XT::Functions::LocalfunctionInterface<E, D, d, double, 1>,
                                                     double>& local_volume_two_form,
-             const XT::Functions::LocalizableFunctionInterface<E, D, d, double, 1>& test_function,
-             const XT::Functions::LocalizableFunctionInterface<E, D, d, double, 1>& ansatz_function,
+             const XT::Functions::GridFunctionInterface<E, D, d, double, 1>& test_function,
+             const XT::Functions::GridFunctionInterface<E, D, d, double, 1>& ansatz_function,
              ResultStorage& result /*,
              const XT::Grid::ApplyOn::WhichEntity<GL>& where*/) {
             self.append(local_volume_two_form, test_function, ansatz_function, result.result() /*, where.copy()*/);

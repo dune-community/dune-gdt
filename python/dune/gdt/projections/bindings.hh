@@ -32,12 +32,12 @@ class project
   typedef typename SP::type SpaceType;
   static_assert(is_space<SpaceType>::value, "");
   static_assert(XT::LA::is_vector<V>::value, "");
-  typedef typename XT::Functions::LocalizableFunctionInterface<typename SpaceType::EntityType,
-                                                               typename SpaceType::DomainFieldType,
-                                                               SpaceType::dimDomain,
-                                                               typename SpaceType::RangeFieldType,
-                                                               SpaceType::dimRange,
-                                                               SpaceType::dimRangeCols>
+  typedef typename XT::Functions::GridFunctionInterface<typename SpaceType::EntityType,
+                                                        typename SpaceType::DomainFieldType,
+                                                        SpaceType::dimDomain,
+                                                        typename SpaceType::RangeFieldType,
+                                                        SpaceType::dimRange,
+                                                        SpaceType::dimRangeCols>
       SourceType;
   typedef DiscreteFunction<SpaceType, V> RangeType;
 

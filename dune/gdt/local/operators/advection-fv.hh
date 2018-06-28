@@ -15,7 +15,7 @@
 #include <dune/xt/common/matrix.hh>
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/la/eigen-solver.hh>
-#include <dune/xt/functions/interfaces/smooth-function.hh>
+#include <dune/xt/functions/interfaces/function.hh>
 
 #include <dune/gdt/exceptions.hh>
 
@@ -36,7 +36,7 @@ class NumericalFluxInterface : public XT::Common::ParametricInterface
   using ThisType = NumericalFluxInterface<d, m, R>;
 
 public:
-  using FluxType = XT::Functions::SmoothFunctionInterface<m, d, m, R>;
+  using FluxType = XT::Functions::FunctionInterface<m, d, m, R>;
   using PhysicalDomainType = FieldVector<double, d>;
   using StateRangeType = typename FluxType::DomainType;
 
@@ -135,7 +135,7 @@ private:
 
 
 template <size_t d, size_t m, class R>
-NumericalLambdaFlux<d, m, R> make_numerical_lambda_flux(const XT::Functions::SmoothFunctionInterface<m, d, m, R>& flux,
+NumericalLambdaFlux<d, m, R> make_numerical_lambda_flux(const XT::Functions::FunctionInterface<m, d, m, R>& flux,
                                                         typename NumericalLambdaFlux<d, m, R>::LambdaType lambda,
                                                         const XT::Common::ParameterType& param_type = {})
 {
@@ -217,7 +217,7 @@ private:
 
 template <size_t d, size_t m, class R, class... Args>
 NumericalVijayasundaramFlux<d, m, R>
-make_numerical_vijayasundaram_flux(const XT::Functions::SmoothFunctionInterface<m, d, m, R>& flux, Args&&... args)
+make_numerical_vijayasundaram_flux(const XT::Functions::FunctionInterface<m, d, m, R>& flux, Args&&... args)
 {
   return NumericalVijayasundaramFlux<d, m, R>(flux, std::forward<Args>(args)...);
 }

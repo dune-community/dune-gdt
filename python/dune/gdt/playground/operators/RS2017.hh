@@ -23,7 +23,7 @@
 #include <python/dune/xt/grid/grids.bindings.hh>
 #include <dune/xt/grid/layers.hh>
 #include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include <python/dune/gdt/assembler/system.hh>
 #include <dune/gdt/functionals/elliptic-ipdg.hh>
@@ -83,8 +83,8 @@ public:
   typedef typename G::ctype D;
   static const constexpr size_t d = G::dimension;
   typedef double R;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
   typedef typename RangeSpaceType::BaseFunctionSetType BasisType;
 
   static void bind(pybind11::module& m)
@@ -269,8 +269,8 @@ public:
   typedef typename G::ctype D;
   static const constexpr size_t d = G::dimension;
   typedef double R;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
 
   static void bind(pybind11::module& m)
   {
@@ -437,8 +437,8 @@ public:
   typedef typename G::ctype D;
   static const constexpr size_t d = G::dimension;
   typedef double R;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
 
   static void bind(pybind11::module& m)
   {
@@ -576,8 +576,8 @@ public:
   typedef typename G::ctype D;
   static const constexpr size_t d = G::dimension;
   typedef double R;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
   typedef typename RangeSpaceType::BaseFunctionSetType BasisType;
 
   static void bind(pybind11::module& m)
@@ -786,8 +786,8 @@ void bind_neighborhood_discretization(pybind11::module& m)
   typedef double D;
   static const constexpr size_t d = 2;
   typedef double R;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> DF;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> DT;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, 1> DF;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, d, d> DT;
 
   typedef typename XT::Grid::Layer<G,
                                    XT::Grid::Layers::dd_subdomain_oversampled,
@@ -1076,7 +1076,7 @@ public:
   typedef typename G::ctype D;
   static const constexpr size_t d = G::dimension;
   typedef double R;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
   typedef typename SpaceType::BaseFunctionSetType BasisType;
 
   static void bind(pybind11::module& m)
@@ -1170,7 +1170,7 @@ void bind_neighborhood_reconstruction(pybind11::module& m)
   typedef XT::LA::IstlDenseVector<R> VectorType;
   typedef GDT::
       LocalizableDiffusiveFluxReconstructionOperator<NeighborHoodGridLayer,
-                                                     XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
+                                                     XT::Functions::GridFunctionInterface<E, D, d, R, 1>,
                                                      GDT::DiscreteFunction<NeighborhoodRtSpaceType, VectorType>,
                                                      GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>
           LocalizableDiffusiveFluxReconstructionOperatorForRestrictedSpaceType;
@@ -1178,9 +1178,9 @@ void bind_neighborhood_reconstruction(pybind11::module& m)
   m.def("RS2017_apply_diffusive_flux_reconstruction_in_neighborhood",
         [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
            const ssize_t subdomain,
-           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
-           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
-           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& u,
+           const XT::Functions::GridFunctionInterface<E, D, d, R, 1>& lambda,
+           const XT::Functions::GridFunctionInterface<E, D, d, R, d, d>& kappa,
+           const XT::Functions::GridFunctionInterface<E, D, d, R, 1>& u,
            typename LocalizableDiffusiveFluxReconstructionOperatorForRestrictedSpaceType::RangeType& reconstructed_u,
            const ssize_t over_integrate) {
           py::gil_scoped_release DUNE_UNUSED(release);
@@ -1204,7 +1204,7 @@ void bind_neighborhood_reconstruction(pybind11::module& m)
 
   typedef GDT::
       LocalizableDiffusiveFluxReconstructionOperator<NeighborHoodGridLayer,
-                                                     XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
+                                                     XT::Functions::GridFunctionInterface<E, D, d, R, 1>,
                                                      GDT::DiscreteFunction<RtSpaceType, VectorType>,
                                                      GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>
           LocalizableDiffusiveFluxReconstructionOperatorForLeafSpaceType;
@@ -1212,9 +1212,9 @@ void bind_neighborhood_reconstruction(pybind11::module& m)
   m.def("RS2017_apply_diffusive_flux_reconstruction_in_neighborhood",
         [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
            const ssize_t subdomain,
-           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
-           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
-           const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& u,
+           const XT::Functions::GridFunctionInterface<E, D, d, R, 1>& lambda,
+           const XT::Functions::GridFunctionInterface<E, D, d, R, d, d>& kappa,
+           const XT::Functions::GridFunctionInterface<E, D, d, R, 1>& u,
            typename LocalizableDiffusiveFluxReconstructionOperatorForLeafSpaceType::RangeType& reconstructed_u,
            const ssize_t over_integrate) {
           py::gil_scoped_release DUNE_UNUSED(release);

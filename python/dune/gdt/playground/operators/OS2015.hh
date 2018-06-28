@@ -22,7 +22,7 @@
 #include <dune/xt/grid/entity.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/derived.hh>
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/operators/integrals.hh>
@@ -54,8 +54,8 @@ private:
   typedef ResidualProductBase<ProductGridLayer, ReconstructionGridLayer> ThisType;
 
 public:
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
 
 private:
   typedef RaviartThomasSpace<ReconstructionGridLayer, 0, R> RtSpaceType;
@@ -110,21 +110,19 @@ template <class ProductGridLayer, class ReconstructionGridLayer>
 class ResidualProduct
     : internal::ResidualProductBase<ProductGridLayer, ReconstructionGridLayer>,
       public LocalizableProductBase<ProductGridLayer,
-                                    XT::Functions::
-                                        LocalizableFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
-                                                                     typename ProductGridLayer::ctype,
-                                                                     ProductGridLayer::dimension,
-                                                                     double,
-                                                                     1>>
+                                    XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
+                                                                         typename ProductGridLayer::ctype,
+                                                                         ProductGridLayer::dimension,
+                                                                         double,
+                                                                         1>>
 {
   typedef internal::ResidualProductBase<ProductGridLayer, ReconstructionGridLayer> ResidualProductBaseType;
   typedef LocalizableProductBase<ProductGridLayer,
-                                 XT::Functions::
-                                     LocalizableFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
-                                                                  typename ProductGridLayer::ctype,
-                                                                  ProductGridLayer::dimension,
-                                                                  double,
-                                                                  1>>
+                                 XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
+                                                                      typename ProductGridLayer::ctype,
+                                                                      ProductGridLayer::dimension,
+                                                                      double,
+                                                                      1>>
       LocalizableProductBaseType;
 
 public:
@@ -246,12 +244,11 @@ private:
 template <class ProductGridLayer, class ReconstructionGridLayer>
 class DiffusiveFluxProduct
     : public LocalizableProductBase<ProductGridLayer,
-                                    XT::Functions::
-                                        LocalizableFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
-                                                                     typename ProductGridLayer::ctype,
-                                                                     ProductGridLayer::dimension,
-                                                                     double,
-                                                                     1>>
+                                    XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<ProductGridLayer>,
+                                                                         typename ProductGridLayer::ctype,
+                                                                         ProductGridLayer::dimension,
+                                                                         double,
+                                                                         1>>
 {
   static_assert(XT::Grid::is_layer<ProductGridLayer>::value, "");
   static_assert(XT::Grid::is_layer<ReconstructionGridLayer>::value, "");
@@ -263,13 +260,13 @@ class DiffusiveFluxProduct
   typedef DiffusiveFluxProduct<ProductGridLayer, ReconstructionGridLayer> ThisType;
 
 public:
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
 
 private:
   typedef RaviartThomasSpace<ReconstructionGridLayer, 0, R> RtSpaceType;
   typedef DiscreteFunction<RtSpaceType> FluxReconstructionType;
-  typedef LocalizableProductBase<ProductGridLayer, XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>> BaseType;
+  typedef LocalizableProductBase<ProductGridLayer, XT::Functions::GridFunctionInterface<E, D, d, R, 1>> BaseType;
   typedef LocalVolumeIntegralOperator<LocalLambdaBinaryVolumeIntegrand<E>,
                                       typename ScalarFunctionType::LocalfunctionType>
       LocalProductType;

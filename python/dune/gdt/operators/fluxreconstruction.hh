@@ -43,8 +43,8 @@ class DiffusiveFluxReconstructionOperator
   typedef typename S::EntityType E;
   typedef typename S::DomainFieldType D;
   static const size_t d = S::dimDomain;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
-  typedef XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, 1> ScalarFunctionType;
+  typedef XT::Functions::GridFunctionInterface<E, D, d, R, d, d> TensorFunctionType;
 
 public:
   static void bind(pybind11::module& m)

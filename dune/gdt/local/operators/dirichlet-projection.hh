@@ -59,7 +59,7 @@ public:
   }
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC, class RS, class V>
-  void apply(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+  void apply(const XT::Functions::GridFunctionInterface<E, D, d, R, r, rC>& source,
              LocalDiscreteFunction<RS, V>& local_range) const
   {
     const auto& entity = local_range.entity();

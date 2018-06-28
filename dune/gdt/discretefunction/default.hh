@@ -18,7 +18,7 @@
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/la/container/vector-interface.hh>
 
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include <dune/gdt/local/discretefunction.hh>
 #include <dune/gdt/discretefunction/dof-vector.hh>
@@ -31,12 +31,12 @@ namespace GDT {
 template <class Vector, class GridView, size_t range_dim = 1, size_t range_dim_cols = 1, class RangeField = double>
 class ConstDiscreteFunction
     : public XT::Functions::
-          LocalizableFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>
+          GridFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>
 {
   static_assert(XT::LA::is_vector<Vector>::value, "");
 
-  using BaseType = XT::Functions::
-      LocalizableFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>;
+  using BaseType =
+      XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>;
   using ThisType = ConstDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
 
 public:
@@ -85,7 +85,7 @@ public:
   }
 
   /**
-   * \name ``These methods are required by XT::Functions::LocalizableFunctionInterface.''
+   * \name ``These methods are required by XT::Functions::GridFunctionInterface.''
    * \{
    */
   std::string type() const override
@@ -115,9 +115,9 @@ public:
   using BaseType::visualize;
 
   /**
-   * \brief Visualizes the function using Dune::XT::Functions::LocalizableFunctionInterface::visualize on the grid view
+   * \brief Visualizes the function using Dune::XT::Functions::GridFunctionInterface::visualize on the grid view
    *        associated with the space.
-   * \sa    Dune::XT::Functions::LocalizableFunctionInterface::visualize
+   * \sa    Dune::XT::Functions::GridFunctionInterface::visualize
    * \note  Subsampling is enabled by default for functions of order greater than one.
    */
   void visualize(const std::string filename,
@@ -210,7 +210,7 @@ public:
   }
 
   /**
-   * \name ``These methods are required by XT::Functions::LocalizableFunctionInterface.''
+   * \name ``These methods are required by XT::Functions::GridFunctionInterface.''
    * \{
    */
 

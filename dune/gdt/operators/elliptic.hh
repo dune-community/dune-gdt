@@ -711,8 +711,8 @@ public:
   }
 
   template <class E, class D, size_t d, class R, size_t r, size_t rC>
-  FieldType apply2(const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& range,
-                   const XT::Functions::LocalizableFunctionInterface<E, D, d, R, r, rC>& source,
+  FieldType apply2(const XT::Functions::GridFunctionInterface<E, D, d, R, r, rC>& range,
+                   const XT::Functions::GridFunctionInterface<E, D, d, R, r, rC>& source,
                    const XT::Common::Parameter& param = {}) const
   {
     auto product = make_elliptic_localizable_product(data_functions_.diffusion_factor(),

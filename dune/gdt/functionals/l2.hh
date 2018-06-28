@@ -15,7 +15,7 @@
 #include <type_traits>
 
 #include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/functions/interfaces/localizable-function.hh>
+#include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/integrands/conversion.hh>
@@ -50,7 +50,7 @@ public:
   using typename BaseType::SourceSpaceType;
   using typename BaseType::SourceVectorType;
 
-  using InducingFunctionType = XT::Functions::LocalizableFunctionInterface<ElementType, r, rC, F>;
+  using InducingFunctionType = XT::Functions::GridFunctionInterface<ElementType, r, rC, F>;
 
 private:
   using LocalFunctionalType = LocalElementIntegralFunctional<ElementType, r, rC, F, DofFieldType>;
@@ -97,7 +97,7 @@ make_l2_volume_vector_functional(
     GridView<AGV> assembly_grid_view,
     const SpaceInterface<GV, r, rC, F>& space,
     XT::LA::VectorInterface<V>& vector,
-    const XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, F>& inducing_function,
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, F>& inducing_function,
     const size_t over_integrate = 0,
     const XT::Common::Parameter& param = {},
     const XT::Grid::ElementFilter<GridView<AGV>>& filter = XT::Grid::ApplyOn::AllElements<GridView<AGV>>())
@@ -111,7 +111,7 @@ L2VolumeVectorFunctional<typename XT::LA::VectorInterface<V>::derived_type, GV, 
 make_l2_volume_vector_functional(
     const SpaceInterface<GV, r, rC, F>& space,
     XT::LA::VectorInterface<V>& vector,
-    const XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, F>& inducing_function,
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, F>& inducing_function,
     const size_t over_integrate = 0,
     const XT::Common::Parameter& param = {},
     const XT::Grid::ElementFilter<GV>& filter = XT::Grid::ApplyOn::AllElements<GV>())
@@ -130,7 +130,7 @@ typename std::enable_if<XT::LA::is_vector<VectorType>::value,
 make_l2_volume_vector_functional(
     GridView<AGV> assembly_grid_view,
     const SpaceInterface<GV, r, rC, F>& space,
-    const XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, F>& inducing_function,
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, F>& inducing_function,
     const size_t over_integrate = 0,
     const XT::Common::Parameter& param = {},
     const XT::Grid::ElementFilter<AGV>& filter = XT::Grid::ApplyOn::AllElements<AGV>())
@@ -143,7 +143,7 @@ template <class VectorType, class GV, size_t r, size_t rC, class F>
 typename std::enable_if<XT::LA::is_vector<VectorType>::value, L2VolumeVectorFunctional<VectorType, GV, r, rC, F>>::type
 make_l2_volume_vector_functional(
     const SpaceInterface<GV, r, rC, F>& space,
-    const XT::Functions::LocalizableFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, F>& inducing_function,
+    const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GV>, r, rC, F>& inducing_function,
     const size_t over_integrate = 0,
     const XT::Common::Parameter& param = {},
     const XT::Grid::ElementFilter<GV>& filter = XT::Grid::ApplyOn::AllElements<GV>())

@@ -98,8 +98,7 @@ public:
    */
   template <class S, class V, size_t r, size_t rC>
   void
-  apply(const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, r, rC>&
-            source,
+  apply(const XT::Functions::GridFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, r, rC>& source,
         DiscreteFunction<S, V>& range,
         const Dune::XT::Common::Parameter& param = {}) const
   {
@@ -148,8 +147,7 @@ private:
   template <class T, class S, class V>
   void redirect_apply(
       const CgSpaceInterface<T, dimDomain, dimDomain, 1>& /*space*/,
-      const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1, 1>&
-          source,
+      const XT::Functions::GridFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1, 1>& source,
       DiscreteFunction<S, V>& range,
       const XT::Common::Parameter param) const
   {
@@ -206,7 +204,7 @@ private:
   template <class T, class S, class V>
   void redirect_apply(
       const RtSpaceInterface<T, dimDomain, dimDomain, 1>& /*space*/,
-      const XT::Functions::LocalizableFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
+      const XT::Functions::GridFunctionInterface<EntityType, DomainFieldType, dimDomain, FieldType, 1>& source,
       DiscreteFunction<S, V>& range,
       const XT::Common::Parameter param) const
   {
