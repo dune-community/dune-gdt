@@ -20,6 +20,7 @@
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/la/container/vector-interface.hh>
 
+#include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/spaces/interface.hh>
 
@@ -30,7 +31,7 @@ namespace GDT {
 /**
  * \brief Interface for operators (and two-forms).
  *
- * Consider (discrete) spaces V_h and W_h, and a field K, this interface models
+ * Considering (discrete) spaces V_h and W_h, and a field K, this interface models
  *
  * - operators A: V_h -> W_h and
  *
@@ -57,11 +58,6 @@ namespace GDT {
  *
  * The field K of the interpretation of the operator as a two-form (see for instance the default implementation of
  * apply2()) is modelled by Field.
- *
- * \note It would be nice to support variants of the methods below which act on ConstDiscreteFunction and
- *       DiscreteFunction. However, this would require a means to check if the arguments spaces coincide with the spaces
- *       of the operator (and thus an equality check on SpaceInterface), which at the end would require a means to
- *       compare two GridView instances for equality, which is not (yet) supported by dune-grid.
  */
 template <class SourceVector,
           class SourceGridView,
@@ -96,13 +92,22 @@ public:
 
   using SourceSpaceType = SpaceInterface<SGV, s_r, s_rC, SF>;
   using SourceVectorType = SourceVector;
+  using SourceFunctionType = DiscreteFunction<SourceVector, SGV, s_r, s_rC, SF>;
+  using ConstSourceFunctionType = ConstDiscreteFunction<SourceVector, SGV, s_r, s_rC, SF>;
 
   using RangeSpaceType = SpaceInterface<RGV, r_r, r_rC, RF>;
   using RangeVectorType = RangeVector;
+  using RangeFunctionType = DiscreteFunction<RangeVector, RGV, r_r, r_rC, RF>;
+  using ConstRangeFunctionType = ConstDiscreteFunction<RangeVector, RGV, r_r, r_rC, RF>;
 
   using FieldType = Field;
 
   using ThisType = OperatorInterface<SV, SGV, s_r, s_rC, SF, F, r_r, r_rC, RF, RGV, RV>;
+
+  explicit OperatorInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
+  {
+  }
 
   virtual ~OperatorInterface() = default;
 
@@ -156,7 +161,7 @@ public:
 \code
 invert_options(some_type).get<std::string>("type") == some_type
 \endcode
-   * and possible other key/value pairs.
+   * and possibly other key/value pairs.
    */
   virtual XT::Common::Configuration invert_options(const std::string& /*type*/) const
   {
@@ -289,19 +294,171 @@ invert_options(some_type).get<std::string>("type") == some_type
   /// \name These induced_norm variants are provided for convenience.
   /// \{
 
-  template <class RangeVectorType_,
+  template <class ParameterType_,
             typename = /* Only enable this method, if */
-            typename std::enable_if</* range is in the vector space defined by RangeSpaceType/RangeVectorType */ (
-                                        std::is_same<RangeVectorType_, RangeVectorType>::value)
+            typename std::enable_if</* param is the same as XT::Common::Parameter */ (
+                                        std::is_same<ParameterType_, XT::Common::Parameter>::value)
                                     && /* and the vector spaces defined by SourceSpaceType/SourceVectorType and */
                                     /* RangeSpaceType/RangeVectorType coincide. */ (
                                         std::is_same<SV, RV>::value&& std::is_same<SGV, RGV>::value && (s_r == r_r)
                                         && (s_rC == r_rC)
                                         && std::is_same<SF, RF>::value)>::type>
-  FieldType induced_norm(const RangeVectorType_& range, const XT::Common::Parameter& param = {}) const
+  FieldType induced_norm(const RangeVectorType& range, const ParameterType_& param = {}) const
   {
     using std::sqrt;
     return sqrt(this->apply2(range, range, param));
+  }
+
+  /// \}
+  /// \name For each method above which accepts vectors we provide a similar variant for convenience which accepts
+  ///       functions (which simply extracts the vectors and calls the respectiv method).
+  /// \{
+
+  virtual void
+  apply(const ConstSourceFunctionType& source, RangeFunctionType& range, const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->source_space().contains(source),
+                  Exceptions::operator_error,
+                  "this->source_space() = " << this->source_space() << "\n   source.space() = " << source.space());
+    DUNE_THROW_IF(!this->range_space().contains(range),
+                  Exceptions::operator_error,
+                  "this->range_space() = " << this->range_space() << "\n   range.space() = " << range.space());
+    this->apply(source.dofs().vector(), range.dofs().vector(), param);
+  }
+
+  virtual RangeFunctionType apply(const ConstSourceFunctionType& source, const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->source_space().contains(source),
+                  Exceptions::operator_error,
+                  "this->source_space() = " << this->source_space() << "\n   source.space() = " << source.space());
+    return RangeFunctionType(this->range_space(), this->apply(source.dofs().vector(), param));
+  }
+
+  virtual FieldType apply2(const SourceFunctionType& range,
+                           const RangeFunctionType& source,
+                           const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->source_space().contains(source),
+                  Exceptions::operator_error,
+                  "this->source_space() = " << this->source_space() << "\n   source.space() = " << source.space());
+    DUNE_THROW_IF(!this->range_space().contains(range),
+                  Exceptions::operator_error,
+                  "this->range_space() = " << this->range_space() << "\n   range.space() = " << range.space());
+    return this->apply2(range.dofs().vector(), source.dofs().vector(), param);
+  }
+
+  virtual void apply_inverse(const RangeFunctionType& range,
+                             SourceFunctionType& source,
+                             const XT::Common::Configuration& opts,
+                             const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->source_space().contains(source),
+                  Exceptions::operator_error,
+                  "this->source_space() = " << this->source_space() << "\n   source.space() = " << source.space());
+    DUNE_THROW_IF(!this->range_space().contains(range),
+                  Exceptions::operator_error,
+                  "this->range_space() = " << this->range_space() << "\n   range.space() = " << range.space());
+    this->apply_inverse(range.dofs().vector(), source.dofs().vector(), opts, param);
+  }
+
+  virtual void apply_inverse(const RangeFunctionType& range,
+                             SourceFunctionType& source,
+                             const std::string& type,
+                             const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->source_space().contains(source),
+                  Exceptions::operator_error,
+                  "this->source_space() = " << this->source_space() << "\n   source.space() = " << source.space());
+    DUNE_THROW_IF(!this->range_space().contains(range),
+                  Exceptions::operator_error,
+                  "this->range_space() = " << this->range_space() << "\n   range.space() = " << range.space());
+    this->apply_inverse(range.dofs().vector(), source.dofs().vector(), type, param);
+  }
+
+  virtual void apply_inverse(const RangeFunctionType& range,
+                             SourceFunctionType& source,
+                             const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->source_space().contains(source),
+                  Exceptions::operator_error,
+                  "this->source_space() = " << this->source_space() << "\n   source.space() = " << source.space());
+    DUNE_THROW_IF(!this->range_space().contains(range),
+                  Exceptions::operator_error,
+                  "this->range_space() = " << this->range_space() << "\n   range.space() = " << range.space());
+    this->apply_inverse(range.dofs().vector(), source.dofs().vector(), param);
+  }
+
+  virtual SourceFunctionType apply_inverse(const RangeFunctionType& range,
+                                           const XT::Common::Configuration& opts,
+                                           const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->range_space().contains(range),
+                  Exceptions::operator_error,
+                  "this->range_space() = " << this->range_space() << "\n   range.space() = " << range.space());
+    return SourceFunctionType(this->source_space(), this->apply_inverse(range.dofs().vector(), opts, param));
+  }
+
+  virtual SourceFunctionType
+  apply_inverse(const RangeFunctionType& range, const std::string& type, const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->range_space().contains(range),
+                  Exceptions::operator_error,
+                  "this->range_space() = " << this->range_space() << "\n   range.space() = " << range.space());
+    return SourceFunctionType(this->source_space(), this->apply_inverse(range.dofs().vector(), type, param));
+  }
+
+  virtual SourceFunctionType apply_inverse(const RangeFunctionType& range,
+                                           const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->range_space().contains(range),
+                  Exceptions::operator_error,
+                  "this->range_space() = " << this->range_space() << "\n   range.space() = " << range.space());
+    return SourceFunctionType(this->source_space(), this->apply_inverse(range.dofs().vector(), param));
+  }
+
+  virtual std::shared_ptr<ThisType> jacobian(const SourceFunctionType& source,
+                                             const XT::Common::Configuration& opts,
+                                             const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->source_space().contains(source),
+                  Exceptions::operator_error,
+                  "this->source_space() = " << this->source_space() << "\n   source.space() = " << source.space());
+    return this->jacobian(source.dofs().vector(), opts, param);
+  }
+
+  virtual std::shared_ptr<ThisType>
+  jacobian(const SourceFunctionType& source, const std::string& type, const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->source_space().contains(source),
+                  Exceptions::operator_error,
+                  "this->source_space() = " << this->source_space() << "\n   source.space() = " << source.space());
+    return this->jacobian(source.dofs().vector(), type, param);
+  }
+
+  virtual std::shared_ptr<ThisType> jacobian(const SourceFunctionType& source,
+                                             const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->source_space().contains(source),
+                  Exceptions::operator_error,
+                  "this->source_space() = " << this->source_space() << "\n   source.space() = " << source.space());
+    return this->jacobian(source.dofs().vector(), param);
+  }
+
+  template <class ParameterType_,
+            typename = /* Only enable this method, if */
+            typename std::enable_if</* param is the same as XT::Common::Parameter */ (
+                                        std::is_same<ParameterType_, XT::Common::Parameter>::value)
+                                    && /* and the vector spaces defined by SourceSpaceType/SourceVectorType and */
+                                    /* RangeSpaceType/RangeVectorType coincide. */ (
+                                        std::is_same<SV, RV>::value&& std::is_same<SGV, RGV>::value && (s_r == r_r)
+                                        && (s_rC == r_rC)
+                                        && std::is_same<SF, RF>::value)>::type>
+  FieldType induced_norm(const RangeFunctionType& range, const ParameterType_& param = {}) const
+  {
+    DUNE_THROW_IF(!this->range_space().contains(range),
+                  Exceptions::operator_error,
+                  "this->range_space() = " << this->range_space() << "\n   range.space() = " << range.space());
+    return this->induced_norm(range.dofs().vector(), param);
   }
 
   /// \}
