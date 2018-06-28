@@ -1,3 +1,4 @@
+# ~~~
 # This file is part of the dune-gdt project:
 #   https://github.com/dune-community/dune-gdt
 # Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
@@ -6,6 +7,7 @@
 #          with "runtime exception" (http://www.dune-project.org/license.html)
 # Authors:
 #   Felix Schindler (2010, 2013 - 2014, 2016 - 2017)
+# ~~~
 
 add_subdirectory(doxygen)
 
