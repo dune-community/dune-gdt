@@ -1205,8 +1205,8 @@ public:
     using namespace pybind11::literals;
 
     const auto space_name = GDT::bindings::space_name<SP>::value();
-    const auto grid_layer_name = XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
-                                 + XT::Grid::bindings::backend_name<Backends::view>::value();
+    const auto grid_layer_name =
+        XT::Grid::layer_names[Layers::dd_subdomain] + "_" + XT::Grid::bindings::backend_name<Backends::view>::value();
 
     const std::string classname = XT::Common::to_camel_case(
         "RS2017_penalty_product_matrix_operator_oversampled_subdomain_" + XT::Grid::bindings::grid_name<G>::value());
@@ -1506,7 +1506,7 @@ void bind_neighborhood_discretization(py::module& m)
         m,
         GDT::bindings::space_name<SP>::value(),
         GDT::bindings::space_name<SP>::value(),
-        XT::Grid::bindings::layer_name<Layers::dd_subdomain_oversampled>::value() + "_"
+        XT::Grid::layer_names[Layers::dd_subdomain_oversampled] + "_"
             + XT::Grid::bindings::backend_name<Backends::view>::value());
   } catch (std::runtime_error&) {
   }

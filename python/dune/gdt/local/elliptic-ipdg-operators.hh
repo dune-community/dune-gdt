@@ -64,7 +64,7 @@ private:
   {
     static std::string value()
     {
-      return "_" + XT::Grid::bindings::layer_name<layer>::value() + "_intersection";
+      return "_" + XT::Grid::layer_names[layer] + "_intersection";
     }
   };
 
@@ -229,7 +229,7 @@ private:
   {
     static std::string value()
     {
-      return "_" + XT::Grid::bindings::layer_name<layer>::value() + "_intersection";
+      return "_" + XT::Grid::layer_names[layer] + "_intersection";
     }
   };
 

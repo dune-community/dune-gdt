@@ -234,7 +234,7 @@ public:
                                                                                     backend>::type>,
                                       V>::bind(m,
                                                space_name<SP>::value() + "_restricted_to_"
-                                                   + XT::Grid::bindings::layer_name<layer>::value()
+                                                   + XT::Grid::layer_names[layer]
                                                    + "_"
                                                    + XT::Grid::bindings::backend_name<backend>::value());
   } // ... addbind_restricted(...)

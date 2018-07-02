@@ -49,7 +49,7 @@ class WeightedL2LocalizableProduct
       namespace py = pybind11;
       using namespace pybind11::literals;
 
-      m.def(std::string("apply_weighted_l2_product_" + XT::Grid::bindings::layer_name<layer_type>::value() + "_"
+      m.def(std::string("apply_weighted_l2_product_" + XT::Grid::layer_names[layer_type] + "_"
                         + XT::Grid::bindings::backend_name<layer_backend>::value())
                 .c_str(),
             [](const F& weight,
@@ -83,7 +83,7 @@ class WeightedL2LocalizableProduct
       namespace py = pybind11;
       using namespace pybind11::literals;
 
-      m.def(std::string("apply_weighted_l2_product_" + XT::Grid::bindings::layer_name<layer_type>::value() + "_"
+      m.def(std::string("apply_weighted_l2_product_" + XT::Grid::layer_names[layer_type] + "_"
                         + XT::Grid::bindings::backend_name<layer_backend>::value())
                 .c_str(),
             [](const F& weight,
@@ -102,7 +102,7 @@ class WeightedL2LocalizableProduct
             "grid"_a,
             "level"_a = -1,
             "over_integrate"_a = 0);
-      m.def(std::string("apply_weighted_l2_product_" + XT::Grid::bindings::layer_name<layer_type>::value() + "_"
+      m.def(std::string("apply_weighted_l2_product_" + XT::Grid::layer_names[layer_type] + "_"
                         + XT::Grid::bindings::backend_name<layer_backend>::value())
                 .c_str(),
             [](const F& weight,

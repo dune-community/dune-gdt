@@ -61,7 +61,7 @@ struct ResidualProduct
   {
     static std::string value()
     {
-      return "_" + XT::Grid::bindings::layer_name<reconstruction_layer_type>::value() + "_"
+      return "_" + XT::Grid::layer_names[reconstruction_layer_type] + "_"
              + XT::Grid::bindings::backend_name<Backends::view>::value();
     }
   }; // struct reconstruction_layer_suffix<false, ...>
@@ -73,8 +73,8 @@ struct ResidualProduct
 
   static std::string layer_suffix()
   {
-    return XT::Grid::bindings::layer_name<layer_type>::value() + "_"
-           + XT::Grid::bindings::backend_name<layer_backend>::value() + reconstruction_layer_suffix<>::value();
+    return XT::Grid::layer_names[layer_type] + "_" + XT::Grid::bindings::backend_name<layer_backend>::value()
+           + reconstruction_layer_suffix<>::value();
   }
 
   template <bool is_dd = (layer_type == Layers::dd_subdomain) || (layer_type == Layers::dd_subdomain_boundary)
@@ -223,7 +223,7 @@ struct DiffusiveFluxProduct
   {
     static std::string value()
     {
-      return "_" + XT::Grid::bindings::layer_name<reconstruction_layer_type>::value() + "_"
+      return "_" + XT::Grid::layer_names[reconstruction_layer_type] + "_"
              + XT::Grid::bindings::backend_name<Backends::view>::value();
     }
   }; // struct reconstruction_layer_suffix<false, ...>
@@ -235,8 +235,8 @@ struct DiffusiveFluxProduct
 
   static std::string layer_suffix()
   {
-    return XT::Grid::bindings::layer_name<layer_type>::value() + "_"
-           + XT::Grid::bindings::backend_name<layer_backend>::value() + reconstruction_layer_suffix<>::value();
+    return XT::Grid::layer_names[layer_type] + "_" + XT::Grid::bindings::backend_name<layer_backend>::value()
+           + reconstruction_layer_suffix<>::value();
   }
 
   template <bool is_dd = (layer_type == Layers::dd_subdomain) || (layer_type == Layers::dd_subdomain_boundary)

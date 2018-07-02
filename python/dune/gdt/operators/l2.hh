@@ -147,7 +147,7 @@ public:
 private:
   static std::string class_name()
   {
-    return "l2_localizable_product_on_" + XT::Grid::bindings::layer_name<layer_type>::value() + "_"
+    return "l2_localizable_product_on_" + XT::Grid::layer_names[layer_type] + "_"
            + XT::Grid::bindings::backend_name<layer_backend>::value() + "_for_" + XT::Common::to_string(range_r) + "x"
            + XT::Common::to_string(range_rC) + "_range_times_" + XT::Common::to_string(source_r) + "x"
            + XT::Common::to_string(source_rC) + "_source";

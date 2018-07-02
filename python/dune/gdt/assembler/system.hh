@@ -339,7 +339,7 @@ public:
     return binder::bind(m,
                         space_name<TP>::value(),
                         space_name<AP>::value(),
-                        XT::Grid::bindings::layer_name<grid_layer>::value() + "_"
+                        XT::Grid::layer_names[grid_layer] + "_"
                             + XT::Grid::bindings::backend_name<grid_backend>::value());
   }
 }; // class SystemAssembler

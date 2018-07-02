@@ -150,8 +150,8 @@ struct space_name_base
   static std::string value_wo_grid()
   {
     using XT::Common::to_string;
-    return XT::Grid::bindings::layer_name<layer>::value() + "_" + XT::Grid::bindings::backend_name<g>::value() + "_to_"
-           + to_string(r) + "x" + to_string(rC) + "_" + backend_name<backend>::value();
+    return XT::Grid::layer_names[layer] + "_" + XT::Grid::bindings::backend_name<g>::value() + "_to_" + to_string(r)
+           + "x" + to_string(rC) + "_" + backend_name<backend>::value();
   }
 
   static std::string value()
@@ -465,7 +465,7 @@ private:
 
       typedef GDT::RestrictedSpace<S, typename XT::Grid::Layer<G, layer, backend>::type> RestrictedSpaceType;
 
-      c.def(std::string("restrict_to_" + XT::Grid::bindings::layer_name<layer>::value() + "_"
+      c.def(std::string("restrict_to_" + XT::Grid::layer_names[layer] + "_"
                         + XT::Grid::bindings::backend_name<backend>::value())
                 .c_str(),
             [](type& self,
@@ -489,7 +489,7 @@ private:
 
       typedef GDT::RestrictedSpace<S, typename XT::Grid::Layer<G, layer, backend>::type> RestrictedSpaceType;
 
-      c.def(std::string("restrict_to_" + XT::Grid::bindings::layer_name<layer>::value() + "_"
+      c.def(std::string("restrict_to_" + XT::Grid::layer_names[layer] + "_"
                         + XT::Grid::bindings::backend_name<backend>::value())
                 .c_str(),
             [](type& self, XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>& grid_provider, const int level = -1) {
@@ -510,8 +510,8 @@ private:
     typedef GDT::RestrictedSpace<S, typename XT::Grid::Layer<G, layer, backend>::type> RestrictedSpaceType;
 
     XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
-      const auto restricted_space_name = sp_name + "_restricted_to_" + XT::Grid::bindings::layer_name<layer>::value()
-                                         + "_" + XT::Grid::bindings::backend_name<backend>::value();
+      const auto restricted_space_name = sp_name + "_restricted_to_" + XT::Grid::layer_names[layer] + "_"
+                                         + XT::Grid::bindings::backend_name<backend>::value();
       auto restricted_space = SpaceInterfaceWoFactory<RestrictedSpaceType>::bind(mod, restricted_space_name);
       restricted_space.def("restrict",
                            [](RestrictedSpaceType& self, const XT::LA::IstlDenseVector<double>& unrestricted_vector) {
