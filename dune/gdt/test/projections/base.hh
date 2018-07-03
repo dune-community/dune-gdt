@@ -42,14 +42,18 @@ struct ProjectionOperatorBase : public OperatorBase<SpaceType>
     DXTC_EXPECT_FLOAT_LE(l2_error, expected_error);
   }
 
-  static const constexpr double default_tolerance = 1.35e-10;
-  static const constexpr double alugrid_tolerance = 3.8e-11;
-}; // struct ProjectionOperatorBase
+  ProjectionOperatorBase()
+    : BaseType()
+    , relax_factor(this->space_.grid_layer().grid().comm().size() > 1 ? 1.15 : 1)
+    , default_tolerance(1.35e-10 * relax_factor)
+    , alugrid_tolerance(3.8e-11)
+  {
+  }
 
-template <class T>
-constexpr double ProjectionOperatorBase<T>::default_tolerance;
-template <class T>
-constexpr double ProjectionOperatorBase<T>::alugrid_tolerance;
+  const double relax_factor;
+  const double default_tolerance;
+  const double alugrid_tolerance;
+}; // struct ProjectionOperatorBase
 
 } // namespace internal
 
