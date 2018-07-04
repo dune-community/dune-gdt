@@ -14,11 +14,13 @@
 #include <dune/pybindxi/pybind11.h>
 
 #include <dune/xt/functions/interfaces/localizable-function.hh>
-#include <python/dune/xt/grid/grids.bindings.hh>
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/local/integrands/ESV2007.hh>
 #include <dune/gdt/local/operators/integrals.hh>
+
+#include <python/dune/xt/grid/grids.bindings.hh>
+#include <python/dune/xt/common/bindings.hh>
 
 namespace Dune {
 namespace GDT {

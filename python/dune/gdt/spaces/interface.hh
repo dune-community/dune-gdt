@@ -14,8 +14,6 @@
 #include <dune/pybindxi/pybind11.h>
 
 #include <dune/xt/common/string.hh>
-#include <python/dune/xt/grid/grids.bindings.hh>
-#include <python/dune/xt/grid/layers.bindings.hh>
 #include <dune/xt/grid/dd/subdomains/grid.hh>
 #include <dune/xt/grid/gridprovider/provider.hh>
 #include <dune/xt/grid/type_traits.hh>
@@ -28,6 +26,10 @@
 #include <dune/gdt/spaces/cg.hh>
 #include <dune/gdt/spaces/dg.hh>
 #include <dune/gdt/spaces/fv.hh>
+
+#include <python/dune/xt/common/bindings.hh>
+#include <python/dune/xt/grid/grids.bindings.hh>
+#include <python/dune/xt/grid/layers.bindings.hh>
 
 namespace Dune {
 namespace GDT {
