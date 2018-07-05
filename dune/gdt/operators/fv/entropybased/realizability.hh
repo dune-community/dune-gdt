@@ -72,7 +72,8 @@ public:
                                 const RangeFieldType epsilon,
                                 const std::vector<RangeType>& basis_values,
                                 const XT::Common::Parameter& param,
-                                const std::string filename)
+                                const std::string filename,
+                                const RangeFieldType psi_vac)
     : analytical_flux_(analytical_flux)
     , source_(source)
     , reconstructed_function_(reconstructed_function)
@@ -82,6 +83,8 @@ public:
     , basis_values_(basis_values)
     , param_(param)
     , filename_(filename)
+    , psi_vac_(psi_vac)
+    , u_vac_(basis_functions_.integrated() * psi_vac_ / 100.)
   {
     param_.set("boundary", {0.});
   }
@@ -91,15 +94,66 @@ public:
   }
 
   void apply_limiter(const typename AnalyticalFluxType::EntityType& entity,
-                     const RangeFieldType theta_entity,
+                     const RangeType theta_entity,
                      std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& local_reconstructed_values,
-                     const RangeType& u_bar)
+                     const RangeType& u_bar,
+                     bool add_epsilon = true)
   {
     assert(dynamic_cast<const EntropyFluxType*>(&analytical_flux_) != nullptr
            && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
-    if (theta_entity + epsilon_ > 0.) {
-      //      std::cout << "limited with theta: " << theta_entity << " and epsilon " << epsilon_ << std::endl;
-      auto theta = theta_entity + epsilon_;
+    for (size_t ii = 0; ii < dimRange; ++ii) {
+      auto theta_ii = add_epsilon ? theta_entity[ii] + epsilon_ : theta_entity[ii];
+      if (theta_ii > 0.) {
+        //            std::cout << "limited with theta: " << theta_entity << " and epsilon " << epsilon_ << std::endl;
+        if (theta_ii > 1.)
+          theta_ii = 1.;
+        for (auto& pair : local_reconstructed_values) {
+          auto& u_ii = pair.second[ii];
+          u_ii = convex_combination(u_ii, u_bar[ii], theta_ii);
+        }
+      } // if (theta_ii > 0)
+    } // ii
+
+    for (auto& pair : local_reconstructed_values) {
+      const auto x_in_inside_coords = entity.geometry().local(pair.first);
+      auto& u = pair.second;
+      const auto s = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
+                         ->derived_local_function(entity)
+                         ->get_alpha(x_in_inside_coords, u, param_, true, false)
+                         .second;
+
+      // if regularization was needed, we also need to replace u_n in that cell by its regularized version
+      if (s > 0.) {
+        if (!filename_.empty()) {
+          static std::mutex outfile_lock;
+          outfile_lock.lock();
+          std::ofstream outfile(filename_, std::ios_base::app);
+          outfile << param_.get("t")[0];
+          for (size_t ii = 0; ii < dimDomain; ++ii)
+            outfile << " " << entity.geometry().center()[ii];
+          outfile << " " << s << " 1" << std::endl;
+          outfile_lock.unlock();
+        }
+        const auto u_iso = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
+                               ->basis_functions()
+                               .calculate_isotropic_distribution(u)
+                               .first;
+        u = convex_combination(u, u_iso, s);
+      } // if (s > 0)
+    } // local_reconstructed_values
+  }
+
+  void apply_limiter(const typename AnalyticalFluxType::EntityType& entity,
+                     const RangeFieldType theta_entity,
+                     std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& local_reconstructed_values,
+                     const RangeType& u_bar,
+                     bool add_epsilon = true)
+  {
+    assert(dynamic_cast<const EntropyFluxType*>(&analytical_flux_) != nullptr
+           && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
+    auto theta = add_epsilon ? theta_entity + epsilon_ : theta_entity;
+    if (theta > 0.) {
+      //            std::cout << "limited with theta: " << theta_entity << " and epsilon " << epsilon_ << std::endl;
       if (theta > 1.)
         theta = 1.;
       for (auto& pair : local_reconstructed_values) {
@@ -107,7 +161,7 @@ public:
         u = convex_combination(u, u_bar, theta);
       }
     }
-    // solve optimization problem
+
     for (auto& pair : local_reconstructed_values) {
       const auto x_in_inside_coords = entity.geometry().local(pair.first);
       auto& u = pair.second;
@@ -147,6 +201,11 @@ protected:
     return u_scaled + u_bar_scaled;
   }
 
+  RangeFieldType convex_combination(const RangeFieldType& u, const RangeFieldType& u_bar, const RangeFieldType& theta)
+  {
+    return u_bar * theta + u * (1. - theta);
+  }
+
   const AnalyticalFluxType& analytical_flux_;
   const DiscreteFunctionType& source_;
   ReconstructedFunctionType& reconstructed_function_;
@@ -156,6 +215,8 @@ protected:
   const std::vector<RangeType>& basis_values_;
   XT::Common::Parameter param_;
   const std::string filename_;
+  const RangeFieldType psi_vac_;
+  const RangeType u_vac_;
 };
 
 template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp = int>
@@ -210,27 +271,27 @@ public:
         source_.local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center()));
 
     // vector to store thetas for each local reconstructed value
-    thread_local std::vector<RangeFieldType> thetas(local_reconstructed_values.size());
-    std::fill(thetas.begin(), thetas.end(), -epsilon_);
+    RangeType thetas(0.);
 
-    size_t ll = -1;
     for (const auto& pair : local_reconstructed_values) {
-      ++ll;
-      const auto& u_l = pair.second;
-      for (size_t ii = 0; ii < u_l.size(); ++ii) {
-        if (u_l[ii] >= u_bar[ii])
+      const auto& u = pair.second;
+      for (size_t ii = 0; ii < u.size(); ++ii) {
+        if (u[ii] >= u_bar[ii])
           continue;
-        thetas[ll] = std::max(thetas[ll], u_l[ii] / (u_l[ii] - u_bar[ii]));
-      }
+        if (u_bar[ii] < u_vac_[ii])
+          thetas[ii] = 1.;
+        else if (u[ii] < u_vac_[ii])
+          thetas[ii] = std::max(thetas[ii], (u_vac_[ii] - u[ii]) / (u_bar[ii] - u[ii]));
+      } // ii
     } // ll
-    auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
-    BaseType::apply_limiter(entity, theta_entity, local_reconstructed_values, u_bar);
+
+    BaseType::apply_limiter(entity, thetas, local_reconstructed_values, u_bar, false);
   } // void apply_local(...)
 
 private:
   using BaseType::source_;
   using BaseType::reconstructed_function_;
-  using BaseType::epsilon_;
+  using BaseType::u_vac_;
 }; // class PositivityLocalRealizabilityLimiter
 
 template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
@@ -967,13 +1028,15 @@ public:
                        const BasisfunctionType& basis_functions,
                        const QuadratureType& quadrature,
                        const RangeFieldType epsilon = 1e-8,
-                       const std::string filename = "")
+                       const std::string filename = "",
+                       const RangeFieldType psi_vac = 5e-9)
     : analytical_flux_(analytical_flux)
     , basis_functions_(basis_functions)
     , quadrature_(quadrature)
     , epsilon_(epsilon)
     , basis_values_(quadrature_.size())
     , filename_(filename)
+    , psi_vac_(psi_vac)
   {
     for (size_t ii = 0; ii < quadrature_.size(); ++ii)
       basis_values_[ii] = basis_functions_.evaluate(quadrature_[ii].position());
@@ -984,8 +1047,16 @@ public:
   {
     static_assert(is_discrete_function<SourceType>::value,
                   "SourceType has to be derived from DiscreteFunction (use the non-reconstructed values!)");
-    LocalRealizabilityLimiterType local_realizability_limiter(
-        analytical_flux_, source, range, basis_functions_, quadrature_, epsilon_, basis_values_, param, filename_);
+    LocalRealizabilityLimiterType local_realizability_limiter(analytical_flux_,
+                                                              source,
+                                                              range,
+                                                              basis_functions_,
+                                                              quadrature_,
+                                                              epsilon_,
+                                                              basis_values_,
+                                                              param,
+                                                              filename_,
+                                                              psi_vac_);
     auto walker = XT::Grid::Walker<typename SourceType::SpaceType::GridLayerType>(source.space().grid_layer());
     walker.append(local_realizability_limiter);
     walker.walk(true);
@@ -998,6 +1069,7 @@ private:
   const RangeFieldType epsilon_;
   std::vector<RangeType> basis_values_;
   const std::string filename_;
+  const RangeFieldType psi_vac_;
 }; // class RealizabilityLimiter<...>
 
 

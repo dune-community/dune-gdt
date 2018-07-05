@@ -274,6 +274,11 @@ public:
     return quadrature_;
   }
 
+  virtual const RangeFieldType psi_vac() const
+  {
+    return psi_vac_;
+  }
+
 protected:
   static size_t get_num_regions(const DynamicVector<size_t>& num_segments)
   {
