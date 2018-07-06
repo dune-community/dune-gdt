@@ -84,7 +84,7 @@ public:
     , param_(param)
     , filename_(filename)
     , psi_vac_(psi_vac)
-    , u_vac_(basis_functions_.integrated() * psi_vac_ / 100.)
+    , u_vac_(basis_functions_.integrated() * psi_vac_ / 10.)
   {
     param_.set("boundary", {0.});
   }
@@ -329,22 +329,23 @@ public:
         source_.local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center()));
 
     // vector to store thetas for each local reconstructed value
-    std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), -epsilon_);
+    RangeType thetas(-epsilon_);
 
-    size_t ll = -1;
     for (const auto& pair : local_reconstructed_values) {
-      ++ll;
-      const auto& u_l = pair.second;
+      const auto& u = pair.second;
       FieldVector<RangeFieldType, dimRange / 2> local_thetas(-epsilon_);
       for (size_t ii = 0; ii < dimRange / 2; ++ii) {
-        const auto& u0 = u_l[2 * ii];
-        const auto& u1 = u_l[2 * ii + 1];
+        const auto& u0 = u[2 * ii];
+        const auto& u1 = u[2 * ii + 1];
         const auto& ubar0 = u_bar[2 * ii];
         const auto& ubar1 = u_bar[2 * ii + 1];
         const auto& vj = triangulation_[ii];
         const auto& vjplus1 = triangulation_[ii];
         FieldVector<RangeFieldType, 3> thetas_ii;
-        thetas_ii[0] = u0 / (ubar0 - u0);
+        if (u_bar[ii] < u_vac_[ii])
+          thetas_ii[0] = 1.;
+        else
+          thetas_ii[0] = u0 / (ubar0 - u0);
         thetas_ii[1] = (u0 * vj - u1) / ((ubar1 - u1) - (ubar0 - u0) * vj);
         thetas_ii[2] = (u0 * vjplus1 - u1) / ((ubar1 - u1) - (ubar0 - u0) * vjplus1);
         for (size_t kk = 0; kk < 3; ++kk) {
@@ -352,11 +353,11 @@ public:
             thetas_ii[kk] = -epsilon_;
           local_thetas[ii] = std::max(local_thetas[ii], thetas_ii[kk]);
         } // kk
+        thetas[2 * ii] = std::max(thetas[2 * ii], local_thetas[ii]);
+        thetas[2 * ii + 1] = thetas[2 * ii];
       } // ii
-      thetas[ll] = *std::max_element(local_thetas.begin(), local_thetas.end());
-    } // ll
-    auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
-    BaseType::apply_limiter(entity, theta_entity, local_reconstructed_values, u_bar);
+    } // local_reconstructed_values
+    BaseType::apply_limiter(entity, thetas, local_reconstructed_values, u_bar);
   } // void apply_local(...)
 
 private:
@@ -364,6 +365,7 @@ private:
   using BaseType::reconstructed_function_;
   using BaseType::basis_functions_;
   using BaseType::epsilon_;
+  using BaseType::u_vac_;
   typename BasisfunctionImp::TriangulationType triangulation_;
 }; // class DgLocalRealizabilityLimiter
 
