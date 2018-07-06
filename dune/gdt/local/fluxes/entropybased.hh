@@ -47,6 +47,7 @@ public:
   typedef typename std::map<StateRangeType, VectorType, XT::Common::FieldVectorLess> MapType;
   typedef typename MapType::iterator IteratorType;
   typedef typename MapType::const_iterator ConstIteratorType;
+  using RangeFieldType = typename StateRangeType::value_type;
 
   EntropyLocalCache(const size_t capacity)
     : capacity_(capacity)
@@ -63,30 +64,27 @@ public:
     }
   }
 
-  void keep(const IteratorType& it)
+  void keep(const ConstIteratorType& it)
   {
     keys_.remove(it->first);
     keys_.push_back(it->first);
   }
 
-  IteratorType lower_bound(const StateRangeType& u)
+  ConstIteratorType find_closest(const StateRangeType& u) const
   {
-    return cache_.lower_bound(u);
-  }
-
-  ConstIteratorType lower_bound(const StateRangeType& u) const
-  {
-    return cache_.lower_bound(u);
-  }
-
-  IteratorType find(const StateRangeType& u)
-  {
-    return cache_.find(u);
-  }
-
-  ConstIteratorType find(const StateRangeType& u) const
-  {
-    return cache_.find(u);
+    ConstIteratorType ret = cache_.begin();
+    if (ret == end())
+      return ret;
+    RangeFieldType distance = (u - ret->first).two_norm2();
+    RangeFieldType new_distance = distance;
+    auto it = ret;
+    while (++it != end()) {
+      if ((new_distance = (u - it->first).two_norm2()) < distance) {
+        distance = new_distance;
+        ret = it;
+      }
+    }
+    return ret;
   }
 
   IteratorType end()
@@ -341,7 +339,7 @@ public:
       if (boundary)
         cache_.increase_capacity(2 * cache_size);
       // if value has already been calculated for these values, skip computation
-      auto cache_iterator = cache_.lower_bound(u);
+      const auto cache_iterator = cache_.find_closest(u);
       if (cache_iterator != cache_.end() && cache_iterator->first == u) {
         ret.first = cache_iterator->second;
         ret.second = 0.;
@@ -1111,7 +1109,7 @@ public:
       if (boundary)
         cache_.increase_capacity(2 * cache_size);
       // if value has already been calculated for these values, skip computation
-      auto cache_iterator = cache_.lower_bound(u_in);
+      const auto cache_iterator = cache_.find_closest(u_in);
       if (cache_iterator != cache_.end() && cache_iterator->first == u_in) {
         ret.first = cache_iterator->second;
         ret.second = 0.;
@@ -2059,7 +2057,7 @@ public:
       mutex_.lock();
       if (boundary)
         cache_.increase_capacity(2 * cache_size);
-      auto cache_iterator = cache_.lower_bound(u);
+      const auto cache_iterator = cache_.find_closest(u);
       if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u)) {
         ret = cache_iterator->second;
         mutex_.unlock();
@@ -2743,7 +2741,7 @@ public:
       if (boundary)
         cache_.increase_capacity(2 * cache_size);
       // if value has already been calculated for these values, skip computation
-      auto cache_iterator = cache_.lower_bound(u);
+      const auto cache_iterator = cache_.find_closest(u);
       if (cache_iterator != cache_.end() && cache_iterator->first == u) {
         ret.first = cache_iterator->second;
         ret.second = 0.;
