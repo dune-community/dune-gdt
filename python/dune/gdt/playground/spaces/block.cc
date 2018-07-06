@@ -6,10 +6,9 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2017)
+//   Rene Milk       (2018)
 
 #include "config.h"
-
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/common/parallel/mpihelper.hh>
 
@@ -38,8 +37,6 @@ PYBIND11_MODULE(__spaces_block, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  DUNE_GDT_SPACES_BLOCK_BIND(m, ALU_2D_SIMPLEX_CONFORMING, dg, gdt, 1);
+  DUNE_GDT_SPACES_BLOCK_BIND(m, GDT_BINDINGS_GRID, dg, gdt, 1);
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.spaces.block");
 }
-
-#endif // HAVE_DUNE_PYBINDXI

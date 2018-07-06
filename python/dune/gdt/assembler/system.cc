@@ -6,10 +6,9 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2017)
+//   Rene Milk       (2018)
 
 #include "config.h"
-
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/common/parallel/mpihelper.hh>
 
@@ -63,6 +62,23 @@
                                                                 double,                                                \
                                                                 _a_r,                                                  \
                                                                 1>>::bind(_m)
+#define BIND_GRID(G)                                                                                                   \
+  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.assembler");                                             \
+  DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, G, leaf, view, "leaf");                                                          \
+  DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(G, leaf, view, istl_sparse);                                                  \
+  DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, G, dd_subdomain, view, "dd_subdomain");                                          \
+  DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(G, dd_subdomain, view, istl_sparse);                                          \
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, view, gdt, dg, leaf, 1, 1, gdt, dg, leaf, 1, 1);                          \
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, view, gdt, dg, leaf, 2, 1, gdt, dg, leaf, 2, 1);                          \
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, view, gdt, dg, leaf, 3, 1, gdt, dg, leaf, 3, 1);                          \
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, dd_subdomain, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);  \
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(                                                                                      \
+      m, G, dd_subdomain_boundary, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);                    \
+  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(                                                                                      \
+      m, G, dd_subdomain_coupling, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);
+
+//  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(
+//      m, G, dd_subdomain_oversampled, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);
 
 PYBIND11_MODULE(__assembler, m)
 {
@@ -76,20 +92,6 @@ PYBIND11_MODULE(__assembler, m)
       [](const Dune::GDT::bindings::ResultStorage& self) { return self.result(); },
       [](Dune::GDT::bindings::ResultStorage& self, const double& value) { self.result() = value; });
 
-  using G = ALU_2D_SIMPLEX_CONFORMING;
-  Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.assembler");
-  DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, G, leaf, view, "leaf");
-  DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(G, leaf, view, istl_sparse);
-  DUNE_GDT_SPACES_CONSTRAINTS_BIND(m, G, dd_subdomain, view, "dd_subdomain");
-  DUNE_GDT_SPACES_CONSTRAINTS_ADDBIND_LA(G, dd_subdomain, view, istl_sparse);
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, view, gdt, dg, leaf, 1, 1, gdt, dg, leaf, 1, 1);
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, view, gdt, dg, leaf, 2, 1, gdt, dg, leaf, 2, 1);
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, leaf, view, gdt, dg, leaf, 3, 1, gdt, dg, leaf, 3, 1);
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(m, G, dd_subdomain, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(
-      m, G, dd_subdomain_boundary, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);
-  DUNE_GDT_ASSEMBLER_SYSTEM_BIND(
-      m, G, dd_subdomain_coupling, view, gdt, dg, dd_subdomain, 1, 1, gdt, dg, dd_subdomain, 1, 1);
-}
 
-#endif // HAVE_DUNE_PYBINDXI
+  BIND_GRID(GDT_BINDINGS_GRID)
+}

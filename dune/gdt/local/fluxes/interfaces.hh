@@ -26,7 +26,7 @@ namespace GDT {
 
 template <class Traits>
 class LocalNumericalCouplingFluxInterface
-    : public XT::CRTPInterface<LocalNumericalCouplingFluxInterface<Traits>, Traits>
+    : public XT::Common::CRTPInterface<LocalNumericalCouplingFluxInterface<Traits>, Traits>
 {
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;
@@ -65,7 +65,7 @@ public:
 
 template <class Traits>
 class LocalNumericalBoundaryFluxInterface
-    : public XT::CRTPInterface<LocalNumericalBoundaryFluxInterface<Traits>, Traits>
+    : public XT::Common::CRTPInterface<LocalNumericalBoundaryFluxInterface<Traits>, Traits>
 {
   typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
   typedef typename Traits::EntityType EntityType;

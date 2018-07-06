@@ -5,11 +5,10 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2017)
+//   Rene Milk (2018)
 
 #ifndef PYTHON_DUNE_GDT_SPACES_CG_BINDINGS_HH
 #define PYTHON_DUNE_GDT_SPACES_CG_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <python/dune/xt/grid/grids.bindings.hh>
 
@@ -78,5 +77,4 @@
 // end: this is what we need for the .so
 
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_SPACES_CG_BINDINGS_HH

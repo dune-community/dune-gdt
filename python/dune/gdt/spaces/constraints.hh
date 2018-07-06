@@ -6,10 +6,10 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2017)
+//   Rene Milk       (2018)
 
 #ifndef PYTHON_DUNE_GDT_SPACES_CONSTRAINTS_BINDINGS_HH
 #define PYTHON_DUNE_GDT_SPACES_CONSTRAINTS_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <boost/numeric/conversion/cast.hpp>
 
@@ -49,10 +49,11 @@ public:
     const auto ClassName = XT::Common::to_camel_case("DirichletConstraints_" + layer_name + "_" + grid_name);
 
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
-    c.def("__init__",
-          [](type& self, const XT::Grid::BoundaryInfo<I>& boundary_info, const ssize_t size, const bool set) {
+    //! TODO did keep alive change when replacing placement new?
+    c.def(py::init([](const XT::Grid::BoundaryInfo<I>& boundary_info, const ssize_t size, const bool set) {
+            size_t ss{0};
             try {
-              new (&self) type(boundary_info, boost::numeric_cast<size_t>(size), set);
+              ss = boost::numeric_cast<size_t>(size);
             } catch (boost::bad_numeric_cast& ee) {
               DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                          "Given size has to be positive!\n\n The error in boost while converting '"
@@ -62,7 +63,8 @@ public:
                              << "' was: "
                              << ee.what());
             }
-          },
+            return new type(boundary_info, ss, set);
+          }),
           "boundary_info"_a,
           "size"_a,
           "set_diagonal_entries"_a = true,
@@ -94,8 +96,10 @@ public:
     return c;
   } // ... bind(...)
 
-  template <XT::LA::Backends la_backend, class R = double>
-  static void addbind(bound_type& c)
+  template <XT::LA::Backends la_backend = XT::LA::Backends::istl_sparse,
+            class R = double,
+            class addbind_type = bound_type>
+  static void addbind(addbind_type& c)
   {
     typedef typename XT::LA::Container<R, la_backend>::MatrixType M;
     typedef typename XT::LA::Container<R, la_backend>::VectorType V;
@@ -147,5 +151,4 @@ public:
 } // namespace Dune
 
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_SPACES_CONSTRAINTS_BINDINGS_HH

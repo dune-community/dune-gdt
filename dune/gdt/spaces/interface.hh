@@ -5,7 +5,7 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2013 - 2017)
+//   Felix Schindler (2013 - 2018)
 //   Rene Milk       (2014, 2016 - 2018)
 //   Sven Kaulmann   (2014)
 //   Tobias Leibner  (2014, 2016 - 2017)
@@ -109,7 +109,8 @@ struct layer_from_backend<Backends::gdt>
 
 
 template <class Traits, size_t domainDim, size_t rangeDim, size_t rangeDimCols = 1>
-class SpaceInterface : public XT::CRTPInterface<SpaceInterface<Traits, domainDim, rangeDim, rangeDimCols>, Traits>
+class SpaceInterface
+    : public XT::Common::CRTPInterface<SpaceInterface<Traits, domainDim, rangeDim, rangeDimCols>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
@@ -405,6 +406,8 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     pattern.sort();
     return pattern;
   } // ... compute_face_pattern(...)
+
+  virtual ~SpaceInterface() = default;
 
 private:
   template <class GV>

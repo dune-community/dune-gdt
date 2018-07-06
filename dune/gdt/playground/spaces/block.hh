@@ -5,8 +5,8 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2014 - 2017)
-//   Rene Milk       (2014, 2016 - 2017)
+//   Felix Schindler (2014 - 2018)
+//   Rene Milk       (2014, 2016 - 2018)
 //   Tobias Leibner  (2014)
 
 #ifndef DUNE_GDT_SPACES_BLOCK_HH
@@ -91,7 +91,7 @@ public:
   typedef XT::Grid::DD::SubdomainGrid<typename XT::Grid::extract_grid<GridLayerType>::type> DdSubdomainsGridType;
   static const constexpr Backends backend_type{Backends::gdt};
 
-  BlockSpace(const DdSubdomainsGridType& grid, const std::vector<std::shared_ptr<const LocalSpaceType>>& spaces)
+  BlockSpace(const DdSubdomainsGridType& grid, std::vector<std::shared_ptr<const LocalSpaceType>> spaces)
     : dd_grid_(grid)
     , entity_to_subdomain_map_(dd_grid_.entityToSubdomainMap())
     , global_grid_part_(new GridLayerType(dd_grid_.global_grid_view()))

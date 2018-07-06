@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# ~~~
 # This file is part of the dune-gdt project:
 #   https://github.com/dune-community/dune-gdt
 # Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
@@ -8,7 +9,9 @@
 #          with "runtime exception" (http://www.dune-project.org/license.html)
 # Authors:
 #   Felix Schindler (2017)
-#   Rene Milk       (2016)
+#   Rene Milk       (2016, 2018)
+#
+# ~~~
 
 if [[ $TRAVIS_JOB_NUMBER == *.1 ]] ; then
     git config --global hooks.clangformat ${CLANG_FORMAT}

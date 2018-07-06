@@ -5,11 +5,10 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2017)
+//   Felix Schindler (2017 - 2018)
+//   Rene Milk       (2018)
 
 #include "config.h"
-
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/common/parallel/mpihelper.hh>
 
@@ -52,18 +51,17 @@ template <class G,
           size_t source_rC = range_rC>
 void bind_l2_localizable_product(py::module& m)
 {
-  try {
-    GDT::bindings::L2LocalizableProduct<G, layer_type, layer_backend, range_r, range_rC, source_r, source_rC>::bind(m);
-  } catch (std::runtime_error&) {
-  }
+  XT::Common::bindings::try_register(m, [](pybind11::module& mod) {
+    GDT::bindings::L2LocalizableProduct<G, layer_type, layer_backend, range_r, range_rC, source_r, source_rC>::bind(
+        mod);
+  });
 }
 
 
 PYBIND11_MODULE(__operators_l2, m)
 {
 
-#if HAVE_DUNE_ALUGRID
-  using G = ALU_2D_SIMPLEX_CONFORMING;
+  using G = GDT_BINDINGS_GRID;
 
   bind_l2_localizable_product<G, Layers::dd_subdomain, XT::Grid::Backends::view>(m);
   bind_l2_localizable_product<G, Layers::leaf, XT::Grid::Backends::view>(m);
@@ -72,21 +70,18 @@ PYBIND11_MODULE(__operators_l2, m)
   DUNE_GDT_OPERATORS_L2_BIND(m, G, leaf, gdt, dg, 3, 1, istl_sparse);
   DUNE_GDT_OPERATORS_L2_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_sparse);
   DUNE_GDT_OPERATORS_L2_BIND(m, G, dd_subdomain, gdt, dg, 1, 1, istl_sparse);
+  using LayerType =
+      typename XT::Grid::Layer<G, Layers::dd_subdomain, XT::Grid::Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type;
+
   Dune::GDT::bindings::internal::
       L2MatrixOperator<GDT::RestrictedSpace<
                            typename GDT::
                                SpaceProvider<G, Layers::leaf, GDT::SpaceType::rt, GDT::Backends::gdt, 0, double, 2>::
                                    type,
-                           typename XT::Grid::Layer<G,
-                                                    Layers::dd_subdomain,
-                                                    XT::Grid::Backends::view,
-                                                    XT::Grid::DD::SubdomainGrid<G>>::type>,
+                           LayerType>,
                        XT::LA::IstlRowMajorSparseMatrix<double>>::bind(m,
                                                                        "RtAlu2dSimplexLeafRestrictedSubdomainPartSpace",
                                                                        "istl_row_major_sparse_matrix_double");
 
-#endif // HAVE_DUNE_ALUGRID
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 }
-
-#endif // HAVE_DUNE_PYBINDXI

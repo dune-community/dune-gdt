@@ -49,7 +49,7 @@ class IsLocalBoundaryOperator
 
 
 template <class Traits>
-class LocalOperatorInterface : public XT::CRTPInterface<LocalOperatorInterface<Traits>, Traits>,
+class LocalOperatorInterface : public XT::Common::CRTPInterface<LocalOperatorInterface<Traits>, Traits>,
                                internal::IsLocalOperator
 {
 public:
@@ -68,7 +68,7 @@ public:
 
 
 template <class Traits>
-class LocalCouplingOperatorInterface : public XT::CRTPInterface<LocalCouplingOperatorInterface<Traits>, Traits>,
+class LocalCouplingOperatorInterface : public XT::Common::CRTPInterface<LocalCouplingOperatorInterface<Traits>, Traits>,
                                        public XT::Common::ParametricInterface,
                                        internal::IsLocalCouplingOperator
 {
@@ -86,7 +86,7 @@ public:
 
 
 template <class Traits>
-class LocalBoundaryOperatorInterface : public XT::CRTPInterface<LocalBoundaryOperatorInterface<Traits>, Traits>,
+class LocalBoundaryOperatorInterface : public XT::Common::CRTPInterface<LocalBoundaryOperatorInterface<Traits>, Traits>,
                                        internal::IsLocalBoundaryOperator
 {
 public:

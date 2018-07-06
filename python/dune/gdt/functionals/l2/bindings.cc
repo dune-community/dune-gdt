@@ -5,11 +5,10 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2017)
+//   Felix Schindler (2017 - 2018)
+//   Rene Milk       (2018)
 
 #include "config.h"
-
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/common/parallel/mpihelper.hh>
 
@@ -79,21 +78,9 @@ PYBIND11_MODULE(__functionals_l2, m)
 {
   namespace py = pybind11;
   using namespace pybind11::literals;
-  {
-    using G = ALU_2D_SIMPLEX_CONFORMING;
-    Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.functionals.l2");
-    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 1, istl_sparse);
-    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 2, istl_sparse);
-    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 3, istl_sparse);
-    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, dd_subdomain, view, dg, gdt, 1, istl_sparse);
-  }
-  {
-    using G = YASP_2D_EQUIDISTANT_OFFSET;
-    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 1, istl_sparse);
-    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 2, istl_sparse);
-    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 3, istl_sparse);
-    DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, dd_subdomain, view, dg, gdt, 1, istl_sparse);
-  }
+  using G = GDT_BINDINGS_GRID;
+  DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 1, istl_sparse);
+  DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 2, istl_sparse);
+  DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, leaf, view, dg, gdt, 3, istl_sparse);
+  DUNE_GDT_FUNCTIONALS_L2_BIND(m, 2, G, dd_subdomain, view, dg, gdt, 1, istl_sparse);
 }
-
-#endif // HAVE_DUNE_PYBINDXI

@@ -9,8 +9,8 @@
 //   Rene Milk       (2016 - 2018)
 //   Tobias Leibner  (2017)
 
-#ifndef DUNE_GDT_TESTS_LINEARELLIPTIC_OPERATORS_ELLIPTIC_IPDG_HH
-#define DUNE_GDT_TESTS_LINEARELLIPTIC_OPERATORS_ELLIPTIC_IPDG_HH
+#ifndef DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_HH
+#define DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_HH
 
 #include <dune/xt/grid/boundaryinfo.hh>
 #include <dune/xt/grid/type_traits.hh>
@@ -42,8 +42,11 @@ template <class DiffusionFactorType,
 class EllipticIpdgMatrixOperator
     : public MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::face_and_volume>
 {
+public:
   typedef MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::face_and_volume>
       BaseType;
+
+private:
   typedef EllipticIpdgMatrixOperator<DiffusionFactorType,
                                      DiffusionTensorType,
                                      RangeSpace,
@@ -69,6 +72,10 @@ public:
   /// \name Ctors for given single diffusion
   /// \sa The Ctors of EllipticLocalizableProduct.
   /// \{
+
+  virtual ~EllipticIpdgMatrixOperator()
+  {
+  }
 
   template <typename DiffusionImp,
             typename = typename std::enable_if<(std::is_same<DiffusionTensorType, void>::value)
@@ -1131,4 +1138,4 @@ make_elliptic_ipdg_matrix_operator(
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_TESTS_LINEARELLIPTIC_OPERATORS_ELLIPTIC_IPDG_HH
+#endif // DUNE_GDT_OPERATORS_ELLIPTIC_IPDG_HH

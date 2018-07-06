@@ -6,7 +6,7 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2013 - 2017)
-//   Rene Milk       (2016 - 2017)
+//   Rene Milk       (2016 - 2018)
 //   Tobias Leibner  (2014)
 
 #ifndef DUNE_GDT_LOCAL_INTEGRANDS_ELLIPTIC_IPDG_HH

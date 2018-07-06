@@ -5,11 +5,11 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2017)
+//   Felix Schindler (2017 - 2018)
+//   Rene Milk       (2018)
 
 #ifndef PYTHON_DUNE_GDT_OPERATORS_WEIGHTED_L2_BINDINGS_HH
 #define PYTHON_DUNE_GDT_OPERATORS_WEIGHTED_L2_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -49,7 +49,7 @@ class WeightedL2LocalizableProduct
       namespace py = pybind11;
       using namespace pybind11::literals;
 
-      m.def(std::string("apply_weighted_l2_product_" + XT::Grid::bindings::layer_name<layer_type>::value() + "_"
+      m.def(std::string("apply_weighted_l2_product_" + XT::Grid::layer_names[layer_type] + "_"
                         + XT::Grid::bindings::backend_name<layer_backend>::value())
                 .c_str(),
             [](const F& weight,
@@ -83,13 +83,13 @@ class WeightedL2LocalizableProduct
       namespace py = pybind11;
       using namespace pybind11::literals;
 
-      m.def(std::string("apply_weighted_l2_product_" + XT::Grid::bindings::layer_name<layer_type>::value() + "_"
+      m.def(std::string("apply_weighted_l2_product_" + XT::Grid::layer_names[layer_type] + "_"
                         + XT::Grid::bindings::backend_name<layer_backend>::value())
                 .c_str(),
             [](const F& weight,
                const F& range,
                const F& source,
-               const XT::Grid::GridProvider<G>& grid,
+               const XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>& grid,
                const int level,
                const size_t over_integrate) {
               return GDT::WeightedL2LocalizableProduct<F, GL, F, F>(
@@ -102,7 +102,7 @@ class WeightedL2LocalizableProduct
             "grid"_a,
             "level"_a = -1,
             "over_integrate"_a = 0);
-      m.def(std::string("apply_weighted_l2_product_" + XT::Grid::bindings::layer_name<layer_type>::value() + "_"
+      m.def(std::string("apply_weighted_l2_product_" + XT::Grid::layer_names[layer_type] + "_"
                         + XT::Grid::bindings::backend_name<layer_backend>::value())
                 .c_str(),
             [](const F& weight,
@@ -136,5 +136,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_OPERATORS_WEIGHTED_L2_BINDINGS_HH

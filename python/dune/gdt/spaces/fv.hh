@@ -6,10 +6,10 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2017)
+//   Rene Milk       (2018)
 
 #ifndef PYTHON_DUNE_GDT_SPACES_FV_BINDINGS_HH
 #define PYTHON_DUNE_GDT_SPACES_FV_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <python/dune/xt/grid/grids.bindings.hh>
 
@@ -58,9 +58,9 @@
 
 #define _DUNE_GDT_SPACES_FV_BIND_GDT_YASP_LAYER(_m, _layer)                                                            \
   _DUNE_GDT_SPACES_FV_BIND_GDT(_m, YASP_2D_EQUIDISTANT_OFFSET, _layer, 1, 1)
-#define _DUNE_GDT_SPACES_FV_BIND_GDT_YASP(_m)                                                                          \
-  _DUNE_GDT_SPACES_FV_BIND_GDT_YASP_LAYER(_m, leaf);                                                                   \
-  _DUNE_GDT_SPACES_FV_BIND_GDT_YASP_LAYER(_m, level)
+#define _DUNE_GDT_SPACES_FV_BIND_GDT_YASP(_m)
+//  _DUNE_GDT_SPACES_FV_BIND_GDT_YASP_LAYER(_m, leaf);                                                                   \
+//  _DUNE_GDT_SPACES_FV_BIND_GDT_YASP_LAYER(_m, level)
 
 #define DUNE_GDT_SPACES_FV_BIND(_m)                                                                                    \
   _DUNE_GDT_SPACES_FV_BIND_GDT_ALBERTA(_m);                                                                            \
@@ -71,5 +71,4 @@
 // end: this is what we need for the .so
 
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_SPACES_FV_BINDINGS_HH

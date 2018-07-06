@@ -56,6 +56,8 @@ include(DuneXTInstallPythonPackage)
 # compiled extensions directly usable from the venv
 dune_xt_install_python_package(PATH python)
 include_dependent_binary_python_dirs()
+dxt_add_make_dependent_bindings(dune-xt-common dune-xt-la dune-xt-grid dune-xt-functions)
+
 # do not change order here
 if(dune-pybindxi_FOUND)
   add_subdirectory(python)
@@ -65,6 +67,7 @@ endif()
 add_definitions("-DENABLE_HEADERCHECK=1")
 add_format(${CMAKE_CURRENT_SOURCE_DIR})
 add_tidy(${CMAKE_CURRENT_SOURCE_DIR})
+add_pylicense()
 
 # finalize the dune project, e.g., generate config.h etc.
 finalize_dune_project(GENERATE_CONFIG_H_CMAKE)

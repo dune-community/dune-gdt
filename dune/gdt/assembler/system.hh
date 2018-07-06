@@ -79,7 +79,7 @@ public:
             typename AnsatzSpace,
             typename = typename std::enable_if<std::is_same<OuterTestSpaceType, TestSpace>::value
                                                && std::is_same<OuterAnsatzSpaceType, AnsatzSpace>::value>::type>
-  SystemAssembler(const TestSpace& test, const AnsatzSpace& ansatz, const GridLayerType& grd_layr)
+  SystemAssembler(TestSpace test, AnsatzSpace ansatz, const GridLayerType& grd_layr)
     : BaseType(grd_layr)
     , test_space_(test)
     , ansatz_space_(ansatz)
@@ -94,7 +94,7 @@ public:
                 typename std::enable_if<std::is_same<OuterTestSpaceType, TestSpace>::value
                                         && std::is_same<OuterAnsatzSpaceType, AnsatzSpace>::value
                                         && std::is_same<typename TestSpace::GridLayerType, GridLayerType>::value>::type>
-  explicit SystemAssembler(const TestSpace& test, const AnsatzSpace& ansatz)
+  explicit SystemAssembler(TestSpace test, AnsatzSpace ansatz)
     : BaseType(test.grid_layer())
     , test_space_(test)
     , ansatz_space_(ansatz)
@@ -109,7 +109,7 @@ public:
                                         && std::is_same<OuterTestSpaceType, TestSpace>::value
                                         && std::is_same<OuterAnsatzSpaceType, TestSpace>::value
                                         && std::is_same<typename TestSpace::GridLayerType, GridLayerType>::value>::type>
-  explicit SystemAssembler(const TestSpace& test)
+  explicit SystemAssembler(TestSpace test)
     : BaseType(test.grid_layer())
     , test_space_(test)
     , ansatz_space_(test)
@@ -122,7 +122,7 @@ public:
             typename = typename std::enable_if<std::is_same<AnsatzSpaceType, TestSpace>::value
                                                && std::is_same<OuterTestSpaceType, TestSpace>::value
                                                && std::is_same<OuterAnsatzSpaceType, TestSpace>::value>::type>
-  explicit SystemAssembler(const TestSpace& test, const GridLayerType& grd_layr)
+  explicit SystemAssembler(TestSpace test, const GridLayerType& grd_layr)
     : BaseType(grd_layr)
     , test_space_(test)
     , ansatz_space_(test)
@@ -132,10 +132,10 @@ public:
   }
 
   SystemAssembler(const GridLayerType& grd_layr,
-                  const TestSpaceType& inner_test,
-                  const AnsatzSpaceType& inner_ansatz,
-                  const OuterTestSpaceType& outer_test,
-                  const OuterAnsatzSpaceType& outer_ansatz)
+                  TestSpaceType inner_test,
+                  AnsatzSpaceType inner_ansatz,
+                  OuterTestSpaceType outer_test,
+                  OuterAnsatzSpaceType outer_ansatz)
     : BaseType(grd_layr)
     , test_space_(inner_test)
     , ansatz_space_(inner_ansatz)
@@ -149,6 +149,10 @@ public:
   SystemAssembler(ThisType&& source) = delete;
   ThisType& operator=(const ThisType& other) = delete;
   ThisType& operator=(ThisType&& source) = delete;
+
+  virtual ~SystemAssembler()
+  {
+  }
 
   const TestSpaceType& test_space() const
   {
@@ -451,10 +455,12 @@ public:
   }
 
 protected:
-  const TestSpaceType& test_space_;
-  const AnsatzSpaceType& ansatz_space_;
-  const OuterTestSpaceType& outer_test_space_;
-  const OuterAnsatzSpaceType& outer_ansatz_space_;
+  // ideally these, and the ctor args, would be references, but that's currently causing memory corruption
+  // in the python bindings. Let's revisit this after the walker/gdt-space refactor has landed.
+  const TestSpaceType test_space_;
+  const AnsatzSpaceType ansatz_space_;
+  const OuterTestSpaceType outer_test_space_;
+  const OuterAnsatzSpaceType outer_ansatz_space_;
   // this is a hack and should be removed after applying https://github.com/dune-community/dune-xt-grid/pull/28
   std::vector<std::unique_ptr<XT::Grid::internal::Codim0ReturnObject<GridLayerType, double>>> codim0_return_functors_;
 }; // class SystemAssembler

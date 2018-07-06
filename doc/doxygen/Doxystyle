@@ -1,3 +1,4 @@
+# ~~~
 # This file is part of the dune-gdt project:
 #   https://github.com/dune-community/dune-gdt
 # Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
@@ -6,6 +7,9 @@
 #          with "runtime exception" (http://www.dune-project.org/license.html)
 # Authors:
 #   Felix Schindler (2014, 2017)
+#   Rene Milk       (2018)
+#
+# ~~~
 
 PROJECT_NAME           = @DUNE_MOD_NAME@
 PROJECT_NUMBER         = @DUNE_MOD_VERSION@
@@ -14,7 +18,7 @@ RECURSIVE              = YES
 FILE_PATTERNS          = *.hh \
                          *.cc
 INPUT                  =
-EXCLUDE                = 
+EXCLUDE                =
 
 EXCLUDE_PATTERNS       = */test/*
 
@@ -106,9 +110,9 @@ SORT_BRIEF_DOCS        = NO
 SORT_MEMBERS_CTORS_1ST = NO
 SORT_GROUP_NAMES       = YES
 SORT_BY_SCOPE_NAME     = NO
-ENABLED_SECTIONS       = 
+ENABLED_SECTIONS       =
 MAX_INITIALIZER_LINES  = 30
 SHOW_FILES             = YES
 SHOW_NAMESPACES        = YES
-FILE_VERSION_FILTER    = 
-LAYOUT_FILE            = 
+FILE_VERSION_FILTER    =
+LAYOUT_FILE            =

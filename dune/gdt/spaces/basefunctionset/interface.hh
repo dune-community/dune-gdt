@@ -7,7 +7,7 @@
 // Authors:
 //   Felix Schindler (2013 - 2017)
 //   Kirsten Weber   (2013)
-//   Rene Milk       (2014, 2016)
+//   Rene Milk       (2014, 2016, 2018)
 //   Tobias Leibner  (2014)
 
 #ifndef DUNE_GDT_SPACES_BASEFUNCTIONSET_INTERFACE_HH
@@ -29,7 +29,7 @@ namespace GDT {
 template <class Traits, class D, size_t d, class R, size_t r, size_t rC = 1>
 class BaseFunctionSetInterface
     : public XT::Functions::LocalfunctionSetInterface<typename Traits::EntityType, D, d, R, r, rC>,
-      public XT::CRTPInterface<BaseFunctionSetInterface<Traits, D, d, R, r, rC>, Traits>
+      public XT::Common::CRTPInterface<BaseFunctionSetInterface<Traits, D, d, R, r, rC>, Traits>
 {
   typedef XT::Functions::LocalfunctionSetInterface<typename Traits::EntityType, D, d, R, r, rC> BaseType;
 

@@ -5,20 +5,14 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2017)
+//   Felix Schindler (2017 - 2018)
+//   Rene Milk       (2018)
 
 #include "config.h"
-
-#if HAVE_DUNE_PYBINDXI
 
 #include <python/dune/gdt/functionals/elliptic-ipdg/bindings.hh>
 
 
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
-DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(template, leaf, view, dg, gdt, 1, istl_sparse);
-DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(template, level, view, dg, gdt, 1, istl_sparse);
-DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB_ALU(template, dd_subdomain, view, dg, gdt, 1, istl_sparse);
-#endif
-
-
-#endif // HAVE_DUNE_PYBINDXI
+DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB(template, GDT_BINDINGS_GRID, leaf, view, dg, gdt, 1, istl_sparse);
+DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB(template, GDT_BINDINGS_GRID, level, view, dg, gdt, 1, istl_sparse);
+DUNE_GDT_FUNCTIONALS_ELLIPTIC_IPDG_BIND_LIB(template, GDT_BINDINGS_GRID, dd_subdomain, view, dg, gdt, 1, istl_sparse);

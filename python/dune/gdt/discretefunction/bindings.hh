@@ -5,11 +5,11 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2017)
+//   Felix Schindler (2017 - 2018)
+//   Rene Milk       (2018)
 
 #ifndef PYTHON_DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BINDINGS_HH
 #define PYTHON_DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -81,7 +81,7 @@ public:
     // these two are copied from <dune/xt/functions/interfaces.pbh>, would be nicer to inherit them
     c.def("visualize",
           [](const type& self,
-             const XT::Grid::GridProvider<G>& grid_provider,
+             const XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>& grid_provider,
              const std::string& layer,
              const ssize_t lvl,
              const std::string& path,
@@ -234,7 +234,7 @@ public:
                                                                                     backend>::type>,
                                       V>::bind(m,
                                                space_name<SP>::value() + "_restricted_to_"
-                                                   + XT::Grid::bindings::layer_name<layer>::value()
+                                                   + XT::Grid::layer_names[layer]
                                                    + "_"
                                                    + XT::Grid::bindings::backend_name<backend>::value());
   } // ... addbind_restricted(...)
@@ -246,5 +246,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BINDINGS_HH

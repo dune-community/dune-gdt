@@ -1,3 +1,6 @@
+#!/bin/bash
+
+# ~~~
 # This file is part of the dune-gdt project:
 #   https://github.com/dune-community/dune-gdt
 # Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
@@ -6,8 +9,7 @@
 #          with "runtime exception" (http://www.dune-project.org/license.html)
 # Authors:
 #   Rene Milk (2017 - 2018)
-#
-#/bin/bash
+# ~~~
 
 set -e
 SWAP=$HOME/swap.img

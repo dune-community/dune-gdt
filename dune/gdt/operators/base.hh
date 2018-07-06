@@ -235,6 +235,7 @@ class MatrixOperatorBase
                                                                   OuterSourceSpaceImp>>,
       public SystemAssembler<RangeSpaceImp, GridLayerImp, SourceSpaceImp, OuterRangeSpaceImp, OuterSourceSpaceImp>
 {
+public:
   typedef OperatorInterface<internal::MatrixOperatorBaseTraits<MatrixImp,
                                                                RangeSpaceImp,
                                                                GridLayerImp,
@@ -282,6 +283,10 @@ public:
   using typename BaseAssemblerType::GridLayerType;
   using typename BaseAssemblerType::IntersectionType;
   static const constexpr ChoosePattern pattern_type = pt;
+
+  virtual ~MatrixOperatorBase()
+  {
+  }
 
 private:
   typedef XT::LA::Solver<MatrixType, typename SourceSpaceType::DofCommunicatorType> LinearSolverType;

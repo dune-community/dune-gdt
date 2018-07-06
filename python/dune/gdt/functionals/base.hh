@@ -6,10 +6,10 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2017)
+//   Rene Milk       (2018)
 
 #ifndef PYTHON_DUNE_GDT_FUNCTIONALS_BASE_BINDINGS_H
 #define PYTHON_DUNE_GDT_FUNCTIONALS_BASE_BINDINGS_H
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -38,6 +38,7 @@ public:
 
     typedef typename type::SpaceType S;
     typedef typename type::VectorType V;
+    py::module::import("dune.gdt.__assembler");
 
     bound_type c(m, std::string(class_id).c_str(), std::string(class_id).c_str());
 
@@ -56,5 +57,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_FUNCTIONALS_BASE_BINDINGS_H

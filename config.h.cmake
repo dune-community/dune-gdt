@@ -23,5 +23,7 @@
 /* Define to the revision of dune-gdt */
 #define DUNE_GDT_VERSION_REVISION ${DUNE_GDT_VERSION_REVISION}
 
+
+#define GDT_BINDINGS_GRID ${GDT_BINDINGS_GRID}
 /* end dune-gdt */
 // NEVER delete/alter above comment, dune's cmake relies on it

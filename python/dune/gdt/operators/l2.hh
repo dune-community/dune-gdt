@@ -6,10 +6,10 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2017)
+//   Rene Milk       (2018)
 
 #ifndef PYTHON_DUNE_GDT_OPERATORS_L2_BINDINGS_HH
 #define PYTHON_DUNE_GDT_OPERATORS_L2_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -35,18 +35,20 @@ class L2MatrixOperator
 {
 public:
   typedef GDT::L2MatrixOperator<R, M> type;
-  typedef pybind11::class_<type, XT::Grid::Walker<typename R::GridLayerType>> bound_type;
+  using bound_type = typename MatrixOperatorBase<type>::bound_type;
 
 public:
   static bound_type bind(pybind11::module& m, const std::string& space_name, const std::string& container_name)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
+    MatrixOperatorBase<type>::bind_bases(m);
 
     const std::string class_name = "l2_matrix_operator";
     const auto ClassName = XT::Common::to_camel_case(class_name + "_" + space_name + "_" + container_name);
 
     bound_type c(m, ClassName.c_str());
+    MatrixOperatorBase<type>::bind(c);
     c.def("assemble", [](type& self) { self.assemble(); });
     c.def("matrix", [](type& self) { return self.matrix(); });
 
@@ -145,7 +147,7 @@ public:
 private:
   static std::string class_name()
   {
-    return "l2_localizable_product_on_" + XT::Grid::bindings::layer_name<layer_type>::value() + "_"
+    return "l2_localizable_product_on_" + XT::Grid::layer_names[layer_type] + "_"
            + XT::Grid::bindings::backend_name<layer_backend>::value() + "_for_" + XT::Common::to_string(range_r) + "x"
            + XT::Common::to_string(range_rC) + "_range_times_" + XT::Common::to_string(source_r) + "x"
            + XT::Common::to_string(source_rC) + "_source";
@@ -195,7 +197,7 @@ private:
       using namespace pybind11::literals;
 
       m.def(std::string("make_" + class_name()).c_str(),
-            [](XT::Grid::GridProvider<G>& grid_provider,
+            [](XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>& grid_provider,
                const int level,
                const R& range,
                const S& source,
@@ -238,5 +240,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_OPERATORS_L2_BINDINGS_HH

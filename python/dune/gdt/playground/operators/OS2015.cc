@@ -5,11 +5,10 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2017)
+//   Felix Schindler (2017 - 2018)
+//   Rene Milk       (2018)
 
 #include "config.h"
-
-#if HAVE_DUNE_PYBINDXI
 
 #include <memory>
 
@@ -62,7 +61,7 @@ struct ResidualProduct
   {
     static std::string value()
     {
-      return "_" + XT::Grid::bindings::layer_name<reconstruction_layer_type>::value() + "_"
+      return "_" + XT::Grid::layer_names[reconstruction_layer_type] + "_"
              + XT::Grid::bindings::backend_name<Backends::view>::value();
     }
   }; // struct reconstruction_layer_suffix<false, ...>
@@ -74,8 +73,8 @@ struct ResidualProduct
 
   static std::string layer_suffix()
   {
-    return XT::Grid::bindings::layer_name<layer_type>::value() + "_"
-           + XT::Grid::bindings::backend_name<layer_backend>::value() + reconstruction_layer_suffix<>::value();
+    return XT::Grid::layer_names[layer_type] + "_" + XT::Grid::bindings::backend_name<layer_backend>::value()
+           + reconstruction_layer_suffix<>::value();
   }
 
   template <bool is_dd = (layer_type == Layers::dd_subdomain) || (layer_type == Layers::dd_subdomain_boundary)
@@ -139,7 +138,7 @@ struct ResidualProduct
       using namespace pybind11::literals;
 
       m.def(std::string("make_" + class_name() + "_" + layer_suffix()).c_str(),
-            [](XT::Grid::GridProvider<G>& grid_provider,
+            [](XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>& grid_provider,
                const ssize_t layer_level,
                const ssize_t reconstruction_layer_level,
                const typename type::ScalarFunctionType& lambda,
@@ -183,16 +182,15 @@ struct ResidualProduct
   {
     using namespace pybind11::literals;
 
-    try { // we might not be the first ones to add this type
-      bound_type c(m,
+    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
+      bound_type c(mod,
                    XT::Common::to_camel_case(class_name() + "_" + XT::Grid::bindings::grid_name<G>::value() + "_"
                                              + layer_suffix())
                        .c_str(),
                    "OS2015::ResidualProduct");
       c.def("apply2", [](type& self) { return self.apply2(); });
       c.def("result", [](type& self) { return self.apply2(); });
-    } catch (std::runtime_error& ee) {
-    }
+    });
 
     factory_method<>::addbind(m);
   } // ... bind(...)
@@ -225,7 +223,7 @@ struct DiffusiveFluxProduct
   {
     static std::string value()
     {
-      return "_" + XT::Grid::bindings::layer_name<reconstruction_layer_type>::value() + "_"
+      return "_" + XT::Grid::layer_names[reconstruction_layer_type] + "_"
              + XT::Grid::bindings::backend_name<Backends::view>::value();
     }
   }; // struct reconstruction_layer_suffix<false, ...>
@@ -237,8 +235,8 @@ struct DiffusiveFluxProduct
 
   static std::string layer_suffix()
   {
-    return XT::Grid::bindings::layer_name<layer_type>::value() + "_"
-           + XT::Grid::bindings::backend_name<layer_backend>::value() + reconstruction_layer_suffix<>::value();
+    return XT::Grid::layer_names[layer_type] + "_" + XT::Grid::bindings::backend_name<layer_backend>::value()
+           + reconstruction_layer_suffix<>::value();
   }
 
   template <bool is_dd = (layer_type == Layers::dd_subdomain) || (layer_type == Layers::dd_subdomain_boundary)
@@ -296,7 +294,7 @@ struct DiffusiveFluxProduct
       using namespace pybind11::literals;
 
       m.def(std::string("make_" + class_name() + "_" + layer_suffix()).c_str(),
-            [](XT::Grid::GridProvider<G>& grid_provider,
+            [](XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>& grid_provider,
                const ssize_t layer_level,
                const ssize_t reconstruction_layer_level,
                const typename type::ScalarFunctionType& lambda,
@@ -354,18 +352,13 @@ PYBIND11_MODULE(__operators_OS2015, m)
 {
   using namespace pybind11::literals;
 
-
-#if HAVE_DUNE_ALUGRID
   // This is not efficient: we reconstruct on the whole leaf instead of only the neighborhood, but the rt space
   //                        on a dd_subdomain_oversampled grid view (which is a wrapped part) is broken, if based on
   //                        a 2d simplex alugrid.
-  ResidualProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
-  DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
-  DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::leaf, Backends::view>::bind(m);
+  ResidualProduct<GDT_BINDINGS_GRID, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
+  DiffusiveFluxProduct<GDT_BINDINGS_GRID, Layers::leaf, Backends::view>::bind(m);
+  DiffusiveFluxProduct<GDT_BINDINGS_GRID, Layers::leaf, Backends::view>::bind(m);
   // s.a.
-  DiffusiveFluxProduct<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
-#endif
+  DiffusiveFluxProduct<GDT_BINDINGS_GRID, Layers::dd_subdomain, Backends::view, Layers::leaf>::bind(m);
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 }
-
-#endif // HAVE_DUNE_PYBINDXI

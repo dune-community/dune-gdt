@@ -6,10 +6,9 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2017)
+//   Rene Milk       (2018)
 
 #include "config.h"
-
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/common/parallel/mpihelper.hh>
 
@@ -38,7 +37,7 @@ PYBIND11_MODULE(__discretefunction, m)
   namespace py = pybind11;
   using namespace pybind11::literals;
 
-  using G = ALU_2D_SIMPLEX_CONFORMING;
+  using G = GDT_BINDINGS_GRID;
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.discretefunction");
   DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, gdt, dg, 1, 1, istl_dense);
   DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, gdt, dg, 2, 1, istl_dense);
@@ -46,5 +45,3 @@ PYBIND11_MODULE(__discretefunction, m)
   DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, dd_subdomain, gdt, block_dg, 1, 1, istl_dense);
   DUNE_GDT_DISCRETEFUNCTION_DEFAULT_BIND(m, G, leaf, gdt, rt, 0, 2, istl_dense);
 }
-
-#endif // HAVE_DUNE_PYBINDXI

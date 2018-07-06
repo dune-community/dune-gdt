@@ -6,10 +6,10 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2017)
+//   Rene Milk       (2018)
 
 #ifndef PYTHON_DUNE_GDT_OPERATORS_FLUXRECONSTRUCTION_BINDINGS_HH
 #define PYTHON_DUNE_GDT_OPERATORS_FLUXRECONSTRUCTION_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -92,5 +92,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_OPERATORS_FLUXRECONSTRUCTION_BINDINGS_HH

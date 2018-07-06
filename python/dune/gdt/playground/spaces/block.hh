@@ -5,11 +5,11 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2017)
+//   Felix Schindler (2017 - 2018)
+//   Rene Milk       (2018)
 
 #ifndef PYTHON_DUNE_GDT_PLAYGROUND_SPACES_BLOCK_BINDINGS_HH
 #define PYTHON_DUNE_GDT_PLAYGROUND_SPACES_BLOCK_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -170,22 +170,22 @@ public:
           "ansatz_block"_a,
           "global_sparsity_pattern"_a);
 
-    // matrices
-    addbind_matrix<XT::LA::Backends::common_dense>(c);
-    addbind_matrix<XT::LA::Backends::common_sparse>(c);
-#if HAVE_EIGEN
-    addbind_matrix<XT::LA::Backends::eigen_dense>(c);
-    addbind_matrix<XT::LA::Backends::eigen_sparse>(c);
-#endif
+// matrices
+//    addbind_matrix<XT::LA::Backends::common_dense>(c);
+//    addbind_matrix<XT::LA::Backends::common_sparse>(c);
+//#if HAVE_EIGEN
+//    addbind_matrix<XT::LA::Backends::eigen_dense>(c);
+//    addbind_matrix<XT::LA::Backends::eigen_sparse>(c);
+//#endif
 #if HAVE_DUNE_ISTL
     addbind_matrix<XT::LA::Backends::istl_sparse>(c);
 #endif
 
-    // vectors
-    addbind_vector<XT::LA::Backends::common_dense>(c);
-#if HAVE_EIGEN
-    addbind_vector<XT::LA::Backends::eigen_dense>(c);
-#endif
+// vectors
+//    addbind_vector<XT::LA::Backends::common_dense>(c);
+//#if HAVE_EIGEN
+//    addbind_vector<XT::LA::Backends::eigen_dense>(c);
+//#endif
 #if HAVE_DUNE_ISTL
     addbind_vector<XT::LA::Backends::istl_dense>(c);
 #endif
@@ -271,11 +271,7 @@ private:
 public:
   static bound_type bind(pybind11::module& m)
   {
-    try {
-      BlockMapper<SP>::bind(m);
-    } catch (const std::runtime_error&) {
-      // already exists
-    }
+    XT::Common::bindings::try_register(m, [](pybind11::module& mod) { BlockMapper<SP>::bind(mod); });
 
     namespace py = pybind11;
     using namespace pybind11::literals;
@@ -284,19 +280,14 @@ public:
 
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
 
-    c.def("__init__",
-          [](type& self, XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider) {
-            const auto& dd_grid = dd_grid_provider.dd_grid();
+    c.def(py::init([](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider) {
+            const XT::Grid::DD::SubdomainGrid<G>& dd_grid = dd_grid_provider.dd_grid();
             std::vector<std::shared_ptr<const S>> local_spaces(dd_grid.size());
-            for (size_t ss = 0; ss < dd_grid.size(); ++ss)
+            for (size_t ss = 0; ss < dd_grid.size(); ++ss) {
               local_spaces[ss] = std::make_shared<S>(SP::create(dd_grid_provider, boost::numeric_cast<int>(ss)));
-            try {
-              new (&self) type(dd_grid, local_spaces);
-            } catch (...) {
-              self.~type();
-              throw;
             }
-          },
+            return new type(dd_grid, local_spaces);
+          }),
           "dd_grid"_a,
           py::keep_alive<1, 2>());
     c.def_property_readonly("dimDomain", [](const type& /*self*/) { return S::dimDomain; });
@@ -387,10 +378,10 @@ public:
           },
           "neighborhood"_a);
 
-    addbind_vector<XT::LA::Backends::common_dense>(c);
-#if HAVE_EIGEN
-    addbind_vector<XT::LA::Backends::eigen_dense>(c);
-#endif
+//    addbind_vector<XT::LA::Backends::common_dense>(c);
+//#if HAVE_EIGEN
+//    addbind_vector<XT::LA::Backends::eigen_dense>(c);
+//#endif
 #if HAVE_DUNE_ISTL
     addbind_vector<XT::LA::Backends::istl_dense>(c);
 #endif
@@ -416,5 +407,4 @@ public:
 } // namespace Dune
 
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_PLAYGROUND_SPACES_BLOCK_BINDINGS_HH

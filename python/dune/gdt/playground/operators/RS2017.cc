@@ -1,15 +1,13 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2017 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2017)
+//   Rene Milk (2018)
 
 #include "config.h"
-
-#if HAVE_DUNE_PYBINDXI
 
 #include <memory>
 
@@ -23,8 +21,8 @@
 #include <python/dune/xt/common/bindings.hh>
 #include <python/dune/xt/grid/grids.bindings.hh>
 #include <python/dune/xt/grid/layers.bindings.hh>
-#include <python/dune/gdt/playground/operators/RS2017.hh>
 #include <python/dune/gdt/operators/base.hh>
+#include <python/dune/gdt/operators/elliptic-ipdg/bindings.hh>
 #include <python/dune/gdt/assembler/system.hh>
 #include <python/dune/gdt/shared.hh>
 
@@ -77,15 +75,15 @@ class DiffusiveFluxAaProduct
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
   typedef typename GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1> SP;
+  typedef DiffusiveFluxAaProduct<G> ThisType;
+
+public:
   typedef GDT::
       MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
                          typename SP::type,
                          typename XT::Grid::
                              Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
           BaseType;
-  typedef DiffusiveFluxAaProduct<G> ThisType;
-
-public:
   using typename BaseType::GridLayerType;
   using typename BaseType::RangeSpaceType;
 
@@ -100,18 +98,14 @@ public:
 
   static void bind(py::module& m)
   {
+    GDT::bindings::MatrixOperatorBase<ThisType>::bind_bases(m);
     using namespace pybind11::literals;
 
-    GDT::bindings::MatrixOperatorBase<ThisType>::bind(
-        m,
-        XT::Common::to_camel_case("RS2017_diffusive_flux_aa_product_matrix_operator_subdomain_"
-                                  + XT::Grid::bindings::grid_name<G>::value())
-            .c_str(),
-        GDT::bindings::space_name<SP>::value(),
-        GDT::bindings::space_name<SP>::value(),
-        XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
-            + XT::Grid::bindings::backend_name<Backends::view>::value());
+    const std::string classname = XT::Common::to_camel_case(
+        "RS2017_diffusive_flux_aa_product_matrix_operator_subdomain_" + XT::Grid::bindings::grid_name<G>::value());
 
+    typename GDT::bindings::MatrixOperatorBase<ThisType>::bound_type c(m, classname.c_str(), classname.c_str());
+    GDT::bindings::MatrixOperatorBase<ThisType>::bind(c);
     m.def("RS2017_make_diffusive_flux_aa_product_matrix_operator_on_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
              const ssize_t subdomain,
@@ -285,6 +279,7 @@ public:
   {
     using namespace pybind11::literals;
 
+    //! TODO not a proper base
     py::class_<ThisType, XT::Grid::Walker<GridLayerType>> c(
         m,
         XT::Common::to_camel_case("RS2017_diffusive_flux_ab_product_matrix_operator_subdomain_"
@@ -451,6 +446,7 @@ public:
   {
     using namespace pybind11::literals;
 
+    //! TODO not a proper base
     py::class_<ThisType, XT::Grid::Walker<GridLayerType>> c(
         m,
         XT::Common::to_camel_case("RS2017_diffusive_flux_bb_product_matrix_operator_subdomain_"
@@ -596,6 +592,7 @@ public:
   {
     using namespace pybind11::literals;
 
+    //! TODO not a proper base
     py::class_<ThisType, XT::Grid::Walker<GridLayerType>> c(
         m,
         XT::Common::to_camel_case("RS2017_Hdiv_semi_product_matrix_operator_subdomain_"
@@ -726,6 +723,7 @@ public:
   {
     using namespace pybind11::literals;
 
+    //! TODO not a proper base
     py::class_<ThisType, XT::Grid::Walker<GridLayerType>> c(
         m,
         XT::Common::to_camel_case("RS2017_divergence_matrix_operator_subdomain_"
@@ -786,7 +784,7 @@ public:
                                 local_vec[ii] = div * test_vals[ii];
                             });
 
-        local_l2_operator.apply2(dg_range_basis, dg_range_basis, local_matrix.backend());
+        local_l2_operator.apply2(dg_range_basis, dg_range_basis, local_matrix);
         local_l2_functional.apply(dg_range_basis, local_vector.backend());
 
         // solve
@@ -863,6 +861,7 @@ public:
   {
     using namespace pybind11::literals;
 
+    //! TODO not a proper base
     py::class_<ThisType, XT::Grid::Walker<GridLayerType>> c(
         m,
         XT::Common::to_camel_case("RS2017_residual_part_vector_functional_subdomain_"
@@ -944,12 +943,16 @@ class SwipdgPenaltySubdomainProduct
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
   typedef GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::dg, GDT::Backends::gdt, 1, double, 1> SP;
+
+public:
   typedef GDT::
       MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
                          typename SP::type,
                          typename XT::Grid::
                              Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
           BaseType;
+
+private:
   typedef SwipdgPenaltySubdomainProduct<G> ThisType;
 
 public:
@@ -967,17 +970,13 @@ public:
 
   static void bind(py::module& m)
   {
+    GDT::bindings::MatrixOperatorBase<ThisType>::bind_bases(m);
     using namespace pybind11::literals;
 
-    GDT::bindings::MatrixOperatorBase<ThisType>::bind(
-        m,
-        XT::Common::to_camel_case("RS2017_penalty_product_matrix_operator_subdomain_"
-                                  + XT::Grid::bindings::grid_name<G>::value())
-            .c_str(),
-        GDT::bindings::space_name<SP>::value(),
-        GDT::bindings::space_name<SP>::value(),
-        XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
-            + XT::Grid::bindings::backend_name<Backends::view>::value());
+    const std::string classname = XT::Common::to_camel_case("RS2017_penalty_product_matrix_operator_subdomain_"
+                                                            + XT::Grid::bindings::grid_name<G>::value());
+    typename GDT::bindings::MatrixOperatorBase<ThisType>::bound_type c(m, classname.c_str(), classname.c_str());
+    GDT::bindings::MatrixOperatorBase<ThisType>::bind(c);
 
     m.def("RS2017_make_penalty_product_matrix_operator_on_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
@@ -1179,15 +1178,15 @@ class SwipdgPenaltyNeighborhoodProduct
 {
   static_assert(XT::Grid::is_grid<G>::value, "");
   typedef GDT::SpaceProvider<G, Layers::dd_subdomain, GDT::SpaceType::block_dg, GDT::Backends::gdt, 1, double, 1> SP;
+  typedef SwipdgPenaltyNeighborhoodProduct<G> ThisType;
+
+public:
   typedef GDT::
       MatrixOperatorBase<XT::LA::IstlRowMajorSparseMatrix<double>,
                          typename SP::type,
                          typename XT::Grid::
                              Layer<G, Layers::dd_subdomain, Backends::view, XT::Grid::DD::SubdomainGrid<G>>::type>
           BaseType;
-  typedef SwipdgPenaltyNeighborhoodProduct<G> ThisType;
-
-public:
   using typename BaseType::GridLayerType;
   using typename BaseType::RangeSpaceType;
 
@@ -1202,21 +1201,17 @@ public:
 
   static void bind(py::module& m)
   {
+    GDT::bindings::MatrixOperatorBase<ThisType>::bind_bases(m);
     using namespace pybind11::literals;
 
     const auto space_name = GDT::bindings::space_name<SP>::value();
-    const auto grid_layer_name = XT::Grid::bindings::layer_name<Layers::dd_subdomain>::value() + "_"
-                                 + XT::Grid::bindings::backend_name<Backends::view>::value();
+    const auto grid_layer_name =
+        XT::Grid::layer_names[Layers::dd_subdomain] + "_" + XT::Grid::bindings::backend_name<Backends::view>::value();
 
-    GDT::bindings::MatrixOperatorBase<ThisType>::bind(
-        m,
-        XT::Common::to_camel_case("RS2017_penalty_product_matrix_operator_oversampled_subdomain_"
-                                  + XT::Grid::bindings::grid_name<G>::value())
-            .c_str(),
-        space_name,
-        space_name,
-        grid_layer_name);
-
+    const std::string classname = XT::Common::to_camel_case(
+        "RS2017_penalty_product_matrix_operator_oversampled_subdomain_" + XT::Grid::bindings::grid_name<G>::value());
+    typename GDT::bindings::MatrixOperatorBase<ThisType>::bound_type c(m, classname.c_str(), classname.c_str());
+    GDT::bindings::MatrixOperatorBase<ThisType>::bind(c);
     m.def("RS2017_make_penalty_product_matrix_operator_on_oversampled_subdomain",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
              const ssize_t subdomain,
@@ -1423,7 +1418,7 @@ void bind_neighborhood_reconstruction(py::module& m)
                                                      GDT::DiscreteFunction<NeighborhoodRtSpaceType, VectorType>,
                                                      GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>
           LocalizableDiffusiveFluxReconstructionOperatorForRestrictedSpaceType;
-
+  // for u in restricted space
   m.def("RS2017_apply_diffusive_flux_reconstruction_in_neighborhood",
         [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
            const ssize_t subdomain,
@@ -1457,7 +1452,7 @@ void bind_neighborhood_reconstruction(py::module& m)
                                                      GDT::DiscreteFunction<RtSpaceType, VectorType>,
                                                      GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor>
           LocalizableDiffusiveFluxReconstructionOperatorForLeafSpaceType;
-
+  // for u in leaf space
   m.def("RS2017_apply_diffusive_flux_reconstruction_in_neighborhood",
         [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
            const ssize_t subdomain,
@@ -1511,7 +1506,7 @@ void bind_neighborhood_discretization(py::module& m)
         m,
         GDT::bindings::space_name<SP>::value(),
         GDT::bindings::space_name<SP>::value(),
-        XT::Grid::bindings::layer_name<Layers::dd_subdomain_oversampled>::value() + "_"
+        XT::Grid::layer_names[Layers::dd_subdomain_oversampled] + "_"
             + XT::Grid::bindings::backend_name<Backends::view>::value());
   } catch (std::runtime_error&) {
   }
@@ -1526,17 +1521,16 @@ void bind_neighborhood_discretization(py::module& m)
                   XT::Common::numeric_cast<size_t>(subdomain)));
         });
 
-  typedef GDT::
-      EllipticIpdgMatrixOperator<DF, DT, S, GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor, M, NGL>
-          DgMatrixOperator;
-  py::class_<DgMatrixOperator, GDT::SystemAssembler<S, NGL>> dg_matrix_operator(
-      m, "EllipticIpdgMatrixOperatorNeighborhood");
+  using binder = GDT::bindings::internal::
+      EllipticIpdgMatrixOperator<DF, DT, S, GDT::LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor, M, NGL>;
+  using DgMatrixOperator = typename binder::type;
+  auto dg_matrix_operator = binder::bind_no_factories(m, "EllipticIpdgMatrixOperatorNeighborhood");
   dg_matrix_operator.def("matrix", [](DgMatrixOperator& self) { return self.matrix(); });
 
   m.def("RS2017_make_elliptic_swipdg_matrix_operator_on_neighborhood",
         [](XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
            const ssize_t subdomain,
-           XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<NGL>>& boundary_info,
+           const XT::Grid::BoundaryInfo<XT::Grid::extract_intersection_t<NGL>>& boundary_info,
            const S& neighborhood_space,
            const DF& lambda,
            const DT& kappa,
@@ -1627,30 +1621,25 @@ PYBIND11_MODULE(__operators_RS2017, m)
 {
   using namespace pybind11::literals;
 
-#if HAVE_DUNE_ALUGRID
-  SwipdgPenaltySubdomainProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
-  SwipdgPenaltyNeighborhoodProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
-  SubdomainDivergenceMatrixOperator<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
-  HdivSemiProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
-  DiffusiveFluxAaProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
-  DiffusiveFluxAbProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
-  DiffusiveFluxBbProduct<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
-  ResidualPartFunctional<ALU_2D_SIMPLEX_CONFORMING>::bind(m);
+  SwipdgPenaltySubdomainProduct<GDT_BINDINGS_GRID>::bind(m);
+  SwipdgPenaltyNeighborhoodProduct<GDT_BINDINGS_GRID>::bind(m);
+  SubdomainDivergenceMatrixOperator<GDT_BINDINGS_GRID>::bind(m);
+  HdivSemiProduct<GDT_BINDINGS_GRID>::bind(m);
+  DiffusiveFluxAaProduct<GDT_BINDINGS_GRID>::bind(m);
+  DiffusiveFluxAbProduct<GDT_BINDINGS_GRID>::bind(m);
+  DiffusiveFluxBbProduct<GDT_BINDINGS_GRID>::bind(m);
+  ResidualPartFunctional<GDT_BINDINGS_GRID>::bind(m);
 
-  bind_neighborhood_reconstruction<ALU_2D_SIMPLEX_CONFORMING>(m);
-  bind_neighborhood_discretization<ALU_2D_SIMPLEX_CONFORMING>(m);
+  bind_neighborhood_reconstruction<GDT_BINDINGS_GRID>(m);
+  bind_neighborhood_discretization<GDT_BINDINGS_GRID>(m);
 
-  typedef typename ALU_2D_SIMPLEX_CONFORMING::template Codim<0>::Entity E;
+  typedef typename GDT_BINDINGS_GRID::template Codim<0>::Entity E;
   typedef double D;
   static const constexpr size_t d = 2;
   typedef double R;
 
-  typedef XT::LA::IstlDenseVector<R> V;
-  typedef XT::LA::IstlRowMajorSparseMatrix<R> M;
-
   m.def("RS2017_residual_indicator_min_diffusion_eigenvalue",
-        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
-               dd_grid_provider,
+        [](XT::Grid::GridProvider<GDT_BINDINGS_GRID, XT::Grid::DD::SubdomainGrid<GDT_BINDINGS_GRID>>& dd_grid_provider,
            const ssize_t subdomain,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
@@ -1692,8 +1681,7 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "kappa"_a,
         "over_integrate"_a = 2);
   m.def("RS2017_residual_indicator_subdomain_diameter",
-        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
-               dd_grid_provider,
+        [](XT::Grid::GridProvider<GDT_BINDINGS_GRID, XT::Grid::DD::SubdomainGrid<GDT_BINDINGS_GRID>>& dd_grid_provider,
            const ssize_t subdomain) {
           py::gil_scoped_release DUNE_UNUSED(release);
           auto subdomain_layer = dd_grid_provider.template layer<Layers::dd_subdomain, Backends::view>(
@@ -1715,8 +1703,7 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "dd_grid_provider"_a,
         "subdomain"_a);
   m.def("RS2017_apply_l2_product",
-        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
-               dd_grid_provider,
+        [](XT::Grid::GridProvider<GDT_BINDINGS_GRID, XT::Grid::DD::SubdomainGrid<GDT_BINDINGS_GRID>>& dd_grid_provider,
            const ssize_t subdomain,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& u,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& v,
@@ -1733,8 +1720,7 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "v"_a,
         "over_integrate"_a = 2);
   m.def("RS2017_diffusive_flux_indicator_apply_aa_product",
-        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
-               dd_grid_provider,
+        [](XT::Grid::GridProvider<GDT_BINDINGS_GRID, XT::Grid::DD::SubdomainGrid<GDT_BINDINGS_GRID>>& dd_grid_provider,
            const ssize_t subdomain,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda_hat,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda_u,
@@ -1790,8 +1776,7 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "v"_a,
         "over_integrate"_a = 2);
   m.def("RS2017_diffusive_flux_indicator_apply_ab_product",
-        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
-               dd_grid_provider,
+        [](XT::Grid::GridProvider<GDT_BINDINGS_GRID, XT::Grid::DD::SubdomainGrid<GDT_BINDINGS_GRID>>& dd_grid_provider,
            const ssize_t subdomain,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda_hat,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda_u,
@@ -1841,8 +1826,7 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "reconstructed_v"_a,
         "over_integrate"_a = 2);
   m.def("RS2017_diffusive_flux_indicator_apply_bb_product",
-        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
-               dd_grid_provider,
+        [](XT::Grid::GridProvider<GDT_BINDINGS_GRID, XT::Grid::DD::SubdomainGrid<GDT_BINDINGS_GRID>>& dd_grid_provider,
            const ssize_t subdomain,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda_hat,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>& kappa,
@@ -1885,30 +1869,28 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "reconstructed_v"_a,
         "over_integrate"_a = 2);
 
-  typedef GDT::EllipticMatrixOperator<XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
-                                      XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>,
-                                      typename GDT::SpaceProvider<ALU_2D_SIMPLEX_CONFORMING,
-                                                                  Layers::dd_subdomain,
-                                                                  GDT::SpaceType::dg,
-                                                                  GDT::Backends::gdt,
-                                                                  1,
-                                                                  double,
-                                                                  1>::type,
-                                      XT::LA::IstlRowMajorSparseMatrix<double>,
-                                      typename XT::Grid::
-                                          Layer<ALU_2D_SIMPLEX_CONFORMING, Layers::dd_subdomain, Backends::view>::type>
-      EllipticMatrixOperatorType;
-  try { // we might not be the first to add this
+  typedef GDT::
+      EllipticMatrixOperator<XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>,
+                             XT::Functions::LocalizableFunctionInterface<E, D, d, R, d, d>,
+                             typename GDT::SpaceProvider<GDT_BINDINGS_GRID,
+                                                         Layers::dd_subdomain,
+                                                         GDT::SpaceType::dg,
+                                                         GDT::Backends::gdt,
+                                                         1,
+                                                         double,
+                                                         1>::type,
+                             XT::LA::IstlRowMajorSparseMatrix<double>,
+                             typename XT::Grid::Layer<GDT_BINDINGS_GRID, Layers::dd_subdomain, Backends::view>::type>
+          EllipticMatrixOperatorType;
+  XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
     py::class_<EllipticMatrixOperatorType,
                GDT::SystemAssembler<typename EllipticMatrixOperatorType::SourceSpaceType,
                                     typename EllipticMatrixOperatorType::GridLayerType>>
-        elliptic_matrix_operator(m, "EllipticMatrixOperatorNeighborhood");
+        elliptic_matrix_operator(mod, "EllipticMatrixOperatorNeighborhood");
     elliptic_matrix_operator.def("matrix", [](EllipticMatrixOperatorType& self) { return self.matrix(); });
-  } catch (std::runtime_error&) {
-  }
+  });
   m.def("RS2017_make_elliptic_matrix_operator_on_subdomain",
-        [](XT::Grid::GridProvider<ALU_2D_SIMPLEX_CONFORMING, XT::Grid::DD::SubdomainGrid<ALU_2D_SIMPLEX_CONFORMING>>&
-               dd_grid_provider,
+        [](XT::Grid::GridProvider<GDT_BINDINGS_GRID, XT::Grid::DD::SubdomainGrid<GDT_BINDINGS_GRID>>& dd_grid_provider,
            const ssize_t subdomain,
            const typename EllipticMatrixOperatorType::SourceSpaceType& space,
            const XT::Functions::LocalizableFunctionInterface<E, D, d, R, 1>& lambda,
@@ -1929,7 +1911,4 @@ PYBIND11_MODULE(__operators_RS2017, m)
         "over_integrate"_a = 2);
 
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
-#endif // HAVE_DUNE_ALUGRID
 }
-
-#endif // HAVE_DUNE_PYBINDXI

@@ -5,7 +5,7 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2017)
+//   Felix Schindler (2017 - 2018)
 //   Rene Milk       (2016 - 2018)
 
 #include <dune/xt/common/test/main.hxx> // <- This one has to come first!
@@ -31,17 +31,20 @@ typedef L2LocalProjectionOperatorTest<{{SpaceType}}>
 typedef L2LocalProjectionLocalizableOperatorTest<{{SpaceType}}>
   L2LocalProjectionLocalizableOperatorTest_{{Name}};
 
+template <class TestCase>
+double {{Name}}_default_tol(const TestCase& test) {
 {% if 'FvSpace' in SpaceType %}
-  const double {{Name}}_tolerance = 1.45e-1;
+   return 1.45e-1;
 {% elif 'RaviartThomasSpace' in SpaceType %}
-    const auto {{Name}}_tolerance = rt_tolerance<L2LocalProjectionOperatorTest_{{Name}}>();
+    return rt_tolerance<L2LocalProjectionOperatorTest_{{Name}}>();
 {% elif 'ContinuousLagrangeSpace' in SpaceType %}
-    const auto {{Name}}_tolerance = cg_tolerance<L2LocalProjectionOperatorTest_{{Name}}>();
+    return cg_tolerance<L2LocalProjectionOperatorTest_{{Name}}>();
 {% else %}
-  const auto {{Name}}_tolerance = Dune::XT::Grid::is_alugrid<Dune::XT::Grid::extract_grid_t<typename {{SpaceType}}::GridLayerType>>::value
-      ? L2LocalProjectionOperatorTest_{{Name}}::alugrid_tolerance
-      : L2LocalProjectionOperatorTest_{{Name}}::default_tolerance;
+  return Dune::XT::Grid::is_alugrid<Dune::XT::Grid::extract_grid_t<typename {{SpaceType}}::GridLayerType>>::value
+      ? test.alugrid_tolerance
+      : test.default_tolerance;
 {% endif %}
+}
 
 TEST_F(L2LocalProjectionOperatorTest_{{Name}}, constructible_by_ctor)
 {
@@ -53,7 +56,7 @@ TEST_F(L2LocalProjectionOperatorTest_{{Name}}, constructible_by_factory)
 }
 TEST_F(L2LocalProjectionOperatorTest_{{Name}}, produces_correct_results)
 {
-  this->produces_correct_results({{Name}}_tolerance);
+  this->produces_correct_results({{Name}}_default_tol(*this));
 }
 
 TEST_F(L2LocalProjectionLocalizableOperatorTest_{{Name}}, constructible_by_ctor)
@@ -66,8 +69,8 @@ TEST_F(L2LocalProjectionLocalizableOperatorTest_{{Name}}, constructible_by_facto
 }
 TEST_F(L2LocalProjectionLocalizableOperatorTest_{{Name}}, produces_correct_results)
 {
-  this->produces_correct_results({{Name}}_tolerance);
-  this->produces_correct_results({{Name}}_tolerance);
+  this->produces_correct_results({{Name}}_default_tol(*this));
+  this->produces_correct_results({{Name}}_default_tol(*this));
 }
 
 

@@ -5,11 +5,11 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2017)
+//   Felix Schindler (2017 - 2018)
+//   Rene Milk       (2018)
 
 #ifndef PYTHON_DUNE_GDT_OPERATORS_ELLIPTIC_BINDINGS_HH
 #define PYTHON_DUNE_GDT_OPERATORS_ELLIPTIC_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -43,7 +43,7 @@ class EllipticMatrixOperator
 
 public:
   typedef GDT::EllipticMatrixOperator<DF, DT, R, M, GL /*, S, F*/> type;
-  typedef pybind11::class_<type> bound_type;
+  using bound_type = typename MatrixOperatorBase<type>::bound_type;
 
 private:
   template <bool single_diffusion = std::is_same<DT, void>::value,
@@ -153,17 +153,19 @@ private:
   };
 
 public:
-  static bound_type bind(pybind11::module& m, const std::string& space_name, const std::string& grid_layer_name)
+  static bound_type bind(pybind11::module& m, const std::string& space_name)
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
+
+    MatrixOperatorBase<type>::bind_bases(m);
 
     const auto ClassName = XT::Common::to_camel_case(
         "elliptic_matrix_operator_" + space_name + "_" + XT::LA::bindings::container_name<M>::value() + "_"
         + diffusion_switch<>::suffix());
 
-    auto c = MatrixOperatorBase<type>::bind(m, ClassName, space_name, space_name, grid_layer_name);
-
+    bound_type c(m, ClassName.c_str(), ClassName.c_str());
+    MatrixOperatorBase<type>::bind(c);
     diffusion_switch<>::template addbind_factory_methods<type>(m);
 
     return c;
@@ -203,10 +205,7 @@ public:
 
   static bound_type bind(pybind11::module& m)
   {
-    return binder::bind(m,
-                        space_name<SP>::value(),
-                        XT::Grid::bindings::layer_name<gl>::value()
-                            + XT::Grid::bindings::backend_name<gl_backend>::value());
+    return binder::bind(m, space_name<SP>::value());
   }
 }; // class EllipticMatrixOperator
 
@@ -214,5 +213,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_OPERATORS_ELLIPTIC_BINDINGS_HH

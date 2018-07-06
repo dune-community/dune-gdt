@@ -5,18 +5,15 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2017)
+//   Felix Schindler (2017 - 2018)
 //   Rene Milk       (2018)
 
 #ifndef PYTHON_DUNE_GDT_SPACES_INTERFACE_BINDINGS_HH
 #define PYTHON_DUNE_GDT_SPACES_INTERFACE_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
 #include <dune/xt/common/string.hh>
-#include <python/dune/xt/grid/grids.bindings.hh>
-#include <python/dune/xt/grid/layers.bindings.hh>
 #include <dune/xt/grid/dd/subdomains/grid.hh>
 #include <dune/xt/grid/gridprovider/provider.hh>
 #include <dune/xt/grid/type_traits.hh>
@@ -29,6 +26,10 @@
 #include <dune/gdt/spaces/cg.hh>
 #include <dune/gdt/spaces/dg.hh>
 #include <dune/gdt/spaces/fv.hh>
+
+#include <python/dune/xt/common/bindings.hh>
+#include <python/dune/xt/grid/grids.bindings.hh>
+#include <python/dune/xt/grid/layers.bindings.hh>
 
 namespace Dune {
 namespace GDT {
@@ -151,8 +152,8 @@ struct space_name_base
   static std::string value_wo_grid()
   {
     using XT::Common::to_string;
-    return XT::Grid::bindings::layer_name<layer>::value() + "_" + XT::Grid::bindings::backend_name<g>::value() + "_to_"
-           + to_string(r) + "x" + to_string(rC) + "_" + backend_name<backend>::value();
+    return XT::Grid::layer_names[layer] + "_" + XT::Grid::bindings::backend_name<g>::value() + "_to_" + to_string(r)
+           + "x" + to_string(rC) + "_" + backend_name<backend>::value();
   }
 
   static std::string value()
@@ -431,7 +432,9 @@ class SpaceInterface
       const std::string factory_method_name = "make_" + space_name<SP>::value_wo_grid();
 
       m.def(factory_method_name.c_str(),
-            [](XT::Grid::GridProvider<G>& grid_provider, int level) { return SP::create(grid_provider, level); },
+            [](XT::Grid::GridProvider<G, XT::Grid::none_t>& grid_provider, int level) {
+              return SP::create(grid_provider, level);
+            },
             "grid_provider"_a,
             "level"_a = 0,
             py::keep_alive<0, 1>());
@@ -464,7 +467,7 @@ private:
 
       typedef GDT::RestrictedSpace<S, typename XT::Grid::Layer<G, layer, backend>::type> RestrictedSpaceType;
 
-      c.def(std::string("restrict_to_" + XT::Grid::bindings::layer_name<layer>::value() + "_"
+      c.def(std::string("restrict_to_" + XT::Grid::layer_names[layer] + "_"
                         + XT::Grid::bindings::backend_name<backend>::value())
                 .c_str(),
             [](type& self,
@@ -488,10 +491,10 @@ private:
 
       typedef GDT::RestrictedSpace<S, typename XT::Grid::Layer<G, layer, backend>::type> RestrictedSpaceType;
 
-      c.def(std::string("restrict_to_" + XT::Grid::bindings::layer_name<layer>::value() + "_"
+      c.def(std::string("restrict_to_" + XT::Grid::layer_names[layer] + "_"
                         + XT::Grid::bindings::backend_name<backend>::value())
                 .c_str(),
-            [](type& self, XT::Grid::GridProvider<G>& grid_provider, const int level = -1) {
+            [](type& self, XT::Grid::GridProvider<G, Dune::XT::Grid::none_t>& grid_provider, const int level = -1) {
               return RestrictedSpaceType(self, grid_provider.template layer<layer, backend>(level));
             },
             "grid_provider"_a,
@@ -508,10 +511,10 @@ private:
 
     typedef GDT::RestrictedSpace<S, typename XT::Grid::Layer<G, layer, backend>::type> RestrictedSpaceType;
 
-    try { // we might not be the first to add this RestrictedSpace
-      const auto restricted_space_name = sp_name + "_restricted_to_" + XT::Grid::bindings::layer_name<layer>::value()
-                                         + "_" + XT::Grid::bindings::backend_name<backend>::value();
-      auto restricted_space = SpaceInterfaceWoFactory<RestrictedSpaceType>::bind(m, restricted_space_name);
+    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
+      const auto restricted_space_name = sp_name + "_restricted_to_" + XT::Grid::layer_names[layer] + "_"
+                                         + XT::Grid::bindings::backend_name<backend>::value();
+      auto restricted_space = SpaceInterfaceWoFactory<RestrictedSpaceType>::bind(mod, restricted_space_name);
       restricted_space.def("restrict",
                            [](RestrictedSpaceType& self, const XT::LA::IstlDenseVector<double>& unrestricted_vector) {
                              return self.mapper().restrict(unrestricted_vector);
@@ -522,8 +525,7 @@ private:
                              return self.mapper().extend(restricted_vector);
                            },
                            "restricted_vector"_a);
-    } catch (std::runtime_error&) {
-    }
+    });
 
     restriction_methods<backend, layer>::addbind(c);
   } // ... addbind_restricted(...)
@@ -551,5 +553,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_SPACES_INTERFACE_BINDINGS_HH

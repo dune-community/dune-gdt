@@ -6,19 +6,21 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2017)
+//   Rene Milk       (2018)
 
 #ifndef PYTHON_DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BINDINGS_HH
 #define PYTHON_DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
 #include <dune/xt/functions/interfaces/localizable-function.hh>
-#include <python/dune/xt/grid/grids.bindings.hh>
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/local/integrands/ESV2007.hh>
 #include <dune/gdt/local/operators/integrals.hh>
+
+#include <python/dune/xt/grid/grids.bindings.hh>
+#include <python/dune/xt/common/bindings.hh>
 
 namespace Dune {
 namespace GDT {
@@ -54,13 +56,11 @@ public:
     using namespace pybind11::literals;
     using XT::Common::to_string;
 
-    // bind interface, guard since we might not be the first to do so for this combination
-    try {
+    XT::Common::bindings::try_register(m, [&](pybind11::module& mod) {
       const auto InterfaceName = XT::Common::to_camel_case(
           "local_volume_two_form_interface_" + XT::Grid::bindings::grid_name<G>::value() + "_to_1x1");
-      py::class_<InterfaceType>(m, InterfaceName.c_str(), "LocalVolumeTwoFormInterface");
-    } catch (std::runtime_error&) {
-    }
+      py::class_<InterfaceType>(mod, InterfaceName.c_str(), "LocalVolumeTwoFormInterface");
+    });
 
     const std::string class_name = "local_diffusive_flux_estimation_esv2007_operator";
     const auto ClassName =
@@ -93,5 +93,4 @@ public:
 } // namespace Dune
 
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_LOCAL_DIFFUSIVE_FLUX_ESTIMATION_OPERATOR_BINDINGS_HH

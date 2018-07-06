@@ -124,12 +124,44 @@ public:
                                        space,
                                        new XT::Grid::ApplyOn::NeumannIntersections<GridLayerType>(*boundary_info));
     // register everything for assembly in one grid walk
-    SystemAssembler<SpaceType> assembler(space);
-    assembler.append(*ipdg_operator);
-    assembler.append(*ipdg_boundary_functional);
-    assembler.append(*l2_force_functional);
-    assembler.append(*l2_neumann_functional);
-    assembler.assemble();
+
+    ipdg_operator->append(*ipdg_boundary_functional);
+    ipdg_operator->append(*l2_force_functional);
+    ipdg_operator->append(*l2_neumann_functional);
+    ipdg_operator->assemble();
+    // create the discretization (no copy of the containers done here, bc. of cow)
+    return DiscretizationType(problem, space, ipdg_operator->matrix(), rhs_vector);
+  } // ... discretize(...)
+
+  template <class SubdomainGridType, class LocalSpaceType>
+  static DiscretizationType discretize_for_block(XT::Grid::GridProvider<GridType, SubdomainGridType>& grid_provider,
+                                                 const ProblemType& problem,
+                                                 LocalSpaceType& space)
+  {
+    auto logger = XT::Common::TimedLogger().get(static_id());
+    logger.info() << "Creating space... " << std::endl;
+    logger.debug() << "grid has " << space.grid_layer().indexSet().size(0) << " elements" << std::endl;
+    typedef typename SpaceType::GridLayerType GridLayerType;
+    auto boundary_info = XT::Grid::BoundaryInfoFactory<XT::Grid::extract_intersection_t<GridLayerType>>::create(
+        problem.boundary_info_cfg());
+    logger.info() << "Assembling... " << std::endl;
+    VectorType rhs_vector(space.mapper().size(), 0.0);
+    auto ipdg_operator = make_elliptic_ipdg_matrix_operator<MatrixType, method>(
+        problem.diffusion_factor(), problem.diffusion_tensor(), *boundary_info, space);
+    auto ipdg_boundary_functional = make_elliptic_ipdg_dirichlet_vector_functional<method>(
+        problem.dirichlet(), problem.diffusion_factor(), problem.diffusion_tensor(), *boundary_info, rhs_vector, space);
+    auto l2_force_functional = make_l2_volume_vector_functional(problem.force(), rhs_vector, space);
+    auto l2_neumann_functional =
+        make_l2_face_vector_functional(problem.neumann(),
+                                       rhs_vector,
+                                       space,
+                                       new XT::Grid::ApplyOn::NeumannIntersections<GridLayerType>(*boundary_info));
+    // register everything for assembly in one grid walk
+
+    ipdg_operator->append(*ipdg_boundary_functional);
+    ipdg_operator->append(*l2_force_functional);
+    ipdg_operator->append(*l2_neumann_functional);
+    ipdg_operator->assemble();
     // create the discretization (no copy of the containers done here, bc. of cow)
     return DiscretizationType(problem, space, ipdg_operator->matrix(), rhs_vector);
   } // ... discretize(...)

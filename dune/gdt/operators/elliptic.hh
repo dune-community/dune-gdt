@@ -199,9 +199,10 @@ class EllipticMatrixOperator
                                  SourceSpace,
                                  Field>
       ThisType;
-  typedef MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::volume> BaseType;
 
 public:
+  typedef MatrixOperatorBase<Matrix, RangeSpace, GridLayer, SourceSpace, Field, ChoosePattern::volume> BaseType;
+
   /// \sa MatrixOperatorBase
   EllipticMatrixOperator(const ThisType& other) = delete;
   EllipticMatrixOperator(ThisType& other) = delete; // <- b.c. of the too perfect forwarding ctor

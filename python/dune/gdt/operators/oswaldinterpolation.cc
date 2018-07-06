@@ -5,11 +5,10 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2017)
+//   Felix Schindler (2017 - 2018)
+//   Rene Milk       (2018)
 
 #include "config.h"
-
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/common/parallel/mpihelper.hh>
 
@@ -31,8 +30,7 @@ PYBIND11_MODULE(__operators_oswaldinterpolation, m)
   using namespace pybind11::literals;
 
 
-#if HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
-  Dune::GDT::bindings::OswaldInterpolationOperator<ALU_2D_SIMPLEX_CONFORMING,
+  Dune::GDT::bindings::OswaldInterpolationOperator<GDT_BINDINGS_GRID,
                                                    Dune::GDT::SpaceType::block_dg,
                                                    Dune::GDT::Backends::gdt,
                                                    Dune::XT::Grid::Layers::dd_subdomain,
@@ -41,8 +39,5 @@ PYBIND11_MODULE(__operators_oswaldinterpolation, m)
                                                    1,
                                                    Dune::XT::LA::Backends::istl_dense,
                                                    Dune::XT::Grid::Layers::dd_subdomain_oversampled>::bind(m);
-#endif // HAVE_DUNE_ALUGRID && HAVE_DUNE_ISTL
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt.operators.elliptic");
 }
-
-#endif // HAVE_DUNE_PYBINDXI

@@ -5,8 +5,8 @@
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
-//   Felix Schindler (2014 - 2017)
-//   Rene Milk       (2014, 2016)
+//   Felix Schindler (2014 - 2018)
+//   Rene Milk       (2014, 2016, 2018)
 //   Tobias Leibner  (2014)
 
 #ifndef DUNE_GDT_TEST_OPERATORS_DARCY_HH
@@ -45,7 +45,7 @@ struct DarcyOperatorTest : public ::testing::Test
 
   typedef typename RangeSpaceType::GridLayerType GridLayerType;
   typedef XT::Grid::extract_grid_t<GridLayerType> GridType;
-  typedef XT::Grid::GridProvider<GridType> GridProviderType;
+  typedef XT::Grid::GridProvider<GridType, XT::Grid::none_t> GridProviderType;
   using EntityType = XT::Grid::extract_entity_t<GridLayerType>;
   typedef typename GridLayerType::ctype DomainFieldType;
   static const size_t dimDomain = SourceSpaceType::dimDomain;

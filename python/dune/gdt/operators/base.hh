@@ -6,10 +6,10 @@
 //          with "runtime exception" (http://www.dune-project.org/license.html)
 // Authors:
 //   Felix Schindler (2017)
+//   Rene Milk       (2018)
 
 #ifndef PYTHON_DUNE_GDT_OPERATORS_BASE_BINDINGS_HH
 #define PYTHON_DUNE_GDT_OPERATORS_BASE_BINDINGS_HH
-#if HAVE_DUNE_PYBINDXI
 
 #include <dune/pybindxi/pybind11.h>
 
@@ -35,8 +35,10 @@ public:
   using R = typename OperatorType::RangeSpaceType;
   using S = typename OperatorType::RangeSpaceType;
   using GL = typename OperatorType::GridLayerType;
-  typedef GDT::SystemAssembler<R, GL, S> BaseType;
-  typedef pybind11::class_<type, BaseType> bound_type;
+
+  using BaseType = typename type::BaseType;
+  using bound_type = pybind11::class_<OperatorType, typename type::BaseOperatorType, typename type::BaseAssemblerType>;
+
 
 private:
   typedef typename XT::LA::Container<typename type::FieldType, type::MatrixType::vector_type>::VectorType V;
@@ -101,24 +103,30 @@ private:
   }; // struct addbind_switch<true, true, ...>
 
 public:
-  static bound_type bind(pybind11::module& m,
-                         const std::string& class_id,
-                         const std::string& test_space_name,
-                         const std::string& ansatz_space_name,
-                         const std::string& grid_layer_name)
+  static void bind_bases(pybind11::module& m)
   {
-    try { //  we might not be the first to add this
-      internal::SystemAssembler<R, GL, S>::bind(m, test_space_name, ansatz_space_name, grid_layer_name);
-    } catch (const std::runtime_error&) {
-    }
+    using Op = typename type::BaseOperatorType;
+    XT::Common::bindings::try_register(
+        m, [](pybind11::module& mod) { pybind11::class_<Op> c(mod, XT::Common::Typename<Op>::value().c_str()); });
+    using Sys = typename type::BaseAssemblerType;
+    XT::Common::bindings::try_register(m, [](pybind11::module& mod) {
+      pybind11::class_<Sys, XT::Grid::Walker<GL>> c(mod, XT::Common::Typename<Sys>::value().c_str());
+      internal::bind_system_assembler_functions(c);
+    });
+  }
+
+  static void bind(bound_type& c)
+  {
+    internal::bind_system_assembler_functions(c);
 
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    bound_type c(m, std::string(class_id).c_str(), std::string(class_id).c_str());
+    std::string classname = XT::Common::Typename<BaseType>::value(true);
+
     // from MatrixOperatorBase
     addbind_switch<>::pattern(c);
-    c.def("pattern",
+    c.def("self_pattern",
           [](type& self) { return self.pattern(self.range_space(), self.source_space(), self.grid_layer()); });
     c.def("matrix", [](type& self) { return self.matrix(); });
     c.def("source_space", [](type& self) { return self.source_space(); });
@@ -210,7 +218,6 @@ public:
           "source"_a);
     addbind_switch<>::induced_norm(c);
 
-    return c;
   } // ... bind(...)
 }; // class MatrixOperatorBase
 
@@ -219,5 +226,4 @@ public:
 } // namespace GDT
 } // namespace Dune
 
-#endif // HAVE_DUNE_PYBINDXI
 #endif // PYTHON_DUNE_GDT_OPERATORS_BASE_BINDINGS_HH

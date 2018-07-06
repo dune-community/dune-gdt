@@ -19,7 +19,7 @@ namespace GDT {
 
 
 template <class Traits>
-class FunctionalInterface : public XT::CRTPInterface<FunctionalInterface<Traits>, Traits>
+class FunctionalInterface : public XT::Common::CRTPInterface<FunctionalInterface<Traits>, Traits>
 {
 public:
   typedef typename Traits::derived_type derived_type;
