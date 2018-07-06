@@ -342,7 +342,7 @@ public:
         const auto& vj = triangulation_[ii];
         const auto& vjplus1 = triangulation_[ii];
         FieldVector<RangeFieldType, 3> thetas_ii;
-        if (u_bar[ii] < u_vac_[ii])
+        if (u_bar[2 * ii] < u_vac_[2 * ii] || u_bar[2 * ii + 1] < u_vac_[2 * ii + 1])
           thetas_ii[0] = 1.;
         else
           thetas_ii[0] = u0 / (ubar0 - u0);
@@ -715,28 +715,25 @@ public:
     const RangeType u_bar =
         source_.local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center()));
 
-    // vector to store thetas for each local reconstructed value
-    std::vector<RangeFieldType> thetas(local_reconstructed_values.size());
+    RangeFieldType theta_entity(0.);
 
-    size_t ll = -1;
+    // if a component is already really small, we do not want to reconstruct in that direction
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      if (u_bar[ii] < u_vac_[ii])
+        for (auto& pair : local_reconstructed_values)
+          pair.second[ii] = u_bar[ii];
+
     for (const auto& pair : local_reconstructed_values) {
-      ++ll;
-      const auto& u_l = pair.second;
-      // if (XT::Common::FloatCmp::eq(u_bar, u_l) || basis_functions_.obviously_realizable(u_l)) {
-      if (XT::Common::FloatCmp::eq(u_bar, u_l)) {
-        thetas[ll] = -epsilon_;
+      const auto& u = pair.second;
+      if (XT::Common::FloatCmp::eq(u_bar, u))
         continue;
-      }
 
       // solve LP:
       // min \theta s.t.
       // (\sum x_i v_i) + \theta (u - \bar{u}) = u
       // x_i, \theta >= 0
-      auto theta = solve_linear_program(u_bar, u_l);
-      thetas[ll] = theta;
+      theta_entity = std::max(theta_entity, solve_linear_program(u_bar, u));
     } // ll
-
-    auto theta_entity = *std::max_element(thetas.begin(), thetas.end());
     BaseType::apply_limiter(entity, theta_entity, local_reconstructed_values, u_bar);
   } // void apply_local(...)
 
@@ -822,6 +819,7 @@ private:
   using BaseType::quadrature_;
   using BaseType::epsilon_;
   using BaseType::basis_values_;
+  using BaseType::u_vac_;
   XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>> lp_;
 }; // class ClpLocalRealizabilityLimiter
 
