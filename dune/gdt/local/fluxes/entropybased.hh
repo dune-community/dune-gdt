@@ -87,6 +87,16 @@ public:
     return ret;
   }
 
+  IteratorType begin()
+  {
+    return cache_.begin();
+  }
+
+  ConstIteratorType begin() const
+  {
+    return cache_.begin();
+  }
+
   IteratorType end()
   {
     return cache_.end();
