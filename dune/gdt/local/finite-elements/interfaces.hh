@@ -61,9 +61,9 @@ public:
   virtual void jacobian(const DomainType& /*point_in_reference_element*/,
                         std::vector<DerivativeRangeType>& /*result*/) const = 0;
 
-  /**
-   * \name ``These methods are provided for convenience and should not be used within library code.''
-   */
+  /// \name ``These methods are provided for convenience and should not be used within library code.''
+  /// \{
+
   virtual std::vector<RangeType> evaluate(const DomainType& point_in_reference_element) const
   {
     std::vector<RangeType> result(this->size());
@@ -77,6 +77,7 @@ public:
     this->jacobian(point_in_reference_element, result);
     return result;
   }
+
   /// \}
 }; // class LocalFiniteElementBasisInterface
 
@@ -294,7 +295,7 @@ for (size_t ii = 0; ii < lagrange_points.size(); ++ii)
       assert(basis().evaluate(lagrange_points()[ii])[rr * lagrange_points.size() + jj][rr] == (ii = jj ? 1 : 0));
 \endcode
    *
-   * whlie the matrix-valued case is not implemented yet.
+   * while the matrix-valued case is not implemented yet.
    *
    * See also LocalPowerFiniteElement for the reasoning behind the mapping in the vector-valued case.
    *
