@@ -116,7 +116,7 @@ interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_
 /**
  * \brief Interpolates a smooth function within a given space [most general variant].
  *
- * Simply calls as_localizable<>() and redirects to the appropriate interpolate() function.
+ * Simply calls as_grid_function<>() and redirects to the appropriate interpolate() function.
  */
 template <class GV, size_t r, size_t rC, class R, class V, class IGV>
 std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
@@ -125,7 +125,7 @@ interpolate(const XT::Functions::FunctionInterface<GridView<IGV>::dimension, r, 
             DiscreteFunction<V, GV, r, rC, R>& target,
             const GridView<IGV>& interpolation_grid_view)
 {
-  interpolate(source.as_localizable(interpolation_grid_view), target, interpolation_grid_view);
+  interpolate(source.as_grid_function(interpolation_grid_view), target, interpolation_grid_view);
 }
 
 
@@ -153,7 +153,8 @@ interpolate(const XT::Functions::FunctionInterface<GridView<IGV>::dimension, r, 
             const SpaceInterface<GV, r, rC, R>& target_space,
             const GridView<IGV>& interpolation_grid_view)
 {
-  return interpolate<VectorType>(source.as_localizable(interpolation_grid_view), target_space, interpolation_grid_view);
+  return interpolate<VectorType>(
+      source.as_grid_function(interpolation_grid_view), target_space, interpolation_grid_view);
 }
 
 
@@ -176,7 +177,7 @@ interpolate(const XT::Functions::FunctionInterface<GV::dimension, r, rC, R>& sou
 /**
  * \brief Interpolates a smooth function given as a lambda expression within a given space [most general variant].
  *
- * Simply calls as_localizable<>() and redirects to the appropriate interpolate() function.
+ * Simply creates a XT::Functions::SmoothLambdaFunction and redirects to the appropriate interpolate() function.
  */
 template <class GV, size_t r, size_t rC, class R, class V, class IGV>
 std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
