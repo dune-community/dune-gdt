@@ -15,9 +15,11 @@
 #include <dune/common/dynvector.hh>
 
 #include <dune/xt/common/parameter.hh>
+#include <dune/xt/grid/bound-object.hh>
 #include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/functions/interfaces/element-functions.hh>
 
-#include <dune/xt/functions/interfaces/grid-function.hh>
+#include <dune/gdt/exceptions.hh>
 
 namespace Dune {
 namespace GDT {
@@ -36,7 +38,8 @@ template <class Element,
           size_t range_dim_cols = 1,
           class RangeField = double,
           class Field = double>
-class LocalUnaryElementIntegrandInterface : public XT::Common::ParametricInterface
+class LocalUnaryElementIntegrandInterface : public XT::Common::ParametricInterface,
+                                            public XT::Grid::ElementBoundObject<Element>
 {
   static_assert(XT::Grid::is_entity<Element>::value, "");
 
@@ -52,7 +55,7 @@ public:
   static const constexpr size_t r = range_dim;
   static const constexpr size_t rC = range_dim_cols;
 
-  using ElementType = E;
+  using typename XT::Grid::ElementBoundObject<Element>::ElementType;
   using DomainType = FieldVector<D, d>;
   using LocalBasisType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
 
@@ -66,33 +69,27 @@ public:
   virtual std::unique_ptr<ThisType> copy() const = 0;
 
   /**
-   * This method needs to be called on each grid element before calling order() or evalaute(). It is supposed to be a
-   * (nearly-)no-op if already bound to the element.
-   */
-  virtual ThisType& bind(const ElementType& element) = 0;
-
-  /**
    * Returns the polynomial order of the integrand, given the basis.
    *
-   * \note Undefined behaviour if not bound!
-   */
+   * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
+   **/
   virtual int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const = 0;
 
   /**
    * Computes the evaluation of this integrand at the given point for each function in the basis.
    *
-   * \note Undefined behaviour if not bound!
-   */
+   * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
+   **/
   virtual void evaluate(const LocalBasisType& basis,
                         const DomainType& point_in_reference_element,
                         DynamicVector<F>& result,
                         const XT::Common::Parameter& param = {}) const = 0;
 
   /**
-    * This method is provided for convenience and should not be used within library code.
+   * This method is provided for convenience and should not be used within library code.
    *
-   * \note Undefined behaviour if not bound!
-    */
+   * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
+   **/
   virtual DynamicVector<F> evaluate(const LocalBasisType& basis,
                                     const DomainType& point_in_reference_element,
                                     const XT::Common::Parameter& param = {}) const
@@ -120,7 +117,8 @@ template <class Element,
           size_t ansatz_range_dim = test_range_dim,
           size_t ansatz_range_dim_cols = test_range_dim_cols,
           class AnsatzRangeField = TestRangeField>
-class LocalBinaryElementIntegrandInterface : public XT::Common::ParametricInterface
+class LocalBinaryElementIntegrandInterface : public XT::Common::ParametricInterface,
+                                             public XT::Grid::ElementBoundObject<Element>
 {
   static_assert(XT::Grid::is_entity<Element>::value, "");
 
@@ -147,7 +145,7 @@ public:
   static const constexpr size_t a_r = ansatz_range_dim;
   static const constexpr size_t a_rC = ansatz_range_dim_cols;
 
-  using ElementType = E;
+  using typename XT::Grid::ElementBoundObject<Element>::ElementType;
   using DomainType = FieldVector<D, d>;
   using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
   using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
@@ -162,16 +160,10 @@ public:
   virtual std::unique_ptr<ThisType> copy() const = 0;
 
   /**
-   * This method needs to be called on each grid element before calling order() or evalaute(). It is supposed to be a
-   * (nearly-)no-op if already bound to the element.
-   */
-  virtual ThisType& bind(const ElementType& element) = 0;
-
-  /**
    * Returns the polynomial order of the integrand, given the bases.
    *
-   * \note Undefined behaviour if not bound!
-   */
+   * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
+   **/
   virtual int order(const LocalTestBasisType& test_basis,
                     const LocalAnsatzBasisType& ansatz_basis,
                     const XT::Common::Parameter& param = {}) const = 0;
@@ -179,8 +171,8 @@ public:
   /**
    * Computes the evaluation of this integrand at the given point for each combination of functions from the two bases.
    *
-   * \note Undefined behaviour if not bound!
-   */
+   * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
+   **/
   virtual void evaluate(const LocalTestBasisType& test_basis,
                         const LocalAnsatzBasisType& ansatz_basis,
                         const DomainType& point_in_reference_element,
@@ -188,10 +180,10 @@ public:
                         const XT::Common::Parameter& param = {}) const = 0;
 
   /**
-    * This method is provided for convenience and should not be used within library code.
+   * This method is provided for convenience and should not be used within library code.
    *
-   * \note Undefined behaviour if not bound!
-    */
+   * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
+   **/
   virtual DynamicMatrix<F> evaluate(const LocalTestBasisType& test_basis,
                                     const LocalAnsatzBasisType& ansatz_basis,
                                     const DomainType& point_in_reference_element,

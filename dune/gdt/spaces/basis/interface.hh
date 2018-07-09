@@ -52,8 +52,6 @@ public:
   }
 
   virtual std::unique_ptr<LocalizedBasisType> localize() const = 0;
-
-  virtual std::unique_ptr<LocalizedBasisType> localize(const ElementType& element) const = 0;
 }; // class GlobalBasisInterface
 
 

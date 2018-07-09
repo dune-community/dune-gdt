@@ -47,7 +47,7 @@ public:
       ConstLocalDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
 
   using typename BaseType::LocalFunctionType;
-  using typename BaseType::EntityType;
+  using typename BaseType::ElementType;
 
   ConstDiscreteFunction(const SpaceType& spc,
                         const VectorType& vector,
@@ -79,11 +79,6 @@ public:
     return std::make_unique<ConstLocalDiscreteFunctionType>(space_, dofs_);
   }
 
-  std::unique_ptr<ConstLocalDiscreteFunctionType> local_discrete_function(const EntityType& element) const
-  {
-    return std::make_unique<ConstLocalDiscreteFunctionType>(space_, dofs_, element);
-  }
-
   /**
    * \name ``These methods are required by XT::Functions::GridFunctionInterface.''
    * \{
@@ -98,14 +93,9 @@ public:
     return name_;
   }
 
-  virtual std::unique_ptr<LocalFunctionType> local_function() const
+  std::unique_ptr<LocalFunctionType> local_function() const override final
   {
     return local_discrete_function();
-  }
-
-  virtual std::unique_ptr<LocalFunctionType> local_function(const EntityType& element) const
-  {
-    return local_discrete_function(element);
   }
 
   /**
@@ -156,7 +146,7 @@ class DiscreteFunction : XT::Common::StorageProvider<Vector>,
   using BaseType = ConstDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
 
 public:
-  using typename BaseType::EntityType;
+  using typename BaseType::ElementType;
   using typename BaseType::SpaceType;
   using typename BaseType::VectorType;
 
@@ -202,11 +192,6 @@ public:
   std::unique_ptr<LocalDiscreteFunctionType> local_discrete_function()
   {
     return std::make_unique<LocalDiscreteFunctionType>(space_, dofs_);
-  }
-
-  std::unique_ptr<LocalDiscreteFunctionType> local_discrete_function(const EntityType& element)
-  {
-    return std::make_unique<LocalDiscreteFunctionType>(space_, dofs_, element);
   }
 
   /**

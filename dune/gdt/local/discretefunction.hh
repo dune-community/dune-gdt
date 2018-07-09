@@ -27,7 +27,7 @@ namespace GDT {
 template <class Vector, class GridView, size_t range_dim = 1, size_t range_dim_cols = 1, class RangeField = double>
 class ConstLocalDiscreteFunction
     : public XT::Functions::
-          LocalFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>
+          ElementFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>
 {
   // No need to check the rest, is done in SpaceInterface.
   static_assert(XT::LA::is_vector<Vector>::value, "");
@@ -35,7 +35,7 @@ class ConstLocalDiscreteFunction
 
   using ThisType = ConstLocalDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
   using BaseType = XT::Functions::
-      LocalFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>;
+      ElementFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>;
 
 public:
   using SpaceType = SpaceInterface<GridView, range_dim, range_dim_cols, RangeField>;
@@ -43,7 +43,7 @@ public:
   using ConstLocalDofVectorType = typename ConstDofVectorType::ConstLocalDofVectorType;
   using LocalBasisType = typename SpaceType::GlobalBasisType::LocalizedBasisType;
 
-  using typename BaseType::EntityType;
+  using typename BaseType::ElementType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeSelector;
   using typename BaseType::DerivativeRangeSelector;
@@ -64,19 +64,7 @@ public:
     : BaseType()
     , space_(spc)
     , dof_vector_(dof_vector.localize())
-    , basis_(nullptr)
-    , basis_values_(space_.mapper().max_local_size())
-    , dynamic_basis_values_(space_.mapper().max_local_size())
-    , basis_derivatives_(space_.mapper().max_local_size())
-    , dynamic_basis_derivatives_(space_.mapper().max_local_size())
-  {
-  }
-
-  ConstLocalDiscreteFunction(const SpaceType& spc, const ConstDofVectorType& dof_vector, const EntityType& ent)
-    : BaseType(ent)
-    , space_(spc)
-    , dof_vector_(dof_vector.localize(ent))
-    , basis_(space_.basis().localize(ent))
+    , basis_(space_.basis().localize())
     , basis_values_(space_.mapper().max_local_size())
     , dynamic_basis_values_(space_.mapper().max_local_size())
     , basis_derivatives_(space_.mapper().max_local_size())
@@ -85,16 +73,16 @@ public:
   }
 
 protected:
-  void post_bind(const EntityType& ent) override
+  void post_bind(const ElementType& ent) override
   {
-    basis_ = space_.basis().localize(ent);
+    basis_->bind(ent);
     dof_vector_.bind(ent);
   }
 
 public:
   int order(const XT::Common::Parameter& /*param*/ = {}) const override final
   {
-    DUNE_THROW_IF(!basis_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     return basis_->order();
   }
 
@@ -105,13 +93,13 @@ public:
 
   const LocalBasisType& basis() const
   {
-    DUNE_THROW_IF(!basis_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     return basis_;
   }
 
   const ConstLocalDofVectorType& dofs() const
   {
-    DUNE_THROW_IF(!basis_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     return dof_vector_;
   }
 
@@ -302,7 +290,7 @@ class LocalDiscreteFunction : public ConstLocalDiscreteFunction<V, GV, r, rC, R>
 
 public:
   using typename BaseType::SpaceType;
-  using typename BaseType::EntityType;
+  using typename BaseType::ElementType;
 
   using DofVectorType = DofVector<V, GV>;
   using LocalDofVectorType = typename DofVectorType::LocalDofVectorType;
@@ -314,7 +302,7 @@ public:
   {
   }
 
-  LocalDiscreteFunction(const SpaceType& spc, DofVectorType& dof_vector, const EntityType& ent)
+  LocalDiscreteFunction(const SpaceType& spc, DofVectorType& dof_vector, const ElementType& ent)
     : BaseType(spc, dof_vector, ent)
     , dof_vector_(dof_vector.localize(ent))
     , bound_(true)
@@ -322,7 +310,7 @@ public:
   }
 
 protected:
-  void post_bind(const EntityType& ent) override
+  void post_bind(const ElementType& ent) override
   {
     BaseType::bind(ent);
     dof_vector_.bind(ent);

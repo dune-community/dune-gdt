@@ -120,15 +120,6 @@ private:
     {
     }
 
-    LocalizedRaviartThomasGlobalBasis(const RaviartThomasGlobalBasis<GL, R>& self, const EntityType& elemnt)
-      : BaseType(elemnt)
-      , self_(self)
-      , shape_functions_(nullptr)
-      , element_index_(0)
-    {
-      post_bind(elemnt);
-    }
-
     LocalizedRaviartThomasGlobalBasis(const ThisType&) = default;
     LocalizedRaviartThomasGlobalBasis(ThisType&&) = default;
 

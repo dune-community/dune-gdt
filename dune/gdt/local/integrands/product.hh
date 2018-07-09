@@ -14,7 +14,7 @@
 
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/functions/constant.hh>
-#include <dune/xt/functions/base/smooth-localizable-function.hh>
+#include <dune/xt/functions/base/function-as-grid-function.hh>
 #include <dune/xt/functions/interfaces/grid-function.hh>
 
 #include "interfaces.hh"
@@ -50,11 +50,11 @@ public:
   using typename BaseType::LocalTestBasisType;
   using typename BaseType::LocalAnsatzBasisType;
 
-  using LocalizableFunctionType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
+  using GridFunctionType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
 
   LocalElementProductIntegrand(const F& inducing_value = F(1))
     : BaseType()
-    , inducing_function_(new XT::Functions::SmoothFunctionAsLocalizableWrapper<E, 1, 1, F>(
+    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, F>(
           new XT::Functions::ConstantFunction<d, 1, 1, F>(inducing_value)))
     , local_function_(inducing_function_.access().local_function())
     , test_basis_values_()
@@ -64,14 +64,14 @@ public:
 
   LocalElementProductIntegrand(const XT::Functions::FunctionInterface<d, 1, 1, F>& inducing_function)
     : BaseType()
-    , inducing_function_(new XT::Functions::SmoothFunctionAsLocalizableWrapper<E, 1, 1, F>(inducing_function))
+    , inducing_function_(new XT::Functions::FunctionAsGridFunctionWrapper<E, 1, 1, F>(inducing_function))
     , local_function_(inducing_function_.access().local_function())
     , test_basis_values_()
     , ansatz_basis_values_()
   {
   }
 
-  LocalElementProductIntegrand(const LocalizableFunctionType& inducing_function)
+  LocalElementProductIntegrand(const GridFunctionType& inducing_function)
     : BaseType(inducing_function.parameter_type())
     , inducing_function_(inducing_function)
     , local_function_(inducing_function_.access().local_function())
@@ -96,12 +96,13 @@ public:
     return std::make_unique<ThisType>(*this);
   }
 
-  BaseType& bind(const ElementType& element) override final
+protected:
+  void post_bind(const ElementType& ele) override final
   {
-    local_function_->bind(element);
-    return *this;
+    local_function_->bind(ele);
   }
 
+public:
   int order(const LocalTestBasisType& test_basis,
             const LocalAnsatzBasisType& ansatz_basis,
             const XT::Common::Parameter& param = {}) const override final
@@ -117,7 +118,7 @@ public:
                 DynamicMatrix<F>& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
-    // prepare sotrage
+    // prepare storage
     const size_t rows = test_basis.size(param);
     const size_t cols = ansatz_basis.size(param);
     if (result.rows() < rows || result.cols() < cols)
@@ -133,8 +134,8 @@ public:
   } // ... evaluate(...)
 
 private:
-  const XT::Common::ConstStorageProvider<LocalizableFunctionType> inducing_function_;
-  std::unique_ptr<typename LocalizableFunctionType::LocalFunctionType> local_function_;
+  const XT::Common::ConstStorageProvider<GridFunctionType> inducing_function_;
+  std::unique_ptr<typename GridFunctionType::LocalFunctionType> local_function_;
   mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_values_;
   mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_values_;
 }; // class LocalElementProductIntegrand

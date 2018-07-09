@@ -49,11 +49,6 @@ public:
     return vector_;
   }
 
-  ConstLocalDofVectorType localize(const ElementType& element) const
-  {
-    return ConstLocalDofVectorType(mapper_, vector_, element);
-  }
-
   ConstLocalDofVectorType localize() const
   {
     return ConstLocalDofVectorType(mapper_, vector_);
@@ -95,11 +90,6 @@ public:
   }
 
   using BaseType::localize;
-
-  LocalDofVectorType localize(const ElementType& element)
-  {
-    return LocalDofVectorType(mapper_, vector_, element);
-  }
 
   LocalDofVectorType localize()
   {

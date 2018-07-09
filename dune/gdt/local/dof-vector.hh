@@ -13,6 +13,8 @@
 
 #include <dune/xt/common/vector.hh>
 #include <dune/xt/la/container/vector-interface.hh>
+#include <dune/xt/grid/bound-object.hh>
+#include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/spaces/mapper/interfaces.hh>
@@ -71,7 +73,8 @@ public:
  *       taken here.
  */
 template <class Vector, class GridView, class Traits>
-class ConstLocalDofVector : public XT::LA::VectorInterface<Traits>
+class ConstLocalDofVector : public XT::LA::VectorInterface<Traits>,
+                            public XT::Grid::ElementBoundObject<XT::Grid::extract_entity_t<GridView>>
 {
 
   using ThisType = ConstLocalDofVector<Vector, GridView, Traits>;
@@ -81,61 +84,33 @@ public:
   using typename BaseType::ScalarType;
   using VectorType = Vector;
   using MapperType = MapperInterface<GridView>;
-  using ElementType = typename MapperType::ElementType;
+  using typename XT::Grid::ElementBoundObject<XT::Grid::extract_entity_t<GridView>>::ElementType;
 
   ConstLocalDofVector(const MapperType& mapper, const VectorType& global_vector)
     : mapper_(mapper)
     , global_vector_(global_vector)
     , global_DoF_indices_(mapper_.max_local_size())
     , size_(0)
-    , element_(nullptr)
   {
   }
 
-  // Cannot be defaulted due to element_.
-  ConstLocalDofVector(const MapperType& mapper, const VectorType& global_vector, const ElementType& element)
-    : mapper_(mapper)
-    , global_vector_(global_vector)
-    , global_DoF_indices_(mapper_.max_local_size())
-    , size_(0)
-    , element_(nullptr)
+  ConstLocalDofVector(const ThisType& other) = default;
+  ConstLocalDofVector(ThisType&& source) = default;
+
+protected:
+  void post_bind(const ElementType& ele)
   {
-    this->bind(element);
+    mapper_.global_indices(ele, global_DoF_indices_);
+    size_ = mapper_.local_size(ele);
+    DUNE_THROW_IF(global_DoF_indices_.size() < size_,
+                  Exceptions::dof_vector_error,
+                  "This must not happen, the mapper is broken!");
   }
 
-  // Cannot be defaulted due to element_.
-  ConstLocalDofVector(const ThisType& other)
-    : mapper_(other.mapper_)
-    , global_vector_(other.global_vector_)
-    , global_DoF_indices_(other.global_DoF_indices_)
-    , size_(other.size_)
-    , element_(other.element_ ? std::make_unique<ElementType>(*other.element_) : nullptr)
-  {
-  }
-
-  ConstLocalDofVector(ThisType&& source)
-    : mapper_(source.mapper_)
-    , global_vector_(source.global_vector_)
-    , global_DoF_indices_(std::move(source.global_DoF_indices_))
-    , size_(std::move(source.size_))
-    , element_(std::move(source.element_))
-  {
-  }
-
-  ThisType& bind(const ElementType& new_element)
-  {
-    if (!element_ || new_element != *element_) {
-      element_ = std::make_unique<ElementType>(new_element);
-      mapper_.global_indices(*element_, global_DoF_indices_);
-      size_ = mapper_.local_size(*element_);
-      assert(global_DoF_indices_.size() >= size_ && "This must not happen, the mapper is broken!");
-    }
-    return *this;
-  } // ... bind(...)
-
+public:
   size_t size() const
   {
-    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     return size_;
   }
 
@@ -151,7 +126,7 @@ public:
 
   ScalarType get_entry(const size_t ii) const
   {
-    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     assert(ii < size_);
     return global_vector_.get_entry(global_DoF_indices_[ii]);
   }
@@ -165,7 +140,7 @@ protected:
 
   const ScalarType& get_unchecked_ref(const size_t ii) const
   {
-    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     assert(ii < size_);
     // This is not optimal, but global_vector_.get_unchecked_ref is protected.
     return global_vector_[global_DoF_indices_[ii]];
@@ -180,7 +155,7 @@ public:
 
   const ScalarType& operator[](const size_t ii) const
   {
-    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     assert(ii < size_);
     return global_vector_[global_DoF_indices_[ii]];
   }
@@ -196,7 +171,6 @@ private:
 protected:
   DynamicVector<size_t> global_DoF_indices_;
   size_t size_;
-  std::unique_ptr<ElementType> element_;
 
 private:
   ScalarType dummy_scalar_to_silence_the_warning_;
@@ -214,16 +188,9 @@ public:
   using typename BaseType::ScalarType;
   using VectorType = Vector;
   using MapperType = MapperInterface<GridView>;
-  using ElementType = typename MapperType::ElementType;
 
   LocalDofVector(const MapperType& mapper, VectorType& global_vector)
     : BaseType(mapper, global_vector)
-    , global_vector_(global_vector)
-  {
-  }
-
-  LocalDofVector(const MapperType& mapper, VectorType& global_vector, const ElementType& element)
-    : BaseType(mapper, global_vector, element)
     , global_vector_(global_vector)
   {
   }
@@ -233,21 +200,21 @@ public:
 
   void add_to_entry(const size_t ii, const ScalarType& value)
   {
-    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     assert(ii < size_);
     global_vector_.add_to_entry(global_DoF_indices_[ii], value);
   }
 
   void set_entry(const size_t ii, const ScalarType& value)
   {
-    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     assert(ii < size_);
     global_vector_.set_entry(global_DoF_indices_[ii], value);
   }
 
   ScalarType get_entry(const size_t ii) const
   {
-    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     assert(ii < size_);
     return global_vector_.get_entry(global_DoF_indices_[ii]);
   }
@@ -255,14 +222,14 @@ public:
 protected:
   ScalarType& get_unchecked_ref(const size_t ii)
   {
-    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     assert(ii < size_);
     return global_vector_[global_DoF_indices_[ii]];
   }
 
   const ScalarType& get_unchecked_ref(const size_t ii) const
   {
-    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     assert(ii < size_);
     return global_vector_[global_DoF_indices_[ii]];
   }
@@ -270,14 +237,14 @@ protected:
 public:
   ScalarType& operator[](const size_t ii)
   {
-    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     assert(ii < size_);
     return global_vector_[global_DoF_indices_[ii]];
   }
 
   const ScalarType& operator[](const size_t ii) const
   {
-    DUNE_THROW_IF(!element_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     assert(ii < size_);
     return global_vector_[global_DoF_indices_[ii]];
   }

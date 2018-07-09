@@ -93,7 +93,7 @@ private:
     using BaseType = XT::Functions::ElementFunctionSetInterface<E, r, 1, R>;
 
   public:
-    using typename BaseType::EntityType;
+    using typename BaseType::ElementType;
     using typename BaseType::DomainType;
     using typename BaseType::RangeSelector;
     using typename BaseType::DerivativeRangeSelector;
@@ -105,11 +105,6 @@ private:
 
     LocalizedFiniteVolumeGlobalBasis()
       : BaseType()
-    {
-    }
-
-    LocalizedFiniteVolumeGlobalBasis(const EntityType& elemnt)
-      : BaseType(elemnt)
     {
     }
 

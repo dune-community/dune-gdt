@@ -284,8 +284,8 @@ public:
                       || (local_range_outside.space().type() != SpaceType::finite_volume),
                   Exceptions::operator_error,
                   "Use LocalAdvectionDgCouplingOperator instead!");
-    const auto& inside_element = local_range_inside.entity();
-    const auto& outside_element = local_range_outside.entity();
+    const auto& inside_element = local_range_inside.element();
+    const auto& outside_element = local_range_outside.element();
     const auto u = source.local_discrete_function(inside_element);
     const auto v = source.local_discrete_function(outside_element);
     const auto normal = intersection.centerUnitOuterNormal();

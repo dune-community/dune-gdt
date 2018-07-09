@@ -70,13 +70,14 @@ public:
     return std::make_unique<ThisType>(*this);
   }
 
-  BaseType& bind(const ElementType& element) override final
+protected:
+  void post_bind(const ElementType& element) override final
   {
     local_function_->bind(element);
     local_binary_integrand_->bind(element);
-    return *this;
   }
 
+public:
   int order(const LocalBasisType& basis, const XT::Common::Parameter& param = {}) const override final
   {
     return local_binary_integrand_->order(*local_function_, basis, param);

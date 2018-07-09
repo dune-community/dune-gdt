@@ -61,7 +61,7 @@ public:
              const XT::Common::Parameter& param = {}) const override final
   {
     // prepare integand
-    const auto& element = basis.entity();
+    const auto& element = basis.element();
     integrand_->bind(element);
     // prepare storage
     const auto size = basis.size(param);
@@ -70,7 +70,7 @@ public:
     result *= 0;
     // loop over all quadrature points
     const auto integration_order = integrand_->order(basis, param) + over_integrate_;
-    for (auto&& quadrature_point : QuadratureRules<D, d>::rule(element.type(), integration_order)) {
+    for (auto&& quadrature_point : QuadratureRules<D, d>::rule(element.geometry().type(), integration_order)) {
       const auto point_in_reference_element = quadrature_point.position();
       // integration factors
       const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);

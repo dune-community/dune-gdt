@@ -47,6 +47,7 @@ public:
     , param_(param)
     , local_vector_(space_.mapper().max_local_size())
     , global_indices_(space_.mapper().max_local_size())
+    , basis_(space_.basis().localize())
   {
     DUNE_THROW_IF(global_vector_.size() != space_.mapper().size(),
                   XT::Common::Exceptions::shapes_do_not_match,
@@ -63,6 +64,7 @@ public:
     , param_(other.param_)
     , local_vector_(other.local_vector_)
     , global_indices_(other.global_indices_)
+    , basis_(space_.basis().localize())
   {
   }
 
@@ -76,11 +78,11 @@ public:
   void apply_local(const ElementType& element) override final
   {
     // apply functional
-    const auto basis = space_.basis().localize(element);
-    local_functional_->apply(*basis, local_vector_, param_);
+    basis_->bind(element);
+    local_functional_->apply(*basis_, local_vector_, param_);
     // copy local vector to global
     space_.mapper().global_indices(element, global_indices_);
-    for (size_t jj = 0; jj < basis->size(param_); ++jj)
+    for (size_t jj = 0; jj < basis_->size(param_); ++jj)
       global_vector_.add_to_entry(global_indices_[jj], local_vector_[jj]);
   }
 
@@ -91,6 +93,7 @@ private:
   XT::Common::Parameter param_;
   DynamicVector<FieldType> local_vector_;
   DynamicVector<size_t> global_indices_;
+  mutable std::unique_ptr<typename SpaceType::GlobalBasisType::LocalizedBasisType> basis_;
 }; // class LocalElementFunctionalAssembler
 
 

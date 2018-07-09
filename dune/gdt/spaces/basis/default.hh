@@ -84,11 +84,6 @@ public:
     return std::make_unique<LocalizedDefaultGlobalBasis>(*this);
   }
 
-  std::unique_ptr<LocalizedBasisType> localize(const ElementType& element) const override final
-  {
-    return std::make_unique<LocalizedDefaultGlobalBasis>(*this, element);
-  }
-
 private:
   class LocalizedDefaultGlobalBasis : public XT::Functions::ElementFunctionSetInterface<E, r, rC, R>
   {
@@ -96,7 +91,7 @@ private:
     using BaseType = XT::Functions::ElementFunctionSetInterface<E, r, rC, R>;
 
   public:
-    using typename BaseType::EntityType;
+    using typename BaseType::ElementType;
     using typename BaseType::DomainType;
     using typename BaseType::RangeType;
     using typename BaseType::DerivativeRangeType;
@@ -106,14 +101,6 @@ private:
       , self_(self)
       , shape_functions_(nullptr)
     {
-    }
-
-    LocalizedDefaultGlobalBasis(const DefaultGlobalBasis<GV, r, rC, R>& self, const EntityType& elemnt)
-      : BaseType(elemnt)
-      , self_(self)
-      , shape_functions_(nullptr)
-    {
-      post_bind(elemnt);
     }
 
     LocalizedDefaultGlobalBasis(const ThisType&) = default;
@@ -128,7 +115,7 @@ private:
     }
 
   protected:
-    void post_bind(const EntityType& elemnt) override final
+    void post_bind(const ElementType& elemnt) override final
     {
       shape_functions_ = std::make_unique<XT::Common::ConstStorageProvider<ShapeFunctionsType>>(
           self_.shape_functions(elemnt.geometry().type()));
@@ -165,7 +152,7 @@ private:
       // evaluate jacobian of shape functions
       shape_functions_->access().jacobian(point_in_reference_element, result);
       // apply transformation
-      const auto J_inv_T = this->entity().geometry().jacobianInverseTransposed(point_in_reference_element);
+      const auto J_inv_T = this->element().geometry().jacobianInverseTransposed(point_in_reference_element);
       auto tmp_value = result[0][0];
       for (size_t ii = 0; ii < shape_functions_->access().size(); ++ii) {
         J_inv_T.mv(result[ii][0], tmp_value);
