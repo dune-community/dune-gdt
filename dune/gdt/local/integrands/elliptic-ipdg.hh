@@ -1478,6 +1478,649 @@ public:
 }; // class BoundaryRHS
 #endif // 0
 
+/**
+ * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
+ */
+template <class I, class F = double, Method method = default_method>
+class InnerOnlyPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
+{
+  using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
+  using ThisType = InnerOnlyPenalty<I, F, method>;
+
+public:
+  using typename BaseType::IntersectionType;
+  using typename BaseType::E;
+  using BaseType::d;
+  using typename BaseType::LocalTestBasisType;
+  using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::DomainType;
+
+  using DiffusionFactorType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
+  using DiffusionTensorType = XT::Functions::GridFunctionInterface<E, d, d, F>;
+
+  InnerOnlyPenalty(const DiffusionFactorType& diffusion_factor,
+                   const DiffusionTensorType& diffusion_tensor,
+                   const double beta = internal::default_beta(d))
+    : BaseType(diffusion_factor.parameter_type() + diffusion_tensor.parameter_type())
+    , beta_(beta)
+    , diffusion_factor_(diffusion_factor)
+    , diffusion_tensor_(diffusion_tensor)
+    , local_diffusion_factor_in_(diffusion_factor_.local_function())
+    , local_diffusion_factor_out_(diffusion_factor_.local_function())
+    , local_diffusion_tensor_in_(diffusion_tensor_.local_function())
+    , local_diffusion_tensor_out_(diffusion_tensor_.local_function())
+  {
+  }
+
+  InnerOnlyPenalty(const ThisType& other)
+    : BaseType(other.parameter_type())
+    , beta_(other.beta_)
+    , diffusion_factor_(other.diffusion_factor_)
+    , diffusion_tensor_(other.diffusion_tensor_)
+    , local_diffusion_factor_in_(diffusion_factor_.local_function())
+    , local_diffusion_factor_out_(diffusion_factor_.local_function())
+    , local_diffusion_tensor_in_(diffusion_tensor_.local_function())
+    , local_diffusion_tensor_out_(diffusion_tensor_.local_function())
+  {
+  }
+
+  InnerOnlyPenalty(ThisType&& source) = default;
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+protected:
+  void post_bind(const IntersectionType& intersection) override final
+  {
+    DUNE_THROW_IF(!intersection.neighbor(),
+                  Exceptions::integrand_error,
+                  "This integrand cannot be used on a boundary intersection!");
+    const auto inside_element = intersection.inside();
+    const auto outside_element = intersection.outside();
+    local_diffusion_factor_in_->bind(inside_element);
+    local_diffusion_tensor_in_->bind(inside_element);
+    local_diffusion_factor_out_->bind(outside_element);
+    local_diffusion_tensor_out_->bind(outside_element);
+  } // ... post_bind(...)
+
+public:
+  int order(const LocalTestBasisType& test_basis_inside,
+            const LocalAnsatzBasisType& ansatz_basis_inside,
+            const LocalTestBasisType& test_basis_outside,
+            const LocalAnsatzBasisType& ansatz_basis_outside,
+            const XT::Common::Parameter& param = {}) const override final
+  {
+    return std::max(local_diffusion_factor_in_->order(param), local_diffusion_factor_out_->order(param))
+           + std::max(local_diffusion_tensor_in_->order(), local_diffusion_tensor_out_->order(param))
+           + std::max(test_basis_inside.order(param), test_basis_outside.order(param))
+           + std::max(ansatz_basis_inside.order(param), ansatz_basis_outside.order(param));
+  }
+
+private:
+  template <Method m, class Anything = void>
+  struct IPDG
+  {
+    static_assert(AlwaysFalse<Anything>::value, "Other methods are not implemented yet!");
+
+    template <class R>
+    static inline F delta_plus(const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                               const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_ne*/,
+                               const XT::Common::FieldMatrix<R, d, d>& /*diffusion_ne*/,
+                               const FieldVector<R, d>& /*normal*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+
+    template <class R>
+    static inline F delta_minus(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                                const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_en*/,
+                                const XT::Common::FieldMatrix<R, d, d>& /*diffusion_en*/,
+                                const FieldVector<R, d>& /*normal*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+
+    template <class R>
+    static inline F gamma(const R& /*delta_plus*/, const R& /*delta_minus*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+
+    template <class R>
+    static inline F penalty(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                            const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_en*/,
+                            const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                            const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_ne*/,
+                            const FieldVector<R, d>& /*normal*/,
+                            const R& /*sigma*/,
+                            const R& /*gamma*/,
+                            const R& /*h*/,
+                            const R& /*beta*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+
+    template <class R>
+    static inline F weight_plus(const R& /*delta_plus*/, const R& /*delta_minus*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+
+    template <class R>
+    static inline F weight_minus(const R& /*delta_plus*/, const R& /*delta_minus*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+  }; // struct IPDG<...>
+
+  template <class Anything>
+  struct IPDG<Method::swipdg, Anything>
+  {
+    template <class R>
+    static inline F delta_plus(const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                               const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_ne*/,
+                               const XT::Common::FieldMatrix<R, d, d>& diffusion_ne,
+                               const FieldVector<R, d>& normal)
+    {
+      return normal * (diffusion_ne * normal);
+    }
+
+    template <class R>
+    static inline F delta_minus(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                                const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_en*/,
+                                const XT::Common::FieldMatrix<R, d, d>& diffusion_en,
+                                const FieldVector<R, d>& normal)
+    {
+      return normal * (diffusion_en * normal);
+    }
+
+    template <class R>
+    static inline F gamma(const R& delta_plus, const R& delta_minus)
+    {
+      return (delta_plus * delta_minus) / (delta_plus + delta_minus);
+    }
+
+    template <class R>
+    static inline F penalty(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                            const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_en*/,
+                            const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                            const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_ne*/,
+                            const FieldVector<R, d>& /*normal*/,
+                            const R& sigma,
+                            const R& gamma,
+                            const R& h,
+                            const R& beta)
+    {
+      return (sigma * gamma) / std::pow(h, beta);
+    }
+
+    template <class R>
+    static inline F weight_plus(const R& delta_plus, const R& delta_minus)
+    {
+      return delta_minus / (delta_plus + delta_minus);
+    }
+
+    template <class R>
+    static inline F weight_minus(const R& delta_plus, const R& delta_minus)
+    {
+      return delta_plus / (delta_plus + delta_minus);
+    }
+  }; // struct IPDG<Method::swipdg, ...>
+
+  template <class Anything>
+  struct IPDG<Method::swipdg_affine_factor, Anything>
+  {
+    template <class R>
+    static inline F delta_plus(const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                               const XT::Common::FieldMatrix<R, d, d>& diffusion_tensor_ne,
+                               const XT::Common::FieldMatrix<R, d, d>& /*diffusion_ne*/,
+                               const FieldVector<R, d>& normal)
+    {
+      return normal * (diffusion_tensor_ne * normal);
+    }
+
+    template <class R>
+    static inline F delta_minus(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                                const XT::Common::FieldMatrix<R, d, d>& diffusion_tensor_en,
+                                const XT::Common::FieldMatrix<R, d, d>& /*diffusion_en*/,
+                                const FieldVector<R, d>& normal)
+    {
+      return normal * (diffusion_tensor_en * normal);
+    }
+
+    template <class R>
+    static inline F gamma(const R& delta_plus, const R& delta_minus)
+    {
+      return (delta_plus * delta_minus) / (delta_plus + delta_minus);
+    }
+
+    template <class R>
+    static inline F penalty(const FieldVector<R, 1>& diffusion_factor_en,
+                            const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_en*/,
+                            const FieldVector<R, 1>& diffusion_factor_ne,
+                            const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_ne*/,
+                            const FieldVector<R, d>& /*normal*/,
+                            const R& sigma,
+                            const R& gamma,
+                            const R& h,
+                            const R& beta)
+    {
+      return (0.5 * (diffusion_factor_en + diffusion_factor_ne) * sigma * gamma) / std::pow(h, beta);
+    }
+
+    template <class R>
+    static inline F weight_plus(const R& delta_plus, const R& delta_minus)
+    {
+      return delta_minus / (delta_plus + delta_minus);
+    }
+
+    template <class R>
+    static inline F weight_minus(const R& delta_plus, const R& delta_minus)
+    {
+      return delta_plus / (delta_plus + delta_minus);
+    }
+  }; // struct IPDG<Method::swipdg_affine_factor, ...>
+
+  template <class Anything>
+  struct IPDG<Method::swipdg_affine_tensor, Anything>
+  {
+    template <class R>
+    static inline F delta_plus(const FieldVector<R, 1>& diffusion_factor_ne,
+                               const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_ne*/,
+                               const XT::Common::FieldMatrix<R, d, d>& /*diffusion_ne*/,
+                               const FieldVector<R, d>& /*normal*/)
+    {
+      return diffusion_factor_ne;
+    }
+
+    template <class R>
+    static inline F delta_minus(const FieldVector<R, 1>& diffusion_factor_en,
+                                const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_en*/,
+                                const XT::Common::FieldMatrix<R, d, d>& /*diffusion_en*/,
+                                const FieldVector<R, d>& /*normal*/)
+    {
+      return diffusion_factor_en;
+    }
+
+    template <class R>
+    static inline F gamma(const R& delta_plus, const R& delta_minus)
+    {
+      return (delta_plus * delta_minus) / (delta_plus + delta_minus);
+    }
+
+    template <class R>
+    static inline F penalty(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                            const XT::Common::FieldMatrix<R, d, d>& diffusion_tensor_en,
+                            const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                            const XT::Common::FieldMatrix<R, d, d>& diffusion_tensor_ne,
+                            const FieldVector<R, d>& normal,
+                            const R& sigma,
+                            const R& gamma,
+                            const R& h,
+                            const R& beta)
+    {
+      return (normal * (((diffusion_tensor_en + diffusion_tensor_ne) * 0.5) * normal) * sigma * gamma)
+             / std::pow(h, beta);
+    }
+
+    template <class R>
+    static inline F weight_plus(const R& delta_plus, const R& delta_minus)
+    {
+      return delta_minus / (delta_plus + delta_minus);
+    }
+
+    template <class R>
+    static inline F weight_minus(const R& delta_plus, const R& delta_minus)
+    {
+      return delta_plus / (delta_plus + delta_minus);
+    }
+  }; // struct IPDG<Method::swipdg_affine_tensor, ...>
+
+  template <class Anything>
+  struct IPDG<Method::sipdg, Anything>
+  {
+    template <class R>
+    static inline F delta_plus(const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                               const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_ne*/,
+                               const XT::Common::FieldMatrix<R, d, d>& /*diffusion_ne*/,
+                               const FieldVector<R, d>& /*normal*/)
+    {
+      return 1.0;
+    }
+
+    template <class R>
+    static inline F delta_minus(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                                const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_en*/,
+                                const XT::Common::FieldMatrix<R, d, d>& /*diffusion_en*/,
+                                const FieldVector<R, d>& /*normal*/)
+    {
+      return 1.0;
+    }
+
+    template <class R>
+    static inline F gamma(const R& /*delta_plus*/, const R& /*delta_minus*/)
+    {
+      return 1.0;
+    }
+
+    template <class R>
+    static inline F penalty(const FieldVector<R, 1>& /*diffusion_factor_en*/,
+                            const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_en*/,
+                            const FieldVector<R, 1>& /*diffusion_factor_ne*/,
+                            const XT::Common::FieldMatrix<R, d, d>& /*diffusion_tensor_ne*/,
+                            const FieldVector<R, d>& /*normal*/,
+                            const R& sigma,
+                            const R& /*gamma*/,
+                            const R& h,
+                            const R& beta)
+    {
+      return sigma / std::pow(h, beta);
+    }
+
+    template <class R>
+    static inline F weight_plus(const R& /*delta_plus*/, const R& /*delta_minus*/)
+    {
+      return 0.5;
+    }
+
+    template <class R>
+    static inline F weight_minus(const R& /*delta_plus*/, const R& /*delta_minus*/)
+    {
+      return 0.5;
+    }
+  }; // struct IPDG<Method::sipdg, ...>
+
+public:
+  void evaluate(const LocalTestBasisType& test_basis_inside,
+                const LocalAnsatzBasisType& ansatz_basis_inside,
+                const LocalTestBasisType& test_basis_outside,
+                const LocalAnsatzBasisType& ansatz_basis_outside,
+                const DomainType& point_in_reference_intersection,
+                DynamicMatrix<F>& result_in_in,
+                DynamicMatrix<F>& result_in_out,
+                DynamicMatrix<F>& result_out_in,
+                DynamicMatrix<F>& result_out_out,
+                const XT::Common::Parameter& param = {}) const override final
+  {
+    // prepare sotrage
+    const size_t rows_in = test_basis_inside.size(param);
+    const size_t rows_out = test_basis_outside.size(param);
+    const size_t cols_in = ansatz_basis_inside.size(param);
+    const size_t cols_out = ansatz_basis_outside.size(param);
+    const auto ensure_size_and_clear = [](auto& m, const auto& r, const auto& c) {
+      if (m.rows() < r || m.cols() < c)
+        m.resize(r, c);
+      m *= 0;
+    };
+    ensure_size_and_clear(result_in_in, rows_in, cols_in);
+    ensure_size_and_clear(result_in_out, rows_in, cols_out);
+    ensure_size_and_clear(result_out_in, rows_out, cols_in);
+    ensure_size_and_clear(result_out_out, rows_out, cols_out);
+    // evaluate ...
+    const auto point_in_inside_reference_element =
+        this->intersection().geometryInInside().global(point_in_reference_intersection);
+    const auto point_in_outside_reference_element =
+        this->intersection().geometryInOutside().global(point_in_reference_intersection);
+    const auto normal = this->intersection().unitOuterNormal(point_in_reference_intersection);
+    // ... basis functions and ...
+    test_basis_inside.evaluate(point_in_inside_reference_element, test_basis_in_values_, param);
+    test_basis_outside.evaluate(point_in_outside_reference_element, test_basis_out_values_, param);
+    ansatz_basis_inside.evaluate(point_in_inside_reference_element, ansatz_basis_in_values_, param);
+    ansatz_basis_outside.evaluate(point_in_outside_reference_element, ansatz_basis_out_values_, param);
+    // ... data functions
+    const auto diffusion_factor_in = local_diffusion_factor_in_->evaluate(point_in_inside_reference_element, param);
+    const auto diffusion_tensor_in = local_diffusion_tensor_in_->evaluate(point_in_inside_reference_element, param);
+    const auto diffusion_factor_out = local_diffusion_factor_out_->evaluate(point_in_outside_reference_element, param);
+    const auto diffusion_tensor_out = local_diffusion_tensor_out_->evaluate(point_in_outside_reference_element, param);
+    const auto diffusion_in = diffusion_tensor_in * diffusion_factor_in;
+    const auto diffusion_out = diffusion_tensor_out * diffusion_factor_out;
+    // compute penalty factor (see Epshteyn, Riviere, 2007)
+    const size_t max_polorder =
+        std::max(test_basis_inside.order(param),
+                 std::max(ansatz_basis_inside.order(param),
+                          std::max(test_basis_outside.order(param), ansatz_basis_outside.order(param))));
+    const F sigma = internal::inner_sigma(max_polorder);
+    // compute weighting (see Ern, Stephansen, Zunino 2007)
+    const F delta_plus = IPDG<method>::delta_plus(diffusion_factor_out, diffusion_tensor_out, diffusion_out, normal);
+    const F delta_minus = IPDG<method>::delta_minus(diffusion_factor_in, diffusion_tensor_in, diffusion_in, normal);
+    const F gamma = IPDG<method>::gamma(delta_plus, delta_minus);
+    const F penalty = IPDG<method>::penalty(diffusion_factor_in,
+                                            diffusion_tensor_out,
+                                            diffusion_factor_out,
+                                            diffusion_tensor_in,
+                                            normal,
+                                            sigma,
+                                            gamma,
+                                            this->intersection().geometry().volume(),
+                                            beta_);
+    // compute integrand
+    for (size_t ii = 0; ii < rows_in; ++ii) {
+      for (size_t jj = 0; jj < cols_in; ++jj)
+        result_in_in[ii][jj] += penalty * ansatz_basis_in_values_[jj] * test_basis_in_values_[ii];
+      for (size_t jj = 0; jj < cols_out; ++jj)
+        result_in_out[ii][jj] += -1.0 * penalty * ansatz_basis_out_values_[jj] * test_basis_in_values_[ii];
+    }
+    for (size_t ii = 0; ii < rows_out; ++ii) {
+      for (size_t jj = 0; jj < cols_in; ++jj)
+        result_out_in[ii][jj] += -1.0 * penalty * ansatz_basis_in_values_[jj] * test_basis_out_values_[ii];
+      for (size_t jj = 0; jj < cols_out; ++jj)
+        result_out_out[ii][jj] += penalty * ansatz_basis_out_values_[jj] * test_basis_out_values_[ii];
+    }
+  } // ... evaluate(...)
+
+private:
+  const double beta_;
+  const DiffusionFactorType& diffusion_factor_; // These are just required ...
+  const DiffusionTensorType& diffusion_tensor_; //                         ... for the copy ctor atm.
+  std::unique_ptr<typename DiffusionFactorType::LocalFunctionType> local_diffusion_factor_in_;
+  std::unique_ptr<typename DiffusionFactorType::LocalFunctionType> local_diffusion_factor_out_;
+  std::unique_ptr<typename DiffusionTensorType::LocalFunctionType> local_diffusion_tensor_in_;
+  std::unique_ptr<typename DiffusionTensorType::LocalFunctionType> local_diffusion_tensor_out_;
+  mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_in_values_;
+  mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_out_values_;
+  mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_in_values_;
+  mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_out_values_;
+}; //  InnerOnlyPenalty
+
+/**
+ * \sa [Epshteyn, Riviere, 2007] for the meaning of beta
+ */
+template <class I, class F = double, Method method = default_method>
+class DirichletBoundaryLhsOnlyPenalty : public LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>
+{
+  using BaseType = LocalQuaternaryIntersectionIntegrandInterface<I, 1, 1, F, F, 1, 1, F>;
+  using ThisType = DirichletBoundaryLhsOnlyPenalty<I, F, method>;
+
+public:
+  using typename BaseType::IntersectionType;
+  using typename BaseType::E;
+  using BaseType::d;
+  using typename BaseType::LocalTestBasisType;
+  using typename BaseType::LocalAnsatzBasisType;
+  using typename BaseType::DomainType;
+
+  using DiffusionFactorType = XT::Functions::GridFunctionInterface<E, 1, 1, F>;
+  using DiffusionTensorType = XT::Functions::GridFunctionInterface<E, d, d, F>;
+
+  DirichletBoundaryLhsOnlyPenalty(const DiffusionFactorType& diffusion_factor,
+                                  const DiffusionTensorType& diffusion_tensor,
+                                  const double beta = internal::default_beta(d))
+    : BaseType(diffusion_factor.parameter_type() + diffusion_tensor.parameter_type())
+    , beta_(beta)
+    , diffusion_factor_(diffusion_factor)
+    , diffusion_tensor_(diffusion_tensor)
+    , local_diffusion_factor_(diffusion_factor_.local_function())
+    , local_diffusion_tensor_(diffusion_tensor_.local_function())
+  {
+  }
+
+  DirichletBoundaryLhsOnlyPenalty(const ThisType& other)
+    : BaseType(other.parameter_type())
+    , beta_(other.beta_)
+    , diffusion_factor_(other.diffusion_factor_)
+    , diffusion_tensor_(other.diffusion_tensor_)
+    , local_diffusion_factor_(diffusion_factor_.local_function())
+    , local_diffusion_tensor_(diffusion_tensor_.local_function())
+  {
+  }
+
+  DirichletBoundaryLhsOnlyPenalty(ThisType&& source) = default;
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+protected:
+  void post_bind(const IntersectionType& intersection) override final
+  {
+    const auto inside_element = intersection.inside();
+    local_diffusion_factor_->bind(inside_element);
+    local_diffusion_tensor_->bind(inside_element);
+  }
+
+public:
+  int order(const LocalTestBasisType& test_basis_inside,
+            const LocalAnsatzBasisType& ansatz_basis_inside,
+            const LocalTestBasisType& /*test_basis_outside*/,
+            const LocalAnsatzBasisType& /*ansatz_basis_outside*/,
+            const XT::Common::Parameter& param = {}) const override final
+  {
+    return local_diffusion_factor_->order(param) + local_diffusion_tensor_->order(param)
+           + test_basis_inside.order(param) + ansatz_basis_inside.order(param);
+  }
+
+private:
+  template <Method m, class Anything = void>
+  struct IPDG
+  {
+    static_assert(AlwaysFalse<Anything>::value, "Other methods are not implemented yet!");
+
+    template <class R>
+    static inline F gamma(const XT::Common::FieldMatrix<R, d, d>& /*diffusion*/, const FieldVector<R, d>& /*normal*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+
+    template <class R>
+    static inline F penalty(const R& /*sigma*/, const R& /*gamma*/, const R& /*h*/, const R& /*beta*/)
+    {
+      static_assert(AlwaysFalse<R>::value, "Other methods are not implemented yet!");
+      return 0.;
+    }
+  }; // struct IPDG<...>
+
+  template <class Anything>
+  struct IPDG<Method::swipdg, Anything>
+  {
+    template <class R>
+    static inline F gamma(const XT::Common::FieldMatrix<R, d, d>& diffusion, const FieldVector<R, d>& normal)
+    {
+      return normal * (diffusion * normal);
+    }
+
+    template <class R>
+    static inline F penalty(const R& sigma, const R& gamma, const R& h, const R& beta)
+    {
+      return (sigma * gamma) / std::pow(h, beta);
+    }
+  }; // struct IPDG<Method::swipdg, ...>
+
+  template <class Anything>
+  struct IPDG<Method::swipdg_affine_factor, Anything> : public IPDG<Method::swipdg, Anything>
+  {
+  };
+
+  template <class Anything>
+  struct IPDG<Method::swipdg_affine_tensor, Anything> : public IPDG<Method::swipdg, Anything>
+  {
+  };
+
+  template <class Anything>
+  struct IPDG<Method::sipdg, Anything>
+  {
+    template <class R>
+    static inline F gamma(const XT::Common::FieldMatrix<R, d, d>& /*diffusion*/, const FieldVector<R, d>& /*normal*/)
+    {
+      return 1.0;
+    }
+
+    template <class R>
+    static inline F penalty(const R& sigma, const R& /*gamma*/, const R& h, const R& beta)
+    {
+      return sigma / std::pow(h, beta);
+    }
+  }; // struct IPDG<Method::sipdg, ...>
+
+public:
+  void evaluate(const LocalTestBasisType& test_basis_inside,
+                const LocalAnsatzBasisType& ansatz_basis_inside,
+                const LocalTestBasisType& test_basis_outside,
+                const LocalAnsatzBasisType& ansatz_basis_outside,
+                const DomainType& point_in_reference_intersection,
+                DynamicMatrix<F>& result_in_in,
+                DynamicMatrix<F>& result_in_out,
+                DynamicMatrix<F>& result_out_in,
+                DynamicMatrix<F>& result_out_out,
+                const XT::Common::Parameter& param = {}) const override final
+  {
+    // prepare sotrage
+    const size_t rows_in = test_basis_inside.size(param);
+    const size_t rows_out = test_basis_outside.size(param);
+    const size_t cols_in = ansatz_basis_inside.size(param);
+    const size_t cols_out = ansatz_basis_outside.size(param);
+    const auto ensure_size_and_clear = [](auto& m, const auto& r, const auto& c) {
+      if (m.rows() < r || m.cols() < c)
+        m.resize(r, c);
+      m *= 0;
+    };
+    ensure_size_and_clear(result_in_in, rows_in, cols_in);
+    ensure_size_and_clear(result_in_out, rows_in, cols_out); // This is on purpose ...
+    ensure_size_and_clear(result_out_in, rows_out, cols_in); // ... (including the resize), otherwise ...
+    ensure_size_and_clear(result_out_out, rows_out, cols_out); // ... we could not use this in the standard assembler.
+    // evaluate ...
+    const auto point_in_inside_reference_element =
+        this->intersection().geometryInInside().global(point_in_reference_intersection);
+    const auto normal = this->intersection().unitOuterNormal(point_in_reference_intersection);
+    // ... basis functions and ...
+    test_basis_inside.evaluate(point_in_inside_reference_element, test_basis_values_, param);
+    ansatz_basis_inside.evaluate(point_in_inside_reference_element, ansatz_basis_values_, param);
+    // ... data functions
+    const auto diffusion_factor = local_diffusion_factor_->evaluate(point_in_inside_reference_element, param);
+    const auto diffusion_tensor = local_diffusion_tensor_->evaluate(point_in_inside_reference_element, param);
+    const auto diffusion = diffusion_tensor * diffusion_factor;
+    // compute penalty (see Epshteyn, Riviere, 2007)
+    const size_t max_polorder = std::max(test_basis_inside.order(param), ansatz_basis_inside.order(param));
+    const F sigma = internal::boundary_sigma(max_polorder);
+    // compute weighting (see Ern, Stephansen, Zunino 2007)
+    const F gamma = IPDG<method>::gamma(diffusion, normal);
+    const F penalty = IPDG<method>::penalty(sigma, gamma, this->intersection().geometry().volume(), beta_);
+    // compute integrand
+    for (size_t ii = 0; ii < rows_in; ++ii)
+      for (size_t jj = 0; jj < cols_in; ++jj)
+        result_in_in[ii][jj] += penalty * ansatz_basis_values_[jj] * test_basis_values_[ii];
+  } // ... evaluate(...)
+
+private:
+  const double beta_;
+  const DiffusionFactorType& diffusion_factor_; // These are just required ...
+  const DiffusionTensorType& diffusion_tensor_; //                         ... for the copy ctor atm.
+  std::unique_ptr<typename DiffusionFactorType::LocalFunctionType> local_diffusion_factor_;
+  std::unique_ptr<typename DiffusionTensorType::LocalFunctionType> local_diffusion_tensor_;
+  mutable std::vector<typename LocalTestBasisType::RangeType> test_basis_values_;
+  mutable std::vector<typename LocalTestBasisType::DerivativeRangeType> test_basis_grads_;
+  mutable std::vector<typename LocalAnsatzBasisType::RangeType> ansatz_basis_values_;
+  mutable std::vector<typename LocalAnsatzBasisType::DerivativeRangeType> ansatz_basis_grads_;
+}; // DirichletBoundaryLhsOnlyPenalty
 
 } // namespace LocalEllipticIpdgIntegrands
 } // namespace GDT
