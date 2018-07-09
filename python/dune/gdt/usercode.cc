@@ -456,6 +456,246 @@ PYBIND11_PLUGIN(usercode)
         "ss"_a,
         "space_type"_a = "discontinuous_lagrange");
 
+  m.def("assemble_local_product_contributions",
+        [](DomainDecomposition& domain_decomposition, const size_t ss, const std::string space_type) {
+          DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
+                        XT::Common::Exceptions::index_out_of_range,
+                        "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
+                                << domain_decomposition.dd_grid.num_subdomains());
+          const XT::Functions::ConstantFunction<d> diffusion_factor(1.);
+          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+              XT::Common::from_string<typename XT::Functions::ConstantFunction<d, d, d>::RangeReturnType>(
+                  "[1 0 0; 0 1 0; 0 0 1]"));
+          std::unique_ptr<M> subdomain_matrix;
+          for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
+            if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
+              // this is the subdomain we are interested in, create space
+              auto subdomain_grid_view = domain_decomposition.dd_grid.local_grid(macro_element).leaf_view();
+              using GV = decltype(subdomain_grid_view);
+              using E = typename GV::template Codim<0>::Entity;
+              using I = typename GV::Intersection;
+              auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
+              // create operator
+              auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element_and_intersection);
+              const LocalElementIntegralBilinearForm<E> element_bilinear_form(LocalEllipticIntegrand<E>(
+                  diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
+              subdomain_operator.append(element_bilinear_form);
+              if (!subdomain_space->continuous(0)) {
+                const LocalIntersectionIntegralBilinearForm<I> coupling_bilinear_form(
+                    LocalEllipticIpdgIntegrands::InnerOnlyPenalty<I>(diffusion_factor.as_grid_function<E>(),
+                                                                     diffusion_tensor.as_grid_function<E>()));
+                subdomain_operator.append(coupling_bilinear_form, {}, XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
+              }
+              subdomain_operator.assemble();
+              subdomain_matrix = std::make_unique<M>(subdomain_operator.matrix());
+              break;
+            }
+          }
+          return std::move(subdomain_matrix);
+        },
+        "domain_decomposition"_a,
+        "ss"_a,
+        "space_type"_a = "discontinuous_lagrange");
+
+  m.def("assemble_coupling_product_contributions",
+        [](DomainDecomposition& domain_decomposition, const size_t ss, const size_t nn, const std::string space_type) {
+          DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
+                        XT::Common::Exceptions::index_out_of_range,
+                        "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
+                                << domain_decomposition.dd_grid.num_subdomains());
+          const XT::Functions::ConstantFunction<d> diffusion_factor(1.);
+          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+              XT::Common::from_string<typename XT::Functions::ConstantFunction<d, d, d>::RangeReturnType>(
+                  "[1 0 0; 0 1 0; 0 0 1]"));
+          std::unique_ptr<M> coupling_matrix_in_in;
+          std::unique_ptr<M> coupling_matrix_in_out;
+          std::unique_ptr<M> coupling_matrix_out_in;
+          std::unique_ptr<M> coupling_matrix_out_out;
+          for (auto&& inside_macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
+            if (domain_decomposition.dd_grid.subdomain(inside_macro_element) == ss) {
+              // this is the subdomain we are interested in, create space
+              auto inner_subdomain_grid_view =
+                  domain_decomposition.dd_grid.local_grid(inside_macro_element).leaf_view();
+              auto inner_subdomain_space = make_subdomain_space(inner_subdomain_grid_view, space_type);
+              bool found_correct_macro_intersection = false;
+              for (auto&& macro_intersection :
+                   intersections(domain_decomposition.dd_grid.macro_grid_view(), inside_macro_element)) {
+                if (macro_intersection.neighbor()) {
+                  const auto outside_macro_element = macro_intersection.outside();
+                  if (domain_decomposition.dd_grid.subdomain(outside_macro_element) == nn) {
+                    found_correct_macro_intersection = true;
+                    // these are the subdomains we are interested in
+                    auto outer_subdomain_grid_view =
+                        domain_decomposition.dd_grid.local_grid(outside_macro_element).leaf_view();
+                    auto outer_subdomain_space = make_subdomain_space(outer_subdomain_grid_view, space_type);
+                    // walk the coupling once to create the sparsity patterns
+                    XT::LA::SparsityPatternDefault pattern_in_in(inner_subdomain_space->mapper().size());
+                    XT::LA::SparsityPatternDefault pattern_in_out(inner_subdomain_space->mapper().size());
+                    XT::LA::SparsityPatternDefault pattern_out_in(outer_subdomain_space->mapper().size());
+                    XT::LA::SparsityPatternDefault pattern_out_out(outer_subdomain_space->mapper().size());
+                    const auto& coupling = domain_decomposition.dd_grid.coupling(
+                        inside_macro_element, -1, outside_macro_element, -1, true);
+                    DynamicVector<size_t> global_indices_in(inner_subdomain_space->mapper().max_local_size());
+                    DynamicVector<size_t> global_indices_out(outer_subdomain_space->mapper().max_local_size());
+                    auto inside_basis = inner_subdomain_space->basis().localize();
+                    auto outside_basis = outer_subdomain_space->basis().localize();
+                    const auto coupling_intersection_it_end = coupling.template iend<0>();
+                    for (auto coupling_intersection_it = coupling.template ibegin<0>();
+                         coupling_intersection_it != coupling_intersection_it_end;
+                         ++coupling_intersection_it) {
+                      const auto& coupling_intersection = *coupling_intersection_it;
+                      const auto inside_element = coupling_intersection.inside();
+                      const auto outside_element = coupling_intersection.outside();
+                      inside_basis->bind(inside_element);
+                      outside_basis->bind(outside_element);
+                      inner_subdomain_space->mapper().global_indices(inside_element, global_indices_in);
+                      outer_subdomain_space->mapper().global_indices(outside_element, global_indices_out);
+                      for (size_t ii = 0; ii < inside_basis->size(); ++ii) {
+                        for (size_t jj = 0; jj < inside_basis->size(); ++jj)
+                          pattern_in_in.insert(global_indices_in[ii], global_indices_in[jj]);
+                        for (size_t jj = 0; jj < outside_basis->size(); ++jj)
+                          pattern_in_out.insert(global_indices_in[ii], global_indices_out[jj]);
+                      }
+                      for (size_t ii = 0; ii < outside_basis->size(); ++ii) {
+                        for (size_t jj = 0; jj < inside_basis->size(); ++jj)
+                          pattern_out_in.insert(global_indices_out[ii], global_indices_in[jj]);
+                        for (size_t jj = 0; jj < outside_basis->size(); ++jj)
+                          pattern_out_out.insert(global_indices_out[ii], global_indices_out[jj]);
+                      }
+                    }
+                    // we need to ensure at least one entry per row
+                    for (size_t ii = 0; ii < inner_subdomain_space->mapper().size(); ++ii) {
+                      pattern_in_in.insert(ii, 0);
+                      pattern_in_out.insert(ii, 0);
+                    }
+                    for (size_t ii = 0; ii < outer_subdomain_space->mapper().size(); ++ii) {
+                      pattern_out_in.insert(ii, 0);
+                      pattern_out_out.insert(ii, 0);
+                    }
+                    pattern_in_in.sort();
+                    pattern_in_out.sort();
+                    pattern_out_in.sort();
+                    pattern_out_out.sort();
+                    coupling_matrix_in_in = std::make_unique<M>(
+                        inner_subdomain_space->mapper().size(), inner_subdomain_space->mapper().size(), pattern_in_in);
+                    coupling_matrix_in_out = std::make_unique<M>(
+                        inner_subdomain_space->mapper().size(), outer_subdomain_space->mapper().size(), pattern_in_out);
+                    coupling_matrix_out_in = std::make_unique<M>(
+                        outer_subdomain_space->mapper().size(), inner_subdomain_space->mapper().size(), pattern_out_in);
+                    coupling_matrix_out_out = std::make_unique<M>(
+                        outer_subdomain_space->mapper().size(), outer_subdomain_space->mapper().size(), pattern_in_in);
+                    // walk the coupling for the second time to assemble
+                    DynamicMatrix<double> local_matrix_in_in(inner_subdomain_space->mapper().max_local_size(),
+                                                             inner_subdomain_space->mapper().max_local_size());
+                    DynamicMatrix<double> local_matrix_in_out(inner_subdomain_space->mapper().max_local_size(),
+                                                              outer_subdomain_space->mapper().max_local_size());
+                    DynamicMatrix<double> local_matrix_out_in(outer_subdomain_space->mapper().max_local_size(),
+                                                              inner_subdomain_space->mapper().max_local_size());
+                    DynamicMatrix<double> local_matrix_out_out(outer_subdomain_space->mapper().max_local_size(),
+                                                               outer_subdomain_space->mapper().max_local_size());
+                    using I = typename DomainDecomposition::DdGridType::GlueType::Intersection;
+                    using E = typename I::InsideEntity;
+                    const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
+                        LocalEllipticIpdgIntegrands::InnerOnlyPenalty<I>(diffusion_factor.as_grid_function<E>(),
+                                                                         diffusion_tensor.as_grid_function<E>()));
+                    for (auto coupling_intersection_it = coupling.template ibegin<0>();
+                         coupling_intersection_it != coupling_intersection_it_end;
+                         ++coupling_intersection_it) {
+                      const auto& coupling_intersection = *coupling_intersection_it;
+                      const auto inside_element = coupling_intersection.inside();
+                      const auto outside_element = coupling_intersection.outside();
+                      inside_basis->bind(inside_element);
+                      outside_basis->bind(outside_element);
+                      inner_subdomain_space->mapper().global_indices(inside_element, global_indices_in);
+                      outer_subdomain_space->mapper().global_indices(outside_element, global_indices_out);
+                      intersection_bilinear_form.apply2(coupling_intersection,
+                                                        *inside_basis,
+                                                        *inside_basis,
+                                                        *outside_basis,
+                                                        *outside_basis,
+                                                        local_matrix_in_in,
+                                                        local_matrix_in_out,
+                                                        local_matrix_out_in,
+                                                        local_matrix_out_out);
+                      for (size_t ii = 0; ii < inside_basis->size(); ++ii) {
+                        for (size_t jj = 0; jj < inside_basis->size(); ++jj)
+                          coupling_matrix_in_in->add_to_entry(
+                              global_indices_in[ii], global_indices_in[jj], local_matrix_in_in[ii][jj]);
+                        for (size_t jj = 0; jj < outside_basis->size(); ++jj)
+                          coupling_matrix_in_out->add_to_entry(
+                              global_indices_in[ii], global_indices_out[jj], local_matrix_in_out[ii][jj]);
+                      }
+                      for (size_t ii = 0; ii < outside_basis->size(); ++ii) {
+                        for (size_t jj = 0; jj < inside_basis->size(); ++jj)
+                          coupling_matrix_out_in->add_to_entry(
+                              global_indices_out[ii], global_indices_in[jj], local_matrix_out_in[ii][jj]);
+                        for (size_t jj = 0; jj < outside_basis->size(); ++jj)
+                          coupling_matrix_out_out->add_to_entry(
+                              global_indices_out[ii], global_indices_out[jj], local_matrix_out_out[ii][jj]);
+                      }
+                    }
+                    break;
+                  }
+                }
+              }
+              DUNE_THROW_IF(!found_correct_macro_intersection,
+                            XT::Common::Exceptions::index_out_of_range,
+                            "ss = " << ss << "\n   nn = " << nn);
+            }
+          }
+          return std::make_tuple(std::move(coupling_matrix_in_in),
+                                 std::move(coupling_matrix_in_out),
+                                 std::move(coupling_matrix_out_in),
+                                 std::move(coupling_matrix_out_out));
+        },
+        "domain_decomposition"_a,
+        "ss"_a,
+        "nn"_a,
+        "space_type"_a = "discontinuous_lagrange");
+
+  m.def("assemble_boundary_product_contributions",
+        [](DomainDecomposition& domain_decomposition, const size_t ss, const std::string space_type) {
+          DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
+                        XT::Common::Exceptions::index_out_of_range,
+                        "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
+                                << domain_decomposition.dd_grid.num_subdomains());
+          using MGV = typename DomainDecomposition::DdGridType::MacroGridViewType;
+          const XT::Grid::AllDirichletBoundaryInfo<XT::Grid::extract_intersection_t<MGV>> macro_boundary_info;
+          const XT::Functions::ConstantFunction<d> diffusion_factor(1.);
+          const XT::Functions::ConstantFunction<d, d, d> diffusion_tensor(
+              XT::Common::from_string<typename XT::Functions::ConstantFunction<d, d, d>::RangeReturnType>(
+                  "[1 0 0; 0 1 0; 0 0 1]"));
+          std::unique_ptr<M> subdomain_matrix;
+          for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
+            if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
+              // this is the subdomain we are interested in, create space
+              auto subdomain_grid_view = domain_decomposition.dd_grid.local_grid(macro_element).leaf_view();
+              using GV = decltype(subdomain_grid_view);
+              using E = typename GV::template Codim<0>::Entity;
+              using I = typename GV::Intersection;
+              auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
+              const MacroGridBasedBoundaryInfo<MGV, GV> subdomain_boundary_info(
+                  domain_decomposition.dd_grid.macro_grid_view(), macro_element, macro_boundary_info);
+              // create operator
+              auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element);
+              const LocalIntersectionIntegralBilinearForm<I> dirichlet_bilinear_form(
+                  LocalEllipticIpdgIntegrands::DirichletBoundaryLhsOnlyPenalty<I>(
+                      diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
+              subdomain_operator.append(dirichlet_bilinear_form,
+                                        {},
+                                        XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(
+                                            subdomain_boundary_info, new XT::Grid::DirichletBoundary()));
+              subdomain_operator.assemble();
+              subdomain_matrix = std::make_unique<M>(subdomain_operator.matrix());
+              break;
+            }
+          }
+          return std::move(subdomain_matrix);
+        },
+        "domain_decomposition"_a,
+        "ss"_a,
+        "space_type"_a = "discontinuous_lagrange");
+
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt");
   return m.ptr();
 } // PYBIND11_PLUGIN(...)
