@@ -18,11 +18,12 @@
 #include <dune/xt/la/container/matrix-interface.hh>
 #include <dune/xt/la/container/pattern.hh>
 #include <dune/xt/la/solver.hh>
+#include <dune/xt/grid/walker.hh>
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/local/assembler/two-form-assemblers.hh>
-#include <dune/gdt/local/operators/interfaces.hh>
+#include <dune/gdt/local/bilinear-forms/interfaces.hh>
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/tools/sparsity-pattern.hh>
 #include <dune/gdt/type_traits.hh>
@@ -86,6 +87,14 @@ public:
                                       << source_space_.mapper().size());
   } // ConstMatrixBasedOperator(...)
 
+  ConstMatrixBasedOperator(ThisType&& source)
+    : source_space_(source.source_space_)
+    , range_space_(source.range_space_)
+    , matrix_(source.matrix_)
+    , linear_solver_(matrix_, source_space_.dof_communicator())
+  {
+  }
+
   bool linear() const override final
   {
     return true;
@@ -113,7 +122,7 @@ public:
              const XT::Common::Parameter& /*param*/ = {}) const override
   {
     try {
-      matrix_.mv(source.dofs().vector(), range.dofs().vector());
+      matrix_.mv(source, range);
     } catch (const XT::Common::Exceptions::shapes_do_not_match& ee) {
       DUNE_THROW(Exceptions::operator_error,
                  "when applying matrix to source and range dofs!\n\nThis was the original error: " << ee.what());
@@ -289,9 +298,10 @@ public:
   using ElementFilterType = XT::Grid::ElementFilter<AssemblyGridViewType>;
   using IntersectionFilterType = XT::Grid::IntersectionFilter<AssemblyGridViewType>;
   using ApplyOnAllElements = XT::Grid::ApplyOn::AllElements<AssemblyGridViewType>;
-  using ApplyOnAllIntersection = XT::Grid::ApplyOn::AllIntersections<AssemblyGridViewType>;
+  using ApplyOnAllIntersections = XT::Grid::ApplyOn::AllIntersections<AssemblyGridViewType>;
 
   using typename WalkerBaseType::E;
+  using typename WalkerBaseType::I;
 
   /**
    * Ctor which accept an existing matrix into which to assemble.
@@ -335,17 +345,38 @@ public:
 
   using WalkerBaseType::append;
 
-  ThisType& append(const LocalElementTwoFormInterface<E, r_r, r_rC, RF, F, s_r, s_rC, SF>& local_two_form,
+  ThisType& append(const LocalElementBilinearFormInterface<E, r_r, r_rC, RF, F, s_r, s_rC, SF>& local_bilinear_form,
                    const XT::Common::Parameter& param = {},
                    const ElementFilterType& filter = ApplyOnAllElements())
   {
     using LocalAssemblerType =
-        LocalElementTwoFormAssembler<MatrixType, AssemblyGridViewType, r_r, r_rC, RF, RGV, SGV, s_r, s_rC, SF>;
+        LocalElementBilinearFormAssembler<MatrixType, AssemblyGridViewType, r_r, r_rC, RF, RGV, SGV, s_r, s_rC, SF>;
     this->append(new LocalAssemblerType(
-                     this->range_space(), this->source_space(), local_two_form, MatrixStorage::access(), param),
+                     this->range_space(), this->source_space(), local_bilinear_form, MatrixStorage::access(), param),
                  filter);
     return *this;
   }
+
+  ThisType&
+  append(const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, RF, F, s_r, s_rC, SF>& local_bilinear_form,
+         const XT::Common::Parameter& param = {},
+         const IntersectionFilterType& filter = ApplyOnAllIntersections())
+  {
+    using LocalAssemblerType = LocalIntersectionBilinearFormAssembler<MatrixType,
+                                                                      AssemblyGridViewType,
+                                                                      r_r,
+                                                                      r_rC,
+                                                                      RF,
+                                                                      RGV,
+                                                                      SGV,
+                                                                      s_r,
+                                                                      s_rC,
+                                                                      SF>;
+    this->append(new LocalAssemblerType(
+                     this->range_space(), this->source_space(), local_bilinear_form, MatrixStorage::access(), param),
+                 filter);
+    return *this;
+  } // ... append(...)
 
   // similar append for LocalIntersectionFunctionalInterface ...
 
