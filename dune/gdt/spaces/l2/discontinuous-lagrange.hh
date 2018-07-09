@@ -159,6 +159,16 @@ private:
 }; // class DiscontinuousLagrangeSpace
 
 
+/**
+ * \sa DiscontinuousLagrangeSpace
+ */
+template <int p, class GV, class R = double>
+DiscontinuousLagrangeSpace<GridView<GV>, p, 1, R> make_discontinuous_lagrange_space(GridView<GV> grid_view)
+{
+  return DiscontinuousLagrangeSpace<GridView<GV>, p, 1, R>(grid_view);
+}
+
+
 } // namespace GDT
 } // namespace Dune
 
