@@ -14,31 +14,31 @@ from importlib import import_module
 
 import numpy as np
 
-from dune.xt.common import DEBUG # inits MPI via mpi4py
+import dune.xt.common
 
 _init_logger_methods = list()
 _test_logger_methods = list()
 _init_mpi_methods = list()
 _other_modules = ('xt.common', 'xt.grid', 'xt.functions', 'xt.la')
 
-_gdt_modules = ['spaces',
-                'spaces_block',
-                'local_diffusive_flux_estimation_operator',
-                'local_elliptic_ipdg_operators',
-                'assembler',
-                'discretefunction',
-                'projections',
-                'functionals_elliptic_ipdg',
-                'functionals_l2',
-                'operators_elliptic',
-                'operators_elliptic_ipdg',
-                'operators_fluxreconstruction',
-                'operators_oswaldinterpolation',
-                'operators_ESV2007',
-                'operators_OS2015',
-                'operators_RS2017',
-                'operators_l2',
-                'operators_weighted_l2']
+_gdt_modules = ()
+#                'spaces_block',
+#                'local_diffusive_flux_estimation_operator',
+#                'local_elliptic_ipdg_operators',
+#                'assembler',
+#                'discretefunction',
+#                'projections',
+#                'functionals_elliptic_ipdg',
+#                'functionals_l2',
+#                'operators_elliptic',
+#                'operators_elliptic_ipdg',
+#                'operators_fluxreconstruction',
+#                'operators_oswaldinterpolation',
+#                'operators_ESV2007',
+#                'operators_OS2015',
+#                'operators_RS2017',
+#                'operators_l2',
+#                'operators_weighted_l2']
 
 for module_name in _gdt_modules:
     mod = import_module('.__{}'.format(module_name), 'dune.gdt')
