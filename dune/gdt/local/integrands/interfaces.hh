@@ -196,234 +196,118 @@ public:
 }; // class LocalBinaryElementIntegrandInterface
 
 
-#if 0
-/**
- *  \brief  Interface for local evaluations that depend on an intersection.
- *  \tparam numArguments  The number of local bases.
- *  \note   All evaluations have to be copyable!
- */
-template <class Traits, size_t numArguments>
-class LocalFaceIntegrandInterface
+template <class Intersection,
+          size_t test_range_dim = 1,
+          size_t test_range_dim_cols = 1,
+          class TestRangeField = double,
+          class Field = double,
+          size_t ansatz_range_dim = test_range_dim,
+          size_t ansatz_range_dim_cols = test_range_dim_cols,
+          class AnsatzRangeField = TestRangeField>
+class LocalQuaternaryIntersectionIntegrandInterface : public XT::Common::ParametricInterface,
+                                                      public XT::Grid::IntersectionBoundObject<Intersection>
 {
-  static_assert(AlwaysFalse<Traits>::value, "There is no interface for this numArguments!");
-};
+  static_assert(XT::Grid::is_intersection<Intersection>::value, "");
 
-
-/**
- *  \brief  Interface for unary codim 1 evaluations.
- */
-template <class Traits>
-class LocalFaceIntegrandInterface<Traits, 1> : public XT::CRTPInterface<LocalFaceIntegrandInterface<Traits, 1>, Traits>
-{
-public:
-  typedef typename Traits::derived_type derived_type;
-  typedef typename Traits::EntityType EntityType;
-  typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
-  typedef typename Traits::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = Traits::dimDomain;
-
-protected:
-  typedef EntityType E;
-  typedef DomainFieldType D;
-  static const size_t d = dimDomain;
+  using ThisType = LocalQuaternaryIntersectionIntegrandInterface<Intersection,
+                                                                 test_range_dim,
+                                                                 test_range_dim_cols,
+                                                                 TestRangeField,
+                                                                 Field,
+                                                                 ansatz_range_dim,
+                                                                 ansatz_range_dim_cols,
+                                                                 AnsatzRangeField>;
 
 public:
-  LocalfunctionTupleType localFunctions(const EntityType& entity) const
+  using typename XT::Grid::IntersectionBoundObject<Intersection>::IntersectionType;
+  using ElementType = XT::Grid::extract_inside_element_t<Intersection>;
+
+  using I = Intersection;
+  using E = ElementType;
+  using D = typename ElementType::Geometry::ctype;
+  static const constexpr size_t d = E::dimension;
+  using F = Field;
+
+  using TR = TestRangeField;
+  static const constexpr size_t t_r = test_range_dim;
+  static const constexpr size_t t_rC = test_range_dim_cols;
+
+  using AR = AnsatzRangeField;
+  static const constexpr size_t a_r = ansatz_range_dim;
+  static const constexpr size_t a_rC = ansatz_range_dim_cols;
+
+  using DomainType = FieldVector<D, d - 1>;
+  using LocalTestBasisType = XT::Functions::ElementFunctionSetInterface<E, t_r, t_rC, TR>;
+  using LocalAnsatzBasisType = XT::Functions::ElementFunctionSetInterface<E, a_r, a_rC, AR>;
+
+  LocalQuaternaryIntersectionIntegrandInterface(const XT::Common::ParameterType& param_type = {})
+    : XT::Common::ParametricInterface(param_type)
   {
-    CHECK_CRTP(this->as_imp().localFunctions(entity));
-    return this->as_imp().localFunctions(entity);
   }
+
+  virtual ~LocalQuaternaryIntersectionIntegrandInterface() = default;
+
+  virtual std::unique_ptr<ThisType> copy() const = 0;
 
   /**
-   *  \brief  Computes the needed integration order.
-   *  \tparam R   RangeFieldType
-   *  \tparam r   dimRange of the testBase
-   *  \tparam rC  dimRangeRows of the testBase
-   */
-  template <class R, size_t r, size_t rC>
-  size_t order(const LocalfunctionTupleType& localFunctionsTuple,
-               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase) const
-  {
-    CHECK_CRTP(this->as_imp().order(localFunctionsTuple, testBase));
-    return this->as_imp().order(localFunctionsTuple, testBase);
-  }
+   * Returns the polynomial order of the integrand, given the bases.
+   *
+   * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
+   **/
+  virtual int order(const LocalTestBasisType& test_basis_inside,
+                    const LocalAnsatzBasisType& ansatz_basis_inside,
+                    const LocalTestBasisType& test_basis_outside,
+                    const LocalAnsatzBasisType& ansatz_basis_outside,
+                    const XT::Common::Parameter& param = {}) const = 0;
 
   /**
-   *  \brief  Computes a binary codim 1 evaluation.
-   *  \tparam IntersectionType    A model of Dune::Intersection< ... >
-   *  \tparam R                   RangeFieldType
-   *  \tparam r                   dimRange of the testBase
-   *  \tparam rC                  dimRangeRows of the testBase
-   *  \attention ret is assumed to be zero!
-   */
-  template <class IntersectionType, class R, size_t r, size_t rC>
-  void evaluate(const LocalfunctionTupleType& localFunctionsTuple,
-                const XT::Functions::LocalfunctionSetInterface<E, D, d, R, r, rC>& testBase,
-                const IntersectionType& intersection,
-                const Dune::FieldVector<D, d - 1>& localPoint,
-                Dune::DynamicVector<R>& ret) const
-  {
-    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctionsTuple, testBase, intersection, localPoint, ret));
-  }
-}; // class LocalFaceIntegrandInterface< Traits, 1 >
-
-
-/**
- *  \brief  Interface for binary codim 1 evaluations.
- */
-template <class Traits>
-class LocalFaceIntegrandInterface<Traits, 2> : public XT::CRTPInterface<LocalFaceIntegrandInterface<Traits, 2>, Traits>
-{
-public:
-  typedef typename Traits::derived_type derived_type;
-  typedef typename Traits::EntityType EntityType;
-  typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
-  typedef typename Traits::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = Traits::dimDomain;
-
-protected:
-  typedef EntityType E;
-  typedef DomainFieldType D;
-  static const size_t d = dimDomain;
-
-public:
-  LocalfunctionTupleType localFunctions(const EntityType& entity) const
-  {
-    CHECK_CRTP(this->as_imp().localFunctions(entity));
-    return this->as_imp().localFunctions(entity);
-  }
+   * Computes the evaluation of this integrand at the given point for each combination of functions from the bases.
+   *
+   * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
+   **/
+  virtual void evaluate(const LocalTestBasisType& test_basis_inside,
+                        const LocalAnsatzBasisType& ansatz_basis_inside,
+                        const LocalTestBasisType& test_basis_outside,
+                        const LocalAnsatzBasisType& ansatz_basis_outside,
+                        const DomainType& point_in_reference_intersection,
+                        DynamicMatrix<F>& result_in_in,
+                        DynamicMatrix<F>& result_in_out,
+                        DynamicMatrix<F>& result_out_in,
+                        DynamicMatrix<F>& result_out_out,
+                        const XT::Common::Parameter& param = {}) const = 0;
 
   /**
-   *  \brief  Computes the needed integration order.
-   *  \tparam R                   RangeFieldType
-   *  \tparam r{T,A}              dimRange of the {testBase,ansatzBase}
-   *  \tparam rC{T,A}             dimRangeRows of the {testBase,ansatzBase}
-   */
-  template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  size_t order(const LocalfunctionTupleType& localFunctionsTuple,
-               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
-               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase) const
+   * This method is provided for convenience and should not be used within library code.
+   *
+   * \note Will throw Exceptions::not_bound_to_an_element_yet error if not bound yet!
+   **/
+  virtual std::array<DynamicMatrix<F>, 4> evaluate(const LocalTestBasisType& test_basis_inside,
+                                                   const LocalAnsatzBasisType& ansatz_basis_inside,
+                                                   const LocalTestBasisType& test_basis_outside,
+                                                   const LocalAnsatzBasisType& ansatz_basis_outside,
+                                                   const DomainType& point_in_reference_intersection,
+                                                   const XT::Common::Parameter& param = {}) const
   {
-    CHECK_CRTP(this->as_imp().order(localFunctionsTuple, testBase, ansatzBase));
-    return this->as_imp().order(localFunctionsTuple, testBase, ansatzBase);
-  }
+    DynamicMatrix<F> result_in_in(test_basis_inside.size(param), ansatz_basis_inside.size(param), 0);
+    DynamicMatrix<F> result_in_out(test_basis_inside.size(param), ansatz_basis_outside.size(param), 0);
+    DynamicMatrix<F> result_out_in(test_basis_outside.size(param), ansatz_basis_inside.size(param), 0);
+    DynamicMatrix<F> result_out_out(test_basis_outside.size(param), ansatz_basis_outside.size(param), 0);
+    this->evaluate(test_basis_inside,
+                   ansatz_basis_inside,
+                   test_basis_outside,
+                   ansatz_basis_outside,
+                   point_in_reference_intersection,
+                   result_in_in,
+                   result_in_out,
+                   result_out_in,
+                   result_out_out,
+                   param);
+    return {result_in_in, result_in_out, result_out_in, result_out_out};
+  } // ... apply(...)
 
-  /**
-   *  \brief  Computes a binary codim 1 evaluation.
-   *  \tparam IntersectionType    A model of Dune::Intersection< ... >
-   *  \tparam R                   RangeFieldType
-   *  \tparam r{T,A}              dimRange of the {testBase*,ansatzBase*}
-   *  \tparam rC{T,A}             dimRangeRows of the {testBase*,ansatzBase*}
-   *  \attention ret is assumed to be zero!
-   */
-  template <class IntersectionType, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void evaluate(const LocalfunctionTupleType& localFunctionsTuple,
-                const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBase,
-                const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBase,
-                const IntersectionType& intersection,
-                const Dune::FieldVector<D, d - 1>& localPoint,
-                Dune::DynamicMatrix<R>& ret) const
-  {
-    CHECK_AND_CALL_CRTP(
-        this->as_imp().evaluate(localFunctionsTuple, testBase, ansatzBase, intersection, localPoint, ret));
-  }
-}; // class LocalFaceIntegrandInterface< Traits, 2 >
-
-
-/**
- *  \brief  Interface for quaternary codim 1 evaluations.
- */
-template <class Traits>
-class LocalFaceIntegrandInterface<Traits, 4> : public XT::CRTPInterface<LocalFaceIntegrandInterface<Traits, 4>, Traits>
-{
-public:
-  typedef typename Traits::derived_type derived_type;
-  typedef typename Traits::EntityType EntityType;
-  typedef typename Traits::LocalfunctionTupleType LocalfunctionTupleType;
-  typedef typename Traits::DomainFieldType DomainFieldType;
-  static const size_t dimDomain = Traits::dimDomain;
-
-protected:
-  typedef EntityType E;
-  typedef DomainFieldType D;
-  static const size_t d = dimDomain;
-
-public:
-  LocalfunctionTupleType localFunctions(const EntityType& entity) const
-  {
-    CHECK_CRTP(this->as_imp().localFunctions(entity));
-    return this->as_imp().localFunctions(entity);
-  }
-
-  /**
-   *  \brief  Computes the needed integration order.
-   *  \tparam R                     RangeFieldType
-   *  \tparam r{T,A}                dimRange of the {testBase*,ansatzBase*}
-   *  \tparam rC{T,A}               dimRangeRows of the {testBase*,ansatzBase*}
-   */
-  template <class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  size_t order(const LocalfunctionTupleType localFunctionsEntity,
-               const LocalfunctionTupleType localFunctionsNeighbor,
-               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBaseEntity,
-               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBaseEntity,
-               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rT, rCT>& testBaseNeighbor,
-               const XT::Functions::LocalfunctionSetInterface<E, D, d, R, rA, rCA>& ansatzBaseNeighbor) const
-  {
-    CHECK_CRTP(this->as_imp().order(localFunctionsEntity,
-                                    localFunctionsNeighbor,
-                                    testBaseEntity,
-                                    ansatzBaseEntity,
-                                    testBaseNeighbor,
-                                    ansatzBaseNeighbor));
-    return this->as_imp().order(localFunctionsEntity,
-                                localFunctionsNeighbor,
-                                testBaseEntity,
-                                ansatzBaseEntity,
-                                testBaseNeighbor,
-                                ansatzBaseNeighbor);
-  }
-
-  /**
-   *  \brief  Computes a quaternary codim 1 evaluation.
-   *  \tparam IntersectionType      A model of Dune::Intersection< ... >
-   *  \tparam R                     RangeFieldType
-   *  \tparam r{T,A}                dimRange of the {testBase*,ansatzBase*}
-   *  \tparam rC{T,A}               dimRangeRows of the {testBase*,ansatzBase*}
-   *  \attention entityEntityRet, entityEntityRet, entityEntityRet and neighborEntityRet are assumed to be zero!
-   */
-  template <class IntersectionType, class R, size_t rT, size_t rCT, size_t rA, size_t rCA>
-  void evaluate(const LocalfunctionTupleType& localFunctionsEntity,
-                const LocalfunctionTupleType& localFunctionsNeighbor,
-                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>&
-                    testBaseEntity,
-                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>&
-                    ansatzBaseEntity,
-                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rT, rCT>&
-                    testBaseNeighbor,
-                const XT::Functions::LocalfunctionSetInterface<EntityType, DomainFieldType, dimDomain, R, rA, rCA>&
-                    ansatzBaseNeighbor,
-                const IntersectionType& intersection,
-                const Dune::FieldVector<DomainFieldType, dimDomain - 1>& localPoint,
-                Dune::DynamicMatrix<R>& entityEntityRet,
-                Dune::DynamicMatrix<R>& neighborNeighborRet,
-                Dune::DynamicMatrix<R>& entityNeighborRet,
-                Dune::DynamicMatrix<R>& neighborEntityRet) const
-  {
-    CHECK_AND_CALL_CRTP(this->as_imp().evaluate(localFunctionsEntity,
-                                                localFunctionsNeighbor,
-                                                testBaseEntity,
-                                                ansatzBaseEntity,
-                                                testBaseNeighbor,
-                                                ansatzBaseNeighbor,
-                                                intersection,
-                                                localPoint,
-                                                entityEntityRet,
-                                                neighborNeighborRet,
-                                                entityNeighborRet,
-                                                neighborEntityRet));
-  }
-}; // class LocalFaceIntegrandInterface< Traits, 4 >
-#endif // 0
+private:
+  std::unique_ptr<IntersectionType> intersection_;
+}; // class LocalQuaternaryIntersectionIntegrandInterface
 
 
 } // namespace GDT
