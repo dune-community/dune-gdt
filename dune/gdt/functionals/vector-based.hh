@@ -258,14 +258,15 @@ template <class GV, size_t r, size_t rC, class F, class V>
 VectorBasedFunctional<typename XT::LA::VectorInterface<V>::derived_type, GV, r, rC, F>
 make_vector_functional(const SpaceInterface<GV, r, rC, F>& space, XT::LA::VectorInterface<V>& vector)
 {
-  return VectorBasedFunctional<typename XT::LA::VectorInterface<V>::derived_type, GV, r, rC, F>(space, vector.as_imp());
+  return VectorBasedFunctional<typename XT::LA::VectorInterface<V>::derived_type, GV, r, rC, F>(
+      space.grid_view(), space, vector.as_imp());
 }
 
 template <class VectorType, class GV, size_t r, size_t rC, class F>
 typename std::enable_if<XT::LA::is_vector<VectorType>::value, VectorBasedFunctional<VectorType, GV, r, rC, F>>::type
 make_vector_functional(const SpaceInterface<GV, r, rC, F>& space)
 {
-  return VectorBasedFunctional<VectorType, GV, r, rC, F>(space);
+  return VectorBasedFunctional<VectorType, GV, r, rC, F>(space.grid_view(), space);
 }
 
 
