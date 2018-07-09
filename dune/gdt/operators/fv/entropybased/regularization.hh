@@ -34,11 +34,13 @@ public:
   explicit LocalMomentRegularizer(const SourceType& source,
                                   RangeType& range,
                                   const AnalyticalFluxType& analytical_flux,
-                                  const XT::Common::Parameter& param)
+                                  const XT::Common::Parameter& param,
+                                  const std::string filename)
     : source_(source)
     , range_(range)
     , analytical_flux_(analytical_flux)
     , param_(param)
+    , filename_(filename)
   {
     param_.set("boundary", {0.});
   }
@@ -59,9 +61,16 @@ public:
 
     // if regularization was needed, we also need to replace u_n in that cell by its regularized version
     if (s > 0.) {
-      std::cout << "regularization in regularizer: time: " << param_.get("t")[0]
-                << ", entitycenter: " << XT::Common::to_string(entity.geometry().center())
-                << ", s: " << XT::Common::to_string(s, 15) << std::endl;
+      if (!filename_.empty()) {
+        static std::mutex outfile_lock;
+        outfile_lock.lock();
+        std::ofstream outfile(filename_, std::ios_base::app);
+        outfile << param_.get("t")[0];
+        for (size_t ii = 0; ii < AnalyticalFluxType::dimDomain; ++ii)
+          outfile << " " << entity.geometry().center()[ii];
+        outfile << " " << s << " 0" << std::endl;
+        outfile_lock.unlock();
+      }
       const auto u_iso = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
                              ->basis_functions()
                              .calculate_isotropic_distribution(u)
@@ -80,6 +89,7 @@ private:
   RangeType& range_;
   const AnalyticalFluxType& analytical_flux_;
   XT::Common::Parameter param_;
+  const std::string filename_;
 }; // class LocalMomentRegularizer<...>
 
 
@@ -113,8 +123,9 @@ public:
   using AnalyticalFluxType = typename Traits::AnalyticalFluxType;
   using BasisfunctionType = typename Traits::BasisfunctionType;
 
-  MomentRegularizer(const AnalyticalFluxType& analytical_flux)
+  MomentRegularizer(const AnalyticalFluxType& analytical_flux, const std::string filename = "")
     : analytical_flux_(analytical_flux)
+    , filename_(filename)
   {
   }
 
@@ -122,7 +133,7 @@ public:
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
   {
     LocalMomentRegularizer<SourceType, RangeType, AnalyticalFluxType, BasisfunctionType> local_moment_regularizer(
-        source, range, analytical_flux_, param);
+        source, range, analytical_flux_, param, filename_);
     auto walker = XT::Grid::Walker<typename SourceType::SpaceType::GridLayerType>(source.space().grid_layer());
     walker.append(local_moment_regularizer);
     walker.walk(true);
@@ -130,6 +141,7 @@ public:
 
 private:
   const AnalyticalFluxType& analytical_flux_;
+  const std::string filename_;
 }; // class MomentRegularizer<...>
 
 

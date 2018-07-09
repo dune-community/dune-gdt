@@ -155,6 +155,7 @@ class JacobianWrapper : public JacobianWrapperBase<AnalyticalFluxType, MatrixTyp
 
 protected:
   using V = XT::Common::VectorAbstraction<VectorType>;
+  using M = XT::Common::MatrixAbstraction<MatrixType>;
   using EigenSolverType = typename XT::LA::EigenSolver<MatrixType>;
   using typename BaseType::RangeFieldType;
 
@@ -169,9 +170,48 @@ public:
   using BaseType::jacobian;
 
   JacobianWrapper()
-    : tau_(V::create(dimRange))
+    : work_(1)
+    , scale_(dimRange)
+    , rconde_(dimRange)
+    , rcondv_(dimRange)
+    , iwork_(2 * dimRange - 2)
+    , eigenvalues_(std::vector<RangeFieldType>(dimRange))
+    , tau_(V::create(dimRange))
   {
     jacobian() = std::make_unique<JacobianType>(eigenvectors_);
+#if HAVE_MKL || HAVE_LAPACKE
+    int ilo, ihi;
+    double norm;
+    if (M::storage_layout == XT::Common::StorageLayout::dense_row_major) {
+      // get optimal working size in work[0] (requested by lwork = -1)
+      int info = XT::Common::Lapacke::dgeevx_work(XT::Common::Lapacke::row_major(),
+                                                  /*both diagonally scale and permute*/ 'B',
+                                                  /*do_not_compute_left_eigenvectors:*/ 'N',
+                                                  /*compute_right_eigenvectors:*/ 'V',
+                                                  'N',
+                                                  static_cast<int>(dimRange),
+                                                  M::data(jacobian(0)),
+                                                  static_cast<int>(dimRange),
+                                                  &(eigenvalues_[0][0]),
+                                                  &(dummy_complex_eigenvalues_[0]),
+                                                  nullptr,
+                                                  static_cast<int>(dimRange),
+                                                  M::data(eigenvectors_[0]),
+                                                  static_cast<int>(dimRange),
+                                                  &ilo,
+                                                  &ihi,
+                                                  scale_.data(),
+                                                  &norm,
+                                                  rconde_.data(),
+                                                  rcondv_.data(),
+                                                  work_.data(),
+                                                  -1,
+                                                  iwork_.data());
+      if (info != 0)
+        DUNE_THROW(Dune::XT::LA::Exceptions::eigen_solver_failed, "The lapack backend reported '" << info << "'!");
+      work_.resize(work_[0]);
+    }
+#endif
   }
 
   virtual void get_jacobian(const size_t dd,
@@ -197,10 +237,44 @@ public:
 
   virtual void compute(const size_t dd) override
   {
-    static auto eigensolver_options = BaseType::template create_eigensolver_opts<MatrixType>();
-    const auto eigensolver = EigenSolverType(jacobian(dd), &eigensolver_options);
-    eigenvectors_[dd] = eigensolver.real_eigenvectors();
-    eigenvalues_[dd] = eigensolver.real_eigenvalues();
+    if (false) {
+      ;
+#if HAVE_MKL || HAVE_LAPACKE
+    } else if (M::storage_layout == XT::Common::StorageLayout::dense_row_major) {
+      int ilo, ihi;
+      double norm;
+      int info = XT::Common::Lapacke::dgeevx_work(XT::Common::Lapacke::row_major(),
+                                                  /*both diagonally scale and permute*/ 'B',
+                                                  /*do_not_compute_left_eigenvectors:*/ 'N',
+                                                  /*compute_right_eigenvectors:*/ 'V',
+                                                  'N',
+                                                  static_cast<int>(dimRange),
+                                                  M::data(jacobian(dd)),
+                                                  static_cast<int>(dimRange),
+                                                  eigenvalues_[dd].data(),
+                                                  &(dummy_complex_eigenvalues_[0]),
+                                                  nullptr,
+                                                  static_cast<int>(dimRange),
+                                                  M::data(eigenvectors_[dd]),
+                                                  static_cast<int>(dimRange),
+                                                  &ilo,
+                                                  &ihi,
+                                                  scale_.data(),
+                                                  &norm,
+                                                  rconde_.data(),
+                                                  rcondv_.data(),
+                                                  work_.data(),
+                                                  static_cast<int>(work_.size()),
+                                                  iwork_.data());
+      if (info != 0)
+        DUNE_THROW(Dune::XT::LA::Exceptions::eigen_solver_failed, "The lapack backend reported '" << info << "'!");
+#endif // HAVE_MKL || HAVE_LAPACKE
+    } else {
+      static auto eigensolver_options = BaseType::template create_eigensolver_opts<MatrixType>();
+      const auto eigensolver = EigenSolverType(jacobian(dd), &eigensolver_options);
+      eigenvectors_[dd] = eigensolver.real_eigenvectors();
+      eigenvalues_[dd] = eigensolver.real_eigenvalues();
+    }
     QR_[dd] = eigenvectors_[dd];
     XT::LA::qr(QR_[dd], tau_[dd], permutations_[dd]);
     computed_[dd] = true;
@@ -218,9 +292,12 @@ public:
   }
 
 protected:
+  std::vector<RangeFieldType> work_, scale_, rconde_, rcondv_;
+  std::vector<int> iwork_;
   using BaseType::computed_;
   JacobianType eigenvectors_;
   FieldVector<std::vector<RangeFieldType>, dimDomain> eigenvalues_;
+  FieldVector<RangeFieldType, dimRange> dummy_complex_eigenvalues_;
   JacobianType QR_;
   FieldVector<VectorType, dimDomain> tau_;
   FieldVector<FieldVector<int, dimRange>, dimDomain> permutations_;
