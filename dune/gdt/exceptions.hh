@@ -29,6 +29,10 @@ class dof_vector_error : public Exception
 {
 };
 
+class integrand_error : public Exception
+{
+};
+
 class functional_error : public Exception
 {
 };
