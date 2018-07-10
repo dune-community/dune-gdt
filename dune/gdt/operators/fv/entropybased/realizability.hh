@@ -10,8 +10,6 @@
 #ifndef DUNE_GDT_OPERATORS_FV_REALIZABILITY_HH
 #define DUNE_GDT_OPERATORS_FV_REALIZABILITY_HH
 
-#include "config.h"
-
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/device/null.hpp>
 
@@ -822,7 +820,7 @@ private:
     // Now solve
     lp.primal();
     theta = lp.objectiveValue();
-    if (!lp.isProvenOptimal())
+    if (!lp.primalFeasible() || !lp.isProvenOptimal())
       theta = 1.;
 
     return theta;

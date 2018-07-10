@@ -102,9 +102,11 @@ public:
   {
     return new ActualBoundaryValueType(
         [&](const DomainType& x, const XT::Common::Parameter&) {
-          if (x[0] < 1.5)
-            return helper<BasisfunctionType>::get_left_boundary_values(quadrature_, basis_functions_, psi_vac_);
-          else {
+          if (x[0] < 1.5) {
+            static auto ret =
+                helper<BasisfunctionType>::get_left_boundary_values(quadrature_, basis_functions_, psi_vac_);
+            return ret;
+          } else {
             auto ret = basis_functions_.integrated();
             ret *= psi_vac_;
             return ret;
@@ -160,7 +162,7 @@ protected:
         ret += summand;
       }
       ret /= denominator();
-      // add small vacuum concentration move away from realizable boundary
+      // add small vacuum concentration to move away from realizable boundary
       ret += basis_functions.integrated() * psi_vac;
       return ret;
     }
@@ -190,7 +192,7 @@ protected:
           ret[nn] += 1. / ((vn - vnm) * denominator())
                      * ((1 - vnm) * integral_1(vnm, vn) - 1. / 2e5 * (numerator(vn) - numerator(vnm)));
       }
-      // add small vacuum concentration move away from realizable boundary
+      // add small vacuum concentration to move away from realizable boundary
       ret += basis_functions.integrated() * psi_vac;
       return ret;
     }
@@ -213,7 +215,7 @@ protected:
         ret[2 * ii] = integral_1(triangulation[ii], triangulation[ii + 1]) / denominator();
         ret[2 * ii + 1] = integral_2(triangulation[ii], triangulation[ii + 1]) / denominator();
       }
-      // add small vacuum concentration move away from realizable boundary
+      // add small vacuum concentration to move away from realizable boundary
       ret += basis_functions.integrated() * psi_vac;
       return ret;
     }
