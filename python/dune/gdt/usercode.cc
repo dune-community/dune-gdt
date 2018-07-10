@@ -696,6 +696,49 @@ PYBIND11_PLUGIN(usercode)
         "ss"_a,
         "space_type"_a = "discontinuous_lagrange");
 
+  m.def("to_csr",
+        [](M& matrix, const double& prune) {
+          const auto& mat = matrix.backend();
+          // The istl matrix reports the wrong numbers of nonzerose, so we start with std::vectors ...
+          std::vector<double> data;
+          std::vector<size_t> rows;
+          std::vector<size_t> cols;
+          if (prune > 0) {
+            for (size_t ii = 0; ii < mat.N(); ++ii) {
+              if (mat.getrowsize(ii) > 0) {
+                const auto& row = mat[ii];
+                const auto it_end = row.end();
+                for (auto it = row.begin(); it != it_end; ++it) {
+                  const auto val = it->operator[](0)[0];
+                  if (XT::Common::FloatCmp::ne<XT::Common::FloatCmp::Style::absolute>(val, decltype(val)(0), prune)) {
+                    data.push_back(val);
+                    rows.push_back(ii);
+                    cols.push_back(it.index());
+                  }
+                }
+              }
+            }
+          } else {
+            for (size_t ii = 0; ii < mat.N(); ++ii) {
+              if (mat.getrowsize(ii) > 0) {
+                const auto& row = mat[ii];
+                const auto it_end = row.end();
+                for (auto it = row.begin(); it != it_end; ++it) {
+                  data.push_back(it->operator[](0)[0]);
+                  rows.push_back(ii);
+                  cols.push_back(it.index());
+                }
+              }
+            }
+          }
+          // ... and convert afterwards.
+          return std::make_tuple(std::make_unique<XT::LA::CommonDenseVector<double>>(data),
+                                 std::make_unique<XT::LA::CommonDenseVector<size_t>>(rows),
+                                 std::make_unique<XT::LA::CommonDenseVector<size_t>>(cols));
+        },
+        "matrix"_a,
+        "prune"_a = 1e-15);
+
   Dune::XT::Common::bindings::add_initialization(m, "dune.gdt");
   return m.ptr();
 } // PYBIND11_PLUGIN(...)
