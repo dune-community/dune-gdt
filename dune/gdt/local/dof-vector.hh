@@ -257,7 +257,6 @@ private:
   VectorType& global_vector_;
   using BaseType::global_DoF_indices_;
   using BaseType::size_;
-  using BaseType::element_;
 }; // class LocalDofVector
 
 

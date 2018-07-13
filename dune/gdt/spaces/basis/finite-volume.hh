@@ -81,11 +81,6 @@ public:
     return std::make_unique<LocalizedFiniteVolumeGlobalBasis>();
   }
 
-  std::unique_ptr<LocalizedBasisType> localize(const ElementType& element) const override final
-  {
-    return std::make_unique<LocalizedFiniteVolumeGlobalBasis>(element);
-  }
-
 private:
   class LocalizedFiniteVolumeGlobalBasis : public XT::Functions::ElementFunctionSetInterface<E, r, 1, R>
   {
