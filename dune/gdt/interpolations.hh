@@ -17,7 +17,7 @@
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces/grid-function.hh>
 #include <dune/xt/functions/interfaces/function.hh>
-#include <dune/xt/functions/lambda/smooth-function.hh>
+#include <dune/xt/functions/lambda/function.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 
@@ -114,7 +114,7 @@ interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_
 
 
 /**
- * \brief Interpolates a smooth function within a given space [most general variant].
+ * \brief Interpolates a function within a given space [most general variant].
  *
  * Simply calls as_grid_function<>() and redirects to the appropriate interpolate() function.
  */
@@ -130,7 +130,7 @@ interpolate(const XT::Functions::FunctionInterface<GridView<IGV>::dimension, r, 
 
 
 /**
- * \brief Interpolates a smooth function within a given space [uses target.space().grid_view() as
+ * \brief Interpolates a function within a given space [uses target.space().grid_view() as
  *        interpolation_grid_view].
  **/
 template <class GV, size_t r, size_t rC, class R, class V>
@@ -142,7 +142,7 @@ void interpolate(const XT::Functions::FunctionInterface<GV::dimension, r, rC, R>
 
 
 /**
- * \brief Interpolates a smooth function within a given space [creates a suitable target function].
+ * \brief Interpolates a function within a given space [creates a suitable target function].
  **/
 template <class VectorType, class GV, size_t r, size_t rC, class R, class IGV>
 std::enable_if_t<XT::LA::is_vector<VectorType>::value
@@ -159,7 +159,7 @@ interpolate(const XT::Functions::FunctionInterface<GridView<IGV>::dimension, r, 
 
 
 /**
- * \brief Interpolates a smooth function within a given space [creates a suitable target function, uses
+ * \brief Interpolates a function within a given space [creates a suitable target function, uses
  *        target_space.grid_view() as interpolation_grid_view].
  **/
 template <class VectorType, class GV, size_t r, size_t rC, class R>
@@ -171,50 +171,48 @@ interpolate(const XT::Functions::FunctionInterface<GV::dimension, r, rC, R>& sou
 }
 
 
-// ### Variants for SmoothLambdaFunction
+// ### Variants for LambdaFunction
 
 
 /**
- * \brief Interpolates a smooth function given as a lambda expression within a given space [most general variant].
+ * \brief Interpolates a function given as a lambda expression within a given space [most general variant].
  *
- * Simply creates a XT::Functions::SmoothLambdaFunction and redirects to the appropriate interpolate() function.
+ * Simply creates a XT::Functions::LambdaFunction and redirects to the appropriate interpolate() function.
  */
 template <class GV, size_t r, size_t rC, class R, class V, class IGV>
 std::enable_if_t<std::is_same<XT::Grid::extract_entity_t<GV>, typename IGV::Grid::template Codim<0>::Entity>::value,
                  void>
 interpolate(
     const int source_order,
-    const std::function<typename XT::Functions::SmoothLambdaFunction<GridView<IGV>::dimension, r, rC, R>::RangeType(
-        const typename XT::Functions::SmoothLambdaFunction<GridView<IGV>::dimension, r, rC, R>::DomainType&,
+    const std::function<typename XT::Functions::LambdaFunction<GridView<IGV>::dimension, r, rC, R>::RangeReturnType(
+        const typename XT::Functions::LambdaFunction<GridView<IGV>::dimension, r, rC, R>::DomainType&,
         const XT::Common::Parameter&)> source_evaluate_lambda,
     DiscreteFunction<V, GV, r, rC, R>& target,
     const GridView<IGV>& interpolation_grid_view)
 {
-  interpolate(
-      XT::Functions::SmoothLambdaFunction<GridView<IGV>::dimension, r, rC, R>(source_order, source_evaluate_lambda),
-      target,
-      interpolation_grid_view);
+  interpolate(XT::Functions::LambdaFunction<GridView<IGV>::dimension, r, rC, R>(source_order, source_evaluate_lambda),
+              target,
+              interpolation_grid_view);
 }
 
 
 /**
- * \brief Interpolates a smooth function given as a lambda expression within a given space [uses
+ * \brief Interpolates a function given as a lambda expression within a given space [uses
  *        target.space().grid_view() as interpolation_grid_view].
  **/
 template <class GV, size_t r, size_t rC, class R, class V>
 void interpolate(const int source_order,
-                 const std::function<typename XT::Functions::SmoothLambdaFunction<GV::dimension, r, rC, R>::RangeType(
-                     const typename XT::Functions::SmoothLambdaFunction<GV::dimension, r, rC, R>::DomainType&,
+                 const std::function<typename XT::Functions::LambdaFunction<GV::dimension, r, rC, R>::RangeReturnType(
+                     const typename XT::Functions::LambdaFunction<GV::dimension, r, rC, R>::DomainType&,
                      const XT::Common::Parameter&)> source_evaluate_lambda,
                  DiscreteFunction<V, GV, r, rC, R>& target)
 {
-  interpolate(XT::Functions::SmoothLambdaFunction<GV::dimension, r, rC, R>(source_order, source_evaluate_lambda),
-              target);
+  interpolate(XT::Functions::LambdaFunction<GV::dimension, r, rC, R>(source_order, source_evaluate_lambda), target);
 }
 
 
 /**
- * \brief Interpolates a smooth function given as a lambda expression within a given space [creates a suitable target
+ * \brief Interpolates a function given as a lambda expression within a given space [creates a suitable target
  *        function].
  **/
 template <class VectorType, class GV, size_t r, size_t rC, class R, class IGV>
@@ -224,33 +222,33 @@ std::enable_if_t<XT::LA::is_vector<VectorType>::value
                  DiscreteFunction<VectorType, GV, r, rC, R>>
 interpolate(
     const int source_order,
-    const std::function<typename XT::Functions::SmoothLambdaFunction<GridView<IGV>::dimension, r, rC, R>::RangeType(
-        const typename XT::Functions::SmoothLambdaFunction<GridView<IGV>::dimension, r, rC, R>::DomainType&,
+    const std::function<typename XT::Functions::LambdaFunction<GridView<IGV>::dimension, r, rC, R>::RangeReturnType(
+        const typename XT::Functions::LambdaFunction<GridView<IGV>::dimension, r, rC, R>::DomainType&,
         const XT::Common::Parameter&)> source_evaluate_lambda,
     const SpaceInterface<GV, r, rC, R>& target_space,
     const GridView<IGV>& interpolation_grid_view)
 {
   return interpolate<VectorType>(
-      XT::Functions::SmoothLambdaFunction<GridView<IGV>::dimension, r, rC, R>(source_order, source_evaluate_lambda),
+      XT::Functions::LambdaFunction<GridView<IGV>::dimension, r, rC, R>(source_order, source_evaluate_lambda),
       target_space,
       interpolation_grid_view);
 }
 
 
 /**
- * \brief Interpolates a smooth function given as a lambda expression within a given space [creates a suitable target
+ * \brief Interpolates a function given as a lambda expression within a given space [creates a suitable target
  *        function, uses target_space.grid_view() as interpolation_grid_view].
  **/
 template <class VectorType, class GV, size_t r, size_t rC, class R>
 std::enable_if_t<XT::LA::is_vector<VectorType>::value, DiscreteFunction<VectorType, GV, r, rC, R>>
 interpolate(const int source_order,
-            const std::function<typename XT::Functions::SmoothLambdaFunction<GV::dimension, r, rC, R>::RangeType(
-                const typename XT::Functions::SmoothLambdaFunction<GV::dimension, r, rC, R>::DomainType&,
+            const std::function<typename XT::Functions::LambdaFunction<GV::dimension, r, rC, R>::RangeReturnType(
+                const typename XT::Functions::LambdaFunction<GV::dimension, r, rC, R>::DomainType&,
                 const XT::Common::Parameter&)> source_evaluate_lambda,
             const SpaceInterface<GV, r, rC, R>& target_space)
 {
   return interpolate<VectorType>(
-      XT::Functions::SmoothLambdaFunction<GV::dimension, r, rC, R>(source_order, source_evaluate_lambda), target_space);
+      XT::Functions::LambdaFunction<GV::dimension, r, rC, R>(source_order, source_evaluate_lambda), target_space);
 }
 
 
