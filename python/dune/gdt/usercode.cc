@@ -45,22 +45,84 @@ using M = XT::LA::IstlRowMajorSparseMatrix<double>;
 using V = XT::LA::IstlDenseVector<double>;
 
 
+template <class GV>
+std::unique_ptr<GDT::SpaceInterface<GV>> make_subdomain_space(GV subdomain_grid_view, const std::string& space_type)
+{
+  if (space_type == "continuous_lagrange")
+    return std::make_unique<GDT::ContinuousLagrangeSpace<GV, /*order=*/1>>(subdomain_grid_view);
+  else if (space_type == "discontinuous_lagrange")
+    return std::make_unique<GDT::DiscontinuousLagrangeSpace<GV, /*order=*/1>>(subdomain_grid_view);
+  else
+    DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
+               "space_type = " << space_type << "\n   has to be 'continuous_lagrange' or 'discontinuous_lagrange'!");
+}
+
+
 class DomainDecomposition
 {
 public:
   using DdGridType = XT::Grid::DD::Glued<G, G, XT::Grid::Layers::leaf>;
 
+private:
+  using GV = typename DdGridType::LocalViewType;
+
+public:
   DomainDecomposition(const unsigned int num_macro_elements_per_dim, const size_t num_refinements_per_subdomain)
-    : macro_grid(XT::Grid::make_cube_grid<G>(0., 1., num_macro_elements_per_dim))
-    , dd_grid(macro_grid, num_refinements_per_subdomain, false, true)
+    : macro_grid_(XT::Grid::make_cube_grid<G>(0., 1., num_macro_elements_per_dim))
+    , dd_grid(macro_grid_, num_refinements_per_subdomain, false, true)
+    , vtk_writer_(dd_grid)
+    , local_spaces_(dd_grid.num_subdomains(), nullptr)
+    , local_discrete_functions_(dd_grid.num_subdomains(), nullptr)
   {
   }
 
+  void add_local_visualization(const size_t ss, const V& vec, const std::string& space_type, const std::string& name)
+  {
+    DUNE_THROW_IF(ss >= dd_grid.num_subdomains(),
+                  XT::Common::Exceptions::index_out_of_range,
+                  "ss = " << ss << "\n   dd_grid.num_subdomains() = " << dd_grid.num_subdomains());
+    for (auto&& macro_element : elements(dd_grid.macro_grid_view())) {
+      if (dd_grid.subdomain(macro_element) == ss) { // this is the subdomain we are interested in
+        if (!local_spaces_[ss]) { // we are the first to do something here
+          local_spaces_[ss] = make_subdomain_space(dd_grid.local_grid(macro_element).leaf_view(), space_type);
+          local_discrete_functions_[ss] = std::make_shared<std::vector<DiscreteFunction<V, GV>>>();
+        }
+        // create and stash the discrete function for later
+        local_discrete_functions_[ss]->emplace_back(make_discrete_function(*local_spaces_[ss], V(vec), name));
+        auto visualization_adapter = std::make_shared<XT::Functions::VisualizationAdapter<GV, 1, 1, double>>(
+            local_discrete_functions_[ss]->back(), name);
+        vtk_writer_.addVertexData(ss, visualization_adapter);
+        break;
+      }
+    }
+  } // ... add_local_visualization(...)
+
+  void add_local_visualization(const size_t subdomain, const XT::Functions::FunctionInterface<d>& func)
+  {
+    auto visualization_adapter = std::make_shared<XT::Functions::VisualizationAdapter<GV, 1, 1, double>>(
+        func.template as_grid_function<typename GV::template Codim<0>::Entity>(), func.name());
+    vtk_writer_.addVertexData(subdomain, visualization_adapter);
+  }
+
+  void write_visualization(const std::string& filename_prefix)
+  {
+    vtk_writer_.write(filename_prefix, VTK::appendedraw);
+    vtk_writer_.clear();
+    local_discrete_functions_ =
+        std::vector<std::shared_ptr<std::vector<DiscreteFunction<V, GV>>>>(dd_grid.num_subdomains(), nullptr);
+    local_spaces_ = std::vector<std::shared_ptr<SpaceInterface<GV>>>(dd_grid.num_subdomains(), nullptr);
+  } // ... write_visualization(...)
+
 private:
-  XT::Grid::GridProvider<G> macro_grid;
+  XT::Grid::GridProvider<G> macro_grid_;
 
 public:
   DdGridType dd_grid;
+
+private:
+  XT::Grid::DD::GluedVTKWriter<G, G, XT::Grid::Layers::leaf> vtk_writer_;
+  std::vector<std::shared_ptr<SpaceInterface<GV>>> local_spaces_;
+  std::vector<std::shared_ptr<std::vector<DiscreteFunction<V, GV>>>> local_discrete_functions_;
 }; // class DomainDecomposition
 
 
@@ -113,19 +175,6 @@ public:
 }; // class MacroGridBasedBoundaryInfo
 
 
-template <class GV>
-std::unique_ptr<GDT::SpaceInterface<GV>> make_subdomain_space(GV subdomain_grid_view, const std::string& space_type)
-{
-  if (space_type == "continuous_lagrange")
-    return std::make_unique<GDT::ContinuousLagrangeSpace<GV, /*order=*/1>>(subdomain_grid_view);
-  else if (space_type == "discontinuous_lagrange")
-    return std::make_unique<GDT::DiscontinuousLagrangeSpace<GV, /*order=*/1>>(subdomain_grid_view);
-  else
-    DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
-               "space_type = " << space_type << "\n   has to be 'continuous_lagrange' or 'discontinuous_lagrange'!");
-}
-
-
 PYBIND11_PLUGIN(usercode)
 {
   namespace py = pybind11;
@@ -171,6 +220,27 @@ PYBIND11_PLUGIN(usercode)
     }
     return neighboring_subdomains;
   });
+  domain_decomposition.def("add_local_visualization",
+                           [](DomainDecomposition& self,
+                              const size_t ss,
+                              const V& vec,
+                              const std::string& space_type,
+                              const std::string& name) { self.add_local_visualization(ss, vec, space_type, name); },
+                           "ss"_a,
+                           "subdomain_vector"_a,
+                           "space_type"_a = "discontinuous_lagrange",
+                           "name"_a = "STATE");
+  domain_decomposition.def(
+      "add_local_visualization",
+      [](DomainDecomposition& self, const size_t ss, const XT::Functions::FunctionInterface<d>& func) {
+        self.add_local_visualization(ss, func);
+      },
+      "ss"_a,
+      "function"_a);
+  domain_decomposition.def(
+      "write_visualization",
+      [](DomainDecomposition& self, const std::string& filename_prefix) { self.write_visualization(filename_prefix); },
+      "filename_prefix"_a);
 
   m.def("assemble_local_system_matrix",
         [](XT::Functions::FunctionInterface<d>& diffusion_factor,
