@@ -98,13 +98,18 @@ public:
   // \psi_{vac} = 0.5*10^(-8) at x = 3, with g(v) = exp(-10^5(v-1)^2), so n-th component of boundary value has to be
   // \frac{<base_n(v)*g(v)>}{<g>} at x = 0 and \psi_{vac}*base_integrated_n
   // at x = 3.
-  virtual BoundaryValueType* create_boundary_values() const override
+  virtual BoundaryValueType* create_boundary_values() const override final
   {
+    // use very fine quadrature, is only used once
+    static auto boundary_quadrature_config = default_grid_cfg();
+    boundary_quadrature_config["num_quad_cells"] = "200";
+    boundary_quadrature_config["quad_order"] = "31";
+    static const auto boundary_quadrature = BaseType::default_quadrature(boundary_quadrature_config);
     return new ActualBoundaryValueType(
         [&](const DomainType& x, const XT::Common::Parameter&) {
           if (x[0] < 1.5) {
             static auto ret =
-                helper<BasisfunctionType>::get_left_boundary_values(quadrature_, basis_functions_, psi_vac_);
+                helper<BasisfunctionType>::get_left_boundary_values(boundary_quadrature, basis_functions_, psi_vac_);
             return ret;
           } else {
             auto ret = basis_functions_.integrated();

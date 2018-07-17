@@ -729,12 +729,6 @@ public:
 
     RangeFieldType theta_entity(0.);
 
-    // if a component is already really small, we do not want to reconstruct in that direction
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      if (u_bar[ii] < u_vac_[ii])
-        for (auto& pair : local_reconstructed_values)
-          pair.second[ii] = u_bar[ii];
-
     for (const auto& pair : local_reconstructed_values) {
       const auto& u = pair.second;
       if (XT::Common::FloatCmp::eq(u_bar, u))
@@ -765,7 +759,7 @@ private:
       // Clp wants the row indices that are non-zero in each column. We have a dense matrix, so provide all indices
       // 0..num_rows
       std::array<int, num_rows> row_indices;
-      for (size_t ii = 0; ii < num_rows; ++ii)
+      for (int ii = 0; ii < num_rows; ++ii)
         row_indices[ii] = ii;
 
       // set columns for quadrature points
@@ -801,7 +795,7 @@ private:
     const auto u_l_minus_u_bar = u_l - u_bar;
 
     // set rhs (equality constraints, so set both bounds equal
-    for (size_t ii = 0; ii < num_rows; ++ii) {
+    for (int ii = 0; ii < num_rows; ++ii) {
       lp.setRowLower(ii, u_l[ii]);
       lp.setRowUpper(ii, u_l[ii]);
     }
@@ -809,7 +803,7 @@ private:
     // Clp wants the row indices that are non-zero in each column. We have a dense matrix, so provide all indices
     // 0..num_rows
     std::array<int, num_rows> row_indices;
-    for (size_t ii = 0; ii < num_rows; ++ii)
+    for (int ii = 0; ii < num_rows; ++ii)
       row_indices[ii] = ii;
 
     // delete and reset theta column

@@ -64,10 +64,10 @@ public:
     }
   }
 
-  void keep(const ConstIteratorType& it)
+  void keep(const StateRangeType& u)
   {
-    keys_.remove(it->first);
-    keys_.push_back(it->first);
+    keys_.remove(u);
+    keys_.push_back(u);
   }
 
   ConstIteratorType find_closest(const StateRangeType& u) const
@@ -260,6 +260,12 @@ public:
     {
     }
 
+
+    void keep(const StateRangeType& u)
+    {
+      cache_.keep(u);
+    }
+
     using LocalfunctionType::entity;
 
     // temporary vectors to store inner products and exponentials
@@ -322,18 +328,19 @@ public:
 
     void apply_inverse_matrix(const MatrixType& T_k, BasisValuesMatrixType& M) const
     {
+      assert(quad_points_.size() < std::numeric_limits<int>::max());
       XT::Common::Blas::dtrsm(XT::Common::Blas::row_major(),
                               XT::Common::Blas::left(),
                               XT::Common::Blas::lower(),
                               XT::Common::Blas::no_trans(),
                               XT::Common::Blas::non_unit(),
                               dimRange,
-                              quad_points_.size(),
+                              static_cast<int>(quad_points_.size()),
                               1.,
                               &(T_k[0][0]),
                               dimRange,
                               M.data(),
-                              quad_points_.size());
+                              static_cast<int>(quad_points_.size()));
     }
 
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
@@ -353,7 +360,7 @@ public:
       if (cache_iterator != cache_.end() && cache_iterator->first == u) {
         ret.first = cache_iterator->second;
         ret.second = 0.;
-        cache_.keep(cache_iterator);
+        cache_.keep(cache_iterator->first);
         mutex_.unlock();
         return ret;
       } else if (only_cache) {
@@ -1123,7 +1130,7 @@ public:
       if (cache_iterator != cache_.end() && cache_iterator->first == u_in) {
         ret.first = cache_iterator->second;
         ret.second = 0.;
-        cache_.keep(cache_iterator);
+        cache_.keep(cache_iterator->first);
         mutex_.unlock();
         return ret;
       } else if (only_cache) {
@@ -2755,7 +2762,7 @@ public:
       if (cache_iterator != cache_.end() && cache_iterator->first == u) {
         ret.first = cache_iterator->second;
         ret.second = 0.;
-        cache_.keep(cache_iterator);
+        cache_.keep(cache_iterator->first);
         mutex_.unlock();
         return ret;
       } else if (only_cache) {
