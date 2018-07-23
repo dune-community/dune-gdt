@@ -57,7 +57,7 @@ public:
     for (auto i : XT::Common::value_range(size)) {
       assert(i < global_indices_.size());
       const auto global = global_indices_[i];
-      const auto vector_size = vector_.size();
+      const auto DXTC_DEBUG_ONLY(vector_size) = vector_.size();
       assert(global < vector_size);
       value_cache_[i] = vector_[global];
     }
