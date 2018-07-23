@@ -66,7 +66,6 @@ public:
     const auto num_intersections = entity.subEntities(1);
     std::vector<size_t> local_DoF_index_of_vertex(num_intersections, std::numeric_limits<size_t>::infinity());
     std::vector<size_t> local_DoF_index_of_intersection(num_intersections, std::numeric_limits<size_t>::infinity());
-    typedef typename BaseFunctionSetType::DomainType DomainType;
     std::vector<DomainType> vertices(num_intersections, DomainType(0));
     std::vector<bool> lies_on_intersection(num_intersections, false);
     DomainType corner(0);
