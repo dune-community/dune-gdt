@@ -166,7 +166,7 @@ static void bind_system_assembler_functions(pybind11::class_<AssemblerOrDerivedT
         py::keep_alive<1, 2>());
   c.def("assemble",
         [](type& self, const bool use_tbb) {
-          py::gil_scoped_release DUNE_UNUSED(release);
+          py::gil_scoped_release DUNE_UNUSED release;
           self.assemble(use_tbb);
         },
         "use_tbb"_a = false);

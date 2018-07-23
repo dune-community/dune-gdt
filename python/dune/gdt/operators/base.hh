@@ -68,13 +68,13 @@ private:
 
       c.def("induced_norm",
             [](type& self, const V& range) {
-              py::gil_scoped_release DUNE_UNUSED(release);
+              py::gil_scoped_release DUNE_UNUSED release;
               return self.induced_norm(range);
             },
             "range"_a);
       c.def("induced_norm",
             [](type& self, const GDT::ConstDiscreteFunction<S, V>& range) {
-              py::gil_scoped_release DUNE_UNUSED(release);
+              py::gil_scoped_release DUNE_UNUSED release;
               return self.induced_norm(range);
             },
             "range"_a);
@@ -133,21 +133,21 @@ public:
     c.def("range_space", [](type& self) { return self.range_space(); });
     c.def("apply",
           [](type& self, const V& source, V& range) {
-            py::gil_scoped_release DUNE_UNUSED(release);
+            py::gil_scoped_release DUNE_UNUSED release;
             self.apply(source, range);
           },
           "source"_a,
           "range"_a);
     c.def("apply",
           [](type& self, const GDT::ConstDiscreteFunction<S, V>& source, GDT::DiscreteFunction<R, V>& range) {
-            py::gil_scoped_release DUNE_UNUSED(release);
+            py::gil_scoped_release DUNE_UNUSED release;
             self.apply(source, range);
           },
           "source"_a,
           "range"_a);
     c.def("apply2",
           [](type& self, const V& range, const V& source) {
-            py::gil_scoped_release DUNE_UNUSED(release);
+            py::gil_scoped_release DUNE_UNUSED release;
             return self.apply2(range, source);
           },
           "range"_a,
@@ -155,14 +155,14 @@ public:
     c.def(
         "apply2",
         [](type& self, const GDT::ConstDiscreteFunction<R, V>& range, const GDT::ConstDiscreteFunction<S, V>& source) {
-          py::gil_scoped_release DUNE_UNUSED(release);
+          py::gil_scoped_release DUNE_UNUSED release;
           return self.apply2(range, source);
         },
         "range"_a,
         "source"_a);
     c.def("apply_inverse",
           [](type& self, const V& range, V& source, const XT::Common::Configuration& opts) {
-            py::gil_scoped_release DUNE_UNUSED(release);
+            py::gil_scoped_release DUNE_UNUSED release;
             self.apply_inverse(range, source, opts);
           },
           "range"_a,
@@ -173,7 +173,7 @@ public:
              const GDT::ConstDiscreteFunction<R, V>& range,
              GDT::ConstDiscreteFunction<S, V>& source,
              const XT::Common::Configuration& opts) {
-            py::gil_scoped_release DUNE_UNUSED(release);
+            py::gil_scoped_release DUNE_UNUSED release;
             self.apply_inverse(range, source, opts);
           },
           "range"_a,
@@ -185,7 +185,7 @@ public:
     // from OperatorInterface
     c.def("apply_inverse",
           [](type& self, const V& range, V& source, const std::string& type) {
-            py::gil_scoped_release DUNE_UNUSED(release);
+            py::gil_scoped_release DUNE_UNUSED release;
             self.apply_inverse(range, source, type);
           },
           "range"_a,
@@ -196,7 +196,7 @@ public:
              const GDT::ConstDiscreteFunction<R, V>& range,
              GDT::ConstDiscreteFunction<S, V>& source,
              const std::string& type) {
-            py::gil_scoped_release DUNE_UNUSED(release);
+            py::gil_scoped_release DUNE_UNUSED release;
             self.apply_inverse(range, source, type);
           },
           "range"_a,
@@ -204,14 +204,14 @@ public:
           "type"_a);
     c.def("apply_inverse",
           [](type& self, const V& range, V& source) {
-            py::gil_scoped_release DUNE_UNUSED(release);
+            py::gil_scoped_release DUNE_UNUSED release;
             self.apply_inverse(range, source);
           },
           "range"_a,
           "source"_a);
     c.def("apply_inverse",
           [](type& self, const GDT::ConstDiscreteFunction<R, V>& range, GDT::ConstDiscreteFunction<S, V>& source) {
-            py::gil_scoped_release DUNE_UNUSED(release);
+            py::gil_scoped_release DUNE_UNUSED release;
             self.apply_inverse(range, source);
           },
           "range"_a,
