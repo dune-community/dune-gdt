@@ -125,9 +125,12 @@ public:
   static const size_t dimDomain = Traits::dimDomain;
 
 public:
-  LocalFvRhsIntegrand(const RhsEvaluationType& rhs_evaluation, const SourceType& source)
+  LocalFvRhsIntegrand(const RhsEvaluationType& rhs_evaluation,
+                      const SourceType& source,
+                      const XT::Common::Parameter& param)
     : rhs_evaluation_(rhs_evaluation)
     , source_(source)
+    , param_(param)
   {
   }
 
@@ -154,13 +157,14 @@ public:
       Dune::DynamicVector<R>& ret) const
   {
     const auto u = std::get<1>(local_functions_tuple)->evaluate(x_local);
-    ret = DynamicVector<R>(std::get<0>(local_functions_tuple)->evaluate(x_local, u));
+    ret = DynamicVector<R>(std::get<0>(local_functions_tuple)->evaluate(x_local, u, param_));
     ret /= std::get<2>(local_functions_tuple);
   }
 
 private:
   const RhsEvaluationType& rhs_evaluation_;
   const SourceType& source_;
+  const XT::Common::Parameter param_;
 }; // class LocalFvRhsIntegrand
 
 
