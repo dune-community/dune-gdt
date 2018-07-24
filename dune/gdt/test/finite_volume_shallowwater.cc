@@ -63,18 +63,25 @@ int main(int argc, char** argv)
   // ***************** parse arguments and set up MPI and TBB
   size_t num_threads = 1;
   size_t threading_partition_factor = 1;
-  size_t num_save_steps = 5;
+  size_t num_save_steps = 100;
   std::string grid_size("100"), overlap_size("2");
   double t_end = 0;
   double epsilon = 1e-10;
-  bool visualize = true;
   std::string filename;
+  double CFL = 0;
   for (int i = 1; i < argc; ++i) {
     if (std::string(argv[i]) == "-num_threads") {
       if (i + 1 < argc) {
         num_threads = Dune::XT::Common::from_string<size_t>(argv[++i]);
       } else {
         std::cerr << "--num_threads option requires one argument." << std::endl;
+        return 1;
+      }
+    } else if (std::string(argv[i]) == "--CFL") {
+      if (i + 1 < argc) {
+        CFL = XT::Common::from_string<double>(argv[++i]);
+      } else {
+        std::cerr << "--CFL option requires one argument." << std::endl;
         return 1;
       }
     } else if (std::string(argv[i]) == "--threading_partition_factor") {
@@ -136,16 +143,10 @@ int main(int argc, char** argv)
   static const bool periodic_boundaries = false; // use periodic boundaries ?
   using DomainFieldType = double;
   using RangeFieldType = double;
-  const RangeFieldType CFL = 0.4;
 
   // ********************* choose timesteppers ************************
-  //  const auto time_stepper_method = TimeStepperMethods::explicit_euler;
   const auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_second_order_ssp;
-  //  const auto time_stepper_method = TimeStepperMethods::dormand_prince;
-  //  const auto rhs_time_stepper_method = TimeStepperMethods::explicit_euler;
   const auto rhs_time_stepper_method = TimeStepperMethods::explicit_rungekutta_second_order_ssp;
-  //  const auto rhs_time_stepper_method = TimeStepperMethods::matrix_exponential;
-  //  const auto time_stepper_splitting_method = TimeStepperSplittingMethods::fractional_step;
   const auto time_stepper_splitting_method = TimeStepperSplittingMethods::strang;
 
   // ********************* choose GridType ************************
@@ -215,9 +216,6 @@ int main(int argc, char** argv)
                                                                  OperatorTimeStepperType,
                                                                  time_stepper_splitting_method>::TimeStepperType;
 
-  //  using TimeStepperType = typename TimeStepperFactory<FvOperatorType, DiscreteFunctionType,
-  //  time_stepper_method>::TimeStepperType;
-
   // *************** choose initial dt **************************************
   // calculate dx and choose initial dt
   Dune::XT::Grid::Dimensions<typename SpaceType::GridLayerType> dimensions(grid_layer);
@@ -226,6 +224,7 @@ int main(int argc, char** argv)
     dx /= std::sqrt(2);
   if (dimDomain == 3)
     dx /= std::sqrt(3);
+  CFL = (CFL == 0.) ? problem.CFL() : CFL;
   RangeFieldType dt = CFL * dx;
   t_end = XT::Common::FloatCmp::eq(t_end, 0.) ? problem.t_end() : t_end;
 
@@ -248,10 +247,10 @@ int main(int argc, char** argv)
   timestepper.solve(t_end,
                     dt,
                     num_save_steps,
-                    /*save_solution = */ false,
-                    /*output_progress = */ true,
-                    visualize,
-                    visualize,
+                    /* save_solution = */ false, // Save vector of calculated timesteps?
+                    /* output_progress = */ true, // Progress written to std::cout?
+                    /* visualize */ true, // vtp Output?
+                    /* write_to_file */ true, // txt Output?
                     filename);
 
   return 0;

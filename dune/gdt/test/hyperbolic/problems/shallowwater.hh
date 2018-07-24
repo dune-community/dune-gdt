@@ -86,7 +86,7 @@ public:
                grid_cfg,
                boundary_cfg,
                0.4,
-               0.3,
+               4,
                false)
   {
   }
@@ -197,7 +197,7 @@ public:
     grid_config["type"] = XT::Grid::cube_gridprovider_default_config()["type"];
     grid_config["lower_left"] = "[0.0]";
     grid_config["upper_right"] = "[10.0]";
-    grid_config["num_elements"] = "[10]";
+    grid_config["num_elements"] = "[1000]";
     grid_config["overlap_size"] = "[1]";
     return grid_config;
   }
