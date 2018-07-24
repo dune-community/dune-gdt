@@ -340,7 +340,12 @@ public:
 
   static StringifierType vector_stringifier()
   {
-    return [](const RangeType& val) { return XT::Common::to_string(val, 15); };
+    return [](const RangeType& val) {
+      std::string ret = XT::Common::to_string(val[0], 15);
+      for (size_t ii = 1; ii < val.size(); ++ii)
+        ret += " " + XT::Common::to_string(val[ii], 15);
+      return ret;
+    };
   } // ... vector_stringifier()
 
   void write_to_textfile(const DiscreteFunctionType& u_n,
