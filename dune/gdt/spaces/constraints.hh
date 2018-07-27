@@ -16,18 +16,21 @@
 
 #include <dune/common/unused.hh>
 
+#include <dune/xt/common/parallel/threadstorage.hh>
 #include <dune/xt/common/crtp.hh>
 #include <dune/xt/grid/boundaryinfo.hh>
+#include <dune/xt/grid/functors/interfaces.hh>
 #include <dune/xt/la/container/interfaces.hh>
+#include <dune/gdt/spaces/interface.hh>
 
 namespace Dune {
 namespace GDT {
 namespace internal {
 
 
-// forward, needed for friendlyness
-template <class TestSpaceType, class AnsatzSpaceType, class GridLayerType, class ConstraintsType>
-class ConstraintsWrapper;
+//// forward, needed for friendlyness
+// template <class TestSpaceType, class AnsatzSpaceType, class GridLayerType, class ConstraintsType>
+// class ConstraintsWrapper;
 
 
 } // namespace internal
@@ -38,56 +41,81 @@ class ConstraintsWrapper;
  *
  *        We need this interface for template matching in the SystemAssembler.
  */
-template <class Traits>
-class ConstraintsInterface : public XT::CRTPInterface<ConstraintsInterface<Traits>, Traits>
+// template <class Traits>
+// class ConstraintsInterface : public XT::CRTPInterface<ConstraintsInterface<Traits>, Traits>
+//{
+// public:
+//  typedef typename Traits::derived_type derived_type;
+//}; // class ConstraintsInterface
+
+
+//// forward
+// template <class IntersectionType>
+// class DirichletConstraints;
+
+
+// namespace internal {
+
+
+// template <class IntersectionType>
+// class DirichletConstraintsTraits
+//{
+// public:
+//  typedef DirichletConstraints<IntersectionType> derived_type;
+//};
+
+
+//} // namespace internal
+
+
+template <class IntersectionType, class SpaceType>
+class DirichletConstraints : public Dune::XT::Grid::ElementFunctor<typename SpaceType::GridViewType>
 {
-public:
-  typedef typename Traits::derived_type derived_type;
-}; // class ConstraintsInterface
+  using ThisType = DirichletConstraints<IntersectionType, SpaceType>;
+  using BaseType = XT::Grid::ElementFunctor<typename SpaceType::GridViewType>;
+  //  using Propagator = XT::Common::ThreadResultPropagator<ThisType, size_t>;
+  //  friend Propagator;
 
-
-// forward
-template <class IntersectionType>
-class DirichletConstraints;
-
-
-namespace internal {
-
-
-template <class IntersectionType>
-class DirichletConstraintsTraits
-{
-public:
-  typedef DirichletConstraints<IntersectionType> derived_type;
-};
-
-
-} // namespace internal
-
-
-template <class IntersectionType>
-class DirichletConstraints : public ConstraintsInterface<internal::DirichletConstraintsTraits<IntersectionType>>
-{
-  typedef DirichletConstraints<IntersectionType> ThisType;
 
 public:
-  typedef internal::DirichletConstraintsTraits<IntersectionType> Traits;
-  typedef XT::Grid::BoundaryInfo<IntersectionType> BoundaryInfoType;
+  using BoundaryInfoType = XT::Grid::BoundaryInfo<IntersectionType>;
+  using ElementType = typename ThisType::ElementType;
+  using GridView = typename SpaceType::GridViewType;
+  static const constexpr size_t r = SpaceType::r;
+  static const constexpr size_t rC = SpaceType::rC;
+  using R = typename SpaceType::R;
 
-  DirichletConstraints(const BoundaryInfoType& bnd_info, const size_t sz, const bool set = true)
+  DirichletConstraints(const BoundaryInfoType& bnd_info, const SpaceType& space, const bool set = true)
     : boundary_info_(bnd_info)
-    , size_(sz)
+    , space_(space)
     , set_(set)
   {
   }
 
-  // manual copy ctor needed bc. of the mutex
-  DirichletConstraints(const ThisType& other)
-    : boundary_info_(other.boundary_info_)
-    , size_(other.size_)
-    , set_(other.set_)
-    , dirichlet_DoFs_(other.dirichlet_DoFs_)
+  void apply_local(const ElementType& element) override final
   {
+    std::set<size_t> local_DoFs;
+    static const XT::Grid::DirichletBoundary dirichlet{};
+    const auto lps = space_.finite_element(element.type()).lagrange_points();
+    const auto intersection_it_end = space_.grid_view().iend(element);
+    for (auto intersection_it = space_.grid_view().ibegin(element); intersection_it != intersection_it_end;
+         ++intersection_it) {
+      // only work on dirichlet ones
+      const auto& intersection = *intersection_it;
+      // actual dirichlet intersections + process boundaries for parallel runs
+      if (boundary_info_.type(intersection) == dirichlet || (!intersection.neighbor() && !intersection.boundary()))
+        for (size_t ii = 0; ii < lps.size(); ++ii) {
+          const auto& local_lagrange_point = lps[ii];
+          if (XT::Grid::contains(intersection, element.geometry().global(local_lagrange_point)))
+            local_DoFs.insert(ii);
+        }
+    }
+
+    if (local_DoFs.size() > 0) {
+      for (const auto& local_DoF : local_DoFs) {
+        dirichlet_DoFs_.insert(space_.mapper().global_index(element, local_DoF));
+      }
+    }
   }
 
   const BoundaryInfoType& boundary_info() const
@@ -95,17 +123,17 @@ public:
     return boundary_info_;
   }
 
-  size_t size() const
-  {
-    return size_;
-  }
+  //  size_t size() const
+  //  {
+  //    return size_;
+  //  }
 
-  inline void insert(const size_t DoF)
-  {
-    DUNE_UNUSED std::lock_guard<std::mutex> mutex_guard(mutex_);
-    assert(DoF < size_);
-    dirichlet_DoFs_.insert(DoF);
-  }
+  //  inline void insert(const size_t DoF)
+  //  {
+  //    DUNE_UNUSED std::lock_guard<std::mutex> mutex_guard(mutex_);
+  //    assert(DoF < size_);
+  //    dirichlet_DoFs_.insert(DoF);
+  //  }
 
   const std::set<size_t>& dirichlet_DoFs() const
   {
@@ -115,7 +143,6 @@ public:
   template <class M>
   void apply(XT::LA::MatrixInterface<M>& matrix) const
   {
-    assert(matrix.rows() == size_);
     if (set_) {
       for (const auto& DoF : dirichlet_DoFs_)
         matrix.unit_row(DoF);
@@ -128,7 +155,6 @@ public:
   template <class V>
   void apply(XT::LA::VectorInterface<V>& vector) const
   {
-    assert(vector.size() == size_);
     for (const auto& DoF : dirichlet_DoFs_)
       vector[DoF] = 0.0;
   }
@@ -136,8 +162,6 @@ public:
   template <class M, class V>
   void apply(XT::LA::MatrixInterface<M>& matrix, XT::LA::VectorInterface<V>& vector) const
   {
-    assert(matrix.rows() == size_);
-    assert(vector.size() == size_);
     if (set_) {
       for (const auto& DoF : dirichlet_DoFs_) {
         matrix.unit_row(DoF);
@@ -151,15 +175,24 @@ public:
     }
   } // ... apply(...)
 
-private:
-  template <class T, class A, class GL, class C>
-  friend class GDT::internal::ConstraintsWrapper;
+  //  void finalize() override
+  //  {
+  //    Propagator::finalize_imp();
+  //  }
 
+  BaseType* copy() override
+  {
+    return new ThisType(*this);
+    //    return Propagator::copy_imp();
+  }
+
+private:
   const BoundaryInfoType& boundary_info_;
-  const size_t size_;
+  const SpaceInterface<GridView, r, rC, R>& space_;
+  //  const size_t size_;
   const bool set_;
   std::set<size_t> dirichlet_DoFs_;
-  std::mutex mutex_;
+  //  std::mutex mutex_;
 }; // class DirichletConstraints
 
 
