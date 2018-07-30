@@ -36,7 +36,20 @@ if [ "X${TRAVIS_PULL_REQUEST}" != "Xfalse" ] ; then
         retry_command ${SUPERDIR}/scripts/bash/travis_upload_test_logs.bash ${DUNE_BUILD_DIR}/${MY_MODULE}/dune/gdt/test/
 fi
 
-#unset GH_TOKEN
-#${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make install | grep -v "Installing"
-#${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make package_source
+# clang coverage currently disabled for being to mem hungry
+if [[ ${CC} == *"clang"* ]] ; then
+    exit 0
+fi
 
+pushd ${DUNE_BUILD_DIR}/${MY_MODULE}
+COVERAGE_INFO=${PWD}/coverage.info
+lcov --directory . --output-file ${COVERAGE_INFO} -c
+for d in "dune-common" "dune-pybindxi" "dune-geometry"  "dune-istl"  "dune-grid" "dune-alugrid"  "dune-uggrid"  "dune-localfunctions" \
+         "dune-xt-common" "dune-xt-functions" "dune-xt-la" "dune-xt-grid" ; do
+    lcov --directory . --output-file ${COVERAGE_INFO} -r ${COVERAGE_INFO} "${SUPERDIR}/${d}/*"
+done
+lcov --directory . --output-file ${COVERAGE_INFO} -r ${COVERAGE_INFO} "${SUPERDIR}/${MY_MODULE}/dune/xt/*/test/*"
+cd ${SUPERDIR}/${MY_MODULE}
+${OLDPWD}/dune-env pip install codecov
+${OLDPWD}/dune-env codecov -v -X gcov -X coveragepy -F ctest -f ${COVERAGE_INFO} -t ${CODECOV_TOKEN}
+popd
