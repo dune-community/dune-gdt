@@ -51,6 +51,7 @@ class ConstLocalDofVectorTraits
 public:
   using derived_type = ConstLocalDofVector<Vector, GridView>;
   using ScalarType = typename Vector::ScalarType;
+  using RealType = typename Vector::RealType;
 };
 
 
@@ -62,6 +63,7 @@ class LocalDofVectorTraits
 public:
   using derived_type = LocalDofVector<Vector, GridView>;
   using ScalarType = typename Vector::ScalarType;
+  using RealType = typename Vector::RealType;
 };
 
 
