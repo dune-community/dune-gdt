@@ -52,6 +52,13 @@ public:
   }
 
   virtual std::unique_ptr<LocalizedBasisType> localize() const = 0;
+
+  virtual std::unique_ptr<LocalizedBasisType> localize(const ElementType& grid_element) const
+  {
+    auto lb = localize();
+    lb->bind(grid_element);
+    return lb;
+  }
 }; // class GlobalBasisInterface
 
 
