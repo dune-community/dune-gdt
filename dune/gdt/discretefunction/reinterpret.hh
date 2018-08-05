@@ -12,7 +12,7 @@
 #define DUNE_GDT_DISCRETEFUNCTION_REINTERPRET_HH
 
 #include <dune/xt/grid/type_traits.hh>
-#include <dune/xt/functions/reinterpret.hh>
+#include <dune/xt/functions/base/reinterpret.hh>
 
 #include "default.hh"
 
