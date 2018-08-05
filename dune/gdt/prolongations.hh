@@ -16,7 +16,6 @@
 
 #include <dune/common/dynvector.hh>
 
-#include <dune/xt/functions/reinterpret.hh>
 #include <dune/xt/la/container/vector-interface.hh>
 
 #include <dune/gdt/discretefunction/bochner.hh>
@@ -154,13 +153,12 @@ DiscreteFunction<V, TGV, r, rC, TR> prolong(const DiscreteFunction<V, SGV, r, rC
  * \sa interpolate
  * \sa reinterpret
  */
-template <class SV, class SGV, class TV, class TGV, class PGV>
-void prolong(const DiscreteBochnerFunction<SV, SGV>& source,
-             DiscreteBochnerFunction<TV, TGV>& target,
+template <class SV, class SGV, size_t r, size_t rC, class R, class TV, class TGV, class PGV>
+void prolong(const DiscreteBochnerFunction<SV, SGV, r, rC, R>& source,
+             DiscreteBochnerFunction<TV, TGV, r, rC, R>& target,
              const GridView<PGV>& spatial_prolongation_grid_view)
 {
   // prepare
-  target.dof_vectors().set_all(0.);
   const auto& temporal_space = target.space().temporal_space();
   DynamicVector<size_t> local_dof_indices(temporal_space.mapper().max_local_size());
   std::vector<bool> dof_has_been_handled(temporal_space.mapper().size(), false);
@@ -178,7 +176,7 @@ void prolong(const DiscreteBochnerFunction<SV, SGV>& source,
             make_discrete_function(source.space().spatial_space(), source.evaluate(point_in_time));
         // prolong in space
         auto fine_spatial_function =
-            make_discrete_function(target.space().spatial_space(), target.dof_vectors()[global_dof_index]);
+            make_discrete_function(target.space().spatial_space(), target.dof_vectors()[global_dof_index].vector());
         prolong(coarse_spatial_function, fine_spatial_function, spatial_prolongation_grid_view);
         dof_has_been_handled[global_dof_index] = true;
       }
@@ -197,8 +195,9 @@ void prolong(const DiscreteBochnerFunction<SV, SGV>& source,
  * \sa interpolate
  * \sa reinterpret
  */
-template <class SV, class SGV, class TV, class TGV>
-void prolong(const DiscreteBochnerFunction<SV, SGV>& source, DiscreteBochnerFunction<TV, TGV>& target)
+template <class SV, class SGV, size_t r, size_t rC, class R, class TV, class TGV>
+void prolong(const DiscreteBochnerFunction<SV, SGV, r, rC, R>& source,
+             DiscreteBochnerFunction<TV, TGV, r, rC, R>& target)
 {
   prolong(source, target, target.space().spatial_space().grid_view());
 }
@@ -213,12 +212,12 @@ void prolong(const DiscreteBochnerFunction<SV, SGV>& source, DiscreteBochnerFunc
 auto target_function = prolong<TargetVectorType>(source, target_space, spatial_prolongation_grid_view);
 \endcode
  */
-template <class TargetVectorType, class SV, class SGV, class TGV, size_t r, size_t rC, class R, class PGV>
+template <class TargetVectorType, class SV, class SGV, size_t r, size_t rC, class R, class TGV, class PGV>
 std::enable_if_t<XT::LA::is_vector<TargetVectorType>::value
                      && std::is_same<XT::Grid::extract_entity_t<TGV>,
                                      typename PGV::Grid::template Codim<0>::Entity>::value,
                  DiscreteBochnerFunction<TargetVectorType, TGV, r, rC, R>>
-prolong(const DiscreteBochnerFunction<SV, SGV>& source,
+prolong(const DiscreteBochnerFunction<SV, SGV, r, rC, R>& source,
         const BochnerSpace<TGV, r, rC, R>& target_space,
         const GridView<PGV>& spatial_prolongation_grid_view)
 {
@@ -228,9 +227,9 @@ prolong(const DiscreteBochnerFunction<SV, SGV>& source,
 }
 
 
-template <class TargetVectorType, class SV, class SGV, class TGV, size_t r, size_t rC, class R>
+template <class TargetVectorType, class SV, class SGV, size_t r, size_t rC, class R, class TGV>
 std::enable_if_t<XT::LA::is_vector<TargetVectorType>::value, DiscreteBochnerFunction<TargetVectorType, TGV, r, rC, R>>
-prolong(const DiscreteBochnerFunction<SV, SGV>& source, const BochnerSpace<TGV, r, rC, R>& target_space)
+prolong(const DiscreteBochnerFunction<SV, SGV, r, rC, R>& source, const BochnerSpace<TGV, r, rC, R>& target_space)
 {
   return prolong<TargetVectorType>(source, target_space, target_space.spatial_space().grid_view());
 }
