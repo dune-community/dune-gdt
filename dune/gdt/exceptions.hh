@@ -33,6 +33,10 @@ class integrand_error : public Exception
 {
 };
 
+class assembler_error : public Exception
+{
+};
+
 class functional_error : public Exception
 {
 };
