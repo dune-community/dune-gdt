@@ -12,6 +12,8 @@
 
 #include <functional>
 
+#include <dune/geometry/quadraturerules.hh>
+
 #include <dune/xt/common/matrix.hh>
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/la/eigen-solver.hh>
@@ -140,6 +142,193 @@ NumericalLambdaFlux<d, m, R> make_numerical_lambda_flux(const XT::Functions::Fun
                                                         const XT::Common::ParameterType& param_type = {})
 {
   return NumericalLambdaFlux<d, m, R>(flux, lambda, param_type);
+}
+
+
+template <size_t d, size_t m = 1, class R = double>
+class NumericalUpwindFlux : public NumericalFluxInterface<d, m, R>
+{
+public:
+  template <class... Args>
+  explicit NumericalUpwindFlux(Args&&... args)
+  {
+    DUNE_THROW(NotImplemented, "for systems (yet)!");
+  }
+};
+
+template <size_t d, class R>
+class NumericalUpwindFlux<d, 1, R> : public NumericalFluxInterface<d, 1, R>
+{
+  static const constexpr size_t m = 1;
+  using ThisType = NumericalUpwindFlux<d, m, R>;
+  using BaseType = NumericalFluxInterface<d, m, R>;
+
+public:
+  using typename BaseType::FluxType;
+  using typename BaseType::PhysicalDomainType;
+  using typename BaseType::StateRangeType;
+
+  NumericalUpwindFlux(const FluxType& flx)
+    : BaseType(flx)
+  {
+  }
+
+  NumericalUpwindFlux(const ThisType& other) = default;
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+  using BaseType::apply;
+
+  StateRangeType apply(const StateRangeType& u,
+                       const StateRangeType& v,
+                       const PhysicalDomainType& n,
+                       const XT::Common::Parameter& param = {}) const override final
+  {
+    const auto df = this->flux().jacobian((u + v) / 2., param);
+    if ((n * df) > 0)
+      return this->flux().evaluate(u, param) * n;
+    else
+      return this->flux().evaluate(v, param) * n;
+  }
+}; // class NumericalUpwindFlux
+
+
+template <size_t d, size_t m, class R>
+NumericalUpwindFlux<d, m, R> make_numerical_upwind_flux(const XT::Functions::FunctionInterface<m, d, m, R>& flux)
+{
+  return NumericalUpwindFlux<d, m, R>(flux);
+}
+
+
+template <size_t d, size_t m = 1, class R = double>
+class NumericalLaxFriedrichsFlux : public NumericalFluxInterface<d, m, R>
+{
+public:
+  template <class... Args>
+  explicit NumericalLaxFriedrichsFlux(Args&&... args)
+  {
+    DUNE_THROW(NotImplemented, "for systems (yet)!");
+  }
+};
+
+template <size_t d, class R>
+class NumericalLaxFriedrichsFlux<d, 1, R> : public NumericalFluxInterface<d, 1, R>
+{
+  static const constexpr size_t m = 1;
+  using ThisType = NumericalLaxFriedrichsFlux<d, m, R>;
+  using BaseType = NumericalFluxInterface<d, m, R>;
+
+public:
+  using typename BaseType::FluxType;
+  using typename BaseType::PhysicalDomainType;
+  using typename BaseType::StateRangeType;
+
+  NumericalLaxFriedrichsFlux(const FluxType& flx)
+    : BaseType(flx)
+  {
+  }
+
+  NumericalLaxFriedrichsFlux(const ThisType& other) = default;
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+  using BaseType::apply;
+
+  StateRangeType apply(const StateRangeType& u,
+                       const StateRangeType& v,
+                       const PhysicalDomainType& n,
+                       const XT::Common::Parameter& param = {}) const override final
+  {
+    const auto lambda =
+        1. / std::max(this->flux().jacobian(u, param).infinity_norm(), this->flux().jacobian(v, param).infinity_norm());
+    return 0.5 * ((this->flux().evaluate(u, param) + this->flux().evaluate(v, param)) * n) + 0.5 * ((u - v) / lambda);
+  }
+}; // class NumericalLaxFriedrichsFlux
+
+
+template <size_t d, size_t m, class R>
+NumericalLaxFriedrichsFlux<d, m, R>
+make_numerical_lax_friedrichs_flux(const XT::Functions::FunctionInterface<m, d, m, R>& flux)
+{
+  return NumericalLaxFriedrichsFlux<d, m, R>(flux);
+}
+
+
+template <size_t d, size_t m = 1, class R = double>
+class NumericalEngquistOsherFlux : public NumericalFluxInterface<d, m, R>
+{
+public:
+  template <class... Args>
+  explicit NumericalEngquistOsherFlux(Args&&... args)
+  {
+    DUNE_THROW(NotImplemented, "for systems (yet)!");
+  }
+};
+
+template <size_t d, class R>
+class NumericalEngquistOsherFlux<d, 1, R> : public NumericalFluxInterface<d, 1, R>
+{
+  static const constexpr size_t m = 1;
+  using ThisType = NumericalEngquistOsherFlux<d, m, R>;
+  using BaseType = NumericalFluxInterface<d, m, R>;
+
+public:
+  using typename BaseType::FluxType;
+  using typename BaseType::PhysicalDomainType;
+  using typename BaseType::StateRangeType;
+
+  NumericalEngquistOsherFlux(const FluxType& flx)
+    : BaseType(flx)
+  {
+  }
+
+  NumericalEngquistOsherFlux(const ThisType& other) = default;
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+  using BaseType::apply;
+
+  StateRangeType apply(const StateRangeType& u,
+                       const StateRangeType& v,
+                       const PhysicalDomainType& n,
+                       const XT::Common::Parameter& param = {}) const override final
+  {
+    auto integrate_f = [&](const auto& s, const std::function<double(const R&, const R&)>& min_max) {
+      if (!(s[0] > 0.))
+        return 0.;
+      double ret = 0.;
+      const OneDGrid state_grid(1, 0., s[0]);
+      const auto state_interval = *state_grid.leafGridView().template begin<0>();
+      for (const auto& quadrature_point :
+           QuadratureRules<R, 1>::rule(state_interval.type(), this->flux().order(param))) {
+        const auto local_uu = quadrature_point.position();
+        const auto uu = state_interval.geometry().global(local_uu);
+        const auto df = this->flux().jacobian(uu, param);
+        ret += state_interval.geometry().integrationElement(local_uu) * quadrature_point.weight() * min_max(n * df, 0.);
+      }
+      return ret;
+    };
+    return (this->flux().evaluate(0., param) * n)
+           + integrate_f(u, [](const double& a, const double& b) { return std::max(a, b); })
+           + integrate_f(v, [](const double& a, const double& b) { return std::min(a, b); });
+  }
+}; // class NumericalEngquistOsherFlux
+
+
+template <size_t d, size_t m, class R>
+NumericalEngquistOsherFlux<d, m, R>
+make_numerical_engquist_osher_flux(const XT::Functions::FunctionInterface<m, d, m, R>& flux)
+{
+  return NumericalEngquistOsherFlux<d, m, R>(flux);
 }
 
 
