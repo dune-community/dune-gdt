@@ -164,8 +164,4 @@ std::ostream& operator<<(std::ostream& out, const SpaceInterface<GV, r, rC, R>& 
 } // namespace GDT
 } // namespace Dune
 
-
-#include <dune/gdt/discretefunction/default.hh>
-
-
 #endif // DUNE_GDT_SPACES_INTERFACE_HH
