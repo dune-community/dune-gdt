@@ -119,7 +119,7 @@ public:
                   Exceptions::operator_error,
                   "this->parameter_type() = " << this->parameter_type() << "\n   param.type() = " << param.type());
     range.set_all(0);
-    const auto source_function = make_const_discrete_function(source_space_, source);
+    const auto source_function = make_discrete_function(source_space_, source);
     auto range_function = make_discrete_function(range_space_, range);
     // set up the actual operator
     auto localizable_op = make_localizable_operator(assembly_grid_view_, source_function, range_function);
