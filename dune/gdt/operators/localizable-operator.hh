@@ -24,6 +24,10 @@ namespace Dune {
 namespace GDT {
 
 
+/**
+ * \todo Rename this one to LocalizableDiscreteOperatorBase, create LocalizableOperatorBase which accepts a GridFunction
+ *       as source, derive LocalizableDiscreteOperatorBase from LocalizableOperatorBase.
+ */
 template <class AssemblyGridView,
           class SourceVector,
           size_t source_range_dim = 1,
