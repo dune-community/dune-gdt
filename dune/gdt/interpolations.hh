@@ -49,7 +49,6 @@ interpolate(const XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_
             DiscreteFunction<V, GV, r, rC, R>& target,
             const GridView<IGV>& interpolation_grid_view)
 {
-  target.dofs().vector().set_all(0);
   auto local_dof_vector = target.dofs().localize();
   auto local_source = source.local_function();
   std::vector<R> local_dofs(target.space().mapper().max_local_size());
