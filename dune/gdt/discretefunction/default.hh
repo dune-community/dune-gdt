@@ -26,17 +26,33 @@
 
 namespace Dune {
 namespace GDT {
+namespace internal {
+
+
+template <class Vector, class GridView>
+struct AssertArgumentsOfConstDiscreteFunction
+{
+  static_assert(XT::LA::is_vector<Vector>::value, "");
+  static_assert(XT::Grid::is_view<GridView>::value, "");
+  using E = XT::Grid::extract_entity_t<GridView>;
+};
+
+
+} // namespace internal
 
 
 template <class Vector, class GridView, size_t range_dim = 1, size_t range_dim_cols = 1, class RangeField = double>
-class ConstDiscreteFunction
-    : public XT::Functions::
-          GridFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>
+class ConstDiscreteFunction : public XT::Functions::GridFunctionInterface<
+                                  typename internal::AssertArgumentsOfConstDiscreteFunction<Vector, GridView>::E,
+                                  range_dim,
+                                  range_dim_cols,
+                                  RangeField>
 {
-  static_assert(XT::LA::is_vector<Vector>::value, "");
-
-  using BaseType =
-      XT::Functions::GridFunctionInterface<XT::Grid::extract_entity_t<GridView>, range_dim, range_dim_cols, RangeField>;
+  using BaseType = XT::Functions::GridFunctionInterface<
+      typename internal::AssertArgumentsOfConstDiscreteFunction<Vector, GridView>::E,
+      range_dim,
+      range_dim_cols,
+      RangeField>;
   using ThisType = ConstDiscreteFunction<Vector, GridView, range_dim, range_dim_cols, RangeField>;
 
 public:
@@ -77,6 +93,13 @@ public:
   std::unique_ptr<ConstLocalDiscreteFunctionType> local_discrete_function() const
   {
     return std::make_unique<ConstLocalDiscreteFunctionType>(space_, dofs_);
+  }
+
+  std::unique_ptr<ConstLocalDiscreteFunctionType> local_discrete_function(const ElementType& grid_element) const
+  {
+    auto ldf = local_discrete_function();
+    ldf->bind(grid_element);
+    return ldf;
   }
 
   /**
@@ -128,9 +151,9 @@ private:
 
 template <class V, class GV, size_t r, size_t rC, class R>
 ConstDiscreteFunction<typename XT::LA::VectorInterface<V>::derived_type, GV, r, rC, R>
-make_const_discrete_function(const SpaceInterface<GV, r, rC, R>& space,
-                             const XT::LA::VectorInterface<V>& vector,
-                             const std::string nm = "dune.gdt.constdiscretefunction")
+make_discrete_function(const SpaceInterface<GV, r, rC, R>& space,
+                       const XT::LA::VectorInterface<V>& vector,
+                       const std::string nm = "dune.gdt.constdiscretefunction")
 {
   return ConstDiscreteFunction<typename XT::LA::VectorInterface<V>::derived_type, GV, r, rC, R>(
       space, vector.as_imp(), nm);
@@ -192,6 +215,13 @@ public:
   std::unique_ptr<LocalDiscreteFunctionType> local_discrete_function()
   {
     return std::make_unique<LocalDiscreteFunctionType>(space_, dofs_);
+  }
+
+  std::unique_ptr<LocalDiscreteFunctionType> local_discrete_function(const ElementType& grid_element)
+  {
+    auto ldf = local_discrete_function();
+    ldf->bind(grid_element);
+    return ldf;
   }
 
   /**
