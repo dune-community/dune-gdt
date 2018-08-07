@@ -78,7 +78,7 @@ public:
 
   std::vector<std::string> quantities() const override final
   {
-    return {"rel. mass conserv. error"};
+    return {"rel mass conserv   error"};
   }
 
   virtual std::map<std::string, std::map<std::string, double>>
@@ -94,7 +94,7 @@ public:
     while (!actual_quantities.empty()) {
       const auto id = actual_quantities.back();
       actual_quantities.pop_back();
-      if (id == "rel. mass conserv. error") {
+      if (id == "rel mass conserv   error") {
         const auto compute_mass = [&](const auto& vec) {
           const auto func = make_discrete_function(space, vec);
           const auto density = XT::Functions::make_sliced_function<1>(func, {0}, "density");
@@ -108,7 +108,7 @@ public:
         for (size_t ii = 1; ii < u.length(); ++ii)
           relative_mass_conservation_error = std::max(
               relative_mass_conservation_error, std::abs(initial_mass - compute_mass(u[ii].vector())) / initial_mass);
-        data["quantity"]["rel. mass conserv. error"] = relative_mass_conservation_error;
+        data["quantity"]["rel mass conserv   error"] = relative_mass_conservation_error;
       } else
         DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                    "I do not know how to compute the quantity '" << id << "'!");
@@ -160,6 +160,34 @@ protected:
                  {},
                  impermeable_wall_filter);
       return op;
+    } else if (boundary_treatment == "impermeable_walls_by_inviscid_mirror_treatment") {
+      boundary_info = std::make_unique<XT::Grid::NormalBasedBoundaryInfo<XT::Grid::extract_intersection_t<GV>>>();
+      boundary_info->register_new_normal({-1}, new XT::Grid::ImpermeableBoundary());
+      boundary_info->register_new_normal({1}, new XT::Grid::ImpermeableBoundary());
+      XT::Grid::ApplyOn::CustomBoundaryIntersections<GV> impermeable_wall_filter(*boundary_info,
+                                                                                 new XT::Grid::ImpermeableBoundary());
+      auto op = std::make_unique<AdvectionFvOperator<GV, V, m>>(space.grid_view(),
+                                                                *self.numerical_flux_,
+                                                                space,
+                                                                space,
+                                                                /*periodicity_restriction=*/impermeable_wall_filter);
+      // the actual handling of impermeable walls, see [DF2015, p. 415, (8.66 - 8.67)]
+      op->append(
+          [&](const auto& intersection,
+              const auto& xx_in_reference_intersection_coordinates,
+              const auto& /*f*/,
+              const auto& u,
+              const auto& /*mu*/ = {}) {
+            const auto normal = intersection.unitOuterNormal(xx_in_reference_intersection_coordinates);
+            const auto rho = euler_tools.density_from_conservative(u);
+            auto velocity = euler_tools.velocity_from_conservative(u);
+            velocity -= normal * 2. * (velocity * normal);
+            const auto pressure = euler_tools.pressure_from_conservative(u);
+            return euler_tools.to_conservative(XT::Common::hstack(rho, velocity, pressure));
+          },
+          {},
+          impermeable_wall_filter);
+      return op;
     } else
       DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong, "boundary_treatment = " << boundary_treatment);
     return nullptr;
@@ -192,13 +220,15 @@ TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest, impermeable_walls_by_direc
   this->boundary_treatment = "impermeable_walls_by_direct_euler_treatment";
   this->run();
 }
+TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest, impermeable_walls_by_inviscid_mirror_treatment)
+{
+  this->set_numerical_flux("vijayasundaram");
+  this->boundary_treatment = "impermeable_walls_by_inviscid_mirror_treatment";
+  this->run();
+}
 
 
 #if 0
-// TEST_F(InviscidCompressibleFlowEuler1dExplicitFV, impermeable_walls_by_inviscid_mirror_treatment)
-//{
-//  this->impermeable_walls_by_inviscid_mirror_treatment();
-//}
 // TEST_F(InviscidCompressibleFlowEuler1dExplicitFV,
 //       inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right)
 //{
