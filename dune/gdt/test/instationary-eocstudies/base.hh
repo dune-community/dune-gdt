@@ -299,7 +299,7 @@ protected:
     return time_points;
   }
 
-  const double T_end_;
+  double T_end_;
   const size_t num_refinements_;
   const size_t num_additional_refinements_for_reference_;
   const std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualize_;
