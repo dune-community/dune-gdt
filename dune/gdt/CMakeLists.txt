@@ -11,14 +11,5 @@
 #   Tobias Leibner  (2017)
 # ~~~
 
-if(DUNE_XT_WITH_PYTHON_BINDINGS)
-  set(dunegdt_sources
-      assembler/system.lib/alu_2d_simplex_conforming.cc
-      assembler/system.lib/yasp_1d_equidistant_offset.cc
-      assembler/system.lib/yasp_2d_equidistant_offset.cc
-      assembler/system.lib/yasp_3d_equidistant_offset.cc)
-  dune_library_add_sources(dunegdt SOURCES ${dunegdt_sources})
-endif()
-
 add_subdirectory(test EXCLUDE_FROM_ALL)
 
