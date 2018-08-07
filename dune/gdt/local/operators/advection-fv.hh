@@ -19,8 +19,11 @@
 #include <dune/xt/la/eigen-solver.hh>
 #include <dune/xt/functions/interfaces/function.hh>
 #include <dune/xt/functions/constant.hh>
+#include <dune/xt/functions/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
+#include <dune/gdt/local/dof-vector.hh>
+#include <dune/gdt/type_traits.hh>
 
 #include "interfaces.hh"
 
@@ -538,6 +541,69 @@ public:
 private:
   std::unique_ptr<NumericalFluxType> numerical_flux_;
 }; // class LocalAdvectionFvCouplingOperator
+
+
+template <class I, class SV, class SGV, size_t m = 1, class SF = double, class RF = SF, class RGV = SGV, class RV = SV>
+class LocalAdvectionFvBoundaryOperatorByCustomNumericalFlux
+    : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
+{
+  using ThisType = LocalAdvectionFvBoundaryOperatorByCustomNumericalFlux<I, SV, SGV, m, SF, RF, RGV, RV>;
+  using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>;
+
+public:
+  using BaseType::d;
+  using typename BaseType::IntersectionType;
+  using typename BaseType::SourceType;
+  using typename BaseType::LocalInsideRangeType;
+  using typename BaseType::LocalOutsideRangeType;
+
+  using StateDomainType = FieldVector<typename SGV::ctype, SGV::dimension>;
+  using StateDofsType = ConstLocalDofVector<SV, SGV>;
+  using StateRangeType = typename XT::Functions::RangeTypeSelector<SF, m, 1>::type;
+  using LambdaType = std::function<StateRangeType(
+      const StateDofsType& /*u*/, const StateDomainType& /*n*/, const XT::Common::Parameter& /*param*/)>;
+
+  LocalAdvectionFvBoundaryOperatorByCustomNumericalFlux(
+      LambdaType numerical_boundary_flux_lambda, const XT::Common::ParameterType& boundary_treatment_param_type = {})
+    : BaseType(boundary_treatment_param_type)
+    , numerical_boundary_flux_lambda_(numerical_boundary_flux_lambda)
+  {
+  }
+
+  LocalAdvectionFvBoundaryOperatorByCustomNumericalFlux(const ThisType& other)
+    : BaseType(other.parameter_type())
+    , numerical_boundary_flux_lambda_(other.numerical_boundary_flux_lambda_)
+  {
+  }
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    return std::make_unique<ThisType>(*this);
+  }
+
+  void apply(const SourceType& source,
+             const IntersectionType& intersection,
+             LocalInsideRangeType& local_range_inside,
+             LocalOutsideRangeType& /*local_range_outside*/,
+             const XT::Common::Parameter& param = {}) const override final
+  {
+    DUNE_THROW_IF((source.space().type() != SpaceType::finite_volume)
+                      || (local_range_inside.space().type() != SpaceType::finite_volume),
+                  Exceptions::operator_error,
+                  "Use LocalAdvectionDgBoundaryOperatorByCustomNumericalFlux instead!");
+    const auto& element = local_range_inside.element();
+    const auto u = source.local_discrete_function(element);
+    const auto normal = intersection.centerUnitOuterNormal();
+    const auto g = numerical_boundary_flux_lambda_(u->dofs(), normal, param);
+    const auto h_intersection = intersection.geometry().volume();
+    const auto h_element = element.geometry().volume();
+    for (size_t ii = 0; ii < m; ++ii)
+      local_range_inside.dofs()[ii] += (g[ii] * h_intersection) / h_element;
+  } // ... apply(...)
+
+private:
+  const LambdaType numerical_boundary_flux_lambda_;
+}; // class LocalAdvectionFvBoundaryOperatorByCustomNumericalFlux
 
 
 } // namespace GDT
