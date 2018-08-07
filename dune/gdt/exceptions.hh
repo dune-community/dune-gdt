@@ -53,11 +53,11 @@ class projection_error : public operator_error
 {
 };
 
-class finite_element_error : public Dune::Exception
+class finite_element_error : public Exception
 {
 };
 
-class space_error : public Dune::Exception
+class space_error : public Exception
 {
 };
 
@@ -73,7 +73,7 @@ class basis_error : public space_error
 {
 };
 
-class discrete_function_error : public Dune::Exception
+class discrete_function_error : public Exception
 {
 };
 
