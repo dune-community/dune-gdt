@@ -75,6 +75,30 @@ public:
                                const PhysicalDomainType& n,
                                const XT::Common::Parameter& param = {}) const = 0;
 
+  template <class V>
+  StateRangeType apply(const StateRangeType& u,
+                       const XT::LA::VectorInterface<V>& v,
+                       const PhysicalDomainType& n,
+                       const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(v.size() != m, Exceptions::operator_error, "v.size() = " << v.size() << "\n   m = " << m);
+    for (size_t ii = 0; ii < m; ++ii)
+      v_[ii] = v[ii];
+    return this->apply(u, v_, n, param);
+  }
+
+  template <class U>
+  StateRangeType apply(const XT::LA::VectorInterface<U>& u,
+                       const StateRangeType& v,
+                       const PhysicalDomainType& n,
+                       const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(u.size() != m, Exceptions::operator_error, "u.size() = " << u.size() << "\n   m = " << m);
+    for (size_t ii = 0; ii < m; ++ii)
+      u_[ii] = u[ii];
+    return this->apply(u_, v, n, param);
+  }
+
   template <class U, class V>
   StateRangeType apply(const XT::LA::VectorInterface<U>& u,
                        const XT::LA::VectorInterface<V>& v,
