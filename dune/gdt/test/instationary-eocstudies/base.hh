@@ -104,7 +104,7 @@ public:
     return {"L_infty/L_1", "L_infty/L_2", "L_2/L_2"};
   }
 
-  virtual std::vector<std::string> estimates() const override
+  virtual std::vector<std::pair<std::string, std::string>> estimates() const override
   {
     return {};
   }
@@ -276,11 +276,16 @@ public:
                      "I do not know how to compute the temporal norm '" << temporal_norm_id << "'!");
       }
     }
-    // - estimates
-    std::vector<std::string> actual_estimates = self.filter(self.estimates(), only_these);
-    DUNE_THROW_IF(!actual_estimates.empty(),
-                  XT::Common::Exceptions::wrong_input_given,
-                  "I did not know how to compute the following estimates: " << actual_estimates);
+    //    // - estimates
+    //    auto actual_estimates = self.filter(self.estimates(), only_these);
+    //    DUNE_THROW_IF(!actual_estimates.empty(),
+    //                  XT::Common::Exceptions::wrong_input_given,
+    //                  "I did not know how to compute the following estimate: " << actual_estimates);
+    //    // - quantities
+    //    auto actual_quantities = self.filter(self.quantities(), only_these);
+    //    DUNE_THROW_IF(!actual_estimates.empty(),
+    //                  XT::Common::Exceptions::wrong_input_given,
+    //                  "I did not know how to compute the following quantity: " << actual_quantities);
     return current_data_;
   } // ... compute_on_current_refinement(...)
 
