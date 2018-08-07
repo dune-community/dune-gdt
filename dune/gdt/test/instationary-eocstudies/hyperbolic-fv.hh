@@ -75,13 +75,13 @@ protected:
   void set_numerical_flux(const std::string type)
   {
     if (type == "upwind")
-      numerical_flux_ = std::make_unique<NumericalUpwindFlux<d>>(flux());
+      numerical_flux_ = std::make_unique<NumericalUpwindFlux<d, m>>(flux());
     else if (type == "vijayasundaram")
-      numerical_flux_ = std::make_unique<NumericalVijayasundaramFlux<d>>(flux());
+      numerical_flux_ = std::make_unique<NumericalVijayasundaramFlux<d, m>>(flux());
     else if (type == "lax_friedrichs")
-      numerical_flux_ = std::make_unique<NumericalLaxFriedrichsFlux<d>>(flux());
+      numerical_flux_ = std::make_unique<NumericalLaxFriedrichsFlux<d, m>>(flux());
     else if (type == "engquist_osher")
-      numerical_flux_ = std::make_unique<NumericalEngquistOsherFlux<d>>(flux());
+      numerical_flux_ = std::make_unique<NumericalEngquistOsherFlux<d, m>>(flux());
     else
       DUNE_THROW(XT::Common::Exceptions::wrong_input_given, "type = " << type);
   } // ... set_numerical_flux(...)

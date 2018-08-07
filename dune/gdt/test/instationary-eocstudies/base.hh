@@ -236,14 +236,14 @@ public:
         if (spatial_norm_id == "L_1") {
           spatial_norm = [&](const DF& func) {
             auto localizable_functional = make_localizable_functional(reference_space.grid_view(), func);
-            localizable_functional.append(LocalElementIntegralFunctional<E>(LocalElementAbsIntegrand<E>()));
+            localizable_functional.append(LocalElementIntegralFunctional<E, m>(LocalElementAbsIntegrand<E, m>()));
             localizable_functional.assemble();
             return localizable_functional.result();
           };
         } else if (spatial_norm_id == "L_2") {
           spatial_norm = [&](const DF& func) {
             auto localizable_product = make_localizable_bilinear_form(reference_space.grid_view(), func, func);
-            localizable_product.append(LocalElementIntegralBilinearForm<E>(LocalElementProductIntegrand<E>()));
+            localizable_product.append(LocalElementIntegralBilinearForm<E, m>(LocalElementProductIntegrand<E, m>()));
             localizable_product.assemble();
             return std::sqrt(localizable_product.result());
           };
