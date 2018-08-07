@@ -73,6 +73,8 @@ public:
   using I = XT::Grid::extract_intersection_t<AGV>;
   using BoundaryTreatmentByCustomNumericalFluxOperatorType =
       LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
+  using BoundaryTreatmentByCustomExtrapolationOperatorType =
+      LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
 
   using typename BaseType::SourceSpaceType;
   using typename BaseType::RangeSpaceType;
@@ -127,6 +129,17 @@ public:
     return *this;
   }
 
+  ThisType& append(typename BoundaryTreatmentByCustomExtrapolationOperatorType::LambdaType extrapolation,
+                   const XT::Common::ParameterType& extrapolation_parameter_type = {},
+                   const XT::Grid::IntersectionFilter<AGV>& filter = XT::Grid::ApplyOn::BoundaryIntersections<AGV>())
+  {
+    boundary_treatments_by_custom_extrapolation_.emplace_back(
+        new BoundaryTreatmentByCustomExtrapolationOperatorType(
+            numerical_flux_, extrapolation, extrapolation_parameter_type),
+        filter.copy());
+    return *this;
+  }
+
   /// \}
 
   using BaseType::apply;
@@ -159,6 +172,12 @@ public:
       const auto& filter = *boundary_treatment.second;
       localizable_op.append(boundary_op, param, filter);
     }
+    // treat boundaries by custom extrapolation
+    for (const auto& boundary_treatment : boundary_treatments_by_custom_extrapolation_) {
+      const auto& boundary_op = *boundary_treatment.first;
+      const auto& filter = *boundary_treatment.second;
+      localizable_op.append(boundary_op, param, filter);
+    }
     // do the actual work
     localizable_op.assemble(/*use_tbb=*/true);
     DUNE_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
@@ -173,6 +192,9 @@ private:
   std::list<std::pair<std::unique_ptr<BoundaryTreatmentByCustomNumericalFluxOperatorType>,
                       std::unique_ptr<XT::Grid::IntersectionFilter<AGV>>>>
       boundary_treatments_by_custom_numerical_flux_;
+  std::list<std::pair<std::unique_ptr<BoundaryTreatmentByCustomExtrapolationOperatorType>,
+                      std::unique_ptr<XT::Grid::IntersectionFilter<AGV>>>>
+      boundary_treatments_by_custom_extrapolation_;
 }; // class AdvectionFvOperator
 
 
