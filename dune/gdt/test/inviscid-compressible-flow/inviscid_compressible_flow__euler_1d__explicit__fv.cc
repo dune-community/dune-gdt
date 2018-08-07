@@ -29,13 +29,13 @@ using namespace Dune::GDT::Test;
 
 template <class G>
 class InviscidCompressibleFlowEulerExplicitFvTest
-    : XT::Common::ConstStorageProvider<InviscidCompressibleFlowEulerProblem<G>>,
+    : protected XT::Common::ConstStorageProvider<InviscidCompressibleFlowEulerProblem<G>>,
       public InstationaryHyperbolicFiniteVolumeEocStudy<G, G::dimension + 2>
 {
-  using Problem = XT::Common::ConstStorageProvider<InviscidCompressibleFlowEulerProblem<G>>;
   using BaseType = InstationaryHyperbolicFiniteVolumeEocStudy<G, G::dimension + 2>;
 
 protected:
+  using Problem = XT::Common::ConstStorageProvider<InviscidCompressibleFlowEulerProblem<G>>;
   using BaseType::d;
   using BaseType::m;
   using typename BaseType::E;
@@ -46,6 +46,7 @@ protected:
   using typename BaseType::S;
   using typename BaseType::BS;
   using typename BaseType::V;
+  using typename BaseType::O;
 
 public:
   InviscidCompressibleFlowEulerExplicitFvTest(const size_t num_refinements = 3,
@@ -63,6 +64,7 @@ public:
                  }
                })
     , visualization_steps_(0)
+    , boundary_treatment("")
   {
   }
 
@@ -130,6 +132,39 @@ protected:
     return Problem::access().make_initial_grid();
   }
 
+  std::unique_ptr<O> make_lhs_operator(const S& space) override final
+  {
+    if (boundary_treatment.empty())
+      return BaseType::make_lhs_operator(space);
+    auto& self = *this;
+    const auto& euler_tools = Problem::access().euler_tools;
+    DUNE_THROW_IF(
+        !self.numerical_flux_, XT::Common::Exceptions::you_are_using_this_wrong, "call set_numerical_flux() first!");
+    // the layer is periodic and the operator includes handling of periodic boundaries, so we need to make an exception
+    // for all non-periodic boundaries
+    if (boundary_treatment == "impermeable_walls_by_direct_euler_treatment") {
+      boundary_info = std::make_unique<XT::Grid::NormalBasedBoundaryInfo<XT::Grid::extract_intersection_t<GV>>>();
+      boundary_info->register_new_normal({-1}, new XT::Grid::ImpermeableBoundary());
+      boundary_info->register_new_normal({1}, new XT::Grid::ImpermeableBoundary());
+      XT::Grid::ApplyOn::CustomBoundaryIntersections<GV> impermeable_wall_filter(*boundary_info,
+                                                                                 new XT::Grid::ImpermeableBoundary());
+      auto op = std::make_unique<AdvectionFvOperator<GV, V, m>>(space.grid_view(),
+                                                                *self.numerical_flux_,
+                                                                space,
+                                                                space,
+                                                                /*periodicity_restriction=*/impermeable_wall_filter);
+      // the actual handling of impermeable walls
+      op->append([&](const auto& u,
+                     const auto& n,
+                     const auto& /*param*/ = {}) { return euler_tools.flux_at_impermeable_walls(u, n); },
+                 {},
+                 impermeable_wall_filter);
+      return op;
+    } else
+      DUNE_THROW(XT::Common::Exceptions::you_are_using_this_wrong, "boundary_treatment = " << boundary_treatment);
+    return nullptr;
+  } // ... make_lhs_operator(...)
+
   XT::LA::ListVectorArray<V> solve(const S& space, const double T_end, const double dt) override final
   {
     const auto u_0 = this->make_initial_values(space);
@@ -138,24 +173,28 @@ protected:
   }
 
   size_t visualization_steps_;
+  std::string boundary_treatment;
+  std::unique_ptr<XT::Grid::NormalBasedBoundaryInfo<XT::Grid::extract_intersection_t<GV>>> boundary_info;
 }; // class InviscidCompressibleFlowEulerExplicitFvTest
 
 
-using InviscidCompressibleFlowEuler1dExplicitFvTest =
+using InviscidCompressibleFlow1dEulerExplicitFvTest =
     InviscidCompressibleFlowEulerExplicitFvTest<YASP_1D_EQUIDISTANT_OFFSET>;
-TEST_F(InviscidCompressibleFlowEuler1dExplicitFvTest, periodic_boundaries__numerical_vijayasundaram_flux)
+TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest, periodic_boundaries)
 {
   //  this->visualization_steps_ = 100; // <- something like this to visualize
   this->set_numerical_flux("vijayasundaram");
   this->run();
 }
+TEST_F(InviscidCompressibleFlow1dEulerExplicitFvTest, impermeable_walls_by_direct_euler_treatment)
+{
+  this->set_numerical_flux("vijayasundaram");
+  this->boundary_treatment = "impermeable_walls_by_direct_euler_treatment";
+  this->run();
+}
 
 
 #if 0
-// TEST_F(InviscidCompressibleFlowEuler1dExplicitFV, impermeable_walls_by_direct_euler_treatment)
-//{
-//  this->impermeable_walls_by_direct_euler_treatment();
-//}
 // TEST_F(InviscidCompressibleFlowEuler1dExplicitFV, impermeable_walls_by_inviscid_mirror_treatment)
 //{
 //  this->impermeable_walls_by_inviscid_mirror_treatment();
