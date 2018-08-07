@@ -18,6 +18,7 @@
 #include <dune/xt/common/memory.hh>
 #include <dune/xt/la/eigen-solver.hh>
 #include <dune/xt/functions/interfaces/function.hh>
+#include <dune/xt/functions/constant.hh>
 
 #include <dune/gdt/exceptions.hh>
 
@@ -93,6 +94,54 @@ private:
 }; // class NumericalFluxInterface
 
 
+namespace internal {
+
+
+template <size_t d, size_t m = 1, class R = double>
+class ThisNumericalFluxIsNotAvailableForTheseDimensions : public NumericalFluxInterface<d, m, R>
+{
+  using ThisType = ThisNumericalFluxIsNotAvailableForTheseDimensions<d, m, R>;
+  using BaseType = NumericalFluxInterface<d, m, R>;
+
+public:
+  using typename BaseType::StateRangeType;
+  using typename BaseType::PhysicalDomainType;
+
+  template <class... Args>
+  explicit ThisNumericalFluxIsNotAvailableForTheseDimensions(Args&&... /*args*/)
+    : BaseType(new XT::Functions::ConstantFunction<m, d, m, R>(0.))
+  {
+    DUNE_THROW(NotImplemented, "d = " << d << "\n   m = " << m);
+  }
+
+  std::unique_ptr<BaseType> copy() const override final
+  {
+    DUNE_THROW(NotImplemented, "d = " << d << "\n   m = " << m);
+    return nullptr;
+  }
+
+  bool linear() const override final
+  {
+    DUNE_THROW(NotImplemented, "d = " << d << "\n   m = " << m);
+    return false;
+  }
+
+  using BaseType::apply;
+
+  StateRangeType apply(const StateRangeType& /*u*/,
+                       const StateRangeType& /*v*/,
+                       const PhysicalDomainType& /*n*/,
+                       const XT::Common::Parameter& /*param*/ = {}) const override final
+  {
+    DUNE_THROW(NotImplemented, "d = " << d << "\n   m = " << m);
+    return StateRangeType();
+  }
+}; // class ThisNumericalFluxIsNotAvailableForTheseDimensions
+
+
+} // namespace internal
+
+
 /**
  * \brief Implementation of NumericalFluxInterface for a given lambda expression.
  */
@@ -146,13 +195,13 @@ NumericalLambdaFlux<d, m, R> make_numerical_lambda_flux(const XT::Functions::Fun
 
 
 template <size_t d, size_t m = 1, class R = double>
-class NumericalUpwindFlux : public NumericalFluxInterface<d, m, R>
+class NumericalUpwindFlux : public internal::ThisNumericalFluxIsNotAvailableForTheseDimensions<d, m, R>
 {
 public:
   template <class... Args>
-  explicit NumericalUpwindFlux(Args&&... args)
+  explicit NumericalUpwindFlux(Args&&... /*args*/)
+    : internal::ThisNumericalFluxIsNotAvailableForTheseDimensions<d, m, R>()
   {
-    DUNE_THROW(NotImplemented, "for systems (yet)!");
   }
 };
 
@@ -204,13 +253,13 @@ NumericalUpwindFlux<d, m, R> make_numerical_upwind_flux(const XT::Functions::Fun
 
 
 template <size_t d, size_t m = 1, class R = double>
-class NumericalLaxFriedrichsFlux : public NumericalFluxInterface<d, m, R>
+class NumericalLaxFriedrichsFlux : public internal::ThisNumericalFluxIsNotAvailableForTheseDimensions<d, m, R>
 {
 public:
   template <class... Args>
-  explicit NumericalLaxFriedrichsFlux(Args&&... args)
+  explicit NumericalLaxFriedrichsFlux(Args&&... /*args*/)
+    : internal::ThisNumericalFluxIsNotAvailableForTheseDimensions<d, m, R>()
   {
-    DUNE_THROW(NotImplemented, "for systems (yet)!");
   }
 };
 
@@ -261,13 +310,13 @@ make_numerical_lax_friedrichs_flux(const XT::Functions::FunctionInterface<m, d, 
 
 
 template <size_t d, size_t m = 1, class R = double>
-class NumericalEngquistOsherFlux : public NumericalFluxInterface<d, m, R>
+class NumericalEngquistOsherFlux : public internal::ThisNumericalFluxIsNotAvailableForTheseDimensions<d, m, R>
 {
 public:
   template <class... Args>
-  explicit NumericalEngquistOsherFlux(Args&&... args)
+  explicit NumericalEngquistOsherFlux(Args&&... /*args*/)
+    : internal::ThisNumericalFluxIsNotAvailableForTheseDimensions<d, m, R>()
   {
-    DUNE_THROW(NotImplemented, "for systems (yet)!");
   }
 };
 
