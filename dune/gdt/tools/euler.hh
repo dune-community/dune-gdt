@@ -14,10 +14,13 @@
 
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/fmatrix.hh>
+#include <dune/xt/la/container/vector-interface.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/functions/interfaces/grid-function.hh>
 #include <dune/xt/functions/base/sliced.hh>
 #include <dune/xt/functions/base/transformed.hh>
+
+#include <dune/gdt/exceptions.hh>
 
 namespace Dune {
 namespace GDT {
@@ -37,10 +40,9 @@ public:
   {
   }
 
-  /**
-   * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11)]
-   */
-  XT::Common::FieldVector<R, m> to_primitive(const FieldVector<R, m>& conservative_variables) const
+private:
+  template <class VectorType>
+  XT::Common::FieldVector<R, m> convert_to_primitive(const VectorType& conservative_variables) const
   {
     // extract
     const auto& rho = conservative_variables[0];
@@ -58,6 +60,24 @@ public:
     // * pressure
     primitive_variables[m - 1] = (gamma_ - 1.) * (e - 0.5 * rho * v.two_norm2());
     return primitive_variables;
+  }
+
+public:
+  /**
+   * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11)]
+   */
+  XT::Common::FieldVector<R, m> to_primitive(const FieldVector<R, m>& conservative_variables) const
+  {
+    return convert_to_primitive(conservative_variables);
+  }
+
+  template <class V>
+  XT::Common::FieldVector<R, m> to_primitive(const XT::LA::VectorInterface<V>& conservative_variables) const
+  {
+    DUNE_THROW_IF(conservative_variables.size() != m,
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "conservative_variables.size() = " << conservative_variables.size() << "\n   m = " << m);
+    return convert_to_primitive(conservative_variables);
   }
 
   /**
@@ -88,6 +108,16 @@ public:
    */
   XT::Common::FieldVector<R, 1> density_from_conservative(const FieldVector<R, m>& conservative_variables) const
   {
+    return conservative_variables[0];
+  }
+
+  template <class V>
+  XT::Common::FieldVector<R, 1>
+  density_from_conservative(const XT::LA::VectorInterface<V>& conservative_variables) const
+  {
+    DUNE_THROW_IF(conservative_variables.size() != m,
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "conservative_variables.size() = " << conservative_variables.size() << "\n   m = " << m);
     return conservative_variables[0];
   }
 
@@ -124,16 +154,34 @@ public:
     return v;
   }
 
+private:
   /**
    * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11) or p. 421, (8.89)]
    */
-  XT::Common::FieldVector<R, d> velocity_from_conservative(const FieldVector<R, m>& conservative_variables) const
+  template <class VectorType>
+  XT::Common::FieldVector<R, d> extract_velocity_from_conservative(const VectorType& conservative_variables) const
   {
     const auto& rho = conservative_variables[0];
     XT::Common::FieldVector<R, d> v;
     for (size_t ii = 0; ii < d; ++ii)
       v[ii] = conservative_variables[1 + ii] / rho;
     return v;
+  }
+
+public:
+  XT::Common::FieldVector<R, d> velocity_from_conservative(const FieldVector<R, m>& conservative_variables) const
+  {
+    return extract_velocity_from_conservative(conservative_variables);
+  }
+
+  template <class V>
+  XT::Common::FieldVector<R, d>
+  velocity_from_conservative(const XT::LA::VectorInterface<V>& conservative_variables) const
+  {
+    DUNE_THROW_IF(conservative_variables.size() != m,
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "conservative_variables.size() = " << conservative_variables.size() << "\n   m = " << m);
+    return extract_velocity_from_conservative(conservative_variables);
   }
 
   /**
@@ -168,10 +216,12 @@ public:
     return p / (gamma_ - 1.) + 0.5 * rho * v.two_norm2();
   }
 
+private:
   /**
    * \sa [Dolejsi, Feistauer, 2016, p. 404, (8.11) or p. 421, (8.89)]
    */
-  XT::Common::FieldVector<R, 1> pressure_from_conservative(const FieldVector<R, m>& conservative_variables) const
+  template <class VectorType>
+  XT::Common::FieldVector<R, 1> extract_pressure_from_conservative(const VectorType& conservative_variables) const
   {
     const auto& rho = conservative_variables[0];
     FieldVector<R, d> v;
@@ -179,6 +229,22 @@ public:
       v[ii] = conservative_variables[ii + 1] / rho;
     const auto& e = conservative_variables[m - 1];
     return (gamma_ - 1.) * (e - 0.5 * rho * v.two_norm2());
+  }
+
+public:
+  XT::Common::FieldVector<R, 1> pressure_from_conservative(const FieldVector<R, m>& conservative_variables) const
+  {
+    return extract_pressure_from_conservative(conservative_variables);
+  }
+
+  template <class V>
+  XT::Common::FieldVector<R, 1>
+  pressure_from_conservative(const XT::LA::VectorInterface<V>& conservative_variables) const
+  {
+    DUNE_THROW_IF(conservative_variables.size() != m,
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "conservative_variables.size() = " << conservative_variables.size() << "\n   m = " << m);
+    return extract_pressure_from_conservative(conservative_variables);
   }
 
   /**
@@ -217,13 +283,14 @@ public:
     return 4;
   }
 
+private:
   /**
    * \brief The Euler flux at impermeable walls (e.g., v*n = 0).
    * \sa    [DF2015, p. 414, (8.58)]
    */
-  template <class D>
-  XT::Common::FieldVector<R, m> flux_at_impermeable_walls(const FieldVector<R, m>& conservative_variables,
-                                                          const FieldVector<D, d>& normal) const
+  template <class VectorType, class D>
+  XT::Common::FieldVector<R, m> compute_flux_at_impermeable_walls(const VectorType& conservative_variables,
+                                                                  const FieldVector<D, d>& normal) const
   {
     const auto pressure = to_primitive(conservative_variables)[m - 1];
     const auto tmp = normal * pressure;
@@ -232,6 +299,24 @@ public:
       ret[ii + 1] = tmp[ii];
     return ret;
   } // ... flux_at_impermeable_walls(...)
+
+public:
+  template <class D>
+  XT::Common::FieldVector<R, m> flux_at_impermeable_walls(const FieldVector<R, m>& conservative_variables,
+                                                          const FieldVector<D, d>& normal) const
+  {
+    return compute_flux_at_impermeable_walls(conservative_variables, normal);
+  }
+
+  template <class V, class D>
+  XT::Common::FieldVector<R, m> flux_at_impermeable_walls(const XT::LA::VectorInterface<V>& conservative_variables,
+                                                          const FieldVector<D, d>& normal) const
+  {
+    DUNE_THROW_IF(conservative_variables.size() != m,
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "conservative_variables.size() = " << conservative_variables.size() << "\n   m = " << m);
+    return compute_flux_at_impermeable_walls(conservative_variables, normal);
+  }
 
   /**
    * \sa [Dolejsi, Feistauer, 2016, p. 405, (8.18 - 8.19)] for the 2d case
@@ -288,14 +373,31 @@ public:
     return dim_switch<>::eigenvectors_inv_flux_jacobi_matrix(gamma_, conservative_variables, normal);
   }
 
+private:
   /**
    * \sa [Dolejsi, Feistauer, 2016, p. 403, (8.7)] for the 2d case
    */
-  R speed_of_sound_from_conservative(const FieldVector<R, m>& conservative_variables) const
+  template <class VectorType>
+  R compute_speed_of_sound_from_conservative(const VectorType& conservative_variables) const
   {
     const auto rho = density_from_conservative(conservative_variables);
     const auto p = pressure_from_conservative(conservative_variables);
     return std::sqrt((gamma_ * p) / rho);
+  }
+
+public:
+  R speed_of_sound_from_conservative(const FieldVector<R, m>& conservative_variables) const
+  {
+    return compute_speed_of_sound_from_conservative(conservative_variables);
+  }
+
+  template <class V>
+  R speed_of_sound_from_conservative(const XT::LA::VectorInterface<V>& conservative_variables) const
+  {
+    DUNE_THROW_IF(conservative_variables.size() != m,
+                  XT::Common::Exceptions::shapes_do_not_match,
+                  "conservative_variables.size() = " << conservative_variables.size() << "\n   m = " << m);
+    return compute_speed_of_sound_from_conservative(conservative_variables);
   }
 
   /**
