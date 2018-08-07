@@ -21,6 +21,7 @@ namespace GDT {
 template <class E, size_t r = 1, size_t rC = 1, class R = double, class F = double>
 class LocalElementAbsIntegrand : public LocalUnaryElementIntegrandInterface<E, r, rC, R, F>
 {
+  static_assert(rC == 1, "");
   using ThisType = LocalElementAbsIntegrand<E, r, rC, R, F>;
   using BaseType = LocalUnaryElementIntegrandInterface<E, r, rC, R, F>;
 
@@ -52,9 +53,8 @@ public:
     // evaluate
     basis.evaluate(point_in_reference_element, basis_values_, param);
     // compute integrand
-    using std::abs;
     for (size_t ii = 0; ii < size; ++ii)
-      result[ii] = abs(basis_values_[ii]);
+      result[ii] = basis_values_[ii].two_norm();
   } // ... evaluate(...)
 
 private:
