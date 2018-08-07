@@ -130,7 +130,7 @@ public:
     // compute product
     for (size_t ii = 0; ii < rows; ++ii)
       for (size_t jj = 0; jj < cols; ++jj)
-        result[ii][jj] = function_value * test_basis_values_[ii] * ansatz_basis_values_[jj];
+        result[ii][jj] = function_value * (test_basis_values_[ii] * ansatz_basis_values_[jj]);
   } // ... evaluate(...)
 
 private:
