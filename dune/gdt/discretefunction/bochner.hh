@@ -76,7 +76,7 @@ public:
     return name_;
   }
 
-  V evaluate(const double& time) const
+  DiscreteFunction<V, GV, r, rC, R> evaluate(const double& time) const
   {
     const auto search_result = XT::Grid::make_entity_in_level_search(bochner_space_.temporal_space().grid_view())(
         std::vector<double>(1, time));
@@ -91,7 +91,7 @@ public:
     const auto global_dof_indices = bochner_space_.temporal_space().mapper().global_indices(time_interval);
     for (size_t ii = 0; ii < temporal_basis->size(); ++ii)
       result.axpy(temporal_basis_values[ii], this->dof_vectors()[global_dof_indices[ii]].vector());
-    return result;
+    return make_discrete_function(bochner_space_.spatial_space(), std::move(result));
   } // ... evaluate(...)
 
   void visualize(const std::string filename_prefix, const VTK::OutputType vtk_output_type = VTK::appendedraw) const
