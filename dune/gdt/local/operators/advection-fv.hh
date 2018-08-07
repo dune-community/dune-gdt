@@ -532,9 +532,11 @@ public:
     const auto normal = intersection.centerUnitOuterNormal();
     const auto g = numerical_flux_->apply(u->dofs(), v->dofs(), normal, param);
     const auto h_intersection = intersection.geometry().volume();
+    const auto h_inside_element = inside_element.geometry().volume();
+    const auto h_outside_element = outside_element.geometry().volume();
     for (size_t ii = 0; ii < m; ++ii) {
-      local_range_inside.dofs()[ii] += (g[ii] * h_intersection) / inside_element.geometry().volume();
-      local_range_outside.dofs()[ii] -= (g[ii] * h_intersection) / outside_element.geometry().volume();
+      local_range_inside.dofs()[ii] += (g[ii] * h_intersection) / h_inside_element;
+      local_range_outside.dofs()[ii] -= (g[ii] * h_intersection) / h_outside_element;
     }
   } // ... apply(...)
 
@@ -544,10 +546,10 @@ private:
 
 
 template <class I, class SV, class SGV, size_t m = 1, class SF = double, class RF = SF, class RGV = SGV, class RV = SV>
-class LocalAdvectionFvBoundaryOperatorByCustomNumericalFlux
+class LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator
     : public LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>
 {
-  using ThisType = LocalAdvectionFvBoundaryOperatorByCustomNumericalFlux<I, SV, SGV, m, SF, RF, RGV, RV>;
+  using ThisType = LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
   using BaseType = LocalIntersectionOperatorInterface<I, SV, SGV, m, 1, SF, m, 1, RF, RGV, RV>;
 
 public:
@@ -563,16 +565,16 @@ public:
   using LambdaType = std::function<StateRangeType(
       const StateDofsType& /*u*/, const StateDomainType& /*n*/, const XT::Common::Parameter& /*param*/)>;
 
-  LocalAdvectionFvBoundaryOperatorByCustomNumericalFlux(
+  LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator(
       LambdaType numerical_boundary_flux_lambda, const XT::Common::ParameterType& boundary_treatment_param_type = {})
     : BaseType(boundary_treatment_param_type)
-    , numerical_boundary_flux_lambda_(numerical_boundary_flux_lambda)
+    , numerical_boundary_flux_(numerical_boundary_flux_lambda)
   {
   }
 
-  LocalAdvectionFvBoundaryOperatorByCustomNumericalFlux(const ThisType& other)
+  LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator(const ThisType& other)
     : BaseType(other.parameter_type())
-    , numerical_boundary_flux_lambda_(other.numerical_boundary_flux_lambda_)
+    , numerical_boundary_flux_(other.numerical_boundary_flux_)
   {
   }
 
@@ -594,7 +596,7 @@ public:
     const auto& element = local_range_inside.element();
     const auto u = source.local_discrete_function(element);
     const auto normal = intersection.centerUnitOuterNormal();
-    const auto g = numerical_boundary_flux_lambda_(u->dofs(), normal, param);
+    const auto g = numerical_boundary_flux_(u->dofs(), normal, param);
     const auto h_intersection = intersection.geometry().volume();
     const auto h_element = element.geometry().volume();
     for (size_t ii = 0; ii < m; ++ii)
@@ -602,8 +604,8 @@ public:
   } // ... apply(...)
 
 private:
-  const LambdaType numerical_boundary_flux_lambda_;
-}; // class LocalAdvectionFvBoundaryOperatorByCustomNumericalFlux
+  const LambdaType numerical_boundary_flux_;
+}; // class LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator
 
 
 } // namespace GDT

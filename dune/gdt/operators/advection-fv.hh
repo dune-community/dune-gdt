@@ -12,6 +12,7 @@
 
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/grid/walker/filters.hh>
 
 #include <dune/gdt/local/operators/advection-fv.hh>
 
@@ -69,18 +70,22 @@ public:
   using AssemblyGridViewType = AssemblyGridView;
   using NumericalFluxType = NumericalFluxInterface<AssemblyGridView::dimension, m, RF>;
 
+  using I = XT::Grid::extract_intersection_t<AGV>;
+  using BoundaryTreatmentByCustomNumericalFluxOperatorType =
+      LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
+
   using typename BaseType::SourceSpaceType;
   using typename BaseType::RangeSpaceType;
 
   using typename BaseType::SourceVectorType;
   using typename BaseType::RangeVectorType;
 
-  AdvectionFvOperator(const AssemblyGridViewType& assembly_grid_view,
-                      const NumericalFluxType& numerical_flux,
-                      const SourceSpaceType& source_space,
-                      const RangeSpaceType& range_space,
-                      const XT::Grid::IntersectionFilter<AssemblyGridViewType>& periodicity_exception =
-                          XT::Grid::ApplyOn::NoIntersections<AssemblyGridViewType>())
+  AdvectionFvOperator(
+      const AssemblyGridViewType& assembly_grid_view,
+      const NumericalFluxType& numerical_flux,
+      const SourceSpaceType& source_space,
+      const RangeSpaceType& range_space,
+      const XT::Grid::IntersectionFilter<AGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<AGV>())
     : BaseType(numerical_flux.parameter_type())
     , assembly_grid_view_(assembly_grid_view)
     , numerical_flux_(numerical_flux)
@@ -107,6 +112,23 @@ public:
     return range_space_;
   }
 
+  /// \name Non-periodic boundary treatment
+  /// \{
+
+  ThisType&
+  append(typename BoundaryTreatmentByCustomNumericalFluxOperatorType::LambdaType numerical_boundary_treatment_flux,
+         const XT::Common::ParameterType& boundary_treatment_parameter_type = {},
+         const XT::Grid::IntersectionFilter<AGV>& filter = XT::Grid::ApplyOn::BoundaryIntersections<AGV>())
+  {
+    boundary_treatments_by_custom_numerical_flux_.emplace_back(
+        new BoundaryTreatmentByCustomNumericalFluxOperatorType(numerical_boundary_treatment_flux,
+                                                               boundary_treatment_parameter_type),
+        filter.copy());
+    return *this;
+  }
+
+  /// \}
+
   using BaseType::apply;
 
   void apply(const SourceVectorType& source,
@@ -123,7 +145,6 @@ public:
     auto range_function = make_discrete_function(range_space_, range);
     // set up the actual operator
     auto localizable_op = make_localizable_operator(assembly_grid_view_, source_function, range_function);
-    using I = XT::Grid::extract_intersection_t<AGV>;
     // treat all inner intersections
     localizable_op.append(LocalAdvectionFvCouplingOperator<I, SV, SGV, m, SF, RF, RGV, RV>(numerical_flux_),
                           param,
@@ -132,6 +153,12 @@ public:
     localizable_op.append(LocalAdvectionFvCouplingOperator<I, SV, SGV, m, SF, RF, RGV, RV>(numerical_flux_),
                           param,
                           *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<AGV>() && !(*periodicity_exception_)));
+    // treat boundaries by custom numerical flux
+    for (const auto& boundary_treatment : boundary_treatments_by_custom_numerical_flux_) {
+      const auto& boundary_op = *boundary_treatment.first;
+      const auto& filter = *boundary_treatment.second;
+      localizable_op.append(boundary_op, param, filter);
+    }
     // do the actual work
     localizable_op.assemble(/*use_tbb=*/true);
     DUNE_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
@@ -143,6 +170,9 @@ private:
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
   std::unique_ptr<XT::Grid::IntersectionFilter<AssemblyGridViewType>> periodicity_exception_;
+  std::list<std::pair<std::unique_ptr<BoundaryTreatmentByCustomNumericalFluxOperatorType>,
+                      std::unique_ptr<XT::Grid::IntersectionFilter<AGV>>>>
+      boundary_treatments_by_custom_numerical_flux_;
 }; // class AdvectionFvOperator
 
 
