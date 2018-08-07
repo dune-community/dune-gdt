@@ -261,7 +261,7 @@ public:
           const XT::Functions::LambdaFunction<1> spatial_norm_function(1, [&](const auto& time, const auto& /*param*/) {
             const auto u_t = make_discrete_bochner_function(reference_bochner_space, u).evaluate(time);
             const auto u_h_t = make_discrete_bochner_function(reference_bochner_space, u_h).evaluate(time);
-            return spatial_norm(make_discrete_function(reference_space, u_t - u_h_t));
+            return spatial_norm(make_discrete_function(reference_space, u_t.dofs().vector() - u_h_t.dofs().vector()));
           });
           auto temporal_grid_view = reference_bochner_space.temporal_space().grid_view();
           using TE = XT::Grid::extract_entity_t<decltype(temporal_grid_view)>;

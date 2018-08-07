@@ -172,8 +172,7 @@ void prolong(const DiscreteBochnerFunction<SV, SGV, r, rC, R>& source,
       if (!dof_has_been_handled[global_dof_index]) {
         const auto& point_in_time = time_interval.geometry().global(lagrange_points_in_time[ii]);
         // evaluate in time
-        const auto coarse_spatial_function =
-            make_discrete_function(source.space().spatial_space(), source.evaluate(point_in_time));
+        const auto coarse_spatial_function = source.evaluate(point_in_time);
         // prolong in space
         auto fine_spatial_function =
             make_discrete_function(target.space().spatial_space(), target.dof_vectors()[global_dof_index].vector());
