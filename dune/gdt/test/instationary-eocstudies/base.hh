@@ -300,8 +300,8 @@ protected:
   }
 
   double T_end_;
-  const size_t num_refinements_;
-  const size_t num_additional_refinements_for_reference_;
+  size_t num_refinements_;
+  size_t num_additional_refinements_for_reference_;
   const std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualize_;
   size_t current_refinement_;
   std::map<std::string, std::map<std::string, double>> current_data_;
