@@ -45,11 +45,10 @@ namespace GDT {
  *
  * - 3d: mixed simplices and cubes (the mapper cannot handle non-conforming intersections/the switches are not corect)
  */
-template <class GV, int p, class R = double>
+template <class GV, class R = double>
 class RaviartThomasSpace : public SpaceInterface<GV, GV::dimension, 1, R>
 {
-  static_assert(p == 0, "Higher orders are not tested yet!");
-  using ThisType = RaviartThomasSpace<GV, p, R>;
+  using ThisType = RaviartThomasSpace<GV, R>;
   using BaseType = SpaceInterface<GV, GV::dimension, 1, R>;
 
 public:
@@ -65,16 +64,18 @@ private:
   using GlobalBasisImplementation = RaviartThomasGlobalBasis<GV, R>;
 
 public:
-  RaviartThomasSpace(GridViewType grd_vw)
+  RaviartThomasSpace(GridViewType grd_vw, const int order)
     : grid_view_(grd_vw)
+    , order_(order)
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
     , mapper_(nullptr)
     , basis_(nullptr)
   {
+    DUNE_THROW_IF(order_ != 0, Exceptions::space_error, "Higher orders are not testet yet!");
     // create finite elements
     for (auto&& geometry_type : grid_view_.indexSet().types(0))
       finite_elements_->insert(
-          std::make_pair(geometry_type, make_local_raviart_thomas_finite_element<D, d, R>(geometry_type, p)));
+          std::make_pair(geometry_type, make_local_raviart_thomas_finite_element<D, d, R>(geometry_type, order_)));
     // check: the mapper does not work for non-conforming intersections
     if (d == 3 && finite_elements_->size() != 1)
       DUNE_THROW(Exceptions::space_error,
@@ -166,12 +167,12 @@ public:
 
   int min_polorder() const override final
   {
-    return p;
+    return order_;
   }
 
   int max_polorder() const override final
   {
-    return p;
+    return order_;
   }
 
   bool continuous(const int /*diff_order*/) const override final
@@ -189,13 +190,23 @@ public:
     return false;
   }
 
-
 private:
   const GridViewType grid_view_;
+  const int order_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
   std::shared_ptr<MapperImplementation> mapper_;
   std::shared_ptr<GlobalBasisImplementation> basis_;
 }; // class RaviartThomasSpace
+
+
+/**
+ * \sa RaviartThomasSpace
+ */
+template <class GV, class R = double>
+RaviartThomasSpace<GridView<GV>, R> make_raviart_thomas_space(GridView<GV> grid_view, const int order)
+{
+  return RaviartThomasSpace<GridView<GV>, R>(grid_view, order);
+}
 
 
 } // namespace GDT

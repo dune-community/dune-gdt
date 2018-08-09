@@ -44,10 +44,10 @@ namespace GDT {
  *
  * \sa make_local_lagrange_finite_element
  */
-template <class GV, int p, class R = double>
+template <class GV, class R = double>
 class ContinuousLagrangeSpace : public SpaceInterface<GV, 1, 1, R>
 {
-  using ThisType = ContinuousLagrangeSpace<GV, p, R>;
+  using ThisType = ContinuousLagrangeSpace<GV, R>;
   using BaseType = SpaceInterface<GV, 1, 1, R>;
 
 public:
@@ -63,8 +63,9 @@ private:
   using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, 1, 1, R>;
 
 public:
-  ContinuousLagrangeSpace(GridViewType grd_vw)
+  ContinuousLagrangeSpace(GridViewType grd_vw, const int order)
     : grid_view_(grd_vw)
+    , order_(order)
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
     , mapper_(nullptr)
     , basis_(nullptr)
@@ -72,7 +73,7 @@ public:
     // create finite elements
     for (auto&& geometry_type : grid_view_.indexSet().types(0))
       finite_elements_->insert(
-          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R>(geometry_type, p)));
+          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R>(geometry_type, order)));
     // check
     if (d == 3 && finite_elements_->size() != 1)
       DUNE_THROW(Exceptions::space_error,
@@ -123,12 +124,12 @@ public:
 
   int min_polorder() const override final
   {
-    return p;
+    return order_;
   }
 
   int max_polorder() const override final
   {
-    return p;
+    return order_;
   }
 
   bool continuous(const int diff_order) const override final
@@ -148,6 +149,7 @@ public:
 
 private:
   const GridViewType grid_view_;
+  const int order_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
   std::shared_ptr<MapperImplementation> mapper_;
   std::shared_ptr<GlobalBasisImplementation> basis_;
@@ -157,10 +159,10 @@ private:
 /**
  * \sa ContinuousLagrangeSpace
  */
-template <int p, class GV, class R = double>
-ContinuousLagrangeSpace<GridView<GV>, p, R> make_continuous_lagrange_space(GridView<GV> grid_view)
+template <class GV, class R = double>
+ContinuousLagrangeSpace<GridView<GV>, R> make_continuous_lagrange_space(GridView<GV> grid_view, const int order)
 {
-  return ContinuousLagrangeSpace<GridView<GV>, p, R>(grid_view);
+  return ContinuousLagrangeSpace<GridView<GV>, R>(grid_view, order);
 }
 
 

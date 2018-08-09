@@ -54,10 +54,10 @@ namespace GDT {
  *
  * \sa make_local_lagrange_finite_element
  */
-template <class GV, int p, size_t r = 1, class R = double>
+template <class GV, size_t r = 1, class R = double>
 class DiscontinuousLagrangeSpace : public SpaceInterface<GV, r, 1, R>
 {
-  using ThisType = DiscontinuousLagrangeSpace<GV, p, r, R>;
+  using ThisType = DiscontinuousLagrangeSpace<GV, r, R>;
   using BaseType = SpaceInterface<GV, r, 1, R>;
 
 public:
@@ -73,8 +73,9 @@ private:
   using GlobalBasisImplementation = DefaultGlobalBasis<GridViewType, r, 1, R>;
 
 public:
-  DiscontinuousLagrangeSpace(GridViewType grd_vw)
+  DiscontinuousLagrangeSpace(GridViewType grd_vw, const int order)
     : grid_view_(grd_vw)
+    , order_(order)
     , finite_elements_(new std::map<GeometryType, std::shared_ptr<FiniteElementType>>())
     , mapper_(nullptr)
     , basis_(nullptr)
@@ -82,7 +83,7 @@ public:
     // create finite elements
     for (auto&& geometry_type : grid_view_.indexSet().types(0))
       finite_elements_->insert(
-          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R, r>(geometry_type, p)));
+          std::make_pair(geometry_type, make_local_lagrange_finite_element<D, d, R, r>(geometry_type, order_)));
     // create mapper, basis and communicator
     mapper_ = std::make_shared<MapperImplementation>(grid_view_, finite_elements_);
     basis_ = std::make_shared<GlobalBasisImplementation>(grid_view_, finite_elements_);
@@ -128,12 +129,12 @@ public:
 
   int min_polorder() const override final
   {
-    return p;
+    return order_;
   }
 
   int max_polorder() const override final
   {
-    return p;
+    return order_;
   }
 
   bool continuous(const int /*diff_order*/) const override final
@@ -153,6 +154,7 @@ public:
 
 private:
   const GridViewType grid_view_;
+  const int order_;
   std::shared_ptr<std::map<GeometryType, std::shared_ptr<FiniteElementType>>> finite_elements_;
   std::shared_ptr<MapperImplementation> mapper_;
   std::shared_ptr<GlobalBasisImplementation> basis_;
@@ -162,10 +164,11 @@ private:
 /**
  * \sa DiscontinuousLagrangeSpace
  */
-template <int p, class GV, class R = double>
-DiscontinuousLagrangeSpace<GridView<GV>, p, 1, R> make_discontinuous_lagrange_space(GridView<GV> grid_view)
+template <class GV, class R = double>
+DiscontinuousLagrangeSpace<GridView<GV>, 1, R> make_discontinuous_lagrange_space(GridView<GV> grid_view,
+                                                                                 const int order)
 {
-  return DiscontinuousLagrangeSpace<GridView<GV>, p, 1, R>(grid_view);
+  return DiscontinuousLagrangeSpace<GridView<GV>, 1, R>(grid_view, order);
 }
 
 
