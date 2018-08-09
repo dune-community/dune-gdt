@@ -304,6 +304,8 @@ public:
       class_name += "_and_" + ansatz_space_name;
     class_name += "_on_" + grid_layer_name;
 
+    py::module::import("dune.xt.grid.walker");
+
     bound_type c(m, XT::Common::to_camel_case(class_name).c_str(), XT::Common::to_camel_case(class_name).c_str());
     bind_system_assembler_functions(c);
     // add ctor
