@@ -9,8 +9,8 @@
 
 import pytest
 from dune.xt.common.test import load_all_submodule
-from dune.xt.grid import make_cube_dd_subdomains_grid__2d_simplex_aluconformgrid
-from dune.xt.grid import make_boundary_info_on_dd_subdomain_layer
+from dune.xt.grid.provider import make_cube_dd_subdomains_grid__2d_simplex_aluconformgrid
+from dune.xt.grid.boundaryinfo import make_boundary_info_on_dd_subdomain_layer
 from dune.xt.la import IstlRowMajorSparseMatrixDouble as Matrix
 from dune.gdt.__operators_elliptic_ipdg import make_elliptic_swipdg_affine_factor_matrix_operator as make_elliptic_swipdg_matrix_operator
 from dune.xt.functions import (
