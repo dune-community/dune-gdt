@@ -13,6 +13,10 @@
 #include <dune/xt/grid/view/periodic.hh>
 #include <dune/xt/functions/lambda/function.hh>
 
+#include <dune/gdt/local/numerical-fluxes/engquist-osher.hh>
+#include <dune/gdt/local/numerical-fluxes/lax-friedrichs.hh>
+#include <dune/gdt/local/numerical-fluxes/upwind.hh>
+#include <dune/gdt/local/numerical-fluxes/vijayasundaram.hh>
 #include <dune/gdt/operators/advection-fv.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
 #include <dune/gdt/tools/hyperbolic.hh>

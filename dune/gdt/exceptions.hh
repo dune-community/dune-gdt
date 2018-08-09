@@ -41,6 +41,10 @@ class functional_error : public Exception
 {
 };
 
+class numerical_flux_error : public Exception
+{
+};
+
 class operator_error : public Exception
 {
 };
