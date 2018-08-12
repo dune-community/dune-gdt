@@ -90,7 +90,7 @@ public:
       const XT::Grid::IntersectionFilter<AGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<AGV>())
     : BaseType(numerical_flux.parameter_type())
     , assembly_grid_view_(assembly_grid_view)
-    , numerical_flux_(numerical_flux)
+    , numerical_flux_(numerical_flux.copy())
     , source_space_(source_space)
     , range_space_(range_space)
     , periodicity_exception_(periodicity_exception.copy())
@@ -101,7 +101,7 @@ public:
 
   bool linear() const override final
   {
-    return numerical_flux_.linear();
+    return numerical_flux_->linear();
   }
 
   const SourceSpaceType& source_space() const override final
@@ -135,7 +135,7 @@ public:
   {
     boundary_treatments_by_custom_extrapolation_.emplace_back(
         new BoundaryTreatmentByCustomExtrapolationOperatorType(
-            numerical_flux_, extrapolation, extrapolation_parameter_type),
+            *numerical_flux_, extrapolation, extrapolation_parameter_type),
         filter.copy());
     return *this;
   }
@@ -158,21 +158,21 @@ public:
     auto range_function = make_discrete_function(range_space_, range);
     // set up the actual operator
     auto localizable_op = make_localizable_operator(assembly_grid_view_, source_function, range_function);
-    // treat all inner intersections
-    localizable_op.append(LocalAdvectionFvCouplingOperator<I, SV, SGV, m, SF, RF, RGV, RV>(numerical_flux_),
+    // contributions from inner intersections
+    localizable_op.append(LocalAdvectionFvCouplingOperator<I, SV, SGV, m, SF, RF, RGV, RV>(*numerical_flux_),
                           param,
                           XT::Grid::ApplyOn::InnerIntersectionsOnce<AGV>());
-    // treat periodic boundaries
-    localizable_op.append(LocalAdvectionFvCouplingOperator<I, SV, SGV, m, SF, RF, RGV, RV>(numerical_flux_),
+    // contributions from periodic boundaries
+    localizable_op.append(LocalAdvectionFvCouplingOperator<I, SV, SGV, m, SF, RF, RGV, RV>(*numerical_flux_),
                           param,
                           *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<AGV>() && !(*periodicity_exception_)));
-    // treat boundaries by custom numerical flux
+    // contributions from other boundaries by custom numerical flux
     for (const auto& boundary_treatment : boundary_treatments_by_custom_numerical_flux_) {
       const auto& boundary_op = *boundary_treatment.first;
       const auto& filter = *boundary_treatment.second;
       localizable_op.append(boundary_op, param, filter);
     }
-    // treat boundaries by custom extrapolation
+    // contributions from other boundaries by custom extrapolation
     for (const auto& boundary_treatment : boundary_treatments_by_custom_extrapolation_) {
       const auto& boundary_op = *boundary_treatment.first;
       const auto& filter = *boundary_treatment.second;
@@ -185,7 +185,7 @@ public:
 
 private:
   const AssemblyGridViewType& assembly_grid_view_;
-  const NumericalFluxType& numerical_flux_;
+  const std::unique_ptr<const NumericalFluxType> numerical_flux_;
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
   std::unique_ptr<XT::Grid::IntersectionFilter<AssemblyGridViewType>> periodicity_exception_;
