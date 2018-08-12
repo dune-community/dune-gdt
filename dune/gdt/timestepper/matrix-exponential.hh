@@ -22,16 +22,11 @@
 
 #include "interface.hh"
 
-#if HAVE_MATEXP
-#include "matrix_exponential/matrix_exponential_extension.hpp"
-#include "matrix_exponential/matrix_exponential.hpp"
-#endif // HAVE_MATEXP
+#include <dune/xt/data/matrix_exponential/matrix_exponential_extension.hpp>
+#include <dune/xt/data/matrix_exponential/matrix_exponential.h>
 
 namespace Dune {
 namespace GDT {
-
-
-#if HAVE_MATEXP
 
 template <class DiscreteFunctionType, class RhsEvaluationType, class MatrixType>
 class MatrixExponentialFunctor
@@ -281,18 +276,6 @@ private:
   std::vector<SparseMatrixType> matrix_exponential_integrals_;
   RangeFieldType last_dt_;
 };
-
-#else // HAVE_MATEXP
-
-template <class OperatorImp, class DiscreteFunctionImp>
-class MatrixExponentialTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
-{
-  virtual ~MatrixExponentialTimeStepper() = default; // silence warning
-  static_assert(AlwaysFalse<OperatorImp>::value, "You are missing the matrix_exponential library!");
-};
-
-#endif // HAVE_MATEXP
-
 
 } // namespace GDT
 } // namespace Dune
