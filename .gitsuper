@@ -4,7 +4,7 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 5af7224dda0addd6cde1a0073ff93fc9be1f5095 config.opts (heads/master)
 	 8f2c5aba441417bf2c42f22272f538c68a89cc4a dune-alugrid (remotes/origin/releases/2.5)
 	 707acf201d5a754c80f87cc4d71aa36bf29a6e3f dune-common (v2.5.1-9-g707acf20)
-	+2bf1df847362d022846b6a76ea91c5b26e92e3e1 dune-gdt (heads/pytest)
+	+ac63bc8bc6d043f55b9ce5b65b3d6831c627d710 dune-gdt (heads/pytest)
 	 6bd2463d53617b8c0c0f11a485277a32e9c8e98a dune-geometry (v2.5.2)
 	 d7b20bbc5f6fdcfc312beb0ea5d16d39ea26904e dune-grid (v2.5.1-2-gd7b20bbc5)
 	 e9d9a3336735090648637e044e279866bbea3597 dune-grid-glue (v2.4.0-60-ge9d9a33)
@@ -16,7 +16,7 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 8fe883e99c58c9f0c2f92457d546a0ac9f5a9bf9 dune-uggrid (v2.5.2-1-g8fe883e9)
 	+400226f017d0352b894782020522b4bd7e61f6b1 dune-xt-common (heads/master)
 	 17b4d7e9e16feada2b5409f7af5ac2d304b27df0 dune-xt-functions (heads/master)
-	+99fa8d27eeb04dd005b1ee6ca7a26b8cd2977987 dune-xt-grid (heads/refactor_py_imports)
+	+250d11a64f0c811097c0aa37bdd8b9a31ce922e7 dune-xt-grid (heads/refactor_py_imports)
 	 4bad9ce8823aacf0b9de3295ad17039a02833844 dune-xt-la (heads/master)
 	+0956ca45c408a260bf99c5dc9ce381b1b9730229 pylrbms (heads/master)
 	 37f7861dd9b8fd00cc28fc6c80d2b005567e8a0d pymor (0.1.0-3239-g37f7861d)
@@ -46,7 +46,7 @@ commit = 707acf201d5a754c80f87cc4d71aa36bf29a6e3f
 [submodule.dune-gdt]
 remote = https://github.com/dune-community/dune-gdt.git
 status = 2424627f0ad5de7e4aaa5e7f48bc2a02414d95a1 .vcsetup (heads/master)
-commit = 2bf1df847362d022846b6a76ea91c5b26e92e3e1
+commit = ac63bc8bc6d043f55b9ce5b65b3d6831c627d710
 
 [submodule.dune-geometry]
 remote = https://github.com/dune-mirrors/dune-geometry.git
@@ -106,7 +106,7 @@ commit = 17b4d7e9e16feada2b5409f7af5ac2d304b27df0
 [submodule.dune-xt-grid]
 remote = https://github.com/dune-community/dune-xt-grid.git
 status = 2424627f0ad5de7e4aaa5e7f48bc2a02414d95a1 .vcsetup (heads/master)
-commit = 99fa8d27eeb04dd005b1ee6ca7a26b8cd2977987
+commit = 250d11a64f0c811097c0aa37bdd8b9a31ce922e7
 
 [submodule.dune-xt-la]
 remote = https://github.com/dune-community/dune-xt-la.git

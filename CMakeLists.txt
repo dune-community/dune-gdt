@@ -69,5 +69,9 @@ add_format(${CMAKE_CURRENT_SOURCE_DIR})
 add_tidy(${CMAKE_CURRENT_SOURCE_DIR})
 add_pylicense()
 
+# this dummy makes sure a dune-gdt-targets.cmake is created
+# for dependent modules to include, despite
+# us having only NO_EXPORT libs in this project
+# needs to come after everything else
 # finalize the dune project, e.g., generate config.h etc.
 finalize_dune_project(GENERATE_CONFIG_H_CMAKE)
