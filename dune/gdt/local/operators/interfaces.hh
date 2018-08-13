@@ -58,6 +58,9 @@ public:
   using RR = RangeField;
   using LocalRangeType = LocalDiscreteFunction<RV, RGV, r_r, r_rC, RR>;
 
+  static const constexpr size_t d = LocalRangeType::d;
+  using D = typename LocalRangeType::D;
+
   using ThisType = LocalElementOperatorInterface<SV, SGV, s_r, s_rC, SR, r_r, r_rC, RR, RGV, RV>;
 
   LocalElementOperatorInterface(const XT::Common::ParameterType& param_type = {})
@@ -97,6 +100,7 @@ class LocalIntersectionOperatorInterface : public XT::Common::ParametricInterfac
 
 public:
   static const constexpr size_t d = Intersection::dimension;
+  using D = typename Intersection::ctype;
   using I = Intersection;
   using IntersectionType = Intersection;
 
