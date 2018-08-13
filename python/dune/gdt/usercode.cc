@@ -78,6 +78,21 @@ public:
   {
   }
 
+  void visualize_local(const std::string& filename_prefix, const size_t ss, const V& vec, const std::string& space_type, const std::string& name)
+  {
+    DUNE_THROW_IF(ss >= dd_grid.num_subdomains(),
+                  XT::Common::Exceptions::index_out_of_range,
+                  "ss = " << ss << "\n   dd_grid.num_subdomains() = " << dd_grid.num_subdomains());
+    for (auto&& macro_element : elements(dd_grid.macro_grid_view())) {
+      if (dd_grid.subdomain(macro_element) == ss) { // this is the subdomain we are interested in
+        auto local_space = make_subdomain_space(dd_grid.local_grid(macro_element).leaf_view(), space_type);
+        auto local_discrete_function = make_discrete_function(*local_space, V(vec), name);
+	local_discrete_function.visualize(filename_prefix);
+        break;
+      }
+    }
+  } // ... add_local_visualization(...) */
+
   void add_local_visualization(const size_t ss, const V& vec, const std::string& space_type, const std::string& name)
   {
     DUNE_THROW_IF(ss >= dd_grid.num_subdomains(),
@@ -222,6 +237,18 @@ PYBIND11_PLUGIN(usercode)
     }
     return neighboring_subdomains;
   });
+  domain_decomposition.def("visualize_local",
+                           [](DomainDecomposition& self,
+		              const std::string& filename_prefix,
+                              const size_t ss,
+                              const V& vec,
+                              const std::string& space_type,
+                              const std::string& name) { self.visualize_local(filename_prefix, ss, vec, space_type, name); },
+			   "filename_prefix"_a,
+                           "ss"_a,
+                           "subdomain_vector"_a,
+                           "space_type"_a = "discontinuous_lagrange",
+                           "name"_a = "STATE");
   domain_decomposition.def("add_local_visualization",
                            [](DomainDecomposition& self,
                               const size_t ss,
