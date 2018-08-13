@@ -36,13 +36,11 @@ before_script:
     - ./.travis.add_swap.bash 2000 &
     # get image with fallback to master branch of the super repo
     - docker pull ${IMAGE} || export IMAGE="dunecommunity/${MY_MODULE}-testing_${DOCKER_TAG}:master" ; docker pull ${IMAGE}
+    - docker inspect ${IMAGE}
     # for add swap
     - wait
     - export ENV_FILE=${HOME}/env
-    - printenv | \grep TRAVIS > ${ENV_FILE} || echo This is not a failure
-    - printenv | \grep encrypt >> ${ENV_FILE} || echo This is not a failure
-    - printenv | \grep TEST >> ${ENV_FILE}
-    - printenv | \grep TOKEN >> ${ENV_FILE} || echo This is not a failure
+    - python3 ./.travis.make_env_file.py
     - export DOCKER_RUN="docker run --env-file ${ENV_FILE} -v ${TRAVIS_BUILD_DIR}:/root/src/${MY_MODULE} ${IMAGE}"
 
 script:
