@@ -244,6 +244,7 @@ PYBIND11_PLUGIN(usercode)
                               const V& vec,
                               const std::string& space_type,
                               const std::string& name) { self.visualize_local(filename_prefix, ss, vec, space_type, name); },
+			   py::call_guard<py::gil_scoped_release>(),
 			   "filename_prefix"_a,
                            "ss"_a,
                            "subdomain_vector"_a,
@@ -310,6 +311,7 @@ PYBIND11_PLUGIN(usercode)
           }
           return std::move(subdomain_matrix);
         },
+        py::call_guard<py::gil_scoped_release>(),
         "diffusion_factor"_a,
         "domain_decomposition"_a,
         "ss"_a,
@@ -343,6 +345,7 @@ PYBIND11_PLUGIN(usercode)
           }
           return std::move(subdomain_matrix);
         },
+        py::call_guard<py::gil_scoped_release>(),
         "domain_decomposition"_a,
         "ss"_a,
         "space_type"_a = "discontinuous_lagrange");
@@ -376,6 +379,7 @@ PYBIND11_PLUGIN(usercode)
           }
           return std::move(subdomain_vector);
         },
+        py::call_guard<py::gil_scoped_release>(),
         "force"_a,
         "domain_decomposition"_a,
         "ss"_a,
@@ -535,6 +539,7 @@ PYBIND11_PLUGIN(usercode)
                                std::move(coupling_matrix_out_in),
                                std::move(coupling_matrix_out_out));
       },
+      py::call_guard<py::gil_scoped_release>(),
       "diffusion_factor"_a,
       "domain_decomposition"_a,
       "ss"_a,
@@ -581,7 +586,8 @@ PYBIND11_PLUGIN(usercode)
             }
           }
           return std::move(subdomain_matrix);
-        },
+        }, 
+        py::call_guard<py::gil_scoped_release>(),
         "diffusion_factor"_a,
         "domain_decomposition"_a,
         "ss"_a,
@@ -624,6 +630,7 @@ PYBIND11_PLUGIN(usercode)
           }
           return std::move(subdomain_matrix);
         },
+        py::call_guard<py::gil_scoped_release>(),
         "domain_decomposition"_a,
         "ss"_a,
         "space_type"_a = "discontinuous_lagrange");
@@ -779,6 +786,7 @@ PYBIND11_PLUGIN(usercode)
                                std::move(coupling_matrix_out_in),
                                std::move(coupling_matrix_out_out));
       },
+      py::call_guard<py::gil_scoped_release>(),
       "domain_decomposition"_a,
       "ss"_a,
       "nn"_a,
@@ -823,6 +831,7 @@ PYBIND11_PLUGIN(usercode)
           }
           return std::move(subdomain_matrix);
         },
+        py::call_guard<py::gil_scoped_release>(),
         "domain_decomposition"_a,
         "ss"_a,
         "space_type"_a = "discontinuous_lagrange");
@@ -867,6 +876,7 @@ PYBIND11_PLUGIN(usercode)
                                  std::make_unique<XT::LA::CommonDenseVector<size_t>>(rows),
                                  std::make_unique<XT::LA::CommonDenseVector<size_t>>(cols));
         },
+        py::call_guard<py::gil_scoped_release>(),
         "matrix"_a,
         "prune"_a = 1e-15);
 
