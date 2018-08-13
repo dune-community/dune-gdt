@@ -288,6 +288,38 @@ PYBIND11_PLUGIN(usercode)
         "ss"_a,
         "space_type"_a = "discontinuous_lagrange");
 
+  m.def("assemble_local_l2_matrix",
+        [](DomainDecomposition& domain_decomposition,
+           const size_t ss,
+           const std::string space_type) {
+          DUNE_THROW_IF(ss >= domain_decomposition.dd_grid.num_subdomains(),
+                        XT::Common::Exceptions::index_out_of_range,
+                        "ss = " << ss << "\n   domain_decomposition.dd_grid.num_subdomains() = "
+                                << domain_decomposition.dd_grid.num_subdomains());
+          std::unique_ptr<M> subdomain_matrix;
+          for (auto&& macro_element : elements(domain_decomposition.dd_grid.macro_grid_view())) {
+            if (domain_decomposition.dd_grid.subdomain(macro_element) == ss) {
+              // this is the subdomain we are interested in, create space
+              auto subdomain_grid_view = domain_decomposition.dd_grid.local_grid(macro_element).leaf_view();
+              using GV = decltype(subdomain_grid_view);
+              using E = typename GV::template Codim<0>::Entity;
+              using I = typename GV::Intersection;
+              auto subdomain_space = make_subdomain_space(subdomain_grid_view, space_type);
+              // create operator
+              auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element_and_intersection);
+              const LocalElementIntegralBilinearForm<E> element_bilinear_form(LocalElementProductIntegrand<E>{});
+              subdomain_operator.append(element_bilinear_form);
+              subdomain_operator.assemble();
+              subdomain_matrix = std::make_unique<M>(subdomain_operator.matrix());
+              break;
+            }
+          }
+          return std::move(subdomain_matrix);
+        },
+        "domain_decomposition"_a,
+        "ss"_a,
+        "space_type"_a = "discontinuous_lagrange");
+
   m.def("assemble_local_rhs",
         [](XT::Functions::FunctionInterface<d>& force,
            DomainDecomposition& domain_decomposition,
