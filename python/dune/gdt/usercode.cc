@@ -44,6 +44,8 @@ static const constexpr size_t d = G::dimension;
 using M = XT::LA::IstlRowMajorSparseMatrix<double>;
 using V = XT::LA::IstlDenseVector<double>;
 
+static const LocalEllipticIpdgIntegrands::Method ipdg_variant = LocalEllipticIpdgIntegrands::Method::swipdg_affine_factor;
+
 
 template <class GV>
 std::unique_ptr<GDT::SpaceInterface<GV>> make_subdomain_space(GV subdomain_grid_view, const std::string& space_type)
@@ -270,8 +272,8 @@ PYBIND11_PLUGIN(usercode)
               subdomain_operator.append(element_bilinear_form);
               if (!subdomain_space->continuous(0)) {
                 const LocalIntersectionIntegralBilinearForm<I> coupling_bilinear_form(
-                    LocalEllipticIpdgIntegrands::Inner<I>(diffusion_factor.as_grid_function<E>(),
-                                                          diffusion_tensor.as_grid_function<E>()));
+                    LocalEllipticIpdgIntegrands::Inner<I, double, ipdg_variant>(diffusion_factor.as_grid_function<E>(),
+                                                                                diffusion_tensor.as_grid_function<E>()));
                 subdomain_operator.append(coupling_bilinear_form, {}, XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
               }
               subdomain_operator.assemble();
@@ -422,8 +424,8 @@ PYBIND11_PLUGIN(usercode)
                   using I = typename DomainDecomposition::DdGridType::GlueType::Intersection;
                   using E = typename I::InsideEntity;
                   const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
-                      LocalEllipticIpdgIntegrands::Inner<I>(diffusion_factor.as_grid_function<E>(),
-                                                            diffusion_tensor.as_grid_function<E>()));
+                      LocalEllipticIpdgIntegrands::Inner<I, double, ipdg_variant>(diffusion_factor.as_grid_function<E>(),
+                                                                                  diffusion_tensor.as_grid_function<E>()));
                   for (auto coupling_intersection_it = coupling.template ibegin<0>();
                        coupling_intersection_it != coupling_intersection_it_end;
                        ++coupling_intersection_it) {
@@ -508,8 +510,8 @@ PYBIND11_PLUGIN(usercode)
               // create operator
               auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element);
               const LocalIntersectionIntegralBilinearForm<I> dirichlet_bilinear_form(
-                  LocalEllipticIpdgIntegrands::DirichletBoundaryLhs<I>(diffusion_factor.as_grid_function<E>(),
-                                                                       diffusion_tensor.as_grid_function<E>()));
+                  LocalEllipticIpdgIntegrands::DirichletBoundaryLhs<I, double, ipdg_variant>(diffusion_factor.as_grid_function<E>(),
+                                                                                             diffusion_tensor.as_grid_function<E>()));
               subdomain_operator.append(dirichlet_bilinear_form,
                                         {},
                                         XT::Grid::ApplyOn::CustomBoundaryIntersections<GV>(
@@ -552,8 +554,8 @@ PYBIND11_PLUGIN(usercode)
               subdomain_operator.append(element_bilinear_form);
               if (!subdomain_space->continuous(0)) {
                 const LocalIntersectionIntegralBilinearForm<I> coupling_bilinear_form(
-                    LocalEllipticIpdgIntegrands::InnerOnlyPenalty<I>(diffusion_factor.as_grid_function<E>(),
-                                                                     diffusion_tensor.as_grid_function<E>()));
+                    LocalEllipticIpdgIntegrands::InnerOnlyPenalty<I, double, ipdg_variant>(diffusion_factor.as_grid_function<E>(),
+                                                                                           diffusion_tensor.as_grid_function<E>()));
                 subdomain_operator.append(coupling_bilinear_form, {}, XT::Grid::ApplyOn::InnerIntersectionsOnce<GV>());
               }
               subdomain_operator.assemble();
@@ -666,8 +668,8 @@ PYBIND11_PLUGIN(usercode)
                   using I = typename DomainDecomposition::DdGridType::GlueType::Intersection;
                   using E = typename I::InsideEntity;
                   const LocalIntersectionIntegralBilinearForm<I> intersection_bilinear_form(
-                      LocalEllipticIpdgIntegrands::InnerOnlyPenalty<I>(diffusion_factor.as_grid_function<E>(),
-                                                                       diffusion_tensor.as_grid_function<E>()));
+                      LocalEllipticIpdgIntegrands::InnerOnlyPenalty<I, double, ipdg_variant>(diffusion_factor.as_grid_function<E>(),
+                                                                                             diffusion_tensor.as_grid_function<E>()));
                   for (auto coupling_intersection_it = coupling.template ibegin<0>();
                        coupling_intersection_it != coupling_intersection_it_end;
                        ++coupling_intersection_it) {
@@ -749,7 +751,7 @@ PYBIND11_PLUGIN(usercode)
               // create operator
               auto subdomain_operator = make_matrix_operator<M>(*subdomain_space, Stencil::element);
               const LocalIntersectionIntegralBilinearForm<I> dirichlet_bilinear_form(
-                  LocalEllipticIpdgIntegrands::DirichletBoundaryLhsOnlyPenalty<I>(
+                  LocalEllipticIpdgIntegrands::DirichletBoundaryLhsOnlyPenalty<I, double, ipdg_variant>(
                       diffusion_factor.as_grid_function<E>(), diffusion_tensor.as_grid_function<E>()));
               subdomain_operator.append(dirichlet_bilinear_form,
                                         {},
