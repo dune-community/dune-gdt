@@ -134,7 +134,7 @@ public:
   } // ... discretize(...)
 
   template <class SubdomainGridType, class LocalSpaceType>
-  static DiscretizationType discretize_for_block(XT::Grid::GridProvider<GridType, SubdomainGridType>& grid_provider,
+  static DiscretizationType discretize_for_block(XT::Grid::GridProvider<GridType, SubdomainGridType>&,
                                                  const ProblemType& problem,
                                                  LocalSpaceType& space)
   {

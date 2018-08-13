@@ -166,7 +166,7 @@ static void bind_system_assembler_functions(pybind11::class_<AssemblerOrDerivedT
         py::keep_alive<1, 2>());
   c.def("assemble",
         [](type& self, const bool use_tbb) {
-          py::gil_scoped_release DUNE_UNUSED(release);
+          py::gil_scoped_release DUNE_UNUSED release;
           self.assemble(use_tbb);
         },
         "use_tbb"_a = false);
@@ -303,6 +303,8 @@ public:
     if (ansatz_space_name != test_space_name)
       class_name += "_and_" + ansatz_space_name;
     class_name += "_on_" + grid_layer_name;
+
+    py::module::import("dune.xt.grid.walker");
 
     bound_type c(m, XT::Common::to_camel_case(class_name).c_str(), XT::Common::to_camel_case(class_name).c_str());
     bind_system_assembler_functions(c);

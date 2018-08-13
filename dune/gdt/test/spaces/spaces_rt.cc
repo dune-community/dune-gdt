@@ -250,8 +250,7 @@ struct RtSpaceOnSimplicialLeafView
 }; // struct RtSpaceOnSimplicialLeafView
 
 
-using SimplicialGrids = ::testing::Types<ONED_1D,
-                                         YASP_1D_EQUIDISTANT_OFFSET
+using SimplicialGrids = ::testing::Types<YASP_1D_EQUIDISTANT_OFFSET
 #if HAVE_DUNE_ALUGRID
                                          ,
                                          ALU_2D_SIMPLEX_CONFORMING,

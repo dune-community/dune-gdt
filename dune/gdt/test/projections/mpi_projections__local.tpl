@@ -34,10 +34,13 @@ typedef L2LocalProjectionLocalizableOperatorTest<{{SpaceType}}>
 template <class TestCase>
 double {{Name}}_default_tol(const TestCase& test) {
 {% if 'FvSpace' in SpaceType %}
+   (void)test;
    return 1.45e-1;
 {% elif 'RaviartThomasSpace' in SpaceType %}
+    (void)test;
     return rt_tolerance<L2LocalProjectionOperatorTest_{{Name}}>();
 {% elif 'ContinuousLagrangeSpace' in SpaceType %}
+    (void)test;
     return cg_tolerance<L2LocalProjectionOperatorTest_{{Name}}>();
 {% else %}
   return Dune::XT::Grid::is_alugrid<Dune::XT::Grid::extract_grid_t<typename {{SpaceType}}::GridLayerType>>::value

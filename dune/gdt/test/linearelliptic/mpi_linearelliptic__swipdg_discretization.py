@@ -20,12 +20,11 @@ from dune.xt.codegen import typeid_to_typedef_name, la_backends
 grids = ['Yasp2Grid']
 mpi_case = 'mpi' in __file__
 
-if not mpi_case:
-    try:
-        if cache['dune-alugrid']:
-            grids.extend(['AluSimplex2dGridType', 'AluConform2dGridType'])
-    except KeyError:
-        pass
+try:
+    if cache['dune-alugrid']:
+        grids.extend(['AluSimplex2dGridType', 'AluConform2dGridType'])
+except KeyError:
+    pass
 assert(len(grids))
 
 casenames = ['AO2013TestCase', 'ER2007TestCase', 'ESV2007TestCase', 'MixedBoundaryTestCase']
