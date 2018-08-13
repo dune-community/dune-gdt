@@ -11,14 +11,15 @@
 #   Tobias Leibner  (2016 - 2017)
 # ~~~
 
-# expectation targets
-dune_add_library(expectations_hyperbolic_fv_discretizations_yaspgrid
-                 SOURCES
-                 eocexpectations-fv-sourcebeam-1dyaspgrid.cxx
-                 eocexpectations-fv-boltzmanncheckerboard-2dyaspgrid.cxx
-                 eocexpectations-fv-burgers-1dyaspgrid.cxx
-                 eocexpectations-fv-burgers-2dyaspgrid.cxx
-                 eocexpectations-fv-transport-1dyaspgrid.cxx
-                 eocexpectations-fv-transport-2dyaspgrid.cxx
-                 eocexpectations-fv-shallowwater-1dyaspgrid.cxx
-                 eocexpectations-fv-shocktube-1dyaspgrid.cxx)
+# all expectation targets are manually created because otherwise we'd have to use dune_add_library( NO_EXPORT ) which
+# is really broken expectation targets
+add_library(expectations_hyperbolic_fv_discretizations_yaspgrid
+            eocexpectations-fv-sourcebeam-1dyaspgrid.cxx
+            eocexpectations-fv-boltzmanncheckerboard-2dyaspgrid.cxx
+            eocexpectations-fv-burgers-1dyaspgrid.cxx
+            eocexpectations-fv-burgers-2dyaspgrid.cxx
+            eocexpectations-fv-transport-1dyaspgrid.cxx
+            eocexpectations-fv-transport-2dyaspgrid.cxx
+            eocexpectations-fv-shallowwater-1dyaspgrid.cxx
+            eocexpectations-fv-shocktube-1dyaspgrid.cxx)
+dune_target_enable_all_packages(expectations_hyperbolic_fv_discretizations_yaspgrid)
