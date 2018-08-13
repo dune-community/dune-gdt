@@ -100,7 +100,7 @@ public:
   ConstLocalDofVector(ThisType&& source) = default;
 
 protected:
-  void post_bind(const ElementType& ele)
+  void post_bind(const ElementType& ele) override final
   {
     mapper_.global_indices(ele, global_DoF_indices_);
     size_ = mapper_.local_size(ele);
