@@ -10,8 +10,6 @@
 #ifndef DUNE_GDT_OPERATORS_FV_REALIZABILITY_HH
 #define DUNE_GDT_OPERATORS_FV_REALIZABILITY_HH
 
-#include "config.h"
-
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/device/null.hpp>
 

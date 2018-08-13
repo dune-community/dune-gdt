@@ -11,8 +11,6 @@
 #ifndef DUNE_GDT_TIMESTEPPER_MATRIXEXPONENTIAL_HH
 #define DUNE_GDT_TIMESTEPPER_MATRIXEXPONENTIAL_HH
 
-#include "config.h"
-
 #include <dune/xt/functions/affine.hh>
 #include <dune/xt/functions/checkerboard.hh>
 
