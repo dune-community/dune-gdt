@@ -23,7 +23,7 @@
 #include "interface.hh"
 
 #include <dune/xt/data/matrix_exponential/matrix_exponential_extension.hpp>
-#include <dune/xt/data/matrix_exponential/matrix_exponential.h>
+#include <dune/xt/data/matrix_exponential/matrix_exponential.hpp>
 
 namespace Dune {
 namespace GDT {
