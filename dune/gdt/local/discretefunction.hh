@@ -94,7 +94,7 @@ public:
   const LocalBasisType& basis() const
   {
     DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
-    return basis_;
+    return *basis_;
   }
 
   const ConstLocalDofVectorType& dofs() const
@@ -115,7 +115,7 @@ public:
   RangeReturnType evaluate(const DomainType& point_in_reference_element,
                            const XT::Common::Parameter& param = {}) const override final
   {
-    DUNE_THROW_IF(!basis_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     RangeReturnType result(0);
     if (space_.type() == GDT::SpaceType::finite_volume) {
       for (size_t ii = 0; ii < r; ++ii)
@@ -131,7 +131,7 @@ public:
   DerivativeRangeReturnType jacobian(const DomainType& point_in_reference_element,
                                      const XT::Common::Parameter& param = {}) const override final
   {
-    DUNE_THROW_IF(!basis_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     DerivativeRangeReturnType result(0);
     if (space_.type() == GDT::SpaceType::finite_volume) {
       return result;
@@ -147,22 +147,28 @@ public:
                                        const DomainType& point_in_reference_element,
                                        const XT::Common::Parameter& /*param*/ = {}) const override final
   {
-    DUNE_THROW_IF(!basis_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
+    DUNE_THROW_IF(space_.type() != GDT::SpaceType::finite_volume,
+                  Exceptions::discrete_function_error,
+                  "arbitrary derivatives are not supported by the local finite elements!\n\n"
+                      << "alpha = "
+                      << alpha
+                      << "\n"
+                      << "point_in_reference_element = "
+                      << point_in_reference_element);
     DerivativeRangeReturnType result(0);
-    if (space_.type() == GDT::SpaceType::finite_volume) {
-      for (size_t jj = 0; jj < d; ++jj)
-        if (alpha[jj] == 0)
-          for (size_t ii = 0; ii < r; ++ii)
-            result[ii][jj] = dof_vector_[ii];
-      return result;
-    } else {
-      DUNE_THROW(Exceptions::discrete_function_error,
-                 "arbitrary derivatives are not supported by the local finite elements!\n\n"
-                     << "alpha = "
-                     << alpha
-                     << "\n"
-                     << "point_in_reference_element = "
-                     << point_in_reference_element);
+    for (size_t jj = 0; jj < d; ++jj) {
+      if (alpha[jj] == 0) {
+        for (size_t ii = 0; ii < r; ++ii)
+          result[ii][jj] = dof_vector_[ii];
+      } else
+        DUNE_THROW(Exceptions::discrete_function_error,
+                   "arbitrary derivatives are not supported by the local finite elements!\n\n"
+                       << "alpha = "
+                       << alpha
+                       << "\n"
+                       << "point_in_reference_element = "
+                       << point_in_reference_element);
     }
     return result;
   } // ... derivative(...)
@@ -178,6 +184,7 @@ public:
                 DynamicRangeType& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     RangeSelector::ensure_size(result);
     result *= 0;
     if (space_.type() == GDT::SpaceType::finite_volume) {
@@ -194,6 +201,7 @@ public:
                 DynamicDerivativeRangeType& result,
                 const XT::Common::Parameter& param = {}) const override final
   {
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     DerivativeRangeSelector::ensure_size(result);
     result *= 0;
     if (space_.type() == GDT::SpaceType::finite_volume) {
@@ -210,21 +218,29 @@ public:
                   DynamicDerivativeRangeType& result,
                   const XT::Common::Parameter& /*param*/ = {}) const override final
   {
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
+    DUNE_THROW_IF(space_.type() != GDT::SpaceType::finite_volume,
+                  Exceptions::discrete_function_error,
+                  "arbitrary derivatives are not supported by the local finite elements!\n\n"
+                      << "alpha = "
+                      << alpha
+                      << "\n"
+                      << "point_in_reference_element = "
+                      << point_in_reference_element);
     DerivativeRangeSelector::ensure_size(result);
     result *= 0;
-    if (space_.type() == GDT::SpaceType::finite_volume) {
-      for (size_t jj = 0; jj < d; ++jj)
-        if (alpha[jj] == 0)
-          for (size_t ii = 0; ii < r; ++ii)
-            result[ii][jj] = dof_vector_[ii];
-    } else {
-      DUNE_THROW(Exceptions::discrete_function_error,
-                 "arbitrary derivatives are not supported by the local finite elements!\n\n"
-                     << "alpha = "
-                     << alpha
-                     << "\n"
-                     << "point_in_reference_element = "
-                     << point_in_reference_element);
+    for (size_t jj = 0; jj < d; ++jj) {
+      if (alpha[jj] == 0) {
+        for (size_t ii = 0; ii < r; ++ii)
+          result[ii][jj] = dof_vector_[ii];
+      } else
+        DUNE_THROW(Exceptions::discrete_function_error,
+                   "arbitrary derivatives are not supported by the local finite elements!\n\n"
+                       << "alpha = "
+                       << alpha
+                       << "\n"
+                       << "point_in_reference_element = "
+                       << point_in_reference_element);
     }
   } // ... derivative(...)
 
@@ -240,6 +256,7 @@ public:
              const size_t col = 0,
              const XT::Common::Parameter& param = {}) const override final
   {
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     this->assert_correct_dims(row, col, "evaluate");
     if (space_.type() == GDT::SpaceType::finite_volume) {
       return dof_vector_[row];
@@ -257,6 +274,7 @@ public:
                                            const size_t col = 0,
                                            const XT::Common::Parameter& param = {}) const override final
   {
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     this->assert_correct_dims(row, col, "jacobian");
     if (space_.type() == GDT::SpaceType::finite_volume) {
       return 0;
@@ -298,35 +316,31 @@ public:
   LocalDiscreteFunction(const SpaceType& spc, DofVectorType& dof_vector)
     : BaseType(spc, dof_vector)
     , dof_vector_(dof_vector.localize())
-    , bound_(false)
   {
   }
 
   LocalDiscreteFunction(const SpaceType& spc, DofVectorType& dof_vector, const ElementType& ent)
     : BaseType(spc, dof_vector, ent)
     , dof_vector_(dof_vector.localize(ent))
-    , bound_(true)
   {
   }
 
 protected:
-  void post_bind(const ElementType& ent) override
+  void post_bind(const ElementType& ent) override final
   {
     BaseType::bind(ent);
     dof_vector_.bind(ent);
-    bound_ = true;
   }
 
 public:
   LocalDofVectorType& dofs()
   {
-    DUNE_THROW_IF(!bound_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+    DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
     return dof_vector_;
   }
 
 private:
   LocalDofVectorType dof_vector_;
-  bool bound_;
 }; // class LocalDiscreteFunction
 
 
