@@ -69,7 +69,7 @@ public:
   Spe10Model1Problem(const XT::Common::Configuration& grd_cfg = default_grid_cfg(),
                      const XT::Common::Configuration& bnd_cfg = default_boundary_info_cfg())
     : BaseType(
-          new Spe10FunctionType(XT::Data::spe10_model1_filename,
+          new Spe10FunctionType(XT::Data::spe10_model1_filename(),
                                 grd_cfg.get<typename Spe10FunctionType::DomainType>("lower_left"),
                                 grd_cfg.get<typename Spe10FunctionType::DomainType>("upper_right"),
                                 XT::Functions::Spe10::internal::model1_min_value,
