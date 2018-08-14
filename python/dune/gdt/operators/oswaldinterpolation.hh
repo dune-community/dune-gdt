@@ -51,6 +51,7 @@ public:
   {
     namespace py = pybind11;
     using namespace pybind11::literals;
+    py::module::import("dune.xt.grid.boundaryinfo");
 
     m.def("apply_oswald_interpolation_operator",
           [](const XT::Grid::GridProvider<G, XT::Grid::DD::SubdomainGrid<G>>& dd_grid_provider,
