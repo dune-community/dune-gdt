@@ -7,8 +7,8 @@
 // Authors:
 //   Felix Schindler (2018)
 
-#ifndef DUNE_GDT_TEST_INSTATIONARY_EOCSTUDIES_HYPERBOLIC_FV_HH
-#define DUNE_GDT_TEST_INSTATIONARY_EOCSTUDIES_HYPERBOLIC_FV_HH
+#ifndef DUNE_GDT_TEST_INSTATIONARY_EOCSTUDIES_HYPERBOLIC_NONCONFORMING_HH
+#define DUNE_GDT_TEST_INSTATIONARY_EOCSTUDIES_HYPERBOLIC_NONCONFORMING_HH
 
 #include <dune/xt/grid/view/periodic.hh>
 #include <dune/xt/functions/lambda/function.hh>
@@ -17,7 +17,9 @@
 #include <dune/gdt/local/numerical-fluxes/lax-friedrichs.hh>
 #include <dune/gdt/local/numerical-fluxes/upwind.hh>
 #include <dune/gdt/local/numerical-fluxes/vijayasundaram.hh>
+#include <dune/gdt/operators/advection-dg.hh>
 #include <dune/gdt/operators/advection-fv.hh>
+#include <dune/gdt/spaces/l2/discontinuous-lagrange.hh>
 #include <dune/gdt/spaces/l2/finite-volume.hh>
 #include <dune/gdt/tools/hyperbolic.hh>
 
@@ -29,7 +31,7 @@ namespace Test {
 
 
 template <class G, size_t m = 1, XT::LA::Backends la = XT::LA::Backends::istl_sparse>
-class InstationaryHyperbolicFiniteVolumeEocStudy
+class InstationaryNonconformingHyperbolicEocStudy
     : public InstationaryEocStudy<XT::Grid::PeriodicGridLayer<typename XT::Grid::Layer<G,
                                                                                        XT::Grid::Layers::leaf,
                                                                                        XT::Grid::Backends::view>::type>,
@@ -56,13 +58,15 @@ protected:
   using NF = NumericalFluxInterface<d, m>;
 
 public:
-  InstationaryHyperbolicFiniteVolumeEocStudy(
+  InstationaryNonconformingHyperbolicEocStudy(
       const double T_end,
       const size_t num_refinements = 3,
       const size_t num_additional_refinements_for_reference = 2,
       std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualizer =
           [](const auto& /*solution*/, const auto& /*prefix*/) { /*no visualization by default*/ })
     : BaseType(T_end, num_refinements, num_additional_refinements_for_reference, visualizer)
+    , space_type_("")
+    , numerical_flux_type_("")
   {
   }
 
@@ -76,40 +80,48 @@ protected:
     return estimate_dt_for_hyperbolic_system(space.grid_view(), make_initial_values(space), flux());
   }
 
-  void set_numerical_flux(const std::string type)
-  {
-    if (type == "upwind")
-      numerical_flux_ = std::make_unique<NumericalUpwindFlux<d, m>>(flux());
-    else if (type == "vijayasundaram")
-      numerical_flux_ = std::make_unique<NumericalVijayasundaramFlux<d, m>>(flux());
-    else if (type == "lax_friedrichs")
-      numerical_flux_ = std::make_unique<NumericalLaxFriedrichsFlux<d, m>>(flux());
-    else if (type == "engquist_osher")
-      numerical_flux_ = std::make_unique<NumericalEngquistOsherFlux<d, m>>(flux());
-    else
-      DUNE_THROW(XT::Common::Exceptions::wrong_input_given, "type = " << type);
-  } // ... set_numerical_flux(...)
-
   virtual std::unique_ptr<S> make_space(const GP& current_grid) override
   {
-    return std::make_unique<FiniteVolumeSpace<GV, m>>(
-        make_finite_volume_space<m>(XT::Grid::make_periodic_grid_layer(current_grid.leaf_view())));
-  }
+    if (space_type_ == "fv")
+      return std::make_unique<FiniteVolumeSpace<GV, m>>(XT::Grid::make_periodic_grid_layer(current_grid.leaf_view()));
+    else if (space_type_.size() >= 4 && space_type_.substr(0, 4) == "dg_p") {
+      const auto order = XT::Common::from_string<int>(space_type_.substr(4));
+      return std::make_unique<DiscontinuousLagrangeSpace<GV, m>>(
+          XT::Grid::make_periodic_grid_layer(current_grid.leaf_view()), order);
+    } else {
+      DUNE_THROW(XT::Common::Exceptions::wrong_input_given, "space_type_ = " << space_type_);
+      return nullptr;
+    }
+  } // ... make_space(...)
 
   virtual std::unique_ptr<O> make_lhs_operator(const S& space) override
   {
-    DUNE_THROW_IF(
-        !numerical_flux_, XT::Common::Exceptions::you_are_using_this_wrong, "call set_numerical_flux() first!");
-    return std::make_unique<AdvectionFvOperator<GV, V, m>>(space.grid_view(), *numerical_flux_, space, space);
-  }
+    std::unique_ptr<NF> numerical_flux;
+    if (numerical_flux_type_ == "upwind")
+      numerical_flux = std::make_unique<NumericalUpwindFlux<d, m>>(flux());
+    else if (numerical_flux_type_ == "vijayasundaram")
+      numerical_flux = std::make_unique<NumericalVijayasundaramFlux<d, m>>(flux());
+    else if (numerical_flux_type_ == "lax_friedrichs")
+      numerical_flux = std::make_unique<NumericalLaxFriedrichsFlux<d, m>>(flux());
+    else if (numerical_flux_type_ == "engquist_osher")
+      numerical_flux = std::make_unique<NumericalEngquistOsherFlux<d, m>>(flux());
+    else {
+      DUNE_THROW(XT::Common::Exceptions::wrong_input_given, "numerical_flux_type_ = " << numerical_flux_type_);
+      return nullptr;
+    }
+    if (space_type_ == "fv")
+      return std::make_unique<AdvectionFvOperator<GV, V, m>>(space.grid_view(), *numerical_flux, space, space);
+    else
+      return std::make_unique<AdvectionDgOperator<GV, V, m>>(space.grid_view(), *numerical_flux, space, space);
+  } // ... make_lhs_operator(...)
 
-  const std::string numerical_flux_type_;
-  std::unique_ptr<NF> numerical_flux_;
-}; // struct InstationaryHyperbolicFiniteVolumeEocStudy
+  std::string space_type_;
+  std::string numerical_flux_type_;
+}; // struct InstationaryNonconformingHyperbolicEocStudy
 
 
 } // namespace Test
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_TEST_INSTATIONARY_EOCSTUDIES_HYPERBOLIC_FV_HH
+#endif // DUNE_GDT_TEST_INSTATIONARY_EOCSTUDIES_HYPERBOLIC_NONCONFORMING_HH
