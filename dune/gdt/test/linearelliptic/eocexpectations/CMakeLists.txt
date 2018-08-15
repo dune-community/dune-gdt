@@ -10,30 +10,29 @@
 #   Rene Milk       (2016, 2018)
 # ~~~
 
-# expectation targets
-dune_add_library(block_swipdg_expectations SOURCES block-swipdg-esv2007-2dyaspgrid.cxx)
-dune_add_library(cg_expectations
-                 SOURCES
-                 cg-ao2013-2dyaspgrid.cxx
-                 cg-er2007-2dyaspgrid.cxx
-                 cg-esv2007-2dyaspgrid.cxx
-                 cg-mixedboundary-2dyaspgrid.cxx
-                 cg-spe10-2dyaspgrid.cxx
-                 cg-ao2013-2dalugrid.cxx
-                 cg-er2007-2dalugrid.cxx
-                 cg-esv2007-2dalugrid.cxx
-                 cg-mixedboundary-2dalugrid.cxx
-                 cg-spe10-2dalugrid.cxx)
-dune_add_library(swipdg_expectations
-                 SOURCES
-                 swipdg-ao2013-2dyaspgrid.cxx
-                 swipdg-er2007-2dyaspgrid.cxx
-                 swipdg-esv2007-2dyaspgrid.cxx
-                 swipdg-mixedboundary-2dyaspgrid.cxx
-                 swipdg-spe10-2dyaspgrid.cxx
-                 swipdg-ao2013-2dalugrid.cxx
-                 swipdg-er2007-2dalugrid.cxx
-                 swipdg-esv2007-2dalugrid.cxx
-                 swipdg-mixedboundary-2dalugrid.cxx
-                 swipdg-spe10-2dalugrid.cxx)
-
+# all expectation targets are manually created because otherwise we'd have to use dune_add_library( NO_EXPORT ) which
+# is really broken expectation targets
+add_library(block_swipdg_expectations block-swipdg-esv2007-2dyaspgrid.cxx)
+add_library(cg_expectations
+            cg-ao2013-2dyaspgrid.cxx
+            cg-er2007-2dyaspgrid.cxx
+            cg-esv2007-2dyaspgrid.cxx
+            cg-mixedboundary-2dyaspgrid.cxx
+            cg-spe10-2dyaspgrid.cxx
+            cg-ao2013-2dalugrid.cxx
+            cg-er2007-2dalugrid.cxx
+            cg-esv2007-2dalugrid.cxx
+            cg-mixedboundary-2dalugrid.cxx
+            cg-spe10-2dalugrid.cxx)
+add_library(swipdg_expectations
+            swipdg-ao2013-2dyaspgrid.cxx
+            swipdg-er2007-2dyaspgrid.cxx
+            swipdg-esv2007-2dyaspgrid.cxx
+            swipdg-mixedboundary-2dyaspgrid.cxx
+            swipdg-spe10-2dyaspgrid.cxx
+            swipdg-ao2013-2dalugrid.cxx
+            swipdg-er2007-2dalugrid.cxx
+            swipdg-esv2007-2dalugrid.cxx
+            swipdg-mixedboundary-2dalugrid.cxx
+            swipdg-spe10-2dalugrid.cxx)
+dune_target_enable_all_packages(swipdg_expectations cg_expectations block_swipdg_expectations)

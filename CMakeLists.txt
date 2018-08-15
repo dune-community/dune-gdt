@@ -18,7 +18,10 @@ project("dune-gdt" CXX)
 cmake_minimum_required(VERSION 3.1)
 
 if(NOT (dune-common_DIR OR dune-common_ROOT OR "${CMAKE_PREFIX_PATH}" MATCHES ".*dune-common.*"))
-  string(REPLACE ${CMAKE_PROJECT_NAME} dune-common dune-common_DIR ${PROJECT_BINARY_DIR})
+  string(REPLACE ${CMAKE_PROJECT_NAME}
+                 dune-common
+                 dune-common_DIR
+                 ${PROJECT_BINARY_DIR})
 endif()
 
 # dune-common
@@ -44,7 +47,8 @@ endif(EIGEN3_FOUND)
 find_file(SPE10MODEL1DATA
           NAMES perm_case1.dat
           PATHS "${dune-gdt_SOURCE_DIR}/../local/src/spe10/model1"
-          DOC "Location of perm_case1.dat" NO_DEFAULT_PATH)
+          DOC "Location of perm_case1.dat"
+          NO_DEFAULT_PATH)
 
 add_subdirectory(doc)
 add_subdirectory(dune)
@@ -69,5 +73,7 @@ add_format(${CMAKE_CURRENT_SOURCE_DIR})
 add_tidy(${CMAKE_CURRENT_SOURCE_DIR})
 add_pylicense()
 
-# finalize the dune project, e.g., generate config.h etc.
+# this dummy makes sure a dune-gdt-targets.cmake is created for dependent modules to include, despite us having only
+# NO_EXPORT libs in this project needs to come after everything else finalize the dune project, e.g., generate config.h
+# etc.
 finalize_dune_project(GENERATE_CONFIG_H_CMAKE)

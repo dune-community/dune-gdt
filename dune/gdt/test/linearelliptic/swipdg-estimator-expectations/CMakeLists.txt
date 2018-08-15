@@ -11,12 +11,11 @@
 #
 # ~~~
 
-# expectation targets
-dune_add_library(swipdg_estimator_expectations
-                 NO_EXPORT
-                 SOURCES
-                 ao2013-2dalugrid.cxx
-                 esv2007-2dalugrid.cxx
-                 esv2007-2dyaspgrid.cxx
-                 spe10-2dalugrid.cxx)
-
+# all expectation targets are manually created because otherwise we'd have to use dune_add_library( NO_EXPORT ) which
+# is really broken expectation targets
+add_library(swipdg_estimator_expectations
+            ao2013-2dalugrid.cxx
+            esv2007-2dalugrid.cxx
+            esv2007-2dyaspgrid.cxx
+            spe10-2dalugrid.cxx)
+dune_target_enable_all_packages(swipdg_estimator_expectations)
