@@ -26,9 +26,7 @@ _init_mpi_methods = list()
 _other_modules = ('xt.common', 'xt.grid', 'xt.functions', 'xt.la')
 
 # The ordering of these module imports matter, do not change unless you know what you are doing!
-_gdt_modules = ['spaces',
-                'spaces_block',
-                'local_diffusive_flux_estimation_operator',
+_gdt_modules = ['local_diffusive_flux_estimation_operator',
                 'local_elliptic_ipdg_operators',
                 'assembler',
                 'discretefunction',
@@ -40,9 +38,6 @@ _gdt_modules = ['spaces',
                 'operators_elliptic_ipdg',
                 'operators_fluxreconstruction',
                 'operators_oswaldinterpolation',
-                'operators_ESV2007',
-                'operators_OS2015',
-                'operators_RS2017',
                 'operators_l2',
                 'operators_weighted_l2']
 
