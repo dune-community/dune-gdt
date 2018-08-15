@@ -172,19 +172,19 @@ struct ButcherArrayProvider<RangeFieldType, TimeStepperMethods::explicit_rungeku
 template <class OperatorImp, class DiscreteFunctionImp, TimeStepperMethods method = TimeStepperMethods::explicit_euler>
 class ExplicitRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
 {
-  typedef TimeStepperInterface<DiscreteFunctionImp> BaseType;
-  typedef typename internal::ButcherArrayProvider<typename BaseType::RangeFieldType, method> ButcherArrayProviderType;
+  using BaseType = TimeStepperInterface<DiscreteFunctionImp>;
+  using ButcherArrayProviderType = typename internal::ButcherArrayProvider<typename BaseType::RangeFieldType, method>;
 
 public:
   using typename BaseType::DiscreteFunctionType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::SolutionType;
+  using typename BaseType::DiscreteSolutionType;
   using typename BaseType::DataHandleType;
 
-  typedef OperatorImp OperatorType;
-  typedef typename Dune::DynamicMatrix<RangeFieldType> MatrixType;
-  typedef typename Dune::DynamicVector<RangeFieldType> VectorType;
+  using OperatorType = OperatorImp;
+  using MatrixType = Dune::DynamicMatrix<RangeFieldType>;
+  using VectorType = Dune::DynamicVector<RangeFieldType>;
 
   using BaseType::current_solution;
   using BaseType::current_time;

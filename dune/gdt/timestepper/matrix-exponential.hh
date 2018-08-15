@@ -105,38 +105,24 @@ class MatrixExponentialTimeStepper : public TimeStepperInterface<DiscreteFunctio
   typedef TimeStepperInterface<DiscreteFunctionImp> BaseType;
 
 public:
-  using typename BaseType::DiscreteFunctionType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::SolutionType;
   using typename BaseType::DataHandleType;
+  using typename BaseType::DiscreteFunctionType;
+  using typename BaseType::DiscreteSolutionType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::EntityType;
+  using typename BaseType::RangeFieldType;
 
-  typedef OperatorImp OperatorType;
-  typedef typename OperatorType::RhsEvaluationType EvaluationType;
+  using OperatorType = OperatorImp;
+  using EvaluationType = typename OperatorType::RhsEvaluationType;
   static const size_t dimDomain = DiscreteFunctionType::dimDomain;
   static const size_t dimRange = DiscreteFunctionType::dimRange;
-  typedef Dune::FieldMatrix<RangeFieldType, dimRange, dimRange> FieldMatrixType;
-  typedef XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange> DenseMatrixType;
-  typedef XT::LA::CommonSparseOrDenseMatrixCsr<RangeFieldType> SparseMatrixType;
-
-  typedef typename XT::Functions::AffineFluxFunction<typename DiscreteFunctionType::EntityType,
-                                                     DomainFieldType,
-                                                     dimDomain,
-                                                     DiscreteFunctionType,
-                                                     RangeFieldType,
-                                                     dimRange,
-                                                     1>
-      RhsAffineFunctionType;
-  typedef typename XT::Functions::CheckerboardFunction<typename DiscreteFunctionType::EntityType,
-                                                       DomainFieldType,
-                                                       dimDomain,
-                                                       RangeFieldType,
-                                                       dimRange,
-                                                       1,
-                                                       RhsAffineFunctionType>
-      AffineCheckerboardType;
-
-
+  using FieldMatrixType = Dune::FieldMatrix<RangeFieldType, dimRange, dimRange>;
+  using DenseMatrixType = XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>;
+  using SparseMatrixType = XT::LA::CommonSparseOrDenseMatrixCsr<RangeFieldType>;
+  using RhsAffineFunctionType = XT::Functions::
+      AffineFluxFunction<EntityType, DomainFieldType, dimDomain, DiscreteFunctionType, RangeFieldType, dimRange, 1>;
+  using AffineCheckerboardType = XT::Functions::
+      CheckerboardFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, RhsAffineFunctionType>;
   using BaseType::current_solution;
   using BaseType::current_time;
 

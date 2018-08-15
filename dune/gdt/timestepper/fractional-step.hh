@@ -36,16 +36,15 @@ namespace GDT {
 template <class FirstStepperImp, class SecondStepperImp>
 class FractionalTimeStepper : public TimeStepperInterface<typename FirstStepperImp::DiscreteFunctionType>
 {
-  typedef TimeStepperInterface<typename FirstStepperImp::DiscreteFunctionType> BaseType;
+  using BaseType = TimeStepperInterface<typename FirstStepperImp::DiscreteFunctionType>;
 
 public:
   using typename BaseType::DiscreteFunctionType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::SolutionType;
 
-  typedef FirstStepperImp FirstStepperType;
-  typedef SecondStepperImp SecondStepperType;
+  using FirstStepperType = FirstStepperImp;
+  using SecondStepperType = SecondStepperImp;
 
   using BaseType::current_solution;
   using BaseType::current_time;
@@ -89,16 +88,15 @@ private:
 template <class FirstStepperImp, class SecondStepperImp>
 class StrangSplittingTimeStepper : public TimeStepperInterface<typename FirstStepperImp::DiscreteFunctionType>
 {
-  typedef TimeStepperInterface<typename FirstStepperImp::DiscreteFunctionType> BaseType;
+  using BaseType = TimeStepperInterface<typename FirstStepperImp::DiscreteFunctionType>;
 
 public:
   using typename BaseType::DiscreteFunctionType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::SolutionType;
 
-  typedef FirstStepperImp FirstStepperType;
-  typedef SecondStepperImp SecondStepperType;
+  using FirstStepperType = FirstStepperImp;
+  using SecondStepperType = SecondStepperImp;
 
   using BaseType::current_solution;
   using BaseType::current_time;
