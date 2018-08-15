@@ -39,21 +39,9 @@ namespace bindings {
 template <Backends backend>
 struct backend_name
 {
-  static_assert(AlwaysFalse<typename internal::backend_dependent_typename<backend>::type>::value,
-                "Please add a specialization for this backend!");
-
-  static std::string value()
+  static DUNE_DEPRECATED_MSG("use backend_names[backend] instead(13.08.2018)!") std::string value()
   {
-    return "";
-  }
-};
-
-template <>
-struct backend_name<Backends::gdt>
-{
-  static std::string value()
-  {
-    return "gdt";
+    return backend_names[backend];
   }
 };
 
@@ -61,87 +49,11 @@ struct backend_name<Backends::gdt>
 template <SpaceType tp>
 struct space_type_name
 {
-  static_assert(AlwaysFalse<typename internal::space_type_dependent_typename<tp>::type>::value,
-                "Please add a specialization for this space type!");
-
-  static std::string value()
+  static DUNE_DEPRECATED_MSG("use spacetype_names[tp] instead(13.08.2018)!") std::string value()
   {
-    return "";
+    return spacetype_names[tp];
   }
 };
-
-template <>
-struct space_type_name<SpaceType::cg>
-{
-  static std::string value()
-  {
-    return "cg";
-  }
-};
-
-template <>
-struct space_type_name<SpaceType::block_cg>
-{
-  static std::string value()
-  {
-    return "block_cg";
-  }
-};
-
-template <>
-struct space_type_name<SpaceType::dg>
-{
-  static std::string value()
-  {
-    return "dg";
-  }
-};
-
-template <>
-struct space_type_name<SpaceType::block_dg>
-{
-  static std::string value()
-  {
-    return "block_dg";
-  }
-};
-
-template <>
-struct space_type_name<SpaceType::fv>
-{
-  static std::string value()
-  {
-    return "fv";
-  }
-};
-
-template <>
-struct space_type_name<SpaceType::block_fv>
-{
-  static std::string value()
-  {
-    return "block_fv";
-  }
-};
-
-template <>
-struct space_type_name<SpaceType::rt>
-{
-  static std::string value()
-  {
-    return "rt";
-  }
-};
-
-template <>
-struct space_type_name<SpaceType::block_rt>
-{
-  static std::string value()
-  {
-    return "block_rt";
-  }
-};
-
 
 namespace internal {
 
