@@ -43,16 +43,17 @@ namespace GDT {
  * - 3d: orders 8, ..., 14 also work on simplices
  * - 3d: orders 8, 9 also work on prisms
  *
- * The following dimensions/orders/elements are tested to fail:
+ * The following dimensions/orders/elements are tested to fail (basis matrix fails to invert):
  *
- * - 1d: orders > 18 (basis matrix fails to invert)
- * - 2d: orders > 15 on simplices (basis matrix fails to invert)
- * - 2d: orders > 10 on cubes (basis matrix fails to invert)
- * - 3d: orders > 14 on simplices(basis matrix fails to invert)
- * - 3d: orders > 7 on cubes (basis matrix fails to invert)
- * - 3d: orders > 9 on prisms (basis matrix fails to invert)
+ * - 1d: orders > 18
+ * - 2d: orders > 15 on simplices
+ * - 2d: orders > 10 on cubes
+ * - 3d: orders > 14 on simplices
+ * - 3d: orders > 7 on cubes
+ * - 3d: orders > 9 on prisms
  *
  * \sa make_local_lagrange_finite_element
+ * \sa make_discontinuous_lagrange_space
  */
 template <class GV, size_t r = 1, class R = double>
 class DiscontinuousLagrangeSpace : public SpaceInterface<GV, r, 1, R>
