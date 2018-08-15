@@ -20,7 +20,10 @@
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/math.hh>
 
+#include <dune/xt/la/eigen-solver.hh>
+
 #include <dune/gdt/local/fluxes/entropybased.hh>
+#include <dune/gdt/operators/fv/reconstruction/linear.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
 
 #include "base.hh"
@@ -49,6 +52,7 @@ public:
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
   using typename BaseType::QuadratureType;
+  using typename BaseType::FluxType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
 
@@ -101,15 +105,15 @@ public:
   virtual BoundaryValueType* create_boundary_values() const override final
   {
     // use very fine quadrature, is only used once
-    static auto boundary_quadrature_config = default_grid_cfg();
-    boundary_quadrature_config["num_quad_cells"] = "200";
-    boundary_quadrature_config["quad_order"] = "31";
-    static const auto boundary_quadrature = BaseType::default_quadrature(boundary_quadrature_config);
+    //    static auto boundary_quadrature_config = default_grid_cfg();
+    //    boundary_quadrature_config["num_quad_cells"] = "2000";
+    //    boundary_quadrature_config["quad_order"] = "31";
+    //    static const auto boundary_quadrature = BaseType::default_quadrature(boundary_quadrature_config);
     return new ActualBoundaryValueType(
         [&](const DomainType& x, const XT::Common::Parameter&) {
           if (x[0] < 1.5) {
             static auto ret =
-                helper<BasisfunctionType>::get_left_boundary_values(boundary_quadrature, basis_functions_, psi_vac_);
+                helper<BasisfunctionType>::get_left_boundary_values(quadrature_, basis_functions_, psi_vac_);
             return ret;
           } else {
             auto ret = basis_functions_.integrated();
@@ -119,6 +123,48 @@ public:
         },
         1);
   } // ... create_boundary_values()
+
+  RangeType left_boundary_value() const
+  {
+    return helper<BasisfunctionType>::get_left_boundary_values(quadrature_, basis_functions_, psi_vac_);
+  }
+
+  // return exact solution if there is no rhs (i.e. sigma_s = sigma_a = Q = 0) and the initial values are the zero
+  // function
+  std::unique_ptr<InitialValueType> exact_solution_without_rhs() const
+  {
+    const std::unique_ptr<FluxType> flux(BaseType::create_flux());
+    const auto jacobian =
+        flux->local_function(grid_layer_.template begin<0>())->partial_u_col(0, DomainType(0.), RangeType(0.));
+    using MatrixType = typename FluxType::PartialURangeType;
+    using EigenSolverType = Dune::XT::LA::EigenSolver<MatrixType>;
+    static auto eigensolver_options = Dune::GDT::internal::hyperbolic_default_eigensolver_options<MatrixType>();
+    const auto eigensolver = EigenSolverType(jacobian, &eigensolver_options);
+    const auto eigenvectors = eigensolver.real_eigenvectors();
+    const auto eigenvalues = eigensolver.real_eigenvalues();
+    const auto eigenvectors_inv = eigensolver.real_eigenvectors_inverse();
+    RangeType char_boundary_val;
+    const auto left_boundary_val =
+        helper<BasisfunctionType>::get_left_boundary_values(quadrature_, basis_functions_, psi_vac_);
+    //    const RangeType left_boundary_val(1.); // for real dirac at left boundary
+    eigenvectors_inv.mv(left_boundary_val, char_boundary_val);
+    auto lambda = [=](const FieldVector<double, 1>& x, const Dune::XT::Common::Parameter& param) {
+      const auto t = param.get("t")[0];
+      RangeType ret(0.);
+      for (size_t ii = 0; ii < ret.size(); ++ii)
+        if (x[0] <= eigenvalues[ii] * t)
+          ret[ii] = char_boundary_val[ii];
+      const auto ret_copy = ret;
+      eigenvectors.mv(ret_copy, ret);
+      return ret;
+    };
+    return std::make_unique<XT::Functions::GlobalLambdaFunction<typename GridLayerType::template Codim<0>::Entity,
+                                                                DomainFieldType,
+                                                                dimDomain,
+                                                                RangeFieldType,
+                                                                dimRange,
+                                                                1>>(lambda, 10);
+  }
 
 protected:
   struct helper_base
@@ -132,7 +178,8 @@ protected:
     // returns the denominator <g> of the left boundary value (see create_boundary_values)
     static RangeFieldType denominator()
     {
-      return 1 / 200. * std::sqrt(M_PI / 10) * std::erf(200 * std::sqrt(10));
+      static RangeFieldType ret = 1 / 200. * std::sqrt(M_PI / 10) * std::erf(200 * std::sqrt(10));
+      return ret;
     }
 
     // calculates integral from v_l to v_u of numerator g
@@ -148,6 +195,7 @@ protected:
       return integral_1(v_l, v_u) - 1. / 2e5 * (numerator(v_u) - numerator(v_l));
     }
   };
+
 
   template <class B, class anything = void>
   struct helper : public helper_base
@@ -227,6 +275,7 @@ protected:
   };
 
   using BaseType::basis_functions_;
+  using BaseType::grid_layer_;
   using BaseType::quadrature_;
   using BaseType::psi_vac_;
 }; // class SourceBeamPn<...>
