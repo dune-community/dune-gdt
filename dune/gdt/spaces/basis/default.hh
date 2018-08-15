@@ -103,7 +103,7 @@ private:
     {
     }
 
-    LocalizedDefaultGlobalBasis(const ThisType&) = default;
+    LocalizedDefaultGlobalBasis(const ThisType&) = delete;
     LocalizedDefaultGlobalBasis(ThisType&&) = default;
 
     ThisType& operator=(const ThisType&) = delete;
@@ -124,13 +124,13 @@ private:
   public:
     size_t size(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+      DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
       return shape_functions_->access().size();
     }
 
     int order(const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+      DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
       return shape_functions_->access().order();
     }
 
@@ -138,7 +138,7 @@ private:
                   std::vector<RangeType>& result,
                   const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+      DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
       this->assert_inside_reference_element(point_in_reference_element);
       shape_functions_->access().evaluate(point_in_reference_element, result);
     }
@@ -147,7 +147,7 @@ private:
                    std::vector<DerivativeRangeType>& result,
                    const XT::Common::Parameter& /*param*/ = {}) const override final
     {
-      DUNE_THROW_IF(!shape_functions_, Exceptions::not_bound_to_an_element_yet, "you need to call bind() first!");
+      DUNE_THROW_IF(!this->is_bound_, Exceptions::not_bound_to_an_element_yet, "");
       this->assert_inside_reference_element(point_in_reference_element);
       // evaluate jacobian of shape functions
       shape_functions_->access().jacobian(point_in_reference_element, result);

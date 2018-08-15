@@ -160,9 +160,15 @@ private:
       if (result.size() < 1)
         result.resize(1);
       for (size_t jj = 0; jj < d; ++jj)
-        if (alpha[jj] == 0)
+        if (alpha[jj] == 0) {
           for (size_t ii = 0; ii < r; ++ii)
             result[0][jj] = 1;
+        } else {
+          DUNE_THROW(Exceptions::basis_error,
+                     "arbitrary derivatives are not supported!\n\n"
+                         << "alpha = "
+                         << alpha);
+        }
     } // ... derivatives(...)
 
     /**
