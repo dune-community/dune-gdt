@@ -67,6 +67,15 @@ enum class SpaceType
   block_rt
 };
 
+static const XT::Common::FixedMap<SpaceType, std::string, 9> spacetype_names = {{SpaceType::cg, "cg"},
+                                                                                {SpaceType::block_cg, "block_cg"},
+                                                                                {SpaceType::dg, "dg"},
+                                                                                {SpaceType::block_dg, "block_dg"},
+                                                                                {SpaceType::fv, "fv"},
+                                                                                {SpaceType::product_fv, "product_fv"},
+                                                                                {SpaceType::block_fv, "block_fv"},
+                                                                                {SpaceType::rt, "rt"},
+                                                                                {SpaceType::block_rt, "block_rt"}};
 
 namespace internal {
 
