@@ -57,13 +57,13 @@ public:
     //    static_assert(std::is_same<Entity<cd, EntityType::dimension, GridImp, EntityImp>,
     //                               XT::Grid::extract_entity_t<EntityType, cd>>::value,
     //                  "Entity mismatch");
-    CHECK_CRTP(this->as_imp(*this).numDofs(entity));
-    return this->as_imp(*this).numDofs(entity);
+    CHECK_CRTP(this->as_imp().numDofs(entity));
+    return this->as_imp().numDofs(entity);
   }
 
   void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).globalIndices(entity, ret));
+    CHECK_AND_CALL_CRTP(this->as_imp().globalIndices(entity, ret));
   }
 
   Dune::DynamicVector<size_t> globalIndices(const EntityType& entity) const
