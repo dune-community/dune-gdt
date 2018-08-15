@@ -72,8 +72,10 @@ public:
   {
   }
 
+  virtual ~ConstLocalDiscreteFunction() = default;
+
 protected:
-  void post_bind(const ElementType& ent) override
+  virtual void post_bind(const ElementType& ent) override
   {
     basis_->bind(ent);
     dof_vector_.bind(ent);
@@ -328,7 +330,7 @@ public:
 protected:
   void post_bind(const ElementType& ent) override final
   {
-    BaseType::bind(ent);
+    BaseType::post_bind(ent);
     dof_vector_.bind(ent);
   }
 
