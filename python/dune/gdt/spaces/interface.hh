@@ -272,14 +272,10 @@ public:
 
     bound_type c(m, ClassName.c_str(), ClassName.c_str());
 
-    c.def_property_readonly("dimDomain", [](const type& /*self*/) { return S::dimDomain; });
-    c.def_property_readonly("dimRange", [](const type& /*self*/) { return S::dimRange; });
-    c.def_property_readonly("dimRangeCols", [](const type& /*self*/) { return S::dimRangeCols; });
-    c.def_property_readonly("polOrder", [](const type& /*self*/) { return S::polOrder; });
-    c.def_property_readonly_static("dimDomain", [](const type& /*self*/) { return S::dimDomain; });
-    c.def_property_readonly_static("dimRange", [](const type& /*self*/) { return S::dimRange; });
-    c.def_property_readonly_static("dimRangeCols", [](const type& /*self*/) { return S::dimRangeCols; });
-    c.def_property_readonly_static("polOrder", [](const type& /*self*/) { return S::polOrder; });
+    c.def_property_readonly_static("dimDomain", [](const py::object& /*self*/) { return S::dimDomain; });
+    c.def_property_readonly_static("dimRange", [](const py::object& /*self*/) { return S::dimRange; });
+    c.def_property_readonly_static("dimRangeCols", [](const py::object& /*self*/) { return S::dimRangeCols; });
+    c.def_property_readonly_static("polOrder", [](const py::object& /*self*/) { return S::polOrder; });
 
     c.def("size", [](const type& self) { return self.mapper().size(); });
     c.def("visualize",
