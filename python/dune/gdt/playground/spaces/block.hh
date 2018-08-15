@@ -290,10 +290,6 @@ public:
           }),
           "dd_grid"_a,
           py::keep_alive<1, 2>());
-    c.def_property_readonly("dimDomain", [](const type& /*self*/) { return S::dimDomain; });
-    c.def_property_readonly("dimRange", [](const type& /*self*/) { return S::dimRange; });
-    c.def_property_readonly("dimRangeCols", [](const type& /*self*/) { return S::dimRangeCols; });
-    c.def_property_readonly("polOrder", [](const type& /*self*/) { return S::polOrder; });
     c.def_property_readonly("num_blocks", [](const type& self) { return self.num_blocks(); });
     c.def_property_readonly("mapper",
                             [](const type& self) {
@@ -301,11 +297,10 @@ public:
                               return std::decay_t<decltype(self.mapper())>(self.mapper());
                             },
                             py::keep_alive<0, 1>());
-    // these need to be defined *after* their non static counterparts
-    c.def_property_readonly_static("dimDomain", [](const type& /*self*/) { return S::dimDomain; });
-    c.def_property_readonly_static("dimRange", [](const type& /*self*/) { return S::dimRange; });
-    c.def_property_readonly_static("dimRangeCols", [](const type& /*self*/) { return S::dimRangeCols; });
-    c.def_property_readonly_static("polOrder", [](const type& /*self*/) { return S::polOrder; });
+    c.def_property_readonly_static("dimDomain", [](const py::object& /*self*/) { return S::dimDomain; });
+    c.def_property_readonly_static("dimRange", [](const py::object& /*self*/) { return S::dimRange; });
+    c.def_property_readonly_static("dimRangeCols", [](const py::object& /*self*/) { return S::dimRangeCols; });
+    c.def_property_readonly_static("polOrder", [](const py::object& /*self*/) { return S::polOrder; });
     c.def("local_space",
           [](const type& self, ssize_t block) { return self.local_space(XT::Common::numeric_cast<size_t>(block)); },
           "block"_a);
