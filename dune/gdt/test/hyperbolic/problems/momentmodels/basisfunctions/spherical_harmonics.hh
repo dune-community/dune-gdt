@@ -380,9 +380,9 @@ public:
     return [](const RangeType& val) { return XT::Common::to_string(val[0] * std::sqrt(4 * M_PI), 15); };
   } // ... stringifier()
 
-  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  RangeFieldType density(const RangeType& u) const
   {
-    return 2 * std::max(u[0], u_bar[0]);
+    return u[0];
   }
 
 private:

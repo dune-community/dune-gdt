@@ -261,10 +261,9 @@ public:
     return triangulation_;
   }
 
-  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  RangeFieldType density(const RangeType& u) const
   {
-    return 2 * std::max(std::accumulate(u.begin(), u.end(), RangeFieldType(0)),
-                        std::accumulate(u_bar.begin(), u_bar.end(), RangeFieldType(0)));
+    return std::accumulate(u.begin(), u.end(), RangeFieldType(0));
   }
 
   // get indices of all faces that contain point v
@@ -471,10 +470,9 @@ public:
     return triangulation_;
   }
 
-  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  RangeFieldType density(const RangeType& u) const
   {
-    return 2 * std::max(std::accumulate(u.begin(), u.end(), RangeFieldType(0)),
-                        std::accumulate(u_bar.begin(), u_bar.end(), RangeFieldType(0)));
+    return std::accumulate(u.begin(), u.end(), RangeFieldType(0));
   }
 
   // get indices of all faces that contain point v

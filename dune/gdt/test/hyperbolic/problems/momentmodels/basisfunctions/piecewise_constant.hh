@@ -223,15 +223,9 @@ public:
     return triangulation_;
   }
 
-  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  RangeFieldType density(const RangeType& u) const
   {
-    RangeFieldType u_sum(0.);
-    RangeFieldType u_bar_sum(0.);
-    for (size_t ii = 0; ii < u.size(); ++ii) {
-      u_sum += u[ii];
-      u_bar_sum += u_bar[ii];
-    }
-    return 2 * std::max(u_sum, u_bar_sum);
+    return std::accumulate(u.begin(), u.end(), RangeFieldType(0.));
   }
 
   // get indices of all faces that contain point

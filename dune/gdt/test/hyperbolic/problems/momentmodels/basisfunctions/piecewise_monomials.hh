@@ -250,16 +250,13 @@ public:
     return triangulation_;
   }
 
-  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  RangeFieldType density(const RangeType& u) const
   {
-    RangeFieldType u_sum(0.);
-    RangeFieldType u_bar_sum(0.);
+    RangeFieldType ret(0.);
     for (size_t ii = 0; ii < u.size(); ii += 2) {
-      u_sum += u[ii];
-      u_bar_sum += u_bar[ii];
+      ret += u[ii];
     }
-    return 2 * std::max(u_sum, u_bar_sum);
-    //    return 2 * std::max(u[0], u_bar[0]);
+    return ret;
   }
 
   // get indices of all faces that contain point
@@ -470,15 +467,12 @@ public:
     return std::make_pair(u_iso, alpha_iso);
   }
 
-  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  RangeFieldType density(const RangeType& u) const
   {
-    RangeFieldType u_sum(0.);
-    RangeFieldType u_bar_sum(0.);
-    for (size_t ii = 0; ii < u.size(); ii += 4) {
-      u_sum += u[ii];
-      u_bar_sum += u_bar[ii];
-    }
-    return 2 * std::max(u_sum, u_bar_sum);
+    RangeFieldType ret(0.);
+    for (size_t ii = 0; ii < u.size(); ii += 4)
+      ret += u[ii];
+    return ret;
   }
 
   std::vector<size_t> get_face_indices(const DomainType& v) const

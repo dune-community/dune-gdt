@@ -77,7 +77,7 @@ public:
 
   virtual MatrixType mass_matrix() const override
   {
-    MatrixType M(dimRange, dimRange, 0);
+    MatrixType M(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
       M[rr][rr] = 2. / (2. * rr + 1.);
     return M;
@@ -85,7 +85,7 @@ public:
 
   virtual MatrixType mass_matrix_inverse() const override
   {
-    MatrixType Minv(dimRange, dimRange, 0);
+    MatrixType Minv(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
       Minv[rr][rr] = (2. * rr + 1.) / 2.;
     return Minv;
@@ -187,9 +187,9 @@ public:
     return std::make_pair(u_iso, alpha_iso);
   }
 
-  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  RangeFieldType density(const RangeType& u) const
   {
-    return 2 * std::max(u[0], u_bar[0]);
+    return u[0];
   }
 
   const TriangulationType& triangulation() const
