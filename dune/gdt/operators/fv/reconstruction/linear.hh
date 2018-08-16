@@ -239,7 +239,7 @@ public:
 
   using BaseType::compute;
 
-  virtual void compute(const size_t dd) override final
+  virtual void compute(const size_t dd) override
   {
     if (false) {
       ;
@@ -872,11 +872,11 @@ public:
     std::copy_n(u_entity.shape(), dimDomain - 1, slope_sizes.begin());
     slope.resize(slope_sizes);
     MultiIndexProvider<decltype(u_left)> multi_indices(u_left);
-    for (const auto& multi_index : multi_indices) {
-      // Todo: adapt to new slopes
-      // slope(multi_index) = slope_limiter_.get(u_left(multi_index), u_entity(multi_index),
-      // u_right(multi_index), eigenvectors);
-    }
+    // Todo: adapt to new slopes
+    //    for (const auto& multi_index : multi_indices) {
+    // slope(multi_index) = slope_limiter_.get(u_left(multi_index), u_entity(multi_index),
+    // u_right(multi_index), eigenvectors);
+    //    }
 
     // calculate reconstructed values
     for (size_t ii = 0; ii < dimDomain; ++ii)

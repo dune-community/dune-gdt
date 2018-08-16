@@ -37,8 +37,7 @@ template <class TestCaseType,
           size_t reconstruction_order = 0,
           TimeStepperMethods time_stepper_method = TimeStepperMethods::explicit_rungekutta_second_order_ssp,
           TimeStepperMethods rhs_time_stepper_method = TimeStepperMethods::matrix_exponential,
-          TimeStepperSplittingMethods time_stepper_splitting_method = TimeStepperSplittingMethods::fractional_step,
-          SlopeLimiters slope_limiter = SlopeLimiters::minmod>
+          TimeStepperSplittingMethods time_stepper_splitting_method = TimeStepperSplittingMethods::fractional_step>
 class FvDiscretizer
 {
 public:
@@ -57,8 +56,7 @@ public:
                                             reconstruction_order,
                                             time_stepper_method,
                                             rhs_time_stepper_method,
-                                            time_stepper_splitting_method,
-                                            slope_limiter>
+                                            time_stepper_splitting_method>
       DiscretizationType;
 
   typedef Hyperbolic::ProblemInterface<typename GridType::template Codim<0>::Entity,
