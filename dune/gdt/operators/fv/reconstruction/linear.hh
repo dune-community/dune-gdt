@@ -29,11 +29,35 @@
 
 #include "../quadrature.hh"
 #include "reconstructed_function.hh"
-#include "slopelimiters.hh"
+#include "slopes.hh"
 
 namespace Dune {
 namespace GDT {
 namespace internal {
+
+
+template <class MatImp>
+XT::Common::Configuration hyperbolic_default_eigensolver_options()
+{
+  using EigenSolverOptionsType = typename XT::LA::EigenSolverOptions<MatImp>;
+  using MatrixInverterOptionsType = typename XT::LA::MatrixInverterOptions<MatImp>;
+  XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options(EigenSolverOptionsType::types()[0]);
+  //        XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options("shifted_qr");
+  eigensolver_options["assert_eigendecomposition"] = "1e-6";
+  eigensolver_options["assert_real_eigendecomposition"] = "1e-6";
+  eigensolver_options["disable_checks"] =
+#ifdef NDEBUG
+      "true";
+#else
+      "false";
+#endif
+  XT::Common::Configuration matrix_inverter_options = MatrixInverterOptionsType::options();
+  matrix_inverter_options["post_check_is_left_inverse"] = "1e-6";
+  matrix_inverter_options["post_check_is_right_inverse"] = "1e-6";
+  eigensolver_options.add(matrix_inverter_options, "matrix-inverter");
+  return eigensolver_options;
+} // ... create_eigensolver_opts()
+
 
 template <class AnalyticalFluxType, class MatrixImp, class VectorImp>
 class JacobianWrapperBase
@@ -116,29 +140,9 @@ public:
 
   virtual void apply_inverse_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const = 0;
 
-protected:
-  template <class MatImp>
-  static XT::Common::Configuration create_eigensolver_opts()
-  {
-    using EigenSolverOptionsType = typename XT::LA::EigenSolverOptions<MatImp>;
-    using MatrixInverterOptionsType = typename XT::LA::MatrixInverterOptions<MatImp>;
-    XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options(EigenSolverOptionsType::types()[0]);
-    //    XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options("shifted_qr");
-    eigensolver_options["assert_eigendecomposition"] = "1e-6";
-    eigensolver_options["assert_real_eigendecomposition"] = "1e-6";
-    eigensolver_options["disable_checks"] =
-#ifdef NDEBUG
-        "true";
-#else
-        "false";
-#endif
-    XT::Common::Configuration matrix_inverter_options = MatrixInverterOptionsType::options();
-    matrix_inverter_options["post_check_is_left_inverse"] = "1e-6";
-    matrix_inverter_options["post_check_is_right_inverse"] = "1e-6";
-    eigensolver_options.add(matrix_inverter_options, "matrix-inverter");
-    return eigensolver_options;
-  } // ... create_eigensolver_opts()
+  virtual const MatrixType& eigenvectors(const size_t dd) const = 0;
 
+protected:
   std::unique_ptr<JacobianType> jacobian_;
   FieldVector<bool, dimDomain> computed_;
 }; // class JacobianWrapperBase<...>
@@ -188,7 +192,7 @@ public:
                                                   /*both diagonally scale and permute*/ 'B',
                                                   /*do_not_compute_left_eigenvectors:*/ 'N',
                                                   /*compute_right_eigenvectors:*/ 'V',
-                                                  'N',
+                                                  /*do not compute condition numbers*/ 'N',
                                                   static_cast<int>(dimRange),
                                                   M::data(jacobian(0)),
                                                   static_cast<int>(dimRange),
@@ -219,23 +223,23 @@ public:
                             const AnalyticalFluxType& analytical_flux,
                             const DomainType& x_in_inside_coords,
                             const StateRangeType& u,
-                            const XT::Common::Parameter& param) override
+                            const XT::Common::Parameter& param) override final
   {
-    analytical_flux.local_function(entity)->partial_u_col(dd, x_in_inside_coords, u, jacobian(dd), param);
+    return analytical_flux.local_function(entity)->partial_u_col(dd, x_in_inside_coords, u, jacobian(dd), param);
   }
 
   virtual void get_jacobian(const EntityType& entity,
                             const AnalyticalFluxType& analytical_flux,
                             const DomainType& x_in_inside_coords,
                             const StateRangeType& u,
-                            const XT::Common::Parameter& param) override
+                            const XT::Common::Parameter& param) override final
   {
     analytical_flux.local_function(entity)->partial_u(x_in_inside_coords, u, *jacobian(), param);
   }
 
   using BaseType::compute;
 
-  virtual void compute(const size_t dd) override
+  virtual void compute(const size_t dd) override final
   {
     if (false) {
       ;
@@ -245,9 +249,9 @@ public:
       double norm;
       int info = XT::Common::Lapacke::dgeevx_work(XT::Common::Lapacke::row_major(),
                                                   /*both diagonally scale and permute*/ 'B',
-                                                  /*do_not_compute_left_eigenvectors:*/ 'N',
-                                                  /*compute_right_eigenvectors:*/ 'V',
-                                                  'N',
+                                                  /*do not compute left eigenvectors*/ 'N',
+                                                  /*compute right eigenvectors*/ 'V',
+                                                  /*do not compute condition numbers*/ 'N',
                                                   static_cast<int>(dimRange),
                                                   M::data(jacobian(dd)),
                                                   static_cast<int>(dimRange),
@@ -270,7 +274,7 @@ public:
         DUNE_THROW(Dune::XT::LA::Exceptions::eigen_solver_failed, "The lapack backend reported '" << info << "'!");
 #endif // HAVE_MKL || HAVE_LAPACKE
     } else {
-      static auto eigensolver_options = BaseType::template create_eigensolver_opts<MatrixType>();
+      static auto eigensolver_options = hyperbolic_default_eigensolver_options<MatrixType>();
       const auto eigensolver = EigenSolverType(jacobian(dd), &eigensolver_options);
       eigenvectors_[dd] = eigensolver.real_eigenvectors();
       eigenvalues_[dd] = eigensolver.real_eigenvalues();
@@ -280,15 +284,20 @@ public:
     computed_[dd] = true;
   }
 
-  virtual void apply_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const override
+  virtual void apply_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const override final
   {
     eigenvectors_[dd].mv(x, ret);
   }
 
-  virtual void apply_inverse_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const override
+  virtual void apply_inverse_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const override final
   {
-    VectorType work = V::create(dimRange);
+    thread_local VectorType work = V::create(dimRange);
     XT::LA::solve_qr_factorized(QR_[dd], tau_[dd], permutations_[dd], ret, x, &work);
+  }
+
+  virtual const MatrixType& eigenvectors(const size_t dd) const override final
+  {
+    return eigenvectors_[dd];
   }
 
 protected:
@@ -365,7 +374,7 @@ public:
   using BaseType::jacobian;
   using BaseType::compute;
 
-  virtual void compute(const size_t dd) override
+  virtual void compute(const size_t dd) override final
   {
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       if (block_size == 2) {
@@ -413,8 +422,7 @@ public:
         if (info != 0)
           DUNE_THROW(Dune::XT::LA::Exceptions::eigen_solver_failed, "The lapack backend reported '" << info << "'!");
 #else // HAVE_MKL || HAVE_LAPACKE
-        static XT::Common::Configuration eigensolver_options =
-            BaseType::template create_eigensolver_opts<LocalMatrixType>();
+        static XT::Common::Configuration eigensolver_options = hyperbolic_default_eigensolver_options<MatrixType>();
         const auto eigensolver = EigenSolverType(jacobian(dd)[jj], &eigensolver_options);
         eigenvectors_[dd][jj] = eigensolver.real_eigenvectors();
 #endif // HAVE_MKL || HAVE_LAPACKE
@@ -425,7 +433,7 @@ public:
     computed_[dd] = true;
   }
 
-  virtual void apply_eigenvectors(const size_t dd, const StateRangeType& x, StateRangeType& ret) const override
+  virtual void apply_eigenvectors(const size_t dd, const StateRangeType& x, StateRangeType& ret) const override final
   {
     std::fill(ret.begin(), ret.end(), 0.);
     for (size_t jj = 0; jj < num_blocks; ++jj) {
@@ -441,7 +449,7 @@ public:
                             const AnalyticalFluxType& analytical_flux,
                             const DomainType& x_in_inside_coords,
                             const StateRangeType& u,
-                            const XT::Common::Parameter& param) override
+                            const XT::Common::Parameter& param) override final
   {
     const auto local_func = analytical_flux.local_function(entity);
     local_func->partial_u_col(dd, x_in_inside_coords, u, (*nonblocked_jacobians_)[dd], param);
@@ -457,7 +465,7 @@ public:
                             const AnalyticalFluxType& analytical_flux,
                             const DomainType& x_in_inside_coords,
                             const StateRangeType& u,
-                            const XT::Common::Parameter& param) override
+                            const XT::Common::Parameter& param) override final
   {
     const auto local_func = analytical_flux.local_function(entity);
     local_func->partial_u(x_in_inside_coords, u, *nonblocked_jacobians_, param);
@@ -471,7 +479,7 @@ public:
     } // dd
   }
 
-  virtual void apply_inverse_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const override
+  virtual void apply_inverse_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const override final
   {
     LocalRangeType work;
     LocalRangeType tmp_ret, tmp_x;
@@ -482,6 +490,11 @@ public:
       for (size_t ll = 0; ll < block_size; ++ll)
         ret[jj * block_size + ll] = tmp_ret[ll];
     }
+  }
+
+  virtual const MatrixType& eigenvectors(const size_t dd) const override final
+  {
+    return eigenvectors_[dd];
   }
 
 protected:
@@ -645,41 +658,40 @@ private:
   RangeType value_;
 };
 
-template <class AnalyticalFluxType,
-          class BoundaryValueType,
-          class GridLayerType,
-          SlopeLimiters slope_limiter,
-          class JacobianWrapperType>
+template <class AnalyticalFluxType, class BoundaryValueType, class GridLayerType, class JacobianWrapperType>
 class LocalLinearReconstructionOperator : public XT::Grid::Functor::Codim0<GridLayerType>
 {
   // stencil is (i-r, i+r) in all dimensions, where r = polOrder + 1
   static constexpr size_t dimDomain = BoundaryValueType::dimDomain;
   static constexpr size_t dimRange = BoundaryValueType::dimRange;
   static constexpr size_t axis_size = 3;
-  typedef typename GridLayerType::template Codim<0>::Entity EntityType;
-  typedef typename GridLayerType::IndexSet IndexSetType;
-  typedef typename BoundaryValueType::DomainType DomainType;
-  typedef typename BoundaryValueType::DomainFieldType DomainFieldType;
-  typedef typename BoundaryValueType::RangeType RangeType;
-  typedef typename BoundaryValueType::RangeFieldType RangeFieldType;
-  typedef Dune::QuadratureRule<DomainFieldType, 1> Quadrature1dType;
-  typedef typename GridLayerType::Intersection IntersectionType;
-  typedef FieldVector<IntersectionType, 2 * dimDomain> IntersectionVectorType;
-  typedef typename IntersectionType::Geometry::LocalCoordinate IntersectionLocalCoordType;
-  typedef typename AnalyticalFluxType::LocalfunctionType AnalyticalFluxLocalfunctionType;
-  typedef typename AnalyticalFluxLocalfunctionType::StateRangeType StateRangeType;
-  typedef typename XT::Grid::BoundaryInfo<IntersectionType> BoundaryInfoType;
+  using EntityType = typename GridLayerType::template Codim<0>::Entity;
+  using IndexSetType = typename GridLayerType::IndexSet;
+  using DomainType = typename BoundaryValueType::DomainType;
+  using DomainFieldType = typename BoundaryValueType::DomainFieldType;
+  using RangeType = typename BoundaryValueType::RangeType;
+  using RangeFieldType = typename BoundaryValueType::RangeFieldType;
+  using Quadrature1dType = Dune::QuadratureRule<DomainFieldType, 1>;
+  using IntersectionType = typename GridLayerType::Intersection;
+  using IntersectionVectorType = FieldVector<IntersectionType, 2 * dimDomain>;
+  using IntersectionLocalCoordType = typename IntersectionType::Geometry::LocalCoordinate;
+  using AnalyticalFluxLocalfunctionType = typename AnalyticalFluxType::LocalfunctionType;
+  using StateRangeType = typename AnalyticalFluxLocalfunctionType::StateRangeType;
+  using BoundaryInfoType = typename XT::Grid::BoundaryInfo<IntersectionType>;
   using ReconstructedFunctionType =
       ReconstructedLocalizableFunction<GridLayerType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>;
   using StencilType = boost::multi_array<boost::optional<RangeType>, dimDomain>;
   using MultiArrayType = boost::multi_array<RangeType, dimDomain>;
   using SliceType = Slice<RangeType, dimDomain>;
   using CoordsType = std::array<size_t, dimDomain>;
+  using MatrixType = typename JacobianWrapperType::MatrixType;
+  using SlopeType = SlopeBase<RangeType, MatrixType>;
 
 public:
   explicit LocalLinearReconstructionOperator(const std::vector<RangeType>& source_values,
                                              const AnalyticalFluxType& analytical_flux,
                                              const BoundaryValueType& boundary_values,
+                                             const SlopeType& slope,
                                              const GridLayerType& grid_layer,
                                              const XT::Common::Parameter& param,
                                              const Quadrature1dType& quadrature,
@@ -688,6 +700,7 @@ public:
     : source_values_(source_values)
     , analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
+    , slope_(slope)
     , grid_layer_(grid_layer)
     , param_(param)
     , quadrature_(quadrature)
@@ -734,14 +747,16 @@ public:
         // have the same value assigned, independent of the slope in the other directions
         std::array<size_t, dimDomain> indices;
         indices.fill(1);
-        FieldVector<RangeType, axis_size> stencil_1d;
+        FieldVector<RangeType, axis_size> stencil_1d, stencil_1d_char;
         FieldVector<RangeType, 2> reconstructed_values;
         for (size_t ii = 0; ii < axis_size; ++ii) { // transform to characteristic variables
           indices[dd] = ii;
-          jac.apply_inverse_eigenvectors(dd, *stencil(indices), stencil_1d[ii]);
+          stencil_1d[ii] = *stencil(indices);
+          jac.apply_inverse_eigenvectors(dd, stencil_1d[ii], stencil_1d_char[ii]);
         }
         // perform the actual reconstruction
-        linear_reconstruction_1d(stencil_1d, reconstructed_values);
+        linear_reconstruction_1d(stencil_1d, stencil_1d_char, reconstructed_values, jac.eigenvectors(dd));
+
         // convert back to non-characteristic variables
         auto tmp_value = reconstructed_values[0];
         jac.apply_eigenvectors(dd, tmp_value, reconstructed_values[0]);
@@ -780,7 +795,8 @@ public:
           } // if (dir > 0)
           // perform the actual reconstruction
           const auto& curr_quadrature = dir > 0 ? quadrature_ : get_left_right_quadrature();
-          linear_reconstruction(curr_dir, curr_quadrature, tmp_multiarray, reconstructed_values);
+          linear_reconstruction(
+              curr_dir, curr_quadrature, tmp_multiarray, reconstructed_values, jac.eigenvectors(curr_dir));
           last_dir = curr_dir;
         } // dir
         // convert back to non-characteristic variables
@@ -806,26 +822,28 @@ public:
     } // dd
   } // void apply_local(...)
 
-  static void linear_reconstruction_1d(const FieldVector<RangeType, axis_size>& stencil,
-                                       FieldVector<RangeType, 2>& reconstructed_values)
+  // stencil is in original coordinates, stencil_char in characteristic coordinates
+  // returned reconstructed values are in characteristic coordinates
+  void linear_reconstruction_1d(const FieldVector<RangeType, axis_size>& stencil,
+                                const FieldVector<RangeType, axis_size>& stencil_char,
+                                FieldVector<RangeType, 2>& reconstructed_values,
+                                const MatrixType& eigenvectors)
   {
-    const auto& u_left = stencil[0];
-    const auto& u_entity = stencil[1];
-    const auto& u_right = stencil[2];
-    const auto slope_left = u_entity - u_left;
-    const auto slope_center = 0.5 * (u_right - u_left);
-    const auto slope_right = u_right - u_entity;
-    auto slope = internal::ChooseLimiter<slope_limiter>::limit(slope_left, slope_right, slope_center);
-    slope *= 0.5;
-    reconstructed_values[0] = u_entity - slope;
-    reconstructed_values[1] = u_entity + slope;
-  } // static void linear_reconstruction(...)
+    const auto& u_entity_char = stencil_char[1];
+    const auto slope_char = slope_.get(stencil, stencil_char, eigenvectors) * 0.5;
+    reconstructed_values[0] = u_entity_char - slope_char;
+    reconstructed_values[1] = u_entity_char + slope_char;
+  } // void linear_reconstruction_1d(...)
 
-  static void linear_reconstruction(const size_t dir,
-                                    const Quadrature1dType& quadrature,
-                                    const MultiArrayType& stencil,
-                                    MultiArrayType& reconstructed_values)
+  // This is only used in several dimensions if we use an interface quadrature different from the midpoint quadrature
+  // Todo: adapt to new slopes
+  void linear_reconstruction(const size_t dir,
+                             const Quadrature1dType& quadrature,
+                             const MultiArrayType& stencil,
+                             MultiArrayType& reconstructed_values,
+                             const MatrixType& /*eigenvectors*/)
   {
+    DUNE_THROW(Dune::NotImplemented, "This needs to be adapted to the new slopes");
     // resize the reconstructed_values array
     CoordsType new_shape;
     std::copy_n(stencil.shape(), dimDomain, new_shape.begin());
@@ -855,10 +873,9 @@ public:
     slope.resize(slope_sizes);
     MultiIndexProvider<decltype(u_left)> multi_indices(u_left);
     for (const auto& multi_index : multi_indices) {
-      const auto slope_left = u_entity(multi_index) - u_left(multi_index);
-      const auto slope_center = 0.5 * (u_right(multi_index) - u_left(multi_index));
-      const auto slope_right = u_right(multi_index) - u_entity(multi_index);
-      slope(multi_index) = internal::ChooseLimiter<slope_limiter>::limit(slope_left, slope_right, slope_center);
+      // Todo: adapt to new slopes
+      // slope(multi_index) = slope_limiter_.get(u_left(multi_index), u_entity(multi_index),
+      // u_right(multi_index), eigenvectors);
     }
 
     // calculate reconstructed values
@@ -873,7 +890,7 @@ public:
         reconstructed_ii(multi_index) += u_entity(multi_index);
       }
     } // ii (quadrature.size())
-  } // static void linear_reconstruction(...)
+  } // void linear_reconstruction(...)
 
 private:
   CoordsType center(const StencilType& stencil) const
@@ -979,6 +996,7 @@ private:
   const std::vector<RangeType>& source_values_;
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueType& boundary_values_;
+  const SlopeType& slope_;
   const GridLayerType& grid_layer_;
   XT::Common::Parameter param_;
   const Quadrature1dType& quadrature_;
@@ -987,23 +1005,18 @@ private:
 }; // class LocalLinearReconstructionOperator
 
 
-template <class AnalyticalFluxImp,
-          class BoundaryValueImp,
-          SlopeLimiters slope_limiter,
-          class JacobianWrapperImp,
-          class Traits>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class JacobianWrapperImp, class Traits>
 class LinearReconstructionOperator;
 
 
 namespace internal {
 
 
-template <class AnalyticalFluxImp, class BoundaryValueImp, SlopeLimiters slope_lim, class JacobianWrapperImp>
+template <class AnalyticalFluxImp, class BoundaryValueImp, class JacobianWrapperImp>
 struct LinearReconstructionOperatorTraits
 {
   using AnalyticalFluxType = AnalyticalFluxImp;
   using BoundaryValueType = BoundaryValueImp;
-  static const SlopeLimiters slope_limiter = slope_lim;
   using JacobianWrapperType = JacobianWrapperImp;
   using DomainFieldType = typename BoundaryValueType::DomainFieldType;
   using RangeFieldType = typename BoundaryValueType::DomainFieldType;
@@ -1015,7 +1028,6 @@ struct LinearReconstructionOperatorTraits
   using Quadrature1dType = Dune::QuadratureRule<DomainFieldType, 1>;
   using derived_type = LinearReconstructionOperator<AnalyticalFluxType,
                                                     BoundaryValueType,
-                                                    slope_limiter,
                                                     JacobianWrapperType,
                                                     LinearReconstructionOperatorTraits>;
 };
@@ -1026,17 +1038,14 @@ struct LinearReconstructionOperatorTraits
 
 template <class AnalyticalFluxImp,
           class BoundaryValueImp,
-          SlopeLimiters slope_limiter = SlopeLimiters::minmod,
           class JacobianWrapperImp = internal::JacobianWrapper<AnalyticalFluxImp,
                                                                FieldMatrix<typename BoundaryValueImp::RangeFieldType,
                                                                            BoundaryValueImp::dimRange,
                                                                            BoundaryValueImp::dimRange>,
                                                                FieldVector<typename BoundaryValueImp::RangeFieldType,
                                                                            BoundaryValueImp::dimRange>>,
-          class Traits = internal::LinearReconstructionOperatorTraits<AnalyticalFluxImp,
-                                                                      BoundaryValueImp,
-                                                                      slope_limiter,
-                                                                      JacobianWrapperImp>>
+          class Traits =
+              internal::LinearReconstructionOperatorTraits<AnalyticalFluxImp, BoundaryValueImp, JacobianWrapperImp>>
 class LinearReconstructionOperator : public OperatorInterface<Traits>
 {
 public:
@@ -1047,14 +1056,18 @@ public:
   using ProductQuadratureType = typename Traits::ProductQuadratureType;
   using DomainFieldType = typename Traits::DomainFieldType;
   using RangeFieldType = typename Traits::RangeFieldType;
+  using MatrixType = typename JacobianWrapperType::MatrixType;
+  using SlopeType = SlopeBase<typename BoundaryValueType::RangeType, MatrixType>;
   static constexpr size_t dimDomain = Traits::dimDomain;
   static constexpr size_t dimRange = Traits::dimRange;
 
   LinearReconstructionOperator(const AnalyticalFluxType& analytical_flux,
                                const BoundaryValueType& boundary_values,
+                               const SlopeType& slope,
                                const Quadrature1dType& quadrature_1d = default_1d_quadrature<DomainFieldType>(1))
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
+    , slope_(slope)
     , quadrature_1d_(quadrature_1d)
     , product_quadrature_(product_quadrature_on_intersection<DomainFieldType, dimDomain>(quadrature_1d))
   {
@@ -1085,10 +1098,10 @@ public:
         LocalLinearReconstructionOperator<AnalyticalFluxType,
                                           BoundaryValueType,
                                           typename SourceType::SpaceType::GridLayerType,
-                                          slope_limiter,
                                           JacobianWrapperType>(source_values,
                                                                analytical_flux_,
                                                                boundary_values_,
+                                                               slope_,
                                                                grid_layer,
                                                                param,
                                                                quadrature_1d_,
@@ -1102,6 +1115,7 @@ public:
 private:
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueType& boundary_values_;
+  const SlopeType& slope_;
   const Quadrature1dType quadrature_1d_;
   const ProductQuadratureType product_quadrature_;
   mutable XT::Common::PerThreadValue<JacobianWrapperType> jacobian_wrapper_;
