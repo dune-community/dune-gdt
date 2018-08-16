@@ -197,11 +197,14 @@ private:
       for (int m1 = only_positive ? 0. : -l1; std::abs(m1) <= l1; ++m1) {
         for (int l2 = 0; l2 <= static_cast<int>(order); ++l2) {
           size_t row = pos(l1, m1);
-          size_t col = pos(l2, m1); // m1 == m2, else matrix entry is 0
-          if (l1 == l2 + 1)
+          if (l1 == l2 + 1 && std::abs(m1) < l1) {
+            size_t col = pos(l2, m1); // m1 == m2, else matrix entry is 0
             Bz[row][col] += A_lm(l2 + 1, m1);
-          if (l1 == l2 - 1)
+          }
+          if (l1 == l2 - 1) {
+            size_t col = pos(l2, m1); // m1 == m2, else matrix entry is 0
             Bz[row][col] += A_lm(l2, m1);
+          }
         } // l2
       } // m1
     } // l1
