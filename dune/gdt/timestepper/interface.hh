@@ -263,29 +263,50 @@ public:
     return dt;
   } // ... solve(...)
 
+  // default solve, use internal solution
   virtual RangeFieldType solve(const RangeFieldType t_end,
                                const RangeFieldType initial_dt,
-                               const size_t num_save_steps = static_cast<size_t>(-1),
-                               const std::string prefix = "solution")
+                               const size_t num_save_steps = size_t(-1),
+                               const size_t num_output_steps = size_t(-1),
+                               const bool save_solution = false,
+                               const bool visualize = false,
+                               const bool write_discrete = false,
+                               const bool write_exact = false,
+                               const std::string prefix = "solution",
+                               const VisualizerType& visualizer = vector_visualizer(),
+                               const StringifierType& stringifier = vector_stringifier(),
+                               const LocalizableFunctionType& exact_solution = zero_solution())
   {
-    return solve(t_end, initial_dt, num_save_steps, prefix, *solution_);
+    return solve(t_end,
+                 initial_dt,
+                 num_save_steps,
+                 num_output_steps,
+                 save_solution,
+                 visualize,
+                 write_discrete,
+                 write_exact,
+                 prefix,
+                 *solution_,
+                 visualizer,
+                 stringifier,
+                 exact_solution);
   }
 
+  // solve and store in sol, no (file) output
   virtual RangeFieldType solve(const RangeFieldType t_end,
                                const RangeFieldType initial_dt,
                                const size_t num_save_steps,
-                               const std::string prefix,
                                DiscreteSolutionType& sol)
   {
     return solve(t_end,
                  initial_dt,
                  num_save_steps,
-                 num_save_steps,
-                 true,
-                 true,
+                 0,
                  true,
                  false,
-                 prefix,
+                 false,
+                 false,
+                 "",
                  sol,
                  vector_visualizer(),
                  vector_stringifier(),
