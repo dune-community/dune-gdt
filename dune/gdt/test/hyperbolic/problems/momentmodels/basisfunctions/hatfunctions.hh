@@ -78,7 +78,7 @@ public:
     return ret;
   }
 
-  virtual RangeType evaluate(const DomainType& v) const override
+  virtual RangeType evaluate(const DomainType& v) const override final
   {
     RangeType ret(0);
     for (size_t ii = 0; ii < dimRange; ++ii) {
@@ -92,7 +92,7 @@ public:
     return ret;
   } // ... evaluate(...)
 
-  virtual RangeType integrated() const override
+  virtual RangeType integrated() const override final
   {
     RangeType ret(0);
     ret[0] = triangulation_[1] - triangulation_[0];
@@ -104,7 +104,7 @@ public:
   }
 
   // returns matrix with entries <h_i h_j>
-  virtual MatrixType mass_matrix() const override
+  virtual MatrixType mass_matrix() const override final
   {
     MatrixType ret(dimRange, dimRange, 0);
     ret[0][0] = (triangulation_[1] - triangulation_[0]) / 3.;
@@ -120,13 +120,13 @@ public:
     return ret;
   }
 
-  virtual MatrixType mass_matrix_inverse() const override
+  virtual MatrixType mass_matrix_inverse() const override final
   {
     return tridiagonal_matrix_inverse<RangeFieldType, dimRange>(mass_matrix());
   }
 
   // returns matrix with entries <v h_i h_j>
-  virtual FieldVector<MatrixType, 1> mass_matrix_with_v() const override
+  virtual FieldVector<MatrixType, 1> mass_matrix_with_v() const override final
   {
     MatrixType ret(dimRange, dimRange, 0.);
     ret[0][0] = (triangulation_[1] * triangulation_[1] + 2 * triangulation_[1] * triangulation_[0]
@@ -153,7 +153,7 @@ public:
   }
 
   // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
-  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const
+  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const override final
   {
     FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
     auto mm_with_v = mass_matrix_with_v();
@@ -196,7 +196,7 @@ public:
     return ret;
   }
 
-  virtual MatrixType reflection_matrix(const DomainType& n) const
+  virtual MatrixType reflection_matrix(const DomainType& n) const override final
   {
     MatrixType ret(dimRange, dimRange, 0);
     for (size_t ii = 0; ii < dimDomain; ++ii)
@@ -241,14 +241,19 @@ public:
     return triangulation_;
   }
 
-  RangeType alpha_iso()
+  virtual RangeType alpha_iso() const override final
   {
     return RangeType(1.);
   }
 
-  RangeFieldType density(const RangeType& u) const
+  virtual RangeFieldType density(const RangeType& u) const override final
   {
     return std::accumulate(u.begin(), u.end(), RangeFieldType(0));
+  }
+
+  virtual std::string short_id() const override final
+  {
+    return "hf1d";
   }
 
   // get indices of all faces that contain point v
@@ -435,14 +440,19 @@ public:
     return triangulation_;
   }
 
-  RangeType alpha_iso()
+  virtual RangeType alpha_iso() const override final
   {
     return RangeType(1.);
   }
 
-  RangeFieldType density(const RangeType& u) const
+  virtual RangeFieldType density(const RangeType& u) const override final
   {
     return std::accumulate(u.begin(), u.end(), RangeFieldType(0));
+  }
+
+  virtual std::string short_id() const override final
+  {
+    return "hf3d";
   }
 
   // get indices of all faces that contain point v

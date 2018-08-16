@@ -186,6 +186,11 @@ public:
     return u[0];
   }
 
+  virtual std::string short_id() const override final
+  {
+    return "leg";
+  }
+
   const TriangulationType& triangulation() const
   {
     return triangulation_;

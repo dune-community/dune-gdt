@@ -269,7 +269,9 @@ public:
   using StringifierType = std::function<std::string(const RangeType&)>;
   typedef typename Dune::QuadratureRule<RangeFieldType, dimDomain> QuadratureType;
 
-  virtual ~BasisfunctionsInterface(){};
+  virtual ~BasisfunctionsInterface()
+  {
+  }
 
   virtual RangeType evaluate(const DomainType& v) const = 0;
 
@@ -281,9 +283,26 @@ public:
 
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const = 0;
 
+  virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+  }
+
+  virtual MatrixType reflection_matrix(const DomainType& /*n*/) const
+  {
+    DUNE_THROW(Dune::NotImplemented, "");
+  }
+
   virtual RangeType alpha_iso() const = 0;
 
   virtual RangeFieldType density(const RangeType& u) const = 0;
+
+  virtual RangeType u_iso() const
+  {
+    return integrated() * 0.5;
+  }
+
+  virtual std::string short_id() const = 0;
 
   static QuadratureRule<RangeFieldType, 2> barycentre_rule()
   {

@@ -235,13 +235,26 @@ public:
     return ret;
   }
 
-  RangeFieldType density(const RangeType& u) const
+  virtual RangeFieldType density(const RangeType& u) const override final
   {
     RangeFieldType ret(0.);
     for (size_t ii = 0; ii < dimRange; ii += 2) {
       ret += u[ii];
     }
     return ret;
+  }
+
+  RangeFieldType density(const FieldVector<FieldVector<RangeFieldType, 2>, dimRange / 2>& u) const
+  {
+    RangeFieldType ret(0.);
+    for (size_t jj = 0; jj < dimRange / 2; ++jj)
+      ret += u[jj][0];
+    return ret;
+  }
+
+  virtual std::string short_id() const override final
+  {
+    return "pm1d";
   }
 
   // get indices of all faces that contain point
@@ -443,6 +456,19 @@ public:
     for (size_t ii = 0; ii < dimRange; ii += 4)
       ret += u[ii];
     return ret;
+  }
+
+  RangeFieldType density(const FieldVector<FieldVector<RangeFieldType, 4>, dimRange / 4>& u) const
+  {
+    RangeFieldType ret(0.);
+    for (size_t jj = 0; jj < dimRange / 4; ++jj)
+      ret += u[jj][0];
+    return ret;
+  }
+
+  virtual std::string short_id() const override final
+  {
+    return "pm3d";
   }
 
   std::vector<size_t> get_face_indices(const DomainType& v) const

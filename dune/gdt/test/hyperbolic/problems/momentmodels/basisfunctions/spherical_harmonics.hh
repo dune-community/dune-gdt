@@ -124,6 +124,11 @@ public:
     return u[0] * std::sqrt(4 * M_PI);
   }
 
+  virtual std::string short_id() const override final
+  {
+    return "shm";
+  }
+
 private:
   static RangeFieldType A_lm(const int l, const int m)
   {
@@ -390,6 +395,11 @@ public:
   virtual RangeFieldType density(const RangeType& u) const override final
   {
     return u[0] * std::sqrt(4 * M_PI);
+  }
+
+  virtual std::string short_id() const override final
+  {
+    return "rhm";
   }
 
 private:

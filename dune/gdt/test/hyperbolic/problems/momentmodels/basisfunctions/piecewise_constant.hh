@@ -210,6 +210,11 @@ public:
     return std::accumulate(u.begin(), u.end(), RangeFieldType(0.));
   }
 
+  virtual std::string short_id() const override final
+  {
+    return "pconst";
+  }
+
   // get indices of all faces that contain point
   std::vector<size_t> get_face_indices(const DomainType& v) const
   {
