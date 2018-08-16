@@ -26,6 +26,7 @@
 #include <dune/xt/la/type_traits.hh>
 #include <dune/xt/grid/gridprovider/provider.hh>
 #include <dune/xt/grid/type_traits.hh>
+#include <dune/xt/functions/base/sliced.hh>
 #include <dune/xt/functions/lambda/function.hh>
 
 #include <dune/gdt/exceptions.hh>
@@ -33,6 +34,7 @@
 #include <dune/gdt/local/bilinear-forms/integrals.hh>
 #include <dune/gdt/local/functionals/integrals.hh>
 #include <dune/gdt/local/integrands/abs.hh>
+#include <dune/gdt/local/integrands/identity.hh>
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/operators/localizable-bilinear-form.hh>
@@ -107,6 +109,11 @@ public:
   virtual std::vector<std::pair<std::string, std::string>> estimates() const override
   {
     return {};
+  }
+
+  virtual std::vector<std::string> quantities() const override
+  {
+    return {"rel mass conserv   error"}; // <- This is on purpose, see column header formatting in ConvergenceStudy.
   }
 
   virtual std::string discretization_info_title() const override
@@ -276,16 +283,50 @@ public:
                      "I do not know how to compute the temporal norm '" << temporal_norm_id << "'!");
       }
     }
-    //    // - estimates
-    //    auto actual_estimates = self.filter(self.estimates(), only_these);
-    //    DUNE_THROW_IF(!actual_estimates.empty(),
-    //                  XT::Common::Exceptions::wrong_input_given,
-    //                  "I did not know how to compute the following estimate: " << actual_estimates);
-    //    // - quantities
-    //    auto actual_quantities = self.filter(self.quantities(), only_these);
-    //    DUNE_THROW_IF(!actual_estimates.empty(),
-    //                  XT::Common::Exceptions::wrong_input_given,
-    //                  "I did not know how to compute the following quantity: " << actual_quantities);
+    DUNE_THROW_IF(!actual_norms.empty(),
+                  XT::Common::Exceptions::wrong_input_given,
+                  "I did not know how to compute the following norms: " << actual_norms);
+    // - estimates
+    auto actual_estimates = self.filter(self.estimates(), only_these);
+    DUNE_THROW_IF(!actual_estimates.empty(),
+                  XT::Common::Exceptions::wrong_input_given,
+                  "I did not know how to compute the following estimates: " << actual_estimates);
+    // - quantities
+    auto actual_quantities = self.filter(self.quantities(), only_these);
+    while (!actual_quantities.empty()) {
+      const auto id = actual_quantities.back();
+      actual_quantities.pop_back();
+      if (id == "rel mass conserv   error") {
+        const auto compute_masses = [&](const auto& vec) {
+          auto func = make_discrete_function(current_space, vec);
+          FieldVector<double, m> results(0);
+          for (size_t ss = 0; ss < m; ++ss) {
+            auto component_function = XT::Functions::make_sliced_function<1>(func, {ss});
+            auto l1_functional = make_localizable_functional(current_space.grid_view(), component_function);
+            l1_functional.append(LocalElementIntegralFunctional<E>(LocalElementIdentityIntegrand<E>()));
+            l1_functional.assemble(/*use_tbb=*/true);
+            results[ss] = l1_functional.result();
+          }
+          return results;
+        }; // ... compute_masses(...)
+        const auto initial_masses = compute_masses(solution_on_current_grid[0].vector());
+        auto relative_mass_conservation_errors = initial_masses;
+        relative_mass_conservation_errors *= 0;
+        for (size_t ii = 1; ii < solution_on_current_grid.length(); ++ii) {
+          const auto current_masses = compute_masses(solution_on_current_grid[ii].vector());
+          for (size_t ss = 0; ss < m; ++ss)
+            relative_mass_conservation_errors[ss] = std::max(relative_mass_conservation_errors[ss],
+                                                             std::abs(initial_masses[ss] - current_masses[ss])
+                                                                 / (initial_masses[ss] > 0. ? initial_masses[ss] : 1.));
+        }
+        current_data_["quantity"]["rel mass conserv   error"] = relative_mass_conservation_errors.infinity_norm();
+      } else
+        DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
+                   "I do not know how to compute the quantity '" << id << "'!");
+    }
+    DUNE_THROW_IF(!actual_quantities.empty(),
+                  XT::Common::Exceptions::wrong_input_given,
+                  "I did not know how to compute the following quantities: " << actual_quantities);
     return current_data_;
   } // ... compute_on_current_refinement(...)
 
