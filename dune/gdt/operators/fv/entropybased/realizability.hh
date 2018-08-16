@@ -59,7 +59,7 @@ public:
   using ReconstructedFunctionType =
       ReconstructedLocalizableFunction<GridLayerType, DomainFieldType, dimDomain, RangeFieldType, dimRange>;
   using EntropyFluxType = EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, DiscreteFunctionType>;
-  using LocalReconstructedValuesType = typename ReconstructedFunctionType::ReconstructedValuesType;
+  using LocalReconstructedValuesType = typename ReconstructedFunctionType::LocalReconstructedValuesType;
 
   LocalRealizabilityLimiterBase(const AnalyticalFluxType& analytical_flux,
                                 const DiscreteFunctionType& source,
@@ -110,7 +110,7 @@ public:
 
   // version for component-wise limiting
   void apply_limiter(const EntityType& entity,
-                     const RangeType theta_entity,
+                     const RangeType& theta_entity,
                      LocalReconstructedValuesType& local_reconstructed_values,
                      const RangeType& u_bar,
                      bool add_epsilon = true)
@@ -146,11 +146,11 @@ protected:
       for (const auto& pair : local_reconstructed_values) {
         const auto x_in_inside_coords = entity.geometry().local(pair.first);
         const auto& u = pair.second;
-        local_func->get_alpha(x_in_inside_coords, u, param_, false);
+        local_func->get_alpha(x_in_inside_coords, u, param_, false, false);
       } // local_reconstructed_values
     } catch (const Dune::MathError&) {
       // solving failed for reconstructed value, so check that it works with u_bar ...
-      local_func->get_alpha(entity.geometry.local(entity.geometry().center()), u_bar, param_, false);
+      local_func->get_alpha(entity.geometry().local(entity.geometry().center()), u_bar, param_, false, false);
       // ... and set all reconstructed values to u_bar
       for (auto& pair : local_reconstructed_values)
         pair.second = u_bar;

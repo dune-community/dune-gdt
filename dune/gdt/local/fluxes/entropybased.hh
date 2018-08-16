@@ -433,7 +433,9 @@ public:
       } else if (only_cache) {
         DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
-        RangeType u_iso = basis_functions_.integrated() * 0.5;
+        RangeType u_iso = basis_functions_.u_iso();
+        RangeFieldType tau_prime =
+            tau_ / ((1 + std::sqrt(dimRange) * u_prime.two_norm()) * density + std::sqrt(dimRange) * tau_);
 
         // define further variables
         VectorType g_k, beta_in, beta_out, v;
@@ -475,9 +477,9 @@ public:
               mutex_.unlock();
               DUNE_THROW(Dune::MathError, "Failure to converge!");
             }
-            // calculate current error
-            VectorType error(0);
-            T_k->mv(g_k, error);
+            // calculate gradient in original basis
+            VectorType g_alpha_tilde;
+            T_k->mv(g_k, g_alpha_tilde);
             // calculate descent direction d_k;
             VectorType d_k = g_k;
             d_k *= -1;
@@ -495,7 +497,7 @@ public:
             auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
             VectorType d_alpha_tilde;
             XT::LA::solve_lower_triangular_transposed(*T_k, d_alpha_tilde, d_k);
-            if (error.two_norm() < tau_
+            if (g_alpha_tilde.two_norm() < tau_prime
                 && 1 - epsilon_gamma_ < std::exp(d_alpha_tilde.one_norm() + std::abs(std::log(density_tilde)))
                 && is_realizable(u_eps_diff)) {
               ret.first = alpha_prime + alpha_iso * std::log(density);
@@ -1192,6 +1194,27 @@ public:
       } // jj
     }
 
+    bool is_realizable(const BlockVectorType& u, const RangeFieldType eps = 0.) const
+    {
+      if (dimDomain == 1) {
+        for (size_t jj = 0; jj < num_blocks; ++jj) {
+          const auto& u0 = u[jj][0];
+          const auto& u1 = u[jj][1];
+          const auto& v0 = basis_functions_.triangulation()[jj];
+          const auto& v1 = basis_functions_.triangulation()[jj + 1];
+          bool ret = (u0 >= eps) && (u1 <= v1 * u0 - eps * std::sqrt(std::pow(v1, 2) + 1))
+                     && (v0 * u0 + eps * std::sqrt(std::pow(v0, 2) + 1) <= u1);
+          if (!ret)
+            return false;
+        } // jj
+      } else if (dimDomain == 3) {
+        DUNE_THROW(Dune::NotImplemented, "Todo");
+      } else {
+        DUNE_THROW(Dune::NotImplemented, "Only implemented for dimensions 1 and 3");
+      }
+      return true;
+    }
+
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
                               const StateRangeType& u_in,
                               const XT::Common::Parameter& param,
@@ -1205,10 +1228,19 @@ public:
       mutex_.lock();
       if (boundary)
         cache_.increase_capacity(2 * cache_size);
+
+      // rescale u such that the density <psi> is 1
+      RangeFieldType density = basis_functions_.density(u_in);
+      StateRangeType u_prime_in = u_in / density;
+      StateRangeType alpha_iso_in = basis_functions_.alpha_iso();
+      BlockVectorType alpha_iso;
+      vector_to_block_vector(alpha_iso_in, alpha_iso);
+
       // if value has already been calculated for these values, skip computation
-      const auto cache_iterator = cache_.find_closest(u_in);
-      if (cache_iterator != cache_.end() && cache_iterator->first == u_in) {
-        ret.first = cache_iterator->second;
+      const auto cache_iterator = cache_.find_closest(u_prime_in);
+      if (cache_iterator != cache_.end() && cache_iterator->first == u_prime_in) {
+        const auto alpha_prime = cache_iterator->second;
+        ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
         cache_.keep(cache_iterator->first);
         mutex_.unlock();
@@ -1216,10 +1248,12 @@ public:
       } else if (only_cache) {
         DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
-        StateRangeType u_iso_in, alpha_iso_in;
-        std::tie(u_iso_in, alpha_iso_in) = basis_functions_.calculate_isotropic_distribution(u_in);
-        BlockVectorType alpha_iso;
-        vector_to_block_vector(alpha_iso_in, alpha_iso);
+        RangeFieldType tau_prime =
+            tau_ / ((1 + std::sqrt(dimRange) * u_prime_in.two_norm()) * density + std::sqrt(dimRange) * tau_);
+
+        // calculate moment vector for isotropic distribution
+        StateRangeType u_iso_in = basis_functions_.u_iso();
+        StateRangeType v_in;
 
         // define further variables
         BlockVectorType g_k, beta_in, beta_out, v;
@@ -1229,8 +1263,8 @@ public:
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
         const auto r_max = r_sequence.back();
         for (const auto& r : r_sequence) {
-          // normalize u
-          v_in = u_in;
+          // regularize u
+          v_in = u_prime_in;
           if (r > 0.) {
             beta_in = alpha_iso;
             StateRangeType r_times_u_iso = u_iso_in;
@@ -1252,7 +1286,7 @@ public:
           int pure_newton = 0;
           for (size_t kk = 0; kk < k_max_; ++kk) {
             // exit inner for loop to increase r if too many iterations are used or cholesky decomposition fails
-            if (kk > k_0_ && r < r_max && r_max > 0)
+            if (kk > k_0_ && r < r_max)
               break;
             try {
               change_basis(beta_in, v_k, P_k, *T_k, g_k, beta_out);
@@ -1262,26 +1296,32 @@ public:
               mutex_.unlock();
               DUNE_THROW(Dune::MathError, "Failure to converge!");
             }
-            // calculate vector of errors e = \int { m exp(beta_out * T_k^{-1}m) } - v
-            BlockVectorType error_vec(FieldVector<RangeFieldType, block_size>(0.));
-            thread_local BasisValuesMatrixType tmp_mat(XT::LA::CommonDenseMatrix<RangeFieldType>(0, 0, 0., 0));
-            copy_basis_matrix(M_, tmp_mat); // calculate T_k^{-1} M_ and store in tmp_mat
-            apply_inverse_matrix(*T_k, tmp_mat);
-            calculate_vector_integral(beta_out, M_, tmp_mat, error_vec);
-            error_vec -= v;
 
             // calculate descent direction d_k;
             BlockVectorType d_k = g_k;
             d_k *= -1.;
-            BlockVectorType T_k_inv_transp_d_k;
-            for (size_t jj = 0; jj < num_blocks; ++jj)
-              XT::LA::solve_lower_triangular_transposed((*T_k)[jj], T_k_inv_transp_d_k[jj], d_k[jj]);
-            if (two_norm(error_vec) < tau_ && std::exp(5 * one_norm(T_k_inv_transp_d_k)) < 1 + epsilon_gamma_) {
-              for (size_t jj = 0; jj < num_blocks; ++jj)
-                XT::LA::solve_lower_triangular_transposed((*T_k)[jj], ret.first[jj], beta_out[jj]);
+
+            // Calculate stopping criteria (in original basis). Variables with _k are in current basis, without k in
+            // original basis.
+            BlockVectorType alpha_tilde, u_alpha_tilde, u_alpha_prime, d_alpha_tilde, g_alpha_tilde;
+            auto u_alpha_tilde_k = g_k + v_k;
+            for (size_t jj = 0; jj < num_blocks; ++jj) { // convert everything to original basis
+              XT::LA::solve_lower_triangular_transposed((*T_k)[jj], alpha_tilde[jj], beta_out[jj]);
+              (*T_k)[jj].mv(u_alpha_tilde_k[jj], u_alpha_tilde[jj]);
+              (*T_k)[jj].mv(g_k, g_alpha_tilde);
+              XT::LA::solve_lower_triangular_transposed((*T_k)[jj], d_alpha_tilde[jj], d_k[jj]);
+            } // jj
+            auto density_tilde = basis_functions_.density(u_alpha_tilde);
+            const auto alpha_prime = alpha_tilde - alpha_iso * std::log(density_tilde);
+            calculate_vector_integral(alpha_prime, M_, M_, u_alpha_prime);
+            auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
+            if (two_norm(g_alpha_tilde) < tau_prime
+                && 1 - epsilon_gamma_ < std::exp(one_norm(d_alpha_tilde) + std::abs(std::log(density_tilde)))
+                && is_realizable(u_eps_diff)) {
+              ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
-              if (kk > 40)
-                std::cout << XT::Common::to_string(kk) << std::endl;
+              cache_.insert(v_in, alpha_prime);
+              mutex_.unlock();
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
@@ -1309,12 +1349,9 @@ public:
 
         mutex_.unlock();
         DUNE_THROW(MathError, "Failed to converge");
-
-      outside_all_loops:
-        // store values as initial conditions for next time step on this entity
-        cache_.insert(v_in, ret.first);
-        mutex_.unlock();
       } // else ( value has not been calculated before )
+
+    outside_all_loops:
       return ret;
     }
 
@@ -2863,13 +2900,15 @@ public:
       } else if (only_cache) {
         DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
+        RangeFieldType tau_prime =
+            tau_ / ((1 + std::sqrt(dimRange) * u_prime.two_norm()) * density + std::sqrt(dimRange) * tau_);
         // The hessian H is always symmetric and tridiagonal, so we only need to store the diagonal and subdiagonal
         // elements
         RangeType H_diag;
         FieldVector<RangeFieldType, dimRange - 1> H_subdiag;
 
         // calculate moment vector for isotropic distribution
-        RangeType u_iso = basis_functions_.integrated() * 0.5;
+        RangeType u_iso = basis_functions_.u_iso();
         RangeType v;
         RangeType alpha_k = cache_iterator != cache_.end() ? cache_iterator->second : alpha_iso;
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
@@ -2912,7 +2951,6 @@ public:
               }
             }
 
-
             const auto& alpha_tilde = alpha_k;
             const auto u_alpha_tilde = g_k + v;
             auto density_tilde = basis_functions_.density(u_alpha_tilde);
@@ -2920,7 +2958,7 @@ public:
             const auto u_alpha_prime = calculate_u(alpha_prime);
             auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
             // checking realizability is cheap so we do not need the second stopping criterion
-            if (g_k.two_norm() < tau_ && is_realizable(u_eps_diff)) {
+            if (g_k.two_norm() < tau_prime && is_realizable(u_eps_diff)) {
               ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
               cache_.insert(v, alpha_prime);
