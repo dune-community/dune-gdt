@@ -226,14 +226,6 @@ public:
     };
   }
 
-  RangeFieldType calculate_psi_from_moments(const RangeType& val) const
-  {
-    RangeFieldType psi(0);
-    for (const auto& entry : val)
-      psi += entry;
-    return psi;
-  }
-
   static StringifierType stringifier()
   {
     return [](const RangeType& val) {
@@ -244,21 +236,14 @@ public:
     };
   } // ... stringifier()
 
-  std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
-  {
-    RangeFieldType psi_iso(0);
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      psi_iso += u[ii];
-    psi_iso /= 2.;
-    RangeType alpha_iso(std::log(psi_iso));
-    auto u_iso = integrated();
-    u_iso *= psi_iso;
-    return std::make_pair(u_iso, alpha_iso);
-  }
-
   const TriangulationType& triangulation() const
   {
     return triangulation_;
+  }
+
+  RangeType alpha_iso()
+  {
+    return RangeType(1.);
   }
 
   RangeFieldType density(const RangeType& u) const
@@ -435,14 +420,6 @@ public:
     };
   }
 
-  RangeFieldType calculate_psi_from_moments(const RangeType& val) const
-  {
-    RangeFieldType psi(0);
-    for (const auto& entry : val)
-      psi += entry;
-    return psi;
-  }
-
   static StringifierType stringifier()
   {
     return [](const RangeType& val) {
@@ -453,21 +430,14 @@ public:
     };
   } // ... stringifier()
 
-  std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
-  {
-    RangeFieldType psi_iso(0);
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      psi_iso += u[ii];
-    psi_iso /= 4. * M_PI;
-    RangeType alpha_iso(std::log(psi_iso));
-    auto u_iso = integrated();
-    u_iso *= psi_iso;
-    return std::make_pair(u_iso, alpha_iso);
-  }
-
   const TriangulationType& triangulation() const
   {
     return triangulation_;
+  }
+
+  RangeType alpha_iso()
+  {
+    return RangeType(1.);
   }
 
   RangeFieldType density(const RangeType& u) const

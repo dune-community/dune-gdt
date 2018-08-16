@@ -281,6 +281,10 @@ public:
 
   virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const = 0;
 
+  virtual RangeType alpha_iso() const = 0;
+
+  virtual RangeFieldType density(const RangeType& u) const = 0;
+
   static QuadratureRule<RangeFieldType, 2> barycentre_rule()
   {
     Dune::QuadratureRule<RangeFieldType, 2> ret;

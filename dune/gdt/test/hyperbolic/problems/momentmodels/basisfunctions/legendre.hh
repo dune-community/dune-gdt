@@ -169,25 +169,19 @@ public:
     };
   }
 
-  RangeFieldType calculate_psi_from_moments(const RangeType& val) const
-  {
-    return val[0];
-  }
-
   static StringifierType stringifier()
   {
     return [](const RangeType& val) { return XT::Common::to_string(val[0], 15); };
   } // ... stringifier()
 
-  std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
+  virtual RangeType alpha_iso() const override final
   {
-    RangeType u_iso(0), alpha_iso(0);
-    u_iso[0] = u[0];
-    alpha_iso[0] = std::log(u[0] / 2.);
-    return std::make_pair(u_iso, alpha_iso);
+    RangeType ret(0.);
+    ret[0] = 1.;
+    return ret;
   }
 
-  RangeFieldType density(const RangeType& u) const
+  virtual RangeFieldType density(const RangeType& u) const override final
   {
     return u[0];
   }
