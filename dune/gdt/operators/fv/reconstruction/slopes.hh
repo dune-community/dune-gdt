@@ -333,9 +333,9 @@ public:
               (u0 * vj - u1 + epsilon_ * std::sqrt(std::pow(vj, 2) + 1)) / ((ubar1 - u1) - (ubar0 - u0) * vj);
           thetas_ii[2] = (u0 * vjplus1 - u1 - epsilon_ * std::sqrt(std::pow(vjplus1, 2) + 1))
                          / ((ubar1 - u1) - (ubar0 - u0) * vjplus1);
-          for (size_t kk = 0; kk < 3; ++kk)
-            if (thetas_ii[kk] >= 0. && thetas_ii[kk] <= 1.)
-              thetas[2 * ii] = std::max(thetas[2 * ii], thetas_ii[kk]);
+          for (size_t ll = 0; ll < 3; ++ll)
+            if (thetas_ii[ll] >= 0. && thetas_ii[ll] <= 1.)
+              thetas[2 * ii] = std::max(thetas[2 * ii], thetas_ii[ll]);
         } // else (!realizable)
         thetas[2 * ii + 1] = thetas[2 * ii];
       } // ii

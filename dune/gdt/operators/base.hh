@@ -541,7 +541,7 @@ public:
   {
     const_cast<ThisType&>(*this).assemble();
     auto tmp = range.copy();
-    matrix().mv(source.as_imp(source), tmp);
+    matrix().mv(source.as_imp(), tmp);
     return range.dot(tmp);
   }
 
