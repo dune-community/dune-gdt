@@ -28,45 +28,6 @@ namespace GDT {
 namespace internal {
 
 
-//// forward, needed for friendlyness
-// template <class TestSpaceType, class AnsatzSpaceType, class GridLayerType, class ConstraintsType>
-// class ConstraintsWrapper;
-
-
-} // namespace internal
-
-
-/**
- * \brief CRTP interface for all implementations of constraints.
- *
- *        We need this interface for template matching in the SystemAssembler.
- */
-// template <class Traits>
-// class ConstraintsInterface : public XT::CRTPInterface<ConstraintsInterface<Traits>, Traits>
-//{
-// public:
-//  typedef typename Traits::derived_type derived_type;
-//}; // class ConstraintsInterface
-
-
-//// forward
-// template <class IntersectionType>
-// class DirichletConstraints;
-
-
-// namespace internal {
-
-
-// template <class IntersectionType>
-// class DirichletConstraintsTraits
-//{
-// public:
-//  typedef DirichletConstraints<IntersectionType> derived_type;
-//};
-
-
-//} // namespace internal
-
 template <typename T>
 struct setUnion
 {
@@ -79,15 +40,19 @@ struct setUnion
 };
 
 
+} // namespace internal
+
+
 template <class IntersectionType, class SpaceType>
 class DirichletConstraints
     : public Dune::XT::Grid::ElementFunctor<typename SpaceType::GridViewType>,
-      public XT::Common::
-          ThreadResultPropagator<DirichletConstraints<IntersectionType, SpaceType>, std::set<size_t>, setUnion<size_t>>
+      public XT::Common::ThreadResultPropagator<DirichletConstraints<IntersectionType, SpaceType>,
+                                                std::set<size_t>,
+                                                internal::setUnion<size_t>>
 {
   using ThisType = DirichletConstraints<IntersectionType, SpaceType>;
   using BaseType = XT::Grid::ElementFunctor<typename SpaceType::GridViewType>;
-  using Propagator = XT::Common::ThreadResultPropagator<ThisType, std::set<size_t>, setUnion<size_t>>;
+  using Propagator = XT::Common::ThreadResultPropagator<ThisType, std::set<size_t>, internal::setUnion<size_t>>;
   friend Propagator;
 
 public:
@@ -204,14 +169,11 @@ public:
     dirichlet_DoFs_ = res;
   }
 
-
 private:
   const BoundaryInfoType& boundary_info_;
   const SpaceInterface<GridView, r, rC, R>& space_;
-  //  const size_t size_;
   const bool set_;
   std::set<size_t> dirichlet_DoFs_;
-  //  std::mutex mutex_;
 }; // class DirichletConstraints
 
 
