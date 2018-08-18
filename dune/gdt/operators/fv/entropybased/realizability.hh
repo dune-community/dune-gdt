@@ -401,7 +401,7 @@ public:
     // vector to store thetas for each local reconstructed value
     std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), -epsilon_);
 
-    size_t ll = -1;
+    size_t ll = static_cast<size_t>(-1);
     for (const auto& pair : local_reconstructed_values) {
       ++ll;
       // rescale u_l, u_bar
@@ -534,7 +534,7 @@ public:
     // vector to store thetas for each local reconstructed value
     std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), -epsilon_);
 
-    size_t ll = -1;
+    size_t ll = static_cast<size_t>(-1);
     for (const auto& pair : local_reconstructed_values) {
       ++ll;
       // rescale u_l, u_bar

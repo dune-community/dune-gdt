@@ -88,18 +88,20 @@ public:
     assert(coords.size() < std::numeric_limits<int>::max() && weights.size() < std::numeric_limits<int>::max());
     int coords_size = static_cast<int>(coords.size());
     int weights_size = static_cast<int>(weights.size());
-    std::vector<int> coords_sizes(comm.size());
-    std::vector<int> weights_sizes(comm.size());
-    std::vector<int> coords_displacements(comm.size(), 0);
-    std::vector<int> weights_displacements(comm.size(), 0);
+    assert(comm.size() >= 0 && coords_size >= 0 && weights_size >= 0);
+    size_t comm_size = static_cast<size_t>(comm.size());
+    std::vector<int> coords_sizes(comm_size);
+    std::vector<int> weights_sizes(comm_size);
+    std::vector<int> coords_displacements(comm_size, 0);
+    std::vector<int> weights_displacements(comm_size, 0);
     comm.allgather(&coords_size, 1, coords_sizes.data());
     comm.allgather(&weights_size, 1, weights_sizes.data());
-    for (int ii = 1; ii < comm.size(); ++ii) {
+    for (size_t ii = 1; ii < comm_size; ++ii) {
       coords_displacements[ii] = coords_displacements[ii - 1] + coords_sizes[ii - 1];
       weights_displacements[ii] = weights_displacements[ii - 1] + weights_sizes[ii - 1];
     }
-    auto all_coords_size = comm.sum(coords_size);
-    auto all_weights_size = comm.sum(weights_size);
+    size_t all_coords_size = static_cast<size_t>(comm.sum(coords_size));
+    size_t all_weights_size = static_cast<size_t>(comm.sum(weights_size));
     std::vector<double> all_coords(all_coords_size);
     std::vector<double> all_weights(all_weights_size);
     comm.allgatherv(coords.data(), coords_size, all_coords.data(), coords_sizes.data(), coords_displacements.data());
@@ -144,7 +146,7 @@ public:
                                                    std::make_pair("t_end", 1)});
   }
 
-  virtual ~KineticTransportEquation()
+  virtual ~KineticTransportEquation() override
   {
   }
 
@@ -282,7 +284,7 @@ public:
 protected:
   static size_t get_num_regions(const DynamicVector<size_t>& num_segments)
   {
-    return std::accumulate(num_segments.begin(), num_segments.end(), 1, [](auto a, auto b) { return a * b; });
+    return std::accumulate(num_segments.begin(), num_segments.end(), size_t(1), [](auto a, auto b) { return a * b; });
   }
 
   static RangeFieldType unit_ball_volume()

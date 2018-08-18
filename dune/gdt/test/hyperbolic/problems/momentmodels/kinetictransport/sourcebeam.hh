@@ -235,15 +235,17 @@ protected:
       RangeType ret(0);
       for (size_t nn = 0; nn < dimRange; ++nn) {
         const auto& triangulation = basis_functions.triangulation();
-        const auto vnm = triangulation[nn - 1];
         const auto vn = triangulation[nn];
-        const auto vnp = triangulation[nn + 1];
-        if (nn < dimRange - 1)
+        if (nn < dimRange - 1) {
+          const auto vnp = triangulation[nn + 1];
           ret[nn] += 1. / ((vn - vnp) * denominator())
                      * ((1 - vnp) * integral_1(vn, vnp) - 1. / 2e5 * (numerator(vnp) - numerator(vn)));
-        if (nn > 0)
+        }
+        if (nn > 0) {
+          const auto vnm = triangulation[nn - 1];
           ret[nn] += 1. / ((vn - vnm) * denominator())
                      * ((1 - vnm) * integral_1(vnm, vn) - 1. / 2e5 * (numerator(vn) - numerator(vnm)));
+        }
       }
       // add small vacuum concentration to move away from realizable boundary
       ret += basis_functions.integrated() * psi_vac;

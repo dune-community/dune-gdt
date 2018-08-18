@@ -287,11 +287,11 @@ public:
         // 0..num_rows
         std::array<int, num_rows> row_indices;
         for (int ii = 0; ii < num_rows; ++ii)
-          row_indices[ii] = ii;
+          row_indices[static_cast<size_t>(ii)] = ii;
 
         // set columns for quadrature points
         for (int ii = 0; ii < num_cols; ++ii) {
-          const auto v_i = basis_functions_.evaluate(quad_points_[ii]);
+          const auto v_i = basis_functions_.evaluate(quad_points_[static_cast<size_t>(ii)]);
           // First argument: number of elements in column
           // Second/Third argument: indices/values of column entries
           // Fourth/Fifth argument: lower/upper column bound, i.e. lower/upper bound for x_i. As all x_i should be
@@ -314,8 +314,9 @@ public:
       constexpr int num_rows = static_cast<int>(dimRange);
       // set rhs (equality constraints, so set both bounds equal
       for (int ii = 0; ii < num_rows; ++ii) {
-        lp.setRowLower(ii, u_prime[ii]);
-        lp.setRowUpper(ii, u_prime[ii]);
+        size_t uii = static_cast<size_t>(ii);
+        lp.setRowLower(ii, u_prime[uii]);
+        lp.setRowUpper(ii, u_prime[uii]);
       }
       // Now check solvability
       lp.primal();
@@ -1162,27 +1163,6 @@ public:
       } // jj
     }
 
-    bool is_realizable(const BlockVectorType& u, const RangeFieldType eps = 0.) const
-    {
-      if (dimDomain == 1) {
-        for (size_t jj = 0; jj < num_blocks; ++jj) {
-          const auto& u0 = u.block(jj)[0];
-          const auto& u1 = u.block(jj)[1];
-          const auto& v0 = basis_functions_.triangulation()[jj];
-          const auto& v1 = basis_functions_.triangulation()[jj + 1];
-          bool ret = (u0 >= eps) && (u1 <= v1 * u0 - eps * std::sqrt(std::pow(v1, 2) + 1))
-                     && (v0 * u0 + eps * std::sqrt(std::pow(v0, 2) + 1) <= u1);
-          if (!ret)
-            return false;
-        } // jj
-      } else if (dimDomain == 3) {
-        DUNE_THROW(Dune::NotImplemented, "Todo");
-      } else {
-        DUNE_THROW(Dune::NotImplemented, "Only implemented for dimensions 1 and 3");
-      }
-      return true;
-    }
-
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
                               const StateRangeType& u_in,
                               const XT::Common::Parameter& param,
@@ -1280,7 +1260,7 @@ public:
             auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
             if (g_alpha_tilde.two_norm() < tau_prime
                 && 1 - epsilon_gamma_ < std::exp(d_alpha_tilde.one_norm() + std::abs(std::log(density_tilde)))
-                && is_realizable(u_eps_diff)) {
+                && helper<dimDomain>::is_realizable(u_eps_diff, 0., basis_functions_)) {
               ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
               cache_.insert(v_in, alpha_prime);
@@ -1419,6 +1399,22 @@ public:
         assert(cc == 0);
         return ret[rr];
       }
+
+      static bool
+      is_realizable(const BlockVectorType& u, const RangeFieldType eps, const BasisfunctionType& basis_functions)
+      {
+        for (size_t jj = 0; jj < num_blocks; ++jj) {
+          const auto& u0 = u.block(jj)[0];
+          const auto& u1 = u.block(jj)[1];
+          const auto& v0 = basis_functions.triangulation()[jj];
+          const auto& v1 = basis_functions.triangulation()[jj + 1];
+          bool ret = (u0 >= eps) && (u1 <= v1 * u0 - eps * std::sqrt(std::pow(v1, 2) + 1))
+                     && (v0 * u0 + eps * std::sqrt(std::pow(v0, 2) + 1) <= u1);
+          if (!ret)
+            return false;
+        } // jj
+        return true;
+      }
     }; // class helper<1, ...>
 
     template <class anything>
@@ -1448,6 +1444,14 @@ public:
       static RangeFieldType& get_ref(RangeType& ret, const size_t rr, const size_t cc)
       {
         return ret[rr][cc];
+      }
+
+      static bool is_realizable(const BlockVectorType& /*u*/,
+                                const RangeFieldType /*eps*/,
+                                const BasisfunctionType& /*basis_functions*/)
+      {
+        DUNE_THROW(Dune::NotImplemented, "");
+        return true;
       }
     }; // class helper<3, ...>
 
@@ -2146,6 +2150,7 @@ public:
                               const XT::Common::Parameter& param,
                               const bool regularize = true) const
     {
+      DUNE_THROW(Dune::NotImplemented, "Has to be adapted!");
       const bool boundary = bool(param.get("boundary")[0]);
       AlphaReturnType ret;
       mutex_.lock();
@@ -2162,7 +2167,7 @@ public:
 
         // calculate moment vector for isotropic distribution
         StateRangeType u_iso, alpha_iso, v;
-        std::tie(u_iso, alpha_iso) = basis_functions_.calculate_isotropic_distribution(u);
+        //        std::tie(u_iso, alpha_iso) = basis_functions_.calculate_isotropic_distribution(u);
         StateRangeType alpha_k = cache_iterator != cache_.end() ? cache_iterator->second.first : alpha_iso;
 
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};

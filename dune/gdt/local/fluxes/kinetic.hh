@@ -114,7 +114,8 @@ public:
                      const RangeType& u_j) const
   {
     // find direction of unit outer normal
-    size_t direction = intersection.indexInInside() / 2;
+    assert(intersection.indexInInside() >= 0);
+    size_t direction = static_cast<size_t>(intersection.indexInInside()) / 2;
     auto n_ij = intersection.unitOuterNormal(x_in_intersection_coords);
     if (dynamic_cast<const EntropyFluxType*>(analytical_flux_) != nullptr) {
       return dynamic_cast<const EntropyFluxType*>(analytical_flux_)

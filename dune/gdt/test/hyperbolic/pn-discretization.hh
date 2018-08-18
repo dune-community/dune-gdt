@@ -65,7 +65,6 @@ struct HyperbolicPnTest : public ::testing::Test
     using EquationType = Hyperbolic::Problems::KineticEquation<ProblemType>;
     using DomainFieldType = typename EquationType::DomainFieldType;
     using RangeFieldType = typename EquationType::RangeFieldType;
-    using RangeType = typename EquationType::RangeType;
     using RhsType = typename EquationType::RhsType;
     using InitialValueType = typename EquationType::InitialValueType;
     static constexpr size_t dimDomain = BasisfunctionType::dimDomain;
@@ -151,7 +150,7 @@ struct HyperbolicPnTest : public ::testing::Test
     AdvectionOperatorType advection_operator(analytical_flux, boundary_values, *basis_functions);
     RhsOperatorType rhs_operator(rhs);
 
-    MinmodSlope<RangeType, typename ReconstructionOperatorType::MatrixType> slope;
+    MinmodSlope<typename ReconstructionOperatorType::VectorType, typename ReconstructionOperatorType::MatrixType> slope;
     ReconstructionOperatorType reconstruction_operator(
         analytical_flux, boundary_values, slope, Dune::GDT::default_1d_quadrature<double>(1));
 
@@ -165,8 +164,18 @@ struct HyperbolicPnTest : public ::testing::Test
     TimeStepperType timestepper(timestepper_rhs, timestepper_op);
 
     auto visualizer = basis_functions->template visualizer<DiscreteFunctionType>();
-    timestepper.solve(
-        t_end, dt, 1, 0, false, false, true, false, "solution", visualizer, basis_functions->stringifier());
+    timestepper.solve(t_end,
+                      dt,
+                      1,
+                      0,
+                      false,
+                      false,
+                      true,
+                      false,
+                      problem_imp->static_id() + "_ord" + (TestCaseType::reconstruction ? "2_" : "1_")
+                          + basis_functions->short_id(),
+                      visualizer,
+                      basis_functions->stringifier());
 
     RangeFieldType l1norm = 0;
     RangeFieldType l2norm = 0;

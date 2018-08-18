@@ -185,7 +185,8 @@ public:
     else if (boundary_type == XT::Grid::dirichlet_boundary)
       ret = local_dirichlet_boundary_values_->evaluate(x);
     else if (boundary_type == XT::Grid::reflecting_boundary) {
-      const auto direction = intersection.indexInInside();
+      assert(intersection.indexInInside() >= 0);
+      const auto direction = static_cast<size_t>(intersection.indexInInside());
       reflection_matrices_[direction].mv(u, ret);
     } else
       DUNE_THROW(Dune::NotImplemented,

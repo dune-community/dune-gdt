@@ -100,8 +100,10 @@ public:
       return;
     // get intersections
     FieldVector<typename GridLayerType::Intersection, 2 * dimDomain> intersections;
-    for (const auto& intersection : Dune::intersections(grid_layer_, entity))
-      intersections[intersection.indexInInside()] = intersection;
+    for (const auto& intersection : Dune::intersections(grid_layer_, entity)) {
+      const size_t index = static_cast<size_t>(intersection.indexInInside());
+      intersections[index] = intersection;
+    }
     const auto entity_index = grid_layer_.indexSet().index(entity);
     auto& reconstructed_values_map = reconstructed_function_.values()[entity_index];
 
@@ -233,7 +235,7 @@ public:
     assert(stencil.shape()[dir] == 3);
     RangeArrayType ranges;
     for (size_t ii = 0; ii < dimDomain; ++ii)
-      ranges[ii] = IndexRangeType(0, stencil.shape()[ii]);
+      ranges[ii] = IndexRangeType(0, static_cast<long>(stencil.shape()[ii]));
     ranges[dir] = IndexRangeType(0);
     const auto u_left = stencil[IndicesBuilderType::build(ranges)];
     ranges[dir] = IndexRangeType(1);
@@ -255,9 +257,9 @@ public:
 
     // calculate reconstructed values
     for (size_t ii = 0; ii < dimDomain; ++ii)
-      ranges[ii] = IndexRangeType(0, new_shape[ii]);
+      ranges[ii] = IndexRangeType(0, static_cast<long>(new_shape[ii]));
     for (size_t ii = 0; ii < quadrature.size(); ++ii) {
-      ranges[dir] = IndexRangeType(ii);
+      ranges[dir] = IndexRangeType(static_cast<long>(ii));
       auto reconstructed_ii = reconstructed_values[IndicesBuilderType::build(ranges)];
       for (const auto& multi_index : multi_indices) {
         reconstructed_ii(multi_index) = slope(multi_index);
@@ -334,7 +336,9 @@ private:
   //  get next coords in direction dir (increase or decrease coords in that direction)
   static void next_coords_in_dir(const int dir, CoordsType& coords)
   {
-    dir % 2 ? coords[dir / 2]++ : coords[dir / 2]--;
+    assert(dir >= 0.);
+    size_t udir = static_cast<size_t>(dir);
+    udir % 2 ? coords[udir / 2]++ : coords[udir / 2]--;
   }
 
   // Direction is allowed if end of stencil is not reached and direction is not visited by another iterator.
@@ -347,9 +351,11 @@ private:
     return new_dir == dir || new_dir / 2 > dir / 2;
   }
 
-  bool end_of_stencil(const StencilType& stencil, const int dir, const CoordsType& coords)
+  static bool end_of_stencil(const StencilType& stencil, const int dir, const CoordsType& coords)
   {
-    return coords[dir / 2] == stencil.shape()[dir / 2] - 1 || coords[dir / 2] == 0;
+    assert(dir >= 0.);
+    size_t udir = static_cast<size_t>(dir);
+    return coords[udir / 2] == stencil.shape()[udir / 2] - 1 || coords[udir / 2] == 0;
   }
 
 

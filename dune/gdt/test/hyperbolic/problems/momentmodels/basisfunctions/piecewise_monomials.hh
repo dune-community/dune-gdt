@@ -181,8 +181,6 @@ public:
             ret_pos[nn][mm] = mm_with_v[0][nn][mm];
       }
     } // nn
-    std::cout << "pos: " << XT::Common::to_string(ret_pos) << std::endl;
-    std::cout << "neg: " << XT::Common::to_string(ret_neg) << std::endl;
     return ret;
   }
 
@@ -380,7 +378,7 @@ public:
     return B;
   }
 
-  virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const
+  virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const override final
   {
     FieldVector<FieldVector<MatrixType, 2>, dimFlux> B_kinetic(
         FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
@@ -408,7 +406,7 @@ public:
     return B_kinetic;
   } // ... kinetic_flux_matrices()
 
-  virtual MatrixType reflection_matrix(const DomainType& n) const
+  virtual MatrixType reflection_matrix(const DomainType& n) const override final
   {
     MatrixType ret(dimRange, dimRange, 0);
     size_t direction;

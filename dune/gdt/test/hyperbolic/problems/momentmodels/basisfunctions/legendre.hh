@@ -211,14 +211,16 @@ private:
     int n_factor = n;
     int m_divisor = m / 2;
     int n_divisor = (n - 1) / 2;
-    FieldVector<std::vector<RangeFieldType>, 4> factors(std::vector<RangeFieldType>(std::max(m, n)));
-    for (int ii = 0; ii < std::max(m, n); ++ii) {
+    size_t max_mn = static_cast<size_t>(std::max(m, n));
+    FieldVector<std::vector<RangeFieldType>, 4> factors((std::vector<RangeFieldType>(max_mn)));
+    assert(std::max(m, n) >= 0);
+    for (size_t ii = 0; ii < max_mn; ++ii) {
       factors[0][ii] = m_factor > 0 ? m_factor-- : 1.;
       factors[1][ii] = n_factor > 0 ? n_factor-- : 1.;
       factors[2][ii] = m_divisor > 0 ? 1. / std::pow(m_divisor--, 2) : 1.;
       factors[3][ii] = n_divisor > 0 ? 1. / std::pow(n_divisor--, 2) : 1.;
     }
-    for (int ii = 0; ii < std::max(m, n); ++ii) {
+    for (size_t ii = 0; ii < max_mn; ++ii) {
       ret *= factors[0][ii] * factors[1][ii] * factors[2][ii] * factors[3][ii] / 2.;
     }
     ret *= std::pow(-1., (m + n + 1) / 2) / ((m - n) * (m + n + 1) * std::pow(2., m + n - 1 - std::max(m, n)));

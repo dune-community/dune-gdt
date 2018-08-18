@@ -155,8 +155,6 @@ public:
             ret_pos[nn][mm] = mm_with_v[0][nn][mm];
       }
     } // nn
-    std::cout << "pos: " << XT::Common::to_string(ret_pos) << std::endl;
-    std::cout << "neg: " << XT::Common::to_string(ret_neg) << std::endl;
     return ret;
   }
 

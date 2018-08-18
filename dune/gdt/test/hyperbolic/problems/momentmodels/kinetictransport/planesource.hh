@@ -95,9 +95,11 @@ public:
   {
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
-    size_t num_elements = grid_layer_.size(0);
+    assert(grid_layer_.size(0) >= 0 && grid_layer_.overlapSize(0) >= 0
+           && grid_layer_.overlapSize(0) < grid_layer_.size(0));
+    size_t num_elements = static_cast<size_t>(grid_layer_.size(0));
     if (grid_layer_.comm().size() > 1) {
-      num_elements -= grid_layer_.overlapSize(0);
+      num_elements -= static_cast<size_t>(grid_layer_.overlapSize(0));
       num_elements = grid_layer_.comm().sum(num_elements);
     }
     if (num_elements % 2)

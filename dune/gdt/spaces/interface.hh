@@ -407,7 +407,10 @@ void local_constraints(const SpaceInterface< S, d, r, rC > >&, const EntityType&
     return pattern;
   } // ... compute_face_pattern(...)
 
+  SpaceInterface() = default;
   virtual ~SpaceInterface() = default;
+  SpaceInterface(const SpaceInterface& /*other*/) = default;
+  SpaceInterface(SpaceInterface&& /*other*/) = default;
 
 private:
   template <class GV>

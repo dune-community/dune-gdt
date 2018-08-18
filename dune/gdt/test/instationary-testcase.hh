@@ -24,7 +24,7 @@ namespace Test {
 
 
 /**
- * \tparam ProblemType has to provide a type SolutionType which
+ * \tparam ProblemImp has to provide a type SolutionType which
  *         defines the type of the solution of the problem.
  * TODO: choose suitable SolutionType for Problems (provide Interface?)
  */

@@ -210,7 +210,7 @@ public:
                                                   iwork_.data());
       if (info != 0)
         DUNE_THROW(Dune::XT::LA::Exceptions::eigen_solver_failed, "The lapack backend reported '" << info << "'!");
-      work_.resize(work_[0]);
+      work_.resize(static_cast<size_t>(work_[0] + 0.5));
     }
 #endif
   }
@@ -369,7 +369,8 @@ public:
                                                -1);
     if (info != 0)
       DUNE_THROW(Dune::XT::LA::Exceptions::eigen_solver_failed, "The lapack backend reported '" << info << "'!");
-    work_.resize(work_[0]);
+    assert(work_[0] >= 0.);
+    work_.resize(static_cast<size_t>(work_[0] + 0.5));
 #endif
   }
 

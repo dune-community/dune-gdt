@@ -117,9 +117,9 @@ public:
   {
     auto& t = current_time();
     const RangeFieldType actual_dt = std::min(dt, max_dt);
-    first_stepper_.solve(t + actual_dt / 2, actual_dt / 2, -1, 0, false);
-    second_stepper_.solve(t + actual_dt, actual_dt, -1, 0, false);
-    first_stepper_.solve(t + actual_dt, actual_dt / 2, -1, 0, false);
+    first_stepper_.solve(t + actual_dt / 2, actual_dt / 2, static_cast<size_t>(-1), 0, false);
+    second_stepper_.solve(t + actual_dt, actual_dt, static_cast<size_t>(-1), 0, false);
+    first_stepper_.solve(t + actual_dt, actual_dt / 2, static_cast<size_t>(-1), 0, false);
     t += actual_dt;
     return dt;
   } // ... step(...)
