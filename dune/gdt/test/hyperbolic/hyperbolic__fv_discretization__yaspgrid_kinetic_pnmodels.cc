@@ -65,6 +65,16 @@ using YaspGridTestCasesAll = testing::
               PlaneSourcePnTestCase<Yasp1,
                                     Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<double, 1, double, 8, 1, 1>,
                                     true>,
+          //          Dune::GDT::Hyperbolic::Problems::KineticTransport::
+          //              PointSourcePnTestCase<Yasp3,
+          //                                    Dune::GDT::Hyperbolic::Problems::RealSphericalHarmonics<double, double,
+          //                                    2, 3>,
+          //                                    false>,
+          //          Dune::GDT::Hyperbolic::Problems::KineticTransport::
+          //              PointSourcePnTestCase<Yasp3,
+          //                                    Dune::GDT::Hyperbolic::Problems::RealSphericalHarmonics<double, double,
+          //                                    2, 3>,
+          //                                    true>,
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3,
                                     Dune::GDT::Hyperbolic::Problems::HatFunctions<double, 3, double, 6, 1, 3>,

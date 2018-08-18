@@ -420,8 +420,8 @@ public:
 
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u);
-      RangeType u_prime = u / density;
-      RangeType alpha_iso = basis_functions_.alpha_iso();
+      StateRangeType u_prime = u / density;
+      StateRangeType alpha_iso = basis_functions_.alpha_iso();
 
       // if value has already been calculated for these values, skip computation
       const auto cache_iterator = cache_.find_closest(u_prime);
@@ -435,7 +435,7 @@ public:
       } else if (only_cache) {
         DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
-        RangeType u_iso = basis_functions_.u_iso();
+        StateRangeType u_iso = basis_functions_.u_iso();
         RangeFieldType tau_prime =
             tau_ / ((1 + std::sqrt(dimRange) * u_prime.two_norm()) * density + std::sqrt(dimRange) * tau_);
 
@@ -487,14 +487,14 @@ public:
             d_k *= -1;
             // Calculate stopping criteria (in original basis). Variables with _k are in current basis, without k in
             // original basis.
-            RangeType alpha_tilde;
+            StateRangeType alpha_tilde;
             XT::LA::solve_lower_triangular_transposed(*T_k, alpha_tilde, beta_out);
             auto u_alpha_tilde_k = g_k + v_k;
-            RangeType u_alpha_tilde;
+            StateRangeType u_alpha_tilde;
             T_k->mv(u_alpha_tilde_k, u_alpha_tilde);
             auto density_tilde = basis_functions_.density(u_alpha_tilde);
             const auto alpha_prime = alpha_tilde - alpha_iso * std::log(density_tilde);
-            RangeType u_alpha_prime;
+            StateRangeType u_alpha_prime;
             calculate_vector_integral(alpha_prime, M_, M_, u_alpha_prime);
             auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
             VectorType d_alpha_tilde;

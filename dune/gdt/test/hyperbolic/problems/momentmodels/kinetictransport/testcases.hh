@@ -122,13 +122,13 @@ struct PlaneSourcePnTestCase : SourceBeamPnTestCase<GridImp, BasisfunctionImp, r
 template <class BasisfunctionImp, bool reconstruct>
 struct PointSourcePnExpectedResults;
 
-// template <bool reconstruct>
-// struct PointSourcePnExpectedResults<LegendrePolynomials<double, double, 7>, reconstruct>
-//{
-//  static constexpr double l1norm = reconstruct ? 2.0000000240000007 : 2.0000000240000029;
-//  static constexpr double l2norm = reconstruct ? 2.9627559791618099 : 2.7793543802214402;
-//  static constexpr double linfnorm = reconstruct ? 7.5368337466833273 : 5.9468208917837284;
-//};
+template <bool reconstruct>
+struct PointSourcePnExpectedResults<RealSphericalHarmonics<double, double, 2, 3>, reconstruct>
+{
+  static constexpr double l1norm = reconstruct ? 2.0000000240000007 : 2.0000000240000029;
+  static constexpr double l2norm = reconstruct ? 2.9627559791618099 : 2.7793543802214402;
+  static constexpr double linfnorm = reconstruct ? 7.5368337466833273 : 5.9468208917837284;
+};
 
 template <bool reconstruct>
 struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 6, 1, 3>, reconstruct>
