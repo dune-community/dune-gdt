@@ -8,8 +8,8 @@
 //   Rene Milk      (2018)
 //   Tobias Leibner (2017)
 
-#ifndef DUNE_GDT_OPERATORS_FV_SLOPELIMITERS_HH
-#define DUNE_GDT_OPERATORS_FV_SLOPELIMITERS_HH
+#ifndef DUNE_GDT_OPERATORS_FV_SLOPES_HH
+#define DUNE_GDT_OPERATORS_FV_SLOPES_HH
 
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/device/null.hpp>
@@ -31,6 +31,8 @@
 #include <dune/xt/common/parallel/threadstorage.hh>
 
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/piecewise_monomials.hh>
+
+#include "internal.hh"
 
 namespace Dune {
 namespace GDT {
@@ -284,10 +286,11 @@ private:
 template <class RangeFieldType,
           size_t dimRange,
           class MatrixType,
-          class SlopeType = MinmodSlope<FieldVector<RangeFieldType, dimRange>, MatrixType>>
-class Dg1dRealizabilityLimitedSlope : public SlopeBase<FieldVector<RangeFieldType, dimRange>, MatrixType, 3>
+          class SlopeType = MinmodSlope<XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 2, 2>, MatrixType>>
+class Dg1dRealizabilityLimitedSlope
+    : public SlopeBase<XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 2, 2>, MatrixType, 3>
 {
-  using VectorType = FieldVector<RangeFieldType, dimRange>;
+  using VectorType = XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 2, 2>;
   using BaseType = SlopeBase<VectorType, MatrixType, 3>;
   using BasisfunctionType =
       Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<RangeFieldType, 1, RangeFieldType, dimRange, 1, 1, 1>;
@@ -308,7 +311,7 @@ public:
     const VectorType slope = slope_limiter_.get(stencil, stencil_char, A);
     // this needs to be changed for other interface quadratures (see above)
     const VectorType& u_bar_char = stencil_char[1];
-    const FieldVector<VectorType, 2> reconstructed_values{u_bar_char - 0.5 * slope, u_bar_char + 0.5 * slope};
+    const FieldVector<VectorType, 2> reconstructed_values{u_bar_char - slope * 0.5, u_bar_char + slope * 0.5};
     const VectorType& u_bar = stencil[1];
 
     VectorType thetas(0.);
@@ -977,4 +980,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_OPERATORS_FV_SLOPELIMITERS_HH
+#endif // DUNE_GDT_OPERATORS_FV_SLOPES_HH

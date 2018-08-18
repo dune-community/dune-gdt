@@ -80,8 +80,8 @@ public:
     grid_config["lower_left"] = "[0.0]";
     grid_config["upper_right"] = "[3.0]";
     grid_config["num_elements"] = "[300]";
-    grid_config["overlap_size"] = "[1]";
-    grid_config["num_quad_cells"] = "[48]";
+    grid_config["overlap_size"] = "[2]";
+    grid_config["num_quad_cells"] = "[100]";
     grid_config["quad_order"] = "31";
     return grid_config;
   }
@@ -94,8 +94,8 @@ public:
     return XT::Common::Parameter({std::make_pair("sigma_a", std::vector<double>{1, 1, 1, 1, 0, 0}),
                                   std::make_pair("sigma_s", std::vector<double>{0, 0, 2, 2, 10, 10}),
                                   std::make_pair("Q", std::vector<double>{0, 0, 0.5, 0, 0, 0}),
-                                  std::make_pair("CFL", std::vector<double>{0.4}),
-                                  std::make_pair("t_end", std::vector<double>{4.0})});
+                                  std::make_pair("CFL", std::vector<double>{0.49}),
+                                  std::make_pair("t_end", std::vector<double>{2.5})});
   }
 
   // Boundary value of kinetic equation is \frac{g}{<g>} at x = 0 and

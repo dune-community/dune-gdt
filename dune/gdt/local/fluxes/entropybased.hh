@@ -34,6 +34,7 @@
 
 #include <dune/xt/functions/interfaces/localizable-flux-function.hh>
 
+#include <dune/gdt/operators/fv/reconstruction/internal.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/hatfunctions.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/piecewise_monomials.hh>
 
@@ -950,8 +951,8 @@ public:
   using BaseType::dimRangeCols;
   static const size_t block_size = (dimDomain == 1) ? 2 : 4;
   static const size_t num_blocks = dimRange / block_size;
-  using BlockMatrixType = FieldVector<FieldMatrix<RangeFieldType, block_size, block_size>, num_blocks>;
-  typedef FieldVector<FieldVector<RangeFieldType, block_size>, num_blocks> BlockVectorType;
+  using BlockMatrixType = XT::Common::BlockedFieldMatrix<RangeFieldType, num_blocks, block_size>;
+  using BlockVectorType = XT::Common::BlockedFieldVector<RangeFieldType, num_blocks, block_size>;
   using BasisValuesMatrixType = FieldVector<XT::LA::CommonDenseMatrix<RangeFieldType>, num_blocks>;
   typedef Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
   using QuadraturePointsType =
@@ -1076,39 +1077,6 @@ public:
       return work_vecs;
     }
 
-    RangeFieldType one_norm(const BlockVectorType& vec) const
-    {
-      RangeFieldType ret(0);
-      for (size_t jj = 0; jj < num_blocks; ++jj)
-        for (size_t ii = 0; ii < block_size; ++ii)
-          ret += std::abs(vec[jj][ii]);
-      return ret;
-    }
-
-    RangeFieldType two_norm(const BlockVectorType& vec) const
-    {
-      RangeFieldType ret(0);
-      for (size_t jj = 0; jj < num_blocks; ++jj)
-        for (size_t ii = 0; ii < block_size; ++ii)
-          ret += std::pow(vec[jj][ii], 2);
-      ret = std::sqrt(ret);
-      return ret;
-    }
-
-    void vector_to_block_vector(const StateRangeType& vec, BlockVectorType& block_vec) const
-    {
-      for (size_t jj = 0; jj < num_blocks; ++jj)
-        for (size_t ii = 0; ii < block_size; ++ii)
-          block_vec[jj][ii] = vec[jj * block_size + ii];
-    }
-
-    void block_vector_to_vector(const BlockVectorType& block_vec, StateRangeType& vec) const
-    {
-      for (size_t jj = 0; jj < num_blocks; ++jj)
-        for (size_t ii = 0; ii < block_size; ++ii)
-          vec[jj * block_size + ii] = block_vec[jj][ii];
-    }
-
     void copy_basis_matrix(const BasisValuesMatrixType& source_mat, BasisValuesMatrixType& range_mat) const
     {
       for (size_t jj = 0; jj < num_blocks; ++jj)
@@ -1124,7 +1092,7 @@ public:
         const auto& M_backend = M[jj].backend();
         std::fill(scalar_products[jj].begin(), scalar_products[jj].end(), 0.);
         for (size_t ii = 0; ii < block_size; ++ii) {
-          const auto factor = beta_in[jj][ii];
+          const auto factor = beta_in.block(jj)[ii];
           for (size_t ll = 0; ll < num_quad_points; ++ll)
             scalar_products[jj][ll] += M_backend.get_entry_ref(ii, ll) * factor;
         }
@@ -1170,7 +1138,7 @@ public:
           RangeFieldType result(0.);
           for (size_t ll = 0; ll < num_quad_points; ++ll)
             result += M1_backend.get_entry_ref(ii, ll) * work_vecs[jj][ll] * quad_weights_[jj][ll];
-          ret[jj][ii] = result;
+          ret.block(jj)[ii] = result;
         } // ii
       } // jj
     }
@@ -1187,7 +1155,7 @@ public:
                                 block_size,
                                 static_cast<int>(quad_points_[jj].size()),
                                 1.,
-                                &(T_k[jj][0][0]),
+                                &(T_k.block(jj)[0][0]),
                                 block_size,
                                 M[jj].data(),
                                 static_cast<int>(quad_points_[jj].size()));
@@ -1198,8 +1166,8 @@ public:
     {
       if (dimDomain == 1) {
         for (size_t jj = 0; jj < num_blocks; ++jj) {
-          const auto& u0 = u[jj][0];
-          const auto& u1 = u[jj][1];
+          const auto& u0 = u.block(jj)[0];
+          const auto& u1 = u.block(jj)[1];
           const auto& v0 = basis_functions_.triangulation()[jj];
           const auto& v1 = basis_functions_.triangulation()[jj + 1];
           bool ret = (u0 >= eps) && (u1 <= v1 * u0 - eps * std::sqrt(std::pow(v1, 2) + 1))
@@ -1233,8 +1201,7 @@ public:
       RangeFieldType density = basis_functions_.density(u_in);
       StateRangeType u_prime_in = u_in / density;
       StateRangeType alpha_iso_in = basis_functions_.alpha_iso();
-      BlockVectorType alpha_iso;
-      vector_to_block_vector(alpha_iso_in, alpha_iso);
+      BlockVectorType alpha_iso = alpha_iso_in;
 
       // if value has already been calculated for these values, skip computation
       const auto cache_iterator = cache_.find_closest(u_prime_in);
@@ -1253,7 +1220,6 @@ public:
 
         // calculate moment vector for isotropic distribution
         StateRangeType u_iso_in = basis_functions_.u_iso();
-        StateRangeType v_in;
 
         // define further variables
         BlockVectorType g_k, beta_in, beta_out, v;
@@ -1267,12 +1233,9 @@ public:
           v_in = u_prime_in;
           if (r > 0.) {
             beta_in = alpha_iso;
-            StateRangeType r_times_u_iso = u_iso_in;
-            r_times_u_iso *= r;
-            v_in *= 1 - r;
-            v_in += r_times_u_iso;
+            v_in = v_in * (1 - r) + u_iso_in * r;
           }
-          vector_to_block_vector(v_in, v);
+          v = v_in;
           *T_k = T_minus_one_;
           // calculate T_k u
           BlockVectorType v_k = v;
@@ -1280,8 +1243,7 @@ public:
           thread_local BasisValuesMatrixType P_k(XT::LA::CommonDenseMatrix<RangeFieldType>(0, 0, 0., 0));
           copy_basis_matrix(M_, P_k);
           // calculate f_0
-          RangeFieldType f_k = calculate_scalar_integral(beta_in, P_k);
-          f_k -= beta_in * v_k;
+          RangeFieldType f_k = calculate_scalar_integral(beta_in, P_k) - beta_in * v_k;
 
           int pure_newton = 0;
           for (size_t kk = 0; kk < k_max_; ++kk) {
@@ -1305,18 +1267,19 @@ public:
             // original basis.
             BlockVectorType alpha_tilde, u_alpha_tilde, u_alpha_prime, d_alpha_tilde, g_alpha_tilde;
             auto u_alpha_tilde_k = g_k + v_k;
-            for (size_t jj = 0; jj < num_blocks; ++jj) { // convert everything to original basis
-              XT::LA::solve_lower_triangular_transposed((*T_k)[jj], alpha_tilde[jj], beta_out[jj]);
-              (*T_k)[jj].mv(u_alpha_tilde_k[jj], u_alpha_tilde[jj]);
-              (*T_k)[jj].mv(g_k, g_alpha_tilde);
-              XT::LA::solve_lower_triangular_transposed((*T_k)[jj], d_alpha_tilde[jj], d_k[jj]);
+            // convert everything to original basis
+            T_k->mv(u_alpha_tilde_k, u_alpha_tilde);
+            T_k->mv(g_k, g_alpha_tilde);
+            for (size_t jj = 0; jj < num_blocks; ++jj) {
+              XT::LA::solve_lower_triangular_transposed(T_k->block(jj), alpha_tilde.block(jj), beta_out.block(jj));
+              XT::LA::solve_lower_triangular_transposed(T_k->block(jj), d_alpha_tilde.block(jj), d_k.block(jj));
             } // jj
             auto density_tilde = basis_functions_.density(u_alpha_tilde);
             const auto alpha_prime = alpha_tilde - alpha_iso * std::log(density_tilde);
             calculate_vector_integral(alpha_prime, M_, M_, u_alpha_prime);
             auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
-            if (two_norm(g_alpha_tilde) < tau_prime
-                && 1 - epsilon_gamma_ < std::exp(one_norm(d_alpha_tilde) + std::abs(std::log(density_tilde)))
+            if (g_alpha_tilde.two_norm() < tau_prime
+                && 1 - epsilon_gamma_ < std::exp(d_alpha_tilde.one_norm() + std::abs(std::log(density_tilde)))
                 && is_realizable(u_eps_diff)) {
               ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
@@ -1327,12 +1290,9 @@ public:
               RangeFieldType zeta_k = 1;
               beta_in = beta_out;
               // backtracking line search
-              while (pure_newton >= 2 || zeta_k > epsilon_ * two_norm(beta_out) / two_norm(d_k) * 100.) {
-                BlockVectorType beta_new = d_k;
-                beta_new *= zeta_k;
-                beta_new += beta_out;
-                RangeFieldType f = calculate_scalar_integral(beta_new, P_k);
-                f -= beta_new * v_k;
+              while (pure_newton >= 2 || zeta_k > epsilon_ * beta_out.two_norm() / d_k.two_norm()) {
+                BlockVectorType beta_new = d_k * zeta_k + beta_out;
+                RangeFieldType f = calculate_scalar_integral(beta_new, P_k) - beta_new * v_k;
                 if (pure_newton >= 2 || f <= f_k + xi_ * zeta_k * (g_k * d_k)) {
                   beta_in = beta_new;
                   f_k = f;
@@ -1341,7 +1301,7 @@ public:
                 }
                 zeta_k = chi_ * zeta_k;
               } // backtracking linesearch while
-              if (zeta_k <= epsilon_ * two_norm(beta_out) / two_norm(d_k) * 100)
+              if (zeta_k <= epsilon_ * beta_out.two_norm() / d_k.two_norm())
                 ++pure_newton;
             } // else (stopping conditions)
           } // k loop (Newton iterations)
@@ -1499,7 +1459,7 @@ public:
       // calculate B = LL^T first
       if (!L_calculated) {
         for (size_t jj = 0; jj < num_blocks; ++jj)
-          XT::LA::cholesky(B[jj]);
+          XT::LA::cholesky(B.block(jj));
       }
       FieldVector<RangeFieldType, block_size> tmp_vec;
       FieldVector<RangeFieldType, block_size> tmp_A_row;
@@ -1509,9 +1469,9 @@ public:
         for (size_t ii = 0; ii < block_size; ++ii) {
           for (size_t kk = 0; kk < block_size; ++kk)
             tmp_A_row[kk] = A[offset + ii][offset + kk];
-          XT::LA::solve_lower_triangular(B[jj], tmp_vec, tmp_A_row);
+          XT::LA::solve_lower_triangular(B.block(jj), tmp_vec, tmp_A_row);
           // calculate ret = C L^{-1}
-          XT::LA::solve_lower_triangular_transposed(B[jj], tmp_A_row, tmp_vec);
+          XT::LA::solve_lower_triangular_transposed(B.block(jj), tmp_A_row, tmp_vec);
           for (size_t kk = 0; kk < block_size; ++kk)
             A[offset + ii][offset + kk] = tmp_A_row[kk];
         } // ii
@@ -1535,7 +1495,7 @@ public:
             RangeFieldType result(0);
             for (size_t ll = 0; ll < num_quad_points; ++ll)
               result += M_backend.get_entry_ref(ii, ll) * M_backend.get_entry_ref(kk, ll) * work_vecs[jj][ll];
-            H[jj][ii][kk] = result;
+            H.block(jj)[ii][kk] = result;
           } // kk
         } // ii
       } // jj
@@ -1588,14 +1548,14 @@ public:
       thread_local auto H = XT::Common::make_unique<BlockMatrixType>(0.);
       calculate_hessian(beta_in, P_k, *H);
       for (size_t jj = 0; jj < num_blocks; ++jj)
-        XT::LA::cholesky((*H)[jj]);
+        XT::LA::cholesky(H->block(jj));
       const auto& L = *H;
+      T_k.rightmultiply(L);
+      L.mtv(beta_in, beta_out);
       FieldVector<RangeFieldType, block_size> tmp_vec;
       for (size_t jj = 0; jj < num_blocks; ++jj) {
-        T_k[jj].rightmultiply(L[jj]);
-        L[jj].mtv(beta_in[jj], beta_out[jj]);
-        XT::LA::solve_lower_triangular(L[jj], tmp_vec, v_k[jj]);
-        v_k[jj] = tmp_vec;
+        XT::LA::solve_lower_triangular(L.block(jj), tmp_vec, v_k.block(jj));
+        v_k.block(jj) = tmp_vec;
       } // jj
       apply_inverse_matrix(L, P_k);
       calculate_vector_integral(beta_out, P_k, P_k, g_k, true);

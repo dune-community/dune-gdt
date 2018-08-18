@@ -106,7 +106,7 @@ public:
   }
 
   // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
-  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const
+  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const override final
   {
     FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
     auto mm_with_v = mass_matrix_with_v();
@@ -138,7 +138,7 @@ public:
     return ret;
   }
 
-  virtual MatrixType reflection_matrix(const DomainType& n) const
+  virtual MatrixType reflection_matrix(const DomainType& n) const override final
   {
     MatrixType ret(dimRange, dimRange, 0);
     for (size_t ii = 0; ii < dimDomain; ++ii)

@@ -112,7 +112,7 @@ public:
   }
 
   // returns matrix with entries <h_i h_j>
-  virtual MatrixType mass_matrix() const override
+  virtual MatrixType mass_matrix() const override final
   {
     MatrixType M(dimRange, dimRange, 0.);
     for (size_t ii = 0; ii < dimRange / 2; ++ii) {
@@ -124,13 +124,13 @@ public:
     return M;
   }
 
-  virtual MatrixType mass_matrix_inverse() const override
+  virtual MatrixType mass_matrix_inverse() const override final
   {
     return tridiagonal_matrix_inverse<RangeFieldType, dimRange>(mass_matrix());
   }
 
   // returns matrix with entries <v h_i h_j>
-  virtual FieldVector<MatrixType, dimDomain> mass_matrix_with_v() const override
+  virtual FieldVector<MatrixType, dimDomain> mass_matrix_with_v() const override final
   {
     MatrixType B(dimRange, dimRange, 0.);
     for (size_t ii = 0; ii < dimRange / 2; ++ii) {
@@ -143,7 +143,7 @@ public:
   }
 
   // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
-  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const
+  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const override final
   {
     FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
     auto mm_with_v = mass_matrix_with_v();
@@ -186,7 +186,7 @@ public:
     return ret;
   }
 
-  virtual MatrixType reflection_matrix(const DomainType& n) const
+  virtual MatrixType reflection_matrix(const DomainType& n) const override final
   {
     MatrixType ret(dimRange, dimRange, 0);
     for (size_t ii = 0; ii < dimDomain; ++ii)
@@ -352,27 +352,27 @@ public:
   } // ... evaluate(...)
 
   // returns <b>, where b is the basis functions vector
-  virtual RangeType integrated() const override
+  virtual RangeType integrated() const override final
   {
     static const RangeType ret = integrated_initializer(quadrature_);
     return ret;
   }
 
-  virtual MatrixType mass_matrix() const override
+  virtual MatrixType mass_matrix() const override final
   {
     MatrixType M(dimRange, dimRange, 0.);
     parallel_quadrature(quadrature_, M, size_t(-1));
     return M;
   } // ... mass_matrix()
 
-  virtual MatrixType mass_matrix_inverse() const override
+  virtual MatrixType mass_matrix_inverse() const override final
   {
     auto ret = mass_matrix();
     ret.invert();
     return ret;
   }
 
-  virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const override
+  virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const override final
   {
     FieldVector<MatrixType, dimFlux> B(MatrixType(dimRange, dimRange, 0));
     for (size_t dd = 0; dd < dimFlux; ++dd)
