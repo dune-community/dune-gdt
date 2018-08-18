@@ -8,8 +8,9 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_PN_DISCRETIZATION_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_PN_DISCRETIZATION_HH
 
-#include <dune/xt/common/string.hh>
 #include <dune/xt/common/parallel/threadmanager.hh>
+#include <dune/xt/common/string.hh>
+#include <dune/xt/common/test/gtest/gtest.h>
 
 #include <dune/xt/grid/information.hh>
 #include <dune/xt/grid/gridprovider.hh>
