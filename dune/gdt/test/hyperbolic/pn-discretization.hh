@@ -24,6 +24,8 @@
 #include <dune/gdt/timestepper/factory.hh>
 #include <dune/gdt/operators/fv/quadrature.hh>
 
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/kineticequation.hh>
+
 template <bool reconstruction>
 struct FvOperatorChooser
 {
