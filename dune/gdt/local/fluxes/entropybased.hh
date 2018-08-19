@@ -863,7 +863,141 @@ private:
   mutable std::vector<std::mutex> mutexes_;
   mutable XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>> lp_;
 };
-#endif
+
+#else // HAVE_CLP
+
+template <class BasisfunctionImp, class GridLayerImp, class U>
+class EntropyBasedLocalFlux
+    : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                             typename BasisfunctionImp::DomainFieldType,
+                                                             BasisfunctionImp::dimFlux,
+                                                             U,
+                                                             0,
+                                                             typename BasisfunctionImp::RangeFieldType,
+                                                             BasisfunctionImp::dimRange,
+                                                             BasisfunctionImp::dimFlux>
+{
+  typedef typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                                   typename BasisfunctionImp::DomainFieldType,
+                                                                   BasisfunctionImp::dimFlux,
+                                                                   U,
+                                                                   0,
+                                                                   typename BasisfunctionImp::RangeFieldType,
+                                                                   BasisfunctionImp::dimRange,
+                                                                   BasisfunctionImp::dimFlux>
+      BaseType;
+
+public:
+  typedef BasisfunctionImp BasisfunctionType;
+  typedef GridLayerImp GridLayerType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::StateType;
+  using typename BaseType::StateRangeType;
+  using typename BaseType::RangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::PartialURangeType;
+  using typename BaseType::LocalfunctionType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  using BaseType::dimRangeCols;
+  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
+  using VectorType = FieldVector<RangeFieldType, dimRange>;
+  using BasisValuesMatrixType = XT::LA::CommonDenseMatrix<RangeFieldType>;
+  typedef Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
+  typedef std::pair<VectorType, RangeFieldType> AlphaReturnType;
+  typedef EntropyLocalCache<StateRangeType, VectorType> LocalCacheType;
+  static const size_t cache_size = 2 * dimDomain + 2;
+
+  explicit EntropyBasedLocalFlux(
+      const BasisfunctionType& /*basis_functions*/,
+      const GridLayerType& /*grid_layer*/,
+      const QuadratureRuleType& /*quadrature*/,
+      const RangeFieldType /*tau*/ = 1e-9,
+      const RangeFieldType /*epsilon_gamma*/ = 0.01,
+      const RangeFieldType /*chi*/ = 0.5,
+      const RangeFieldType /*xi*/ = 1e-3,
+      const std::vector<RangeFieldType> /*r_sequence*/ = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1},
+      const size_t /*k_0*/ = 500,
+      const size_t /*k_max*/ = 1000,
+      const RangeFieldType /*epsilon*/ = std::pow(2, -52),
+      const MatrixType& /*T_minus_one*/ = MatrixType(),
+      const std::string /*name*/ = "")
+    : basis_functions_(basis_functions)
+  {
+    DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+  }
+
+  class Localfunction : public LocalfunctionType
+  {
+  public:
+    AlphaReturnType get_alpha(const DomainType& /*x_local*/,
+                              const StateRangeType& /*u*/,
+                              const XT::Common::Parameter& /*param*/,
+                              const bool /*regularize*/,
+                              const bool /*only_cache*/) const
+    {
+      DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+      return AlphaReturnType();
+    }
+
+    virtual size_t order(const XT::Common::Parameter& /*param*/) const override
+    {
+      DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+      return 0;
+    }
+
+    virtual void evaluate(const DomainType& /*x_local*/,
+                          const StateRangeType& /*u*/,
+                          RangeType& /*ret*/,
+                          const XT::Common::Parameter& /*param*/) const override
+    {
+      DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+    } // void evaluate(...)
+  }; // class Localfunction
+
+  std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const
+  {
+    DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+    return derived_local_function(entity);
+  }
+
+  std::unique_ptr<Localfunction> derived_local_function(const EntityType& /*entity*/) const
+  {
+    DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+    return std::make_unique<Localfunction>();
+  }
+
+  // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
+  // m is the basis function vector, phi_u is the ansatz corresponding to u
+  // and x, v, t are the space, velocity and time variable, respectively
+  // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
+  StateRangeType evaluate_kinetic_flux(const EntityType& /*entity*/,
+                                       const DomainType& /*x_local_entity*/,
+                                       const StateRangeType& /*u_i*/,
+                                       const EntityType& /*neighbor*/,
+                                       const DomainType& /*x_local_neighbor*/,
+                                       const StateRangeType& /*u_j*/,
+                                       const DomainType& /*n_ij*/,
+                                       const size_t /*dd*/,
+                                       const XT::Common::Parameter& /*param*/,
+                                       const XT::Common::Parameter& /*param_neighbor*/) const
+  {
+    DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+    return StateRangeType(0.);
+  } // StateRangeType evaluate_kinetic_flux(...)
+
+  const BasisfunctionType& basis_functions() const
+  {
+    DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+    return basis_functions_;
+  }
+
+private:
+  const BasisfunctionType& basis_functions_;
+};
+#endif // HAVE_CLP
 
 #if 1
 
