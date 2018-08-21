@@ -70,7 +70,7 @@ int main(int argc, char** argv)
   std::string filename;
   double CFL = 0;
   for (int i = 1; i < argc; ++i) {
-    if (std::string(argv[i]) == "-num_threads") {
+    if (std::string(argv[i]) == "--num_threads") {
       if (i + 1 < argc) {
         num_threads = Dune::XT::Common::from_string<size_t>(argv[++i]);
       } else {
@@ -126,6 +126,8 @@ int main(int argc, char** argv)
         std::cerr << "--t_end option requires one argument." << std::endl;
         return 1;
       }
+    } else {
+      std::cerr << "Warning: Unrecognized option '" << argv[i] << "' ignored." << std::endl;
     }
   }
   (void)epsilon;
@@ -173,8 +175,9 @@ int main(int argc, char** argv)
   auto grid_config = ProblemType::default_grid_cfg();
   grid_config["num_elements"] = grid_size;
   grid_config["overlap_size"] = overlap_size;
-  const auto grid_ptr = Dune::XT::Grid::CubeGridProviderFactory<GridType>::create(grid_config).grid_ptr();
-  assert(grid.comm().size() == 1 || grid.overlapSize(0) > 0);
+  const auto grid_ptr =
+      Dune::XT::Grid::CubeGridProviderFactory<GridType>::create(grid_config, MPIHelper::getCommunicator()).grid_ptr();
+  assert(grid_ptr->comm().size() == 1 || grid_ptr->overlapSize(0) > 0);
   const GridLayerType grid_layer(grid_ptr->leafGridView());
   const SpaceType fv_space(grid_layer);
 
