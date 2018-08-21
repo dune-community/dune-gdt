@@ -32,6 +32,7 @@ namespace KineticTransport {
 template <class BasisfunctionImp, class AnalyticalFluxType, class DiscreteFunctionType>
 struct RealizabilityLimiterChooser;
 
+#if HAVE_CLP
 template <size_t order, class AnalyticalFluxType, class DiscreteFunctionType>
 struct RealizabilityLimiterChooser<LegendrePolynomials<double, double, order>, AnalyticalFluxType, DiscreteFunctionType>
 {
@@ -49,6 +50,7 @@ struct RealizabilityLimiterChooser<LegendrePolynomials<double, double, order>, A
     return std::make_unique<SlopeType>(basis_functions, quadrature, epsilon);
   }
 };
+#endif
 
 template <size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType>
 struct RealizabilityLimiterChooser<HatFunctions<double, 1, double, dimRange, 1, 1>,
@@ -56,25 +58,26 @@ struct RealizabilityLimiterChooser<HatFunctions<double, 1, double, dimRange, 1, 
                                    DiscreteFunctionType>
 {
   using BasisfunctionType = HatFunctions<double, 1, double, dimRange, 1, 1>;
-  //    using LocalRealizabilityLimiterType =
-  //        PositivityLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
   using LocalRealizabilityLimiterType =
       NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
 
+#if HAVE_CLP
   template <class MatrixType, class QuadratureType>
-  // static std::unique_ptr<PositivityLimitedSlope<double, dimRange, MatrixType>> make_slope(const BasisfunctionType&
-  // /*basis_functions*/, const QuadratureType& /*quadrature*/, const double epsilon)
   static std::unique_ptr<LpPositivityLimitedSlope<double, dimRange, MatrixType>>
   make_slope(const BasisfunctionType& /*basis_functions*/, const QuadratureType& /*quadrature*/, const double epsilon)
-  // static std::unique_ptr<MinmodSlope<typename AnalyticalFluxType::StateRangeType, MatrixType>> make_slope(const
-  // BasisfunctionType& /*basis_functions*/, const QuadratureType& /*quadrature*/, const double epsilon)
   {
-    //   using SlopeType = PositivityLimitedSlope<double, dimRange, MatrixType>;
-    //   using SlopeType = MinmodSlope<typename AnalyticalFluxType::StateRangeType, MatrixType>;
     using SlopeType = LpPositivityLimitedSlope<double, dimRange, MatrixType>;
     return std::make_unique<SlopeType>(epsilon);
-    //   return std::make_unique<SlopeType>();
   }
+#else // HAVE_CLP
+  template <class MatrixType, class QuadratureType>
+  static std::unique_ptr<PositivityLimitedSlope<double, dimRange, MatrixType>>
+  make_slope(const BasisfunctionType& /*basis_functions*/, const QuadratureType& /*quadrature*/, const double epsilon)
+  {
+    using SlopeType = PositivityLimitedSlope<double, dimRange, MatrixType>;
+    return std::make_unique<SlopeType>(epsilon);
+  }
+#endif // HAVE_CLP
 };
 
 template <size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType>
