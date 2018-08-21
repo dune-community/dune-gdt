@@ -345,6 +345,7 @@ public:
   using LocalMatrixType = typename MatrixType::BlockType;
   using EigenSolverType = typename XT::LA::EigenSolver<LocalMatrixType>;
   using LocalM = typename XT::Common::MatrixAbstraction<LocalMatrixType>;
+  using LocalV = typename XT::Common::VectorAbstraction<LocalVectorType>;
 
   BlockedJacobianWrapper()
     : work_(1)
@@ -359,7 +360,7 @@ public:
                                                static_cast<int>(block_size),
                                                LocalM::data(jacobian(0).block(0)),
                                                static_cast<int>(block_size),
-                                               eigenvalues_[0].data(),
+                                               LocalV::data(eigenvalues_[0].block(0)),
                                                &(dummy_complex_eigenvalues_[0]),
                                                nullptr,
                                                static_cast<int>(block_size),
@@ -414,7 +415,7 @@ public:
                                                    static_cast<int>(block_size),
                                                    LocalM::data(jacobian(dd).block(jj)),
                                                    static_cast<int>(block_size),
-                                                   eigenvalues_[jj].data(),
+                                                   LocalV::data(eigenvalues_[dd].block(jj)),
                                                    &(dummy_complex_eigenvalues_[0]),
                                                    nullptr,
                                                    static_cast<int>(block_size),

@@ -14,6 +14,8 @@
 #include <dune/grid/yaspgrid.hh>
 #include <dune/gdt/timestepper/interface.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
+#include <dune/gdt/operators/fv/entropybased/realizability.hh>
+#include <dune/gdt/operators/fv/reconstruction/slopes.hh>
 
 #include "planesource.hh"
 #include "pointsource.hh"
@@ -26,7 +28,76 @@ namespace Problems {
 namespace KineticTransport {
 
 
-// SourceBeam
+// choose RealizabilityLimiter suitable for BasisfunctionImp
+template <class BasisfunctionImp, class AnalyticalFluxType, class DiscreteFunctionType>
+struct RealizabilityLimiterChooser;
+
+template <size_t order, class AnalyticalFluxType, class DiscreteFunctionType>
+struct RealizabilityLimiterChooser<LegendrePolynomials<double, double, order>, AnalyticalFluxType, DiscreteFunctionType>
+{
+  using BasisfunctionType = LegendrePolynomials<double, double, order>;
+  //  using LocalRealizabilityLimiterType =
+  //      ClpLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
+  using LocalRealizabilityLimiterType =
+      NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
+
+  template <class MatrixType, class QuadratureType>
+  static std::unique_ptr<LpConvexhullRealizabilityLimitedSlope<BasisfunctionType, MatrixType>>
+  make_slope(const BasisfunctionType& basis_functions, const QuadratureType& quadrature, const double epsilon)
+  {
+    using SlopeType = LpConvexhullRealizabilityLimitedSlope<BasisfunctionType, MatrixType>;
+    return std::make_unique<SlopeType>(basis_functions, quadrature, epsilon);
+  }
+};
+
+template <size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType>
+struct RealizabilityLimiterChooser<HatFunctions<double, 1, double, dimRange, 1, 1>,
+                                   AnalyticalFluxType,
+                                   DiscreteFunctionType>
+{
+  using BasisfunctionType = HatFunctions<double, 1, double, dimRange, 1, 1>;
+  //    using LocalRealizabilityLimiterType =
+  //        PositivityLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
+  using LocalRealizabilityLimiterType =
+      NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
+
+  template <class MatrixType, class QuadratureType>
+  // static std::unique_ptr<PositivityLimitedSlope<double, dimRange, MatrixType>> make_slope(const BasisfunctionType&
+  // /*basis_functions*/, const QuadratureType& /*quadrature*/, const double epsilon)
+  static std::unique_ptr<LpPositivityLimitedSlope<double, dimRange, MatrixType>>
+  make_slope(const BasisfunctionType& /*basis_functions*/, const QuadratureType& /*quadrature*/, const double epsilon)
+  // static std::unique_ptr<MinmodSlope<typename AnalyticalFluxType::StateRangeType, MatrixType>> make_slope(const
+  // BasisfunctionType& /*basis_functions*/, const QuadratureType& /*quadrature*/, const double epsilon)
+  {
+    //   using SlopeType = PositivityLimitedSlope<double, dimRange, MatrixType>;
+    //   using SlopeType = MinmodSlope<typename AnalyticalFluxType::StateRangeType, MatrixType>;
+    using SlopeType = LpPositivityLimitedSlope<double, dimRange, MatrixType>;
+    return std::make_unique<SlopeType>(epsilon);
+    //   return std::make_unique<SlopeType>();
+  }
+};
+
+template <size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType>
+struct RealizabilityLimiterChooser<PiecewiseMonomials<double, 1, double, dimRange, 1, 1>,
+                                   AnalyticalFluxType,
+                                   DiscreteFunctionType>
+{
+  using BasisfunctionType = PiecewiseMonomials<double, 1, double, dimRange, 1, 1>;
+  using LocalRealizabilityLimiterType =
+      DgLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
+
+  template <class MatrixType, class QuadratureType>
+  static std::unique_ptr<Dg1dRealizabilityLimitedSlope<double, dimRange, MatrixType>>
+  make_slope(const BasisfunctionType& /*basis_functions*/, const QuadratureType& /*quadrature*/, const double epsilon)
+  {
+    using SlopeType = Dg1dRealizabilityLimitedSlope<double, dimRange, MatrixType>;
+    //   using SlopeType = MinmodSlope<RangeType, MatrixType>;
+    return std::make_unique<SlopeType>(epsilon);
+  }
+};
+
+
+// SourceBeam Pn
 template <class BasisfunctionImp, bool reconstruct>
 struct SourceBeamPnExpectedResults;
 
@@ -54,7 +125,6 @@ struct SourceBeamPnExpectedResults<PiecewiseMonomials<double, 1, double, 8, 1, 1
   static constexpr double linfnorm = reconstruct ? 1.0490804598503622 : 0.99004736850989217;
 };
 
-
 template <class GridImp, class BasisfunctionImp, bool reconstruct>
 struct SourceBeamPnTestCase
 {
@@ -77,7 +147,61 @@ struct SourceBeamPnTestCase
   using ExpectedResultsType = SourceBeamPnExpectedResults<BasisfunctionImp, reconstruction>;
 };
 
-// PlaneSource
+
+// SourceBeam Mn
+template <class BasisfunctionImp, bool reconstruct>
+struct SourceBeamMnExpectedResults;
+
+template <bool reconstruct>
+struct SourceBeamMnExpectedResults<LegendrePolynomials<double, double, 7>, reconstruct>
+{
+  static constexpr double l1norm = reconstruct ? 0.33066818456325014 : 0.33107004463413914;
+  static constexpr double l2norm = reconstruct ? 0.4615751405564803 : 0.44609169128863851;
+  static constexpr double linfnorm = reconstruct ? 1.1553979882432861 : 1.0882801946666156;
+};
+
+template <bool reconstruct>
+struct SourceBeamMnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, reconstruct>
+{
+  static constexpr double l1norm = reconstruct ? 0.33146057542497237 : 0.33146794280839997;
+  static constexpr double l2norm = reconstruct ? 0.46411980559363358 : 0.44913032300780292;
+  static constexpr double linfnorm = reconstruct ? 0.98904667015384473 : 0.98709215129457029;
+};
+
+template <bool reconstruct>
+struct SourceBeamMnExpectedResults<PiecewiseMonomials<double, 1, double, 8, 1, 1>, reconstruct>
+{
+  static constexpr double l1norm = reconstruct ? 0.33140398337610927 : 0.33140398337603194;
+  static constexpr double l2norm = reconstruct ? 0.47294828933204158 : 0.45667075585121392;
+  static constexpr double linfnorm = reconstruct ? 1.0490804598503622 : 0.99004736850989217;
+};
+
+template <class GridImp, class BasisfunctionImp, bool reconstruct>
+struct SourceBeamMnTestCase
+{
+  using BasisfunctionType = BasisfunctionImp;
+  static constexpr size_t dimDomain = BasisfunctionType::dimDomain;
+  static constexpr size_t dimRange = BasisfunctionType::dimRange;
+  static constexpr auto time_stepper_method = TimeStepperMethods::explicit_rungekutta_second_order_ssp;
+  static constexpr auto rhs_time_stepper_method = TimeStepperMethods::matrix_exponential;
+  static constexpr auto time_stepper_splitting_method = TimeStepperSplittingMethods::strang;
+  using DomainFieldType = typename BasisfunctionType::DomainFieldType;
+  using RangeFieldType = typename BasisfunctionType::RangeFieldType;
+  using GridType = GridImp;
+  using GridLayerType = typename GridType::LeafGridView;
+  using SpaceType = FvProductSpace<GridLayerType, RangeFieldType, dimRange, 1>;
+  using VectorType = typename Dune::XT::LA::Container<RangeFieldType, Dune::XT::LA::default_backend>::VectorType;
+  using DiscreteFunctionType = DiscreteFunction<SpaceType, VectorType>;
+  using ProblemType = SourceBeamMn<BasisfunctionType, GridLayerType, DiscreteFunctionType>;
+  static constexpr RangeFieldType t_end = 0.25;
+  static constexpr bool reconstruction = reconstruct;
+  using ExpectedResultsType = SourceBeamMnExpectedResults<BasisfunctionImp, reconstruction>;
+  using RealizabilityLimiterChooserType =
+      RealizabilityLimiterChooser<BasisfunctionType, typename ProblemType::FluxType, DiscreteFunctionType>;
+};
+
+
+// PlaneSource Pn
 template <class BasisfunctionImp, bool reconstruct>
 struct PlaneSourcePnExpectedResults;
 
@@ -118,7 +242,50 @@ struct PlaneSourcePnTestCase : SourceBeamPnTestCase<GridImp, BasisfunctionImp, r
 };
 
 
-// PointSource
+// PlaneSource Mn
+template <class BasisfunctionImp, bool reconstruct>
+struct PlaneSourceMnExpectedResults;
+
+template <bool reconstruct>
+struct PlaneSourceMnExpectedResults<LegendrePolynomials<double, double, 7>, reconstruct>
+{
+  static constexpr double l1norm = reconstruct ? 2.0000000240000007 : 2.0000000240000029;
+  static constexpr double l2norm = reconstruct ? 2.9627559791618099 : 2.7793543802214402;
+  static constexpr double linfnorm = reconstruct ? 7.5368337466833273 : 5.9468208917837284;
+};
+
+template <bool reconstruct>
+struct PlaneSourceMnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, reconstruct>
+{
+  static constexpr double l1norm = 2.0000000240000557;
+  static constexpr double l2norm = reconstruct ? 2.892587690555561 : 2.7677861047579322;
+  static constexpr double linfnorm = reconstruct ? 6.9955083584307651 : 5.8898335510903852;
+};
+
+template <bool reconstruct>
+struct PlaneSourceMnExpectedResults<PiecewiseMonomials<double, 1, double, 8, 1, 1>, reconstruct>
+{
+  static constexpr double l1norm = reconstruct ? 2.000000024000026 : 2.0000000240000273;
+  static constexpr double l2norm = reconstruct ? 2.881005248537496 : 2.7713504721240083;
+  static constexpr double linfnorm = reconstruct ? 6.9331778582604997 : 6.0086435546642116;
+};
+
+template <class GridImp, class BasisfunctionImp, bool reconstruct>
+struct PlaneSourceMnTestCase : SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>
+{
+  using BaseType = SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>;
+  using typename BaseType::DiscreteFunctionType;
+  using RangeFieldType = typename BaseType::RangeFieldType;
+  using ProblemType = PlaneSourceMn<BasisfunctionImp, typename BaseType::GridLayerType, DiscreteFunctionType>;
+  static constexpr RangeFieldType t_end = 0.25;
+  static constexpr bool reconstruction = reconstruct;
+  using ExpectedResultsType = PlaneSourceMnExpectedResults<BasisfunctionImp, reconstruction>;
+  using RealizabilityLimiterChooserType =
+      RealizabilityLimiterChooser<BasisfunctionImp, typename ProblemType::FluxType, DiscreteFunctionType>;
+};
+
+
+// PointSourcePn
 template <class BasisfunctionImp, bool reconstruct>
 struct PointSourcePnExpectedResults;
 
@@ -141,9 +308,9 @@ struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 6, 1, 3>, re
 template <bool reconstruct>
 struct PointSourcePnExpectedResults<PiecewiseMonomials<double, 3, double, 32, 1, 3>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 1.0088250566247499 : 1.0029611746514546;
-  static constexpr double l2norm = reconstruct ? 2.7626619532892951 : 2.7118027445930162;
-  static constexpr double linfnorm = reconstruct ? 10.787213242460366 : 10.476921363773437;
+  static constexpr double l1norm = reconstruct ? 1.0029611747120692 : 1.0029611746514546;
+  static constexpr double l2norm = reconstruct ? 2.715087211171229 : 2.7118027445930162;
+  static constexpr double linfnorm = reconstruct ? 10.447363497137538 : 10.476921363773437;
 };
 
 template <class GridImp, class BasisfunctionImp, bool reconstruct>

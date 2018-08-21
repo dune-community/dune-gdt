@@ -834,7 +834,9 @@ class LpConvexhullRealizabilityLimitedSlope
     : public SlopeBase<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>
 {
   using RangeFieldType = typename BasisfunctionType::RangeFieldType;
-  static const size_t dimRange = BasisfunctionType::dimRange;
+  static constexpr size_t dimRange = BasisfunctionType::dimRange;
+  static_assert(dimRange < std::numeric_limits<int>::max(), "");
+  static constexpr size_t num_rows = dimRange;
   using VectorType = FieldVector<RangeFieldType, dimRange>;
   using BaseType = SlopeBase<VectorType, MatrixType, 3>;
 
@@ -881,37 +883,30 @@ private:
   {
     if (!*lp_) {
       // We start with creating a model with dimRange rows and num_quad_points+1 columns */
-      constexpr int num_rows = static_cast<int>(dimRange);
-      assert(basis_values_.size() < std::numeric_limits<int>::max());
-      int num_cols =
-          static_cast<int>(basis_values_.size() + dimRange); /* variables are x_1, ..., x_{num_quad_points}, theta_1,
-                                                                ..., theta_{dimRange} */
+      assert(basis_values_.size() + dimRange < std::numeric_limits<int>::max());
+      size_t num_cols = basis_values_.size() + dimRange; /* variables are x_1, ..., x_{num_quad_points}, theta_1,
+                                                                              ..., theta_{dimRange} */
       *lp_ = std::make_unique<ClpSimplex>(false);
       auto& lp = **lp_;
       // set number of rows
       lp.resize(num_rows, 0);
 
-      // Clp wants the row indices that are non-zero in each column. We have a dense matrix, so provide all indices
-      // 0..num_rows
-      std::array<int, num_rows> row_indices;
-      for (int ii = 0; ii < num_rows; ++ii)
-        row_indices[ii] = ii;
-
       // set columns for quadrature points
-      assert(int(basis_values_.size()) == num_cols - dimRange);
-      for (int ii = 0; ii < num_cols - dimRange; ++ii) {
+      assert(basis_values_.size() == num_cols - dimRange);
+      static auto row_indices = create_row_indices();
+      for (size_t ii = 0; ii < num_cols - dimRange; ++ii) {
         // First argument: number of elements in column
         // Second/Third argument: indices/values of column entries
         // Fourth/Fifth argument: lower/upper column bound, i.e. lower/upper bound for x_i. As all x_i should be
         // positive, set to 0/inf, which is the default.
         // Sixth argument: Prefactor in objective for x_i, this is 0 for all x_i, which is also the default;
-        lp.addColumn(num_rows, row_indices.data(), &(basis_values_[ii][0]));
+        lp.addColumn(static_cast<int>(num_rows), row_indices.data(), &(basis_values_[ii][0]));
       }
 
       // add theta columns (set to random values, will be set correctly in solve_linear_program)
       // The bounds for theta should be [0,1]. Also sets the prefactor in the objective to 1 for the thetas.
-      for (int ii = 0; ii < dimRange; ++ii)
-        lp.addColumn(num_rows, row_indices.data(), &(basis_values_[0][0]), 0., 1., 1.);
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        lp.addColumn(static_cast<int>(num_rows), row_indices.data(), &(basis_values_[0][0]), 0., 1., 1.);
       lp.setLogLevel(0);
     } // if (!lp_)
   } // void setup_linear_program()
@@ -932,40 +927,44 @@ private:
     // setup linear program
     setup_linear_program();
     auto& lp = **lp_;
-    constexpr int num_rows = static_cast<int>(dimRange);
-    int num_cols = static_cast<int>(basis_values_.size() + dimRange); // see above
+    size_t num_cols = basis_values_.size() + dimRange; // see above
 
     // set rhs (equality constraints, so set both bounds equal)
-    for (int ii = 0; ii < num_rows; ++ii) {
-      lp.setRowLower(ii, u[ii]);
-      lp.setRowUpper(ii, u[ii]);
+    for (size_t ii = 0; ii < num_rows; ++ii) {
+      lp.setRowLower(static_cast<int>(ii), u[ii]);
+      lp.setRowUpper(static_cast<int>(ii), u[ii]);
     }
-
-    // Clp wants the row indices that are non-zero in each column. We have a dense matrix, so provide all indices
-    // 0..num_rows
-    std::array<int, num_rows> row_indices;
-    for (int ii = 0; ii < num_rows; ++ii)
-      row_indices[ii] = ii;
 
     // delete old theta columns.
     FieldVector<int, dimRange> theta_columns;
-    for (int ii = 0; ii < dimRange; ++ii)
-      theta_columns[ii] = num_cols - dimRange + ii;
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      theta_columns[ii] = static_cast<int>(num_cols - dimRange + ii);
     lp.deleteColumns(dimRange, &(theta_columns[0]));
 
     // set new theta columns
-    for (int jj = 0; jj < dimRange; ++jj)
+    static auto row_indices = create_row_indices();
+    for (size_t jj = 0; jj < dimRange; ++jj)
       lp.addColumn(num_rows, row_indices.data(), &(A_tilde_transposed[jj][0]), 0., 1., 1.);
 
     // Now solve
     lp.primal();
     const auto* thetas_ptr = lp.primalColumnSolution();
     VectorType thetas;
-    for (int ii = 0; ii < dimRange; ++ii)
+    for (size_t ii = 0; ii < dimRange; ++ii)
       thetas[ii] = thetas_ptr[ii];
     if (!lp.isProvenOptimal())
       std::fill(thetas.begin(), thetas.end(), 1.);
     return thetas;
+  }
+
+  // Clp wants the row indices that are non-zero in each column. We have a dense matrix, so provide all indices
+  // 0..num_rows
+  static std::array<int, num_rows> create_row_indices()
+  {
+    std::array<int, dimRange> ret;
+    for (size_t ii = 0; ii < dimRange; ++ii)
+      ret[ii] = static_cast<int>(ii);
+    return ret;
   }
 
   const RangeFieldType epsilon_;
