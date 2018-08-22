@@ -89,10 +89,11 @@ struct HyperbolicPnTest : public ::testing::Test
     const EquationType problem(*problem_imp);
     const InitialValueType& initial_values = problem.initial_values();
     using BoundaryValueType =
-        MomentModelBoundaryValue<GridLayerType, BasisfunctionType, typename EquationType::BoundaryValueType>;
-    const auto& dirichlet_boundary_values = problem.boundary_values();
+        LocalizableFunctionBasedLocalizableDirichletBoundaryValue<GridLayerType,
+                                                                  typename EquationType::BoundaryValueType>;
+    const auto& localizable_boundary_values = problem.boundary_values();
     const auto boundary_info = XT::Grid::AllDirichletBoundaryInfo<IntersectionType>();
-    const BoundaryValueType boundary_values(boundary_info, *basis_functions, dirichlet_boundary_values);
+    const BoundaryValueType boundary_values(boundary_info, localizable_boundary_values);
     const RhsType& rhs = problem.rhs();
     const RangeFieldType CFL = problem.CFL();
 
