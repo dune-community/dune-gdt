@@ -20,6 +20,8 @@ import dune.xt.la
 import dune.xt.grid
 import dune.xt.functions
 
+from dune.gdt.__shared import *
+
 _init_logger_methods = list()
 _test_logger_methods = list()
 _init_mpi_methods = list()
