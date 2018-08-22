@@ -9,10 +9,9 @@
 
 import pytest
 from dune.xt.common.test import load_all_submodule
-from dune.xt.grid.provider import make_cube_dd_subdomains_grid__2d_simplex_aluconformgrid
+from dune.xt.grid.provider import make_cube_dd_subdomains_grid__2d_cube_yaspgrid
 from dune.xt.grid.boundaryinfo import make_boundary_info_on_dd_subdomain_layer
 from dune.xt.la import IstlRowMajorSparseMatrixDouble as Matrix
-from dune.gdt.__operators_elliptic_ipdg import make_elliptic_swipdg_affine_factor_matrix_operator as make_elliptic_swipdg_matrix_operator
 from dune.xt.functions import (
     make_constant_function_2x2,
     make_expression_function_1x1
@@ -27,7 +26,10 @@ def test_load_all():
 def make_grid(num_subdomains=[2, 2]):
     half_num_fine_elements_per_subdomain_and_dim = 3
     inner_boundary_segment_index = 18446744073709551573
-    return make_cube_dd_subdomains_grid__2d_simplex_aluconformgrid(
+    import dune.xt.grid.provider as prv
+    import dune.gdt
+    maker = getattr(prv, 'make_cube_dd_subdomains_grid__{}'.format(dune.gdt.GDT_BINDINGS_GRID))
+    return maker(
             lower_left=[-1,-1],
             upper_right=[1,1],
             num_elements=[num_subdomains[0]*half_num_fine_elements_per_subdomain_and_dim,
@@ -39,9 +41,11 @@ def make_grid(num_subdomains=[2, 2]):
 
 
 def test_blockspace():
-    from dune.gdt.__spaces_block import make_block_dg_dd_subdomain_view_to_1x1_gdt_p1_space as make_block_space
+    from dune.gdt.spaces import make_block_dg_space
+    from dune.gdt.__operators_elliptic_ipdg import \
+        make_elliptic_swipdg_affine_factor_matrix_operator as make_elliptic_swipdg_matrix_operator
     grid = make_grid()
-    block_space = make_block_space(grid)
+    block_space = make_block_dg_space(grid)
     diffusion = make_expression_function_1x1(grid, 'x', '1', order=2, name='lambda_0')
     kappa = make_constant_function_2x2(grid, [[1., 0.], [0., 1.]], name='kappa')
     local_all_neumann_boundary_info = make_boundary_info_on_dd_subdomain_layer(grid, {'type': 'xt.grid.boundaryinfo.allneumann'})
