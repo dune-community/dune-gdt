@@ -998,10 +998,10 @@ public:
     const auto ansatz_values_ne = ansatz_base_ne.evaluate(local_point_ne);
     const auto ansatz_gradients_ne = ansatz_base_ne.jacobian(local_point_ne);
     // compute the evaluations
-    assert(ret_en_en.rows() >= rows_en && ret_en_en.cols() >= cols_en);
-    assert(ret_en_ne.rows() >= rows_en && ret_en_ne.cols() >= cols_ne);
-    assert(ret_ne_en.rows() >= rows_ne && ret_ne_en.cols() >= cols_en);
-    assert(ret_ne_ne.rows() >= rows_ne && ret_ne_ne.cols() >= cols_ne);
+    DXT_ASSERT(ret_en_en.rows() >= rows_en && ret_en_en.cols() >= cols_en);
+    DXT_ASSERT(ret_en_ne.rows() >= rows_en && ret_en_ne.cols() >= cols_ne);
+    DXT_ASSERT(ret_ne_en.rows() >= rows_ne && ret_ne_en.cols() >= cols_en);
+    DXT_ASSERT(ret_ne_ne.rows() >= rows_ne && ret_ne_ne.cols() >= cols_ne);
     // loop over all entity test basis functions
     for (size_t ii = 0; ii < rows_en; ++ii) {
       auto& ret_en_en_row = ret_en_en[ii];
@@ -1385,7 +1385,7 @@ public:
     const auto ansatz_values = ansatz_base.evaluate(local_point_entity);
     const auto ansatz_gradients = ansatz_base.jacobian(local_point_entity);
     // compute products
-    assert(ret.rows() >= rows && ret.cols() >= cols);
+    DXT_ASSERT(ret.rows() >= rows && ret.cols() >= cols);
     // loop over all test basis functions
     for (size_t ii = 0; ii < rows; ++ii) {
       auto& retRow = ret[ii];
@@ -1634,7 +1634,7 @@ public:
     const auto test_values = test_base.evaluate(local_point_entity);
     const auto test_gradients = test_base.jacobian(local_point_entity);
     // compute
-    assert(ret.size() >= size);
+    DXT_ASSERT(ret.size() >= size);
     // loop over all test basis functions
     for (size_t ii = 0; ii < size; ++ii) {
       // symmetry term

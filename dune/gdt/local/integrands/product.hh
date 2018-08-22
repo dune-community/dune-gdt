@@ -253,7 +253,7 @@ public:
     const size_t size = testBase.size();
     const auto testValues = testBase.evaluate(localPoint);
     // compute product
-    assert(ret.size() >= size);
+    DXT_ASSERT(ret.size() >= size);
     for (size_t ii = 0; ii < size; ++ii) {
       ret[ii] = functionValue * testValues[ii];
     }
@@ -280,8 +280,8 @@ public:
     const auto testValues = testBase.evaluate(localPoint);
     const auto ansatzValues = ansatzBase.evaluate(localPoint);
     // compute product
-    assert(ret.rows() >= rows);
-    assert(ret.cols() >= cols);
+    DXT_ASSERT(ret.rows() >= rows);
+    DXT_ASSERT(ret.cols() >= cols);
     for (size_t ii = 0; ii < rows; ++ii) {
       auto& retRow = ret[ii];
       for (size_t jj = 0; jj < cols; ++jj) {
@@ -309,7 +309,7 @@ public:
     const size_t size = testBase.size();
     const auto testValues = testBase.evaluate(localPointEntity);
     // compute product
-    assert(ret.size() >= size);
+    DXT_ASSERT(ret.size() >= size);
     for (size_t ii = 0; ii < size; ++ii) {
       ret[ii] = functionValue * testValues[ii];
     }
@@ -338,8 +338,8 @@ public:
     const auto testValues = testBase.evaluate(localPointEntity);
     const auto ansatzValues = ansatzBase.evaluate(localPointEntity);
     // compute product
-    assert(ret.rows() >= rows);
-    assert(ret.cols() >= cols);
+    DXT_ASSERT(ret.rows() >= rows);
+    DXT_ASSERT(ret.cols() >= cols);
     for (size_t ii = 0; ii < rows; ++ii) {
       auto& retRow = ret[ii];
       for (size_t jj = 0; jj < cols; ++jj) {
@@ -400,7 +400,7 @@ public:
     // evaluate test base
     const size_t size = testBase.size();
     // compute product
-    assert(ret.size() >= size);
+    DXT_ASSERT(ret.size() >= size);
     for (size_t ii = 0; ii < size; ++ii) {
       ret[ii] = functionValue[ii];
     }
@@ -425,8 +425,8 @@ public:
     const auto rows = testBase.size();
     const auto cols = ansatzBase.size();
     // compute product
-    assert(ret.rows() >= rows);
-    assert(ret.cols() >= cols);
+    DXT_ASSERT(ret.rows() >= rows);
+    DXT_ASSERT(ret.cols() >= cols);
     for (size_t ii = 0; ii < rows; ++ii)
       ret[ii][ii] = functionValue;
   } // ... evaluate(...)
@@ -448,7 +448,7 @@ public:
     // evaluate test base
     const size_t size = testBase.size();
     // compute product
-    assert(ret.size() >= size);
+    DXT_ASSERT(ret.size() >= size);
     for (size_t ii = 0; ii < size; ++ii)
       ret[ii] = functionValue[ii];
   } // ... evaluate(...)
@@ -474,9 +474,9 @@ public:
     // evaluate bases
     const size_t rows = testBase.size();
     // compute product
-    assert(testBase.size() == ansatzBase.size() && "Only implemented for the same testBase and ansatzBase!");
-    assert(ret.rows() >= rows);
-    assert(ret.cols() >= rows);
+    DXT_ASSERT(testBase.size() == ansatzBase.size() && "Only implemented for the same testBase and ansatzBase!");
+    DXT_ASSERT(ret.rows() >= rows);
+    DXT_ASSERT(ret.cols() >= rows);
     for (size_t ii = 0; ii < rows; ++ii)
       ret[ii][ii] = functionValue;
   } // ... evaluate(...)

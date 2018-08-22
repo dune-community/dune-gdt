@@ -94,7 +94,7 @@ public:
                 std::vector<RangeType>& ret,
                 const XT::Common::Parameter& /*param*/ = {}) const override final
   {
-    assert(this->is_a_valid_point(xx));
+    DXT_ASSERT(this->is_a_valid_point(xx));
     finite_element_.localBasis().evaluateFunction(xx, ret);
   }
 
@@ -104,7 +104,7 @@ public:
                 std::vector<JacobianRangeType>& ret,
                 const XT::Common::Parameter& /*param*/ = {}) const override final
   {
-    assert(this->is_a_valid_point(xx));
+    DXT_ASSERT(this->is_a_valid_point(xx));
     // evaluate jacobian of shape functions
     finite_element_.localBasis().evaluateJacobian(xx, ret);
     // apply transformation

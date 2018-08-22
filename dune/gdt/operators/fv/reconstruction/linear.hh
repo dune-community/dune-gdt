@@ -837,7 +837,7 @@ public:
     using RangeArrayType = XT::Common::FieldVector<IndexRangeType, dimDomain>;
     using IndicesBuilderType = IndicesBuilder<RangeArrayType, dimDomain, dimDomain - 1>;
 
-    assert(stencil.shape()[dir] == 3);
+    DXT_ASSERT(stencil.shape()[dir] == 3);
     RangeArrayType ranges;
     for (size_t ii = 0; ii < dimDomain; ++ii)
       ranges[ii] = IndexRangeType(0, stencil.shape()[ii]);
@@ -880,7 +880,7 @@ private:
   {
     CoordsType ret;
     for (size_t ii = 0; ii < dimDomain; ++ii) {
-      assert(stencil.shape()[ii] % 2 && "Center not well-defined if one of the axis_sizes is even!");
+      DXT_ASSERT(stencil.shape()[ii] % 2 && "Center not well-defined if one of the axis_sizes is even!");
       ret[ii] = stencil.shape()[ii] / 2;
     }
     return ret;
@@ -923,7 +923,7 @@ private:
       } // if (!end_of_stencil(...))
     } // intersections
 
-    assert(boundary_dirs.size() <= dimDomain);
+    DXT_ASSERT(boundary_dirs.size() <= dimDomain);
     if (boundary_dirs.size() > 1) {
       auto new_coords = coords;
       next_coords_in_dir(boundary_dirs[0], new_coords);

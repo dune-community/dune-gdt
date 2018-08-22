@@ -234,7 +234,7 @@ public:
                 std::vector<RangeType>& ret,
                 const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
-    assert(this->is_a_valid_point(xx));
+    DXT_ASSERT(this->is_a_valid_point(xx));
     // evaluate shape functions
     finite_element_.localBasis().evaluateFunction(xx, ret);
     // flip and scale shape functions to ensure
@@ -259,7 +259,7 @@ public:
                 std::vector<JacobianRangeType>& ret,
                 const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
-    assert(this->is_a_valid_point(xx));
+    DXT_ASSERT(this->is_a_valid_point(xx));
     // evaluate jacobian of shape functions
     finite_element_.localBasis().evaluateJacobian(xx, ret);
     // flip and scale shape functions to ensure

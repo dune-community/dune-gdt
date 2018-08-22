@@ -71,7 +71,7 @@ public:
     const auto lagrange_points = local_range.space().lagrange_points(entity);
     const auto local_source = source.local_function(entity);
     auto& local_range_DoF_vector = local_range.vector();
-    assert(lagrange_points.size() == local_range_DoF_vector.size());
+    DXT_ASSERT(lagrange_points.size() == local_range_DoF_vector.size());
     for (const size_t& local_DoF_id : local_dirichlet_DoFs)
       local_range_DoF_vector.set(local_DoF_id, local_source->evaluate(lagrange_points[local_DoF_id]));
   } // ... apply(...)

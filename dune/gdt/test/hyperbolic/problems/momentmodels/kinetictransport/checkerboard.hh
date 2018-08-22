@@ -147,7 +147,7 @@ protected:
 
   static bool is_absorbing(size_t plane, size_t row, size_t col)
   {
-    assert(plane < 7 && row < 7 && col < 7);
+    DXT_ASSERT(plane < 7 && row < 7 && col < 7);
     if (plane == 0 || plane == 6)
       return false;
     if (plane == 2 || plane == 4)

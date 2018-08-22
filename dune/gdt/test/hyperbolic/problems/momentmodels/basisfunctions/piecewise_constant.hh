@@ -241,7 +241,7 @@ public:
     for (size_t jj = 0; jj < triangulation_.size() - 1; ++jj)
       if (XT::Common::FloatCmp::ge(v[0], triangulation_[jj]) && XT::Common::FloatCmp::le(v[0], triangulation_[jj + 1]))
         face_indices.push_back(jj);
-    assert(face_indices.size());
+    DXT_ASSERT(face_indices.size());
     return face_indices;
   }
 

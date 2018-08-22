@@ -146,10 +146,10 @@ public:
                                               tmp_matrix_en_ne_, // <- and this one
                                               tmp_matrix_);
                     // compute integrals
-                    assert(tmp_matrix_en_en_.rows() >= 1);
-                    assert(tmp_matrix_en_en_.cols() >= 1);
-                    assert(tmp_matrix_en_ne_.rows() >= 1);
-                    assert(tmp_matrix_en_ne_.cols() >= 1);
+                    DXT_ASSERT(tmp_matrix_en_en_.rows() >= 1);
+                    DXT_ASSERT(tmp_matrix_en_en_.cols() >= 1);
+                    DXT_ASSERT(tmp_matrix_en_ne_.rows() >= 1);
+                    DXT_ASSERT(tmp_matrix_en_ne_.cols() >= 1);
                     lhs += integration_factor * weigth * (basis_value * normal);
                     rhs += integration_factor * weigth * (tmp_matrix_en_en_[0][0] + tmp_matrix_en_ne_[0][0]);
                   } // do a face quadrature
@@ -186,8 +186,8 @@ public:
                                                xx_intersection,
                                                tmp_matrix_);
                   // compute integrals
-                  assert(tmp_matrix_.rows() >= 1);
-                  assert(tmp_matrix_.cols() >= 1);
+                  DXT_ASSERT(tmp_matrix_.rows() >= 1);
+                  DXT_ASSERT(tmp_matrix_.cols() >= 1);
                   lhs += integration_factor * weigth * (basis_value * normal);
                   rhs += integration_factor * weigth * tmp_matrix_[0][0];
                 } // do a face quadrature
@@ -306,7 +306,7 @@ private:
       const auto& entity = *entity_it;
       const auto local_DoF_indices = rtn0_space.local_DoF_indices(entity);
       const auto global_DoF_indices = rtn0_space.mapper().globalIndices(entity);
-      assert(global_DoF_indices.size() == local_DoF_indices.size());
+      DXT_ASSERT(global_DoF_indices.size() == local_DoF_indices.size());
       const auto local_diffusion_factor = diffusion_factor_.local_function(entity);
       const auto local_diffusion_tensor = diffusion_tensor_.local_function(entity);
       const auto local_source = source.local_function(entity);
@@ -366,17 +366,17 @@ private:
                                         tmp_matrix_en_ne, // <- and this one
                                         tmp_matrix);
               // compute integrals
-              assert(tmp_matrix_en_en.rows() >= 1);
-              assert(tmp_matrix_en_en.cols() >= 1);
-              assert(tmp_matrix_en_ne.rows() >= 1);
-              assert(tmp_matrix_en_ne.cols() >= 1);
+              DXT_ASSERT(tmp_matrix_en_en.rows() >= 1);
+              DXT_ASSERT(tmp_matrix_en_en.cols() >= 1);
+              DXT_ASSERT(tmp_matrix_en_ne.rows() >= 1);
+              DXT_ASSERT(tmp_matrix_en_ne.cols() >= 1);
               lhs += integration_factor * weigth * (basis_value * normal);
               rhs += integration_factor * weigth * (tmp_matrix_en_en[0][0] + tmp_matrix_en_ne[0][0]);
             } // do a face quadrature
             // set DoF
             const size_t global_DoF_index = global_DoF_indices[local_DoF_index];
             // and make sure we are the first to do so
-            assert(!(range_vector[global_DoF_index] < infinity));
+            DXT_ASSERT(!(range_vector[global_DoF_index] < infinity));
             if (XT::Common::isnan(rhs) || XT::Common::isinf(rhs))
               range_vector[global_DoF_index] = 0.;
             else
@@ -411,15 +411,15 @@ private:
                                          xx_intersection,
                                          tmp_matrix);
             // compute integrals
-            assert(tmp_matrix.rows() >= 1);
-            assert(tmp_matrix.cols() >= 1);
+            DXT_ASSERT(tmp_matrix.rows() >= 1);
+            DXT_ASSERT(tmp_matrix.cols() >= 1);
             lhs += integration_factor * weigth * (basis_value * normal);
             rhs += integration_factor * weigth * tmp_matrix[0][0];
           } // do a face quadrature
           // set DoF
           const size_t global_DoF_index = global_DoF_indices[local_DoF_index];
           // and make sure we are the first to do so
-          assert(!(range_vector[global_DoF_index] < infinity));
+          DXT_ASSERT(!(range_vector[global_DoF_index] < infinity));
           if (XT::Common::isnan(rhs) || XT::Common::isinf(rhs))
             range_vector[global_DoF_index] = 0.;
           else
@@ -496,7 +496,7 @@ public:
       const auto& entity = *entity_it;
       const auto local_DoF_indices = rtn0_space.local_DoF_indices(entity);
       const auto global_DoF_indices = rtn0_space.mapper().globalIndices(entity);
-      assert(global_DoF_indices.size() == local_DoF_indices.size());
+      DXT_ASSERT(global_DoF_indices.size() == local_DoF_indices.size());
       const auto local_diffusion = diffusion_.local_function(entity);
       const auto local_source = source.local_function(entity);
       const auto local_basis = rtn0_space.base_function_set(entity);
@@ -550,17 +550,17 @@ public:
                                         tmp_matrix_en_ne, // <- and this one
                                         tmp_matrix);
               // compute integrals
-              assert(tmp_matrix_en_en.rows() >= 1);
-              assert(tmp_matrix_en_en.cols() >= 1);
-              assert(tmp_matrix_en_ne.rows() >= 1);
-              assert(tmp_matrix_en_ne.cols() >= 1);
+              DXT_ASSERT(tmp_matrix_en_en.rows() >= 1);
+              DXT_ASSERT(tmp_matrix_en_en.cols() >= 1);
+              DXT_ASSERT(tmp_matrix_en_ne.rows() >= 1);
+              DXT_ASSERT(tmp_matrix_en_ne.cols() >= 1);
               lhs += integration_factor * weigth * (basis_value * normal);
               rhs += integration_factor * weigth * (tmp_matrix_en_en[0][0] + tmp_matrix_en_ne[0][0]);
             } // do a face quadrature
             // set DoF
             const size_t global_DoF_index = global_DoF_indices[local_DoF_index];
             // and make sure we are the first to do so
-            assert(!(range_vector[global_DoF_index] < infinity));
+            DXT_ASSERT(!(range_vector[global_DoF_index] < infinity));
             range_vector[global_DoF_index] = rhs / lhs;
           }
         } else if (intersection.boundary() && !intersection.neighbor()) {
@@ -587,15 +587,15 @@ public:
             boundary_evaluation.evaluate(
                 *local_diffusion, *local_constant_one, *local_source, intersection, xx_intersection, tmp_matrix);
             // compute integrals
-            assert(tmp_matrix.rows() >= 1);
-            assert(tmp_matrix.cols() >= 1);
+            DXT_ASSERT(tmp_matrix.rows() >= 1);
+            DXT_ASSERT(tmp_matrix.cols() >= 1);
             lhs += integration_factor * weigth * (basis_value * normal);
             rhs += integration_factor * weigth * tmp_matrix[0][0];
           } // do a face quadrature
           // set DoF
           const size_t global_DoF_index = global_DoF_indices[local_DoF_index];
           // and make sure we are the first to do so
-          assert(!(range_vector[global_DoF_index] < infinity));
+          DXT_ASSERT(!(range_vector[global_DoF_index] < infinity));
           range_vector[global_DoF_index] = rhs / lhs;
         } else
           DUNE_THROW(XT::Common::Exceptions::internal_error, "Unknown intersection type!");

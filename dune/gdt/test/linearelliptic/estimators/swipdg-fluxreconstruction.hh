@@ -157,8 +157,8 @@ public:
   {
     const auto local_difference = difference_.local_function(entity);
     const auto ret = local_operator_.apply2(*local_difference, *local_difference);
-    assert(ret.rows() >= 1);
-    assert(ret.cols() >= 1);
+    DXT_ASSERT(ret.rows() >= 1);
+    DXT_ASSERT(ret.cols() >= 1);
     return ret[0][0];
   } // ... compute_locally(...)
 
@@ -290,8 +290,8 @@ public:
   {
     const auto local_difference = difference_.local_function(entity);
     auto ret = local_operator_.apply2(*local_difference, *local_difference);
-    assert(ret.rows() >= 1);
-    assert(ret.cols() >= 1);
+    DXT_ASSERT(ret.rows() >= 1);
+    DXT_ASSERT(ret.cols() >= 1);
     return ret[0][0];
   } // ... compute_locally(...)
 
@@ -446,8 +446,8 @@ public:
   {
     const auto local_discrete_solution = discrete_solution_.local_function(entity);
     auto ret = local_operator_.apply2(*local_discrete_solution, *local_discrete_solution);
-    assert(ret.rows() >= 1);
-    assert(ret.cols() >= 1);
+    DXT_ASSERT(ret.rows() >= 1);
+    DXT_ASSERT(ret.cols() >= 1);
     return ret[0][0];
   } // ... compute_locally(...)
 

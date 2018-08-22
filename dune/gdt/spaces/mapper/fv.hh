@@ -136,7 +136,7 @@ public:
 
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
-    assert(localIndex < dimRange);
+    DXT_ASSERT(localIndex < dimRange);
     return (dimRange * mapper_->subIndex(entity, 0, 0)) + localIndex;
   }
 
@@ -192,7 +192,7 @@ public:
 
   size_t mapToGlobal(const EntityType& entity, const size_t& DXTC_DEBUG_ONLY(localIndex)) const
   {
-    assert(localIndex == 0);
+    DXT_ASSERT(localIndex == 0);
     return mapper_->subIndex(entity, 0, 0);
   }
 
@@ -242,8 +242,8 @@ public:
                      const EntityType& entity,
                      const size_t& DXTC_DEBUG_ONLY(local_index_in_factor)) const
   {
-    assert(local_index_in_factor == 0);
-    assert(factor_index < numDofs(entity));
+    DXT_ASSERT(local_index_in_factor == 0);
+    DXT_ASSERT(factor_index < numDofs(entity));
     return dimRange * backend().index(entity) + factor_index;
   }
 
@@ -251,8 +251,8 @@ public:
                     const EntityType& DXTC_DEBUG_ONLY(entity),
                     const size_t& DXTC_DEBUG_ONLY(local_index_in_factor)) const
   {
-    assert(local_index_in_factor == 0);
-    assert(factor_index < numDofs(entity));
+    DXT_ASSERT(local_index_in_factor == 0);
+    DXT_ASSERT(factor_index < numDofs(entity));
     return factor_index;
   }
 

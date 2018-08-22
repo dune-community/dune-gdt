@@ -269,7 +269,7 @@ public:
     for (size_t jj = 0; jj < triangulation_.size() - 1; ++jj)
       if (XT::Common::FloatCmp::ge(v[0], triangulation_[jj]) && XT::Common::FloatCmp::le(v[0], triangulation_[jj + 1]))
         face_indices.push_back(jj);
-    assert(face_indices.size());
+    DXT_ASSERT(face_indices.size());
     return face_indices;
   }
 
@@ -305,7 +305,7 @@ public:
     : triangulation_(triangulation)
     , quadrature_(quadrature)
   {
-    assert(4 * triangulation_.faces().size() == dimRange);
+    DXT_ASSERT(4 * triangulation_.faces().size() == dimRange);
     calculate_plane_equations();
   }
 
@@ -317,7 +317,7 @@ public:
     : triangulation_(initial_points, refinements, reference_quadrature_rule)
     , quadrature_(triangulation_.quadrature_rule(quadrature_refinements))
   {
-    assert(4 * triangulation_.faces().size() == dimRange);
+    DXT_ASSERT(4 * triangulation_.faces().size() == dimRange);
     calculate_plane_equations();
   }
 
@@ -328,7 +328,7 @@ public:
     : triangulation_(initial_points, refinements)
     , quadrature_(quadrature)
   {
-    assert(4 * triangulation_.faces().size() == dimRange);
+    DXT_ASSERT(4 * triangulation_.faces().size() == dimRange);
     calculate_plane_equations();
   }
 
@@ -343,11 +343,11 @@ public:
     RangeType ret(0);
     const auto face_indices = triangulation_.get_face_indices(v);
     num_faces = face_indices.size();
-    assert(num_faces);
+    DXT_ASSERT(num_faces);
     for (const auto& face_index : face_indices) {
       ret[4 * face_index] = 1.;
       for (size_t ii = 1; ii < 4; ++ii) {
-        assert(4 * face_index + ii < ret.size());
+        DXT_ASSERT(4 * face_index + ii < ret.size());
         ret[4 * face_index + ii] = v[ii - 1];
       }
     } // face_indices

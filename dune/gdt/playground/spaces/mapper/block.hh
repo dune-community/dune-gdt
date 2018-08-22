@@ -94,7 +94,7 @@ private:
         DUNE_THROW(InvalidStateException, "You did not provide a local space for block " << block << "!");
       self.backend()[block]->mapper().globalIndices(entity, ret);
       const size_t num_dofs = self.backend()[block]->mapper().numDofs(entity);
-      assert(ret.size() >= num_dofs);
+      DXT_ASSERT(ret.size() >= num_dofs);
       for (size_t ii = 0; ii < num_dofs; ++ii)
         ret[ii] += self.global_start_indices_[block];
     }
@@ -179,13 +179,13 @@ public:
 
   size_t localSize(const size_t block) const
   {
-    assert(block < num_blocks_);
+    DXT_ASSERT(block < num_blocks_);
     return backend()[block]->mapper().size();
   }
 
   size_t mapToGlobal(const size_t block, const size_t localIndex) const
   {
-    assert(block < num_blocks_);
+    DXT_ASSERT(block < num_blocks_);
     return global_start_indices_[block] + localIndex;
   }
 

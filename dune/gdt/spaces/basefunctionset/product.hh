@@ -108,7 +108,7 @@ struct DynamicTupleGetter
     const auto dimRangeFactor = factor_ret[0].size();
     for (size_t basis_func = 0; basis_func < num_basis_funcs_in_factor; ++basis_func) {
       const auto& basis_func_ret = factor_ret[basis_func];
-      assert(basis_func_ret.size() == dimRangeFactor);
+      DXT_ASSERT(basis_func_ret.size() == dimRangeFactor);
       ret[first_basis_func_index + basis_func] = RangeType(0);
       for (size_t jj = 0; jj < dimRangeFactor; ++jj)
         ret[first_basis_func_index + basis_func][first_range_index + jj] = basis_func_ret[jj];
@@ -140,7 +140,7 @@ struct DynamicTupleGetter
     const auto dimRangeFactor = factor_ret[0].size();
     for (size_t basis_func = 0; basis_func < num_basis_funcs_in_factor; ++basis_func) {
       const auto& basis_func_ret = factor_ret[basis_func];
-      assert(basis_func_ret.size() == dimRangeFactor);
+      DXT_ASSERT(basis_func_ret.size() == dimRangeFactor);
       ret[first_basis_func_index + basis_func] = JacobianRangeType(0);
       for (size_t jj = 0; jj < dimRangeFactor; ++jj)
         ret[first_basis_func_index + basis_func][first_range_index + jj] = basis_func_ret[jj];

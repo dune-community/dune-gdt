@@ -63,7 +63,7 @@ struct product_quadrature_helper<DomainFieldType, 3>
 template <class DomainFieldType>
 QuadratureRule<DomainFieldType, 1> default_1d_quadrature(const size_t reconstructionOrder)
 {
-  assert(reconstructionOrder <= std::numeric_limits<int>::max());
+  DXT_ASSERT(reconstructionOrder <= std::numeric_limits<int>::max());
   return QuadratureRules<DomainFieldType, 1>::rule(Dune::GeometryType(Dune::GeometryType::BasicType::cube, 1),
                                                    static_cast<int>(reconstructionOrder));
 }

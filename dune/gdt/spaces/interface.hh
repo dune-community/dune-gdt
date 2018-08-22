@@ -458,7 +458,7 @@ private:
         DUNE_THROW(Dune::RangeError, "component must not be negative (is " << component << ")!");
       if (component < boost::numeric_cast<int>(baseFunctionSet.size())) {
         baseFunctionSet.evaluate(xx, values_);
-        assert(component < boost::numeric_cast<int>(values_.size()) && "This should not happen!");
+        DXT_ASSERT(component < boost::numeric_cast<int>(values_.size()) && "This should not happen!");
         return values_[index_][component];
       } else if (component < boost::numeric_cast<int>(space_.mapper().maxNumDofs()))
         return 0.0;

@@ -70,7 +70,7 @@ public:
     // prepare storage
     const size_t size = test_base.size();
     ret *= 0.0;
-    assert(ret.size() >= size);
+    DXT_ASSERT(ret.size() >= size);
     DynamicVector<FieldType> evaluation_result(size, 0.); // \todo: make mutable member, after SMP refactor
     // loop over all quadrature points
     for (const auto& quadrature_point : quadrature) {
@@ -149,7 +149,7 @@ public:
     // prepare storage
     const size_t size = test_base.size();
     ret *= 0.0;
-    assert(ret.size() >= size);
+    DXT_ASSERT(ret.size() >= size);
     DynamicVector<FieldType> evaluation_result(size, 0.); // \todo: make mutable member, after SMP refactor
     // loop over all quadrature points
     for (const auto& quadrature_point : quadrature) {

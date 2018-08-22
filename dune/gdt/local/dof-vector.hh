@@ -52,7 +52,7 @@ public:
 
   ScalarType get(const size_t ii) const
   {
-    assert(ii < indices_.size());
+    DXT_ASSERT(ii < indices_.size());
     return vector_.get_entry(indices_[ii]);
   }
 
@@ -106,20 +106,20 @@ public:
 
   void set(const size_t ii, const ScalarType& val)
   {
-    assert(ii < indices_.size());
+    DXT_ASSERT(ii < indices_.size());
     vector_.set_entry(indices_[ii], val);
   }
 
   void add(const size_t ii, const ScalarType& val)
   {
-    assert(ii < indices_.size());
+    DXT_ASSERT(ii < indices_.size());
     vector_.add_to_entry(indices_[ii], val);
   }
 
   template <class OtherVectorImp>
   void add(const OtherVectorImp& vector)
   {
-    assert(vector.size() == indices_.size());
+    DXT_ASSERT(vector.size() == indices_.size());
     for (size_t ii = 0; ii < indices_.size(); ++ii)
       add(ii, vector[ii]);
   }

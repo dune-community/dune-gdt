@@ -200,8 +200,8 @@ public:
 private:
   static RangeFieldType fmn(const int m, const int n)
   {
-    assert(!(m % 2));
-    assert(n % 2);
+    DXT_ASSERT(!(m % 2));
+    DXT_ASSERT(n % 2);
     // The factorials overflow for large m or n, so do it more complicated
     // return (std::pow(-1., (m + n + 1) / 2) * XT::Common::factorial(m) * XT::Common::factorial(n))
     //       / (std::pow(2., m + n - 1) * (m - n) * (m + n + 1) * std::pow(XT::Common::factorial(m / 2), 2)

@@ -159,15 +159,15 @@ protected:
     static_assert(polOrder == 1, "Not tested for higher polynomial orders!");
     if (dimRange != 1)
       DUNE_THROW(NotImplemented, "Does not work for higher dimensions");
-    assert(this->grid_layer().indexSet().contains(entity));
+    DXT_ASSERT(this->grid_layer().indexSet().contains(entity));
     // get the basis and reference element
     const auto basis = this->base_function_set(entity);
     typedef typename BaseType::BaseFunctionSetType::RangeType RangeType;
     std::vector<RangeType> tmp_basis_values(basis.size(), RangeType(0));
     const auto& reference_element = ReferenceElements<DomainFieldType, dimDomain>::general(entity.type());
     const auto num_vertices = reference_element.size(dimDomain);
-    assert(num_vertices >= 0);
-    assert(boost::numeric_cast<size_t>(num_vertices) == basis.size() && "This should not happen with polOrder 1!");
+    DXT_ASSERT(num_vertices >= 0);
+    DXT_ASSERT(boost::numeric_cast<size_t>(num_vertices) == basis.size() && "This should not happen with polOrder 1!");
     // prepare return vector
     std::vector<DomainType> local_vertices(num_vertices, DomainType(0));
     // loop over all vertices
@@ -189,7 +189,7 @@ protected:
         else
           ++failures;
       }
-      assert(ones == 1 && zeros == (basis.size() - 1) && failures == 0 && "This must not happen for polOrder 1!");
+      DXT_ASSERT(ones == 1 && zeros == (basis.size() - 1) && failures == 0 && "This must not happen for polOrder 1!");
     }
     return local_vertices;
   } // ... lagrange_points_order_1(...)

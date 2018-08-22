@@ -113,7 +113,7 @@ public:
                 std::vector<RangeType>& ret,
                 const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
-    assert(ret.size() >= 0);
+    DXT_ASSERT(ret.size() >= 0);
     ret[0] = backend_;
   }
 
@@ -123,7 +123,7 @@ public:
                 std::vector<JacobianRangeType>& ret,
                 const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
-    assert(ret.size() >= 0);
+    DXT_ASSERT(ret.size() >= 0);
     ret[0] *= 0.0;
   }
 
@@ -203,7 +203,7 @@ public:
                 std::vector<RangeType>& ret,
                 const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
-    assert(ret.size() >= size());
+    DXT_ASSERT(ret.size() >= size());
     for (size_t ii = 0; ii < size(); ++ii) {
       ret[ii] *= 0.0;
       ret[ii][ii] = backend_;
@@ -216,7 +216,7 @@ public:
                 std::vector<JacobianRangeType>& ret,
                 const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
-    assert(ret.size() >= size());
+    DXT_ASSERT(ret.size() >= size());
     for (size_t ii = 0; ii < size(); ++ii)
       ret[ii] *= 0.0;
   } // ... jacobian(...)

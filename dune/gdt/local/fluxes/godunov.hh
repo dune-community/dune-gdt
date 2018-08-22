@@ -155,7 +155,7 @@ public:
     size_t direction = intersection.indexInInside() / 2;
     // get unit outer normal
     const auto n_ij = intersection.unitOuterNormal(x_in_intersection_coords);
-    assert(XT::Common::FloatCmp::eq(std::abs(n_ij[direction]), 1.));
+    DXT_ASSERT(XT::Common::FloatCmp::eq(std::abs(n_ij[direction]), 1.));
 
     // intialize jacobians
     auto& jac = *jacobian_wrapper_;

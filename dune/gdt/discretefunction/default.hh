@@ -220,7 +220,7 @@ public:
 
   std::unique_ptr<ConstLocalDiscreteFunctionType> local_discrete_function(const EntityType& entity) const
   {
-    assert(space_.grid_layer().indexSet().contains(entity));
+    DXT_ASSERT(space_.grid_layer().indexSet().contains(entity));
     return Dune::XT::Common::make_unique<ConstLocalDiscreteFunctionType>(space_, vector_->access(), entity);
   }
 
@@ -366,7 +366,7 @@ public:
 
   std::unique_ptr<LocalDiscreteFunctionType> local_discrete_function(const EntityType& entity)
   {
-    assert(space_.grid_layer().indexSet().contains(entity));
+    DXT_ASSERT(space_.grid_layer().indexSet().contains(entity));
     return Dune::XT::Common::make_unique<LocalDiscreteFunctionType>(space_, this->access(), entity);
   }
 

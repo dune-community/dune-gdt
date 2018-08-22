@@ -202,15 +202,15 @@ public:
     const size_t rows = test_base.size();
     const auto test_gradients = test_base.jacobian(local_point);
     auto left_sum = test_gradients[0];
-    assert(test_gradients.size() == rows);
+    DXT_ASSERT(test_gradients.size() == rows);
     // evaluate ansatz gradient
     const size_t cols = ansatz_base.size();
     const auto ansatz_gradients = ansatz_base.jacobian(local_point);
     auto right_sum = ansatz_gradients[0];
-    assert(ansatz_gradients.size() == rows);
+    DXT_ASSERT(ansatz_gradients.size() == rows);
     // compute
-    assert(ret.rows() >= rows);
-    assert(ret.cols() >= cols);
+    DXT_ASSERT(ret.rows() >= rows);
+    DXT_ASSERT(ret.cols() >= cols);
     for (size_t ii = 0; ii < rows; ++ii) {
       left_sum = test_gradients[ii];
       left_sum[0] *= diffusion_value;
@@ -380,14 +380,14 @@ public:
     // evaluate test gradient
     const size_t rows = test_base.size();
     const auto test_gradients = test_base.jacobian(local_point);
-    assert(test_gradients.size() == rows);
+    DXT_ASSERT(test_gradients.size() == rows);
     // evaluate ansatz gradient
     const size_t cols = ansatz_base.size();
     const auto ansatz_gradients = ansatz_base.jacobian(local_point);
-    assert(ansatz_gradients.size() == rows);
+    DXT_ASSERT(ansatz_gradients.size() == rows);
     // compute
-    assert(ret.rows() >= rows);
-    assert(ret.cols() >= cols);
+    DXT_ASSERT(ret.rows() >= rows);
+    DXT_ASSERT(ret.cols() >= cols);
     for (size_t ii = 0; ii < rows; ++ii) {
       left_sum = diffusion_value * test_gradients[ii][0];
       left_sum += diffusive_flux_value;

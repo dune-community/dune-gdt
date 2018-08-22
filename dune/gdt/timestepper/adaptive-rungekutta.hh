@@ -277,18 +277,18 @@ public:
     , b_diff_(b_2_ - b_1_)
     , num_stages_(A_.rows())
   {
-    assert(Dune::XT::Common::FloatCmp::gt(tol_, 0.0));
-    assert(Dune::XT::Common::FloatCmp::le(scale_factor_min_, 1.0));
-    assert(Dune::XT::Common::FloatCmp::ge(scale_factor_max_, 1.0));
-    assert(A_.rows() == A_.cols() && "A has to be a square matrix");
-    assert(b_1_.size() == A_.rows());
-    assert(b_2_.size() == A_.rows());
-    assert(c_.size() == A_.rows());
+    DXT_ASSERT(Dune::XT::Common::FloatCmp::gt(tol_, 0.0));
+    DXT_ASSERT(Dune::XT::Common::FloatCmp::le(scale_factor_min_, 1.0));
+    DXT_ASSERT(Dune::XT::Common::FloatCmp::ge(scale_factor_max_, 1.0));
+    DXT_ASSERT(A_.rows() == A_.cols() && "A has to be a square matrix");
+    DXT_ASSERT(b_1_.size() == A_.rows());
+    DXT_ASSERT(b_2_.size() == A_.rows());
+    DXT_ASSERT(c_.size() == A_.rows());
 #ifndef NDEBUG
     for (size_t ii = 0; ii < A_.rows(); ++ii) {
       for (size_t jj = ii; jj < A_.cols(); ++jj) {
-        assert(Dune::XT::Common::FloatCmp::eq(A_[ii][jj], 0.0)
-               && "A has to be a lower triangular matrix with 0 on the main diagonal");
+        DXT_ASSERT(Dune::XT::Common::FloatCmp::eq(A_[ii][jj], 0.0)
+                   && "A has to be a lower triangular matrix with 0 on the main diagonal");
       }
     }
 #endif // NDEBUG

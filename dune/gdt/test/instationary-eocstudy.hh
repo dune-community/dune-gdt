@@ -88,10 +88,10 @@ public:
   {
     if (is_norm(type)) {
       compute_reference_solution();
-      assert(reference_solution_);
+      DXT_ASSERT(reference_solution_);
       if (test_case_.provides_exact_solution()) {
         compute_discrete_exact_solution_vector();
-        assert(discrete_exact_solution_);
+        DXT_ASSERT(discrete_exact_solution_);
         return compute_norm(*discrete_exact_solution_, type);
       } else {
         return compute_norm(*reference_solution_, type);
@@ -102,26 +102,26 @@ public:
 
   virtual size_t current_num_DoFs() override final
   {
-    assert(current_refinement_ <= num_refinements());
+    DXT_ASSERT(current_refinement_ <= num_refinements());
     const int level = test_case_.level_of(current_refinement_);
     return test_case_.grid().size(level, 0);
   } // ... current_num_DoFs(...)
 
   virtual size_t current_grid_size() const override final
   {
-    assert(current_refinement_ <= num_refinements());
+    DXT_ASSERT(current_refinement_ <= num_refinements());
     const int level = test_case_.level_of(current_refinement_);
     return test_case_.grid().size(level, 0);
   } // ... current_grid_size(...)
 
   virtual double current_grid_width() override final
   {
-    assert(current_refinement_ <= num_refinements());
+    DXT_ASSERT(current_refinement_ <= num_refinements());
     if (grid_widths_[current_refinement_] < 0.0) {
       const int level = test_case_.level_of(current_refinement_);
       const auto grid_layer = test_case_.template layer<XT::Grid::Layers::level, XT::Grid::Backends::view>(level);
       grid_widths_[current_refinement_] = XT::Grid::dimensions(grid_layer).entity_width.max();
-      assert(grid_widths_[current_refinement_] > 0.0);
+      DXT_ASSERT(grid_widths_[current_refinement_] > 0.0);
     }
     return grid_widths_[current_refinement_];
   } // ... current_grid_width(...)
@@ -129,7 +129,7 @@ public:
   virtual double compute_on_current_refinement() override final
   {
     if (current_refinement_ != last_computed_refinement_) {
-      assert(current_refinement_ <= num_refinements());
+      DXT_ASSERT(current_refinement_ <= num_refinements());
       // compute solution
       Timer timer;
       current_discretization_ = XT::Common::make_unique<DiscretizationType>(Discretizer::discretize(
@@ -138,7 +138,7 @@ public:
       time_to_solution_ = timer.elapsed();
       // prolong to reference grid part
       compute_reference_solution();
-      assert(reference_solution_);
+      DXT_ASSERT(reference_solution_);
       if (!current_solution_)
         current_solution_ = XT::Common::make_unique<DiscreteSolutionType>(*reference_solution_);
       // time prolongation
@@ -184,31 +184,31 @@ public:
   virtual double current_error_norm(const std::string type) override final
   {
     // get current solution
-    assert(current_refinement_ <= num_refinements());
+    DXT_ASSERT(current_refinement_ <= num_refinements());
     compute_on_current_refinement();
-    assert(last_computed_refinement_ == current_refinement_);
+    DXT_ASSERT(last_computed_refinement_ == current_refinement_);
     if (is_norm(type)) {
-      assert(current_solution_);
+      DXT_ASSERT(current_solution_);
       compute_reference_solution();
-      assert(reference_discretization_);
+      DXT_ASSERT(reference_discretization_);
       // compute error
       std::unique_ptr<DiscreteSolutionType> difference;
       if (test_case_.provides_exact_solution()) {
         compute_discrete_exact_solution_vector();
-        assert(discrete_exact_solution_);
+        DXT_ASSERT(discrete_exact_solution_);
         difference = Dune::XT::Common::make_unique<DiscreteSolutionType>(*discrete_exact_solution_);
       } else {
-        assert(reference_solution_);
+        DXT_ASSERT(reference_solution_);
         difference = Dune::XT::Common::make_unique<DiscreteSolutionType>(*reference_solution_);
       }
       for (auto& difference_at_time : *difference) {
         auto time = difference_at_time.first;
-        assert(current_solution_->count(time) && "Time steps must be the same");
+        DXT_ASSERT(current_solution_->count(time) && "Time steps must be the same");
         difference_at_time.second.vector() = difference_at_time.second.vector() - current_solution_->at(time).vector();
       }
       return compute_norm(*difference, type);
     } else {
-      assert(current_solution_on_level_);
+      DXT_ASSERT(current_solution_on_level_);
       return estimate(*current_solution_on_level_, type);
     }
   } // ... current_error_norm(...)

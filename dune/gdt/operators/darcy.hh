@@ -222,7 +222,7 @@ private:
       const auto& entity = *entity_it;
       const auto local_DoF_indices = rtn0_space.local_DoF_indices(entity);
       const auto global_DoF_indices = rtn0_space.mapper().globalIndices(entity);
-      assert(global_DoF_indices.size() == local_DoF_indices.size());
+      DXT_ASSERT(global_DoF_indices.size() == local_DoF_indices.size());
       const auto local_function = function_.local_function(entity);
       const auto local_source = source.local_function(entity);
       const auto local_basis = rtn0_space.base_function_set(entity);
@@ -271,7 +271,7 @@ private:
             } // do a face quadrature
             // set DoF
             const size_t global_DoF_index = global_DoF_indices[local_DoF_index];
-            assert(!(range_vector[global_DoF_index] < infinity));
+            DXT_ASSERT(!(range_vector[global_DoF_index] < infinity));
             range_vector[global_DoF_index] = rhs / lhs;
           }
         } else if (intersection.boundary() && !intersection.neighbor()) {
@@ -301,7 +301,7 @@ private:
           } // do a face quadrature
           // set DoF
           const size_t global_DoF_index = global_DoF_indices[local_DoF_index];
-          assert(!(range_vector[global_DoF_index] < infinity));
+          DXT_ASSERT(!(range_vector[global_DoF_index] < infinity));
           range_vector[global_DoF_index] = rhs / lhs;
         } else
           DUNE_THROW(XT::Common::Exceptions::internal_error, "Unknown intersection type!");

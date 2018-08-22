@@ -317,7 +317,7 @@ public:
   std::vector<size_t> get_face_indices(const DomainType& v) const
   {
     std::vector<size_t> face_indices;
-    assert(XT::Common::FloatCmp::eq(v * v, 1.));
+    DXT_ASSERT(XT::Common::FloatCmp::eq(v * v, 1.));
     FieldMatrix<RangeFieldImp, 3, 3> vertices_matrix;
     FieldMatrix<RangeFieldImp, 3, 3> determinant_matrix;
     for (const auto& face : faces()) {
@@ -369,7 +369,7 @@ public:
       if (v_in_this_face)
         face_indices.push_back(face->index());
     } // faces
-    assert(face_indices.size());
+    DXT_ASSERT(face_indices.size());
     return face_indices;
   }
 

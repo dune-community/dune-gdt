@@ -73,13 +73,13 @@ public:
     const RangeType one(1);
     std::vector<RangeType> basis_values(num_intersections, one);
     const auto basis = this->base_function_set(entity);
-    assert(basis.size() == num_intersections);
+    DXT_ASSERT(basis.size() == num_intersections);
     const auto geometry = entity.geometry();
     const auto& reference_element = ReferenceElements<DomainFieldType, dimDomain>::general(geometry.type());
     // find the basis function index that corresponds to each vertex of the entity
     // (find the basis function that evaluates to zero at the vertex, and nonzero at the other ones)
     // therefore we walk the vertices
-    assert(num_intersections == entity.subEntities(dimDomain));
+    DXT_ASSERT(num_intersections == entity.subEntities(dimDomain));
     for (size_t vv = 0; vv < num_intersections; ++vv) {
       const auto vertex = entity.template subEntity<dimDomain>(boost::numeric_cast<int>(vv));
       // get the vertex coordinates
@@ -120,7 +120,7 @@ public:
       const auto intersection_geometry = intersection.geometry();
       const size_t local_intersection_index = intersection.indexInInside();
       // make sure this index has not been already taken by another intersection
-      assert(local_DoF_index_of_intersection[local_intersection_index] == std::numeric_limits<size_t>::infinity());
+      DXT_ASSERT(local_DoF_index_of_intersection[local_intersection_index] == std::numeric_limits<size_t>::infinity());
       // walk the corners of the intersection
       for (int cc = 0; cc < intersection_geometry.corners(); ++cc) {
         corner = intersection_geometry.corner(boost::numeric_cast<int>(cc));
@@ -154,7 +154,7 @@ public:
                        << missed);
       ++intersection_counter;
     } // walk the intersection
-    assert(intersection_counter == num_intersections);
+    DXT_ASSERT(intersection_counter == num_intersections);
     return local_DoF_index_of_intersection;
   } // ... local_DoF_indices_2dsimplex_order0(...)
 

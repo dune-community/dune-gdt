@@ -286,7 +286,7 @@ public:
 
     void apply_exponential(std::vector<RangeFieldType>& values) const
     {
-      assert(values.size() < std::numeric_limits<int>::max());
+      DXT_ASSERT(values.size() < std::numeric_limits<int>::max());
       XT::Common::Mkl::exp(static_cast<int>(values.size()), values.data(), values.data());
     }
 
@@ -547,7 +547,7 @@ public:
 
       static RangeFieldType& get_ref(RangeType& ret, const size_t rr, const size_t cc)
       {
-        assert(cc == 0);
+        DXT_ASSERT(cc == 0);
         return ret[rr];
       }
     }; // class helper<1, ...>
@@ -558,7 +558,7 @@ public:
                               ColPartialURangeType& ret,
                               bool L_calculated = false) const
     {
-      assert(col < dimDomain);
+      DXT_ASSERT(col < dimDomain);
       calculate_J(M, ret, col);
       calculate_A_Binv(ret, H, L_calculated);
     } // void partial_u_col(...)
@@ -611,7 +611,7 @@ public:
                      Dune::FieldMatrix<RangeFieldType, dimRange, StateType::dimRange>& J_dd,
                      const size_t dd) const
     {
-      assert(dd < dimRangeCols);
+      DXT_ASSERT(dd < dimRangeCols);
       const auto& work_vecs = working_storage();
       std::fill(J_dd.begin(), J_dd.end(), 0);
       const auto& M_backend = M.backend();
@@ -717,7 +717,7 @@ public:
                                        const XT::Common::Parameter& param,
                                        const XT::Common::Parameter& param_neighbor) const
   {
-    assert(XT::Common::FloatCmp::ne(n_ij[dd], 0.));
+    DXT_ASSERT(XT::Common::FloatCmp::ne(n_ij[dd], 0.));
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto local_function_entity = derived_local_function(entity);
     const auto local_function_neighbor = derived_local_function(neighbor);
@@ -1045,7 +1045,7 @@ public:
     void apply_exponential(TemporaryVectorType& values) const
     {
       for (size_t jj = 0; jj < num_blocks; ++jj) {
-        assert(values[jj].size() < std::numeric_limits<int>::max());
+        DXT_ASSERT(values[jj].size() < std::numeric_limits<int>::max());
         XT::Common::Mkl::exp(static_cast<int>(values[jj].size()), values[jj].data(), values[jj].data());
       }
     }
@@ -1089,7 +1089,7 @@ public:
     void apply_inverse_matrix(const BlockMatrixType& T_k, BasisValuesMatrixType& M) const
     {
       for (size_t jj = 0; jj < num_blocks; ++jj) {
-        assert(quad_points_[jj].size() < std::numeric_limits<int>::max());
+        DXT_ASSERT(quad_points_[jj].size() < std::numeric_limits<int>::max());
         XT::Common::Blas::dtrsm(XT::Common::Blas::row_major(),
                                 XT::Common::Blas::left(),
                                 XT::Common::Blas::lower(),
@@ -1326,13 +1326,13 @@ public:
                                 ColPartialURangeType& ret,
                                 const Localfunction* entropy_flux)
       {
-        assert(col == 0);
+        DXT_ASSERT(col == 0);
         partial_u(M, H, ret, entropy_flux);
       } // void partial_u(...)
 
       static RangeFieldType& get_ref(RangeType& ret, const size_t rr, const size_t DXTC_DEBUG_ONLY(cc))
       {
-        assert(cc == 0);
+        DXT_ASSERT(cc == 0);
         return ret[rr];
       }
     }; // class helper<1, ...>
@@ -1428,7 +1428,7 @@ public:
                      Dune::FieldMatrix<RangeFieldType, dimRange, StateType::dimRange>& J_dd,
                      const size_t dd) const
     {
-      assert(dd < dimRangeCols);
+      DXT_ASSERT(dd < dimRangeCols);
       const auto& work_vecs = working_storage();
       std::fill(J_dd.begin(), J_dd.end(), 0.);
       for (size_t jj = 0; jj < num_blocks; ++jj) {
@@ -1544,7 +1544,7 @@ public:
                                        const XT::Common::Parameter& param,
                                        const XT::Common::Parameter& param_neighbor) const
   {
-    assert(XT::Common::FloatCmp::ne(n_ij[dd], 0.));
+    DXT_ASSERT(XT::Common::FloatCmp::ne(n_ij[dd], 0.));
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto local_function_entity = derived_local_function(entity);
     const auto local_function_neighbor = derived_local_function(neighbor);
@@ -1637,7 +1637,7 @@ multiply_componentwise(const FieldVector<DynamicVector<FieldType>, size>& first,
 template <class FieldType>
 DynamicVector<FieldType>& operator*=(DynamicVector<FieldType>& first, const DynamicVector<FieldType>& second)
 {
-  assert(first.size() == second.size());
+  DXT_ASSERT(first.size() == second.size());
   for (size_t ii = 0; ii < second.size(); ++ii)
     first[ii] *= second[ii];
   return first;
@@ -1647,7 +1647,7 @@ template <class FieldType>
 DynamicVector<FieldVector<FieldType, 3>>& operator*=(DynamicVector<FieldVector<FieldType, 3>>& first,
                                                      const DynamicVector<FieldVector<FieldType, 3>>& second)
 {
-  assert(first.size() == second.size());
+  DXT_ASSERT(first.size() == second.size());
   for (size_t ii = 0; ii < second.size(); ++ii)
     for (size_t jj = 0; jj < 3; ++jj)
       first[ii][jj] *= second[ii][jj];
@@ -1658,7 +1658,7 @@ template <class FieldType>
 DynamicVector<FieldMatrix<FieldType, 3, 3>>& operator*=(DynamicVector<FieldMatrix<FieldType, 3, 3>>& first,
                                                         const DynamicVector<FieldMatrix<FieldType, 3, 3>>& second)
 {
-  assert(first.size() == second.size());
+  DXT_ASSERT(first.size() == second.size());
   for (size_t ii = 0; ii < second.size(); ++ii)
     for (size_t jj = 0; jj < 3; ++jj)
       for (size_t kk = 0; kk < 3; ++kk)
@@ -1920,7 +1920,7 @@ public:
     for (const auto& face : faces) {
       const size_t kk = face->index();
       const auto& vertices = face->vertices();
-      assert(vertices.size() == 3);
+      DXT_ASSERT(vertices.size() == 3);
       for (size_t ii = 0; ii < 3; ++ii)
         k_[ii][kk] = vertices[ii]->index();
       for (size_t qq = 0; qq < 3; ++qq) {
@@ -2890,7 +2890,7 @@ public:
               ++ll;
               pow_frac *= base / (ll + 3);
             } // ll
-            assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+            DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
             ret[nn] += result * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha[nn - 1]);
           }
         }
@@ -2915,7 +2915,7 @@ public:
               ++ll;
               pow_frac *= base / (ll + 3);
             } // ll
-            assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+            DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
             ret[nn] += result * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha[nn]);
           }
         } // if (nn < dimRange - 1)
@@ -2928,7 +2928,7 @@ public:
                               ColRangeType& ret,
                               const XT::Common::Parameter& param) const override
     {
-      assert(col == 0);
+      DXT_ASSERT(col == 0);
       evaluate(x_local, u, ret, param);
     } // void evaluate_col(...)
 
@@ -2951,7 +2951,7 @@ public:
                                ColPartialURangeType& ret,
                                const XT::Common::Parameter& param) const override
     {
-      assert(col == 0);
+      DXT_ASSERT(col == 0);
       partial_u(x_local, u, ret, param);
     }
 
@@ -2980,7 +2980,7 @@ public:
             ++ll;
             pow_frac *= base / ll;
           }
-          assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+          DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
           ret += result * (v_points_[ii + 1] - v_points_[ii]) * std::exp(alpha_k[ii]);
         }
       } // ii
@@ -3009,7 +3009,7 @@ public:
               ++ll;
               pow_frac *= base / (ll + 2);
             }
-            assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+            DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
             g_k[nn] += result * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn]);
           }
         } // if (nn > 0)
@@ -3030,7 +3030,7 @@ public:
               ++ll;
               pow_frac *= base / (ll + 2);
             }
-            assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+            DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
             g_k[nn] += result * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
           }
         } // if (nn < dimRange-1)
@@ -3072,7 +3072,7 @@ public:
               ++ll;
               pow_frac *= base / (ll + 1);
             } // ll
-            assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+            DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
             subdiag[nn - 1] += result * factor;
 
             result = 0.;
@@ -3085,7 +3085,7 @@ public:
               ++ll;
               pow_frac *= base / ll;
             } // ll
-            assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+            DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
             diag[nn] += result * factor;
           }
         } // if (nn > 0)
@@ -3108,7 +3108,7 @@ public:
               ++ll;
               pow_frac *= base / ll;
             } // ll
-            assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+            DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
             diag[nn] += result * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
           }
         } // if (nn < dimRange - 1)
@@ -3158,7 +3158,7 @@ public:
               ++ll;
               pow_frac *= base / (ll + 4);
             } // ll
-            assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+            DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
 
             result = 0.;
             update = 1;
@@ -3170,7 +3170,7 @@ public:
               ++ll;
               pow_frac *= base / (ll + 4);
             } // ll
-            assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+            DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
             diag[nn] += result * factor;
           }
         } // if (nn > 0)
@@ -3200,7 +3200,7 @@ public:
               ++ll;
               pow_frac *= base / (ll + 4);
             } // ll
-            assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+            DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
             diag[nn] += result * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
           }
         } // if (nn < dimRange - 1)
@@ -3294,7 +3294,7 @@ public:
                                        const XT::Common::Parameter& param,
                                        const XT::Common::Parameter& param_neighbor) const
   {
-    assert(dd == 0);
+    DXT_ASSERT(dd == 0);
     // calculate < \mu m G_\alpha(u) > * n_ij
     const auto local_function_entity = derived_local_function(entity);
     const auto local_function_neighbor = derived_local_function(neighbor);
@@ -3329,7 +3329,7 @@ public:
               ++ll;
               pow_frac *= base / (ll + 3);
             } // ll
-            assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+            DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
             ret[nn] += result * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha[nn]);
           }
         } else { //  if (dimRange % 2 || nn != dimRange/2)
@@ -3354,7 +3354,7 @@ public:
               ++ll;
               pow_frac *= base / (2. * (ll + 1));
             } // ll
-            assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+            DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
             ret[nn] += result * -2. * std::pow(v_points_[nn], 2) * std::exp(alpha_neg[nn - 1]);
           }
           if (std::abs(alpha_pos[nn] - alpha_pos[nn - 1]) > taylor_tol_) {
@@ -3376,7 +3376,7 @@ public:
               ++ll;
               pow_frac *= base / (2. * (ll + 1));
             } // ll
-            assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+            DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
             ret[nn] += result * 2. * std::pow(v_points_[nn], 2) * std::exp(alpha_pos[nn]);
           } // else (alpha_n - alpha_{n-1} != 0)
         } // else (dimRange % 2 || nn != dimRange/2)
@@ -3429,7 +3429,7 @@ public:
               ++ll;
               pow_frac *= base / (2. * (ll + 1));
             } // ll
-            assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+            DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
             ret[nn] += result * -2. * std::pow(v_points_[nn + 1], 2) * std::exp(alpha_neg[nn]);
           }
           if (std::abs(alpha_pos[nn + 1] - alpha_pos[nn]) > taylor_tol_) {
@@ -3450,7 +3450,7 @@ public:
               ++ll;
               pow_frac *= base / (2. * (ll + 1));
             } // ll
-            assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
+            DXT_ASSERT(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
             ret[nn] += result * 2. * std::pow(v_points_[nn + 1], 2) * std::exp(alpha_pos[nn + 1]);
           } // else (alpha_n - alpha_{n-1} != 0)
         } // else (dimRange % 2 || nn != dimRange / 2 - 1)

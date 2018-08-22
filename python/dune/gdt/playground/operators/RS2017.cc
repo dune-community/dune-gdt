@@ -1082,10 +1082,10 @@ public:
             const auto test_values_ne = test_base_ne.evaluate(local_point_ne);
             const auto ansatz_values_ne = ansatz_base_ne.evaluate(local_point_ne);
             // compute integrals, loop over all combinations of basis functions
-            assert(ret_en_en.rows() >= rows_en && ret_en_en.cols() >= cols_en);
-            assert(ret_en_ne.rows() >= rows_en && ret_en_ne.cols() >= cols_ne);
-            assert(ret_ne_en.rows() >= rows_ne && ret_ne_en.cols() >= cols_en);
-            assert(ret_ne_ne.rows() >= rows_ne && ret_ne_ne.cols() >= cols_ne);
+            DXT_ASSERT(ret_en_en.rows() >= rows_en && ret_en_en.cols() >= cols_en);
+            DXT_ASSERT(ret_en_ne.rows() >= rows_en && ret_en_ne.cols() >= cols_ne);
+            DXT_ASSERT(ret_ne_en.rows() >= rows_ne && ret_ne_en.cols() >= cols_en);
+            DXT_ASSERT(ret_ne_ne.rows() >= rows_ne && ret_ne_ne.cols() >= cols_ne);
             for (size_t ii = 0; ii < rows_en; ++ii) {
               for (size_t jj = 0; jj < cols_en; ++jj)
                 ret_en_en[ii][jj] += penalty * ansatz_values_en[jj] * test_values_en[ii];
@@ -1138,7 +1138,7 @@ public:
             const auto test_values = test_base.evaluate(local_point_entity);
             const auto ansatz_values = ansatz_base.evaluate(local_point_entity);
             // compute integrals, loop over all combinations of basis functions
-            assert(ret.rows() >= rows && ret.cols() >= cols);
+            DXT_ASSERT(ret.rows() >= rows && ret.cols() >= cols);
             for (size_t ii = 0; ii < rows; ++ii)
               for (size_t jj = 0; jj < cols; ++jj)
                 ret[ii][jj] += penalty * ansatz_values[jj] * test_values[ii];
@@ -1316,10 +1316,10 @@ public:
             const auto test_values_ne = test_base_ne.evaluate(local_point_ne);
             const auto ansatz_values_ne = ansatz_base_ne.evaluate(local_point_ne);
             // compute integrals, loop over all combinations of basis functions
-            assert(ret_en_en.rows() >= rows_en && ret_en_en.cols() >= cols_en);
-            assert(ret_en_ne.rows() >= rows_en && ret_en_ne.cols() >= cols_ne);
-            assert(ret_ne_en.rows() >= rows_ne && ret_ne_en.cols() >= cols_en);
-            assert(ret_ne_ne.rows() >= rows_ne && ret_ne_ne.cols() >= cols_ne);
+            DXT_ASSERT(ret_en_en.rows() >= rows_en && ret_en_en.cols() >= cols_en);
+            DXT_ASSERT(ret_en_ne.rows() >= rows_en && ret_en_ne.cols() >= cols_ne);
+            DXT_ASSERT(ret_ne_en.rows() >= rows_ne && ret_ne_en.cols() >= cols_en);
+            DXT_ASSERT(ret_ne_ne.rows() >= rows_ne && ret_ne_ne.cols() >= cols_ne);
             for (size_t ii = 0; ii < rows_en; ++ii) {
               for (size_t jj = 0; jj < cols_en; ++jj)
                 ret_en_en[ii][jj] += penalty * ansatz_values_en[jj] * test_values_en[ii];
@@ -1372,7 +1372,7 @@ public:
             const auto test_values = test_base.evaluate(local_point_entity);
             const auto ansatz_values = ansatz_base.evaluate(local_point_entity);
             // compute integrals, loop over all combinations of basis functions
-            assert(ret.rows() >= rows && ret.cols() >= cols);
+            DXT_ASSERT(ret.rows() >= rows && ret.cols() >= cols);
             for (size_t ii = 0; ii < rows; ++ii)
               for (size_t jj = 0; jj < cols; ++jj)
                 ret[ii][jj] += penalty * ansatz_values[jj] * test_values[ii];

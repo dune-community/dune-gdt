@@ -113,7 +113,7 @@ public:
     const std::vector<RangeFieldType> T = param.get("T");
     const std::vector<RangeFieldType> Q = param.get("Q");
     const size_t num_regions = get_num_regions(num_segments_);
-    assert(sigma_a.size() == T.size() && sigma_a.size() == Q.size() && sigma_a.size() == num_regions);
+    DXT_ASSERT(sigma_a.size() == T.size() && sigma_a.size() == Q.size() && sigma_a.size() == num_regions);
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
     const RangeType basis_integrated = basis_functions_.integrated();

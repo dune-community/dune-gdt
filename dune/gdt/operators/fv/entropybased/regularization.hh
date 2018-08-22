@@ -49,8 +49,8 @@ public:
   {
     const auto x_in_inside_coords = entity.geometry().local(entity.geometry().center());
     const auto u = source_.local_function(entity)->evaluate(x_in_inside_coords, param_);
-    assert(dynamic_cast<const EntropyFluxType*>(&analytical_flux_) != nullptr
-           && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
+    DXT_ASSERT(dynamic_cast<const EntropyFluxType*>(&analytical_flux_) != nullptr
+               && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
     const auto s = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
                        ->derived_local_function(entity)
                        ->get_alpha(x_in_inside_coords, u, param_, true, false)

@@ -256,7 +256,7 @@ public:
       DUNE_THROW(Exception,
                  "finite_element.localCoefficients().size() = " << local_coefficients.size() << "\n   local_index = "
                                                                 << local_index);
-    assert(local_index <= std::numeric_limits<unsigned int>::max());
+    DXT_ASSERT(local_index <= std::numeric_limits<unsigned int>::max());
     const auto& local_key = local_coefficients.localKey(static_cast<unsigned int>(local_index));
     // No need to assert local_key.index() == 0, has been checked in the ctor!
     return mapper_->subIndex(entity, local_key.subEntity(), local_key.codim());

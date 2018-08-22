@@ -85,7 +85,7 @@ public:
     , base_(new BaseFunctionSetType(space_.base_function_set(this->entity())))
     , localVector_(new ConstLocalDoFVectorType(space_.mapper(), this->entity(), globalVector))
   {
-    assert(localVector_->size() == base_->size());
+    DXT_ASSERT(localVector_->size() == base_->size());
   }
 
   ConstLocalDiscreteFunction(ThisType&& source) = default;
@@ -116,11 +116,11 @@ public:
 
   void evaluate(const DomainType& xx, RangeType& ret, const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
-    assert(this->is_a_valid_point(xx));
+    DXT_ASSERT(this->is_a_valid_point(xx));
     if (!GDT::is_fv_space<SpaceType>::value) {
       std::fill(ret.begin(), ret.end(), RangeFieldType(0));
       std::vector<RangeType> tmpBaseValues(base_->size(), RangeType(0));
-      assert(localVector_->size() == tmpBaseValues.size());
+      DXT_ASSERT(localVector_->size() == tmpBaseValues.size());
       base_->evaluate(xx, tmpBaseValues);
       for (size_t ii = 0; ii < localVector_->size(); ++ii) {
         ret.axpy(localVector_->get(ii), tmpBaseValues[ii]);
@@ -134,11 +134,11 @@ public:
   void
   jacobian(const DomainType& xx, JacobianRangeType& ret, const XT::Common::Parameter& /*mu*/ = {}) const override final
   {
-    assert(this->is_a_valid_point(xx));
+    DXT_ASSERT(this->is_a_valid_point(xx));
     if (!GDT::is_fv_space<SpaceType>::value) {
       std::fill(ret.begin(), ret.end(), RangeFieldType(0));
       std::vector<JacobianRangeType> tmpBaseJacobianValues(base_->size(), JacobianRangeType(0));
-      assert(localVector_->size() == tmpBaseJacobianValues.size());
+      DXT_ASSERT(localVector_->size() == tmpBaseJacobianValues.size());
       base_->jacobian(xx, tmpBaseJacobianValues);
       for (size_t ii = 0; ii < localVector_->size(); ++ii)
         ret.axpy(localVector_->get(ii), tmpBaseJacobianValues[ii]);
@@ -189,7 +189,7 @@ public:
     : BaseType(sp, globalVector, ent)
     , localVector_(new LocalDoFVectorType(space_.mapper(), entity_, globalVector))
   {
-    assert(localVector_->size() == base_->size());
+    DXT_ASSERT(localVector_->size() == base_->size());
   }
 
   //! previous comment questioned validity, defaulting this doesn't touch that question

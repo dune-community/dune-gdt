@@ -364,14 +364,14 @@ public:
     const auto ansatzValuesNe = ansatzBaseNeighbor.evaluate(localPointNe);
     const auto ansatzGradientsNe = ansatzBaseNeighbor.jacobian(localPointNe);
     // compute the evaluations
-    assert(entityEntityRet.rows() >= rowsEn);
-    assert(entityEntityRet.cols() >= colsEn);
-    assert(entityNeighborRet.rows() >= rowsEn);
-    assert(entityNeighborRet.cols() >= colsNe);
-    assert(neighborEntityRet.rows() >= rowsNe);
-    assert(neighborEntityRet.cols() >= colsEn);
-    assert(neighborNeighborRet.rows() >= rowsNe);
-    assert(neighborNeighborRet.cols() >= colsNe);
+    DXT_ASSERT(entityEntityRet.rows() >= rowsEn);
+    DXT_ASSERT(entityEntityRet.cols() >= colsEn);
+    DXT_ASSERT(entityNeighborRet.rows() >= rowsEn);
+    DXT_ASSERT(entityNeighborRet.cols() >= colsNe);
+    DXT_ASSERT(neighborEntityRet.rows() >= rowsNe);
+    DXT_ASSERT(neighborEntityRet.cols() >= colsEn);
+    DXT_ASSERT(neighborNeighborRet.rows() >= rowsNe);
+    DXT_ASSERT(neighborNeighborRet.cols() >= colsNe);
     // loop over all entity test basis functions
     for (size_t ii = 0; ii < rowsEn; ++ii) {
       auto& entityEntityRetRow = entityEntityRet[ii];
@@ -543,8 +543,8 @@ public:
     const auto ansatzValues = ansatzBase.evaluate(localPointEntity);
     const auto ansatzGradients = ansatzBase.jacobian(localPointEntity);
     // compute products
-    assert(ret.rows() >= rows);
-    assert(ret.cols() >= cols);
+    DXT_ASSERT(ret.rows() >= rows);
+    DXT_ASSERT(ret.cols() >= cols);
     // loop over all test basis functions
     for (size_t ii = 0; ii < rows; ++ii) {
       auto& retRow = ret[ii];
@@ -683,7 +683,7 @@ public:
     const auto testValues = testBase.evaluate(localPointEntity);
     const auto testGradients = testBase.jacobian(localPointEntity);
     // compute
-    assert(ret.size() >= size);
+    DXT_ASSERT(ret.size() >= size);
     // loop over all test basis functions
     for (size_t ii = 0; ii < size; ++ii) {
       // symmetry term

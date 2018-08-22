@@ -200,7 +200,7 @@ private:
   void get_matrix_exponential(size_t index, const RangeFieldType& dt)
   {
     const auto& affine_function = *(evaluation_.values()[index]);
-    assert(affine_function.A().size() == 1 && "Not implemented for dimRangeCols > 1!");
+    DXT_ASSERT(affine_function.A().size() == 1 && "Not implemented for dimRangeCols > 1!");
     auto A = affine_function.A()[0].operator std::unique_ptr<FieldMatrixType>();
 
     // calculate matrix exponential exp(A*dt)

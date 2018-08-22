@@ -274,7 +274,7 @@ public:
     for (size_t jj = 0; jj < triangulation_.size() - 1; ++jj)
       if (XT::Common::FloatCmp::ge(v[0], triangulation_[jj]) && XT::Common::FloatCmp::le(v[0], triangulation_[jj + 1]))
         face_indices.push_back(jj);
-    assert(face_indices.size());
+    DXT_ASSERT(face_indices.size());
     return face_indices;
   }
 
@@ -311,7 +311,7 @@ public:
     : triangulation_(triangulation)
     , quadrature_(quadrature)
   {
-    assert(triangulation_.vertices().size() == dimRange);
+    DXT_ASSERT(triangulation_.vertices().size() == dimRange);
   }
 
   HatFunctions(const size_t refinements = 0,
@@ -322,7 +322,7 @@ public:
     : triangulation_(initial_points, refinements, reference_quadrature_rule)
     , quadrature_(triangulation_.quadrature_rule(quadrature_refinements))
   {
-    assert(triangulation_.vertices().size() == dimRange);
+    DXT_ASSERT(triangulation_.vertices().size() == dimRange);
   }
 
   HatFunctions(const size_t refinements,
@@ -332,7 +332,7 @@ public:
     : triangulation_(initial_points, refinements)
     , quadrature_(quadrature)
   {
-    assert(triangulation_.vertices().size() == dimRange);
+    DXT_ASSERT(triangulation_.vertices().size() == dimRange);
   }
 
   virtual RangeType evaluate(const DomainType& v) const override
@@ -350,7 +350,7 @@ public:
         break;
       }
     } // faces
-    assert(success);
+    DXT_ASSERT(success);
     return ret;
   } // ... evaluate(...)
 

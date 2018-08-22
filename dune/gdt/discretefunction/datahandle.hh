@@ -94,7 +94,7 @@ public:
   std::enable_if_t<EntityType::codimension == 0>
   scatter(MessageBuffer& buff, const EntityType& entity, size_t DXTC_DEBUG_ONLY(n))
   {
-    assert(mapper_.numDofs(entity) == n);
+    DXT_ASSERT(mapper_.numDofs(entity) == n);
     const auto global_indices = mapper_.globalIndices(entity);
     for (const auto& index : global_indices)
       buff.read(vector_[index]);

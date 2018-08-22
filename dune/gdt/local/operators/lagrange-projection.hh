@@ -74,7 +74,7 @@ public:
     auto& local_DoF_vector = local_range.vector();
     const size_t size = local_DoF_vector.size();
     const auto lagrange_points = local_range.space().lagrange_points(entity);
-    assert(lagrange_points.size() == size);
+    DXT_ASSERT(lagrange_points.size() == size);
     for (size_t ii = 0; ii < size; ++ii)
       local_DoF_vector.set(ii, local_source->evaluate(lagrange_points[ii], param_));
   } // ... apply(...)
@@ -95,7 +95,7 @@ public:
     auto& local_DoF_vector = local_range.vector();
     const auto lagrange_points = local_range.space().lagrange_points(entity);
     // and do the work (see below)
-    assert(lagrange_points.size() == local_DoF_vector.size());
+    DXT_ASSERT(lagrange_points.size() == local_DoF_vector.size());
     size_t kk = 0;
     for (size_t ii = 0; ii < lagrange_points.size(); ++ii) {
       if (std::isinf(local_DoF_vector.get(kk))) { // Assumes that the global DoF vector was set to infinity beforehand,

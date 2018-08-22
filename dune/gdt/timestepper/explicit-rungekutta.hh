@@ -215,14 +215,14 @@ public:
     , c_(c)
     , num_stages_(A_.rows())
   {
-    assert(A_.rows() == A_.cols() && "A has to be a square matrix");
-    assert(b_.size() == A_.rows());
-    assert(c_.size() == A_.rows());
+    DXT_ASSERT(A_.rows() == A_.cols() && "A has to be a square matrix");
+    DXT_ASSERT(b_.size() == A_.rows());
+    DXT_ASSERT(c_.size() == A_.rows());
 #ifndef NDEBUG
     for (size_t ii = 0; ii < A_.rows(); ++ii) {
       for (size_t jj = ii; jj < A_.cols(); ++jj) {
-        assert(Dune::XT::Common::FloatCmp::eq(A_[ii][jj], 0.0)
-               && "A has to be a lower triangular matrix with 0 on the main diagonal");
+        DXT_ASSERT(Dune::XT::Common::FloatCmp::eq(A_[ii][jj], 0.0)
+                   && "A has to be a lower triangular matrix with 0 on the main diagonal");
       }
     }
 #endif // NDEBUG
@@ -281,7 +281,7 @@ public:
   {
     auto& t = current_time();
     auto& u_n = current_solution();
-    assert(treshold > 0);
+    DXT_ASSERT(treshold > 0);
     // save current state
     DiscreteFunctionType initial_u_n = u_n;
     RangeFieldType initial_t = t;

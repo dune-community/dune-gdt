@@ -172,7 +172,7 @@ public:
   {
     RangeFieldType dt = initial_dt;
     RangeFieldType t = current_time();
-    assert(Dune::XT::Common::FloatCmp::ge(t_end, t));
+    DXT_ASSERT(Dune::XT::Common::FloatCmp::ge(t_end, t));
     size_t time_step_counter = 0;
 
     const RangeFieldType save_interval = (t_end - t) / num_save_steps;

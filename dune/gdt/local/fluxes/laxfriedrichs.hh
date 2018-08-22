@@ -235,7 +235,7 @@ private:
                              JacobianRangeType& ret,
                              const XT::Common::Parameter& param)
     {
-      assert(direction == 0);
+      DXT_ASSERT(direction == 0);
       local_func.partial_u(x_in_inside_coords, u, ret[direction], param);
     }
   };

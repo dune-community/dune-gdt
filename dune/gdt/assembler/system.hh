@@ -197,8 +197,8 @@ public:
              XT::LA::MatrixInterface<M, R>& matrix,
              const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
-    assert(matrix.rows() == test_space_.mapper().size());
-    assert(matrix.cols() == ansatz_space_.mapper().size());
+    DXT_ASSERT(matrix.rows() == test_space_.mapper().size());
+    DXT_ASSERT(matrix.cols() == ansatz_space_.mapper().size());
 #include <dune/xt/common/disable_warnings.hh>
     typedef internal::LocalVolumeTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim0_functors_.emplace_back(
@@ -222,8 +222,8 @@ public:
              XT::LA::MatrixInterface<M, R>& matrix,
              const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
-    assert(matrix.rows() == test_space_.mapper().size());
-    assert(matrix.cols() == ansatz_space_.mapper().size());
+    DXT_ASSERT(matrix.rows() == test_space_.mapper().size());
+    DXT_ASSERT(matrix.cols() == ansatz_space_.mapper().size());
 #include <dune/xt/common/disable_warnings.hh>
     typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(
@@ -241,14 +241,14 @@ public:
              XT::LA::MatrixInterface<M, R>& matrix_out_in,
              const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
-    assert(matrix_in_in.rows() == test_space_.mapper().size());
-    assert(matrix_in_in.cols() == ansatz_space_.mapper().size());
-    assert(matrix_out_out.rows() == outer_test_space_.mapper().size());
-    assert(matrix_out_out.cols() == outer_ansatz_space_.mapper().size());
-    assert(matrix_in_out.rows() == test_space_.mapper().size());
-    assert(matrix_in_out.cols() == outer_ansatz_space_.mapper().size());
-    assert(matrix_out_in.rows() == outer_test_space_.mapper().size());
-    assert(matrix_out_in.cols() == ansatz_space_.mapper().size());
+    DXT_ASSERT(matrix_in_in.rows() == test_space_.mapper().size());
+    DXT_ASSERT(matrix_in_in.cols() == ansatz_space_.mapper().size());
+    DXT_ASSERT(matrix_out_out.rows() == outer_test_space_.mapper().size());
+    DXT_ASSERT(matrix_out_out.cols() == outer_ansatz_space_.mapper().size());
+    DXT_ASSERT(matrix_in_out.rows() == test_space_.mapper().size());
+    DXT_ASSERT(matrix_in_out.cols() == outer_ansatz_space_.mapper().size());
+    DXT_ASSERT(matrix_out_in.rows() == outer_test_space_.mapper().size());
+    DXT_ASSERT(matrix_out_in.cols() == ansatz_space_.mapper().size());
 #include <dune/xt/common/disable_warnings.hh>
     typedef internal::LocalCouplingTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(test_space_,
@@ -276,8 +276,8 @@ public:
              XT::LA::MatrixInterface<M, R>& matrix,
              const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
-    assert(matrix.rows() == test_space_.mapper().size());
-    assert(matrix.cols() == ansatz_space_.mapper().size());
+    DXT_ASSERT(matrix.rows() == test_space_.mapper().size());
+    DXT_ASSERT(matrix.cols() == ansatz_space_.mapper().size());
 #include <dune/xt/common/disable_warnings.hh>
     typedef internal::LocalBoundaryTwoFormMatrixAssemblerWrapper<ThisType, typename M::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(
@@ -392,7 +392,7 @@ public:
              XT::LA::VectorInterface<V, R>& vector,
              const ApplyOnWhichEntity* where = new XT::Grid::ApplyOn::AllEntities<GridLayerType>())
   {
-    assert(vector.size() == test_space_.mapper().size());
+    DXT_ASSERT(vector.size() == test_space_.mapper().size());
 #include <dune/xt/common/disable_warnings.hh>
     typedef internal::LocalVolumeFunctionalVectorAssemblerWrapper<ThisType, typename V::derived_type> WrapperType;
     this->codim0_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
@@ -423,7 +423,7 @@ public:
              XT::LA::VectorInterface<V, R>& vector,
              const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
-    assert(vector.size() == test_space_.mapper().size());
+    DXT_ASSERT(vector.size() == test_space_.mapper().size());
 #include <dune/xt/common/disable_warnings.hh>
     typedef internal::LocalFaceFunctionalVectorAssemblerWrapper<ThisType, typename V::derived_type> WrapperType;
     this->codim1_functors_.emplace_back(new WrapperType(test_space_, where, local_assembler, vector.as_imp()));
@@ -436,7 +436,7 @@ public:
                    XT::LA::VectorInterface<V, R>& vector,
                    const ApplyOnWhichIntersection* where = new XT::Grid::ApplyOn::AllIntersections<GridLayerType>())
   {
-    assert(vector.size() == test_space_.mapper().size());
+    DXT_ASSERT(vector.size() == test_space_.mapper().size());
     this->codim1_functors_.emplace_back(
         new LocalFaceFunctionalAssemblerFunctor<TestSpaceType, typename V::derived_type, GridLayerType>(
             test_space_, where, local_face_functional, vector.as_imp()));

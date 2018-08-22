@@ -72,16 +72,16 @@ public:
     // apply local two-form
     const auto test_base = test_space.base_function_set(entity);
     const auto ansatz_base = ansatz_space.base_function_set(entity);
-    assert(test_base.size() == rows);
-    assert(ansatz_base.size() == cols);
+    DXT_ASSERT(test_base.size() == rows);
+    DXT_ASSERT(ansatz_base.size() == cols);
     local_volume_two_form.apply2(test_base, ansatz_base, local_matrix);
     // write local matrix to global
     const auto global_row_indices =
         test_space.mapper().globalIndices(entity); // \todo: make mutable member, after SMP refactor
     const auto global_col_indices =
         ansatz_space.mapper().globalIndices(entity); // \todo: make mutable member, after SMP refactor
-    assert(global_row_indices.size() == rows);
-    assert(global_col_indices.size() == cols);
+    DXT_ASSERT(global_row_indices.size() == rows);
+    DXT_ASSERT(global_col_indices.size() == cols);
     for (size_t ii = 0; ii < rows; ++ii) {
       const auto& local_matrix_row = local_matrix[ii];
       const size_t global_ii = global_row_indices[ii];
@@ -239,10 +239,10 @@ public:
     const auto global_col_indices_in = inner_ansatz_space.mapper().globalIndices(entity);
     const auto global_row_indices_out = outer_test_space.mapper().globalIndices(neighbor);
     const auto global_col_indices_out = outer_ansatz_space.mapper().globalIndices(neighbor);
-    assert(global_row_indices_in.size() == rows_in);
-    assert(global_col_indices_in.size() == cols_in);
-    assert(global_row_indices_out.size() == rows_out);
-    assert(global_col_indices_out.size() == cols_out);
+    DXT_ASSERT(global_row_indices_in.size() == rows_in);
+    DXT_ASSERT(global_col_indices_in.size() == cols_in);
+    DXT_ASSERT(global_row_indices_out.size() == rows_out);
+    DXT_ASSERT(global_col_indices_out.size() == cols_out);
     for (size_t ii = 0; ii < rows_in; ++ii) {
       const auto& local_matrix_in_in_row = local_matrix_in_in[ii];
       const auto& local_matrix_in_out_row = local_matrix_in_out[ii];
@@ -467,15 +467,15 @@ public:
     // apply local two-form
     const auto test_base = test_space.base_function_set(entity);
     const auto ansatz_base = ansatz_space.base_function_set(entity);
-    assert(test_base.size() == rows);
-    assert(ansatz_base.size() == cols);
+    DXT_ASSERT(test_base.size() == rows);
+    DXT_ASSERT(ansatz_base.size() == cols);
     local_boundary_two_form.apply2(test_base, ansatz_base, intersection, local_matrix);
     // write local matrix to global
     // \todo: make mutable member, after SMP refactor
     const auto global_row_indices = test_space.mapper().globalIndices(entity);
     const auto global_col_indices = ansatz_space.mapper().globalIndices(entity);
-    assert(global_row_indices.size() == rows);
-    assert(global_col_indices.size() == cols);
+    DXT_ASSERT(global_row_indices.size() == rows);
+    DXT_ASSERT(global_col_indices.size() == cols);
     for (size_t ii = 0; ii < rows; ++ii) {
       const auto& local_matrix_row = local_matrix[ii];
       const size_t global_ii = global_row_indices[ii];
@@ -553,12 +553,12 @@ public:
     Dune::DynamicVector<FieldType> local_vector(size, 0.); // \todo: make mutable member, after SMP refactor
     // apply local functional
     const auto test_basis = test_space.base_function_set(entity);
-    assert(test_basis.size() == size);
+    DXT_ASSERT(test_basis.size() == size);
     local_volume_functional.apply(test_basis, local_vector);
     // write local vector to global
     const auto global_indices =
         test_space.mapper().globalIndices(entity); // \todo: make mutable member, after SMP refactor
-    assert(global_indices.size() == size);
+    DXT_ASSERT(global_indices.size() == size);
     for (size_t jj = 0; jj < size; ++jj)
       global_vector.add_to_entry(global_indices[jj], local_vector[jj]);
   } // ... assemble(...)
@@ -623,12 +623,12 @@ public:
     Dune::DynamicVector<FieldType> local_vector(size, 0.); // \todo: make mutable member, after SMP refactor
     // apply local functional
     const auto test_basis = test_space.base_function_set(entity);
-    assert(test_basis.size() == size);
+    DXT_ASSERT(test_basis.size() == size);
     local_face_functional.apply(test_basis, intersection, local_vector);
     // write local vector to global
     // \todo: make mutable member, after SMP refactor
     const auto global_indices = test_space.mapper().globalIndices(entity);
-    assert(global_indices.size() == size);
+    DXT_ASSERT(global_indices.size() == size);
     for (size_t jj = 0; jj < size; ++jj)
       global_vector.add_to_entry(global_indices[jj], local_vector[jj]);
   } // ... assemble(...)

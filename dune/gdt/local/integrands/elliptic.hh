@@ -275,8 +275,8 @@ public:
     // compute elliptic evaluation
     const size_t rows = test_base.size();
     const size_t cols = ansatz_base.size();
-    assert(ret.rows() >= rows);
-    assert(ret.cols() >= cols);
+    DXT_ASSERT(ret.rows() >= rows);
+    DXT_ASSERT(ret.cols() >= cols);
     for (size_t ii = 0; ii < rows; ++ii) {
       auto& retRow = ret[ii];
       for (size_t jj = 0; jj < cols; ++jj) {

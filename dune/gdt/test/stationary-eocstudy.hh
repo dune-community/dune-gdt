@@ -100,8 +100,8 @@ public:
       return compute_norm(test_case_.reference_grid_view(), test_case_.exact_solution(), type);
     } else {
       compute_reference_solution();
-      assert(reference_discretization_);
-      assert(reference_solution_vector_);
+      DXT_ASSERT(reference_discretization_);
+      DXT_ASSERT(reference_solution_vector_);
       const ConstDiscreteFunctionType reference_solution(
           reference_discretization_->ansatz_space(), *reference_solution_vector_, "reference solution");
       return compute_norm(test_case_.reference_grid_view(), reference_solution, type);
@@ -111,7 +111,7 @@ public:
   virtual size_t current_num_DoFs() override final
   {
     if (current_refinement_ != last_computed_refinement_) {
-      assert(current_refinement_ <= num_refinements());
+      DXT_ASSERT(current_refinement_ <= num_refinements());
       current_num_DoFs_ = Discretizer::discretize(test_case_.level_provider(current_refinement_),
                                                   test_case_.problem(),
                                                   test_case_.level_of(current_refinement_))
@@ -124,7 +124,7 @@ public:
 
   virtual size_t current_grid_size() const override final
   {
-    assert(current_refinement_ <= num_refinements());
+    DXT_ASSERT(current_refinement_ <= num_refinements());
     return test_case_.level_provider(current_refinement_)
         .template layer<TestCaseType::layer_type, XT::Grid::Backends::view>(test_case_.level_of(current_refinement_))
         .indexSet()
@@ -133,13 +133,13 @@ public:
 
   virtual double current_grid_width() override final
   {
-    assert(current_refinement_ <= num_refinements());
+    DXT_ASSERT(current_refinement_ <= num_refinements());
     if (grid_widths_[current_refinement_] < 0.0) {
       const int level = test_case_.level_of(current_refinement_);
       const auto grid_layer = test_case_.level_provider(current_refinement_)
                                   .template layer<TestCaseType::layer_type, XT::Grid::Backends::view>(level);
       grid_widths_[current_refinement_] = XT::Grid::dimensions(grid_layer).entity_width.max();
-      assert(grid_widths_[current_refinement_] > 0.0);
+      DXT_ASSERT(grid_widths_[current_refinement_] > 0.0);
     }
     return grid_widths_[current_refinement_];
   } // ... current_grid_width(...)
@@ -148,7 +148,7 @@ public:
   virtual double compute_on_current_refinement() override final
   {
     if (current_refinement_ != last_computed_refinement_) {
-      assert(current_refinement_ <= num_refinements());
+      DXT_ASSERT(current_refinement_ <= num_refinements());
       // compute solution
       Timer timer;
       current_discretization_ = XT::Common::make_unique<DiscretizationType>(
@@ -162,7 +162,7 @@ public:
           current_discretization_->ansatz_space(), *current_solution_vector_on_level_, "solution on current level");
       // prolong to reference grid part
       compute_reference_solution();
-      assert(reference_discretization_);
+      DXT_ASSERT(reference_discretization_);
       if (!current_solution_vector_)
         current_solution_vector_ = XT::Common::make_unique<VectorType>(reference_discretization_->create_vector());
       DiscreteFunctionType reference_refinement_solution(
@@ -184,13 +184,13 @@ public:
   virtual double current_error_norm(const std::string type) override final
   {
     // get current solution
-    assert(current_refinement_ <= num_refinements());
+    DXT_ASSERT(current_refinement_ <= num_refinements());
     compute_on_current_refinement();
-    assert(last_computed_refinement_ == current_refinement_);
+    DXT_ASSERT(last_computed_refinement_ == current_refinement_);
     if (is_norm(type)) {
-      assert(current_solution_vector_);
+      DXT_ASSERT(current_solution_vector_);
       compute_reference_solution();
-      assert(reference_discretization_);
+      DXT_ASSERT(reference_discretization_);
       const ConstDiscreteFunctionType current_solution(
           reference_discretization_->ansatz_space(), *current_solution_vector_, "current solution");
       // compute error
@@ -199,14 +199,14 @@ public:
       } else {
         // get reference solution
         compute_reference_solution();
-        assert(reference_discretization_);
-        assert(reference_solution_vector_);
+        DXT_ASSERT(reference_discretization_);
+        DXT_ASSERT(reference_solution_vector_);
         const ConstDiscreteFunctionType reference_solution(
             reference_discretization_->ansatz_space(), *reference_solution_vector_, "reference solution");
         return compute_norm(test_case_.reference_grid_view(), reference_solution - current_solution, type);
       }
     } else {
-      assert(current_solution_vector_on_level_);
+      DXT_ASSERT(current_solution_vector_on_level_);
       return estimate(*current_solution_vector_on_level_, type);
     }
   } // ... current_error_norm(...)

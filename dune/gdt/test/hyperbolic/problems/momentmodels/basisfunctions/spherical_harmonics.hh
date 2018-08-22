@@ -62,7 +62,7 @@ public:
     const DomainFieldType phi = coords[1];
     RangeType ret(0);
     // TODO: use complex arithmetic, remove real() call
-    assert(order <= std::numeric_limits<int>::max());
+    DXT_ASSERT(order <= std::numeric_limits<int>::max());
     for (unsigned int ll = 0; ll <= static_cast<unsigned int>(order); ++ll)
       for (int mm = only_positive ? 0 : -static_cast<int>(ll); mm <= static_cast<int>(ll); ++mm)
         ret[helper<only_positive>::pos(ll, mm)] = boost::math::spherical_harmonic(ll, mm, theta, phi).real();
@@ -521,7 +521,7 @@ private:
   RangeFieldType N_lm(const int l, const int m) const
   {
     static constexpr auto frac_4pi = 1. / (4. * M_PI);
-    assert(l >= 0 && m >= 0 && m <= l);
+    DXT_ASSERT(l >= 0 && m >= 0 && m <= l);
     // return std::sqrt((2. * l + 1.) * XT::Common::factorial(l - m) / (XT::Common::factorial(l + m) * 4. * M_PI));
     auto factor = 1.;
     for (int ii = l - m + 1; ii <= l + m; ++ii)
@@ -533,7 +533,7 @@ private:
   RangeFieldType evaluate_lm(const DomainFieldType theta, const DomainFieldType phi, const int l, const int m) const
   {
     const auto cos_theta = std::cos(theta);
-    assert(l >= 0 && std::abs(m) <= l);
+    DXT_ASSERT(l >= 0 && std::abs(m) <= l);
     if (m < 0)
       return std::sqrt(2) * N_lm(l, -m) * boost::math::legendre_p(l, -m, cos_theta) * std::sin(-m * phi);
     else if (m == 0)

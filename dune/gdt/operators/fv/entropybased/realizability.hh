@@ -95,8 +95,8 @@ public:
                      const RangeType& u_bar,
                      bool add_epsilon = true)
   {
-    assert(dynamic_cast<const EntropyFluxType*>(&analytical_flux_) != nullptr
-           && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
+    DXT_ASSERT(dynamic_cast<const EntropyFluxType*>(&analytical_flux_) != nullptr
+               && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
     for (size_t ii = 0; ii < dimRange; ++ii) {
       auto theta_ii = add_epsilon ? theta_entity[ii] + epsilon_ : theta_entity[ii];
       if (theta_ii > 0.) {
@@ -145,8 +145,8 @@ public:
                      const RangeType& u_bar,
                      bool add_epsilon = true)
   {
-    assert(dynamic_cast<const EntropyFluxType*>(&analytical_flux_) != nullptr
-           && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
+    DXT_ASSERT(dynamic_cast<const EntropyFluxType*>(&analytical_flux_) != nullptr
+               && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
     auto theta = add_epsilon ? theta_entity + epsilon_ : theta_entity;
     if (theta > 0.) {
       //      std::cout << "limited with theta: " << theta << " and epsilon " << epsilon_ << std::endl;
@@ -721,7 +721,7 @@ public:
   void apply_local(const EntityType& entity)
   {
     auto& local_reconstructed_values = reconstructed_function_.local_values(entity);
-    assert(local_reconstructed_values.size() == 2 * dimDomain);
+    DXT_ASSERT(local_reconstructed_values.size() == 2 * dimDomain);
 
     // get cell average
     const RangeType u_bar =
@@ -755,7 +755,7 @@ private:
     if (!*lp_) {
       // We start with creating a model with dimRange rows and num_quad_points+1 columns */
       constexpr int num_rows = static_cast<int>(dimRange);
-      assert(quadrature_.size() < std::numeric_limits<int>::max());
+      DXT_ASSERT(quadrature_.size() < std::numeric_limits<int>::max());
       int num_cols = static_cast<int>(quadrature_.size() + 1); /* variables are x_1, ..., x_{num_quad_points}, theta */
       *lp_ = std::make_unique<ClpSimplex>(false);
       auto& lp = **lp_;
@@ -769,7 +769,7 @@ private:
         row_indices[ii] = ii;
 
       // set columns for quadrature points
-      assert(int(basis_values_.size()) == num_cols - 1);
+      DXT_ASSERT(int(basis_values_.size()) == num_cols - 1);
       for (int ii = 0; ii < num_cols - 1; ++ii) {
         const auto& v_i = basis_values_[ii];
         // First argument: number of elements in column

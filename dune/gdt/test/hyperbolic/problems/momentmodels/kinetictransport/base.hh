@@ -85,7 +85,7 @@ public:
     }
     // communicate the quadrature points to all ranks
     const auto& comm = velocity_grid.comm();
-    assert(coords.size() < std::numeric_limits<int>::max() && weights.size() < std::numeric_limits<int>::max());
+    DXT_ASSERT(coords.size() < std::numeric_limits<int>::max() && weights.size() < std::numeric_limits<int>::max());
     int coords_size = static_cast<int>(coords.size());
     int weights_size = static_cast<int>(weights.size());
     std::vector<int> coords_sizes(comm.size());
@@ -189,7 +189,7 @@ public:
     const auto sigma_a = param.get("sigma_a");
     const auto sigma_s = param.get("sigma_s");
     const auto Q = param.get("Q");
-    assert(sigma_a.size() == sigma_s.size() && sigma_a.size() == Q.size() && sigma_a.size() == num_regions);
+    DXT_ASSERT(sigma_a.size() == sigma_s.size() && sigma_a.size() == Q.size() && sigma_a.size() == num_regions);
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
     auto sigma_t = sigma_a;

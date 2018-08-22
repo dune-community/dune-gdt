@@ -241,29 +241,30 @@ public:
     , num_stages_(A_.rows())
     , gamma_ii_equal_for_all_i_(true)
   {
-    assert(Dune::XT::Common::FloatCmp::gt(tol_, 0.0));
-    assert(Dune::XT::Common::FloatCmp::le(scale_factor_min_, 1.0));
-    assert(Dune::XT::Common::FloatCmp::ge(scale_factor_max_, 1.0));
-    assert(A_.rows() == A_.cols() && "A has to be a square matrix");
-    assert(Gamma_.rows() == Gamma_.cols() && "Gamma has to be a square matrix");
-    assert(Gamma_.rows() == A_.rows() && "Sizes of A and Gamma have to match!");
-    assert(b_1.size() == A_.rows());
-    assert(b_2.size() == A_.rows());
-    assert(c_.size() == A_.rows());
+    DXT_ASSERT(Dune::XT::Common::FloatCmp::gt(tol_, 0.0));
+    DXT_ASSERT(Dune::XT::Common::FloatCmp::le(scale_factor_min_, 1.0));
+    DXT_ASSERT(Dune::XT::Common::FloatCmp::ge(scale_factor_max_, 1.0));
+    DXT_ASSERT(A_.rows() == A_.cols() && "A has to be a square matrix");
+    DXT_ASSERT(Gamma_.rows() == Gamma_.cols() && "Gamma has to be a square matrix");
+    DXT_ASSERT(Gamma_.rows() == A_.rows() && "Sizes of A and Gamma have to match!");
+    DXT_ASSERT(b_1.size() == A_.rows());
+    DXT_ASSERT(b_2.size() == A_.rows());
+    DXT_ASSERT(c_.size() == A_.rows());
 #ifndef NDEBUG
     for (size_t ii = 0; ii < A_.rows(); ++ii) {
       RangeFieldType c_calculated = 0;
       for (size_t jj = 0; jj < ii; ++jj)
         c_calculated += A_[ii][jj];
-      assert(Dune::XT::Common::FloatCmp::eq(c_calculated, c_[ii]));
+      DXT_ASSERT(Dune::XT::Common::FloatCmp::eq(c_calculated, c_[ii]));
       for (size_t jj = ii; jj < A_.cols(); ++jj) {
-        assert(Dune::XT::Common::FloatCmp::eq(A_[ii][jj], 0.0)
-               && "A has to be a lower triangular matrix with 0 on the main diagonal!");
+        DXT_ASSERT(Dune::XT::Common::FloatCmp::eq(A_[ii][jj], 0.0)
+                   && "A has to be a lower triangular matrix with 0 on the main diagonal!");
         if (jj == ii)
-          assert(Dune::XT::Common::FloatCmp::ne(Gamma_[ii][jj], 0.0)
-                 && "The diagonal entries of Gamma must not vanish!");
+          DXT_ASSERT(Dune::XT::Common::FloatCmp::ne(Gamma_[ii][jj], 0.0)
+                     && "The diagonal entries of Gamma must not vanish!");
         else
-          assert(Dune::XT::Common::FloatCmp::eq(Gamma_[ii][jj], 0.0) && "Gamma has to be a lower triangular matrix!");
+          DXT_ASSERT(Dune::XT::Common::FloatCmp::eq(Gamma_[ii][jj], 0.0)
+                     && "Gamma has to be a lower triangular matrix!");
       }
     }
 #endif // NDEBUG

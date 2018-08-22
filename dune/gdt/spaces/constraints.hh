@@ -103,7 +103,7 @@ public:
   inline void insert(const size_t DoF)
   {
     DUNE_UNUSED std::lock_guard<std::mutex> mutex_guard(mutex_);
-    assert(DoF < size_);
+    DXT_ASSERT(DoF < size_);
     dirichlet_DoFs_.insert(DoF);
   }
 
@@ -115,7 +115,7 @@ public:
   template <class M>
   void apply(XT::LA::MatrixInterface<M>& matrix) const
   {
-    assert(matrix.rows() == size_);
+    DXT_ASSERT(matrix.rows() == size_);
     if (set_) {
       for (const auto& DoF : dirichlet_DoFs_)
         matrix.unit_row(DoF);
@@ -128,7 +128,7 @@ public:
   template <class V>
   void apply(XT::LA::VectorInterface<V>& vector) const
   {
-    assert(vector.size() == size_);
+    DXT_ASSERT(vector.size() == size_);
     for (const auto& DoF : dirichlet_DoFs_)
       vector[DoF] = 0.0;
   }
@@ -136,8 +136,8 @@ public:
   template <class M, class V>
   void apply(XT::LA::MatrixInterface<M>& matrix, XT::LA::VectorInterface<V>& vector) const
   {
-    assert(matrix.rows() == size_);
-    assert(vector.size() == size_);
+    DXT_ASSERT(matrix.rows() == size_);
+    DXT_ASSERT(vector.size() == size_);
     if (set_) {
       for (const auto& DoF : dirichlet_DoFs_) {
         matrix.unit_row(DoF);

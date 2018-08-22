@@ -98,8 +98,8 @@ public:
     const size_t rows = test_base.size();
     const size_t cols = ansatz_base.size();
     ret *= 0.0;
-    assert(ret.rows() >= rows);
-    assert(ret.cols() >= cols);
+    DXT_ASSERT(ret.rows() >= rows);
+    DXT_ASSERT(ret.cols() >= cols);
     DynamicMatrix<FieldType> integrand_eval(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
     // loop over all quadrature points
     for (const auto& quadrature_point : quadrature) {
@@ -126,8 +126,8 @@ public:
     const size_t rows = test_base.size();
     const size_t cols = ansatz_base.size();
     ret *= 0.0;
-    assert(ret.rows() >= rows);
-    assert(ret.cols() >= cols);
+    DXT_ASSERT(ret.rows() >= rows);
+    DXT_ASSERT(ret.cols() >= cols);
     DynamicMatrix<FieldType> integrand_eval(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
     // loop over all quadrature points
     for (const auto& quadrature_point : quadrature) {
@@ -262,14 +262,14 @@ public:
     const size_t cols_en = ansatz_base_en.size();
     const size_t rows_ne = test_base_ne.size();
     const size_t cols_ne = ansatz_base_ne.size();
-    assert(ret_en_en.rows() >= rows_en);
-    assert(ret_en_en.cols() >= cols_en);
-    assert(ret_ne_ne.rows() >= rows_ne);
-    assert(ret_ne_ne.cols() >= cols_ne);
-    assert(ret_en_ne.rows() >= rows_en);
-    assert(ret_en_ne.cols() >= cols_ne);
-    assert(ret_ne_en.rows() >= rows_en);
-    assert(ret_ne_en.cols() >= cols_en);
+    DXT_ASSERT(ret_en_en.rows() >= rows_en);
+    DXT_ASSERT(ret_en_en.cols() >= cols_en);
+    DXT_ASSERT(ret_ne_ne.rows() >= rows_ne);
+    DXT_ASSERT(ret_ne_ne.cols() >= cols_ne);
+    DXT_ASSERT(ret_en_ne.rows() >= rows_en);
+    DXT_ASSERT(ret_en_ne.cols() >= cols_ne);
+    DXT_ASSERT(ret_ne_en.rows() >= rows_en);
+    DXT_ASSERT(ret_ne_en.cols() >= cols_en);
     // \todo: make mutable member, after SMP refactor
     DynamicMatrix<FieldType> integrand_eval_en_en(rows_en, cols_en, 0.);
     DynamicMatrix<FieldType> integrand_eval_ne_ne(rows_ne, cols_ne, 0.);
@@ -393,8 +393,8 @@ public:
     ret *= 0.0;
     const size_t rows = test_base.size();
     const size_t cols = ansatz_base.size();
-    assert(ret.rows() >= rows);
-    assert(ret.cols() >= cols);
+    DXT_ASSERT(ret.rows() >= rows);
+    DXT_ASSERT(ret.cols() >= cols);
     DynamicMatrix<FieldType> integrand_eval(rows, cols, 0.); // \todo: make mutable member, after SMP refactor
     // loop over all quadrature points
     for (const auto& quadrature_point : quadrature) {
@@ -404,8 +404,8 @@ public:
       // evaluate local
       integrand_.evaluate(local_functions, test_base, ansatz_base, intersection, xx, integrand_eval);
       // compute integral
-      assert(integrand_eval.rows() >= rows);
-      assert(integrand_eval.cols() >= cols);
+      DXT_ASSERT(integrand_eval.rows() >= rows);
+      DXT_ASSERT(integrand_eval.cols() >= cols);
       // loop over all test basis functions
       for (size_t ii = 0; ii < rows; ++ii) {
         auto& ret_row = ret[ii];

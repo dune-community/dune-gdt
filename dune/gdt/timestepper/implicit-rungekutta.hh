@@ -205,9 +205,9 @@ public:
     , c_(c)
     , num_stages_(A_.rows())
   {
-    assert(A_.rows() == A_.cols() && "A has to be a square matrix");
-    assert(b_.size() == A_.rows());
-    assert(c_.size() == A_.rows());
+    DXT_ASSERT(A_.rows() == A_.cols() && "A has to be a square matrix");
+    DXT_ASSERT(b_.size() == A_.rows());
+    DXT_ASSERT(c_.size() == A_.rows());
     bool lower_triangular = true;
     bool diagonally_implicit = true;
     for (size_t ii = 0; ii < A_.rows(); ++ii) {
