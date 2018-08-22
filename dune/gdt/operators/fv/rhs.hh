@@ -122,7 +122,6 @@ public:
     const auto global_indices = mapper.globalIndices(entity);
     for (size_t ii = 0; ii < local_vector.size(); ++ii)
       local_vector[ii] = vector_vector.get_entry(global_indices[ii]);
-    // solve
     matrices_[vector_.space().grid_layer().indexSet().index(entity)].mv(local_vector, local_result);
 
     // write solution

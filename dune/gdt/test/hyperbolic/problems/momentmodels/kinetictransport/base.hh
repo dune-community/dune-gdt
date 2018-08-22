@@ -174,7 +174,9 @@ public:
     DynamicVector<RangeFieldType> tmp_row(M_T.N(), 0.);
     for (size_t dd = 0; dd < dimDomain; ++dd) {
       for (size_t ii = 0; ii < M_T.N(); ++ii) {
-        M_T.solve(tmp_row, A[dd][ii]);
+        // copy to our FieldMatrix as the DenseMatrix in dune-common has a bug in its solve method (fixed in 2.6)
+        auto M_T_FieldMat = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(M_T);
+        M_T_FieldMat->solve(tmp_row, A[dd][ii]);
         A[dd][ii] = tmp_row;
       }
     }
@@ -201,7 +203,9 @@ public:
     // calculate c = M^{-T} <b>
     const auto M_T = basis_functions_.mass_matrix(); // mass matrix is symmetric
     RangeType c(0.);
-    M_T.solve(c, basis_integrated);
+    // copy to our FieldMatrix as the DenseMatrix in dune-common has a bug in its solve method (fixed in 2.6)
+    auto M_T_FieldMat = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(M_T);
+    M_T_FieldMat->solve(c, basis_integrated);
     MatrixType I(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
       I[rr][rr] = 1;

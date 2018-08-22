@@ -311,9 +311,19 @@ struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 6, 1, 3>, re
 template <bool reconstruct>
 struct PointSourcePnExpectedResults<PiecewiseMonomials<double, 3, double, 32, 1, 3>, reconstruct>
 {
+  // The matrices in this test case all have eigenvalues [+-0.808311035811965, 0, 0, 0, 0].
+  // Thus, the eigenvectors are not unique and the shifted_qr eigensolver gives different
+  // (orthonormal) eigenvectors than the lapack eigensolver (which gives non-orthogonal
+  //  eigenvectors). Both give correct eigenvalues and eigenvectors. However, this difference
+  // leads to a larger difference in the results than expected by pure numerical errors.
   static constexpr double l1norm = reconstruct ? 1.0029611747120692 : 1.0029611746514546;
+#if HAVE_MKL || HAVE_LAPACKE
   static constexpr double l2norm = reconstruct ? 2.715087211171229 : 2.7118027445930162;
   static constexpr double linfnorm = reconstruct ? 10.447363497137538 : 10.476921363773437;
+#else
+  static constexpr double l2norm = reconstruct ? 2.7147465245739584 : 2.7118027445930162;
+  static constexpr double linfnorm = reconstruct ? 10.443820002347552 : 10.476921363773437;
+#endif
 };
 
 template <class GridImp, class BasisfunctionImp, bool reconstruct>

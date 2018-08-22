@@ -147,7 +147,6 @@ struct HyperbolicPnTest : public ::testing::Test
       dx /= std::sqrt(3);
     RangeFieldType dt = CFL * dx;
     const RangeFieldType t_end = TestCaseType::t_end;
-    //    const RangeFieldType t_end = 2.5;
 
     // *********************** create operators and timesteppers ************************************
     AdvectionOperatorType advection_operator(analytical_flux, boundary_values, *basis_functions);
@@ -197,9 +196,9 @@ struct HyperbolicPnTest : public ::testing::Test
     l2norm = grid_layer.comm().sum(l2norm);
     linfnorm = grid_layer.comm().max(linfnorm);
     l2norm = std::sqrt(l2norm);
-    EXPECT_DOUBLE_EQ(TestCaseType::ExpectedResultsType::l1norm, l1norm);
-    EXPECT_DOUBLE_EQ(TestCaseType::ExpectedResultsType::l2norm, l2norm);
-    EXPECT_DOUBLE_EQ(TestCaseType::ExpectedResultsType::linfnorm, linfnorm);
+    EXPECT_NEAR(TestCaseType::ExpectedResultsType::l1norm, l1norm, l1norm * 1e-14);
+    EXPECT_NEAR(TestCaseType::ExpectedResultsType::l2norm, l2norm, l2norm * 1e-14);
+    EXPECT_NEAR(TestCaseType::ExpectedResultsType::linfnorm, linfnorm, linfnorm * 1e-14);
   }
 };
 
