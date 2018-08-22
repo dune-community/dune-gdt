@@ -901,3 +901,17 @@ TYPED_TEST(Order2MixedDiscontinuousLagrangeSpace, basis_jacobians_seem_to_be_cor
 {
   this->basis_jacobians_seem_to_be_correct();
 }
+
+GTEST_TEST(bindingslike, main)
+{
+  using namespace Dune;
+  using namespace Dune::GDT;
+
+  using Grid = GDT_BINDINGS_GRID;
+  using Spc = DgSpaceProvider<Grid, XT::Grid::Layers::leaf, Backends::gdt, 1, double, 1>;
+  using Vector = XT::LA::IstlDenseVector<>;
+  auto gp = XT::Grid::make_cube_grid<Grid>();
+  auto space = Spc::create(gp);
+  auto df = make_discrete_function<Vector>(space, "STATE");
+  df.visualize("foo");
+}
