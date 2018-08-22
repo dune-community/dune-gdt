@@ -31,7 +31,6 @@ _other_modules = ('xt.common', 'xt.grid', 'xt.functions', 'xt.la')
 _gdt_modules = ['local_diffusive_flux_estimation_operator',
                 'local_elliptic_ipdg_operators',
                 'assembler',
-                'discretefunction',
                 'projections',
                 'prolongations',
                 'functionals_elliptic_ipdg',
