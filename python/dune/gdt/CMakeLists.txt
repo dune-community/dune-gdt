@@ -12,6 +12,7 @@
 
 file(GLOB_RECURSE header "*.hh")
 
+dune_pybindxi_add_module(__shared EXCLUDE_FROM_ALL ${header} shared.cc)
 dune_pybindxi_add_module(__discretefunction EXCLUDE_FROM_ALL ${header} discretefunction/bindings.cc)
 
 dune_pybindxi_add_module(__projections EXCLUDE_FROM_ALL ${header} projections/bindings.cc)
