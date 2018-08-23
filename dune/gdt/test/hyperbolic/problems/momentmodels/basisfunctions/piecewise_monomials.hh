@@ -306,8 +306,13 @@ public:
 
   PiecewiseMonomials(
       const size_t refinements = 0,
+#if HAVE_FEKETE
       const size_t quadrature_refinements = 0,
       const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule = FeketeQuadrature<DomainFieldType>::get(3),
+#else
+      const size_t quadrature_refinements = 7,
+      const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule = barycentre_rule(),
+#endif
       std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points =
           {{1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
     : triangulation_(initial_points, refinements, reference_quadrature_rule)

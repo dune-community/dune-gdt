@@ -303,17 +303,31 @@ struct PointSourcePnExpectedResults<RealSphericalHarmonics<double, double, 2, 3>
 template <bool reconstruct>
 struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 6, 1, 3>, reconstruct>
 {
+// If Fekete is not available, we use a different quadrature, which gives slightly different results
+#if HAVE_FEKETE
   static constexpr double l1norm = reconstruct ? 1.0008094159849688 : 1.0008094159743741;
   static constexpr double l2norm = reconstruct ? 2.7092776186023921 : 2.7069983342698274;
   static constexpr double linfnorm = reconstruct ? 10.423991903881772 : 10.456911277964574;
+#else
+  static constexpr double l1norm = reconstruct ? 1.0008292531174403 : 1.0008292531057066;
+  static constexpr double l2norm = reconstruct ? 2.7095626432312425 : 2.7070581236565103;
+  static constexpr double linfnorm = reconstruct ? 10.424226802303412 : 10.457145890791487;
+#endif
 };
 
 template <bool reconstruct>
 struct PointSourcePnExpectedResults<PiecewiseMonomials<double, 3, double, 32, 1, 3>, reconstruct>
 {
+// If Fekete is not available, we use a different quadrature, which gives slightly different results
+#if HAVE_FEKETE
   static constexpr double l1norm = reconstruct ? 1.0008094159850585 : 1.000809415974838;
   static constexpr double l2norm = reconstruct ? 2.7098602740535496 : 2.7065939033692201;
   static constexpr double linfnorm = reconstruct ? 10.427604575554344 : 10.457121881221033;
+#else
+  static constexpr double l1norm = reconstruct ? 1.0008292531175822 : 1.0008292531061092;
+  static constexpr double l2norm = reconstruct ? 2.7099187578817849 : 2.7066524774407608;
+  static constexpr double linfnorm = reconstruct ? 10.427830136315574 : 10.457348661644719;
+#endif
 };
 
 template <class GridImp, class BasisfunctionImp, bool reconstruct>
