@@ -187,7 +187,6 @@ public:
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
       const GridLayerType& grid_layer,
-      const QuadratureRuleType& quadrature,
       const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
@@ -201,9 +200,9 @@ public:
       const std::string name = static_id())
     : index_set_(grid_layer.indexSet())
     , basis_functions_(basis_functions)
-    , quad_points_(quadrature.size())
-    , quad_weights_(quadrature.size())
-    , M_(dimRange, quadrature.size(), 0., 0)
+    , quad_points_(basis_functions_.quadratures().merged().size())
+    , quad_weights_(quad_points_.size())
+    , M_(dimRange, quad_points_.size(), 0., 0)
     , tau_(tau)
     , epsilon_gamma_(epsilon_gamma)
     , chi_(chi)
@@ -217,12 +216,14 @@ public:
     , cache_(index_set_.size(0), LocalCacheType(cache_size))
     , mutexes_(index_set_.size(0))
   {
-    for (size_t ll = 0; ll < quadrature.size(); ++ll) {
-      quad_points_[ll] = quadrature[ll].position();
-      quad_weights_[ll] = quadrature[ll].weight();
+    size_t ll = 0;
+    for (const auto& quad_point : basis_functions_.quadratures().merged()) {
+      quad_points_[ll] = quad_point.position();
+      quad_weights_[ll] = quad_point.weight();
       const auto val = basis_functions_.evaluate(quad_points_[ll]);
       for (size_t ii = 0; ii < dimRange; ++ii)
         M_.set_entry(ii, ll, val[ii]);
+      ++ll;
     }
   }
 
@@ -913,7 +914,6 @@ public:
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& /*basis_functions*/,
       const GridLayerType& /*grid_layer*/,
-      const QuadratureRuleType& /*quadrature*/,
       const RangeFieldType /*tau*/ = 1e-9,
       const RangeFieldType /*epsilon_gamma*/ = 0.01,
       const RangeFieldType /*chi*/ = 0.5,
@@ -1105,7 +1105,6 @@ public:
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
       const GridLayerType& grid_layer,
-      const QuadratureRuleType& quadrature,
       const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
@@ -1135,15 +1134,14 @@ public:
     , cache_(index_set_.size(0), LocalCacheType(cache_size))
     , mutexes_(index_set_.size(0))
   {
-    for (size_t ii = 0; ii < quadrature.size(); ++ii) {
-      const auto face_indices = basis_functions_.get_face_indices(quadrature[ii].position());
-      const size_t num_adjacent_faces = face_indices.size();
-      for (const auto& kk : face_indices) {
-        quad_points_[kk].emplace_back(quadrature[ii].position());
-        quad_weights_[kk].emplace_back(quadrature[ii].weight() / num_adjacent_faces);
+    const auto& quadratures = basis_functions_.quadratures();
+    assert(quadratures.size() == num_blocks);
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      for (const auto& quad_point : quadratures[jj]) {
+        quad_points_[jj].emplace_back(quad_point.position());
+        quad_weights_[jj].emplace_back(quad_point.weight());
       }
-    } // ii
-    size_t num_faces;
+    } // jj
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       while (quad_weights_[jj].size() % 8) { // align to 64 byte boundary
         quad_points_[jj].push_back(quad_points_[jj].back());
@@ -1151,10 +1149,10 @@ public:
       }
       M_[jj] = XT::LA::CommonDenseMatrix<RangeFieldType>(block_size, quad_points_[jj].size(), 0., 0);
       for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-        const auto val = basis_functions_.evaluate(quad_points_[jj][ll], false, num_faces);
+        const auto val = basis_functions_.evaluate(quad_points_[jj][ll], jj);
         for (size_t ii = 0; ii < block_size; ++ii)
           M_[jj].set_entry(ii, ll, val[block_size * jj + ii]);
-      } // ii
+      } // ll
     } // jj
   }
 
@@ -1888,7 +1886,7 @@ DynamicVector<FieldMatrix<FieldType, 3, 3>>& operator*=(DynamicVector<FieldMatri
   return first;
 }
 
-#if 1
+#if 0
 /**
  * Specialization of EntropyBasedLocalFlux for 3D Hatfunctions
  */
@@ -2889,7 +2887,6 @@ public:
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
       const GridLayerType& grid_layer,
-      const QuadratureRuleType& /*quadrature*/,
       const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,

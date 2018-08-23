@@ -295,35 +295,25 @@ struct PointSourcePnExpectedResults;
 template <bool reconstruct>
 struct PointSourcePnExpectedResults<RealSphericalHarmonics<double, double, 2, 3>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 2.0000000240000007 : 2.0000000240000029;
-  static constexpr double l2norm = reconstruct ? 2.9627559791618099 : 2.7793543802214402;
-  static constexpr double linfnorm = reconstruct ? 7.5368337466833273 : 5.9468208917837284;
+  static constexpr double l1norm = reconstruct ? 1.0007954640626406 : 1.0007954640534238;
+  static constexpr double l2norm = reconstruct ? 2.7177565161122006 : 2.7163083579825025;
+  static constexpr double linfnorm = reconstruct ? 10.461558474249745 : 10.498572083981468;
 };
 
 template <bool reconstruct>
 struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 6, 1, 3>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 1.0029611747117857 : 1.0029611746535056;
-  static constexpr double l2norm = reconstruct ? 2.714746717141042 : 2.7122234140989883;
-  static constexpr double linfnorm = reconstruct ? 10.443809507911537 : 10.476793054121075;
+  static constexpr double l1norm = reconstruct ? 1.0008094159849688 : 1.0008094159743741;
+  static constexpr double l2norm = reconstruct ? 2.7092776186023921 : 2.7069983342698274;
+  static constexpr double linfnorm = reconstruct ? 10.423991903881772 : 10.456911277964574;
 };
 
 template <bool reconstruct>
 struct PointSourcePnExpectedResults<PiecewiseMonomials<double, 3, double, 32, 1, 3>, reconstruct>
 {
-  // The matrices in this test case all have eigenvalues [+-0.808311035811965, 0, 0, 0, 0].
-  // Thus, the eigenvectors are not unique and the shifted_qr eigensolver gives different
-  // (orthonormal) eigenvectors than the lapack eigensolver (which gives non-orthogonal
-  //  eigenvectors). Both give correct eigenvalues and eigenvectors. However, this difference
-  // leads to a larger difference in the results than expected by pure numerical errors.
-  static constexpr double l1norm = reconstruct ? 1.0029611747120692 : 1.0029611746514546;
-#if HAVE_MKL || HAVE_LAPACKE
-  static constexpr double l2norm = reconstruct ? 2.715087211171229 : 2.7118027445930162;
-  static constexpr double linfnorm = reconstruct ? 10.447363497137538 : 10.476921363773437;
-#else
-  static constexpr double l2norm = reconstruct ? 2.7147465245739584 : 2.7118027445930162;
-  static constexpr double linfnorm = reconstruct ? 10.443820002347552 : 10.476921363773437;
-#endif
+  static constexpr double l1norm = reconstruct ? 1.0008094159850585 : 1.000809415974838;
+  static constexpr double l2norm = reconstruct ? 2.7098602740535496 : 2.7065939033692201;
+  static constexpr double linfnorm = reconstruct ? 10.427604575554344 : 10.457121881221033;
 };
 
 template <class GridImp, class BasisfunctionImp, bool reconstruct>

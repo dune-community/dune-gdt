@@ -30,9 +30,9 @@ namespace KineticTransport {
 
 
 template <class BasisfunctionImp, class GridLayerImp, class U_>
-class PointSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, BasisfunctionImp::dimDomain>
+class PointSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, BasisfunctionImp::dimDomain> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -45,17 +45,14 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
-  using typename BaseType::QuadratureType;
 
   using BaseType::default_boundary_cfg;
-  using BaseType::default_quadrature;
 
   PointSourcePn(const BasisfunctionType& basis_functions,
                 const GridLayerType& grid_layer,
-                const QuadratureType& quadrature = default_quadrature(),
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, {1, 1, 1}, grid_cfg, boundary_cfg, 1e-4 / (4 * M_PI))
+    : BaseType(basis_functions, grid_layer, {1, 1, 1}, grid_cfg, boundary_cfg, 1e-4 / (4 * M_PI))
   {
   }
 
@@ -107,7 +104,7 @@ public:
                           1e-4 / (4. * M_PI));
           return ret;
         },
-        50);
+        61);
 
     return new ActualInitialValueType(lower_left, upper_right, num_segments_, initial_vals, "initial_values");
   } // ... create_initial_values()
@@ -129,17 +126,15 @@ public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
   typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
-  using typename BaseType::QuadratureType;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
 
   PointSourceMn(const BasisfunctionType& basis_functions,
                 const GridLayerType& grid_layer,
-                const QuadratureType& quadrature,
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, grid_cfg, boundary_cfg)
   {
   }
 
@@ -150,13 +145,12 @@ public:
 
   virtual FluxType* create_flux() const
   {
-    return new ActualFluxType(basis_functions_, grid_layer_, quadrature_);
+    return new ActualFluxType(basis_functions_, grid_layer_);
   }
 
 protected:
   using BaseType::basis_functions_;
   using BaseType::grid_layer_;
-  using BaseType::quadrature_;
 }; // class PointSourceMn<...>
 
 

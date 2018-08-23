@@ -85,17 +85,14 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
-  using typename BaseType::QuadratureType;
 
   using BaseType::default_boundary_cfg;
-  using BaseType::default_quadrature;
 
   LineSourcePn(const BasisfunctionType& basis_functions,
                const GridLayerType& grid_layer,
-               const QuadratureType quadrature = QuadratureType(),
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, {1, 1}, grid_cfg, boundary_cfg, 1.)
+    : BaseType(basis_functions, grid_layer, {1, 1}, grid_cfg, boundary_cfg, 1.)
   {
   }
 
@@ -168,23 +165,15 @@ public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
   typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
-  using typename BaseType::QuadratureType;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
 
-  static QuadratureType default_quadrature(const XT::Common::Configuration& grid_cfg = default_grid_cfg())
-  {
-    size_t quad_order = grid_cfg.get("quad_order", 100);
-    return LebedevQuadrature<DomainFieldType, true>::get(quad_order);
-  }
-
   LineSourceMn(const BasisfunctionType& basis_functions,
                const GridLayerType& grid_layer,
-               const QuadratureType& quadrature = default_quadrature(),
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, grid_cfg, boundary_cfg)
   {
   }
 
@@ -195,12 +184,11 @@ public:
 
   virtual FluxType* create_flux() const
   {
-    return new ActualFluxType(basis_functions_, grid_layer_, quadrature_);
+    return new ActualFluxType(basis_functions_, grid_layer_);
   }
 
 protected:
   using BaseType::basis_functions_;
-  using BaseType::quadrature_;
   using BaseType::grid_layer_;
 }; // class LineSourceMn<...>
 

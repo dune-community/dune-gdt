@@ -75,21 +75,18 @@ public:
   using typename BaseType::ActualRhsType;
   using typename BaseType::RhsAffineFunctionType;
   using typename BaseType::MatrixType;
-  using typename BaseType::QuadratureType;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
 
   FokkerPlanckEquation(const BasisfunctionType& basis_functions,
                        const GridLayerType grid_layer,
-                       const QuadratureType quadrature = QuadratureType(),
                        const size_t num_segments = 1,
                        const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                        const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
                        const RangeFieldType psi_vac = 1e-4)
     : BaseType(basis_functions,
                grid_layer,
-               quadrature,
                {num_segments},
                grid_cfg,
                boundary_cfg,

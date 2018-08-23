@@ -36,9 +36,9 @@ namespace KineticTransport {
 
 
 template <class BasisfunctionImp, class GridLayerImp, class U_>
-class SourceBeamPn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, 1>
+class SourceBeamPn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, 1> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -51,20 +51,19 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
-  using typename BaseType::QuadratureType;
   using typename BaseType::FluxType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
 
   using BaseType::default_boundary_cfg;
-  using BaseType::default_quadrature;
 
   SourceBeamPn(const BasisfunctionType& basis_functions,
                const GridLayerType& grid_layer,
-               const QuadratureType& quadrature = default_quadrature(),
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
-               const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, {6}, grid_cfg, boundary_cfg)
+               const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
+               const bool is_mn_model = false)
+    : BaseType(basis_functions, grid_layer, {6}, grid_cfg, boundary_cfg)
+    , is_mn_model_(is_mn_model)
   {
   }
 
@@ -81,8 +80,6 @@ public:
     grid_config["upper_right"] = "[3.0]";
     grid_config["num_elements"] = "[300]";
     grid_config["overlap_size"] = "[2]";
-    grid_config["num_quad_cells"] = "[100]";
-    grid_config["quad_order"] = "31";
     return grid_config;
   }
 
@@ -104,16 +101,11 @@ public:
   // at x = 3.
   virtual BoundaryValueType* create_boundary_values() const override final
   {
-    // use very fine quadrature, is only used once
-    //    static auto boundary_quadrature_config = default_grid_cfg();
-    //    boundary_quadrature_config["num_quad_cells"] = "2000";
-    //    boundary_quadrature_config["quad_order"] = "31";
-    //    static const auto boundary_quadrature = BaseType::default_quadrature(boundary_quadrature_config);
     return new ActualBoundaryValueType(
         [&](const DomainType& x, const XT::Common::Parameter&) {
           if (x[0] < 1.5) {
             static auto ret =
-                helper<BasisfunctionType>::get_left_boundary_values(quadrature_, basis_functions_, psi_vac_);
+                helper<BasisfunctionType>::get_left_boundary_values(basis_functions_, psi_vac_, is_mn_model_);
             return ret;
           } else {
             auto ret = basis_functions_.integrated();
@@ -126,7 +118,7 @@ public:
 
   RangeType left_boundary_value() const
   {
-    return helper<BasisfunctionType>::get_left_boundary_values(quadrature_, basis_functions_, psi_vac_);
+    return helper<BasisfunctionType>::get_left_boundary_values(basis_functions_, psi_vac_, is_mn_model_);
   }
 
   // return exact solution if there is no rhs (i.e. sigma_s = sigma_a = Q = 0) and the initial values are the zero
@@ -145,7 +137,7 @@ public:
     const auto eigenvectors_inv = eigensolver.real_eigenvectors_inverse();
     RangeType char_boundary_val;
     const auto left_boundary_val =
-        helper<BasisfunctionType>::get_left_boundary_values(quadrature_, basis_functions_, psi_vac_);
+        helper<BasisfunctionType>::get_left_boundary_values(basis_functions_, psi_vac_, is_mn_model_);
     //    const RangeType left_boundary_val(1.); // for real dirac at left boundary
     eigenvectors_inv.mv(left_boundary_val, char_boundary_val);
     auto lambda = [=](const FieldVector<double, 1>& x, const Dune::XT::Common::Parameter& param) {
@@ -203,16 +195,24 @@ protected:
     using helper_base::numerator;
     using helper_base::denominator;
 
-    static RangeType get_left_boundary_values(const QuadratureType& quadrature,
-                                              const BasisfunctionImp& basis_functions,
-                                              const RangeFieldType& psi_vac)
+    static RangeType get_left_boundary_values(const BasisfunctionImp& basis_functions,
+                                              const RangeFieldType& psi_vac,
+                                              const bool is_mn_model)
     {
       RangeType ret(0);
-      for (const auto& quad_point : quadrature) {
-        const auto& v = quad_point.position()[0];
-        auto summand = basis_functions.evaluate(v);
-        summand *= numerator(v) * quad_point.weight();
-        ret += summand;
+      // For the MN-Models, we have to use the quadrature also used in the optimization problem to guarantee
+      // realizability of the boundary_values.
+      // For the PN-Models, we do not have these issues and just use a very fine quadrature (which is a performance
+      // problem as the integration is only done once).
+      const auto& quadratures =
+          is_mn_model ? basis_functions.quadratures() : BasisfunctionImp::gauss_lobatto_quadratures(100, 31);
+      for (const auto& quadrature : quadratures) {
+        for (const auto& quad_point : quadrature) {
+          const auto& v = quad_point.position()[0];
+          auto summand = basis_functions.evaluate(v);
+          summand *= numerator(v) * quad_point.weight();
+          ret += summand;
+        }
       }
       ret /= denominator();
       // add small vacuum concentration to move away from realizable boundary
@@ -228,9 +228,9 @@ protected:
     using helper_base::denominator;
     using helper_base::integral_1;
 
-    static RangeType get_left_boundary_values(const QuadratureType& /*quadrature*/,
-                                              const BasisfunctionImp& basis_functions,
-                                              const RangeFieldType psi_vac)
+    static RangeType get_left_boundary_values(const BasisfunctionImp& basis_functions,
+                                              const RangeFieldType psi_vac,
+                                              const bool /*is_mn_model*/)
     {
       RangeType ret(0);
       for (size_t nn = 0; nn < dimRange; ++nn) {
@@ -260,9 +260,9 @@ protected:
     using helper_base::integral_1;
     using helper_base::integral_2;
 
-    static RangeType get_left_boundary_values(const QuadratureType& /*quadrature*/,
-                                              const BasisfunctionImp& basis_functions,
-                                              const RangeFieldType psi_vac)
+    static RangeType get_left_boundary_values(const BasisfunctionImp& basis_functions,
+                                              const RangeFieldType psi_vac,
+                                              const bool /*is_mn_model*/)
     {
       const auto& triangulation = basis_functions.triangulation();
       RangeType ret(0);
@@ -278,8 +278,8 @@ protected:
 
   using BaseType::basis_functions_;
   using BaseType::grid_layer_;
-  using BaseType::quadrature_;
   using BaseType::psi_vac_;
+  const bool is_mn_model_;
 }; // class SourceBeamPn<...>
 
 template <class BasisfunctionType, class GridLayerType, class U_>
@@ -292,18 +292,15 @@ public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
   typedef EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
-  using typename BaseType::QuadratureType;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
-  using BaseType::default_quadrature;
 
   SourceBeamMn(const BasisfunctionType& basis_functions,
                const GridLayerType& grid_layer,
-               const QuadratureType& quadrature = default_quadrature(),
                const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, grid_cfg, boundary_cfg, true)
   {
   }
 
@@ -314,13 +311,12 @@ public:
 
   virtual FluxType* create_flux() const
   {
-    return new ActualFluxType(basis_functions_, grid_layer_, quadrature_);
+    return new ActualFluxType(basis_functions_, grid_layer_);
   }
 
 protected:
   using BaseType::basis_functions_;
   using BaseType::grid_layer_;
-  using BaseType::quadrature_;
 }; // class SourceBeamMn<...>
 
 

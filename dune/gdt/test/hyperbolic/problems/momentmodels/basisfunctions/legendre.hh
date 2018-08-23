@@ -30,26 +30,23 @@ private:
   typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseType;
 
 public:
-  typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
   using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
+  using typename BaseType::QuadraturesType;
+  using typename BaseType::RangeType;
   using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
-  typedef FieldVector<DomainFieldType, dimRange / 2 + 1> TriangulationType;
+  using TriangulationType = typename BaseType::Triangulation1dType;
 
-  LegendrePolynomials()
-    : triangulation_(create_triangulation())
+  LegendrePolynomials(const QuadraturesType& quadratures = default_quadratures())
+    : BaseType(quadratures)
   {
   }
 
-  static TriangulationType create_triangulation()
+  static QuadraturesType default_quadratures(const size_t num_quad_intervals = 2, const size_t quad_order = 31)
   {
-    TriangulationType ret;
-    for (size_t ii = 0; ii < dimRange / 2 + 1; ++ii)
-      ret[ii] = -1. + (4. * ii) / dimRange;
-    return ret;
+    return BaseType::gauss_lobatto_quadratures(num_quad_intervals, quad_order);
   }
 
   static std::string static_id()
@@ -191,11 +188,6 @@ public:
     return "leg";
   }
 
-  const TriangulationType& triangulation() const
-  {
-    return triangulation_;
-  }
-
 private:
   static RangeFieldType fmn(const int m, const int n)
   {
@@ -226,8 +218,6 @@ private:
     ret *= std::pow(-1., (m + n + 1) / 2) / ((m - n) * (m + n + 1) * std::pow(2., m + n - 1 - std::max(m, n)));
     return ret;
   } // ... fmn(...)
-
-  const TriangulationType triangulation_;
 }; // class LegendrePolynomials<DomainFieldType, 1, ...>
 
 

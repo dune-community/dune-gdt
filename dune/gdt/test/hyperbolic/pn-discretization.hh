@@ -82,10 +82,9 @@ struct HyperbolicPnTest : public ::testing::Test
     const SpaceType fv_space(grid_layer);
 
     //******************* create EquationType object ***************************************
-    const auto quadrature = ProblemType::default_quadrature(grid_config);
     std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>();
     const std::unique_ptr<ProblemType> problem_imp =
-        XT::Common::make_unique<ProblemType>(*basis_functions, grid_layer, quadrature, grid_config);
+        XT::Common::make_unique<ProblemType>(*basis_functions, grid_layer, grid_config);
     const EquationType problem(*problem_imp);
     const InitialValueType& initial_values = problem.initial_values();
     using BoundaryValueType =
@@ -172,7 +171,7 @@ struct HyperbolicPnTest : public ::testing::Test
                       1,
                       0,
                       false,
-                      false,
+                      true,
                       true,
                       false,
                       problem_imp->static_id() + "_ord" + (TestCaseType::reconstruction ? "2_" : "1_")

@@ -37,7 +37,7 @@ class LebedevQuadrature
 public:
   static Dune::QuadratureRule<FieldType, 2 + cartesian> get(const size_t requested_order)
   {
-    size_t index = -1;
+    size_t index = size_t(-1);
     for (size_t ii = 0; ii < allowed_orders_.size(); ++ii) {
       if (allowed_orders_[ii] >= requested_order) {
         index = ii;

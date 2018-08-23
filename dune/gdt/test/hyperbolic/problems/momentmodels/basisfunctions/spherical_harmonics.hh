@@ -44,12 +44,23 @@ private:
 
 public:
   using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
+  using typename BaseType::QuadraturesType;
   using typename BaseType::MatrixType;
+  using typename BaseType::RangeType;
   using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
   static_assert(order <= std::numeric_limits<int>::max(), "");
+
+  SphericalHarmonics(const QuadraturesType& quadratures = default_quadratures())
+    : BaseType(quadratures)
+  {
+  }
+
+  static QuadraturesType default_quadratures(const size_t quad_order = 10 + 2 * order)
+  {
+    return BaseType::lebedev_quadrature(quad_order);
+  }
 
   virtual RangeType evaluate(const DomainType& v) const override
   {
@@ -264,17 +275,22 @@ private:
   typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimFlux> BaseType;
 
 public:
-  typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
   using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
+  using typename BaseType::QuadraturesType;
+  using typename BaseType::RangeType;
   using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
 
-  RealSphericalHarmonics(const QuadratureType& quadrature)
-    : quadrature_(quadrature)
+  RealSphericalHarmonics(const QuadraturesType& quadratures = default_quadratures())
+    : BaseType(quadratures)
   {
+  }
+
+  static QuadraturesType default_quadratures(const size_t quad_order = 10 + 2 * order)
+  {
+    return BaseType::lebedev_quadrature(quad_order);
   }
 
   virtual RangeType evaluate(const DomainType& v) const override
@@ -324,53 +340,6 @@ public:
       ret[2] = create_Bz();
     return ret;
   } // ... mass_matrix_with_v()
-
-  using BaseType::parallel_quadrature;
-
-  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
-  virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const override final
-  {
-    FieldVector<FieldVector<MatrixType, 2>, dimFlux> B_kinetic(
-        FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
-    QuadratureType neg_quadrature;
-    QuadratureType pos_quadrature;
-    neg_quadrature.reserve(quadrature_.size());
-    pos_quadrature.reserve(quadrature_.size());
-    for (size_t dd = 0; dd < dimFlux; ++dd) {
-      neg_quadrature.clear();
-      pos_quadrature.clear();
-      for (const auto& quad_point : quadrature_) {
-        const auto& v = quad_point.position();
-        const auto& weight = quad_point.weight();
-        if (XT::Common::FloatCmp::eq(v[dd], 0.)) {
-          neg_quadrature.emplace_back(v, weight / 2.);
-          pos_quadrature.emplace_back(v, weight / 2.);
-        } else if (v[dd] > 0.)
-          pos_quadrature.emplace_back(v, weight);
-        else
-          neg_quadrature.emplace_back(v, weight);
-      }
-      parallel_quadrature(neg_quadrature, B_kinetic[dd][0], dd);
-      parallel_quadrature(pos_quadrature, B_kinetic[dd][1], dd);
-    }
-    return B_kinetic;
-  } // ... kinetic_flux_matrices()
-
-  virtual MatrixType reflection_matrix(const DomainType& n) const override final
-  {
-    MatrixType ret(dimRange, dimRange, 0);
-    size_t direction;
-    for (size_t ii = 0; ii < dimDomain; ++ii) {
-      if (XT::Common::FloatCmp::ne(n[ii], 0.)) {
-        direction = ii;
-        if (XT::Common::FloatCmp::ne(std::abs(n[ii]), 1.))
-          DUNE_THROW(NotImplemented, "Implemented only for +-e_i where e_i is the i-th canonical basis vector!");
-      }
-    }
-    parallel_quadrature(quadrature_, ret, direction, true);
-    ret.rightmultiply(mass_matrix_inverse());
-    return ret;
-  }
 
   template <class DiscreteFunctionType>
   VisualizerType<DiscreteFunctionType> visualizer() const
@@ -565,7 +534,7 @@ private:
       return std::sqrt(2) * N_lm(l, m) * boost::math::legendre_p(l, m, cos_theta) * std::cos(m * phi);
   }
 
-  const QuadratureType& quadrature_;
+  using BaseType::quadratures_;
 }; // class RealSphericalHarmonics<DomainFieldType, 3, ...>
 
 

@@ -44,7 +44,6 @@ class CheckerboardPn : public KineticTransportEquation<BasisfunctionImp, GridLay
 public:
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
-  using typename BaseType::QuadratureType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::ActualBoundaryValueType;
   using typename BaseType::DomainType;
@@ -58,14 +57,11 @@ public:
     return boundary_config;
   }
 
-  using BaseType::default_quadrature;
-
   CheckerboardPn(const BasisfunctionType& basis_functions,
                  const GridLayerType& grid_layer,
-                 const QuadratureType& quadrature = default_quadrature(),
                  const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                  const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, {7, 7, 7}, grid_cfg, boundary_cfg, 1e-8 / (4 * M_PI))
+    : BaseType(basis_functions, grid_layer, {7, 7, 7}, grid_cfg, boundary_cfg, 1e-8 / (4 * M_PI))
   {
   }
 
@@ -171,17 +167,15 @@ public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
   typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
-  using typename BaseType::QuadratureType;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
 
   CheckerboardMn(const BasisfunctionType& basis_functions,
                  const GridLayerType& grid_layer,
-                 const QuadratureType& quadrature,
                  const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                  const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, grid_cfg, boundary_cfg)
   {
   }
 
@@ -192,13 +186,12 @@ public:
 
   virtual FluxType* create_flux() const
   {
-    return new ActualFluxType(basis_functions_, grid_layer_, quadrature_);
+    return new ActualFluxType(basis_functions_, grid_layer_);
   }
 
 protected:
   using BaseType::basis_functions_;
   using BaseType::grid_layer_;
-  using BaseType::quadrature_;
 }; // class CheckerboardMn<...>
 
 

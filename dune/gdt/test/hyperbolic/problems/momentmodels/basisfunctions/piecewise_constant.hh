@@ -44,27 +44,19 @@ private:
   typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseType;
 
 public:
-  typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
-  typedef FieldVector<DomainFieldType, dimRange + 1> TriangulationType;
   using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
+  using typename BaseType::QuadraturesType;
+  using typename BaseType::RangeType;
   using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
+  using TriangulationType = typename BaseType::Triangulation1dType;
 
-  PiecewiseConstant(const TriangulationType& triangulation = create_triangulation(),
-                    const QuadratureType& /*quadrature*/ = QuadratureType())
+  PiecewiseConstant(const TriangulationType& triangulation = BaseType::create_1d_triangulation(dimRange),
+                    const QuadraturesType& /*quadratures*/ = QuadraturesType())
     : triangulation_(triangulation)
   {
-  }
-
-  static TriangulationType create_triangulation()
-  {
-    TriangulationType ret;
-    for (size_t ii = 0; ii < dimRange + 1; ++ii)
-      ret[ii] = -1. + (2. * ii) / dimRange;
-    return ret;
   }
 
   virtual RangeType evaluate(const DomainType& v) const override final

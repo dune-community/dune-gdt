@@ -30,6 +30,7 @@
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/spaces/cg.hh>
+#include <dune/gdt/test/hyperbolic/spherical_quadratures/wrapper.hh>
 
 namespace Dune {
 namespace GDT {
@@ -273,6 +274,7 @@ public:
   typedef typename TriangleType::TriangulationVerticesVectorType VertexVectorType;
   typedef typename TriangleType::VertexType VertexType;
   typedef typename VertexType::DomainType DomainType;
+  using QuadraturesType = QuadraturesWrapper<RangeFieldImp, 3>;
 
   static QuadratureRule<RangeFieldImp, 2> barycentre_rule()
   {
@@ -374,14 +376,16 @@ public:
   }
 
   // 3D quadrature on sphere (from http://www.unizar.es/galdeano/actas_pau/PDFVIII/pp61-69.pdf)
-  Dune::QuadratureRule<RangeFieldImp, 3> quadrature_rule(size_t refinements = 0) const
+  QuadraturesType quadrature_rules(size_t refinements = 0) const
   {
-    TriangleVectorType quadrature_faces = get_subtriangles(refinements);
-    Dune::QuadratureRule<RangeFieldImp, 3> ret;
-    for (size_t ii = 0; ii < quadrature_faces.size(); ++ii) {
-      const auto& quad_rule = quadrature_faces[ii]->quadrature_rule();
-      for (const auto& quad_point : quad_rule)
-        ret.emplace_back(quad_point);
+    std::vector<TriangleVectorType> quadrature_faces = get_subtriangles(refinements);
+    QuadraturesType ret(faces_.size());
+    for (size_t jj = 0; jj < faces_.size(); ++jj) {
+      for (size_t ii = 0; ii < quadrature_faces[jj].size(); ++ii) {
+        const auto& quad_rule = quadrature_faces[jj][ii]->quadrature_rule();
+        for (const auto& quad_point : quad_rule)
+          ret[jj].emplace_back(quad_point);
+      }
     }
     return ret;
   }
@@ -393,12 +397,17 @@ private:
     vertices_ = all_vertices_;
   } // void refine(...)
 
-  TriangleVectorType get_subtriangles(size_t refinements = 1) const
+  std::vector<TriangleVectorType> get_subtriangles(const size_t refinements = 1) const
   {
-    TriangleVectorType subtriangles = faces_;
-    while (refinements-- > 0)
-      get_subtriangles(subtriangles);
-    return subtriangles;
+    std::vector<TriangleVectorType> ret(faces_.size());
+    for (size_t jj = 0; jj < faces_.size(); ++jj) {
+      TriangleVectorType subtriangles(1, faces_[jj]);
+      size_t refs = refinements;
+      while (refs-- > 0)
+        get_subtriangles(subtriangles);
+      ret[jj] = subtriangles;
+    } // jj
+    return ret;
   } // ... get_subtriangles(...)
 
   void get_subtriangles(TriangleVectorType& subtriangles) const

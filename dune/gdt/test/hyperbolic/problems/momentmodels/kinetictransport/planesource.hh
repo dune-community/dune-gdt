@@ -30,9 +30,9 @@ namespace KineticTransport {
 
 
 template <class BasisfunctionImp, class GridLayerImp, class U_>
-class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, 1>
+class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, 1> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -45,19 +45,16 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
-  using typename BaseType::QuadratureType;
   using typename BaseType::FluxType;
   using BaseType::default_boundary_cfg;
-  using BaseType::default_quadrature;
   using BaseType::dimDomain;
   using BaseType::dimRange;
 
   PlaneSourcePn(const BasisfunctionType& basis_functions,
                 const GridLayerType& grid_layer,
-                const QuadratureType& quadrature = default_quadrature(),
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, {1}, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, {1}, grid_cfg, boundary_cfg)
   {
   }
 
@@ -74,8 +71,6 @@ public:
     grid_config["upper_right"] = "[1.2]";
     grid_config["num_elements"] = "[240]";
     grid_config["overlap_size"] = "[1]";
-    grid_config["num_quad_cells"] = "[25]";
-    grid_config["quad_order"] = "30";
     return grid_config;
   }
 
@@ -184,19 +179,16 @@ public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
   typedef EntropyBasedLocalFlux<BasisfunctionType, GridLayerImp, U_> ActualFluxType;
-  using typename BaseType::QuadratureType;
   using typename BaseType::GridLayerType;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
-  using BaseType::default_quadrature;
 
   PlaneSourceMn(const BasisfunctionType& basis_functions,
                 const GridLayerType& grid_layer,
-                const QuadratureType& quadrature = default_quadrature(),
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, grid_cfg, boundary_cfg)
   {
   }
 
@@ -207,13 +199,12 @@ public:
 
   virtual FluxType* create_flux() const
   {
-    return new ActualFluxType(basis_functions_, grid_layer_, quadrature_);
+    return new ActualFluxType(basis_functions_, grid_layer_);
   }
 
 protected:
   using BaseType::basis_functions_;
   using BaseType::grid_layer_;
-  using BaseType::quadrature_;
 }; // class PlaneSourceMn<...>
 
 

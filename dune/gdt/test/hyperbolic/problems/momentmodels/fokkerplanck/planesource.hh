@@ -42,18 +42,15 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
-  using typename BaseType::QuadratureType;
   using typename BaseType::GridLayerType;
 
   using BaseType::default_boundary_cfg;
-  using BaseType::default_quadrature;
 
   PlaneSourcePn(const BasisfunctionType& basis_functions,
                 const GridLayerType& grid_layer,
-                const QuadratureType& quadrature = default_quadrature(),
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, 1, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, 1, grid_cfg, boundary_cfg)
   {
   }
 
