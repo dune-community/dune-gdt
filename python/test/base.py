@@ -64,5 +64,14 @@ def test_blockspace():
         ipdg_operator.assemble()
 
 
+def test_visualize():
+    from dune.gdt.spaces import make_dg_space
+    from dune.gdt.discretefunction import make_discrete_function
+    grid = make_grid()
+    space = make_dg_space(grid)
+    df = make_discrete_function(space, 'test')
+    df.visualize(filename='foo')
+
+
 if __name__ == '__main__':
     pytest.main()
