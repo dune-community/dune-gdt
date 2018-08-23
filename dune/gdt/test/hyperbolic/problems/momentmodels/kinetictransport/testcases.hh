@@ -310,8 +310,8 @@ struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 6, 1, 3>, re
   static constexpr double linfnorm = reconstruct ? 10.423991903881772 : 10.456911277964574;
 #else
   static constexpr double l1norm = reconstruct ? 1.0008292531174403 : 1.0008292531057066;
-  static constexpr double l2norm = reconstruct ? 2.7095626432312425 : 2.7070581236565103;
-  static constexpr double linfnorm = reconstruct ? 10.424226802303412 : 10.457145890791487;
+  static constexpr double l2norm = reconstruct ? 2.7095647696183893 : 2.7070581236565103;
+  static constexpr double linfnorm = reconstruct ? 10.424228258642177 : 10.457145890791487;
 #endif
 };
 
