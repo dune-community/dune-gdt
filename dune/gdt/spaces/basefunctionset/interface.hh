@@ -45,8 +45,8 @@ public:
 
   const BackendType& backend() const
   {
-    CHECK_CRTP(this->as_imp(*this).backend());
-    return this->as_imp(*this).backend();
+    CHECK_CRTP(this->as_imp().backend());
+    return this->as_imp().backend();
   }
 }; // class BaseFunctionSetInterface
 

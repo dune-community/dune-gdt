@@ -97,37 +97,37 @@ public:
 
   size_t size(const size_t factor_index) const
   {
-    CHECK_CRTP(this->as_imp(*this).size(factor_index));
-    return this->as_imp(*this).size(factor_index);
+    CHECK_CRTP(this->as_imp().size(factor_index));
+    return this->as_imp().size(factor_index);
   }
 
   size_t numDofs(const size_t factor_index, const EntityType& entity) const
   {
-    CHECK_CRTP(this->as_imp(*this).numDofs(factor_index, entity));
-    return this->as_imp(*this).numDofs(factor_index, entity);
+    CHECK_CRTP(this->as_imp().numDofs(factor_index, entity));
+    return this->as_imp().numDofs(factor_index, entity);
   }
 
   size_t maxNumDofs(const size_t factor_index) const
   {
-    CHECK_CRTP(this->as_imp(*this).maxNumDofs(factor_index));
-    return this->as_imp(*this).maxNumDofs(factor_index);
+    CHECK_CRTP(this->as_imp().maxNumDofs(factor_index));
+    return this->as_imp().maxNumDofs(factor_index);
   }
 
   void globalIndices(const size_t factor_index, const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).globalIndices(factor_index, entity, ret));
+    CHECK_AND_CALL_CRTP(this->as_imp().globalIndices(factor_index, entity, ret));
   }
 
   size_t mapToGlobal(const size_t factor_index, const EntityType& entity, const size_t& local_index_in_factor) const
   {
-    CHECK_CRTP(this->as_imp(*this).mapToGlobal(factor_index, entity, local_index_in_factor));
-    return this->as_imp(*this).mapToGlobal(factor_index, entity, local_index_in_factor);
+    CHECK_CRTP(this->as_imp().mapToGlobal(factor_index, entity, local_index_in_factor));
+    return this->as_imp().mapToGlobal(factor_index, entity, local_index_in_factor);
   }
 
   size_t mapToLocal(const size_t factor_index, const EntityType& entity, const size_t& local_index_in_factor) const
   {
-    CHECK_CRTP(this->as_imp(*this).mapToLocal(factor_index, entity, local_index_in_factor));
-    return this->as_imp(*this).mapToLocal(factor_index, entity, local_index_in_factor);
+    CHECK_CRTP(this->as_imp().mapToLocal(factor_index, entity, local_index_in_factor));
+    return this->as_imp().mapToLocal(factor_index, entity, local_index_in_factor);
   }
 
   Dune::DynamicVector<size_t> globalIndices(const size_t factor_index, const EntityType& entity) const
