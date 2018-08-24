@@ -332,12 +332,10 @@ public:
         for (const auto& quad_point : quadratures_[ii]) {
           const auto& v = quad_point.position();
           const auto& weight = quad_point.weight();
-          if (XT::Common::FloatCmp::eq(v[dd], 0.)) {
-            neg_quadratures[ii].emplace_back(v, weight / 2.);
-            pos_quadratures[ii].emplace_back(v, weight / 2.);
-          } else if (v[dd] > 0.)
+          // if v[dd] = 0 the quad_point does not contribute to the integral
+          if (v[dd] > 0.)
             pos_quadratures[ii].emplace_back(v, weight);
-          else
+          else if (v[dd] < 0.)
             neg_quadratures[ii].emplace_back(v, weight);
         } // quad_points
       } // quadratures
@@ -520,7 +518,7 @@ protected:
   {
     for (auto it = decomposition[ii]; it != decomposition[ii + 1]; ++it) {
       const auto& quad_point = *it;
-      auto basis_evaluated = evaluate(quad_point.position());
+      auto basis_evaluated = evaluate(quad_point.position(), it.first_index());
       basis_evaluated *= quad_point.weight();
       local_range += basis_evaluated;
     } // jj

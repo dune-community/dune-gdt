@@ -63,7 +63,7 @@ public:
         ++second_index_;
       } else {
         // increase first_index_ until we reach either the next non-empty quadrature or the end
-        while (++first_index_ < (*quadratures_).size() && !(*quadratures_)[first_index_].size())
+        while (++first_index_ < quadratures_->size() && !(*quadratures_)[first_index_].size())
           ;
         second_index_ = 0;
       }
@@ -77,11 +77,10 @@ public:
       return ret;
     }
 
-    // everything with first index >= quadratures_.size() is interpreted as end iterator
     bool operator==(const MergedQuadratureIterator& other)
     {
-      return (first_index_ == other.first_index_ && second_index_ == other.second_index_)
-             || (first_index_ >= quadratures_->size() && other.first_index_ > quadratures_->size());
+      return (quadratures_ == other.quadratures_ && first_index_ == other.first_index_
+              && second_index_ == other.second_index_);
     }
 
     bool operator!=(const MergedQuadratureIterator& other)
@@ -95,6 +94,11 @@ public:
     }
 
     size_t first_index()
+    {
+      return first_index_;
+    }
+
+    size_t second_index()
     {
       return first_index_;
     }

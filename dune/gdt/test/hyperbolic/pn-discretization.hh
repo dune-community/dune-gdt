@@ -196,9 +196,10 @@ struct HyperbolicPnTest : public ::testing::Test
     l2norm = grid_layer.comm().sum(l2norm);
     linfnorm = grid_layer.comm().max(linfnorm);
     l2norm = std::sqrt(l2norm);
-    EXPECT_NEAR(TestCaseType::ExpectedResultsType::l1norm, l1norm, l1norm * 1e-14);
-    EXPECT_NEAR(TestCaseType::ExpectedResultsType::l2norm, l2norm, l2norm * 1e-14);
-    EXPECT_NEAR(TestCaseType::ExpectedResultsType::linfnorm, linfnorm, linfnorm * 1e-14);
+    using ResultsType = typename TestCaseType::ExpectedResultsType;
+    EXPECT_NEAR(ResultsType::l1norm, l1norm, ResultsType::l1norm * ResultsType::tol);
+    EXPECT_NEAR(ResultsType::l2norm, l2norm, ResultsType::l2norm * ResultsType::tol);
+    EXPECT_NEAR(ResultsType::linfnorm, linfnorm, ResultsType::linfnorm * ResultsType::tol);
   }
 };
 

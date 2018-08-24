@@ -110,6 +110,7 @@ struct SourceBeamPnExpectedResults<LegendrePolynomials<double, double, 7>, recon
   static constexpr double l1norm = reconstruct ? 0.33066818456325014 : 0.33107004463413914;
   static constexpr double l2norm = reconstruct ? 0.4615751405564803 : 0.44609169128863851;
   static constexpr double linfnorm = reconstruct ? 1.1553979882432861 : 1.0882801946666156;
+  static constexpr double tol = 1e-14;
 };
 
 template <bool reconstruct>
@@ -118,6 +119,7 @@ struct SourceBeamPnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, rec
   static constexpr double l1norm = reconstruct ? 0.33146057542497237 : 0.33146794280839997;
   static constexpr double l2norm = reconstruct ? 0.46411980559363358 : 0.44913032300780292;
   static constexpr double linfnorm = reconstruct ? 0.98904667015384473 : 0.98709215129457029;
+  static constexpr double tol = 1e-14;
 };
 
 template <bool reconstruct>
@@ -126,6 +128,7 @@ struct SourceBeamPnExpectedResults<PiecewiseMonomials<double, 1, double, 8, 1, 1
   static constexpr double l1norm = reconstruct ? 0.33140398337610927 : 0.33140398337603194;
   static constexpr double l2norm = reconstruct ? 0.47294828933204158 : 0.45667075585121392;
   static constexpr double linfnorm = reconstruct ? 1.0490804598503622 : 0.99004736850989217;
+  static constexpr double tol = 1e-14;
 };
 
 template <class GridImp, class BasisfunctionImp, bool reconstruct>
@@ -161,6 +164,7 @@ struct SourceBeamMnExpectedResults<LegendrePolynomials<double, double, 7>, recon
   static constexpr double l1norm = reconstruct ? 0.33066818456325014 : 0.33107004463413914;
   static constexpr double l2norm = reconstruct ? 0.4615751405564803 : 0.44609169128863851;
   static constexpr double linfnorm = reconstruct ? 1.1553979882432861 : 1.0882801946666156;
+  static constexpr double tol = 1e-14;
 };
 
 template <bool reconstruct>
@@ -169,6 +173,7 @@ struct SourceBeamMnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, rec
   static constexpr double l1norm = reconstruct ? 0.33146057542497237 : 0.33146794280839997;
   static constexpr double l2norm = reconstruct ? 0.46411980559363358 : 0.44913032300780292;
   static constexpr double linfnorm = reconstruct ? 0.98904667015384473 : 0.98709215129457029;
+  static constexpr double tol = 1e-14;
 };
 
 template <bool reconstruct>
@@ -177,6 +182,7 @@ struct SourceBeamMnExpectedResults<PiecewiseMonomials<double, 1, double, 8, 1, 1
   static constexpr double l1norm = reconstruct ? 0.33140398337610927 : 0.33140398337603194;
   static constexpr double l2norm = reconstruct ? 0.47294828933204158 : 0.45667075585121392;
   static constexpr double linfnorm = reconstruct ? 1.0490804598503622 : 0.99004736850989217;
+  static constexpr double tol = 1e-14;
 };
 
 template <class GridImp, class BasisfunctionImp, bool reconstruct>
@@ -214,6 +220,7 @@ struct PlaneSourcePnExpectedResults<LegendrePolynomials<double, double, 7>, reco
   static constexpr double l1norm = reconstruct ? 2.0000000240000007 : 2.0000000240000029;
   static constexpr double l2norm = reconstruct ? 2.9627559791618099 : 2.7793543802214402;
   static constexpr double linfnorm = reconstruct ? 7.5368337466833273 : 5.9468208917837284;
+  static constexpr double tol = 1e-14;
 };
 
 template <bool reconstruct>
@@ -222,6 +229,7 @@ struct PlaneSourcePnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, re
   static constexpr double l1norm = 2.0000000240000557;
   static constexpr double l2norm = reconstruct ? 2.892587690555561 : 2.7677861047579322;
   static constexpr double linfnorm = reconstruct ? 6.9955083584307651 : 5.8898335510903852;
+  static constexpr double tol = 1e-14;
 };
 
 template <bool reconstruct>
@@ -230,6 +238,7 @@ struct PlaneSourcePnExpectedResults<PiecewiseMonomials<double, 1, double, 8, 1, 
   static constexpr double l1norm = reconstruct ? 2.000000024000026 : 2.0000000240000273;
   static constexpr double l2norm = reconstruct ? 2.881005248537496 : 2.7713504721240083;
   static constexpr double linfnorm = reconstruct ? 6.9331778582604997 : 6.0086435546642116;
+  static constexpr double tol = 1e-14;
 };
 
 template <class GridImp, class BasisfunctionImp, bool reconstruct>
@@ -255,6 +264,7 @@ struct PlaneSourceMnExpectedResults<LegendrePolynomials<double, double, 7>, reco
   static constexpr double l1norm = reconstruct ? 2.0000000240000007 : 2.0000000240000029;
   static constexpr double l2norm = reconstruct ? 2.9627559791618099 : 2.7793543802214402;
   static constexpr double linfnorm = reconstruct ? 7.5368337466833273 : 5.9468208917837284;
+  static constexpr double tol = 1e-14;
 };
 
 template <bool reconstruct>
@@ -263,6 +273,7 @@ struct PlaneSourceMnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, re
   static constexpr double l1norm = 2.0000000240000557;
   static constexpr double l2norm = reconstruct ? 2.892587690555561 : 2.7677861047579322;
   static constexpr double linfnorm = reconstruct ? 6.9955083584307651 : 5.8898335510903852;
+  static constexpr double tol = 1e-14;
 };
 
 template <bool reconstruct>
@@ -271,6 +282,7 @@ struct PlaneSourceMnExpectedResults<PiecewiseMonomials<double, 1, double, 8, 1, 
   static constexpr double l1norm = reconstruct ? 2.000000024000026 : 2.0000000240000273;
   static constexpr double l2norm = reconstruct ? 2.881005248537496 : 2.7713504721240083;
   static constexpr double linfnorm = reconstruct ? 6.9331778582604997 : 6.0086435546642116;
+  static constexpr double tol = 1e-14;
 };
 
 template <class GridImp, class BasisfunctionImp, bool reconstruct>
@@ -298,6 +310,7 @@ struct PointSourcePnExpectedResults<RealSphericalHarmonics<double, double, 2, 3>
   static constexpr double l1norm = reconstruct ? 1.0007954640626406 : 1.0007954640534238;
   static constexpr double l2norm = reconstruct ? 2.7177565161122006 : 2.7163083579825025;
   static constexpr double linfnorm = reconstruct ? 10.461558474249745 : 10.498572083981468;
+  static constexpr double tol = 1e-14;
 };
 
 template <bool reconstruct>
@@ -313,6 +326,14 @@ struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 6, 1, 3>, re
   static constexpr double l2norm = reconstruct ? 2.7095647696183893 : 2.7070581236565103;
   static constexpr double linfnorm = reconstruct ? 10.424228258642177 : 10.457145890791487;
 #endif
+  // The matrices in this test case all have eigenvalues [+-0.808311035811965, 0, 0, 0, 0].
+  // Thus, the eigenvectors are not unique, and the eigensolvers are extremely sensitive
+  // to numerical errors. A difference of 1e-16 in the jacobians entries suffices to
+  // result in completely different eigenvectors. In all cases, the eigenvectors are
+  // valid eigenvectors to the correct eigenvalues. However, this difference in the
+  // eigendecomposition leads to differences in the results with linear reconstruction
+  // that are larger than would be expected by pure numerical errors.
+  static constexpr double tol = reconstruct ? 1e-5 : 1e-14;
 };
 
 template <bool reconstruct>
@@ -328,6 +349,7 @@ struct PointSourcePnExpectedResults<PiecewiseMonomials<double, 3, double, 32, 1,
   static constexpr double l2norm = reconstruct ? 2.7099187578817849 : 2.7066524774407608;
   static constexpr double linfnorm = reconstruct ? 10.427830136315574 : 10.457348661644719;
 #endif
+  static constexpr double tol = 1e-14;
 };
 
 template <class GridImp, class BasisfunctionImp, bool reconstruct>
