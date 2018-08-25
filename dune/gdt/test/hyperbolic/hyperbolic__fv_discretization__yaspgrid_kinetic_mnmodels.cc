@@ -64,7 +64,9 @@ using YaspGridTestCasesAll = testing::
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PlaneSourceMnTestCase<Yasp1,
                                     Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<double, 1, double, 8, 1, 1>,
-                                    true>,
+                                    true>
+#if HAVE_QHULL
+          ,
           //          Dune::GDT::Hyperbolic::Problems::KineticTransport::
           //              PointSourceMnTestCase<Yasp3,
           //                                    Dune::GDT::Hyperbolic::Problems::RealSphericalHarmonics<double, double,
@@ -92,7 +94,9 @@ using YaspGridTestCasesAll = testing::
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourceMnTestCase<Yasp3,
                                     Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<double, 3, double, 32, 1, 3>,
-                                    true>>;
+                                    true>
+#endif
+          >;
 
 TYPED_TEST_CASE(HyperbolicMnTest, YaspGridTestCasesAll);
 TYPED_TEST(HyperbolicMnTest, check)

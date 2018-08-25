@@ -116,14 +116,13 @@ struct RealizabilityLimiterChooser<PiecewiseMonomials<double, 1, double, dimRang
   }
 };
 
+#if HAVE_QHULL
 template <size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType>
 struct RealizabilityLimiterChooser<PiecewiseMonomials<double, 3, double, dimRange, 1, 3>,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
   using BasisfunctionType = PiecewiseMonomials<double, 3, double, dimRange, 1, 3>;
-  //  using LocalRealizabilityLimiterType =
-  //      DgLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
   using LocalRealizabilityLimiterType =
       NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
 
@@ -141,7 +140,7 @@ struct RealizabilityLimiterChooser<PiecewiseMonomials<double, 3, double, dimRang
     return std::make_unique<BasisfunctionType>();
   }
 };
-
+#endif
 
 // SourceBeam Pn
 template <class BasisfunctionImp, bool reconstruct>
