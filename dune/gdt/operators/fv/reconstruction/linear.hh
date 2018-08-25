@@ -445,7 +445,7 @@ public:
 
   LinearReconstructionOperator(const AnalyticalFluxType& analytical_flux,
                                const BoundaryValueType& boundary_values,
-                               const SlopeType& slope,
+                               const SlopeType& slope = default_minmod_slope(),
                                const Quadrature1dType& quadrature_1d = default_1d_quadrature<DomainFieldType>(1))
     : analytical_flux_(analytical_flux)
     , boundary_values_(boundary_values)
@@ -495,6 +495,12 @@ public:
   } // void apply(...)
 
 private:
+  static SlopeType& default_minmod_slope()
+  {
+    static MinmodSlope<VectorType, MatrixType> minmod_slope_;
+    return minmod_slope_;
+  }
+
   const AnalyticalFluxType& analytical_flux_;
   const BoundaryValueType& boundary_values_;
   const SlopeType& slope_;
