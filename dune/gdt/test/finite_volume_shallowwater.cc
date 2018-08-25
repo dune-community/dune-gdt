@@ -64,6 +64,7 @@ int main(int argc, char** argv)
   size_t num_threads = 1;
   size_t threading_partition_factor = 1;
   size_t num_save_steps = 100;
+  size_t num_output_steps = size_t(-1);
   std::string grid_size("100"), overlap_size("2");
   double t_end = 0;
   double epsilon = 1e-10;
@@ -103,6 +104,13 @@ int main(int argc, char** argv)
         num_save_steps = Dune::XT::Common::from_string<size_t>(argv[++i]);
       } else {
         std::cerr << "--num_save_steps option requires one argument." << std::endl;
+        return 1;
+      }
+    } else if (std::string(argv[i]) == "--num_output_steps") {
+      if (i + 1 < argc) {
+        num_output_steps = Dune::XT::Common::from_string<size_t>(argv[++i]);
+      } else {
+        std::cerr << "--num_output_steps option requires one argument." << std::endl;
         return 1;
       }
     } else if (std::string(argv[i]) == "--grid_size") {
@@ -206,8 +214,7 @@ int main(int argc, char** argv)
 
   using AdvectionOperatorType = AdvectionGodunovOperator<AnalyticalFluxType, BoundaryValueType>;
 
-  using ReconstructionOperatorType =
-      LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, SlopeLimiters::minmod>;
+  using ReconstructionOperatorType = LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType>;
   //  using FvOperatorType = AdvectionWithReconstructionOperator<AdvectionOperatorType, ReconstructionOperatorType>;
   using FvOperatorType = AdvectionOperatorType;
 
@@ -250,6 +257,7 @@ int main(int argc, char** argv)
   timestepper.solve(t_end,
                     dt,
                     num_save_steps,
+                    num_output_steps,
                     /* save_solution = */ false, // Save vector of calculated timesteps?
                     /* output_progress = */ true, // Progress written to std::cout?
                     /* visualize */ true, // vtp Output?
