@@ -64,7 +64,7 @@ using YaspGridTestCasesAll = testing::
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PlaneSourceMnTestCase<Yasp1,
                                     Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<double, 1, double, 8, 1, 1>,
-                                    true>
+                                    true>,
           //          Dune::GDT::Hyperbolic::Problems::KineticTransport::
           //              PointSourceMnTestCase<Yasp3,
           //                                    Dune::GDT::Hyperbolic::Problems::RealSphericalHarmonics<double, double,
@@ -75,29 +75,24 @@ using YaspGridTestCasesAll = testing::
           //                                    Dune::GDT::Hyperbolic::Problems::RealSphericalHarmonics<double, double,
           //                                    2, 3>,
           //                                    true>,
-          //          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-          //              PointSourceMnTestCase<Yasp3,
-          //                                    Dune::GDT::Hyperbolic::Problems::HatFunctions<double, 3, double, 6, 1,
-          //                                    3>,
-          //                                    false>,
-          //          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-          //              PointSourceMnTestCase<Yasp3,
-          //                                    Dune::GDT::Hyperbolic::Problems::HatFunctions<double, 3, double, 6, 1,
-          //                                    3>,
-          //                                    true>,
-          //          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-          //              PointSourceMnTestCase<Yasp3,
-          //                                    Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<double, 3, double,
-          //                                    32, 1,
-          //                                    3>,
-          //                                    false>,
-          //          Dune::GDT::Hyperbolic::Problems::KineticTransport::
-          //              PointSourceMnTestCase<Yasp3,
-          //                                    Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<double, 3, double,
-          //                                    32, 1,
-          //                                    3>,
-          //                                    true>
-          >;
+          // Dune::GDT::Hyperbolic::Problems::KineticTransport::
+          //    PointSourceMnTestCase<Yasp3,
+          //                          Dune::GDT::Hyperbolic::Problems::HatFunctions<double, 3, double, 6, 1,
+          //                          3>,
+          //                          false>,
+          // Dune::GDT::Hyperbolic::Problems::KineticTransport::
+          //     PointSourceMnTestCase<Yasp3,
+          //                           Dune::GDT::Hyperbolic::Problems::HatFunctions<double, 3, double, 6, 1,
+          //                           3>,
+          //                           true>,
+          Dune::GDT::Hyperbolic::Problems::KineticTransport::
+              PointSourceMnTestCase<Yasp3,
+                                    Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<double, 3, double, 32, 1, 3>,
+                                    false>,
+          Dune::GDT::Hyperbolic::Problems::KineticTransport::
+              PointSourceMnTestCase<Yasp3,
+                                    Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<double, 3, double, 32, 1, 3>,
+                                    true>>;
 
 TYPED_TEST_CASE(HyperbolicMnTest, YaspGridTestCasesAll);
 TYPED_TEST(HyperbolicMnTest, check)

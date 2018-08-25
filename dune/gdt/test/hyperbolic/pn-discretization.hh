@@ -53,7 +53,6 @@ struct HyperbolicPnTest : public ::testing::Test
 {
   void run()
   {
-
     using namespace Dune;
     using namespace Dune::GDT;
 
@@ -196,6 +195,7 @@ struct HyperbolicPnTest : public ::testing::Test
     l2norm = grid_layer.comm().sum(l2norm);
     linfnorm = grid_layer.comm().max(linfnorm);
     l2norm = std::sqrt(l2norm);
+
     using ResultsType = typename TestCaseType::ExpectedResultsType;
     EXPECT_NEAR(ResultsType::l1norm, l1norm, ResultsType::l1norm * ResultsType::tol);
     EXPECT_NEAR(ResultsType::l2norm, l2norm, ResultsType::l2norm * ResultsType::tol);

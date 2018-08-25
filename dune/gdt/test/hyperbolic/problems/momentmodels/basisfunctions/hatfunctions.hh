@@ -421,7 +421,7 @@ protected:
       // copy vertices to gradients
       gradients[ii] = vertices[ii]->position();
       const auto scalar_prod = v * gradients[ii];
-      // if v is not on the same octant of the sphere as the vertices, return false
+      // if v is not on the same half space of the sphere as the vertices, return false
       // assumes the triangulation is fine enough that vertices[ii]*vertices[jj] >= 0 for all triangles
       if (XT::Common::FloatCmp::lt(scalar_prod, 0.))
         return false;

@@ -2926,7 +2926,7 @@ public:
 
     Localfunction(const EntityType& e,
                   const BasisfunctionType& basis_functions,
-                  const RangeType& v_points,
+                  const std::vector<RangeFieldType>& v_points,
                   const RangeFieldType tau,
                   const RangeFieldType epsilon_gamma,
                   const RangeFieldType chi,
@@ -3482,7 +3482,7 @@ public:
     } // void calculate_J_Hinv(...)
 
     const BasisfunctionType& basis_functions_;
-    const RangeType& v_points_;
+    const std::vector<RangeFieldType>& v_points_;
     const RangeFieldType tau_;
     const RangeFieldType epsilon_gamma_;
     const RangeFieldType chi_;
@@ -3717,7 +3717,7 @@ public:
 private:
   const typename GridLayerType::IndexSet& index_set_;
   const BasisfunctionType& basis_functions_;
-  const RangeType& v_points_;
+  const std::vector<RangeFieldType>& v_points_;
   const RangeFieldType tau_;
   const RangeFieldType epsilon_gamma_;
   const RangeFieldType chi_;

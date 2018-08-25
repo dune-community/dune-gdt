@@ -53,7 +53,6 @@ struct HyperbolicMnTest : public ::testing::Test
 {
   void run()
   {
-
     using namespace Dune;
     using namespace Dune::GDT;
 
@@ -82,11 +81,9 @@ struct HyperbolicMnTest : public ::testing::Test
     const SpaceType fv_space(grid_layer);
 
     //******************* create EquationType object ***************************************
-    using QuadratureType = typename ProblemType::QuadratureType;
-    const QuadratureType quadrature = ProblemType::default_quadrature(grid_config);
-    std::shared_ptr<const BasisfunctionType> basis_functions = std::make_shared<const BasisfunctionType>();
+    const auto basis_functions = TestCaseType::RealizabilityLimiterChooserType::make_basis_functions();
     const std::unique_ptr<ProblemType> problem_imp =
-        XT::Common::make_unique<ProblemType>(*basis_functions, grid_layer, quadrature, grid_config);
+        XT::Common::make_unique<ProblemType>(*basis_functions, grid_layer, grid_config);
     const EquationType problem(*problem_imp);
     const InitialValueType& initial_values = problem.initial_values();
     using BoundaryValueType =
@@ -168,14 +165,13 @@ struct HyperbolicMnTest : public ::testing::Test
     RhsOperatorType rhs_operator(rhs);
 
     constexpr double epsilon = 1e-12;
-    auto slope = TestCaseType::RealizabilityLimiterChooserType::
-        template make_slope<typename ReconstructionOperatorType::MatrixType, QuadratureType>(
-            *basis_functions, quadrature, epsilon);
+    auto slope = TestCaseType::RealizabilityLimiterChooserType::template make_slope<
+        typename ReconstructionOperatorType::MatrixType>(*basis_functions, epsilon);
     ReconstructionOperatorType reconstruction_operator(
         analytical_flux, boundary_values, *slope, Dune::GDT::default_1d_quadrature<double>(1));
     RegularizationOperatorType regularization_operator(analytical_flux);
 
-    RealizabilityLimiterType realizability_limiter(analytical_flux, *basis_functions, quadrature, epsilon);
+    RealizabilityLimiterType realizability_limiter(analytical_flux, *basis_functions, epsilon);
     ReconstructionFvOperatorType reconstruction_fv_operator(
         advection_operator, reconstruction_operator, regularization_operator, realizability_limiter);
     NoReconstructionFvOperatorType no_reconstruction_fv_operator(advection_operator, regularization_operator);
@@ -219,9 +215,11 @@ struct HyperbolicMnTest : public ::testing::Test
     l2norm = grid_layer.comm().sum(l2norm);
     linfnorm = grid_layer.comm().max(linfnorm);
     l2norm = std::sqrt(l2norm);
-    EXPECT_DOUBLE_EQ(TestCaseType::ExpectedResultsType::l1norm, l1norm);
-    EXPECT_DOUBLE_EQ(TestCaseType::ExpectedResultsType::l2norm, l2norm);
-    EXPECT_DOUBLE_EQ(TestCaseType::ExpectedResultsType::linfnorm, linfnorm);
+
+    using ResultsType = typename TestCaseType::ExpectedResultsType;
+    EXPECT_NEAR(ResultsType::l1norm, l1norm, ResultsType::l1norm * ResultsType::tol);
+    EXPECT_NEAR(ResultsType::l2norm, l2norm, ResultsType::l2norm * ResultsType::tol);
+    EXPECT_NEAR(ResultsType::linfnorm, linfnorm, ResultsType::linfnorm * ResultsType::tol);
   }
 };
 

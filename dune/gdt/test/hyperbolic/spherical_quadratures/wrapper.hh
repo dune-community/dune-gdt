@@ -124,11 +124,14 @@ public:
   // iterator pointing to element at position ii in merged quadrature
   ConstIteratorType iterator(const size_t index) const
   {
-    size_t ii = 0;
-    size_t jj = index;
-    while (jj >= quadratures_[ii].size())
-      jj -= quadratures_[ii++].size();
-    return ConstIteratorType(quadratures_, ii, jj);
+    const auto indices = get_indices(index);
+    return ConstIteratorType(quadratures_, indices[0], indices[1]);
+  }
+
+  const QuadPointType& operator[](const size_t index) const
+  {
+    const auto indices = get_indices(index);
+    return quadratures_[indices[0]][indices[1]];
   }
 
   size_t size() const
@@ -140,6 +143,13 @@ public:
   }
 
 private:
+  FieldVector<size_t, 2> get_indices(size_t index) const
+  {
+    FieldVector<size_t, 2> ret{0, index};
+    while (ret[1] >= quadratures_[ret[0]].size())
+      ret[1] -= quadratures_[ret[0]++].size();
+    return ret;
+  }
   const QuadraturesWrapperType& quadratures_;
 };
 
