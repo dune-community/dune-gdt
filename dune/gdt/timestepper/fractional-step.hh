@@ -36,16 +36,15 @@ namespace GDT {
 template <class FirstStepperImp, class SecondStepperImp>
 class FractionalTimeStepper : public TimeStepperInterface<typename FirstStepperImp::DiscreteFunctionType>
 {
-  typedef TimeStepperInterface<typename FirstStepperImp::DiscreteFunctionType> BaseType;
+  using BaseType = TimeStepperInterface<typename FirstStepperImp::DiscreteFunctionType>;
 
 public:
   using typename BaseType::DiscreteFunctionType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::SolutionType;
 
-  typedef FirstStepperImp FirstStepperType;
-  typedef SecondStepperImp SecondStepperType;
+  using FirstStepperType = FirstStepperImp;
+  using SecondStepperType = SecondStepperImp;
 
   using BaseType::current_solution;
   using BaseType::current_time;
@@ -62,12 +61,12 @@ public:
     second_stepper_.set_solution_pointer(solution());
   } // constructor
 
-  RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
+  virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
   {
     auto& t = current_time();
     const RangeFieldType actual_dt = std::min(dt, max_dt);
-    const auto dt_1 = first_stepper_.solve(t + actual_dt, dt, -1, false);
-    const auto dt_2 = second_stepper_.solve(t + actual_dt, dt_1, -1, false);
+    const auto dt_1 = first_stepper_.solve(t + actual_dt, dt, -1, 0, false);
+    const auto dt_2 = second_stepper_.solve(t + actual_dt, dt_1, -1, 0, false);
     t += actual_dt;
     return dt_2;
   } // ... step(...)
@@ -89,16 +88,15 @@ private:
 template <class FirstStepperImp, class SecondStepperImp>
 class StrangSplittingTimeStepper : public TimeStepperInterface<typename FirstStepperImp::DiscreteFunctionType>
 {
-  typedef TimeStepperInterface<typename FirstStepperImp::DiscreteFunctionType> BaseType;
+  using BaseType = TimeStepperInterface<typename FirstStepperImp::DiscreteFunctionType>;
 
 public:
   using typename BaseType::DiscreteFunctionType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::SolutionType;
 
-  typedef FirstStepperImp FirstStepperType;
-  typedef SecondStepperImp SecondStepperType;
+  using FirstStepperType = FirstStepperImp;
+  using SecondStepperType = SecondStepperImp;
 
   using BaseType::current_solution;
   using BaseType::current_time;
@@ -115,13 +113,13 @@ public:
     second_stepper_.set_solution_pointer(solution());
   } // constructor
 
-  RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
+  virtual RangeFieldType step(const RangeFieldType dt, const RangeFieldType max_dt) override final
   {
     auto& t = current_time();
     const RangeFieldType actual_dt = std::min(dt, max_dt);
-    first_stepper_.solve(t + actual_dt / 2, actual_dt / 2, -1, false);
-    second_stepper_.solve(t + actual_dt, actual_dt, -1, false);
-    first_stepper_.solve(t + actual_dt, actual_dt / 2, -1, false);
+    first_stepper_.solve(t + actual_dt / 2, actual_dt / 2, static_cast<size_t>(-1), 0, false);
+    second_stepper_.solve(t + actual_dt, actual_dt, static_cast<size_t>(-1), 0, false);
+    first_stepper_.solve(t + actual_dt, actual_dt / 2, static_cast<size_t>(-1), 0, false);
     t += actual_dt;
     return dt;
   } // ... step(...)

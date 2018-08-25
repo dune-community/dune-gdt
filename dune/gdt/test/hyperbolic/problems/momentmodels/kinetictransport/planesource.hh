@@ -13,7 +13,12 @@
 
 #include <dune/xt/common/string.hh>
 
+#include <dune/xt/grid/information.hh>
+
+#include <dune/xt/la/eigen-solver.hh>
+
 #include <dune/gdt/local/fluxes/entropybased.hh>
+#include <dune/gdt/operators/fv/reconstruction/linear.hh>
 
 #include "base.hh"
 
@@ -25,9 +30,9 @@ namespace KineticTransport {
 
 
 template <class BasisfunctionImp, class GridLayerImp, class U_>
-class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, 1>
+class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, 1> BaseType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
   using typename BaseType::InitialValueType;
@@ -40,17 +45,16 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
-  using typename BaseType::QuadratureType;
-
+  using typename BaseType::FluxType;
   using BaseType::default_boundary_cfg;
-  using BaseType::default_quadrature;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
 
   PlaneSourcePn(const BasisfunctionType& basis_functions,
                 const GridLayerType& grid_layer,
-                const QuadratureType& quadrature = default_quadrature(),
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, {1}, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, {1}, grid_cfg, boundary_cfg)
   {
   }
 
@@ -67,8 +71,6 @@ public:
     grid_config["upper_right"] = "[1.2]";
     grid_config["num_elements"] = "[240]";
     grid_config["overlap_size"] = "[1]";
-    grid_config["num_quad_cells"] = "[25]";
-    grid_config["quad_order"] = "30";
     return grid_config;
   }
 
@@ -88,9 +90,11 @@ public:
   {
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg_["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg_["upper_right"]);
-    size_t num_elements = grid_layer_.size(0);
+    assert(grid_layer_.size(0) >= 0 && grid_layer_.overlapSize(0) >= 0
+           && grid_layer_.overlapSize(0) < grid_layer_.size(0));
+    size_t num_elements = static_cast<size_t>(grid_layer_.size(0));
     if (grid_layer_.comm().size() > 1) {
-      num_elements -= grid_layer_.overlapSize(0);
+      num_elements -= static_cast<size_t>(grid_layer_.overlapSize(0));
       num_elements = grid_layer_.comm().sum(num_elements);
     }
     if (num_elements % 2)
@@ -115,6 +119,47 @@ public:
     return new ActualInitialValueType(lower_left, upper_right, num_segments_, initial_vals, "initial_values");
   } // ... create_initial_values()
 
+  // return exact solution if there is no rhs (i.e. sigma_s = sigma_a = Q = 0) and psi_vac = 0
+  std::unique_ptr<InitialValueType> exact_solution_without_rhs() const
+  {
+    const std::unique_ptr<FluxType> flux(BaseType::create_flux());
+    const auto jacobian =
+        flux->local_function(grid_layer_.template begin<0>())->partial_u_col(0, DomainType(0.), RangeType(0.));
+    using MatrixType = typename FluxType::PartialURangeType;
+    using EigenSolverType = Dune::XT::LA::EigenSolver<MatrixType>;
+    static auto eigensolver_options = Dune::GDT::internal::hyperbolic_default_eigensolver_options<MatrixType>();
+    const auto eigensolver = EigenSolverType(jacobian, &eigensolver_options);
+    const auto eigenvectors = eigensolver.real_eigenvectors();
+    const auto eigenvalues = eigensolver.real_eigenvalues();
+    const auto eigenvectors_inv = eigensolver.real_eigenvectors_inverse();
+    XT::Grid::Dimensions<GridLayerType> dimensions(grid_layer_);
+    RangeFieldType dx = dimensions.entity_width.max();
+    RangeType initial_val = basis_functions_.integrated() * 1. / (2. * dx);
+    RangeType char_initial_val;
+    eigenvectors_inv.mv(initial_val, char_initial_val);
+    auto lambda = [=](const FieldVector<double, 1>& x, const XT::Common::Parameter& param) {
+      const auto t = param.get("t")[0];
+      RangeType ret(0.);
+      for (size_t ii = 0; ii < dimRange; ++ii) {
+        auto x_initial_ii = x[0] - eigenvalues[ii] * t;
+        if (Dune::XT::Common::FloatCmp::le(x_initial_ii, dx, 1e-8, 1e-8)
+            && Dune::XT::Common::FloatCmp::ge(x_initial_ii, -dx, 1e-8, 1e-8))
+          ret[ii] = char_initial_val[ii];
+        else
+          ret[ii] = 0.;
+      }
+      const auto ret_copy = ret;
+      eigenvectors.mv(ret_copy, ret);
+      return ret;
+    };
+    return std::make_unique<XT::Functions::GlobalLambdaFunction<typename GridLayerType::template Codim<0>::Entity,
+                                                                DomainFieldType,
+                                                                dimDomain,
+                                                                RangeFieldType,
+                                                                dimRange,
+                                                                1>>(lambda, 10);
+  }
+
 protected:
   using BaseType::grid_cfg_;
   using BaseType::grid_layer_;
@@ -134,19 +179,16 @@ public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
   typedef EntropyBasedLocalFlux<BasisfunctionType, GridLayerImp, U_> ActualFluxType;
-  using typename BaseType::QuadratureType;
   using typename BaseType::GridLayerType;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
-  using BaseType::default_quadrature;
 
   PlaneSourceMn(const BasisfunctionType& basis_functions,
                 const GridLayerType& grid_layer,
-                const QuadratureType& quadrature = default_quadrature(),
                 const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                 const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, grid_cfg, boundary_cfg)
   {
   }
 
@@ -157,13 +199,12 @@ public:
 
   virtual FluxType* create_flux() const
   {
-    return new ActualFluxType(basis_functions_, grid_layer_, quadrature_);
+    return new ActualFluxType(basis_functions_, grid_layer_);
   }
 
 protected:
   using BaseType::basis_functions_;
   using BaseType::grid_layer_;
-  using BaseType::quadrature_;
 }; // class PlaneSourceMn<...>
 
 

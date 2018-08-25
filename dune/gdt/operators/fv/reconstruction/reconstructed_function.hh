@@ -123,8 +123,9 @@ public:
 
   ReconstructedLocalizableFunction(const GridLayerType& grid_layer)
     : index_set_(grid_layer.indexSet())
-    , reconstructed_values_(grid_layer.size(0))
+    , reconstructed_values_(static_cast<size_t>(grid_layer.size(0)))
   {
+    assert(grid_layer.size(0) >= 0);
   }
 
   virtual std::unique_ptr<LocalfunctionInterfaceType> local_function(const EntityType& entity) const

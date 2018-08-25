@@ -42,10 +42,8 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
-  using typename BaseType::QuadratureType;
 
   using BaseType::default_boundary_cfg;
-  using BaseType::default_quadrature;
 
   static std::string static_id()
   {
@@ -54,10 +52,9 @@ public:
 
   TwoPulsesPn(const BasisfunctionType& basis_functions,
               const GridLayerType& grid_layer,
-              const QuadratureType& quadrature = default_quadrature(),
               const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
               const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, 1, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, 1, grid_cfg, boundary_cfg)
   {
   }
 
@@ -69,8 +66,6 @@ public:
     grid_config["upper_right"] = "[7]";
     grid_config["num_elements"] = "[100]";
     grid_config["overlap_size"] = "[1]";
-    grid_config["num_quad_cells"] = "[20]";
-    grid_config["quad_order"] = "50";
     return grid_config;
   }
 
@@ -108,7 +103,6 @@ public:
 
 protected:
   using BaseType::basis_functions_;
-  using BaseType::quadrature_;
 }; // class TwoPulsesPn<...>
 
 

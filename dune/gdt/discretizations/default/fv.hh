@@ -35,7 +35,6 @@ template <class ProblemImp,
           TimeStepperMethods time_stepper_method,
           TimeStepperMethods rhs_time_stepper_method,
           TimeStepperSplittingMethods time_stepper_splitting_method,
-          SlopeLimiters slope_limiter,
           class Traits>
 class HyperbolicFvDefaultDiscretization;
 
@@ -49,8 +48,7 @@ template <class TestCaseImp,
           size_t reconstruction_order,
           TimeStepperMethods time_stepper_method,
           TimeStepperMethods rhs_time_stepper_method,
-          TimeStepperSplittingMethods time_stepper_splitting_method,
-          SlopeLimiters slope_limiter>
+          TimeStepperSplittingMethods time_stepper_splitting_method>
 class HyperbolicFvDefaultDiscretizationTraits
 {
   // no checks of the arguments needed, those are done in the interfaces
@@ -62,7 +60,6 @@ public:
                                             time_stepper_method,
                                             rhs_time_stepper_method,
                                             time_stepper_splitting_method,
-                                            slope_limiter,
                                             HyperbolicFvDefaultDiscretizationTraits>
       derived_type;
   typedef typename TestCaseImp::ProblemType ProblemType;
@@ -84,15 +81,13 @@ template <class TestCaseImp,
           TimeStepperMethods time_stepper_method,
           TimeStepperMethods rhs_time_stepper_method = time_stepper_method,
           TimeStepperSplittingMethods time_stepper_splitting_method = TimeStepperSplittingMethods::fractional_step,
-          SlopeLimiters slope_limiter = SlopeLimiters::minmod,
           class Traits = internal::HyperbolicFvDefaultDiscretizationTraits<TestCaseImp,
                                                                            FvSpaceImp,
                                                                            numerical_flux,
                                                                            reconstruction_order,
                                                                            time_stepper_method,
                                                                            rhs_time_stepper_method,
-                                                                           time_stepper_splitting_method,
-                                                                           slope_limiter>>
+                                                                           time_stepper_splitting_method>>
 class HyperbolicFvDefaultDiscretization : public FvDiscretizationInterface<Traits>
 {
   static_assert(reconstruction_order <= 1, "Not yet implemented for higher reconstruction orders!");
@@ -119,6 +114,7 @@ private:
       LocalizableFunctionBasedLocalizableDirichletBoundaryValue<GridLayerType, typename ProblemType::BoundaryValueType>;
   typedef typename ProblemType::DomainFieldType DomainFieldType;
   typedef typename ProblemType::RangeFieldType RangeFieldType;
+  typedef typename DiscreteFunctionType::RangeType RangeType;
   typedef typename Dune::XT::Functions::
       ConstantFunction<typename SpaceType::EntityType, DomainFieldType, dimDomain, RangeFieldType, 1, 1>
           ConstantFunctionType;
@@ -202,7 +198,8 @@ public:
       std::unique_ptr<AdvectionOperatorType> advection_op =
           AdvectionOperatorCreatorType::create(analytical_flux, boundary_values, dx_function);
 
-      ReconstructionOperatorType reconstruction_op(analytical_flux, boundary_values);
+      MinmodSlope<RangeType, typename ReconstructionOperatorType::MatrixType> slope;
+      ReconstructionOperatorType reconstruction_op(analytical_flux, boundary_values, slope);
 
       AdvectionWithReconstructionOperatorType advection_with_reconstruction_op(*advection_op, reconstruction_op);
 

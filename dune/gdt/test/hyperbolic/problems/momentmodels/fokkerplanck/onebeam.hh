@@ -41,17 +41,14 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
-  using typename BaseType::QuadratureType;
 
   using BaseType::default_boundary_cfg;
-  using BaseType::default_quadrature;
 
   OneBeamPn(const BasisfunctionType& basis_functions,
             const GridLayerType& grid_layer,
-            const QuadratureType& quadrature = default_quadrature(),
             const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
             const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, 10, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, 10, grid_cfg, boundary_cfg)
   {
   }
 
@@ -92,7 +89,7 @@ public:
   {
     RangeType basis_integrated = basis_functions_.integrated();
     RangeType left_boundary_value(0);
-    for (const auto& quadpoint : quadrature_) {
+    for (const auto& quadpoint : basis_functions_.quadratures().merged()) {
       const auto& v = quadpoint.position();
       left_boundary_value +=
           basis_functions_.evaluate(v) * 3. * std::exp(3. * v[0] + 3.) / (std::exp(6) - 1) * quadpoint.weight();
@@ -111,7 +108,6 @@ public:
 
 protected:
   using BaseType::basis_functions_;
-  using BaseType::quadrature_;
   using BaseType::psi_vac_;
 }; // class OneBeamPn<...>
 

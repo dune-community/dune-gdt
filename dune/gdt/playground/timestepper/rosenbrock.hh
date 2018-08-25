@@ -179,20 +179,18 @@ template <class OperatorImp,
           RosenbrockTimeStepperMethods method = RosenbrockTimeStepperMethods::GRK4T>
 class RosenbrockTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
 {
-  typedef TimeStepperInterface<DiscreteFunctionImp> BaseType;
-  typedef typename internal::RosenbrockButcherArrayProvider<typename BaseType::RangeFieldType, method>
-      ButcherArrayProviderType;
+  using BaseType = TimeStepperInterface<DiscreteFunctionImp>;
+  using ButcherArrayProviderType = internal::RosenbrockButcherArrayProvider<typename BaseType::RangeFieldType, method>;
 
 public:
   using typename BaseType::DiscreteFunctionType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::SolutionType;
 
-  typedef OperatorImp OperatorType;
-  typedef SolverImp SolverType;
-  typedef typename Dune::DynamicMatrix<RangeFieldType> MatrixType;
-  typedef typename Dune::DynamicVector<RangeFieldType> VectorType;
+  using OperatorType = OperatorImp;
+  using SolverType = SolverImp;
+  using MatrixType = typename Dune::DynamicMatrix<RangeFieldType>;
+  using VectorType = typename Dune::DynamicVector<RangeFieldType>;
 
   using BaseType::current_solution;
   using BaseType::current_time;

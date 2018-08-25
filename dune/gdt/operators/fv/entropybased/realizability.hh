@@ -46,19 +46,20 @@ public:
   using AnalyticalFluxType = AnalyticalFluxImp;
   using DiscreteFunctionType = DiscreteFunctionImp;
   using BasisfunctionType = BasisfunctionImp;
-  typedef typename DiscreteFunctionType::SpaceType::GridLayerType GridLayerType;
-  typedef typename DiscreteFunctionType::EntityType EntityType;
-  typedef typename GridLayerType::template Codim<0>::Geometry::LocalCoordinate DomainType;
-  typedef typename DiscreteFunctionType::RangeType RangeType;
-  typedef typename GridLayerType::IndexSet IndexSetType;
-  typedef typename DiscreteFunctionType::RangeFieldType RangeFieldType;
-  typedef typename DiscreteFunctionType::DomainFieldType DomainFieldType;
+  using GridLayerType = typename DiscreteFunctionType::SpaceType::GridLayerType;
+  using EntityType = typename DiscreteFunctionType::EntityType;
+  using DomainType = typename GridLayerType::template Codim<0>::Geometry::LocalCoordinate;
+  using RangeType = typename DiscreteFunctionType::RangeType;
+  using IndexSetType = typename GridLayerType::IndexSet;
+  using RangeFieldType = typename DiscreteFunctionType::RangeFieldType;
+  using DomainFieldType = typename DiscreteFunctionType::DomainFieldType;
   static const size_t dimDomain = DiscreteFunctionType::dimDomain;
   static const size_t dimRange = DiscreteFunctionType::dimRange;
-  typedef typename Dune::QuadratureRule<RangeFieldType, dimDomain> QuadratureType;
+  using QuadratureType = typename Dune::QuadratureRule<RangeFieldType, dimDomain>;
   using ReconstructedFunctionType =
       ReconstructedLocalizableFunction<GridLayerType, DomainFieldType, dimDomain, RangeFieldType, dimRange>;
   using EntropyFluxType = EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, DiscreteFunctionType>;
+  using LocalReconstructedValuesType = typename ReconstructedFunctionType::LocalReconstructedValuesType;
 
   LocalRealizabilityLimiterBase(const AnalyticalFluxType& analytical_flux,
                                 const DiscreteFunctionType& source,
@@ -67,9 +68,7 @@ public:
                                 const QuadratureType& quadrature,
                                 const RangeFieldType epsilon,
                                 const std::vector<RangeType>& basis_values,
-                                const XT::Common::Parameter& param,
-                                const std::string filename,
-                                const RangeFieldType psi_vac)
+                                const XT::Common::Parameter& param)
     : analytical_flux_(analytical_flux)
     , source_(source)
     , reconstructed_function_(reconstructed_function)
@@ -78,9 +77,6 @@ public:
     , epsilon_(epsilon)
     , basis_values_(basis_values)
     , param_(param)
-    , filename_(filename)
-    , psi_vac_(psi_vac)
-    , u_vac_(basis_functions_.integrated() * psi_vac_ / 10.)
   {
     param_.set("boundary", {0.});
   }
@@ -89,18 +85,43 @@ public:
   {
   }
 
-  void apply_limiter(const typename AnalyticalFluxType::EntityType& entity,
-                     const RangeType theta_entity,
-                     std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& local_reconstructed_values,
+  // scalar version
+  void apply_limiter(const EntityType& entity,
+                     const RangeFieldType theta_entity,
+                     LocalReconstructedValuesType& local_reconstructed_values,
                      const RangeType& u_bar,
                      bool add_epsilon = true)
   {
+    // apply slope limiter
+    assert(dynamic_cast<const EntropyFluxType*>(&analytical_flux_) != nullptr
+           && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
+    auto theta = add_epsilon ? theta_entity + epsilon_ : theta_entity;
+    if (theta > 0.) {
+      // std::cout << "limited with theta: " << theta << " and epsilon " << epsilon_ << std::endl;
+      if (theta > 1.)
+        theta = 1.;
+      for (auto& pair : local_reconstructed_values) {
+        auto& u = pair.second;
+        u = convex_combination(u, u_bar, theta);
+      }
+    }
+    check_solvability(entity, local_reconstructed_values, u_bar);
+  } // void apply_limiter(...)
+
+  // version for component-wise limiting
+  void apply_limiter(const EntityType& entity,
+                     const RangeType& theta_entity,
+                     LocalReconstructedValuesType& local_reconstructed_values,
+                     const RangeType& u_bar,
+                     bool add_epsilon = true)
+  {
+    // apply slope limiter
     assert(dynamic_cast<const EntropyFluxType*>(&analytical_flux_) != nullptr
            && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
     for (size_t ii = 0; ii < dimRange; ++ii) {
       auto theta_ii = add_epsilon ? theta_entity[ii] + epsilon_ : theta_entity[ii];
       if (theta_ii > 0.) {
-        //        std::cout << "limited with theta: " << theta_ii << " and epsilon " << epsilon_ << std::endl;
+        // std::cout << "limited with theta: " << theta_ii << " and epsilon " << epsilon_ << std::endl;
         if (theta_ii > 1.)
           theta_ii = 1.;
         for (auto& pair : local_reconstructed_values) {
@@ -109,85 +130,35 @@ public:
         }
       } // if (theta_ii > 0)
     } // ii
-
-    for (auto& pair : local_reconstructed_values) {
-      const auto x_in_inside_coords = entity.geometry().local(pair.first);
-      auto& u = pair.second;
-      const auto s = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
-                         ->derived_local_function(entity)
-                         ->get_alpha(x_in_inside_coords, u, param_, true, false)
-                         .second;
-
-      // if regularization was needed, we also need to replace u_n in that cell by its regularized version
-      if (s > 0.) {
-        if (!filename_.empty()) {
-          static std::mutex outfile_lock;
-          outfile_lock.lock();
-          std::ofstream outfile(filename_, std::ios_base::app);
-          outfile << param_.get("t")[0];
-          for (size_t ii = 0; ii < dimDomain; ++ii)
-            outfile << " " << entity.geometry().center()[ii];
-          outfile << " " << s << " 1" << std::endl;
-          outfile_lock.unlock();
-        }
-        const auto u_iso = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
-                               ->basis_functions()
-                               .calculate_isotropic_distribution(u)
-                               .first;
-        u = convex_combination(u, u_iso, s);
-      } // if (s > 0)
-    } // local_reconstructed_values
+    check_solvability(entity, local_reconstructed_values, u_bar);
   }
 
-  void apply_limiter(const typename AnalyticalFluxType::EntityType& entity,
-                     const RangeFieldType theta_entity,
-                     std::map<DomainType, RangeType, XT::Common::FieldVectorLess>& local_reconstructed_values,
-                     const RangeType& u_bar,
-                     bool add_epsilon = true)
-  {
-    assert(dynamic_cast<const EntropyFluxType*>(&analytical_flux_) != nullptr
-           && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
-    auto theta = add_epsilon ? theta_entity + epsilon_ : theta_entity;
-    if (theta > 0.) {
-      //      std::cout << "limited with theta: " << theta << " and epsilon " << epsilon_ << std::endl;
-      if (theta > 1.)
-        theta = 1.;
-      for (auto& pair : local_reconstructed_values) {
-        auto& u = pair.second;
-        u = convex_combination(u, u_bar, theta);
-      }
-    }
-
-    for (auto& pair : local_reconstructed_values) {
-      const auto x_in_inside_coords = entity.geometry().local(pair.first);
-      auto& u = pair.second;
-      const auto s = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
-                         ->derived_local_function(entity)
-                         ->get_alpha(x_in_inside_coords, u, param_, true, false)
-                         .second;
-
-      // if regularization was needed, we also need to replace u_n in that cell by its regularized version
-      if (s > 0.) {
-        if (!filename_.empty()) {
-          static std::mutex outfile_lock;
-          outfile_lock.lock();
-          std::ofstream outfile(filename_, std::ios_base::app);
-          outfile << param_.get("t")[0];
-          for (size_t ii = 0; ii < dimDomain; ++ii)
-            outfile << " " << entity.geometry().center()[ii];
-          outfile << " " << s << " 1" << std::endl;
-          outfile_lock.unlock();
-        }
-        const auto u_iso = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
-                               ->basis_functions()
-                               .calculate_isotropic_distribution(u)
-                               .first;
-        u = convex_combination(u, u_iso, s);
-      } // if (s > 0)
-    } // local_reconstructed_values
-  } // void apply_limiter(...)
-
 protected:
+  void check_solvability(const EntityType& entity,
+                         LocalReconstructedValuesType& local_reconstructed_values,
+                         const RangeType& u_bar)
+
+  {
+    // Try to solve optimization problem for all reconstructed values. If it fails for one value,
+    // we cannot guarantee realizability preservation, so disable reconstruction in that case.
+    const auto local_func = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)->derived_local_function(entity);
+    try {
+      for (const auto& pair : local_reconstructed_values) {
+        const auto x_in_inside_coords = entity.geometry().local(pair.first);
+        const auto& u = pair.second;
+        local_func->get_alpha(x_in_inside_coords, u, param_, false, false);
+      } // local_reconstructed_values
+    } catch (const Dune::MathError&) {
+      // solving failed for reconstructed value, so check that it works with u_bar ...
+      local_func->get_alpha(entity.geometry().local(entity.geometry().center()), u_bar, param_, false, false);
+      // ... and set all reconstructed values to u_bar
+      for (auto& pair : local_reconstructed_values)
+        pair.second = u_bar;
+      std::cout << "Reconstruction disabled at time " << XT::Common::to_string(param_.get("t")[0], 15)
+                << " and entity with center " << XT::Common::to_string(entity.geometry().center(), 15) << std::endl;
+    }
+  }
+
   RangeType convex_combination(const RangeType& u, const RangeType& u_bar, const RangeFieldType& theta)
   {
     RangeType u_scaled = u;
@@ -210,9 +181,6 @@ protected:
   const RangeFieldType epsilon_;
   const std::vector<RangeType>& basis_values_;
   XT::Common::Parameter param_;
-  const std::string filename_;
-  const RangeFieldType psi_vac_;
-  const RangeType u_vac_;
 };
 
 template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp = int>
@@ -281,20 +249,21 @@ public:
       for (size_t ii = 0; ii < u.size(); ++ii) {
         if (u[ii] >= u_bar[ii])
           continue;
-        if (u_bar[ii] < u_vac_[ii])
+        if (u_bar[ii] < epsilon_)
           thetas[ii] = 1.;
-        else if (u[ii] < u_vac_[ii])
-          thetas[ii] = std::max(thetas[ii], (u_vac_[ii] - u[ii]) / (u_bar[ii] - u[ii]));
+        else if (u[ii] < epsilon_)
+          thetas[ii] = std::max(thetas[ii], (epsilon_ - u[ii]) / (u_bar[ii] - u[ii]));
       } // ii
     } // ll
 
-    BaseType::apply_limiter(entity, thetas, local_reconstructed_values, u_bar, false);
+    const auto theta_max = *std::max_element(thetas.begin(), thetas.end());
+    BaseType::apply_limiter(entity, theta_max, local_reconstructed_values, u_bar, false);
   } // void apply_local(...)
 
 private:
   using BaseType::source_;
   using BaseType::reconstructed_function_;
-  using BaseType::u_vac_;
+  using BaseType::epsilon_;
 }; // class PositivityLocalRealizabilityLimiter
 
 template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
@@ -341,16 +310,16 @@ public:
         const auto& u1 = u[2 * ii + 1];
         const auto& ubar0 = u_bar[2 * ii];
         const auto& ubar1 = u_bar[2 * ii + 1];
-        const auto& epsilon = u_vac_[2 * ii];
         const auto& vj = triangulation_[ii];
         const auto& vjplus1 = triangulation_[ii + 1];
         FieldVector<RangeFieldType, 3> thetas_ii;
-        if (!is_epsilon_realizable(ubar0, ubar1, vj, vjplus1, epsilon)) {
+        if (!is_epsilon_realizable(ubar0, ubar1, vj, vjplus1, epsilon_)) {
           thetas[2 * ii] = 1.;
         } else {
-          thetas_ii[0] = (epsilon - u0) / (ubar0 - u0);
-          thetas_ii[1] = (u0 * vj - u1 + epsilon * std::sqrt(std::pow(vj, 2) + 1)) / ((ubar1 - u1) - (ubar0 - u0) * vj);
-          thetas_ii[2] = (u0 * vjplus1 - u1 - epsilon * std::sqrt(std::pow(vjplus1, 2) + 1))
+          thetas_ii[0] = (epsilon_ - u0) / (ubar0 - u0);
+          thetas_ii[1] =
+              (u0 * vj - u1 + epsilon_ * std::sqrt(std::pow(vj, 2) + 1)) / ((ubar1 - u1) - (ubar0 - u0) * vj);
+          thetas_ii[2] = (u0 * vjplus1 - u1 - epsilon_ * std::sqrt(std::pow(vjplus1, 2) + 1))
                          / ((ubar1 - u1) - (ubar0 - u0) * vjplus1);
           for (size_t kk = 0; kk < 3; ++kk)
             if (thetas_ii[kk] >= 0. && thetas_ii[kk] <= 1.)
@@ -374,10 +343,10 @@ private:
     return ret;
   }
 
-  using BaseType::source_;
-  using BaseType::reconstructed_function_;
   using BaseType::basis_functions_;
-  using BaseType::u_vac_;
+  using BaseType::epsilon_;
+  using BaseType::reconstructed_function_;
+  using BaseType::source_;
   typename BasisfunctionImp::TriangulationType triangulation_;
 }; // class DgLocalRealizabilityLimiter
 
@@ -432,13 +401,13 @@ public:
     // vector to store thetas for each local reconstructed value
     std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), -epsilon_);
 
-    size_t ll = -1;
+    size_t ll = static_cast<size_t>(-1);
     for (const auto& pair : local_reconstructed_values) {
       ++ll;
       // rescale u_l, u_bar
       auto u_l = pair.second;
       auto u_bar_minus_u_l = u_bar - u_l;
-      const auto factor = basis_functions_.realizability_limiter_max(u_l, u_bar);
+      const auto factor = std::max(basis_functions_.density(u_l), basis_functions_.density(u_bar)) / 2.;
       u_l /= factor;
       u_bar_minus_u_l /= factor;
 
@@ -565,14 +534,14 @@ public:
     // vector to store thetas for each local reconstructed value
     std::vector<RangeFieldType> thetas(local_reconstructed_values.size(), -epsilon_);
 
-    size_t ll = -1;
+    size_t ll = static_cast<size_t>(-1);
     for (const auto& pair : local_reconstructed_values) {
       ++ll;
       // rescale u_l, u_bar
       auto u_l = pair.second;
       if (XT::Common::FloatCmp::eq(u_l, u_bar))
         continue;
-      const auto factor = basis_functions_.realizability_limiter_max(u_l, u_bar);
+      const auto factor = std::max(basis_functions_.density(u_l), basis_functions_.density(u_bar)) / 2.;
       u_l /= factor;
       auto u_bar_scaled = u_bar;
       u_bar_scaled /= factor;
@@ -727,13 +696,7 @@ public:
     const RangeType u_bar =
         source_.local_function(entity)->evaluate(entity.geometry().local(entity.geometry().center()));
 
-    RangeFieldType theta_entity(0.);
-
-    // if a component is already really small, we do not want to reconstruct in that direction
-    for (size_t ii = 0; ii < dimRange; ++ii)
-      if (u_bar[ii] < u_vac_[ii])
-        for (auto& pair : local_reconstructed_values)
-          pair.second[ii] = u_bar[ii];
+    RangeFieldType theta_entity(-epsilon_);
 
     for (const auto& pair : local_reconstructed_values) {
       const auto& u = pair.second;
@@ -746,7 +709,7 @@ public:
       // x_i, \theta >= 0
       theta_entity = std::max(theta_entity, solve_linear_program(u_bar, u));
     } // ll
-    BaseType::apply_limiter(entity, theta_entity, local_reconstructed_values, u_bar);
+    BaseType::apply_limiter(entity, theta_entity, local_reconstructed_values, u_bar, true);
   } // void apply_local(...)
 
 private:
@@ -765,7 +728,7 @@ private:
       // Clp wants the row indices that are non-zero in each column. We have a dense matrix, so provide all indices
       // 0..num_rows
       std::array<int, num_rows> row_indices;
-      for (size_t ii = 0; ii < num_rows; ++ii)
+      for (int ii = 0; ii < num_rows; ++ii)
         row_indices[ii] = ii;
 
       // set columns for quadrature points
@@ -801,7 +764,7 @@ private:
     const auto u_l_minus_u_bar = u_l - u_bar;
 
     // set rhs (equality constraints, so set both bounds equal
-    for (size_t ii = 0; ii < num_rows; ++ii) {
+    for (int ii = 0; ii < num_rows; ++ii) {
       lp.setRowLower(ii, u_l[ii]);
       lp.setRowUpper(ii, u_l[ii]);
     }
@@ -809,7 +772,7 @@ private:
     // Clp wants the row indices that are non-zero in each column. We have a dense matrix, so provide all indices
     // 0..num_rows
     std::array<int, num_rows> row_indices;
-    for (size_t ii = 0; ii < num_rows; ++ii)
+    for (int ii = 0; ii < num_rows; ++ii)
       row_indices[ii] = ii;
 
     // delete and reset theta column
@@ -831,7 +794,6 @@ private:
   using BaseType::quadrature_;
   using BaseType::epsilon_;
   using BaseType::basis_values_;
-  using BaseType::u_vac_;
   XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>> lp_;
 }; // class ClpLocalRealizabilityLimiter
 
@@ -888,16 +850,12 @@ public:
   RealizabilityLimiter(const AnalyticalFluxType& analytical_flux,
                        const BasisfunctionType& basis_functions,
                        const QuadratureType& quadrature,
-                       const RangeFieldType epsilon = 1e-8,
-                       const std::string filename = "",
-                       const RangeFieldType psi_vac = 5e-9)
+                       const RangeFieldType epsilon = 1e-8)
     : analytical_flux_(analytical_flux)
     , basis_functions_(basis_functions)
     , quadrature_(quadrature)
     , epsilon_(epsilon)
     , basis_values_(quadrature_.size())
-    , filename_(filename)
-    , psi_vac_(psi_vac)
   {
     for (size_t ii = 0; ii < quadrature_.size(); ++ii)
       basis_values_[ii] = basis_functions_.evaluate(quadrature_[ii].position());
@@ -908,16 +866,8 @@ public:
   {
     static_assert(is_discrete_function<SourceType>::value,
                   "SourceType has to be derived from DiscreteFunction (use the non-reconstructed values!)");
-    LocalRealizabilityLimiterType local_realizability_limiter(analytical_flux_,
-                                                              source,
-                                                              range,
-                                                              basis_functions_,
-                                                              quadrature_,
-                                                              epsilon_,
-                                                              basis_values_,
-                                                              param,
-                                                              filename_,
-                                                              psi_vac_);
+    LocalRealizabilityLimiterType local_realizability_limiter(
+        analytical_flux_, source, range, basis_functions_, quadrature_, epsilon_, basis_values_, param);
     auto walker = XT::Grid::Walker<typename SourceType::SpaceType::GridLayerType>(source.space().grid_layer());
     walker.append(local_realizability_limiter);
     walker.walk(true);
@@ -929,8 +879,6 @@ private:
   const QuadratureType& quadrature_;
   const RangeFieldType epsilon_;
   std::vector<RangeType> basis_values_;
-  const std::string filename_;
-  const RangeFieldType psi_vac_;
 }; // class RealizabilityLimiter<...>
 
 

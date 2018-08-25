@@ -35,20 +35,20 @@ public:
 
   const BackendType& backend() const
   {
-    CHECK_CRTP(this->as_imp(*this).backend());
-    return this->as_imp(*this).backend();
+    CHECK_CRTP(this->as_imp().backend());
+    return this->as_imp().backend();
   }
 
   size_t size() const
   {
-    CHECK_CRTP(this->as_imp(*this).size());
-    return this->as_imp(*this).size();
+    CHECK_CRTP(this->as_imp().size());
+    return this->as_imp().size();
   }
 
   size_t maxNumDofs() const
   {
-    CHECK_CRTP(this->as_imp(*this).maxNumDofs());
-    return this->as_imp(*this).maxNumDofs();
+    CHECK_CRTP(this->as_imp().maxNumDofs());
+    return this->as_imp().maxNumDofs();
   }
 
   template <int cd, class GridImp, template <int, int, class> class EntityImp>
@@ -57,13 +57,13 @@ public:
     //    static_assert(std::is_same<Entity<cd, EntityType::dimension, GridImp, EntityImp>,
     //                               XT::Grid::extract_entity_t<EntityType, cd>>::value,
     //                  "Entity mismatch");
-    CHECK_CRTP(this->as_imp(*this).numDofs(entity));
-    return this->as_imp(*this).numDofs(entity);
+    CHECK_CRTP(this->as_imp().numDofs(entity));
+    return this->as_imp().numDofs(entity);
   }
 
   void globalIndices(const EntityType& entity, Dune::DynamicVector<size_t>& ret) const
   {
-    CHECK_AND_CALL_CRTP(this->as_imp(*this).globalIndices(entity, ret));
+    CHECK_AND_CALL_CRTP(this->as_imp().globalIndices(entity, ret));
   }
 
   Dune::DynamicVector<size_t> globalIndices(const EntityType& entity) const
@@ -75,8 +75,8 @@ public:
 
   size_t mapToGlobal(const EntityType& entity, const size_t& localIndex) const
   {
-    CHECK_CRTP(this->as_imp(*this).mapToGlobal(entity, localIndex));
-    return this->as_imp(*this).mapToGlobal(entity, localIndex);
+    CHECK_CRTP(this->as_imp().mapToGlobal(entity, localIndex));
+    return this->as_imp().mapToGlobal(entity, localIndex);
   }
 }; // class MapperInterface
 

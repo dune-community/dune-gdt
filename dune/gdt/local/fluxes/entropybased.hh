@@ -20,6 +20,7 @@
 
 #include <boost/align/aligned_allocator.hpp>
 
+#include <dune/xt/common/debug.hh>
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/lapacke.hh>
 #include <dune/xt/common/math.hh>
@@ -33,8 +34,13 @@
 
 #include <dune/xt/functions/interfaces/localizable-flux-function.hh>
 
+#include <dune/gdt/operators/fv/reconstruction/internal.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/hatfunctions.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/piecewise_monomials.hh>
+
+#if HAVE_CLP
+#include <coin/ClpSimplex.hpp>
+#endif // HAVE_CLP
 
 namespace Dune {
 namespace GDT {
@@ -64,10 +70,10 @@ public:
     }
   }
 
-  void keep(const ConstIteratorType& it)
+  void keep(const StateRangeType& u)
   {
-    keys_.remove(it->first);
-    keys_.push_back(it->first);
+    keys_.remove(u);
+    keys_.push_back(u);
   }
 
   ConstIteratorType find_closest(const StateRangeType& u) const
@@ -124,7 +130,10 @@ private:
   std::list<StateRangeType> keys_;
 };
 
-#if 1
+template <class BasisfunctionImp, class GridLayerImp, class U>
+class EntropyBasedLocalFlux;
+
+#if HAVE_CLP
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * for the notation see
  * Alldredge, Hauck, O'Leary, Tits, "Adaptive change of basis in entropy-based moment closures for linear kinetic
@@ -178,7 +187,6 @@ public:
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
       const GridLayerType& grid_layer,
-      const QuadratureRuleType& quadrature,
       const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
@@ -192,9 +200,9 @@ public:
       const std::string name = static_id())
     : index_set_(grid_layer.indexSet())
     , basis_functions_(basis_functions)
-    , quad_points_(quadrature.size())
-    , quad_weights_(quadrature.size())
-    , M_(dimRange, quadrature.size(), 0., 0)
+    , quad_points_(basis_functions_.quadratures().merged().size())
+    , quad_weights_(quad_points_.size())
+    , M_(dimRange, quad_points_.size(), 0., 0)
     , tau_(tau)
     , epsilon_gamma_(epsilon_gamma)
     , chi_(chi)
@@ -208,12 +216,14 @@ public:
     , cache_(index_set_.size(0), LocalCacheType(cache_size))
     , mutexes_(index_set_.size(0))
   {
-    for (size_t ll = 0; ll < quadrature.size(); ++ll) {
-      quad_points_[ll] = quadrature[ll].position();
-      quad_weights_[ll] = quadrature[ll].weight();
+    size_t ll = 0;
+    for (const auto& quad_point : basis_functions_.quadratures().merged()) {
+      quad_points_[ll] = quad_point.position();
+      quad_weights_[ll] = quad_point.weight();
       const auto val = basis_functions_.evaluate(quad_points_[ll]);
       for (size_t ii = 0; ii < dimRange; ++ii)
         M_.set_entry(ii, ll, val[ii]);
+      ++ll;
     }
   }
 
@@ -240,7 +250,8 @@ public:
                   const RangeFieldType epsilon,
                   const MatrixType& T_minus_one,
                   LocalCacheType& cache,
-                  std::mutex& mutex)
+                  std::mutex& mutex,
+                  XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& lp)
       : LocalfunctionType(e)
       , basis_functions_(basis_functions)
       , quad_points_(quad_points)
@@ -257,7 +268,65 @@ public:
       , T_minus_one_(T_minus_one)
       , cache_(cache)
       , mutex_(mutex)
+      , lp_(lp)
     {
+    }
+
+    void setup_linear_program() const
+    {
+      if (!*lp_) {
+        // We start with creating a model with dimRange rows and num_quad_points columns */
+        constexpr int num_rows = static_cast<int>(dimRange);
+        assert(quad_points_.size() < std::numeric_limits<int>::max());
+        int num_cols = static_cast<int>(quad_points_.size()); /* variables are x_1, ..., x_{num_quad_points} */
+        *lp_ = std::make_unique<ClpSimplex>(false);
+        auto& lp = **lp_;
+        // set number of rows
+        lp.resize(num_rows, 0);
+
+        // Clp wants the row indices that are non-zero in each column. We have a dense matrix, so provide all indices
+        // 0..num_rows
+        std::array<int, num_rows> row_indices;
+        for (int ii = 0; ii < num_rows; ++ii)
+          row_indices[static_cast<size_t>(ii)] = ii;
+
+        // set columns for quadrature points
+        for (int ii = 0; ii < num_cols; ++ii) {
+          const auto v_i = basis_functions_.evaluate(quad_points_[static_cast<size_t>(ii)]);
+          // First argument: number of elements in column
+          // Second/Third argument: indices/values of column entries
+          // Fourth/Fifth argument: lower/upper column bound, i.e. lower/upper bound for x_i. As all x_i should be
+          // positive, set to 0/inf, which is the default.
+          // Sixth argument: Prefactor in objective for x_i, this is 0 for all x_i, which is also the default;
+          lp.addColumn(num_rows, row_indices.data(), &(v_i[0]));
+        }
+
+        // silence lp
+        lp.setLogLevel(0);
+      } // if (!lp_)
+    }
+
+    //  RangeFieldType solve_linear_program(const RangeType& u_bar, const RangeType& u_l, const size_t index)
+    bool is_realizable(const StateRangeType& u) const
+    {
+      const auto u_prime = u / basis_functions_.density(u);
+      setup_linear_program();
+      auto& lp = **lp_;
+      constexpr int num_rows = static_cast<int>(dimRange);
+      // set rhs (equality constraints, so set both bounds equal
+      for (int ii = 0; ii < num_rows; ++ii) {
+        size_t uii = static_cast<size_t>(ii);
+        lp.setRowLower(ii, u_prime[uii]);
+        lp.setRowUpper(ii, u_prime[uii]);
+      }
+      // Now check solvability
+      lp.primal();
+      return lp.primalFeasible();
+    }
+
+    void keep(const StateRangeType& u)
+    {
+      cache_.keep(u);
     }
 
     using LocalfunctionType::entity;
@@ -322,18 +391,19 @@ public:
 
     void apply_inverse_matrix(const MatrixType& T_k, BasisValuesMatrixType& M) const
     {
+      assert(quad_points_.size() < std::numeric_limits<int>::max());
       XT::Common::Blas::dtrsm(XT::Common::Blas::row_major(),
                               XT::Common::Blas::left(),
                               XT::Common::Blas::lower(),
                               XT::Common::Blas::no_trans(),
                               XT::Common::Blas::non_unit(),
                               dimRange,
-                              quad_points_.size(),
+                              static_cast<int>(quad_points_.size()),
                               1.,
                               &(T_k[0][0]),
                               dimRange,
                               M.data(),
-                              quad_points_.size());
+                              static_cast<int>(quad_points_.size()));
     }
 
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
@@ -348,19 +418,27 @@ public:
       mutex_.lock();
       if (boundary)
         cache_.increase_capacity(2 * cache_size);
+
+      // rescale u such that the density <psi> is 1
+      RangeFieldType density = basis_functions_.density(u);
+      StateRangeType u_prime = u / density;
+      StateRangeType alpha_iso = basis_functions_.alpha_iso();
+
       // if value has already been calculated for these values, skip computation
-      const auto cache_iterator = cache_.find_closest(u);
-      if (cache_iterator != cache_.end() && cache_iterator->first == u) {
-        ret.first = cache_iterator->second;
+      const auto cache_iterator = cache_.find_closest(u_prime);
+      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime)) {
+        const auto alpha_prime = cache_iterator->second;
+        ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
-        cache_.keep(cache_iterator);
+        cache_.keep(cache_iterator->first);
         mutex_.unlock();
         return ret;
       } else if (only_cache) {
         DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
-        StateRangeType u_iso, alpha_iso;
-        std::tie(u_iso, alpha_iso) = basis_functions_.calculate_isotropic_distribution(u);
+        StateRangeType u_iso = basis_functions_.u_iso();
+        RangeFieldType tau_prime =
+            tau_ / ((1 + std::sqrt(dimRange) * u_prime.two_norm()) * density + std::sqrt(dimRange) * tau_);
 
         // define further variables
         VectorType g_k, beta_in, beta_out, v;
@@ -371,7 +449,7 @@ public:
         const auto r_max = r_sequence.back();
         for (const auto& r : r_sequence) {
           // regularize u
-          v = u;
+          v = u_prime;
           if (r > 0) {
             beta_in = alpha_iso;
             VectorType r_times_u_iso = u_iso;
@@ -392,7 +470,7 @@ public:
           int pure_newton = 0;
           for (size_t kk = 0; kk < k_max_; ++kk) {
             // exit inner for loop to increase r if to many iterations are used or cholesky decomposition fails
-            if (kk > k_0_ && r < r_max && r_max > 0)
+            if (kk > k_0_ && r < r_max)
               break;
             try {
               change_basis(beta_in, v_k, P_k, *T_k, g_k, beta_out);
@@ -402,23 +480,40 @@ public:
               mutex_.unlock();
               DUNE_THROW(Dune::MathError, "Failure to converge!");
             }
-            // calculate current error
-            VectorType error(0);
-            T_k->mv(g_k, error);
+            // calculate gradient in original basis
+            VectorType g_alpha_tilde;
+            T_k->mv(g_k, g_alpha_tilde);
             // calculate descent direction d_k;
             VectorType d_k = g_k;
             d_k *= -1;
-            VectorType T_k_inv_transp_d_k;
-            XT::LA::solve_lower_triangular_transposed(*T_k, T_k_inv_transp_d_k, d_k);
-            if (error.two_norm() < tau_ && std::exp(5 * T_k_inv_transp_d_k.one_norm()) < 1 + epsilon_gamma_) {
-              XT::LA::solve_lower_triangular_transposed(*T_k, ret.first, beta_out);
+            // Calculate stopping criteria (in original basis). Variables with _k are in current basis, without k in
+            // original basis.
+            StateRangeType alpha_tilde;
+            XT::LA::solve_lower_triangular_transposed(*T_k, alpha_tilde, beta_out);
+            auto u_alpha_tilde_k = g_k + v_k;
+            StateRangeType u_alpha_tilde;
+            T_k->mv(u_alpha_tilde_k, u_alpha_tilde);
+            auto density_tilde = basis_functions_.density(u_alpha_tilde);
+            const auto alpha_prime = alpha_tilde - alpha_iso * std::log(density_tilde);
+            StateRangeType u_alpha_prime;
+            calculate_vector_integral(alpha_prime, M_, M_, u_alpha_prime);
+            auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
+            VectorType d_alpha_tilde;
+            XT::LA::solve_lower_triangular_transposed(*T_k, d_alpha_tilde, d_k);
+            if (g_alpha_tilde.two_norm() < tau_prime
+                && 1 - epsilon_gamma_ < std::exp(d_alpha_tilde.one_norm() + std::abs(std::log(density_tilde)))
+                && is_realizable(u_eps_diff)) {
+              ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
+              cache_.insert(v, alpha_prime);
+              mutex_.unlock();
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
               beta_in = beta_out;
               // backtracking line search
-              while (pure_newton >= 2 || zeta_k > epsilon_ * beta_out.two_norm() / d_k.two_norm() * 100.) {
+              // while (pure_newton >= 2 || zeta_k > epsilon_ * beta_out.two_norm() / d_k.two_norm() * 100.) {
+              while (pure_newton >= 2 || zeta_k > epsilon_ * beta_out.two_norm() / d_k.two_norm()) {
                 VectorType beta_new = d_k;
                 beta_new *= zeta_k;
                 beta_new += beta_out;
@@ -432,7 +527,8 @@ public:
                 }
                 zeta_k = chi_ * zeta_k;
               } // backtracking linesearch while
-              if (zeta_k <= epsilon_ * beta_out.two_norm() / d_k.two_norm() * 100.)
+              // if (zeta_k <= epsilon_ * beta_out.two_norm() / d_k.two_norm() * 100.)
+              if (zeta_k <= epsilon_ * beta_out.two_norm() / d_k.two_norm())
                 ++pure_newton;
             } // else (stopping conditions)
           } // k loop (Newton iterations)
@@ -440,13 +536,9 @@ public:
 
         mutex_.unlock();
         DUNE_THROW(MathError, "Failed to converge");
-
-      outside_all_loops:
-        // store values as initial conditions for next time step on this entity
-        cache_.insert(v, ret.first);
-        mutex_.unlock();
       } // else ( value has not been calculated before )
 
+    outside_all_loops:
       return ret;
     }
 
@@ -542,10 +634,10 @@ public:
                             PartialURangeType& ret,
                             const Localfunction* entropy_flux)
       {
-        entropy_flux->partial_u_col_helper(0, M, H, ret, entropy_flux);
+        entropy_flux->partial_u_col_helper(0, M, H, ret, false);
       } // void partial_u(...)
 
-      static RangeFieldType& get_ref(RangeType& ret, const size_t rr, const size_t cc)
+      static RangeFieldType& get_ref(RangeType& ret, const size_t rr, const size_t DXTC_DEBUG_ONLY(cc))
       {
         assert(cc == 0);
         return ret[rr];
@@ -669,6 +761,7 @@ public:
     // constructor)
     LocalCacheType& cache_;
     std::mutex& mutex_;
+    XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& lp_;
   }; // class Localfunction
 
   static std::string static_id()
@@ -699,7 +792,8 @@ public:
                                            epsilon_,
                                            T_minus_one_,
                                            cache_[index],
-                                           mutexes_[index]);
+                                           mutexes_[index],
+                                           lp_);
   }
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
@@ -711,22 +805,20 @@ public:
                                        const StateRangeType& u_i,
                                        const EntityType& neighbor,
                                        const DomainType& x_local_neighbor,
-                                       const StateRangeType u_j,
+                                       const StateRangeType& u_j,
                                        const DomainType& n_ij,
                                        const size_t dd,
                                        const XT::Common::Parameter& param,
                                        const XT::Common::Parameter& param_neighbor) const
   {
     assert(XT::Common::FloatCmp::ne(n_ij[dd], 0.));
+    const bool boundary = static_cast<bool>(param_neighbor.get("boundary")[0]);
     // calculate \sum_{i=1}^d < \omega_i m G_\alpha(u) > n_i
     const auto local_function_entity = derived_local_function(entity);
     const auto local_function_neighbor = derived_local_function(neighbor);
     const auto alpha_i = local_function_entity->get_alpha(x_local_entity, u_i, param, false, true).first;
     const auto alpha_j =
-        local_function_neighbor
-            ->get_alpha(
-                x_local_neighbor, u_j, param_neighbor, false, !static_cast<bool>(param_neighbor.get("boundary")[0]))
-            .first;
+        local_function_neighbor->get_alpha(x_local_neighbor, u_j, param_neighbor, boundary, !boundary).first;
     thread_local FieldVector<std::vector<RangeFieldType>, 2> work_vecs;
     work_vecs[0].resize(quad_points_.size());
     work_vecs[1].resize(quad_points_.size());
@@ -770,8 +862,142 @@ private:
   // constructor)
   mutable std::vector<LocalCacheType> cache_;
   mutable std::vector<std::mutex> mutexes_;
+  mutable XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>> lp_;
 };
-#endif
+
+#else // HAVE_CLP
+
+template <class BasisfunctionImp, class GridLayerImp, class U>
+class EntropyBasedLocalFlux
+    : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                             typename BasisfunctionImp::DomainFieldType,
+                                                             BasisfunctionImp::dimFlux,
+                                                             U,
+                                                             0,
+                                                             typename BasisfunctionImp::RangeFieldType,
+                                                             BasisfunctionImp::dimRange,
+                                                             BasisfunctionImp::dimFlux>
+{
+  typedef typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                                   typename BasisfunctionImp::DomainFieldType,
+                                                                   BasisfunctionImp::dimFlux,
+                                                                   U,
+                                                                   0,
+                                                                   typename BasisfunctionImp::RangeFieldType,
+                                                                   BasisfunctionImp::dimRange,
+                                                                   BasisfunctionImp::dimFlux>
+      BaseType;
+
+public:
+  typedef BasisfunctionImp BasisfunctionType;
+  typedef GridLayerImp GridLayerType;
+  using typename BaseType::EntityType;
+  using typename BaseType::DomainType;
+  using typename BaseType::DomainFieldType;
+  using typename BaseType::StateType;
+  using typename BaseType::StateRangeType;
+  using typename BaseType::RangeType;
+  using typename BaseType::RangeFieldType;
+  using typename BaseType::PartialURangeType;
+  using typename BaseType::LocalfunctionType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  using BaseType::dimRangeCols;
+  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
+  using VectorType = FieldVector<RangeFieldType, dimRange>;
+  using BasisValuesMatrixType = XT::LA::CommonDenseMatrix<RangeFieldType>;
+  typedef Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
+  typedef std::pair<VectorType, RangeFieldType> AlphaReturnType;
+  typedef EntropyLocalCache<StateRangeType, VectorType> LocalCacheType;
+  static const size_t cache_size = 2 * dimDomain + 2;
+
+  explicit EntropyBasedLocalFlux(
+      const BasisfunctionType& /*basis_functions*/,
+      const GridLayerType& /*grid_layer*/,
+      const RangeFieldType /*tau*/ = 1e-9,
+      const RangeFieldType /*epsilon_gamma*/ = 0.01,
+      const RangeFieldType /*chi*/ = 0.5,
+      const RangeFieldType /*xi*/ = 1e-3,
+      const std::vector<RangeFieldType> /*r_sequence*/ = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1},
+      const size_t /*k_0*/ = 500,
+      const size_t /*k_max*/ = 1000,
+      const RangeFieldType /*epsilon*/ = std::pow(2, -52),
+      const MatrixType& /*T_minus_one*/ = MatrixType(),
+      const std::string /*name*/ = "")
+    : basis_functions_(basis_functions)
+  {
+    DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+  }
+
+  class Localfunction : public LocalfunctionType
+  {
+  public:
+    AlphaReturnType get_alpha(const DomainType& /*x_local*/,
+                              const StateRangeType& /*u*/,
+                              const XT::Common::Parameter& /*param*/,
+                              const bool /*regularize*/,
+                              const bool /*only_cache*/) const
+    {
+      DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+      return AlphaReturnType();
+    }
+
+    virtual size_t order(const XT::Common::Parameter& /*param*/) const override
+    {
+      DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+      return 0;
+    }
+
+    virtual void evaluate(const DomainType& /*x_local*/,
+                          const StateRangeType& /*u*/,
+                          RangeType& /*ret*/,
+                          const XT::Common::Parameter& /*param*/) const override
+    {
+      DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+    } // void evaluate(...)
+  }; // class Localfunction
+
+  std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const
+  {
+    DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+    return derived_local_function(entity);
+  }
+
+  std::unique_ptr<Localfunction> derived_local_function(const EntityType& /*entity*/) const
+  {
+    DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+    return std::make_unique<Localfunction>();
+  }
+
+  // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
+  // m is the basis function vector, phi_u is the ansatz corresponding to u
+  // and x, v, t are the space, velocity and time variable, respectively
+  // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
+  StateRangeType evaluate_kinetic_flux(const EntityType& /*entity*/,
+                                       const DomainType& /*x_local_entity*/,
+                                       const StateRangeType& /*u_i*/,
+                                       const EntityType& /*neighbor*/,
+                                       const DomainType& /*x_local_neighbor*/,
+                                       const StateRangeType& /*u_j*/,
+                                       const DomainType& /*n_ij*/,
+                                       const size_t /*dd*/,
+                                       const XT::Common::Parameter& /*param*/,
+                                       const XT::Common::Parameter& /*param_neighbor*/) const
+  {
+    DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+    return StateRangeType(0.);
+  } // StateRangeType evaluate_kinetic_flux(...)
+
+  const BasisfunctionType& basis_functions() const
+  {
+    DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+    return basis_functions_;
+  }
+
+private:
+  const BasisfunctionType& basis_functions_;
+};
+#endif // HAVE_CLP
 
 #if 1
 
@@ -860,8 +1086,8 @@ public:
   using BaseType::dimRangeCols;
   static const size_t block_size = (dimDomain == 1) ? 2 : 4;
   static const size_t num_blocks = dimRange / block_size;
-  using BlockMatrixType = FieldVector<FieldMatrix<RangeFieldType, block_size, block_size>, num_blocks>;
-  typedef FieldVector<FieldVector<RangeFieldType, block_size>, num_blocks> BlockVectorType;
+  using BlockMatrixType = XT::Common::BlockedFieldMatrix<RangeFieldType, num_blocks, block_size>;
+  using BlockVectorType = XT::Common::BlockedFieldVector<RangeFieldType, num_blocks, block_size>;
   using BasisValuesMatrixType = FieldVector<XT::LA::CommonDenseMatrix<RangeFieldType>, num_blocks>;
   typedef Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
   using QuadraturePointsType =
@@ -879,7 +1105,6 @@ public:
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
       const GridLayerType& grid_layer,
-      const QuadratureRuleType& quadrature,
       const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
@@ -909,15 +1134,14 @@ public:
     , cache_(index_set_.size(0), LocalCacheType(cache_size))
     , mutexes_(index_set_.size(0))
   {
-    for (size_t ii = 0; ii < quadrature.size(); ++ii) {
-      const auto face_indices = basis_functions_.get_face_indices(quadrature[ii].position());
-      const size_t num_adjacent_faces = face_indices.size();
-      for (const auto& kk : face_indices) {
-        quad_points_[kk].emplace_back(quadrature[ii].position());
-        quad_weights_[kk].emplace_back(quadrature[ii].weight() / num_adjacent_faces);
+    const auto& quadratures = basis_functions_.quadratures();
+    assert(quadratures.size() == num_blocks);
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      for (const auto& quad_point : quadratures[jj]) {
+        quad_points_[jj].emplace_back(quad_point.position());
+        quad_weights_[jj].emplace_back(quad_point.weight());
       }
-    } // ii
-    size_t num_faces;
+    } // jj
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       while (quad_weights_[jj].size() % 8) { // align to 64 byte boundary
         quad_points_[jj].push_back(quad_points_[jj].back());
@@ -925,10 +1149,10 @@ public:
       }
       M_[jj] = XT::LA::CommonDenseMatrix<RangeFieldType>(block_size, quad_points_[jj].size(), 0., 0);
       for (size_t ll = 0; ll < quad_points_[jj].size(); ++ll) {
-        const auto val = basis_functions_.evaluate(quad_points_[jj][ll], false, num_faces);
+        const auto val = basis_functions_.evaluate(quad_points_[jj][ll], jj);
         for (size_t ii = 0; ii < block_size; ++ii)
           M_[jj].set_entry(ii, ll, val[block_size * jj + ii]);
-      } // ii
+      } // ll
     } // jj
   }
 
@@ -986,39 +1210,6 @@ public:
       return work_vecs;
     }
 
-    RangeFieldType one_norm(const BlockVectorType& vec) const
-    {
-      RangeFieldType ret(0);
-      for (size_t jj = 0; jj < num_blocks; ++jj)
-        for (size_t ii = 0; ii < block_size; ++ii)
-          ret += std::abs(vec[jj][ii]);
-      return ret;
-    }
-
-    RangeFieldType two_norm(const BlockVectorType& vec) const
-    {
-      RangeFieldType ret(0);
-      for (size_t jj = 0; jj < num_blocks; ++jj)
-        for (size_t ii = 0; ii < block_size; ++ii)
-          ret += std::pow(vec[jj][ii], 2);
-      ret = std::sqrt(ret);
-      return ret;
-    }
-
-    void vector_to_block_vector(const StateRangeType& vec, BlockVectorType& block_vec) const
-    {
-      for (size_t jj = 0; jj < num_blocks; ++jj)
-        for (size_t ii = 0; ii < block_size; ++ii)
-          block_vec[jj][ii] = vec[jj * block_size + ii];
-    }
-
-    void block_vector_to_vector(const BlockVectorType& block_vec, StateRangeType& vec) const
-    {
-      for (size_t jj = 0; jj < num_blocks; ++jj)
-        for (size_t ii = 0; ii < block_size; ++ii)
-          vec[jj * block_size + ii] = block_vec[jj][ii];
-    }
-
     void copy_basis_matrix(const BasisValuesMatrixType& source_mat, BasisValuesMatrixType& range_mat) const
     {
       for (size_t jj = 0; jj < num_blocks; ++jj)
@@ -1034,8 +1225,7 @@ public:
         const auto& M_backend = M[jj].backend();
         std::fill(scalar_products[jj].begin(), scalar_products[jj].end(), 0.);
         for (size_t ii = 0; ii < block_size; ++ii) {
-          const auto factor = beta_in[jj][ii];
-#pragma ivdep
+          const auto factor = beta_in.block(jj)[ii];
           for (size_t ll = 0; ll < num_quad_points; ++ll)
             scalar_products[jj][ll] += M_backend.get_entry_ref(ii, ll) * factor;
         }
@@ -1081,7 +1271,7 @@ public:
           RangeFieldType result(0.);
           for (size_t ll = 0; ll < num_quad_points; ++ll)
             result += M1_backend.get_entry_ref(ii, ll) * work_vecs[jj][ll] * quad_weights_[jj][ll];
-          ret[jj][ii] = result;
+          ret.block(jj)[ii] = result;
         } // ii
       } // jj
     }
@@ -1098,7 +1288,7 @@ public:
                                 block_size,
                                 static_cast<int>(quad_points_[jj].size()),
                                 1.,
-                                &(T_k[jj][0][0]),
+                                &(T_k.block(jj)[0][0]),
                                 block_size,
                                 M[jj].data(),
                                 static_cast<int>(quad_points_[jj].size()));
@@ -1118,21 +1308,30 @@ public:
       mutex_.lock();
       if (boundary)
         cache_.increase_capacity(2 * cache_size);
+
+      // rescale u such that the density <psi> is 1
+      RangeFieldType density = basis_functions_.density(u_in);
+      StateRangeType u_prime_in = u_in / density;
+      StateRangeType alpha_iso_in = basis_functions_.alpha_iso();
+      BlockVectorType alpha_iso = alpha_iso_in;
+
       // if value has already been calculated for these values, skip computation
-      const auto cache_iterator = cache_.find_closest(u_in);
-      if (cache_iterator != cache_.end() && cache_iterator->first == u_in) {
-        ret.first = cache_iterator->second;
+      const auto cache_iterator = cache_.find_closest(u_prime_in);
+      if (cache_iterator != cache_.end() && cache_iterator->first == u_prime_in) {
+        const auto alpha_prime = cache_iterator->second;
+        ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
-        cache_.keep(cache_iterator);
+        cache_.keep(cache_iterator->first);
         mutex_.unlock();
         return ret;
       } else if (only_cache) {
         DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
-        StateRangeType u_iso_in, alpha_iso_in;
-        std::tie(u_iso_in, alpha_iso_in) = basis_functions_.calculate_isotropic_distribution(u_in);
-        BlockVectorType alpha_iso;
-        vector_to_block_vector(alpha_iso_in, alpha_iso);
+        RangeFieldType tau_prime =
+            tau_ / ((1 + std::sqrt(dimRange) * u_prime_in.two_norm()) * density + std::sqrt(dimRange) * tau_);
+
+        // calculate moment vector for isotropic distribution
+        StateRangeType u_iso_in = basis_functions_.u_iso();
 
         // define further variables
         BlockVectorType g_k, beta_in, beta_out, v;
@@ -1142,16 +1341,13 @@ public:
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
         const auto r_max = r_sequence.back();
         for (const auto& r : r_sequence) {
-          // normalize u
-          v_in = u_in;
+          // regularize u
+          v_in = u_prime_in;
           if (r > 0.) {
             beta_in = alpha_iso;
-            StateRangeType r_times_u_iso = u_iso_in;
-            r_times_u_iso *= r;
-            v_in *= 1 - r;
-            v_in += r_times_u_iso;
+            v_in = v_in * (1 - r) + u_iso_in * r;
           }
-          vector_to_block_vector(v_in, v);
+          v = v_in;
           *T_k = T_minus_one_;
           // calculate T_k u
           BlockVectorType v_k = v;
@@ -1159,13 +1355,12 @@ public:
           thread_local BasisValuesMatrixType P_k(XT::LA::CommonDenseMatrix<RangeFieldType>(0, 0, 0., 0));
           copy_basis_matrix(M_, P_k);
           // calculate f_0
-          RangeFieldType f_k = calculate_scalar_integral(beta_in, P_k);
-          f_k -= beta_in * v_k;
+          RangeFieldType f_k = calculate_scalar_integral(beta_in, P_k) - beta_in * v_k;
 
           int pure_newton = 0;
           for (size_t kk = 0; kk < k_max_; ++kk) {
             // exit inner for loop to increase r if too many iterations are used or cholesky decomposition fails
-            if (kk > k_0_ && r < r_max && r_max > 0)
+            if (kk > k_0_ && r < r_max)
               break;
             try {
               change_basis(beta_in, v_k, P_k, *T_k, g_k, beta_out);
@@ -1175,37 +1370,41 @@ public:
               mutex_.unlock();
               DUNE_THROW(Dune::MathError, "Failure to converge!");
             }
-            // calculate vector of errors e = \int { m exp(beta_out * T_k^{-1}m) } - v
-            BlockVectorType error_vec(FieldVector<RangeFieldType, block_size>(0.));
-            thread_local BasisValuesMatrixType tmp_mat(XT::LA::CommonDenseMatrix<RangeFieldType>(0, 0, 0., 0));
-            copy_basis_matrix(M_, tmp_mat); // calculate T_k^{-1} M_ and store in tmp_mat
-            apply_inverse_matrix(*T_k, tmp_mat);
-            calculate_vector_integral(beta_out, M_, tmp_mat, error_vec);
-            error_vec -= v;
 
             // calculate descent direction d_k;
             BlockVectorType d_k = g_k;
             d_k *= -1.;
-            BlockVectorType T_k_inv_transp_d_k;
-            for (size_t jj = 0; jj < num_blocks; ++jj)
-              XT::LA::solve_lower_triangular_transposed((*T_k)[jj], T_k_inv_transp_d_k[jj], d_k[jj]);
-            if (two_norm(error_vec) < tau_ && std::exp(5 * one_norm(T_k_inv_transp_d_k)) < 1 + epsilon_gamma_) {
-              for (size_t jj = 0; jj < num_blocks; ++jj)
-                XT::LA::solve_lower_triangular_transposed((*T_k)[jj], ret.first[jj], beta_out[jj]);
+
+            // Calculate stopping criteria (in original basis). Variables with _k are in current basis, without k in
+            // original basis.
+            BlockVectorType alpha_tilde, u_alpha_tilde, u_alpha_prime, d_alpha_tilde, g_alpha_tilde;
+            auto u_alpha_tilde_k = g_k + v_k;
+            // convert everything to original basis
+            T_k->mv(u_alpha_tilde_k, u_alpha_tilde);
+            T_k->mv(g_k, g_alpha_tilde);
+            for (size_t jj = 0; jj < num_blocks; ++jj) {
+              XT::LA::solve_lower_triangular_transposed(T_k->block(jj), alpha_tilde.block(jj), beta_out.block(jj));
+              XT::LA::solve_lower_triangular_transposed(T_k->block(jj), d_alpha_tilde.block(jj), d_k.block(jj));
+            } // jj
+            auto density_tilde = basis_functions_.density(u_alpha_tilde);
+            const auto alpha_prime = alpha_tilde - alpha_iso * std::log(density_tilde);
+            calculate_vector_integral(alpha_prime, M_, M_, u_alpha_prime);
+            auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
+            if (g_alpha_tilde.two_norm() < tau_prime
+                && 1 - epsilon_gamma_ < std::exp(d_alpha_tilde.one_norm() + std::abs(std::log(density_tilde)))
+                && helper<dimDomain>::is_realizable(u_eps_diff, 0., basis_functions_)) {
+              ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
-              if (kk > 40)
-                std::cout << XT::Common::to_string(kk) << std::endl;
+              cache_.insert(v_in, alpha_prime);
+              mutex_.unlock();
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
               beta_in = beta_out;
               // backtracking line search
-              while (pure_newton >= 2 || zeta_k > epsilon_ * two_norm(beta_out) / two_norm(d_k) * 100.) {
-                BlockVectorType beta_new = d_k;
-                beta_new *= zeta_k;
-                beta_new += beta_out;
-                RangeFieldType f = calculate_scalar_integral(beta_new, P_k);
-                f -= beta_new * v_k;
+              while (pure_newton >= 2 || zeta_k > epsilon_ * beta_out.two_norm() / d_k.two_norm()) {
+                BlockVectorType beta_new = d_k * zeta_k + beta_out;
+                RangeFieldType f = calculate_scalar_integral(beta_new, P_k) - beta_new * v_k;
                 if (pure_newton >= 2 || f <= f_k + xi_ * zeta_k * (g_k * d_k)) {
                   beta_in = beta_new;
                   f_k = f;
@@ -1214,7 +1413,7 @@ public:
                 }
                 zeta_k = chi_ * zeta_k;
               } // backtracking linesearch while
-              if (zeta_k <= epsilon_ * two_norm(beta_out) / two_norm(d_k) * 100)
+              if (zeta_k <= epsilon_ * beta_out.two_norm() / d_k.two_norm())
                 ++pure_newton;
             } // else (stopping conditions)
           } // k loop (Newton iterations)
@@ -1222,12 +1421,9 @@ public:
 
         mutex_.unlock();
         DUNE_THROW(MathError, "Failed to converge");
-
-      outside_all_loops:
-        // store values as initial conditions for next time step on this entity
-        cache_.insert(v_in, ret.first);
-        mutex_.unlock();
       } // else ( value has not been calculated before )
+
+    outside_all_loops:
       return ret;
     }
 
@@ -1335,6 +1531,22 @@ public:
         assert(cc == 0);
         return ret[rr];
       }
+
+      static bool
+      is_realizable(const BlockVectorType& u, const RangeFieldType eps, const BasisfunctionType& basis_functions)
+      {
+        for (size_t jj = 0; jj < num_blocks; ++jj) {
+          const auto& u0 = u.block(jj)[0];
+          const auto& u1 = u.block(jj)[1];
+          const auto& v0 = basis_functions.triangulation()[jj];
+          const auto& v1 = basis_functions.triangulation()[jj + 1];
+          bool ret = (u0 >= eps) && (u1 <= v1 * u0 - eps * std::sqrt(std::pow(v1, 2) + 1))
+                     && (v0 * u0 + eps * std::sqrt(std::pow(v0, 2) + 1) <= u1);
+          if (!ret)
+            return false;
+        } // jj
+        return true;
+      }
     }; // class helper<1, ...>
 
     template <class anything>
@@ -1365,6 +1577,14 @@ public:
       {
         return ret[rr][cc];
       }
+
+      static bool is_realizable(const BlockVectorType& /*u*/,
+                                const RangeFieldType /*eps*/,
+                                const BasisfunctionType& /*basis_functions*/)
+      {
+        DUNE_THROW(Dune::NotImplemented, "");
+        return true;
+      }
     }; // class helper<3, ...>
 
     // calculates A = A B^{-1}. B is assumed to be symmetric positive definite.
@@ -1375,7 +1595,7 @@ public:
       // calculate B = LL^T first
       if (!L_calculated) {
         for (size_t jj = 0; jj < num_blocks; ++jj)
-          XT::LA::cholesky(B[jj]);
+          XT::LA::cholesky(B.block(jj));
       }
       FieldVector<RangeFieldType, block_size> tmp_vec;
       FieldVector<RangeFieldType, block_size> tmp_A_row;
@@ -1385,9 +1605,9 @@ public:
         for (size_t ii = 0; ii < block_size; ++ii) {
           for (size_t kk = 0; kk < block_size; ++kk)
             tmp_A_row[kk] = A[offset + ii][offset + kk];
-          XT::LA::solve_lower_triangular(B[jj], tmp_vec, tmp_A_row);
+          XT::LA::solve_lower_triangular(B.block(jj), tmp_vec, tmp_A_row);
           // calculate ret = C L^{-1}
-          XT::LA::solve_lower_triangular_transposed(B[jj], tmp_A_row, tmp_vec);
+          XT::LA::solve_lower_triangular_transposed(B.block(jj), tmp_A_row, tmp_vec);
           for (size_t kk = 0; kk < block_size; ++kk)
             A[offset + ii][offset + kk] = tmp_A_row[kk];
         } // ii
@@ -1411,7 +1631,7 @@ public:
             RangeFieldType result(0);
             for (size_t ll = 0; ll < num_quad_points; ++ll)
               result += M_backend.get_entry_ref(ii, ll) * M_backend.get_entry_ref(kk, ll) * work_vecs[jj][ll];
-            H[jj][ii][kk] = result;
+            H.block(jj)[ii][kk] = result;
           } // kk
         } // ii
       } // jj
@@ -1464,14 +1684,14 @@ public:
       thread_local auto H = XT::Common::make_unique<BlockMatrixType>(0.);
       calculate_hessian(beta_in, P_k, *H);
       for (size_t jj = 0; jj < num_blocks; ++jj)
-        XT::LA::cholesky((*H)[jj]);
+        XT::LA::cholesky(H->block(jj));
       const auto& L = *H;
+      T_k.rightmultiply(L);
+      L.mtv(beta_in, beta_out);
       FieldVector<RangeFieldType, block_size> tmp_vec;
       for (size_t jj = 0; jj < num_blocks; ++jj) {
-        T_k[jj].rightmultiply(L[jj]);
-        L[jj].mtv(beta_in[jj], beta_out[jj]);
-        XT::LA::solve_lower_triangular(L[jj], tmp_vec, v_k[jj]);
-        v_k[jj] = tmp_vec;
+        XT::LA::solve_lower_triangular(L.block(jj), tmp_vec, v_k.block(jj));
+        v_k.block(jj) = tmp_vec;
       } // jj
       apply_inverse_matrix(L, P_k);
       calculate_vector_integral(beta_out, P_k, P_k, g_k, true);
@@ -1666,7 +1886,7 @@ DynamicVector<FieldMatrix<FieldType, 3, 3>>& operator*=(DynamicVector<FieldMatri
   return first;
 }
 
-#if 1
+#if 0
 /**
  * Specialization of EntropyBasedLocalFlux for 3D Hatfunctions
  */
@@ -2062,6 +2282,7 @@ public:
                               const XT::Common::Parameter& param,
                               const bool regularize = true) const
     {
+      DUNE_THROW(Dune::NotImplemented, "Has to be adapted!");
       const bool boundary = bool(param.get("boundary")[0]);
       AlphaReturnType ret;
       mutex_.lock();
@@ -2078,7 +2299,7 @@ public:
 
         // calculate moment vector for isotropic distribution
         StateRangeType u_iso, alpha_iso, v;
-        std::tie(u_iso, alpha_iso) = basis_functions_.calculate_isotropic_distribution(u);
+        //        std::tie(u_iso, alpha_iso) = basis_functions_.calculate_isotropic_distribution(u);
         StateRangeType alpha_k = cache_iterator != cache_.end() ? cache_iterator->second.first : alpha_iso;
 
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
@@ -2655,18 +2876,17 @@ public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
-  typedef Hyperbolic::Problems::HatFunctions<DomainFieldType, 1, RangeFieldType, dimRange, 1, 1> BasisfunctionType;
-  typedef GridLayerImp GridLayerType;
-  typedef Dune::QuadratureRule<DomainFieldType, 1> QuadratureRuleType;
-  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+  using BasisfunctionType = Hyperbolic::Problems::HatFunctions<DomainFieldType, 1, RangeFieldType, dimRange, 1, 1>;
+  using GridLayerType = GridLayerImp;
+  using QuadratureRuleType = Dune::QuadratureRule<DomainFieldType, 1>;
+  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
   using AlphaReturnType = typename std::pair<StateRangeType, RangeFieldType>;
-  typedef EntropyLocalCache<StateRangeType, StateRangeType> LocalCacheType;
+  using LocalCacheType = EntropyLocalCache<StateRangeType, StateRangeType>;
   static const size_t cache_size = 2 * dimDomain + 2;
 
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
       const GridLayerType& grid_layer,
-      const QuadratureRuleType& /*quadrature*/,
       const RangeFieldType tau = 1e-9,
       const RangeFieldType epsilon_gamma = 0.01,
       const RangeFieldType chi = 0.5,
@@ -2739,6 +2959,14 @@ public:
 
     using LocalfunctionType::entity;
 
+    static bool is_realizable(const RangeType& u, const RangeFieldType eps = 0.)
+    {
+      for (const auto& u_i : u)
+        if (u_i < eps)
+          return false;
+      return true;
+    }
+
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
                               const StateRangeType& u,
                               const XT::Common::Parameter& param,
@@ -2750,39 +2978,47 @@ public:
       mutex_.lock();
       if (boundary)
         cache_.increase_capacity(2 * cache_size);
+
+      // rescale u such that the density <psi> is 1
+      RangeFieldType density = basis_functions_.density(u);
+      RangeType u_prime = u / density;
+      RangeType alpha_iso = basis_functions_.alpha_iso();
+
       // if value has already been calculated for these values, skip computation
-      const auto cache_iterator = cache_.find_closest(u);
-      if (cache_iterator != cache_.end() && cache_iterator->first == u) {
-        ret.first = cache_iterator->second;
+      const auto cache_iterator = cache_.find_closest(u_prime);
+      if (cache_iterator != cache_.end() && cache_iterator->first == u_prime) {
+        const auto alpha_prime = cache_iterator->second;
+        ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
-        cache_.keep(cache_iterator);
+        cache_.keep(cache_iterator->first);
         mutex_.unlock();
         return ret;
       } else if (only_cache) {
         DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
+        RangeFieldType tau_prime =
+            tau_ / ((1 + std::sqrt(dimRange) * u_prime.two_norm()) * density + std::sqrt(dimRange) * tau_);
         // The hessian H is always symmetric and tridiagonal, so we only need to store the diagonal and subdiagonal
         // elements
         RangeType H_diag;
         FieldVector<RangeFieldType, dimRange - 1> H_subdiag;
 
         // calculate moment vector for isotropic distribution
-        RangeType u_iso, alpha_iso, v;
-        std::tie(u_iso, alpha_iso) = basis_functions_.calculate_isotropic_distribution(u);
+        RangeType u_iso = basis_functions_.u_iso();
+        RangeType v;
         RangeType alpha_k = cache_iterator != cache_.end() ? cache_iterator->second : alpha_iso;
         const auto& r_sequence = regularize ? r_sequence_ : std::vector<RangeFieldType>{0.};
         const auto r_max = r_sequence.back();
         for (const auto& r : r_sequence_) {
           // regularize u
-          RangeType r_times_u_iso(u_iso);
-          r_times_u_iso *= r;
-          v = u;
-          v *= 1 - r;
-          v += r_times_u_iso;
-
-          // get initial alpha
-          if (r > 0)
+          v = u_prime;
+          if (r > 0) {
             alpha_k = alpha_iso;
+            RangeType r_times_u_iso(u_iso);
+            r_times_u_iso *= r;
+            v *= 1 - r;
+            v += r_times_u_iso;
+          }
 
           // calculate f_0
           RangeFieldType f_k = calculate_f(alpha_k, v);
@@ -2790,12 +3026,8 @@ public:
           int pure_newton = 0;
           for (size_t kk = 0; kk < k_max_; ++kk) {
             // exit inner for loop to increase r if too many iterations are used
-            if (kk > k_0_ && r < r_max && r_max > 0)
+            if (kk > k_0_ && r < r_max)
               break;
-            if (kk > 100) {
-              volatile int dings = 0;
-              std::cout << kk << " " << dings << std::endl;
-            }
             // calculate gradient g
             RangeType g_k = calculate_gradient(alpha_k, v);
             // calculate Hessian H
@@ -2815,13 +3047,24 @@ public:
               }
             }
 
-            if (g_k.two_norm() < tau_ && std::exp(5 * d_k.one_norm()) < 1 + epsilon_gamma_) {
-              ret = std::make_pair(alpha_k, r);
+            const auto& alpha_tilde = alpha_k;
+            const auto u_alpha_tilde = g_k + v;
+            auto density_tilde = basis_functions_.density(u_alpha_tilde);
+            const auto alpha_prime = alpha_tilde - alpha_iso * std::log(density_tilde);
+            const auto u_alpha_prime = calculate_u(alpha_prime);
+            auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
+            // checking realizability is cheap so we do not need the second stopping criterion
+            if (g_k.two_norm() < tau_prime && is_realizable(u_eps_diff)) {
+              ret.first = alpha_prime + alpha_iso * std::log(density);
+              ret.second = r;
+              cache_.insert(v, alpha_prime);
+              mutex_.unlock();
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
               // backtracking line search
-              while (pure_newton >= 2 || zeta_k > epsilon_ * alpha_k.two_norm() / d_k.two_norm() * 100.) {
+              while (pure_newton >= 2 || zeta_k > epsilon_ * alpha_k.two_norm() / d_k.two_norm()) {
+                // while (pure_newton >= 2 || zeta_k > epsilon_ * alpha_k.two_norm() / d_k.two_norm() * 100.) {
                 // calculate alpha_new = alpha_k + zeta_k d_k
                 auto alpha_new = d_k;
                 alpha_new *= zeta_k;
@@ -2836,7 +3079,8 @@ public:
                 }
                 zeta_k = chi_ * zeta_k;
               } // backtracking linesearch while
-              if (zeta_k <= epsilon_ * alpha_k.two_norm() / d_k.two_norm() * 100.)
+              // if (zeta_k <= epsilon_ * alpha_k.two_norm() / d_k.two_norm() * 100.)
+              if (zeta_k <= epsilon_ * alpha_k.two_norm() / d_k.two_norm())
                 ++pure_newton;
             } // else (stopping conditions)
           } // k loop (Newton iterations)
@@ -2844,13 +3088,9 @@ public:
 
         mutex_.unlock();
         DUNE_THROW(MathError, "Failed to converge");
-
-      outside_all_loops:
-        // store values as initial conditions for next time step on this entity
-        cache_.insert(v, ret.first);
-        mutex_.unlock();
       } // else ( value has not been calculated before )
 
+    outside_all_loops:
       return ret;
     } // ... get_alpha(...)
 
@@ -2988,15 +3228,15 @@ public:
       return ret;
     } // .. calculate_f(...)
 
-    RangeType calculate_gradient(const RangeType& alpha_k, const RangeType& v) const
+    RangeType calculate_u(const RangeType& alpha_k) const
     {
-      RangeType g_k(0);
+      RangeType u(0);
       for (size_t nn = 0; nn < dimRange; ++nn) {
         if (nn > 0) {
           if (std::abs(alpha_k[nn] - alpha_k[nn - 1]) > taylor_tol_) {
-            g_k[nn] += -(v_points_[nn] - v_points_[nn - 1]) / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2)
-                           * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1]))
-                       + (v_points_[nn] - v_points_[nn - 1]) / (alpha_k[nn] - alpha_k[nn - 1]) * std::exp(alpha_k[nn]);
+            u[nn] += -(v_points_[nn] - v_points_[nn - 1]) / std::pow(alpha_k[nn] - alpha_k[nn - 1], 2)
+                         * (std::exp(alpha_k[nn]) - std::exp(alpha_k[nn - 1]))
+                     + (v_points_[nn] - v_points_[nn - 1]) / (alpha_k[nn] - alpha_k[nn - 1]) * std::exp(alpha_k[nn]);
           } else {
             RangeFieldType result = 0.;
             RangeFieldType base = alpha_k[nn - 1] - alpha_k[nn];
@@ -3010,14 +3250,14 @@ public:
               pow_frac *= base / (ll + 2);
             }
             assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
-            g_k[nn] += result * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn]);
+            u[nn] += result * (v_points_[nn] - v_points_[nn - 1]) * std::exp(alpha_k[nn]);
           }
         } // if (nn > 0)
         if (nn < dimRange - 1) {
           if (std::abs(alpha_k[nn + 1] - alpha_k[nn]) > taylor_tol_) {
-            g_k[nn] += (v_points_[nn + 1] - v_points_[nn]) / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2)
-                           * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn]))
-                       - (v_points_[nn + 1] - v_points_[nn]) / (alpha_k[nn + 1] - alpha_k[nn]) * std::exp(alpha_k[nn]);
+            u[nn] += (v_points_[nn + 1] - v_points_[nn]) / std::pow(alpha_k[nn + 1] - alpha_k[nn], 2)
+                         * (std::exp(alpha_k[nn + 1]) - std::exp(alpha_k[nn]))
+                     - (v_points_[nn + 1] - v_points_[nn]) / (alpha_k[nn + 1] - alpha_k[nn]) * std::exp(alpha_k[nn]);
           } else {
             RangeFieldType update = 1.;
             RangeFieldType result = 0.;
@@ -3031,12 +3271,16 @@ public:
               pow_frac *= base / (ll + 2);
             }
             assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
-            g_k[nn] += result * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
+            u[nn] += result * (v_points_[nn + 1] - v_points_[nn]) * std::exp(alpha_k[nn]);
           }
         } // if (nn < dimRange-1)
       } // nn
-      g_k -= v;
-      return g_k;
+      return u;
+    } // RangeType calculate_u(...)
+
+    RangeType calculate_gradient(const RangeType& alpha_k, const RangeType& v) const
+    {
+      return calculate_u(alpha_k) - v;
     }
 
     void calculate_hessian(const RangeType& alpha_k,
@@ -3158,6 +3402,7 @@ public:
               ++ll;
               pow_frac *= base / (ll + 4);
             } // ll
+            subdiag[nn - 1] += result * factor;
             assert(!(std::isinf(pow_frac) || std::isnan(pow_frac)));
 
             result = 0.;
@@ -3228,8 +3473,12 @@ public:
       }
       ret[dimRange - 1][dimRange - 1] = J_diag[dimRange - 1];
 
-      // Solve ret H = J which is equivalent to (as H and J are symmetric) to H ret = J;
+      // Solve ret H = J which is equivalent to (as H and J are symmetric) to H ret^T = J;
       XT::LA::solve_tridiagonal_ldlt_factorized(H_diag, H_subdiag, ret);
+      // transpose ret
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        for (size_t jj = 0; jj < ii; ++jj)
+          std::swap(ret[jj][ii], ret[ii][jj]);
     } // void calculate_J_Hinv(...)
 
     const BasisfunctionType& basis_functions_;

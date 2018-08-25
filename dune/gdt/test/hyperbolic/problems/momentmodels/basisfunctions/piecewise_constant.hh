@@ -44,27 +44,19 @@ private:
   typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseType;
 
 public:
-  typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
-  typedef FieldVector<DomainFieldType, dimRange + 1> TriangulationType;
   using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
+  using typename BaseType::QuadraturesType;
+  using typename BaseType::RangeType;
   using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
+  using TriangulationType = typename BaseType::Triangulation1dType;
 
-  PiecewiseConstant(const TriangulationType& triangulation = create_triangulation(),
-                    const QuadratureType& /*quadrature*/ = QuadratureType())
+  PiecewiseConstant(const TriangulationType& triangulation = BaseType::create_1d_triangulation(dimRange),
+                    const QuadraturesType& /*quadratures*/ = QuadraturesType())
     : triangulation_(triangulation)
   {
-  }
-
-  static TriangulationType create_triangulation()
-  {
-    TriangulationType ret;
-    for (size_t ii = 0; ii < dimRange + 1; ++ii)
-      ret[ii] = -1. + (2. * ii) / dimRange;
-    return ret;
   }
 
   virtual RangeType evaluate(const DomainType& v) const override final
@@ -155,8 +147,6 @@ public:
             ret_pos[nn][mm] = mm_with_v[0][nn][mm];
       }
     } // nn
-    std::cout << "pos: " << XT::Common::to_string(ret_pos) << std::endl;
-    std::cout << "neg: " << XT::Common::to_string(ret_neg) << std::endl;
     return ret;
   }
 
@@ -185,14 +175,6 @@ public:
     };
   }
 
-  RangeFieldType calculate_psi_from_moments(const RangeType& val) const
-  {
-    RangeFieldType psi(0);
-    for (size_t rr = 0; rr < dimRange; ++rr)
-      psi += val[rr];
-    return psi;
-  }
-
   static StringifierType stringifier()
   {
     return [](const RangeType& val) {
@@ -203,35 +185,24 @@ public:
     };
   } // ... stringifier()
 
-  std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
-  {
-    RangeType alpha_iso(0);
-    RangeFieldType psi_iso(0);
-    for (size_t ii = 0; ii < dimRange; ++ii) {
-      psi_iso += u[ii];
-      alpha_iso[ii] = 1;
-    }
-    psi_iso /= 2.;
-    alpha_iso *= std::log(psi_iso);
-    RangeType u_iso = integrated();
-    u_iso *= psi_iso;
-    return std::make_pair(u_iso, alpha_iso);
-  }
-
   const TriangulationType& triangulation() const
   {
     return triangulation_;
   }
 
-  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  RangeType alpha_iso()
   {
-    RangeFieldType u_sum(0.);
-    RangeFieldType u_bar_sum(0.);
-    for (size_t ii = 0; ii < u.size(); ++ii) {
-      u_sum += u[ii];
-      u_bar_sum += u_bar[ii];
-    }
-    return 2 * std::max(u_sum, u_bar_sum);
+    return RangeType(1.);
+  }
+
+  RangeFieldType density(const RangeType& u) const
+  {
+    return std::accumulate(u.begin(), u.end(), RangeFieldType(0.));
+  }
+
+  virtual std::string short_id() const override final
+  {
+    return "pconst";
   }
 
   // get indices of all faces that contain point

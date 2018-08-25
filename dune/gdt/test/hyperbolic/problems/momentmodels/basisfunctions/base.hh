@@ -32,6 +32,9 @@
 #include <dune/gdt/operators/l2.hh>
 #include <dune/gdt/spaces/cg.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/triangulation.hh>
+#include <dune/gdt/test/hyperbolic/spherical_quadratures/fekete.hh>
+#include <dune/gdt/test/hyperbolic/spherical_quadratures/lebedev.hh>
+#include <dune/gdt/test/hyperbolic/spherical_quadratures/wrapper.hh>
 
 namespace Dune {
 namespace GDT {
@@ -259,27 +262,115 @@ public:
   static const size_t dimRange = rangeDim;
   static const size_t dimRangeCols = rangeDimCols;
   static const size_t dimFlux = fluxDim;
-  typedef DomainFieldImp DomainFieldType;
-  typedef XT::Common::FieldVector<DomainFieldType, dimDomain> DomainType;
-  typedef RangeFieldImp RangeFieldType;
-  typedef DynamicMatrix<RangeFieldType> MatrixType;
-  typedef typename XT::Functions::RangeTypeSelector<RangeFieldType, dimRange, dimRangeCols>::type RangeType;
+  using DomainFieldType = DomainFieldImp;
+  using DomainType = XT::Common::FieldVector<DomainFieldType, dimDomain>;
+  using RangeFieldType = RangeFieldImp;
+  using MatrixType = DynamicMatrix<RangeFieldType>;
+  using RangeType = typename XT::Functions::RangeTypeSelector<RangeFieldType, dimRange, dimRangeCols>::type;
+  using QuadraturesType = QuadraturesWrapper<DomainFieldType, dimDomain>;
+  using QuadratureType = typename QuadraturesType::QuadratureType;
   template <class DiscreteFunctionType>
-  using VisualizerType = typename std::function<void(const DiscreteFunctionType&, const std::string&, const size_t)>;
+  using VisualizerType = std::function<void(const DiscreteFunctionType&, const std::string&, const size_t)>;
   using StringifierType = std::function<std::string(const RangeType&)>;
-  typedef typename Dune::QuadratureRule<RangeFieldType, dimDomain> QuadratureType;
+  using Triangulation1dType = std::vector<RangeFieldType>;
+  using MergedQuadratureIterator = typename QuadraturesType::MergedQuadratureType::ConstIteratorType;
 
-  virtual ~BasisfunctionsInterface(){};
+  BasisfunctionsInterface(const QuadraturesType& quadratures = QuadraturesType())
+    : quadratures_(quadratures)
+  {
+  }
+
+  virtual ~BasisfunctionsInterface()
+  {
+  }
 
   virtual RangeType evaluate(const DomainType& v) const = 0;
 
-  virtual RangeType integrated() const = 0;
+  virtual RangeType evaluate(const DomainType& v, const size_t /*face_index*/) const
+  {
+    return evaluate(v);
+  }
 
-  virtual MatrixType mass_matrix() const = 0;
+  // returns <b>, where b is the basis functions vector
+  virtual RangeType integrated() const
+  {
+    static const RangeType ret = integrated_initializer(quadratures_);
+    return ret;
+  }
 
-  virtual MatrixType mass_matrix_inverse() const = 0;
+  virtual MatrixType mass_matrix() const
+  {
+    MatrixType M(dimRange, dimRange, 0.);
+    parallel_quadrature(quadratures_, M, size_t(-1));
+    return M;
+  } // ... mass_matrix()
 
-  virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const = 0;
+  virtual MatrixType mass_matrix_inverse() const
+  {
+    auto ret = mass_matrix();
+    ret.invert();
+    return ret;
+  }
+
+  virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const
+  {
+    FieldVector<MatrixType, dimFlux> B(MatrixType(dimRange, dimRange, 0));
+    for (size_t dd = 0; dd < dimFlux; ++dd)
+      parallel_quadrature(quadratures_, B[dd], dd);
+    return B;
+  }
+
+  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
+  virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const
+  {
+    FieldVector<FieldVector<MatrixType, 2>, dimFlux> B_kinetic(
+        FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
+    for (size_t dd = 0; dd < dimFlux; ++dd) {
+      QuadraturesType neg_quadratures(quadratures_.size());
+      QuadraturesType pos_quadratures(quadratures_.size());
+      for (size_t ii = 0; ii < quadratures_.size(); ++ii) {
+        for (const auto& quad_point : quadratures_[ii]) {
+          const auto& v = quad_point.position();
+          const auto& weight = quad_point.weight();
+          // if v[dd] = 0 the quad_point does not contribute to the integral
+          if (v[dd] > 0.)
+            pos_quadratures[ii].emplace_back(v, weight);
+          else if (v[dd] < 0.)
+            neg_quadratures[ii].emplace_back(v, weight);
+        } // quad_points
+      } // quadratures
+      parallel_quadrature(neg_quadratures, B_kinetic[dd][0], dd);
+      parallel_quadrature(pos_quadratures, B_kinetic[dd][1], dd);
+    } // dd
+    return B_kinetic;
+  } // ... kinetic_flux_matrices()
+
+  virtual MatrixType reflection_matrix(const DomainType& n) const
+  {
+    MatrixType ret(dimRange, dimRange, 0);
+    size_t direction;
+    for (size_t ii = 0; ii < dimDomain; ++ii) {
+      if (XT::Common::FloatCmp::ne(n[ii], 0.)) {
+        direction = ii;
+        if (XT::Common::FloatCmp::ne(std::abs(n[ii]), 1.))
+          DUNE_THROW(NotImplemented, "Implemented only for +-e_i where e_i is the i-th canonical basis vector!");
+      }
+    }
+    parallel_quadrature(quadratures_, ret, direction, true);
+    ret.rightmultiply(mass_matrix_inverse());
+    return ret;
+  }
+
+  virtual RangeType alpha_iso() const = 0;
+
+  virtual RangeFieldType density(const RangeType& u) const = 0;
+
+  virtual RangeType u_iso() const
+  {
+    return integrated() * 0.5;
+  }
+
+  virtual std::string short_id() const = 0;
 
   static QuadratureRule<RangeFieldType, 2> barycentre_rule()
   {
@@ -288,38 +379,82 @@ public:
     return ret;
   }
 
-protected:
-  std::vector<std::vector<size_t>> create_decomposition(const size_t num_threads, const size_t size) const
+  static Triangulation1dType create_1d_triangulation(const size_t num_intervals)
   {
-    std::vector<std::vector<size_t>> decomposition(num_threads);
-    for (size_t ii = 0; ii < num_threads - 1; ++ii) {
-      decomposition[ii].reserve(size / num_threads * (ii + 1) - size / num_threads * ii);
-      for (size_t jj = size / num_threads * ii; jj < size / num_threads * (ii + 1); ++jj)
-        decomposition[ii].push_back(jj);
-    }
-    decomposition[num_threads - 1].reserve(size - (size / num_threads) * (num_threads - 1));
-    for (size_t jj = size / num_threads * (num_threads - 1); jj < size; ++jj)
-      decomposition[num_threads - 1].push_back(jj);
-    return decomposition;
+    Triangulation1dType ret(num_intervals + 1);
+    for (size_t ii = 0; ii <= num_intervals; ++ii)
+      ret[ii] = -1. + (2. * ii) / num_intervals;
+    return ret;
   }
 
-  virtual void parallel_quadrature(const QuadratureType& quadrature,
+  const QuadraturesType& quadratures() const
+  {
+    return quadratures_;
+  }
+
+  // A Gauss-Lobatto quadrature on each interval
+  template <size_t dD = dimDomain>
+  static std::enable_if_t<dD == 1, QuadraturesType> gauss_lobatto_quadratures(const size_t num_intervals,
+                                                                              const size_t quad_order)
+  {
+    QuadraturesType ret(num_intervals);
+    auto interval_boundaries = create_1d_triangulation(num_intervals);
+    // quadrature on reference interval [0, 1]
+    const auto reference_quadrature = Dune::QuadratureRules<DomainFieldType, dimDomain>::rule(
+        Dune::GeometryType(Dune::GeometryType::BasicType::simplex, 1),
+        static_cast<int>(quad_order),
+        Dune::QuadratureType::GaussLobatto);
+    // map to quadrature on interval [a, b] by
+    // x_i -> (1-x_i) a + x_i b
+    // w_i -> w_i * (b-a)
+    for (size_t ii = 0; ii < num_intervals; ++ii) {
+      for (const auto& quad_point : reference_quadrature) {
+        const auto& x = quad_point.position()[0];
+        const auto& a = interval_boundaries[ii];
+        const auto& b = interval_boundaries[ii + 1];
+        const auto pos = (1 - x) * a + x * b;
+        const auto weight = quad_point.weight() * (b - a);
+        ret[ii].emplace_back(pos, weight);
+      } // quad_points
+    } // quad_cells
+    return ret;
+  }
+
+  template <size_t dD = dimDomain>
+  static std::enable_if_t<dD == 3, QuadraturesType> lebedev_quadrature(const size_t quad_order)
+  {
+    return QuadraturesType(1, LebedevQuadrature<DomainFieldType, true>::get(quad_order));
+  }
+
+protected:
+  static std::vector<MergedQuadratureIterator> create_decomposition(const QuadraturesType& quadratures,
+                                                                    const size_t num_threads)
+  {
+    const size_t size = quadratures.merged().size();
+    std::vector<MergedQuadratureIterator> ret(num_threads + 1);
+    for (size_t ii = 0; ii < num_threads; ++ii)
+      ret[ii] = quadratures.merged().iterator(size / num_threads * ii);
+    ret[num_threads] = quadratures.merged().iterator(size);
+    return ret;
+  }
+
+  virtual void parallel_quadrature(const QuadraturesType& quadratures,
                                    MatrixType& matrix,
                                    const size_t v_index,
                                    const bool reflecting = false) const
   {
-    size_t num_threads = std::min(XT::Common::threadManager().max_threads(), quadrature.size());
-    auto decomposition = create_decomposition(num_threads, quadrature.size());
+    size_t num_threads = std::min(XT::Common::threadManager().max_threads(), quadratures.merged().size());
+    auto decomposition = create_decomposition(quadratures, num_threads);
     std::vector<std::thread> threads(num_threads);
     // Launch a group of threads
     std::vector<MatrixType> local_matrices(num_threads, MatrixType(matrix.N(), matrix.M(), 0.));
     for (size_t ii = 0; ii < num_threads; ++ii)
       threads[ii] = std::thread(&BasisfunctionsInterface::calculate_in_thread,
                                 this,
-                                std::cref(quadrature),
                                 std::ref(local_matrices[ii]),
                                 v_index,
-                                std::cref(decomposition[ii]),
+                                std::cref(decomposition),
+                                ii,
                                 reflecting);
     // Join the threads with the main thread
     for (size_t ii = 0; ii < num_threads; ++ii)
@@ -330,19 +465,21 @@ protected:
       matrix += local_matrices[ii];
   } // void parallel_quadrature(...)
 
-  virtual void calculate_in_thread(const QuadratureType& quadrature,
-                                   MatrixType& local_matrix,
+  virtual void calculate_in_thread(MatrixType& local_matrix,
                                    const size_t v_index,
-                                   const std::vector<size_t>& indices,
+                                   const std::vector<MergedQuadratureIterator>& decomposition,
+                                   const size_t ii,
                                    const bool reflecting) const
   {
-    for (const auto& jj : indices) {
-      const auto& quad_point = quadrature[jj];
+    for (auto it = decomposition[ii]; it != decomposition[ii + 1]; ++it) {
+      const auto& quad_point = *it;
       const auto& v = quad_point.position();
       auto v_reflected = v;
       if (reflecting)
         v_reflected[v_index] *= -1.;
-      const auto basis_evaluated = evaluate(v);
+      const auto basis_evaluated = evaluate(v, it.first_index());
+      if (reflecting)
+        DUNE_THROW(Dune::NotImplemented, "TODO: Think about evaluation below.");
       const auto basis_reflected = evaluate(v_reflected);
       const auto& weight = quad_point.weight();
       const auto factor = (reflecting || v_index == size_t(-1)) ? 1. : v[v_index];
@@ -350,21 +487,21 @@ protected:
         for (size_t mm = 0; mm < local_matrix.M(); ++mm)
           local_matrix[nn][mm] +=
               basis_evaluated[nn] * (reflecting ? basis_reflected[mm] : basis_evaluated[mm]) * factor * weight;
-    } // ii
+    }
   } // void calculate_in_thread(...)
 
-  RangeType integrated_initializer(const QuadratureType& quadrature) const
+  RangeType integrated_initializer(const QuadraturesType& quadratures) const
   {
-    size_t num_threads = std::min(XT::Common::threadManager().max_threads(), quadrature.size());
-    auto decomposition = create_decomposition(num_threads, quadrature.size());
+    size_t num_threads = std::min(XT::Common::threadManager().max_threads(), quadratures.merged().size());
+    auto decomposition = create_decomposition(quadratures, num_threads);
     std::vector<std::thread> threads(num_threads);
     std::vector<RangeType> local_vectors(num_threads, RangeType(0.));
     for (size_t ii = 0; ii < num_threads; ++ii)
       threads[ii] = std::thread(&BasisfunctionsInterface::integrated_initializer_thread,
                                 this,
-                                std::cref(quadrature),
                                 std::ref(local_vectors[ii]),
-                                std::cref(decomposition[ii]));
+                                std::cref(decomposition),
+                                ii);
     // Join the threads with the main thread
     for (size_t ii = 0; ii < num_threads; ++ii)
       threads[ii].join();
@@ -375,17 +512,19 @@ protected:
     return ret;
   }
 
-  void integrated_initializer_thread(const QuadratureType& quadrature,
-                                     RangeType& local_range,
-                                     const std::vector<size_t>& indices) const
+  void integrated_initializer_thread(RangeType& local_range,
+                                     const std::vector<MergedQuadratureIterator>& decomposition,
+                                     const size_t ii) const
   {
-    for (const auto& jj : indices) {
-      const auto& quad_point = quadrature[jj];
-      auto basis_evaluated = evaluate(quad_point.position());
+    for (auto it = decomposition[ii]; it != decomposition[ii + 1]; ++it) {
+      const auto& quad_point = *it;
+      auto basis_evaluated = evaluate(quad_point.position(), it.first_index());
       basis_evaluated *= quad_point.weight();
       local_range += basis_evaluated;
     } // jj
   } // void calculate_in_thread(...)
+
+  QuadraturesType quadratures_;
 };
 
 

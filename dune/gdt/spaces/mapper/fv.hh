@@ -104,7 +104,8 @@ public:
 
   size_t size() const
   {
-    return dimRange * mapper_->size();
+    assert(mapper_->size() >= 0);
+    return dimRange * static_cast<size_t>(mapper_->size());
   }
 
   template <int cd, class GridImp, template <int, int, class> class EntityImp>
@@ -168,7 +169,8 @@ public:
 
   size_t size() const
   {
-    return mapper_->size();
+    assert(mapper_->size() >= 0);
+    return static_cast<size_t>(mapper_->size());
   }
 
   size_t numDofs(const EntityType& /*entity*/) const

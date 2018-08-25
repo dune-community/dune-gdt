@@ -30,26 +30,23 @@ private:
   typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols> BaseType;
 
 public:
-  typedef typename Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureType;
   using typename BaseType::DomainType;
-  using typename BaseType::RangeType;
   using typename BaseType::MatrixType;
+  using typename BaseType::QuadraturesType;
+  using typename BaseType::RangeType;
   using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
-  typedef FieldVector<DomainFieldType, dimRange / 2 + 1> TriangulationType;
+  using TriangulationType = typename BaseType::Triangulation1dType;
 
-  LegendrePolynomials()
-    : triangulation_(create_triangulation())
+  LegendrePolynomials(const QuadraturesType& quadratures = default_quadratures())
+    : BaseType(quadratures)
   {
   }
 
-  static TriangulationType create_triangulation()
+  static QuadraturesType default_quadratures(const size_t num_quad_intervals = 2, const size_t quad_order = 31)
   {
-    TriangulationType ret;
-    for (size_t ii = 0; ii < dimRange / 2 + 1; ++ii)
-      ret[ii] = -1. + (4. * ii) / dimRange;
-    return ret;
+    return BaseType::gauss_lobatto_quadratures(num_quad_intervals, quad_order);
   }
 
   static std::string static_id()
@@ -77,7 +74,7 @@ public:
 
   virtual MatrixType mass_matrix() const override
   {
-    MatrixType M(dimRange, dimRange, 0);
+    MatrixType M(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
       M[rr][rr] = 2. / (2. * rr + 1.);
     return M;
@@ -85,7 +82,7 @@ public:
 
   virtual MatrixType mass_matrix_inverse() const override
   {
-    MatrixType Minv(dimRange, dimRange, 0);
+    MatrixType Minv(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
       Minv[rr][rr] = (2. * rr + 1.) / 2.;
     return Minv;
@@ -106,7 +103,7 @@ public:
   }
 
   // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
-  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const
+  virtual FieldVector<FieldVector<MatrixType, 2>, 1> kinetic_flux_matrices() const override final
   {
     FieldVector<FieldVector<MatrixType, 2>, 1> ret(FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
     auto mm_with_v = mass_matrix_with_v();
@@ -138,7 +135,7 @@ public:
     return ret;
   }
 
-  virtual MatrixType reflection_matrix(const DomainType& n) const
+  virtual MatrixType reflection_matrix(const DomainType& n) const override final
   {
     MatrixType ret(dimRange, dimRange, 0);
     for (size_t ii = 0; ii < dimDomain; ++ii)
@@ -169,32 +166,26 @@ public:
     };
   }
 
-  RangeFieldType calculate_psi_from_moments(const RangeType& val) const
-  {
-    return val[0];
-  }
-
   static StringifierType stringifier()
   {
     return [](const RangeType& val) { return XT::Common::to_string(val[0], 15); };
   } // ... stringifier()
 
-  std::pair<RangeType, RangeType> calculate_isotropic_distribution(const RangeType& u) const
+  virtual RangeType alpha_iso() const override final
   {
-    RangeType u_iso(0), alpha_iso(0);
-    u_iso[0] = u[0];
-    alpha_iso[0] = std::log(u[0] / 2.);
-    return std::make_pair(u_iso, alpha_iso);
+    RangeType ret(0.);
+    ret[0] = 1.;
+    return ret;
   }
 
-  RangeFieldType realizability_limiter_max(const RangeType& u, const RangeType& u_bar) const
+  virtual RangeFieldType density(const RangeType& u) const override final
   {
-    return 2 * std::max(u[0], u_bar[0]);
+    return u[0];
   }
 
-  const TriangulationType& triangulation() const
+  virtual std::string short_id() const override final
   {
-    return triangulation_;
+    return "leg";
   }
 
 private:
@@ -212,21 +203,21 @@ private:
     int n_factor = n;
     int m_divisor = m / 2;
     int n_divisor = (n - 1) / 2;
-    FieldVector<std::vector<RangeFieldType>, 4> factors(std::vector<RangeFieldType>(std::max(m, n)));
-    for (int ii = 0; ii < std::max(m, n); ++ii) {
+    size_t max_mn = static_cast<size_t>(std::max(m, n));
+    FieldVector<std::vector<RangeFieldType>, 4> factors((std::vector<RangeFieldType>(max_mn)));
+    assert(std::max(m, n) >= 0);
+    for (size_t ii = 0; ii < max_mn; ++ii) {
       factors[0][ii] = m_factor > 0 ? m_factor-- : 1.;
       factors[1][ii] = n_factor > 0 ? n_factor-- : 1.;
       factors[2][ii] = m_divisor > 0 ? 1. / std::pow(m_divisor--, 2) : 1.;
       factors[3][ii] = n_divisor > 0 ? 1. / std::pow(n_divisor--, 2) : 1.;
     }
-    for (int ii = 0; ii < std::max(m, n); ++ii) {
+    for (size_t ii = 0; ii < max_mn; ++ii) {
       ret *= factors[0][ii] * factors[1][ii] * factors[2][ii] * factors[3][ii] / 2.;
     }
     ret *= std::pow(-1., (m + n + 1) / 2) / ((m - n) * (m + n + 1) * std::pow(2., m + n - 1 - std::max(m, n)));
     return ret;
   } // ... fmn(...)
-
-  const TriangulationType triangulation_;
 }; // class LegendrePolynomials<DomainFieldType, 1, ...>
 
 

@@ -122,7 +122,6 @@ public:
     const auto global_indices = mapper.globalIndices(entity);
     for (size_t ii = 0; ii < local_vector.size(); ++ii)
       local_vector[ii] = vector_vector.get_entry(global_indices[ii]);
-    // solve
     matrices_[vector_.space().grid_layer().indexSet().index(entity)].mv(local_vector, local_result);
 
     // write solution
@@ -153,12 +152,12 @@ public:
   }
 
   template <class SourceType, class RangeType>
-  void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& /*param*/) const
+  void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
   {
     std::fill(range.vector().begin(), range.vector().end(), 0);
     LocalVolumeIntegralFunctional<LocalFvRhsIntegrand<RhsEvaluationType, SourceType>,
                                   typename RangeType::SpaceType::BaseFunctionSetType>
-        local_functional(rhs_evaluation_, source);
+        local_functional(rhs_evaluation_, source, param);
     VectorFunctionalBase<typename RangeType::VectorType,
                          typename RangeType::SpaceType,
                          typename RangeType::SpaceType::GridLayerType,

@@ -377,7 +377,7 @@ public:
    * with the correct value of false. If you have already done that externally,
    * you can skip the initialization.
    *
-   * \param space         The GridFunctionSpace to operate on.
+   * \param space_in     The GridFunctionSpace to operate on.
    * \param v_           The result vector.
    * \param init_vector  Flag to control whether the result vector will be initialized.
    */

@@ -71,13 +71,11 @@ public:
         outfile << " " << s << " 0" << std::endl;
         outfile_lock.unlock();
       }
-      const auto u_iso = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
-                             ->basis_functions()
-                             .calculate_isotropic_distribution(u)
-                             .first;
+      const auto& basis_functions = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)->basis_functions();
+      const auto u_iso_scaled = basis_functions.u_iso() * basis_functions.density(u);
       for (size_t ii = 0; ii < vector_indices.size(); ++ii)
         range_.vector().set_entry(vector_indices[ii],
-                                  (1 - s) * source_.vector().get_entry(vector_indices[ii]) + s * u_iso[ii]);
+                                  (1 - s) * source_.vector().get_entry(vector_indices[ii]) + s * u_iso_scaled[ii]);
     } else {
       for (const auto& index : vector_indices)
         range_.vector().set_entry(index, source_.vector().get_entry(index));

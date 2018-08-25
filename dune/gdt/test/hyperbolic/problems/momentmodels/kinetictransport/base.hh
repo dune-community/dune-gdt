@@ -13,6 +13,8 @@
 
 #include <dune/grid/common/partitionset.hh>
 
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/base.hh>
+
 #include "../kineticequation.hh"
 
 namespace Dune {
@@ -21,11 +23,11 @@ namespace Hyperbolic {
 namespace Problems {
 
 
-template <class BasisfunctionImp, class GridLayerImp, class U_, size_t quadratureDim = BasisfunctionImp::dimDomain>
+template <class BasisfunctionImp, class GridLayerImp, class U_>
 class KineticTransportEquation : public KineticEquationImplementationInterface<BasisfunctionImp, GridLayerImp, U_>,
                                  public XT::Common::ParametricInterface
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_, quadratureDim> ThisType;
+  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> ThisType;
   typedef KineticEquationImplementationInterface<BasisfunctionImp, GridLayerImp, U_> BaseType;
 
 public:
@@ -50,75 +52,10 @@ public:
   using typename BaseType::ActualBoundaryValueType;
   using typename BaseType::RhsAffineFunctionType;
 
-  typedef Dune::QuadratureRule<DomainFieldType, quadratureDim> QuadratureType;
-
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
-
-  static QuadratureType default_quadrature(const XT::Common::Configuration& grid_cfg = default_grid_cfg())
-  {
-    std::vector<int> num_quad_cells = grid_cfg.get("num_quad_cells", std::vector<int>{2, 2, 2});
-    int quad_order = grid_cfg.get("quad_order", 20);
-    // quadrature that consists of a Gauss-Legendre quadrature on each cell of the velocity grid
-    Dune::FieldVector<double, quadratureDim> lower_left(-1);
-    Dune::FieldVector<double, quadratureDim> upper_right(1);
-    std::array<int, quadratureDim> s;
-    for (size_t ii = 0; ii < quadratureDim; ++ii)
-      s[ii] = num_quad_cells[ii];
-    typedef typename Dune::YaspGrid<quadratureDim, Dune::EquidistantOffsetCoordinates<double, quadratureDim>> GridType;
-    GridType velocity_grid(lower_left, upper_right, s);
-    const auto velocity_grid_view = velocity_grid.leafGridView();
-    // In an MPI parallel environment, each rank will only have parts of the velocity grid,
-    // but we need the full quadrature on each rank, so we need to communicate the missing parts
-    std::vector<double> coords;
-    std::vector<double> weights;
-    // first, collect the quadrature points on each rank
-    for (const auto& entity : elements(velocity_grid_view, Dune::Partitions::Interior())) {
-      const auto local_quadrature = Dune::QuadratureRules<DomainFieldType, quadratureDim>::rule(
-          entity.type(), quad_order, Dune::QuadratureType::GaussLobatto);
-      for (const auto& quad_point : local_quadrature) {
-        const auto pos = entity.geometry().global(quad_point.position());
-        for (size_t ii = 0; ii < quadratureDim; ++ii)
-          coords.push_back(pos[ii]);
-        weights.push_back(quad_point.weight() * entity.geometry().integrationElement(quad_point.position()));
-      }
-    }
-    // communicate the quadrature points to all ranks
-    const auto& comm = velocity_grid.comm();
-    assert(coords.size() < std::numeric_limits<int>::max() && weights.size() < std::numeric_limits<int>::max());
-    int coords_size = static_cast<int>(coords.size());
-    int weights_size = static_cast<int>(weights.size());
-    std::vector<int> coords_sizes(comm.size());
-    std::vector<int> weights_sizes(comm.size());
-    std::vector<int> coords_displacements(comm.size(), 0);
-    std::vector<int> weights_displacements(comm.size(), 0);
-    comm.allgather(&coords_size, 1, coords_sizes.data());
-    comm.allgather(&weights_size, 1, weights_sizes.data());
-    for (int ii = 1; ii < comm.size(); ++ii) {
-      coords_displacements[ii] = coords_displacements[ii - 1] + coords_sizes[ii - 1];
-      weights_displacements[ii] = weights_displacements[ii - 1] + weights_sizes[ii - 1];
-    }
-    auto all_coords_size = comm.sum(coords_size);
-    auto all_weights_size = comm.sum(weights_size);
-    std::vector<double> all_coords(all_coords_size);
-    std::vector<double> all_weights(all_weights_size);
-    comm.allgatherv(coords.data(), coords_size, all_coords.data(), coords_sizes.data(), coords_displacements.data());
-    comm.allgatherv(
-        weights.data(), weights_size, all_weights.data(), weights_sizes.data(), weights_displacements.data());
-    // now assemble the quadrature
-    QuadratureType quadrature;
-    for (size_t ii = 0; ii < all_weights.size(); ++ii) {
-      XT::Common::FieldVector<DomainFieldType, quadratureDim> position;
-      for (size_t jj = 0; jj < quadratureDim; ++jj)
-        position[jj] = all_coords[ii * quadratureDim + jj];
-      quadrature.push_back(Dune::QuadraturePoint<DomainFieldType, quadratureDim>(position, all_weights[ii]));
-    }
-    return quadrature;
-  }
-
   KineticTransportEquation(const BasisfunctionType& basis_functions,
                            const GridLayerType& grid_layer,
-                           const QuadratureType quadrature = QuadratureType(),
                            DynamicVector<size_t> num_segments = {1, 1, 1},
                            const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
                            const XT::Common::Configuration& boundary_cfg = default_boundary_cfg(),
@@ -129,13 +66,10 @@ public:
     , grid_cfg_(grid_cfg)
     , boundary_cfg_(boundary_cfg)
     , psi_vac_(psi_vac)
-    , quadrature_(quadrature)
     , parameter_type_(parameter_type)
   {
     // by default, initially num_segments has size 3. If dimDomain < 3 we thus need to resize
     num_segments_.resize(dimDomain);
-    if (quadrature_.empty())
-      quadrature_ = default_quadrature(grid_cfg);
     if (parameter_type_.empty())
       parameter_type_ = XT::Common::ParameterType({std::make_pair("sigma_a", get_num_regions(num_segments_)),
                                                    std::make_pair("sigma_s", get_num_regions(num_segments_)),
@@ -144,7 +78,7 @@ public:
                                                    std::make_pair("t_end", 1)});
   }
 
-  virtual ~KineticTransportEquation()
+  virtual ~KineticTransportEquation() override
   {
   }
 
@@ -172,7 +106,9 @@ public:
     DynamicVector<RangeFieldType> tmp_row(M_T.N(), 0.);
     for (size_t dd = 0; dd < dimDomain; ++dd) {
       for (size_t ii = 0; ii < M_T.N(); ++ii) {
-        M_T.solve(tmp_row, A[dd][ii]);
+        // copy to our FieldMatrix as the DenseMatrix in dune-common has a bug in its solve method (fixed in 2.6)
+        auto M_T_FieldMat = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(M_T);
+        M_T_FieldMat->solve(tmp_row, A[dd][ii]);
         A[dd][ii] = tmp_row;
       }
     }
@@ -199,7 +135,9 @@ public:
     // calculate c = M^{-T} <b>
     const auto M_T = basis_functions_.mass_matrix(); // mass matrix is symmetric
     RangeType c(0.);
-    M_T.solve(c, basis_integrated);
+    // copy to our FieldMatrix as the DenseMatrix in dune-common has a bug in its solve method (fixed in 2.6)
+    auto M_T_FieldMat = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(M_T);
+    M_T_FieldMat->solve(c, basis_integrated);
     MatrixType I(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
       I[rr][rr] = 1;
@@ -269,11 +207,6 @@ public:
     return "kinetictransportequation";
   }
 
-  virtual const QuadratureType& quadrature() const
-  {
-    return quadrature_;
-  }
-
   virtual const RangeFieldType psi_vac() const
   {
     return psi_vac_;
@@ -282,7 +215,7 @@ public:
 protected:
   static size_t get_num_regions(const DynamicVector<size_t>& num_segments)
   {
-    return std::accumulate(num_segments.begin(), num_segments.end(), 1, [](auto a, auto b) { return a * b; });
+    return std::accumulate(num_segments.begin(), num_segments.end(), size_t(1), [](auto a, auto b) { return a * b; });
   }
 
   static RangeFieldType unit_ball_volume()
@@ -304,7 +237,6 @@ protected:
   const XT::Common::Configuration grid_cfg_;
   const XT::Common::Configuration boundary_cfg_;
   const RangeFieldType psi_vac_;
-  QuadratureType quadrature_;
   XT::Common::ParameterType parameter_type_;
 }; // class KineticTransportEquation<...>
 

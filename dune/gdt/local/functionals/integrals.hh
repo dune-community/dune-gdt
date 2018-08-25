@@ -60,7 +60,7 @@ public:
 
   using BaseType::apply;
 
-  void apply(const TestBaseType& test_base, DynamicVector<FieldType>& ret) const override final
+  virtual void apply(const TestBaseType& test_base, DynamicVector<FieldType>& ret) const override final
   {
     const auto& entity = test_base.entity();
     const auto local_functions = integrand_.localFunctions(entity);

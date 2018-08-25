@@ -46,14 +46,12 @@ public:
   using typename BaseType::QuadratureType;
 
   using BaseType::default_boundary_cfg;
-  using BaseType::default_quadrature;
 
   TwoBeamsPn(const BasisfunctionType& basis_functions,
              const GridLayerType& grid_layer,
-             const QuadratureType& quadrature = default_quadrature(),
              const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
              const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, 1, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, 1, grid_cfg, boundary_cfg)
   {
   }
 
@@ -70,8 +68,6 @@ public:
     grid_config["upper_right"] = "[0.5]";
     grid_config["num_elements"] = "[100]";
     grid_config["overlap_size"] = "[1]";
-    grid_config["num_quad_cells"] = "[20]";
-    grid_config["quad_order"] = "50";
     return grid_config;
   }
 
@@ -124,14 +120,12 @@ public:
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
-  using BaseType::default_quadrature;
 
   TwoBeamsMn(const BasisfunctionType& basis_functions,
              const GridLayerType& grid_layer,
-             const QuadratureType& quadrature = default_quadrature(),
              const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
              const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, quadrature, grid_cfg, boundary_cfg)
+    : BaseType(basis_functions, grid_layer, grid_cfg, boundary_cfg)
   {
   }
 
@@ -142,13 +136,12 @@ public:
 
   virtual FluxType* create_flux() const
   {
-    return new ActualFluxType(basis_functions_, grid_layer_, quadrature_);
+    return new ActualFluxType(basis_functions_, grid_layer_);
   }
 
 protected:
   using BaseType::basis_functions_;
   using BaseType::grid_layer_;
-  using BaseType::quadrature_;
 }; // class TwoBeamsMn<...>
 
 

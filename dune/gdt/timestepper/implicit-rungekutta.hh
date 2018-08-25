@@ -142,25 +142,24 @@ template <class OperatorImp,
           XT::LA::Backends container_backend = XT::LA::default_sparse_backend>
 class DiagonallyImplicitRungeKuttaTimeStepper : public TimeStepperInterface<DiscreteFunctionImp>
 {
-  typedef TimeStepperInterface<DiscreteFunctionImp> BaseType;
-  typedef typename internal::ButcherArrayProvider<typename BaseType::RangeFieldType, method> ButcherArrayProviderType;
+  using BaseType = TimeStepperInterface<DiscreteFunctionImp>;
+  using ButcherArrayProviderType = internal::ButcherArrayProvider<typename BaseType::RangeFieldType, method>;
 
 public:
   using typename BaseType::DiscreteFunctionType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::RangeFieldType;
-  using typename BaseType::SolutionType;
   using typename BaseType::DataHandleType;
 
-  typedef OperatorImp OperatorType;
-  typedef typename Dune::DynamicMatrix<RangeFieldType> MatrixType;
-  typedef typename Dune::DynamicVector<RangeFieldType> VectorType;
-  typedef typename XT::LA::Container<RangeFieldType, container_backend>::MatrixType SolverMatrixType;
-  typedef typename XT::LA::Container<RangeFieldType, container_backend>::VectorType SolverVectorType;
-  typedef typename DiscreteFunctionType::SpaceType::DofCommunicatorType DofCommunicatorType;
-  typedef typename XT::LA::Solver<SolverMatrixType, DofCommunicatorType> SolverType;
-  typedef typename Dune::GDT::MatrixDataHandle<SolverMatrixType, typename DiscreteFunctionType::SpaceType>
-      SolverMatrixDataHandleType;
+  using OperatorType = OperatorImp;
+  using MatrixType = DynamicMatrix<RangeFieldType>;
+  using VectorType = DynamicVector<RangeFieldType>;
+  using SolverMatrixType = typename XT::LA::Container<RangeFieldType, container_backend>::MatrixType;
+  using SolverVectorType = typename XT::LA::Container<RangeFieldType, container_backend>::VectorType;
+  using DofCommunicatorType = typename DiscreteFunctionType::SpaceType::DofCommunicatorType;
+  using SolverType = XT::LA::Solver<SolverMatrixType, DofCommunicatorType>;
+  using SolverMatrixDataHandleType =
+      Dune::GDT::MatrixDataHandle<SolverMatrixType, typename DiscreteFunctionType::SpaceType>;
 
   using BaseType::current_solution;
   using BaseType::current_time;
