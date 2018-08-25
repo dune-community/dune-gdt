@@ -110,40 +110,28 @@ public:
 
   SphericalTriangle(TriangulationVerticesVectorType& triangulation_vertices,
                     const VertexVectorType& vertices,
-                    std::atomic<size_t>* current_face_index,
                     std::atomic<size_t>* current_vertex_index,
-                    std::mutex* triangulation_vertices_mutex,
-                    const Dune::QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule)
+                    std::mutex* triangulation_vertices_mutex)
     : triangulation_vertices_(triangulation_vertices)
     , vertices_(vertices)
-    , current_face_index_(current_face_index)
     , current_vertex_index_(current_vertex_index)
     , triangulation_vertices_mutex_(triangulation_vertices_mutex)
-    , index_((*current_face_index_)++)
     , subtriangle_once_flag_(new std::once_flag)
-    , reference_quadrature_rule_(reference_quadrature_rule)
   {
-    calculate_quadrature_rule();
   }
 
   SphericalTriangle(TriangulationVerticesVectorType& triangulation_vertices,
                     const std::shared_ptr<VertexType> vertex_1,
                     const std::shared_ptr<VertexType> vertex_2,
                     const std::shared_ptr<VertexType> vertex_3,
-                    std::atomic<size_t>* current_face_index,
                     std::atomic<size_t>* current_vertex_index,
-                    std::mutex* triangulation_vertices_mutex,
-                    const Dune::QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule)
+                    std::mutex* triangulation_vertices_mutex)
     : triangulation_vertices_(triangulation_vertices)
     , vertices_{vertex_1, vertex_2, vertex_3}
-    , current_face_index_(current_face_index)
     , current_vertex_index_(current_vertex_index)
     , triangulation_vertices_mutex_(triangulation_vertices_mutex)
-    , index_((*current_face_index_)++)
     , subtriangle_once_flag_(new std::once_flag)
-    , reference_quadrature_rule_(reference_quadrature_rule)
   {
-    calculate_quadrature_rule();
   }
 
   const SubtrianglesVectorType& subtriangles() const
@@ -163,19 +151,26 @@ public:
     return vertices_;
   }
 
-  //  const QuadraturePointType& quadrature_point() const
-  //  {
-  //    return *quadrature_point_;
-  //  }
-
-  const QuadratureRuleType& quadrature_rule() const
+  QuadratureRuleType quadrature_rule(const Dune::QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule) const
   {
-    return *quadrature_rule_;
-  }
-
-  size_t index()
-  {
-    return index_;
+    QuadratureRuleType quadrature_rule;
+    for (const auto& quad_point : reference_quadrature_rule) {
+      const auto& ref_pos = quad_point.position();
+      const auto& ref_weight = quad_point.weight();
+      // map point to spherical triangle
+      const FieldVectorType vertices_1_minus_0 = vertices_[1]->position() - vertices_[0]->position();
+      const FieldVectorType vertices_2_minus_0 = vertices_[2]->position() - vertices_[0]->position();
+      FieldVectorType ff =
+          FieldVectorType(vertices_[0]->position() + ref_pos[0] * vertices_1_minus_0 + ref_pos[1] * vertices_2_minus_0);
+      const RangeFieldType norm_ff = ff.two_norm();
+      const FieldVectorType pos = ff / norm_ff;
+      const RangeFieldType norm_ff_3 = std::pow(norm_ff, 3);
+      const FieldVectorType partial_s_gg = vertices_2_minus_0 / norm_ff - ff * (ff * vertices_2_minus_0) / norm_ff_3;
+      const FieldVectorType partial_t_gg = vertices_1_minus_0 / norm_ff - ff * (ff * vertices_1_minus_0) / norm_ff_3;
+      const RangeFieldType weight = XT::Common::cross_product(partial_s_gg, partial_t_gg).two_norm() * ref_weight;
+      quadrature_rule.emplace_back(Dune::QuadraturePoint<RangeFieldType, 3>(pos, weight));
+    }
+    return quadrature_rule;
   }
 
 private:
@@ -202,67 +197,34 @@ private:
                                                   vertices_[0],
                                                   midpoints[0],
                                                   midpoints[2],
-                                                  current_face_index_,
                                                   current_vertex_index_,
-                                                  triangulation_vertices_mutex_,
-                                                  reference_quadrature_rule_);
+                                                  triangulation_vertices_mutex_);
     subtriangles_[1] = std::make_shared<ThisType>(triangulation_vertices_,
                                                   vertices_[1],
                                                   midpoints[1],
                                                   midpoints[0],
-                                                  current_face_index_,
                                                   current_vertex_index_,
-                                                  triangulation_vertices_mutex_,
-                                                  reference_quadrature_rule_);
+                                                  triangulation_vertices_mutex_);
     subtriangles_[2] = std::make_shared<ThisType>(triangulation_vertices_,
                                                   vertices_[2],
                                                   midpoints[2],
                                                   midpoints[1],
-                                                  current_face_index_,
                                                   current_vertex_index_,
-                                                  triangulation_vertices_mutex_,
-                                                  reference_quadrature_rule_);
+                                                  triangulation_vertices_mutex_);
     subtriangles_[3] = std::make_shared<ThisType>(triangulation_vertices_,
                                                   midpoints[0],
                                                   midpoints[1],
                                                   midpoints[2],
-                                                  current_face_index_,
                                                   current_vertex_index_,
-                                                  triangulation_vertices_mutex_,
-                                                  reference_quadrature_rule_);
+                                                  triangulation_vertices_mutex_);
   } // initialize_subtriangles()
-
-  void calculate_quadrature_rule() const
-  {
-    quadrature_rule_ = std::make_unique<QuadratureRuleType>();
-    for (const auto& quad_point : reference_quadrature_rule_) {
-      const auto& ref_pos = quad_point.position();
-      const auto& ref_weight = quad_point.weight();
-      // map point to spherical triangle
-      const FieldVectorType vertices_1_minus_0 = vertices_[1]->position() - vertices_[0]->position();
-      const FieldVectorType vertices_2_minus_0 = vertices_[2]->position() - vertices_[0]->position();
-      FieldVectorType ff =
-          FieldVectorType(vertices_[0]->position() + ref_pos[0] * vertices_1_minus_0 + ref_pos[1] * vertices_2_minus_0);
-      const RangeFieldType norm_ff = ff.two_norm();
-      const FieldVectorType pos = ff / norm_ff;
-      const RangeFieldType norm_ff_3 = std::pow(norm_ff, 3);
-      const FieldVectorType partial_s_gg = vertices_2_minus_0 / norm_ff - ff * (ff * vertices_2_minus_0) / norm_ff_3;
-      const FieldVectorType partial_t_gg = vertices_1_minus_0 / norm_ff - ff * (ff * vertices_1_minus_0) / norm_ff_3;
-      const RangeFieldType weight = XT::Common::cross_product(partial_s_gg, partial_t_gg).two_norm() * ref_weight;
-      quadrature_rule_->emplace_back(Dune::QuadraturePoint<RangeFieldType, 3>(pos, weight));
-    }
-  }
 
   TriangulationVerticesVectorType& triangulation_vertices_;
   const VertexVectorType vertices_;
-  mutable std::unique_ptr<QuadratureRuleType> quadrature_rule_;
   mutable SubtrianglesVectorType subtriangles_;
-  mutable std::atomic<size_t>* current_face_index_;
   mutable std::atomic<size_t>* current_vertex_index_;
   mutable std::mutex* triangulation_vertices_mutex_;
-  size_t index_;
   std::unique_ptr<std::once_flag> subtriangle_once_flag_;
-  const Dune::QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule_;
 }; // class SphericalTriangle<...>
 
 template <class RangeFieldImp = double>
@@ -283,15 +245,40 @@ public:
     return ret;
   }
 
+  SphericalTriangulation()
+  {
+  }
+
   SphericalTriangulation(const std::vector<DomainType>& initial_points,
                          size_t num_refinements = 0,
                          const QuadratureRule<RangeFieldImp, 2>& reference_quadrature_rule = barycentre_rule())
-    : current_face_index_(0)
-    , current_vertex_index_(0)
+    : current_vertex_index_(0)
     , reference_quadrature_rule_(reference_quadrature_rule)
   {
     calculate_faces(initial_points);
     refine(num_refinements);
+  }
+
+  SphericalTriangulation(SphericalTriangulation&& other)
+    : faces_(std::move(other.faces_))
+    , vertices_(std::move(other.vertices_))
+    , all_vertices_(std::move(other.all_vertices_))
+    , all_vertices_mutex_()
+    , current_vertex_index_(std::move(other.current_vertex_index_))
+    , reference_quadrature_rule_(std::move(other.reference_quadrature_rule_))
+    , reflected_face_indices_(std::move(other.reflected_face_indices_))
+  {
+  }
+
+  SphericalTriangulation& operator=(SphericalTriangulation&& other)
+  {
+    faces_ = std::move(other.faces_);
+    vertices_ = std::move(other.vertices_);
+    all_vertices_ = std::move(other.all_vertices_);
+    current_vertex_index_ = other.current_vertex_index_.load();
+    reference_quadrature_rule_ = std::move(other.reference_quadrature_rule_);
+    reflected_face_indices_ = std::move(other.reflected_face_indices_);
+    return *this;
   }
 
   const TriangleVectorType& faces() const
@@ -315,14 +302,14 @@ public:
   }
 
   // get indices of all faces that contain point
-  // indices are unordered
   std::vector<size_t> get_face_indices(const DomainType& v) const
   {
     std::vector<size_t> face_indices;
     assert(XT::Common::FloatCmp::eq(v * v, 1.));
     FieldMatrix<RangeFieldImp, 3, 3> vertices_matrix;
     FieldMatrix<RangeFieldImp, 3, 3> determinant_matrix;
-    for (const auto& face : faces()) {
+    for (size_t kk = 0; kk < faces().size(); ++kk) {
+      const auto& face = faces_[kk];
       bool v_in_this_face = false;
       bool second_check = true;
       const auto& vertices = face->vertices();
@@ -369,7 +356,7 @@ public:
         } // ii
       } // if (second_check)
       if (v_in_this_face)
-        face_indices.push_back(face->index());
+        face_indices.push_back(kk);
     } // faces
     assert(face_indices.size());
     return face_indices;
@@ -382,7 +369,7 @@ public:
     QuadraturesType ret(faces_.size());
     for (size_t jj = 0; jj < faces_.size(); ++jj) {
       for (size_t ii = 0; ii < quadrature_faces[jj].size(); ++ii) {
-        const auto& quad_rule = quadrature_faces[jj][ii]->quadrature_rule();
+        const auto quad_rule = quadrature_faces[jj][ii]->quadrature_rule(reference_quadrature_rule_);
         for (const auto& quad_point : quad_rule)
           ret[jj].emplace_back(quad_point);
       }
@@ -390,11 +377,21 @@ public:
     return ret;
   }
 
+  // This returns a vector, which contains for each face kk a FieldVector<size_t, 3> of the
+  // indices of the faces that correspond to face kk when it is reflected in direction ii,
+  // i.e. reflected_face_indices()[kk][0] is the index of the face which is the result of
+  // reflecting face kk through the y-z Plane.
+  const std::vector<FieldVector<size_t, 3>>& reflected_face_indices() const
+  {
+    return reflected_face_indices_;
+  }
+
 private:
   void refine(size_t times = 1)
   {
     set_faces_to_subtriangles(times);
     vertices_ = all_vertices_;
+    calculate_reflected_faces();
   } // void refine(...)
 
   std::vector<TriangleVectorType> get_subtriangles(const size_t refinements = 1) const
@@ -423,10 +420,8 @@ private:
 
   void set_faces_to_subtriangles(size_t refinements = 1)
   {
-    while (refinements-- > 0) {
-      current_face_index_ = 0;
+    while (refinements-- > 0)
       get_subtriangles(faces_);
-    }
   }
 
   void calculate_faces(const std::vector<DomainType>& points0)
@@ -466,37 +461,42 @@ private:
               // if max_value is <= 0, all values are less or equal zero,
               // i.e the normal points outwards and thus p0, p1, p2 are oriented counterclockwise, which is what we want
               if (XT::Common::FloatCmp::le(max_value, 0.))
-                faces_.emplace_back(std::make_shared<TriangleType>(all_vertices_,
-                                                                   v0,
-                                                                   v1,
-                                                                   v2,
-                                                                   &current_face_index_,
-                                                                   &current_vertex_index_,
-                                                                   &all_vertices_mutex_,
-                                                                   reference_quadrature_rule_));
+                faces_.emplace_back(std::make_shared<TriangleType>(
+                    all_vertices_, v0, v1, v2, &current_vertex_index_, &all_vertices_mutex_));
               else
-                faces_.emplace_back(std::make_shared<TriangleType>(all_vertices_,
-                                                                   v0,
-                                                                   v2,
-                                                                   v1,
-                                                                   &current_face_index_,
-                                                                   &current_vertex_index_,
-                                                                   &all_vertices_mutex_,
-                                                                   reference_quadrature_rule_));
+                faces_.emplace_back(std::make_shared<TriangleType>(
+                    all_vertices_, v0, v2, v1, &current_vertex_index_, &all_vertices_mutex_));
             } // if (is_face)
           } // check if points define a plane
         } // p2
       } // p1
     } // p0
+    calculate_reflected_faces();
   } // void calculate_faces(...)
+
+  void calculate_reflected_faces()
+  {
+    reflected_face_indices_.resize(faces_.size());
+    for (size_t kk = 0; kk < faces_.size(); ++kk) {
+      const auto midpoint_rule = faces_[kk]->quadrature_rule(barycentre_rule());
+      assert(midpoint_rule.size() == 1);
+      for (size_t ii = 0; ii < 3; ++ii) {
+        auto midpoint_reflected_in_dir_ii = midpoint_rule[0].position();
+        midpoint_reflected_in_dir_ii[ii] = -midpoint_reflected_in_dir_ii[ii];
+        auto reflected_index = get_face_indices(midpoint_reflected_in_dir_ii);
+        assert(reflected_index.size() == 1);
+        reflected_face_indices_[kk][ii] = reflected_index[0];
+      }
+    }
+  }
 
   TriangleVectorType faces_;
   VertexVectorType vertices_;
   VertexVectorType all_vertices_;
   mutable std::mutex all_vertices_mutex_;
-  std::atomic<size_t> current_face_index_;
   std::atomic<size_t> current_vertex_index_;
-  const QuadratureRule<RangeFieldImp, 2> reference_quadrature_rule_;
+  QuadratureRule<RangeFieldImp, 2> reference_quadrature_rule_;
+  std::vector<FieldVector<size_t, 3>> reflected_face_indices_;
 }; // class SphericalTriangulation<...>
 
 

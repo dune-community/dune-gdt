@@ -211,9 +211,14 @@ Dune::DynamicMatrix<FieldType> tridiagonal_matrix_inverse(const DynamicMatrix<Fi
 template <size_t refinements>
 struct OctaederStatistics
 {
+  static constexpr size_t constexpr_pow(size_t base, size_t exponent)
+  {
+    return (exponent == 0) ? 1 : (base * constexpr_pow(base, exponent - 1));
+  }
+
   static constexpr size_t num_faces()
   {
-    return 8 * (1 << 2 * refinements);
+    return 8 * constexpr_pow(4, refinements);
   }
 
   static constexpr size_t num_intersections()
@@ -273,6 +278,7 @@ public:
   using VisualizerType = std::function<void(const DiscreteFunctionType&, const std::string&, const size_t)>;
   using StringifierType = std::function<std::string(const RangeType&)>;
   using Triangulation1dType = std::vector<RangeFieldType>;
+  using SphericalTriangulationType = SphericalTriangulation<RangeFieldType>;
   using MergedQuadratureIterator = typename QuadraturesType::MergedQuadratureType::ConstIteratorType;
 
   BasisfunctionsInterface(const QuadraturesType& quadratures = QuadraturesType())
@@ -474,13 +480,14 @@ protected:
     for (auto it = decomposition[ii]; it != decomposition[ii + 1]; ++it) {
       const auto& quad_point = *it;
       const auto& v = quad_point.position();
-      auto v_reflected = v;
-      if (reflecting)
-        v_reflected[v_index] *= -1.;
       const auto basis_evaluated = evaluate(v, it.first_index());
-      if (reflecting)
-        DUNE_THROW(Dune::NotImplemented, "TODO: Think about evaluation below.");
-      const auto basis_reflected = evaluate(v_reflected);
+      auto basis_reflected = basis_evaluated;
+      if (reflecting) {
+        auto v_reflected = v;
+        const auto& reflected_indices = triangulation_.reflected_face_indices();
+        v_reflected[v_index] *= -1.;
+        basis_reflected = evaluate(v_reflected, reflected_indices[it.first_index()][v_index]);
+      }
       const auto& weight = quad_point.weight();
       const auto factor = (reflecting || v_index == size_t(-1)) ? 1. : v[v_index];
       for (size_t nn = 0; nn < local_matrix.N(); ++nn)
@@ -525,6 +532,7 @@ protected:
   } // void calculate_in_thread(...)
 
   QuadraturesType quadratures_;
+  SphericalTriangulationType triangulation_;
 };
 
 

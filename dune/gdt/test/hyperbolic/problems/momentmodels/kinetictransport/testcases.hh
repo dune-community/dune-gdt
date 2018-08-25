@@ -345,7 +345,13 @@ struct PlaneSourceMnTestCase : SourceBeamMnTestCase<GridImp, BasisfunctionImp, r
 
 // PointSourcePn
 template <class BasisfunctionImp, bool reconstruct>
-struct PointSourcePnExpectedResults;
+struct PointSourcePnExpectedResults
+{
+  static constexpr double l1norm = reconstruct ? 1.0007954640626406 : 1.0007954640534238;
+  static constexpr double l2norm = reconstruct ? 2.7177565161122006 : 2.7163083579825025;
+  static constexpr double linfnorm = reconstruct ? 10.461558474249745 : 10.498572083981468;
+  static constexpr double tol = 1e-14;
+};
 
 template <bool reconstruct>
 struct PointSourcePnExpectedResults<RealSphericalHarmonics<double, double, 2, 3>, reconstruct>
@@ -357,7 +363,7 @@ struct PointSourcePnExpectedResults<RealSphericalHarmonics<double, double, 2, 3>
 };
 
 template <bool reconstruct>
-struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 6, 1, 3>, reconstruct>
+struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 0, 1, 3>, reconstruct>
 {
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
@@ -380,7 +386,25 @@ struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 6, 1, 3>, re
 };
 
 template <bool reconstruct>
-struct PointSourcePnExpectedResults<PiecewiseMonomials<double, 3, double, 32, 1, 3>, reconstruct>
+struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 1, 1, 3>, reconstruct>
+{
+  // If Fekete is not available, we use a different quadrature, which gives slightly different results
+  static_assert(!reconstruct, "Results with reconstruction not available yet!");
+#if HAVE_FEKETE
+  static constexpr double l1norm = 1.0007953665771843;
+  static constexpr double l2norm = 2.7065005653281369;
+  static constexpr double linfnorm = 10.456533271787738;
+#else
+  static constexpr double l1norm = 1.0008292531057066;
+  static constexpr double l2norm = 2.7070581236565103;
+  static constexpr double linfnorm = 10.457145890791487;
+#endif
+  // see above
+  static constexpr double tol = reconstruct ? 1e-5 : 1e-14;
+};
+
+template <bool reconstruct>
+struct PointSourcePnExpectedResults<PiecewiseMonomials<double, 3, double, 0, 1, 3>, reconstruct>
 {
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
@@ -394,6 +418,24 @@ struct PointSourcePnExpectedResults<PiecewiseMonomials<double, 3, double, 32, 1,
 #endif
   static constexpr double tol = 1e-14;
 };
+
+template <bool reconstruct>
+struct PointSourcePnExpectedResults<PiecewiseMonomials<double, 3, double, 1, 1, 3>, reconstruct>
+{
+  static_assert(!reconstruct, "Results with reconstruction not available yet!");
+// If Fekete is not available, we use a different quadrature, which gives slightly different results
+#if HAVE_FEKETE
+  static constexpr double l1norm = 1.0007953665769933;
+  static constexpr double l2norm = 2.7065732611564592;
+  static constexpr double linfnorm = 10.457047161924061;
+#else
+  static constexpr double l1norm = 1.0008292531061092;
+  static constexpr double l2norm = 2.7066524774407608;
+  static constexpr double linfnorm = 10.457348661644719;
+#endif
+  static constexpr double tol = 1e-14;
+};
+
 
 template <class GridImp, class BasisfunctionImp, bool reconstruct>
 struct PointSourcePnTestCase : SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>

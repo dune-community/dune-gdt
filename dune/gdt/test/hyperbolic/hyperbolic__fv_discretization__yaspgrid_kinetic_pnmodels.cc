@@ -75,19 +75,27 @@ using YaspGridTestCasesAll = testing::
                                     true>,
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3,
-                                    Dune::GDT::Hyperbolic::Problems::HatFunctions<double, 3, double, 6, 1, 3>,
+                                    Dune::GDT::Hyperbolic::Problems::HatFunctions<double, 3, double, 0, 1, 3>,
                                     false>,
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3,
-                                    Dune::GDT::Hyperbolic::Problems::HatFunctions<double, 3, double, 6, 1, 3>,
+                                    Dune::GDT::Hyperbolic::Problems::HatFunctions<double, 3, double, 1, 1, 3>,
+                                    false>,
+          Dune::GDT::Hyperbolic::Problems::KineticTransport::
+              PointSourcePnTestCase<Yasp3,
+                                    Dune::GDT::Hyperbolic::Problems::HatFunctions<double, 3, double, 0, 1, 3>,
                                     true>,
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3,
-                                    Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<double, 3, double, 32, 1, 3>,
+                                    Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<double, 3, double, 0, 1, 3>,
                                     false>,
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourcePnTestCase<Yasp3,
-                                    Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<double, 3, double, 32, 1, 3>,
+                                    Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<double, 3, double, 1, 1, 3>,
+                                    false>,
+          Dune::GDT::Hyperbolic::Problems::KineticTransport::
+              PointSourcePnTestCase<Yasp3,
+                                    Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<double, 3, double, 0, 1, 3>,
                                     true>>;
 
 TYPED_TEST_CASE(HyperbolicPnTest, YaspGridTestCasesAll);

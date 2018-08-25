@@ -272,14 +272,19 @@ private:
   const TriangulationType triangulation_;
 }; // class PiecewiseMonomials<DomainFieldType, 1, ...>
 
-template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t dimFlux>
-class PiecewiseMonomials<DomainFieldType, 3, RangeFieldType, rangeDim, rangeDimCols, dimFlux, 1>
-    : public BasisfunctionsInterface<DomainFieldType, 3, RangeFieldType, rangeDim, rangeDimCols, dimFlux>
+template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux>
+class PiecewiseMonomials<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1>
+    : public BasisfunctionsInterface<DomainFieldType,
+                                     3,
+                                     RangeFieldType,
+                                     OctaederStatistics<refinements>::num_faces() * 4,
+                                     1,
+                                     dimFlux>
 {
 public:
   static const size_t dimDomain = 3;
-  static const size_t dimRange = rangeDim;
-  static const size_t dimRangeCols = rangeDimCols;
+  static const size_t dimRange = OctaederStatistics<refinements>::num_faces() * 4;
+  static const size_t dimRangeCols = 1;
 
 private:
   using BaseType = BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimFlux>;
@@ -298,14 +303,12 @@ public:
 
   PiecewiseMonomials(const TriangulationType& triangulation, const QuadraturesType& quadratures)
     : BaseType(quadratures)
-    , triangulation_(triangulation)
   {
+    triangulation_ = triangulation;
     assert(4 * triangulation_.faces().size() == dimRange);
-    calculate_plane_equations();
   }
 
   PiecewiseMonomials(
-      const size_t refinements = 0,
 #if HAVE_FEKETE
       const size_t quadrature_refinements = 0,
       const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule = FeketeQuadrature<DomainFieldType>::get(3),
@@ -313,24 +316,21 @@ public:
       const size_t quadrature_refinements = 7,
       const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule = barycentre_rule(),
 #endif
-      std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points =
-          {{1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
-    : triangulation_(initial_points, refinements, reference_quadrature_rule)
+      std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points = {
+          {1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
   {
+    triangulation_ = TriangulationType(initial_points, refinements, reference_quadrature_rule);
     quadratures_ = triangulation_.quadrature_rules(quadrature_refinements);
     assert(4 * triangulation_.faces().size() == dimRange);
-    calculate_plane_equations();
   }
 
-  PiecewiseMonomials(const size_t refinements,
-                     const QuadraturesType& quadratures,
+  PiecewiseMonomials(const QuadraturesType& quadratures,
                      std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points =
                          {{1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
     : BaseType(quadratures)
-    , triangulation_(initial_points, refinements)
   {
+    triangulation_ = TriangulationType(initial_points, refinements);
     assert(4 * triangulation_.faces().size() == dimRange);
-    calculate_plane_equations();
   }
 
   virtual RangeType evaluate(const DomainType& v) const override final
@@ -434,31 +434,8 @@ public:
   }
 
 protected:
-  using BaseType::parallel_quadrature;
-
-  void calculate_plane_equations()
-  {
-    for (const auto& face : triangulation_.faces()) {
-      const auto& vertices = face->vertices();
-      const auto index = face->index();
-      // calculate plane equation defined by three points
-      const DomainType v0v1 = vertices[1]->position() - vertices[0]->position();
-      const DomainType v0v2 = vertices[2]->position() - vertices[0]->position();
-      auto& n = n_[index];
-      n = XT::Common::cross_product(v0v1, v0v2);
-      if (n * vertices[0]->position() < 0.)
-        n *= -1.;
-      n /= n.two_norm();
-      d_[index] = n * vertices[0]->position();
-    }
-  }
-
-  using BaseType::integrated_initializer;
-
-  const TriangulationType triangulation_;
   using BaseType::quadratures_;
-  FieldVector<FieldVector<DomainFieldType, 3>, dimRange / 4> n_;
-  FieldVector<DomainFieldType, dimRange / 4> d_;
+  using BaseType::triangulation_;
 }; // class PiecewiseMonomials<DomainFieldType, 3, ...>
 
 

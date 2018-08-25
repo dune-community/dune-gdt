@@ -273,15 +273,20 @@ private:
   const TriangulationType triangulation_;
 }; // class HatFunctions<DomainFieldType, 1, ...>
 
-template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t fluxDim>
-class HatFunctions<DomainFieldType, 3, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
-    : public BasisfunctionsInterface<DomainFieldType, 3, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
+template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t fluxDim>
+class HatFunctions<DomainFieldType, 3, RangeFieldType, refinements, 1, fluxDim>
+    : public BasisfunctionsInterface<DomainFieldType,
+                                     3,
+                                     RangeFieldType,
+                                     OctaederStatistics<refinements>::num_vertices(),
+                                     1,
+                                     fluxDim>
 {
 public:
-  static const size_t dimDomain = 3;
-  static const size_t dimRange = rangeDim;
-  static const size_t dimRangeCols = rangeDimCols;
-  static const size_t dimFlux = fluxDim;
+  static constexpr size_t dimDomain = 3;
+  static constexpr size_t dimRange = OctaederStatistics<refinements>::num_vertices();
+  static constexpr size_t dimRangeCols = 1;
+  static constexpr size_t dimFlux = fluxDim;
 
 private:
   typedef BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimFlux> BaseType;
@@ -299,7 +304,6 @@ public:
   using BaseType::barycentre_rule;
 
   HatFunctions(
-      const size_t refinements = 0,
 #if HAVE_FEKETE
       const size_t quadrature_refinements = 0,
       const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule = FeketeQuadrature<DomainFieldType>::get(3),
@@ -307,21 +311,20 @@ public:
       const size_t quadrature_refinements = 7,
       const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule = barycentre_rule(),
 #endif
-      std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points =
-          {{1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
-    : triangulation_(initial_points, refinements, reference_quadrature_rule)
+      std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points = {
+          {1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
   {
+    triangulation_ = TriangulationType(initial_points, refinements, reference_quadrature_rule);
     quadratures_ = triangulation_.quadrature_rules(quadrature_refinements);
     assert(triangulation_.vertices().size() == dimRange);
   }
 
-  HatFunctions(const size_t refinements,
-               const QuadraturesType& quadratures,
+  HatFunctions(const QuadraturesType& quadratures,
                std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points =
                    {{1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
     : BaseType(quadratures)
-    , triangulation_(initial_points, refinements)
   {
+    triangulation_ = TriangulationType(initial_points, refinements);
     assert(triangulation_.vertices().size() == dimRange);
   }
 
@@ -470,8 +473,8 @@ protected:
     return true;
   } // bool calculate_barycentric_coordinates(...)
 
-  const TriangulationType triangulation_;
   using BaseType::quadratures_;
+  using BaseType::triangulation_;
 }; // class HatFunctions<DomainFieldType, 3, ...>
 
 
