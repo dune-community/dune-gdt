@@ -39,14 +39,14 @@ public:
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
   using TriangulationType = typename BaseType::Triangulation1dType;
 
-  LegendrePolynomials(const QuadraturesType& quadratures = default_quadratures())
+  LegendrePolynomials(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
   }
 
-  static QuadraturesType default_quadratures(const size_t num_quad_intervals = 2, const size_t quad_order = 31)
+  LegendrePolynomials(const size_t quad_order = 31, const size_t quad_refinements = 0)
+    : BaseType(BaseType::gauss_lobatto_quadratures(std::pow(2, quad_refinements), quad_order))
   {
-    return BaseType::gauss_lobatto_quadratures(num_quad_intervals, quad_order);
   }
 
   static std::string static_id()

@@ -62,10 +62,17 @@ public:
     return "pcw";
   }
 
-  PiecewiseMonomials(const QuadraturesType& quadratures = BaseType::gauss_lobatto_quadratures(num_intervals, 15))
+  PiecewiseMonomials(const QuadraturesType& quadratures)
     : BaseType(quadratures)
     , triangulation_(BaseType::create_1d_triangulation(num_intervals))
   {
+  }
+
+  PiecewiseMonomials(const size_t quad_order = 15, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+    : BaseType(BaseType::gauss_lobatto_quadratures(num_intervals, quad_order))
+    , triangulation_(BaseType::create_1d_triangulation(num_intervals))
+  {
+    assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
   }
 
   virtual RangeType evaluate(const DomainType& v) const override final
@@ -301,35 +308,39 @@ public:
 
   using BaseType::barycentre_rule;
 
-  PiecewiseMonomials(const TriangulationType& triangulation, const QuadraturesType& quadratures)
+  PiecewiseMonomials(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
-    triangulation_ = triangulation;
+    triangulation_ = TriangulationType(refinements);
     assert(4 * triangulation_.faces().size() == dimRange);
   }
 
-  PiecewiseMonomials(
+  PiecewiseMonomials(const size_t quad_refinements, const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule)
+  {
+    triangulation_ = TriangulationType(refinements, reference_quadrature_rule);
+    quadratures_ = triangulation_.quadrature_rules(quad_refinements);
+    assert(4 * triangulation_.faces().size() == dimRange);
+  }
+
+  // This constructor is here for compatibility with the one-dimensional basis to simplify testing
+  PiecewiseMonomials(const size_t fekete_rule_num = 3,
+                     const size_t quad_refinements =
 #if HAVE_FEKETE
-      const size_t quadrature_refinements = 0,
-      const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule = FeketeQuadrature<DomainFieldType>::get(3),
+                         0
 #else
-      const size_t quadrature_refinements = 7,
-      const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule = barycentre_rule(),
+                         7
 #endif
-      std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points = {
-          {1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
+                     )
   {
-    triangulation_ = TriangulationType(initial_points, refinements, reference_quadrature_rule);
-    quadratures_ = triangulation_.quadrature_rules(quadrature_refinements);
-    assert(4 * triangulation_.faces().size() == dimRange);
-  }
-
-  PiecewiseMonomials(const QuadraturesType& quadratures,
-                     std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points =
-                         {{1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
-    : BaseType(quadratures)
-  {
-    triangulation_ = TriangulationType(initial_points, refinements);
+#if HAVE_FEKETE
+    const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule =
+        FeketeQuadrature<DomainFieldType>::get(fekete_rule_num);
+#else
+    DUNE_UNUSED_PARAMETER(fekete_rule_num);
+    const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule = barycentre_rule();
+#endif
+    triangulation_ = TriangulationType(refinements, reference_quadrature_rule);
+    quadratures_ = triangulation_.quadrature_rules(quad_refinements);
     assert(4 * triangulation_.faces().size() == dimRange);
   }
 

@@ -249,9 +249,10 @@ public:
   {
   }
 
-  SphericalTriangulation(const std::vector<DomainType>& initial_points,
-                         size_t num_refinements = 0,
-                         const QuadratureRule<RangeFieldImp, 2>& reference_quadrature_rule = barycentre_rule())
+  SphericalTriangulation(size_t num_refinements,
+                         const QuadratureRule<RangeFieldImp, 2>& reference_quadrature_rule = barycentre_rule(),
+                         const std::vector<DomainType>& initial_points =
+                             {{1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
     : current_vertex_index_(0)
     , reference_quadrature_rule_(reference_quadrature_rule)
   {

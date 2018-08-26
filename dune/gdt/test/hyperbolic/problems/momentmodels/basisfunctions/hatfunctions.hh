@@ -64,10 +64,17 @@ public:
     return "hatfunctions";
   }
 
-  HatFunctions(const QuadraturesType& quadratures = BaseType::gauss_lobatto_quadratures(dimRange - 1, 15))
+  HatFunctions(const QuadraturesType& quadratures)
     : BaseType(quadratures)
     , triangulation_(BaseType::create_1d_triangulation(dimRange - 1))
   {
+  }
+
+  HatFunctions(const size_t quad_order = 15, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+    : BaseType(BaseType::gauss_lobatto_quadratures(dimRange - 1, quad_order))
+    , triangulation_(BaseType::create_1d_triangulation(dimRange - 1))
+  {
+    assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
   }
 
   virtual RangeType evaluate(const DomainType& v) const override final
@@ -303,28 +310,39 @@ public:
 
   using BaseType::barycentre_rule;
 
-  HatFunctions(
-#if HAVE_FEKETE
-      const size_t quadrature_refinements = 0,
-      const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule = FeketeQuadrature<DomainFieldType>::get(3),
-#else
-      const size_t quadrature_refinements = 7,
-      const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule = barycentre_rule(),
-#endif
-      std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points = {
-          {1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
+  HatFunctions(const QuadraturesType& quadratures)
+    : BaseType(quadratures)
   {
-    triangulation_ = TriangulationType(initial_points, refinements, reference_quadrature_rule);
-    quadratures_ = triangulation_.quadrature_rules(quadrature_refinements);
+    triangulation_ = TriangulationType(refinements);
     assert(triangulation_.vertices().size() == dimRange);
   }
 
-  HatFunctions(const QuadraturesType& quadratures,
-               std::vector<Dune::XT::Common::FieldVector<DomainFieldType, dimDomain>> initial_points =
-                   {{1., 0., 0.}, {-1., 0., 0.}, {0., 1., 0.}, {0., -1., 0.}, {0., 0., 1.}, {0., 0., -1.}})
-    : BaseType(quadratures)
+  HatFunctions(const size_t quad_refinements, const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule)
   {
-    triangulation_ = TriangulationType(initial_points, refinements);
+    triangulation_ = TriangulationType(refinements, reference_quadrature_rule);
+    quadratures_ = triangulation_.quadrature_rules(quad_refinements);
+    assert(triangulation_.vertices().size() == dimRange);
+  }
+
+  // This constructor is here for compatibility with the one-dimensional basis to simplify testing
+  HatFunctions(const size_t fekete_rule_num = 3,
+               const size_t quad_refinements =
+#if HAVE_FEKETE
+                   0
+#else
+                   7
+#endif
+               )
+  {
+#if HAVE_FEKETE
+    const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule =
+        FeketeQuadrature<DomainFieldType>::get(fekete_rule_num);
+#else
+    DUNE_UNUSED_PARAMETER(fekete_rule_num);
+    const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule = barycentre_rule();
+#endif
+    triangulation_ = TriangulationType(refinements, reference_quadrature_rule);
+    quadratures_ = triangulation_.quadrature_rules(quad_refinements);
     assert(triangulation_.vertices().size() == dimRange);
   }
 

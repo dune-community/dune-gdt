@@ -25,7 +25,7 @@ namespace Problems {
 
 
 // TODO: use complex arithmetic, currently only usable for Pn Models in 2D, test for only_positive = false
-template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_positive = true>
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim = 3, bool only_positive = true>
 class SphericalHarmonics
     : public BasisfunctionsInterface<DomainFieldType,
                                      3,
@@ -52,9 +52,15 @@ public:
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
   static_assert(order <= std::numeric_limits<int>::max(), "");
 
-  SphericalHarmonics(const QuadraturesType& quadratures = OctantQuadrature<DomainFieldType>::get(order + 2))
+  SphericalHarmonics(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
+  }
+
+  SphericalHarmonics(const size_t quad_order = order + 2, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+    : BaseType(OctantQuadrature<DomainFieldType>::get(quad_order))
+  {
+    assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
   }
 
   virtual RangeType evaluate(const DomainType& v) const override
@@ -252,7 +258,7 @@ private:
 }; // class SphericalHarmonics<DomainFieldType, 3, ...>
 
 
-template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim, bool only_even = false>
+template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim = 3, bool only_even = false>
 class RealSphericalHarmonics
     : public BasisfunctionsInterface<DomainFieldType,
                                      3,
@@ -278,9 +284,15 @@ public:
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
 
-  RealSphericalHarmonics(const QuadraturesType& quadratures = OctantQuadrature<DomainFieldType>::get(order + 2))
+  RealSphericalHarmonics(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
+  }
+
+  RealSphericalHarmonics(const size_t quad_order = order + 2, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+    : BaseType(OctantQuadrature<DomainFieldType>::get(quad_order))
+  {
+    assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
   }
 
   virtual RangeType evaluate(const DomainType& v) const override
