@@ -810,7 +810,8 @@ private:
 template <class BasisfunctionType,
           class MatrixType,
           class SlopeType =
-              McSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>>
+              MinmodSlope<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>,
+                          MatrixType>>
 class LpConvexhullRealizabilityLimitedSlope
     : public SlopeBase<FieldVector<typename BasisfunctionType::RangeFieldType, BasisfunctionType::dimRange>, MatrixType>
 {

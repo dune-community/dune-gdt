@@ -123,7 +123,10 @@ struct HyperbolicMnTest : public ::testing::Test
         conditional_t<std::is_base_of<
                           typename Hyperbolic::Problems::
                               PiecewiseMonomials<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimDomain>,
-                          BasisfunctionType>::value,
+                          BasisfunctionType>::value
+                          || std::is_base_of<typename Hyperbolic::Problems::
+                                                 PiecewiseMonomials<DomainFieldType, 3, RangeFieldType, 0, 1, 3>,
+                                             BasisfunctionType>::value,
                       internal::BlockedJacobianWrapper<AnalyticalFluxType>,
                       internal::JacobianWrapper<AnalyticalFluxType>>;
     using ReconstructionOperatorType =

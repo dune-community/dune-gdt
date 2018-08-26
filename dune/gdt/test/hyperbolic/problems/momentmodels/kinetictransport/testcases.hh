@@ -116,13 +116,39 @@ struct RealizabilityLimiterChooser<PiecewiseMonomials<double, 1, double, dimRang
   }
 };
 
-#if HAVE_QHULL
-template <size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType>
-struct RealizabilityLimiterChooser<PiecewiseMonomials<double, 3, double, dimRange, 1, 3>,
+#if HAVE_CLP
+template <size_t order, class AnalyticalFluxType, class DiscreteFunctionType>
+struct RealizabilityLimiterChooser<RealSphericalHarmonics<double, double, order, 3>,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using BasisfunctionType = PiecewiseMonomials<double, 3, double, dimRange, 1, 3>;
+  using BasisfunctionType = RealSphericalHarmonics<double, double, order, 3>;
+  using LocalRealizabilityLimiterType =
+      NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
+
+  template <class MatrixType>
+  static std::unique_ptr<LpConvexhullRealizabilityLimitedSlope<BasisfunctionType, MatrixType>>
+  make_slope(const BasisfunctionType& basis_functions, const double epsilon)
+  {
+    using SlopeType = LpConvexhullRealizabilityLimitedSlope<BasisfunctionType, MatrixType>;
+    return std::make_unique<SlopeType>(basis_functions, epsilon);
+  }
+
+  static std::unique_ptr<BasisfunctionType> make_basis_functions()
+  {
+    return std::make_unique<BasisfunctionType>();
+  }
+};
+#endif
+
+
+#if HAVE_QHULL
+template <size_t refinements, class AnalyticalFluxType, class DiscreteFunctionType>
+struct RealizabilityLimiterChooser<PiecewiseMonomials<double, 3, double, refinements, 1, 3, 1>,
+                                   AnalyticalFluxType,
+                                   DiscreteFunctionType>
+{
+  using BasisfunctionType = PiecewiseMonomials<double, 3, double, refinements, 1, 3>;
   using LocalRealizabilityLimiterType =
       NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
 
@@ -462,7 +488,7 @@ struct PointSourceMnExpectedResults<RealSphericalHarmonics<double, double, 2, 3>
 };
 
 template <bool reconstruct>
-struct PointSourceMnExpectedResults<HatFunctions<double, 3, double, 6, 1, 3>, reconstruct>
+struct PointSourceMnExpectedResults<HatFunctions<double, 3, double, 0, 1, 3>, reconstruct>
 {
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
@@ -485,7 +511,7 @@ struct PointSourceMnExpectedResults<HatFunctions<double, 3, double, 6, 1, 3>, re
 };
 
 template <bool reconstruct>
-struct PointSourceMnExpectedResults<PiecewiseMonomials<double, 3, double, 32, 1, 3>, reconstruct>
+struct PointSourceMnExpectedResults<PiecewiseMonomials<double, 3, double, 0, 1, 3, 1>, reconstruct>
 {
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE

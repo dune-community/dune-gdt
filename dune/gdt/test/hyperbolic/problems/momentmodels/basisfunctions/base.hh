@@ -477,6 +477,7 @@ protected:
                                    const size_t ii,
                                    const bool reflecting) const
   {
+    const auto& reflected_indices = triangulation_.reflected_face_indices();
     for (auto it = decomposition[ii]; it != decomposition[ii + 1]; ++it) {
       const auto& quad_point = *it;
       const auto& v = quad_point.position();
@@ -484,9 +485,11 @@ protected:
       auto basis_reflected = basis_evaluated;
       if (reflecting) {
         auto v_reflected = v;
-        const auto& reflected_indices = triangulation_.reflected_face_indices();
         v_reflected[v_index] *= -1.;
-        basis_reflected = evaluate(v_reflected, reflected_indices[it.first_index()][v_index]);
+        // If the basis functions have a triangulation, get index of reflected triangle. Otherwise set to 0, will be
+        // ignored.
+        const size_t reflected_index = reflected_indices.size() ? reflected_indices[it.first_index()][v_index] : 0;
+        basis_reflected = evaluate(v_reflected, reflected_index);
       }
       const auto& weight = quad_point.weight();
       const auto factor = (reflecting || v_index == size_t(-1)) ? 1. : v[v_index];
