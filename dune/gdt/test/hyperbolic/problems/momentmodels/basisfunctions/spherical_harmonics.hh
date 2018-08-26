@@ -57,7 +57,7 @@ public:
   {
   }
 
-  SphericalHarmonics(const size_t quad_order = order + 2, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+  SphericalHarmonics(const size_t quad_order = 2 * order + 2, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
     : BaseType(OctantQuadrature<DomainFieldType>::get(quad_order))
   {
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
@@ -289,7 +289,7 @@ public:
   {
   }
 
-  RealSphericalHarmonics(const size_t quad_order = order + 2, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+  RealSphericalHarmonics(const size_t quad_order = 2 * order + 2, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
     : BaseType(OctantQuadrature<DomainFieldType>::get(quad_order))
   {
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
