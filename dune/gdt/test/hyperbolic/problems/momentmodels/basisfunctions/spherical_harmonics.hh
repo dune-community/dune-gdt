@@ -52,14 +52,9 @@ public:
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
   static_assert(order <= std::numeric_limits<int>::max(), "");
 
-  SphericalHarmonics(const QuadraturesType& quadratures = default_quadratures())
+  SphericalHarmonics(const QuadraturesType& quadratures = OctantQuadrature<DomainFieldType>::get(order + 2))
     : BaseType(quadratures)
   {
-  }
-
-  static QuadraturesType default_quadratures(const size_t quad_order = 10 + 2 * order)
-  {
-    return BaseType::lebedev_quadrature(quad_order);
   }
 
   virtual RangeType evaluate(const DomainType& v) const override
@@ -283,14 +278,9 @@ public:
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
 
-  RealSphericalHarmonics(const QuadraturesType& quadratures = default_quadratures())
+  RealSphericalHarmonics(const QuadraturesType& quadratures = OctantQuadrature<DomainFieldType>::get(order + 2))
     : BaseType(quadratures)
   {
-  }
-
-  static QuadraturesType default_quadratures(const size_t quad_order = 10 + 2 * order)
-  {
-    return BaseType::lebedev_quadrature(quad_order);
   }
 
   virtual RangeType evaluate(const DomainType& v) const override

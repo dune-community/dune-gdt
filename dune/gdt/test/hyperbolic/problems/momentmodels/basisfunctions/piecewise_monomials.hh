@@ -254,7 +254,7 @@ public:
 
   virtual std::string short_id() const override final
   {
-    return "pm1d";
+    return "1dpm";
   }
 
   // get indices of all faces that contain point
@@ -413,7 +413,7 @@ public:
 
   virtual std::string short_id() const override final
   {
-    return "pm3d";
+    return "3dpm";
   }
 
   std::vector<size_t> get_face_indices(const DomainType& v) const

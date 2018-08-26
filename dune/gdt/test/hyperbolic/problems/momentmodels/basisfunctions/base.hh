@@ -34,6 +34,7 @@
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/triangulation.hh>
 #include <dune/gdt/test/hyperbolic/spherical_quadratures/fekete.hh>
 #include <dune/gdt/test/hyperbolic/spherical_quadratures/lebedev.hh>
+#include <dune/gdt/test/hyperbolic/spherical_quadratures/octant.hh>
 #include <dune/gdt/test/hyperbolic/spherical_quadratures/wrapper.hh>
 
 namespace Dune {

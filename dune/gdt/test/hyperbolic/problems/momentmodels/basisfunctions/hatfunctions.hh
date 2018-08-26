@@ -255,7 +255,7 @@ public:
 
   virtual std::string short_id() const override final
   {
-    return "hf1d";
+    return "1dhf";
   }
 
   // get indices of all faces that contain point v
@@ -395,7 +395,7 @@ public:
 
   virtual std::string short_id() const override final
   {
-    return "hf3d";
+    return "3dhf";
   }
 
   // get indices of all faces that contain point v

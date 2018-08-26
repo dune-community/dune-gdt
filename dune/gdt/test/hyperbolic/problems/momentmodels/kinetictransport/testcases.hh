@@ -381,9 +381,9 @@ struct PointSourcePnExpectedResults
 template <bool reconstruct>
 struct PointSourcePnExpectedResults<RealSphericalHarmonics<double, double, 2, 3>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 1.0007954640626406 : 1.0007954640534238;
-  static constexpr double l2norm = reconstruct ? 2.7177565161122006 : 2.7163083579825025;
-  static constexpr double linfnorm = reconstruct ? 10.461558474249745 : 10.498572083981468;
+  static constexpr double l1norm = reconstruct ? 1.0007954640626406 : 1.0007954640534624;
+  static constexpr double l2norm = reconstruct ? 2.6992308546885653 : 2.6970513662067956;
+  static constexpr double linfnorm = reconstruct ? 10.379541276684977 : 10.414316177722712;
   static constexpr double tol = 1e-14;
 };
 
@@ -420,9 +420,9 @@ struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 1, 1, 3>, re
   static constexpr double l2norm = 2.7065005653281369;
   static constexpr double linfnorm = 10.456533271787738;
 #else
-  static constexpr double l1norm = 1.0008292531057066;
-  static constexpr double l2norm = 2.7070581236565103;
-  static constexpr double linfnorm = 10.457145890791487;
+  static constexpr double l1norm = 1.0008039111672102;
+  static constexpr double l2norm = 2.7065211670792411;
+  static constexpr double linfnorm = 10.456611570230423;
 #endif
   // see above
   static constexpr double tol = reconstruct ? 1e-5 : 1e-14;
