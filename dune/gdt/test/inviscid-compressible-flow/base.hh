@@ -110,12 +110,9 @@ protected:
   using typename BaseType::O;
 
 public:
-  InviscidCompressibleFlowEulerTest(const size_t num_refinements = 3,
-                                    const size_t num_additional_refinements_for_reference = 2)
+  InviscidCompressibleFlowEulerTest()
     : Problem(new InviscidCompressibleFlowEulerProblem<G>())
     , BaseType(Problem::access().T_end,
-               num_refinements,
-               num_additional_refinements_for_reference,
                [&](const auto& solution, const auto& prefix) {
                  for (size_t ii = 0; ii < this->visualization_steps_; ++ii) {
                    const double time = ii * (this->T_end_ / this->visualization_steps_);

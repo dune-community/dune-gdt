@@ -72,10 +72,11 @@ protected:
 
 public:
   InstationaryEocStudy(const double T_end,
-                       const size_t num_refinements = 3,
-                       const size_t num_additional_refinements_for_reference = 2,
                        std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualizer =
-                           [](const auto& /*solution*/, const auto& /*prefix*/) { /*no visualization by default*/ })
+                           [](const auto& /*solution*/, const auto& /*prefix*/) { /*no visualization by default*/ },
+                       const size_t num_refinements = DXTC_CONFIG_GET("num_refinements", 3),
+                       const size_t num_additional_refinements_for_reference =
+                           DXTC_CONFIG_GET("num_additional_refinements_for_reference", 2))
     : T_end_(T_end)
     , num_refinements_(num_refinements)
     , num_additional_refinements_for_reference_(num_additional_refinements_for_reference)

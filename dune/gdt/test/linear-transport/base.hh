@@ -87,19 +87,18 @@ protected:
   using typename BaseType::V;
 
 public:
-  LinearTransportTest(const size_t num_refinements = 3,
-                      const size_t num_additional_refinements_for_reference = 1) // Not exact, but enough.
-      : Problem(new LinearTransportProblem<G>()),
-        BaseType(Problem::access().T_end,
-                 num_refinements,
-                 num_additional_refinements_for_reference,
-                 [&](const auto& solution, const auto& prefix) {
-                   for (size_t ii = 0; ii < this->visualization_steps_; ++ii) {
-                     const double time = ii * (this->T_end_ / this->visualization_steps_);
-                     solution.evaluate(time).visualize(prefix + "_solution_" + XT::Common::to_string(ii));
-                   }
-                 }),
-        visualization_steps_(0)
+  LinearTransportTest()
+    : Problem(new LinearTransportProblem<G>())
+    , BaseType(Problem::access().T_end,
+               [&](const auto& solution, const auto& prefix) {
+                 const auto end_time =
+                     std::min(this->T_end_, this->time_points_from_vector_array(solution.dof_vectors()).back());
+                 for (size_t ii = 0; ii < this->visualization_steps_; ++ii) {
+                   const double time = ii * (end_time / this->visualization_steps_);
+                   solution.evaluate(time).visualize(prefix + "_solution_" + XT::Common::to_string(ii));
+                 }
+               })
+    , visualization_steps_(0)
   {
   }
 

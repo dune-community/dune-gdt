@@ -61,11 +61,9 @@ protected:
 public:
   InstationaryNonconformingHyperbolicEocStudy(
       const double T_end,
-      const size_t num_refinements = 3,
-      const size_t num_additional_refinements_for_reference = 2,
       std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualizer =
           [](const auto& /*solution*/, const auto& /*prefix*/) { /*no visualization by default*/ })
-    : BaseType(T_end, num_refinements, num_additional_refinements_for_reference, visualizer)
+    : BaseType(T_end, visualizer)
     , space_type_("")
     , numerical_flux_type_("")
   {
@@ -155,7 +153,14 @@ protected:
     if (space_type_ == "fv")
       return std::make_unique<AdvectionFvOperator<GV, V, m>>(space.grid_view(), *numerical_flux, space, space);
     else
-      return std::make_unique<AdvectionDgOperator<GV, V, m>>(space.grid_view(), *numerical_flux, space, space);
+      return std::make_unique<AdvectionDgArtificialViscosityOperator<GV, V, m>>(
+          space.grid_view(),
+          *numerical_flux,
+          space,
+          space,
+          /*periodicity_exception=*/XT::Grid::ApplyOn::NoIntersections<GV>(),
+          DXTC_CONFIG_GET("nu_1", 0.2),
+          DXTC_CONFIG_GET("alpha_1", 1.0));
   } // ... make_lhs_operator(...)
 
   std::string space_type_;
