@@ -15,6 +15,7 @@
 #include <dune/xt/common/float_cmp.hh>
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/memory.hh>
+#include <dune/xt/la/container/conversion.hh>
 #include <dune/xt/grid/grids.hh>
 #include <dune/xt/grid/walker.hh>
 #include <dune/xt/grid/gridprovider/cube.hh>
@@ -63,26 +64,15 @@ struct InviscidCompressibleFlowEulerProblem
   template <class Vector, class GV>
   DiscreteFunction<Vector, GV, m> make_initial_values(const SpaceInterface<GV, m>& space) const
   {
-    return interpolate<Vector>(
-        0,
-        [&](const auto& xx, const auto& /*mu*/) {
-          RangeType primitive_variables(0.);
-          // density
-          if (XT::Common::FloatCmp::ge(xx, DomainType(-0.5)) && XT::Common::FloatCmp::le(xx, DomainType(0)))
-            primitive_variables[0] = 4.;
-          else
-            primitive_variables[0] = 1.;
-          // velocity
-          for (size_t ii = 0; ii < d; ++ii)
-            primitive_variables[1 + ii] = 0.;
-          // pressure
-          if (XT::Common::FloatCmp::ge(xx, DomainType(-0.5)) && XT::Common::FloatCmp::le(xx, DomainType(0)))
-            primitive_variables[m - 1] = 1.6;
-          else
-            primitive_variables[m - 1] = 0.4;
-          return euler_tools.to_conservative(primitive_variables);
-        },
-        space);
+    return interpolate<Vector>(0,
+                               [&](const auto& xx, const auto& /*mu*/) {
+                                 if (XT::Common::FloatCmp::ge(xx, DomainType(-0.5))
+                                     && XT::Common::FloatCmp::le(xx, DomainType(0)))
+                                   return euler_tools.conservative(/*density=*/4., /*velocity=*/0., /*pressure=*/1.6);
+                                 else
+                                   return euler_tools.conservative(/*density=*/1., /*velocity=*/0., /*pressure=*/0.4);
+                               },
+                               space);
   } // ... make_initial_values(...)
 }; // struct InviscidCompressibleFlowEulerProblem
 
@@ -108,6 +98,7 @@ protected:
   using typename BaseType::BS;
   using typename BaseType::V;
   using typename BaseType::O;
+  using RangeType = XT::Common::FieldVector<R, m>;
 
 public:
   InviscidCompressibleFlowEulerTest()
@@ -146,15 +137,7 @@ protected:
       const auto& euler_tools = Problem::access().euler_tools;
       return interpolate<V>(0,
                             [&](const auto& /*xx*/, const auto& /*param*/) {
-                              FieldVector<R, m> primitive_variables(0.);
-                              // density
-                              primitive_variables[0] = 0.5;
-                              // velocity
-                              for (size_t ii = 0; ii < d; ++ii)
-                                primitive_variables[1 + ii] = 0.;
-                              // pressure
-                              primitive_variables[m - 1] = 0.4;
-                              return euler_tools.to_conservative(primitive_variables);
+                              return euler_tools.conservative(/*density=*/0.5, /*velocity=*/0., /*pressure=*/0.4);
                             },
                             space);
     } else
@@ -192,11 +175,33 @@ protected:
 
   std::unique_ptr<O> make_lhs_operator(const S& space) override final
   {
-    if (boundary_treatment.empty())
-      return BaseType::make_lhs_operator(space);
     auto& self = *this;
     const auto& euler_tools = Problem::access().euler_tools;
-    auto numerical_flux = make_numerical_vijayasundaram_flux(self.flux());
+    const NumericalVijayasundaramFlux<d, m> numerical_flux(
+        self.flux(),
+        /*flux_eigen_decomposition=*/[&](const auto& /*f*/, const auto& w, const auto& n, const auto&
+                                         /*param*/) {
+          return std::make_tuple(euler_tools.eigenvalues_flux_jacobian(w, n),
+                                 euler_tools.eigenvectors_flux_jacobian(w, n),
+                                 euler_tools.eigenvectors_inv_flux_jacobian(w, n));
+        });
+    if (boundary_treatment.empty()) { // The periodic case
+      if (self.space_type_ == "fv")
+        return std::make_unique<AdvectionFvOperator<GV, V, m>>(space.grid_view(), numerical_flux, space, space);
+      else
+        return std::make_unique<AdvectionDgArtificialViscosityOperator<GV, V, m>>(
+            space.grid_view(),
+            numerical_flux,
+            space,
+            space,
+            /*periodicity_exception=*/XT::Grid::ApplyOn::NoIntersections<GV>(),
+            DXTC_CONFIG_GET("nu_1", 0.2),
+            DXTC_CONFIG_GET("alpha_1", 1.0));
+    }
+    // All other than periodic are only availabel for FV at the moment.
+    DUNE_THROW_IF(self.space_type_ != "fv",
+                  XT::Common::Exceptions::you_are_using_this_wrong,
+                  "boundary_treatment = " << boundary_treatment);
     // the layer is periodic and the operator includes handling of periodic boundaries, so we need to make an exception
     // for all non-periodic boundaries
     if (boundary_treatment == "impermeable_walls_by_direct_euler_treatment") {
@@ -211,10 +216,10 @@ protected:
                                                                 space,
                                                                 /*periodicity_restriction=*/impermeable_wall_filter);
       // the actual handling of impermeable walls
-      op->append(/*numerical_boundary_flux=*/[&](
-                     const auto& u,
-                     const auto& n,
-                     const auto& /*param*/) { return euler_tools.flux_at_impermeable_walls(u, n); },
+      op->append(/*numerical_boundary_flux=*/
+                 [&](const auto& u, const auto& n, const auto& /*param*/) {
+                   return euler_tools.flux_at_impermeable_walls(XT::LA::convert_to<RangeType>(u), n);
+                 },
                  {},
                  impermeable_wall_filter);
       return op;
@@ -238,11 +243,12 @@ protected:
               const auto& u,
               const auto& /*param*/) {
             const auto normal = intersection.unitOuterNormal(xx_in_reference_intersection_coordinates);
-            const auto rho = euler_tools.density_from_conservative(u);
-            auto velocity = euler_tools.velocity_from_conservative(u);
+            const auto rho_v_p = euler_tools.primitives(XT::LA::convert_to<RangeType>(u));
+            const auto& rho = std::get<0>(rho_v_p);
+            auto velocity = std::get<1>(rho_v_p);
+            const auto& pressure = std::get<2>(rho_v_p);
             velocity -= normal * 2. * (velocity * normal);
-            const auto pressure = euler_tools.pressure_from_conservative(u);
-            return euler_tools.to_conservative(XT::Common::hstack(rho, velocity, pressure));
+            return euler_tools.conservative(rho, velocity, pressure);
           },
           {},
           impermeable_wall_filter);
@@ -252,16 +258,10 @@ protected:
           std::unique_ptr<XT::Functions::LambdaFunction<d, m>>(new XT::Functions::LambdaFunction<d, m>(
               /*order=*/0,
               [&](const auto& /*xx*/, const auto& param) {
-                FieldVector<R, m> primitive_variables(0.);
                 const auto t = param.get("_t").at(0);
-                // density
-                primitive_variables[0] = 1. + 0.5 * std::sin(2. * M_PI * (t - 0.25));
-                // velocity
-                for (size_t ii = 0; ii < d; ++ii)
-                  primitive_variables[1 + ii] = 0.25 + 0.25 * std::sin(2. * M_PI * (t - 0.25));
-                // pressure
-                primitive_variables[m - 1] = 0.4;
-                return euler_tools.to_conservative(primitive_variables);
+                return euler_tools.conservative(/*density=*/1. + 0.5 * std::sin(2. * M_PI * (t - 0.25)),
+                                                /*velocity=*/0.25 + 0.25 * std::sin(2. * M_PI * (t - 0.25)),
+                                                /*pressure=*/0.4);
               },
               /*name=*/"periodic_density_variation",
               /*parameter_type=*/{"_t", 1}));
@@ -285,18 +285,18 @@ protected:
       const auto heuristic_euler_inflow_outflow_treatment = [&](const auto& intersection,
                                                                 const auto& xx_in_reference_intersection_coordinates,
                                                                 const auto& /*flux*/,
-                                                                const auto& u,
+                                                                const auto& u_,
                                                                 const auto& param) {
-        using RangeType = XT::Common::FieldVector<R, m>;
         // evaluate boundary values
         const auto element = intersection.inside();
         const auto xx_in_reference_element_coordinates =
             intersection.geometryInInside().global(xx_in_reference_intersection_coordinates);
         local_periodic_density_variation_->bind(element);
         const RangeType bv = local_periodic_density_variation_->evaluate(xx_in_reference_element_coordinates, param);
+        const auto u = XT::LA::convert_to<RangeType>(u_);
         // determine flow regime
-        const auto a = euler_tools.speed_of_sound_from_conservative(u);
-        const auto velocity = euler_tools.velocity_from_conservative(u);
+        const auto a = euler_tools.speed_of_sound(u);
+        const auto velocity = euler_tools.velocity(u);
         const auto normal = intersection.unitOuterNormal(xx_in_reference_intersection_coordinates);
         const auto flow_speed = velocity * normal;
         // compute v
@@ -305,16 +305,16 @@ protected:
           return bv;
         } else if (!(flow_speed > 0)) {
           // subsonic inlet
-          const auto rho_outer = euler_tools.density_from_conservative(bv);
-          const auto v_outer = euler_tools.velocity_from_conservative(bv);
-          const auto p_inner = euler_tools.pressure_from_conservative(u);
-          return euler_tools.to_conservative(XT::Common::hstack(rho_outer, v_outer, p_inner));
+          const auto rho_outer = euler_tools.density(bv);
+          const auto v_outer = euler_tools.velocity(bv);
+          const auto p_inner = euler_tools.pressure(u);
+          return euler_tools.conservative(rho_outer, v_outer, p_inner);
         } else if (flow_speed < a) {
           // subsonic outlet
-          const auto rho_inner = euler_tools.density_from_conservative(u);
-          const auto v_inner = euler_tools.velocity_from_conservative(u);
-          const auto p_outer = euler_tools.pressure_from_conservative(bv);
-          return euler_tools.to_conservative(XT::Common::hstack(rho_inner, v_inner, p_outer));
+          const auto rho_inner = euler_tools.density(u);
+          const auto v_inner = euler_tools.velocity(u);
+          const auto p_outer = euler_tools.pressure(bv);
+          return euler_tools.conservative(rho_inner, v_inner, p_outer);
         } else {
           // supersonic outlet
           return RangeType(u);
@@ -330,11 +330,12 @@ protected:
               const auto& u,
               const auto& /*param*/) {
             const auto normal = intersection.unitOuterNormal(xx_in_reference_intersection_coordinates);
-            const auto rho = euler_tools.density_from_conservative(u);
-            auto velocity = euler_tools.velocity_from_conservative(u);
+            const auto rho_v_p = euler_tools.primitives(XT::LA::convert_to<RangeType>(u));
+            const auto& rho = std::get<0>(rho_v_p);
+            auto velocity = std::get<1>(rho_v_p);
+            const auto& pressure = std::get<2>(rho_v_p);
             velocity -= normal * 2. * (velocity * normal);
-            const auto pressure = euler_tools.pressure_from_conservative(u);
-            return euler_tools.to_conservative(XT::Common::hstack(rho, velocity, pressure));
+            return euler_tools.conservative(rho, velocity, pressure);
           },
           {},
           impermeable_wall_filter);
