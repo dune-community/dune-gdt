@@ -71,6 +71,36 @@ public:
   {
   }
 
+  virtual std::vector<std::string> quantities() const override
+  {
+    auto qq = BaseType::quantities();
+    if (this->space_type_ != "fv")
+      qq.push_back("           CFL  "); // <- This is on purpose, see column header formatting in ConvergenceStudy.
+    return qq;
+  }
+
+  virtual std::map<std::string, std::map<std::string, double>>
+  compute(const size_t refinement_level,
+          const std::vector<std::string>& actual_norms,
+          const std::vector<std::pair<std::string, std::string>>& actual_estimates,
+          const std::vector<std::string>& actual_quantities) override
+  {
+    auto& self = *this;
+    auto quantities_to_compute = actual_quantities;
+    if (self.space_type_ != "fv") {
+      const auto search_result =
+          std::find(quantities_to_compute.begin(), quantities_to_compute.end(), "           CFL  ");
+      if (search_result != quantities_to_compute.end()) {
+        self.current_data_["quantity"]["           CFL  "] =
+            self.current_data_["target"]["dt"] / self.current_data_["info"]["explicit_dt"];
+        quantities_to_compute.erase(search_result);
+      }
+    }
+    auto data = BaseType::compute(refinement_level, actual_norms, actual_estimates, quantities_to_compute);
+    data["quantity"]["           CFL  "] = self.current_data_["quantity"]["           CFL  "];
+    return data;
+  } // ... compute(...)
+
 protected:
   virtual const F& flux() const = 0;
 

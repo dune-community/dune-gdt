@@ -201,7 +201,10 @@ protected:
 
 public:
   virtual std::map<std::string, std::map<std::string, double>>
-  compute(const size_t refinement_level, const std::vector<std::string>& only_these) override
+  compute(const size_t refinement_level,
+          const std::vector<std::string>& actual_norms,
+          const std::vector<std::pair<std::string, std::string>>& actual_estimates,
+          const std::vector<std::string>& actual_quantities) override
   {
     auto& self = *this;
     if (current_refinement_ != refinement_level)
@@ -219,9 +222,9 @@ public:
     const auto coarse_solution = make_discrete_bochner_function(current_bochner_space, solution_on_current_grid);
     // determine wether we need a reference solution
     // compute statistics
-    std::vector<std::string> actual_norms = self.filter(self.norms(), only_these);
+    auto norms_to_compute = actual_norms;
     // - norms
-    if (!actual_norms.empty()) {
+    if (!norms_to_compute.empty()) {
       self.compute_reference_solution();
       DUNE_THROW_IF(!reference_space_, InvalidStateException, "");
       const auto& reference_space = *reference_space_;
@@ -233,10 +236,10 @@ public:
       current_solution_on_reference_grid_ = std::make_unique<XT::LA::ListVectorArray<V>>(
           prolong<V>(coarse_solution, reference_bochner_space).dof_vectors());
       auto& u_h = *current_solution_on_reference_grid_;
-      while (!actual_norms.empty()) {
-        const auto norm_id = actual_norms.back();
+      while (!norms_to_compute.empty()) {
+        const auto norm_id = norms_to_compute.back();
         const auto components = XT::Common::tokenize(norm_id, "/");
-        actual_norms.pop_back();
+        norms_to_compute.pop_back();
         // compute Bochner norm
         DUNE_THROW_IF(components.size() != 2,
                       XT::Common::Exceptions::wrong_input_given,
@@ -288,19 +291,19 @@ public:
                      "I do not know how to compute the temporal norm '" << temporal_norm_id << "'!");
       }
     }
-    DUNE_THROW_IF(!actual_norms.empty(),
+    DUNE_THROW_IF(!norms_to_compute.empty(),
                   XT::Common::Exceptions::wrong_input_given,
-                  "I did not know how to compute the following norms: " << actual_norms);
+                  "I did not know how to compute the following norms: " << norms_to_compute);
     // - estimates
-    auto actual_estimates = self.filter(self.estimates(), only_these);
-    DUNE_THROW_IF(!actual_estimates.empty(),
+    auto estimats_to_compute = actual_estimates;
+    DUNE_THROW_IF(!estimats_to_compute.empty(),
                   XT::Common::Exceptions::wrong_input_given,
-                  "I did not know how to compute the following estimates: " << actual_estimates);
+                  "I did not know how to compute the following estimates: " << estimats_to_compute);
     // - quantities
-    auto actual_quantities = self.filter(self.quantities(), only_these);
-    while (!actual_quantities.empty()) {
-      const auto id = actual_quantities.back();
-      actual_quantities.pop_back();
+    auto quantities_to_compute = actual_quantities;
+    while (!quantities_to_compute.empty()) {
+      const auto id = quantities_to_compute.back();
+      quantities_to_compute.pop_back();
       if (id == "rel mass conserv   error") {
         const auto compute_masses = [&](const auto& vec) {
           auto func = make_discrete_function(current_space, vec);
@@ -329,9 +332,9 @@ public:
         DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                    "I do not know how to compute the quantity '" << id << "'!");
     }
-    DUNE_THROW_IF(!actual_quantities.empty(),
+    DUNE_THROW_IF(!quantities_to_compute.empty(),
                   XT::Common::Exceptions::wrong_input_given,
-                  "I did not know how to compute the following quantities: " << actual_quantities);
+                  "I did not know how to compute the following quantities: " << quantities_to_compute);
     return current_data_;
   } // ... compute_on_current_refinement(...)
 
