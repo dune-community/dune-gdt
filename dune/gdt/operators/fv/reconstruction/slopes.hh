@@ -11,9 +11,6 @@
 #ifndef DUNE_GDT_OPERATORS_FV_SLOPES_HH
 #define DUNE_GDT_OPERATORS_FV_SLOPES_HH
 
-#include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/device/null.hpp>
-
 #if HAVE_CLP
 #include <coin/ClpSimplex.hpp>
 #endif // HAVE_CLP
@@ -509,7 +506,13 @@ public:
     : basis_functions_(basis_functions)
     , epsilon_(epsilon)
   {
-    calculate_plane_coefficients();
+    if (!basis_functions_.plane_coefficients()[0].size())
+      basis_functions_.calculate_plane_coefficients();
+    // replace the coefficients b by \tilde{b} = b - eps  \twonorm(a) to guarantee distance of eps to boundary
+    plane_coefficients_ = basis_functions_.plane_coefficients();
+    for (size_t jj = 0; jj < num_blocks; ++jj)
+      for (auto& coeff : plane_coefficients_[jj])
+        coeff.second -= epsilon_ * coeff.first.two_norm();
   }
 
   virtual VectorType
@@ -578,89 +581,6 @@ private:
     theta = std::min(epsilon_ + theta, 1.);
     return theta;
   } // ... get_block_theta(...)
-
-  // calculate half space representation of realizable set
-  void calculate_plane_coefficients()
-  {
-    FieldVector<std::vector<FieldVector<RangeFieldType, block_size>>, num_blocks> points;
-    const auto& quadratures = basis_functions_.quadratures();
-    for (size_t jj = 0; jj < num_blocks; ++jj) {
-      points[jj].resize(quadratures[jj].size() + 1);
-      for (size_t ll = 0; ll < quadratures[jj].size(); ++ll) {
-        const auto val = basis_functions_.evaluate(quadratures[jj][ll].position(), jj);
-        for (size_t ii = 0; ii < block_size; ++ii)
-          points[jj][ll][ii] = val[block_size * jj + ii];
-      } // ll
-      points[jj][quadratures[jj].size()] = FieldVector<RangeFieldType, block_size>(0.);
-    }
-    std::vector<std::thread> threads(num_blocks);
-    // Calculate plane coefficients for each block in a separate thread
-    for (size_t jj = 0; jj < num_blocks; ++jj)
-      threads[jj] = std::thread(&ThisType::calculate_plane_coefficient_block, this, std::ref(points[jj]), jj);
-    // Join the threads with the main thread
-    for (size_t jj = 0; jj < num_blocks; ++jj)
-      threads[jj].join();
-  }
-
-  void calculate_plane_coefficient_block(std::vector<FieldVector<RangeFieldType, block_size>>& points, const size_t jj)
-  {
-    orgQhull::Qhull qhull;
-    // ignore output
-    boost::iostreams::stream<boost::iostreams::null_sink> null_ostream((boost::iostreams::null_sink()));
-    qhull.setOutputStream(&null_ostream);
-    qhull.setErrorStream(&null_ostream);
-    // calculate convex hull
-    assert(points.size() < std::numeric_limits<int>::max());
-    qhull.runQhull(
-        "Realizable set", static_cast<int>(block_size), static_cast<int>(points.size()), &(points[0][0]), "Qt T1");
-    const auto facet_end = qhull.endFacet();
-    BlockPlaneCoefficientsType block_plane_coefficients(qhull.facetList().count());
-    //    std::cout << "num_vertices: " << qhull.vertexList().count() << std::endl;
-    size_t ll = 0;
-    for (auto facet = qhull.beginFacet(); facet != facet_end; facet = facet.next(), ++ll) {
-      for (size_t ii = 0; ii < block_size; ++ii)
-        block_plane_coefficients[ll].first[ii] = *(facet.hyperplane().coordinates() + ii);
-      block_plane_coefficients[ll].second = -facet.hyperplane().offset();
-    } // ii
-    // discard duplicate facets (qhull triangulates output, so there may be several facets on the same hyperplane)
-    using CoeffType = typename BlockPlaneCoefficientsType::value_type;
-    std::sort(block_plane_coefficients.begin(),
-              block_plane_coefficients.end(),
-              [](const CoeffType& first, const CoeffType& second) {
-                // Check component-wise if first.a[ii] < second.a[ii]. If they are equal, check next component.
-                for (size_t ii = 0; ii < block_size; ++ii) {
-                  if (XT::Common::FloatCmp::lt(first.first[ii], second.first[ii]))
-                    return true;
-                  else if (XT::Common::FloatCmp::gt(first.first[ii], second.first[ii]))
-                    return false;
-                }
-                // first.a and second.a are equal, check first.b and second.b
-                if (XT::Common::FloatCmp::lt(first.second, second.second))
-                  return true;
-                return false;
-              });
-    static const auto pair_float_cmp = [](const CoeffType& first, const CoeffType& second) {
-      return XT::Common::FloatCmp::eq(first.first, second.first)
-             && XT::Common::FloatCmp::eq(first.second, second.second);
-    };
-    block_plane_coefficients.erase(
-        std::unique(block_plane_coefficients.begin(), block_plane_coefficients.end(), pair_float_cmp),
-        block_plane_coefficients.end());
-    // discard facets belonging to the condition u0 < 1, i.e. with a = (1, 0, 0, ...) and b = 1
-    CoeffType coeff_to_erase{BlockRangeType(0), 1.};
-    coeff_to_erase.first[0] = 1.;
-    auto coeff_to_erase_it =
-        std::find_if(block_plane_coefficients.begin(),
-                     block_plane_coefficients.end(),
-                     [&coeff_to_erase](const CoeffType& coeff) { return pair_float_cmp(coeff, coeff_to_erase); });
-    if (coeff_to_erase_it == block_plane_coefficients.end())
-      DUNE_THROW(Dune::MathError, "There should be such a coefficient!");
-    block_plane_coefficients.erase(coeff_to_erase_it);
-    // replace the coefficients b by \tilde{b} = b - eps  \twonorm(a) to guarantee distance of eps to boundary
-    for (auto& coeff : block_plane_coefficients)
-      coeff.second -= epsilon_ * coeff.first.two_norm();
-    plane_coefficients_[jj] = block_plane_coefficients;
-  }
 
   const BasisfunctionType& basis_functions_;
   const RangeFieldType epsilon_;

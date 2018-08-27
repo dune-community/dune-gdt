@@ -26,6 +26,129 @@
 
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/kineticequation.hh>
 
+int parse_momentmodel_arguments(int argc,
+                                char** argv,
+                                size_t& num_threads,
+                                size_t& threading_partition_factor,
+                                size_t& num_save_steps,
+                                size_t& num_output_steps,
+                                size_t& quad_refinements,
+                                size_t& quad_order,
+                                std::string& grid_size,
+                                std::string& overlap_size,
+                                double& t_end,
+                                std::string& filename)
+{
+  using namespace Dune;
+  using namespace Dune::GDT;
+  MPIHelper::instance(argc, argv);
+
+  for (int i = 1; i < argc; ++i) {
+    if (std::string(argv[i]) == "--num_threads") {
+      if (i + 1 < argc) {
+        num_threads = XT::Common::from_string<size_t>(argv[++i]);
+      } else {
+        std::cerr << "--num_threads option requires one argument." << std::endl;
+        return 1;
+      }
+    } else if (std::string(argv[i]) == "--threading_partition_factor") {
+      if (i + 1 < argc) {
+        threading_partition_factor = XT::Common::from_string<size_t>(argv[++i]);
+      } else {
+        std::cerr << "--threading_partition_factor option requires one argument." << std::endl;
+        return 1;
+      }
+    } else if (std::string(argv[i]) == "--filename") {
+      if (i + 1 < argc) {
+        filename = std::string(argv[++i]);
+      } else {
+        std::cerr << "--filename option requires one argument." << std::endl;
+        return 1;
+      }
+    } else if (std::string(argv[i]) == "--quad_refinements") {
+      if (i + 1 < argc) {
+        quad_refinements = XT::Common::from_string<size_t>(argv[++i]);
+      } else {
+        std::cerr << "--quad_refinements option requires one argument." << std::endl;
+        return 1;
+      }
+    } else if (std::string(argv[i]) == "--quad_order") {
+      if (i + 1 < argc) {
+        quad_order = XT::Common::from_string<size_t>(argv[++i]);
+      } else {
+        std::cerr << "--quad_order option requires one argument." << std::endl;
+        return 1;
+      }
+    } else if (std::string(argv[i]) == "--num_save_steps") {
+      if (i + 1 < argc) {
+        num_save_steps = XT::Common::from_string<size_t>(argv[++i]);
+      } else {
+        std::cerr << "--num_save_steps option requires one argument." << std::endl;
+        return 1;
+      }
+    } else if (std::string(argv[i]) == "--num_output_steps") {
+      if (i + 1 < argc) {
+        num_output_steps = XT::Common::from_string<size_t>(argv[++i]);
+      } else {
+        std::cerr << "--num_output_steps option requires one argument." << std::endl;
+        return 1;
+      }
+    } else if (std::string(argv[i]) == "--grid_size") {
+      if (i + 1 < argc) {
+        grid_size = argv[++i];
+      } else {
+        std::cerr << "--grid_size option requires one argument." << std::endl;
+        return 1;
+      }
+    } else if (std::string(argv[i]) == "--overlap_size") {
+      if (i + 1 < argc) {
+        overlap_size = argv[++i];
+      } else {
+        std::cerr << "--overlap_size option requires one argument." << std::endl;
+        return 1;
+      }
+    } else if (std::string(argv[i]) == "--t_end") {
+      if (i + 1 < argc) {
+        t_end = XT::Common::from_string<double>(argv[++i]);
+      } else {
+        std::cerr << "--t_end option requires one argument." << std::endl;
+        return 1;
+      }
+    } else {
+      std::cerr << "Unknown option " << std::string(argv[i]) << std::endl;
+      return 1;
+    }
+  }
+
+  DXTC_CONFIG.set("threading.partition_factor", threading_partition_factor, true);
+  XT::Common::threadManager().set_max_threads(num_threads);
+  return 0;
+}
+
+
+template <class BasisfunctionType, class AnalyticalFluxType>
+struct JacobianChooser
+{
+  using type = Dune::GDT::internal::JacobianWrapper<AnalyticalFluxType>;
+};
+
+template <class AnalyticalFluxType,
+          class DomainFieldType,
+          size_t dimDomain,
+          class RangeFieldType,
+          size_t dimRange_or_refinements>
+struct JacobianChooser<Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<DomainFieldType,
+                                                                           dimDomain,
+                                                                           RangeFieldType,
+                                                                           dimRange_or_refinements,
+                                                                           1,
+                                                                           dimDomain>,
+                       AnalyticalFluxType>
+{
+  using type = Dune::GDT::internal::BlockedJacobianWrapper<AnalyticalFluxType>;
+};
+
+
 template <bool reconstruction>
 struct FvOperatorChooser
 {
@@ -73,7 +196,6 @@ struct HyperbolicPnDiscretization
     using ProblemType = typename TestCaseType::ProblemType;
     using IntersectionType = typename GridLayerType::Intersection;
     using EquationType = Hyperbolic::Problems::KineticEquation<ProblemType>;
-    using DomainFieldType = typename EquationType::DomainFieldType;
     using RangeFieldType = typename EquationType::RangeFieldType;
     using RhsType = typename EquationType::RhsType;
     using InitialValueType = typename EquationType::InitialValueType;
@@ -128,14 +250,7 @@ struct HyperbolicPnDiscretization
 
     using AdvectionOperatorType =
         AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType, BasisfunctionType, GridLayerType>;
-
-    using JacobianWrapperType = std::
-        conditional_t<std::is_base_of<
-                          typename Hyperbolic::Problems::
-                              PiecewiseMonomials<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimDomain>,
-                          BasisfunctionType>::value,
-                      internal::BlockedJacobianWrapper<AnalyticalFluxType>,
-                      internal::JacobianWrapper<AnalyticalFluxType>>;
+    using JacobianWrapperType = typename JacobianChooser<BasisfunctionType, AnalyticalFluxType>::type;
     using ReconstructionOperatorType =
         LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, JacobianWrapperType>;
     using ReconstructionFvOperatorType =

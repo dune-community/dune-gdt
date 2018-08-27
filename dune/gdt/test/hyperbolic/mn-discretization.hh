@@ -26,32 +26,20 @@
 
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/kineticequation.hh>
 
-template <bool reconstruction>
-struct FvOperatorChooser
-{
-  template <class AdvectionOperatorType, class ReconstructionOperatorType>
-  static ReconstructionOperatorType& choose(AdvectionOperatorType& /*advection_operator*/,
-                                            ReconstructionOperatorType& reconstruction_operator)
-  {
-    return reconstruction_operator;
-  }
-};
-
-template <>
-struct FvOperatorChooser<false>
-{
-  template <class AdvectionOperatorType, class ReconstructionOperatorType>
-  static AdvectionOperatorType& choose(AdvectionOperatorType& advection_operator,
-                                       ReconstructionOperatorType& /*reconstruction_operator*/)
-  {
-    return advection_operator;
-  }
-};
+#include "pn-discretization.hh"
 
 template <class TestCaseType>
-struct HyperbolicMnTest : public ::testing::Test
+struct HyperbolicMnDiscretization
 {
-  void run()
+  Dune::FieldVector<double, 3>
+  run(size_t num_save_steps = 1,
+      size_t num_output_steps = 0,
+      size_t num_quad_refinements = TestCaseType::RealizabilityLimiterChooserType::num_quad_refinements,
+      size_t quad_order = TestCaseType::RealizabilityLimiterChooserType::quad_order,
+      std::string grid_size = "",
+      std::string overlap_size = "2",
+      double t_end = TestCaseType::t_end,
+      std::string filename = "")
   {
     using namespace Dune;
     using namespace Dune::GDT;
@@ -65,7 +53,6 @@ struct HyperbolicMnTest : public ::testing::Test
     using ProblemType = typename TestCaseType::ProblemType;
     using IntersectionType = typename GridLayerType::Intersection;
     using EquationType = Hyperbolic::Problems::KineticEquation<ProblemType>;
-    using DomainFieldType = typename EquationType::DomainFieldType;
     using RangeFieldType = typename EquationType::RangeFieldType;
     using RhsType = typename EquationType::RhsType;
     using InitialValueType = typename EquationType::InitialValueType;
@@ -74,6 +61,9 @@ struct HyperbolicMnTest : public ::testing::Test
 
     //******************* create grid and FV space ***************************************
     auto grid_config = EquationType::default_grid_cfg();
+    if (!grid_size.empty())
+      grid_config["num_elements"] = grid_size;
+    grid_config["overlap_size"] = overlap_size;
     const auto grid_ptr =
         Dune::XT::Grid::CubeGridProviderFactory<GridType>::create(grid_config, MPIHelper::getCommunicator()).grid_ptr();
     assert(grid_ptr->comm().size() == 1 || grid_ptr->overlapSize(0) > 0);
@@ -81,7 +71,13 @@ struct HyperbolicMnTest : public ::testing::Test
     const SpaceType fv_space(grid_layer);
 
     //******************* create EquationType object ***************************************
-    const auto basis_functions = TestCaseType::RealizabilityLimiterChooserType::make_basis_functions();
+    if ((num_quad_refinements == size_t(-1) || quad_order == size_t(-1)) && (num_quad_refinements != quad_order))
+      std::cerr << "You specified either num_quad_refinements or quad_order, please also specify the other one!"
+                << std::endl;
+    std::shared_ptr<const BasisfunctionType> basis_functions =
+        (num_quad_refinements == size_t(-1) || quad_order == size_t(-1))
+            ? std::make_shared<const BasisfunctionType>()
+            : std::make_shared<const BasisfunctionType>(quad_order, num_quad_refinements);
     const std::unique_ptr<ProblemType> problem_imp =
         XT::Common::make_unique<ProblemType>(*basis_functions, grid_layer, grid_config);
     const EquationType problem(*problem_imp);
@@ -98,37 +94,22 @@ struct HyperbolicMnTest : public ::testing::Test
     // create a discrete function for the solution
     DiscreteFunctionType u(fv_space, "solution");
     // project initial values
-    project_l2(initial_values, u);
+    project_l2(initial_values, u, 0, {}, true);
 
     // ************************* create analytical flux object ***************************************
     using AnalyticalFluxType = typename EquationType::FluxType;
     const AnalyticalFluxType& analytical_flux = problem.flux();
 
     //***************** choose RealizabilityLimiter ********************************************
-
-    //  using LocalRealizabilityLimiterType = ConvexHullLocalRealizabilityLimiter<DiscreteFunctionType,
-    //  BasisfunctionType>;
-
     using LocalRealizabilityLimiterType =
         typename TestCaseType::RealizabilityLimiterChooserType::LocalRealizabilityLimiterType;
     using RealizabilityLimiterType = RealizabilityLimiter<LocalRealizabilityLimiterType>;
+    using JacobianWrapperType = typename JacobianChooser<BasisfunctionType, AnalyticalFluxType>::type;
 
     // ******************** choose flux and rhs operator and timestepper ******************************************
     using RhsOperatorType = AdvectionRhsOperator<RhsType>;
-
     using AdvectionOperatorType =
         AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType, BasisfunctionType, GridLayerType>;
-
-    using JacobianWrapperType = std::
-        conditional_t<std::is_base_of<
-                          typename Hyperbolic::Problems::
-                              PiecewiseMonomials<DomainFieldType, dimDomain, RangeFieldType, dimRange, 1, dimDomain>,
-                          BasisfunctionType>::value
-                          || std::is_base_of<typename Hyperbolic::Problems::
-                                                 PiecewiseMonomials<DomainFieldType, 3, RangeFieldType, 0, 1, 3>,
-                                             BasisfunctionType>::value,
-                      internal::BlockedJacobianWrapper<AnalyticalFluxType>,
-                      internal::JacobianWrapper<AnalyticalFluxType>>;
     using ReconstructionOperatorType =
         LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, JacobianWrapperType>;
     using RegularizationOperatorType = MomentRegularizer<AnalyticalFluxType, BasisfunctionType>;
@@ -151,8 +132,7 @@ struct HyperbolicMnTest : public ::testing::Test
                                                         OperatorTimeStepperType,
                                                         TestCaseType::time_stepper_splitting_method>::TimeStepperType;
 
-    // *************** choose t_end and initial dt **************************************
-    // calculate dx and choose initial dt
+    // *************** Calculate dx and initial dt **************************************
     Dune::XT::Grid::Dimensions<GridLayerType> dimensions(grid_layer);
     RangeFieldType dx = dimensions.entity_width.max();
     if (dimDomain == 2)
@@ -160,8 +140,6 @@ struct HyperbolicMnTest : public ::testing::Test
     if (dimDomain == 3)
       dx /= std::sqrt(3);
     RangeFieldType dt = CFL * dx;
-    const RangeFieldType t_end = TestCaseType::t_end;
-    //    const RangeFieldType t_end = 2.5;
 
     // *********************** create operators and timesteppers ************************************
     AdvectionOperatorType advection_operator(analytical_flux, boundary_values, *basis_functions);
@@ -185,25 +163,31 @@ struct HyperbolicMnTest : public ::testing::Test
     OperatorTimeStepperType timestepper_op(fv_operator, u, -1.0);
     RhsOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
     TimeStepperType timestepper(timestepper_rhs, timestepper_op);
+    filename += "_" + ProblemType::static_id();
+    filename += "_grid_" + grid_size;
+    filename += "_tend_" + XT::Common::to_string(t_end);
+    filename += "_quad" + XT::Common::to_string(num_quad_refinements) + "x" + XT::Common::to_string(quad_order);
+    filename += std::is_same<FvOperatorType, ReconstructionFvOperatorType>::value ? "_ord2" : "_ord1";
+    filename += "_" + basis_functions->short_id();
+    filename += "_m" + Dune::XT::Common::to_string(dimRange);
 
     auto visualizer = basis_functions->template visualizer<DiscreteFunctionType>();
     timestepper.solve(t_end,
                       dt,
-                      1,
-                      0,
-                      false,
+                      num_save_steps,
+                      num_output_steps,
                       false,
                       true,
+                      true,
                       false,
-                      problem_imp->static_id() + "_ord" + (TestCaseType::reconstruction ? "2_" : "1_")
-                          + basis_functions->short_id()
-                          + "_lpslope",
+                      filename,
                       visualizer,
                       basis_functions->stringifier());
 
-    RangeFieldType l1norm = 0;
-    RangeFieldType l2norm = 0;
-    RangeFieldType linfnorm = 0;
+    FieldVector<double, 3> ret(0);
+    double& l1norm = ret[0];
+    double& l2norm = ret[1];
+    double& linfnorm = ret[2];
     const auto& current_sol = timestepper.current_solution();
     for (const auto& entity : elements(grid_layer, Dune::Partitions::interior)) {
       const auto local_sol = current_sol.local_function(entity);
@@ -213,12 +197,23 @@ struct HyperbolicMnTest : public ::testing::Test
       l2norm += std::pow(psi, 2) * entity.geometry().volume();
       linfnorm = std::max(std::abs(psi), linfnorm);
     }
-
     l1norm = grid_layer.comm().sum(l1norm);
     l2norm = grid_layer.comm().sum(l2norm);
     linfnorm = grid_layer.comm().max(linfnorm);
     l2norm = std::sqrt(l2norm);
+    return ret;
+  }
+};
 
+template <class TestCaseType>
+struct HyperbolicMnTest : public HyperbolicMnDiscretization<TestCaseType>, public ::testing::Test
+{
+  void run()
+  {
+    auto norms = HyperbolicMnDiscretization<TestCaseType>::run();
+    const double l1norm = norms[0];
+    const double l2norm = norms[1];
+    const double linfnorm = norms[2];
     using ResultsType = typename TestCaseType::ExpectedResultsType;
     EXPECT_NEAR(ResultsType::l1norm, l1norm, ResultsType::l1norm * ResultsType::tol);
     EXPECT_NEAR(ResultsType::l2norm, l2norm, ResultsType::l2norm * ResultsType::tol);

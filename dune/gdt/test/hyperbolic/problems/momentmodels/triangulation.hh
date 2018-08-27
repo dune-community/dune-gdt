@@ -151,6 +151,13 @@ public:
     return vertices_;
   }
 
+  DomainType center() const
+  {
+    DomainType center = (vertices_[0]->position() + vertices_[1]->position() + vertices_[2]->position()) / 3.;
+    center /= center.two_norm();
+    return center;
+  }
+
   QuadratureRuleType quadrature_rule(const Dune::QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule) const
   {
     QuadratureRuleType quadrature_rule;

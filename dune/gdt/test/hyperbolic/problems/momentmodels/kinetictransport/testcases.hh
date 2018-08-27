@@ -41,6 +41,8 @@ struct RealizabilityLimiterChooser<LegendrePolynomials<double, double, order>, A
   //      ClpLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
   using LocalRealizabilityLimiterType =
       NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
+  static constexpr size_t quad_order = 31;
+  static constexpr size_t num_quad_refinements = 6;
 
   template <class MatrixType>
   static std::unique_ptr<LpConvexhullRealizabilityLimitedSlope<BasisfunctionType, MatrixType>>
@@ -52,8 +54,7 @@ struct RealizabilityLimiterChooser<LegendrePolynomials<double, double, order>, A
 
   static std::unique_ptr<BasisfunctionType> make_basis_functions()
   {
-    const auto quadrature = BasisfunctionType::default_quadratures(10, 31);
-    return std::make_unique<BasisfunctionType>(quadrature);
+    return std::make_unique<BasisfunctionType>(31, 6);
   }
 };
 #endif
@@ -66,6 +67,8 @@ struct RealizabilityLimiterChooser<HatFunctions<double, 1, double, dimRange, 1, 
   using BasisfunctionType = HatFunctions<double, 1, double, dimRange, 1, 1>;
   using LocalRealizabilityLimiterType =
       NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
+  static constexpr size_t quad_order = 15;
+  static constexpr size_t num_quad_refinements = 0;
 
 #if HAVE_CLP
   template <class MatrixType>
@@ -84,10 +87,6 @@ struct RealizabilityLimiterChooser<HatFunctions<double, 1, double, dimRange, 1, 
     return std::make_unique<SlopeType>(epsilon);
   }
 #endif // HAVE_CLP
-  static std::unique_ptr<BasisfunctionType> make_basis_functions()
-  {
-    return std::make_unique<BasisfunctionType>();
-  }
 };
 
 template <size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType>
@@ -100,6 +99,8 @@ struct RealizabilityLimiterChooser<PiecewiseMonomials<double, 1, double, dimRang
   //      DgLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
   using LocalRealizabilityLimiterType =
       NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
+  static constexpr size_t quad_order = 15;
+  static constexpr size_t num_quad_refinements = 0;
 
   template <class MatrixType>
   static std::unique_ptr<Dg1dRealizabilityLimitedSlope<double, dimRange, MatrixType>>
@@ -125,6 +126,8 @@ struct RealizabilityLimiterChooser<RealSphericalHarmonics<double, double, order,
   using BasisfunctionType = RealSphericalHarmonics<double, double, order, 3>;
   using LocalRealizabilityLimiterType =
       NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
+  static constexpr size_t quad_order = 2 * order + 2; // fekete rule number 7
+  static constexpr size_t num_quad_refinements = 0;
 
   template <class MatrixType>
   static std::unique_ptr<LpConvexhullRealizabilityLimitedSlope<BasisfunctionType, MatrixType>>
@@ -141,6 +144,36 @@ struct RealizabilityLimiterChooser<RealSphericalHarmonics<double, double, order,
 };
 #endif
 
+template <size_t refinements, class AnalyticalFluxType, class DiscreteFunctionType>
+struct RealizabilityLimiterChooser<HatFunctions<double, 3, double, refinements, 1, 3>,
+                                   AnalyticalFluxType,
+                                   DiscreteFunctionType>
+{
+  using BasisfunctionType = HatFunctions<double, 3, double, refinements, 1, 3>;
+  using LocalRealizabilityLimiterType =
+      NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
+  static constexpr size_t dimRange = BasisfunctionType::dimRange;
+  static constexpr size_t quad_order = 7; // fekete rule number 7
+  static constexpr size_t num_quad_refinements = 2;
+
+#if HAVE_CLP
+  template <class MatrixType>
+  static std::unique_ptr<LpPositivityLimitedSlope<double, dimRange, MatrixType>>
+  make_slope(const BasisfunctionType& /*basis_functions*/, const double epsilon)
+  {
+    using SlopeType = LpPositivityLimitedSlope<double, dimRange, MatrixType>;
+    return std::make_unique<SlopeType>(epsilon);
+  }
+#else // HAVE_CLP
+  template <class MatrixType>
+  static std::unique_ptr<PositivityLimitedSlope<double, dimRange, MatrixType>>
+  make_slope(const BasisfunctionType& /*basis_functions*/, const double epsilon)
+  {
+    using SlopeType = PositivityLimitedSlope<double, dimRange, MatrixType>;
+    return std::make_unique<SlopeType>(epsilon);
+  }
+#endif // HAVE_CLP
+};
 
 #if HAVE_QHULL
 template <size_t refinements, class AnalyticalFluxType, class DiscreteFunctionType>
@@ -151,6 +184,8 @@ struct RealizabilityLimiterChooser<PiecewiseMonomials<double, 3, double, refinem
   using BasisfunctionType = PiecewiseMonomials<double, 3, double, refinements, 1, 3>;
   using LocalRealizabilityLimiterType =
       NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
+  static constexpr size_t quad_order = 3; // fekete rule number 3
+  static constexpr size_t num_quad_refinements = 0;
 
   template <class MatrixType>
   static std::unique_ptr<DgConvexHullRealizabilityLimitedSlope<BasisfunctionType, MatrixType>>
@@ -159,11 +194,6 @@ struct RealizabilityLimiterChooser<PiecewiseMonomials<double, 3, double, refinem
     using SlopeType = DgConvexHullRealizabilityLimitedSlope<BasisfunctionType, MatrixType>;
     //   using SlopeType = MinmodSlope<RangeType, MatrixType>;
     return std::make_unique<SlopeType>(basis_functions, epsilon);
-  }
-
-  static std::unique_ptr<BasisfunctionType> make_basis_functions()
-  {
-    return std::make_unique<BasisfunctionType>();
   }
 };
 #endif
@@ -193,9 +223,9 @@ struct SourceBeamPnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, rec
 template <bool reconstruct>
 struct SourceBeamPnExpectedResults<PiecewiseMonomials<double, 1, double, 8, 1, 1>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 0.33140398337610927 : 0.33140398337603194;
-  static constexpr double l2norm = reconstruct ? 0.47294828933204158 : 0.45667075585121392;
-  static constexpr double linfnorm = reconstruct ? 1.0490804598503622 : 0.99004736850989217;
+  static constexpr double l1norm = reconstruct ? 0.33140398337588411 : 0.33140398337567956;
+  static constexpr double l2norm = reconstruct ? 0.4558335407458029 : 0.44484887611129575;
+  static constexpr double linfnorm = reconstruct ? 0.99172184304968958 : 0.98930905293217597;
   static constexpr double tol = 1e-14;
 };
 
@@ -229,27 +259,27 @@ struct SourceBeamMnExpectedResults;
 template <bool reconstruct>
 struct SourceBeamMnExpectedResults<LegendrePolynomials<double, double, 7>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 0.33066818456325014 : 0.33107004463413914;
-  static constexpr double l2norm = reconstruct ? 0.4615751405564803 : 0.44609169128863851;
-  static constexpr double linfnorm = reconstruct ? 1.1553979882432861 : 1.0882801946666156;
+  static constexpr double l1norm = reconstruct ? 0.33140386483040757 : 0.33140386482516998;
+  static constexpr double l2norm = reconstruct ? 0.45585375203639722 : 0.44485813651836886;
+  static constexpr double linfnorm = reconstruct ? 0.99172157113121273 : 0.98930892899939982;
   static constexpr double tol = 1e-14;
 };
 
 template <bool reconstruct>
 struct SourceBeamMnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 0.33146057542497237 : 0.33146794280839997;
-  static constexpr double l2norm = reconstruct ? 0.46411980559363358 : 0.44913032300780292;
-  static constexpr double linfnorm = reconstruct ? 0.98904667015384473 : 0.98709215129457029;
+  static constexpr double l1norm = reconstruct ? 0.33140398337608101 : 0.33140398337582355;
+  static constexpr double l2norm = reconstruct ? 0.45585374774065163 : 0.44485696909271483;
+  static constexpr double linfnorm = reconstruct ? 0.99172209692400415 : 0.98930944853186242;
   static constexpr double tol = 1e-14;
 };
 
 template <bool reconstruct>
 struct SourceBeamMnExpectedResults<PiecewiseMonomials<double, 1, double, 8, 1, 1>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 0.33140398337610927 : 0.33140398337603194;
-  static constexpr double l2norm = reconstruct ? 0.47294828933204158 : 0.45667075585121392;
-  static constexpr double linfnorm = reconstruct ? 1.0490804598503622 : 0.99004736850989217;
+  static constexpr double l1norm = reconstruct ? 0.33140398337588411 : 0.33140398337567956;
+  static constexpr double l2norm = reconstruct ? 0.4558335407458029 : 0.44484887611129575;
+  static constexpr double linfnorm = reconstruct ? 0.99172184304968958 : 0.98930905293217597;
   static constexpr double tol = 1e-14;
 };
 
@@ -330,26 +360,26 @@ template <bool reconstruct>
 struct PlaneSourceMnExpectedResults<LegendrePolynomials<double, double, 7>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 2.0000000240000007 : 2.0000000240000029;
-  static constexpr double l2norm = reconstruct ? 2.9627559791618099 : 2.7793543802214402;
-  static constexpr double linfnorm = reconstruct ? 7.5368337466833273 : 5.9468208917837284;
+  static constexpr double l2norm = reconstruct ? 2.7921993086492169 : 2.7461013585034388;
+  static constexpr double linfnorm = reconstruct ? 4.8849177621513 : 5.3276983579096191;
   static constexpr double tol = 1e-14;
 };
 
 template <bool reconstruct>
 struct PlaneSourceMnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, reconstruct>
 {
-  static constexpr double l1norm = 2.0000000240000557;
-  static constexpr double l2norm = reconstruct ? 2.892587690555561 : 2.7677861047579322;
-  static constexpr double linfnorm = reconstruct ? 6.9955083584307651 : 5.8898335510903852;
+  static constexpr double l1norm = 2.0000000240000158;
+  static constexpr double l2norm = reconstruct ? 2.7968403961890758 : 2.7457197084995624;
+  static constexpr double linfnorm = reconstruct ? 5.247368376105662 : 4.9918923122990027;
   static constexpr double tol = 1e-14;
 };
 
 template <bool reconstruct>
 struct PlaneSourceMnExpectedResults<PiecewiseMonomials<double, 1, double, 8, 1, 1>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 2.000000024000026 : 2.0000000240000273;
-  static constexpr double l2norm = reconstruct ? 2.881005248537496 : 2.7713504721240083;
-  static constexpr double linfnorm = reconstruct ? 6.9331778582604997 : 6.0086435546642116;
+  static constexpr double l1norm = reconstruct ? 2.0000000239999913 : 2.0000000239999904;
+  static constexpr double l2norm = reconstruct ? 2.8215879031830924 : 2.7633864171093845;
+  static constexpr double linfnorm = reconstruct ? 6.0674052799293623 : 6.2607864745536039;
   static constexpr double tol = 1e-14;
 };
 
@@ -481,9 +511,9 @@ struct PointSourceMnExpectedResults;
 template <bool reconstruct>
 struct PointSourceMnExpectedResults<RealSphericalHarmonics<double, double, 2, 3>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 1.0007954640626406 : 1.0007954640534238;
-  static constexpr double l2norm = reconstruct ? 2.7177565161122006 : 2.7163083579825025;
-  static constexpr double linfnorm = reconstruct ? 10.461558474249745 : 10.498572083981468;
+  static constexpr double l1norm = reconstruct ? 1.0007954640632573 : 1.0007954640632366;
+  static constexpr double l2norm = reconstruct ? 2.6875983831354029 : 2.6817153143915298;
+  static constexpr double linfnorm = reconstruct ? 10.360218210413363 : 10.365996649935104;
   static constexpr double tol = 1e-14;
 };
 
@@ -492,9 +522,9 @@ struct PointSourceMnExpectedResults<HatFunctions<double, 3, double, 0, 1, 3>, re
 {
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
-  static constexpr double l1norm = reconstruct ? 1.0008094159849688 : 1.0008094159743741;
-  static constexpr double l2norm = reconstruct ? 2.7092776186023921 : 2.7069983342698274;
-  static constexpr double linfnorm = reconstruct ? 10.423991903881772 : 10.456911277964574;
+  static constexpr double l1norm = reconstruct ? 1.0007954632958449 : 1.0007954632958254;
+  static constexpr double l2norm = reconstruct ? 2.6947689708516487 : 2.6892993875002693;
+  static constexpr double linfnorm = reconstruct ? 10.379119469345591 : 10.395364963148149;
 #else
   static constexpr double l1norm = reconstruct ? 1.0008292531174403 : 1.0008292531057066;
   static constexpr double l2norm = reconstruct ? 2.7095647696183893 : 2.7070581236565103;
@@ -515,9 +545,9 @@ struct PointSourceMnExpectedResults<PiecewiseMonomials<double, 3, double, 0, 1, 
 {
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
-  static constexpr double l1norm = reconstruct ? 1.0008094159850585 : 1.000809415974838;
-  static constexpr double l2norm = reconstruct ? 2.7098602740535496 : 2.7065939033692201;
-  static constexpr double linfnorm = reconstruct ? 10.427604575554344 : 10.457121881221033;
+  static constexpr double l1norm = reconstruct ? 1.0008094159885297 : 1.0008094159873213;
+  static constexpr double l2norm = reconstruct ? 2.6984032921653527 : 2.6882435933317925;
+  static constexpr double linfnorm = reconstruct ? 10.391298207973659 : 10.394254425939714;
 #else
   static constexpr double l1norm = reconstruct ? 1.0008292531175822 : 1.0008292531061092;
   static constexpr double l2norm = reconstruct ? 2.7099187578817849 : 2.7066524774407608;

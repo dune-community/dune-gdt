@@ -74,18 +74,16 @@ using YaspGridTestCasesAll = testing::
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourceMnTestCase<Yasp3,
                                     Dune::GDT::Hyperbolic::Problems::RealSphericalHarmonics<double, double, 2, 3>,
-                                    true>
+                                    true>,
 #endif
-// Dune::GDT::Hyperbolic::Problems::KineticTransport::
-//    PointSourceMnTestCase<Yasp3,
-//                          Dune::GDT::Hyperbolic::Problems::HatFunctions<double, 3, double, 6, 1,
-//                          3>,
-//                          false>,
-// Dune::GDT::Hyperbolic::Problems::KineticTransport::
-//     PointSourceMnTestCase<Yasp3,
-//                           Dune::GDT::Hyperbolic::Problems::HatFunctions<double, 3, double, 6, 1,
-//                           3>,
-//                           true>,
+          Dune::GDT::Hyperbolic::Problems::KineticTransport::
+              PointSourceMnTestCase<Yasp3,
+                                    Dune::GDT::Hyperbolic::Problems::HatFunctions<double, 3, double, 0, 1, 3>,
+                                    false>,
+          Dune::GDT::Hyperbolic::Problems::KineticTransport::
+              PointSourceMnTestCase<Yasp3,
+                                    Dune::GDT::Hyperbolic::Problems::HatFunctions<double, 3, double, 0, 1, 3>,
+                                    true>
 #if HAVE_QHULL
           ,
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
