@@ -57,7 +57,7 @@ struct LinearTransportProblem
   DiscreteFunction<Vector, GV> make_exact_solution__periodic_boundaries(const SpaceInterface<GV, 1>& space,
                                                                         const double& time) const
   {
-    DUNE_THROW_IF(time > 1., XT::Common::Exceptions::wrong_input_given, "time = " << time);
+    DUNE_THROW_IF(time > 10., XT::Common::Exceptions::wrong_input_given, "time = " << time);
     const auto indicator = [](const auto& x) {
       if (0.25 <= x && x <= 0.5)
         return 1.;
@@ -65,7 +65,7 @@ struct LinearTransportProblem
         return 0.;
     };
     return interpolate<Vector>(
-        0, [&](const auto& xx, const auto& /*mu*/) { return indicator(std::fmod(xx[0] - time + 1., 1.)); }, space);
+        0, [&](const auto& xx, const auto& /*mu*/) { return indicator(std::fmod(xx[0] - time + 10., 1.)); }, space);
   } // ... make_exact_solution__periodic_boundaries(...)
 }; // struct LinearTransportProblem
 
@@ -145,8 +145,11 @@ protected:
     self.reference_grid_ = std::make_unique<GP>(make_initial_grid());
     for (size_t ref = 0; ref < self.num_refinements_ + self.num_additional_refinements_for_reference_; ++ref)
       self.reference_grid_->global_refine(DGFGridInfo<G>::refineStepsForHalf());
+    auto st = self.space_type_;
+    self.space_type_ = "fv";
     self.reference_space_ = self.make_space(*self.reference_grid_);
     const auto dt = estimate_dt(*self.reference_space_).second;
+    self.space_type_ = st;
     self.reference_solution_on_reference_grid_ = std::make_unique<XT::LA::ListVectorArray<V>>(
         self.reference_space_->mapper().size(), /*length=*/0, /*reserve=*/std::ceil(self.T_end_ / dt));
     double time = 0.;
@@ -172,11 +175,11 @@ protected:
 template <class G>
 class LinearTransportExplicitTest : public LinearTransportTest<G>
 {
+protected:
   using BaseType = LinearTransportTest<G>;
   using typename BaseType::S;
   using typename BaseType::V;
 
-protected:
   XT::LA::ListVectorArray<V> solve(const S& space, const double T_end, const double dt) override final
   {
     const auto u_0 = this->make_initial_values(space);
