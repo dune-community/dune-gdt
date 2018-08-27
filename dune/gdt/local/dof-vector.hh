@@ -116,6 +116,11 @@ public:
     return size_;
   }
 
+  void resize(const size_t new_size)
+  {
+    DUNE_THROW_IF(this->size() != new_size, Exceptions::dof_vector_error, "this does not make sense!");
+  }
+
   void add_to_entry(const size_t /*ii*/, const ScalarType& /*value*/)
   {
     DUNE_THROW(Exceptions::dof_vector_error, "a ConstLocalDofVector is not mutable!");
