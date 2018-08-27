@@ -164,15 +164,28 @@ protected:
       return Problem::access().template make_initial_values<V>(space);
   } // ... make_initial_values(...)
 
-  double estimate_dt(const S& space) override final
+  // Apart from the boundary_data_range, this is the same as BaseType::estimate_dt
+  std::pair<double, double> estimate_dt(const S& space) override final
   {
-    if (boundary_treatment == "inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right")
-      return estimate_dt_for_hyperbolic_system(space.grid_view(),
-                                               make_initial_values(space),
-                                               flux(),
-                                               /*boundary_data_range=*/{{0.5, 0., 0.4}, {1.5, 0.5, 0.4}});
-    else
-      return estimate_dt_for_hyperbolic_system(space.grid_view(), make_initial_values(space), flux());
+    if (boundary_treatment == "inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right") {
+      const auto u_0 = this->make_initial_values(space);
+      const auto fv_dt = estimate_dt_for_hyperbolic_system(space.grid_view(),
+                                                           u_0,
+                                                           flux(),
+                                                           /*boundary_data_range=*/{{0.5, 0., 0.4}, {1.5, 0.5, 0.4}});
+      if (this->space_type_ == "fv")
+        return {fv_dt, fv_dt};
+      const auto max_sup_norm = 1.25 * u_0.dofs().vector().sup_norm();
+      const auto actual_dt = XT::Common::find_largest_by_bisection(1e-15, fv_dt, [&](const auto& dt_to_test) {
+        const auto solution = this->solve(space, 250 * dt_to_test, dt_to_test);
+        for (const auto& vec : solution.vectors())
+          if (vec.sup_norm() > max_sup_norm)
+            return false;
+        return true;
+      });
+      return {fv_dt, actual_dt};
+    } else
+      return BaseType::estimate_dt(space);
   } // ... estimate_dt(...)
 
   GP make_initial_grid() override final

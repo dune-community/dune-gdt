@@ -10,6 +10,7 @@
 #ifndef DUNE_GDT_TEST_INSTATIONARY_EOCSTUDIES_HYPERBOLIC_NONCONFORMING_HH
 #define DUNE_GDT_TEST_INSTATIONARY_EOCSTUDIES_HYPERBOLIC_NONCONFORMING_HH
 
+#include <dune/xt/common/bisect.hh>
 #include <dune/xt/grid/view/periodic.hh>
 #include <dune/xt/functions/lambda/function.hh>
 
@@ -75,10 +76,22 @@ protected:
 
   virtual DF make_initial_values(const S& space) = 0;
 
-  virtual double estimate_dt(const S& space) override
+  virtual std::pair<double, double> estimate_dt(const S& space) override
   {
-    return estimate_dt_for_hyperbolic_system(space.grid_view(), make_initial_values(space), flux());
-  }
+    const auto u_0 = this->make_initial_values(space);
+    const auto fv_dt = estimate_dt_for_hyperbolic_system(space.grid_view(), u_0, flux());
+    if (space_type_ == "fv")
+      return {fv_dt, fv_dt};
+    const auto max_sup_norm = 1.25 * u_0.dofs().vector().sup_norm();
+    const auto actual_dt = XT::Common::find_largest_by_bisection(1e-15, fv_dt, [&](const auto& dt_to_test) {
+      const auto solution = this->solve(space, 250 * dt_to_test, dt_to_test);
+      for (const auto& vec : solution.vectors())
+        if (vec.sup_norm() > max_sup_norm)
+          return false;
+      return true;
+    });
+    return {fv_dt, actual_dt};
+  } // ... estimate_dt(...)
 
   virtual std::unique_ptr<S> make_space(const GP& current_grid) override
   {

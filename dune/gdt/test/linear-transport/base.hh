@@ -111,13 +111,13 @@ public:
       return BaseType::targets();
   }
 
-  double estimate_dt(const S& space) override
+  std::pair<double, double> estimate_dt(const S& space) override
   {
-    if (d == 1) { // in 1d we know that dt = h is a good choice
+    if (d == 1 && this->space_type_ == "fv") { // here we know that dt = h is a good choice
       double grid_width = 0.;
       for (auto&& grid_element : elements(space.grid_view()))
         grid_width = std::max(grid_width, XT::Grid::entity_diameter(grid_element));
-      return grid_width;
+      return {grid_width, grid_width};
     } else
       return BaseType::estimate_dt(space);
   } // ... estimate_dt(...)
@@ -147,9 +147,9 @@ protected:
     for (size_t ref = 0; ref < self.num_refinements_ + self.num_additional_refinements_for_reference_; ++ref)
       self.reference_grid_->global_refine(DGFGridInfo<G>::refineStepsForHalf());
     self.reference_space_ = self.make_space(*self.reference_grid_);
-    const auto dt = estimate_dt(*self.reference_space_);
+    const auto dt = estimate_dt(*self.reference_space_).second;
     self.reference_solution_on_reference_grid_ = std::make_unique<XT::LA::ListVectorArray<V>>(
-        self.reference_space_->mapper().size(), /*length=*/0, /*reserve=*/std::ceil(self.T_end_ / (dt)));
+        self.reference_space_->mapper().size(), /*length=*/0, /*reserve=*/std::ceil(self.T_end_ / dt));
     double time = 0.;
     while (time < self.T_end_ + dt) {
       auto u_t = Problem::access().template make_exact_solution__periodic_boundaries<V>(*self.reference_space_, time);

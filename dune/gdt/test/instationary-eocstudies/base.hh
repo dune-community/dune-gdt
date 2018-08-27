@@ -126,7 +126,10 @@ protected:
 
   virtual std::unique_ptr<S> make_space(const GP& current_grid) = 0;
 
-  virtual double estimate_dt(const S& space) = 0;
+  /**
+   * Something like {some_reference_dt, actually_used_dt}, 2nd will be used.
+   */
+  virtual std::pair<double, double> estimate_dt(const S& space) = 0;
 
 public:
   virtual std::string discretization_info(const size_t refinement_level) override
@@ -151,7 +154,9 @@ public:
       current_refinement_ = refinement_level;
       current_data_.clear();
       current_data_["target"]["h"] = grid_width;
-      current_data_["target"]["dt"] = self.estimate_dt(*current_space_);
+      auto dts = self.estimate_dt(*current_space_);
+      current_data_["info"]["explicit_dt"] = dts.first;
+      current_data_["target"]["dt"] = dts.second;
       current_data_["info"]["num_grid_elements"] = grid_size;
       current_data_["info"]["num_dofs"] = current_space_->mapper().size();
     }
@@ -184,8 +189,8 @@ protected:
     for (size_t ref = 0; ref < num_refinements_ + num_additional_refinements_for_reference_; ++ref)
       reference_grid_->global_refine(DGFGridInfo<G>::refineStepsForHalf());
     reference_space_ = make_space(*reference_grid_);
-    reference_solution_on_reference_grid_ =
-        std::make_unique<XT::LA::ListVectorArray<V>>(solve(*reference_space_, T_end_, estimate_dt(*reference_space_)));
+    reference_solution_on_reference_grid_ = std::make_unique<XT::LA::ListVectorArray<V>>(
+        solve(*reference_space_, T_end_, estimate_dt(*reference_space_).second));
     // visualize
     const BS reference_bochner_space(*reference_space_,
                                      time_points_from_vector_array(*reference_solution_on_reference_grid_));
