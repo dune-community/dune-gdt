@@ -40,7 +40,7 @@ public:
     , range_(range)
     , analytical_flux_(analytical_flux)
     , param_(param)
-    , filename_(filename)
+    , filename_(filename + "_regularization.txt")
   {
     param_.set("boundary", {0.});
   }

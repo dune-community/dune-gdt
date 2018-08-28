@@ -495,7 +495,7 @@ class DgConvexHullRealizabilityLimitedSlope
   static const size_t num_blocks = dimRange / block_size;
   using VectorType = XT::Common::BlockedFieldVector<RangeFieldType, num_blocks, block_size>;
   using BaseType = SlopeBase<VectorType, MatrixType, 3>;
-  using BlockRangeType = FieldVector<RangeFieldType, block_size>;
+  using BlockRangeType = typename VectorType::BlockType;
   using BlockPlaneCoefficientsType = typename std::vector<std::pair<BlockRangeType, RangeFieldType>>;
   using PlaneCoefficientsType = FieldVector<BlockPlaneCoefficientsType, num_blocks>;
 
@@ -532,20 +532,13 @@ public:
       const VectorType& u_char = reconstructed_values[kk];
       // convert back to ordinary coordinates
       A.mv(u_char, u);
-      FieldVector<RangeFieldType, block_size> u_block, u_bar_block;
       for (size_t jj = 0; jj < num_blocks; ++jj) {
-        const size_t offset = jj * block_size;
-        // copy to local vectors
-        for (size_t ii = 0; ii < block_size; ++ii) {
-          u_block[ii] = u[offset + ii];
-          u_bar_block[ii] = u_bar[offset + ii];
-        }
         // Check realizability of u_bar in this block. The first condition avoids unnecessary repeated checking.
-        if (thetas[jj] == 1. || !is_epsilon_realizable(u_bar_block, jj)) {
+        if (thetas[jj] == 1. || !is_epsilon_realizable(u_bar.block(jj), jj)) {
           thetas[jj] = 1.;
           continue;
         }
-        thetas[jj] = std::max(thetas[jj], get_block_theta(u_block, u_bar_block, jj));
+        thetas[jj] = std::max(thetas[jj], get_block_theta(u.block(jj), u_bar.block(jj), jj));
       } // jj
     } // kk
 

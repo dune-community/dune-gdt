@@ -145,7 +145,7 @@ public:
     for (size_t rr = 0; rr < dimRange; ++rr)
       for (size_t cc = 0; cc < dimRange; ++cc)
         G[rr][cc] = basis_integrated[rr] * c[cc];
-    const auto vol = BasisfunctionType::unit_ball_volume();
+    const auto vol = basis_functions_.unit_ball_volume();
     std::vector<RhsAffineFunctionType> affine_functions;
     for (size_t ii = 0; ii < num_regions; ++ii) {
       MatrixType G_scaled = G;

@@ -426,7 +426,7 @@ public:
 
       // if value has already been calculated for these values, skip computation
       const auto cache_iterator = cache_.find_closest(u_prime);
-      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime)) {
+      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime, 1e-13, 1e-13)) {
         const auto alpha_prime = cache_iterator->second;
         ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
@@ -434,6 +434,7 @@ public:
         mutex_.unlock();
         return ret;
       } else if (only_cache) {
+        mutex_.unlock();
         DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
         StateRangeType u_iso = basis_functions_.u_iso();
@@ -999,45 +1000,6 @@ private:
 #endif // HAVE_CLP
 
 #if 1
-
-// explicit specialization for 4, 4 because dune-common's operator+/-= do not compile if the two sizes are equal
-template <class FieldType>
-FieldVector<FieldVector<FieldType, 4>, 4>& operator-=(FieldVector<FieldVector<FieldType, 4>, 4>& vec1,
-                                                      const FieldVector<FieldVector<FieldType, 4>, 4>& vec2)
-{
-  for (size_t ii = 0; ii < vec1.size(); ++ii)
-    vec1[ii] -= vec2[ii];
-  return vec1;
-}
-
-template <class FieldType>
-FieldVector<FieldVector<FieldType, 4>, 4>& operator+=(FieldVector<FieldVector<FieldType, 4>, 4>& vec1,
-                                                      const FieldVector<FieldVector<FieldType, 4>, 4>& vec2)
-{
-  for (size_t ii = 0; ii < vec1.size(); ++ii)
-    vec1[ii] += vec2[ii];
-  return vec1;
-}
-
-// explicit specialization for 2, 2 because dune-common's operator+/-= do not compile if the two sizes are equal
-template <class FieldType>
-FieldVector<FieldVector<FieldType, 2>, 2>& operator-=(FieldVector<FieldVector<FieldType, 2>, 2>& vec1,
-                                                      const FieldVector<FieldVector<FieldType, 2>, 2>& vec2)
-{
-  for (size_t ii = 0; ii < vec1.size(); ++ii)
-    vec1[ii] -= vec2[ii];
-  return vec1;
-}
-
-template <class FieldType>
-FieldVector<FieldVector<FieldType, 2>, 2>& operator+=(FieldVector<FieldVector<FieldType, 2>, 2>& vec1,
-                                                      const FieldVector<FieldVector<FieldType, 2>, 2>& vec2)
-{
-  for (size_t ii = 0; ii < vec1.size(); ++ii)
-    vec1[ii] += vec2[ii];
-  return vec1;
-}
-
 /**
  * Specialization for DG basis
  */
@@ -1263,7 +1225,7 @@ public:
 
       // if value has already been calculated for these values, skip computation
       const auto cache_iterator = cache_.find_closest(u_prime_in);
-      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime_in)) {
+      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime_in, 1e-13, 1e-13)) {
         const auto alpha_prime = cache_iterator->second;
         ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
@@ -2189,7 +2151,7 @@ public:
       StateRangeType alpha_iso = basis_functions_.alpha_iso();
       // if value has already been calculated for these values, skip computation
       const auto cache_iterator = cache_.find_closest(u_prime);
-      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime)) {
+      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime, 1e-13, 1e-13)) {
         const auto alpha_prime = cache_iterator->second;
         ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
@@ -2197,6 +2159,7 @@ public:
         mutex_.unlock();
         return ret;
       } else if (only_cache) {
+        mutex_.unlock();
         DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
         StateRangeType u_iso = basis_functions_.u_iso();
@@ -2809,7 +2772,7 @@ public:
 
       // if value has already been calculated for these values, skip computation
       const auto cache_iterator = cache_.find_closest(u_prime);
-      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime)) {
+      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime, 1e-13, 1e-13)) {
         const auto alpha_prime = cache_iterator->second;
         ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
@@ -2817,6 +2780,7 @@ public:
         mutex_.unlock();
         return ret;
       } else if (only_cache) {
+        mutex_.unlock();
         DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
         RangeFieldType tau_prime =

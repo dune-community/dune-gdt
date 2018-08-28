@@ -372,9 +372,18 @@ public:
 
   virtual RangeFieldType density(const RangeType& u) const = 0;
 
+  // Volume of integration domain. For the Mn models it is important that u_iso has density 1. If the basis is exactly
+  // integrated, we thus use the exact unit ball volume. If the basis is only integrated by quadrature, we have to use
+  // <1> as volume to get a density of 1.
+  virtual RangeFieldType unit_ball_volume() const
+  {
+    return unit_ball_volume_exact();
+  }
+
   virtual RangeType u_iso() const
   {
-    return integrated() / unit_ball_volume();
+    static RangeType ret = integrated() / unit_ball_volume();
+    return ret;
   }
 
   virtual std::string short_id() const = 0;
@@ -433,7 +442,7 @@ public:
     return QuadraturesType(1, LebedevQuadrature<DomainFieldType, true>::get(quad_order));
   }
 
-  static RangeFieldType unit_ball_volume()
+  static RangeFieldType unit_ball_volume_exact()
   {
     if (dimDomain == 1)
       return 2;
@@ -445,6 +454,14 @@ public:
       DUNE_THROW(NotImplemented, "");
       return 0;
     }
+  }
+
+  RangeFieldType unit_ball_volume_quad() const
+  {
+    RangeFieldType ret(0.);
+    for (const auto& quad_point : quadratures_.merged())
+      ret += quad_point.weight();
+    return ret;
   }
 
 protected:

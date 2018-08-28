@@ -401,6 +401,11 @@ public:
     return triangulation_;
   }
 
+  virtual RangeFieldType unit_ball_volume() const override final
+  {
+    return BaseType::unit_ball_volume_quad();
+  }
+
   virtual RangeType alpha_iso() const override final
   {
     return RangeType(1.);

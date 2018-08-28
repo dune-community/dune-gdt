@@ -318,7 +318,7 @@ public:
   using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
-  using BlockRangeType = FieldVector<RangeFieldType, block_size>;
+  using BlockRangeType = XT::Common::FieldVector<RangeFieldType, block_size>;
   using BlockPlaneCoefficientsType = typename std::vector<std::pair<BlockRangeType, RangeFieldType>>;
   using PlaneCoefficientsType = FieldVector<BlockPlaneCoefficientsType, num_blocks>;
 
@@ -413,6 +413,11 @@ public:
       return XT::Common::to_string(psi, 15);
     };
   } // ... stringifier()
+
+  virtual RangeFieldType unit_ball_volume() const override final
+  {
+    return BaseType::unit_ball_volume_quad();
+  }
 
   virtual RangeType alpha_iso() const override final
   {
