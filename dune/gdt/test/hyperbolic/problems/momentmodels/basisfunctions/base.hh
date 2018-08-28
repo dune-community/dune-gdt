@@ -374,7 +374,7 @@ public:
 
   virtual RangeType u_iso() const
   {
-    return integrated() * unit_ball_volume();
+    return integrated() / unit_ball_volume();
   }
 
   virtual std::string short_id() const = 0;

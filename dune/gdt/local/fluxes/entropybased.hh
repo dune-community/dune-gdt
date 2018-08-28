@@ -2809,7 +2809,7 @@ public:
 
       // if value has already been calculated for these values, skip computation
       const auto cache_iterator = cache_.find_closest(u_prime);
-      if (cache_iterator != cache_.end() && cache_iterator->first == u_prime) {
+      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime)) {
         const auto alpha_prime = cache_iterator->second;
         ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
