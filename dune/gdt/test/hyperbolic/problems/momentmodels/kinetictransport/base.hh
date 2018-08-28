@@ -145,7 +145,7 @@ public:
     for (size_t rr = 0; rr < dimRange; ++rr)
       for (size_t cc = 0; cc < dimRange; ++cc)
         G[rr][cc] = basis_integrated[rr] * c[cc];
-    const auto vol = unit_ball_volume();
+    const auto vol = BasisfunctionType::unit_ball_volume();
     std::vector<RhsAffineFunctionType> affine_functions;
     for (size_t ii = 0; ii < num_regions; ++ii) {
       MatrixType G_scaled = G;
@@ -216,20 +216,6 @@ protected:
   static size_t get_num_regions(const DynamicVector<size_t>& num_segments)
   {
     return std::accumulate(num_segments.begin(), num_segments.end(), size_t(1), [](auto a, auto b) { return a * b; });
-  }
-
-  static RangeFieldType unit_ball_volume()
-  {
-    if (BasisfunctionType::dimDomain == 1)
-      return 2;
-    else if (BasisfunctionType::dimDomain == 2)
-      return 2 * M_PI;
-    else if (BasisfunctionType::dimDomain == 3)
-      return 4 * M_PI;
-    else {
-      DUNE_THROW(NotImplemented, "");
-      return 0;
-    }
   }
 
   using BaseType::basis_functions_;

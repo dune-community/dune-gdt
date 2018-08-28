@@ -150,7 +150,16 @@ struct HyperbolicMnDiscretization
         typename ReconstructionOperatorType::MatrixType>(*basis_functions, epsilon);
     ReconstructionOperatorType reconstruction_operator(
         analytical_flux, boundary_values, *slope, Dune::GDT::default_1d_quadrature<double>(1));
-    RegularizationOperatorType regularization_operator(analytical_flux);
+
+    filename += "_" + ProblemType::static_id();
+    filename += "_grid_" + grid_size;
+    filename += "_tend_" + XT::Common::to_string(t_end);
+    filename += "_quad" + XT::Common::to_string(num_quad_refinements) + "x" + XT::Common::to_string(quad_order);
+    filename += std::is_same<FvOperatorType, ReconstructionFvOperatorType>::value ? "_ord2" : "_ord1";
+    filename += "_" + basis_functions->short_id();
+    filename += "_m" + Dune::XT::Common::to_string(dimRange);
+
+    RegularizationOperatorType regularization_operator(analytical_flux, filename);
 
     RealizabilityLimiterType realizability_limiter(analytical_flux, *basis_functions, epsilon);
     ReconstructionFvOperatorType reconstruction_fv_operator(
@@ -163,14 +172,6 @@ struct HyperbolicMnDiscretization
     OperatorTimeStepperType timestepper_op(fv_operator, u, -1.0);
     RhsOperatorTimeStepperType timestepper_rhs(rhs_operator, u);
     TimeStepperType timestepper(timestepper_rhs, timestepper_op);
-    filename += "_" + ProblemType::static_id();
-    filename += "_grid_" + grid_size;
-    filename += "_tend_" + XT::Common::to_string(t_end);
-    filename += "_quad" + XT::Common::to_string(num_quad_refinements) + "x" + XT::Common::to_string(quad_order);
-    filename += std::is_same<FvOperatorType, ReconstructionFvOperatorType>::value ? "_ord2" : "_ord1";
-    filename += "_" + basis_functions->short_id();
-    filename += "_m" + Dune::XT::Common::to_string(dimRange);
-
     auto visualizer = basis_functions->template visualizer<DiscreteFunctionType>();
     timestepper.solve(t_end,
                       dt,

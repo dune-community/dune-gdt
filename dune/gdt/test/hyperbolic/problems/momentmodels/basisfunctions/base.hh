@@ -374,7 +374,7 @@ public:
 
   virtual RangeType u_iso() const
   {
-    return integrated() * 0.5;
+    return integrated() * unit_ball_volume();
   }
 
   virtual std::string short_id() const = 0;
@@ -431,6 +431,20 @@ public:
   static std::enable_if_t<dD == 3, QuadraturesType> lebedev_quadrature(const size_t quad_order)
   {
     return QuadraturesType(1, LebedevQuadrature<DomainFieldType, true>::get(quad_order));
+  }
+
+  static RangeFieldType unit_ball_volume()
+  {
+    if (dimDomain == 1)
+      return 2;
+    else if (dimDomain == 2)
+      return 2 * M_PI;
+    else if (dimDomain == 3)
+      return 4 * M_PI;
+    else {
+      DUNE_THROW(NotImplemented, "");
+      return 0;
+    }
   }
 
 protected:
