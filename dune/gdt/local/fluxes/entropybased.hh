@@ -133,7 +133,6 @@ private:
 template <class BasisfunctionImp, class GridLayerImp, class U>
 class EntropyBasedLocalFlux;
 
-#if HAVE_CLP
 /** Analytical flux \mathbf{f}(\mathbf{u}) = < \mu \mathbf{m} G_{\hat{\alpha}(\mathbf{u})} >,
  * for the notation see
  * Alldredge, Hauck, O'Leary, Tits, "Adaptive change of basis in entropy-based moment closures for linear kinetic
@@ -250,8 +249,13 @@ public:
                   const RangeFieldType epsilon,
                   const MatrixType& T_minus_one,
                   LocalCacheType& cache,
-                  std::mutex& mutex,
+                  std::mutex& mutex
+#if HAVE_CLP
+                  ,
                   XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& lp)
+#else
+                  )
+#endif
       : LocalfunctionType(e)
       , basis_functions_(basis_functions)
       , quad_points_(quad_points)
@@ -268,61 +272,120 @@ public:
       , T_minus_one_(T_minus_one)
       , cache_(cache)
       , mutex_(mutex)
-      , lp_(lp)
+#if HAVE_CLP
+      , realizability_helper_(basis_functions_, quad_points_, lp)
+#else
+      , realizability_helper_(basis_functions_, quad_points_)
+#endif
     {
     }
 
-    void setup_linear_program() const
+    template <class BasisFuncImp = BasisfunctionType, bool quadrature_contains_vertices = true, bool anything = true>
+    struct RealizabilityHelper;
+
+#if HAVE_CLP
+    template <class BasisFuncImp, bool quadrature_contains_vertices, bool anything>
+    struct RealizabilityHelper
     {
-      if (!*lp_) {
-        // We start with creating a model with dimRange rows and num_quad_points columns */
-        constexpr int num_rows = static_cast<int>(dimRange);
-        assert(quad_points_.size() < std::numeric_limits<int>::max());
-        int num_cols = static_cast<int>(quad_points_.size()); /* variables are x_1, ..., x_{num_quad_points} */
-        *lp_ = std::make_unique<ClpSimplex>(false);
-        auto& lp = **lp_;
-        // set number of rows
-        lp.resize(num_rows, 0);
+      static_assert(std::is_same<BasisFuncImp, BasisfunctionType>::value, "BasisFuncImp has to be BasisfunctionType!");
 
-        // Clp wants the row indices that are non-zero in each column. We have a dense matrix, so provide all indices
-        // 0..num_rows
-        std::array<int, num_rows> row_indices;
-        for (int ii = 0; ii < num_rows; ++ii)
-          row_indices[static_cast<size_t>(ii)] = ii;
-
-        // set columns for quadrature points
-        for (int ii = 0; ii < num_cols; ++ii) {
-          const auto v_i = basis_functions_.evaluate(quad_points_[static_cast<size_t>(ii)]);
-          // First argument: number of elements in column
-          // Second/Third argument: indices/values of column entries
-          // Fourth/Fifth argument: lower/upper column bound, i.e. lower/upper bound for x_i. As all x_i should be
-          // positive, set to 0/inf, which is the default.
-          // Sixth argument: Prefactor in objective for x_i, this is 0 for all x_i, which is also the default;
-          lp.addColumn(num_rows, row_indices.data(), &(v_i[0]));
-        }
-
-        // silence lp
-        lp.setLogLevel(0);
-      } // if (!lp_)
-    }
-
-    //  RangeFieldType solve_linear_program(const RangeType& u_bar, const RangeType& u_l, const size_t index)
-    bool is_realizable(const StateRangeType& u) const
-    {
-      const auto u_prime = u / basis_functions_.density(u);
-      setup_linear_program();
-      auto& lp = **lp_;
-      constexpr int num_rows = static_cast<int>(dimRange);
-      // set rhs (equality constraints, so set both bounds equal
-      for (int ii = 0; ii < num_rows; ++ii) {
-        size_t uii = static_cast<size_t>(ii);
-        lp.setRowLower(ii, u_prime[uii]);
-        lp.setRowUpper(ii, u_prime[uii]);
+      RealizabilityHelper(const BasisfunctionType& basis_functions,
+                          const std::vector<DomainType>& quad_points,
+                          XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& lp)
+        : basis_functions_(basis_functions)
+        , quad_points_(quad_points)
+        , lp_(lp)
+      {
       }
-      // Now check solvability
-      lp.primal();
-      return lp.primalFeasible();
-    }
+
+      void setup_linear_program() const
+      {
+        if (!*lp_) {
+          // We start with creating a model with dimRange rows and num_quad_points columns */
+          constexpr int num_rows = static_cast<int>(dimRange);
+          assert(quad_points_.size() < std::numeric_limits<int>::max());
+          int num_cols = static_cast<int>(quad_points_.size()); /* variables are x_1, ..., x_{num_quad_points} */
+          *lp_ = std::make_unique<ClpSimplex>(false);
+          auto& lp = **lp_;
+          // set number of rows
+          lp.resize(num_rows, 0);
+
+          // Clp wants the row indices that are non-zero in each column. We have a dense matrix, so provide all indices
+          // 0..num_rows
+          std::array<int, num_rows> row_indices;
+          for (int ii = 0; ii < num_rows; ++ii)
+            row_indices[static_cast<size_t>(ii)] = ii;
+
+          // set columns for quadrature points
+          for (int ii = 0; ii < num_cols; ++ii) {
+            const auto v_i = basis_functions_.evaluate(quad_points_[static_cast<size_t>(ii)]);
+            // First argument: number of elements in column
+            // Second/Third argument: indices/values of column entries
+            // Fourth/Fifth argument: lower/upper column bound, i.e. lower/upper bound for x_i. As all x_i should be
+            // positive, set to 0/inf, which is the default.
+            // Sixth argument: Prefactor in objective for x_i, this is 0 for all x_i, which is also the default;
+            lp.addColumn(num_rows, row_indices.data(), &(v_i[0]));
+          }
+
+          // silence lp
+          lp.setLogLevel(0);
+        } // if (!lp_)
+      }
+
+      bool is_realizable(const StateRangeType& u) const
+      {
+        const auto u_prime = u / basis_functions_.density(u);
+        setup_linear_program();
+        auto& lp = **lp_;
+        constexpr int num_rows = static_cast<int>(dimRange);
+        // set rhs (equality constraints, so set both bounds equal
+        for (int ii = 0; ii < num_rows; ++ii) {
+          size_t uii = static_cast<size_t>(ii);
+          lp.setRowLower(ii, u_prime[uii]);
+          lp.setRowUpper(ii, u_prime[uii]);
+        }
+        // Now check solvability
+        lp.primal();
+        return lp.primalFeasible();
+      }
+
+    private:
+      const BasisfunctionType& basis_functions_;
+      const std::vector<DomainType>& quad_points_;
+      XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& lp_;
+    }; // struct RealizabilityHelper<...>
+#endif
+
+    // specialization for hatfunctions
+    template <size_t dimRange_or_refinements, bool anything>
+    struct RealizabilityHelper<Hyperbolic::Problems::HatFunctions<DomainFieldType,
+                                                                  dimDomain,
+                                                                  RangeFieldType,
+                                                                  dimRange_or_refinements,
+                                                                  1,
+                                                                  dimDomain>,
+                               true,
+                               anything>
+    {
+      RealizabilityHelper(const BasisfunctionType& /*basis_functions*/,
+                          const std::vector<DomainType>& /*quad_points*/
+#if HAVE_CLP
+                          ,
+                          XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& /*lp*/)
+#else
+                          )
+#endif
+      {
+      }
+
+      static bool is_realizable(const StateRangeType& u)
+      {
+        for (const auto& u_i : u)
+          if (u_i < 0.)
+            return false;
+        return true;
+      }
+    }; // struct RealizabilityHelper<Hatfunctions, ...>
 
     void keep(const StateRangeType& u)
     {
@@ -502,7 +565,7 @@ public:
             XT::LA::solve_lower_triangular_transposed(*T_k, d_alpha_tilde, d_k);
             if (g_alpha_tilde.two_norm() < tau_prime
                 && 1 - epsilon_gamma_ < std::exp(d_alpha_tilde.one_norm() + std::abs(std::log(density_tilde)))
-                && is_realizable(u_eps_diff)) {
+                && realizability_helper_.is_realizable(u_eps_diff)) {
               ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
               cache_.insert(v, alpha_prime);
@@ -760,7 +823,7 @@ public:
     // constructor)
     LocalCacheType& cache_;
     std::mutex& mutex_;
-    XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& lp_;
+    RealizabilityHelper<BasisfunctionType, true, true> realizability_helper_;
   }; // class Localfunction
 
   static std::string static_id()
@@ -791,8 +854,13 @@ public:
                                            epsilon_,
                                            T_minus_one_,
                                            cache_[index],
-                                           mutexes_[index],
+                                           mutexes_[index]
+#if HAVE_CLP
+                                           ,
                                            lp_);
+#else
+                                           )
+#endif
   }
 
   // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
@@ -861,142 +929,11 @@ private:
   // constructor)
   mutable std::vector<LocalCacheType> cache_;
   mutable std::vector<std::mutex> mutexes_;
+#if HAVE_CLP
   mutable XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>> lp_;
+#endif
 };
 
-#else // HAVE_CLP
-
-template <class BasisfunctionImp, class GridLayerImp, class U>
-class EntropyBasedLocalFlux
-    : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
-                                                             typename BasisfunctionImp::DomainFieldType,
-                                                             BasisfunctionImp::dimFlux,
-                                                             U,
-                                                             0,
-                                                             typename BasisfunctionImp::RangeFieldType,
-                                                             BasisfunctionImp::dimRange,
-                                                             BasisfunctionImp::dimFlux>
-{
-  typedef typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
-                                                                   typename BasisfunctionImp::DomainFieldType,
-                                                                   BasisfunctionImp::dimFlux,
-                                                                   U,
-                                                                   0,
-                                                                   typename BasisfunctionImp::RangeFieldType,
-                                                                   BasisfunctionImp::dimRange,
-                                                                   BasisfunctionImp::dimFlux>
-      BaseType;
-
-public:
-  typedef BasisfunctionImp BasisfunctionType;
-  typedef GridLayerImp GridLayerType;
-  using typename BaseType::EntityType;
-  using typename BaseType::DomainType;
-  using typename BaseType::DomainFieldType;
-  using typename BaseType::StateType;
-  using typename BaseType::StateRangeType;
-  using typename BaseType::RangeType;
-  using typename BaseType::RangeFieldType;
-  using typename BaseType::PartialURangeType;
-  using typename BaseType::LocalfunctionType;
-  using BaseType::dimDomain;
-  using BaseType::dimRange;
-  using BaseType::dimRangeCols;
-  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
-  using VectorType = FieldVector<RangeFieldType, dimRange>;
-  using BasisValuesMatrixType = XT::LA::CommonDenseMatrix<RangeFieldType>;
-  typedef Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
-  typedef std::pair<VectorType, RangeFieldType> AlphaReturnType;
-  typedef EntropyLocalCache<StateRangeType, VectorType> LocalCacheType;
-  static const size_t cache_size = 2 * dimDomain + 2;
-
-  explicit EntropyBasedLocalFlux(
-      const BasisfunctionType& /*basis_functions*/,
-      const GridLayerType& /*grid_layer*/,
-      const RangeFieldType /*tau*/ = 1e-9,
-      const RangeFieldType /*epsilon_gamma*/ = 0.01,
-      const RangeFieldType /*chi*/ = 0.5,
-      const RangeFieldType /*xi*/ = 1e-3,
-      const std::vector<RangeFieldType> /*r_sequence*/ = {0, 1e-8, 1e-6, 1e-4, 1e-3, 1e-2, 5e-2, 0.1, 0.5, 1},
-      const size_t /*k_0*/ = 500,
-      const size_t /*k_max*/ = 1000,
-      const RangeFieldType /*epsilon*/ = std::pow(2, -52),
-      const MatrixType& /*T_minus_one*/ = MatrixType(),
-      const std::string /*name*/ = "")
-    : basis_functions_(basis_functions)
-  {
-    DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
-  }
-
-  class Localfunction : public LocalfunctionType
-  {
-  public:
-    AlphaReturnType get_alpha(const DomainType& /*x_local*/,
-                              const StateRangeType& /*u*/,
-                              const XT::Common::Parameter& /*param*/,
-                              const bool /*regularize*/,
-                              const bool /*only_cache*/) const
-    {
-      DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
-      return AlphaReturnType();
-    }
-
-    virtual size_t order(const XT::Common::Parameter& /*param*/) const override
-    {
-      DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
-      return 0;
-    }
-
-    virtual void evaluate(const DomainType& /*x_local*/,
-                          const StateRangeType& /*u*/,
-                          RangeType& /*ret*/,
-                          const XT::Common::Parameter& /*param*/) const override
-    {
-      DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
-    } // void evaluate(...)
-  }; // class Localfunction
-
-  std::unique_ptr<LocalfunctionType> local_function(const EntityType& entity) const
-  {
-    DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
-    return derived_local_function(entity);
-  }
-
-  std::unique_ptr<Localfunction> derived_local_function(const EntityType& /*entity*/) const
-  {
-    DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
-    return std::make_unique<Localfunction>();
-  }
-
-  // calculate \sum_{i=1}^d < v_i m \psi > n_i, where n is the unit outer normal,
-  // m is the basis function vector, phi_u is the ansatz corresponding to u
-  // and x, v, t are the space, velocity and time variable, respectively
-  // As we are using cartesian grids, n_i == 0 in all but one dimension, so only evaluate for i == dd
-  StateRangeType evaluate_kinetic_flux(const EntityType& /*entity*/,
-                                       const DomainType& /*x_local_entity*/,
-                                       const StateRangeType& /*u_i*/,
-                                       const EntityType& /*neighbor*/,
-                                       const DomainType& /*x_local_neighbor*/,
-                                       const StateRangeType& /*u_j*/,
-                                       const DomainType& /*n_ij*/,
-                                       const size_t /*dd*/,
-                                       const XT::Common::Parameter& /*param*/,
-                                       const XT::Common::Parameter& /*param_neighbor*/) const
-  {
-    DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
-    return StateRangeType(0.);
-  } // StateRangeType evaluate_kinetic_flux(...)
-
-  const BasisfunctionType& basis_functions() const
-  {
-    DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
-    return basis_functions_;
-  }
-
-private:
-  const BasisfunctionType& basis_functions_;
-};
-#endif // HAVE_CLP
 
 #if 1
 /**
@@ -1810,7 +1747,7 @@ private:
 };
 #endif
 
-#if 1
+#if 0
 /**
  * Specialization of EntropyBasedLocalFlux for 3D Hatfunctions
  */
