@@ -506,7 +506,6 @@ public:
               ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
               cache_.insert(v, alpha_prime);
-              mutex_.unlock();
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
@@ -533,12 +532,12 @@ public:
             } // else (stopping conditions)
           } // k loop (Newton iterations)
         } // r loop (Regularization parameter)
-
         mutex_.unlock();
         DUNE_THROW(MathError, "Failed to converge");
       } // else ( value has not been calculated before )
 
     outside_all_loops:
+      mutex_.unlock();
       return ret;
     }
 
@@ -1233,6 +1232,7 @@ public:
         mutex_.unlock();
         return ret;
       } else if (only_cache) {
+        mutex_.unlock();
         DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
         RangeFieldType tau_prime =
@@ -1304,7 +1304,6 @@ public:
               ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
               cache_.insert(v_in, alpha_prime);
-              mutex_.unlock();
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
@@ -1326,12 +1325,12 @@ public:
             } // else (stopping conditions)
           } // k loop (Newton iterations)
         } // r loop (Regularization parameter)
-
         mutex_.unlock();
         DUNE_THROW(MathError, "Failed to converge");
       } // else ( value has not been calculated before )
 
     outside_all_loops:
+      mutex_.unlock();
       return ret;
     }
 
@@ -2221,7 +2220,6 @@ public:
               ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
               cache_.insert(v, alpha_prime);
-              mutex_.unlock();
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
@@ -2245,9 +2243,12 @@ public:
             } // else (stopping conditions)
           } // k loop (Newton iterations)
         } // r loop (Regularization parameter)
+        mutex_.unlock();
+        DUNE_THROW(MathError, "Failed to converge");
       } // else ( value has not been calculated before )
 
     outside_all_loops:
+      mutex_.unlock();
       return ret;
     } // ... get_alpha(...)
 
@@ -2304,6 +2305,8 @@ public:
         for (size_t kk1 = 0; kk1 <= kk; ++kk1)
           update += p3_[dd][jj][qq][kk][kk1] * powers_alpha1m3.get(kk1) * powers_alpha2m3.get(kk - kk1);
       } while (++kk <= max_order && XT::Common::FloatCmp::ne(update, last_update, tol_));
+      if (kk == max_order)
+        std::cout << "Maxorder reached! " << std::endl;
       for (size_t vv = 0; vv < 3; ++vv)
         ret[vertex_indices_[jj][vv]] += update[vv] * exp_alpha3;
     }
@@ -2376,6 +2379,8 @@ public:
           for (size_t kk1 = 0; kk1 <= kk; ++kk1)
             update += p1_[jj][qq][kk][kk1] * powers_alpha1m3.get(kk1) * powers_alpha2m3.get(kk - kk1);
         } while (++kk <= max_order && XT::Common::FloatCmp::ne(update, last_update, tol_));
+        if (kk == max_order)
+          std::cout << "Maxorder reached! " << std::endl;
         ret += update * exp_alpha3;
       } // jj
       ret -= alpha * v;
@@ -2404,6 +2409,8 @@ public:
           for (size_t kk1 = 0; kk1 <= kk; ++kk1)
             update += p2_[jj][qq][kk][kk1] * powers_alpha1m3.get(kk1) * powers_alpha2m3.get(kk - kk1);
         } while (++kk <= max_order && XT::Common::FloatCmp::ne(update, last_update, tol_));
+        if (kk == max_order)
+          std::cout << "Maxorder reached! " << std::endl;
         update *= exp_alpha3;
         for (size_t vv = 0; vv < 3; ++vv)
           ret[vertex_indices_[jj][vv]] += update[vv];
@@ -2438,6 +2445,8 @@ public:
           for (size_t kk1 = 0; kk1 <= kk; ++kk1)
             update += p4_[jj][qq][kk][kk1] * powers_alpha1m3.get(kk1) * powers_alpha2m3.get(kk - kk1);
         } while (++kk <= max_order && XT::Common::FloatCmp::ne(update, last_update, tol_));
+        if (kk == max_order)
+          std::cout << "Maxorder reached! " << std::endl;
         update *= exp_alpha3;
         for (size_t mm = 0; mm < 3; ++mm)
           for (size_t nn = 0; nn < 3; ++nn)
@@ -2467,6 +2476,8 @@ public:
           for (size_t kk1 = 0; kk1 <= kk; ++kk1)
             update += p5_[dd][jj][qq][kk][kk1] * powers_alpha1m3.get(kk1) * powers_alpha2m3.get(kk - kk1);
         } while (++kk <= max_order && XT::Common::FloatCmp::ne(update, last_update, tol_));
+        if (kk == max_order)
+          std::cout << "Maxorder reached! " << std::endl;
         update *= exp_alpha3;
         for (size_t mm = 0; mm < 3; ++mm)
           for (size_t nn = 0; nn < 3; ++nn)
@@ -2845,7 +2856,6 @@ public:
               ret.first = alpha_prime + alpha_iso * std::log(density);
               ret.second = r;
               cache_.insert(v, alpha_prime);
-              mutex_.unlock();
               goto outside_all_loops;
             } else {
               RangeFieldType zeta_k = 1;
@@ -2872,12 +2882,12 @@ public:
             } // else (stopping conditions)
           } // k loop (Newton iterations)
         } // r loop (Regularization parameter)
-
         mutex_.unlock();
         DUNE_THROW(MathError, "Failed to converge");
       } // else ( value has not been calculated before )
 
     outside_all_loops:
+      mutex_.unlock();
       return ret;
     } // ... get_alpha(...)
 
