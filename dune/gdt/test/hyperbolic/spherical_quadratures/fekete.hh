@@ -24,8 +24,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
 
 
 #if HAVE_FEKETE
@@ -45,7 +43,7 @@ public:
 
     Dune::QuadratureRule<FieldType, 2> quad_rule;
     std::vector<double> xy, weights;
-    internal::get_fekete_rule(static_cast<int>(rule), xy, weights);
+    Hyperbolic::Problems::internal::get_fekete_rule(static_cast<int>(rule), xy, weights);
     // The weights in the original paper (Taylor, Wingate, Vincent, "An Algorithm for Computing Fekete Points in the
     // Triangle", https://doi.org/10.1137/S0036142998337247) sum up to 2. The TRIANGLE_FEKETE_RULE library divides the
     // weights by 2, so the weights now sum up to 1. We want the weights to sum up to 1/2, the area of the unit
@@ -67,8 +65,6 @@ class FeketeQuadrature
 #endif // HAVE_FEKETE
 
 
-} // namespace Problems
-} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

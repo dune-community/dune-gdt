@@ -39,8 +39,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
 
 
 // take a DiscreteFunction and return a DiscreteFunction corresponding to component ii
@@ -571,8 +569,6 @@ protected:
 };
 
 
-} // namespace Problems
-} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

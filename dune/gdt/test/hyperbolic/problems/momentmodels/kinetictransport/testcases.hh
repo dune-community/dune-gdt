@@ -34,9 +34,9 @@ struct RealizabilityLimiterChooser;
 
 #if HAVE_CLP
 template <size_t order, class AnalyticalFluxType, class DiscreteFunctionType>
-struct RealizabilityLimiterChooser<LegendrePolynomials<double, double, order>, AnalyticalFluxType, DiscreteFunctionType>
+struct RealizabilityLimiterChooser<LegendreMomentBasis<double, double, order>, AnalyticalFluxType, DiscreteFunctionType>
 {
-  using BasisfunctionType = LegendrePolynomials<double, double, order>;
+  using BasisfunctionType = LegendreMomentBasis<double, double, order>;
   //  using LocalRealizabilityLimiterType =
   //      ClpLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
   using LocalRealizabilityLimiterType =
@@ -60,11 +60,11 @@ struct RealizabilityLimiterChooser<LegendrePolynomials<double, double, order>, A
 #endif
 
 template <size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType>
-struct RealizabilityLimiterChooser<HatFunctions<double, 1, double, dimRange, 1, 1>,
+struct RealizabilityLimiterChooser<HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1>,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using BasisfunctionType = HatFunctions<double, 1, double, dimRange, 1, 1>;
+  using BasisfunctionType = HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1>;
   using LocalRealizabilityLimiterType =
       NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
   static constexpr size_t quad_order = 15;
@@ -90,11 +90,11 @@ struct RealizabilityLimiterChooser<HatFunctions<double, 1, double, dimRange, 1, 
 };
 
 template <size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType>
-struct RealizabilityLimiterChooser<PiecewiseMonomials<double, 1, double, dimRange, 1, 1>,
+struct RealizabilityLimiterChooser<PartialMomentBasis<double, 1, double, dimRange, 1, 1>,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using BasisfunctionType = PiecewiseMonomials<double, 1, double, dimRange, 1, 1>;
+  using BasisfunctionType = PartialMomentBasis<double, 1, double, dimRange, 1, 1>;
   //  using LocalRealizabilityLimiterType =
   //      DgLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
   using LocalRealizabilityLimiterType =
@@ -119,11 +119,11 @@ struct RealizabilityLimiterChooser<PiecewiseMonomials<double, 1, double, dimRang
 
 #if HAVE_CLP
 template <size_t order, class AnalyticalFluxType, class DiscreteFunctionType>
-struct RealizabilityLimiterChooser<RealSphericalHarmonics<double, double, order, 3>,
+struct RealizabilityLimiterChooser<RealSphericalHarmonicsMomentBasis<double, double, order, 3>,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using BasisfunctionType = RealSphericalHarmonics<double, double, order, 3>;
+  using BasisfunctionType = RealSphericalHarmonicsMomentBasis<double, double, order, 3>;
   using LocalRealizabilityLimiterType =
       NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
   static constexpr size_t quad_order = 2 * order + 2; // fekete rule number 7
@@ -145,11 +145,11 @@ struct RealizabilityLimiterChooser<RealSphericalHarmonics<double, double, order,
 #endif
 
 template <size_t refinements, class AnalyticalFluxType, class DiscreteFunctionType>
-struct RealizabilityLimiterChooser<HatFunctions<double, 3, double, refinements, 1, 3>,
+struct RealizabilityLimiterChooser<HatFunctionMomentBasis<double, 3, double, refinements, 1, 3>,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using BasisfunctionType = HatFunctions<double, 3, double, refinements, 1, 3>;
+  using BasisfunctionType = HatFunctionMomentBasis<double, 3, double, refinements, 1, 3>;
   using LocalRealizabilityLimiterType =
       NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
   static constexpr size_t dimRange = BasisfunctionType::dimRange;
@@ -177,11 +177,11 @@ struct RealizabilityLimiterChooser<HatFunctions<double, 3, double, refinements, 
 
 #if HAVE_QHULL
 template <size_t refinements, class AnalyticalFluxType, class DiscreteFunctionType>
-struct RealizabilityLimiterChooser<PiecewiseMonomials<double, 3, double, refinements, 1, 3, 1>,
+struct RealizabilityLimiterChooser<PartialMomentBasis<double, 3, double, refinements, 1, 3, 1>,
                                    AnalyticalFluxType,
                                    DiscreteFunctionType>
 {
-  using BasisfunctionType = PiecewiseMonomials<double, 3, double, refinements, 1, 3>;
+  using BasisfunctionType = PartialMomentBasis<double, 3, double, refinements, 1, 3>;
   using LocalRealizabilityLimiterType =
       NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
   static constexpr size_t quad_order = 3; // fekete rule number 3
@@ -203,7 +203,7 @@ template <class BasisfunctionImp, bool reconstruct>
 struct SourceBeamPnExpectedResults;
 
 template <bool reconstruct>
-struct SourceBeamPnExpectedResults<LegendrePolynomials<double, double, 7>, reconstruct>
+struct SourceBeamPnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 0.33066818456325014 : 0.33107004463413914;
   static constexpr double l2norm = reconstruct ? 0.4615751405564803 : 0.44609169128863851;
@@ -212,7 +212,7 @@ struct SourceBeamPnExpectedResults<LegendrePolynomials<double, double, 7>, recon
 };
 
 template <bool reconstruct>
-struct SourceBeamPnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, reconstruct>
+struct SourceBeamPnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 0.33146057542497237 : 0.33146794280839997;
   static constexpr double l2norm = reconstruct ? 0.46411980559363358 : 0.44913032300780292;
@@ -221,7 +221,7 @@ struct SourceBeamPnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, rec
 };
 
 template <bool reconstruct>
-struct SourceBeamPnExpectedResults<PiecewiseMonomials<double, 1, double, 8, 1, 1>, reconstruct>
+struct SourceBeamPnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 0.33140398337588411 : 0.33140398337567956;
   static constexpr double l2norm = reconstruct ? 0.4558335407458029 : 0.44484887611129575;
@@ -257,7 +257,7 @@ template <class BasisfunctionImp, bool reconstruct>
 struct SourceBeamMnExpectedResults;
 
 template <bool reconstruct>
-struct SourceBeamMnExpectedResults<LegendrePolynomials<double, double, 7>, reconstruct>
+struct SourceBeamMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 0.33140386483040757 : 0.33140386482516998;
   static constexpr double l2norm = reconstruct ? 0.45585375203639722 : 0.44485813651836886;
@@ -266,7 +266,7 @@ struct SourceBeamMnExpectedResults<LegendrePolynomials<double, double, 7>, recon
 };
 
 template <bool reconstruct>
-struct SourceBeamMnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, reconstruct>
+struct SourceBeamMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 0.33140398337608101 : 0.33140398337582355;
   static constexpr double l2norm = reconstruct ? 0.45585374774065163 : 0.44485696909271483;
@@ -275,7 +275,7 @@ struct SourceBeamMnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, rec
 };
 
 template <bool reconstruct>
-struct SourceBeamMnExpectedResults<PiecewiseMonomials<double, 1, double, 8, 1, 1>, reconstruct>
+struct SourceBeamMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 0.33140398337588411 : 0.33140398337567956;
   static constexpr double l2norm = reconstruct ? 0.4558335407458029 : 0.44484887611129575;
@@ -313,7 +313,7 @@ template <class BasisfunctionImp, bool reconstruct>
 struct PlaneSourcePnExpectedResults;
 
 template <bool reconstruct>
-struct PlaneSourcePnExpectedResults<LegendrePolynomials<double, double, 7>, reconstruct>
+struct PlaneSourcePnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 2.0000000240000007 : 2.0000000240000029;
   static constexpr double l2norm = reconstruct ? 2.9627559791618099 : 2.7793543802214402;
@@ -322,7 +322,7 @@ struct PlaneSourcePnExpectedResults<LegendrePolynomials<double, double, 7>, reco
 };
 
 template <bool reconstruct>
-struct PlaneSourcePnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, reconstruct>
+struct PlaneSourcePnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct>
 {
   static constexpr double l1norm = 2.0000000240000557;
   static constexpr double l2norm = reconstruct ? 2.892587690555561 : 2.7677861047579322;
@@ -331,7 +331,7 @@ struct PlaneSourcePnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, re
 };
 
 template <bool reconstruct>
-struct PlaneSourcePnExpectedResults<PiecewiseMonomials<double, 1, double, 8, 1, 1>, reconstruct>
+struct PlaneSourcePnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 2.000000024000026 : 2.0000000240000273;
   static constexpr double l2norm = reconstruct ? 2.881005248537496 : 2.7713504721240083;
@@ -357,7 +357,7 @@ template <class BasisfunctionImp, bool reconstruct>
 struct PlaneSourceMnExpectedResults;
 
 template <bool reconstruct>
-struct PlaneSourceMnExpectedResults<LegendrePolynomials<double, double, 7>, reconstruct>
+struct PlaneSourceMnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 2.0000000240000007 : 2.0000000240000029;
   static constexpr double l2norm = reconstruct ? 2.7921993086492169 : 2.7461013585034388;
@@ -366,7 +366,7 @@ struct PlaneSourceMnExpectedResults<LegendrePolynomials<double, double, 7>, reco
 };
 
 template <bool reconstruct>
-struct PlaneSourceMnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, reconstruct>
+struct PlaneSourceMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct>
 {
   static constexpr double l1norm = 2.0000000240000158;
   static constexpr double l2norm = reconstruct ? 2.7968403961890758 : 2.7457197084995624;
@@ -375,7 +375,7 @@ struct PlaneSourceMnExpectedResults<HatFunctions<double, 1, double, 8, 1, 1>, re
 };
 
 template <bool reconstruct>
-struct PlaneSourceMnExpectedResults<PiecewiseMonomials<double, 1, double, 8, 1, 1>, reconstruct>
+struct PlaneSourceMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 2.0000000239999913 : 2.0000000239999904;
   static constexpr double l2norm = reconstruct ? 2.8215879031830924 : 2.7633864171093845;
@@ -409,7 +409,7 @@ struct PointSourcePnExpectedResults
 };
 
 template <bool reconstruct>
-struct PointSourcePnExpectedResults<RealSphericalHarmonics<double, double, 2, 3>, reconstruct>
+struct PointSourcePnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 1.0007954640626406 : 1.0007954640534624;
   static constexpr double l2norm = reconstruct ? 2.6992308546885653 : 2.6970513662067956;
@@ -418,7 +418,7 @@ struct PointSourcePnExpectedResults<RealSphericalHarmonics<double, double, 2, 3>
 };
 
 template <bool reconstruct>
-struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 0, 1, 3>, reconstruct>
+struct PointSourcePnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, reconstruct>
 {
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
@@ -441,7 +441,7 @@ struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 0, 1, 3>, re
 };
 
 template <bool reconstruct>
-struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 1, 1, 3>, reconstruct>
+struct PointSourcePnExpectedResults<HatFunctionMomentBasis<double, 3, double, 1, 1, 3>, reconstruct>
 {
   // If Fekete is not available, we use a different quadrature, which gives slightly different results
   static_assert(!reconstruct, "Results with reconstruction not available yet!");
@@ -459,7 +459,7 @@ struct PointSourcePnExpectedResults<HatFunctions<double, 3, double, 1, 1, 3>, re
 };
 
 template <bool reconstruct>
-struct PointSourcePnExpectedResults<PiecewiseMonomials<double, 3, double, 0, 1, 3>, reconstruct>
+struct PointSourcePnExpectedResults<PartialMomentBasis<double, 3, double, 0, 1, 3>, reconstruct>
 {
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
@@ -475,7 +475,7 @@ struct PointSourcePnExpectedResults<PiecewiseMonomials<double, 3, double, 0, 1, 
 };
 
 template <bool reconstruct>
-struct PointSourcePnExpectedResults<PiecewiseMonomials<double, 3, double, 1, 1, 3>, reconstruct>
+struct PointSourcePnExpectedResults<PartialMomentBasis<double, 3, double, 1, 1, 3>, reconstruct>
 {
   static_assert(!reconstruct, "Results with reconstruction not available yet!");
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
@@ -509,7 +509,7 @@ template <class BasisfunctionImp, bool reconstruct>
 struct PointSourceMnExpectedResults;
 
 template <bool reconstruct>
-struct PointSourceMnExpectedResults<RealSphericalHarmonics<double, double, 2, 3>, reconstruct>
+struct PointSourceMnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 1.0007954640632573 : 1.0007954640632366;
   static constexpr double l2norm = reconstruct ? 2.6875983831354029 : 2.6817153143915298;
@@ -518,7 +518,7 @@ struct PointSourceMnExpectedResults<RealSphericalHarmonics<double, double, 2, 3>
 };
 
 template <bool reconstruct>
-struct PointSourceMnExpectedResults<HatFunctions<double, 3, double, 0, 1, 3>, reconstruct>
+struct PointSourceMnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, reconstruct>
 {
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
@@ -541,7 +541,7 @@ struct PointSourceMnExpectedResults<HatFunctions<double, 3, double, 0, 1, 3>, re
 };
 
 template <bool reconstruct>
-struct PointSourceMnExpectedResults<PiecewiseMonomials<double, 3, double, 0, 1, 3, 1>, reconstruct>
+struct PointSourceMnExpectedResults<PartialMomentBasis<double, 3, double, 0, 1, 3, 1>, reconstruct>
 {
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE

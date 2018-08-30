@@ -15,8 +15,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
 
 
 template <class DomainFieldType,
@@ -221,8 +219,6 @@ private:
 }; // class PiecewiseConstant<DomainFieldType, 1, ...>
 
 
-} // namespace Problems
-} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

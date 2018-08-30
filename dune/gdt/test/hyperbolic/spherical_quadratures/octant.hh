@@ -27,8 +27,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
 
 
 // The tabulated values are in spherical coordinates (mu, phi), where mu in [-1,1] is
@@ -197,8 +195,6 @@ public:
 }; // class OctantQuadrature
 
 
-} // namespace Problems
-} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

@@ -222,7 +222,8 @@ protected:
   };
 
   template <class anything>
-  struct helper<HatFunctions<DomainFieldType, dimDomain, RangeFieldType, dimRange>, anything> : public helper_base
+  struct helper<HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange>, anything>
+      : public helper_base
   {
     using helper_base::numerator;
     using helper_base::denominator;
@@ -254,7 +255,7 @@ protected:
   };
 
   template <class anything>
-  struct helper<PiecewiseMonomials<DomainFieldType, dimDomain, RangeFieldType, dimRange>, anything> : public helper_base
+  struct helper<PartialMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange>, anything> : public helper_base
   {
     using helper_base::denominator;
     using helper_base::integral_1;

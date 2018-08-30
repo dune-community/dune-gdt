@@ -205,12 +205,11 @@ class CheckerboardTestCase
           InstationaryTestCase<G,
                                Problems::
                                    KineticEquation<Problems::KineticTransport::
-                                                       CheckerboardPn<Hyperbolic::Problems::
-                                                                          SphericalHarmonics<double,
-                                                                                             double,
-                                                                                             momentOrder,
-                                                                                             G::dimension,
-                                                                                             true>,
+                                                       CheckerboardPn<SphericalHarmonicsMomentBasis<double,
+                                                                                                    double,
+                                                                                                    momentOrder,
+                                                                                                    G::dimension,
+                                                                                                    true>,
                                                                       typename G::LevelGridView,
                                                                       typename internal::
                                                                           DiscreteFunctionProvider<G,
@@ -218,20 +217,19 @@ class CheckerboardTestCase
                                                                                                        product_fv,
                                                                                                    0,
                                                                                                    R,
-                                                                                                   Hyperbolic::Problems::
-                                                                                                       SphericalHarmonics<double,
-                                                                                                                          double,
-                                                                                                                          momentOrder,
-                                                                                                                          G::dimension,
-                                                                                                                          true>::
-                                                                                                           dimRange,
+                                                                                                   SphericalHarmonicsMomentBasis<double,
+                                                                                                                                 double,
+                                                                                                                                 momentOrder,
+                                                                                                                                 G::dimension,
+                                                                                                                                 true>::
+                                                                                                       dimRange,
                                                                                                    1,
                                                                                                    GDT::Backends::gdt>::
                                                                               type>>>
 {
   typedef typename G::ctype D;
   static const size_t d = G::dimension;
-  typedef Hyperbolic::Problems::SphericalHarmonics<double, double, momentOrder, G::dimension, true> BasisfunctionType;
+  typedef SphericalHarmonicsMomentBasis<double, double, momentOrder, G::dimension, true> BasisfunctionType;
 
 public:
   typedef Problems::
@@ -243,12 +241,11 @@ public:
                                                                       GDT::SpaceType::product_fv,
                                                                       0,
                                                                       R,
-                                                                      Hyperbolic::Problems::
-                                                                          SphericalHarmonics<double,
-                                                                                             double,
-                                                                                             momentOrder,
-                                                                                             G::dimension,
-                                                                                             true>::dimRange,
+                                                                      SphericalHarmonicsMomentBasis<double,
+                                                                                                    double,
+                                                                                                    momentOrder,
+                                                                                                    G::dimension,
+                                                                                                    true>::dimRange,
                                                                       1,
                                                                       GDT::Backends::gdt>::type>>
           ProblemType;

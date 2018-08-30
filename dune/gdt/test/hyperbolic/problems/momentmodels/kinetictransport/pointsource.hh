@@ -161,7 +161,7 @@ protected:
 template <class G,
           class R = double,
           size_t rangeDim = 6,
-          class B = Hyperbolic::Problems::HatFunctions<typename G::ctype, 3, typename G::ctype, rangeDim, 1, 3>>
+          class B = HatFunctionMomentBasis<typename G::ctype, 3, typename G::ctype, rangeDim, 1, 3>>
 class PointSourceTestCase
     : public Dune::GDT::Test::
           InstationaryTestCase<G,

@@ -137,12 +137,12 @@ template <class AnalyticalFluxType,
           size_t dimDomain,
           class RangeFieldType,
           size_t dimRange_or_refinements>
-struct JacobianChooser<Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<DomainFieldType,
-                                                                           dimDomain,
-                                                                           RangeFieldType,
-                                                                           dimRange_or_refinements,
-                                                                           1,
-                                                                           dimDomain>,
+struct JacobianChooser<Dune::GDT::PartialMomentBasis<DomainFieldType,
+                                                     dimDomain,
+                                                     RangeFieldType,
+                                                     dimRange_or_refinements,
+                                                     1,
+                                                     dimDomain>,
                        AnalyticalFluxType>
 {
   using type = Dune::GDT::internal::BlockedJacobianWrapper<AnalyticalFluxType>;

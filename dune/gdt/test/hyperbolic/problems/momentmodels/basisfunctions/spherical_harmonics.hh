@@ -20,13 +20,11 @@
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
 
 
 // TODO: use complex arithmetic, currently only usable for Pn Models in 2D, test for only_positive = false
 template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim = 3, bool only_positive = true>
-class SphericalHarmonics
+class SphericalHarmonicsMomentBasis
     : public BasisfunctionsInterface<DomainFieldType,
                                      3,
                                      RangeFieldType,
@@ -52,12 +50,13 @@ public:
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
   static_assert(order <= std::numeric_limits<int>::max(), "");
 
-  SphericalHarmonics(const QuadraturesType& quadratures)
+  SphericalHarmonicsMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
   }
 
-  SphericalHarmonics(const size_t quad_order = 2 * order + 2, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+  SphericalHarmonicsMomentBasis(const size_t quad_order = 2 * order + 2,
+                                const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
     : BaseType(OctantQuadrature<DomainFieldType>::get(quad_order))
   {
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
@@ -255,11 +254,11 @@ private:
       return static_cast<size_t>(ret);
     }
   };
-}; // class SphericalHarmonics<DomainFieldType, 3, ...>
+}; // class SphericalHarmonicsMomentBasis<DomainFieldType, 3, ...>
 
 
 template <class DomainFieldType, class RangeFieldType, size_t order, size_t fluxDim = 3, bool only_even = false>
-class RealSphericalHarmonics
+class RealSphericalHarmonicsMomentBasis
     : public BasisfunctionsInterface<DomainFieldType,
                                      3,
                                      RangeFieldType,
@@ -284,12 +283,13 @@ public:
   template <class DiscreteFunctionType>
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
 
-  RealSphericalHarmonics(const QuadraturesType& quadratures)
+  RealSphericalHarmonicsMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
   }
 
-  RealSphericalHarmonics(const size_t quad_order = 2 * order + 2, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+  RealSphericalHarmonicsMomentBasis(const size_t quad_order = 2 * order + 2,
+                                    const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
     : BaseType(OctantQuadrature<DomainFieldType>::get(quad_order))
   {
     assert(quad_refinements == 0 && "Refinement of the quadrature intervals not implemented for this basis!");
@@ -537,11 +537,9 @@ private:
   }
 
   using BaseType::quadratures_;
-}; // class RealSphericalHarmonics<DomainFieldType, 3, ...>
+}; // class RealSphericalHarmonicsMomentBasis<DomainFieldType, 3, ...>
 
 
-} // namespace Problems
-} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

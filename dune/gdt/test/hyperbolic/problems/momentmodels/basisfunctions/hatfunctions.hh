@@ -22,8 +22,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
 
 
 template <class DomainFieldType,
@@ -32,13 +30,13 @@ template <class DomainFieldType,
           size_t dimRange,
           size_t dimRangeCols = 1,
           size_t dimFlux = dimDomain>
-class HatFunctions
+class HatFunctionMomentBasis
 {
   //  static_assert(false, "Not implemented for this dimension!");
 };
 
 template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t fluxDim>
-class HatFunctions<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
+class HatFunctionMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
     : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, fluxDim>
 {
 public:
@@ -64,13 +62,13 @@ public:
     return "hatfunctions";
   }
 
-  HatFunctions(const QuadraturesType& quadratures)
+  HatFunctionMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
     , triangulation_(BaseType::create_1d_triangulation(dimRange - 1))
   {
   }
 
-  HatFunctions(const size_t quad_order = 15, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+  HatFunctionMomentBasis(const size_t quad_order = 15, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
     : BaseType(BaseType::gauss_lobatto_quadratures(dimRange - 1, quad_order))
     , triangulation_(BaseType::create_1d_triangulation(dimRange - 1))
   {
@@ -278,10 +276,10 @@ public:
 
 private:
   const TriangulationType triangulation_;
-}; // class HatFunctions<DomainFieldType, 1, ...>
+}; // class HatFunctionMomentBasis<DomainFieldType, 1, ...>
 
 template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t fluxDim>
-class HatFunctions<DomainFieldType, 3, RangeFieldType, refinements, 1, fluxDim>
+class HatFunctionMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, fluxDim>
     : public BasisfunctionsInterface<DomainFieldType,
                                      3,
                                      RangeFieldType,
@@ -310,14 +308,15 @@ public:
 
   using BaseType::barycentre_rule;
 
-  HatFunctions(const QuadraturesType& quadratures)
+  HatFunctionMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
     triangulation_ = TriangulationType(refinements);
     assert(triangulation_.vertices().size() == dimRange);
   }
 
-  HatFunctions(const size_t quad_refinements, const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule)
+  HatFunctionMomentBasis(const size_t quad_refinements,
+                         const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule)
   {
     triangulation_ = TriangulationType(refinements, reference_quadrature_rule);
     quadratures_ = triangulation_.quadrature_rules(quad_refinements);
@@ -325,14 +324,14 @@ public:
   }
 
   // This constructor is here for compatibility with the one-dimensional basis to simplify testing
-  HatFunctions(const size_t fekete_rule_num = 3,
-               const size_t quad_refinements =
+  HatFunctionMomentBasis(const size_t fekete_rule_num = 3,
+                         const size_t quad_refinements =
 #if HAVE_FEKETE
-                   0
+                             0
 #else
-                   7
+                             7
 #endif
-               )
+                         )
   {
 #if HAVE_FEKETE
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule =
@@ -498,11 +497,9 @@ protected:
 
   using BaseType::quadratures_;
   using BaseType::triangulation_;
-}; // class HatFunctions<DomainFieldType, 3, ...>
+}; // class HatFunctionMomentBasis<DomainFieldType, 3, ...>
 
 
-} // namespace Problems
-} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

@@ -290,8 +290,7 @@ class Dg1dRealizabilityLimitedSlope
 {
   using VectorType = XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 2, 2>;
   using BaseType = SlopeBase<VectorType, MatrixType, 3>;
-  using BasisfunctionType =
-      Dune::GDT::Hyperbolic::Problems::PiecewiseMonomials<RangeFieldType, 1, RangeFieldType, dimRange, 1, 1, 1>;
+  using BasisfunctionType = Dune::GDT::PartialMomentBasis<RangeFieldType, 1, RangeFieldType, dimRange, 1, 1, 1>;
 
 public:
   using typename BaseType::StencilType;

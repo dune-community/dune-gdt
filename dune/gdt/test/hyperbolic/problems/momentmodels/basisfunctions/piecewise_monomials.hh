@@ -27,8 +27,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
 
 
 template <class DomainFieldType,
@@ -38,13 +36,13 @@ template <class DomainFieldType,
           size_t dimRangeCols = 1,
           size_t dimFlux = dimDomain,
           size_t order = 1>
-class PiecewiseMonomials
+class PartialMomentBasis
 {
   //  static_assert(false, "Not implemented for this combination of dimension and order!");
 };
 
 template <class DomainFieldType, class RangeFieldType, size_t rangeDim, size_t rangeDimCols, size_t dimFlux>
-class PiecewiseMonomials<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux, 1>
+class PartialMomentBasis<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux, 1>
     : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, rangeDim, rangeDimCols, dimFlux>
 {
 public:
@@ -72,13 +70,13 @@ public:
     return "pcw";
   }
 
-  PiecewiseMonomials(const QuadraturesType& quadratures)
+  PartialMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
     , triangulation_(BaseType::create_1d_triangulation(num_intervals))
   {
   }
 
-  PiecewiseMonomials(const size_t quad_order = 15, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
+  PartialMomentBasis(const size_t quad_order = 15, const size_t DXTC_DEBUG_ONLY(quad_refinements) = 0)
     : BaseType(BaseType::gauss_lobatto_quadratures(num_intervals, quad_order))
     , triangulation_(BaseType::create_1d_triangulation(num_intervals))
   {
@@ -287,10 +285,10 @@ public:
 
 private:
   const TriangulationType triangulation_;
-}; // class PiecewiseMonomials<DomainFieldType, 1, ...>
+}; // class PartialMomentBasis<DomainFieldType, 1, ...>
 
 template <class DomainFieldType, class RangeFieldType, size_t refinements, size_t dimFlux>
-class PiecewiseMonomials<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1>
+class PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, 1, dimFlux, 1>
     : public BasisfunctionsInterface<DomainFieldType,
                                      3,
                                      RangeFieldType,
@@ -307,7 +305,7 @@ public:
 
 private:
   using BaseType = BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimFlux>;
-  using ThisType = PiecewiseMonomials;
+  using ThisType = PartialMomentBasis;
 
 public:
   typedef SphericalTriangulation<DomainFieldType> TriangulationType;
@@ -324,14 +322,14 @@ public:
 
   using BaseType::barycentre_rule;
 
-  PiecewiseMonomials(const QuadraturesType& quadratures)
+  PartialMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
     triangulation_ = TriangulationType(refinements);
     assert(4 * triangulation_.faces().size() == dimRange);
   }
 
-  PiecewiseMonomials(const size_t quad_refinements, const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule)
+  PartialMomentBasis(const size_t quad_refinements, const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule)
   {
     triangulation_ = TriangulationType(refinements, reference_quadrature_rule);
     quadratures_ = triangulation_.quadrature_rules(quad_refinements);
@@ -339,7 +337,7 @@ public:
   }
 
   // This constructor is here for compatibility with the one-dimensional basis to simplify testing
-  PiecewiseMonomials(const size_t fekete_rule_num = 3,
+  PartialMomentBasis(const size_t fekete_rule_num = 3,
                      const size_t quad_refinements =
 #if HAVE_FEKETE
                          0
@@ -554,11 +552,9 @@ private:
   using BaseType::quadratures_;
   using BaseType::triangulation_;
   mutable PlaneCoefficientsType plane_coefficients_;
-}; // class PiecewiseMonomials<DomainFieldType, 3, ...>
+}; // class PartialMomentBasis<DomainFieldType, 3, ...>
 
 
-} // namespace Problems
-} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

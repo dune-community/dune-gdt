@@ -117,8 +117,7 @@ class SourceBeamTestCase
     : public Dune::GDT::Test::
           InstationaryTestCase<G,
                                Problems::KineticEquation<Problems::FokkerPlanck::
-                                                             SourceBeamPn<Hyperbolic::Problems::
-                                                                              LegendrePolynomials<double, double, 5>,
+                                                             SourceBeamPn<LegendreMomentBasis<double, double, 5>,
                                                                           typename G::LevelGridView,
                                                                           typename internal::
                                                                               DiscreteFunctionProvider<G,
@@ -135,7 +134,7 @@ class SourceBeamTestCase
   static const size_t d = G::dimension;
 
 public:
-  typedef typename Hyperbolic::Problems::LegendrePolynomials<double, double, 5> BasisfunctionType;
+  typedef LegendreMomentBasis<double, double, 5> BasisfunctionType;
   static const size_t dimRange = 6;
   static const size_t dimRangeCols = 1;
   typedef

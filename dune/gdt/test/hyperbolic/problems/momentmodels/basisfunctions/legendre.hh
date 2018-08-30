@@ -15,12 +15,10 @@
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
 
 
 template <class DomainFieldType, class RangeFieldType, size_t order, size_t dimRangeCols = 1>
-class LegendrePolynomials : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, order + 1, dimRangeCols>
+class LegendreMomentBasis : public BasisfunctionsInterface<DomainFieldType, 1, RangeFieldType, order + 1, dimRangeCols>
 {
 public:
   static const size_t dimDomain = 1;
@@ -39,12 +37,12 @@ public:
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
   using TriangulationType = typename BaseType::Triangulation1dType;
 
-  LegendrePolynomials(const QuadraturesType& quadratures)
+  LegendreMomentBasis(const QuadraturesType& quadratures)
     : BaseType(quadratures)
   {
   }
 
-  LegendrePolynomials(const size_t quad_order = 31, const size_t quad_refinements = 0)
+  LegendreMomentBasis(const size_t quad_order = 31, const size_t quad_refinements = 0)
     : BaseType(BaseType::gauss_lobatto_quadratures(std::pow(2, quad_refinements), quad_order))
   {
   }
@@ -218,11 +216,9 @@ private:
     ret *= std::pow(-1., (m + n + 1) / 2) / ((m - n) * (m + n + 1) * std::pow(2., m + n - 1 - std::max(m, n)));
     return ret;
   } // ... fmn(...)
-}; // class LegendrePolynomials<DomainFieldType, 1, ...>
+}; // class LegendreMomentBasis<DomainFieldType, 1, ...>
 
 
-} // namespace Problems
-} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

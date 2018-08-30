@@ -34,8 +34,6 @@
 
 namespace Dune {
 namespace GDT {
-namespace Hyperbolic {
-namespace Problems {
 
 
 template <class FieldType, size_t dimDomain>
@@ -508,8 +506,6 @@ private:
 }; // class SphericalTriangulation<...>
 
 
-} // namespace Problems
-} // namespace Hyperbolic
 } // namespace GDT
 } // namespace Dune
 

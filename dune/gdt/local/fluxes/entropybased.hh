@@ -35,8 +35,7 @@
 #include <dune/xt/functions/interfaces/localizable-flux-function.hh>
 
 #include <dune/gdt/operators/fv/reconstruction/internal.hh>
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/hatfunctions.hh>
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/piecewise_monomials.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions.hh>
 
 #if HAVE_CLP
 #include <coin/ClpSimplex.hpp>
@@ -81,11 +80,11 @@ public:
     ConstIteratorType ret = cache_.begin();
     if (ret == end())
       return ret;
-    RangeFieldType distance = (u - ret->first).two_norm2();
+    RangeFieldType distance = (u - ret->first).infinity_norm();
     RangeFieldType new_distance = distance;
     auto it = ret;
     while (++it != end()) {
-      if ((new_distance = (u - it->first).two_norm2()) < distance) {
+      if ((new_distance = (u - it->first).infinity_norm()) < distance) {
         distance = new_distance;
         ret = it;
       }
@@ -116,12 +115,6 @@ public:
   void set_capacity(const size_t new_capacity)
   {
     capacity_ = new_capacity;
-  }
-
-  void increase_capacity(const size_t new_capacity)
-  {
-    if (new_capacity > capacity_)
-      capacity_ = new_capacity;
   }
 
 private:
@@ -181,7 +174,7 @@ public:
   typedef Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
   typedef std::pair<VectorType, RangeFieldType> AlphaReturnType;
   typedef EntropyLocalCache<StateRangeType, VectorType> LocalCacheType;
-  static const size_t cache_size = 2 * dimDomain + 2;
+  static const size_t cache_size = 4 * dimDomain + 2;
 
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
@@ -358,12 +351,12 @@ public:
 
     // specialization for hatfunctions
     template <size_t dimRange_or_refinements, bool anything>
-    struct RealizabilityHelper<Hyperbolic::Problems::HatFunctions<DomainFieldType,
-                                                                  dimDomain,
-                                                                  RangeFieldType,
-                                                                  dimRange_or_refinements,
-                                                                  1,
-                                                                  dimDomain>,
+    struct RealizabilityHelper<HatFunctionMomentBasis<DomainFieldType,
+                                                      dimDomain,
+                                                      RangeFieldType,
+                                                      dimRange_or_refinements,
+                                                      1,
+                                                      dimDomain>,
                                true,
                                anything>
     {
@@ -480,7 +473,7 @@ public:
       AlphaReturnType ret;
       mutex_.lock();
       if (boundary)
-        cache_.increase_capacity(2 * cache_size);
+        cache_.set_capacity(cache_size + dimDomain);
 
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u);
@@ -489,7 +482,7 @@ public:
 
       // if value has already been calculated for these values, skip computation
       const auto cache_iterator = cache_.find_closest(u_prime);
-      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime, 1e-13, 1e-13)) {
+      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime, 1e-14, 1e-14)) {
         const auto alpha_prime = cache_iterator->second;
         ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
@@ -501,7 +494,8 @@ public:
         DUNE_THROW(Dune::MathError, "Cache was not used!");
       } else {
         StateRangeType u_iso = basis_functions_.u_iso();
-        RangeFieldType tau_prime = tau_ / ((1 + u_prime.two_norm()) * density + tau_);
+        const RangeFieldType dim_factor = is_full_moment_basis<BasisfunctionType>::value ? 1. : std::sqrt(dimDomain);
+        RangeFieldType tau_prime = tau_ / ((1 + dim_factor * u_prime.two_norm()) * density + dim_factor * tau_);
 
         // define further variables
         VectorType g_k, beta_in, beta_out, v;
@@ -940,11 +934,11 @@ private:
  * Specialization for DG basis
  */
 template <class GridLayerImp, class U, size_t domainDim, size_t dimRange_or_refinements>
-class EntropyBasedLocalFlux<Hyperbolic::Problems::PiecewiseMonomials<typename U::DomainFieldType,
-                                                                     domainDim,
-                                                                     typename U::RangeFieldType,
-                                                                     dimRange_or_refinements,
-                                                                     1>,
+class EntropyBasedLocalFlux<PartialMomentBasis<typename U::DomainFieldType,
+                                               domainDim,
+                                               typename U::RangeFieldType,
+                                               dimRange_or_refinements,
+                                               1>,
                             GridLayerImp,
                             U>
     : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
@@ -991,14 +985,13 @@ public:
       FieldVector<std::vector<DomainType, boost::alignment::aligned_allocator<DomainType, 64>>, num_blocks>;
   using QuadratureWeightsType =
       FieldVector<std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>, num_blocks>;
-  typedef Hyperbolic::Problems::
-      PiecewiseMonomials<DomainFieldType, dimDomain, RangeFieldType, dimRange_or_refinements, 1, dimDomain>
-          BasisfunctionType;
+  typedef PartialMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange_or_refinements, 1, dimDomain>
+      BasisfunctionType;
   typedef std::pair<BlockVectorType, RangeFieldType> AlphaReturnType;
   typedef EntropyLocalCache<StateRangeType, BlockVectorType> LocalCacheType;
   using TemporaryVectorType =
       FieldVector<std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>, num_blocks>;
-  static const size_t cache_size = 2 * dimDomain + 2;
+  static const size_t cache_size = 4 * dimDomain + 2;
 
   class Localfunction : public LocalfunctionType
   {
@@ -1151,7 +1144,7 @@ public:
       StateRangeType v_in;
       mutex_.lock();
       if (boundary)
-        cache_.increase_capacity(2 * cache_size);
+        cache_.set_capacity(cache_size + dimDomain);
 
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u_in);
@@ -1161,7 +1154,7 @@ public:
 
       // if value has already been calculated for these values, skip computation
       const auto cache_iterator = cache_.find_closest(u_prime_in);
-      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime_in, 1e-13, 1e-13)) {
+      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime_in, 1e-14, 1e-14)) {
         const auto alpha_prime = cache_iterator->second;
         ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
@@ -1752,7 +1745,7 @@ private:
  * Specialization of EntropyBasedLocalFlux for 3D Hatfunctions
  */
 template <class GridLayerImp, class U, size_t refinements>
-class EntropyBasedLocalFlux<Hyperbolic::Problems::HatFunctions<typename U::DomainFieldType,
+class EntropyBasedLocalFlux<Hyperbolic::Problems::HatFunctionMomentBasis<typename U::DomainFieldType,
                                                                3,
                                                                typename U::RangeFieldType,
                                                                refinements,
@@ -1798,7 +1791,7 @@ public:
   using LocalMatrixType = XT::Common::FieldMatrix<RangeFieldType, 3, 3>;
   using BasisValuesMatrixType = std::vector<LocalVectorType>;
   typedef Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
-  typedef Hyperbolic::Problems::HatFunctions<DomainFieldType, dimDomain, RangeFieldType, refinements, 1, dimDomain>
+  typedef Hyperbolic::Problems::HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, refinements, 1, dimDomain>
       BasisfunctionType;
   static constexpr size_t max_order = 200;
   // storage for precalculated factors for f = 1
@@ -1831,7 +1824,7 @@ public:
 
   using AlphaReturnType = typename std::pair<StateRangeType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<StateRangeType, StateRangeType>;
-  static constexpr size_t cache_size = 2 * dimDomain + 2;
+  static constexpr size_t cache_size = 4 * dimDomain + 2;
 
 private:
   // Stores entries h^k or h^k/k!
@@ -2080,14 +2073,14 @@ public:
       AlphaReturnType ret;
       mutex_.lock();
       if (boundary)
-        cache_.increase_capacity(2 * cache_size);
+        cache_.set_capacity(cache_size+dimDomain);
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u);
       StateRangeType u_prime = u / density;
       StateRangeType alpha_iso = basis_functions_.alpha_iso();
       // if value has already been calculated for these values, skip computation
       const auto cache_iterator = cache_.find_closest(u_prime);
-      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime, 1e-13, 1e-13)) {
+      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime, 1e-14, 1e-14)) {
         const auto alpha_prime = cache_iterator->second;
         ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
@@ -2569,12 +2562,12 @@ private:
  * Specialization of EntropyBasedLocalFlux for 1D Hatfunctions
  */
 template <class GridLayerImp, class U>
-class EntropyBasedLocalFlux<Hyperbolic::Problems::HatFunctions<typename U::DomainFieldType,
-                                                               1,
-                                                               typename U::RangeFieldType,
-                                                               U::dimRange,
-                                                               1,
-                                                               1>,
+class EntropyBasedLocalFlux<HatFunctionMomentBasis<typename U::DomainFieldType,
+                                                   1,
+                                                   typename U::RangeFieldType,
+                                                   U::dimRange,
+                                                   1,
+                                                   1>,
                             GridLayerImp,
                             U>
     : public XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
@@ -2610,13 +2603,13 @@ public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
-  using BasisfunctionType = Hyperbolic::Problems::HatFunctions<DomainFieldType, 1, RangeFieldType, dimRange, 1, 1>;
+  using BasisfunctionType = HatFunctionMomentBasis<DomainFieldType, 1, RangeFieldType, dimRange, 1, 1>;
   using GridLayerType = GridLayerImp;
   using QuadratureRuleType = Dune::QuadratureRule<DomainFieldType, 1>;
   using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
   using AlphaReturnType = typename std::pair<StateRangeType, RangeFieldType>;
   using LocalCacheType = EntropyLocalCache<StateRangeType, StateRangeType>;
-  static const size_t cache_size = 2 * dimDomain + 2;
+  static const size_t cache_size = 4 * dimDomain + 2;
 
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
@@ -2711,7 +2704,7 @@ public:
       AlphaReturnType ret;
       mutex_.lock();
       if (boundary)
-        cache_.increase_capacity(2 * cache_size);
+        cache_.set_capacity(cache_size + dimDomain);
 
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u);
@@ -2720,7 +2713,7 @@ public:
 
       // if value has already been calculated for these values, skip computation
       const auto cache_iterator = cache_.find_closest(u_prime);
-      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime, 1e-13, 1e-13)) {
+      if (cache_iterator != cache_.end() && XT::Common::FloatCmp::eq(cache_iterator->first, u_prime, 1e-14, 1e-14)) {
         const auto alpha_prime = cache_iterator->second;
         ret.first = alpha_prime + alpha_iso * std::log(density);
         ret.second = 0.;
