@@ -17,7 +17,7 @@ from dune.xt.codegen import typeid_to_typedef_name, la_backends, is_found
 grids = []
 try:
     if cache['dune-alugrid']:
-        grids.extend(['AluSimplex2dGridType', 'AluConform2dGridType'])
+        grids.extend(['AluSimplex2dGridType'])
 except KeyError:
     pass
 
