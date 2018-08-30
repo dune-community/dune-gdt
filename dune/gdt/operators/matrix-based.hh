@@ -316,7 +316,8 @@ public:
     , assembled_(false)
   {
     // to detect assembly
-    this->append([&](const auto&) { assembled_ = true; });
+    this->append(
+        [](/*prepare nothing*/) {}, [](const auto&) { /*apply nothing*/ }, [&](/*finalize*/) { assembled_ = true; });
   }
 
   /**
@@ -333,7 +334,8 @@ public:
     , assembled_(false)
   {
     // to detect assembly
-    this->append([&](const auto&) { assembled_ = true; });
+    this->append(
+        [](/*prepare nothing*/) {}, [](const auto&) { /*apply nothing*/ }, [&](/*finalize*/) { assembled_ = true; });
   }
 
   using OperatorBaseType::matrix;
