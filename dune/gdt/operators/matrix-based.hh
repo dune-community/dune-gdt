@@ -22,7 +22,7 @@
 #include <dune/xt/grid/type_traits.hh>
 
 #include <dune/gdt/exceptions.hh>
-#include <dune/gdt/local/assembler/two-form-assemblers.hh>
+#include <dune/gdt/local/assembler/bilinear-form-assemblers.hh>
 #include <dune/gdt/local/bilinear-forms/interfaces.hh>
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/tools/sparsity-pattern.hh>
@@ -38,40 +38,22 @@ namespace GDT {
  * \note See OperatorInterface for a description of the template arguments.
  *
  * \sa OperatorInterface
- * \sa MatrixBasedOperator
+ * \sa MatrixOperator
  */
-template <class Matrix,
-          class SGV,
-          size_t s_r = 1,
-          size_t s_rC = 1,
-          class SF = double,
-          class F = double,
-          size_t r_r = s_r,
-          size_t r_rC = s_rC,
-          class RF = double,
-          class RGV = SGV,
-          class SourceVector = typename XT::LA::Container<typename Matrix::ScalarType, Matrix::vector_type>::VectorType,
-          class RangeVector = SourceVector>
-class ConstMatrixBasedOperator
-    : public OperatorInterface<SourceVector, SGV, s_r, s_rC, SF, F, r_r, r_rC, RF, RGV, RangeVector>
+template <class M, class SGV, size_t s_r = 1, size_t s_rC = 1, size_t r_r = s_r, size_t r_rC = s_rC, class RGV = SGV>
+class ConstMatrixOperator : public OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, RGV>
 {
-  static_assert(XT::LA::is_matrix<Matrix>::value, "");
-
-  using ThisType =
-      ConstMatrixBasedOperator<Matrix, SGV, s_r, s_rC, SF, F, r_r, r_rC, RF, RGV, SourceVector, RangeVector>;
-  using BaseType = OperatorInterface<SourceVector, SGV, s_r, s_rC, SF, F, r_r, r_rC, RF, RGV, RangeVector>;
+  using ThisType = ConstMatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
+  using BaseType = OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
 
 public:
-  using MatrixType = Matrix;
-  using DofFieldType = typename MatrixType::ScalarType;
-
+  using typename BaseType::MatrixType;
+  using typename BaseType::VectorType;
   using typename BaseType::SourceSpaceType;
   using typename BaseType::RangeSpaceType;
+  using typename BaseType::MatrixOperatorType;
 
-  using typename BaseType::SourceVectorType;
-  using typename BaseType::RangeVectorType;
-
-  ConstMatrixBasedOperator(const SourceSpaceType& source_spc, const RangeSpaceType& range_spc, const MatrixType& mat)
+  ConstMatrixOperator(const SourceSpaceType& source_spc, const RangeSpaceType& range_spc, const MatrixType& mat)
     : source_space_(source_spc)
     , range_space_(range_spc)
     , matrix_(mat)
@@ -85,9 +67,9 @@ public:
                   XT::Common::Exceptions::shapes_do_not_match,
                   "matrix_.cols() = " << matrix_.cols() << "\n   source_space_.mapper().size() = "
                                       << source_space_.mapper().size());
-  } // ConstMatrixBasedOperator(...)
+  } // ConstMatrixOperator(...)
 
-  ConstMatrixBasedOperator(ThisType&& source)
+  ConstMatrixOperator(ThisType&& source)
     : source_space_(source.source_space_)
     , range_space_(source.range_space_)
     , matrix_(source.matrix_)
@@ -117,9 +99,7 @@ public:
 
   using BaseType::apply;
 
-  void apply(const SourceVectorType& source,
-             RangeVectorType& range,
-             const XT::Common::Parameter& /*param*/ = {}) const override
+  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& /*param*/ = {}) const override
   {
     try {
       matrix_.mv(source, range);
@@ -146,8 +126,8 @@ public:
 
   using BaseType::apply_inverse;
 
-  void apply_inverse(const RangeVectorType& range,
-                     SourceVectorType& source,
+  void apply_inverse(const VectorType& range,
+                     VectorType& source,
                      const XT::Common::Configuration& opts,
                      const XT::Common::Parameter& /*param*/ = {}) const override
   {
@@ -159,40 +139,44 @@ public:
     }
   } // ... apply_inverse(...)
 
-  std::vector<std::string> jacobian_options() const override
-  {
-    return {"direct"};
-  }
+  //  std::vector<std::string> jacobian_options() const override
+  //  {
+  //    return {"direct"};
+  //  }
 
-  XT::Common::Configuration jacobian_options(const std::string& type) const override
-  {
-    DUNE_THROW_IF(type != jacobian_options().at(0),
-                  Exceptions::operator_error,
-                  "requested jacobian type is not one of the available ones!\n\n"
-                      << "type = "
-                      << type
-                      << "\njacobian_options() = "
-                      << jacobian_options());
-    return {{"type", jacobian_options().at(0)}};
-  } // ... jacobian_options(...)
+  //  XT::Common::Configuration jacobian_options(const std::string& type) const override
+  //  {
+  //    DUNE_THROW_IF(type != jacobian_options().at(0),
+  //                  Exceptions::operator_error,
+  //                  "requested jacobian type is not one of the available ones!\n\n"
+  //                      << "type = "
+  //                      << type
+  //                      << "\njacobian_options() = "
+  //                      << jacobian_options());
+  //    return {{"type", jacobian_options().at(0)}};
+  //  } // ... jacobian_options(...)
 
   using BaseType::jacobian;
 
-  std::shared_ptr<BaseType> jacobian(const SourceVectorType& /*source*/,
-                                     const XT::Common::Configuration& opts,
-                                     const XT::Common::Parameter& /*param*/ = {}) const override
+  void jacobian(const VectorType& /*source*/,
+                MatrixOperatorType& /*jacobian_op*/,
+                const XT::Common::Configuration& /*opts*/,
+                const XT::Common::Parameter& /*param*/ = {}) const override
   {
-    DUNE_THROW_IF(
-        !opts.has_key("type"), Exceptions::operator_error, "missing key 'type' in given opts!\n\nopts = " << opts);
-    const auto type = opts.get<std::string>("type");
-    DUNE_THROW_IF(type != jacobian_options().at(0),
-                  Exceptions::operator_error,
-                  "requested jacobian type is not one of the available ones!\n\n"
-                      << "type = "
-                      << type
-                      << "\njacobian_options() = "
-                      << jacobian_options());
-    return std::make_shared<ThisType>(source_space_, range_space_, matrix_);
+    //    DUNE_THROW_IF(
+    //        !opts.has_key("type"), Exceptions::operator_error, "missing key 'type' in given opts!\n\nopts = " <<
+    //        opts);
+    //    const auto type = opts.get<std::string>("type");
+    //    DUNE_THROW_IF(type != jacobian_options().at(0),
+    //                  Exceptions::operator_error,
+    //                  "requested jacobian type is not one of the available ones!\n\n"
+    //                      << "type = "
+    //                      << type
+    //                      << "\njacobian_options() = "
+    //                      << jacobian_options());
+    DUNE_THROW(Exceptions::operator_error, "This operator does not provide a jacobian yet!");
+    // I am not sure yet how to implement this:
+    // if assembled, do jacobian_op.matrix() += matrix_?
   } // ... jacobian(...)
 
 private:
@@ -200,42 +184,25 @@ private:
   const RangeSpaceType& range_space_;
   const MatrixType& matrix_;
   const XT::LA::Solver<MatrixType, typename SourceSpaceType::DofCommunicatorType> linear_solver_;
-}; // class ConstMatrixBasedOperator
+}; // class ConstMatrixOperator
 
 
-template <class SGV, size_t s_r, size_t s_rC, class SF, class RGV, size_t r_r, size_t r_rC, class RF, class M>
-ConstMatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type,
-                         SGV,
-                         s_r,
-                         s_rC,
-                         SF,
-                         typename XT::Common::multiplication_promotion<SF, RF>::type,
-                         r_r,
-                         r_rC,
-                         RF,
-                         RGV>
-make_matrix_operator(const SpaceInterface<SGV, s_r, s_rC, SF>& source_space,
-                     const SpaceInterface<RGV, r_r, r_rC, RF>& range_space,
+template <class SGV, size_t s_r, size_t s_rC, class F, class RGV, size_t r_r, size_t r_rC, class M>
+ConstMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, SGV, s_r, s_rC, r_r, r_rC, RGV>
+make_matrix_operator(const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
+                     const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                      const XT::LA::MatrixInterface<M>& matrix)
 {
-  return ConstMatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type,
-                                  SGV,
-                                  s_r,
-                                  s_rC,
-                                  SF,
-                                  typename XT::Common::multiplication_promotion<SF, RF>::type,
-                                  r_r,
-                                  r_rC,
-                                  RF,
-                                  RGV>(source_space, range_space, matrix.as_imp());
-} // ... make_matrix_operator(...)
+  return ConstMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, SGV, s_r, s_rC, r_r, r_rC, RGV>(
+      source_space, range_space, matrix.as_imp());
+}
 
 
 template <class GV, size_t r, size_t rC, class F, class M>
-ConstMatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>
+ConstMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>
 make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::MatrixInterface<M>& matrix)
 {
-  return ConstMatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>(
+  return ConstMatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>(
       space, space, matrix.as_imp());
 }
 
@@ -243,62 +210,44 @@ make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::Ma
 /**
  * \brief Base class for linear operators which are assembled into a matrix.
  *
- * Similar to the GlobalAssembler, we derive from the XT::Grid::Walker and povide custom append() methods to allow to
- * add local element and intersection operators. In contrast to the GlobalAssembler we already hold the target matrix
- * (or create one of appropriate size and given sparsity pattern), into which we want to assemble. The operator is
- * assembled by walking over the given assembly_gid_view (which defaults to the one fom the given space). This allows to
- * assemble an operator only on a smaller grid view than the one given from the space (similar functionality could be
- * achieved by appending this operator to another walker and by providing an appropriate filter).
+ * We derive from the XT::Grid::Walker and povide custom append() methods to allow to add local element and intersection
+ * operators. In contrast to the GlobalAssembler we already hold the target matrix (or create one of appropriate size
+ * and given sparsity pattern), into which we want to assemble. The operator is assembled by walking over the given
+ * assembly_grid_view, if you want to assemble an operator only on a smaller grid view, consider to append this operator
+ * to another walker or provide appropriate filters.
  *
- * \note One could achieve similar functionality by deriving from GlobalAssembler directly, which would slightly
- *       simplify the implementation of the append methods. However, we do not want to expose the other append methods
- *       of GlobalAssembler here (it should not be possible to append a local functional to an operator), but want to
- *       expose the ones from the XT::Grid::Walker (it should be possible to append other element or intersection
- *       operators or two-forms).
- *
- * \note See ConstMatrixBasedOperator and OperatorInterface for a description of the template arguments.
+ * \note See ConstMatrixOperator and OperatorInterface for a description of the template arguments.
  *
  * \sa OperatorInterface
- * \sa ConstMatrixBasedOperator
+ * \sa ConstMatrixOperator
  * \sa XT::Grid::Walker
- * \sa GlobalAssembler
  */
-template <class M,
-          class AssemblyGridView,
-          size_t s_r = 1,
-          size_t s_rC = 1,
-          class SF = double,
-          class SGV = AssemblyGridView,
-          class F = double,
-          size_t r_r = s_r,
-          size_t r_rC = s_rC,
-          class RF = double,
-          class RGV = SGV,
-          class SV = typename XT::LA::Container<typename M::ScalarType, M::vector_type>::VectorType,
-          class RV = SV>
-class MatrixBasedOperator : XT::Common::StorageProvider<M>,
-                            public ConstMatrixBasedOperator<M, SGV, s_r, s_rC, SF, F, r_r, r_rC, RF, RGV, SV, RV>,
-                            public XT::Grid::Walker<AssemblyGridView>
+template <class M, class SGV, size_t s_r = 1, size_t s_rC = 1, size_t r_r = s_r, size_t r_rC = s_rC, class RGV = SGV>
+class MatrixOperator : XT::Common::StorageProvider<M>,
+                       public ConstMatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>,
+                       public XT::Grid::Walker<SGV>
 {
-  static_assert(XT::Grid::is_view<AssemblyGridView>::value, "");
-
-  using ThisType = MatrixBasedOperator<M, AssemblyGridView, s_r, s_rC, SF, SGV, F, r_r, r_rC, RF, RGV, SV, RV>;
+  using ThisType = MatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
   using MatrixStorage = XT::Common::StorageProvider<M>;
-  using OperatorBaseType = ConstMatrixBasedOperator<M, SGV, s_r, s_rC, SF, F, r_r, r_rC, RF, RGV, SV, RV>;
-  using WalkerBaseType = XT::Grid::Walker<AssemblyGridView>;
+  using OperatorBaseType = ConstMatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
+  using WalkerBaseType = XT::Grid::Walker<SGV>;
 
 public:
-  using AssemblyGridViewType = AssemblyGridView;
+  using AssemblyGridViewType = SGV;
 
   using typename OperatorBaseType::MatrixType;
+  using typename OperatorBaseType::VectorType;
   using typename OperatorBaseType::SourceSpaceType;
   using typename OperatorBaseType::RangeSpaceType;
+  using typename OperatorBaseType::MatrixOperatorType;
+  using typename OperatorBaseType::V;
+  using typename OperatorBaseType::F;
 
   using typename WalkerBaseType::ElementType;
-  using ElementFilterType = XT::Grid::ElementFilter<AssemblyGridViewType>;
-  using IntersectionFilterType = XT::Grid::IntersectionFilter<AssemblyGridViewType>;
-  using ApplyOnAllElements = XT::Grid::ApplyOn::AllElements<AssemblyGridViewType>;
-  using ApplyOnAllIntersections = XT::Grid::ApplyOn::AllIntersections<AssemblyGridViewType>;
+  using ElementFilterType = XT::Grid::ElementFilter<SGV>;
+  using IntersectionFilterType = XT::Grid::IntersectionFilter<SGV>;
+  using ApplyOnAllElements = XT::Grid::ApplyOn::AllElements<SGV>;
+  using ApplyOnAllIntersections = XT::Grid::ApplyOn::AllIntersections<SGV>;
 
   using typename WalkerBaseType::E;
   using typename WalkerBaseType::I;
@@ -306,10 +255,10 @@ public:
   /**
    * Ctor which accept an existing matrix into which to assemble.
    */
-  MatrixBasedOperator(AssemblyGridViewType assembly_grid_view,
-                      const SourceSpaceType& source_spc,
-                      const RangeSpaceType& range_spc,
-                      MatrixType& mat)
+  MatrixOperator(AssemblyGridViewType assembly_grid_view,
+                 const SourceSpaceType& source_spc,
+                 const RangeSpaceType& range_spc,
+                 MatrixType& mat)
     : MatrixStorage(mat)
     , OperatorBaseType(source_spc, range_spc, MatrixStorage::access())
     , WalkerBaseType(assembly_grid_view)
@@ -324,10 +273,10 @@ public:
    * Ctor which creates an appropriate matrix into which to assemble from a given sparsity pattern.
    */
 
-  MatrixBasedOperator(AssemblyGridViewType assembly_grid_view,
-                      const SourceSpaceType& source_spc,
-                      const RangeSpaceType& range_spc,
-                      const XT::LA::SparsityPatternDefault& pattern)
+  MatrixOperator(AssemblyGridViewType assembly_grid_view,
+                 const SourceSpaceType& source_spc,
+                 const RangeSpaceType& range_spc,
+                 const XT::LA::SparsityPatternDefault& pattern)
     : MatrixStorage(new MatrixType(range_spc.mapper().size(), source_spc.mapper().size(), pattern))
     , OperatorBaseType(source_spc, range_spc, MatrixStorage::access())
     , WalkerBaseType(assembly_grid_view)
@@ -347,40 +296,29 @@ public:
 
   using WalkerBaseType::append;
 
-  ThisType& append(const LocalElementBilinearFormInterface<E, r_r, r_rC, RF, F, s_r, s_rC, SF>& local_bilinear_form,
+  ThisType& append(const LocalElementBilinearFormInterface<E, r_r, r_rC, F, F, s_r, s_rC, F>& local_bilinear_form,
                    const XT::Common::Parameter& param = {},
                    const ElementFilterType& filter = ApplyOnAllElements())
   {
-    using LocalAssemblerType =
-        LocalElementBilinearFormAssembler<MatrixType, AssemblyGridViewType, r_r, r_rC, RF, RGV, SGV, s_r, s_rC, SF>;
+    using LocalAssemblerType = LocalElementBilinearFormAssembler<M, SGV, r_r, r_rC, F, RGV, SGV, s_r, s_rC, F>;
     this->append(new LocalAssemblerType(
                      this->range_space(), this->source_space(), local_bilinear_form, MatrixStorage::access(), param),
                  filter);
     return *this;
   }
 
-  ThisType&
-  append(const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, RF, F, s_r, s_rC, SF>& local_bilinear_form,
-         const XT::Common::Parameter& param = {},
-         const IntersectionFilterType& filter = ApplyOnAllIntersections())
+  ThisType& append(const LocalIntersectionBilinearFormInterface<I, r_r, r_rC, F, F, s_r, s_rC, F>& local_bilinear_form,
+                   const XT::Common::Parameter& param = {},
+                   const IntersectionFilterType& filter = ApplyOnAllIntersections())
   {
-    using LocalAssemblerType = LocalIntersectionBilinearFormAssembler<MatrixType,
-                                                                      AssemblyGridViewType,
-                                                                      r_r,
-                                                                      r_rC,
-                                                                      RF,
-                                                                      RGV,
-                                                                      SGV,
-                                                                      s_r,
-                                                                      s_rC,
-                                                                      SF>;
+    using LocalAssemblerType =
+        LocalIntersectionBilinearFormAssembler<MatrixType, AssemblyGridViewType, r_r, r_rC, F, RGV, SGV, s_r, s_rC, F>;
     this->append(new LocalAssemblerType(
                      this->range_space(), this->source_space(), local_bilinear_form, MatrixStorage::access(), param),
                  filter);
     return *this;
   } // ... append(...)
 
-  // similar append for LocalIntersectionFunctionalInterface ...
 
   void assemble(const bool use_tbb = false) override final
   {
@@ -391,68 +329,52 @@ public:
     assembled_ = true;
   }
 
+  using OperatorBaseType::jacobian;
+
+  void jacobian(const VectorType& /*source*/,
+                MatrixOperatorType& /*jacobian_op*/,
+                const XT::Common::Configuration& /*opts*/,
+                const XT::Common::Parameter& /*param*/ = {}) const override
+  {
+    DUNE_THROW(Exceptions::operator_error, "This operator does not provide a jacobian yet!");
+    // I am not sure yet how to implement this:
+    // if assembled, do jacobian_op.matrix() += matrix_?
+    // If not, append this to jacobian_op?
+    // Or keep a list of all appended local ops and append them to jacobian_op? <- This is probably best.
+  } // ... jacobian(...)
+
 private:
   bool assembled_;
-}; // class MatrixBasedOperator
+}; // class MatrixOperator
 
 
 /// \name Variants of make_matrix_operator for a given matrix.
 /// \{
 
-template <class AGV,
-          class SGV,
-          size_t s_r,
-          size_t s_rC,
-          class SF,
-          class RGV,
-          size_t r_r,
-          size_t r_rC,
-          class RF,
-          class M>
-MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type,
-                    GridView<AGV>,
-                    s_r,
-                    s_rC,
-                    SF,
-                    SGV,
-                    typename XT::Common::multiplication_promotion<SF, RF>::type,
-                    r_r,
-                    r_rC,
-                    RF,
-                    RGV>
-make_matrix_operator(GridView<AGV> assembly_grid_view,
-                     const SpaceInterface<SGV, s_r, s_rC, SF>& source_space,
-                     const SpaceInterface<RGV, r_r, r_rC, RF>& range_space,
+template <class SGV, size_t s_r, size_t s_rC, class F, class RGV, size_t r_r, size_t r_rC, class M>
+MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, SGV, s_r, s_rC, r_r, r_rC, RGV>
+make_matrix_operator(SGV assembly_grid_view,
+                     const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
+                     const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                      XT::LA::MatrixInterface<M>& matrix)
 {
-  return MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type,
-                             GridView<AGV>,
-                             s_r,
-                             s_rC,
-                             SF,
-                             SGV,
-                             typename XT::Common::multiplication_promotion<SF, RF>::type,
-                             r_r,
-                             r_rC,
-                             RF,
-                             RGV>(assembly_grid_view, source_space, range_space, matrix.as_imp());
-} // ... make_matrix_operator(...)
+  return MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, SGV, s_r, s_rC, r_r, r_rC, RGV>(
+      assembly_grid_view, source_space, range_space, matrix.as_imp());
+}
 
-template <class AGV, class GV, size_t r, size_t rC, class F, class M>
-MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GridView<AGV>, r, rC, F, GV>
-make_matrix_operator(GridView<AGV> assembly_grid_view,
-                     const SpaceInterface<GV, r, rC, F>& space,
-                     XT::LA::MatrixInterface<M>& matrix)
+template <class GV, size_t r, size_t rC, class F, class M>
+MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC> make_matrix_operator(
+    GV assembly_grid_view, const SpaceInterface<GV, r, rC, F>& space, XT::LA::MatrixInterface<M>& matrix)
 {
-  return MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GridView<AGV>, r, rC, F, GV>(
+  return MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>(
       assembly_grid_view, space, space, matrix.as_imp());
 }
 
 template <class GV, size_t r, size_t rC, class F, class M>
-MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>
+MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>
 make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, XT::LA::MatrixInterface<M>& matrix)
 {
-  return MatrixBasedOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC, F>(
+  return MatrixOperator<typename XT::LA::MatrixInterface<M>::derived_type, GV, r, rC>(
       space.grid_view(), space, space, matrix.as_imp());
 }
 
@@ -466,45 +388,17 @@ make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, XT::LA::MatrixIn
 auto op = make_matrix_operator<MatrixType>(assembly_grid_view, source_space, range_space, pattern);
 \endcode
  */
-template <class MatrixType,
-          class AGV,
-          class SGV,
-          size_t s_r,
-          size_t s_rC,
-          class SF,
-          class RGV,
-          size_t r_r,
-          size_t r_rC,
-          class RF>
+template <class MatrixType, class SGV, size_t s_r, size_t s_rC, class F, class RGV, size_t r_r, size_t r_rC>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value,
-                        MatrixBasedOperator<MatrixType,
-                                            GridView<AGV>,
-                                            s_r,
-                                            s_rC,
-                                            SF,
-                                            SGV,
-                                            typename XT::Common::multiplication_promotion<SF, RF>::type,
-                                            r_r,
-                                            r_rC,
-                                            RF,
-                                            RGV>>::type
-make_matrix_operator(GridView<AGV> assembly_grid_view,
-                     const SpaceInterface<SGV, s_r, s_rC, SF>& source_space,
-                     const SpaceInterface<RGV, r_r, r_rC, RF>& range_space,
+                        MatrixOperator<MatrixType, SGV, s_r, s_rC, r_r, r_rC, RGV>>::type
+make_matrix_operator(SGV assembly_grid_view,
+                     const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
+                     const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                      const XT::LA::SparsityPatternDefault& pattern)
 {
-  return MatrixBasedOperator<MatrixType,
-                             GridView<AGV>,
-                             s_r,
-                             s_rC,
-                             SF,
-                             SGV,
-                             typename XT::Common::multiplication_promotion<SF, RF>::type,
-                             r_r,
-                             r_rC,
-                             RF,
-                             RGV>(assembly_grid_view, source_space, range_space, pattern);
-} // ... make_matrix_operator(...)
+  return MatrixOperator<MatrixType, SGV, s_r, s_rC, r_r, r_rC, RGV>(
+      assembly_grid_view, source_space, range_space, pattern);
+}
 
 /**
  * \note Use as in
@@ -512,14 +406,13 @@ make_matrix_operator(GridView<AGV> assembly_grid_view,
 auto op = make_matrix_operator<MatrixType>(assembly_grid_view, space, pattern);
 \endcode
  */
-template <class MatrixType, class AGV, class GV, size_t r, size_t rC, class F>
-typename std::enable_if<XT::LA::is_matrix<MatrixType>::value,
-                        MatrixBasedOperator<MatrixType, GridView<AGV>, r, rC, F, GV>>::type
-make_matrix_operator(GridView<AGV> assembly_grid_view,
+template <class MatrixType, class GV, size_t r, size_t rC, class F>
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixOperator<MatrixType, GV, r, rC>>::type
+make_matrix_operator(GV assembly_grid_view,
                      const SpaceInterface<GV, r, rC, F>& space,
                      const XT::LA::SparsityPatternDefault& pattern)
 {
-  return MatrixBasedOperator<MatrixType, GridView<AGV>, r, rC, F, GV>(assembly_grid_view, space, space, pattern);
+  return MatrixOperator<MatrixType, GV, r, rC>(assembly_grid_view, space, space, pattern);
 }
 
 /**
@@ -529,10 +422,10 @@ auto op = make_matrix_operator<MatrixType>(space, pattern);
 \endcode
  */
 template <class MatrixType, class GV, size_t r, size_t rC, class F>
-typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixBasedOperator<MatrixType, GV, r, rC, F>>::type
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixOperator<MatrixType, GV, r, rC>>::type
 make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::SparsityPatternDefault& pattern)
 {
-  return MatrixBasedOperator<MatrixType, GV, r, rC, F>(space.grid_view(), space, space, pattern);
+  return MatrixOperator<MatrixType, GV, r, rC>(space.grid_view(), space, space, pattern);
 }
 
 /// \}
@@ -545,48 +438,20 @@ make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space, const XT::LA::Sp
 auto op = make_matrix_operator<MatrixType>(source_space, range_space, stencil);
 \endcode
  */
-template <class MatrixType,
-          class AGV,
-          class SGV,
-          size_t s_r,
-          size_t s_rC,
-          class SF,
-          class RGV,
-          size_t r_r,
-          size_t r_rC,
-          class RF>
+template <class MatrixType, class SGV, size_t s_r, size_t s_rC, class F, class RGV, size_t r_r, size_t r_rC>
 typename std::enable_if<XT::LA::is_matrix<MatrixType>::value,
-                        MatrixBasedOperator<MatrixType,
-                                            GridView<AGV>,
-                                            s_r,
-                                            s_rC,
-                                            SF,
-                                            SGV,
-                                            typename XT::Common::multiplication_promotion<SF, RF>::type,
-                                            r_r,
-                                            r_rC,
-                                            RF,
-                                            RGV>>::type
-make_matrix_operator(GridView<AGV> assembly_grid_view,
-                     const SpaceInterface<SGV, s_r, s_rC, SF>& source_space,
-                     const SpaceInterface<RGV, r_r, r_rC, RF>& range_space,
+                        MatrixOperator<MatrixType, SGV, s_r, s_rC, r_r, r_rC, RGV>>::type
+make_matrix_operator(SGV assembly_grid_view,
+                     const SpaceInterface<SGV, s_r, s_rC, F>& source_space,
+                     const SpaceInterface<RGV, r_r, r_rC, F>& range_space,
                      const Stencil stencil = Stencil::element_and_intersection)
 {
-  return MatrixBasedOperator<MatrixType,
-                             GridView<AGV>,
-                             s_r,
-                             s_rC,
-                             SF,
-                             SGV,
-                             typename XT::Common::multiplication_promotion<SF, RF>::type,
-                             r_r,
-                             r_rC,
-                             RF,
-                             RGV>(assembly_grid_view,
-                                  source_space,
-                                  range_space,
-                                  make_sparsity_pattern(range_space, source_space, assembly_grid_view, stencil));
-} // ... make_matrix_operator(...)
+  return MatrixOperator<MatrixType, SGV, s_r, s_rC, r_r, r_rC, RGV>(
+      assembly_grid_view,
+      source_space,
+      range_space,
+      make_sparsity_pattern(range_space, source_space, assembly_grid_view, stencil));
+}
 
 /**
  * \note Use as in
@@ -594,14 +459,13 @@ make_matrix_operator(GridView<AGV> assembly_grid_view,
 auto op = make_matrix_operator<MatrixType>(assembly_grid_view, space, stencil);
 \endcode
  */
-template <class MatrixType, class AGV, class GV, size_t r, size_t rC, class F>
-typename std::enable_if<XT::LA::is_matrix<MatrixType>::value,
-                        MatrixBasedOperator<MatrixType, GridView<AGV>, r, rC, F, GV>>::type
-make_matrix_operator(GridView<AGV> assembly_grid_view,
+template <class MatrixType, class GV, size_t r, size_t rC, class F>
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixOperator<MatrixType, GV, r, rC>>::type
+make_matrix_operator(GV assembly_grid_view,
                      const SpaceInterface<GV, r, rC, F>& space,
                      const Stencil stencil = Stencil::element_and_intersection)
 {
-  return MatrixBasedOperator<MatrixType, GridView<AGV>, r, rC, F, GV>(
+  return MatrixOperator<MatrixType, GV, r, rC>(
       assembly_grid_view, space, space, make_sparsity_pattern(space, assembly_grid_view, stencil));
 }
 
@@ -612,12 +476,11 @@ auto op = make_matrix_operator<MatrixType>(space, stencil);
 \endcode
  */
 template <class MatrixType, class GV, size_t r, size_t rC, class F>
-typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixBasedOperator<MatrixType, GV, r, rC, F>>::type
+typename std::enable_if<XT::LA::is_matrix<MatrixType>::value, MatrixOperator<MatrixType, GV, r, rC>>::type
 make_matrix_operator(const SpaceInterface<GV, r, rC, F>& space,
                      const Stencil stencil = Stencil::element_and_intersection)
 {
-  return MatrixBasedOperator<MatrixType, GV, r, rC, F>(
-      space.grid_view(), space, space, make_sparsity_pattern(space, stencil));
+  return MatrixOperator<MatrixType, GV, r, rC>(space.grid_view(), space, space, make_sparsity_pattern(space, stencil));
 }
 
 /// \}

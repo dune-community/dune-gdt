@@ -28,66 +28,34 @@ namespace GDT {
  *
  * \sa OperatorInterface
  */
-template <class AssemblyGridView,
-          class SV,
-          size_t m = 1,
-          class SF = double,
-          class SGV = AssemblyGridView,
-          class RF = SF,
-          class RGV = AssemblyGridView,
-          class RV = SV>
-class AdvectionFvOperator : public OperatorInterface<SV,
-                                                     SGV,
-                                                     m,
-                                                     1,
-                                                     SF,
-                                                     typename XT::Common::multiplication_promotion<SF, RF>::type,
-                                                     m,
-                                                     1,
-                                                     RF,
-                                                     RGV,
-                                                     RV>
+template <class M, class SGV, size_t m = 1, class RGV = SGV>
+class AdvectionFvOperator : public OperatorInterface<M, SGV, m, 1, m, 1, RGV>
 {
-  // No need to check the rest, is done in OperatorInterface.
-  static_assert(XT::Grid::is_view<AssemblyGridView>::value, "");
-  static_assert((AssemblyGridView::dimension == SGV::dimension) && (AssemblyGridView::dimension == RGV::dimension), "");
-
-  using ThisType = AdvectionFvOperator<AssemblyGridView, SV, m, SF, SGV, RF, RGV, RV>;
-  using BaseType = OperatorInterface<SV,
-                                     SGV,
-                                     m,
-                                     1,
-                                     SF,
-                                     typename XT::Common::multiplication_promotion<SF, RF>::type,
-                                     m,
-                                     1,
-                                     RF,
-                                     RGV,
-                                     RV>;
-  using AGV = AssemblyGridView;
+  using ThisType = AdvectionFvOperator<M, SGV, m, RGV>;
+  using BaseType = OperatorInterface<M, SGV, m, 1, m, 1, RGV>;
 
 public:
-  using AssemblyGridViewType = AssemblyGridView;
-  using NumericalFluxType = NumericalFluxInterface<AssemblyGridView::dimension, m, RF>;
+  using typename BaseType::V;
+  using typename BaseType::F;
 
-  using I = XT::Grid::extract_intersection_t<AGV>;
+  using NumericalFluxType = NumericalFluxInterface<SGV::dimension, m, F>;
+
+  using I = XT::Grid::extract_intersection_t<SGV>;
   using BoundaryTreatmentByCustomNumericalFluxOperatorType =
-      LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
+      LocalAdvectionFvBoundaryTreatmentByCustomNumericalFluxOperator<I, V, SGV, m, F, F, RGV, V>;
   using BoundaryTreatmentByCustomExtrapolationOperatorType =
-      LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, SV, SGV, m, SF, RF, RGV, RV>;
+      LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, V, SGV, m, F, F, RGV, V>;
 
   using typename BaseType::SourceSpaceType;
   using typename BaseType::RangeSpaceType;
-
-  using typename BaseType::SourceVectorType;
-  using typename BaseType::RangeVectorType;
+  using typename BaseType::VectorType;
 
   AdvectionFvOperator(
-      const AssemblyGridViewType& assembly_grid_view,
+      const SGV& assembly_grid_view,
       const NumericalFluxType& numerical_flux,
       const SourceSpaceType& source_space,
       const RangeSpaceType& range_space,
-      const XT::Grid::IntersectionFilter<AGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<AGV>())
+      const XT::Grid::IntersectionFilter<SGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<SGV>())
     : BaseType(numerical_flux.parameter_type())
     , assembly_grid_view_(assembly_grid_view)
     , numerical_flux_(numerical_flux.copy())
@@ -120,7 +88,7 @@ public:
   ThisType&
   append(typename BoundaryTreatmentByCustomNumericalFluxOperatorType::LambdaType numerical_boundary_treatment_flux,
          const XT::Common::ParameterType& boundary_treatment_parameter_type = {},
-         const XT::Grid::IntersectionFilter<AGV>& filter = XT::Grid::ApplyOn::BoundaryIntersections<AGV>())
+         const XT::Grid::IntersectionFilter<SGV>& filter = XT::Grid::ApplyOn::BoundaryIntersections<SGV>())
   {
     boundary_treatments_by_custom_numerical_flux_.emplace_back(
         new BoundaryTreatmentByCustomNumericalFluxOperatorType(numerical_boundary_treatment_flux,
@@ -131,7 +99,7 @@ public:
 
   ThisType& append(typename BoundaryTreatmentByCustomExtrapolationOperatorType::LambdaType extrapolation,
                    const XT::Common::ParameterType& extrapolation_parameter_type = {},
-                   const XT::Grid::IntersectionFilter<AGV>& filter = XT::Grid::ApplyOn::BoundaryIntersections<AGV>())
+                   const XT::Grid::IntersectionFilter<SGV>& filter = XT::Grid::ApplyOn::BoundaryIntersections<SGV>())
   {
     boundary_treatments_by_custom_extrapolation_.emplace_back(
         new BoundaryTreatmentByCustomExtrapolationOperatorType(
@@ -144,9 +112,7 @@ public:
 
   using BaseType::apply;
 
-  void apply(const SourceVectorType& source,
-             RangeVectorType& range,
-             const XT::Common::Parameter& param = {}) const override final
+  void apply(const VectorType& source, VectorType& range, const XT::Common::Parameter& param = {}) const override final
   {
     // some checks
     DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
@@ -159,13 +125,13 @@ public:
     // set up the actual operator
     auto localizable_op = make_localizable_operator(assembly_grid_view_, source_function, range_function);
     // contributions from inner intersections
-    localizable_op.append(LocalAdvectionFvCouplingOperator<I, SV, SGV, m, SF, RF, RGV, RV>(*numerical_flux_),
+    localizable_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
                           param,
-                          XT::Grid::ApplyOn::InnerIntersectionsOnce<AGV>());
+                          XT::Grid::ApplyOn::InnerIntersectionsOnce<SGV>());
     // contributions from periodic boundaries
-    localizable_op.append(LocalAdvectionFvCouplingOperator<I, SV, SGV, m, SF, RF, RGV, RV>(*numerical_flux_),
+    localizable_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
                           param,
-                          *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<AGV>() && !(*periodicity_exception_)));
+                          *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<SGV>() && !(*periodicity_exception_)));
     // contributions from other boundaries by custom numerical flux
     for (const auto& boundary_treatment : boundary_treatments_by_custom_numerical_flux_) {
       const auto& boundary_op = *boundary_treatment.first;
@@ -184,31 +150,30 @@ public:
   } // ... apply(...)
 
 private:
-  const AssemblyGridViewType& assembly_grid_view_;
+  const SGV assembly_grid_view_;
   const std::unique_ptr<const NumericalFluxType> numerical_flux_;
   const SourceSpaceType& source_space_;
   const RangeSpaceType& range_space_;
-  std::unique_ptr<XT::Grid::IntersectionFilter<AssemblyGridViewType>> periodicity_exception_;
+  std::unique_ptr<XT::Grid::IntersectionFilter<SGV>> periodicity_exception_;
   std::list<std::pair<std::unique_ptr<BoundaryTreatmentByCustomNumericalFluxOperatorType>,
-                      std::unique_ptr<XT::Grid::IntersectionFilter<AGV>>>>
+                      std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>>>
       boundary_treatments_by_custom_numerical_flux_;
   std::list<std::pair<std::unique_ptr<BoundaryTreatmentByCustomExtrapolationOperatorType>,
-                      std::unique_ptr<XT::Grid::IntersectionFilter<AGV>>>>
+                      std::unique_ptr<XT::Grid::IntersectionFilter<SGV>>>>
       boundary_treatments_by_custom_extrapolation_;
 }; // class AdvectionFvOperator
 
 
-template <class VectorType, class AGV, size_t m, class RF, class SGV, class SF, class RGV>
-std::enable_if_t<XT::LA::is_vector<VectorType>::value,
-                 AdvectionFvOperator<AGV, VectorType, m, SF, SGV, RF, RGV, VectorType>>
+template <class MatrixType, class SGV, size_t m, class F, class RGV>
+std::enable_if_t<XT::LA::is_matrix<MatrixType>::value, AdvectionFvOperator<MatrixType, SGV, m, RGV>>
 make_advection_fv_operator(
-    const AGV& assembly_grid_view,
-    const NumericalFluxInterface<AGV::dimension, m, RF>& numerical_flux,
-    const SpaceInterface<SGV, m, 1, SF>& source_space,
-    const SpaceInterface<RGV, m, 1, RF>& range_space,
-    const XT::Grid::IntersectionFilter<AGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<AGV>())
+    const SGV& assembly_grid_view,
+    const NumericalFluxInterface<SGV::dimension, m, F>& numerical_flux,
+    const SpaceInterface<SGV, m, 1, F>& source_space,
+    const SpaceInterface<RGV, m, 1, F>& range_space,
+    const XT::Grid::IntersectionFilter<SGV>& periodicity_exception = XT::Grid::ApplyOn::NoIntersections<SGV>())
 {
-  return AdvectionFvOperator<AGV, VectorType, m, SF, SGV, RF, RGV, VectorType>(
+  return AdvectionFvOperator<MatrixType, SGV, m, RGV>(
       assembly_grid_view, numerical_flux, source_space, range_space, periodicity_exception);
 }
 

@@ -1,6 +1,6 @@
 // This file is part of the dune-gdt project:
 //   https://github.com/dune-community/dune-gdt
-// Copyright 2010-2018 dune-gdt developers and contributors. All rights reserved.
+// Copyright 2010-2018 dune-gdt developers and contributors. All rights reseVed.
 // License: Dual licensed as BSD 2-Clause License (http://opensource.org/licenses/BSD-2-Clause)
 //      or  GPL-2.0+ (http://opensource.org/licenses/gpl-license)
 //          with "runtime exception" (http://www.dune-project.org/license.html)
@@ -19,90 +19,122 @@
 #include <dune/xt/common/configuration.hh>
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/la/container/vector-interface.hh>
+#include <dune/xt/la/type_traits.hh>
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/spaces/interface.hh>
+#include <dune/gdt/tools/sparsity-pattern.hh>
 
 namespace Dune {
 namespace GDT {
+namespace internal {
+
+
+template <class Matrix,
+          class SourceGridView,
+          size_t source_dim,
+          size_t source_dim_cols,
+          size_t range_dim,
+          size_t range_dim_cols,
+          class RangeGridView>
+class AssertArgumentsOfOperatorInterface
+{
+  static_assert(XT::LA::is_matrix<Matrix>::value, "");
+  static_assert(XT::Grid::is_view<SourceGridView>::value, "");
+  static_assert(source_dim > 0, "");
+  static_assert(source_dim_cols > 0, "");
+  static_assert(range_dim > 0, "");
+  static_assert(range_dim_cols > 0, "");
+  static_assert(XT::Grid::is_view<RangeGridView>::value, "");
+  static_assert(SourceGridView::dimension == RangeGridView::dimension, "");
+}; // class AssertArgumentsOfOperatorInterface
+
+
+} // namespace internal
+
+
+// forward, required for the jacobian
+template <class M, class SGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class RGV>
+class MatrixOperator;
 
 
 /**
  * \brief Interface for operators (and two-forms).
  *
- * Considering (discrete) spaces V_h and W_h, and a field K, this interface models
+ * Considering (discrete) spaces V_h and W_h, and a field F, this interface models
  *
  * - operators A: V_h -> W_h and
  *
- * - two-forms B: W_h x V_h -> K.
+ * - two-forms B: W_h x V_h -> F.
  *
  * The source of the operator V_h is the (discrete) space
  *
- *   V_h := \{ v_h: \tau_h^s -> SF^{s_r \times s_rC} \}
+ *   V_h := \{ v_h: \tau_h^s -> F^{s_r \times s_rC} \}
  *
  * (modelled by SpaceInterface) of functions mapping from a partition \tau_h^s (modelled by SourceGridView) of a
- * physical domain to a (possibly vector- or matrix-valued) vector space SF^{s_r \times s_rC} (modelled by SourceField,
+ * physical domain to a (possibly vector- or matrix-valued) vector space F^{s_r \times s_rC} (modelled by Field,
  * source_dim and source_dim_cols). The range of the operator W_h (identified with its dual, since we are in the
  * discrete setting) is the (discrete) space
  *
- *   W_h := \{ w_h: \tau_h^r -> RF^{r_r \times r_rC} \}
+ *   W_h := \{ w_h: \tau_h^r -> F^{r_r \times r_rC} \}
  *
  * (modelled by SpaceInterface) of functions mapping from a partition \tau_h^r (modelled by RangeGridView) of a
- * physical domain to a (possibly vector- or matrix-valued) vector space RF^{r_r \times r_rC} (modelled by RangeField,
+ * physical domain to a (possibly vector- or matrix-valued) vector space F^{r_r \times r_rC} (modelled by Field,
  * range_dim and range_dim_cols).
  *
  * The functions v_h \in V_h (and w_h \in W_h), to which the operator can be applied to, are represented by their DoF
- * vectors (an appropriate vector type derived from XT::LA::VectorInterface modelled by SourceVector (RangeVector)),
- * which are then interpreted as discrete functions in the respective source_space or range_space.
+ * vectors, which are then interpreted as discrete functions in the respective source_space or range_space.
  *
- * The field K of the interpretation of the operator as a two-form (see for instance the default implementation of
- * apply2()) is modelled by Field.
+ * The appropriate vector type (derived from XT::LA::VectorInterface) is automatically deduced from the given
+ * matrix type (derived from XT::LA::MatrixInterface, modelled by Matrix), as well as the underlying field.
+ *
+ * \note In general, one would like to have differente fields for the source vector, the range vector, the matrix and
+ *       the result of apply2(). However, this is postponed in favor of fewer template arguments, until we require it.
  */
-template <class SourceVector,
+template <class Matrix,
           class SourceGridView,
           size_t source_dim = 1,
           size_t source_dim_cols = 1,
-          class SourceField = double,
-          class Field = double,
           size_t range_dim = source_dim,
           size_t range_dim_cols = source_dim_cols,
-          class RangeField = double,
-          class RangeGridView = SourceGridView,
-          class RangeVector = SourceVector>
-class OperatorInterface : public XT::Common::ParametricInterface
+          class RangeGridView = SourceGridView>
+class OperatorInterface : internal::AssertArgumentsOfOperatorInterface<Matrix,
+                                                                       SourceGridView,
+                                                                       source_dim,
+                                                                       source_dim_cols,
+                                                                       range_dim,
+                                                                       range_dim_cols,
+                                                                       RangeGridView>,
+                          public XT::Common::ParametricInterface
 {
-  static_assert(XT::LA::is_vector<SourceVector>::value, "");
-  static_assert(XT::LA::is_vector<RangeVector>::value, "");
-
 public:
-  using SV = SourceVector;
+  using MatrixType = Matrix;
+  using VectorType = XT::LA::vector_t<MatrixType>;
+  using FieldType = typename MatrixType::ScalarType;
+
+  using M = Matrix;
+  using V = VectorType;
+  using F = FieldType;
+
   using SGV = SourceGridView;
   static const constexpr size_t s_r = source_dim;
   static const constexpr size_t s_rC = source_dim_cols;
-  using SF = SourceField;
 
-  using RV = RangeVector;
   using RGV = RangeGridView;
   static const constexpr size_t r_r = range_dim;
   static const constexpr size_t r_rC = range_dim_cols;
-  using RF = RangeField;
 
-  using F = Field;
+  using SourceSpaceType = SpaceInterface<SGV, s_r, s_rC, F>;
+  using SourceFunctionType = DiscreteFunction<V, SGV, s_r, s_rC, F>;
+  using ConstSourceFunctionType = ConstDiscreteFunction<V, SGV, s_r, s_rC, F>;
 
-  using SourceSpaceType = SpaceInterface<SGV, s_r, s_rC, SF>;
-  using SourceVectorType = SourceVector;
-  using SourceFunctionType = DiscreteFunction<SourceVector, SGV, s_r, s_rC, SF>;
-  using ConstSourceFunctionType = ConstDiscreteFunction<SourceVector, SGV, s_r, s_rC, SF>;
+  using RangeSpaceType = SpaceInterface<RGV, r_r, r_rC, F>;
+  using RangeFunctionType = DiscreteFunction<V, RGV, r_r, r_rC, F>;
+  using ConstRangeFunctionType = ConstDiscreteFunction<V, RGV, r_r, r_rC, F>;
 
-  using RangeSpaceType = SpaceInterface<RGV, r_r, r_rC, RF>;
-  using RangeVectorType = RangeVector;
-  using RangeFunctionType = DiscreteFunction<RangeVector, RGV, r_r, r_rC, RF>;
-  using ConstRangeFunctionType = ConstDiscreteFunction<RangeVector, RGV, r_r, r_rC, RF>;
-
-  using FieldType = Field;
-
-  using ThisType = OperatorInterface<SV, SGV, s_r, s_rC, SF, F, r_r, r_rC, RF, RGV, RV>;
+  using ThisType = OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
+  using MatrixOperatorType = MatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
 
   explicit OperatorInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
@@ -134,9 +166,8 @@ public:
   /// \name These methods should be implemented and define the functionality of the operator.
   /// \{
 
-  virtual void apply(const SourceVectorType& /*source*/,
-                     RangeVectorType& /*range*/,
-                     const XT::Common::Parameter& /*param*/ = {}) const
+  virtual void
+  apply(const VectorType& /*source*/, VectorType& /*range*/, const XT::Common::Parameter& /*param*/ = {}) const
   {
     DUNE_THROW(Exceptions::operator_error, "This operator cannot be applied!");
   }
@@ -169,8 +200,8 @@ invert_options(some_type).get<std::string>("type") == some_type
     return XT::Common::Configuration();
   }
 
-  virtual void apply_inverse(const RangeVectorType& /*range*/,
-                             SourceVectorType& /*source*/,
+  virtual void apply_inverse(const VectorType& /*range*/,
+                             VectorType& /*source*/,
                              const XT::Common::Configuration& /*opts*/,
                              const XT::Common::Parameter& /*param*/ = {}) const
   {
@@ -203,21 +234,27 @@ invert_options(some_type).get<std::string>("type") == some_type
     return XT::Common::Configuration();
   }
 
-  virtual std::shared_ptr<ThisType> jacobian(const SourceVectorType& /*source*/,
-                                             const XT::Common::Configuration& /*opts*/,
-                                             const XT::Common::Parameter& /*param*/ = {}) const
+  /**
+   * Either appends suitable functors to the jacobian_op (such that the jacobian of this operator is assembled
+   * additively into jacobian_op) or adds the jacobian of this operator to jacobian_op.matrix().
+   *
+   * \note That you need to call jacobian_op.assemble() to be sure to have the jacobian fully assembled.
+   **/
+  virtual void jacobian(const VectorType& /*source*/,
+                        MatrixOperatorType& /*jacobian_op*/,
+                        const XT::Common::Configuration& /*opts*/,
+                        const XT::Common::Parameter& /*param*/ = {}) const
   {
     DUNE_THROW(Exceptions::operator_error, "This operator does not provide a jacobian!");
-    return nullptr;
   }
 
   /// \}
   /// \name These apply variants are provided for convenience.
   /// \{
 
-  virtual RangeVectorType apply(const SourceVectorType& source, const XT::Common::Parameter& param = {}) const
+  virtual VectorType apply(const VectorType& source, const XT::Common::Parameter& param = {}) const
   {
-    RangeVectorType range(this->range_space().mapper().size(), 0);
+    VectorType range(this->range_space().mapper().size(), 0);
     this->apply(source, range, param);
     return range;
   }
@@ -227,7 +264,7 @@ invert_options(some_type).get<std::string>("type") == some_type
   /// \{
 
   virtual FieldType
-  apply2(const SourceVectorType& range, const RangeVectorType& source, const XT::Common::Parameter& param = {}) const
+  apply2(const VectorType& range, const VectorType& source, const XT::Common::Parameter& param = {}) const
   {
     return range.dot(this->apply(source, param));
   }
@@ -236,40 +273,39 @@ invert_options(some_type).get<std::string>("type") == some_type
   /// \name These apply_invers variants are provided for convenience.
   /// \{
 
-  virtual void apply_inverse(const RangeVectorType& range,
-                             SourceVectorType& source,
+  virtual void apply_inverse(const VectorType& range,
+                             VectorType& source,
                              const std::string& type,
                              const XT::Common::Parameter& param = {}) const
   {
     this->apply_inverse(range, source, this->invert_options(type), param);
   }
 
-  virtual void
-  apply_inverse(const RangeVectorType& range, SourceVectorType& source, const XT::Common::Parameter& param = {}) const
+  virtual void apply_inverse(const VectorType& range, VectorType& source, const XT::Common::Parameter& param = {}) const
   {
     this->apply_inverse(range, source, this->invert_options().at(0), param);
   }
 
-  virtual SourceVectorType apply_inverse(const RangeVectorType& range,
-                                         const XT::Common::Configuration& opts,
-                                         const XT::Common::Parameter& param = {}) const
+  virtual VectorType apply_inverse(const VectorType& range,
+                                   const XT::Common::Configuration& opts,
+                                   const XT::Common::Parameter& param = {}) const
   {
-    SourceVectorType source(this->source_space().mapper().size());
+    VectorType source(this->source_space().mapper().size());
     this->apply_inverse(range, source, opts, param);
     return source;
   }
 
-  virtual SourceVectorType
-  apply_inverse(const RangeVectorType& range, const std::string& type, const XT::Common::Parameter& param = {}) const
+  virtual VectorType
+  apply_inverse(const VectorType& range, const std::string& type, const XT::Common::Parameter& param = {}) const
   {
-    SourceVectorType source(this->source_space().mapper().size());
+    VectorType source(this->source_space().mapper().size());
     this->apply_inverse(range, source, type, param);
     return source;
   }
 
-  virtual SourceVectorType apply_inverse(const RangeVectorType& range, const XT::Common::Parameter& param = {}) const
+  virtual VectorType apply_inverse(const VectorType& range, const XT::Common::Parameter& param = {}) const
   {
-    SourceVectorType source(this->source_space().mapper().size());
+    VectorType source(this->source_space().mapper().size());
     this->apply_inverse(range, source, param);
     return source;
   }
@@ -278,17 +314,55 @@ invert_options(some_type).get<std::string>("type") == some_type
   /// \name These jacobian variants are provided for convenience.
   /// \{
 
-  virtual std::shared_ptr<ThisType>
-  jacobian(const SourceVectorType& source, const std::string& type, const XT::Common::Parameter& param = {}) const
+  virtual void jacobian(const VectorType& source,
+                        MatrixOperatorType& jacobian_op,
+                        const std::string& type,
+                        const XT::Common::Parameter& param = {}) const
   {
-    return this->jacobian(source, this->jacobian_options(type), param);
+    return this->jacobian(source, jacobian_op, this->jacobian_options(type), param);
   }
 
-  virtual std::shared_ptr<ThisType> jacobian(const SourceVectorType& source,
-                                             const XT::Common::Parameter& param = {}) const
+  virtual void
+  jacobian(const VectorType& source, MatrixOperatorType& jacobian_op, const XT::Common::Parameter& param = {}) const
   {
-    return this->jacobian(source, this->jacobian_options().at(0), param);
+    return this->jacobian(source, jacobian_op, this->jacobian_options().at(0), param);
   }
+
+  virtual MatrixOperatorType jacobian(const VectorType& source,
+                                      const XT::Common::Configuration& opts,
+                                      const XT::Common::Parameter& param = {}) const
+  {
+    MatrixOperatorType jacobian_op(this->source_space().grid_view(),
+                                   this->source_space(),
+                                   this->range_space(),
+                                   make_element_and_intersection_sparsity_pattern(
+                                       this->range_space(), this->source_space(), this->source_space().grid_view()));
+    this->jacobian(source, jacobian_op, opts, param);
+    return jacobian_op;
+  } // ... jacobian(...)
+
+  virtual MatrixOperatorType
+  jacobian(const VectorType& source, const std::string& type, const XT::Common::Parameter& param = {}) const
+  {
+    MatrixOperatorType jacobian_op(this->source_space().grid_view(),
+                                   this->source_space(),
+                                   this->range_space(),
+                                   make_element_and_intersection_sparsity_pattern(
+                                       this->range_space(), this->source_space(), this->source_space().grid_view()));
+    this->jacobian(source, jacobian_op, type, param);
+    return jacobian_op;
+  } // ... jacobian(...)
+
+  virtual MatrixOperatorType jacobian(const VectorType& source, const XT::Common::Parameter& param = {}) const
+  {
+    MatrixOperatorType jacobian_op(this->source_space().grid_view(),
+                                   this->source_space(),
+                                   this->range_space(),
+                                   make_element_and_intersection_sparsity_pattern(
+                                       this->range_space(), this->source_space(), this->source_space().grid_view()));
+    this->jacobian(source, jacobian_op, param);
+    return jacobian_op;
+  } // ... jacobian(...)
 
   /// \}
   /// \name These induced_norm variants are provided for convenience.
@@ -298,12 +372,11 @@ invert_options(some_type).get<std::string>("type") == some_type
             typename = /* Only enable this method, if */
             typename std::enable_if</* param is the same as XT::Common::Parameter */ (
                                         std::is_same<ParameterType_, XT::Common::Parameter>::value)
-                                    && /* and the vector spaces defined by SourceSpaceType/SourceVectorType and */
-                                    /* RangeSpaceType/RangeVectorType coincide. */ (
-                                        std::is_same<SV, RV>::value&& std::is_same<SGV, RGV>::value && (s_r == r_r)
-                                        && (s_rC == r_rC)
-                                        && std::is_same<SF, RF>::value)>::type>
-  FieldType induced_norm(const RangeVectorType& range, const ParameterType_& param = {}) const
+                                    && /* and the vector spaces defined by SourceSpaceType/VectorType and */
+                                    /* RangeSpaceType/VectorType coincide. */ (
+                                        std::is_same<V, V>::value&& std::is_same<SGV, RGV>::value && (s_r == r_r)
+                                        && (s_rC == r_rC))>::type>
+  FieldType induced_norm(const VectorType& range, const ParameterType_& param = {}) const
   {
     using std::sqrt;
     return sqrt(this->apply2(range, range, param));
@@ -416,9 +489,41 @@ invert_options(some_type).get<std::string>("type") == some_type
     return SourceFunctionType(this->source_space(), this->apply_inverse(range.dofs().vector(), param));
   }
 
-  virtual std::shared_ptr<ThisType> jacobian(const SourceFunctionType& source,
-                                             const XT::Common::Configuration& opts,
-                                             const XT::Common::Parameter& param = {}) const
+  virtual void jacobian(const SourceFunctionType& source,
+                        MatrixOperatorType& jacobian_op,
+                        const XT::Common::Configuration& opts,
+                        const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->source_space().contains(source),
+                  Exceptions::operator_error,
+                  "this->source_space() = " << this->source_space() << "\n   source.space() = " << source.space());
+    return this->jacobian(source.dofs().vector(), jacobian_op, opts, param);
+  }
+
+  virtual void jacobian(const SourceFunctionType& source,
+                        MatrixOperatorType& jacobian_op,
+                        const std::string& type,
+                        const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->source_space().contains(source),
+                  Exceptions::operator_error,
+                  "this->source_space() = " << this->source_space() << "\n   source.space() = " << source.space());
+    return this->jacobian(source.dofs().vector(), jacobian_op, type, param);
+  }
+
+  virtual void jacobian(const SourceFunctionType& source,
+                        MatrixOperatorType& jacobian_op,
+                        const XT::Common::Parameter& param = {}) const
+  {
+    DUNE_THROW_IF(!this->source_space().contains(source),
+                  Exceptions::operator_error,
+                  "this->source_space() = " << this->source_space() << "\n   source.space() = " << source.space());
+    return this->jacobian(source.dofs().vector(), jacobian_op, param);
+  }
+
+  virtual MatrixOperatorType jacobian(const SourceFunctionType& source,
+                                      const XT::Common::Configuration& opts,
+                                      const XT::Common::Parameter& param = {}) const
   {
     DUNE_THROW_IF(!this->source_space().contains(source),
                   Exceptions::operator_error,
@@ -426,7 +531,7 @@ invert_options(some_type).get<std::string>("type") == some_type
     return this->jacobian(source.dofs().vector(), opts, param);
   }
 
-  virtual std::shared_ptr<ThisType>
+  virtual MatrixOperatorType
   jacobian(const SourceFunctionType& source, const std::string& type, const XT::Common::Parameter& param = {}) const
   {
     DUNE_THROW_IF(!this->source_space().contains(source),
@@ -435,8 +540,7 @@ invert_options(some_type).get<std::string>("type") == some_type
     return this->jacobian(source.dofs().vector(), type, param);
   }
 
-  virtual std::shared_ptr<ThisType> jacobian(const SourceFunctionType& source,
-                                             const XT::Common::Parameter& param = {}) const
+  virtual MatrixOperatorType jacobian(const SourceFunctionType& source, const XT::Common::Parameter& param = {}) const
   {
     DUNE_THROW_IF(!this->source_space().contains(source),
                   Exceptions::operator_error,
@@ -448,11 +552,10 @@ invert_options(some_type).get<std::string>("type") == some_type
             typename = /* Only enable this method, if */
             typename std::enable_if</* param is the same as XT::Common::Parameter */ (
                                         std::is_same<ParameterType_, XT::Common::Parameter>::value)
-                                    && /* and the vector spaces defined by SourceSpaceType/SourceVectorType and */
-                                    /* RangeSpaceType/RangeVectorType coincide. */ (
-                                        std::is_same<SV, RV>::value&& std::is_same<SGV, RGV>::value && (s_r == r_r)
-                                        && (s_rC == r_rC)
-                                        && std::is_same<SF, RF>::value)>::type>
+                                    && /* and the vector spaces defined by SourceSpaceType/VectorType and */
+                                    /* RangeSpaceType/VectorType coincide. */ (
+                                        std::is_same<V, V>::value&& std::is_same<SGV, RGV>::value && (s_r == r_r)
+                                        && (s_rC == r_rC))>::type>
   FieldType induced_norm(const RangeFunctionType& range, const ParameterType_& param = {}) const
   {
     DUNE_THROW_IF(!this->range_space().contains(range),
@@ -467,5 +570,7 @@ invert_options(some_type).get<std::string>("type") == some_type
 
 } // namespace GDT
 } // namespace Dune
+
+#include "matrix-based.hh"
 
 #endif // DUNE_GDT_OPERATORS_INTERFACES_HH
