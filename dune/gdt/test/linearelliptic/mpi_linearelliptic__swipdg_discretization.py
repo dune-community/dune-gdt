@@ -22,7 +22,7 @@ mpi_case = 'mpi' in __file__
 
 try:
     if cache['dune-alugrid']:
-        grids.extend(['AluSimplex2dGridType', 'AluConform2dGridType'])
+        grids.extend(['AluSimplex2dGridType'])
 except KeyError:
     pass
 assert(len(grids))
