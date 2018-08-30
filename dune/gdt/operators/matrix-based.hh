@@ -23,7 +23,9 @@
 
 #include <dune/gdt/exceptions.hh>
 #include <dune/gdt/local/assembler/bilinear-form-assemblers.hh>
+#include <dune/gdt/local/assembler/operator-fd-jacobian-assemblers.hh>
 #include <dune/gdt/local/bilinear-forms/interfaces.hh>
+#include <dune/gdt/local/operators/interfaces.hh>
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/tools/sparsity-pattern.hh>
 #include <dune/gdt/type_traits.hh>
@@ -319,15 +321,41 @@ public:
     return *this;
   } // ... append(...)
 
+  /// \{
+  /// \name Variants to compute the jacobian of the appended local operator by finite differences.
+
+  ThisType& append(const LocalElementOperatorInterface<V, SGV, s_r, s_rC, F, r_r, r_rC>& local_operator,
+                   const VectorType& source,
+                   const XT::Common::Parameter& param = {},
+                   const ElementFilterType& filter = ApplyOnAllElements())
+  {
+    this->append(new LocalElementOperatorFiniteDifferenceJacobianAssembler<M, SGV, s_r, s_rC, F, r_r, r_rC>(
+                     this->source_space(), this->range_space(), MatrixStorage::access(), source, local_operator, param),
+                 filter);
+    return *this;
+  }
+
+  ThisType& append(const LocalIntersectionOperatorInterface<I, V, SGV, s_r, s_rC, F, r_r, r_rC>& local_operator,
+                   const VectorType& source,
+                   const XT::Common::Parameter& param = {},
+                   const IntersectionFilterType& filter = ApplyOnAllIntersections())
+  {
+    this->append(new LocalIntersectionOperatorFiniteDifferenceJacobianAssembler<M, SGV, s_r, s_rC, F, r_r, r_rC>(
+                     this->source_space(), this->range_space(), MatrixStorage::access(), source, local_operator, param),
+                 filter);
+    return *this;
+  }
+
+  /// \}
 
   void assemble(const bool use_tbb = false) override final
   {
-    if (assembled_)
-      return;
-    // This clears all appended operators, which is ok, since we are done after assembling once!
-    this->walk(use_tbb);
-    assembled_ = true;
-  }
+    if (!assembled_) {
+      // This clears all appended operators, which is ok, since we are done after assembling once!
+      this->walk(use_tbb);
+      assembled_ = true;
+    }
+  } // ... assemble(...)
 
   using OperatorBaseType::jacobian;
 
