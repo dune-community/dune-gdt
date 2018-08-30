@@ -89,13 +89,13 @@ LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluSimplex2d
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {2.09e-02, 4.85e-03};
+    return {6.14e-03, 1.40e-03};
 #else
     return {6.84e-02, 2.17e-02, 5.78e-03, 1.27e-03};
 #endif
   } else if (type == "H1_semi" || type == "energy") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.70e-01, 7.64e-02};
+    return {1.06e-01, 4.78e-02};
 #else
     return {3.28e-01, 1.76e-01, 8.72e-02, 3.89e-02};
 #endif
@@ -117,13 +117,13 @@ LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluSimplex2d
 {
   if (type == "L2") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {1.53e-03, 2.68e-04};
+    return {3.62e-04, 8.72e-05};
 #else
     return {9.67e-03, 1.52e-03, 2.75e-04, 5.63e-05};
 #endif
   } else if (type == "H1_semi" || type == "energy") {
 #if DXT_DISABLE_LARGE_TESTS
-    return {3.14e-02, 1.09e-02};
+    return {1.67e-02, 7.88e-03};
 #else
     return {9.33e-02, 3.19e-02, 1.19e-02, 4.66e-03};
 #endif
