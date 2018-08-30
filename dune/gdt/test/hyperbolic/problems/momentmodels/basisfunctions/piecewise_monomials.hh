@@ -318,21 +318,20 @@ public:
   using VisualizerType = typename BaseType::template VisualizerType<DiscreteFunctionType>;
   using BlockRangeType = XT::Common::FieldVector<RangeFieldType, block_size>;
   using BlockPlaneCoefficientsType = typename std::vector<std::pair<BlockRangeType, RangeFieldType>>;
-  using PlaneCoefficientsType = FieldVector<BlockPlaneCoefficientsType, num_blocks>;
+  using PlaneCoefficientsType = XT::Common::FieldVector<BlockPlaneCoefficientsType, num_blocks>;
 
   using BaseType::barycentre_rule;
 
   PartialMomentBasis(const QuadraturesType& quadratures)
-    : BaseType(quadratures)
+    : BaseType(refinements, quadratures)
   {
-    triangulation_ = TriangulationType(refinements);
     assert(4 * triangulation_.faces().size() == dimRange);
   }
 
   PartialMomentBasis(const size_t quad_refinements, const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule)
+    : BaseType(refinements)
   {
-    triangulation_ = TriangulationType(refinements, reference_quadrature_rule);
-    quadratures_ = triangulation_.quadrature_rules(quad_refinements);
+    quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
     assert(4 * triangulation_.faces().size() == dimRange);
   }
 
@@ -345,6 +344,7 @@ public:
                          7
 #endif
                      )
+    : BaseType(refinements)
   {
 #if HAVE_FEKETE
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule =
@@ -353,8 +353,7 @@ public:
     DUNE_UNUSED_PARAMETER(fekete_rule_num);
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule = barycentre_rule();
 #endif
-    triangulation_ = TriangulationType(refinements, reference_quadrature_rule);
-    quadratures_ = triangulation_.quadrature_rules(quad_refinements);
+    quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
     assert(4 * triangulation_.faces().size() == dimRange);
   }
 
@@ -471,7 +470,7 @@ public:
   // calculate half space representation of realizable set
   void calculate_plane_coefficients() const
   {
-    FieldVector<std::vector<FieldVector<RangeFieldType, block_size>>, num_blocks> points;
+    XT::Common::FieldVector<std::vector<XT::Common::FieldVector<RangeFieldType, block_size>>, num_blocks> points;
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       points[jj].resize(quadratures_[jj].size() + 1);
       for (size_t ll = 0; ll < quadratures_[jj].size(); ++ll) {
@@ -479,7 +478,7 @@ public:
         for (size_t ii = 0; ii < block_size; ++ii)
           points[jj][ll][ii] = val[block_size * jj + ii];
       } // ll
-      points[jj][quadratures_[jj].size()] = FieldVector<RangeFieldType, block_size>(0.);
+      points[jj][quadratures_[jj].size()] = XT::Common::FieldVector<RangeFieldType, block_size>(0.);
     }
     std::vector<std::thread> threads(num_blocks);
     // Calculate plane coefficients for each block in a separate thread
@@ -491,7 +490,7 @@ public:
   }
 
 private:
-  void calculate_plane_coefficients_block(std::vector<FieldVector<RangeFieldType, block_size>>& points,
+  void calculate_plane_coefficients_block(std::vector<XT::Common::FieldVector<RangeFieldType, block_size>>& points,
                                           const size_t jj) const
   {
     orgQhull::Qhull qhull;

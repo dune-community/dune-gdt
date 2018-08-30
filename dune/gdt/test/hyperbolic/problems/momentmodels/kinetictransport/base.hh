@@ -35,6 +35,7 @@ public:
   using typename BaseType::GridLayerType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::StateType;
+  using typename BaseType::IntersectionType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
@@ -45,10 +46,12 @@ public:
   using typename BaseType::FluxType;
   using typename BaseType::RhsType;
   using typename BaseType::InitialValueType;
+  using typename BaseType::DirichletBoundaryValueType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::ActualFluxType;
   using typename BaseType::ActualRhsType;
   using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::ActualBoundaryValueType;
   using typename BaseType::RhsAffineFunctionType;
 
@@ -179,7 +182,9 @@ public:
   virtual BoundaryValueType* create_boundary_values() const override
   {
     RangeType value = basis_functions_.integrated() * psi_vac_;
-    return new ActualBoundaryValueType([=](const DomainType&, const XT::Common::Parameter&) { return value; }, 0);
+    return new ActualBoundaryValueType(XT::Grid::make_alldirichlet_boundaryinfo<IntersectionType>(),
+                                       std::make_unique<ActualDirichletBoundaryValueType>(
+                                           [=](const DomainType&, const XT::Common::Parameter&) { return value; }, 0));
   } // ... create_boundary_values()
 
   virtual RangeFieldType CFL() const override

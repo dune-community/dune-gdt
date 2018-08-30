@@ -309,17 +309,16 @@ public:
   using BaseType::barycentre_rule;
 
   HatFunctionMomentBasis(const QuadraturesType& quadratures)
-    : BaseType(quadratures)
+    : BaseType(refinements, quadratures)
   {
-    triangulation_ = TriangulationType(refinements);
     assert(triangulation_.vertices().size() == dimRange);
   }
 
   HatFunctionMomentBasis(const size_t quad_refinements,
                          const QuadratureRule<RangeFieldType, 2>& reference_quadrature_rule)
+    : BaseType(refinements)
   {
-    triangulation_ = TriangulationType(refinements, reference_quadrature_rule);
-    quadratures_ = triangulation_.quadrature_rules(quad_refinements);
+    quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
     assert(triangulation_.vertices().size() == dimRange);
   }
 
@@ -332,6 +331,7 @@ public:
                              7
 #endif
                          )
+    : BaseType(refinements)
   {
 #if HAVE_FEKETE
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule =
@@ -340,8 +340,7 @@ public:
     DUNE_UNUSED_PARAMETER(fekete_rule_num);
     const QuadratureRule<RangeFieldType, 2> reference_quadrature_rule = barycentre_rule();
 #endif
-    triangulation_ = TriangulationType(refinements, reference_quadrature_rule);
-    quadratures_ = triangulation_.quadrature_rules(quad_refinements);
+    quadratures_ = triangulation_.quadrature_rules(quad_refinements, reference_quadrature_rule);
     assert(triangulation_.vertices().size() == dimRange);
   }
 
@@ -371,9 +370,12 @@ public:
     const auto& vertices = face->vertices();
     DomainType barycentric_coords(0);
     bool success = calculate_barycentric_coordinates(v, vertices, barycentric_coords);
+    assert(success);
+#ifdef NDEBUG
+    static_cast<void>(success);
+#endif
     for (size_t ii = 0; ii < 3; ++ii)
       ret[vertices[ii]->index()] = barycentric_coords[ii];
-    assert(success);
     return ret;
   } // ... evaluate(...)
 

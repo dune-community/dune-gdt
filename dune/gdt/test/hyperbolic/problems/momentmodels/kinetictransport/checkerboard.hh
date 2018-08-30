@@ -39,13 +39,13 @@ namespace KineticTransport {
 template <class BasisfunctionImp, class GridLayerImp, class U_>
 class CheckerboardPn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  using BaseType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
   using typename BaseType::BoundaryValueType;
-  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeType;
   using BaseType::dimDomain;
@@ -90,7 +90,7 @@ public:
     return XT::Common::Parameter({std::make_pair("sigma_a", create_sigma_a()),
                                   std::make_pair("sigma_s", create_sigma_s()),
                                   std::make_pair("Q", create_Q()),
-                                  std::make_pair("CFL", std::vector<double>{0.4}),
+                                  std::make_pair("CFL", std::vector<double>{0.49 * 1 / std::sqrt(dimDomain)}),
                                   std::make_pair("t_end", std::vector<double>{3.2})});
   }
 

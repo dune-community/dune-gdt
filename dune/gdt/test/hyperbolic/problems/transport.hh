@@ -197,9 +197,8 @@ class TransportInitialValues
     : public XT::Functions::
           GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
 {
-  typedef typename XT::Functions::
-      GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>
-          BaseType;
+  using BaseType = typename XT::Functions::
+      GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, RangeFieldImp, rangeDim, rangeDimCols>;
 
 public:
   using BaseType::dimDomain;
@@ -248,8 +247,8 @@ namespace Problems {
 template <class E, class D, size_t d, class U, class R, size_t r>
 class Transport : public ProblemBase<E, D, d, U, R, r>
 {
-  typedef Transport<E, D, d, U, R, r> ThisType;
-  typedef ProblemBase<E, D, d, U, R, r> BaseType;
+  using ThisType = Transport<E, D, d, U, R, r>;
+  using BaseType = ProblemBase<E, D, d, U, R, r>;
 
 public:
   static const bool linear = true;
@@ -259,18 +258,17 @@ public:
   using typename BaseType::RangeType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
-
-  typedef typename XT::Functions::AffineFluxFunction<E, D, d, U, R, r, d> ActualFluxType;
-  typedef typename XT::Functions::AffineFluxFunction<E, D, d, U, R, r, 1> ActualRhsType;
-  typedef XT::Functions::GlobalLambdaFunction<E, D, d, R, r, 1> ActualBoundaryValueType;
-  typedef ActualBoundaryValueType ActualInitialValueType;
-
-  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
-
+  using typename BaseType::IntersectionType;
   using typename BaseType::FluxType;
   using typename BaseType::RhsType;
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::ActualRhsType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualBoundaryValueType;
+  using ActualFluxType = typename XT::Functions::AffineFluxFunction<E, D, d, U, R, r, d>;
+  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
 
   Transport(const XT::Common::Configuration& grid_cfg = BaseType::default_grid_cfg(),
             const XT::Common::Configuration& boundary_cfg = BaseType::default_boundary_cfg())
@@ -322,7 +320,9 @@ public:
 
   virtual BoundaryValueType* create_boundary_values()
   {
-    return new ActualBoundaryValueType([=](const DomainType&, const XT::Common::Parameter&) { return 0; }, 0);
+    return new ActualBoundaryValueType(XT::Grid::make_alldirichlet_boundaryinfo<IntersectionType>(),
+                                       std::make_unique<ActualDirichletBoundaryValueType>(
+                                           [=](const DomainType&, const XT::Common::Parameter&) { return 0; }, 0));
   } // ... create_boundary_values()
 }; // class Transport<...>
 

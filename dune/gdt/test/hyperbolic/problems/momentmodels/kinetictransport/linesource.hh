@@ -72,13 +72,13 @@ struct BSpline<0, i, D, R>
 template <class BasisfunctionImp, class GridLayerImp, class U_>
 class LineSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  using BaseType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::ActualInitialValueType;
-  using typename BaseType::ActualBoundaryValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeFieldType;
@@ -154,8 +154,8 @@ protected:
 template <class BasisfunctionType, class GridLayerType, class U_>
 class LineSourceMn : public LineSourcePn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef LineSourcePn<BasisfunctionType, GridLayerType, U_> BaseType;
-  typedef LineSourceMn ThisType;
+  using BaseType = LineSourcePn<BasisfunctionType, GridLayerType, U_>;
+  using ThisType = LineSourceMn;
 
 public:
   using typename BaseType::FluxType;
@@ -164,7 +164,7 @@ public:
   using typename BaseType::DomainFieldType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
-  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
+  using ActualFluxType = GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_>;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;

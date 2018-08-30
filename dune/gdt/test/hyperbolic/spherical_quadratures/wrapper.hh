@@ -144,7 +144,7 @@ private:
   FieldVector<size_t, 2> get_indices(size_t index) const
   {
     FieldVector<size_t, 2> ret{0, index};
-    while (ret[1] >= quadratures_[ret[0]].size())
+    while (ret[0] < quadratures_.size() && ret[1] >= quadratures_[ret[0]].size())
       ret[1] -= quadratures_[ret[0]++].size();
     return ret;
   }

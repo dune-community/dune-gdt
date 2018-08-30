@@ -37,12 +37,14 @@ public:
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::ActualBoundaryValueType;
   using typename BaseType::DomainType;
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
+  using typename BaseType::IntersectionType;
 
   using BaseType::default_boundary_cfg;
 
@@ -89,16 +91,17 @@ public:
   {
     const auto basis_evaluated_at_one = basis_functions_.evaluate(DomainType(1));
     const auto basis_evaluated_at_minus_one = basis_functions_.evaluate(DomainType(-1));
-    return new ActualBoundaryValueType(
-        [=](const DomainType& x, const XT::Common::Parameter&) {
-          RangeType ret = basis_evaluated_at_minus_one;
-          ret *= (x[0] + 0.5) * 50;
-          RangeType summand2 = basis_evaluated_at_one;
-          summand2 *= (0.5 - x[0]) * 50;
-          ret += summand2;
-          return ret;
-        },
-        1);
+    return new ActualBoundaryValueType(XT::Grid::make_alldirichlet_boundaryinfo<IntersectionType>(),
+                                       std::make_unique<ActualDirichletBoundaryValueType>(
+                                           [=](const DomainType& x, const XT::Common::Parameter&) {
+                                             RangeType ret = basis_evaluated_at_minus_one;
+                                             ret *= (x[0] + 0.5) * 50;
+                                             RangeType summand2 = basis_evaluated_at_one;
+                                             summand2 *= (0.5 - x[0]) * 50;
+                                             ret += summand2;
+                                             return ret;
+                                           },
+                                           1));
   } // ... create_boundary_values()
 
 protected:

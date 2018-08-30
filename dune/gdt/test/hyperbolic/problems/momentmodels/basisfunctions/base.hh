@@ -285,6 +285,12 @@ public:
   {
   }
 
+  BasisfunctionsInterface(const size_t refinements, const QuadraturesType& quadratures = QuadraturesType())
+    : quadratures_(quadratures)
+    , triangulation_(refinements)
+  {
+  }
+
   virtual ~BasisfunctionsInterface()
   {
   }

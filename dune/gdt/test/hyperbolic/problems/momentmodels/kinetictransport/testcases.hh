@@ -17,8 +17,10 @@
 #include <dune/gdt/operators/fv/entropybased/realizability.hh>
 #include <dune/gdt/operators/fv/reconstruction/slopes.hh>
 
+#include "checkerboard.hh"
 #include "planesource.hh"
 #include "pointsource.hh"
+#include "shadow.hh"
 #include "sourcebeam.hh"
 
 namespace Dune {
@@ -504,6 +506,31 @@ struct PointSourcePnTestCase : SourceBeamPnTestCase<GridImp, BasisfunctionImp, r
   using ExpectedResultsType = PointSourcePnExpectedResults<BasisfunctionImp, reconstruction>;
 };
 
+template <class GridImp, class BasisfunctionImp, bool reconstruct>
+struct CheckerboardPnTestCase : SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>
+{
+  using BaseType = SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>;
+  using RangeFieldType = typename BaseType::RangeFieldType;
+  using ProblemType =
+      CheckerboardPn<BasisfunctionImp, typename BaseType::GridLayerType, typename BaseType::DiscreteFunctionType>;
+  static constexpr RangeFieldType t_end = 0.1;
+  static constexpr bool reconstruction = reconstruct;
+  using ExpectedResultsType = PointSourcePnExpectedResults<BasisfunctionImp, reconstruction>;
+};
+
+template <class GridImp, class BasisfunctionImp, bool reconstruct>
+struct ShadowPnTestCase : SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>
+{
+  using BaseType = SourceBeamPnTestCase<GridImp, BasisfunctionImp, reconstruct>;
+  using RangeFieldType = typename BaseType::RangeFieldType;
+  using ProblemType =
+      ShadowPn<BasisfunctionImp, typename BaseType::GridLayerType, typename BaseType::DiscreteFunctionType>;
+  static constexpr RangeFieldType t_end = 0.1;
+  static constexpr bool reconstruction = reconstruct;
+  using ExpectedResultsType = PointSourcePnExpectedResults<BasisfunctionImp, reconstruction>;
+};
+
+
 // PointSourceMn
 template <class BasisfunctionImp, bool reconstruct>
 struct PointSourceMnExpectedResults;
@@ -562,6 +589,36 @@ struct PointSourceMnTestCase : SourceBeamMnTestCase<GridImp, BasisfunctionImp, r
   using BaseType = SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>;
   using ProblemType =
       PointSourceMn<BasisfunctionImp, typename BaseType::GridLayerType, typename BaseType::DiscreteFunctionType>;
+  using typename BaseType::RangeFieldType;
+  static constexpr RangeFieldType t_end = 0.1;
+  static constexpr bool reconstruction = reconstruct;
+  using ExpectedResultsType = PointSourceMnExpectedResults<BasisfunctionImp, reconstruction>;
+  using RealizabilityLimiterChooserType = RealizabilityLimiterChooser<BasisfunctionImp,
+                                                                      typename ProblemType::FluxType,
+                                                                      typename BaseType::DiscreteFunctionType>;
+};
+
+template <class GridImp, class BasisfunctionImp, bool reconstruct>
+struct CheckerboardMnTestCase : SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>
+{
+  using BaseType = SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>;
+  using ProblemType =
+      CheckerboardMn<BasisfunctionImp, typename BaseType::GridLayerType, typename BaseType::DiscreteFunctionType>;
+  using typename BaseType::RangeFieldType;
+  static constexpr RangeFieldType t_end = 0.1;
+  static constexpr bool reconstruction = reconstruct;
+  using ExpectedResultsType = PointSourceMnExpectedResults<BasisfunctionImp, reconstruction>;
+  using RealizabilityLimiterChooserType = RealizabilityLimiterChooser<BasisfunctionImp,
+                                                                      typename ProblemType::FluxType,
+                                                                      typename BaseType::DiscreteFunctionType>;
+};
+
+template <class GridImp, class BasisfunctionImp, bool reconstruct>
+struct ShadowMnTestCase : SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>
+{
+  using BaseType = SourceBeamMnTestCase<GridImp, BasisfunctionImp, reconstruct>;
+  using ProblemType =
+      ShadowMn<BasisfunctionImp, typename BaseType::GridLayerType, typename BaseType::DiscreteFunctionType>;
   using typename BaseType::RangeFieldType;
   static constexpr RangeFieldType t_end = 0.1;
   static constexpr bool reconstruction = reconstruct;

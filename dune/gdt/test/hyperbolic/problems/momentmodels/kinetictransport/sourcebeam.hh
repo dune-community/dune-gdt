@@ -44,6 +44,7 @@ public:
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
   using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
   using typename BaseType::ActualBoundaryValueType;
   using typename BaseType::DomainFieldType;
   using typename BaseType::DomainType;
@@ -51,6 +52,7 @@ public:
   using typename BaseType::RangeType;
   using typename BaseType::BasisfunctionType;
   using typename BaseType::GridLayerType;
+  using typename BaseType::IntersectionType;
   using typename BaseType::FluxType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
@@ -101,19 +103,20 @@ public:
   // at x = 3.
   virtual BoundaryValueType* create_boundary_values() const override final
   {
-    return new ActualBoundaryValueType(
-        [&](const DomainType& x, const XT::Common::Parameter&) {
-          if (x[0] < 1.5) {
-            static auto ret =
-                helper<BasisfunctionType>::get_left_boundary_values(basis_functions_, psi_vac_, is_mn_model_);
-            return ret;
-          } else {
-            auto ret = basis_functions_.integrated();
-            ret *= psi_vac_;
-            return ret;
-          }
-        },
-        1);
+    return new ActualBoundaryValueType(XT::Grid::make_alldirichlet_boundaryinfo<IntersectionType>(),
+                                       std::make_unique<ActualDirichletBoundaryValueType>(
+                                           [&](const DomainType& x, const XT::Common::Parameter&) {
+                                             if (x[0] < 1.5) {
+                                               static auto ret = helper<BasisfunctionType>::get_left_boundary_values(
+                                                   basis_functions_, psi_vac_, is_mn_model_);
+                                               return ret;
+                                             } else {
+                                               auto ret = basis_functions_.integrated();
+                                               ret *= psi_vac_;
+                                               return ret;
+                                             }
+                                           },
+                                           1));
   } // ... create_boundary_values()
 
   RangeType left_boundary_value() const

@@ -199,16 +199,15 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::StateRangeType;
+  using typename BaseType::IntersectionType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
-
-  typedef typename XT::Functions::GlobalLambdaFluxFunction<U, 0, RangeFieldType, dimRange, dimDomain> ActualFluxType;
-  typedef typename XT::Functions::AffineFluxFunction<E, D, dimDomain, U, RangeFieldType, dimRange, 1> ActualRhsType;
-  typedef XT::Functions::GlobalLambdaFunction<E, D, dimDomain, RangeFieldType, dimRange, 1> ActualBoundaryValueType;
-  typedef XT::Functions::CheckerboardFunction<E, D, dimDomain, RangeFieldType, dimRange, 1> ActualInitialValueType;
-
-  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
-
+  using typename BaseType::ActualFluxType;
+  using typename BaseType::ActualRhsType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualBoundaryValueType;
+  using ActualInitialValueType = XT::Functions::CheckerboardFunction<E, D, dimDomain, RangeFieldType, dimRange, 1>;
+  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
   using typename BaseType::FluxType;
   using typename BaseType::RhsType;
   using typename BaseType::InitialValueType;
@@ -296,11 +295,12 @@ public:
 
   virtual BoundaryValueType* create_boundary_values()
   {
-    return new ActualBoundaryValueType(
-        [=](const DomainType& x, const XT::Common::Parameter&) {
-          return RangeType{1 - x[0] * 0.875, 0., 2.5 - x[0] * 2.25};
-        },
-        1);
+    return new ActualBoundaryValueType(XT::Grid::make_alldirichlet_boundaryinfo<IntersectionType>(),
+                                       std::make_unique<ActualDirichletBoundaryValueType>(
+                                           [=](const DomainType& x, const XT::Common::Parameter&) {
+                                             return RangeType{1 - x[0] * 0.875, 0., 2.5 - x[0] * 2.25};
+                                           },
+                                           1));
   } // ... create_boundary_values()
 }; // class Shocktube<...>
 

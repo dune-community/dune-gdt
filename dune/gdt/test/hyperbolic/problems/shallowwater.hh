@@ -49,20 +49,17 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::StateRangeType;
-  using BaseType::dimDomain;
-  using BaseType::dimRange;
-
-  typedef typename XT::Functions::GlobalLambdaFluxFunction<U, 0, RangeFieldType, dimRange, dimDomain> ActualFluxType;
-  typedef typename XT::Functions::GlobalLambdaFluxFunction<U, 0, RangeFieldType, dimRange, 1> ActualRhsType;
-  typedef XT::Functions::GlobalLambdaFunction<E, D, dimDomain, RangeFieldType, dimRange, 1> ActualBoundaryValueType;
-  typedef ActualBoundaryValueType ActualInitialValueType;
-
-  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
-
   using typename BaseType::FluxType;
   using typename BaseType::RhsType;
   using typename BaseType::InitialValueType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::ActualFluxType;
+  using typename BaseType::ActualInitialValueType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualBoundaryValueType;
+  using BaseType::dimDomain;
+  using BaseType::dimRange;
+  using ActualRhsType = typename XT::Functions::GlobalLambdaFluxFunction<U, 0, RangeFieldType, dimRange, 1>;
 
   static XT::Common::Configuration default_grid_cfg()
   {
@@ -153,11 +150,11 @@ public:
 
   virtual BoundaryValueType* create_boundary_values()
   {
-    return new ActualBoundaryValueType(
+    return new ActualBoundaryValueType(std::make_unique<ActualDirichletBoundaryValueType>(
         [=](const DomainType&, const XT::Common::Parameter&) {
           return RangeType{1., 0., 0.};
         },
-        0);
+        0));
   } // ... create_boundary_values()
 }; // class ShallowWater<...>
 
@@ -175,16 +172,17 @@ public:
   using typename BaseType::RangeFieldType;
   using typename BaseType::RangeType;
   using typename BaseType::StateRangeType;
+  using typename BaseType::IntersectionType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
+  using typename BaseType::ActualFluxType;
+  using typename BaseType::ActualRhsType;
+  using typename BaseType::ActualDirichletBoundaryValueType;
+  using typename BaseType::ActualBoundaryValueType;
+  using ActualInitialValueType = XT::Functions::
+      CheckerboardFunction<E, D, dimDomain, RangeFieldType, dimRange, 1, ActualDirichletBoundaryValueType>;
 
-  typedef typename XT::Functions::GlobalLambdaFluxFunction<U, 0, RangeFieldType, dimRange, dimDomain> ActualFluxType;
-  typedef typename XT::Functions::AffineFluxFunction<E, D, dimDomain, U, RangeFieldType, dimRange, 1> ActualRhsType;
-  typedef XT::Functions::GlobalLambdaFunction<E, D, dimDomain, RangeFieldType, dimRange, 1> ActualBoundaryValueType;
-  typedef XT::Functions::CheckerboardFunction<E, D, dimDomain, RangeFieldType, dimRange, 1, ActualBoundaryValueType>
-      ActualInitialValueType;
-
-  typedef FieldMatrix<RangeFieldType, dimRange, dimRange> MatrixType;
+  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
 
   using typename BaseType::FluxType;
   using typename BaseType::RhsType;
@@ -281,11 +279,12 @@ public:
 
   virtual BoundaryValueType* create_boundary_values()
   {
-    return new ActualBoundaryValueType(
-        [=](const DomainType&, const XT::Common::Parameter&) {
-          return RangeType{1., 0.};
-        },
-        0);
+    return new ActualBoundaryValueType(XT::Grid::make_alldirichlet_boundaryinfo<IntersectionType>(),
+                                       std::make_unique<ActualDirichletBoundaryValueType>(
+                                           [=](const DomainType&, const XT::Common::Parameter&) {
+                                             return RangeType{1., 0.};
+                                           },
+                                           0));
   } // ... create_boundary_values()
 }; // class ShallowWater<...>
 

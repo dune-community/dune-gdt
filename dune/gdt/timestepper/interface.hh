@@ -203,7 +203,8 @@ public:
     size_t time_step_counter = 0;
 
     const RangeFieldType save_interval = (t_end - t) / num_save_steps;
-    const RangeFieldType output_interval = (t_end - t) / num_output_steps;
+    const RangeFieldType output_interval =
+        (num_output_steps == 0 ? std::numeric_limits<RangeFieldType>::max() : (t_end - t) / num_output_steps);
     RangeFieldType next_save_time = t + save_interval > t_end ? t_end : t + save_interval;
     RangeFieldType next_output_time = t + output_interval > t_end ? t_end : t + output_interval;
     size_t save_step_counter = 1;

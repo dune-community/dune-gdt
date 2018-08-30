@@ -16,6 +16,10 @@
 
 #include <dune/xt/grid/gridprovider/cube.hh>
 
+#include <dune/xt/functions/affine.hh>
+#include <dune/xt/functions/lambda/global-flux-function.hh>
+#include <dune/xt/functions/lambda/global-function.hh>
+
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/spaces.hh>
 
@@ -69,7 +73,18 @@ public:
   using typename BaseType::FluxType;
   using typename BaseType::RhsType;
   using typename BaseType::InitialValueType;
+  using typename BaseType::DirichletBoundaryValueType;
   using typename BaseType::BoundaryValueType;
+  using typename BaseType::GridLayerType;
+
+  using ActualFluxType = typename XT::Functions::GlobalLambdaFluxFunction<U_, 0, RangeFieldType, rangeDim, domainDim>;
+  using ActualRhsType = typename XT::Functions::
+      AffineFluxFunction<EntityType, DomainFieldType, domainDim, U_, RangeFieldType, rangeDim, 1>;
+  using ActualDirichletBoundaryValueType =
+      XT::Functions::GlobalLambdaFunction<EntityType, DomainFieldType, domainDim, RangeFieldType, rangeDim, 1>;
+  using ActualInitialValueType = ActualDirichletBoundaryValueType;
+  using ActualBoundaryValueType =
+      LocalizableFunctionBasedLocalizableDirichletBoundaryValue<GridLayerType, BoundaryValueType>;
 
   ProblemBase(const FluxType& _flux,
               const RhsType& _rhs,

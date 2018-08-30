@@ -194,11 +194,12 @@ struct HyperbolicPnDiscretization
     using SpaceType = typename TestCaseType::SpaceType;
     using GridLayerType = typename TestCaseType::GridLayerType;
     using ProblemType = typename TestCaseType::ProblemType;
-    using IntersectionType = typename GridLayerType::Intersection;
     using EquationType = Hyperbolic::Problems::KineticEquation<ProblemType>;
+    using DomainFieldType = typename EquationType::DomainFieldType;
     using RangeFieldType = typename EquationType::RangeFieldType;
     using RhsType = typename EquationType::RhsType;
     using InitialValueType = typename EquationType::InitialValueType;
+    using EntityType = typename GridLayerType::template Codim<0>::Entity;
     static constexpr size_t dimDomain = BasisfunctionType::dimDomain;
     static constexpr size_t dimRange = BasisfunctionType::dimRange;
 
@@ -226,12 +227,9 @@ struct HyperbolicPnDiscretization
         XT::Common::make_unique<ProblemType>(*basis_functions, grid_layer, grid_config);
     const EquationType problem(*problem_imp);
     const InitialValueType& initial_values = problem.initial_values();
-    using BoundaryValueType =
-        LocalizableFunctionBasedLocalizableDirichletBoundaryValue<GridLayerType,
-                                                                  typename EquationType::BoundaryValueType>;
-    const auto& localizable_boundary_values = problem.boundary_values();
-    const auto boundary_info = XT::Grid::AllDirichletBoundaryInfo<IntersectionType>();
-    const BoundaryValueType boundary_values(boundary_info, localizable_boundary_values);
+    using BoundaryValueType = typename ProblemType::BoundaryValueType;
+    const BoundaryValueType& boundary_values = problem.boundary_values();
+
     const RhsType& rhs = problem.rhs();
     const RangeFieldType CFL = problem.CFL();
 
@@ -248,8 +246,14 @@ struct HyperbolicPnDiscretization
     // ******************** choose flux and rhs operator and timestepper ******************************************
     using RhsOperatorType = AdvectionRhsOperator<RhsType>;
 
+    //    using AdvectionOperatorType =
+    //        AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType, BasisfunctionType, GridLayerType>;
+
+    using ConstantFunctionType =
+        Dune::XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1>;
     using AdvectionOperatorType =
-        AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType, BasisfunctionType, GridLayerType>;
+        AdvectionLaxFriedrichsOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType>;
+
     using JacobianWrapperType = typename JacobianChooser<BasisfunctionType, AnalyticalFluxType>::type;
     using ReconstructionOperatorType =
         LinearReconstructionOperator<AnalyticalFluxType, BoundaryValueType, JacobianWrapperType>;
@@ -280,7 +284,9 @@ struct HyperbolicPnDiscretization
     RangeFieldType dt = CFL * dx;
 
     // *********************** create operators and timesteppers ************************************
-    AdvectionOperatorType advection_operator(analytical_flux, boundary_values, *basis_functions);
+    //    AdvectionOperatorType advection_operator(analytical_flux, boundary_values, *basis_functions);
+    ConstantFunctionType dx_func(dx);
+    AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_func);
     RhsOperatorType rhs_operator(rhs);
 
     MinmodSlope<typename ReconstructionOperatorType::VectorType, typename ReconstructionOperatorType::MatrixType> slope;
