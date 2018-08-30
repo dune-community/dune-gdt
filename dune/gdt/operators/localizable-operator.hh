@@ -18,6 +18,7 @@
 
 #include <dune/gdt/discretefunction/default.hh>
 #include <dune/gdt/local/assembler/operator-applicators.hh>
+#include <dune/gdt/local/operators/generic.hh>
 #include <dune/gdt/local/operators/interfaces.hh>
 
 namespace Dune {
@@ -32,11 +33,11 @@ template <class AssemblyGridView,
           class SourceVector,
           size_t source_range_dim = 1,
           size_t source_range_dim_cols = 1,
-          class SourceRangeField = double,
+          class SourceField = double,
           class SourceGridView = AssemblyGridView,
           size_t range_range_dim = source_range_dim,
           size_t range_range_dim_cols = source_range_dim_cols,
-          class RangeRangeField = SourceRangeField,
+          class RangeField = SourceField,
           class RangeGridView = SourceGridView,
           class RangeVector = SourceVector>
 class LocalizableOperatorBase : public XT::Grid::Walker<AssemblyGridView>
@@ -51,11 +52,11 @@ class LocalizableOperatorBase : public XT::Grid::Walker<AssemblyGridView>
                                            SourceVector,
                                            source_range_dim,
                                            source_range_dim_cols,
-                                           SourceRangeField,
+                                           SourceField,
                                            SourceGridView,
                                            range_range_dim,
                                            range_range_dim_cols,
-                                           RangeRangeField,
+                                           RangeField,
                                            RangeGridView,
                                            RangeVector>;
   using BaseType = XT::Grid::Walker<AssemblyGridView>;
@@ -68,21 +69,27 @@ public:
   using SGV = SourceGridView;
   static const constexpr size_t s_r = source_range_dim;
   static const constexpr size_t s_rC = source_range_dim_cols;
-  using SR = SourceRangeField;
-  using SourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SR>;
+  using SF = SourceField;
+  using SourceType = ConstDiscreteFunction<SV, SGV, s_r, s_rC, SF>;
 
   using RV = RangeVector;
   using RGV = RangeGridView;
   static const constexpr size_t r_r = range_range_dim;
   static const constexpr size_t r_rC = range_range_dim_cols;
-  using RR = RangeRangeField;
-  using RangeType = DiscreteFunction<RV, RGV, r_r, r_rC, RR>;
+  using RF = RangeField;
+  using RangeType = DiscreteFunction<RV, RGV, r_r, r_rC, RF>;
 
   using typename BaseType::I;
   using ElementFilterType = XT::Grid::ElementFilter<AssemblyGridViewType>;
   using IntersectionFilterType = XT::Grid::IntersectionFilter<AssemblyGridViewType>;
   using ApplyOnAllElements = XT::Grid::ApplyOn::AllElements<AssemblyGridViewType>;
   using ApplyOnAllIntersection = XT::Grid::ApplyOn::AllIntersections<AssemblyGridViewType>;
+
+  using GenericLocalElementOperatorType = GenericLocalElementOperator<SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, RGV, RV>;
+  using GenericLocalElementFunctionType = typename GenericLocalElementOperatorType::GenericFunctionType;
+  using GenericLocalIntersectionOperatorType =
+      GenericLocalIntersectionOperator<I, SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, RGV, RV>;
+  using GenericLocalIntersectionFunctionType = typename GenericLocalIntersectionOperatorType::GenericFunctionType;
 
   LocalizableOperatorBase(AssemblyGridViewType assembly_grid_view, const SourceType& src, RangeType& rng)
     : BaseType(assembly_grid_view)
@@ -112,7 +119,7 @@ public:
 
   using BaseType::append;
 
-  ThisType& append(const LocalElementOperatorInterface<SV, SGV, s_r, s_rC, SR, r_r, r_rC, RR, RGV, RV>& local_operator,
+  ThisType& append(const LocalElementOperatorInterface<SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, RGV, RV>& local_operator,
                    const XT::Common::Parameter& param = {},
                    const ElementFilterType& filter = ApplyOnAllElements())
   {
@@ -120,12 +127,28 @@ public:
     return *this;
   }
 
+  ThisType& append(GenericLocalElementFunctionType generic_function,
+                   const XT::Common::Parameter& param = {},
+                   const ElementFilterType& filter = ApplyOnAllElements())
+  {
+    this->append(GenericLocalElementOperatorType(generic_function, param.type()), param, filter);
+    return *this;
+  }
+
   ThisType&
-  append(const LocalIntersectionOperatorInterface<I, SV, SGV, s_r, s_rC, SR, r_r, r_rC, RR, RGV, RV>& local_operator,
+  append(const LocalIntersectionOperatorInterface<I, SV, SGV, s_r, s_rC, SF, r_r, r_rC, RF, RGV, RV>& local_operator,
          const XT::Common::Parameter& param = {},
          const IntersectionFilterType& filter = ApplyOnAllIntersection())
   {
     this->append(make_local_intersection_operator_applicator(local_operator, source_, range_, param).release(), filter);
+    return *this;
+  }
+
+  ThisType& append(GenericLocalIntersectionFunctionType generic_function,
+                   const XT::Common::Parameter& param = {},
+                   const IntersectionFilterType& filter = ApplyOnAllIntersection())
+  {
+    this->append(GenericLocalIntersectionFunctionType(generic_function, param.type()), param, filter);
     return *this;
   }
 
