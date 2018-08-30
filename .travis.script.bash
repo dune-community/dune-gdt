@@ -21,9 +21,11 @@ source ${SUPERDIR}/scripts/bash/retry_command.bash
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make
 
-# this does nothing if all current tests are distributed already, but triggers full build if not
-# -> builder will timeout -> manually run refresh_test_timings -> push results
+# if this generates a diff we need to manually run this and commit -> push
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja -v -j 1 refresh_test_timings
+pushd ${SUPERDIR}/${MY_MODULE}
+    git diff --exit-code dune/gdt/test/{builder_definitions.cmake,compiles_totals.pickle}
+popd
 
 free -h
 
