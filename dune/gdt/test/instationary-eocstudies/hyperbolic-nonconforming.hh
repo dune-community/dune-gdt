@@ -48,6 +48,7 @@ class InstationaryNonconformingHyperbolicEocStudy
 protected:
   using typename BaseType::GV;
   using typename BaseType::O;
+  using typename BaseType::M;
   using typename BaseType::V;
   using typename BaseType::R;
   using typename BaseType::S;
@@ -151,9 +152,9 @@ protected:
       return nullptr;
     }
     if (space_type_ == "fv")
-      return std::make_unique<AdvectionFvOperator<GV, V, m>>(space.grid_view(), *numerical_flux, space, space);
+      return std::make_unique<AdvectionFvOperator<M, GV, m>>(space.grid_view(), *numerical_flux, space, space);
     else
-      return std::make_unique<AdvectionDgArtificialViscosityOperator<GV, V, m>>(
+      return std::make_unique<AdvectionDgArtificialViscosityOperator<M, GV, m>>(
           space.grid_view(),
           *numerical_flux,
           space,

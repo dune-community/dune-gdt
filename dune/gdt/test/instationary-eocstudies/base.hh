@@ -38,6 +38,7 @@
 #include <dune/gdt/local/integrands/product.hh>
 #include <dune/gdt/operators/interfaces.hh>
 #include <dune/gdt/operators/localizable-bilinear-form.hh>
+#include <dune/gdt/operators/matrix-based.hh>
 #include <dune/gdt/prolongations.hh>
 #include <dune/gdt/spaces/bochner.hh>
 #include <dune/gdt/spaces/interface.hh>
@@ -65,10 +66,11 @@ protected:
   using RangeType = XT::Common::FieldVector<D, m>;
   using GP = XT::Grid::GridProvider<G>;
   using S = SpaceInterface<GV, m>;
-  using V = typename XT::LA::Container<R, la>::VectorType;
+  using M = typename XT::LA::Container<R, la>::MatrixType;
+  using V = XT::LA::vector_t<M>;
   using DF = DiscreteFunction<V, GV, m>;
   using BS = BochnerSpace<GV, m>;
-  using O = OperatorInterface<V, GV, m>;
+  using O = OperatorInterface<M, GV, m>;
 
 public:
   InstationaryEocStudy(const double T_end,
