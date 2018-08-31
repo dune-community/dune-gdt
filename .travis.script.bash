@@ -12,9 +12,9 @@
 
 set -ex
 
-WAIT="${SUPERDIR}/scripts/bash/travis_wait_new.bash 45"
-source ${SUPERDIR}/scripts/bash/retry_command.bash
+MY_BUILD_DIR=${DUNE_BUILD_DIR}/${MY_MODULE}
 
+cd ${SUPERDIR}
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
 ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make
 
@@ -24,26 +24,22 @@ pushd ${SUPERDIR}/${MY_MODULE}
     git diff --exit-code dune/gdt/test/{builder_definitions.cmake,compiles_totals.pickle}
 popd
 
-free -h
+${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja -v -j 1 check
 
-if [ x"${TESTS}" == x ] ; then
-    ${WAIT} ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja -v test_binaries
-    ${WAIT} ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -V -j 2
-else
-    ${WAIT} ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ninja -v -j 1 test_binaries_builder_${TESTS}
-    ${WAIT} ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} bexec ctest -V -j 2 -L "^builder_${TESTS}$"
-fi
-if [ "X${TRAVIS_PULL_REQUEST}" != "Xfalse" ] ; then
-        ${SUPERDIR}/.ci/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-gdt-testlogs
-        retry_command ${SUPERDIR}/scripts/bash/travis_upload_test_logs.bash ${DUNE_BUILD_DIR}/${MY_MODULE}/dune/gdt/test/
-fi
 
-# clang coverage currently disabled for being to mem hungry
+
+# if [ "X${TRAVIS_PULL_REQUEST}" != "Xfalse" ] ; then
+#         ${SUPERDIR}/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-gdt-testlogs
+# source ${SUPERDIR}/scripts/bash/retry_command.bash
+#         retry_command ${SUPERDIR}/scripts/bash/travis_upload_test_logs.bash ${MY_BUILD_DIR}/dune/gdt/test/
+# fi
+
+# clang coverage currently disabled for being too mem hungry
 if [[ ${CC} == *"clang"* ]] ; then
     exit 0
 fi
 
-pushd ${DUNE_BUILD_DIR}/${MY_MODULE}
+pushd ${MY_BUILD_DIR}
 COVERAGE_INFO=${PWD}/coverage.info
 lcov --directory . --output-file ${COVERAGE_INFO} -c
 for d in "dune-common" "dune-pybindxi" "dune-geometry"  "dune-istl"  "dune-grid" "dune-alugrid"  "dune-uggrid"  "dune-localfunctions" \
@@ -52,6 +48,6 @@ for d in "dune-common" "dune-pybindxi" "dune-geometry"  "dune-istl"  "dune-grid"
 done
 lcov --directory . --output-file ${COVERAGE_INFO} -r ${COVERAGE_INFO} "${SUPERDIR}/${MY_MODULE}/dune/xt/*/test/*"
 cd ${SUPERDIR}/${MY_MODULE}
-${OLDPWD}/dune-env pip install codecov
-${OLDPWD}/dune-env codecov -v -X gcov -X coveragepy -F ctest -f ${COVERAGE_INFO} -t ${CODECOV_TOKEN}
+${MY_BUILD_DIR}/dune-env pip install codecov
+${MY_BUILD_DIR}/dune-env codecov -v -X gcov -X coveragepy -F ctest -f ${COVERAGE_INFO} -t ${CODECOV_TOKEN}
 popd
