@@ -386,26 +386,35 @@ public:
         const auto trace = jac[0][0] + jac[1][1];
         const auto det = jac[0][0] * jac[1][1] - jac[0][1] * jac[1][0];
         const auto sqrt_val = std::sqrt(0.25 * trace * trace - det);
-        const auto eigval1 = 0.5 * trace + sqrt_val;
-        const auto eigval2 = 0.5 * trace - sqrt_val;
+        auto& eigvals = eigenvalues_[dd].block(jj);
+        eigvals[0] = 0.5 * trace + sqrt_val;
+        eigvals[1] = 0.5 * trace - sqrt_val;
+        auto& eigvecs = eigenvectors_[dd].block(jj);
         if (std::abs(jac[1][0]) > std::abs(jac[0][1])) {
           if (XT::Common::FloatCmp::ne(jac[1][0], 0.)) {
-            eigenvectors_[dd].block(jj)[0][0] = eigval1 - jac[1][1];
-            eigenvectors_[dd].block(jj)[0][1] = eigval2 - jac[1][1];
-            eigenvectors_[dd].block(jj)[1][0] = eigenvectors_[dd].block(jj)[1][1] = jac[1][0];
+            eigvecs[0][0] = eigvals[0] - jac[1][1];
+            eigvecs[0][1] = eigvals[1] - jac[1][1];
+            eigvecs[1][0] = eigvecs[1][1] = jac[1][0];
           } else {
-            eigenvectors_[dd].block(jj)[0][0] = eigenvectors_[dd].block(jj)[1][1] = 1.;
-            eigenvectors_[dd].block(jj)[0][1] = eigenvectors_[dd].block(jj)[1][0] = 0.;
+            eigvecs[0][0] = eigvecs[1][1] = 1.;
+            eigvecs[0][1] = eigvecs[1][0] = 0.;
           }
         } else {
           if (XT::Common::FloatCmp::ne(jac[0][1], 0.)) {
-            eigenvectors_[dd].block(jj)[1][0] = eigval1 - jac[0][0];
-            eigenvectors_[dd].block(jj)[1][1] = eigval2 - jac[0][0];
-            eigenvectors_[dd].block(jj)[0][0] = eigenvectors_[dd].block(jj)[0][1] = jac[0][1];
+            eigvecs[1][0] = eigvals[0] - jac[0][0];
+            eigvecs[1][1] = eigvals[1] - jac[0][0];
+            eigvecs[0][0] = eigvecs[0][1] = jac[0][1];
           } else {
-            eigenvectors_[dd].block(jj)[0][0] = eigenvectors_[dd].block(jj)[1][1] = 1.;
-            eigenvectors_[dd].block(jj)[0][1] = eigenvectors_[dd].block(jj)[1][0] = 0.;
+            eigvecs[0][0] = eigvecs[1][1] = 1.;
+            eigvecs[0][1] = eigvecs[1][0] = 0.;
           }
+        }
+        // normalize such that the eigenvectors have norm 1
+        for (size_t col = 0; col < 2; ++col) {
+          RangeFieldType two_norm = 0;
+          two_norm = std::sqrt(std::pow(eigvecs[0][col], 2) + std::pow(eigvecs[1][col], 2));
+          for (size_t row = 0; row < 2; ++row)
+            eigvecs[row][col] /= two_norm;
         }
       } else {
 #if HAVE_MKL || HAVE_LAPACKE
