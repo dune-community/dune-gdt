@@ -148,7 +148,6 @@ struct JacobianChooser<Dune::GDT::PartialMomentBasis<DomainFieldType,
   using type = Dune::GDT::internal::BlockedJacobianWrapper<AnalyticalFluxType>;
 };
 
-
 template <bool reconstruction>
 struct FvOperatorChooser
 {
@@ -195,11 +194,11 @@ struct HyperbolicPnDiscretization
     using GridLayerType = typename TestCaseType::GridLayerType;
     using ProblemType = typename TestCaseType::ProblemType;
     using EquationType = Hyperbolic::Problems::KineticEquation<ProblemType>;
-    using DomainFieldType = typename EquationType::DomainFieldType;
+    //    using DomainFieldType = typename EquationType::DomainFieldType;
     using RangeFieldType = typename EquationType::RangeFieldType;
     using RhsType = typename EquationType::RhsType;
     using InitialValueType = typename EquationType::InitialValueType;
-    using EntityType = typename GridLayerType::template Codim<0>::Entity;
+    //    using EntityType = typename GridLayerType::template Codim<0>::Entity;
     static constexpr size_t dimDomain = BasisfunctionType::dimDomain;
     static constexpr size_t dimRange = BasisfunctionType::dimRange;
 

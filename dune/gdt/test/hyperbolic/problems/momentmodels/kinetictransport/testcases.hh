@@ -225,9 +225,9 @@ struct SourceBeamPnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 
 template <bool reconstruct>
 struct SourceBeamPnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 0.33140398337588411 : 0.33140398337567956;
-  static constexpr double l2norm = reconstruct ? 0.4558335407458029 : 0.44484887611129575;
-  static constexpr double linfnorm = reconstruct ? 0.99172184304968958 : 0.98930905293217597;
+  static constexpr double l1norm = reconstruct ? 0.33140398337610927 : 0.33140398337603194;
+  static constexpr double l2norm = reconstruct ? 0.47294828933204164 : 0.45667075585121392;
+  static constexpr double linfnorm = reconstruct ? 1.0490804598503625 : 0.99004736850989217;
   static constexpr double tol = 1e-14;
 };
 
@@ -318,26 +318,26 @@ template <bool reconstruct>
 struct PlaneSourcePnExpectedResults<LegendreMomentBasis<double, double, 7>, reconstruct>
 {
   static constexpr double l1norm = reconstruct ? 2.0000000240000007 : 2.0000000240000029;
-  static constexpr double l2norm = reconstruct ? 2.9627559791618099 : 2.7793543802214402;
-  static constexpr double linfnorm = reconstruct ? 7.5368337466833273 : 5.9468208917837284;
+  static constexpr double l2norm = reconstruct ? 2.9616518419466558 : 2.7792352623482848;
+  static constexpr double linfnorm = reconstruct ? 7.5355813391308644 : 5.9472849007944166;
   static constexpr double tol = 1e-14;
 };
 
 template <bool reconstruct>
 struct PlaneSourcePnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, reconstruct>
 {
-  static constexpr double l1norm = 2.0000000240000557;
-  static constexpr double l2norm = reconstruct ? 2.892587690555561 : 2.7677861047579322;
-  static constexpr double linfnorm = reconstruct ? 6.9955083584307651 : 5.8898335510903852;
+  static constexpr double l1norm = 2.0000000240000149;
+  static constexpr double l2norm = reconstruct ? 2.8915349919892397 : 2.7676677008555917;
+  static constexpr double linfnorm = reconstruct ? 6.9950740716997668 : 5.8904604670932663;
   static constexpr double tol = 1e-14;
 };
 
 template <bool reconstruct>
 struct PlaneSourcePnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 2.000000024000026 : 2.0000000240000273;
-  static constexpr double l2norm = reconstruct ? 2.881005248537496 : 2.7713504721240083;
-  static constexpr double linfnorm = reconstruct ? 6.9331778582604997 : 6.0086435546642116;
+  static constexpr double l1norm = reconstruct ? 2.0000000239999896 : 2.0000000239999918;
+  static constexpr double l2norm = reconstruct ? 2.8799152602279068 : 2.771228836660768;
+  static constexpr double linfnorm = reconstruct ? 6.9320887958307775 : 6.0090382693364512;
   static constexpr double tol = 1e-14;
 };
 
@@ -413,9 +413,9 @@ struct PointSourcePnExpectedResults
 template <bool reconstruct>
 struct PointSourcePnExpectedResults<RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, reconstruct>
 {
-  static constexpr double l1norm = reconstruct ? 1.0007954640626406 : 1.0007954640534624;
-  static constexpr double l2norm = reconstruct ? 2.6992308546885653 : 2.6970513662067956;
-  static constexpr double linfnorm = reconstruct ? 10.379541276684977 : 10.414316177722712;
+  static constexpr double l1norm = reconstruct ? 1.0007954640626138 : 1.0007954640529835;
+  static constexpr double l2norm = reconstruct ? 2.7018734377354714 : 2.6999617861637795;
+  static constexpr double linfnorm = reconstruct ? 10.391017138477658 : 10.426558946481034;
   static constexpr double tol = 1e-14;
 };
 
@@ -424,9 +424,9 @@ struct PointSourcePnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0,
 {
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
-  static constexpr double l1norm = reconstruct ? 1.0008094159849688 : 1.0008094159743741;
-  static constexpr double l2norm = reconstruct ? 2.7092776186023921 : 2.7069983342698274;
-  static constexpr double linfnorm = reconstruct ? 10.423991903881772 : 10.456911277964574;
+  static constexpr double l1norm = reconstruct ? 1.0008081476461759 : 1.0008081476360002;
+  static constexpr double l2norm = reconstruct ? 2.7094988565517113 : 2.7073931584332405;
+  static constexpr double linfnorm = reconstruct ? 10.424578957824737 : 10.458114243519278;
 #else
   static constexpr double l1norm = reconstruct ? 1.0008292531174403 : 1.0008292531057066;
   static constexpr double l2norm = reconstruct ? 2.7095647696183893 : 2.7070581236565103;
@@ -448,9 +448,9 @@ struct PointSourcePnExpectedResults<HatFunctionMomentBasis<double, 3, double, 1,
   // If Fekete is not available, we use a different quadrature, which gives slightly different results
   static_assert(!reconstruct, "Results with reconstruction not available yet!");
 #if HAVE_FEKETE
-  static constexpr double l1norm = 1.0007953665771843;
-  static constexpr double l2norm = 2.7065005653281369;
-  static constexpr double linfnorm = 10.456533271787738;
+  static constexpr double l1norm = 1.0007953754379604;
+  static constexpr double l2norm = 2.7069180208261652;
+  static constexpr double linfnorm = 10.4578353362239;
 #else
   static constexpr double l1norm = 1.0008039111672102;
   static constexpr double l2norm = 2.7065211670792411;
@@ -465,9 +465,9 @@ struct PointSourcePnExpectedResults<PartialMomentBasis<double, 3, double, 0, 1, 
 {
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
-  static constexpr double l1norm = reconstruct ? 1.0008094159850585 : 1.000809415974838;
-  static constexpr double l2norm = reconstruct ? 2.7098602740535496 : 2.7065939033692201;
-  static constexpr double linfnorm = reconstruct ? 10.427604575554344 : 10.457121881221033;
+  static constexpr double l1norm = reconstruct ? 1.0008081476462325 : 1.0008081476365056;
+  static constexpr double l2norm = reconstruct ? 2.7100893563191693 : 2.7070071430786014;
+  static constexpr double linfnorm = reconstruct ? 10.428361386931211 : 10.458405903819866;
 #else
   static constexpr double l1norm = reconstruct ? 1.0008292531175822 : 1.0008292531061092;
   static constexpr double l2norm = reconstruct ? 2.7099187578817849 : 2.7066524774407608;
@@ -482,9 +482,9 @@ struct PointSourcePnExpectedResults<PartialMomentBasis<double, 3, double, 1, 1, 
   static_assert(!reconstruct, "Results with reconstruction not available yet!");
 // If Fekete is not available, we use a different quadrature, which gives slightly different results
 #if HAVE_FEKETE
-  static constexpr double l1norm = 1.0007953665769933;
-  static constexpr double l2norm = 2.7065732611564592;
-  static constexpr double linfnorm = 10.457047161924061;
+  static constexpr double l1norm = 1.0007953754377614;
+  static constexpr double l2norm = 2.7069901509556513;
+  static constexpr double linfnorm = 10.458345325407425;
 #else
   static constexpr double l1norm = 1.0008292531061092;
   static constexpr double l2norm = 2.7066524774407608;
