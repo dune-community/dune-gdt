@@ -17,7 +17,7 @@ if [[ $TRAVIS_JOB_NUMBER == *.1 ]] ; then
     ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} configure
     ${SRC_DCTRL} ${BLD} --only=${MY_MODULE} make doc
     if [ "X${TRAVIS_PULL_REQUEST}" != "Xfalse" ] ; then
-        ${SUPERDIR}/.travis/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-community.github.io
-        ${SUPERDIR}/.travis/deploy_docs.sh ${MY_MODULE} "${DUNE_BUILD_DIR}"
+        ${SUPERDIR}/.ci/init_sshkey.sh ${encrypted_95fb78800815_key} ${encrypted_95fb78800815_iv} keys/dune-community/dune-community.github.io
+        ${SUPERDIR}/.ci/deploy_docs.sh ${MY_MODULE} "${DUNE_BUILD_DIR}"
     fi
 fi
