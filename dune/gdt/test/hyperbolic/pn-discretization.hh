@@ -246,13 +246,13 @@ struct HyperbolicPnDiscretization
     // ******************** choose flux and rhs operator and timestepper ******************************************
     using RhsOperatorType = AdvectionRhsOperator<RhsType>;
 
-    //    using AdvectionOperatorType =
-    //        AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType, BasisfunctionType, GridLayerType>;
-
-    using ConstantFunctionType =
-        Dune::XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1>;
     using AdvectionOperatorType =
-        AdvectionLaxFriedrichsOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType>;
+        AdvectionKineticOperator<AnalyticalFluxType, BoundaryValueType, BasisfunctionType, GridLayerType>;
+
+    //    using ConstantFunctionType =
+    //        Dune::XT::Functions::ConstantFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, 1>;
+    //    using AdvectionOperatorType =
+    //        AdvectionLaxFriedrichsOperator<AnalyticalFluxType, BoundaryValueType, ConstantFunctionType>;
 
     using JacobianWrapperType = typename JacobianChooser<BasisfunctionType, AnalyticalFluxType>::type;
     using ReconstructionOperatorType =
@@ -284,9 +284,9 @@ struct HyperbolicPnDiscretization
     RangeFieldType dt = CFL * dx;
 
     // *********************** create operators and timesteppers ************************************
-    //    AdvectionOperatorType advection_operator(analytical_flux, boundary_values, *basis_functions);
-    ConstantFunctionType dx_func(dx);
-    AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_func);
+    AdvectionOperatorType advection_operator(analytical_flux, boundary_values, *basis_functions);
+    //    ConstantFunctionType dx_func(dx);
+    //    AdvectionOperatorType advection_operator(analytical_flux, boundary_values, dx_func);
     RhsOperatorType rhs_operator(rhs);
 
     MinmodSlope<typename ReconstructionOperatorType::VectorType, typename ReconstructionOperatorType::MatrixType> slope;

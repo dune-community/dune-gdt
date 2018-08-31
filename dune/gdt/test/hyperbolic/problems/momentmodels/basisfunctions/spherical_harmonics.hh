@@ -373,6 +373,11 @@ public:
     return "rhm";
   }
 
+  RangeType integrate_dirac_at(const DomainType& dirac_position) const
+  {
+    return evaluate(dirac_position);
+  }
+
 private:
   static RangeFieldType A_lm(const int l, const int m)
   {

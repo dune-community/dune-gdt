@@ -458,8 +458,11 @@ public:
   // calculates <b(v) dirac(v-dirac_position)>
   RangeType integrate_dirac_at(const DomainType& dirac_position) const
   {
-    size_t dummy;
-    return evaluate(dirac_position, true, dummy);
+    size_t num_faces;
+    auto ret = evaluate(dirac_position, true, num_faces);
+    if (dirac_position == DomainType{1, 0, 0})
+      DXT_ASSERT(num_faces == 4);
+    return ret;
   }
 
   const PlaneCoefficientsType& plane_coefficients() const
