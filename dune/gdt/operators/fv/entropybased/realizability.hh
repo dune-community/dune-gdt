@@ -36,6 +36,18 @@ namespace Dune {
 namespace GDT {
 
 
+// The limiters in this file act on the reconstructed values on the reconstructed values to ensure realizability.
+// Another possibility is to include the realizability limiting in the slope limiting, see
+// dune/gdt/operators/fv/reconstruction/slopes.hh.
+// Which one of the two limiting approaches is more suitable depends on the actual reconstruction. If the values are
+// reconstructed on the midpoint of each intersection only, the slope limiting is easy to use and it is possible to
+// limit in characteristic variables at no extra computational cost. Moreover, if the the values are not only
+// reconstructed at the interfaces but also within the cell, limiting the slope before calculating the reconstructed
+// values might be less expensive than limiting the reconstructed values afterwards. However, if we have a quadrature
+// with several points on each interface, we do a dimension by dimension reconstruction on the whole stencil, and in the
+// current implementation slope limiting is performed at every step. It might be enough to perform the realizability
+// limiting in the last step only, which would bring the slope limiters on a par with the reconstructions in this file
+// performance-wise.
 template <class AnalyticalFluxImp, class DiscreteFunctionImp, class BasisfunctionImp>
 class LocalRealizabilityLimiterBase
     : public XT::Grid::Functor::Codim0<typename DiscreteFunctionImp::SpaceType::GridLayerType>

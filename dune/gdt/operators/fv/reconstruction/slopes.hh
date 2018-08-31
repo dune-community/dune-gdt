@@ -215,6 +215,7 @@ public:
 // Realizability limiter that ensures positivity of the components of u in noncharacteristic variables. Uses single
 // limiter variable for all components.
 // TODO: Make usable with interface quadratures different from the midpoint quadrature
+// See dune/gdt/operators/fv/entropybased/realizability.hh
 template <class RangeFieldType,
           size_t dimRange,
           class MatrixType,
@@ -281,6 +282,7 @@ private:
 // Realizability limiter that ensures positivity of the components of u in noncharacteristic variables. Uses single
 // limiter variable for all components.
 // TODO: Make usable with interface quadratures different from the midpoint quadrature
+// See dune/gdt/operators/fv/entropybased/realizability.hh
 template <class RangeFieldType,
           size_t dimRange,
           class MatrixType,
@@ -372,6 +374,7 @@ private:
 // Realizability limiter that ensures that the limited values are within the convex hull of the quadrature points. Uses
 // single limiter variable for all components.
 // TODO: Make usable with interface quadratures different from the midpoint quadrature
+// See dune/gdt/operators/fv/entropybased/realizability.hh
 template <class BasisfunctionType,
           class MatrixType,
           class SlopeType =
@@ -474,6 +477,7 @@ private:
 // Realizability limiter that ensures that the limited values are within the convex hull of the quadrature points. Uses
 // single limiter variable for all components.
 // TODO: Make usable with interface quadratures different from the midpoint quadrature
+// See dune/gdt/operators/fv/entropybased/realizability.hh
 template <class BasisfunctionType,
           class MatrixType,
           class SlopeType =
@@ -607,6 +611,7 @@ class DgConvexHullRealizabilityLimitedSlopeSlope
 // Characteristic component-wise realizability limiter that ensures positivity of the components of u in
 // noncharacteristic variables by solving a linear program.
 // TODO: Make usable with interface quadratures different from the midpoint quadrature
+// See dune/gdt/operators/fv/entropybased/realizability.hh
 template <class RangeFieldType,
           size_t dimRange,
           class MatrixType,
@@ -719,6 +724,7 @@ private:
 // Realizability limiter that solves a linear program to ensure the reconstructed values are still in the numerically
 // realizable set, i.e. in the convex hull of basis evaluations.
 // TODO: Make usable with interface quadratures different from the midpoint quadrature
+// See dune/gdt/operators/fv/entropybased/realizability.hh
 template <class BasisfunctionType,
           class MatrixType,
           class SlopeType =
