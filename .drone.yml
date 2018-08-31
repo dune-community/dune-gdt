@@ -1,0 +1,33 @@
+workspace:
+    base: /root/src/dune-gdt
+    path: .
+
+pipeline:
+  cpp:
+    image: dunecommunity/dune-gdt-testing_$CC:${DRONE_BRANCH/\//_}
+    pull: true
+    environment:
+      - MY_MODULE=dune-gdt
+    commands:
+      - /root/src/dune-gdt/.travis.script.bash
+
+  python:
+    image: dunecommunity/dune-gdt-testing_$CC:${DRONE_BRANCH/\//_}
+    pull: true
+    environment:
+      - MY_MODULE=dune-gdt
+    commands:
+      - /root/src/dune-gdt/.travis.test_python.bash
+
+  notify:
+    image: drillster/drone-email
+    host: mail.milk.pm
+    from: drone@pymor.org
+    when:
+      status: [ changed, failure ]
+    secrets:  [ email_username, email_password ]
+
+matrix:
+  CC:
+    - gcc
+    - clang
