@@ -4,7 +4,7 @@ workspace:
 
 pipeline:
   cpp:
-    image: dunecommunity/dune-gdt-testing_$CC:${DRONE_BRANCH/\//_}
+    image: dunecommunity/dune-gdt-testing_${CC}:master
     pull: true
     environment:
       - MY_MODULE=dune-gdt
@@ -12,7 +12,7 @@ pipeline:
       - /root/src/dune-gdt/.travis.script.bash
 
   python:
-    image: dunecommunity/dune-gdt-testing_$CC:${DRONE_BRANCH/\//_}
+    image: dunecommunity/dune-gdt-testing_${CC}:master
     pull: true
     environment:
       - MY_MODULE=dune-gdt
