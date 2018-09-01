@@ -13,7 +13,7 @@
 
 #include "basisfunctions/legendre.hh"
 #include "basisfunctions/hatfunctions.hh"
-#include "basisfunctions/piecewise_monomials.hh"
+#include "basisfunctions/partial_moments.hh"
 #include "basisfunctions/piecewise_constant.hh"
 #include "basisfunctions/spherical_harmonics.hh"
 

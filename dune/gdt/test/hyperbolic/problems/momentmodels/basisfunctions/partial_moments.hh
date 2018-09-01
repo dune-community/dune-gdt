@@ -8,8 +8,8 @@
 //   Rene Milk      (2018)
 //   Tobias Leibner (2017)
 
-#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PIECEWISEMONOMIALS_HH
-#define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PIECEWISEMONOMIALS_HH
+#ifndef DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PARTIALMOMENTS_HH
+#define DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PARTIALMOMENTS_HH
 
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/device/null.hpp>
@@ -496,6 +496,7 @@ private:
   void calculate_plane_coefficients_block(std::vector<XT::Common::FieldVector<RangeFieldType, block_size>>& points,
                                           const size_t jj) const
   {
+#if HAVE_QHULL
     orgQhull::Qhull qhull;
     // ignore output
     boost::iostreams::stream<boost::iostreams::null_sink> null_ostream((boost::iostreams::null_sink()));
@@ -549,6 +550,9 @@ private:
       DUNE_THROW(Dune::MathError, "There should be such a coefficient!");
     block_plane_coefficients.erase(coeff_to_erase_it);
     plane_coefficients_[jj] = block_plane_coefficients;
+#else // HAVE_QHULL
+    DUNE_THROW(Dune::NotImplemented, "You are missing Qhull!");
+#endif // HAVE_QHULL
   }
 
   using BaseType::quadratures_;
@@ -560,4 +564,4 @@ private:
 } // namespace GDT
 } // namespace Dune
 
-#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PIECEWISEMONOMIALS_HH
+#endif // DUNE_GDT_HYPERBOLIC_PROBLEMS_MOMENTMODELS_PARTIALMOMENTS_HH

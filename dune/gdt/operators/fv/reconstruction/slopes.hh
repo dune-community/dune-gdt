@@ -28,7 +28,7 @@
 #include <dune/xt/common/fvector.hh>
 #include <dune/xt/common/parallel/threadstorage.hh>
 
-#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/piecewise_monomials.hh>
+#include <dune/gdt/test/hyperbolic/problems/momentmodels/basisfunctions/partial_moments.hh>
 
 #include "internal.hh"
 
