@@ -51,7 +51,6 @@ struct HyperbolicMnDiscretization
     using SpaceType = typename TestCaseType::SpaceType;
     using GridLayerType = typename TestCaseType::GridLayerType;
     using ProblemType = typename TestCaseType::ProblemType;
-    using IntersectionType = typename GridLayerType::Intersection;
     using EquationType = Hyperbolic::Problems::KineticEquation<ProblemType>;
     using RangeFieldType = typename EquationType::RangeFieldType;
     using RhsType = typename EquationType::RhsType;
@@ -82,11 +81,8 @@ struct HyperbolicMnDiscretization
         XT::Common::make_unique<ProblemType>(*basis_functions, grid_layer, grid_config);
     const EquationType problem(*problem_imp);
     const InitialValueType& initial_values = problem.initial_values();
-    using BoundaryValueType =
-        MomentModelBoundaryValue<GridLayerType, BasisfunctionType, typename EquationType::BoundaryValueType>;
-    const auto& dirichlet_boundary_values = problem.boundary_values();
-    const auto boundary_info = XT::Grid::AllDirichletBoundaryInfo<IntersectionType>();
-    const BoundaryValueType boundary_values(boundary_info, *basis_functions, dirichlet_boundary_values);
+    using BoundaryValueType = typename ProblemType::BoundaryValueType;
+    const BoundaryValueType& boundary_values = problem.boundary_values();
     const RhsType& rhs = problem.rhs();
     const RangeFieldType CFL = problem.CFL();
 
