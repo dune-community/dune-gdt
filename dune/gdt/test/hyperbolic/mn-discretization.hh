@@ -70,13 +70,8 @@ struct HyperbolicMnDiscretization
     const SpaceType fv_space(grid_layer);
 
     //******************* create EquationType object ***************************************
-    if ((num_quad_refinements == size_t(-1) || quad_order == size_t(-1)) && (num_quad_refinements != quad_order))
-      std::cerr << "You specified either num_quad_refinements or quad_order, please also specify the other one!"
-                << std::endl;
     std::shared_ptr<const BasisfunctionType> basis_functions =
-        (num_quad_refinements == size_t(-1) || quad_order == size_t(-1))
-            ? std::make_shared<const BasisfunctionType>()
-            : std::make_shared<const BasisfunctionType>(quad_order, num_quad_refinements);
+        std::make_shared<const BasisfunctionType>(quad_order, num_quad_refinements);
     const std::unique_ptr<ProblemType> problem_imp =
         XT::Common::make_unique<ProblemType>(*basis_functions, grid_layer, grid_config);
     const EquationType problem(*problem_imp);
