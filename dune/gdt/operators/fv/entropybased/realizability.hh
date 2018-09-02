@@ -149,20 +149,24 @@ protected:
     // Try to solve optimization problem for all reconstructed values. If it fails for one value,
     // we cannot guarantee realizability preservation, so disable reconstruction in that case.
     const auto local_func = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)->derived_local_function(entity);
+    std::pair<DomainType, RangeType> current_pair = *local_reconstructed_values.begin();
     try {
       for (const auto& pair : local_reconstructed_values) {
+        current_pair = pair;
         const auto x_in_inside_coords = entity.geometry().local(pair.first);
         const auto& u = pair.second;
         local_func->get_alpha(x_in_inside_coords, u, param_, false, false);
       } // local_reconstructed_values
     } catch (const Dune::MathError&) {
+      std::cout << "Reconstruction disabled at time " << XT::Common::to_string(param_.get("t")[0], 15)
+                << " and entity with center " << XT::Common::to_string(entity.geometry().center(), 15) << std::endl;
+      std::cout << "Solving failed for moments " << XT::Common::to_string(current_pair.second, 15)
+                << " at x = " << XT::Common::to_string(current_pair.first, 15) << std::endl;
       // solving failed for reconstructed value, so check that it works with u_bar ...
       local_func->get_alpha(entity.geometry().local(entity.geometry().center()), u_bar, param_, false, false);
       // ... and set all reconstructed values to u_bar
       for (auto& pair : local_reconstructed_values)
         pair.second = u_bar;
-      std::cout << "Reconstruction disabled at time " << XT::Common::to_string(param_.get("t")[0], 15)
-                << " and entity with center " << XT::Common::to_string(entity.geometry().center(), 15) << std::endl;
     }
   }
 

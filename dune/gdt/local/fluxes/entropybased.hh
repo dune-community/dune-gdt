@@ -526,7 +526,7 @@ public:
 
           int pure_newton = 0;
           for (size_t kk = 0; kk < k_max_; ++kk) {
-            // exit inner for loop to increase r if to many iterations are used or cholesky decomposition fails
+            // exit inner for loop to increase r if too many iterations are used or cholesky decomposition fails
             if (kk > k_0_ && r < r_max)
               break;
             try {
@@ -535,6 +535,10 @@ public:
               if (r < r_max)
                 break;
               mutex_.unlock();
+              std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density "
+                        << XT::Common::to_string(density, 15) << " at position "
+                        << XT::Common::to_string(entity().geometry().center(), 15)
+                        << " due to errors in the Cholesky decomposition!" << std::endl;
               DUNE_THROW(Dune::MathError, "Failure to converge!");
             }
             // calculate gradient in original basis
@@ -590,6 +594,10 @@ public:
           } // k loop (Newton iterations)
         } // r loop (Regularization parameter)
         mutex_.unlock();
+        std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density "
+                  << XT::Common::to_string(density, 15) << " at position "
+                  << XT::Common::to_string(entity().geometry().center(), 15) << " due to too many iterations!"
+                  << std::endl;
         DUNE_THROW(MathError, "Failed to converge");
       } // else ( value has not been calculated before )
 
@@ -1206,6 +1214,10 @@ public:
               if (r < r_max)
                 break;
               mutex_.unlock();
+              std::cerr << "Failed to converge for " << XT::Common::to_string(u_in, 15) << " with density "
+                        << XT::Common::to_string(density, 15) << " at position "
+                        << XT::Common::to_string(entity().geometry().center(), 15) << " due to too many iterations!"
+                        << std::endl;
               DUNE_THROW(Dune::MathError, "Failure to converge!");
             }
 
@@ -1256,6 +1268,10 @@ public:
           } // k loop (Newton iterations)
         } // r loop (Regularization parameter)
         mutex_.unlock();
+        std::cerr << "Failed to converge for " << XT::Common::to_string(u_in, 15) << " with density "
+                  << XT::Common::to_string(density, 15) << " at position "
+                  << XT::Common::to_string(entity().geometry().center(), 15) << " due to too many iterations!"
+                  << std::endl;
         DUNE_THROW(MathError, "Failed to converge");
       } // else ( value has not been calculated before )
 
@@ -2114,7 +2130,7 @@ public:
           RangeFieldType f_k = calculate_f(alpha_k, v);
           int pure_newton = 0;
           for (size_t kk = 0; kk < k_max_; ++kk) {
-            // exit inner for loop to increase r if to many iterations are used or cholesky decomposition fails
+            // exit inner for loop to increase r if too many iterations are used or cholesky decomposition fails
             if (kk > k_0_ && r < r_max)
               break;
             // calculate gradient g
@@ -2136,6 +2152,7 @@ public:
                 break;
               } else {
                 mutex_.unlock();
+                std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density " << XT::Common::to_string(density, 15) << " at position " << XT::Common::to_string(entity().geometry().center(), 15) << " due to errors in the Cholesky decomposition!" << std::endl;
                 DUNE_THROW(Dune::MathError, "Failure to converge!");
               }
             }
@@ -2174,6 +2191,7 @@ public:
           } // k loop (Newton iterations)
         } // r loop (Regularization parameter)
         mutex_.unlock();
+        std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density " << XT::Common::to_string(density, 15) << " at position " << XT::Common::to_string(entity().geometry().center(), 15) << " due to too many iterations!" << std::endl;
         DUNE_THROW(MathError, "Failed to converge");
       } // else ( value has not been calculated before )
 
@@ -2236,7 +2254,7 @@ public:
           update += p3_[dd][jj][qq][kk][kk1] * powers_alpha1m3.get(kk1) * powers_alpha2m3.get(kk - kk1);
       } while (++kk <= max_order && XT::Common::FloatCmp::ne(update, last_update, tol_));
       if (kk == max_order)
-        std::cout << "Maxorder reached! " << std::endl;
+        std::cerr << "Maxorder reached! " << std::endl;
       for (size_t vv = 0; vv < 3; ++vv)
         ret[vertex_indices_[jj][vv]] += update[vv] * exp_alpha3;
     }
@@ -2310,7 +2328,7 @@ public:
             update += p1_[jj][qq][kk][kk1] * powers_alpha1m3.get(kk1) * powers_alpha2m3.get(kk - kk1);
         } while (++kk <= max_order && XT::Common::FloatCmp::ne(update, last_update, tol_));
         if (kk == max_order)
-          std::cout << "Maxorder reached! " << std::endl;
+          std::cerr << "Maxorder reached! " << std::endl;
         ret += update * exp_alpha3;
       } // jj
       ret -= alpha * v;
@@ -2340,7 +2358,7 @@ public:
             update += p2_[jj][qq][kk][kk1] * powers_alpha1m3.get(kk1) * powers_alpha2m3.get(kk - kk1);
         } while (++kk <= max_order && XT::Common::FloatCmp::ne(update, last_update, tol_));
         if (kk == max_order)
-          std::cout << "Maxorder reached! " << std::endl;
+          std::cerr << "Maxorder reached! " << std::endl;
         update *= exp_alpha3;
         for (size_t vv = 0; vv < 3; ++vv)
           ret[vertex_indices_[jj][vv]] += update[vv];
@@ -2376,7 +2394,7 @@ public:
             update += p4_[jj][qq][kk][kk1] * powers_alpha1m3.get(kk1) * powers_alpha2m3.get(kk - kk1);
         } while (++kk <= max_order && XT::Common::FloatCmp::ne(update, last_update, tol_));
         if (kk == max_order)
-          std::cout << "Maxorder reached! " << std::endl;
+          std::cerr << "Maxorder reached! " << std::endl;
         update *= exp_alpha3;
         for (size_t mm = 0; mm < 3; ++mm)
           for (size_t nn = 0; nn < 3; ++nn)
@@ -2407,7 +2425,7 @@ public:
             update += p5_[dd][jj][qq][kk][kk1] * powers_alpha1m3.get(kk1) * powers_alpha2m3.get(kk - kk1);
         } while (++kk <= max_order && XT::Common::FloatCmp::ne(update, last_update, tol_));
         if (kk == max_order)
-          std::cout << "Maxorder reached! " << std::endl;
+          std::cerr << "Maxorder reached! " << std::endl;
         update *= exp_alpha3;
         for (size_t mm = 0; mm < 3; ++mm)
           for (size_t nn = 0; nn < 3; ++nn)
@@ -2771,6 +2789,10 @@ public:
                 break;
               } else {
                 mutex_.unlock();
+                std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density "
+                          << XT::Common::to_string(density, 15) << " at position "
+                          << XT::Common::to_string(entity().geometry().center(), 15)
+                          << " due to errors in the Cholesky decomposition!" << std::endl;
                 DUNE_THROW(Dune::MathError, "Failure to converge!");
               }
             }
@@ -2813,6 +2835,10 @@ public:
           } // k loop (Newton iterations)
         } // r loop (Regularization parameter)
         mutex_.unlock();
+        std::cerr << "Failed to converge for " << XT::Common::to_string(u, 15) << " with density "
+                  << XT::Common::to_string(density, 15) << " at position "
+                  << XT::Common::to_string(entity().geometry().center(), 15) << " due to too many iterations!"
+                  << std::endl;
         DUNE_THROW(MathError, "Failed to converge");
       } // else ( value has not been calculated before )
 
