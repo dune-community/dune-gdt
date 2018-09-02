@@ -68,7 +68,8 @@ public:
         outfile << param_.get("t")[0];
         for (size_t ii = 0; ii < AnalyticalFluxType::dimDomain; ++ii)
           outfile << " " << entity.geometry().center()[ii];
-        outfile << " " << s << " 0" << std::endl;
+        outfile << " " << s << " ";
+        outfile << XT::Common::to_string(u, 15) << std::endl;
         outfile_lock.unlock();
       }
       const auto& basis_functions = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)->basis_functions();
