@@ -61,6 +61,9 @@ struct RealizabilityLimiterChooser<LegendreMomentBasis<double, double, order>, A
 };
 #endif
 
+#ifndef USE_LP_POSITIVITY_LIMITER
+#define USE_LP_POSITIVITY_LIMITER 0
+#endif // USE_LP_POSITIVITY_LIMITER
 template <size_t dimRange, class AnalyticalFluxType, class DiscreteFunctionType>
 struct RealizabilityLimiterChooser<HatFunctionMomentBasis<double, 1, double, dimRange, 1, 1>,
                                    AnalyticalFluxType,
@@ -72,7 +75,7 @@ struct RealizabilityLimiterChooser<HatFunctionMomentBasis<double, 1, double, dim
   static constexpr size_t quad_order = 15;
   static constexpr size_t num_quad_refinements = 0;
 
-#if HAVE_CLP
+#if HAVE_CLP && USE_LP_POSITIVITY_LIMITER
   template <class MatrixType>
   static std::unique_ptr<LpPositivityLimitedSlope<double, dimRange, MatrixType>>
   make_slope(const BasisfunctionType& /*basis_functions*/, const double epsilon)
@@ -158,7 +161,7 @@ struct RealizabilityLimiterChooser<HatFunctionMomentBasis<double, 3, double, ref
   static constexpr size_t quad_order = 7; // fekete rule number 7
   static constexpr size_t num_quad_refinements = 2;
 
-#if HAVE_CLP
+#if HAVE_CLP && USE_LP_POSITIVITY_LIMITER
   template <class MatrixType>
   static std::unique_ptr<LpPositivityLimitedSlope<double, dimRange, MatrixType>>
   make_slope(const BasisfunctionType& /*basis_functions*/, const double epsilon)

@@ -8,6 +8,8 @@
 // This one has to come first (includes the config.h)!
 #include <dune/xt/common/test/main.hxx>
 
+#define USE_LP_POSITIVITY_LIMITER 1
+
 #include <dune/gdt/test/grids.hh>
 #include <dune/gdt/test/hyperbolic/problems/momentmodels/kinetictransport/testcases.hh>
 #include <dune/gdt/test/hyperbolic/mn-discretization.hh>
@@ -40,9 +42,8 @@ using YaspGridTestCasesAll = testing::
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PlaneSourceMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1>, false>,
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
-              PlaneSourceMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1>, true>
+              PlaneSourceMnTestCase<Yasp1, Dune::GDT::PartialMomentBasis<double, 1, double, 8, 1, 1>, true>,
 #if HAVE_CLP
-          ,
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
               PointSourceMnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, false>,
           Dune::GDT::Hyperbolic::Problems::KineticTransport::
