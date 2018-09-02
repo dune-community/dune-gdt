@@ -150,7 +150,7 @@ struct HyperbolicMnDiscretization
     filename += "_" + basis_functions->short_id();
     filename += "_m" + Dune::XT::Common::to_string(dimRange);
 
-    RegularizationOperatorType regularization_operator(analytical_flux, filename);
+    RegularizationOperatorType regularization_operator(analytical_flux, problem_imp->psi_vac() / 1e4, filename);
 
     RealizabilityLimiterType realizability_limiter(analytical_flux, *basis_functions, epsilon);
     ReconstructionFvOperatorType reconstruction_fv_operator(

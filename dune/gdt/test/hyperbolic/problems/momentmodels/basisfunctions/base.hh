@@ -376,6 +376,20 @@ public:
 
   virtual RangeFieldType density(const RangeType& u) const = 0;
 
+  // For the partial moments, we might not be able to solve the optimization problem for some moments where the density
+  // on one interval/spherical triangle is very low. The overall density might be much higher than the density on that
+  // triangle, so we use this function to get the minimal density.
+  virtual RangeFieldType density_min(const RangeType& u) const
+  {
+    return density(u);
+  }
+
+  // Number of factors the density is calculated from
+  virtual size_t density_factor() const
+  {
+    return 1;
+  }
+
   // Volume of integration domain. For the Mn models it is important that u_iso has density 1. If the basis is exactly
   // integrated, we thus use the exact unit ball volume. If the basis is only integrated by quadrature, we have to use
   // <1> as volume to get a density of 1.

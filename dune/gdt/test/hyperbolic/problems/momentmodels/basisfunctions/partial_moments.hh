@@ -267,6 +267,27 @@ public:
     return ret;
   }
 
+  virtual RangeFieldType density_min(const RangeType& u) const override final
+  {
+    RangeFieldType ret(u[0]);
+    for (size_t ii = 2; ii < dimRange; ii += 2)
+      ret = std::min(ret, u[ii]);
+    return ret;
+  }
+
+  RangeFieldType density_min(const XT::Common::BlockedFieldVector<RangeFieldType, num_intervals, 2>& u) const
+  {
+    RangeFieldType ret(u.block(0)[0]);
+    for (size_t jj = 1; jj < num_intervals; ++jj)
+      ret = std::min(ret, u.block(jj)[0]);
+    return ret;
+  }
+
+  virtual size_t density_factor() const override final
+  {
+    return num_intervals;
+  }
+
   virtual std::string short_id() const override final
   {
     return "1dpm";
@@ -438,6 +459,27 @@ public:
     for (size_t jj = 0; jj < dimRange / 4; ++jj)
       ret += u.block(jj)[0];
     return ret;
+  }
+
+  virtual RangeFieldType density_min(const RangeType& u) const override final
+  {
+    RangeFieldType ret(u[0]);
+    for (size_t ii = 4; ii < dimRange; ii += 4)
+      ret = std::min(ret, u[ii]);
+    return ret;
+  }
+
+  RangeFieldType density_min(const XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 4, 4>& u) const
+  {
+    RangeFieldType ret(u.block(0)[0]);
+    for (size_t jj = 1; jj < dimRange / 4; ++jj)
+      ret = std::min(ret, u.block(jj)[0]);
+    return ret;
+  }
+
+  virtual size_t density_factor() const override final
+  {
+    return dimRange / 4;
   }
 
   virtual std::string short_id() const override final

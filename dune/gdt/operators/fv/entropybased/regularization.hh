@@ -24,21 +24,24 @@ class LocalMomentRegularizer : public XT::Grid::Functor::Codim0<typename SourceT
 {
   // stencil is (i-r, i+r) in all dimensions, where r = polOrder + 1
   static_assert(is_discrete_function<SourceType>::value, "SourceType has to be derived from DiscreteFunction!");
-  typedef typename SourceType::SpaceType SpaceType;
-  typedef typename SpaceType::GridLayerType GridLayerType;
-  typedef typename GridLayerType::template Codim<0>::Entity EntityType;
-  typedef typename GridLayerType::IndexSet IndexSetType;
+  using SpaceType = typename SourceType::SpaceType;
+  using GridLayerType = typename SpaceType::GridLayerType;
+  using EntityType = typename GridLayerType::template Codim<0>::Entity;
+  using IndexSetType = typename GridLayerType::IndexSet;
   using EntropyFluxType = EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, SourceType>;
+  using RangeFieldType = typename EntropyFluxType::RangeFieldType;
 
 public:
   explicit LocalMomentRegularizer(const SourceType& source,
                                   RangeType& range,
                                   const AnalyticalFluxType& analytical_flux,
+                                  const RangeFieldType min_acceptable_density,
                                   const XT::Common::Parameter& param,
                                   const std::string filename)
     : source_(source)
     , range_(range)
     , analytical_flux_(analytical_flux)
+    , min_acceptable_density_(min_acceptable_density)
     , param_(param)
     , filename_(filename + "_regularization.txt")
   {
@@ -48,17 +51,21 @@ public:
   void apply_local(const EntityType& entity)
   {
     const auto x_in_inside_coords = entity.geometry().local(entity.geometry().center());
-    const auto u = source_.local_function(entity)->evaluate(x_in_inside_coords, param_);
+    auto u = source_.local_function(entity)->evaluate(x_in_inside_coords, param_);
     assert(dynamic_cast<const EntropyFluxType*>(&analytical_flux_) != nullptr
            && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
-    const auto s = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)
-                       ->derived_local_function(entity)
-                       ->get_alpha(x_in_inside_coords, u, param_, true, false)
-                       .second;
-
+    const auto* entropy_flux = dynamic_cast<const EntropyFluxType*>(&analytical_flux_);
+    const auto& basis_functions = entropy_flux->basis_functions();
+    const auto density_min = basis_functions.density_min(u);
     thread_local auto vector_indices = source_.space().mapper().globalIndices(entity);
     source_.space().mapper().globalIndices(entity, vector_indices);
-
+    if (density_min < min_acceptable_density_ * basis_functions.density_factor()) {
+      std::cerr << "Added small vaccuum density to " << XT::Common::to_string(u, 15) << " on entity "
+                << XT::Common::to_string(entity.geometry().center(), 15) << std::endl;
+      u += basis_functions.u_iso() * min_acceptable_density_;
+    }
+    const auto s =
+        entropy_flux->derived_local_function(entity)->get_alpha(x_in_inside_coords, u, param_, true, false).second;
     // if regularization was needed, we also need to replace u_n in that cell by its regularized version
     if (s > 0.) {
       if (!filename_.empty()) {
@@ -72,14 +79,12 @@ public:
         outfile << XT::Common::to_string(u, 15) << std::endl;
         outfile_lock.unlock();
       }
-      const auto& basis_functions = dynamic_cast<const EntropyFluxType*>(&analytical_flux_)->basis_functions();
       const auto u_iso_scaled = basis_functions.u_iso() * basis_functions.density(u);
       for (size_t ii = 0; ii < vector_indices.size(); ++ii)
-        range_.vector().set_entry(vector_indices[ii],
-                                  (1 - s) * source_.vector().get_entry(vector_indices[ii]) + s * u_iso_scaled[ii]);
+        range_.vector().set_entry(vector_indices[ii], (1 - s) * u[ii] + s * u_iso_scaled[ii]);
     } else {
-      for (const auto& index : vector_indices)
-        range_.vector().set_entry(index, source_.vector().get_entry(index));
+      for (size_t ii = 0; ii < vector_indices.size(); ++ii)
+        range_.vector().set_entry(vector_indices[ii], u[ii]);
     }
   } // void apply_local(...)
 
@@ -87,6 +92,7 @@ private:
   const SourceType& source_;
   RangeType& range_;
   const AnalyticalFluxType& analytical_flux_;
+  const RangeFieldType min_acceptable_density_;
   XT::Common::Parameter param_;
   const std::string filename_;
 }; // class LocalMomentRegularizer<...>
@@ -106,6 +112,7 @@ struct MomentRegularizerTraits
   using BasisfunctionType = BasisfunctionImp;
   using FieldType = typename AnalyticalFluxType::DomainFieldType;
   using JacobianType = NoJacobian;
+  using RangeFieldType = typename BasisfunctionType::RangeFieldType;
   using derived_type = MomentRegularizer<AnalyticalFluxType, BasisfunctionType, MomentRegularizerTraits>;
 };
 
@@ -121,9 +128,13 @@ class MomentRegularizer : public OperatorInterface<Traits>
 public:
   using AnalyticalFluxType = typename Traits::AnalyticalFluxType;
   using BasisfunctionType = typename Traits::BasisfunctionType;
+  using RangeFieldType = typename Traits::RangeFieldType;
 
-  MomentRegularizer(const AnalyticalFluxType& analytical_flux, const std::string filename = "")
+  MomentRegularizer(const AnalyticalFluxType& analytical_flux,
+                    const RangeFieldType min_acceptable_density,
+                    const std::string filename = "")
     : analytical_flux_(analytical_flux)
+    , min_acceptable_density_(min_acceptable_density)
     , filename_(filename)
   {
   }
@@ -132,7 +143,7 @@ public:
   void apply(const SourceType& source, RangeType& range, const XT::Common::Parameter& param) const
   {
     LocalMomentRegularizer<SourceType, RangeType, AnalyticalFluxType, BasisfunctionType> local_moment_regularizer(
-        source, range, analytical_flux_, param, filename_);
+        source, range, analytical_flux_, min_acceptable_density_, param, filename_);
     auto walker = XT::Grid::Walker<typename SourceType::SpaceType::GridLayerType>(source.space().grid_layer());
     walker.append(local_moment_regularizer);
     walker.walk(true);
@@ -140,6 +151,7 @@ public:
 
 private:
   const AnalyticalFluxType& analytical_flux_;
+  const RangeFieldType min_acceptable_density_;
   const std::string filename_;
 }; // class MomentRegularizer<...>
 
