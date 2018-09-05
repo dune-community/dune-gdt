@@ -160,19 +160,23 @@ protected:
       append_local_mass_matrix_inversion(LocalizableOperatorBase<SGV, V, m, 1, F, SGV, m, 1, F, RGV, V>& localizable_op,
                                          RangeFunctionType& range_function) const
   {
-    localizable_op.append([&](const auto& element) {
-      // (creating these objects before the grid walk and reusing them would be more efficient, but not thread safe)
-      auto local_range = range_function.local_discrete_function(element);
-      const auto& range_basis = local_range->basis();
-      using E = XT::Grid::extract_entity_t<RGV>;
-      const LocalElementIntegralBilinearForm<E, m, 1, F, F> local_l2_bilinear_form(
-          LocalElementProductIntegrand<E, m, 1, F, F>(1.));
-      local_range->dofs().assign_from(XT::LA::solve(
-          XT::LA::convert_to<XT::LA::CommonDenseMatrix<F>>(local_l2_bilinear_form.apply2(range_basis, range_basis)),
-          XT::LA::convert_to<XT::LA::CommonDenseVector<F>>(local_range->dofs()),
-          {{"type", XT::LA::SolverOptions<XT::LA::CommonDenseMatrix<F>>::types().at(0)},
-           {"post_check_solves_system", "-1"}}));
-    });
+    localizable_op.append(
+        /*prepare=*/[]() {},
+        /*apply_local=*/
+        [&](const auto& element) {
+          // (creating these objects before the grid walk and reusing them would be more efficient, but not thread safe)
+          auto local_range = range_function.local_discrete_function(element);
+          const auto& range_basis = local_range->basis();
+          using E = XT::Grid::extract_entity_t<RGV>;
+          const LocalElementIntegralBilinearForm<E, m, 1, F, F> local_l2_bilinear_form(
+              LocalElementProductIntegrand<E, m, 1, F, F>(1.));
+          local_range->dofs().assign_from(XT::LA::solve(
+              XT::LA::convert_to<XT::LA::CommonDenseMatrix<F>>(local_l2_bilinear_form.apply2(range_basis, range_basis)),
+              XT::LA::convert_to<XT::LA::CommonDenseVector<F>>(local_range->dofs()),
+              {{"type", XT::LA::SolverOptions<XT::LA::CommonDenseMatrix<F>>::types().at(0)},
+               {"post_check_solves_system", "-1"}}));
+        },
+        /*finalize=*/[]() {});
   } // ... append_local_mass_matrix_inversion(...)
 
 public:
@@ -302,75 +306,84 @@ public:
     // we need a thread safe vector with one entry per grid element and just use a scalar FV discrete function
     const auto fv_space = make_finite_volume_space<1>(this->assembly_grid_view_);
     auto jump_indicators = make_discrete_function<XT::LA::CommonDenseVector<F>>(fv_space);
-    localizable_op.append([&](const auto& element) {
-      // compute jump indicator (8.176)
-      double element_jump_indicator = 0;
-      double element_boundary_without_domain_boundary = (d == 1) ? 1. : 0.;
-      const auto local_source_element = source_function.local_discrete_function(element);
-      for (auto&& intersection : intersections(this->assembly_grid_view_, element)) {
-        if (intersection.neighbor() && !intersection.boundary()) {
-          if (d > 1)
-            element_boundary_without_domain_boundary += XT::Grid::diameter(intersection);
-          const auto neighbor = intersection.outside();
-          const auto local_source_neighbor = source_function.local_discrete_function(neighbor);
-          const auto integration_order =
-              std::pow(std::max(local_source_element->order(), local_source_neighbor->order()), 2);
-          for (auto&& quadrature_point :
-               QuadratureRules<D, d - 1>::rule(intersection.geometry().type(), integration_order)) {
-            const auto point_in_reference_intersection = quadrature_point.position();
-            const auto point_in_reference_element =
-                intersection.geometryInInside().global(point_in_reference_intersection);
-            const auto point_in_reference_neighbor =
-                intersection.geometryInOutside().global(point_in_reference_intersection);
-            const auto integration_factor = intersection.geometry().integrationElement(point_in_reference_intersection);
-            const auto quadrature_weight = quadrature_point.weight();
-            const auto value_on_element =
-                local_source_element->evaluate(point_in_reference_element)[jump_indicator_component_];
-            const auto value_on_neighbor =
-                local_source_neighbor->evaluate(point_in_reference_neighbor)[jump_indicator_component_];
-            element_jump_indicator +=
-                integration_factor * quadrature_weight * std::pow(value_on_element - value_on_neighbor, 2);
+    localizable_op.append(
+        /*prepare=*/[]() {},
+        /*apply_local=*/
+        [&](const auto& element) {
+          // compute jump indicator (8.176)
+          double element_jump_indicator = 0;
+          double element_boundary_without_domain_boundary = (d == 1) ? 1. : 0.;
+          const auto local_source_element = source_function.local_discrete_function(element);
+          for (auto&& intersection : intersections(this->assembly_grid_view_, element)) {
+            if (intersection.neighbor() && !intersection.boundary()) {
+              if (d > 1)
+                element_boundary_without_domain_boundary += XT::Grid::diameter(intersection);
+              const auto neighbor = intersection.outside();
+              const auto local_source_neighbor = source_function.local_discrete_function(neighbor);
+              const auto integration_order =
+                  std::pow(std::max(local_source_element->order(), local_source_neighbor->order()), 2);
+              for (auto&& quadrature_point :
+                   QuadratureRules<D, d - 1>::rule(intersection.geometry().type(), integration_order)) {
+                const auto point_in_reference_intersection = quadrature_point.position();
+                const auto point_in_reference_element =
+                    intersection.geometryInInside().global(point_in_reference_intersection);
+                const auto point_in_reference_neighbor =
+                    intersection.geometryInOutside().global(point_in_reference_intersection);
+                const auto integration_factor =
+                    intersection.geometry().integrationElement(point_in_reference_intersection);
+                const auto quadrature_weight = quadrature_point.weight();
+                const auto value_on_element =
+                    local_source_element->evaluate(point_in_reference_element)[jump_indicator_component_];
+                const auto value_on_neighbor =
+                    local_source_neighbor->evaluate(point_in_reference_neighbor)[jump_indicator_component_];
+                element_jump_indicator +=
+                    integration_factor * quadrature_weight * std::pow(value_on_element - value_on_neighbor, 2);
+              }
+            }
+            element_jump_indicator /= element_boundary_without_domain_boundary * element.geometry().volume();
           }
-        }
-        element_jump_indicator /= element_boundary_without_domain_boundary * element.geometry().volume();
-      }
-      // compute smoothed discrete jump indicator (8.180)
-      double smoothed_discrete_jump_indicator = 0;
-      const double xi_min = 0.5;
-      const double xi_max = 1.5;
-      if (element_jump_indicator < xi_min)
-        smoothed_discrete_jump_indicator = 0;
-      else if (!(element_jump_indicator < xi_max))
-        smoothed_discrete_jump_indicator = 1;
-      else
-        smoothed_discrete_jump_indicator =
-            0.5 * std::sin(M_PI * (element_jump_indicator - (xi_max - xi_min)) / (2 * (xi_max - xi_min))) + 0.5;
-      jump_indicators.local_discrete_function(element)->dofs()[0] = smoothed_discrete_jump_indicator;
-    });
+          // compute smoothed discrete jump indicator (8.180)
+          double smoothed_discrete_jump_indicator = 0;
+          const double xi_min = 0.5;
+          const double xi_max = 1.5;
+          if (element_jump_indicator < xi_min)
+            smoothed_discrete_jump_indicator = 0;
+          else if (!(element_jump_indicator < xi_max))
+            smoothed_discrete_jump_indicator = 1;
+          else
+            smoothed_discrete_jump_indicator =
+                0.5 * std::sin(M_PI * (element_jump_indicator - (xi_max - xi_min)) / (2 * (xi_max - xi_min))) + 0.5;
+          jump_indicators.local_discrete_function(element)->dofs()[0] = smoothed_discrete_jump_indicator;
+        },
+        /*finalize=*/[]() {});
     // do the actual (first) grid walk: the above operators will be applied and afterwards cleared
     localizable_op.assemble(/*use_tbb=*/true);
     DUNE_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
     // compute artificial viscosity shock capturing [see DF2015, p. 450, (8.183, 8.1.84)] by appending a grid element
     // functor, use the localizable_op as a XT::Grid::Walker
-    localizable_op.append([&](const auto& element) {
-      // evaluate artificial viscosity form (8.183)
-      const auto local_source = source_function.local_discrete_function(element);
-      auto local_range = range_function.local_discrete_function(element);
-      const auto& local_basis = local_range->basis();
-      const auto h = element.geometry().volume();
-      const auto jump_indicator_element = jump_indicators.local_discrete_function(element)->dofs()[0];
-      for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element.type(), 2 * local_basis.order())) {
-        const auto point_in_reference_element = quadrature_point.position();
-        const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);
-        const auto quadrature_weight = quadrature_point.weight();
-        const auto source_jacobian = local_source->jacobian(point_in_reference_element);
-        const auto basis_jacobians = local_basis.jacobians_of_set(point_in_reference_element);
-        // compute beta_h
-        for (size_t ii = 0; ii < local_basis.size(); ++ii)
-          local_range->dofs()[ii] += integration_factor * quadrature_weight * nu_1_ * std::pow(h, alpha_1_)
-                                     * jump_indicator_element * (source_jacobian[0] * basis_jacobians[ii][0]);
-      }
-    });
+    localizable_op.append(
+        /*prepare=*/[]() {},
+        /*apply_local=*/
+        [&](const auto& element) {
+          // evaluate artificial viscosity form (8.183)
+          const auto local_source = source_function.local_discrete_function(element);
+          auto local_range = range_function.local_discrete_function(element);
+          const auto& local_basis = local_range->basis();
+          const auto h = element.geometry().volume();
+          const auto jump_indicator_element = jump_indicators.local_discrete_function(element)->dofs()[0];
+          for (const auto& quadrature_point : QuadratureRules<D, d>::rule(element.type(), 2 * local_basis.order())) {
+            const auto point_in_reference_element = quadrature_point.position();
+            const auto integration_factor = element.geometry().integrationElement(point_in_reference_element);
+            const auto quadrature_weight = quadrature_point.weight();
+            const auto source_jacobian = local_source->jacobian(point_in_reference_element);
+            const auto basis_jacobians = local_basis.jacobians_of_set(point_in_reference_element);
+            // compute beta_h
+            for (size_t ii = 0; ii < local_basis.size(); ++ii)
+              local_range->dofs()[ii] += integration_factor * quadrature_weight * nu_1_ * std::pow(h, alpha_1_)
+                                         * jump_indicator_element * (source_jacobian[0] * basis_jacobians[ii][0]);
+          }
+        },
+        /*finalize=*/[]() {});
     // do the actual (second) grid walk
     localizable_op.walk(/*use_tbb=*/true); // Do not call assemble() more than once, will not do anything!
     DUNE_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
