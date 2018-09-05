@@ -75,15 +75,15 @@ public:
                                                         MatrixType& matrix,
                                                         const VectorType& source_vector,
                                                         const LocalElementOperatorType& local_operator,
-                                                        const XT::Common::Parameter& param = {},
-                                                        const real_t<F> eps = 1e-7)
+                                                        const XT::Common::Parameter& param = {})
     : source_space_(source_space)
     , range_space_(range_space)
     , matrix_(matrix)
     , source_vector_(source_vector)
     , local_op_(local_operator.copy())
     , param_(param)
-    , eps_(eps)
+    , eps_(param_.has_key("finite-difference-jacobians.eps") ? param_.get("finite-difference-jacobians.eps").at(0)
+                                                             : 1e-7)
     , source_(source_space_) // This is a full vector, and intended!
     , range_(range_space_) // This is a full vector, and intended!
     , local_source_(source_.local_discrete_function())
