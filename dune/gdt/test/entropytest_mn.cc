@@ -76,9 +76,12 @@ int main(int argc, char** argv)
   //      Hyperbolic::Problems::KineticTransport::ShadowMnTestCase<Yasp3Grid, BasisfunctionType, reconstruct>;
 
   HyperbolicMnDiscretization<TestCaseType> test;
-  auto norms = test.run(
+  const auto norms_and_rank = test.run(
       num_save_steps, num_output_steps, quad_refinements, quad_order, grid_size, overlap_size, t_end, filename);
-  std::cout << "l1norm = " << XT::Common::to_string(norms[0], 15) << std::endl;
-  std::cout << "l2norm = " << XT::Common::to_string(norms[1], 15) << std::endl;
-  std::cout << "linfnorm = " << XT::Common::to_string(norms[2], 15) << std::endl;
+  const auto& norms = norms_and_rank.first;
+  if (norms_and_rank.second == 0) {
+    std::cout << "l1norm = " << XT::Common::to_string(norms[0], 15) << std::endl;
+    std::cout << "l2norm = " << XT::Common::to_string(norms[1], 15) << std::endl;
+    std::cout << "linfnorm = " << XT::Common::to_string(norms[2], 15) << std::endl;
+  }
 }
