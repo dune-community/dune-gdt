@@ -13,7 +13,9 @@
 #include <dune/xt/common/type_traits.hh>
 #include <dune/xt/grid/type_traits.hh>
 #include <dune/xt/grid/walker/filters.hh>
+#include <dune/xt/la/container.hh>
 
+#include <dune/gdt/local/assembler/operator-fd-jacobian-assemblers.hh>
 #include <dune/gdt/local/operators/advection-fv.hh>
 
 #include "interfaces.hh"
@@ -46,6 +48,7 @@ public:
   using BoundaryTreatmentByCustomExtrapolationOperatorType =
       LocalAdvectionFvBoundaryTreatmentByCustomExtrapolationOperator<I, V, SGV, m, F, F, RGV, V>;
 
+  using typename BaseType::MatrixOperatorType;
   using typename BaseType::SourceSpaceType;
   using typename BaseType::RangeSpaceType;
   using typename BaseType::VectorType;
@@ -148,6 +151,59 @@ public:
     localizable_op.assemble(/*use_tbb=*/true);
     DUNE_THROW_IF(!range.valid(), Exceptions::operator_error, "range contains inf or nan!");
   } // ... apply(...)
+
+  std::vector<std::string> jacobian_options() const override final
+  {
+    return {"finite-differences"};
+  }
+
+  XT::Common::Configuration jacobian_options(const std::string& type) const override final
+  {
+    DUNE_THROW_IF(type != this->jacobian_options().at(0), Exceptions::operator_error, "type = " << type);
+    return {{"type", type}, {"eps", "1e-7"}};
+  }
+
+  using BaseType::jacobian;
+
+  void jacobian(const VectorType& source,
+                MatrixOperatorType& jacobian_op,
+                const XT::Common::Configuration& opts,
+                const XT::Common::Parameter& param = {}) const override final
+  {
+    // some checks
+    DUNE_THROW_IF(!source.valid(), Exceptions::operator_error, "source contains inf or nan!");
+    DUNE_THROW_IF(!(this->parameter_type() <= param.type()),
+                  Exceptions::operator_error,
+                  "this->parameter_type() = " << this->parameter_type() << "\n   param.type() = " << param.type());
+    DUNE_THROW_IF(!opts.has_key("type"), Exceptions::operator_error, opts);
+    DUNE_THROW_IF(opts.get<std::string>("type") != jacobian_options().at(0), Exceptions::operator_error, opts);
+    const auto default_opts = jacobian_options(jacobian_options().at(0));
+    const auto eps = opts.get("eps", default_opts.template get<double>("eps"));
+    const auto parameter = param + XT::Common::Parameter({"finite-difference-jacobians.eps", eps});
+    // append the same local ops with the same filters as in apply() above
+    // contributions from inner intersections
+    jacobian_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
+                       source,
+                       parameter,
+                       XT::Grid::ApplyOn::InnerIntersectionsOnce<SGV>());
+    // contributions from periodic boundaries
+    jacobian_op.append(LocalAdvectionFvCouplingOperator<I, V, SGV, m, F, F, RGV, V>(*numerical_flux_),
+                       source,
+                       parameter,
+                       *(XT::Grid::ApplyOn::PeriodicBoundaryIntersectionsOnce<SGV>() && !(*periodicity_exception_)));
+    // contributions from other boundaries by custom numerical flux
+    for (const auto& boundary_treatment : boundary_treatments_by_custom_numerical_flux_) {
+      const auto& boundary_op = *boundary_treatment.first;
+      const auto& filter = *boundary_treatment.second;
+      jacobian_op.append(boundary_op, source, parameter, filter);
+    }
+    // contributions from other boundaries by custom extrapolation
+    for (const auto& boundary_treatment : boundary_treatments_by_custom_extrapolation_) {
+      const auto& boundary_op = *boundary_treatment.first;
+      const auto& filter = *boundary_treatment.second;
+      jacobian_op.append(boundary_op, source, parameter, filter);
+    }
+  } // ... jacobian(...)
 
 private:
   const SGV assembly_grid_view_;
