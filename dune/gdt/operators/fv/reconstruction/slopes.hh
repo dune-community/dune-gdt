@@ -549,7 +549,7 @@ public:
     for (size_t jj = 0; jj < num_blocks; ++jj) {
       assert(XT::Common::FloatCmp::le(thetas[jj], 1.) && XT::Common::FloatCmp::ge(thetas[jj], 0.));
       for (size_t ii = 0; ii < block_size; ++ii)
-        ret[jj * block_size + ii] = slope[jj * block_size + ii] * (1 - thetas[jj]);
+        ret.block(jj)[ii] = slope.block(jj)[ii] * (1 - thetas[jj]);
     }
     return ret;
   } // ... get(...)
@@ -574,7 +574,6 @@ private:
       if (XT::Common::FloatCmp::le(theta_li, 1.))
         theta = std::max(theta, theta_li);
     } // coeffs
-    theta = std::min(epsilon_ + theta, 1.);
     return theta;
   } // ... get_block_theta(...)
 
