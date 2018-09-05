@@ -46,6 +46,7 @@ class InstationaryNonconformingHyperbolicEocStudy
                            la>;
 
 protected:
+  static const constexpr int m_as_int = int(ssize_t(m));
   using typename BaseType::GV;
   using typename BaseType::O;
   using typename BaseType::M;
@@ -62,65 +63,19 @@ protected:
 public:
   InstationaryNonconformingHyperbolicEocStudy(
       const double T_end,
+      const std::string timestepping,
       std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualizer =
           [](const auto& /*solution*/, const auto& /*prefix*/) { /*no visualization by default*/ })
-    : BaseType(T_end, visualizer)
+    : BaseType(T_end, timestepping, visualizer)
     , space_type_("")
     , numerical_flux_type_("")
   {
   }
 
-  virtual std::vector<std::string> quantities() const override
-  {
-    auto qq = BaseType::quantities();
-    if (this->space_type_ != "fv")
-      qq.push_back("           CFL  "); // <- This is on purpose, see column header formatting in ConvergenceStudy.
-    return qq;
-  }
-
-  virtual std::map<std::string, std::map<std::string, double>>
-  compute(const size_t refinement_level,
-          const std::vector<std::string>& actual_norms,
-          const std::vector<std::pair<std::string, std::string>>& actual_estimates,
-          const std::vector<std::string>& actual_quantities) override
-  {
-    auto& self = *this;
-    auto quantities_to_compute = actual_quantities;
-    if (self.space_type_ != "fv") {
-      const auto search_result =
-          std::find(quantities_to_compute.begin(), quantities_to_compute.end(), "           CFL  ");
-      if (search_result != quantities_to_compute.end()) {
-        self.current_data_["quantity"]["           CFL  "] =
-            self.current_data_["target"]["dt"] / self.current_data_["info"]["explicit_dt"];
-        quantities_to_compute.erase(search_result);
-      }
-    }
-    auto data = BaseType::compute(refinement_level, actual_norms, actual_estimates, quantities_to_compute);
-    data["quantity"]["           CFL  "] = self.current_data_["quantity"]["           CFL  "];
-    return data;
-  } // ... compute(...)
-
 protected:
   virtual const F& flux() const = 0;
 
   virtual DF make_initial_values(const S& space) = 0;
-
-  virtual std::pair<double, double> estimate_dt(const S& space) override
-  {
-    const auto u_0 = this->make_initial_values(space);
-    const auto fv_dt = estimate_dt_for_hyperbolic_system(space.grid_view(), u_0, flux());
-    if (space_type_ == "fv")
-      return {fv_dt, fv_dt};
-    const auto max_sup_norm = 1.25 * u_0.dofs().vector().sup_norm();
-    const auto actual_dt = XT::Common::find_largest_by_bisection(1e-15, fv_dt, [&](const auto& dt_to_test) {
-      const auto solution = this->solve(space, 250 * dt_to_test, dt_to_test);
-      for (const auto& vec : solution.vectors())
-        if (vec.sup_norm() > max_sup_norm)
-          return false;
-      return true;
-    });
-    return {fv_dt, actual_dt};
-  } // ... estimate_dt(...)
 
   virtual std::unique_ptr<S> make_space(const GP& current_grid) override
   {
@@ -163,6 +118,44 @@ protected:
           DXTC_CONFIG_GET("nu_1", 0.2),
           DXTC_CONFIG_GET("alpha_1", 1.0));
   } // ... make_lhs_operator(...)
+
+  virtual double estimate_fixed_explicit_fv_dt(
+      const S& space,
+      const std::pair<XT::Common::FieldVector<R, m_as_int>, XT::Common::FieldVector<R, m_as_int>>& boundary_data_range =
+          {XT::Common::FieldVector<R, m_as_int>(std::numeric_limits<R>::max()),
+           XT::Common::FieldVector<R, m_as_int>(std::numeric_limits<R>::min())})
+  {
+    return estimate_dt_for_hyperbolic_system(
+        space.grid_view(), make_initial_values(space), flux(), boundary_data_range);
+  }
+
+  virtual double
+  estimate_fixed_explicit_dt(const S& space, const double max_overshoot = 1.25, const int max_steps_to_try = 250)
+  {
+    const auto u_0 = this->make_initial_values(space);
+    const auto op = this->make_lhs_operator(space);
+    const auto max_sup_norm = max_overshoot * u_0.dofs().vector().sup_norm();
+    return XT::Common::find_largest_by_bisection(
+        /*min_dt=*/10 * std::numeric_limits<double>::epsilon(),
+        /*max_dt=*/this->T_end_,
+        /*success=*/[&](const auto& dt_to_test) {
+          try {
+            auto u = u_0.dofs().vector();
+            const double T_end = max_steps_to_try * dt_to_test;
+            double time = 0.;
+            // explicit euler
+            while (time < T_end + dt_to_test) {
+              u -= op->apply(u, {{"_t", {time}}, {"_dt", {dt_to_test}}}) * dt_to_test;
+              time += dt_to_test;
+              if (u.sup_norm() > max_sup_norm)
+                return false;
+            }
+            return true;
+          } catch (...) {
+            return false;
+          }
+        });
+  } // ... estimate_fixed_explicit_dt(...)
 
   std::string space_type_;
   std::string numerical_flux_type_;

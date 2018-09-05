@@ -87,9 +87,10 @@ protected:
   using typename BaseType::V;
 
 public:
-  LinearTransportTest()
+  LinearTransportTest(const std::string timestepping)
     : Problem(new LinearTransportProblem<G>())
     , BaseType(Problem::access().T_end,
+               timestepping,
                [&](const auto& solution, const auto& prefix) {
                  const auto end_time =
                      std::min(this->T_end_, this->time_points_from_vector_array(solution.dof_vectors()).back());
@@ -101,25 +102,6 @@ public:
     , visualization_steps_(0)
   {
   }
-
-  std::vector<std::string> targets() const override
-  {
-    if (d == 1) // in 1d dt depends linearly on h, so no need to pollute the EOC table with dt-related values
-      return {"h"};
-    else
-      return BaseType::targets();
-  }
-
-  std::pair<double, double> estimate_dt(const S& space) override
-  {
-    if (d == 1 && this->space_type_ == "fv") { // here we know that dt = h is a good choice
-      double grid_width = 0.;
-      for (auto&& grid_element : elements(space.grid_view()))
-        grid_width = std::max(grid_width, XT::Grid::entity_diameter(grid_element));
-      return {grid_width, grid_width};
-    } else
-      return BaseType::estimate_dt(space);
-  } // ... estimate_dt(...)
 
 protected:
   const F& flux() const override
@@ -148,7 +130,14 @@ protected:
     auto st = self.space_type_;
     self.space_type_ = "fv";
     self.reference_space_ = self.make_space(*self.reference_grid_);
-    const auto dt = estimate_dt(*self.reference_space_).second;
+    auto compute_grid_width = [&]() {
+      double grid_width = 0.;
+      for (auto&& grid_element : elements(self.reference_space_->grid_view())) {
+        grid_width = std::max(grid_width, XT::Grid::entity_diameter(grid_element));
+      }
+      return grid_width;
+    };
+    const auto dt = compute_grid_width();
     self.space_type_ = st;
     self.reference_solution_on_reference_grid_ = std::make_unique<XT::LA::ListVectorArray<V>>(
         self.reference_space_->mapper().size(), /*length=*/0, /*reserve=*/std::ceil(self.T_end_ / dt));
@@ -180,10 +169,18 @@ protected:
   using typename BaseType::S;
   using typename BaseType::V;
 
-  XT::LA::ListVectorArray<V> solve(const S& space, const double T_end, const double dt) override final
+  LinearTransportExplicitTest()
+    : BaseType("explicit/fixed")
+  {
+  }
+
+  XT::LA::ListVectorArray<V> solve(const S& space, const double T_end) override
   {
     const auto u_0 = this->make_initial_values(space);
     const auto op = this->make_lhs_operator(space);
+    const auto dt = this->current_data_["target"]["h"];
+    this->current_data_["quantity"]["dt"] = dt;
+    this->current_data_["quantity"]["explicit_fv_dt"] = this->estimate_fixed_explicit_fv_dt(space);
     return solve_instationary_system_explicit_euler(u_0, *op, T_end, dt);
   }
 }; // class LinearTransportExplicitTest

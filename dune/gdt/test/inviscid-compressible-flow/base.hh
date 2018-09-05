@@ -97,13 +97,15 @@ protected:
   using typename BaseType::S;
   using typename BaseType::BS;
   using typename BaseType::V;
+  using typename BaseType::M;
   using typename BaseType::O;
   using RangeType = XT::Common::FieldVector<R, m>;
 
 public:
-  InviscidCompressibleFlowEulerTest()
+  InviscidCompressibleFlowEulerTest(const std::string timestepping)
     : Problem(new InviscidCompressibleFlowEulerProblem<G>())
     , BaseType(Problem::access().T_end,
+               timestepping,
                [&](const auto& solution, const auto& prefix) {
                  for (size_t ii = 0; ii < this->visualization_steps_; ++ii) {
                    const double time = ii * (this->T_end_ / this->visualization_steps_);
@@ -115,14 +117,6 @@ public:
     , visualization_steps_(0)
     , boundary_treatment("")
   {
-  }
-
-  std::vector<std::string> targets() const override final
-  {
-    if (d == 1) // in 1d dt depends linearly on h, so no need to pollute the EOC table with dt-related values
-      return {"h"};
-    else
-      return BaseType::targets();
   }
 
 protected:
@@ -144,30 +138,6 @@ protected:
       return Problem::access().template make_initial_values<V>(space);
   } // ... make_initial_values(...)
 
-  // Apart from the boundary_data_range, this is the same as BaseType::estimate_dt
-  std::pair<double, double> estimate_dt(const S& space) override final
-  {
-    if (boundary_treatment == "inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right") {
-      const auto u_0 = this->make_initial_values(space);
-      const auto fv_dt = estimate_dt_for_hyperbolic_system(space.grid_view(),
-                                                           u_0,
-                                                           flux(),
-                                                           /*boundary_data_range=*/{{0.5, 0., 0.4}, {1.5, 0.5, 0.4}});
-      if (this->space_type_ == "fv")
-        return {fv_dt, fv_dt};
-      const auto max_sup_norm = 1.25 * u_0.dofs().vector().sup_norm();
-      const auto actual_dt = XT::Common::find_largest_by_bisection(1e-15, fv_dt, [&](const auto& dt_to_test) {
-        const auto solution = this->solve(space, 250 * dt_to_test, dt_to_test);
-        for (const auto& vec : solution.vectors())
-          if (vec.sup_norm() > max_sup_norm)
-            return false;
-        return true;
-      });
-      return {fv_dt, actual_dt};
-    } else
-      return BaseType::estimate_dt(space);
-  } // ... estimate_dt(...)
-
   GP make_initial_grid() override final
   {
     return Problem::access().make_initial_grid();
@@ -187,9 +157,9 @@ protected:
         });
     if (boundary_treatment.empty()) { // The periodic case
       if (self.space_type_ == "fv")
-        return std::make_unique<AdvectionFvOperator<GV, V, m>>(space.grid_view(), numerical_flux, space, space);
+        return std::make_unique<AdvectionFvOperator<M, GV, m>>(space.grid_view(), numerical_flux, space, space);
       else
-        return std::make_unique<AdvectionDgArtificialViscosityOperator<GV, V, m>>(
+        return std::make_unique<AdvectionDgArtificialViscosityOperator<M, GV, m>>(
             space.grid_view(),
             numerical_flux,
             space,
@@ -210,7 +180,7 @@ protected:
       boundary_info->register_new_normal({1}, new XT::Grid::ImpermeableBoundary());
       const XT::Grid::ApplyOn::CustomBoundaryIntersections<GV> impermeable_wall_filter(
           *boundary_info, new XT::Grid::ImpermeableBoundary());
-      auto op = std::make_unique<AdvectionFvOperator<GV, V, m>>(space.grid_view(),
+      auto op = std::make_unique<AdvectionFvOperator<M, GV, m>>(space.grid_view(),
                                                                 numerical_flux,
                                                                 space,
                                                                 space,
@@ -229,7 +199,7 @@ protected:
       boundary_info->register_new_normal({1}, new XT::Grid::ImpermeableBoundary());
       const XT::Grid::ApplyOn::CustomBoundaryIntersections<GV> impermeable_wall_filter(
           *boundary_info, new XT::Grid::ImpermeableBoundary());
-      auto op = std::make_unique<AdvectionFvOperator<GV, V, m>>(space.grid_view(),
+      auto op = std::make_unique<AdvectionFvOperator<M, GV, m>>(space.grid_view(),
                                                                 numerical_flux,
                                                                 space,
                                                                 space,
@@ -274,7 +244,7 @@ protected:
           *boundary_info, new XT::Grid::ImpermeableBoundary());
       const XT::Grid::ApplyOn::CustomBoundaryIntersections<GV> inflow_outflow_filter(
           *boundary_info, new XT::Grid::InflowOutflowBoundary());
-      auto op = std::make_unique<AdvectionFvOperator<GV, V, m>>(
+      auto op = std::make_unique<AdvectionFvOperator<M, GV, m>>(
           space.grid_view(),
           numerical_flux,
           space,
@@ -361,10 +331,23 @@ class InviscidCompressibleFlowEulerExplicitTest : public InviscidCompressibleFlo
   using typename BaseType::V;
 
 protected:
-  XT::LA::ListVectorArray<V> solve(const S& space, const double T_end, const double dt) override final
+  InviscidCompressibleFlowEulerExplicitTest()
+    : BaseType("explicit/fixed")
+  {
+  }
+
+  XT::LA::ListVectorArray<V> solve(const S& space, const double T_end) override final
   {
     const auto u_0 = this->make_initial_values(space);
     const auto op = this->make_lhs_operator(space);
+    const auto fv_dt =
+        (this->boundary_treatment == "inflow_from_the_left_by_heuristic_euler_treatment_impermeable_wall_right")
+            ? estimate_dt_for_hyperbolic_system(
+                  space.grid_view(), u_0, this->flux(), /*boundary_data_range=*/{{0.5, 0., 0.4}, {1.5, 0.5, 0.4}})
+            : estimate_dt_for_hyperbolic_system(space.grid_view(), u_0, this->flux());
+    const auto dt = (this->space_type_ == "fv") ? fv_dt : this->estimate_fixed_explicit_dt(space);
+    this->current_data_["quantity"]["dt"] = dt;
+    this->current_data_["quantity"]["explicit_fv_dt"] = fv_dt;
     return solve_instationary_system_explicit_euler(u_0, *op, T_end, dt);
   }
 }; // class InviscidCompressibleFlowEulerExplicitTest

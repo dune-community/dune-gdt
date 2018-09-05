@@ -16,10 +16,12 @@
 #include <functional>
 #include <memory>
 
+#include <dune/common/timer.hh>
 #include <dune/grid/io/file/dgfparser/dgfparser.hh>
 
 #include <dune/xt/common/convergence-study.hh>
 #include <dune/xt/common/fvector.hh>
+#include <dune/xt/common/string.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
 #include <dune/xt/la/container.hh>
 #include <dune/xt/la/container/vector-array/list.hh>
@@ -74,12 +76,14 @@ protected:
 
 public:
   InstationaryEocStudy(const double T_end,
+                       const std::string timestepping,
                        std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualizer =
                            [](const auto& /*solution*/, const auto& /*prefix*/) { /*no visualization by default*/ },
                        const size_t num_refinements = DXTC_CONFIG_GET("num_refinements", 3),
                        const size_t num_additional_refinements_for_reference =
                            DXTC_CONFIG_GET("num_additional_refinements_for_reference", 2))
     : T_end_(T_end)
+    , timestepping_(timestepping)
     , num_refinements_(num_refinements)
     , num_additional_refinements_for_reference_(num_additional_refinements_for_reference)
     , visualize_(visualizer)
@@ -101,12 +105,18 @@ public:
 
   virtual std::vector<std::string> targets() const override
   {
-    return {"h", "dt"};
+    return {"h"};
   }
 
   virtual std::vector<std::string> norms() const override
   {
-    return {"L_infty/L_1", "L_infty/L_2", "L_2/L_2"};
+    // We currently support the following temporal norms:
+    //   L_infty
+    //   L_2
+    // and the following spatial norms:
+    //   L_1
+    //   L_2
+    return {"L_infty/L_2"};
   }
 
   virtual std::vector<std::pair<std::string, std::string>> estimates() const override
@@ -116,8 +126,15 @@ public:
 
   virtual std::vector<std::string> quantities() const override
   {
-    return {"rel mass conserv   error"}; // <- This is on purpose, see column header formatting in ConvergenceStudy.
-  }
+    std::vector<std::string> ret = {"time to solution (s)", "rel mass conserv error", "num timesteps"};
+    if (this->adaptive_timestepping()) {
+      ret.push_back("min dt");
+      ret.push_back("max dt");
+    } else {
+      ret.push_back("CFL");
+    }
+    return ret;
+  } // ... quantities(...)
 
   virtual std::string discretization_info_title() const override
   {
@@ -129,15 +146,9 @@ protected:
 
   virtual std::unique_ptr<S> make_space(const GP& current_grid) = 0;
 
-  /**
-   * Something like {some_reference_dt, actually_used_dt}, 2nd will be used.
-   */
-  virtual std::pair<double, double> estimate_dt(const S& space) = 0;
-
 public:
   virtual std::string discretization_info(const size_t refinement_level) override
   {
-    auto& self = *this;
     if (current_refinement_ != refinement_level) {
       // clear the current state
       current_grid_.reset();
@@ -157,11 +168,8 @@ public:
       current_refinement_ = refinement_level;
       current_data_.clear();
       current_data_["target"]["h"] = grid_width;
-      auto dts = self.estimate_dt(*current_space_);
-      current_data_["info"]["explicit_dt"] = dts.first;
-      current_data_["target"]["dt"] = dts.second;
-      current_data_["info"]["num_grid_elements"] = grid_size;
-      current_data_["info"]["num_dofs"] = current_space_->mapper().size();
+      current_data_["quantity"]["num_grid_elements"] = grid_size;
+      current_data_["quantity"]["num_dofs"] = current_space_->mapper().size();
     }
     const auto lfill_nicely = [&](const auto& number, const auto& len) {
       std::string ret;
@@ -175,14 +183,14 @@ public:
       }
       return ret;
     };
-    return lfill_nicely(current_data_["info"]["num_grid_elements"], 7) + " | "
-           + lfill_nicely(current_data_["info"]["num_dofs"], 7);
+    return lfill_nicely(current_data_["quantity"]["num_grid_elements"], 7) + " | "
+           + lfill_nicely(current_data_["quantity"]["num_dofs"], 7);
   } // ... discretization_info(...)
 
 protected:
   virtual std::unique_ptr<O> make_lhs_operator(const S& space) = 0;
 
-  virtual XT::LA::ListVectorArray<V> solve(const S& space, const double T_end, const double dt) = 0;
+  virtual XT::LA::ListVectorArray<V> solve(const S& space, const double T_end) = 0;
 
   virtual void compute_reference_solution()
   {
@@ -192,8 +200,8 @@ protected:
     for (size_t ref = 0; ref < num_refinements_ + num_additional_refinements_for_reference_; ++ref)
       reference_grid_->global_refine(DGFGridInfo<G>::refineStepsForHalf());
     reference_space_ = make_space(*reference_grid_);
-    reference_solution_on_reference_grid_ = std::make_unique<XT::LA::ListVectorArray<V>>(
-        solve(*reference_space_, T_end_, estimate_dt(*reference_space_).second));
+    reference_solution_on_reference_grid_ =
+        std::make_unique<XT::LA::ListVectorArray<V>>(solve(*reference_space_, T_end_));
     // visualize
     const BS reference_bochner_space(*reference_space_,
                                      time_points_from_vector_array(*reference_solution_on_reference_grid_));
@@ -216,8 +224,8 @@ public:
     // compute current solution
     const auto& current_space = *current_space_;
     Timer timer;
-    auto solution_on_current_grid = solve(current_space, T_end_, current_data_["target"]["dt"]);
-    current_data_["info"]["time_to_solution"] = timer.elapsed();
+    auto solution_on_current_grid = solve(current_space, T_end_);
+    current_data_["quantity"]["time to solution (s)"] = timer.elapsed();
     // visualize
     const BS current_bochner_space(current_space, time_points_from_vector_array(solution_on_current_grid));
     visualize_(make_discrete_bochner_function(current_bochner_space, solution_on_current_grid),
@@ -228,7 +236,9 @@ public:
     auto norms_to_compute = actual_norms;
     // - norms
     if (!norms_to_compute.empty()) {
+      auto current_data_backup = current_data_;
       self.compute_reference_solution();
+      current_data_ = current_data_backup;
       DUNE_THROW_IF(!reference_space_, InvalidStateException, "");
       const auto& reference_space = *reference_space_;
       DUNE_THROW_IF(!reference_solution_on_reference_grid_, InvalidStateException, "");
@@ -307,7 +317,11 @@ public:
     while (!quantities_to_compute.empty()) {
       const auto id = quantities_to_compute.back();
       quantities_to_compute.pop_back();
-      if (id == "rel mass conserv   error") {
+      if (id == "time to solution (s)") {
+        DUNE_THROW_IF(current_data_["quantity"].find(id) == current_data_["quantity"].end(),
+                      InvalidStateException,
+                      current_data_["quantity"]);
+      } else if (id == "rel mass conserv error") {
         const auto compute_masses = [&](const auto& vec) {
           auto func = make_discrete_function(current_space, vec);
           FieldVector<double, m> results(0);
@@ -330,7 +344,34 @@ public:
                                                              std::abs(initial_masses[ss] - current_masses[ss])
                                                                  / (initial_masses[ss] > 0. ? initial_masses[ss] : 1.));
         }
-        current_data_["quantity"]["rel mass conserv   error"] = relative_mass_conservation_errors.infinity_norm();
+        current_data_["quantity"][id] = relative_mass_conservation_errors.infinity_norm();
+      } else if (id == "num timesteps") {
+        current_data_["quantity"][id] = solution_on_current_grid.vectors().size();
+      } else if (id == "CFL") {
+        DUNE_THROW_IF(this->adaptive_timestepping(), InvalidStateException, "");
+        const auto time_points = this->time_points_from_vector_array(solution_on_current_grid);
+        const auto dt = time_points.at(1) - time_points.at(0);
+        current_data_["quantity"][id] = dt / this->extract(current_data_, "quantity", "explicit_fv_dt");
+      } else if (id == "dt") {
+        DUNE_THROW_IF(this->adaptive_timestepping(), InvalidStateException, "");
+        const auto time_points = this->time_points_from_vector_array(solution_on_current_grid);
+        current_data_["quantity"][id] = time_points.at(1) - time_points.at(0);
+      } else if (id == "min dt") {
+        double min_dt = std::numeric_limits<double>::max();
+        const auto time_points = this->time_points_from_vector_array(solution_on_current_grid);
+        for (size_t ii = 1; ii < time_points.size(); ++ii) {
+          auto dt = time_points[ii] - time_points[ii - 1];
+          min_dt = std::min(min_dt, dt);
+        }
+        current_data_["quantity"][id] = min_dt;
+      } else if (id == "max dt") {
+        double max_dt = std::numeric_limits<double>::min();
+        const auto time_points = this->time_points_from_vector_array(solution_on_current_grid);
+        for (size_t ii = 1; ii < time_points.size(); ++ii) {
+          auto dt = time_points[ii] - time_points[ii - 1];
+          max_dt = std::max(max_dt, dt);
+        }
+        current_data_["quantity"][id] = max_dt;
       } else
         DUNE_THROW(XT::Common::Exceptions::wrong_input_given,
                    "I do not know how to compute the quantity '" << id << "'!");
@@ -351,7 +392,24 @@ protected:
     return time_points;
   }
 
+  bool implicit_timestepping() const
+  {
+    auto ts = XT::Common::tokenize(timestepping_, "/");
+    DUNE_THROW_IF(ts.size() != 2, XT::Common::Exceptions::wrong_input_given, ts);
+    DUNE_THROW_IF(ts[0] != "explicit" && ts[0] != "implicit", XT::Common::Exceptions::wrong_input_given, ts[0]);
+    return ts[0] == "implicit";
+  }
+
+  bool adaptive_timestepping() const
+  {
+    auto ts = XT::Common::tokenize(timestepping_, "/");
+    DUNE_THROW_IF(ts.size() != 2, XT::Common::Exceptions::wrong_input_given, ts);
+    DUNE_THROW_IF(ts[1] != "fixed" && ts[1] != "adaptive", XT::Common::Exceptions::wrong_input_given, ts[1]);
+    return ts[1] == "adaptive";
+  }
+
   double T_end_;
+  const std::string timestepping_;
   size_t num_refinements_;
   size_t num_additional_refinements_for_reference_;
   const std::function<void(const DiscreteBochnerFunction<V, GV, m>&, const std::string&)> visualize_;
@@ -366,9 +424,9 @@ protected:
 }; // struct InstationaryEocStudy
 
 
-template <class V, class GV, size_t m>
+template <class V, class GV, size_t m, class M>
 XT::LA::ListVectorArray<V> solve_instationary_system_explicit_euler(const DiscreteFunction<V, GV, m>& initial_values,
-                                                                    const OperatorInterface<V, GV, m>& spatial_op,
+                                                                    const OperatorInterface<M, GV, m>& spatial_op,
                                                                     const double T_end,
                                                                     const double dt)
 {
@@ -379,9 +437,9 @@ XT::LA::ListVectorArray<V> solve_instationary_system_explicit_euler(const Discre
   // timestepping
   double time = 0.;
   while (time < T_end + dt) {
-    time += dt;
     const auto& u_n = solution.back().vector();
     auto u_n_plus_one = u_n - spatial_op.apply(u_n, {{"_t", {time}}, {"_dt", {dt}}}) * dt;
+    time += dt;
     solution.append(std::move(u_n_plus_one), {"_t", time});
   }
   return solution;
