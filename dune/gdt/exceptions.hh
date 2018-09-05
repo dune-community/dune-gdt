@@ -81,6 +81,10 @@ class discrete_function_error : public Exception
 {
 };
 
+class newton_error : public Exception
+{
+};
+
 
 } // namespace Exceptions
 } // namespace GDT

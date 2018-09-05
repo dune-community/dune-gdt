@@ -186,6 +186,34 @@ protected:
 }; // class LinearTransportExplicitTest
 
 
+template <class G>
+class LinearTransportImplicitTest : public LinearTransportTest<G>
+{
+protected:
+  using BaseType = LinearTransportTest<G>;
+  using typename BaseType::S;
+  using typename BaseType::V;
+
+  LinearTransportImplicitTest()
+    : BaseType("implicit/fixed")
+    , dt_factor_(1.)
+  {
+  }
+
+  XT::LA::ListVectorArray<V> solve(const S& space, const double T_end) override final
+  {
+    const auto u_0 = this->make_initial_values(space);
+    const auto op = this->make_lhs_operator(space);
+    const auto dt = dt_factor_ * this->current_data_["target"]["h"];
+    this->current_data_["quantity"]["dt"] = dt;
+    this->current_data_["quantity"]["explicit_fv_dt"] = this->estimate_fixed_explicit_fv_dt(space);
+    return solve_instationary_system_implicit_euler_newton(u_0, *op, T_end, dt);
+  }
+
+  double dt_factor_;
+}; // class LinearTransportImplicitTest
+
+
 } // namespace Test
 } // namespace GDT
 } // namespace Dune
