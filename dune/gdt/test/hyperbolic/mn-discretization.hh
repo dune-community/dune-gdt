@@ -31,7 +31,8 @@
 template <class TestCaseType>
 struct HyperbolicMnDiscretization
 {
-  Dune::FieldVector<double, 3>
+  // returns: (l1norm, l2norm, linfnorm, MPI rank)
+  std::pair<Dune::FieldVector<double, 3>, int>
   run(size_t num_save_steps = 1,
       size_t num_output_steps = 0,
       size_t num_quad_refinements = TestCaseType::RealizabilityLimiterChooserType::num_quad_refinements,
@@ -150,7 +151,8 @@ struct HyperbolicMnDiscretization
     filename += "_" + basis_functions->short_id();
     filename += "_m" + Dune::XT::Common::to_string(dimRange);
 
-    RegularizationOperatorType regularization_operator(analytical_flux, problem_imp->psi_vac() / 1e4, filename);
+    RegularizationOperatorType regularization_operator(
+        analytical_flux, problem_imp->psi_vac() * basis_functions->unit_ball_volume() / 1000, filename);
 
     RealizabilityLimiterType realizability_limiter(analytical_flux, *basis_functions, epsilon);
     ReconstructionFvOperatorType reconstruction_fv_operator(
@@ -176,10 +178,11 @@ struct HyperbolicMnDiscretization
                       visualizer,
                       basis_functions->stringifier());
 
-    FieldVector<double, 3> ret(0);
-    double& l1norm = ret[0];
-    double& l2norm = ret[1];
-    double& linfnorm = ret[2];
+    auto ret = std::make_pair(FieldVector<double, 3>(0.), int(0));
+    double& l1norm = ret.first[0];
+    double& l2norm = ret.first[1];
+    double& linfnorm = ret.first[2];
+    ret.second = grid_layer.comm().rank();
     const auto& current_sol = timestepper.current_solution();
     for (const auto& entity : elements(grid_layer, Dune::Partitions::interior)) {
       const auto local_sol = current_sol.local_function(entity);

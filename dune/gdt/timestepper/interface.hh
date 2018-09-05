@@ -256,7 +256,8 @@ public:
         ++save_step_counter;
       }
       if (num_output_steps && (Dune::XT::Common::FloatCmp::ge(t, next_output_time) || num_output_steps == size_t(-1))) {
-        std::cout << "time step " << time_step_counter << " done, time =" << t << ", current dt= " << dt << std::endl;
+        if (current_solution().space().grid_layer().comm().rank() == 0)
+          std::cout << "time step " << time_step_counter << " done, time =" << t << ", current dt= " << dt << std::endl;
         next_output_time += output_interval;
       }
     } // while (t < t_end)
