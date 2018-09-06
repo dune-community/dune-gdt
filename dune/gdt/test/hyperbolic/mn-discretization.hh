@@ -205,7 +205,7 @@ struct HyperbolicMnTest : public HyperbolicMnDiscretization<TestCaseType>, publi
 {
   void run()
   {
-    auto norms = HyperbolicMnDiscretization<TestCaseType>::run();
+    auto norms = HyperbolicMnDiscretization<TestCaseType>::run().first;
     const double l1norm = norms[0];
     const double l2norm = norms[1];
     const double linfnorm = norms[2];
