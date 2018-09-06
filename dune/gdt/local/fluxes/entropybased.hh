@@ -49,9 +49,9 @@ template <class StateRangeType, class VectorType>
 class EntropyLocalCache
 {
 public:
-  typedef typename std::map<StateRangeType, VectorType, XT::Common::FieldVectorLess> MapType;
-  typedef typename MapType::iterator IteratorType;
-  typedef typename MapType::const_iterator ConstIteratorType;
+  using MapType = typename std::map<StateRangeType, VectorType, XT::Common::FieldVectorLess>;
+  using IteratorType = typename MapType::iterator;
+  using ConstIteratorType = typename MapType::const_iterator;
   using RangeFieldType = typename StateRangeType::value_type;
 
   EntropyLocalCache(const size_t capacity)
@@ -142,20 +142,20 @@ class EntropyBasedLocalFlux
                                                              BasisfunctionImp::dimRange,
                                                              BasisfunctionImp::dimFlux>
 {
-  typedef typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
-                                                                   typename BasisfunctionImp::DomainFieldType,
-                                                                   BasisfunctionImp::dimFlux,
-                                                                   U,
-                                                                   0,
-                                                                   typename BasisfunctionImp::RangeFieldType,
-                                                                   BasisfunctionImp::dimRange,
-                                                                   BasisfunctionImp::dimFlux>
-      BaseType;
-  typedef EntropyBasedLocalFlux ThisType;
+  using BaseType =
+      typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                               typename BasisfunctionImp::DomainFieldType,
+                                                               BasisfunctionImp::dimFlux,
+                                                               U,
+                                                               0,
+                                                               typename BasisfunctionImp::RangeFieldType,
+                                                               BasisfunctionImp::dimRange,
+                                                               BasisfunctionImp::dimFlux>;
+  using ThisType = EntropyBasedLocalFlux;
 
 public:
-  typedef BasisfunctionImp BasisfunctionType;
-  typedef GridLayerImp GridLayerType;
+  using BasisfunctionType = BasisfunctionImp;
+  using GridLayerType = GridLayerImp;
   using typename BaseType::EntityType;
   using typename BaseType::DomainType;
   using typename BaseType::DomainFieldType;
@@ -168,13 +168,69 @@ public:
   using BaseType::dimDomain;
   using BaseType::dimRange;
   using BaseType::dimRangeCols;
-  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
-  using VectorType = FieldVector<RangeFieldType, dimRange>;
+  // make matrices a little larger to align to 64 byte boundary
+  static constexpr size_t matrix_num_cols = dimRange % 8 ? dimRange : dimRange + (8 - dimRange % 8);
+  using MatrixType = FieldMatrix<RangeFieldType, dimRange, matrix_num_cols>;
+  using VectorType = FieldVector<RangeFieldType, matrix_num_cols>;
   using BasisValuesMatrixType = XT::LA::CommonDenseMatrix<RangeFieldType>;
-  typedef Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
-  typedef std::pair<VectorType, RangeFieldType> AlphaReturnType;
-  typedef EntropyLocalCache<StateRangeType, VectorType> LocalCacheType;
+  using QuadratureRuleType = Dune::QuadratureRule<DomainFieldType, dimDomain>;
+  using AlphaReturnType = std::pair<VectorType, RangeFieldType>;
+  using LocalCacheType = EntropyLocalCache<StateRangeType, VectorType>;
   static const size_t cache_size = 4 * dimDomain + 2;
+
+  // get permutation instead of sorting directly to be able to sort two vectors the same way
+  // see
+  // https://stackoverflow.com/questions/17074324/how-can-i-sort-two-vectors-in-the-same-way-with-criteria-that-uses-only-one-of
+  template <typename T, typename Compare>
+  std::vector<std::size_t> get_sort_permutation(const std::vector<T>& vec, const Compare& compare)
+  {
+    std::vector<std::size_t> p(vec.size());
+    std::iota(p.begin(), p.end(), 0);
+    std::sort(p.begin(), p.end(), [&](std::size_t i, std::size_t j) { return compare(vec[i], vec[j]); });
+    return p;
+  }
+
+  template <typename T>
+  void apply_permutation_in_place(std::vector<T>& vec, const std::vector<std::size_t>& p)
+  {
+    std::vector<bool> done(vec.size());
+    for (std::size_t i = 0; i < vec.size(); ++i) {
+      if (done[i]) {
+        continue;
+      }
+      done[i] = true;
+      std::size_t prev_j = i;
+      std::size_t j = p[i];
+      while (i != j) {
+        std::swap(vec[prev_j], vec[j]);
+        done[j] = true;
+        prev_j = j;
+        j = p[j];
+      }
+    }
+  }
+
+  // Joins duplicate quadpoints, vectors have to be sorted!
+  void join_duplicate_quadpoints(std::vector<DomainType>& quad_points, std::vector<RangeFieldType>& quad_weights)
+  {
+    // Index of first quad_point of several quad_points with the same position
+    size_t curr_index = 0;
+    std::vector<size_t> indices_to_remove;
+    for (size_t ll = 1; ll < quad_weights.size(); ++ll) {
+      if (XT::Common::FloatCmp::eq(quad_points[curr_index], quad_points[ll])) {
+        quad_weights[curr_index] += quad_weights[ll];
+        indices_to_remove.push_back(ll);
+      } else {
+        curr_index = ll;
+      }
+    } // ll
+    assert(indices_to_remove.size() < std::numeric_limits<int>::max());
+    // remove duplicate points, from back to front to avoid invalidating indices
+    for (int ll = static_cast<int>(indices_to_remove.size()) - 1; ll >= 0; --ll) {
+      quad_points.erase(quad_points.begin() + indices_to_remove[ll]);
+      quad_weights.erase(quad_weights.begin() + indices_to_remove[ll]);
+    }
+  }
 
   explicit EntropyBasedLocalFlux(
       const BasisfunctionType& basis_functions,
@@ -188,13 +244,14 @@ public:
       const size_t k_max = 1000,
       const RangeFieldType epsilon = std::pow(2, -52),
       const MatrixType& T_minus_one = XT::LA::eye_matrix<MatrixType>(dimRange,
-                                                                     XT::LA::dense_pattern(dimRange, dimRange)),
+                                                                     matrix_num_cols,
+                                                                     XT::LA::dense_pattern(dimRange, matrix_num_cols)),
       const std::string name = static_id())
     : index_set_(grid_layer.indexSet())
     , basis_functions_(basis_functions)
     , quad_points_(basis_functions_.quadratures().merged().size())
     , quad_weights_(quad_points_.size())
-    , M_(dimRange, quad_points_.size(), 0., 0)
+    , M_(quad_points_.size(), matrix_num_cols, 0., 0)
     , tau_(tau)
     , epsilon_gamma_(epsilon_gamma)
     , chi_(chi)
@@ -212,10 +269,22 @@ public:
     for (const auto& quad_point : basis_functions_.quadratures().merged()) {
       quad_points_[ll] = quad_point.position();
       quad_weights_[ll] = quad_point.weight();
+      ++ll;
+    }
+    // Join duplicate quad_points. For that purpose, first sort the vectors
+    const auto permutation = get_sort_permutation(quad_points_, XT::Common::FieldVectorFloatLess{});
+    apply_permutation_in_place(quad_points_, permutation);
+    apply_permutation_in_place(quad_weights_, permutation);
+    // Now join duplicate quad_points by removing all quad_points with the same position except one and adding the
+    // weights of the removed points to the remaining point
+    join_duplicate_quadpoints(quad_points_, quad_weights_);
+    assert(quad_points_.size() == quad_weights_.size());
+    // evaluate basis functions and store in matrix
+    M_.resize(quad_points_.size(), matrix_num_cols);
+    for (ll = 0; ll < quad_points_.size(); ++ll) {
       const auto val = basis_functions_.evaluate(quad_points_[ll]);
       for (size_t ii = 0; ii < dimRange; ++ii)
-        M_.set_entry(ii, ll, val[ii]);
-      ++ll;
+        M_.set_entry(ll, ii, val[ii]);
     }
   }
 
@@ -400,12 +469,10 @@ public:
                                    std::vector<RangeFieldType>& scalar_products) const
     {
       const size_t num_quad_points = quad_points_.size();
-      const auto& M_backend = M.backend();
       std::fill(scalar_products.begin(), scalar_products.end(), 0.);
-      for (size_t ii = 0; ii < dimRange; ++ii) {
-        const auto factor = beta_in[ii];
-        for (size_t ll = 0; ll < num_quad_points; ++ll)
-          scalar_products[ll] += M_backend.get_entry_ref(ii, ll) * factor;
+      for (size_t ll = 0; ll < num_quad_points; ++ll) {
+        const auto* basis_ll = M.get_ptr(ll);
+        scalar_products[ll] = std::inner_product(beta_in.begin(), beta_in.end(), basis_ll, 0.);
       }
     }
 
@@ -436,30 +503,39 @@ public:
       apply_exponential(work_vec);
       std::fill(ret.begin(), ret.end(), 0.);
       const size_t num_quad_points = quad_weights_.size();
-      const auto& M1_backend = M1.backend();
-      for (size_t ii = 0; ii < (only_first_component ? 1 : dimRange); ++ii) {
-        RangeFieldType result(0.);
-        for (size_t ll = 0; ll < num_quad_points; ++ll)
-          result += M1_backend.get_entry_ref(ii, ll) * work_vec[ll] * quad_weights_[ll];
-        ret[ii] = result;
-      } // ii
+      for (size_t ll = 0; ll < num_quad_points; ++ll) {
+        const auto factor_ll = work_vec[ll] * quad_weights_[ll];
+        const auto* basis_ll = M1.get_ptr(ll);
+        for (size_t ii = 0; ii < (only_first_component ? 1 : dimRange); ++ii)
+          ret[ii] += basis_ll[ii] * factor_ll;
+      } // ll
+    }
+
+    void copy_transposed(const MatrixType& T_k, MatrixType& T_k_trans) const
+    {
+      for (size_t ii = 0; ii < dimRange; ++ii)
+        for (size_t jj = 0; jj <= ii; ++jj)
+          T_k_trans[jj][ii] = T_k[ii][jj];
     }
 
     void apply_inverse_matrix(const MatrixType& T_k, BasisValuesMatrixType& M) const
     {
+      // Calculate the transpose here instead of passing the matrix to dtrsm and using CblasTrans as this is much faster
+      thread_local auto T_k_trans = std::make_unique<MatrixType>(0.);
+      copy_transposed(T_k, *T_k_trans);
       assert(quad_points_.size() < std::numeric_limits<int>::max());
       XT::Common::Blas::dtrsm(XT::Common::Blas::row_major(),
-                              XT::Common::Blas::left(),
-                              XT::Common::Blas::lower(),
+                              XT::Common::Blas::right(),
+                              XT::Common::Blas::upper(),
                               XT::Common::Blas::no_trans(),
                               XT::Common::Blas::non_unit(),
-                              dimRange,
                               static_cast<int>(quad_points_.size()),
-                              1.,
-                              &(T_k[0][0]),
                               dimRange,
+                              1.,
+                              &((*T_k_trans)[0][0]),
+                              matrix_num_cols,
                               M.data(),
-                              static_cast<int>(quad_points_.size()));
+                              matrix_num_cols);
     }
 
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
@@ -639,7 +715,7 @@ public:
       for (size_t ll = 0; ll < quad_weights_.size(); ++ll) {
         const auto factor = work_vecs[ll] * quad_weights_[ll] * quad_points_[ll][col];
         for (size_t ii = 0; ii < dimRange; ++ii)
-          ret[ii] += M_.get_entry(ii, ll) * factor;
+          ret[ii] += M_.get_entry(ll, ii) * factor;
       } // ll
     } // void evaluate_col(...)
 
@@ -742,18 +818,20 @@ public:
       calculate_scalar_products(alpha, M, work_vec);
       apply_exponential(work_vec);
       const size_t num_quad_points = quad_weights_.size();
-      for (size_t ll = 0; ll < num_quad_points; ++ll)
-        work_vec[ll] *= quad_weights_[ll];
       // matrix is symmetric, we only use lower triangular part
-      const auto& M_backend = M.backend();
-      for (size_t ii = 0; ii < dimRange; ++ii) {
-        for (size_t kk = 0; kk <= ii; ++kk) {
-          RangeFieldType result(0);
-          for (size_t ll = 0; ll < num_quad_points; ++ll)
-            result += M_backend.get_entry_ref(ii, ll) * M_backend.get_entry_ref(kk, ll) * work_vec[ll];
-          H[ii][kk] = result;
-        } // kk
-      } // ii
+      for (size_t ll = 0; ll < num_quad_points; ++ll) {
+        auto factor_ll = work_vec[ll] * quad_weights_[ll];
+        const auto* basis_ll = M.get_ptr(ll);
+        for (size_t ii = 0; ii < dimRange; ++ii) {
+          auto* H_row = &(H[ii][0]);
+          const auto factor_ll_ii = basis_ll[ii] * factor_ll;
+          if (!XT::Common::is_zero(factor_ll_ii)) {
+            for (size_t kk = 0; kk <= ii; ++kk) {
+              H_row[kk] += basis_ll[kk] * factor_ll_ii;
+            } // kk
+          }
+        } // ii
+      } // ll
     } // void calculate_hessian(...)
 
     // J = df/dalpha is the derivative of the flux with respect to alpha.
@@ -762,7 +840,7 @@ public:
     // vector-valued),
     // the derivative is the vector of matrices (df_1/dalpha, df_2/dalpha, ...)
     // this function returns the dd-th matrix df_dd/dalpha of J
-    // assumes work_vecs already contains the needed exp(alpha * m) * quad_weights values
+    // assumes work_vecs already contains the needed exp(alpha * m) values
     void calculate_J(const BasisValuesMatrixType& M,
                      Dune::FieldMatrix<RangeFieldType, dimRange, StateType::dimRange>& J_dd,
                      const size_t dd) const
@@ -770,17 +848,18 @@ public:
       assert(dd < dimRangeCols);
       const auto& work_vecs = working_storage();
       std::fill(J_dd.begin(), J_dd.end(), 0);
-      const auto& M_backend = M.backend();
       const size_t num_quad_points = quad_points_.size();
-      for (size_t ii = 0; ii < dimRange; ++ii) {
-        for (size_t kk = 0; kk <= ii; ++kk) {
-          RangeFieldType result(0.);
-          for (size_t ll = 0; ll < num_quad_points; ++ll)
-            result += M_backend.get_entry_ref(ii, ll) * M_backend.get_entry_ref(kk, ll) * work_vecs[ll]
-                      * quad_points_[ll][dd];
-          J_dd[ii][kk] = result;
-        } // kk
-      } // ii
+      for (size_t ll = 0; ll < num_quad_points; ++ll) {
+        const auto factor_ll = work_vecs[ll] * quad_points_[ll][dd] * quad_weights_[ll];
+        const auto* basis_ll = M.get_ptr(ll);
+        for (size_t ii = 0; ii < dimRange; ++ii) {
+          const auto factor_ll_ii = factor_ll * basis_ll[ii];
+          if (!XT::Common::is_zero(factor_ll_ii)) {
+            for (size_t kk = 0; kk <= ii; ++kk)
+              J_dd[ii][kk] += basis_ll[kk] * factor_ll_ii;
+          }
+        } // ii
+      } // ll
       // symmetric update for upper triangular part of J
       for (size_t mm = 0; mm < dimRange; ++mm)
         for (size_t nn = mm + 1; nn < dimRange; ++nn)
@@ -898,8 +977,9 @@ public:
       const auto position = quad_points_[ll][dd];
       RangeFieldType factor = position * n_ij[dd] > 0. ? std::exp(work_vecs[0][ll]) : std::exp(work_vecs[1][ll]);
       factor *= quad_weights_[ll] * position;
+      const auto* basis_ll = M_.get_ptr(ll);
       for (size_t ii = 0; ii < dimRange; ++ii)
-        ret[ii] += M_.get_entry(ii, ll) * factor;
+        ret[ii] += basis_ll[ii] * factor;
     } // ll
     ret *= n_ij[dd];
     return ret;
@@ -958,19 +1038,19 @@ class EntropyBasedLocalFlux<PartialMomentBasis<typename U::DomainFieldType,
                                                              U::dimRange,
                                                              GridLayerImp::dimension>
 {
-  typedef typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
-                                                                   typename U::DomainFieldType,
-                                                                   GridLayerImp::dimension,
-                                                                   U,
-                                                                   0,
-                                                                   typename U::RangeFieldType,
-                                                                   U::dimRange,
-                                                                   GridLayerImp::dimension>
-      BaseType;
-  typedef EntropyBasedLocalFlux ThisType;
+  using BaseType =
+      typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                               typename U::DomainFieldType,
+                                                               GridLayerImp::dimension,
+                                                               U,
+                                                               0,
+                                                               typename U::RangeFieldType,
+                                                               U::dimRange,
+                                                               GridLayerImp::dimension>;
+  using ThisType = EntropyBasedLocalFlux;
 
 public:
-  typedef GridLayerImp GridLayerType;
+  using GridLayerType = GridLayerImp;
   using typename BaseType::EntityType;
   using typename BaseType::DomainType;
   using typename BaseType::DomainFieldType;
@@ -988,15 +1068,15 @@ public:
   using BlockMatrixType = XT::Common::BlockedFieldMatrix<RangeFieldType, num_blocks, block_size>;
   using BlockVectorType = XT::Common::BlockedFieldVector<RangeFieldType, num_blocks, block_size>;
   using BasisValuesMatrixType = FieldVector<XT::LA::CommonDenseMatrix<RangeFieldType>, num_blocks>;
-  typedef Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
+  using QuadratureRuleType = Dune::QuadratureRule<DomainFieldType, dimDomain>;
   using QuadraturePointsType =
       FieldVector<std::vector<DomainType, boost::alignment::aligned_allocator<DomainType, 64>>, num_blocks>;
   using QuadratureWeightsType =
       FieldVector<std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>, num_blocks>;
-  typedef PartialMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange_or_refinements, 1, dimDomain>
-      BasisfunctionType;
-  typedef std::pair<BlockVectorType, RangeFieldType> AlphaReturnType;
-  typedef EntropyLocalCache<StateRangeType, BlockVectorType> LocalCacheType;
+  using BasisfunctionType =
+      PartialMomentBasis<DomainFieldType, dimDomain, RangeFieldType, dimRange_or_refinements, 1, dimDomain>;
+  using AlphaReturnType = std::pair<BlockVectorType, RangeFieldType>;
+  using LocalCacheType = EntropyLocalCache<StateRangeType, BlockVectorType>;
   using TemporaryVectorType =
       FieldVector<std::vector<RangeFieldType, boost::alignment::aligned_allocator<RangeFieldType, 64>>, num_blocks>;
   static const size_t cache_size = 4 * dimDomain + 2;
@@ -1756,12 +1836,13 @@ private:
 };
 #endif
 
+
 #if 0
 /**
  * Specialization of EntropyBasedLocalFlux for 3D Hatfunctions
  */
 template <class GridLayerImp, class U, size_t refinements>
-class EntropyBasedLocalFlux<Hyperbolic::Problems::HatFunctionMomentBasis<typename U::DomainFieldType,
+class EntropyBasedLocalFlux<HatFunctionMomentBasis<typename U::DomainFieldType,
                                                                3,
                                                                typename U::RangeFieldType,
                                                                refinements,
@@ -1789,7 +1870,7 @@ class EntropyBasedLocalFlux<Hyperbolic::Problems::HatFunctionMomentBasis<typenam
   using ThisType = EntropyBasedLocalFlux;
 
 public:
-  typedef GridLayerImp GridLayerType;
+  using  GridLayerType = GridLayerImp;
   using typename BaseType::EntityType;
   using typename BaseType::DomainType;
   using typename BaseType::DomainFieldType;
@@ -1806,9 +1887,8 @@ public:
   using LocalVectorType = XT::Common::FieldVector<RangeFieldType, 3>;
   using LocalMatrixType = XT::Common::FieldMatrix<RangeFieldType, 3, 3>;
   using BasisValuesMatrixType = std::vector<LocalVectorType>;
-  typedef Dune::QuadratureRule<DomainFieldType, dimDomain> QuadratureRuleType;
-  typedef Hyperbolic::Problems::HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, refinements, 1, dimDomain>
-      BasisfunctionType;
+  using  QuadratureRuleType = Dune::QuadratureRule<DomainFieldType, dimDomain>;
+  using  BasisfunctionType = HatFunctionMomentBasis<DomainFieldType, dimDomain, RangeFieldType, refinements, 1, dimDomain>;
   static constexpr size_t max_order = 200;
   // storage for precalculated factors for f = 1
   // index1: face, index2: which of the vertices (1, 2 or 3) belongs to alpha_3, index3: k, index4: k1
@@ -2597,16 +2677,16 @@ class EntropyBasedLocalFlux<HatFunctionMomentBasis<typename U::DomainFieldType,
                                                              U::dimRange,
                                                              1>
 {
-  typedef typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
-                                                                   typename U::DomainFieldType,
-                                                                   GridLayerImp::dimension,
-                                                                   U,
-                                                                   0,
-                                                                   typename U::RangeFieldType,
-                                                                   U::dimRange,
-                                                                   1>
-      BaseType;
-  typedef EntropyBasedLocalFlux ThisType;
+  using BaseType =
+      typename XT::Functions::LocalizableFluxFunctionInterface<typename GridLayerImp::template Codim<0>::Entity,
+                                                               typename U::DomainFieldType,
+                                                               GridLayerImp::dimension,
+                                                               U,
+                                                               0,
+                                                               typename U::RangeFieldType,
+                                                               U::dimRange,
+                                                               1>;
+  using ThisType = EntropyBasedLocalFlux;
 
 public:
   using typename BaseType::EntityType;
