@@ -74,7 +74,7 @@ public:
     DynamicVector<FieldType> evaluation_result(size, 0.); // \todo: make mutable member, after SMP refactor
     // loop over all quadrature points
     for (const auto& quadrature_point : quadrature) {
-      const auto xx = quadrature_point.position();
+      const auto& xx = quadrature_point.position();
       // integration factors
       const auto integration_factor = entity.geometry().integrationElement(xx);
       const auto quadrature_weight = quadrature_point.weight();
