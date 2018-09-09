@@ -37,7 +37,7 @@ XT::Common::Configuration hyperbolic_default_eigensolver_options()
   using EigenSolverOptionsType = typename XT::LA::EigenSolverOptions<MatImp>;
   using MatrixInverterOptionsType = typename XT::LA::MatrixInverterOptions<MatImp>;
   XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options(EigenSolverOptionsType::types()[0]);
-  //        XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options("shifted_qr");
+  //  XT::Common::Configuration eigensolver_options = EigenSolverOptionsType::options("shifted_qr");
   eigensolver_options["assert_eigendecomposition"] = "1e-6";
   eigensolver_options["assert_real_eigendecomposition"] = "1e-6";
   eigensolver_options["disable_checks"] =
@@ -348,31 +348,10 @@ public:
   using LocalV = typename XT::Common::VectorAbstraction<LocalVectorType>;
 
   BlockedJacobianWrapper()
-    : work_(1)
   {
+    std::fill_n(&(eigenvalues_[0][0]), dimDomain * num_blocks, std::vector<double>(block_size, 0.));
     jacobian() = std::make_unique<JacobianType>();
     nonblocked_jacobians_ = std::make_unique<FieldVector<FieldMatrix<RangeFieldType, dimRange, dimRange>, dimDomain>>();
-#if HAVE_MKL || HAVE_LAPACKE
-    // get optimal working size in work[0] (requested by lwork = -1)
-    int info = XT::Common::Lapacke::dgeev_work(XT::Common::Lapacke::row_major(),
-                                               /*do_not_compute_left_eigenvectors: */ 'N',
-                                               /*compute_right_eigenvectors: */ 'V',
-                                               static_cast<int>(block_size),
-                                               LocalM::data(jacobian(0).block(0)),
-                                               static_cast<int>(block_size),
-                                               LocalV::data(eigenvalues_[0].block(0)),
-                                               &(dummy_complex_eigenvalues_[0]),
-                                               nullptr,
-                                               static_cast<int>(block_size),
-                                               LocalM::data(eigenvectors_[0].block(0)),
-                                               static_cast<int>(block_size),
-                                               work_.data(),
-                                               -1);
-    if (info != 0)
-      DUNE_THROW(Dune::XT::LA::Exceptions::eigen_solver_failed, "The lapack backend reported '" << info << "'!");
-    assert(work_[0] >= 0.);
-    work_.resize(static_cast<size_t>(work_[0] + 0.5));
-#endif
   }
 
   using BaseType::jacobian;
@@ -386,7 +365,7 @@ public:
         const auto trace = jac[0][0] + jac[1][1];
         const auto det = jac[0][0] * jac[1][1] - jac[0][1] * jac[1][0];
         const auto sqrt_val = std::sqrt(0.25 * trace * trace - det);
-        auto& eigvals = eigenvalues_[dd].block(jj);
+        auto& eigvals = eigenvalues_[dd][jj];
         eigvals[0] = 0.5 * trace + sqrt_val;
         eigvals[1] = 0.5 * trace - sqrt_val;
         auto& eigvecs = eigenvectors_[dd].block(jj);
@@ -417,28 +396,8 @@ public:
             eigvecs[row][col] /= two_norm;
         }
       } else {
-#if HAVE_MKL || HAVE_LAPACKE
-        int info = XT::Common::Lapacke::dgeev_work(XT::Common::Lapacke::row_major(),
-                                                   /*do_not_compute_left_eigenvectors: */ 'N',
-                                                   /*compute_right_eigenvectors: */ 'V',
-                                                   static_cast<int>(block_size),
-                                                   LocalM::data(jacobian(dd).block(jj)),
-                                                   static_cast<int>(block_size),
-                                                   LocalV::data(eigenvalues_[dd].block(jj)),
-                                                   &(dummy_complex_eigenvalues_[0]),
-                                                   nullptr,
-                                                   static_cast<int>(block_size),
-                                                   LocalM::data(eigenvectors_[dd].block(jj)),
-                                                   static_cast<int>(block_size),
-                                                   work_.data(),
-                                                   static_cast<int>(work_.size()));
-        if (info != 0)
-          DUNE_THROW(Dune::XT::LA::Exceptions::eigen_solver_failed, "The lapack backend reported '" << info << "'!");
-#else // HAVE_MKL || HAVE_LAPACKE
-        static XT::Common::Configuration eigensolver_options = hyperbolic_default_eigensolver_options<MatrixType>();
-        const auto eigensolver = EigenSolverType(jacobian(dd).block(jj), &eigensolver_options);
-        eigenvectors_[dd].block(jj) = eigensolver.real_eigenvectors();
-#endif // HAVE_MKL || HAVE_LAPACKE
+        XT::LA::internal::fmatrix_compute_real_eigenvalues_and_real_right_eigenvectors_using_qr(
+            jacobian(dd).block(jj), eigenvalues_[dd][jj], eigenvectors_[dd].block(jj));
       } // else (block_size == 2)
       QR_[dd].block(jj) = eigenvectors_[dd].block(jj);
       XT::LA::qr(QR_[dd].block(jj), tau_[dd].block(jj), permutations_[dd].block(jj));
@@ -489,11 +448,9 @@ public:
   }
 
 protected:
-  std::vector<RangeFieldType> work_;
   std::unique_ptr<FieldVector<FieldMatrix<RangeFieldType, dimRange, dimRange>, dimDomain>> nonblocked_jacobians_;
   using BaseType::computed_;
-  FieldVector<VectorType, dimDomain> eigenvalues_;
-  FieldVector<RangeFieldType, dimRange> dummy_complex_eigenvalues_;
+  FieldVector<FieldVector<std::vector<double>, num_blocks>, dimDomain> eigenvalues_;
   FieldVector<MatrixType, dimDomain> eigenvectors_;
   FieldVector<MatrixType, dimDomain> QR_;
   FieldVector<VectorType, dimDomain> tau_;
