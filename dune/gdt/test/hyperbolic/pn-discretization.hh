@@ -217,7 +217,6 @@ struct HyperbolicPnDiscretization
     if ((num_quad_refinements == size_t(-1) || quad_order == size_t(-1)) && (num_quad_refinements != quad_order))
       std::cerr << "You specified either num_quad_refinements or quad_order, please also specify the other one!"
                 << std::endl;
-    ;
     std::shared_ptr<const BasisfunctionType> basis_functions =
         (num_quad_refinements == size_t(-1) || quad_order == size_t(-1))
             ? std::make_shared<const BasisfunctionType>()

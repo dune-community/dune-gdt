@@ -1653,9 +1653,7 @@ public:
         DUNE_THROW(Dune::NotImplemented, "You are missing Qhull!");
       }
 
-      static bool is_realizable(const BlockVectorType& /*u*/,
-                                const RangeFieldType /*eps*/,
-                                const BasisfunctionType& /*basis_functions*/)
+      static bool is_realizable(const BlockVectorType& /*u*/, const BasisfunctionType& /*basis_functions*/)
       {
         DUNE_THROW(Dune::NotImplemented, "You are missing Qhull!");
         return false;
