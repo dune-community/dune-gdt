@@ -27,8 +27,8 @@ template <class BasisfunctionImp, class GridLayerImp, class U_>
 class KineticTransportEquation : public KineticEquationImplementationInterface<BasisfunctionImp, GridLayerImp, U_>,
                                  public XT::Common::ParametricInterface
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> ThisType;
-  typedef KineticEquationImplementationInterface<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  using ThisType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
+  using BaseType = KineticEquationImplementationInterface<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
   using typename BaseType::BasisfunctionType;

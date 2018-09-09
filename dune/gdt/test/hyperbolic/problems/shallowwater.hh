@@ -39,8 +39,8 @@ template <class E, class D, class U, size_t d = E::dimension>
 class ShallowWater : public ProblemBase<E, D, d, U, typename U::RangeFieldType, 3>
 {
   static_assert(d == 2, "This is the specialization for two dimension!");
-  typedef ShallowWater<E, D, U, d> ThisType;
-  typedef ProblemBase<E, D, d, U, typename U::RangeFieldType, 3> BaseType;
+  using ThisType = ShallowWater<E, D, U, d>;
+  using BaseType = ProblemBase<E, D, d, U, typename U::RangeFieldType, 3>;
 
 public:
   static const bool linear = false;
@@ -162,8 +162,8 @@ public:
 template <class E, class D, class U>
 class ShallowWater<E, D, U, 1> : public ProblemBase<E, D, 1, U, typename U::RangeFieldType, 2>
 {
-  typedef ShallowWater<E, D, U, 1> ThisType;
-  typedef ProblemBase<E, D, 1, U, typename U::RangeFieldType, 2> BaseType;
+  using ThisType = ShallowWater<E, D, U, 1>;
+  using BaseType = ProblemBase<E, D, 1, U, typename U::RangeFieldType, 2>;
 
 public:
   static const bool linear = false;
@@ -253,7 +253,7 @@ public:
 
   static InitialValueType* create_initial_values(const XT::Common::Configuration& grid_cfg)
   {
-    typedef typename ActualInitialValueType::LocalizableFunctionType LambdaFunctionType;
+    using LambdaFunctionType = typename ActualInitialValueType::LocalizableFunctionType;
     const DomainType lower_left = XT::Common::from_string<DomainType>(grid_cfg["lower_left"]);
     const DomainType upper_right = XT::Common::from_string<DomainType>(grid_cfg["upper_right"]);
     const size_t num_regions = 5;
@@ -306,22 +306,34 @@ class ShallowWaterTestCase
                                                                                R,
                                                                                2,
                                                                                1,
-                                                                               GDT::Backends::gdt>::type>>
+                                                                               GDT::Backends::gdt,
+                                                                               XT::LA::default_backend,
+                                                                               XT::Grid::Layers::leaf,
+                                                                               true
+
+                                                                               >::type>>
 {
-  typedef typename G::template Codim<0>::Entity E;
-  typedef typename G::ctype D;
+  using E = typename G::template Codim<0>::Entity;
+  using D = typename G::ctype;
   static const size_t d = G::dimension;
 
 public:
   static const size_t dimRange = 2;
   static const size_t dimRangeCols = 1;
-  typedef
-      typename internal::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, 2, 1, GDT::Backends::gdt>::type
-          U;
-  typedef typename Problems::ShallowWater<E, D, U> ProblemType;
+  using U = typename internal::DiscreteFunctionProvider<G,
+                                                        GDT::SpaceType::product_fv,
+                                                        0,
+                                                        R,
+                                                        2,
+                                                        1,
+                                                        GDT::Backends::gdt,
+                                                        XT::LA::default_backend,
+                                                        XT::Grid::Layers::leaf,
+                                                        true>::type;
+  using ProblemType = typename Problems::ShallowWater<E, D, U>;
 
 private:
-  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
+  using BaseType = typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType>;
 
 public:
   using typename BaseType::GridType;

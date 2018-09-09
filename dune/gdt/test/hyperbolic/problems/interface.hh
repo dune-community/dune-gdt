@@ -54,7 +54,7 @@ public:
   using StateRangeType = typename StateType::RangeType;
   using RangeType = typename InitialValueType::RangeType;
   using DomainType = typename InitialValueType::DomainType;
-  using BoundaryValueType = LocalizableBoundaryValueInterface<GridLayerType, RangeType>;
+  using BoundaryValueType = LocalizableBoundaryValueInterface<EntityType, IntersectionType, RangeType>;
   using SolutionType = DirichletBoundaryValueType;
 
   virtual ~ProblemInterface()

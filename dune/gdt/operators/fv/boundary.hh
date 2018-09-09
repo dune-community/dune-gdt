@@ -22,15 +22,15 @@ namespace Dune {
 namespace GDT {
 
 
-template <class GridLayerImp, class RangeImp>
+template <class EntityImp, class IntersectionImp, class RangeImp>
 class LocalBoundaryValueInterface
 {
 public:
-  using GridLayerType = GridLayerImp;
+  using EntityType = EntityImp;
+  using IntersectionType = IntersectionImp;
   using RangeType = RangeImp;
-  using IntersectionType = typename GridLayerType::Intersection;
-  using DomainFieldType = typename GridLayerType::ctype;
-  static const size_t dimDomain = GridLayerType::dimension;
+  using DomainFieldType = typename EntityType::Geometry::ctype;
+  static const size_t dimDomain = EntityType::dimension;
   using DomainType = FieldVector<DomainFieldType, dimDomain>;
   using BoundaryInfoType = XT::Grid::BoundaryInfo<IntersectionType>;
   using RangeFieldType = typename RangeType::field_type;
@@ -52,19 +52,19 @@ protected:
 };
 
 
-template <class GridLayerImp, class RangeImp>
+template <class EntityImp, class IntersectionImp, class RangeImp>
 class LocalizableBoundaryValueInterface
 {
 public:
-  using GridLayerType = GridLayerImp;
+  using EntityType = EntityImp;
+  using IntersectionType = IntersectionImp;
   using RangeType = RangeImp;
-  using LocalBoundaryValueInterfaceType = LocalBoundaryValueInterface<GridLayerType, RangeType>;
+  using LocalBoundaryValueInterfaceType = LocalBoundaryValueInterface<EntityType, IntersectionType, RangeType>;
   using BoundaryInfoType = typename LocalBoundaryValueInterfaceType::BoundaryInfoType;
   using DomainFieldType = typename LocalBoundaryValueInterfaceType::DomainFieldType;
   using DomainType = typename LocalBoundaryValueInterfaceType::DomainType;
-  using EntityType = typename GridLayerType::template Codim<0>::Entity;
   using RangeFieldType = typename LocalBoundaryValueInterfaceType::RangeFieldType;
-  static const size_t dimDomain = GridLayerType::dimension;
+  static const size_t dimDomain = EntityType::dimension;
   static const size_t dimRange = RangeType::dimension;
 
   LocalizableBoundaryValueInterface(std::unique_ptr<const BoundaryInfoType>&& boundary_info)
@@ -81,11 +81,15 @@ protected:
 };
 
 
-template <class GridLayerType, class LocalizableFunctionType>
+template <class IntersectionType, class LocalizableFunctionType>
 class LocalizableFunctionBasedLocalDirichletBoundaryValue
-    : public LocalBoundaryValueInterface<GridLayerType, typename LocalizableFunctionType::RangeType>
+    : public LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                         IntersectionType,
+                                         typename LocalizableFunctionType::RangeType>
 {
-  using BaseType = LocalBoundaryValueInterface<GridLayerType, typename LocalizableFunctionType::RangeType>;
+  using BaseType = LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                               IntersectionType,
+                                               typename LocalizableFunctionType::RangeType>;
   using LocalfunctionType = typename LocalizableFunctionType::LocalfunctionType;
 
 public:
@@ -117,13 +121,17 @@ private:
 };
 
 
-template <class GridLayerType, class LocalizableFunctionType>
+template <class IntersectionImp, class LocalizableFunctionType>
 class LocalizableFunctionBasedLocalizableDirichletBoundaryValue
-    : public LocalizableBoundaryValueInterface<GridLayerType, typename LocalizableFunctionType::RangeType>
+    : public LocalizableBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                               IntersectionImp,
+                                               typename LocalizableFunctionType::RangeType>
 {
-  using BaseType = LocalizableBoundaryValueInterface<GridLayerType, typename LocalizableFunctionType::RangeType>;
+  using BaseType = LocalizableBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                                     IntersectionImp,
+                                                     typename LocalizableFunctionType::RangeType>;
   using LocalBoundaryValueType =
-      LocalizableFunctionBasedLocalDirichletBoundaryValue<GridLayerType, LocalizableFunctionType>;
+      LocalizableFunctionBasedLocalDirichletBoundaryValue<IntersectionImp, LocalizableFunctionType>;
 
 public:
   using typename BaseType::BoundaryInfoType;
@@ -149,11 +157,14 @@ private:
 };
 
 
-template <class GridLayerType, class LocalizableFunctionType>
-class LocalMomentModelBoundaryValue
-    : public LocalBoundaryValueInterface<GridLayerType, typename LocalizableFunctionType::RangeType>
+template <class IntersectionImp, class LocalizableFunctionType>
+class LocalMomentModelBoundaryValue : public LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                                                         IntersectionImp,
+                                                                         typename LocalizableFunctionType::RangeType>
 {
-  using BaseType = LocalBoundaryValueInterface<GridLayerType, typename LocalizableFunctionType::RangeType>;
+  using BaseType = LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                               IntersectionImp,
+                                               typename LocalizableFunctionType::RangeType>;
   using RangeFieldType = typename LocalizableFunctionType::RangeFieldType;
 
 public:
@@ -202,13 +213,16 @@ private:
 };
 
 
-template <class GridLayerType, class BasisfunctionType, class LocalizableFunctionType>
-class MomentModelBoundaryValue
-    : public LocalizableBoundaryValueInterface<GridLayerType, typename BasisfunctionType::RangeType>
+template <class IntersectionType, class BasisfunctionType, class LocalizableFunctionType>
+class MomentModelBoundaryValue : public LocalizableBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                                                          IntersectionType,
+                                                                          typename BasisfunctionType::RangeType>
 {
   static_assert(std::is_same<typename BasisfunctionType::RangeType, typename LocalizableFunctionType::RangeType>::value,
                 "RangeTypes have to match!");
-  using BaseType = LocalizableBoundaryValueInterface<GridLayerType, typename BasisfunctionType::RangeType>;
+  using BaseType = LocalizableBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
+                                                     IntersectionType,
+                                                     typename BasisfunctionType::RangeType>;
 
 public:
   using typename BaseType::BoundaryInfoType;
@@ -216,7 +230,7 @@ public:
   using typename BaseType::EntityType;
   using typename BaseType::LocalBoundaryValueInterfaceType;
   using typename BaseType::RangeType;
-  using LocalBoundaryValueType = LocalMomentModelBoundaryValue<GridLayerType, LocalizableFunctionType>;
+  using LocalBoundaryValueType = LocalMomentModelBoundaryValue<IntersectionType, LocalizableFunctionType>;
   using MatrixType = typename LocalBoundaryValueType::MatrixType;
   static const size_t dimDomain = BasisfunctionType::dimDomain;
   static const size_t dimRange = BasisfunctionType::dimRange;

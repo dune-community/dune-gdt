@@ -31,7 +31,7 @@ namespace KineticTransport {
 template <class BasisfunctionImp, class GridLayerImp, class U_>
 class ShadowPn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  using BaseType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
   using typename BaseType::InitialValueType;
@@ -47,7 +47,7 @@ public:
   using typename BaseType::GridLayerType;
   using typename BaseType::IntersectionType;
   using ActualBoundaryValueType =
-      MomentModelBoundaryValue<GridLayerType, BasisfunctionType, DirichletBoundaryValueType>;
+      MomentModelBoundaryValue<IntersectionType, BasisfunctionType, DirichletBoundaryValueType>;
   static const size_t dimDomain = BaseType::dimDomain;
 
   using BaseType::default_boundary_cfg;
@@ -132,13 +132,13 @@ protected:
 template <class BasisfunctionType, class GridLayerType, class U_>
 class ShadowMn : public ShadowPn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef ShadowPn<BasisfunctionType, GridLayerType, U_> BaseType;
-  typedef ShadowMn ThisType;
+  using BaseType = ShadowPn<BasisfunctionType, GridLayerType, U_>;
+  using ThisType = ShadowMn;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
-  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
+  using ActualFluxType = GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_>;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;

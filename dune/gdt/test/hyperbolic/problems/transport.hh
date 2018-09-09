@@ -109,9 +109,9 @@ template <class EntityImp, class DomainFieldImp, size_t domainDim>
 class PeriodicTransportFunction
     : public XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1>
 {
-  typedef XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1>
-      BaseType;
-  typedef PeriodicTransportFunction<EntityImp, DomainFieldImp, domainDim> ThisType;
+  using BaseType =
+      XT::Functions::GlobalFunctionInterface<EntityImp, DomainFieldImp, domainDim, DomainFieldImp, domainDim, 1>;
+  using ThisType = PeriodicTransportFunction<EntityImp, DomainFieldImp, domainDim>;
 
 public:
   using typename BaseType::DomainType;
@@ -225,13 +225,12 @@ class TransportSolution
                               LocalizableFunctionType,
                               GridLayerType>
 {
-  typedef PeriodicTransportFunction<typename LocalizableFunctionType::EntityType,
-                                    typename LocalizableFunctionType::DomainFieldType,
-                                    LocalizableFunctionType::dimDomain>
-      PeriodicTransportFunctionType;
-  typedef typename PeriodicTransportFunctionType::DomainType DomainType;
-  typedef XT::Functions::CompositionFunction<PeriodicTransportFunctionType, LocalizableFunctionType, GridLayerType>
-      BaseType;
+  using PeriodicTransportFunctionType = PeriodicTransportFunction<typename LocalizableFunctionType::EntityType,
+                                                                  typename LocalizableFunctionType::DomainFieldType,
+                                                                  LocalizableFunctionType::dimDomain>;
+  using DomainType = typename PeriodicTransportFunctionType::DomainType;
+  using BaseType =
+      XT::Functions::CompositionFunction<PeriodicTransportFunctionType, LocalizableFunctionType, GridLayerType>;
 
 public:
   TransportSolution(const LocalizableFunctionType initial_values, const DomainType velocity)
@@ -344,24 +343,34 @@ class TransportTestCase
                                                                                R,
                                                                                r,
                                                                                1,
-                                                                               GDT::Backends::gdt>::type,
+                                                                               GDT::Backends::gdt,
+                                                                               XT::LA::default_backend,
+                                                                               XT::Grid::Layers::leaf,
+                                                                               true>::type,
                                    R,
                                    r>>
 {
-  typedef typename G::template Codim<0>::Entity E;
-  typedef typename G::ctype D;
+  using E = typename G::template Codim<0>::Entity;
+  using D = typename G::ctype;
   static const size_t d = G::dimension;
 
 public:
   static const size_t dimRange = r;
   static const size_t dimRangeCols = 1;
-  typedef
-      typename internal::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, r, 1, GDT::Backends::gdt>::type
-          U;
-  typedef typename Problems::Transport<E, D, d, U, R, r> ProblemType;
+  using U = typename internal::DiscreteFunctionProvider<G,
+                                                        GDT::SpaceType::product_fv,
+                                                        0,
+                                                        R,
+                                                        r,
+                                                        1,
+                                                        GDT::Backends::gdt,
+                                                        XT::LA::default_backend,
+                                                        XT::Grid::Layers::leaf,
+                                                        true>::type;
+  using ProblemType = typename Problems::Transport<E, D, d, U, R, r>;
 
 private:
-  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
+  using BaseType = typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType>;
 
 public:
   using typename BaseType::GridType;
@@ -371,7 +380,7 @@ public:
   TransportTestCase(const size_t num_refs = (d == 1 ? 4 : 2), const double divide_t_end_by = 1.0)
     : BaseType(divide_t_end_by, ProblemType::default_grid_cfg(), num_refs)
   {
-    typedef TransportInitialValues<E, D, d, R, r, 1> LocalizableInitialValueType;
+    using LocalizableInitialValueType = TransportInitialValues<E, D, d, R, r, 1>;
     exact_solution_ = std::make_shared<const TransportSolution<LocalizableInitialValueType, LevelGridViewType>>(
         LocalizableInitialValueType{},
         Dune::XT::Common::from_string<typename Dune::XT::Common::FieldVector<D, d>>("[1.0 2.0 3.0]"));

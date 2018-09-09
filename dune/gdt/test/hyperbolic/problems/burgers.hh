@@ -124,9 +124,9 @@ public:
 
   virtual BoundaryValueType* create_boundary_values()
   {
-    return new ActualBoundaryValueType(
-        XT::Grid::make_alldirichlet_boundaryinfo<IntersectionType>(),
-        ActualDirichletBoundaryValueType([=](const DomainType&, const XT::Common::Parameter&) { return 0; }, 0));
+    return new ActualBoundaryValueType(XT::Grid::make_alldirichlet_boundaryinfo<IntersectionType>(),
+                                       std::make_unique<ActualDirichletBoundaryValueType>(
+                                           [=](const DomainType&, const XT::Common::Parameter&) { return 0; }, 0));
   } // ... create_boundary_values()
 }; // class Burgers<...>
 
@@ -147,24 +147,36 @@ class BurgersTestCase
                                                                                              R,
                                                                                              r,
                                                                                              1,
-                                                                                             GDT::Backends::gdt>::type,
+                                                                                             GDT::Backends::gdt,
+                                                                                             XT::LA::default_backend,
+                                                                                             XT::Grid::Layers::leaf,
+                                                                                             true>::type,
                                                  R,
                                                  r>>
 {
-  typedef typename G::template Codim<0>::Entity E;
-  typedef typename G::ctype D;
+  using E = typename G::template Codim<0>::Entity;
+  using D = typename G::ctype;
   static const size_t d = G::dimension;
 
 public:
   static const size_t dimRange = r;
   static const size_t dimRangeCols = 1;
-  typedef
-      typename internal::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, r, 1, GDT::Backends::gdt>::type
-          U;
-  typedef typename Problems::Burgers<E, D, d, U, R, r> ProblemType;
+  using U = typename internal::DiscreteFunctionProvider<G,
+                                                        GDT::SpaceType::product_fv,
+                                                        0,
+                                                        R,
+                                                        r,
+                                                        1,
+                                                        GDT::Backends::gdt,
+                                                        XT::LA::default_backend,
+                                                        XT::Grid::Layers::leaf,
+                                                        true>::type;
+
+
+  using ProblemType = typename Problems::Burgers<E, D, d, U, R, r>;
 
 private:
-  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
+  using BaseType = typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType>;
 
 public:
   using typename BaseType::GridType;

@@ -161,12 +161,12 @@ protected:
 template <class BasisfunctionType, class GridLayerType, class U_>
 class CheckerboardMn : public CheckerboardPn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef CheckerboardPn<BasisfunctionType, GridLayerType, U_> BaseType;
+  using BaseType = CheckerboardPn<BasisfunctionType, GridLayerType, U_>;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
-  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
+  using ActualFluxType = GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_>;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
@@ -210,7 +210,8 @@ class CheckerboardTestCase
                                                                                                     momentOrder,
                                                                                                     G::dimension,
                                                                                                     true>,
-                                                                      typename G::LevelGridView,
+                                                                      XT::Grid::PeriodicGridLayer<
+                                                                          typename G::LevelGridView>,
                                                                       typename internal::
                                                                           DiscreteFunctionProvider<G,
                                                                                                    GDT::SpaceType::
@@ -224,18 +225,22 @@ class CheckerboardTestCase
                                                                                                                                  true>::
                                                                                                        dimRange,
                                                                                                    1,
-                                                                                                   GDT::Backends::gdt>::
-                                                                              type>>>
+                                                                                                   GDT::Backends::gdt,
+                                                                                                   XT::LA::
+                                                                                                       default_backend,
+                                                                                                   XT::Grid::Layers::
+                                                                                                       leaf,
+                                                                                                   true>::type>>>
 {
-  typedef typename G::ctype D;
+  using D = typename G::ctype;
   static const size_t d = G::dimension;
-  typedef SphericalHarmonicsMomentBasis<double, double, momentOrder, G::dimension, true> BasisfunctionType;
+  using BasisfunctionType = SphericalHarmonicsMomentBasis<double, double, momentOrder, G::dimension, true>;
 
 public:
-  typedef Problems::
+  using ProblemType = Problems::
       KineticEquation<Problems::KineticTransport::
                           CheckerboardPn<BasisfunctionType,
-                                         typename G::LevelGridView,
+                                         XT::Grid::PeriodicGridLayer<typename G::LevelGridView>,
                                          typename internal::
                                              DiscreteFunctionProvider<G,
                                                                       GDT::SpaceType::product_fv,
@@ -247,13 +252,15 @@ public:
                                                                                                     G::dimension,
                                                                                                     true>::dimRange,
                                                                       1,
-                                                                      GDT::Backends::gdt>::type>>
-          ProblemType;
+                                                                      GDT::Backends::gdt,
+                                                                      XT::LA::default_backend,
+                                                                      XT::Grid::Layers::leaf,
+                                                                      true>::type>>;
   static const size_t dimRange = ProblemType::dimRange;
   static const size_t dimRangeCols = 1;
 
 private:
-  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
+  using BaseType = typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType>;
 
 public:
   using typename BaseType::GridType;

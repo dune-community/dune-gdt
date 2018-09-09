@@ -123,7 +123,7 @@ public:
                                                                      GlobalLambdaFunctionType>;
   using ActualDirichletBoundaryValueType = GlobalLambdaFunctionType;
   using ActualBoundaryValueType =
-      LocalizableFunctionBasedLocalizableDirichletBoundaryValue<GridLayerType, ActualDirichletBoundaryValueType>;
+      LocalizableFunctionBasedLocalizableDirichletBoundaryValue<IntersectionType, ActualDirichletBoundaryValueType>;
   using MatrixType = typename Dune::DynamicMatrix<RangeFieldType>;
   using DomainType = typename RhsAffineFunctionType::DomainType;
   using RangeType = typename RhsAffineFunctionType::RangeType;

@@ -32,7 +32,7 @@ namespace KineticTransport {
 template <class BasisfunctionImp, class GridLayerImp, class U_>
 class PlaneSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  using BaseType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
   using typename BaseType::InitialValueType;
@@ -172,13 +172,13 @@ protected:
 template <class BasisfunctionType, class GridLayerImp, class U_>
 class PlaneSourceMn : public PlaneSourcePn<BasisfunctionType, GridLayerImp, U_>
 {
-  typedef PlaneSourcePn<BasisfunctionType, GridLayerImp, U_> BaseType;
-  typedef PlaneSourceMn ThisType;
+  using BaseType = PlaneSourcePn<BasisfunctionType, GridLayerImp, U_>;
+  using ThisType = PlaneSourceMn;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
-  typedef EntropyBasedLocalFlux<BasisfunctionType, GridLayerImp, U_> ActualFluxType;
+  using ActualFluxType = EntropyBasedLocalFlux<BasisfunctionType, GridLayerImp, U_>;
   using typename BaseType::GridLayerType;
 
   using BaseType::default_grid_cfg;

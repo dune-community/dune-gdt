@@ -31,7 +31,7 @@ namespace FokkerPlanck {
 template <class BasisfunctionImp, class GridLayerImp, class U_>
 class TwoBeamsPn : public FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  using BaseType = FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
   using typename BaseType::InitialValueType;
@@ -111,14 +111,14 @@ protected:
 template <class BasisfunctionType, class GridLayerType, class U_>
 class TwoBeamsMn : public TwoBeamsPn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef TwoBeamsPn<BasisfunctionType, GridLayerType, U_> BaseType;
-  typedef TwoBeamsMn ThisType;
+  using BaseType = TwoBeamsPn<BasisfunctionType, GridLayerType, U_>;
+  using ThisType = TwoBeamsMn;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
   using typename BaseType::QuadratureType;
-  typedef EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
+  using ActualFluxType = EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_>;
 
 
   using BaseType::default_grid_cfg;

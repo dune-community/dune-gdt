@@ -29,65 +29,138 @@ template <class GridType,
           class RangeFieldType,
           size_t dimRange,
           size_t dimRangeCols = 1,
-          XT::Grid::Backends grid_backend_type = layer_from_backend<backend_type>::type>
+          XT::Grid::Backends grid_backend_type = layer_from_backend<backend_type>::type,
+          bool periodic = false>
 class SpaceProvider
 {
   static_assert(AlwaysFalse<GridType>::value, "Please add a specialization for this space type!");
 };
 
-template <class G, XT::Grid::Layers layer, Backends backend, int p, class R, size_t r, size_t rC, XT::Grid::Backends g>
-class SpaceProvider<G, layer, SpaceType::cg, backend, p, R, r, rC, g>
+template <class G,
+          XT::Grid::Layers layer,
+          Backends backend,
+          int p,
+          class R,
+          size_t r,
+          size_t rC,
+          XT::Grid::Backends g,
+          bool periodic>
+class SpaceProvider<G, layer, SpaceType::cg, backend, p, R, r, rC, g, periodic>
     : public CgSpaceProvider<G, layer, backend, p, R, r, rC, g>
 {
 };
 
-template <class G, XT::Grid::Layers layer, Backends backend, int p, class R, size_t r, size_t rC, XT::Grid::Backends g>
-class SpaceProvider<G, layer, SpaceType::block_cg, backend, p, R, r, rC, g>
+template <class G,
+          XT::Grid::Layers layer,
+          Backends backend,
+          int p,
+          class R,
+          size_t r,
+          size_t rC,
+          XT::Grid::Backends g,
+          bool periodic>
+class SpaceProvider<G, layer, SpaceType::block_cg, backend, p, R, r, rC, g, periodic>
     : public BlockCgSpaceProvider<G, layer, backend, p, R, r, rC, g>
 {
 };
 
-template <class G, XT::Grid::Layers layer, Backends backend, int p, class R, size_t r, size_t rC, XT::Grid::Backends g>
-class SpaceProvider<G, layer, SpaceType::dg, backend, p, R, r, rC, g>
+template <class G,
+          XT::Grid::Layers layer,
+          Backends backend,
+          int p,
+          class R,
+          size_t r,
+          size_t rC,
+          XT::Grid::Backends g,
+          bool periodic>
+class SpaceProvider<G, layer, SpaceType::dg, backend, p, R, r, rC, g, periodic>
     : public DgSpaceProvider<G, layer, backend, p, R, r, rC, g>
 {
 };
 
-template <class G, XT::Grid::Layers layer, Backends backend, int p, class R, size_t r, size_t rC, XT::Grid::Backends g>
-class SpaceProvider<G, layer, SpaceType::block_dg, backend, p, R, r, rC, g>
+template <class G,
+          XT::Grid::Layers layer,
+          Backends backend,
+          int p,
+          class R,
+          size_t r,
+          size_t rC,
+          XT::Grid::Backends g,
+          bool periodic>
+class SpaceProvider<G, layer, SpaceType::block_dg, backend, p, R, r, rC, g, periodic>
     : public BlockDgSpaceProvider<G, layer, backend, p, R, r, rC, g>
 {
 };
 
-template <class G, XT::Grid::Layers layer, Backends backend, int p, class R, size_t r, size_t rC, XT::Grid::Backends g>
-class SpaceProvider<G, layer, SpaceType::fv, backend, p, R, r, rC, g>
-    : public FvSpaceProvider<G, layer, backend, R, r, rC, g>
+template <class G,
+          XT::Grid::Layers layer,
+          Backends backend,
+          int p,
+          class R,
+          size_t r,
+          size_t rC,
+          XT::Grid::Backends g,
+          bool periodic>
+class SpaceProvider<G, layer, SpaceType::fv, backend, p, R, r, rC, g, periodic>
+    : public FvSpaceProvider<G, layer, backend, R, r, rC, g, periodic>
 {
   static_assert(p == 0, "There is no FV space with nonzero polOrder!");
 };
 
-template <class G, XT::Grid::Layers layer, Backends backend, int p, class R, size_t r, size_t rC, XT::Grid::Backends g>
-class SpaceProvider<G, layer, SpaceType::product_fv, backend, p, R, r, rC, g>
-    : public FvProductSpaceProvider<G, layer, backend, R, r, rC, g>
+template <class G,
+          XT::Grid::Layers layer,
+          Backends backend,
+          int p,
+          class R,
+          size_t r,
+          size_t rC,
+          XT::Grid::Backends g,
+          bool periodic>
+class SpaceProvider<G, layer, SpaceType::product_fv, backend, p, R, r, rC, g, periodic>
+    : public FvProductSpaceProvider<G, layer, backend, R, r, rC, g, periodic>
 {
   static_assert(p == 0, "There is no FV space with nonzero polOrder!");
 };
 
-template <class G, XT::Grid::Layers layer, Backends backend, int p, class R, size_t r, size_t rC, XT::Grid::Backends g>
-class SpaceProvider<G, layer, SpaceType::block_fv, backend, p, R, r, rC, g>
+template <class G,
+          XT::Grid::Layers layer,
+          Backends backend,
+          int p,
+          class R,
+          size_t r,
+          size_t rC,
+          XT::Grid::Backends g,
+          bool periodic>
+class SpaceProvider<G, layer, SpaceType::block_fv, backend, p, R, r, rC, g, periodic>
     : public BlockFvSpaceProvider<G, layer, backend, R, r, rC, g>
 {
   static_assert(p == 0, "There is no FV space with nonzero polOrder!");
 };
 
-template <class G, XT::Grid::Layers layer, Backends backend, int p, class R, size_t r, size_t rC, XT::Grid::Backends g>
-class SpaceProvider<G, layer, SpaceType::rt, backend, p, R, r, rC, g>
+template <class G,
+          XT::Grid::Layers layer,
+          Backends backend,
+          int p,
+          class R,
+          size_t r,
+          size_t rC,
+          XT::Grid::Backends g,
+          bool periodic>
+class SpaceProvider<G, layer, SpaceType::rt, backend, p, R, r, rC, g, periodic>
     : public RtSpaceProvider<G, layer, backend, p, R, r, rC, g>
 {
 };
 
-template <class G, XT::Grid::Layers layer, Backends backend, int p, class R, size_t r, size_t rC, XT::Grid::Backends g>
-class SpaceProvider<G, layer, SpaceType::block_rt, backend, p, R, r, rC, g>
+template <class G,
+          XT::Grid::Layers layer,
+          Backends backend,
+          int p,
+          class R,
+          size_t r,
+          size_t rC,
+          XT::Grid::Backends g,
+          bool periodic>
+class SpaceProvider<G, layer, SpaceType::block_rt, backend, p, R, r, rC, g, periodic>
     : public BlockRtSpaceProvider<G, layer, backend, p, R, r, rC, g>
 {
 };

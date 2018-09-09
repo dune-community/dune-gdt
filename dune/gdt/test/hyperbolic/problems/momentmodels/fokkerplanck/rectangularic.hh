@@ -30,7 +30,7 @@ namespace FokkerPlanck {
 template <class BasisfunctionImp, class GridLayerImp, class U_>
 class RectangularIcPn : public FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  using BaseType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
   using typename BaseType::InitialValueType;

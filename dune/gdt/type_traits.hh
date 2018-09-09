@@ -73,7 +73,7 @@ template <class SpaceImp, class VectorImp>
 class DiscreteFunction;
 
 // from #include <dune/gdt/operators/fv/boundary.hh>
-template <class GridLayerImp, class RangeImp>
+template <class EntityImp, class IntersectionImp, class RangeImp>
 class LocalizableBoundaryValueInterface;
 
 // from #include <dune/gdt/operators/fv/reconstructed_function.hh>
@@ -244,10 +244,13 @@ struct is_const_discrete_function_helper
 template <class Tt>
 struct is_localizable_boundary_value_helper
 {
-  DXTC_has_typedef_initialize_once(GridLayerType);
+  DXTC_has_typedef_initialize_once(EntityType);
+  DXTC_has_typedef_initialize_once(IntersectionType);
   DXTC_has_typedef_initialize_once(RangeType);
 
-  static const bool is_candidate = DXTC_has_typedef(GridLayerType)<Tt>::value && DXTC_has_typedef(RangeType)<Tt>::value;
+  static const bool is_candidate = DXTC_has_typedef(EntityType)<Tt>::value
+                                   && DXTC_has_typedef(IntersectionType)<Tt>::value
+                                   && DXTC_has_typedef(RangeType)<Tt>::value;
 };
 
 
@@ -490,7 +493,10 @@ struct is_discrete_function<T, false> : public std::false_type
 // from #include <dune/gdt/operators/fv/boundary.hh>
 template <class T, bool candidate = internal::is_localizable_boundary_value_helper<T>::is_candidate>
 struct is_localizable_boundary_value
-    : public std::is_base_of<LocalizableBoundaryValueInterface<typename T::GridLayerType, typename T::RangeType>, T>
+    : public std::is_base_of<LocalizableBoundaryValueInterface<typename T::EntityType,
+                                                               typename T::IntersectionType,
+                                                               typename T::RangeType>,
+                             T>
 {
 };
 

@@ -31,7 +31,8 @@ template <class GridType,
           class RangeFieldType,
           size_t dimRange,
           size_t dimRangeCols = 1,
-          XT::Grid::Backends grid_backend_type = layer_from_backend<backend_type>::type>
+          XT::Grid::Backends grid_backend_type = layer_from_backend<backend_type>::type,
+          bool periodic = false>
 class FvSpaceProvider
 {
 public:
@@ -40,7 +41,7 @@ public:
   static const constexpr XT::Grid::Layers grid_layer = layer_type;
   static const constexpr XT::Grid::Backends layer_backend = grid_backend_type;
 
-  typedef typename XT::Grid::Layer<GridType, layer_type, layer_backend>::type GridLayerType;
+  using GridLayerType = typename XT::Grid::Layer<GridType, layer_type, layer_backend, int, periodic>::type;
 
 private:
   template <class G, class R, size_t r, size_t rC, GDT::Backends b>
@@ -52,12 +53,12 @@ private:
   template <class G, class R, size_t r, size_t rC>
   struct SpaceChooser<G, R, r, rC, GDT::Backends::gdt>
   {
-    typedef GDT::FvSpace<GridLayerType, R, r, rC> Type;
+    using Type = GDT::FvSpace<GridLayerType, R, r, rC>;
   };
 
 public:
-  typedef typename SpaceChooser<GridType, RangeFieldType, dimRange, dimRangeCols, backend_type>::Type Type;
-  typedef Type type;
+  using Type = typename SpaceChooser<GridType, RangeFieldType, dimRange, dimRangeCols, backend_type>::Type;
+  using type = Type;
 
   static Type create(GridLayerType grd_layer)
   {
@@ -77,7 +78,8 @@ template <class GridType,
           class RangeFieldType,
           size_t dimRange,
           size_t dimRangeCols = 1,
-          XT::Grid::Backends grid_backend_type = layer_from_backend<backend_type>::type>
+          XT::Grid::Backends grid_backend_type = layer_from_backend<backend_type>::type,
+          bool periodic = false>
 class FvProductSpaceProvider
 {
 public:
@@ -86,7 +88,7 @@ public:
   static const constexpr XT::Grid::Layers grid_layer = layer_type;
   static const constexpr XT::Grid::Backends layer_backend = grid_backend_type;
 
-  typedef typename XT::Grid::Layer<GridType, layer_type, layer_backend>::type GridLayerType;
+  using GridLayerType = typename XT::Grid::Layer<GridType, layer_type, layer_backend, int, periodic>::type;
 
 private:
   template <class G, class R, size_t r, size_t rC, GDT::Backends b>
@@ -98,12 +100,12 @@ private:
   template <class G, class R, size_t r, size_t rC>
   struct SpaceChooser<G, R, r, rC, GDT::Backends::gdt>
   {
-    typedef GDT::FvProductSpace<GridLayerType, R, r, rC> Type;
+    using Type = GDT::FvProductSpace<GridLayerType, R, r, rC>;
   };
 
 public:
-  typedef typename SpaceChooser<GridType, RangeFieldType, dimRange, dimRangeCols, backend_type>::Type Type;
-  typedef Type type;
+  using Type = typename SpaceChooser<GridType, RangeFieldType, dimRange, dimRangeCols, backend_type>::Type;
+  using type = Type;
 
   static Type create(GridLayerType grd_layer)
   {
@@ -133,20 +135,20 @@ public:
   static const constexpr XT::Grid::Layers grid_layer = layer_type;
   static const constexpr XT::Grid::Backends layer_backend = grid_backend_type;
 
-  typedef typename XT::Grid::Layer<GridType, grid_layer, layer_backend>::type GridLayerType;
+  using GridLayerType = typename XT::Grid::Layer<GridType, grid_layer, layer_backend>::type;
 
 private:
-  typedef typename FvSpaceProvider<GridType,
-                                   grid_layer,
-                                   space_backend,
-                                   RangeFieldType,
-                                   dimRange,
-                                   dimRangeCols,
-                                   layer_backend>::Type LocalType;
+  using LocalType = typename FvSpaceProvider<GridType,
+                                             grid_layer,
+                                             space_backend,
+                                             RangeFieldType,
+                                             dimRange,
+                                             dimRangeCols,
+                                             layer_backend>::Type;
 
 public:
-  typedef GDT::BlockSpace<LocalType> Type;
-  typedef Type type;
+  using Type = GDT::BlockSpace<LocalType>;
+  using type = Type;
 
   static Type create(GridLayerType /*grid_layer*/)
   {

@@ -32,7 +32,7 @@ namespace KineticTransport {
 template <class BasisfunctionImp, class GridLayerImp, class U_>
 class PointSourcePn : public KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  using BaseType = KineticTransportEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
   using typename BaseType::InitialValueType;
@@ -117,13 +117,13 @@ protected:
 template <class BasisfunctionType, class GridLayerType, class U_>
 class PointSourceMn : public PointSourcePn<BasisfunctionType, GridLayerType, U_>
 {
-  typedef PointSourcePn<BasisfunctionType, GridLayerType, U_> BaseType;
-  typedef PointSourceMn ThisType;
+  using BaseType = PointSourcePn<BasisfunctionType, GridLayerType, U_>;
+  using ThisType = PointSourceMn;
 
 public:
   using typename BaseType::FluxType;
   using typename BaseType::RangeType;
-  typedef GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_> ActualFluxType;
+  using ActualFluxType = GDT::EntropyBasedLocalFlux<BasisfunctionType, GridLayerType, U_>;
 
   using BaseType::default_grid_cfg;
   using BaseType::default_boundary_cfg;
@@ -176,24 +176,23 @@ class PointSourceTestCase
                                                                                   1,
                                                                                   GDT::Backends::gdt>::type>>>
 {
-  typedef typename G::ctype D;
+  using D = typename G::ctype;
 
 public:
   static const size_t d = G::dimension;
   static_assert(d == 3, "Only implemented for dimension 3.");
-  typedef typename Hyperbolic::Problems::KineticEquation<
+  using ProblemType = typename Hyperbolic::Problems::KineticEquation<
       typename Problems::KineticTransport::
           PointSourcePn<B,
                         typename G::LeafGridLayer,
                         DiscreteFunction<FvProductSpace<typename G::LeafGridLayer, double, rangeDim, 1>,
-                                         typename Dune::XT::LA::Container<double,
-                                                                          XT::LA::default_sparse_backend>::VectorType>>>
-      ProblemType;
+                                         typename Dune::XT::LA::Container<double, XT::LA::default_sparse_backend>::
+                                             VectorType>>>;
   static const size_t dimRange = ProblemType::dimRange;
   static const size_t dimRangeCols = 1;
 
 private:
-  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
+  using BaseType = typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType>;
 
 public:
   using typename BaseType::GridType;

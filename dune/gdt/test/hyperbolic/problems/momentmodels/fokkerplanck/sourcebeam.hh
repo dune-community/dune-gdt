@@ -32,7 +32,7 @@ namespace FokkerPlanck {
 template <class BasisfunctionImp, class GridLayerImp, class U_>
 class SourceBeamPn : public FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_>
 {
-  typedef FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_> BaseType;
+  using BaseType = FokkerPlanckEquation<BasisfunctionImp, GridLayerImp, U_>;
 
 public:
   using typename BaseType::InitialValueType;
@@ -119,36 +119,50 @@ template <class G, class R = double>
 class SourceBeamTestCase
     : public Dune::GDT::Test::
           InstationaryTestCase<G,
-                               Problems::KineticEquation<Problems::FokkerPlanck::
-                                                             SourceBeamPn<LegendreMomentBasis<double, double, 5>,
-                                                                          typename G::LevelGridView,
-                                                                          typename internal::
-                                                                              DiscreteFunctionProvider<G,
-                                                                                                       GDT::SpaceType::
-                                                                                                           product_fv,
-                                                                                                       0,
-                                                                                                       R,
-                                                                                                       6,
-                                                                                                       1,
-                                                                                                       GDT::Backends::
-                                                                                                           gdt>::type>>>
+                               Problems::
+                                   KineticEquation<Problems::FokkerPlanck::
+                                                       SourceBeamPn<LegendreMomentBasis<double, double, 5>,
+                                                                    typename XT::Grid::PeriodicGridLayer<
+                                                                        typename G::LevelGridView>,
+                                                                    typename internal::
+                                                                        DiscreteFunctionProvider<G,
+                                                                                                 GDT::SpaceType::
+                                                                                                     product_fv,
+                                                                                                 0,
+                                                                                                 R,
+                                                                                                 6,
+                                                                                                 1,
+                                                                                                 GDT::Backends::gdt,
+                                                                                                 XT::LA::
+                                                                                                     default_backend,
+                                                                                                 XT::Grid::Layers::leaf,
+                                                                                                 true>::type>>>
 {
-  typedef typename G::ctype D;
+  using D = typename G::ctype;
   static const size_t d = G::dimension;
 
 public:
-  typedef LegendreMomentBasis<double, double, 5> BasisfunctionType;
+  using BasisfunctionType = LegendreMomentBasis<double, double, 5>;
   static const size_t dimRange = 6;
   static const size_t dimRangeCols = 1;
-  typedef
-      typename internal::DiscreteFunctionProvider<G, GDT::SpaceType::product_fv, 0, R, 6, 1, GDT::Backends::gdt>::type
-          U;
-  typedef typename Problems::
-      KineticEquation<Problems::FokkerPlanck::SourceBeamPn<BasisfunctionType, typename G::LevelGridView, U>>
-          ProblemType;
+  using U = typename internal::DiscreteFunctionProvider<G,
+                                                        GDT::SpaceType::product_fv,
+                                                        0,
+                                                        R,
+                                                        6,
+                                                        1,
+                                                        GDT::Backends::gdt,
+                                                        XT::LA::default_backend,
+                                                        XT::Grid::Layers::leaf,
+                                                        true>::type;
+  using ProblemType =
+      typename Problems::KineticEquation<Problems::FokkerPlanck::SourceBeamPn<BasisfunctionType,
+                                                                              typename XT::Grid::PeriodicGridLayer<
+                                                                                  typename G::LevelGridView>,
+                                                                              U>>;
 
 private:
-  typedef typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType> BaseType;
+  using BaseType = typename Dune::GDT::Test::InstationaryTestCase<G, ProblemType>;
 
 public:
   SourceBeamTestCase(const size_t num_refs = 1, const double divide_t_end_by = 1.0)
@@ -191,7 +205,7 @@ public:
 
 private:
   const BasisfunctionType basis_functions_;
-  const typename G::LevelGridView level_grid_view_;
+  const XT::Grid::PeriodicGridLayer<typename G::LevelGridView> level_grid_view_;
   const ProblemType problem_;
 }; // class SourceBeamTestCase
 
