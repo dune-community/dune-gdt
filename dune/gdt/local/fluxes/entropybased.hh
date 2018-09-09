@@ -416,7 +416,22 @@ public:
       const std::vector<DomainType>& quad_points_;
       XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>>& lp_;
     }; // struct RealizabilityHelper<...>
-#endif
+#else // HAVE_CLP
+    template <class BasisFuncImp, bool quadrature_contains_vertices, bool anything>
+    struct RealizabilityHelper
+    {
+      RealizabilityHelper(const BasisfunctionType& /*basis_functions*/, const std::vector<DomainType>& /*quad_points*/)
+      {
+        DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+      }
+
+      bool is_realizable(const StateRangeType& /*u*/) const
+      {
+        DUNE_THROW(Dune::NotImplemented, "You are missing Clp!");
+        return false;
+      }
+    }; // struct RealizabilityHelper<...>
+#endif // HAVE_CLP
 
     // specialization for hatfunctions
     template <size_t dimRange_or_refinements, bool anything>

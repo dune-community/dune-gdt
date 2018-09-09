@@ -81,14 +81,14 @@ protected:
 };
 
 
-template <class IntersectionType, class LocalizableFunctionType>
+template <class IntersectionImp, class LocalizableFunctionType>
 class LocalizableFunctionBasedLocalDirichletBoundaryValue
     : public LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
-                                         IntersectionType,
+                                         IntersectionImp,
                                          typename LocalizableFunctionType::RangeType>
 {
   using BaseType = LocalBoundaryValueInterface<typename LocalizableFunctionType::EntityType,
-                                               IntersectionType,
+                                               IntersectionImp,
                                                typename LocalizableFunctionType::RangeType>;
   using LocalfunctionType = typename LocalizableFunctionType::LocalfunctionType;
 
