@@ -431,9 +431,9 @@ struct PointSourcePnExpectedResults<HatFunctionMomentBasis<double, 3, double, 0,
   static constexpr double l2norm = reconstruct ? 2.7094988565517113 : 2.7073931584332405;
   static constexpr double linfnorm = reconstruct ? 10.424578957824737 : 10.458114243519278;
 #else
-  static constexpr double l1norm = reconstruct ? 1.0008292531174403 : 1.0008292531057066;
-  static constexpr double l2norm = reconstruct ? 2.7095647696183893 : 2.7070581236565103;
-  static constexpr double linfnorm = reconstruct ? 10.424228258642177 : 10.457145890791487;
+  static constexpr double l1norm = reconstruct ? 1.0008292531174403 : 1.0008261813654091;
+  static constexpr double l2norm = reconstruct ? 2.7097574564184925 : 2.7074480471822433;
+  static constexpr double linfnorm = reconstruct ? 10.424798568201023 : 10.458329938780505;
 #endif
   // The matrices in this test case all have eigenvalues [+-0.808311035811965, 0, 0, 0, 0].
   // Thus, the eigenvectors are not unique, and the eigensolvers are extremely sensitive
@@ -455,9 +455,9 @@ struct PointSourcePnExpectedResults<HatFunctionMomentBasis<double, 3, double, 1,
   static constexpr double l2norm = 2.7069180208261652;
   static constexpr double linfnorm = 10.4578353362239;
 #else
-  static constexpr double l1norm = 1.0008039111672102;
-  static constexpr double l2norm = 2.7065211670792411;
-  static constexpr double linfnorm = 10.456611570230423;
+  static constexpr double l1norm = 1.0008031432622411;
+  static constexpr double l2norm = 2.7069365027580932;
+  static constexpr double linfnorm = 10.457905431746271;
 #endif
   // see above
   static constexpr double tol = reconstruct ? 1e-5 : 1e-14;
@@ -472,9 +472,9 @@ struct PointSourcePnExpectedResults<PartialMomentBasis<double, 3, double, 0, 1, 
   static constexpr double l2norm = reconstruct ? 2.7100893563191693 : 2.7070071430786014;
   static constexpr double linfnorm = reconstruct ? 10.428361386931211 : 10.458405903819866;
 #else
-  static constexpr double l1norm = reconstruct ? 1.0008292531175822 : 1.0008292531061092;
-  static constexpr double l2norm = reconstruct ? 2.7099187578817849 : 2.7066524774407608;
-  static constexpr double linfnorm = reconstruct ? 10.427830136315574 : 10.457348661644719;
+  static constexpr double l1norm = reconstruct ? 1.0008261813756092 : 1.0008261813658712;
+  static constexpr double l2norm = reconstruct ? 2.7101429263071872 : 2.7070608309129254;
+  static constexpr double linfnorm = reconstruct ? 10.428568071618781 : 10.45861384878939;
 #endif
   static constexpr double tol = 1e-14;
 };
@@ -489,9 +489,9 @@ struct PointSourcePnExpectedResults<PartialMomentBasis<double, 3, double, 1, 1, 
   static constexpr double l2norm = 2.7069901509556513;
   static constexpr double linfnorm = 10.458345325407425;
 #else
-  static constexpr double l1norm = 1.0008292531061092;
-  static constexpr double l2norm = 2.7066524774407608;
-  static constexpr double linfnorm = 10.457348661644719;
+  static constexpr double l1norm = 1.0008031432620421;
+  static constexpr double l2norm = 2.707008617216633;
+  static constexpr double linfnorm = 10.458415332332239;
 #endif
   static constexpr double tol = 1e-14;
 };
