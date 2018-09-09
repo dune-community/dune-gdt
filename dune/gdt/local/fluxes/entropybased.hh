@@ -603,8 +603,8 @@ public:
           // calculate T_k u
           VectorType v_k = v;
           // calculate values of basis p = S_k m
-          static thread_local BasisValuesMatrixType P_k = M_;
-          P_k = M_;
+          static thread_local BasisValuesMatrixType P_k(M_.backend(), false, 0., 0);
+          std::copy_n(M_.data(), M_.rows() * M_.cols(), P_k.data());
           // calculate f_0
           RangeFieldType f_k = calculate_scalar_integral(beta_in, P_k);
           f_k -= beta_in * v_k;
@@ -880,12 +880,19 @@ public:
           J_dd[mm][nn] = J_dd[nn][mm];
     } // void calculate_J(...)
 
-    RangeFieldType hessian_reciprocal_condition(const MatrixType& L, const RangeFieldType inf_norm) const
+    // The hessian is symmetric, so the reciprocal condition (in 2-norm) is the minimal eigenvalue divided by the
+    // maximal eigenvalue. L has the square roots of the eigenvalues on its diagonal.
+    RangeFieldType hessian_sqrt_cond_inv(const MatrixType& L) const
     {
-      double reciprocal_cond;
-      XT::Common::Lapacke::dpocon(
-          XT::Common::Lapacke::row_major(), 'L', dimRange, &(L[0][0]), dimRange, inf_norm, &reciprocal_cond);
-      return reciprocal_cond;
+      RangeFieldType min_eigval = L[0][0];
+      RangeFieldType max_eigval = L[0][0];
+      for (size_t ii = 1; ii < dimRange; ++ii) {
+        if (L[ii][ii] > max_eigval)
+          max_eigval = L[ii][ii];
+        else if (L[ii][ii] < min_eigval)
+          min_eigval = L[ii][ii];
+      }
+      return min_eigval / max_eigval;
     }
 
     bool change_basis(const VectorType& beta_in,
@@ -897,11 +904,10 @@ public:
                       MatrixType& H) const
     {
       calculate_hessian(beta_in, P_k, H);
-      const auto inf_norm = H.infinity_norm();
       XT::LA::cholesky(H);
       const auto& L = H;
       bool ret = false;
-      if (hessian_reciprocal_condition(L, inf_norm) > 1e-3) {
+      if (hessian_sqrt_cond_inv(L) > 0.01) {
         beta_out = beta_in;
         calculate_vector_integral(beta_out, P_k, P_k, g_k, true);
       } else {
@@ -1759,8 +1765,7 @@ public:
         auto& H_jj = H.block(jj);
         XT::LA::cholesky(H_jj);
         const auto& L_jj = H_jj;
-        // 0.032 is approximately sqrt(1e-3)
-        if (hessian_sqrt_cond_inv(L_jj) > 0.032) {
+        if (hessian_sqrt_cond_inv(L_jj) > 0.01) {
           beta_out.block(jj) = beta_in.block(jj);
           calculate_vector_integral_block(jj, beta_out.block(jj), P_k[jj], P_k[jj], g_k.block(jj), true);
           ret[jj] = false;
