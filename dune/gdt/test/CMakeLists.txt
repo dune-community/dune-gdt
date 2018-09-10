@@ -66,16 +66,22 @@ foreach(test_target ${dxt_test_binaries})
   endif()
   if(${test_target} MATCHES hyperbolic__fv_discretization)
     target_link_libraries(${test_target}
-                          ${LPSolve_LIBRARIES}
                           ${Qhull_LIBRARIES}
                           ${LAPACKE_LIBRARIES}
                           ${MATEXP_LIBRARIES}
                           ${LEBEDEVDATA_LIBRARIES}
                           expectations_hyperbolic_fv_discretizations_yaspgrid)
   endif()
+  if(${test_target} MATCHES hyperbolic__momentmodels)
+    target_link_libraries(${test_target}
+                          ${Qhull_LIBRARIES}
+                          ${LAPACKE_LIBRARIES}
+                          ${MATEXP_LIBRARIES}
+                          ${FEKETE_LIBRARIES}
+                          ${LEBEDEVDATA_LIBRARIES})
+  endif()
   if(${test_target} MATCHES entropytest)
     target_link_libraries(${test_target}
-                          ${LPSolve_LIBRARIES}
                           ${Qhull_LIBRARIES}
                           ${LAPACKE_LIBRARIES}
                           ${MATEXP_LIBRARIES}
