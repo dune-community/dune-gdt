@@ -52,9 +52,10 @@ using YaspGridTestCasesAll = testing::Types<
         PointSourceMnTestCase<Yasp3, Dune::GDT::RealSphericalHarmonicsMomentBasis<double, double, 2, 3>, true>,
 #endif
     Dune::GDT::Hyperbolic::Problems::KineticTransport::
-        PointSourceMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, false>,
-#if HAVE_MKL || HAVE_LAPACKE                                                                                           \
-    || HAVE_EIGEN // Our shifted qr eigensolver fails for this problem, needs better shifting strategy
+        PointSourceMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, false>
+// Our shifted qr eigensolver fails for this problem, needs better shifting strategy
+#if HAVE_MKL || HAVE_LAPACKE || HAVE_EIGEN
+    ,
     Dune::GDT::Hyperbolic::Problems::KineticTransport::
         PointSourceMnTestCase<Yasp3, Dune::GDT::HatFunctionMomentBasis<double, 3, double, 0, 1, 3>, true>
 #endif
