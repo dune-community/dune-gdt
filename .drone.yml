@@ -1,23 +1,54 @@
 workspace:
-    base: /root/src/dune-gdt
+    base: /home/dune-ci/src/dune-gdt
     path: .
 
 pipeline:
+  docker:
+    image: dunecommunity/gitlabci_dockerindocker-dockerindocker
+    commands:
+      - docker build --build-arg BASE=dune-gdt-testing_base_${CC}:master -t dunecommunity/dune-gdt-testing_${CC}:${DRONE_COMMIT_SHA} -f .ci/docker/Dockerfile .
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
   cpp:
-    image: dunecommunity/dune-gdt-testing_${CC}:master
+    image: dunecommunity/dune-gdt-testing_${CC}:${DRONE_COMMIT_SHA}
     pull: true
     environment:
       - MY_MODULE=dune-gdt
     commands:
-      - /root/src/dune-gdt/.travis.script.bash
+      - /home/dune-ci/src/dune-gdt/.travis.script.bash
 
   python:
-    image: dunecommunity/dune-gdt-testing_${CC}:master
+    image: dunecommunity/dune-gdt-testing_${CC}:${DRONE_COMMIT_SHA}
     pull: true
     environment:
       - MY_MODULE=dune-gdt
     commands:
-      - /root/src/dune-gdt/.travis.test_python.bash
+      - /home/dune-ci/src/dune-gdt/.travis.test_python.bash
+
+  cleanup_fail:
+    image: dunecommunity/gitlabci_dockerindocker-dockerindocker
+    commands:
+      - echo $DOCKER_PW | docker login --username="$DOCKER_USER" --password-stdin
+      - docker push dunecommunity/dune-gdt-testing_${CC}:${DRONE_COMMIT_SHA}
+      - docker rmi dunecommunity/dune-gdt-testing_${CC}:${DRONE_COMMIT_SHA}
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    secrets: [ docker_user, docker_pw ]
+    when:
+        status:  [ failure ]
+
+  cleanup_success:
+    image: dunecommunity/gitlabci_dockerindocker-dockerindocker
+    commands:
+      - docker rmi dunecommunity/dune-gdt-testing_${CC}:${DRONE_COMMIT_SHA}
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    when:
+        status:  [ success ]
 
   notify:
     image: drillster/drone-email
