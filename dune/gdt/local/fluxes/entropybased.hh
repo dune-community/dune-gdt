@@ -1245,14 +1245,11 @@ public:
                                          const LocalVectorType& beta_in,
                                          const XT::LA::CommonDenseMatrix<RangeFieldType>& M1,
                                          const XT::LA::CommonDenseMatrix<RangeFieldType>& M2,
-                                         LocalVectorType& ret,
-                                         bool same_beta = false) const
+                                         LocalVectorType& ret) const
     {
       auto& work_vec = working_storage()[jj];
-      if (!same_beta) {
-        calculate_scalar_products_block(jj, beta_in, M2, work_vec);
-        apply_exponential(work_vec);
-      }
+      calculate_scalar_products_block(jj, beta_in, M2, work_vec);
+      apply_exponential(work_vec);
       std::fill(ret.begin(), ret.end(), 0.);
       const size_t num_quad_points = quad_weights_[jj].size();
       for (size_t ll = 0; ll < num_quad_points; ++ll) {
@@ -1270,7 +1267,7 @@ public:
                                    BlockVectorType& ret) const
     {
       for (size_t jj = 0; jj < num_blocks; ++jj)
-        calculate_vector_integral_block(jj, beta_in.block(jj), M1[jj], M2[jj], ret.block(jj), false);
+        calculate_vector_integral_block(jj, beta_in.block(jj), M1[jj], M2[jj], ret.block(jj));
     }
 
     void copy_transposed(const LocalMatrixType& T_k, LocalMatrixType& T_k_trans) const
@@ -1396,7 +1393,6 @@ public:
           RangeFieldType f_k = calculate_scalar_integral(beta_in, P_k) - beta_in * v_k;
 
           thread_local auto H = XT::Common::make_unique<BlockMatrixType>(0.);
-          std::array<bool, num_blocks> basis_changed;
 
           int pure_newton = 0;
           for (size_t kk = 0; kk < k_max_; ++kk) {
@@ -1404,8 +1400,7 @@ public:
             if (kk > k_0_ && r < r_max)
               break;
             try {
-              basis_changed = change_basis(beta_in, v_k, P_k, *T_k, g_k, beta_out, *H);
-              //              change_basis(beta_in, v_k, P_k, *T_k, g_k, beta_out);
+              change_basis(beta_in, v_k, P_k, *T_k, g_k, beta_out, *H);
             } catch (const Dune::MathError&) {
               if (r < r_max)
                 break;
@@ -1419,10 +1414,12 @@ public:
 
             // calculate descent direction d_k;
             BlockVectorType d_k = g_k;
-            for (size_t jj = 0; jj < num_blocks; ++jj)
-              if (!basis_changed[jj])
-                XT::LA::solve_cholesky_factorized(H->block(jj), d_k.block(jj));
             d_k *= -1;
+
+            if (kk > 200) {
+              static volatile int dings = 0;
+              std::cout << kk << " " << dings << std::endl;
+            }
 
             // Calculate stopping criteria (in original basis). Variables with _k are in current basis, without k in
             // original basis.
@@ -1748,52 +1745,28 @@ public:
       }
     } // void calculate_J(...)
 
-    // The hessian is symmetric, so the reciprocal condition is the minimal eigenvalue divided by the maximal
-    // eigenvalue. L has the square roots of the eigenvalues on its diagonal.
-    RangeFieldType hessian_sqrt_cond_inv(const LocalMatrixType& L) const
-    {
-      RangeFieldType min_eigval = L[0][0];
-      RangeFieldType max_eigval = L[0][0];
-      for (size_t ii = 1; ii < block_size; ++ii) {
-        if (L[ii][ii] > max_eigval)
-          max_eigval = L[ii][ii];
-        else if (L[ii][ii] < min_eigval)
-          min_eigval = L[ii][ii];
-      }
-      return min_eigval / max_eigval;
-    }
-
-    std::array<bool, num_blocks> change_basis(const BlockVectorType& beta_in,
-                                              BlockVectorType& v_k,
-                                              BasisValuesMatrixType& P_k,
-                                              BlockMatrixType& T_k,
-                                              BlockVectorType& g_k,
-                                              BlockVectorType& beta_out,
-                                              BlockMatrixType& H) const
+    void change_basis(const BlockVectorType& beta_in,
+                      BlockVectorType& v_k,
+                      BasisValuesMatrixType& P_k,
+                      BlockMatrixType& T_k,
+                      BlockVectorType& g_k,
+                      BlockVectorType& beta_out,
+                      BlockMatrixType& H) const
     {
       calculate_hessian(beta_in, P_k, H);
-      std::array<bool, num_blocks> ret;
       FieldVector<RangeFieldType, block_size> tmp_vec;
+      for (size_t jj = 0; jj < num_blocks; ++jj)
+        XT::LA::cholesky(H.block(jj));
+      const auto& L = H;
+      T_k.rightmultiply(L);
+      L.mtv(beta_in, beta_out);
       for (size_t jj = 0; jj < num_blocks; ++jj) {
-        auto& H_jj = H.block(jj);
-        XT::LA::cholesky(H_jj);
-        const auto& L_jj = H_jj;
-        if (hessian_sqrt_cond_inv(L_jj) > 0.01) {
-          beta_out.block(jj) = beta_in.block(jj);
-          calculate_vector_integral_block(jj, beta_out.block(jj), P_k[jj], P_k[jj], g_k.block(jj), true);
-          ret[jj] = false;
-        } else {
-          T_k.block(jj).rightmultiply(L_jj);
-          L_jj.mtv(beta_in.block(jj), beta_out.block(jj));
-          XT::LA::solve_lower_triangular(L_jj, tmp_vec, v_k.block(jj));
-          v_k.block(jj) = tmp_vec;
-          apply_inverse_matrix_block(jj, L_jj, P_k[jj]);
-          calculate_vector_integral_block(jj, beta_out.block(jj), P_k[jj], P_k[jj], g_k.block(jj), false);
-          ret[jj] = true;
-        }
+        XT::LA::solve_lower_triangular(L.block(jj), tmp_vec, v_k.block(jj));
+        v_k.block(jj) = tmp_vec;
       } // jj
+      apply_inverse_matrix(L, P_k);
+      calculate_vector_integral(beta_out, P_k, P_k, g_k);
       g_k -= v_k;
-      return ret;
     } // void change_basis(...)
 
     const BasisfunctionType& basis_functions_;
