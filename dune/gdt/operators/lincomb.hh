@@ -57,6 +57,20 @@ public:
     coeffs_.emplace_back(coeff);
   }
 
+  void add(const ThisType& op, const FieldType& coeff = 1.)
+  {
+    // Only adding op itself would lead to segfaults in some circumstances
+    for (size_t ii = 0; ii < op.num_ops(); ++ii) {
+      const_operators_.emplace_back(op.const_operators_[ii]);
+      coeffs_.emplace_back(coeff * op.coeffs_[ii]);
+    }
+  }
+
+  void add(const ThisType*&& op, const FieldType& coeff = 1.)
+  {
+    this->add(*op, coeff);
+  }
+
   size_t num_ops() const
   {
     return const_operators_.size();
@@ -258,6 +272,18 @@ public:
   {
     operators_.emplace_back(std::move(op));
     BaseType::add(operators_.back().access(), coeff);
+  }
+
+  void add(ThisType& op, const FieldType& coeff = 1.)
+  {
+    for (size_t ii = 0; ii < op.num_ops(); ++ii)
+      operators_.emplace_back(op.operators_[ii]);
+    BaseType::add(op, coeff);
+  }
+
+  void add(ThisType*&& op, const FieldType& coeff = 1.)
+  {
+    this->add(*op, coeff);
   }
 
   using BaseType::op;

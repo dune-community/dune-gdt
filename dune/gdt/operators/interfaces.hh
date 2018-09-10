@@ -54,6 +54,14 @@ class AssertArgumentsOfOperatorInterface
 } // namespace internal
 
 
+// forwards, required for operator +-*/
+template <class M, class SGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class RGV>
+class ConstLincombOperator;
+
+template <class M, class SGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class RGV>
+class LincombOperator;
+
+
 // forward, required for the jacobian
 template <class M, class SGV, size_t s_r, size_t s_rC, size_t r_r, size_t r_rC, class RGV>
 class MatrixOperator;
@@ -135,6 +143,8 @@ public:
 
   using ThisType = OperatorInterface<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
   using MatrixOperatorType = MatrixOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
+  using ConstLincombOperatorType = ConstLincombOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
+  using LincombOperatorType = LincombOperator<M, SGV, s_r, s_rC, r_r, r_rC, RGV>;
 
   explicit OperatorInterface(const XT::Common::ParameterType& param_type = {})
     : XT::Common::ParametricInterface(param_type)
@@ -153,6 +163,100 @@ public:
   virtual const RangeSpaceType& range_space() const = 0;
 
   /// \}
+
+  virtual LincombOperatorType operator*(const FieldType& alpha)
+  {
+    LincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, alpha);
+    return ret;
+  }
+
+  virtual LincombOperatorType operator/(const FieldType& alpha)
+  {
+    LincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, 1. / alpha);
+    return ret;
+  }
+
+  virtual ConstLincombOperatorType operator+(const ConstLincombOperatorType& other) const
+  {
+    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, 1.);
+    ret.add(other, 1.);
+    return ret;
+  }
+
+  virtual ConstLincombOperatorType operator+(const LincombOperatorType& other) const
+  {
+    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, 1.);
+    ret.add(other, 1.);
+    return ret;
+  }
+
+  virtual ConstLincombOperatorType operator+(const ThisType& other) const
+  {
+    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, 1.);
+    ret.add(other, 1.);
+    return ret;
+  }
+
+  virtual LincombOperatorType operator+(LincombOperatorType& other)
+  {
+    LincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, 1.);
+    ret.add(other, 1.);
+    return ret;
+  }
+
+  virtual LincombOperatorType operator+(ThisType& other)
+  {
+    LincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, 1.);
+    ret.add(other, 1.);
+    return ret;
+  }
+
+  virtual ConstLincombOperatorType operator-(const ConstLincombOperatorType& other) const
+  {
+    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, 1.);
+    ret.add(other, -1.);
+    return ret;
+  }
+
+  virtual ConstLincombOperatorType operator-(const LincombOperatorType& other) const
+  {
+    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, 1.);
+    ret.add(other, -1.);
+    return ret;
+  }
+
+  virtual ConstLincombOperatorType operator-(const ThisType& other) const
+  {
+    ConstLincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, 1.);
+    ret.add(other, -1.);
+    return ret;
+  }
+
+  virtual LincombOperatorType operator-(LincombOperatorType& other)
+  {
+    LincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, 1.);
+    ret.add(other, -1.);
+    return ret;
+  }
+
+  virtual LincombOperatorType operator-(ThisType& other)
+  {
+    LincombOperatorType ret(this->source_space(), this->range_space());
+    ret.add(*this, 1.);
+    ret.add(other, -1.);
+    return ret;
+  }
 
   /**
    * Allows the implementation to do preparatory work (i.e., assemble the matrix of a matrix-based operator).
@@ -572,6 +676,7 @@ invert_options(some_type).get<std::string>("type") == some_type
 } // namespace GDT
 } // namespace Dune
 
+#include "lincomb.hh"
 #include "matrix-based.hh"
 
 #endif // DUNE_GDT_OPERATORS_INTERFACES_HH
