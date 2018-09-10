@@ -28,8 +28,8 @@ using YaspGridTestCasesAll = testing::Types<
         PlaneSourceMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7>, false>,
     Dune::GDT::Hyperbolic::Problems::KineticTransport::
         PlaneSourceMnTestCase<Yasp1, Dune::GDT::LegendreMomentBasis<double, double, 7>, true>,
-    Dune::GDT::Hyperbolic::Problems::KineticTransport::
 #endif
+    Dune::GDT::Hyperbolic::Problems::KineticTransport::
         SourceBeamMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, false>,
     Dune::GDT::Hyperbolic::Problems::KineticTransport::
         SourceBeamMnTestCase<Yasp1, Dune::GDT::HatFunctionMomentBasis<double, 1, double, 8, 1, 1>, true>,
