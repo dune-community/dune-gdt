@@ -82,6 +82,7 @@ public:
     , source_vector_(source_vector)
     , local_op_(local_operator.copy())
     , param_(param)
+    , scaling_(param_.has_key("matrixoperator.scaling") ? param_.get("matrixoperator.scaling").at(0) : 1.)
     , eps_(param_.has_key("finite-difference-jacobians.eps") ? param_.get("finite-difference-jacobians.eps").at(0)
                                                              : 1e-7)
     , source_(source_space_) // This is a full vector, and intended!
@@ -99,6 +100,7 @@ public:
     , source_vector_(other.source_vector_)
     , local_op_(other.local_op_->copy())
     , param_(other.param_)
+    , scaling_(other.scaling_)
     , eps_(other.eps_)
     , source_(source_space_) // This is a full vector, and intended!
     , range_(range_space_) // This is a full vector, and intended!
@@ -143,7 +145,7 @@ public:
         auto derivative = (local_range_->dofs()[ii] - range_DoFs_[ii]) / eps;
         if (XT::Common::FloatCmp::eq(derivative, eps))
           derivative = 0;
-        matrix_.add_to_entry(global_range_indices_[ii], global_source_indices_[jj], derivative);
+        matrix_.add_to_entry(global_range_indices_[ii], global_source_indices_[jj], scaling_ * derivative);
       }
       // restore source
       local_source_->dofs()[jj] = jjth_source_DoF;
@@ -157,6 +159,7 @@ private:
   const VectorType& source_vector_;
   const std::unique_ptr<LocalElementOperatorType> local_op_;
   const XT::Common::Parameter param_;
+  const double scaling_;
   const real_t<F> eps_;
   DiscreteFunction<V, SGV, s_r, s_rC, F> source_;
   DiscreteFunction<V, RGV, r_r, r_rC, F> range_;
@@ -226,6 +229,7 @@ public:
     , source_vector_(source_vector)
     , local_op_(local_operator.copy())
     , param_(param)
+    , scaling_(param_.has_key("matrixoperator.scaling") ? param_.get("matrixoperator.scaling").at(0) : 1.)
     , eps_(eps)
     , source_(source_space_) // This is a full vector, and intended!
     , range_(range_space_) // This is a full vector, and intended!
@@ -244,6 +248,7 @@ public:
     , source_vector_(other.source_vector_)
     , local_op_(other.local_op_->copy())
     , param_(other.param_)
+    , scaling_(other.scaling_)
     , eps_(other.eps_)
     , source_(source_space_) // This is a full vector, and intended!
     , range_(range_space_) // This is a full vector, and intended!
@@ -309,7 +314,8 @@ public:
         auto derivative = (local_range_inside_->dofs()[ii] - range_DoFs_inside_[ii]) / eps;
         if (XT::Common::FloatCmp::eq(derivative, eps))
           derivative = 0;
-        matrix_.add_to_entry(global_range_indices_inside_[ii], global_source_indices_inside_[jj], derivative);
+        matrix_.add_to_entry(
+            global_range_indices_inside_[ii], global_source_indices_inside_[jj], scaling_ * derivative);
       }
       // observe perturbation in outside range DoFs
       if (treat_outside) {
@@ -317,7 +323,8 @@ public:
           auto derivative = (local_range_outside_->dofs()[ii] - range_DoFs_outside_[ii]) / eps;
           if (XT::Common::FloatCmp::eq(derivative, eps))
             derivative = 0;
-          matrix_.add_to_entry(global_range_indices_outside_[ii], global_source_indices_inside_[jj], derivative);
+          matrix_.add_to_entry(
+              global_range_indices_outside_[ii], global_source_indices_inside_[jj], scaling_ * derivative);
         }
       }
       // restore source
@@ -340,14 +347,16 @@ public:
           auto derivative = (local_range_inside_->dofs()[ii] - range_DoFs_inside_[ii]) / eps;
           if (XT::Common::FloatCmp::eq(derivative, eps))
             derivative = 0;
-          matrix_.add_to_entry(global_range_indices_inside_[ii], global_source_indices_outside_[jj], derivative);
+          matrix_.add_to_entry(
+              global_range_indices_inside_[ii], global_source_indices_outside_[jj], scaling_ * derivative);
         }
         // observe perturbation in outside range DoFs
         for (size_t ii = 0; ii < local_range_outside_size; ++ii) {
           auto derivative = (local_range_outside_->dofs()[ii] - range_DoFs_outside_[ii]) / eps;
           if (XT::Common::FloatCmp::eq(derivative, eps))
             derivative = 0;
-          matrix_.add_to_entry(global_range_indices_outside_[ii], global_source_indices_outside_[jj], derivative);
+          matrix_.add_to_entry(
+              global_range_indices_outside_[ii], global_source_indices_outside_[jj], scaling_ * derivative);
         }
         // restore source
         local_source_outside_->dofs()[jj] = jjth_source_DoF;
@@ -362,6 +371,7 @@ private:
   const VectorType& source_vector_;
   const std::unique_ptr<LocalIntersectionOperatorType> local_op_;
   const XT::Common::Parameter param_;
+  const double scaling_;
   const real_t<F> eps_;
   DiscreteFunction<V, SGV, s_r, s_rC, F> source_;
   DiscreteFunction<V, RGV, r_r, r_rC, F> range_;

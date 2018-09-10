@@ -242,6 +242,7 @@ public:
   using typename OperatorBaseType::SourceSpaceType;
   using typename OperatorBaseType::RangeSpaceType;
   using typename OperatorBaseType::MatrixOperatorType;
+  using typename OperatorBaseType::FieldType;
   using typename OperatorBaseType::V;
   using typename OperatorBaseType::F;
 
@@ -265,6 +266,7 @@ public:
     , OperatorBaseType(source_spc, range_spc, MatrixStorage::access())
     , WalkerBaseType(assembly_grid_view)
     , assembled_(false)
+    , scaling(1.)
   {
     // to detect assembly
     this->append(
@@ -283,6 +285,7 @@ public:
     , OperatorBaseType(source_spc, range_spc, MatrixStorage::access())
     , WalkerBaseType(assembly_grid_view)
     , assembled_(false)
+    , scaling(1.)
   {
     // to detect assembly
     this->append(
@@ -296,6 +299,8 @@ public:
     return MatrixStorage::access();
   }
 
+  FieldType scaling;
+
   using WalkerBaseType::append;
 
   ThisType& append(const LocalElementBilinearFormInterface<E, r_r, r_rC, F, F, s_r, s_rC, F>& local_bilinear_form,
@@ -303,8 +308,11 @@ public:
                    const ElementFilterType& filter = ApplyOnAllElements())
   {
     using LocalAssemblerType = LocalElementBilinearFormAssembler<M, SGV, r_r, r_rC, F, RGV, SGV, s_r, s_rC, F>;
-    this->append(new LocalAssemblerType(
-                     this->range_space(), this->source_space(), local_bilinear_form, MatrixStorage::access(), param),
+    this->append(new LocalAssemblerType(this->range_space(),
+                                        this->source_space(),
+                                        local_bilinear_form,
+                                        MatrixStorage::access(),
+                                        param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
                  filter);
     return *this;
   }
@@ -315,8 +323,11 @@ public:
   {
     using LocalAssemblerType =
         LocalIntersectionBilinearFormAssembler<MatrixType, AssemblyGridViewType, r_r, r_rC, F, RGV, SGV, s_r, s_rC, F>;
-    this->append(new LocalAssemblerType(
-                     this->range_space(), this->source_space(), local_bilinear_form, MatrixStorage::access(), param),
+    this->append(new LocalAssemblerType(this->range_space(),
+                                        this->source_space(),
+                                        local_bilinear_form,
+                                        MatrixStorage::access(),
+                                        param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
                  filter);
     return *this;
   } // ... append(...)
@@ -330,7 +341,12 @@ public:
                    const ElementFilterType& filter = ApplyOnAllElements())
   {
     this->append(new LocalElementOperatorFiniteDifferenceJacobianAssembler<M, SGV, s_r, s_rC, F, r_r, r_rC>(
-                     this->source_space(), this->range_space(), MatrixStorage::access(), source, local_operator, param),
+                     this->source_space(),
+                     this->range_space(),
+                     MatrixStorage::access(),
+                     source,
+                     local_operator,
+                     param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
                  filter);
     return *this;
   }
@@ -341,7 +357,12 @@ public:
                    const IntersectionFilterType& filter = ApplyOnAllIntersections())
   {
     this->append(new LocalIntersectionOperatorFiniteDifferenceJacobianAssembler<M, SGV, s_r, s_rC, F, r_r, r_rC>(
-                     this->source_space(), this->range_space(), MatrixStorage::access(), source, local_operator, param),
+                     this->source_space(),
+                     this->range_space(),
+                     MatrixStorage::access(),
+                     source,
+                     local_operator,
+                     param + XT::Common::Parameter("matrixoperator.scaling", scaling)),
                  filter);
     return *this;
   }
