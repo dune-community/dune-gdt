@@ -376,7 +376,7 @@ public:
   using typename BaseType::BasisfunctionType;
   static const size_t dimDomain = BaseType::dimDomain;
   static const size_t dimRange = BaseType::dimRange;
-  typedef typename std::vector<std::pair<RangeType, RangeFieldType>> PlaneCoefficientsType;
+  using PlaneCoefficientsType = typename std::vector<std::pair<RangeType, RangeFieldType>>;
 
   template <class... Args>
   ConvexHullLocalRealizabilityLimiter(Args&&... args)
