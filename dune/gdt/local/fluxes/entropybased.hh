@@ -483,6 +483,7 @@ public:
                                    const BasisValuesMatrixType& M,
                                    std::vector<RangeFieldType>& scalar_products) const
     {
+#if HAVE_MKL || HAVE_CBLAS
       XT::Common::Blas::dgemv(XT::Common::Blas::row_major(),
                               XT::Common::Blas::no_trans(),
                               static_cast<int>(quad_points_.size()),
@@ -495,6 +496,14 @@ public:
                               0.,
                               scalar_products.data(),
                               1);
+#else
+      const size_t num_quad_points = quad_points_.size();
+      std::fill(scalar_products.begin(), scalar_products.end(), 0.);
+      for (size_t ll = 0; ll < num_quad_points; ++ll) {
+        const auto* basis_ll = M.get_ptr(ll);
+        scalar_products[ll] = std::inner_product(beta_in.begin(), beta_in.end(), basis_ll, 0.);
+      }
+#endif
     }
 
     void apply_exponential(std::vector<RangeFieldType>& values) const
@@ -542,8 +551,11 @@ public:
           T_k_trans[jj][ii] = T_k[ii][jj];
     }
 
+    // For each basis evaluation b, calculates T_k^{-1} b. As the basis evaluations are the rows of M, we want to
+    // calculate (T_k^{-1} M^T)^T = M T_k^{-T}
     void apply_inverse_matrix(const MatrixType& T_k, BasisValuesMatrixType& M) const
     {
+#if HAVE_MKL || HAVE_CBLAS
       // Calculate the transpose here first as this is much faster than passing the matrix to dtrsm and using CblasTrans
       thread_local auto T_k_trans = std::make_unique<MatrixType>(0.);
       copy_transposed(T_k, *T_k_trans);
@@ -560,6 +572,15 @@ public:
                               dimRange,
                               M.data(),
                               matrix_num_cols);
+#else
+      assert(quad_points_.size() == M.rows());
+      VectorType tmp_vec, tmp_vec2;
+      for (size_t ll = 0; ll < quad_points_.size(); ++ll) {
+        std::copy_n(M.get_ptr(ll), dimRange, tmp_vec.begin());
+        XT::LA::solve_lower_triangular(T_k, tmp_vec2, tmp_vec);
+        std::copy_n(tmp_vec2.begin(), dimRange, M.get_ptr(ll));
+      }
+#endif
     }
 
     AlphaReturnType get_alpha(const DomainType& /*x_local*/,
@@ -1303,6 +1324,7 @@ public:
               (basis_ll[3] - T_k[3][0] * basis_ll[0] - T_k[3][1] * basis_ll[1] - T_k[3][2] * basis_ll[2]) * diag_inv[3];
         }
       } else {
+#if HAVE_MKL || HAVE_CBLAS
         thread_local LocalMatrixType T_k_trans(0.);
         assert(num_quad_points < std::numeric_limits<int>::max());
         // Calculate the transpose here first as this is much faster than passing the matrix to dtrsm and using
@@ -1320,6 +1342,14 @@ public:
                                 block_size,
                                 M.data(),
                                 block_size);
+#else
+        LocalVectorType tmp_vec, tmp_vec2;
+        for (size_t ll = 0; ll < num_quad_points; ++ll) {
+          std::copy_n(M.get_ptr(ll), block_size, tmp_vec.begin());
+          XT::LA::solve_lower_triangular(T_k, tmp_vec2, tmp_vec);
+          std::copy_n(tmp_vec2.begin(), block_size, M.get_ptr(ll));
+        }
+#endif
       }
     }
 
