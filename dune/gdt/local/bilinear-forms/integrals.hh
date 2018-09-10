@@ -226,7 +226,7 @@ public:
           result_out_out[ii][jj] += integrand_values_out_out_[ii][jj] * integration_factor * quadrature_weight;
       }
     } // loop over all quadrature points
-  } // ... apply(...)
+  } // ... apply2(...)
 
 private:
   mutable std::unique_ptr<IntegrandType> integrand_;
