@@ -170,8 +170,8 @@ public:
   using BaseType::dimRangeCols;
   // make matrices a little larger to align to 64 byte boundary
   static constexpr size_t matrix_num_cols = dimRange % 8 ? dimRange : dimRange + (8 - dimRange % 8);
-  using MatrixType = FieldMatrix<RangeFieldType, dimRange, dimRange>;
-  using VectorType = FieldVector<RangeFieldType, dimRange>;
+  using MatrixType = XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>;
+  using VectorType = XT::Common::FieldVector<RangeFieldType, dimRange>;
   using BasisValuesMatrixType = XT::LA::CommonDenseMatrix<RangeFieldType>;
   using QuadratureRuleType = Dune::QuadratureRule<DomainFieldType, dimDomain>;
   using AlphaReturnType = std::pair<VectorType, RangeFieldType>;
@@ -577,8 +577,8 @@ public:
 
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u);
-      StateRangeType u_prime = u / density;
-      StateRangeType alpha_iso = basis_functions_.alpha_iso();
+      VectorType u_prime = u / density;
+      VectorType alpha_iso = basis_functions_.alpha_iso();
 
       // if value has already been calculated for these values, skip computation
       const auto cache_iterator = cache_.find_closest(u_prime);
@@ -654,14 +654,14 @@ public:
             d_k *= -1;
             // Calculate stopping criteria (in original basis). Variables with _k are in current basis, without k in
             // original basis.
-            StateRangeType alpha_tilde;
+            VectorType alpha_tilde;
             XT::LA::solve_lower_triangular_transposed(*T_k, alpha_tilde, beta_out);
             auto u_alpha_tilde_k = g_k + v_k;
-            StateRangeType u_alpha_tilde;
+            VectorType u_alpha_tilde;
             T_k->mv(u_alpha_tilde_k, u_alpha_tilde);
             auto density_tilde = basis_functions_.density(u_alpha_tilde);
             const auto alpha_prime = alpha_tilde - alpha_iso * std::log(density_tilde);
-            StateRangeType u_alpha_prime;
+            VectorType u_alpha_prime;
             calculate_vector_integral(alpha_prime, M_, M_, u_alpha_prime);
             auto u_eps_diff = v - u_alpha_prime * (1 - epsilon_gamma_);
             VectorType d_alpha_tilde;
@@ -825,7 +825,7 @@ public:
     } // void partial_u_col(...)
 
     // calculates A = A B^{-1}. B is assumed to be symmetric positive definite.
-    static void calculate_A_Binv(MatrixType& A, MatrixType& B, bool L_calculated = false)
+    static void calculate_A_Binv(ColPartialURangeType& A, MatrixType& B, bool L_calculated = false)
     {
       // if B = LL^T, then we have to calculate ret = A (L^T)^{-1} L^{-1} = C L^{-1}
       // calculate B = LL^T first

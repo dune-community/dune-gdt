@@ -285,7 +285,7 @@ struct SourceBeamMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 1
   static constexpr double l1norm = reconstruct ? 0.33140398337571542 : 0.33140398337570809;
   static constexpr double l2norm = reconstruct ? 0.4558335407470202 : 0.44484887611142332;
   static constexpr double linfnorm = reconstruct ? 0.99172184304773137 : 0.98930905293228022;
-  static constexpr double tol = 1e-14;
+  static constexpr double tol = 1e-13;
 };
 
 template <class GridImp, class BasisfunctionImp, bool reconstruct>
@@ -376,7 +376,7 @@ struct PlaneSourceMnExpectedResults<HatFunctionMomentBasis<double, 1, double, 8,
   static constexpr double l1norm = 2.0000000240000158;
   static constexpr double l2norm = reconstruct ? 2.7968403961895407 : 2.745719708499653;
   static constexpr double linfnorm = reconstruct ? 5.2473683761050234 : 4.9918923122986048;
-  static constexpr double tol = 1e-14;
+  static constexpr double tol = 1e-13;
 };
 
 template <bool reconstruct>
@@ -385,7 +385,7 @@ struct PlaneSourceMnExpectedResults<PartialMomentBasis<double, 1, double, 8, 1, 
   static constexpr double l1norm = reconstruct ? 2.0000000239999913 : 2.0000000239999904;
   static constexpr double l2norm = reconstruct ? 2.8215879031866615 : 2.7633864171098814;
   static constexpr double linfnorm = reconstruct ? 6.0674052799351612 : 6.2607864745531092;
-  static constexpr double tol = 1e-14;
+  static constexpr double tol = 1e-12;
 };
 
 template <class GridImp, class BasisfunctionImp, bool reconstruct>
