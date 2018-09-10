@@ -158,8 +158,13 @@ struct RealizabilityLimiterChooser<HatFunctionMomentBasis<double, 3, double, ref
   using LocalRealizabilityLimiterType =
       NonLimitingLocalRealizabilityLimiter<AnalyticalFluxType, DiscreteFunctionType, BasisfunctionType>;
   static constexpr size_t dimRange = BasisfunctionType::dimRange;
+#if HAVE_FEKETE
   static constexpr size_t quad_order = 7; // fekete rule number 7
   static constexpr size_t num_quad_refinements = 0;
+#else
+  static constexpr size_t quad_order = 0; // use barycentre rule
+  static constexpr size_t num_quad_refinements = 7; // with 7 refinements
+#endif
 
 #if HAVE_CLP && USE_LP_POSITIVITY_LIMITER
   template <class MatrixType>
