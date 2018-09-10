@@ -348,13 +348,14 @@ public:
 
   /// \}
 
-  void assemble(const bool use_tbb = false) override final
+  ThisType& assemble(const bool use_tbb = false) override final
   {
     if (!assembled_) {
       // This clears all appended operators, which is ok, since we are done after assembling once!
       this->walk(use_tbb);
       assembled_ = true;
     }
+    return *this;
   } // ... assemble(...)
 
   using OperatorBaseType::jacobian;

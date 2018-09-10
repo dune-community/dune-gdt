@@ -155,12 +155,13 @@ public:
   /// \}
 
   /**
-   * Allows the implementation to do preparatory work (i.e., assemble the matrix of a matrix-based linear operator).
+   * Allows the implementation to do preparatory work (i.e., assemble the matrix of a matrix-based operator).
    *
    * \note In general, you have to call this method before calling apply, apply2, apply_inverse or induced_norm!
    */
-  virtual void assemble(const bool /*use_tbb*/ = 0)
+  virtual ThisType& assemble(const bool /*use_tbb*/ = false)
   {
+    return *this;
   }
 
   /// \name These methods should be implemented and define the functionality of the operator.
