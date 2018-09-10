@@ -17,10 +17,10 @@ language: generic
 services: docker
 
 before_script:
-    - export IMAGE="dunecommunity/${MY_MODULE}-testing_${DOCKER_TAG}:${TRAVIS_BRANCH}"
+    - export IMAGE="dunecommunity/${MY_MODULE}-testing_base_${DOCKER_TAG}:${TRAVIS_BRANCH}"
     - ./.travis.add_swap.bash 2000 &
     # get image with fallback to master branch of the super repo
-    - docker pull ${IMAGE} || export IMAGE="dunecommunity/${MY_MODULE}-testing_${DOCKER_TAG}:master" ; docker pull ${IMAGE}
+    - docker pull ${IMAGE} || export IMAGE="dunecommunity/${MY_MODULE}-testing_base_${DOCKER_TAG}:master" ; docker pull ${IMAGE}
     - docker inspect ${IMAGE}
     # for add swap
     - wait
