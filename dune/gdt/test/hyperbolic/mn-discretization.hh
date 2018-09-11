@@ -8,6 +8,8 @@
 #ifndef DUNE_GDT_TEST_HYPERBOLIC_MN_DISCRETIZATION_HH
 #define DUNE_GDT_TEST_HYPERBOLIC_MN_DISCRETIZATION_HH
 
+#include <chrono>
+
 #include <dune/xt/common/parallel/threadmanager.hh>
 #include <dune/xt/common/string.hh>
 #include <dune/xt/common/test/gtest/gtest.h>
@@ -161,6 +163,8 @@ struct HyperbolicMnDiscretization
         *basis_functions, u, problem_imp->get_sigma_a(), problem_imp->get_sigma_s(), problem_imp->get_Q());
     TimeStepperType timestepper(timestepper_rhs, timestepper_op);
     auto visualizer = basis_functions->template visualizer<DiscreteFunctionType>();
+
+    auto begin_time = std::chrono::steady_clock::now();
     timestepper.solve(t_end,
                       dt,
                       num_save_steps,
@@ -172,6 +176,9 @@ struct HyperbolicMnDiscretization
                       filename,
                       visualizer,
                       basis_functions->stringifier());
+    auto end_time = std::chrono::steady_clock::now();
+    std::chrono::duration<double> time_diff = end_time - begin_time;
+    std::cout << "Solving took: " << time_diff.count() << " s" << std::endl;
 
     auto ret = std::make_pair(FieldVector<double, 3>(0.), int(0));
     double& l1norm = ret.first[0];
