@@ -4,7 +4,7 @@ status = 1a3bcab04b011a5d6e44f9983cae6ff89fa695e8 bin (heads/master)
 	 8495540a687b3ee1f7f9a6298d6a5faea51ac069 config.opts (8495540)
 	 8f2c5aba441417bf2c42f22272f538c68a89cc4a dune-alugrid (remotes/origin/releases/2.5)
 	 707acf201d5a754c80f87cc4d71aa36bf29a6e3f dune-common (v2.5.1-9-g707acf20)
-	+5861788394605d00ee719d021242d10b35ed476b dune-gdt (heads/refactor-space-interface_drone)
+	+e75bbc614d6d4eeac6626139d065c814d756e0c8 dune-gdt (heads/refactor-space-interface_drone)
 	 390a2c503783bbed778a8ff610f8c5ca09c238d0 dune-geometry (v2.5.1-5-g390a2c5)
 	 d7b20bbc5f6fdcfc312beb0ea5d16d39ea26904e dune-grid (v2.5.1-2-gd7b20bbc5)
 	 9e29a333e8af02382d80b95335a784d5ce1ea2c8 dune-grid-glue (v2.4.0-70-g9e29a33)
@@ -44,7 +44,7 @@ commit = 707acf201d5a754c80f87cc4d71aa36bf29a6e3f
 [submodule.dune-gdt]
 remote = https://github.com/dune-community/dune-gdt.git
 status = 2424627f0ad5de7e4aaa5e7f48bc2a02414d95a1 .vcsetup (heads/master)
-commit = 5861788394605d00ee719d021242d10b35ed476b
+commit = e75bbc614d6d4eeac6626139d065c814d756e0c8
 
 [submodule.dune-geometry]
 remote = https://github.com/dune-community/dune-geometry.git
