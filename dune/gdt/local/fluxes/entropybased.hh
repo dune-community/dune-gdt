@@ -943,7 +943,7 @@ public:
       XT::LA::cholesky(H);
       const auto& L = H;
       bool ret = false;
-      if (hessian_sqrt_cond_inv(L) > 0.01) {
+      if (hessian_sqrt_cond_inv(L) > 0.1) {
         beta_out = beta_in;
         calculate_vector_integral(beta_out, P_k, P_k, g_k, true);
       } else {
