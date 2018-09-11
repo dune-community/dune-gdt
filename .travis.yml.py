@@ -31,22 +31,22 @@ services: docker
 install:
     - export BASEIMAGE="${MY_MODULE}-testing_base_${CC}:${TRAVIS_BRANCH}"
     - export IMAGE="dunecommunity/${MY_MODULE}-testing_${CC}:${TRAVIS_COMMIT}"
-    - ./.travis.add_swap.bash 2000 &
+    - ./.ci/travis/add_swap.bash 2000 &
     # get image with fallback to master branch of the super repo
     - docker pull dunecommunity/${BASEIMAGE} || export BASEIMAGE="${MY_MODULE}-testing_base_${CC}:master" ; docker pull dunecommunity/${BASEIMAGE}
     - docker build --build-arg BASE=${BASEIMAGE} -t ${IMAGE} -f .ci/docker/Dockerfile .
     # for add swap
     - wait
     - export ENV_FILE=${HOME}/env
-    - python3 ./.travis.make_env_file.py
+    - python3 ./.ci/make_env_file.py
     - export DOCKER_RUN="docker run --env-file ${ENV_FILE} -v ${TRAVIS_BUILD_DIR}:/home/dune-ci/src/${MY_MODULE} ${IMAGE}"
 
 script:
-    - ${DOCKER_RUN} /home/dune-ci/src/${MY_MODULE}/.travis.script.bash
+    - ${DOCKER_RUN} /home/dune-ci/src/${MY_MODULE}/.ci/travis/script.bash
 
 # runs independent of 'script' failure/success
 after_script:
-    - ${DOCKER_RUN} /home/dune-ci/src/${MY_MODULE}/.travis.after_script.bash
+    - ${DOCKER_RUN} /home/dune-ci/src/${MY_MODULE}/.ci/travis/after_script.bash
 
 notifications:
   email:
@@ -84,12 +84,12 @@ jobs:
 {%- endfor %}
   - stage: test_python
     env: CC=gcc
-    script: ${DOCKER_RUN} /home/dune-ci/src/${MY_MODULE}/.travis.test_python.bash
+    script: ${DOCKER_RUN} /home/dune-ci/src/${MY_MODULE}/.ci/travis/test_python.bash
     # overwrite other global/matrix settings
     after_script: true
   - stage: test_python
     env: CC=clang
-    script: ${DOCKER_RUN} /home/dune-ci/src/${MY_MODULE}/.travis.test_python.bash
+    script: ${DOCKER_RUN} /home/dune-ci/src/${MY_MODULE}/.ci/travis/test_python.bash
     # overwrite other global/matrix settings
     after_script: true
 
@@ -109,7 +109,7 @@ oldyml = open(ymlfn, 'rt').read()
 newyml = tpl.render(builders=range(0, builder_count))
 if newyml != oldyml:
     with open(ymlfn, 'wt') as yml:
-        yml.write(tpl.render(newyml))
+        yml.write(newyml)
     
 travis = where.first('travis')
 if travis:
