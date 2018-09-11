@@ -30,11 +30,11 @@ services: docker
 
 install:
     - export BASEIMAGE="${MY_MODULE}-testing_base_${CC}:${TRAVIS_BRANCH}"
-    - export IMAGE="${MY_MODULE}-testing_${CC}:${TRAVIS_COMMIT}"
+    - export IMAGE="dunecommunity/${MY_MODULE}-testing_${CC}:${TRAVIS_COMMIT}"
     - ./.travis.add_swap.bash 2000 &
     # get image with fallback to master branch of the super repo
     - docker pull dunecommunity/${BASEIMAGE} || export BASEIMAGE="${MY_MODULE}-testing_base_${CC}:master" ; docker pull dunecommunity/${BASEIMAGE}
-    - docker build --build-arg BASE=${BASEIMAGE} -t dunecommunity/${IMAGE} -f .ci/docker/Dockerfile .
+    - docker build --build-arg BASE=${BASEIMAGE} -t ${IMAGE} -f .ci/docker/Dockerfile .
     # for add swap
     - wait
     - export ENV_FILE=${HOME}/env
