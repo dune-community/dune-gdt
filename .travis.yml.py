@@ -31,24 +31,25 @@ dist: trusty
 language: generic
 services: docker
 
-before_script:
-    - export IMAGE="dunecommunity/${MY_MODULE}-testing_base_${DOCKER_TAG}:${TRAVIS_BRANCH}"
+install:
+    - export BASEIMAGE="${MY_MODULE}-testing_base_${CC}:${TRAVIS_BRANCH}"
+    - export IMAGE="${MY_MODULE}-testing_${CC}:${TRAVIS_COMMIT}"
     - ./.travis.add_swap.bash 2000 &
     # get image with fallback to master branch of the super repo
-    - docker pull ${IMAGE} || export IMAGE="dunecommunity/${MY_MODULE}-testing_base_${DOCKER_TAG}:master" ; docker pull ${IMAGE}
-    - docker inspect ${IMAGE}
+    - docker pull dunecommunity/${BASEIMAGE} || export BASEIMAGE="${MY_MODULE}-testing_base_${CC}:master" ; docker pull dunecommunity/${BASEIMAGE}
+    - docker build --build-arg BASE=${BASEIMAGE} -t dunecommunity/${IMAGE} -f .ci/docker/Dockerfile .
     # for add swap
     - wait
     - export ENV_FILE=${HOME}/env
     - python3 ./.travis.make_env_file.py
-    - export DOCKER_RUN="docker run --env-file ${ENV_FILE} -v ${TRAVIS_BUILD_DIR}:/root/src/${MY_MODULE} ${IMAGE}"
+    - export DOCKER_RUN="docker run --env-file ${ENV_FILE} -v ${TRAVIS_BUILD_DIR}:/home/dune-ci/src/${MY_MODULE} ${IMAGE}"
 
 script:
-    - ${DOCKER_RUN} /root/src/${MY_MODULE}/.travis.script.bash
+    - ${DOCKER_RUN} /home/dune-ci/src/${MY_MODULE}/.travis.script.bash
 
 # runs independent of 'script' failure/success
 after_script:
-    - ${DOCKER_RUN} /root/src/${MY_MODULE}/.travis.after_script.bash
+    - ${DOCKER_RUN} /home/dune-ci/src/${MY_MODULE}/.travis.after_script.bash
 
 notifications:
   email:
@@ -77,21 +78,21 @@ jobs:
 #   gcc 6
 {%- for c in builders %}
   - stage: test_cpp
-    env: DOCKER_TAG=gcc TESTS={{c}}
+    env: CC=gcc TESTS={{c}}
 {%- endfor %}
 #   clang 3.9
 {%- for c in builders %}
   - stage: test_cpp
-    env: DOCKER_TAG=clang TESTS={{c}}
+    env: CC=clang TESTS={{c}}
 {%- endfor %}
   - stage: test_python
-    env: DOCKER_TAG=gcc
-    script: ${DOCKER_RUN} /root/src/${MY_MODULE}/.travis.test_python.bash
+    env: CC=gcc
+    script: ${DOCKER_RUN} /home/dune-ci/src/${MY_MODULE}/.travis.test_python.bash
     # overwrite other global/matrix settings
     after_script: true
   - stage: test_python
-    env: DOCKER_TAG=clang
-    script: ${DOCKER_RUN} /root/src/${MY_MODULE}/.travis.test_python.bash
+    env: CC=clang
+    script: ${DOCKER_RUN} /home/dune-ci/src/${MY_MODULE}/.travis.test_python.bash
     # overwrite other global/matrix settings
     after_script: true
 
