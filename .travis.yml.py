@@ -108,8 +108,12 @@ import subprocess
 tpl = jinja2.Template(tpl)
 builder_count = int(sys.argv[1])
 ymlfn = os.path.join(os.path.dirname(__file__), '.travis.yml')
-with open(ymlfn, 'wt') as yml:
-    yml.write(tpl.render(builders=range(0, builder_count)))
+oldyml = open(ymlfn, 'rt').read()
+newyml = tpl.render(builders=range(0, builder_count))
+if newyml != oldyml:
+    with open(ymlfn, 'wt') as yml:
+        yml.write(tpl.render(newyml))
+    
 travis = where.first('travis')
 if travis:
     try:
