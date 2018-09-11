@@ -17,7 +17,7 @@ pipeline:
     environment:
       - MY_MODULE=dune-gdt
     commands:
-      - /home/dune-ci/src/dune-gdt/.travis.script.bash
+      - /home/dune-ci/src/dune-gdt/.ci/drone/script.bash
 
   python:
     image: dunecommunity/dune-gdt-testing_${CC}:${DRONE_COMMIT_SHA}
@@ -25,7 +25,7 @@ pipeline:
     environment:
       - MY_MODULE=dune-gdt
     commands:
-      - /home/dune-ci/src/dune-gdt/.travis.test_python.bash
+      - /home/dune-ci/src/dune-gdt/.ci/travis/test_python.bash
 
   cleanup_fail:
     image: dunecommunity/gitlabci_dockerindocker-dockerindocker
