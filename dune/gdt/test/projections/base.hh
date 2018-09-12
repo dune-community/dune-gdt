@@ -46,7 +46,7 @@ struct ProjectionOperatorBase : public OperatorBase<SpaceType>
     : BaseType()
     , relax_factor(this->space_.grid_layer().grid().comm().size() > 1 ? 1.15 : 1)
     , default_tolerance(1.35e-10 * relax_factor)
-    , alugrid_tolerance(3.8e-11)
+    , alugrid_tolerance(1.35e-10 * relax_factor)
   {
   }
 
