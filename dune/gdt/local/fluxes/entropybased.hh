@@ -646,7 +646,6 @@ public:
           f_k -= beta_in * v_k;
 
           thread_local auto H = XT::Common::make_unique<MatrixType>(0.);
-          bool basis_changed;
 
           int pure_newton = 0;
           for (size_t kk = 0; kk < k_max_; ++kk) {
@@ -654,7 +653,7 @@ public:
             if (kk > k_0_ && r < r_max)
               break;
             try {
-              basis_changed = change_basis(beta_in, v_k, P_k, *T_k, g_k, beta_out, *H);
+              change_basis(beta_in, v_k, P_k, *T_k, g_k, beta_out, *H);
             } catch (const Dune::MathError&) {
               if (r < r_max)
                 break;
@@ -670,8 +669,6 @@ public:
             T_k->mv(g_k, g_alpha_tilde);
             // calculate descent direction d_k;
             VectorType d_k = g_k;
-            if (!basis_changed)
-              XT::LA::solve_cholesky_factorized(*H, d_k);
             d_k *= -1;
             // Calculate stopping criteria (in original basis). Variables with _k are in current basis, without k in
             // original basis.
@@ -916,22 +913,7 @@ public:
           J_dd[mm][nn] = J_dd[nn][mm];
     } // void calculate_J(...)
 
-    // The hessian is symmetric, so the reciprocal condition (in 2-norm) is the minimal eigenvalue divided by the
-    // maximal eigenvalue. L has the square roots of the eigenvalues on its diagonal.
-    RangeFieldType hessian_sqrt_cond_inv(const MatrixType& L) const
-    {
-      RangeFieldType min_eigval = L[0][0];
-      RangeFieldType max_eigval = L[0][0];
-      for (size_t ii = 1; ii < dimRange; ++ii) {
-        if (L[ii][ii] > max_eigval)
-          max_eigval = L[ii][ii];
-        else if (L[ii][ii] < min_eigval)
-          min_eigval = L[ii][ii];
-      }
-      return min_eigval / max_eigval;
-    }
-
-    bool change_basis(const VectorType& beta_in,
+    void change_basis(const VectorType& beta_in,
                       VectorType& v_k,
                       BasisValuesMatrixType& P_k,
                       MatrixType& T_k,
@@ -942,22 +924,14 @@ public:
       calculate_hessian(beta_in, P_k, H);
       XT::LA::cholesky(H);
       const auto& L = H;
-      bool ret = false;
-      if (hessian_sqrt_cond_inv(L) > 0.1) {
-        beta_out = beta_in;
-        calculate_vector_integral(beta_out, P_k, P_k, g_k, true);
-      } else {
-        T_k.rightmultiply(L);
-        L.mtv(beta_in, beta_out);
-        StateRangeType tmp_vec;
-        XT::LA::solve_lower_triangular(L, tmp_vec, v_k);
-        v_k = tmp_vec;
-        apply_inverse_matrix(L, P_k);
-        ret = true;
-        calculate_vector_integral(beta_out, P_k, P_k, g_k, false);
-      }
+      T_k.rightmultiply(L);
+      L.mtv(beta_in, beta_out);
+      StateRangeType tmp_vec;
+      XT::LA::solve_lower_triangular(L, tmp_vec, v_k);
+      v_k = tmp_vec;
+      apply_inverse_matrix(L, P_k);
+      calculate_vector_integral(beta_out, P_k, P_k, g_k, false);
       g_k -= v_k;
-      return ret;
     } // void change_basis(...)
 
     const BasisfunctionType& basis_functions_;
