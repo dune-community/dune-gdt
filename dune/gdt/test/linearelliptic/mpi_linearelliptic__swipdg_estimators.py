@@ -14,29 +14,9 @@
 import itertools
 from dune.xt.codegen import typeid_to_typedef_name, la_backends, is_found
 
-
-def  _perm_to_tuple(perm):
-    t, s, l = perm
-    return t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))
-
-def _filter(perm):
-    t, s, l = perm
-    # currently only expectations for one testcase
-    if 'Yasp' in t:
-        return 'ESV2007TestCase' in t
-    # diverging results for istl/eigen, see #137
-    if 'Spe10Model1TestCase' in t:
-        return l == 'eigen_sparse'
-    return True
-
-# this file exists both with and without the "mpi" prefix
-# we dedup some permutations according to our filename
-mpi_case = 'mpi' in __file__
-
-grids = ['Yasp2Grid']
-
+grids = []
 try:
-    if not mpi_case and cache['dune-alugrid']:
+    if cache['dune-alugrid']:
         grids.extend(['AluSimplex2dGridType'])
 except KeyError:
     pass
@@ -47,13 +27,7 @@ try:
     cache['DXT_DISABLE_LARGE_TESTS']
 except KeyError:
     casenames.append('Spe10Model1TestCase')
-
-if mpi_case:
-    la = ('istl_sparse',)
-else:
-    la = la_backends(cache)
-
-casenames = ['ESV2007TestCase']
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
-permutations = itertools.product(testcases, ('gdt',), la)
-permutations = [_perm_to_tuple(perm) for perm in permutations if _filter(perm)]
+
+permutations = itertools.product(testcases, ('gdt',), ('istl_sparse',))
+permutations = [(t, s, l, typeid_to_typedef_name('{}_{}_{}'.format(t, s, l))) for t, s, l in permutations]
