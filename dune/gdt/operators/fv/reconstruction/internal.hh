@@ -176,10 +176,12 @@ public:
     , rconde_(dimRange)
     , rcondv_(dimRange)
     , iwork_(2 * dimRange - 2)
+    , eigenvectors_(std::make_unique<JacobianType>())
     , eigenvalues_(std::vector<RangeFieldType>(dimRange))
+    , QR_(std::make_unique<JacobianType>())
     , tau_(V::create(dimRange))
   {
-    jacobian() = std::make_unique<JacobianType>(eigenvectors_);
+    jacobian() = std::make_unique<JacobianType>();
 #if HAVE_MKL || HAVE_LAPACKE
     int ilo, ihi;
     double norm;
@@ -197,7 +199,7 @@ public:
                                                   &(dummy_complex_eigenvalues_[0]),
                                                   nullptr,
                                                   static_cast<int>(dimRange),
-                                                  M::data(eigenvectors_[0]),
+                                                  M::data((*eigenvectors_)[0]),
                                                   static_cast<int>(dimRange),
                                                   &ilo,
                                                   &ihi,
@@ -256,7 +258,7 @@ public:
                                                   &(dummy_complex_eigenvalues_[0]),
                                                   nullptr,
                                                   static_cast<int>(dimRange),
-                                                  M::data(eigenvectors_[dd]),
+                                                  M::data((*eigenvectors_)[dd]),
                                                   static_cast<int>(dimRange),
                                                   &ilo,
                                                   &ihi,
@@ -273,38 +275,38 @@ public:
     } else {
       static auto eigensolver_options = hyperbolic_default_eigensolver_options<MatrixType>();
       const auto eigensolver = EigenSolverType(jacobian(dd), &eigensolver_options);
-      eigenvectors_[dd] = eigensolver.real_eigenvectors();
+      (*eigenvectors_)[dd] = eigensolver.real_eigenvectors();
       eigenvalues_[dd] = eigensolver.real_eigenvalues();
     }
-    QR_[dd] = eigenvectors_[dd];
-    XT::LA::qr(QR_[dd], tau_[dd], permutations_[dd]);
+    (*QR_)[dd] = (*eigenvectors_)[dd];
+    XT::LA::qr((*QR_)[dd], tau_[dd], permutations_[dd]);
     computed_[dd] = true;
   }
 
   virtual void apply_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const override final
   {
-    eigenvectors_[dd].mv(x, ret);
+    (*eigenvectors_)[dd].mv(x, ret);
   }
 
   virtual void apply_inverse_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const override final
   {
     thread_local VectorType work = V::create(dimRange);
-    XT::LA::solve_qr_factorized(QR_[dd], tau_[dd], permutations_[dd], ret, x, &work);
+    XT::LA::solve_qr_factorized((*QR_)[dd], tau_[dd], permutations_[dd], ret, x, &work);
   }
 
   virtual const MatrixType& eigenvectors(const size_t dd) const override final
   {
-    return eigenvectors_[dd];
+    return (*eigenvectors_)[dd];
   }
 
 protected:
   std::vector<RangeFieldType> work_, scale_, rconde_, rcondv_;
   std::vector<int> iwork_;
   using BaseType::computed_;
-  JacobianType eigenvectors_;
+  std::unique_ptr<JacobianType> eigenvectors_;
   FieldVector<std::vector<RangeFieldType>, dimDomain> eigenvalues_;
   FieldVector<RangeFieldType, dimRange> dummy_complex_eigenvalues_;
-  JacobianType QR_;
+  std::unique_ptr<JacobianType> QR_;
   FieldVector<VectorType, dimDomain> tau_;
   FieldVector<FieldVector<int, dimRange>, dimDomain> permutations_;
 }; // class JacobianWrapper<...>

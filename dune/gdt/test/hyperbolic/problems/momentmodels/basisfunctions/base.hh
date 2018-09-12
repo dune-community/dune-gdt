@@ -337,7 +337,7 @@ public:
     const auto M = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(mass_matrix());
     FieldVector<FieldVector<MatrixType, 2>, dimFlux> B_kinetic(
         FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
-    MatrixType tmp_mat;
+    MatrixType tmp_mat(dimRange, dimRange, 0.);
     for (size_t dd = 0; dd < dimFlux; ++dd) {
       QuadraturesType neg_quadratures(quadratures_.size());
       QuadraturesType pos_quadratures(quadratures_.size());
