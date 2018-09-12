@@ -56,7 +56,7 @@ public:
            const GridLayerType& grid_layer,
            const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
            const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, {12, 4, 3}, grid_cfg, boundary_cfg, 1e-8 / (4 * M_PI))
+    : BaseType(basis_functions, grid_layer, {12, 4, 3}, grid_cfg, boundary_cfg, 1e-4 / (4 * M_PI))
   {
   }
 
@@ -86,14 +86,15 @@ public:
                                   std::make_pair("t_end", std::vector<double>{4})});
   }
 
-  // Boundary value of kinetic equation is \dirac(v - (1, 0, 0)) at x = 0 and
+  // Boundary value of kinetic equation is either \dirac(v - (1, 0, 0)) or an isotropic beam with density 2 (i.e. 2/(4
+  // pi) * basis_integrated) at x = 0 and
   // \psi_{vac} = 0.5*10^(-8) at x = 12, reflecting else
-  // so n-th component of \psi_{vac}*base_integrated_n
-  // at x = 3.
   virtual BoundaryValueType* create_boundary_values() const override
   {
-    auto dirac_integrated = basis_functions_.integrate_dirac_at(DomainType{1, 0, 0});
     auto basis_integrated = basis_functions_.integrated();
+#define USE_DIRAC_BOUNDARY 0
+#if USE_DIRAC_BOUNDARY
+    auto dirac_integrated = basis_functions_.integrate_dirac_at(DomainType{1, 0, 0});
     auto dirichlet_boundary_values = std::make_unique<ActualDirichletBoundaryValueType>(
         [=](const DomainType& x, const XT::Common::Parameter&) {
           auto ret = basis_integrated;
@@ -103,6 +104,15 @@ public:
           return ret;
         },
         1);
+#else // USE_DIRAC_BOUNDARY
+    auto dirichlet_boundary_values = std::make_unique<ActualDirichletBoundaryValueType>(
+        [=](const DomainType& x, const XT::Common::Parameter&) {
+          auto ret = basis_integrated;
+          ret *= psi_vac_ + XT::Common::FloatCmp::eq(x[0], 0.) * 2. / (4 * M_PI);
+          return ret;
+        },
+        1);
+#endif // USE_DIRAC_BOUNDARY
     auto boundary_info = std::make_unique<XT::Grid::NormalBasedBoundaryInfo<IntersectionType>>(
         1e-10, new XT::Grid::ReflectingBoundary{});
     boundary_info->register_new_normal({-1, 0, 0}, new XT::Grid::DirichletBoundary{});
