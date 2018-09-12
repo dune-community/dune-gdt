@@ -333,6 +333,7 @@ public:
   using typename BaseType::DomainType;
   using typename BaseType::MatrixType;
   using typename BaseType::QuadraturesType;
+  using typename BaseType::QuadratureType;
   using typename BaseType::RangeType;
   using typename BaseType::StringifierType;
   template <class DiscreteFunctionType>
@@ -340,6 +341,9 @@ public:
   using BlockRangeType = XT::Common::FieldVector<RangeFieldType, block_size>;
   using BlockPlaneCoefficientsType = typename std::vector<std::pair<BlockRangeType, RangeFieldType>>;
   using PlaneCoefficientsType = XT::Common::FieldVector<BlockPlaneCoefficientsType, num_blocks>;
+  using BlockMatrixType = XT::Common::BlockedFieldMatrix<RangeFieldType, num_blocks, block_size, block_size>;
+  using LocalMatrixType = typename BlockMatrixType::BlockType;
+  using LocalVectorType = XT::Common::FieldVector<RangeFieldType, block_size>;
 
   using BaseType::barycentre_rule;
 
@@ -534,6 +538,49 @@ public:
       threads[jj].join();
   }
 
+  BlockMatrixType block_mass_matrix() const
+  {
+    BlockMatrixType block_matrix;
+    parallel_quadrature_blocked(quadratures_, block_matrix, size_t(-1));
+    return block_matrix;
+  } // ... mass_matrix()
+
+  virtual MatrixType mass_matrix() const override final
+  {
+    return block_mass_matrix().convert_to_dynamic_matrix();
+  } // ... mass_matrix()
+
+  virtual FieldVector<MatrixType, dimFlux> mass_matrix_with_v() const override final
+  {
+    FieldVector<MatrixType, dimFlux> B(MatrixType(dimRange, dimRange, 0));
+    BlockMatrixType block_matrix;
+    for (size_t dd = 0; dd < dimFlux; ++dd) {
+      parallel_quadrature_blocked(quadratures_, block_matrix, dd);
+      B[dd] = block_matrix.convert_to_dynamic_matrix();
+    }
+    return B;
+  }
+
+  // returns V M^-1 where V has entries <v h_i h_j>_- and <v h_i h_j>_+
+  virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const override final
+  {
+    FieldVector<FieldVector<MatrixType, 2>, dimFlux> B_kinetic(
+        FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
+    BlockMatrixType block_matrix;
+    const BlockMatrixType mass_matrix = block_mass_matrix();
+    for (size_t dd = 0; dd < dimFlux; ++dd) {
+      QuadraturesType neg_quadratures(quadratures_.size());
+      QuadraturesType pos_quadratures(quadratures_.size());
+      BaseType::get_pos_and_neg_quadratures(neg_quadratures, pos_quadratures, dd);
+      parallel_quadrature_blocked(neg_quadratures, block_matrix, dd);
+      apply_invM_from_right(mass_matrix, block_matrix, B_kinetic[dd][0]);
+      parallel_quadrature_blocked(pos_quadratures, block_matrix, dd);
+      apply_invM_from_right(mass_matrix, block_matrix, B_kinetic[dd][1]);
+    } // dd
+    return B_kinetic;
+  } // ... kinetic_flux_matrices()
+
+
 private:
   void calculate_plane_coefficients_block(std::vector<XT::Common::FieldVector<RangeFieldType, block_size>>& points,
                                           const size_t jj) const
@@ -595,6 +642,54 @@ private:
 #else // HAVE_QHULL
     DUNE_THROW(Dune::NotImplemented, "You are missing Qhull!");
 #endif // HAVE_QHULL
+  }
+
+  void
+  parallel_quadrature_blocked(const QuadraturesType& quadratures, BlockMatrixType& matrix, const size_t v_index) const
+  {
+    size_t num_threads = num_blocks;
+    std::vector<std::thread> threads(num_threads);
+    // Launch a group of threads
+    for (size_t jj = 0; jj < num_threads; ++jj)
+      threads[jj] = std::thread(&ThisType::calculate_block_in_thread,
+                                this,
+                                std::cref(quadratures[jj]),
+                                std::ref(matrix.block(jj)),
+                                v_index,
+                                jj);
+    // Join the threads with the main thread
+    for (size_t jj = 0; jj < num_threads; ++jj)
+      threads[jj].join();
+  } // void parallel_quadrature(...)
+
+  void calculate_block_in_thread(const QuadratureType& quadrature,
+                                 LocalMatrixType& local_matrix,
+                                 const size_t v_index,
+                                 const size_t jj) const
+  {
+    local_matrix *= 0.;
+    for (const auto& quad_point : quadrature) {
+      const auto& v = quad_point.position();
+      const auto basis_evaluated = evaluate(v, jj);
+      const auto& weight = quad_point.weight();
+      const auto factor = v_index == size_t(-1) ? 1. : v[v_index];
+      for (size_t nn = 0; nn < local_matrix.N(); ++nn)
+        for (size_t mm = 0; mm < local_matrix.M(); ++mm)
+          local_matrix[nn][mm] +=
+              basis_evaluated[jj * block_size + nn] * basis_evaluated[jj * block_size + mm] * factor * weight;
+    }
+  } // void calculate_in_thread(...)
+
+  void apply_invM_from_right(const BlockMatrixType& M, BlockMatrixType& V, MatrixType& ret) const
+  {
+    LocalVectorType local_vec;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      for (size_t rr = 0; rr < block_size; ++rr) {
+        M.block(jj).solve(local_vec, V.block(jj)[rr]);
+        V.block(jj)[rr] = local_vec;
+      } // rr
+    } // jj
+    ret = V.convert_to_dynamic_matrix();
   }
 
   using BaseType::quadratures_;

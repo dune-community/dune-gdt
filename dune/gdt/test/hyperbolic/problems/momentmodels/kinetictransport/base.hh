@@ -42,6 +42,7 @@ public:
   using typename BaseType::MatrixType;
   using BaseType::dimDomain;
   using BaseType::dimRange;
+  using BaseType::dimRangeCols;
 
   using typename BaseType::FluxType;
   using typename BaseType::RhsType;
@@ -97,6 +98,43 @@ public:
 
   virtual XT::Common::Parameter parameters() const = 0;
 
+  template <class VectorType>
+  void
+  solve(const MatrixType& mat,
+        VectorType& x,
+        const VectorType& rhs,
+        const BasisfunctionsInterface<DomainFieldType, dimDomain, RangeFieldType, dimRange, dimRangeCols, dimDomain>&)
+      const
+  {
+    // copy to our FieldMatrix as the DenseMatrix in dune-common has a bug in its solve method (fixed in 2.6)
+    auto field_mat = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(mat);
+    field_mat->solve(x, rhs);
+  }
+
+  template <class VectorType, size_t refinements>
+  void solve(const MatrixType& mat,
+             VectorType& x,
+             const VectorType& rhs,
+             const PartialMomentBasis<DomainFieldType, 3, RangeFieldType, refinements, dimRangeCols, 3, 1>&) const
+  {
+    const size_t num_blocks = dimRange / 4;
+    const size_t block_size = 4;
+    XT::Common::FieldMatrix<RangeFieldType, block_size, block_size> local_mat;
+    XT::Common::FieldVector<RangeFieldType, block_size> local_x, local_rhs;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      const size_t offset = jj * block_size;
+      // copy to local matrix and vector
+      for (size_t rr = 0; rr < block_size; ++rr) {
+        local_rhs[rr] = rhs[offset + rr];
+        for (size_t cc = 0; cc < block_size; ++cc)
+          local_mat[rr][cc] = mat[offset + rr][offset + cc];
+      } // rr
+      local_mat.solve(local_x, local_rhs);
+      for (size_t rr = 0; rr < block_size; ++rr)
+        x[offset + rr] = local_x[rr];
+    } // jj
+  }
+
   using XT::Common::ParametricInterface::parse_parameter;
 
   // flux matrix A = B M^{-1} with B_{ij} = <v h_i h_j>
@@ -109,9 +147,7 @@ public:
     DynamicVector<RangeFieldType> tmp_row(M_T.N(), 0.);
     for (size_t dd = 0; dd < dimDomain; ++dd) {
       for (size_t ii = 0; ii < M_T.N(); ++ii) {
-        // copy to our FieldMatrix as the DenseMatrix in dune-common has a bug in its solve method (fixed in 2.6)
-        auto M_T_FieldMat = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(M_T);
-        M_T_FieldMat->solve(tmp_row, A[dd][ii]);
+        solve(M_T, tmp_row, A[dd][ii], basis_functions_);
         A[dd][ii] = tmp_row;
       }
     }
@@ -138,9 +174,7 @@ public:
     // calculate c = M^{-T} <b>
     const auto M_T = basis_functions_.mass_matrix(); // mass matrix is symmetric
     RangeType c(0.);
-    // copy to our FieldMatrix as the DenseMatrix in dune-common has a bug in its solve method (fixed in 2.6)
-    auto M_T_FieldMat = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(M_T);
-    M_T_FieldMat->solve(c, basis_integrated);
+    solve(M_T, c, basis_integrated, basis_functions_);
     MatrixType I(dimRange, dimRange, 0.);
     for (size_t rr = 0; rr < dimRange; ++rr)
       I[rr][rr] = 1;

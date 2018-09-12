@@ -100,6 +100,7 @@ public:
   using RangeFieldType = typename BasisfunctionType::RangeFieldType;
   static const size_t dimDomain = BasisfunctionType::dimFlux;
   static const size_t dimRange = BasisfunctionType::dimRange;
+  static const size_t dimRangeCols = BasisfunctionType::dimRangeCols;
   using GlobalLambdaFunctionType =
       XT::Functions::GlobalLambdaFunction<EntityType, DomainFieldType, dimDomain, RangeFieldType, dimRange, 1>;
   using GlobalLambdaFluxFunctionType = XT::Functions::GlobalLambdaFluxFunction<U_, 0, RangeFieldType, dimRange, 1>;

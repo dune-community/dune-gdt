@@ -331,27 +331,23 @@ public:
     return B;
   }
 
-  // returns matrices with entries <v h_i h_j>_- and <v h_i h_j>_+
+  // returns V M^-1 where the matrix V has entries <v h_i h_j>_- and <v h_i h_j>_+
   virtual FieldVector<FieldVector<MatrixType, 2>, dimFlux> kinetic_flux_matrices() const
   {
+    const auto M = std::make_unique<XT::Common::FieldMatrix<RangeFieldType, dimRange, dimRange>>(mass_matrix());
     FieldVector<FieldVector<MatrixType, 2>, dimFlux> B_kinetic(
         FieldVector<MatrixType, 2>(MatrixType(dimRange, dimRange, 0.)));
+    MatrixType tmp_mat;
     for (size_t dd = 0; dd < dimFlux; ++dd) {
       QuadraturesType neg_quadratures(quadratures_.size());
       QuadraturesType pos_quadratures(quadratures_.size());
-      for (size_t ii = 0; ii < quadratures_.size(); ++ii) {
-        for (const auto& quad_point : quadratures_[ii]) {
-          const auto& v = quad_point.position();
-          const auto& weight = quad_point.weight();
-          // if v[dd] = 0 the quad_point does not contribute to the integral
-          if (v[dd] > 0.)
-            pos_quadratures[ii].emplace_back(v, weight);
-          else if (v[dd] < 0.)
-            neg_quadratures[ii].emplace_back(v, weight);
-        } // quad_points
-      } // quadratures
-      parallel_quadrature(neg_quadratures, B_kinetic[dd][0], dd);
-      parallel_quadrature(pos_quadratures, B_kinetic[dd][1], dd);
+      get_pos_and_neg_quadratures(neg_quadratures, pos_quadratures, dd);
+      parallel_quadrature(neg_quadratures, tmp_mat, dd);
+      for (size_t rr = 0; rr < dimRange; ++rr)
+        M->solve(B_kinetic[dd][0][rr], tmp_mat[rr]);
+      parallel_quadrature(pos_quadratures, tmp_mat, dd);
+      for (size_t rr = 0; rr < dimRange; ++rr)
+        M->solve(B_kinetic[dd][1][rr], tmp_mat[rr]);
     } // dd
     return B_kinetic;
   } // ... kinetic_flux_matrices()
@@ -483,6 +479,21 @@ public:
   }
 
 protected:
+  void
+  get_pos_and_neg_quadratures(QuadraturesType& neg_quadratures, QuadraturesType& pos_quadratures, const size_t dd) const
+  {
+    for (size_t ii = 0; ii < quadratures_.size(); ++ii) {
+      for (const auto& quad_point : quadratures_[ii]) {
+        const auto& v = quad_point.position();
+        const auto& weight = quad_point.weight();
+        // if v[dd] = 0 the quad_point does not contribute to the integral
+        if (v[dd] > 0.)
+          pos_quadratures[ii].emplace_back(v, weight);
+        else if (v[dd] < 0.)
+          neg_quadratures[ii].emplace_back(v, weight);
+      } // quad_points
+    } // quadratures
+  }
   static std::vector<MergedQuadratureIterator> create_decomposition(const QuadraturesType& quadratures,
                                                                     const size_t num_threads)
   {
