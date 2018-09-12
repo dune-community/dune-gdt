@@ -160,7 +160,7 @@ public:
   VisualizerType<DiscreteFunctionType> visualizer() const
   {
     return [](const DiscreteFunctionType& u_n, const std::string& filename_prefix, const size_t ii) {
-      component_visualizer<DiscreteFunctionType, dimRange, 0>(u_n, filename_prefix, ii);
+      component_visualizer(0, u_n, filename_prefix, ii);
     };
   }
 

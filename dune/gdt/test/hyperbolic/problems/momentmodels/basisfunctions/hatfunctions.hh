@@ -229,7 +229,7 @@ public:
   VisualizerType<DiscreteFunctionType> visualizer() const
   {
     return [](const DiscreteFunctionType& u_n, const std::string& filename_prefix, const size_t ii) {
-      sum_visualizer<DiscreteFunctionType, dimRange>(u_n, filename_prefix, ii);
+      sum_visualizer(u_n, filename_prefix, ii);
     };
   }
 
@@ -393,7 +393,7 @@ public:
   VisualizerType<DiscreteFunctionType> visualizer() const
   {
     return [](const DiscreteFunctionType& u_n, const std::string& filename_prefix, const size_t ii) {
-      sum_visualizer<DiscreteFunctionType, dimRange>(u_n, filename_prefix, ii);
+      sum_visualizer(u_n, filename_prefix, ii);
     };
   }
 

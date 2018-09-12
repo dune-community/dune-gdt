@@ -252,7 +252,7 @@ struct SourceBeamPnTestCase
   using RangeFieldType = typename BasisfunctionType::RangeFieldType;
   using GridType = GridImp;
   using GridLayerType = typename GridType::LeafGridView;
-  using SpaceType = FvProductSpace<GridLayerType, RangeFieldType, dimRange, 1>;
+  using SpaceType = FvSpace<GridLayerType, RangeFieldType, dimRange, 1>;
   using VectorType = typename Dune::XT::LA::Container<RangeFieldType, Dune::XT::LA::default_backend>::VectorType;
   using DiscreteFunctionType = DiscreteFunction<SpaceType, VectorType>;
   using ProblemType = SourceBeamPn<BasisfunctionType, GridLayerType, DiscreteFunctionType>;

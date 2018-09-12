@@ -41,86 +41,51 @@ namespace Dune {
 namespace GDT {
 
 
-// take a DiscreteFunction and return a DiscreteFunction corresponding to component ii
-template <size_t ii, class DiscreteFunctionType>
-auto get_factor_discrete_function(const DiscreteFunctionType& discrete_function) ->
-    typename Dune::GDT::DiscreteFunction<
-        typename XT::Common::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
-        typename DiscreteFunctionType::VectorType>
+template <class DiscreteFunctionType>
+auto get_factor_space(const DiscreteFunctionType& discrete_function)
+    -> FvSpace<typename DiscreteFunctionType::SpaceType::GridLayerType,
+               typename DiscreteFunctionType::RangeFieldType,
+               1,
+               1>
 {
-  typedef typename Dune::GDT::DiscreteFunction<
-      typename XT::Common::tuple_element<ii, typename DiscreteFunctionType::SpaceType::SpaceTupleType>::type,
-      typename DiscreteFunctionType::VectorType>
-      FactorDiscreteFunctionType;
-  static_assert(ii < DiscreteFunctionType::SpaceType::num_factors, "This factor does not exist.");
+  using FactorSpaceType = FvSpace<typename DiscreteFunctionType::SpaceType::GridLayerType,
+                                  typename DiscreteFunctionType::RangeFieldType,
+                                  1,
+                                  1>;
+  return FactorSpaceType(discrete_function.space().grid_layer());
+}
+
+// take a FiniteVolume-DiscreteFunction and return a DiscreteFunction corresponding to component ii
+template <class FactorSpaceType, class DiscreteFunctionType>
+auto get_factor_discrete_function(const size_t ii,
+                                  const FactorSpaceType& factor_space,
+                                  const DiscreteFunctionType& discrete_function)
+    -> DiscreteFunction<FactorSpaceType, typename DiscreteFunctionType::VectorType>
+{
+  static constexpr size_t dimRange = DiscreteFunctionType::dimRange;
+  assert(ii < dimRange);
+  using VectorType = typename DiscreteFunctionType::VectorType;
+  using FactorDiscreteFunctionType = typename Dune::GDT::DiscreteFunction<FactorSpaceType, VectorType>;
   const auto& space = discrete_function.space();
-  const auto& factor_space = space.template factor<ii>();
-  typename DiscreteFunctionType::VectorType factor_vector(factor_space.mapper().size());
+  FactorDiscreteFunctionType factor_discrete_function(factor_space);
+  auto& factor_vector = factor_discrete_function.vector();
   const auto it_end = space.grid_layer().template end<0>();
   for (auto it = space.grid_layer().template begin<0>(); it != it_end; ++it) {
     const auto& entity = *it;
-    for (size_t jj = 0; jj < factor_space.mapper().numDofs(entity); ++jj)
-      factor_vector.set_entry(factor_space.mapper().mapToGlobal(entity, jj),
-                              discrete_function.vector().get_entry(space.mapper().mapToGlobal(ii, entity, jj)));
+    factor_vector.set_entry(factor_space.mapper().mapToGlobal(entity, 0),
+                            discrete_function.vector().get_entry(space.mapper().mapToGlobal(entity, ii)));
   }
-  FactorDiscreteFunctionType factor_discrete_function(factor_space);
-  factor_discrete_function.vector() = factor_vector;
-  //  typedef Dune::GDT::DiscreteFunctionDataHandle<FactorDiscreteFunctionType> DataHandleType;
-  //  DataHandleType handle(factor_discrete_function);
-  //  factor_space.grid_layer().template communicate<DataHandleType>(
-  //      handle, Dune::InteriorBorder_All_Interface, Dune::ForwardCommunication);
   return factor_discrete_function;
 }
 
-// static for loop to sum components of a DiscreteFunction
-template <size_t index, size_t N>
-struct static_discrete_function_loop
-{
-  template <class DiscreteFunctionType>
-  static typename DiscreteFunctionType::VectorType sum_vectors(const DiscreteFunctionType& discrete_function)
-  {
-    return static_discrete_function_loop<index, N / 2>::sum_vectors(discrete_function)
-           + static_discrete_function_loop<index + N / 2, N - N / 2>::sum_vectors(discrete_function);
-  }
-
-  template <class DiscreteFunctionType>
-  static typename DiscreteFunctionType::VectorType
-  sum_vectors_divisible_by(const DiscreteFunctionType& discrete_function, const size_t divisor)
-  {
-    return static_discrete_function_loop<index, N / 2>::sum_vectors_divisible_by(discrete_function, divisor)
-           + static_discrete_function_loop<index + N / 2, N - N / 2>::sum_vectors_divisible_by(discrete_function,
-                                                                                               divisor);
-  }
-};
-
-// specialization to end the loop
-template <size_t index>
-struct static_discrete_function_loop<index, 1>
-{
-  template <class DiscreteFunctionType>
-  static typename DiscreteFunctionType::VectorType sum_vectors(const DiscreteFunctionType& discrete_function)
-  {
-    return get_factor_discrete_function<index, DiscreteFunctionType>(discrete_function).vector();
-  }
-
-  template <class DiscreteFunctionType>
-  static typename DiscreteFunctionType::VectorType
-  sum_vectors_divisible_by(const DiscreteFunctionType& discrete_function, const size_t divisor)
-  {
-    if (!(index % divisor))
-      return get_factor_discrete_function<index, DiscreteFunctionType>(discrete_function).vector();
-    else
-      return typename DiscreteFunctionType::VectorType(
-          discrete_function.space().template factor<index>().mapper().size(), 0.);
-  }
-};
-
 // visualizes sum of components of discrete_function
-template <class DiscreteFunctionType, size_t dimRange>
+template <class DiscreteFunctionType>
 void sum_visualizer(const DiscreteFunctionType& u_n, const std::string& filename_prefix, const size_t ii)
 {
-  auto sum_function = get_factor_discrete_function<0, DiscreteFunctionType>(u_n);
-  sum_function.vector() = static_discrete_function_loop<0, dimRange>::sum_vectors(u_n);
+  auto factor_space = get_factor_space(u_n);
+  auto sum_function = get_factor_discrete_function(0, factor_space, u_n);
+  for (size_t jj = 1; jj < DiscreteFunctionType::dimRange; ++jj)
+    sum_function.vector() += get_factor_discrete_function(jj, factor_space, u_n).vector();
   sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(ii));
 }
 
@@ -131,19 +96,23 @@ void sum_divisible_by_visualizer(const DiscreteFunctionType& u_n,
                                  const size_t ii,
                                  const size_t divisor)
 {
-  auto sum_function = get_factor_discrete_function<0, DiscreteFunctionType>(u_n);
-  sum_function.vector() = static_discrete_function_loop<0, dimRange>::sum_vectors_divisible_by(u_n, divisor);
+  auto factor_space = get_factor_space(u_n);
+  auto sum_function = get_factor_discrete_function(0, factor_space, u_n);
+  for (size_t jj = divisor; jj < DiscreteFunctionType::dimRange; jj += divisor)
+    sum_function.vector() += get_factor_discrete_function(jj, factor_space, u_n).vector();
   sum_function.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(ii));
 }
 
 // visualizes factor * component of discrete function
-template <class DiscreteFunctionType, size_t dimRange, size_t component>
-void component_visualizer(const DiscreteFunctionType& u_n,
+template <class DiscreteFunctionType>
+void component_visualizer(const size_t component,
+                          const DiscreteFunctionType& u_n,
                           const std::string& filename_prefix,
                           const size_t ii,
                           const double factor = 1.)
 {
-  auto u_n_comp = get_factor_discrete_function<component, DiscreteFunctionType>(u_n);
+  auto factor_space = get_factor_space(u_n);
+  auto u_n_comp = get_factor_discrete_function(component, factor_space, u_n);
   u_n_comp.vector() *= factor;
   u_n_comp.visualize(filename_prefix + "_" + Dune::XT::Common::to_string(ii));
 }
