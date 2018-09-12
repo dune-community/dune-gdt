@@ -233,7 +233,12 @@ struct HyperbolicPnDiscretization
 
     // ***************** project initial values to discrete function *********************
     // create a discrete function for the solution
-    DiscreteFunctionType u(fv_space, "solution");
+    const size_t vec_size = fv_space.mapper().size();
+    // we do very few whole-container operations with this vec, so using that many mutexes improves performance as it
+    // avoids locking
+    const size_t num_mutexes = XT::Common::threadManager().max_threads() * 100;
+    typename DiscreteFunctionType::VectorType vec(vec_size, 0., num_mutexes);
+    DiscreteFunctionType u(fv_space, vec, "solution");
     // project initial values
     project_l2(initial_values, u, 0, {}, true);
 
