@@ -47,6 +47,16 @@ public:
   static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type);
 }; // LinearEllipticEocExpectations
 
+template <>
+class LinearEllipticEocExpectations<LinearElliptic::ESV2007TestCase<AluCube2dGridType, double, 1>,
+                                    LinearElliptic::ChooseDiscretizer::cg,
+                                    1> : public internal::LinearEllipticEocExpectationsBase<1>
+{
+  typedef LinearElliptic::ESV2007TestCase<AluCube2dGridType, double, 1> TestCaseType;
+
+public:
+  static std::vector<double> results(const TestCaseType& /*test_case*/, const std::string type);
+}; // LinearEllipticEocExpectations
 
 } // namespace Test
 } // namespace GDT
