@@ -16,10 +16,11 @@ import itertools
 from dune.xt.codegen import typeid_to_typedef_name, la_backends, is_found
 
 
-grids = ['Yasp2Grid']
+grid = []
 # ///TODO re-add alugrid
 
-casenames = ['AO2013TestCase', 'ER2007TestCase', 'ESV2007TestCase', 'MixedBoundaryTestCase', 'Spe10Model1TestCase']
+casenames = ['AO2013TestCase', 'ER2007TestCase', 'ESV2007TestCase', 'MixedBoundaryTestCase',
+             'Spe10Model1TestCase']
 testcases = ['Dune::GDT::LinearElliptic::{}<{}>'.format(c, g) for c, g in itertools.product(casenames, grids)]
 
 permutations = itertools.product(testcases, ('gdt',), la_backends(cache))
