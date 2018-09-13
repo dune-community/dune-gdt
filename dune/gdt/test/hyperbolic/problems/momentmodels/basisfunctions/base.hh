@@ -334,6 +334,18 @@ public:
     }
     parallel_quadrature(quadratures_, ret, direction, true);
     ret.rightmultiply(mass_matrix_inverse());
+    // We need the exact reflection matrix to guarantee Q-realizability, the matrix should only contain 0, +-1, so just
+    // ensure it does
+    for (size_t ii = 0; ii < dimRange; ++ii) {
+      for (size_t jj = 0; jj < dimRange; ++jj) {
+        if (std::abs(ret[ii][jj]) > 0.99 && std::abs(ret[ii][jj]) < 1.01)
+          ret[ii][jj] = ret[ii][jj] / std::abs(ret[ii][jj]);
+        else if (std::abs(ret[ii][jj]) < 0.01)
+          ret[ii][jj] = 0;
+        else
+          DUNE_THROW(Dune::MathError, "Invalid reflection matrix!");
+      }
+    }
     return ret;
   }
 

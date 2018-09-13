@@ -133,6 +133,11 @@ public:
     return (*jacobian_)[dd];
   }
 
+  virtual RangeFieldType eigenvectors_reciprocal_cond(const size_t /*dd*/) const
+  {
+    return 1.;
+  }
+
   virtual void apply_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const = 0;
 
   virtual void apply_inverse_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const = 0;
@@ -177,6 +182,7 @@ public:
     , rcondv_(dimRange)
     , iwork_(2 * dimRange - 2)
     , eigenvectors_(std::make_unique<JacobianType>())
+    , eigenvectors_rcond_(1.)
     , eigenvalues_(std::vector<RangeFieldType>(dimRange))
     , QR_(std::make_unique<JacobianType>())
     , tau_(V::create(dimRange))
@@ -280,7 +286,24 @@ public:
     }
     (*QR_)[dd] = (*eigenvectors_)[dd];
     XT::LA::qr((*QR_)[dd], tau_[dd], permutations_[dd]);
+#if HAVE_MKL || HAVE_LAPACKE
+    int info = XT::Common::Lapacke::dtrcon(XT::Common::Lapacke::row_major(),
+                                           '1',
+                                           'U',
+                                           'N',
+                                           static_cast<int>(dimRange),
+                                           M::data((*QR_)[dd]),
+                                           static_cast<int>(dimRange),
+                                           &(eigenvectors_rcond_[dd]));
+    if (info)
+      eigenvectors_rcond_[dd] = 0.;
+#endif
     computed_[dd] = true;
+  }
+
+  virtual RangeFieldType eigenvectors_reciprocal_cond(const size_t dd) const override final
+  {
+    return eigenvectors_rcond_[dd];
   }
 
   virtual void apply_eigenvectors(const size_t dd, const VectorType& x, VectorType& ret) const override final
@@ -304,6 +327,7 @@ protected:
   std::vector<int> iwork_;
   using BaseType::computed_;
   std::unique_ptr<JacobianType> eigenvectors_;
+  DomainType eigenvectors_rcond_;
   FieldVector<std::vector<RangeFieldType>, dimDomain> eigenvalues_;
   FieldVector<RangeFieldType, dimRange> dummy_complex_eigenvalues_;
   std::unique_ptr<JacobianType> QR_;

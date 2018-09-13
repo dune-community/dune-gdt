@@ -598,6 +598,10 @@ public:
 
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u);
+      if (density <= 0.) {
+        mutex_.unlock();
+        DUNE_THROW(Dune::MathError, "Negative density!");
+      }
       VectorType u_prime = u / density;
       VectorType alpha_iso = basis_functions_.alpha_iso();
 
@@ -1349,6 +1353,10 @@ public:
 
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u_in);
+      if (density <= 0.) {
+        mutex_.unlock();
+        DUNE_THROW(Dune::MathError, "Negative density!");
+      }
       StateRangeType u_prime_in = u_in / density;
       StateRangeType alpha_iso_in = basis_functions_.alpha_iso();
       BlockVectorType alpha_iso = alpha_iso_in;
@@ -2289,6 +2297,10 @@ public:
         cache_.set_capacity(cache_size+dimDomain);
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u);
+      if (density <= 0.) {
+        mutex_.unlock();
+        DUNE_THROW(Dune::MathError, "Negative density!");
+      }
       StateRangeType u_prime = u / density;
       StateRangeType alpha_iso = basis_functions_.alpha_iso();
       // if value has already been calculated for these values, skip computation
@@ -2923,6 +2935,10 @@ public:
 
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u);
+      if (density <= 0.) {
+        mutex_.unlock();
+        DUNE_THROW(Dune::MathError, "Negative density!");
+      }
       RangeType u_prime = u / density;
       RangeType alpha_iso = basis_functions_.alpha_iso();
 

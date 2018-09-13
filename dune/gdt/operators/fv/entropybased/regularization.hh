@@ -60,8 +60,8 @@ public:
     thread_local auto vector_indices = source_.space().mapper().globalIndices(entity);
     source_.space().mapper().globalIndices(entity, vector_indices);
     if (density_min < min_acceptable_density_ / basis_functions.density_factor()) {
-      std::cerr << "Added small vaccuum density to " << XT::Common::to_string(u, 15) << " on entity "
-                << XT::Common::to_string(entity.geometry().center(), 15) << std::endl;
+      //  std::cerr << "Added small vaccuum density to " << XT::Common::to_string(u, 15) << " on entity "
+      //            << XT::Common::to_string(entity.geometry().center(), 15) << std::endl;
       u += basis_functions.u_iso() * min_acceptable_density_;
     }
     const auto s =

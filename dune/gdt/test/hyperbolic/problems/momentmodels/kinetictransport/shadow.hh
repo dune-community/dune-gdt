@@ -56,7 +56,7 @@ public:
            const GridLayerType& grid_layer,
            const XT::Common::Configuration& grid_cfg = default_grid_cfg(),
            const XT::Common::Configuration& boundary_cfg = default_boundary_cfg())
-    : BaseType(basis_functions, grid_layer, {12, 4, 3}, grid_cfg, boundary_cfg, 1e-4 / (4 * M_PI))
+    : BaseType(basis_functions, grid_layer, {12, 4, 3}, grid_cfg, boundary_cfg, 1e-8 / (4 * M_PI))
   {
   }
 
