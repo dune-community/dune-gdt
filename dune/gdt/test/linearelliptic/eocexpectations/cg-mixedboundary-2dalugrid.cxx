@@ -72,6 +72,30 @@ LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluSimplex2d
   return {};
 }
 
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluCube2dGridType, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::cg,
+                                                  1>::
+    results(const LinearEllipticEocExpectations<LinearElliptic::MixedBoundaryTestCase<AluCube2dGridType, double, 1>,
+                                                LinearElliptic::ChooseDiscretizer::cg,
+                                                1>::TestCaseType&,
+            const std::string type)
+{
+  if (type == "L2") {
+#if DXT_DISABLE_LARGE_TESTS
+    return {1.21e-02, 2.58e-03};
+#else
+    return {5.00e-02, 1.25e-02, 3.06e-03, 6.57e-04};
+#endif
+  } else if (type == "H1_semi" || type == "energy") {
+#if DXT_DISABLE_LARGE_TESTS
+    return {1.29e-01, 6.07e-02};
+#else
+    return {2.58e-01, 1.32e-01, 6.63e-02, 3.13e-02};
+#endif
+  } else
+    EXPECT_TRUE(false) << "test results missing for type: " << type;
+  return {};
+}
 
 } // namespace Test
 } // namespace GDT

@@ -70,7 +70,30 @@ std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase
   return {};
 }
 
-
+std::vector<double> LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluCube2dGridType, double, 1>,
+                                                  LinearElliptic::ChooseDiscretizer::cg,
+                                                  1>::
+    results(const LinearEllipticEocExpectations<LinearElliptic::ER2007TestCase<AluCube2dGridType, double, 1>,
+                                                LinearElliptic::ChooseDiscretizer::cg,
+                                                1>::TestCaseType&,
+            const std::string type)
+{
+  if (type == "L2") {
+#if DXT_DISABLE_LARGE_TESTS
+    return {1.59e+00, 2.16e-01};
+#else
+    return {2.16e-01, 2.13e-01, 5.56e-02};
+#endif
+  } else if (type == "H1_semi" || type == "energy") {
+#if DXT_DISABLE_LARGE_TESTS
+    return {1.02e+00, 4.35e-01};
+#else
+    return {4.35e-01, 4.35e-01, 2.24e-01};
+#endif
+  } else
+    EXPECT_TRUE(false) << "test results missing for type: " << type;
+  return {};
+}
 } // namespace Test
 } // namespace GDT
 } // namespace Dune
