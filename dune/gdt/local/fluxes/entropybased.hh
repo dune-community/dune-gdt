@@ -598,7 +598,7 @@ public:
 
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u);
-      if (density <= 0.) {
+      if (density <= 0. || std::isnan(density)) {
         mutex_.unlock();
         DUNE_THROW(Dune::MathError, "Negative density!");
       }
@@ -1353,7 +1353,7 @@ public:
 
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u_in);
-      if (density <= 0.) {
+      if (density <= 0. || std::isnan(density)) {
         mutex_.unlock();
         DUNE_THROW(Dune::MathError, "Negative density!");
       }
@@ -2297,7 +2297,7 @@ public:
         cache_.set_capacity(cache_size+dimDomain);
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u);
-      if (density <= 0.) {
+      if (density <= 0. || std::isnan(density)) {
         mutex_.unlock();
         DUNE_THROW(Dune::MathError, "Negative density!");
       }
@@ -2935,7 +2935,7 @@ public:
 
       // rescale u such that the density <psi> is 1
       RangeFieldType density = basis_functions_.density(u);
-      if (density <= 0.) {
+      if (density <= 0. || std::isnan(density)) {
         mutex_.unlock();
         DUNE_THROW(Dune::MathError, "Negative density!");
       }
