@@ -353,12 +353,10 @@ public:
 
   virtual RangeFieldType density(const RangeType& u) const = 0;
 
-  // For the partial moments, we might not be able to solve the optimization problem for some moments where the density
-  // on one interval/spherical triangle is very low. The overall density might be much higher than the density on that
-  // triangle, so we use this function to get the minimal density.
-  virtual RangeFieldType density_min(const RangeType& u) const
+  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const
   {
-    return density(u);
+    if (density(u) < min_density)
+      u += u_iso() * min_density;
   }
 
   // Number of factors the density is calculated from

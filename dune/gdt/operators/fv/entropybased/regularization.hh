@@ -56,14 +56,9 @@ public:
            && "analytical_flux_ has to be derived from EntropyBasedLocalFlux");
     const auto* entropy_flux = dynamic_cast<const EntropyFluxType*>(&analytical_flux_);
     const auto& basis_functions = entropy_flux->basis_functions();
-    const auto density_min = basis_functions.density_min(u);
     thread_local auto vector_indices = source_.space().mapper().globalIndices(entity);
     source_.space().mapper().globalIndices(entity, vector_indices);
-    if (density_min < min_acceptable_density_ / basis_functions.density_factor()) {
-      //  std::cerr << "Added small vaccuum density to " << XT::Common::to_string(u, 15) << " on entity "
-      //            << XT::Common::to_string(entity.geometry().center(), 15) << std::endl;
-      u += basis_functions.u_iso() * min_acceptable_density_;
-    }
+    basis_functions.ensure_min_density(u, min_acceptable_density_);
     const auto s =
         entropy_flux->derived_local_function(entity)->get_alpha(x_in_inside_coords, u, param_, true, false).second;
     // if regularization was needed, we also need to replace u_n in that cell by its regularized version

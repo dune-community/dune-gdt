@@ -744,7 +744,8 @@ public:
 
   LpConvexhullRealizabilityLimitedSlope(const BasisfunctionType& basis_functions, const RangeFieldType epsilon)
     : epsilon_(epsilon)
-    , basis_values_(basis_functions.quadratures().merged().size())
+    , basis_functions_(basis_functions)
+    , basis_values_(basis_functions_.quadratures().merged().size())
   {
     const auto& quadrature = basis_functions.quadratures().merged();
     for (size_t ii = 0; ii < quadrature.size(); ++ii)
@@ -754,24 +755,42 @@ public:
   virtual VectorType
   get(const StencilType& stencil, const StencilType& stencil_char, const MatrixType& A) const override final
   {
-    const VectorType slope = slope_limiter_.get(stencil, stencil_char, A);
+    const VectorType slope_char = slope_limiter_.get(stencil, stencil_char, A);
     static const VectorType zero_vector(0.);
-    if (XT::Common::FloatCmp::eq(slope, zero_vector))
+    if (XT::Common::FloatCmp::eq(slope_char, zero_vector))
       return zero_vector;
     FieldVector<VectorType, 2> thetas;
     // this needs to be changed for other interface quadratures (see above)
     const auto& u_bar_char = stencil_char[1];
-    const FieldVector<VectorType, 2> reconstructed_values{u_bar_char - 0.5 * slope, u_bar_char + 0.5 * slope};
+    const FieldVector<VectorType, 2> reconstructed_values_char{u_bar_char - 0.5 * slope_char,
+                                                               u_bar_char + 0.5 * slope_char};
     auto& A_tilde_transposed = *A_tilde_transposed_;
-    for (size_t kk = 0; kk < reconstructed_values.size(); ++kk)
-      thetas[kk] = solve_linear_program(reconstructed_values[kk], u_bar_char, A, A_tilde_transposed);
+    for (size_t kk = 0; kk < reconstructed_values_char.size(); ++kk)
+      thetas[kk] = solve_linear_program(reconstructed_values_char[kk], u_bar_char, A, A_tilde_transposed);
     VectorType ret;
     for (size_t ii = 0; ii < dimRange; ++ii) {
       auto theta_max_ii = std::max(thetas[0][ii], thetas[1][ii]);
       if (theta_max_ii > 0.)
         theta_max_ii = std::min(1., theta_max_ii + epsilon_);
-      ret[ii] = slope[ii] * (1 - theta_max_ii);
+      ret[ii] = slope_char[ii] * (1 - theta_max_ii);
     }
+    // Ensure positive density
+    // For that purpose, get slope in ordinary coordinates
+    VectorType slope;
+    A.mv(ret, slope);
+    const auto& u_bar = stencil[1];
+    const FieldVector<VectorType, 2> reconstructed_values{u_bar - 0.5 * slope, u_bar + 0.5 * slope};
+    RangeFieldType theta_pos(0);
+    for (size_t kk = 0; kk < reconstructed_values.size(); ++kk) {
+      const auto& u = reconstructed_values[kk];
+      const auto density_u = basis_functions_.density(u);
+      const auto density_u_bar = basis_functions_.density(u_bar);
+      if (density_u >= density_u_bar)
+        continue;
+      else if (density_u < epsilon_)
+        theta_pos = std::max(theta_pos, (epsilon_ - density_u) / (density_u_bar - density_u));
+    } // kk
+    ret *= 1 - theta_pos;
     return ret;
   }
 
@@ -865,6 +884,7 @@ private:
   }
 
   const RangeFieldType epsilon_;
+  const BasisfunctionType& basis_functions_;
   std::vector<VectorType> basis_values_;
   mutable XT::Common::PerThreadValue<std::unique_ptr<ClpSimplex>> lp_;
   mutable XT::Common::PerThreadValue<MatrixType> A_tilde_transposed_;

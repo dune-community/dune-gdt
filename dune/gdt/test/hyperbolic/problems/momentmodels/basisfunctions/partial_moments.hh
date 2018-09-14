@@ -267,20 +267,20 @@ public:
     return ret;
   }
 
-  virtual RangeFieldType density_min(const RangeType& u) const override final
-  {
-    RangeFieldType ret(u[0]);
-    for (size_t ii = 2; ii < dimRange; ii += 2)
-      ret = std::min(ret, u[ii]);
-    return ret;
-  }
+  using BaseType::u_iso;
 
-  RangeFieldType density_min(const XT::Common::BlockedFieldVector<RangeFieldType, num_intervals, 2>& u) const
+  // For the partial moments, we might not be able to solve the optimization problem for some moments where the density
+  // on one interval/spherical triangle is very low. The overall density might be much higher than the density on that
+  // triangle, so we specialize this function.
+  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
   {
-    RangeFieldType ret(u.block(0)[0]);
-    for (size_t jj = 1; jj < num_intervals; ++jj)
-      ret = std::min(ret, u.block(jj)[0]);
-    return ret;
+    const auto u_iso_min = u_iso() * min_density;
+    for (size_t jj = 0; jj < num_intervals; ++jj) {
+      if (u[2 * jj] < u_iso_min[2 * jj]) {
+        u[2 * jj] += u_iso_min[2 * jj];
+        u[2 * jj + 1] += u_iso_min[2 * jj + 1];
+      }
+    }
   }
 
   virtual size_t density_factor() const override final
@@ -465,20 +465,20 @@ public:
     return ret;
   }
 
-  virtual RangeFieldType density_min(const RangeType& u) const override final
-  {
-    RangeFieldType ret(u[0]);
-    for (size_t ii = 4; ii < dimRange; ii += 4)
-      ret = std::min(ret, u[ii]);
-    return ret;
-  }
+  using BaseType::u_iso;
 
-  RangeFieldType density_min(const XT::Common::BlockedFieldVector<RangeFieldType, dimRange / 4, 4>& u) const
+  // For the partial moments, we might not be able to solve the optimization problem for some moments where the density
+  // on one interval/spherical triangle is very low. The overall density might be much higher than the density on that
+  // triangle, so we specialize this function.
+  virtual void ensure_min_density(RangeType& u, const RangeFieldType min_density) const override final
   {
-    RangeFieldType ret(u.block(0)[0]);
-    for (size_t jj = 1; jj < dimRange / 4; ++jj)
-      ret = std::min(ret, u.block(jj)[0]);
-    return ret;
+    const auto u_iso_min = u_iso() * min_density;
+    for (size_t jj = 0; jj < num_blocks; ++jj) {
+      if (u[4 * jj] < u_iso_min[4 * jj]) {
+        for (size_t ii = 0; ii < block_size; ++ii)
+          u[4 * jj + ii] += u_iso_min[4 * jj + ii];
+      }
+    }
   }
 
   virtual size_t density_factor() const override final
